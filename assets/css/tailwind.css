@@ -5,7 +5,7 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 20 14.3% 4.1%;
+    --foreground: 0 0% 7.45%;
  
     --muted: 60 4.8% 95.9%;
     --muted-foreground: 25 5.3% 44.7%;
@@ -19,7 +19,7 @@
     --border: 20 5.9% 90%;
     --input: 20 5.9% 90%;
  
-    --primary: 24 9.8% 10%;
+    --primary: 0 0% 7.45%;
     --primary-foreground: 60 9.1% 97.8%;
  
     --secondary: 60 4.8% 95.9%;
@@ -37,8 +37,8 @@
   }
  
   .dark {
-    --background: 20 14.3% 4.1%;
-    --foreground: 60 9.1% 97.8%;
+    --background: 12 6.5% 15.1%;
+    --foreground: 0 0% 100%;
  
     --muted: 12 6.5% 15.1%;
     --muted-foreground: 24 5.4% 63.9%;
@@ -52,8 +52,8 @@
     --border: 12 6.5% 15.1%;
     --input: 12 6.5% 15.1%;
  
-    --primary: 60 9.1% 97.8%;
-    --primary-foreground: 24 9.8% 10%;
+    --primary: 0 0% 7.45%;
+    --primary-foreground: 60 9.1% 97.8%;
  
     --secondary: 12 6.5% 15.1%;
     --secondary-foreground: 60 9.1% 97.8%;
@@ -74,5 +74,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    height: 100vh;
+  }
+  #__nuxt {
+    height: 100vh;
   }
 }
