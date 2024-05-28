@@ -2,7 +2,7 @@
 
 </script>
 <template>
-  <nav class="w-56 bg-primary">
+  <nav class="w-56 bg-background text-background-foreground">
     
   </nav>
 </template>

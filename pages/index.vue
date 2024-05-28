@@ -2,10 +2,42 @@
 
 </script>
 <template>
-    <div>
+    <div class="grid grid-cols-3 gap-8">
         <Card>
-            <h1>Hello cruel world!</h1>
-            <Button>Click me!</Button>
+            <CardHeader>
+                <CardTitle>Card Title</CardTitle>
+                <CardDescription>Card Description</CardDescription>
+            </CardHeader>
+            <CardContent>
+                Card Content
+            </CardContent>
+            <CardFooter>
+                Card Footer
+            </CardFooter>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Card Title</CardTitle>
+                <CardDescription>Card Description</CardDescription>
+            </CardHeader>
+            <CardContent>
+                Card Content
+            </CardContent>
+            <CardFooter>
+                Card Footer
+            </CardFooter>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Card Title</CardTitle>
+                <CardDescription>Card Description</CardDescription>
+            </CardHeader>
+            <CardContent>
+                Card Content
+            </CardContent>
+            <CardFooter>
+                Card Footer
+            </CardFooter>
         </Card>
     </div>
 </template>

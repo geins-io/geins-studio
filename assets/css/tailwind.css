@@ -34,11 +34,13 @@
     --ring: 20 14.3% 4.1%;
  
     --radius: 0.5rem;
+
+    --header-height: 3.5rem;
   }
  
   .dark {
-    --background: 12 6.5% 15.1%;
-    --foreground: 0 0% 100%;
+    --background: 0 0% 7.45%;
+    --foreground: 60 9.1% 97.8%;
  
     --muted: 12 6.5% 15.1%;
     --muted-foreground: 24 5.4% 63.9%;
@@ -74,9 +76,9 @@
   }
   body {
     @apply bg-background text-foreground;
-    height: 100vh;
+    height: 100%;
   }
   #__nuxt {
-    height: 100vh;
+    height: 100%;
   }
 }
