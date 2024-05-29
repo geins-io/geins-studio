@@ -8,8 +8,6 @@ import {
   CircleHelp,
   CreditCard,
 } from 'lucide-vue-next';
-import LogoDark from '@/assets/logos/geins-dark.svg';
-import LogoLight from '@/assets/logos/geins-light.svg';
 
 const colorMode = useColorMode();
 const setColorMode = () => {
@@ -18,16 +16,8 @@ const setColorMode = () => {
 </script>
 <template>
   <header
-    class="flex items-center justify-start bg-background text-background-foreground"
+    class="flex flex-none items-center justify-start bg-background text-background-foreground"
   >
-    <div class="w-56 pl-4">
-      <LogoDark
-        v-if="colorMode.value === 'light'"
-        :font-controlled="false"
-        class="w-20"
-      />
-      <LogoLight v-else :font-controlled="false" class="w-20" />
-    </div>
     <div class="relative w-full max-w-sm items-center">
       <Input
         id="search"
@@ -56,9 +46,9 @@ const setColorMode = () => {
         />
       </Button>
     </div>
-    <div class="mr-4">
+    <div class="mr-5">
       <DropdownMenu>
-        <DropdownMenuTrigger class="h-10 w-10">
+        <DropdownMenuTrigger id="topbar-menu-trigger" class="h-10 w-10">
           <Avatar class="h-10 w-10 border">
             <AvatarFallback>OA</AvatarFallback>
           </Avatar>

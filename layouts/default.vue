@@ -1,12 +1,14 @@
 <script setup lang="ts"></script>
 <template>
-  <div class="h-screen flex flex-col">
-    <LayoutHeader class="w-full fixed top-0 h-[--header-height]" />
-    <div class="flex flex-grow mt-[--header-height]">
-      <LayoutSidebar class="w-56 h-full" />
-      <div class="flex-grow p-8 rounded-md border-l border-t overflow-auto">
+  <div class="h-screen flex overflow-hidden">
+    <LayoutSidebar class="h-full" />
+    <main
+      class="relative flex flex-col flex-grow overflow-x-hidden transition-[margin]"
+    >
+      <LayoutHeader class="h-header sticky top-0" />
+      <div class="flex-grow p-8 rounded-tl-md border-l border-t overflow-auto">
         <slot />
       </div>
-    </div>
+    </main>
   </div>
 </template>
