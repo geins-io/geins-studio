@@ -48,7 +48,7 @@ const setColorMode = () => {
     </div>
     <div class="mr-5">
       <DropdownMenu>
-        <DropdownMenuTrigger id="topbar-menu-trigger" class="h-10 w-10">
+        <DropdownMenuTrigger class="h-10 w-10">
           <Avatar class="h-10 w-10 border">
             <AvatarFallback>OA</AvatarFallback>
           </Avatar>

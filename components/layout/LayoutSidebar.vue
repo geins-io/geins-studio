@@ -16,28 +16,23 @@ const setIsCollapsed = (value: boolean) => {
 </script>
 <template>
   <aside
-    :class="
-      cn(
-        `${isCollapsed ? 'w-14' : 'w-56'} relative bg-background text-background-foreground transition-[width]`,
-      )
-    "
+    :class="cn(`${isCollapsed ? 'w-14' : 'w-56'} relative transition-[width]`)"
   >
     <div>
       <div class="flex items-center h-header ml-5">
         <LogoLetter v-if="isCollapsed" :font-controlled="false" class="h-8" />
         <Logo v-else :font-controlled="false" class="h-8" />
       </div>
+      <MainNavigation :is-collapsed="isCollapsed" />
       <Button
         variant="outline"
         size="icon"
-        class="absolute bg-background z-50 -right-5 top-1/2 hidden rounded-full md:inline-flex"
+        class="absolute size-8 bg-background z-50 -right-4 top-1/2 hidden rounded-full md:inline-flex"
         @click="setIsCollapsed(!isCollapsed)"
       >
         <ChevronsLeft
           :class="
-            cn(
-              `h-5 w-5 transition-transform ${isCollapsed ? 'rotate-180' : ''}`,
-            )
+            cn(`size-5 transition-transform ${isCollapsed ? 'rotate-180' : ''}`)
           "
         />
       </Button>

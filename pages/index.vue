@@ -1,5 +1,9 @@
 <script setup lang="ts"></script>
 <template>
+  <TitleBlock
+    title="Hi, these are your latest stats."
+    description="All amounts will be shown excluding VAT. If you keep this page open, your stats will update every 60 seconds."
+  />
   <div class="grid grid-cols-3 gap-8">
     <Card>
       <CardHeader>
