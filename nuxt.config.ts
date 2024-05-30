@@ -10,6 +10,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
+    '@nuxtjs/robots',
     'shadcn-nuxt',
     'nuxt-svgo',
     'nuxt-svgo',
@@ -27,5 +28,11 @@ export default defineNuxtConfig({
   },
   colorMode: {
     classSuffix: '',
+  },
+  robots: {
+    rules: {
+      UserAgent: '*',
+      Disallow: '/',
+    },
   },
 });

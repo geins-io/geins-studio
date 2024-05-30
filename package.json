@@ -11,6 +11,9 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@nuxtjs/color-mode": "^3.4.1",
+    "@nuxtjs/robots": "^3.0.0",
+    "@nuxtjs/tailwindcss": "^6.12.0",
     "@vueuse/core": "^10.10.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -25,9 +28,8 @@
     "vue-router": "^4.3.2"
   },
   "devDependencies": {
+    "@flydotio/dockerfile": "^0.5.7",
     "@nuxt/eslint-config": "^0.3.13",
-    "@nuxtjs/color-mode": "^3.4.1",
-    "@nuxtjs/tailwindcss": "^6.12.0",
     "eslint": "^9.3.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
