@@ -1,16 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  components: [
-    {
-      path: '~/components',
-      pathPrefix: false,
-    },
-  ],
   modules: [
     '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
     '@nuxtjs/robots',
+    '@pinia/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',
     'nuxt-svgo',

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type NavigationItem } from '@/model/Navigation';
+import { type NavigationItem } from '@/model/NavigationItem';
 import {
   ChevronDown,
   Gauge,
@@ -100,7 +100,7 @@ const rootItemClasses = props.root
   ? ref(
       'py-2 pl-5 pr-2 text-sm font-medium h-14 leading-10 transition-[background-color]',
     )
-  : ref('py-2 px-5 text-sm');
+  : ref('py-2 px-6 text-sm');
 </script>
 
 <template>
@@ -112,7 +112,7 @@ const rootItemClasses = props.root
       :class="cn(`w-full flex items-center justify-between`, rootItemClasses)"
     >
       <NuxtLink :to="item.href" :class="cn(`flex flex-grow items-center`)">
-        <component :is="item.icon" class="size-4 mr-3" />
+        <component :is="item.icon" class="size-5 mr-3" />
         <span class="flex flex-grow hover:underline">{{ item.label }}</span>
       </NuxtLink>
       <CollapsibleTrigger
@@ -143,9 +143,9 @@ const rootItemClasses = props.root
       )
     "
   >
-    <component :is="item.icon" class="size-4 mr-3" />
-    <span v-show="!isCollapsed" class="flex flex-grow hover:underline">{{
-      item.label
-    }}</span>
+    <component :is="item.icon" class="size-5 mr-3" />
+    <span v-show="!isCollapsed" class="flex flex-grow hover:underline">
+      {{ item.label }}
+    </span>
   </NuxtLink>
 </template>
