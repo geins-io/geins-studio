@@ -7,7 +7,8 @@ const props = withDefaults(
     isCollapsed: false,
   },
 );
-const navigationMenu = [
+import { type NavigationItem } from '@/model/NavigationItem';
+const navigationMenu = <NavigationItem[]>[
   {
     label: 'Dashboard',
     href: '/Admin/Dashboard/Index',
@@ -15,12 +16,12 @@ const navigationMenu = [
   },
   {
     label: 'Products (PIM)',
-    href: '/Admin/Product/List',
+    href: '/pim/products',
     icon: 'ShoppingBasket',
     children: [
       {
         label: 'Products',
-        href: '/Admin/Product/List',
+        href: '/pim/products',
       },
       {
         label: 'Brands',
@@ -306,6 +307,13 @@ const navigationMenu = [
     ],
   },
 ];
+const route = useRoute();
+navigationMenu.map((item) => {
+  item.active = route.path === item.href;
+  item.children?.map((child) => {
+    child.active = route.path === child.href;
+  });
+});
 </script>
 
 <template>

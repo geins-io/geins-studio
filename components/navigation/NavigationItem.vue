@@ -2,6 +2,7 @@
 import { type NavigationItem } from '@/model/NavigationItem';
 import {
   ChevronDown,
+  ChevronRight,
   Gauge,
   ShoppingBasket,
   Brush,
@@ -14,6 +15,7 @@ import {
   Settings,
   ShieldCheck,
 } from 'lucide-vue-next';
+import { getTransitionRawChildren } from 'vue';
 import { cn } from '~/lib/utils';
 
 const props = withDefaults(
@@ -82,7 +84,6 @@ item.value.icon = iconComponents.find(
 
 const isOpen = ref(false);
 const isCollapsed = ref(props.isCollapsed);
-
 watch(
   () => props.isCollapsed,
   (value) => {
@@ -96,11 +97,27 @@ watch(
   },
 );
 
+const route = useRoute();
+const isActive = computed(() => {
+  return route.path === item.value.href;
+});
+watch(
+  () => route.path,
+  (val) => {
+    console.log('🚀 ~ val:', val);
+    item.value.active = isActive.value;
+    const children = item.value.children;
+    children?.forEach((child) => {
+      child.active = val === child.href;
+    });
+    isOpen.value = children?.length ? children.some((i) => i.active) : false;
+  },
+  { immediate: true },
+);
+
 const rootItemClasses = props.root
-  ? ref(
-      'py-2 pl-5 pr-2 text-sm font-medium h-14 leading-10 transition-[background-color]',
-    )
-  : ref('py-2 px-6 text-sm');
+  ? `py-2 pl-5 pr-2 text-sm font-medium h-14 leading-10 transition-[background-color]`
+  : `py-2 px-6 text-sm ${isActive.value ? 'font-medium' : ''}`;
 </script>
 
 <template>
@@ -144,8 +161,12 @@ const rootItemClasses = props.root
     "
   >
     <component :is="item.icon" class="size-5 mr-3" />
-    <span v-show="!isCollapsed" class="flex flex-grow hover:underline">
+    <span
+      v-show="!isCollapsed"
+      class="flex flex-grow justify-between items-center hover:underline"
+    >
       {{ item.label }}
+      <ChevronRight v-if="isActive" :class="cn(`size-4`)" />
     </span>
   </NuxtLink>
 </template>

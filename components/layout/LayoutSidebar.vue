@@ -22,8 +22,10 @@ const setIsCollapsed = (value: boolean) => {
   >
     <div>
       <div class="flex items-center h-header ml-5">
-        <LogoLetter v-if="isCollapsed" :font-controlled="false" class="h-9" />
-        <Logo v-else :font-controlled="false" class="h-9" />
+        <NuxtLink to="/">
+          <LogoLetter v-if="isCollapsed" :font-controlled="false" class="h-9" />
+          <Logo v-else :font-controlled="false" class="h-9" />
+        </NuxtLink>
       </div>
       <NavigationList :is-collapsed="isCollapsed" />
       <Button
