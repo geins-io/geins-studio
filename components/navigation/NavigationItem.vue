@@ -15,7 +15,6 @@ import {
   Settings,
   ShieldCheck,
 } from 'lucide-vue-next';
-import { getTransitionRawChildren } from 'vue';
 import { cn } from '~/lib/utils';
 
 const props = withDefaults(
@@ -84,6 +83,7 @@ item.value.icon = iconComponents.find(
 
 const isOpen = ref(false);
 const isCollapsed = ref(props.isCollapsed);
+
 watch(
   () => props.isCollapsed,
   (value) => {
@@ -104,7 +104,6 @@ const isActive = computed(() => {
 watch(
   () => route.path,
   (val) => {
-    console.log('🚀 ~ val:', val);
     item.value.active = isActive.value;
     const children = item.value.children;
     children?.forEach((child) => {
@@ -115,9 +114,11 @@ watch(
   { immediate: true },
 );
 
-const rootItemClasses = props.root
-  ? `py-2 pl-5 pr-2 text-sm font-medium h-14 leading-10 transition-[background-color]`
-  : `py-2 px-6 text-sm ${isActive.value ? 'font-medium' : ''}`;
+const rootItemClasses = computed(() => {
+  return props.root
+    ? `py-2 pl-5 pr-2 text-sm font-medium h-14 leading-10 transition-[background-color]`
+    : `py-2 pl-6 pr-4 text-sm ${isActive.value ? 'font-medium' : ''}`;
+});
 </script>
 
 <template>
@@ -126,7 +127,12 @@ const rootItemClasses = props.root
     v-model:open="isOpen"
   >
     <div
-      :class="cn(`w-full flex items-center justify-between`, rootItemClasses)"
+      :class="
+        cn(
+          `w-full flex items-center justify-between ${isCollapsed && isOpen ? 'bg-muted' : ''}`,
+          rootItemClasses,
+        )
+      "
     >
       <NuxtLink :to="item.href" :class="cn(`flex flex-grow items-center`)">
         <component :is="item.icon" class="size-5 mr-3" />
@@ -155,7 +161,7 @@ const rootItemClasses = props.root
     :to="item.href"
     :class="
       cn(
-        `flex items-center ${isCollapsed ? 'transition-colors hover:bg-muted' : ''}`,
+        `flex items-center ${isCollapsed ? 'transition-colors hover:bg-muted' : ''} ${isActive ? 'bg-muted' : ''}`,
         rootItemClasses,
       )
     "
@@ -166,7 +172,10 @@ const rootItemClasses = props.root
       class="flex flex-grow justify-between items-center hover:underline"
     >
       {{ item.label }}
-      <ChevronRight v-if="isActive" :class="cn(`size-4`)" />
+      <ChevronRight
+        v-if="isActive"
+        :class="cn(`text-primary size-5 ${root ? 'mr-2' : ''}`)"
+      />
     </span>
   </NuxtLink>
 </template>

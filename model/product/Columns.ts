@@ -1,6 +1,7 @@
 import { h } from 'vue';
 import type { ColumnDef } from '@tanstack/vue-table';
 import type { Product } from '@/model/product/Product';
+import TableCellActions from '@/components/table/cell/TableCellActions.vue';
 
 export const productListColumns: ColumnDef<Product>[] = [
   {
@@ -21,7 +22,22 @@ export const productListColumns: ColumnDef<Product>[] = [
         currency: 'SEK',
         minimumFractionDigits: 0,
       }).format(price);
-      return h('div', { class: 'text-right font-medium' }, formatted);
+      return h('div', { class: '' }, formatted);
+    },
+  },
+  {
+    id: 'actions',
+    enableHiding: false,
+    cell: ({ row }) => {
+      const product = row.original;
+
+      return h(
+        'div',
+        { class: 'relative' },
+        h(TableCellActions, {
+          product,
+        }),
+      );
     },
   },
 ];

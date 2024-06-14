@@ -1,6 +1,11 @@
 <script setup lang="ts" generic="TData, TValue">
 import type { ColumnDef } from '@tanstack/vue-table';
-import { FlexRender, getCoreRowModel, useVueTable } from '@tanstack/vue-table';
+import {
+  FlexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useVueTable,
+} from '@tanstack/vue-table';
 
 const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
@@ -8,7 +13,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits({
-  clicked: (row: string) => row,
+  clicked: (row: any) => row,
 });
 
 const table = useVueTable({
@@ -19,6 +24,7 @@ const table = useVueTable({
     return props.columns;
   },
   getCoreRowModel: getCoreRowModel(),
+  getPaginationRowModel: getPaginationRowModel(),
 });
 </script>
 
@@ -45,7 +51,7 @@ const table = useVueTable({
             v-for="row in table.getRowModel().rows"
             :key="row.id"
             :data-state="row.getIsSelected() ? 'selected' : undefined"
-            @click="emit('clicked', row.id)"
+            @click="emit('clicked', row)"
           >
             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
               <FlexRender
@@ -64,5 +70,6 @@ const table = useVueTable({
         </template>
       </TableBody>
     </Table>
+    <TablePagination :table="table" />
   </div>
 </template>

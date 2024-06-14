@@ -1,38 +1,23 @@
 <script setup lang="ts">
 import { productListColumns } from '@/model/product/Columns';
 import type { Product } from '@/model/product/Product';
+import { mockProducts } from '@/data/products';
 
-const data = ref<Product[]>([]);
 const columns = ref(productListColumns);
 
-async function getData(): Promise<Product[]> {
-  // Fetch data from API here.
-  return [
-    {
-      id: 1,
-      name: 'Product 1',
-      price: 100,
-    },
-    {
-      id: 2,
-      name: 'Product 2',
-      price: 200,
-    },
-    {
-      id: 3,
-      name: 'Product 3',
-      price: 300,
-    },
-  ];
+const totalProducts = ref(50);
+let products = ref<Product[]>(mockProducts);
+
+if (import.meta.dev) {
+  const { data } = await useFetch<Product[]>('/api/products', {
+    query: { total: totalProducts.value },
+  });
+  products.value = data.value || mockProducts;
 }
 
-const handleClick = async (row: string) => {
-  await navigateTo('/pim/product/' + (parseInt(row) + 1));
+const handleClick = async (row: any) => {
+  await navigateTo(`/pim/product/${row.original.id}`);
 };
-
-onMounted(async () => {
-  data.value = await getData();
-});
 </script>
 
 <template>
@@ -42,5 +27,5 @@ onMounted(async () => {
     <Button variant="outline">Export all</Button>
     <Button variant="outline">Export this</Button>
   </ContentActionBar>
-  <ContentTable :columns="columns" :data="data" @clicked="handleClick" />
+  <ContentTable :columns="columns" :data="products" @clicked="handleClick" />
 </template>
