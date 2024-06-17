@@ -65,6 +65,35 @@
         }
       ],
       "responseMode": null
+    },
+    {
+      "uuid": "de793bd9-6982-4956-bfb2-008c62e044fd",
+      "type": "http",
+      "documentation": "",
+      "method": "get",
+      "endpoint": "categories",
+      "responses": [
+        {
+          "uuid": "4bea3b3a-b551-41b0-81d0-0616c7357249",
+          "body": "[\n  {{# repeat (queryParam 'total' '10') }}\n    {\n      \"id\": \"{{ faker 'number.int' min=10000 max=100000 }}\",\n      \"name\": \"{{ faker 'commerce.department' }}\",\n      \"market\": \"{{ faker 'location.country' }}\",\n    },\n  {{/ repeat }}\n]",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "",
+          "headers": [],
+          "bodyType": "INLINE",
+          "filePath": "",
+          "databucketID": "",
+          "sendFileAsBody": false,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null
     }
   ],
   "rootChildren": [
@@ -75,6 +104,10 @@
     {
       "type": "route",
       "uuid": "638c2770-e0a4-49b2-9b1b-503f548cbbd4"
+    },
+    {
+      "type": "route",
+      "uuid": "de793bd9-6982-4956-bfb2-008c62e044fd"
     }
   ],
   "proxyMode": false,

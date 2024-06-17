@@ -7,5 +7,6 @@ export default createConfigForNuxt()
   .append({
     rules: {
       'vue/require-default-prop': 'off',
+      'vue/no-multiple-template-root': 'off',
     },
   });

@@ -1,11 +1,23 @@
 <script setup lang="ts" generic="TData, TValue">
-import type { ColumnDef } from '@tanstack/vue-table';
+import type {
+  Row,
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+} from '@tanstack/vue-table';
 import {
   FlexRender,
   getCoreRowModel,
   getPaginationRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
   useVueTable,
 } from '@tanstack/vue-table';
+
+import { valueUpdater } from '@/lib/utils';
+
+import { Search } from 'lucide-vue-next';
 
 const props = defineProps<{
   columns: ColumnDef<TData, TValue>[];
@@ -13,8 +25,13 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits({
-  clicked: (row: any) => row,
+  clicked: (row: Row<TData>) => row,
 });
+
+const sorting = ref<SortingState>([]);
+const columnFilters = ref<ColumnFiltersState>([]);
+const columnVisibility = ref<VisibilityState>({});
+const rowSelection = ref({});
 
 const table = useVueTable({
   get data() {
@@ -25,10 +42,50 @@ const table = useVueTable({
   },
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
+  onColumnFiltersChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, columnFilters),
+  getFilteredRowModel: getFilteredRowModel(),
+  onColumnVisibilityChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, columnVisibility),
+  onRowSelectionChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, rowSelection),
+  state: {
+    get sorting() {
+      return sorting.value;
+    },
+    get columnFilters() {
+      return columnFilters.value;
+    },
+    get columnVisibility() {
+      return columnVisibility.value;
+    },
+    get rowSelection() {
+      return rowSelection.value;
+    },
+  },
 });
 </script>
 
 <template>
+  <div class="flex items-center py-4">
+    <div class="relative w-full max-w-sm">
+      <Input
+        class="w-full pl-10"
+        placeholder="Filter products..."
+        :model-value="table.getColumn('name')?.getFilterValue() as string"
+        @update:model-value="table.getColumn('name')?.setFilterValue($event)"
+      />
+      <span
+        class="absolute start-0 inset-y-0 flex items-center justify-center px-3"
+      >
+        <Search class="size-4 text-foreground" />
+      </span>
+    </div>
+
+    <TableColumnToggle :table="table" />
+  </div>
   <div class="border rounded-md">
     <Table>
       <TableHeader>
