@@ -1,6 +1,5 @@
 <script setup lang="ts" generic="TData">
 import type { Category } from '@/model/product/Category';
-import { useColumns } from '@/composables/useColumns';
 
 const { getColumns } = useColumns();
 

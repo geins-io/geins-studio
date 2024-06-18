@@ -28,7 +28,7 @@ const setColorMode = () => {
       <span
         class="absolute start-0 inset-y-0 flex items-center justify-center px-2"
       >
-        <Search class="size-6 text-foreground" />
+        <Search class="size-5 text-foreground" />
       </span>
     </div>
     <div class="ml-auto mr-4">

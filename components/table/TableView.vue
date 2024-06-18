@@ -1,6 +1,5 @@
 <script setup lang="ts" generic="TData, TValue">
 import type {
-  Row,
   ColumnDef,
   ColumnFiltersState,
   SortingState,
@@ -33,7 +32,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits({
-  clicked: (row: Row<TData>) => row,
+  clicked: (row) => row,
 });
 
 const sorting = ref<SortingState>([]);
@@ -86,7 +85,7 @@ const table = useVueTable({
     <div class="relative w-full max-w-sm">
       <Input
         class="w-full pl-10"
-        placeholder="Filter products..."
+        placeholder="Filter list..."
         :model-value="table.getColumn('name')?.getFilterValue() as string"
         @update:model-value="table.getColumn('name')?.setFilterValue($event)"
       />

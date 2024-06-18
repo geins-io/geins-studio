@@ -6,7 +6,7 @@
   "tailwind": {
     "config": "tailwind.config.js",
     "css": "assets/css/tailwind.css",
-    "baseColor": "yellow",
+    "baseColor": "stone",
     "cssVariables": true
   },
   "framework": "nuxt",
