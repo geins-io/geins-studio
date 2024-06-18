@@ -6,7 +6,7 @@ import { mockProducts } from '@/data/products';
 
 const columns = ref(productListColumns);
 
-const totalProducts = ref(50);
+const totalProducts = ref(500);
 const products = ref<Product[]>(mockProducts);
 
 if (import.meta.dev) {
@@ -28,5 +28,11 @@ const handleClick = async (row: Row<Product>) => {
     <Button variant="outline">Export all</Button>
     <Button variant="outline">Export selected</Button>
   </ContentActionBar>
-  <TableView :columns="columns" :data="products" @clicked="handleClick" />
+  <TableView
+    entity-name="product"
+    :rows-selectable="true"
+    :columns="columns"
+    :data="products"
+    @clicked="handleClick"
+  />
 </template>

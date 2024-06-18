@@ -17,7 +17,7 @@
       "responses": [
         {
           "uuid": "80e53f27-a98e-4d1c-a7e8-1d5bb0b920a2",
-          "body": "[\n  {{# repeat (queryParam 'total' '10') }}\n    {\n      \"id\": \"{{ faker 'number.int' min=10000 max=100000 }}\",\n      \"name\": \"{{ faker 'commerce.productName' }}\",\n      \"price\": \"{{ faker 'commerce.price' }}\"\n    },\n  {{/ repeat }}\n]",
+          "body": "[\n  {{# repeat (queryParam 'total' '60') }}\n    {\n      \"id\": \"{{ faker 'number.int' min=10000 max=100000 }}\",\n      \"name\": \"{{ faker 'commerce.productName' }}\",\n      \"price\": \"{{ faker 'commerce.price' }}\"\n    },\n  {{/ repeat }}\n]",
           "latency": 0,
           "statusCode": 200,
           "label": "",
@@ -75,7 +75,7 @@
       "responses": [
         {
           "uuid": "4bea3b3a-b551-41b0-81d0-0616c7357249",
-          "body": "[\n  {{# repeat (queryParam 'total' '10') }}\n    {\n      \"id\": \"{{ faker 'number.int' min=10000 max=100000 }}\",\n      \"name\": \"{{ faker 'commerce.department' }}\",\n      \"market\": \"{{ faker 'location.country' }}\",\n    },\n  {{/ repeat }}\n]",
+          "body": "[\n  {{# repeat (queryParam 'total' '60') }}\n    {\n      \"id\": \"{{ faker 'number.int' min=10000 max=100000 }}\",\n      \"name\": \"{{ faker 'commerce.department' }}\",\n      \"market\": \"{{ faker 'location.country' }}\"\n    },\n  {{/ repeat }}\n]",
           "latency": 0,
           "statusCode": 200,
           "label": "",

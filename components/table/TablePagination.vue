@@ -1,9 +1,11 @@
 <script setup lang="ts" generic="TData">
 import { type Table } from '@tanstack/vue-table';
-import { ChevronLeft } from 'lucide-vue-next';
-import { ChevronRight } from 'lucide-vue-next';
-import { ChevronsLeft } from 'lucide-vue-next';
-import { ChevronsRight } from 'lucide-vue-next';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from 'lucide-vue-next';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -16,15 +18,25 @@ import {
 
 interface DataTablePaginationProps {
   table: Table<TData>;
+  rowsSelectable: boolean;
+  entityName: string;
 }
+
 defineProps<DataTablePaginationProps>();
 </script>
 
 <template>
   <div class="flex items-center justify-between border-t py-3 px-4">
     <div class="flex-1 text-sm text-muted-foreground">
-      {{ table.getFilteredSelectedRowModel().rows.length }} of
-      {{ table.getFilteredRowModel().rows.length }} row(s) selected.
+      <span v-if="rowsSelectable">
+        {{ table.getFilteredSelectedRowModel().rows.length }} of
+        {{ table.getFilteredRowModel().rows.length + ' ' + entityName }}(s)
+        selected.
+      </span>
+      <span v-else>
+        {{ table.getFilteredRowModel().rows.length + ' ' + entityName }}(s)
+        found.
+      </span>
     </div>
     <div class="flex items-center space-x-6 lg:space-x-8">
       <div class="flex items-center space-x-2">
@@ -40,7 +52,7 @@ defineProps<DataTablePaginationProps>();
           </SelectTrigger>
           <SelectContent side="top">
             <SelectItem
-              v-for="pageSize in [10, 20, 30, 40, 50]"
+              v-for="pageSize in [30, 60, 120, 240]"
               :key="pageSize"
               :value="`${pageSize}`"
             >

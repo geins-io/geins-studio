@@ -20,7 +20,7 @@ export const mockNavigation: NavigationItem[] = [
       },
       {
         label: 'Categories',
-        href: '',
+        href: '/pim/categories',
       },
       {
         label: 'Campaigns',

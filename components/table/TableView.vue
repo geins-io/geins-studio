@@ -19,10 +19,18 @@ import { valueUpdater } from '@/lib/utils';
 
 import { Search } from 'lucide-vue-next';
 
-const props = defineProps<{
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    columns: ColumnDef<TData, TValue>[];
+    data: TData[];
+    rowsSelectable?: boolean;
+    entityName?: string;
+  }>(),
+  {
+    rowsSelectable: false,
+    entityName: 'row',
+  },
+);
 
 const emit = defineEmits({
   clicked: (row: Row<TData>) => row,
@@ -65,6 +73,11 @@ const table = useVueTable({
       return rowSelection.value;
     },
   },
+  initialState: {
+    pagination: {
+      pageSize: 30,
+    },
+  },
 });
 </script>
 
@@ -87,13 +100,17 @@ const table = useVueTable({
     <TableColumnToggle :table="table" />
   </div>
   <div class="border rounded-md">
-    <Table>
+    <Table class="relative">
       <TableHeader>
         <TableRow
           v-for="headerGroup in table.getHeaderGroups()"
           :key="headerGroup.id"
         >
-          <TableHead v-for="header in headerGroup.headers" :key="header.id">
+          <TableHead
+            v-for="header in headerGroup.headers"
+            :key="header.id"
+            class="sticky z-20 -top-8 bg-background border-b rounded-t-md"
+          >
             <FlexRender
               v-if="!header.isPlaceholder"
               :render="header.column.columnDef.header"
@@ -127,6 +144,11 @@ const table = useVueTable({
         </template>
       </TableBody>
     </Table>
-    <TablePagination :table="table" />
+    <TablePagination
+      class="sticky -bottom-8 bg-background rounded-b-md"
+      :entity-name="entityName"
+      :rows-selectable="rowsSelectable"
+      :table="table"
+    />
   </div>
 </template>
