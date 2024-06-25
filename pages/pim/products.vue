@@ -1,12 +1,8 @@
 <script setup lang="ts" generic="TData">
-import { productListColumns } from '@/model/product/Columns';
 import type { Product } from '@/model/product/Product';
-import type { Row } from '@tanstack/vue-table';
+import type { ColumnDef } from '@tanstack/vue-table';
 import { mockProducts } from '@/data/products';
-
-// const { getColumns } = useColumns();
-
-const columns = ref(productListColumns);
+import TableCellActions from '@/components/table/cell/TableCellActions.vue';
 
 const totalProducts = ref(500);
 const products = ref<Product[]>(mockProducts);
@@ -21,13 +17,35 @@ if (import.meta.dev) {
   products.value = data.value || mockProducts;
 }
 
-// TODO: Implement extend useColumns
-// const columns = getColumns(products.value);
-// console.log('🚀 ~ columns:', columns);
+const { getColumns, extendColumns } = useColumns<Product>({
+  selectable: true,
+  columnTypes: { price: 'currency' },
+});
+const columns = getColumns(products.value);
 
-const handleClick = async (row: Row<Product>) => {
-  await navigateTo(`/pim/product/${row.original.id}`);
+const actionsColumn: ColumnDef<Product> = {
+  id: 'actions',
+  enableHiding: false,
+  enableSorting: false,
+  cell: ({ row }) => {
+    const product = row.original;
+
+    return h(
+      'div',
+      { class: 'relative' },
+      h(TableCellActions, {
+        onEdit: () => navigateTo(`/pim/product/${product.id}`),
+        onDelete: () => console.log('Delete product', product.id),
+      }),
+    );
+  },
 };
+
+extendColumns(columns, actionsColumn);
+
+// const handleClick = async (row: Row<Product>) => {
+//   await navigateTo(`/pim/product/${row.original.id}`);
+// };
 </script>
 
 <template>
@@ -42,6 +60,5 @@ const handleClick = async (row: Row<Product>) => {
     :rows-selectable="true"
     :columns="columns"
     :data="products"
-    @clicked="handleClick"
   />
 </template>
