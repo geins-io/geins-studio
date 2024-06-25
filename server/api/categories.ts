@@ -1,4 +1,4 @@
-import type { Category } from '@/model/product/Category';
+import type { Category } from '@/types/product/Category';
 
 export default defineEventHandler(async () => {
   const categories = await $fetch<Category[]>(

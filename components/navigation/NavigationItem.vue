@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type NavigationItem } from '@/model/NavigationItem';
+import { type NavigationItem } from '@/types/NavigationItem';
 import {
   ChevronDown,
   ChevronRight,

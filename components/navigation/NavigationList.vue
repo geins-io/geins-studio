@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type NavigationItem } from '@/model/NavigationItem';
+import { type NavigationItem } from '@/types/NavigationItem';
 import { mockNavigation } from '@/data/navigation';
 
 const props = withDefaults(
@@ -11,7 +11,7 @@ const props = withDefaults(
   },
 );
 
-let navigationMenu = ref<NavigationItem[]>(mockNavigation);
+const navigationMenu = ref<NavigationItem[]>(mockNavigation);
 
 const route = useRoute();
 navigationMenu.value.map((item) => {

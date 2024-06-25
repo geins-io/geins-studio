@@ -1,4 +1,4 @@
-import type { Product } from '@/model/product/Product';
+import type { Product } from '@/types/product/Product';
 export const mockProducts: Product[] = [
   { id: '10607', name: 'Practical Steel Pizza', price: 360.0 },
   { id: '33255', name: 'Fantastic Frozen Pants', price: 839.0 },
