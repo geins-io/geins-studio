@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+const { t } = useI18n();
 
 interface DataTablePaginationProps {
   table: Table<TData>;
@@ -22,25 +23,33 @@ interface DataTablePaginationProps {
   entityName: string;
 }
 
-defineProps<DataTablePaginationProps>();
+const props = defineProps<DataTablePaginationProps>();
+
+const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
+const entity = computed(() => t(props.entityName, totalRows.value));
 </script>
 
 <template>
   <div class="flex items-center justify-between border-t py-3 px-4">
     <div class="flex-1 text-sm text-muted-foreground">
       <span v-if="rowsSelectable">
-        {{ table.getFilteredSelectedRowModel().rows.length }} of
-        {{ table.getFilteredRowModel().rows.length + ' ' + entityName }}(s)
-        selected.
+        {{
+          $t('rows_selected', {
+            selected: table.getFilteredSelectedRowModel().rows.length,
+            total: totalRows,
+            entityName: entity,
+          })
+        }}
       </span>
       <span v-else>
-        {{ table.getFilteredRowModel().rows.length + ' ' + entityName }}(s)
-        found.
+        {{ $t('rows_found', { total: totalRows, entityName: entity }) }}
       </span>
     </div>
     <div class="flex items-center space-x-6 lg:space-x-8">
       <div class="flex items-center space-x-2">
-        <p class="text-sm font-medium">Rows per page</p>
+        <p class="text-sm font-medium">
+          {{ $t('rows_per_page', { entityName }, 2) }}
+        </p>
         <Select
           :model-value="`${table.getState().pagination.pageSize}`"
           @update:model-value="table.setPageSize"
@@ -64,8 +73,12 @@ defineProps<DataTablePaginationProps>();
       <div
         class="flex w-[100px] items-center justify-center text-sm font-medium"
       >
-        Page {{ table.getState().pagination.pageIndex + 1 }} of
-        {{ table.getPageCount() }}
+        {{
+          $t('page_of', {
+            page: table.getState().pagination.pageIndex + 1,
+            total: table.getPageCount(),
+          })
+        }}
       </div>
       <div class="flex items-center space-x-2">
         <Button

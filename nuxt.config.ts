@@ -4,25 +4,17 @@ export default defineNuxtConfig({
   modules: [
     '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
+    '@nuxtjs/i18n',
     '@nuxtjs/robots',
     '@pinia/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',
     'nuxt-svgo',
   ],
-  shadcn: {
-    /**
-     * Prefix for all the imported component
-     */
-    prefix: '',
-    /**
-     * Directory that the component lives in.
-     * @default "./components/ui"
-     */
-    componentDir: './components/ui',
-  },
-  colorMode: {
-    classSuffix: '',
+  i18n: {
+    defaultLocale: 'en',
+    langDir: 'lang/',
+    locales: [{ code: 'en', iso: 'en-US', file: 'en-US.ts' }],
   },
   robots: {
     rules: {
