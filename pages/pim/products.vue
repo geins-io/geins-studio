@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/vue-table';
 import { mockProducts } from '@/data/products';
 import TableCellActions from '@/components/table/cell/TableCellActions.vue';
 
+const entityName = 'product';
 const totalProducts = ref(500);
 const products = ref<Product[]>(mockProducts);
 
@@ -51,12 +52,12 @@ extendColumns(columns, actionsColumn);
 <template>
   <ContentTitleBlock title="Products" />
   <ContentActionBar>
-    <Button>New product</Button>
+    <Button>{{ $t('new_entity', { entityName }) }}</Button>
     <Button variant="outline">Export all</Button>
     <Button variant="outline">Export selected</Button>
   </ContentActionBar>
   <TableView
-    entity-name="product"
+    :entity-name="entityName"
     :rows-selectable="true"
     :columns="columns"
     :data="products"

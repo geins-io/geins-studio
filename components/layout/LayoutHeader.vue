@@ -22,7 +22,7 @@ const setColorMode = () => {
       <Input
         id="search"
         type="text"
-        placeholder="Search..."
+        :placeholder="$t('global_search_placeholder')"
         class="pl-10 bg-popover"
       />
       <span
