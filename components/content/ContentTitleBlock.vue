@@ -21,7 +21,7 @@ const unsavedChanges = ref(props.unsavedChanges);
       <h1 class="text-3xl font-bold mb-1">
         {{ title }}
       </h1>
-      <span class="" v-show="unsavedChanges">Unsaved changes</span>
+      <span v-show="unsavedChanges">Unsaved changes</span>
     </div>
     <p v-if="description">
       {{ description }}

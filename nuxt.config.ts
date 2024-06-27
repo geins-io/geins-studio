@@ -4,6 +4,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
+    '@nuxtjs/i18n',
     '@nuxtjs/robots',
     '@pinia/nuxt',
     'shadcn-nuxt',
@@ -22,7 +23,15 @@ export default defineNuxtConfig({
     componentDir: './components/ui',
   },
   colorMode: {
+    preference: 'system', // default value of $colorMode.preference
+    fallback: 'light', // fallback value if not system preference found
     classSuffix: '',
+    storageKey: 'nuxt-color-mode',
+  },
+  i18n: {
+    defaultLocale: 'en',
+    langDir: 'lang/',
+    locales: [{ code: 'en', iso: 'en-US', file: 'en-US.ts' }],
   },
   robots: {
     rules: {
