@@ -2,23 +2,39 @@ import { defineConfig } from 'vitepress';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: 'Geins MC Developer Docs',
-  description: 'Devloper Docs',
+  title: 'Geins Merchant Center Developer Docs',
+  description: 'Geins Merchant Center Developer Docs',
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
+    siteTitle: 'Merchant Center',
+    logo: {
+      light: '/geins-g.svg',
+      dark: '/geins-g-white.svg',
+      alt: 'Geins Merchant Center Developer Docs',
+    },
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Examples', link: '/markdown-examples' },
+      { text: 'Docs', link: '/introduction/what-is-geins-mc' },
     ],
 
     sidebar: [
       {
-        text: 'Gettingh Started',
+        text: 'Introduction',
         items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' },
+          {
+            text: 'What is Geins MC?',
+            link: '/introduction/what-is-geins-mc',
+          },
+          { text: 'Getting Started', link: '/introduction/getting-started' },
+          { text: 'Deploy', link: '/introduction/deploy' },
+        ],
+      },
+      {
+        text: 'Guides',
+        items: [
+          { text: 'Working with the UI', link: '/guides/ui' },
+          { text: 'Working with the API', link: '/guides/api' },
+          { text: 'Working with Data Tables', link: '/guides/data-tables' },
         ],
       },
       {

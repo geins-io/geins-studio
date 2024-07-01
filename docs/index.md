@@ -3,22 +3,31 @@
 layout: home
 
 hero:
-  name: 'Geins Merchant Center'
-  text: 'Developer Docs'
-  tagline: Create your own user interface with Geins Merchant Center
+  name: Merchant Center
+  text: Developer Docs
+  tagline: Create your own e-commerce user interface with Geins Merchant Center
+  image:
+    src: /geins.svg
+    alt: Geins logo
   actions:
     - theme: brand
-      text: Markdown Examples
-      link: /markdown-examples
+      text: Getting started
+      link: /introduction/getting-started
     - theme: alt
       text: API Examples
       link: /api-examples
 
 features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - icon:
+      src: /shadcn-logo.svg
+    title: Built with shadcn-vue
+    details: Get up to speed working with re-susable components from shadcn-vue
+  - icon:
+      src: /github-logo.svg
+    title: Open source
+    details: Own your code and extend your Geins Merchant Center to your needs
+  - icon:
+      src: /box-logo.svg
+    title: Out-of-the-box solution
+    details: The application comes with the full Geins suite integrated for you to use
 ---
