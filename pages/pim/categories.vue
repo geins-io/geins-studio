@@ -1,14 +1,18 @@
 <script setup lang="ts" generic="TData">
-import type { Category } from '@/model/product/Category';
+import type { Category } from '@/types/product/Category';
+import { mockCategories } from '@/data/categories';
+
+const categories = ref<Category[]>(mockCategories);
+
+if (import.meta.dev) {
+  const { data } = await useFetch<Category[]>('/api/categories');
+  if (!data.value) {
+    throw new Error('Failed to fetch categories');
+  }
+  categories.value = data.value || mockCategories;
+}
 
 const { getColumns } = useColumns();
-
-const { data } = await useFetch<Category[]>('/api/categories');
-
-if (!data.value) {
-  throw new Error('Failed to fetch categories');
-}
-const categories = ref<Category[]>(data.value);
 const columns = getColumns(categories.value);
 </script>
 

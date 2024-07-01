@@ -1,4 +1,4 @@
-import type { Product } from '@/model/product/Product';
+import type { Product } from '@/types/product/Product';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);

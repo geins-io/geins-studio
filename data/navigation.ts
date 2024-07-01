@@ -1,4 +1,4 @@
-import type { NavigationItem } from '@/model/NavigationItem';
+import type { NavigationItem } from '@/types/NavigationItem';
 export const mockNavigation: NavigationItem[] = [
   {
     label: 'Dashboard',

@@ -2,6 +2,6 @@ export interface NavigationItem {
   label: string;
   href: string;
   active?: boolean;
-  icon?: string;
+  icon?: unknown;
   children?: NavigationItem[];
 }
