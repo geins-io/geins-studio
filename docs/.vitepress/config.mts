@@ -4,19 +4,29 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   title: 'Geins Merchant Center Developer Docs',
   description: 'Geins Merchant Center Developer Docs',
+  lastUpdated: true,
+  head: [['link', { rel: 'icon', href: '/assets/favicon.ico' }]],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     siteTitle: 'Merchant Center',
     logo: {
-      light: '/geins-g.svg',
-      dark: '/geins-g-white.svg',
+      light: '/assets/geins-g.svg',
+      dark: '/assets/geins-g-white.svg',
       alt: 'Geins Merchant Center Developer Docs',
+    },
+    search: {
+      provider: 'local',
     },
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Docs', link: '/introduction/what-is-geins-mc' },
     ],
-
+    socialLinks: [
+      {
+        icon: 'github',
+        link: 'https://github.com/geins-io/geins-merchant-center',
+      },
+    ],
     sidebar: [
       {
         text: 'Introduction',
@@ -32,9 +42,9 @@ export default defineConfig({
       {
         text: 'Guides',
         items: [
+          { text: 'Working with Data Tables', link: '/guides/data-tables' },
           { text: 'Working with the UI', link: '/guides/ui' },
           { text: 'Working with the API', link: '/guides/api' },
-          { text: 'Working with Data Tables', link: '/guides/data-tables' },
         ],
       },
       {
@@ -45,12 +55,9 @@ export default defineConfig({
         ],
       },
     ],
-
-    socialLinks: [
-      {
-        icon: 'github',
-        link: 'https://github.com/geins-io/geins-merchant-center',
-      },
-    ],
+    // footer: {
+    //   message: '',
+    //   copyright: '',
+    // },
   },
 });

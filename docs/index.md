@@ -7,7 +7,7 @@ hero:
   text: Developer Docs
   tagline: Create your own e-commerce user interface with Geins Merchant Center
   image:
-    src: /geins.svg
+    src: /assets/geins.svg
     alt: Geins logo
   actions:
     - theme: brand
@@ -19,15 +19,15 @@ hero:
 
 features:
   - icon:
-      src: /shadcn-logo.svg
+      src: /assets/shadcn-logo.svg
     title: Built with shadcn-vue
     details: Get up to speed working with re-susable components from shadcn-vue
   - icon:
-      src: /github-logo.svg
+      src: /assets/github-logo.svg
     title: Open source
     details: Own your code and extend your Geins Merchant Center to your needs
   - icon:
-      src: /box-logo.svg
+      src: /assets/box-logo.svg
     title: Out-of-the-box solution
     details: The application comes with the full Geins suite integrated for you to use
 ---
