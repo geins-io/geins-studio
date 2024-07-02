@@ -2,6 +2,7 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: [
+    '@sidebase/nuxt-auth',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
     '@nuxtjs/i18n',
@@ -27,6 +28,16 @@ export default defineNuxtConfig({
     fallback: 'light', // fallback value if not system preference found
     classSuffix: '',
     storageKey: 'nuxt-color-mode',
+  },
+  auth: {
+    isEnabled: true,
+    baseURL: (process as any).env.AUTH_ORIGIN,
+    provider: {
+      type: 'authjs',
+    },
+    globalAppMiddleware: {
+      isEnabled: false,
+    },
   },
   i18n: {
     defaultLocale: 'en',
