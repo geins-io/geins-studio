@@ -1,4 +1,22 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const isProduction = process.env.NODE_ENV === 'production';
+const getAuthBaseUrl = () => {
+  if (!isProduction) {
+    return undefined;
+  }
+  if (process.env.VERCEL) {
+    if (process.env.VERCEL_ENV === 'production') {
+      return (
+        process.env.AUTH_ORIGIN ??
+        `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      );
+    } else {
+      return `https://${process.env.VERCEL_BRANCH_URL}`;
+    }
+  }
+  return process.env.AUTH_ORIGIN;
+};
+
 export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: [
@@ -31,7 +49,7 @@ export default defineNuxtConfig({
   },
   auth: {
     isEnabled: true,
-    baseURL: process.env.AUTH_ORIGIN,
+    baseURL: getAuthBaseUrl(),
     provider: {
       type: 'authjs',
     },
@@ -53,10 +71,13 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Variables within 'public' can be accessed both client-side and server-side
     public: {
-      apiBaseUrl: process.env.AUTH_ORIGIN, // Example public config
+      BASE_URL: getAuthBaseUrl(),
+      AUTH_ORIGIN: process.env.AUTH_ORIGIN, // Example public config
+      VERCEL: process.env.VERCEL,
       VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
       VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
       VERCEL_ENV: process.env.VERCEL_ENV,
+      production: isProduction,
       // Other public runtime configs
     },
     // Variables within 'private' are server-side only
