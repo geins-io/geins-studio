@@ -31,12 +31,12 @@ export default defineNuxtConfig({
   },
   auth: {
     isEnabled: true,
-    baseURL: (process as any).env.AUTH_ORIGIN,
+    baseURL: process.env.AUTH_ORIGIN,
     provider: {
       type: 'authjs',
     },
     globalAppMiddleware: {
-      isEnabled: false,
+      isEnabled: true,
     },
   },
   i18n: {
