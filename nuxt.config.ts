@@ -50,4 +50,19 @@ export default defineNuxtConfig({
       Disallow: '/',
     },
   },
+  runtimeConfig: {
+    // Variables within 'public' can be accessed both client-side and server-side
+    public: {
+      apiBaseUrl: process.env.AUTH_ORIGIN, // Example public config
+      VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
+      VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      // Other public runtime configs
+    },
+    // Variables within 'private' are server-side only
+    private: {
+      apiSecretKey: process.env.AUTH_SECRET, // Example private config
+      // Other private runtime configs
+    },
+  },
 });
