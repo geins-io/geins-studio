@@ -10,7 +10,7 @@ console.log('--> config', config)
   <div class="grid grid-cols-3 gap-8">
     <Card>
       <CardHeader>
-        <CardTitle>{{ title2 }}</CardTitle>
+        <CardTitle />
         <CardDescription>Card Description</CardDescription>
       </CardHeader>
       <CardContent>

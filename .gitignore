@@ -6,6 +6,7 @@
 .cache
 .yarn
 .temp
+.vitepress
 dist
 
 # Node dependencies
@@ -24,3 +25,4 @@ logs
 .env
 .env.*
 !.env.example
+/docs/.vitepress
