@@ -8,7 +8,7 @@ import {
   CircleHelp,
   CreditCard,
 } from 'lucide-vue-next';
-const { data } = useAuth()
+const { data, signOut } = useAuth()
 const colorMode = useColorMode();
 const setColorMode = () => {
   colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark';
@@ -23,6 +23,10 @@ const avatarInitials = computed(() => {
   }
   return '';
 });
+
+const logout = () => {
+  signOut();
+}
 
 </script>
 <template>
@@ -60,9 +64,10 @@ const avatarInitials = computed(() => {
           <DropdownMenuItem>
             <CircleHelp class="mr-2 h-4 w-4" />
             <span>Help center</span>
+            <DropdownMenuShortcut>⌘H</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem @click="logout">
             <LogOut class="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>
