@@ -5,11 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { ColumnOptions } from '@/types/Columns';
 
-export const useColumns = <T extends object>(
-  options: Partial<ColumnOptions> = {},
-) => {
-  const { selectable = false, sortable = true, columnTypes = {} } = options;
-
+export const useColumns = <T extends object>() => {
   const selectableColumn: ColumnDef<T> = {
     id: 'select',
     header: ({ table }: { table: Table<T> }) =>
@@ -29,7 +25,9 @@ export const useColumns = <T extends object>(
     enableHiding: false,
   };
 
-  const getColumns = (data: T[]) => {
+  const getColumns = (data: T[], options: Partial<ColumnOptions> = {}) => {
+    const { selectable = false, sortable = true, columnTypes = {} } = options;
+
     const keys = Object.keys(data[0]);
     if (keys.length === 0) {
       return [];

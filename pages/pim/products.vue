@@ -18,11 +18,11 @@ if (import.meta.dev) {
   products.value = data.value || mockProducts;
 }
 
-const { getColumns, extendColumns } = useColumns<Product>({
+const { getColumns, extendColumns } = useColumns<Product>();
+const columns = getColumns(products.value, {
   selectable: true,
   columnTypes: { price: 'currency' },
 });
-const columns = getColumns(products.value);
 
 const actionsColumn: ColumnDef<Product> = {
   id: 'actions',
