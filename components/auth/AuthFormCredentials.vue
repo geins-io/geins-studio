@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { cn } from '@/lib/utils';
+import type { LoginCredentials } from '~~/types/auth/Auth';
 // emits
 const emit = defineEmits(['login']);
 
@@ -17,7 +18,6 @@ const props = withDefaults(
 
 // refs
 const pending = ref(props.pending);
-
 const username = ref('');
 const password = ref('');
 const rememberMe = ref(false);
@@ -29,10 +29,7 @@ const showInvalid = ref(props.showInvalid);
 watch(() => props.pending, (value) => {
     pending.value = value;
 });
-// watch pending
-watch(() => pending.value, (value) => {
-    console.log('pending: ', value);
-});
+
 
 // validate method
 const validate = () => {
@@ -43,7 +40,7 @@ const validate = () => {
 
 // methods
 const login = () => {
-    const userCredentials = {
+    const userCredentials: LoginCredentials = {
         username: username.value,
         password: password.value,
         rememberMe: rememberMe.value,
@@ -52,8 +49,6 @@ const login = () => {
         showInvalid.value = true;
         return;
     }
-
-    console.log('login', userCredentials);
     emit('login', userCredentials);
 }
 </script>

@@ -36,6 +36,7 @@
     "@flydotio/dockerfile": "^0.5.7",
     "@nuxt/eslint-config": "^0.3.13",
     "@sidebase/nuxt-auth": "^0.7.2",
+    "@types/node-fetch": "^2.6.11",
     "eslint": "^9.3.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",

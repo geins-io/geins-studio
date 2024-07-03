@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import AuthFormCredentials from '@/components/auth/AuthFormCredentials.vue';
 import AuthFormDFA from '@/components/auth/AuthFormDFA.vue';
+import type { LoginCredentials } from '~~/types/auth/Auth';
+
 // meta
 definePageMeta({
     layout: 'auth',
@@ -11,7 +13,7 @@ definePageMeta({
 })
 
 // composables
-const { data, signIn } = useAuth()
+const { data, signIn } = useAuth();
 const router = useRouter();
 
 // refs
@@ -21,30 +23,26 @@ const showInvalid = ref(false);
 const step = ref('LOGIN');
 
 // functions
-async function handleLogin(user: any) {
+async function handleLogin(user: LoginCredentials) {
     pending.value = true;
     showInvalid.value = false;
 
+    const rememberMe = user.rememberMe || false;
     if (!user.username || !user.password) {
+
         showInvalid.value = true;
         pending.value = false;
         return;
     }
-
-    const rememberMe = user.checkbox || false;
-    const loginResult = await signIn('credentials', { username: user.username, password: user.password, rememberMe, redirect: false })
-
-    console.log('result: ', loginResult);
-    pending.value = false;
-
-    if ((loginResult as any).error || (loginResult as any).status === false) {
+    // TODO: fix type
+    const signinResult = await signIn('credentials', { username: user.username, password: user.password, rememberMe, redirect: false });
+    if ((signinResult as any).error || (signinResult as any).ok === false) {
         showInvalid.value = true;
-        pending.value = false;
-        const error = (loginResult as any).error;
+        const error = (signinResult as any).error;
         console.log('error: ', error);
         return;
     }
-    if ((loginResult as any).ok === true) {
+    if ((signinResult as any).ok === true) {
         // check if dfa
         if ((data.value as any) && (data.value as any).dfa?.active === true) {
             const dfaData = (data.value as any).dfa;
@@ -56,20 +54,19 @@ async function handleLogin(user: any) {
         }
     }
 }
+// TODO: fix type
 async function handleVerify(code: any) {
     pending.value = true;
     showInvalid.value = false;
+    // TODO: fix type
     const verifyResult = await signIn('credentials', { username: dfa.value.username, dfaToken: dfa.value.token, dfaCode: code, dfa: true, redirect: false })
     if ((verifyResult as any).error) {
         showInvalid.value = true;
         pending.value = false;
-        console.log('error: ', (verifyResult as any).error);
         return;
     }
     pending.value = false;
-
-    console.log('DONE: data', data.value);
-    // redirect to home
+    // redirect to start page
     router.push('/');
 }
 </script>

@@ -50,7 +50,4 @@ export default defineNuxtConfig({
       Disallow: '/',
     },
   },
-  typescript: {
-    typeCheck: true,
-  },
 });

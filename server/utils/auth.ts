@@ -1,11 +1,10 @@
 // import fetch
 import fetch from 'node-fetch';
-// get api url from nuxt config
-// const apiUrl2 = process.env.AUTH_ORIGIN;
-// console.log('apiUrl', apiUrl2);
+const AUTH_API_URL = process.env.AUTH_API_URL;
 
 export const auth = () => {
-  const apiUrl = 'https://geins-api-mgmt-service.azure-api.net/auth';
+  const apiUrl = AUTH_API_URL;
+
   // login
   const login = async (username: string, password: string) => {
     const credentials = {
@@ -14,7 +13,6 @@ export const auth = () => {
     };
 
     const url = `${apiUrl}/auth`;
-    console.log('url', url);
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -24,11 +22,9 @@ export const auth = () => {
       },
       body: JSON.stringify(credentials),
     });
-    // console.log('[auth.ts] - login() --> response', response);
+
     if (response.ok) {
-      const json = await response.json();
-      console.log('[auth.ts] - login() --> response.json', json);
-      return json;
+      return await response.json();
     }
 
     const text = await response.text();
@@ -49,7 +45,6 @@ export const auth = () => {
       token,
       code,
     };
-    console.log('[auth.ts] - verify() --> param:credentials', credentials);
     const url = `${apiUrl}/dfa-verify`;
     const response = await fetch(url, {
       method: 'POST',
@@ -58,15 +53,12 @@ export const auth = () => {
       },
       body: JSON.stringify(credentials),
     });
-    console.log('[auth.ts] - verify() --> response.ok', response.ok);
-    console.log('[auth.ts] - verify() --> response.ok', response.status);
 
     if (response.ok) {
       return await response.json();
     }
 
     const text = await response.text();
-    console.log('[auth.ts] - verify() --> response.text', text);
     if (response.status === 401) {
       throw new Error('Invalid credentials');
     } else if (response.status === 403) {

@@ -14,9 +14,14 @@ const setColorMode = () => {
   colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark';
 };
 
-// on mounted
-onMounted(() => {
-  console.log('mounted', data.value);
+// computed avatar initials
+const avatarInitials = computed(() => {
+  // TODO: fix type
+  const user: any = data.value?.user ?? {};
+  if (user.firstname && user.lastname) {
+    return `${user.firstname[0]}${user.lastname[0]}`;
+  }
+  return '';
 });
 
 </script>
@@ -38,7 +43,7 @@ onMounted(() => {
       <DropdownMenu>
         <DropdownMenuTrigger class="h-10 w-10">
           <Avatar class="h-10 w-10 border">
-            <AvatarFallback>OA</AvatarFallback>
+            <AvatarFallback>{{ avatarInitials }}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent class="w-56">

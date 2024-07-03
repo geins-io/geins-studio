@@ -1,9 +1,21 @@
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  permissions: string[];
+export interface LoginCredentials {
+  username: string;
+  password: string;
+  rememberMe: boolean;
+}
+export interface LoginResponse {
+  uid?: string;
+  name?: string;
+  email?: string;
+  roles?: string[];
+  dfa?: Dfa;
+}
+
+export interface UserResponse {
+  uid?: string;
+  name?: string;
+  email?: string;
+  roles?: string[];
   dfa?: Dfa;
 }
 

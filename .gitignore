@@ -5,6 +5,7 @@
 .nitro
 .cache
 .yarn
+.temp
 dist
 
 # Node dependencies

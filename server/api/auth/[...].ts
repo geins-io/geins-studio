@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
 import { auth } from '~~/server/utils/auth';
-// import type { Session } from '~~/types/auth/Auth';
 
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
@@ -9,33 +9,67 @@ export default NuxtAuthHandler({
     signIn: '/auth/login',
   },
   callbacks: {
-    jwt: async ({ token, user }) => {
-      // console.log('[jwt] callback - token:', token);
-      // console.log('[jwt] callback - user:', user);
-      const isSignIn = user ? true : false;
-      if (isSignIn) {
-        token.id = user ? user.id || '' : '';
-        token.jwt = user ? (user as any).access_token || '' : '';
-        token.roles = user ? (user as any).roles || [] : [];
-        token.type = 'jwt';
-        if ((user as any).dfa) {
-          token.dfa = user ? (user as any).dfa || {} : {};
+    jwt: async ({ token, user, trigger }) => {
+      const isSingin = trigger === 'signIn';
+      if (isSingin) {
+        // make sure user is not null
+        if (user) {
+          // TODO: fix type
+          const userObj: any = user as any;
+
+          if (userObj.isAuthorized === false && userObj.isDfa === true) {
+            // reset token
+            token = {};
+            token.isAuthorized = false;
+            token.id = '';
+            token.roles = [];
+            token.isDfa = false;
+            token.dfa = {};
+            if (userObj.dfa) {
+              token.dfa = userObj.dfa || {};
+              token.isDfa = true;
+            }
+          } else if (userObj.isAuthorized === true) {
+            // user is authorized
+            token.isAuthorized = true;
+            token.id = userObj.id;
+            token.roles = userObj.roles;
+            token.access_token = userObj.access_token;
+            token.session_id = userObj.session_id;
+            token.user = userObj.info;
+
+            //reset dfa
+            token.isDfa = undefined;
+            token.dfa = undefined;
+          }
+          // return token updated
+          return Promise.resolve(token);
         }
       }
+      // return token as is
       return Promise.resolve(token);
     },
-
+    // TODO: fix types
     session: async ({ session, token }) => {
-      // console.log('[session] callback - session:', session);
-      // console.log('[session] callback - token:', token);
-      (session as Session).uid = token.id;
-      (session as any).roles = token.roles;
-      (session as any).type = 'session';
-      if (token.dfa) {
+      // check if dfa is true
+      if (token.isDfa && token.isDfa === true) {
+        (session as any).isDfa = true;
         (session as any).dfa = token.dfa;
       }
-      session.jwt = token.jwt;
+      // check if user is authorized
+      if (token.isAuthorized && token.isAuthorized === true) {
+        (session as any).isAuthorized = true;
+        (session as any).uid = token.id;
+        (session as any).roles = token.roles;
+        (session as any).type = 'session';
+        (session as any).access_token = token.access_token;
+        (session as any).session_id = token.session_id;
+        (session as any).user = token.user;
 
+        //reset dfa
+        (session as any).isDfa = undefined;
+        (session as any).dfa = undefined;
+      }
       return Promise.resolve(session);
     },
   },
@@ -45,13 +79,12 @@ export default NuxtAuthHandler({
       name: 'Credentials',
       async authorize(credentials: any) {
         const geinsAuth = auth();
-        // console.log('credentials start, ', credentials);
-
         if (credentials.username && credentials.password) {
           const authResponse = await geinsAuth.login(
             credentials.username,
             credentials.password,
           );
+
           if (!authResponse) {
             return null;
           }
@@ -59,8 +92,9 @@ export default NuxtAuthHandler({
           const isDfa = true;
           if (isDfa) {
             const data = authResponse.data;
-            console.log('authorize() -- authResponse.data', data);
             const user = {
+              isAuthorized: false,
+              isDfa: true,
               dfa: {
                 username: data.user,
                 sentTo: data.sentTo,
@@ -68,7 +102,6 @@ export default NuxtAuthHandler({
                 token: data.token,
               },
             };
-            // console.log('authorize() -- RETRUNING --> ', user);
             return user;
           } else {
             // if user is not dfa (only dfa for now)
@@ -77,24 +110,16 @@ export default NuxtAuthHandler({
         } else if (credentials.dfa) {
           // use geinsAuth to get user data and set authorized to true
           try {
-            console.log(
-              '**** authorize() -- credentials username',
-              credentials.username,
-            );
-            console.log(
-              '**** authorize() -- credentials user',
-              credentials.user,
-            );
             const verifyResponse = await geinsAuth.verify(
               credentials.username,
               credentials.dfaToken,
               credentials.dfaCode,
             );
-            console.log('**** authorize() -- verifyResponse', verifyResponse);
 
             if (!verifyResponse) {
               return null;
             }
+
             const verifyData = verifyResponse.data;
             if (!verifyData.authenticated) {
               return null;
@@ -102,21 +127,21 @@ export default NuxtAuthHandler({
 
             const verifyUser = verifyData.user;
             const userInfo = verifyUser.info;
-            const data = {
+            const user = {
+              isAuthorized: true,
               id: verifyUser.id,
               roles: ['authed', ...verifyUser.roles],
               access_token: verifyData.key,
               session_id: verifyData.sessionId,
-              user: {
+              info: {
                 firstname: userInfo.firstName,
                 lastname: userInfo.lastName,
                 email: userInfo.email,
                 phone: userInfo.note.phone,
               },
             };
-            return data;
+            return user;
           } catch (e) {
-            console.log('authorize() -- ERROR --> ', e);
             return null;
           }
         }
