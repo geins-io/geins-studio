@@ -13,7 +13,7 @@ if (import.meta.dev) {
   categories.value = data.value || mockCategories;
 }
 
-const { getColumns } = useColumns();
+const { getColumns } = useColumns<Category>();
 const columns = getColumns(categories.value);
 </script>
 
