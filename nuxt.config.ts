@@ -36,7 +36,7 @@ export default defineNuxtConfig({
       type: 'authjs',
     },
     globalAppMiddleware: {
-      isEnabled: true,
+      isEnabled: false,
     },
   },
   i18n: {
