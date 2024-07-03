@@ -45,42 +45,32 @@ async function handleLogin(user: any) {
         return;
     }
     if ((loginResult as any).ok === true) {
-        console.log('loginResult :: OK:', loginResult);
-        console.log('loginResult :: DATA ', data.value);
         // check if dfa
         if ((data.value as any) && (data.value as any).dfa?.active === true) {
             const dfaData = (data.value as any).dfa;
-            console.log('THIS IS A DFA LOGIN: ', dfaData);
-            dfa.value.token = (data.value as any).dfa.token;
-            dfa.value.username = (data.value as any).dfa.username;
-            dfa.value.sentTo = (data.value as any).dfa.sentTo;
+            dfa.value.username = dfaData.username;
+            dfa.value.sentTo = dfaData.sentTo;
+            dfa.value.token = dfaData.token;
             step.value = 'DFA';
             return;
         }
     }
-
-    // TODO: handle errors
 }
 async function handleVerify(code: any) {
     pending.value = true;
     showInvalid.value = false;
-    console.log('dfa.value: ', dfa.value);
-
-    const verifyResult = await signIn('credentials', { username: dfa.value.username, dfa: dfa.value, redirect: false })
-    console.log('verifyResult: ', verifyResult);
-
+    const verifyResult = await signIn('credentials', { username: dfa.value.username, dfaToken: dfa.value.token, dfaCode: code, dfa: true, redirect: false })
     if ((verifyResult as any).error) {
         showInvalid.value = true;
         pending.value = false;
         console.log('error: ', (verifyResult as any).error);
         return;
     }
+    pending.value = false;
 
+    console.log('DONE: data', data.value);
     // redirect to home
     router.push('/');
-
-
-    pending.value = false;
 }
 </script>
 

@@ -8,42 +8,30 @@ import {
   CircleHelp,
   CreditCard,
 } from 'lucide-vue-next';
-
+const { data } = useAuth()
 const colorMode = useColorMode();
 const setColorMode = () => {
   colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark';
 };
+
+// on mounted
+onMounted(() => {
+  console.log('mounted', data.value);
+});
+
 </script>
 <template>
-  <header
-    class="flex flex-none items-center justify-start bg-background text-background-foreground"
-  >
+  <header class="flex flex-none items-center justify-start bg-background text-background-foreground">
     <div class="relative w-full max-w-sm items-center">
-      <Input
-        id="search"
-        type="text"
-        :placeholder="$t('global_search_placeholder')"
-        class="pl-10 bg-popover"
-      />
-      <span
-        class="absolute start-0 inset-y-0 flex items-center justify-center px-2"
-      >
+      <Input id="search" type="text" :placeholder="$t('global_search_placeholder')" class="pl-10 bg-popover" />
+      <span class="absolute start-0 inset-y-0 flex items-center justify-center px-2">
         <Search class="size-5 text-foreground" />
       </span>
     </div>
     <div class="ml-auto mr-4">
-      <Button
-        variant="outline"
-        size="icon"
-        class="rounded-full w-8 h-8"
-        @click="setColorMode"
-      >
-        <Sun
-          class="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
-        />
-        <MoonStar
-          class="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
-        />
+      <Button variant="outline" size="icon" class="rounded-full w-8 h-8" @click="setColorMode">
+        <Sun class="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+        <MoonStar class="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
       </Button>
     </div>
     <div class="mr-5">
