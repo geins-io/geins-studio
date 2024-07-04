@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { cn } from '@/lib/utils';
 import type { LoginCredentials } from '@/types/auth/Auth';
+import Input from '@/components/ui/input/Input.vue';
 import { ReloadIcon, ExclamationTriangleIcon } from '@radix-icons/vue';
 
 const emit = defineEmits(['login']);
@@ -17,11 +18,12 @@ const props = withDefaults(
 );
 
 const pending = ref(props.pending);
-const username = ref('');
+const email = ref('');
 const password = ref('');
 const rememberMe = ref(false);
-const usernameValid = ref(true);
+const emailValid = ref(true);
 const passwordValid = ref(true);
+const emailInput = ref<typeof Input | null>(null);
 const showInvalid = ref(props.showInvalid);
 
 watch(
@@ -36,16 +38,16 @@ const validatePassword = () => {
 };
 
 const validateEmail = () => {
-  usernameValid.value = username.value.includes('@');
+  emailValid.value = email.value.includes('@');
 };
 
 const allFieldsValid = computed(() => {
-  return usernameValid.value && passwordValid.value;
+  return emailValid.value && passwordValid.value;
 });
 
 const login = () => {
   const userCredentials: LoginCredentials = {
-    username: username.value,
+    username: email.value,
     password: password.value,
     rememberMe: rememberMe.value,
   };
@@ -57,6 +59,13 @@ const login = () => {
   }
   emit('login', userCredentials);
 };
+
+onMounted(() => {
+  const el = emailInput.value?.$el;
+  if (el instanceof HTMLInputElement) {
+    el.focus();
+  }
+});
 </script>
 <template>
   <div class="grid gap-2 text-center">
@@ -71,14 +80,15 @@ const login = () => {
   </Alert>
   <div class="grid gap-4">
     <div class="grid gap-2">
-      <Label for="email">Username</Label>
+      <Label for="email">Email</Label>
       <Input
         id="email"
-        v-model="username"
+        v-model="email"
+        ref="emailInput"
         type="email"
         placeholder="user@geins.io"
         required
-        :valid="usernameValid"
+        :valid="emailValid"
         @blur="validateEmail"
         @keydown.enter="login"
       />

@@ -17,10 +17,20 @@ const delegatedProps = computed(() => {
 });
 
 const forwardedProps = useForwardProps(delegatedProps);
+
+const pinInput = ref<typeof PinInputInput | null>(null);
+
+onMounted(() => {
+  const el = pinInput.value?.$el;
+  if (props.index === 0 && el instanceof HTMLInputElement) {
+    el.focus();
+  }
+});
 </script>
 
 <template>
   <PinInputInput
+    ref="pinInput"
     v-bind="forwardedProps"
     :class="
       cn(

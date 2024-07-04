@@ -19,7 +19,6 @@ const props = withDefaults(
 
 const sentTo = ref(props.sentTo);
 const value = ref<string[]>([]);
-const pinInput = ref(null);
 
 async function verifyAccount(e: string[]) {
   if (value.value.length < 6) {
@@ -28,13 +27,6 @@ async function verifyAccount(e: string[]) {
   const code = value.value.join('');
   emit('verify', code);
 }
-
-onMounted(() => {
-  // if (pinInput.value) {
-  //   console.log('🚀 ~ onMounted ~ pinInput.value:', pinInput.value);
-  //   (pinInput.value as HTMLElement).focus();
-  // }
-});
 </script>
 <template>
   <div class="flex flex-col text-center gap-2">
@@ -52,10 +44,10 @@ onMounted(() => {
       </div>
       <div class="flex justify-center">
         <PinInput
-          ref="pinInput"
           id="pin-input"
           v-model="value"
           placeholder="○"
+          :otp="true"
           @complete="verifyAccount"
         >
           <PinInputGroup>
@@ -74,9 +66,6 @@ onMounted(() => {
         <ReloadIcon v-if="pending" class="w-4 h-4 mr-2 animate-spin" />
         Verify
       </Button>
-      <a href="#" class="inline-block text-sm underline mx-auto">
-        Resend code
-      </a>
     </div>
   </div>
 </template>

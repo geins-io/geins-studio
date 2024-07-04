@@ -70,7 +70,6 @@ async function handleVerify(code: any) {
     pending.value = false;
     return;
   }
-  pending.value = false;
   // redirect to start page
   router.push('/');
 }
