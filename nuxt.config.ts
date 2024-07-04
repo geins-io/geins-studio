@@ -28,7 +28,6 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',
-    'nuxt-svgo',
   ],
   shadcn: {
     /**

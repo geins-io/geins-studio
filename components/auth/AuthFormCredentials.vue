@@ -1,22 +1,21 @@
 <script setup lang="ts">
 import { cn } from '@/lib/utils';
-import type { LoginCredentials } from '~~/types/auth/Auth';
-// emits
+import type { LoginCredentials } from '@/types/auth/Auth';
+import { ReloadIcon, ExclamationTriangleIcon } from '@radix-icons/vue';
+
 const emit = defineEmits(['login']);
 
-// props 
 const props = withDefaults(
-    defineProps<{
-        pending: boolean;
-        showInvalid: boolean;
-    }>(),
-    {
-        pending: false,
-        showInvalid: false,
-    },
+  defineProps<{
+    pending: boolean;
+    showInvalid: boolean;
+  }>(),
+  {
+    pending: false,
+    showInvalid: false,
+  },
 );
 
-// refs
 const pending = ref(props.pending);
 const username = ref('');
 const password = ref('');
@@ -25,73 +24,94 @@ const usernameValid = ref(true);
 const passwordValid = ref(true);
 const showInvalid = ref(props.showInvalid);
 
-// watch props
-watch(() => props.pending, (value) => {
+watch(
+  () => props.pending,
+  (value) => {
     pending.value = value;
+  },
+);
+
+const validatePassword = () => {
+  passwordValid.value = password.value.length > 6;
+};
+
+const validateEmail = () => {
+  usernameValid.value = username.value.includes('@');
+};
+
+const allFieldsValid = computed(() => {
+  return usernameValid.value && passwordValid.value;
 });
 
-
-// validate method
-const validate = () => {
-    usernameValid.value = (username.value.includes('@'));
-    passwordValid.value = (password.value.length > 6);
-    return usernameValid.value && passwordValid.value;
-}
-
-// methods
 const login = () => {
-    const userCredentials: LoginCredentials = {
-        username: username.value,
-        password: password.value,
-        rememberMe: rememberMe.value,
-    }
-    if (!validate()) {
-        showInvalid.value = true;
-        return;
-    }
-    emit('login', userCredentials);
-}
+  const userCredentials: LoginCredentials = {
+    username: username.value,
+    password: password.value,
+    rememberMe: rememberMe.value,
+  };
+  validateEmail();
+  validatePassword();
+  if (!allFieldsValid.value) {
+    showInvalid.value = true;
+    return;
+  }
+  emit('login', userCredentials);
+};
 </script>
 <template>
-    <div class="grid gap-2 text-center">
-        <h1 class="text-3xl font-bold">
-            Login
-        </h1>
-        <p class="text-balance text-muted-foreground">
-            Enter your email below to login to your account
-        </p>
+  <div class="grid gap-2 text-center">
+    <h1 class="text-3xl font-bold">Merchant Center</h1>
+  </div>
+  <Alert v-if="showInvalid" variant="destructive">
+    <ExclamationTriangleIcon class="w-4 h-4" />
+    <AlertTitle>Invalid credentials</AlertTitle>
+    <AlertDescription>
+      Please check your email and password and try again.
+    </AlertDescription>
+  </Alert>
+  <div class="grid gap-4">
+    <div class="grid gap-2">
+      <Label for="email">Username</Label>
+      <Input
+        id="email"
+        v-model="username"
+        type="email"
+        placeholder="user@geins.io"
+        required
+        :valid="usernameValid"
+        @blur="validateEmail"
+        @keydown.enter="login"
+      />
     </div>
-    <div class="grid gap-4">
-        <div class="grid gap-2">
-            <Label for="email">Username</Label>
-            <Input id="email" v-model="username" type="email" placeholder="m@example.com" required
-                :class="cn(`${!usernameValid ? 'border-rose-600' : ''}`)" />
-
-        </div>
-        <div class="grid gap-2">
-            <div class="flex items-center">
-                <Label for="password">Password</Label>
-                <a href="/forgot-password" class="ml-auto inline-block text-sm underline">
-                    Forgot your password?
-                </a>
-            </div>
-            <Input id="password" v-model="password" type="password" required
-                :class="cn(`${!passwordValid ? 'border-rose-600' : ''}`)" />
-        </div>
-        <div class="grid gap-2">
-            <div>
-                <Checkbox id="checkbox" v-model="rememberMe" />
-                <Label for="checkbox" class="ml-2 text-sm">Remember this device</Label>
-            </div>
-        </div>
-        <Button :disabled="pending" type="submit" class="w-full" @click="login">
-            Login
-        </Button>
-        <div v-if="showInvalid" class="grid gap-2">
-            <div>
-                <p>Invalid Credentials</p>
-            </div>
-        </div>
-
+    <div class="grid gap-2">
+      <div class="flex items-center">
+        <Label for="password">Password</Label>
+        <a
+          href="/forgot-password"
+          class="ml-auto inline-block text-sm underline"
+        >
+          Forgot your password?
+        </a>
+      </div>
+      <Input
+        id="password"
+        v-model="password"
+        type="password"
+        required
+        :valid="passwordValid"
+        @blur="validatePassword"
+        @keydown.enter="login"
+      />
     </div>
+    <div class="grid gap-2">
+      <div class="flex items-center space-x-2.5">
+        <Checkbox id="checkbox" v-model="rememberMe" />
+        <Label for="checkbox" class="ml-2 text-sm">Remember this device</Label>
+      </div>
+    </div>
+    <Button :disabled="pending" type="submit" class="w-full" @click="login">
+      <ReloadIcon v-if="pending" class="w-4 h-4 mr-2 animate-spin" />
+      Login
+    </Button>
+  </div>
 </template>
