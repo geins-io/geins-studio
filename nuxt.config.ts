@@ -51,6 +51,7 @@ export default defineNuxtConfig({
     baseURL: getAuthBaseUrl(),
     provider: {
       type: 'authjs',
+      trustHost: true, // this is only for development
     },
     globalAppMiddleware: {
       isEnabled: false,
