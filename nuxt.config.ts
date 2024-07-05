@@ -47,7 +47,7 @@ export default defineNuxtConfig({
     storageKey: 'nuxt-color-mode',
   },
   auth: {
-    isEnabled: false,
+    isEnabled: true,
     baseURL: getAuthBaseUrl(),
     provider: {
       type: 'authjs',
