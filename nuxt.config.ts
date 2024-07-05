@@ -47,7 +47,7 @@ export default defineNuxtConfig({
     storageKey: 'nuxt-color-mode',
   },
   auth: {
-    isEnabled: true,
+    isEnabled: false,
     baseURL: getAuthBaseUrl(),
     provider: {
       type: 'authjs',
@@ -77,6 +77,7 @@ export default defineNuxtConfig({
       VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
       VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
       VERCEL_ENV: process.env.VERCEL_ENV,
+      VERCEL_DEPLOYMENT_ID: process.env.VERCEL_DEPLOYMENT_ID,
       production: isProduction,
       // Other public runtime configs
     },
