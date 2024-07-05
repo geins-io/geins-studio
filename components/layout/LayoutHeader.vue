@@ -8,7 +8,7 @@ import {
   CircleHelp,
   CreditCard,
 } from 'lucide-vue-next';
-// const { data, signOut } = useAuth()
+const { data, signOut } = useAuth()
 const colorMode = useColorMode();
 const setColorMode = () => {
   colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark';
@@ -17,15 +17,15 @@ const setColorMode = () => {
 // computed avatar initials
 const avatarInitials = computed(() => {
   // TODO: fix type
-  /*   const user: any = data.value?.user ?? {};
-    if (user.firstname && user.lastname) {
-      return `${user.firstname[0]}${user.lastname[0]}`;
-    } */
+  const user: any = data.value?.user ?? {};
+  if (user.firstname && user.lastname) {
+    return `${user.firstname[0]}${user.lastname[0]}`;
+  }
   return '';
 });
 
 const logout = () => {
-  /*  signOut(); */
+  signOut();
 }
 
 </script>
