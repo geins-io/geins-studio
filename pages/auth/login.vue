@@ -1,5 +1,11 @@
 <script lang="ts" setup>
-import type { LoginCredentials } from '@/types/auth/Auth';
+import type {
+  LoginCredentials,
+  LoginResponse,
+  Session,
+  SignInResult,
+  Dfa,
+} from '@/types/auth/Auth';
 
 definePageMeta({
   layout: 'auth',
@@ -12,10 +18,10 @@ definePageMeta({
 const { data, signIn } = useAuth();
 const router = useRouter();
 
-const dfa = ref({ username: '', token: '', sentTo: '' });
+const dfa = ref<Dfa>({ username: '', token: '', sentTo: '', active: false });
 const pending = ref(false);
 const showInvalid = ref(false);
-const step = ref('LOGIN');
+const step = ref<'login' | 'verify'>('login');
 
 async function handleLogin(user: LoginCredentials) {
   pending.value = true;
@@ -27,7 +33,8 @@ async function handleLogin(user: LoginCredentials) {
     pending.value = false;
     return;
   }
-  // TODO: fix type
+
+  // Type for signinResult
   const signinResult = await signIn('credentials', {
     username: user.username,
     password: user.password,
@@ -47,17 +54,18 @@ async function handleLogin(user: LoginCredentials) {
       dfa.value.username = dfaData.username;
       dfa.value.sentTo = dfaData.sentTo;
       dfa.value.token = dfaData.token;
-      step.value = 'DFA';
+      step.value = 'verify';
       pending.value = false;
       return;
     }
   }
 }
-// TODO: fix type
-async function handleVerify(code: any) {
+
+async function handleVerify(code: string) {
   pending.value = true;
   showInvalid.value = false;
-  // TODO: fix type
+
+  // Type for verifyResult
   const verifyResult = await signIn('credentials', {
     username: dfa.value.username,
     dfaToken: dfa.value.token,
@@ -65,29 +73,26 @@ async function handleVerify(code: any) {
     dfa: true,
     redirect: false,
   });
+
   if ((verifyResult as any).error) {
     showInvalid.value = true;
     pending.value = false;
     return;
   }
+
   // redirect to start page
   router.push('/');
 }
 </script>
 
 <template>
-  <AuthFormCredentials
-    v-if="step === 'LOGIN'"
-    :pending="pending"
-    :show-invalid="showInvalid"
-    @login="handleLogin"
-  />
-  <AuthFormDFA
-    v-if="step === 'DFA'"
+  <AuthForm
+    :mode="step"
     :pending="pending"
     :show-invalid="showInvalid"
     :sent-to="dfa.sentTo"
     :username="dfa.username"
+    @login="handleLogin"
     @verify="handleVerify"
   />
 </template>

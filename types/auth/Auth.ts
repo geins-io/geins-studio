@@ -1,3 +1,18 @@
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  permissions: string[];
+}
+
+export interface SignInResult {
+  error: string | null;
+  status: number;
+  ok: boolean;
+  url: any;
+}
+
 export interface LoginCredentials {
   username: string;
   password: string;
@@ -32,6 +47,7 @@ export interface Session {
   type: string;
   user: User;
   dfa?: Dfa;
+  isAuthorized: boolean;
   roles: string[];
 }
 
@@ -43,3 +59,5 @@ export interface JwtType {
   dfa?: Dfa;
   roles: string[];
 }
+
+export type AuthFormMode = 'login' | 'verify';

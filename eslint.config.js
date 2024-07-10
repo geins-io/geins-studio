@@ -9,7 +9,7 @@ export default createConfigForNuxt()
       'vue/require-default-prop': 'off',
       'vue/no-multiple-template-root': 'off',
       'vue/html-self-closing': [
-        'warning',
+        'warn',
         {
           html: {
             void: 'never',

@@ -1,4 +1,6 @@
-export default defineNuxtRouteMiddleware(async (to, from) => {
+import type { Session } from '~/types/auth/Auth';
+
+export default defineNuxtRouteMiddleware(async (to) => {
   const { data } = useAuth();
   if (
     to.path.includes('/login') ||
@@ -8,7 +10,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return;
   }
 
-  if (data.value && (data.value as any).isAuthorized) {
+  if (data.value && (data.value as unknown as Session).isAuthorized) {
     return;
   }
 

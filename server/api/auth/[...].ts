@@ -10,8 +10,8 @@ export default NuxtAuthHandler({
   },
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
-      const isSingin = trigger === 'signIn';
-      if (isSingin) {
+      const isSignIn = trigger === 'signIn';
+      if (isSignIn) {
         // make sure user is not null
         if (user) {
           // TODO: fix type

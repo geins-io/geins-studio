@@ -1,6 +1,4 @@
 <script setup lang="ts">
-// import svg from public folder
-
 import Logo from '@/assets/logos/geins.svg';
 </script>
 
