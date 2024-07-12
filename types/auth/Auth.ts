@@ -1,63 +1,38 @@
 export interface User {
   id: number;
-  name: string;
-  email: string;
+  firstname: string;
+  lastname: string;
+  username: string;
   role: string;
-  permissions: string[];
+  email: string;
+  phone: string;
+  permissions?: string[];
 }
-
-export interface SignInResult {
-  error: string | null;
-  status: number;
-  ok: boolean;
-  url: any;
-}
-
 export interface LoginCredentials {
   username: string;
-  password: string;
-  rememberMe: boolean;
+  password?: string;
+  rememberMe?: boolean;
+  tfaString?: string;
+  tfa?: TFA;
 }
-export interface LoginResponse {
-  uid?: string;
-  name?: string;
-  email?: string;
+export interface SignInResponse {
+  isAuthorized?: boolean;
+  tfa?: TFA;
+}
+export interface Session extends SignInResponse {
+  type?: string;
+  user?: User;
+  accessToken?: unknown;
+  sessionId?: unknown;
   roles?: string[];
-  dfa?: Dfa;
 }
 
-export interface UserResponse {
-  uid?: string;
-  name?: string;
-  email?: string;
-  roles?: string[];
-  dfa?: Dfa;
-}
-
-export interface Dfa {
-  username: string;
-  sentTo: string;
+export interface TFA {
   active: boolean;
   token: string;
-}
-
-export interface Session {
-  uid: string;
-  jwt: string;
-  type: string;
-  user: User;
-  dfa?: Dfa;
-  isAuthorized: boolean;
-  roles: string[];
-}
-
-export interface JwtType {
-  id: string;
-  jwt: string;
-  type: string;
-  user: User;
-  dfa?: Dfa;
-  roles: string[];
+  sentTo: string;
+  username?: string;
+  code?: string;
 }
 
 export type AuthFormMode = 'login' | 'verify';
