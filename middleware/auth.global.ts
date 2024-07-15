@@ -1,5 +1,3 @@
-import type { Session } from '~/types/auth/Auth';
-
 export default defineNuxtRouteMiddleware(async (to) => {
   const { data } = useAuth();
   if (
@@ -10,7 +8,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return;
   }
 
-  if (data.value && (data.value as unknown as Session).isAuthorized) {
+  if (data.value && data.value.isAuthorized) {
     return;
   }
 

@@ -1,15 +1,16 @@
 // import fetch
 import fetch from 'node-fetch';
+import type { LoginCredentials, TFA } from '@/types/auth/Auth';
+
 const AUTH_API_URL = process.env.AUTH_API_URL;
 
 export const auth = () => {
   const apiUrl = AUTH_API_URL;
 
-  // login
-  const login = async (username: string, password: string) => {
-    const credentials = {
-      email: username,
-      password,
+  const login = async (credentials: LoginCredentials) => {
+    const creds = {
+      email: credentials.username,
+      password: credentials.password,
     };
 
     const url = `${apiUrl}/auth`;
@@ -20,7 +21,7 @@ export const auth = () => {
         'x-api-key': 'geins',
         'x-session-id': 'geins',
       },
-      body: JSON.stringify(credentials),
+      body: JSON.stringify(creds),
     });
 
     if (response.ok) {
@@ -38,13 +39,14 @@ export const auth = () => {
     throw new Error(text);
   };
 
-  // dfa verify
-  const verify = async (user: string, token: string, code: string) => {
-    const credentials = {
-      user,
-      token,
-      code,
-    };
+  const verify = async (tfa: TFA) => {
+    if (!tfa || !tfa.code || !tfa.username || !tfa.token) {
+      throw new Error('Missing TFA credentials');
+    }
+
+    const { username, token, code } = tfa;
+    const credentials = { user: username, token, code };
+
     const url = `${apiUrl}/dfa-verify`;
     const response = await fetch(url, {
       method: 'POST',
