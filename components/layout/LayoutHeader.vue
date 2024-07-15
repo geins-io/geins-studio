@@ -9,20 +9,11 @@ import {
   CreditCard,
 } from 'lucide-vue-next';
 const auth = useAuth();
+const { avatarInitials } = useUserStore();
 const colorMode = useColorMode();
 const setColorMode = () => {
   colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark';
 };
-
-// computed avatar initials
-const avatarInitials = computed(() => {
-  const user = auth.data.value?.user;
-  if (user?.firstname && user?.lastname) {
-    return `${user.firstname[0]}${user.lastname[0]}`;
-  }
-  return '';
-});
-
 const logout = () => {
   auth.signOut();
 };
