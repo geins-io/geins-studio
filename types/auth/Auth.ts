@@ -15,16 +15,15 @@ export interface LoginCredentials {
   tfaString?: string;
   tfa?: TFA;
 }
-export interface SignInResponse {
-  isAuthorized?: boolean;
-  tfa?: TFA;
-}
-export interface Session extends SignInResponse {
-  type?: string;
+
+export interface Session {
+  isAuthorized: boolean;
+  accessToken?: string;
+  sessionId?: string;
   user?: User;
-  accessToken?: unknown;
-  sessionId?: unknown;
   roles?: string[];
+  tfa?: TFA;
+  type?: string;
 }
 
 export interface TFA {

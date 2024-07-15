@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
 import { auth } from '@/server/utils/auth';
@@ -23,7 +22,7 @@ export default NuxtAuthHandler({
             accsessToken: '',
             sessionId: '',
             user: undefined,
-            tfa: { ...session.tfa, active: true },
+            tfa: session.tfa,
           };
         } else if (session.isAuthorized) {
           token = {
@@ -46,12 +45,8 @@ export default NuxtAuthHandler({
           accessToken: token.accessToken,
           sessionId: token.sessionId,
           type: 'session',
-          user: undefined,
+          user: token.user,
         };
-
-        if (token.user) {
-          session.user = token.user;
-        }
       }
 
       if (token.tfa?.active) {
