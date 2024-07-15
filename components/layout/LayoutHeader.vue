@@ -8,14 +8,16 @@ import {
   CircleHelp,
   CreditCard,
 } from 'lucide-vue-next';
+
 const auth = useAuth();
 const { avatarInitials } = useUserStore();
-const colorMode = useColorMode();
-const setColorMode = () => {
-  colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark';
-};
 const logout = () => {
   auth.signOut();
+};
+
+const colorMode = useColorMode();
+const setColorMode = () => {
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark';
 };
 </script>
 <template>
