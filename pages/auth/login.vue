@@ -52,7 +52,7 @@ async function handleLogin(credentials: LoginCredentials) {
   if (signInResult.ok) {
     const authData = auth.data.value;
 
-    if (authData?.tfa?.active) {
+    if (authData?.tfa) {
       const tfaData = authData.tfa;
       tfa.value = tfaData;
       step.value = 'verify';
@@ -73,14 +73,9 @@ async function handleVerify(code: string) {
     return;
   }
 
-  tfa.value = {
+  const verifyResult = await auth.signIn('credentials', {
     ...tfa.value,
     code,
-  };
-
-  const verifyResult = await auth.signIn('credentials', {
-    username: tfa.value.username,
-    tfaString: JSON.stringify(tfa.value),
     redirect: false,
   });
 

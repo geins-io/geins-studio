@@ -9,13 +9,11 @@ export default NuxtAuthHandler({
     signIn: '/auth/login',
   },
   callbacks: {
-    jwt: async ({ token, user, trigger }) => {
+    jwt: async ({ token, user: session, trigger }) => {
       const isSignIn = trigger === 'signIn';
 
-      const session: Session = user;
-
-      if (isSignIn && user) {
-        if (!session.isAuthorized && session.tfa?.active) {
+      if (isSignIn && session) {
+        if (!session.isAuthorized && session.tfa) {
           token = {
             isAuthorized: false,
             roles: [],
@@ -27,7 +25,6 @@ export default NuxtAuthHandler({
         } else if (session.isAuthorized) {
           token = {
             isAuthorized: true,
-            roles: session.roles,
             accsessToken: session.accessToken,
             sessionId: session.sessionId,
             user: session.user,
@@ -41,15 +38,13 @@ export default NuxtAuthHandler({
       if (token.isAuthorized) {
         session = {
           isAuthorized: true,
-          roles: token.roles,
           accessToken: token.accessToken,
           sessionId: token.sessionId,
-          type: 'session',
           user: token.user,
         };
       }
 
-      if (token.tfa?.active) {
+      if (token.tfa) {
         session.tfa = token.tfa;
       }
 
@@ -62,6 +57,7 @@ export default NuxtAuthHandler({
       name: 'Credentials',
       async authorize(credentials: LoginCredentials) {
         const geinsAuth = auth();
+
         if (credentials.username && credentials.password) {
           const authResponse = await geinsAuth.login(credentials);
 
@@ -76,9 +72,7 @@ export default NuxtAuthHandler({
               isAuthorized: false,
               tfa: {
                 sentTo: data.sentTo,
-                active: true,
                 token: data.token,
-                code: credentials.tfa?.code,
                 username: data.user,
               },
             };
@@ -87,14 +81,10 @@ export default NuxtAuthHandler({
             // if user is not tfa (only tfa for now)
             return null;
           }
-        } else if (credentials.tfaString) {
-          const creds: LoginCredentials = {
-            username: credentials.username,
-            tfa: JSON.parse(credentials.tfaString),
-          };
+        } else if (credentials.token && credentials.code) {
           // use geinsAuth to get user data and set authorized to true
           try {
-            const verifyResponse = await geinsAuth.verify(creds);
+            const verifyResponse = await geinsAuth.verify(credentials);
 
             if (!verifyResponse) {
               return null;
@@ -109,7 +99,6 @@ export default NuxtAuthHandler({
             const userInfo = verifyUser.info;
             const session: Session = {
               isAuthorized: true,
-              roles: ['authed', ...verifyUser.roles],
               accessToken: verifyData.key,
               sessionId: verifyData.sessionId,
               user: {
@@ -118,8 +107,7 @@ export default NuxtAuthHandler({
                 lastname: userInfo.lastName,
                 email: userInfo.email,
                 phone: userInfo.note.phone,
-                role: 'authed',
-                username: userInfo.username,
+                roles: ['authed', ...verifyUser.roles],
               },
             };
             return session;

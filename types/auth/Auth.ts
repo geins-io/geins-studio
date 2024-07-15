@@ -2,18 +2,9 @@ export interface User {
   id: number;
   firstname: string;
   lastname: string;
-  username: string;
-  role: string;
   email: string;
   phone: string;
-  permissions?: string[];
-}
-export interface LoginCredentials {
-  username: string;
-  password?: string;
-  rememberMe?: boolean;
-  tfaString?: string;
-  tfa?: TFA;
+  roles: string[];
 }
 
 export interface Session {
@@ -21,15 +12,18 @@ export interface Session {
   accessToken?: string;
   sessionId?: string;
   user?: User;
-  roles?: string[];
   tfa?: TFA;
-  type?: string;
+}
+
+export interface LoginCredentials extends TFA {
+  username: string;
+  password?: string;
+  rememberMe?: boolean;
 }
 
 export interface TFA {
-  active: boolean;
-  token: string;
-  sentTo: string;
+  token?: string;
+  sentTo?: string;
   username?: string;
   code?: string;
 }
