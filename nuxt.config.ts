@@ -1,7 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { getAuthBaseUrlVercel } from './lib/deployment';
+
 export default defineNuxtConfig({
   devtools: { enabled: true },
+
   modules: [
+    '@sidebase/nuxt-auth',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
     '@nuxtjs/i18n',
@@ -9,8 +13,8 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',
-    'nuxt-svgo',
   ],
+
   shadcn: {
     /**
      * Prefix for all the imported component
@@ -22,21 +26,52 @@ export default defineNuxtConfig({
      */
     componentDir: './components/ui',
   },
+
   colorMode: {
     preference: 'system', // default value of $colorMode.preference
     fallback: 'light', // fallback value if not system preference found
     classSuffix: '',
     storageKey: 'nuxt-color-mode',
   },
+
+  auth: {
+    isEnabled: true,
+    baseURL: getAuthBaseUrlVercel(),
+    provider: {
+      type: 'authjs',
+      trustHost: true, // this is only for development
+    },
+    globalAppMiddleware: {
+      isEnabled: false,
+    },
+  },
+
   i18n: {
     defaultLocale: 'en',
     langDir: 'lang/',
     locales: [{ code: 'en', iso: 'en-US', file: 'en-US.ts' }],
   },
+
   robots: {
     rules: {
       UserAgent: '*',
       Disallow: '/',
     },
   },
+
+  runtimeConfig: {
+    // Variables within 'public' can be accessed both client-side and server-side
+    public: {
+      // vercel env vars
+      VERCEL: process.env.VERCEL,
+      VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
+      VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      // Other public runtime configs
+    },
+    // Variables within 'private' are server-side only
+    private: {},
+  },
+
+  compatibilityDate: '2024-07-05',
 });

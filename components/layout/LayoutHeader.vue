@@ -9,9 +9,15 @@ import {
   CreditCard,
 } from 'lucide-vue-next';
 
+const auth = useAuth();
+const { avatarInitials } = useUserStore();
+const logout = () => {
+  auth.signOut();
+};
+
 const colorMode = useColorMode();
 const setColorMode = () => {
-  colorMode.value = colorMode.value === 'dark' ? 'light' : 'dark';
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark';
 };
 </script>
 <template>
@@ -50,7 +56,7 @@ const setColorMode = () => {
       <DropdownMenu>
         <DropdownMenuTrigger class="h-10 w-10">
           <Avatar class="h-10 w-10 border">
-            <AvatarFallback>OA</AvatarFallback>
+            <AvatarFallback>{{ avatarInitials }}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent class="w-56">
@@ -67,9 +73,10 @@ const setColorMode = () => {
           <DropdownMenuItem>
             <CircleHelp class="mr-2 h-4 w-4" />
             <span>Help center</span>
+            <DropdownMenuShortcut>⌘H</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem @click="logout">
             <LogOut class="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>

@@ -1,19 +1,20 @@
 import { defineStore } from 'pinia';
-import { type User } from '@/types/User';
+import type { User } from '@/types/auth/Auth';
 
 export const useUserStore = defineStore('user', () => {
-  const user = ref<User | null>(null);
-  const setUser = (newUser: User) => {
-    user.value = newUser;
-  };
+  const auth = useAuth();
+  const user = ref<User | undefined>(auth.data.value?.user);
 
-  const resetUser = () => {
-    user.value = null;
-  };
+  const avatarInitials = computed(() => {
+    if (!user.value) {
+      return '';
+    }
+
+    return `${user.value.firstname[0]}${user.value.lastname[0]}`;
+  });
 
   return {
     user,
-    setUser,
-    resetUser,
+    avatarInitials,
   };
 });
