@@ -9,26 +9,20 @@ export default NuxtAuthHandler({
     signIn: '/auth/login',
   },
   callbacks: {
-    jwt: async ({ token, user: session, trigger }) => {
+    jwt: async ({ token, user, trigger }) => {
       const isSignIn = trigger === 'signIn';
-
-      if (isSignIn && session) {
-        if (!session.isAuthorized && session.tfa) {
+      if (isSignIn && user) {
+        if (user.isAuthorized) {
+          token = {
+            isAuthorized: user.isAuthorized,
+            accessToken: user.accessToken,
+            sessionId: user.sessionId,
+            user: user.user,
+          };
+        } else if (user.tfa) {
           token = {
             isAuthorized: false,
-            roles: [],
-            accsessToken: '',
-            sessionId: '',
-            user: undefined,
-            tfa: session.tfa,
-          };
-        } else if (session.isAuthorized) {
-          token = {
-            isAuthorized: true,
-            accsessToken: session.accessToken,
-            sessionId: session.sessionId,
-            user: session.user,
-            tfa: undefined,
+            tfa: user.tfa,
           };
         }
       }
@@ -37,7 +31,8 @@ export default NuxtAuthHandler({
     session: async ({ session, token }) => {
       if (token.isAuthorized) {
         session = {
-          isAuthorized: true,
+          ...session,
+          isAuthorized: token.isAuthorized,
           accessToken: token.accessToken,
           sessionId: token.sessionId,
           user: token.user,

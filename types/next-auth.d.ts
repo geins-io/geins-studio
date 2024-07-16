@@ -11,7 +11,6 @@ declare module 'next-auth' {
   interface User extends CustomSession {}
   interface Session extends CustomSession {
     user?: CustomUser;
-    expires?: ISODateString;
   }
 }
 declare module 'next-auth/jwt' {
