@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { LoginCredentials, AuthFormMode } from '@/types/auth/Auth';
-import Input from '@/components/ui/input/Input.vue';
+import { Input } from '#components';
 import { ReloadIcon, ExclamationTriangleIcon } from '@radix-icons/vue';
 import { ref, watch, computed, onMounted } from 'vue';
 
@@ -92,7 +92,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="grid gap-2 text-center">
+  <div class="auth-form grid gap-2 text-center">
     <h1 class="text-3xl font-bold">
       {{ loginMode ? 'Merchant Center' : 'Verify Account' }}
     </h1>

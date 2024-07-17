@@ -7,14 +7,6 @@ import {
   ChevronsRight,
 } from 'lucide-vue-next';
 
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 const { t } = useI18n();
 
 interface DataTablePaginationProps {

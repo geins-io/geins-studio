@@ -2,7 +2,7 @@
 import type { Product } from '@/types/product/Product';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { mockProducts } from '@/data/products';
-import TableCellActions from '@/components/table/cell/TableCellActions.vue';
+import { TableCellActions } from '#components';
 
 const entityName = 'product';
 const totalProducts = ref(500);

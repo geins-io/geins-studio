@@ -1,8 +1,7 @@
 import { h } from 'vue';
 import type { ColumnDef, Table, Row } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button, Checkbox } from '#components';
 import type { ColumnOptions } from '@/types/Columns';
 
 export const useColumns = <T extends object>() => {
