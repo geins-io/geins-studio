@@ -3,7 +3,7 @@ import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { ContentTitleBlock } from '#components';
 
 describe('ContentTitleBlock', () => {
-  it('Can mount the component', async () => {
+  it('can mount the component', async () => {
     const component = await mountSuspended(ContentTitleBlock, {
       props: {
         title: 'Title',

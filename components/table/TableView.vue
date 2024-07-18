@@ -81,7 +81,7 @@ const table = useVueTable({
 </script>
 
 <template>
-  <div class="flex items-center py-4">
+  <div class="table-view flex items-center py-4">
     <div class="relative w-full max-w-sm">
       <Input
         class="w-full pl-10"
