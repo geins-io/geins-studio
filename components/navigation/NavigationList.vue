@@ -23,7 +23,7 @@ navigationMenu.value.map((item) => {
 </script>
 
 <template>
-  <nav>
+  <nav class="navigation-list">
     <ul>
       <li v-for="(item, index) in navigationMenu" :key="index">
         <NavigationItem :item="item" :is-collapsed="props.isCollapsed" />

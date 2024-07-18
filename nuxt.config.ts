@@ -6,6 +6,7 @@ export default defineNuxtConfig({
 
   modules: [
     '@sidebase/nuxt-auth',
+    '@nuxt/test-utils/module',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
     '@nuxtjs/i18n',
@@ -28,10 +29,10 @@ export default defineNuxtConfig({
   },
 
   colorMode: {
-    preference: 'system', // default value of $colorMode.preference
-    fallback: 'light', // fallback value if not system preference found
+    preference: 'system',
+    fallback: 'light',
     classSuffix: '',
-    storageKey: 'nuxt-color-mode',
+    storageKey: 'geins-color-mode',
   },
 
   auth: {

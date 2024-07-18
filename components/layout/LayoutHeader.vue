@@ -22,7 +22,7 @@ const setColorMode = () => {
 </script>
 <template>
   <header
-    class="flex flex-none items-center justify-start bg-background text-background-foreground"
+    class="layout-header flex flex-none items-center justify-start bg-background text-background-foreground"
   >
     <div class="relative w-full max-w-sm items-center">
       <Input

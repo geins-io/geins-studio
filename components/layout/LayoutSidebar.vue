@@ -17,7 +17,9 @@ const setIsCollapsed = (value: boolean) => {
 <template>
   <aside
     :class="
-      cn(`${isCollapsed ? 'w-[3.75rem]' : 'w-60'} relative transition-[width]`)
+      cn(
+        `layout-sidebar ${isCollapsed ? 'w-[3.75rem]' : 'w-60'} relative transition-[width]`,
+      )
     "
   >
     <div>

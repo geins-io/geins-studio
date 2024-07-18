@@ -53,8 +53,7 @@ async function handleLogin(credentials: LoginCredentials) {
     const authData = auth.data.value;
 
     if (authData?.tfa) {
-      const tfaData = authData.tfa;
-      tfa.value = tfaData;
+      tfa.value = authData.tfa;
       step.value = 'verify';
       pending.value = false;
       return;

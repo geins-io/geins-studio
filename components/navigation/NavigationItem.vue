@@ -116,7 +116,7 @@ watch(
 
 const rootItemClasses = computed(() => {
   return props.root
-    ? `py-2 pl-5 pr-2 text-sm font-medium h-14 leading-10 transition-[background-color]`
+    ? `navigation-item py-2 pl-5 pr-2 text-sm font-medium h-14 leading-10 transition-[background-color]`
     : `py-2 pl-6 pr-4 text-sm ${isActive.value ? 'font-medium' : ''}`;
 });
 </script>
