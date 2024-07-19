@@ -8,12 +8,10 @@ import {
   CircleHelp,
   CreditCard,
 } from 'lucide-vue-next';
+const localePath = useLocalePath();
 
 const auth = useAuth();
-const { avatarInitials } = useUserStore();
-const logout = () => {
-  auth.signOut();
-};
+const { user, avatarInitials } = useUserStore();
 
 const colorMode = useColorMode();
 const setColorMode = () => {
@@ -63,8 +61,10 @@ const setColorMode = () => {
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
-            <User class="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <NuxtLink class="flex items-center" :to="`/user/${user?.id}`">
+              <User class="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </NuxtLink>
           </DropdownMenuItem>
           <DropdownMenuItem>
             <CreditCard class="mr-2 h-4 w-4" />
@@ -76,7 +76,7 @@ const setColorMode = () => {
             <DropdownMenuShortcut>⌘H</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem @click="logout">
+          <DropdownMenuItem @click="auth.signOut()">
             <LogOut class="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>
