@@ -8,7 +8,6 @@ import {
   CircleHelp,
   CreditCard,
 } from 'lucide-vue-next';
-const localePath = useLocalePath();
 
 const auth = useAuth();
 const { user, avatarInitials } = useUserStore();

@@ -69,10 +69,16 @@
   :root {
     --positive: 104.54 67.06% 44.11%;
     --positive-foreground: 60 9.1% 97.8%;
+
+    --positive-muted: 92.73 40.74% 94.71%;
+    --destructive-muted: 0 100% 96.7%;
   }
   .dark {
     --positive: 104.54 67.06% 44.11%;
     --positive-foreground: 60 9.1% 97.8%;
+
+    --positive-muted: 92.73 29.79% 20.32%;
+    --destructive-muted: 0 56.65% 20.86%;
   }
   * {
     @apply border-border;

@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { LoginCredentials, AuthFormMode, TFA } from '@/types/auth/Auth';
+import { useToast } from '@/components/ui/toast/use-toast';
 
 definePageMeta({
   layout: 'auth',
@@ -9,6 +10,7 @@ definePageMeta({
   },
 });
 
+const { toast } = useToast();
 const auth = useAuth();
 const router = useRouter();
 
@@ -85,7 +87,13 @@ async function handleVerify(code: string) {
   }
 
   // redirect to start page
-  router.push('/');
+  await router.push('/');
+
+  toast({
+    title: 'Welcome back!',
+    description: 'You have successfully logged in.',
+    variant: 'positive',
+  });
 }
 </script>
 
