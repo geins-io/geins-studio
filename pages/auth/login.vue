@@ -10,7 +10,6 @@ definePageMeta({
   },
 });
 
-const { toast } = useToast();
 const auth = useAuth();
 const router = useRouter();
 
@@ -63,6 +62,9 @@ async function handleLogin(credentials: LoginCredentials) {
   }
 }
 
+const { toast } = useToast();
+const { t } = useI18n();
+
 async function handleVerify(code: string) {
   pending.value = true;
   showInvalid.value = false;
@@ -89,9 +91,13 @@ async function handleVerify(code: string) {
   // redirect to start page
   await router.push('/');
 
+  await nextTick();
+  const authData = auth.data.value;
+  const firstName = authData?.user?.firstname || '';
+
   toast({
-    title: 'Welcome back!',
-    description: 'You have successfully logged in.',
+    title: t('feedback_welcome_back', { name: firstName }),
+    description: t('feedback_welcome_back_description'),
     variant: 'positive',
   });
 }

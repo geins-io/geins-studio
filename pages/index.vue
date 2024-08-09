@@ -2,17 +2,20 @@
 import { useToast } from '@/components/ui/toast/use-toast';
 
 const { toast } = useToast();
+const { t } = useI18n();
 
 // TODO: Remove this function, only for testing purposes
 const triggerToast = (
   variant: 'default' | 'destructive' | 'positive' | null | undefined,
 ) => {
   const title =
-    variant === 'destructive' ? 'Something went wrong' : 'Welcome back!';
+    variant === 'destructive'
+      ? t('feedback_error')
+      : t('feedback_welcome_back', { name: 'Test' });
   const description =
     variant === 'destructive'
-      ? 'Please try again later.'
-      : 'You have successfully logged in.';
+      ? t('feedback_try_again')
+      : t('feedback_welcome_back_description');
   toast({
     title,
     description,
@@ -22,8 +25,8 @@ const triggerToast = (
 </script>
 <template>
   <ContentTitleBlock
-    title="Hi, these are your latest stats."
-    description="All amounts will be shown excluding VAT. If you keep this page open, your stats will update every 60 seconds."
+    :title="$t('dashboard_title')"
+    :description="$t('dashboard_description')"
   />
   <div class="grid grid-cols-3 gap-8">
     <Card>
