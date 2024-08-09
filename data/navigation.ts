@@ -7,12 +7,12 @@ export const mockNavigation: NavigationItem[] = [
   },
   {
     label: 'Products (PIM)',
-    href: '/pim/products',
+    href: '/pim/product/list',
     icon: 'ShoppingBasket',
     children: [
       {
         label: 'Products',
-        href: '/pim/products',
+        href: '/pim/product/list',
       },
       {
         label: 'Brands',
@@ -20,7 +20,7 @@ export const mockNavigation: NavigationItem[] = [
       },
       {
         label: 'Categories',
-        href: '/pim/categories',
+        href: '/pim/category/list',
       },
       {
         label: 'Campaigns',

@@ -1,4 +1,5 @@
 {
+  "plugins": ["prettier-plugin-vue"],
   "tabWidth": 2,
   "useTabs": false,
   "endOfLine": "auto",

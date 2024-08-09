@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LoginCredentials, AuthFormMode } from '@/types/auth/Auth';
 import { Input } from '#components';
-import { ReloadIcon, ExclamationTriangleIcon } from '@radix-icons/vue';
+import { ExclamationTriangleIcon } from '@radix-icons/vue';
 import { ref, watch, computed, onMounted } from 'vue';
 
 const emit = defineEmits(['login', 'verify']);
@@ -22,6 +22,7 @@ const props = withDefaults(
   },
 );
 
+// Global
 const loginMode = computed(() => props.mode === 'login');
 const verifyMode = computed(() => props.mode === 'verify');
 const showInvalid = ref(props.showInvalid);
@@ -33,7 +34,16 @@ watch(
   },
 );
 
-// Login related refs
+onMounted(() => {
+  if (loginMode.value) {
+    const el = emailInput.value?.$el;
+    if (el instanceof HTMLInputElement) {
+      el.focus();
+    }
+  }
+});
+
+// Login
 const email = ref('');
 const emailInput = ref<typeof Input | null>(null);
 const emailValid = ref(true);
@@ -41,23 +51,18 @@ const password = ref('');
 const passwordValid = ref(true);
 const rememberMe = ref(false);
 
-// Verification related refs
-const verificationCode = ref<string[]>([]);
-
-// Login functions
 const validatePassword = () => {
   passwordValid.value = password.value.length > 6;
 };
-
 const validateEmail = () => {
   emailValid.value = email.value.includes('@');
 };
-
 const allFieldsValid = computed(() => {
   return emailValid.value && passwordValid.value;
 });
 
 const login = () => {
+  showInvalid.value = false;
   const userCredentials: LoginCredentials = {
     username: email.value,
     password: password.value,
@@ -72,23 +77,18 @@ const login = () => {
   emit('login', userCredentials);
 };
 
-// Verification functions
+// Verification
+const verificationCode = ref<string[]>([]);
+
 const verifyAccount = () => {
+  showInvalid.value = false;
   if (verificationCode.value.length < 6) {
+    showInvalid.value = true;
     return;
   }
   const code = verificationCode.value.join('');
   emit('verify', code);
 };
-
-onMounted(() => {
-  if (loginMode.value) {
-    const el = emailInput.value?.$el;
-    if (el instanceof HTMLInputElement) {
-      el.focus();
-    }
-  }
-});
 </script>
 
 <template>
@@ -187,12 +187,11 @@ onMounted(() => {
     </div>
 
     <Button
-      :disabled="pending"
       type="submit"
       class="w-full"
+      :loading="pending"
       @click="loginMode ? login() : verifyAccount()"
     >
-      <ReloadIcon v-if="pending" class="w-4 h-4 mr-2 animate-spin" />
       {{ loginMode ? 'Login' : 'Verify' }}
     </Button>
   </div>

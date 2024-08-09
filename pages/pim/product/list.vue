@@ -7,6 +7,7 @@ import { TableCellActions } from '#components';
 const entityName = 'product';
 const totalProducts = ref(500);
 const products = ref<Product[]>(mockProducts);
+const loading = ref(true);
 
 if (import.meta.dev) {
   const { data } = await useFetch<Product[]>('/api/products', {
@@ -17,6 +18,7 @@ if (import.meta.dev) {
   }
   products.value = data.value || mockProducts;
 }
+loading.value = false;
 
 const { getColumns, extendColumns } = useColumns<Product>();
 const columns = getColumns(products.value, {
@@ -57,6 +59,7 @@ extendColumns(columns, actionsColumn);
     <Button variant="outline">Export selected</Button>
   </ContentActionBar>
   <TableView
+    :loading="loading"
     :entity-name="entityName"
     :rows-selectable="true"
     :columns="columns"

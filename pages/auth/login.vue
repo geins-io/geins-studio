@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { LoginCredentials, AuthFormMode, TFA } from '@/types/auth/Auth';
+import { useToast } from '@/components/ui/toast/use-toast';
 
 definePageMeta({
   layout: 'auth',
@@ -61,6 +62,9 @@ async function handleLogin(credentials: LoginCredentials) {
   }
 }
 
+const { toast } = useToast();
+const { t } = useI18n();
+
 async function handleVerify(code: string) {
   pending.value = true;
   showInvalid.value = false;
@@ -85,7 +89,17 @@ async function handleVerify(code: string) {
   }
 
   // redirect to start page
-  router.push('/');
+  await router.push('/');
+
+  await nextTick();
+  const authData = auth.data.value;
+  const firstName = authData?.user?.firstname || '';
+
+  toast({
+    title: t('feedback_welcome_back', { name: firstName }),
+    description: t('feedback_welcome_back_description'),
+    variant: 'positive',
+  });
 }
 </script>
 

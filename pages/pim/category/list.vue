@@ -4,6 +4,7 @@ import { mockCategories } from '@/data/categories';
 
 const entityName = 'category';
 const categories = ref<Category[]>(mockCategories);
+const loading = ref(true);
 
 if (import.meta.dev) {
   const { data } = await useFetch<Category[]>('/api/categories');
@@ -12,6 +13,7 @@ if (import.meta.dev) {
   }
   categories.value = data.value || mockCategories;
 }
+loading.value = false;
 
 const { getColumns } = useColumns<Category>();
 const columns = getColumns(categories.value);
@@ -24,5 +26,10 @@ const columns = getColumns(categories.value);
     <Button variant="outline">Export all</Button>
     <Button variant="outline">Export selected</Button>
   </ContentActionBar>
-  <TableView :entity-name="entityName" :columns="columns" :data="categories" />
+  <TableView
+    :loading="loading"
+    :entity-name="entityName"
+    :columns="columns"
+    :data="categories"
+  />
 </template>

@@ -51,6 +51,16 @@ module.exports = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        positive: {
+          DEFAULT: 'hsl(var(--positive))',
+          foreground: 'hsl(var(--positive-foreground))',
+        },
+        'positive-muted': {
+          DEFAULT: 'hsl(var(--positive-muted))',
+        },
+        'destructive-muted': {
+          DEFAULT: 'hsl(var(--destructive-muted))',
+        },
       },
       borderRadius: {
         xl: 'calc(var(--radius) + 4px)',

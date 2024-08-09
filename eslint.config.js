@@ -12,7 +12,7 @@ export default createConfigForNuxt()
         'warn',
         {
           html: {
-            void: 'never',
+            void: 'any',
             normal: 'always',
             component: 'always',
           },

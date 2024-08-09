@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="TData, TValue">
+<script setup lang="ts" generic="TData extends object, TValue">
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -24,10 +24,14 @@ const props = withDefaults(
     data: TData[];
     rowsSelectable?: boolean;
     entityName?: string;
+    pageSize?: number;
+    loading?: boolean;
   }>(),
   {
     rowsSelectable: false,
     entityName: 'row',
+    pageSize: 30,
+    loading: false,
   },
 );
 
@@ -39,13 +43,14 @@ const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const columnVisibility = ref<VisibilityState>({});
 const rowSelection = ref({});
+const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
 const table = useVueTable({
   get data() {
-    return props.data;
+    return props.loading ? getSkeletonData<TData>() : props.data;
   },
   get columns() {
-    return props.columns;
+    return props.loading ? getSkeletonColumns<TData>() : props.columns;
   },
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
@@ -74,7 +79,7 @@ const table = useVueTable({
   },
   initialState: {
     pagination: {
-      pageSize: 30,
+      pageSize: props.pageSize,
     },
   },
 });
