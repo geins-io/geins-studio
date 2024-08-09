@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LoginCredentials, AuthFormMode } from '@/types/auth/Auth';
 import { Input } from '#components';
-import { ReloadIcon, ExclamationTriangleIcon } from '@radix-icons/vue';
+import { ExclamationTriangleIcon } from '@radix-icons/vue';
 import { ref, watch, computed, onMounted } from 'vue';
 
 const emit = defineEmits(['login', 'verify']);
@@ -187,12 +187,11 @@ const verifyAccount = () => {
     </div>
 
     <Button
-      :disabled="pending"
       type="submit"
       class="w-full"
+      :loading="pending"
       @click="loginMode ? login() : verifyAccount()"
     >
-      <ReloadIcon v-if="pending" class="w-4 h-4 mr-2 animate-spin" />
       {{ loginMode ? 'Login' : 'Verify' }}
     </Button>
   </div>

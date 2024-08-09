@@ -17,10 +17,8 @@ if (import.meta.dev) {
     throw new Error('Failed to fetch categories');
   }
   products.value = data.value || mockProducts;
-  loading.value = false;
-} else {
-  loading.value = false;
 }
+loading.value = false;
 
 const { getColumns, extendColumns } = useColumns<Product>();
 const columns = getColumns(products.value, {

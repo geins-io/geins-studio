@@ -34,7 +34,7 @@ export const useSkeleton = () => {
         'div',
         { class: 'relative' },
         h(Skeleton, {
-          class: `${width} h-6`,
+          class: `${width} h-5`,
         }),
       );
     };
@@ -47,7 +47,7 @@ export const useSkeleton = () => {
             'div',
             { class: 'relative' },
             h(Skeleton, {
-              class: 'w-3/5 h-8',
+              class: 'w-3/5 h-6',
             }),
           ),
         cell: cellRenderer,

@@ -1,52 +1,52 @@
 {
-  "hash": "9fe04320",
-  "configHash": "2f40558d",
-  "lockfileHash": "67a548b9",
-  "browserHash": "54b8e2e3",
+  "hash": "67768ccb",
+  "configHash": "adad26cd",
+  "lockfileHash": "9e6ddb52",
+  "browserHash": "767c6f57",
   "optimized": {
     "vue": {
       "src": "../../../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
       "file": "vue.js",
-      "fileHash": "2db75b81",
+      "fileHash": "89d2e698",
       "needsInterop": false
     },
     "vitepress > @vue/devtools-api": {
       "src": "../../../../node_modules/vitepress/node_modules/@vue/devtools-api/dist/index.js",
       "file": "vitepress___@vue_devtools-api.js",
-      "fileHash": "74ddf416",
+      "fileHash": "95c178be",
       "needsInterop": false
     },
     "vitepress > @vueuse/core": {
       "src": "../../../../node_modules/@vueuse/core/index.mjs",
       "file": "vitepress___@vueuse_core.js",
-      "fileHash": "d73a9283",
+      "fileHash": "30ecb8bd",
       "needsInterop": false
     },
     "vitepress > @vueuse/integrations/useFocusTrap": {
       "src": "../../../../node_modules/@vueuse/integrations/useFocusTrap.mjs",
       "file": "vitepress___@vueuse_integrations_useFocusTrap.js",
-      "fileHash": "bcb31dcc",
+      "fileHash": "1c2bd1ee",
       "needsInterop": false
     },
     "vitepress > mark.js/src/vanilla.js": {
       "src": "../../../../node_modules/mark.js/src/vanilla.js",
       "file": "vitepress___mark__js_src_vanilla__js.js",
-      "fileHash": "1bbc8b03",
+      "fileHash": "9187c43c",
       "needsInterop": false
     },
     "vitepress > minisearch": {
       "src": "../../../../node_modules/minisearch/dist/es/index.js",
       "file": "vitepress___minisearch.js",
-      "fileHash": "f26780c7",
+      "fileHash": "1fe989a3",
       "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-O3YQPVDG": {
-      "file": "chunk-O3YQPVDG.js"
+    "chunk-UFNYUUAL": {
+      "file": "chunk-UFNYUUAL.js"
     },
-    "chunk-6HFWW3YO": {
-      "file": "chunk-6HFWW3YO.js"
+    "chunk-AU3CLKKL": {
+      "file": "chunk-AU3CLKKL.js"
     }
   }
 }
