@@ -14,7 +14,7 @@ if (import.meta.dev) {
     query: { total: totalProducts.value },
   });
   if (!data.value) {
-    throw new Error('Failed to fetch categories');
+    throw new Error('Failed to fetch products');
   }
   products.value = data.value || mockProducts;
 }
@@ -58,11 +58,5 @@ extendColumns(columns, actionsColumn);
     <Button variant="outline">Export all</Button>
     <Button variant="outline">Export selected</Button>
   </ContentActionBar>
-  <TableView
-    :loading="loading"
-    :entity-name="entityName"
-    :rows-selectable="true"
-    :columns="columns"
-    :data="products"
-  />
+  <TableView :loading="loading" :entity-name="entityName" :rows-selectable="true" :columns="columns" :data="products" />
 </template>
