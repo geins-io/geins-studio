@@ -1,9 +1,7 @@
-import type { NavigationItem } from '@/types/NavigationItem';
+import { geins } from '~/server/utils/geins';
 
-export default defineEventHandler(async () => {
-  const navigation = await $fetch<NavigationItem[]>(
-    'http://localhost:1111/navigation',
-  );
+export default defineEventHandler(async (event) => {
+  const { userTypeId = 1 } = getQuery(event);
 
-  return navigation;
+  return geins.merchantCenter.navigation(Number(userTypeId) || 1);
 });

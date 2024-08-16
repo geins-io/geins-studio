@@ -1,11 +1,6 @@
-import type { Product } from '@/types/product/Product';
+import { geins } from '~/server/utils/geins';
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
-
-  const products = await $fetch<Product[]>('http://localhost:1111/products', {
-    query,
-  });
-
-  return products;
+  const { total = 10, offset = 0 } = getQuery(event);
+  return geins.products.list(Number(total) || 100, Number(offset) || 0);
 });
