@@ -7,11 +7,15 @@ const categories = ref<Category[]>(mockCategories);
 const loading = ref(true);
 
 if (import.meta.dev) {
-  const { data } = await useFetch<Category[]>('/api/categories');
-  if (!data.value) {
-    throw new Error('Failed to fetch categories');
+  const { data, error } = await useFetch<Category[]>('/api/categories');
+  if (!data.value || error.value) {
+    throw createError({
+      ...error.value,
+      statusMessage: 'Failed to fetch categories',
+    });
+  } else {
+    categories.value = data.value;
   }
-  categories.value = data.value || mockCategories;
 }
 loading.value = false;
 
@@ -26,10 +30,18 @@ const columns = getColumns(categories.value);
     <Button variant="outline">Export all</Button>
     <Button variant="outline">Export selected</Button>
   </ContentActionBar>
-  <TableView
-    :loading="loading"
-    :entity-name="entityName"
-    :columns="columns"
-    :data="categories"
-  />
+  <NuxtErrorBoundary>
+    <TableView
+      :loading="loading"
+      :entity-name="entityName"
+      :columns="columns"
+      :data="categories"
+    />
+    <template #error="{ error }">
+      <h2 class="text-xl font-bold">
+        {{ $t('error_loading_entity', { entityName: 'categories' }) }}
+      </h2>
+      <p>{{ error }}</p>
+    </template>
+  </NuxtErrorBoundary>
 </template>

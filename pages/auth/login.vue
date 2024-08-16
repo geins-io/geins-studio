@@ -45,8 +45,6 @@ async function handleLogin(credentials: LoginCredentials) {
   if (signInResult.error || !signInResult.ok) {
     showInvalid.value = true;
     pending.value = false;
-    const error = signInResult.error;
-    console.log('error: ', error);
     return;
   }
 
@@ -69,7 +67,6 @@ async function handleVerify(code: string) {
   pending.value = true;
   showInvalid.value = false;
 
-  // TODO: better error handling
   if (!tfa.value) {
     showInvalid.value = true;
     pending.value = false;
@@ -88,7 +85,7 @@ async function handleVerify(code: string) {
     return;
   }
 
-  // redirect to start page
+  // Redirect to start page
   await router.push('/');
 
   await nextTick();

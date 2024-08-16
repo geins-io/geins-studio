@@ -4,6 +4,7 @@ export default defineI18nLocale(async () => {
     category: 'category | categories',
     new_entity: 'New {entityName}',
     save_entity: 'Save {entityName}',
+    error_loading_entity: "Couldn't load {entityName}",
     rows_per_page: '@.capitalize:{entityName} per page',
     rows_found: '{total} {entityName} found.',
     rows_selected: '{selected} of {total} {entityName} selected.',
