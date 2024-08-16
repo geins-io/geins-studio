@@ -10,13 +10,17 @@ const products = ref<Product[]>(mockProducts);
 const loading = ref(true);
 
 if (import.meta.dev) {
-  const { data } = await useFetch<Product[]>('/api/products', {
+  const { data, error } = await useFetch<Product[]>('/api/products', {
     query: { total: totalProducts.value },
   });
-  if (!data.value) {
-    throw new Error('Failed to fetch categories');
+  if (!data.value || error.value) {
+    throw createError({
+      ...error.value,
+      statusMessage: 'Failed to fetch products',
+    });
+  } else {
+    products.value = data.value;
   }
-  products.value = data.value || mockProducts;
 }
 loading.value = false;
 
@@ -58,11 +62,19 @@ extendColumns(columns, actionsColumn);
     <Button variant="outline">Export all</Button>
     <Button variant="outline">Export selected</Button>
   </ContentActionBar>
-  <TableView
-    :loading="loading"
-    :entity-name="entityName"
-    :rows-selectable="true"
-    :columns="columns"
-    :data="products"
-  />
+  <NuxtErrorBoundary>
+    <TableView
+      :loading="loading"
+      :entity-name="entityName"
+      :rows-selectable="true"
+      :columns="columns"
+      :data="products"
+    />
+    <template #error="{ error }">
+      <h2 class="text-xl font-bold">
+        {{ $t('error_loading_entity', { entityName: 'products' }) }}
+      </h2>
+      <p>{{ error }}</p>
+    </template>
+  </NuxtErrorBoundary>
 </template>
