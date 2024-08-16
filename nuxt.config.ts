@@ -2,8 +2,10 @@
 import { getAuthBaseUrlVercel } from './lib/deployment';
 
 export default defineNuxtConfig({
+  future: {
+    compatibilityVersion: 4,
+  },
   devtools: { enabled: true },
-
   modules: [
     '@sidebase/nuxt-auth',
     '@nuxt/test-utils/module',
@@ -50,7 +52,7 @@ export default defineNuxtConfig({
   i18n: {
     defaultLocale: 'en',
     langDir: 'lang/',
-    locales: [{ code: 'en', iso: 'en-US', file: 'en-US.ts' }],
+    locales: [{ code: 'en', language: 'en-US', file: 'en-US.ts' }],
   },
 
   robots: {
