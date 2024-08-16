@@ -27,7 +27,7 @@ loading.value = false;
 const { getColumns, extendColumns } = useColumns<Product>();
 const columns = getColumns(products.value, {
   selectable: true,
-  columnTypes: { price: 'currency' },
+  columnTypes: { price: 'currency', image: 'image' },
 });
 
 const actionsColumn: ColumnDef<Product> = {

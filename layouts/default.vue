@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 <template>
   <div class="h-screen flex overflow-hidden">
-    <LayoutSidebar class="h-full" />
+    <LayoutSidebar class="h-full shrink-0" />
     <main class="relative flex flex-col flex-grow transition-[margin]">
       <LayoutHeader class="h-header sticky top-0" />
       <div

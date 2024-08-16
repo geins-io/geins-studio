@@ -55,6 +55,12 @@ export const useColumns = <T extends object>() => {
             return h('div', { class: 'pl-3' }, formatted);
           };
           break;
+        case 'image':
+          cellRenderer = ({ row }: { row: Row<T> }) => {
+            const value = row.getValue(key);
+            return h('img', { src: value, alt: title, class: 'size-8 ml-3' });
+          };
+          break;
         // case 'date':
         //   cellRenderer = ({ row }: { row: Row<T> }) => {
         //     const value = row.getValue(key);

@@ -5,5 +5,5 @@ export interface ColumnOptions {
 }
 
 export interface ColumnTypes {
-  [key: string]: 'string' | 'currency' | 'date' | 'number';
+  [key: string]: 'string' | 'currency' | 'date' | 'number' | 'image';
 }
