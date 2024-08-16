@@ -1,6 +1,6 @@
 // import fetch
 import fetch from 'node-fetch';
-import type { LoginCredentials, TFA } from '@/types/auth/Auth';
+import type { LoginCredentials, TFA } from '../../../types/auth/Auth';
 
 const AUTH_API_URL = process.env.AUTH_API_URL;
 

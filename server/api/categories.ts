@@ -1,4 +1,4 @@
-import { geins } from '~/server/utils/geins';
+import { geins } from '../../server/utils/geins';
 
 export default defineEventHandler(async (event) => {
   const { total = 10, offset = 0 } = getQuery(event);

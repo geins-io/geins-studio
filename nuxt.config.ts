@@ -1,5 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import { getAuthBaseUrlVercel } from './lib/deployment';
+import { getAuthBaseUrlVercel } from './app/lib/deployment';
 
 export default defineNuxtConfig({
   future: {
@@ -25,9 +25,9 @@ export default defineNuxtConfig({
     prefix: '',
     /**
      * Directory that the component lives in.
-     * @default "./components/ui"
+     * @default "./app/components/ui"
      */
-    componentDir: './components/ui',
+    componentDir: './app/components/ui',
   },
 
   colorMode: {
