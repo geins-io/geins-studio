@@ -20,4 +20,3 @@ const delegatedProps = computed(() => {
     :class="cn('-mx-1 my-1 h-px bg-muted', props.class)"
   />
 </template>
-~/app/lib/utils

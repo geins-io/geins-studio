@@ -22,4 +22,3 @@ const delegatedProps = computed(() => {
     <slot />
   </ToastDescription>
 </template>
-~/app/lib/utils

@@ -156,4 +156,3 @@ const table = useVueTable({
     />
   </div>
 </template>
-~/app/lib/utils

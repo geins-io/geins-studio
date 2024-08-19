@@ -16,4 +16,3 @@ const props = defineProps<{
     <slot />
   </tfoot>
 </template>
-~/app/lib/utils

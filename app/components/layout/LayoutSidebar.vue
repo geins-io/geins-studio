@@ -45,4 +45,3 @@ const setIsCollapsed = (value: boolean) => {
     </div>
   </aside>
 </template>
-~/app/lib/utils

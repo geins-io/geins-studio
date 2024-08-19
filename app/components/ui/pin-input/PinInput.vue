@@ -32,4 +32,3 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     <slot />
   </PinInputRoot>
 </template>
-~/app/lib/utils

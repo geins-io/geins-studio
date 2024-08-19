@@ -42,4 +42,3 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     </CheckboxIndicator>
   </CheckboxRoot>
 </template>
-~/app/lib/utils

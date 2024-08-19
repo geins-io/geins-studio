@@ -33,4 +33,3 @@ const forwardedProps = useForwardProps(delegatedProps);
     </slot>
   </SelectScrollUpButton>
 </template>
-~/app/lib/utils

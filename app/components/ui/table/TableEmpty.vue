@@ -38,4 +38,3 @@ const delegatedProps = computed(() => {
     </TableCell>
   </TableRow>
 </template>
-~/app/lib/utils

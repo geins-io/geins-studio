@@ -14,4 +14,3 @@ const props = defineProps<{
     </table>
   </div>
 </template>
-~/app/lib/utils

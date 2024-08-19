@@ -34,4 +34,3 @@ const forwardedProps = useForwardProps(delegatedProps);
     <slot />
   </DropdownMenuItem>
 </template>
-~/app/lib/utils

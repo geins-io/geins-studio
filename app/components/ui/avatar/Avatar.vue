@@ -22,4 +22,3 @@ const props = withDefaults(
     <slot />
   </AvatarRoot>
 </template>
-~/app/lib/utils

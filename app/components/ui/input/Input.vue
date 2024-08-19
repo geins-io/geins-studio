@@ -51,4 +51,3 @@ const modelValue = useVModel(props, 'modelValue', emits, {
     {{ description }}
   </p>
 </template>
-~/app/lib/utils

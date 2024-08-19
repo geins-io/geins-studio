@@ -19,4 +19,3 @@ const delegatedProps = computed(() => {
     <slot />
   </SelectGroup>
 </template>
-~/app/lib/utils

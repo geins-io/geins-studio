@@ -28,4 +28,3 @@ const props = withDefaults(defineProps<Props>(), {
     <slot />
   </Primitive>
 </template>
-~/app/lib/utils

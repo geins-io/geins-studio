@@ -30,4 +30,3 @@ const delegatedProps = computed(() => {
     <Cross2Icon class="h-4 w-4" />
   </ToastClose>
 </template>
-~/app/lib/utils

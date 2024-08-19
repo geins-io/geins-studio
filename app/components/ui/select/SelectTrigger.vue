@@ -38,4 +38,3 @@ const forwardedProps = useForwardProps(delegatedProps);
     </SelectIcon>
   </SelectTrigger>
 </template>
-~/app/lib/utils

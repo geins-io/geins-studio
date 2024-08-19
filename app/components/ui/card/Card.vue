@@ -16,4 +16,3 @@ const props = defineProps<{
     <slot />
   </div>
 </template>
-~/app/lib/utils

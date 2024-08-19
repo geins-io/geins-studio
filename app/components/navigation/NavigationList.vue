@@ -31,4 +31,3 @@ navigationMenu.value.map((item) => {
     </ul>
   </nav>
 </template>
-../../types/NavigationItem

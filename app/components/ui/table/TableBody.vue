@@ -12,4 +12,3 @@ const props = defineProps<{
     <slot />
   </tbody>
 </template>
-~/app/lib/utils

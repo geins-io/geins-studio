@@ -13,4 +13,3 @@ const props = defineProps<
     <slot />
   </SelectLabel>
 </template>
-~/app/lib/utils

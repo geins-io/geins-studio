@@ -21,4 +21,3 @@ const forwardedProps = useForwardProps(delegatedProps);
     <slot />
   </Primitive>
 </template>
-~/app/lib/utils

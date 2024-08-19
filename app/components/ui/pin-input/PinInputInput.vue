@@ -40,4 +40,3 @@ onMounted(() => {
     "
   />
 </template>
-~/app/lib/utils

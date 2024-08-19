@@ -25,4 +25,3 @@ const delegatedProps = computed(() => {
     "
   />
 </template>
-~/app/lib/utils

@@ -196,4 +196,3 @@ const verifyAccount = () => {
     </Button>
   </div>
 </template>
-../../types/auth/Auth

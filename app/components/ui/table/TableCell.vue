@@ -19,4 +19,3 @@ const props = defineProps<{
     <slot />
   </td>
 </template>
-~/app/lib/utils
