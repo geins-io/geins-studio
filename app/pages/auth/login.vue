@@ -111,4 +111,3 @@ async function handleVerify(code: string) {
     @verify="handleVerify"
   />
 </template>
-../../types/auth/Auth

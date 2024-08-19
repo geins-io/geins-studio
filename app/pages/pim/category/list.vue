@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TData">
-import type { Category } from '@/../types/product/Category';
+import type { Category } from '@/types/product/Category';
 
 const entityName = 'category';
 const categories = ref<Category[]>([]);
@@ -43,4 +43,3 @@ const columns = getColumns(categories.value);
     </template>
   </NuxtErrorBoundary>
 </template>
-@/types/product/Category

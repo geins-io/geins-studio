@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TData">
-import type { Product } from '@/../types/product/Product';
+import type { Product } from '@/types/product/Product';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { TableCellActions } from '#components';
 
@@ -76,4 +76,3 @@ extendColumns(columns, actionsColumn);
     </template>
   </NuxtErrorBoundary>
 </template>
-@/types/product/Product
