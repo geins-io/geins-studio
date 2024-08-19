@@ -135,7 +135,7 @@ const rootItemClasses = computed(() => {
       "
     >
       <NuxtLink :to="item.href" :class="cn(`flex flex-grow items-center`)">
-        <ClientOnly fallback-tag="svg">
+        <ClientOnly>
           <component :is="item.icon" class="size-5 mr-3" />
         </ClientOnly>
         <span class="flex flex-grow hover:underline">{{ item.label }}</span>
@@ -168,7 +168,7 @@ const rootItemClasses = computed(() => {
       )
     "
   >
-    <ClientOnly fallback-tag="svg">
+    <ClientOnly>
       <component :is="item.icon" class="size-5 mr-3" />
     </ClientOnly>
     <span
