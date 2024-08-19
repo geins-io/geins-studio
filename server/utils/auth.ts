@@ -1,4 +1,3 @@
-// import fetch
 import fetch from 'node-fetch';
 import type { LoginCredentials, TFA } from '@/types/auth/Auth';
 
