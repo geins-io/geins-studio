@@ -22,7 +22,7 @@ if (!data.value || error.value) {
 
 loading.value = false;
 
-const { getColumns, extendColumns } = useColumns<Product>();
+const { getColumns, extendColumns, setOrderForColumn } = useColumns<Product>();
 const columns = getColumns(products.value, {
   selectable: true,
   columnTypes: { price: 'currency', image: 'image' },
@@ -47,6 +47,7 @@ const actionsColumn: ColumnDef<Product> = {
 };
 
 extendColumns(columns, actionsColumn);
+setOrderForColumn(columns, 'image', 1);
 
 // const handleClick = async (row: Row<Product>) => {
 //   await navigateTo(`/pim/product/${row.original.id}`);
