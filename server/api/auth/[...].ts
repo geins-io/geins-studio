@@ -1,7 +1,6 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
-import { auth } from '../../../server/utils/auth';
-import type { Session, LoginCredentials } from '../../../types/auth/Auth';
+import type { Session, LoginCredentials } from '@/types/auth/Auth';
 
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,

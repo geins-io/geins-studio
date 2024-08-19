@@ -1,9 +1,5 @@
 <script lang="ts" setup>
-import type {
-  LoginCredentials,
-  AuthFormMode,
-  TFA,
-} from '../../../types/auth/Auth';
+import type { LoginCredentials, AuthFormMode, TFA } from '@/types/auth/Auth';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 definePageMeta({
@@ -115,3 +111,4 @@ async function handleVerify(code: string) {
     @verify="handleVerify"
   />
 </template>
+../../types/auth/Auth

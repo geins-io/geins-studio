@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type NavigationItem } from '../../../types/NavigationItem';
+import { type NavigationItem } from '@/types/NavigationItem';
 import { navigation } from '@/lib/mockdata/navigation';
 
 const props = withDefaults(
@@ -31,3 +31,4 @@ navigationMenu.value.map((item) => {
     </ul>
   </nav>
 </template>
+../../types/NavigationItem

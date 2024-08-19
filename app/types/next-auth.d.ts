@@ -5,7 +5,7 @@ import { JWT } from 'next-auth/jwt';
 import type {
   Session as CustomSession,
   User as CustomUser,
-} from '../../../types/auth/Auth';
+} from '@/types/auth/Auth';
 
 declare module 'next-auth' {
   interface User extends CustomSession {}

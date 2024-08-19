@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type NavigationItem } from '../../../types/NavigationItem';
+import { type NavigationItem } from '@/types/NavigationItem';
 import {
   ChevronDown,
   ChevronRight,
@@ -179,4 +179,4 @@ const rootItemClasses = computed(() => {
     </span>
   </NuxtLink>
 </template>
-~/app/lib/utils
+~/app/lib/utils ../../types/NavigationItem

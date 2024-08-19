@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LoginCredentials, AuthFormMode } from '../../../types/auth/Auth';
+import type { LoginCredentials, AuthFormMode } from '@/types/auth/Auth';
 import { Input } from '#components';
 import { ExclamationTriangleIcon } from '@radix-icons/vue';
 import { ref, watch, computed, onMounted } from 'vue';
@@ -196,3 +196,4 @@ const verifyAccount = () => {
     </Button>
   </div>
 </template>
+../../types/auth/Auth
