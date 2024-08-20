@@ -15,7 +15,6 @@ import {
   Settings,
   ShieldCheck,
 } from 'lucide-vue-next';
-import { cn } from '~/lib/utils';
 
 const props = withDefaults(
   defineProps<{

@@ -2,7 +2,6 @@
 import Logo from '@/assets/logos/geins.svg';
 import LogoLetter from '@/assets/logos/geins-g.svg';
 import { ChevronsLeft } from 'lucide-vue-next';
-import { cn } from '@/lib/utils';
 
 const props = defineProps<{
   open?: boolean;
