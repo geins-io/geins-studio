@@ -2,7 +2,6 @@
 import { type HTMLAttributes, computed } from 'vue';
 import { ToastClose, type ToastCloseProps } from 'radix-vue';
 import { Cross2Icon } from '@radix-icons/vue';
-import { cn } from '@/lib/utils';
 
 const props = defineProps<
   ToastCloseProps & {

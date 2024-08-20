@@ -10,7 +10,7 @@ export const useUserStore = defineStore('user', () => {
       return '';
     }
 
-    return `${user.value.firstname[0]}${user.value.lastname[0]}`;
+    return `${user.value.firstName[0]}${user.value.lastName[0]}`;
   });
 
   return {

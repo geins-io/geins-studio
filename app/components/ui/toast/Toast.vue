@@ -6,7 +6,6 @@ import {
   useForwardPropsEmits,
 } from 'radix-vue';
 import { type ToastProps, toastVariants } from '.';
-import { cn } from '@/lib/utils';
 
 const props = defineProps<ToastProps>();
 

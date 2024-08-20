@@ -6,7 +6,6 @@ import {
   useForwardProps,
 } from 'radix-vue';
 import { ChevronDownIcon } from '@radix-icons/vue';
-import { cn } from '@/lib/utils';
 
 const props = defineProps<
   SelectScrollDownButtonProps & { class?: HTMLAttributes['class'] }

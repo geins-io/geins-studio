@@ -14,8 +14,6 @@ import {
   useVueTable,
 } from '@tanstack/vue-table';
 
-import { valueUpdater } from '@/lib/utils';
-
 import { Search } from 'lucide-vue-next';
 
 const props = withDefaults(

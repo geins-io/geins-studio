@@ -88,8 +88,8 @@ export default NuxtAuthHandler({
               sessionId: verifyData.sessionId,
               user: {
                 id: verifyUser.id,
-                firstname: userInfo.firstName,
-                lastname: userInfo.lastName,
+                firstName: userInfo.firstName,
+                lastName: userInfo.lastName,
                 email: userInfo.email,
                 phone: userInfo.note.phone,
                 roles: ['authed', ...verifyUser.roles],

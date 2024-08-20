@@ -69,11 +69,11 @@ setOrderForColumn(columns, 'image', 1);
       :columns="columns"
       :data="products"
     />
-    <template #error="{ error }">
+    <template #error="{ errorCatched }">
       <h2 class="text-xl font-bold">
         {{ $t('error_loading_entity', { entityName: 'products' }) }}
       </h2>
-      <p>{{ error }}</p>
+      <p>{{ errorCatched }}</p>
     </template>
   </NuxtErrorBoundary>
 </template>

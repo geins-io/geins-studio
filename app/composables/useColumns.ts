@@ -74,7 +74,11 @@ export const useColumns = <T extends object>() => {
         case 'image':
           cellRenderer = ({ row }: { row: Row<T> }) => {
             const value = row.getValue(key);
-            return h('img', { src: value, alt: title, class: 'size-7 ml-3' });
+            return h('img', {
+              src: value,
+              alt: title,
+              class: 'size-7 ml-3 rounded-md',
+            });
           };
           headerRenderer = () => h('div', { class: 'ml-3' }, title);
           break;

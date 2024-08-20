@@ -24,6 +24,7 @@ export const geins = {
   },
   merchantCenter: {
     navigation: async (userTypeId: number) => {
+      console.log(userTypeId);
       return mockData.navigation();
     },
   },

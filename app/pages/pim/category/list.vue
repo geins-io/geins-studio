@@ -35,11 +35,11 @@ const columns = getColumns(categories.value);
       :columns="columns"
       :data="categories"
     />
-    <template #error="{ error }">
+    <template #error="{ errorCatched }">
       <h2 class="text-xl font-bold">
         {{ $t('error_loading_entity', { entityName: 'categories' }) }}
       </h2>
-      <p>{{ error }}</p>
+      <p>{{ errorCatched }}</p>
     </template>
   </NuxtErrorBoundary>
 </template>

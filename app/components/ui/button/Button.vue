@@ -2,7 +2,7 @@
 import type { HTMLAttributes } from 'vue';
 import { Primitive, type PrimitiveProps } from 'radix-vue';
 import { type ButtonVariants, buttonVariants } from '.';
-import { cn } from '@/lib/utils';
+
 import { ReloadIcon } from '@radix-icons/vue';
 
 interface Props extends PrimitiveProps {
