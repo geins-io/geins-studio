@@ -90,7 +90,7 @@ async function handleVerify(code: string) {
 
   await nextTick();
   const authData = auth.data.value;
-  const firstName = authData?.user?.firstname || '';
+  const firstName = authData?.user?.firstName || '';
 
   toast({
     title: t('feedback_welcome_back', { name: firstName }),
