@@ -39,10 +39,39 @@ const emit = defineEmits({
 
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
-const columnVisibility = ref<VisibilityState>({});
 const rowSelection = ref({});
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
+// Setup column visibility
+const { path } = useRoute();
+const { user } = useUserStore();
+const userId = user?.id || 'default';
+const cookieKey = `${userId + path}`;
+
+const columnVisibilityCookie = useCookie<VisibilityState>(
+  `geins-cols-${cookieKey}`,
+  {
+    default: () => ({}),
+  },
+);
+
+const columnVisibility = ref(columnVisibilityCookie.value);
+
+const updateVisibilityCookie = () => {
+  columnVisibilityCookie.value = columnVisibility.value;
+};
+
+watch(columnVisibility, updateVisibilityCookie, { deep: true });
+
+const columnVisibilityChoices = computed(() => {
+  let columnsArray = Object.keys(columnVisibility.value);
+  columnsArray = columnsArray.filter((col) => {
+    return !columnVisibility.value[col];
+  });
+  return columnsArray.length;
+});
+
+// Setup table
 const table = useVueTable({
   get data() {
     return props.loading ? getSkeletonData<TData>() : props.data;
@@ -57,8 +86,9 @@ const table = useVueTable({
   onColumnFiltersChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnFilters),
   getFilteredRowModel: getFilteredRowModel(),
-  onColumnVisibilityChange: (updaterOrValue) =>
-    valueUpdater(updaterOrValue, columnVisibility),
+  onColumnVisibilityChange: (updaterOrValue) => {
+    valueUpdater(updaterOrValue, columnVisibility);
+  },
   onRowSelectionChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, rowSelection),
   state: {
@@ -99,7 +129,7 @@ const table = useVueTable({
       </span>
     </div>
 
-    <TableColumnToggle :table="table" />
+    <TableColumnToggle :table="table" :choices="columnVisibilityChoices" />
   </div>
   <div class="border rounded-md">
     <Table class="relative">

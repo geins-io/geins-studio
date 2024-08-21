@@ -3,11 +3,13 @@ import type { Product } from '@/types/product/Product';
 import type { ColumnDef } from '@tanstack/vue-table';
 import { TableCellActions } from '#components';
 
+// Globals
 const entityName = 'product';
 const totalProducts = ref(500);
 const products = ref<Product[]>([]);
 const loading = ref(true);
 
+// Fetch data
 const { data, error } = await useFetch<Product[]>('/api/products', {
   query: { total: totalProducts.value },
 });
@@ -19,9 +21,9 @@ if (!data.value || error.value) {
 } else {
   products.value = data.value;
 }
-
 loading.value = false;
 
+// Fix columns
 const { getColumns, extendColumns, setOrderForColumn } = useColumns<Product>();
 const columns = getColumns(products.value, {
   selectable: true,
