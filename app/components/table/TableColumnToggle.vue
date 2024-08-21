@@ -4,6 +4,7 @@ import { ListTodo } from 'lucide-vue-next';
 
 interface TableColumnToggleProps {
   table: Table<TData>;
+  choices?: number;
 }
 
 const props = defineProps<TableColumnToggleProps>();
@@ -24,6 +25,9 @@ const columns = computed(() =>
       <Button variant="outline" class="hidden ml-auto lg:flex">
         <ListTodo class="w-4 h-4 mr-2" />
         Toggle columns
+        <Badge v-if="choices" class="ml-2">
+          {{ choices }}
+        </Badge>
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end" class="w-[150px]">

@@ -63,16 +63,12 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    // Variables within 'public' can be accessed both client-side and server-side
     public: {
-      // vercel env vars
       VERCEL: process.env.VERCEL,
       VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
       VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
       VERCEL_ENV: process.env.VERCEL_ENV,
-      // Other public runtime configs
     },
-    // Variables within 'private' are server-side only
     private: {},
   },
 
