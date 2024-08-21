@@ -56,7 +56,6 @@ const columnVisibilityCookie = useCookie<VisibilityState>(
 );
 
 const columnVisibility = ref(columnVisibilityCookie.value);
-console.log('🚀 ~ columnVisibility:', columnVisibility.value);
 
 const updateVisibilityCookie = () => {
   columnVisibilityCookie.value = columnVisibility.value;
@@ -72,6 +71,7 @@ const columnVisibilityChoices = computed(() => {
   return columnsArray.length;
 });
 
+// Setup table
 const table = useVueTable({
   get data() {
     return props.loading ? getSkeletonData<TData>() : props.data;
