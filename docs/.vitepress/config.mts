@@ -63,6 +63,7 @@ export default defineConfig({
       {
         text: 'Examples',
         items: [
+          { text: 'Login using the API', link: '/login-api-example' },
           { text: 'Markdown Examples', link: '/markdown-examples' },
           { text: 'Runtime API Examples', link: '/api-examples' },
         ],

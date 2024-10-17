@@ -8,6 +8,7 @@
     "generate": "nuxi generate",
     "preview": "nuxi preview",
     "postinstall": "nuxi prepare",
+    "docs:dev": "vitepress dev docs",
     "lint": "eslint . --fix",
     "docs": "vitepress dev docs --port 3010",
     "test": "vitest"

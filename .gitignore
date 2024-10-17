@@ -26,3 +26,7 @@ logs
 .env.*
 !.env.example
 /docs/.vitepress
+
+# vitepress docs
+docs/.vitepress/dist
+docs/.vitepress/cache
