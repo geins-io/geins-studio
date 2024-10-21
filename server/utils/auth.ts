@@ -1,29 +1,27 @@
 import fetch from 'node-fetch';
 import type { LoginCredentials, TFA } from '@/types/auth/Auth';
 
-const AUTH_API_URL = process.env.AUTH_API_URL;
+const AUTH_API_URL = process.env.AUTH_API_URL as string;
+const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
 
 export const auth = () => {
-  const apiUrl = AUTH_API_URL;
-
   const login = async (credentials: LoginCredentials) => {
     const creds = {
-      email: credentials.username,
+      userName: credentials.username,
       password: credentials.password,
     };
 
-    const url = `${apiUrl}/auth`;
-    const response = await fetch(url, {
+    const response = await fetch(AUTH_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': 'geins',
-        'x-session-id': 'geins',
+        ...(ACCOUNT_KEY && { 'x-account-key': ACCOUNT_KEY }),
       },
       body: JSON.stringify(creds),
     });
+    console.log('🚀 ~ login ~ response:', response);
 
-    if (response.ok) {
+    if (response.status === 200) {
       return await response.json();
     }
 
@@ -46,7 +44,7 @@ export const auth = () => {
     const { username, token, code } = tfa;
     const credentials = { user: username, token, code };
 
-    const url = `${apiUrl}/dfa-verify`;
+    const url = `${AUTH_API_URL}/dfa-verify`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {

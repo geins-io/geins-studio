@@ -11,7 +11,7 @@ export interface User {
 export interface Session {
   isAuthorized: boolean;
   accessToken?: string;
-  sessionId?: string;
+  refreshToken?: string;
   user?: User;
   tfa?: TFA;
 }
