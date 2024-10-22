@@ -1,8 +1,10 @@
 import fetch from 'node-fetch';
 import type { LoginCredentials, TFA } from '@/types/auth/Auth';
 
-const AUTH_API_URL = process.env.AUTH_API_URL as string;
+const API_BASE = process.env.API_BASE as string;
 const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
+
+const API_URL = `${API_BASE}/auth`;
 
 export const auth = () => {
   const login = async (credentials: LoginCredentials) => {
@@ -11,7 +13,7 @@ export const auth = () => {
       password: credentials.password,
     };
 
-    const response = await fetch(AUTH_API_URL, {
+    const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -19,7 +21,6 @@ export const auth = () => {
       },
       body: JSON.stringify(creds),
     });
-    console.log('🚀 ~ login ~ response:', response);
 
     if (response.status === 200) {
       return await response.json();
@@ -44,7 +45,7 @@ export const auth = () => {
     const { username, token, code } = tfa;
     const credentials = { user: username, token, code };
 
-    const url = `${AUTH_API_URL}/dfa-verify`;
+    const url = `${API_BASE}/dfa-verify`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {

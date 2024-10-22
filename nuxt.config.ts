@@ -42,10 +42,6 @@ export default defineNuxtConfig({
     baseURL: getAuthBaseUrlVercel(),
     provider: {
       type: 'authjs',
-      trustHost: true, // this is only for development
-    },
-    globalAppMiddleware: {
-      isEnabled: false,
     },
   },
 
@@ -64,6 +60,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
+      accountKey: process.env.ACCOUNT_KEY,
+      apiBase: process.env.API_BASE,
       VERCEL: process.env.VERCEL,
       VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
       VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,

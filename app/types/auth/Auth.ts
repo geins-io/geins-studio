@@ -2,10 +2,11 @@ export interface User {
   id: number | string;
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string;
-  company: string;
-  roles: string[];
+  email?: string | null;
+  phone?: string;
+  company?: string;
+  roles?: string[];
+  apiUserType?: string;
 }
 
 export interface Session {
