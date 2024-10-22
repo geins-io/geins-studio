@@ -1,6 +1,6 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
-import type { LoginCredentials, User } from '@/types/auth/Auth';
+import type { LoginCredentials } from '@/types/auth/Auth';
 import type { Session } from 'next-auth';
 
 export default NuxtAuthHandler({
@@ -27,22 +27,16 @@ export default NuxtAuthHandler({
       return token;
     },
     session: async ({ session, token }) => {
-      if (token.isAuthorized) {
+      if (token.isAuthorized && token.accessToken) {
         session = {
           ...session,
           ...token,
         };
         if (!session.user?.email) {
           try {
-            const apiUrl = useRuntimeConfig().public.apiBase as string;
-            const accountKey = useRuntimeConfig().public.accountKey as string;
-            const user: User = await $fetch(`${apiUrl}/user/me`, {
-              method: 'GET',
-              headers: {
-                Authorization: `Bearer ${token.accessToken}`,
-                'x-account-key': accountKey,
-              },
-            });
+            const geinsAuth = auth();
+            const user = await geinsAuth.getUser(token.accessToken);
+
             session.user = user;
           } catch (error) {
             console.error('Error fetching user:', error);
@@ -60,13 +54,11 @@ export default NuxtAuthHandler({
     CredentialsProvider.default({
       name: 'Credentials',
       async authorize(credentials: LoginCredentials) {
-        console.log('🚀 ~ authorize ~ credentials:', credentials);
         const geinsAuth = auth();
 
         try {
           if (credentials.username && credentials.password) {
             const authResponse = await geinsAuth.login(credentials);
-            console.log('🚀 ~ authorize ~ authResponse:', authResponse);
 
             if (!authResponse) {
               return null;

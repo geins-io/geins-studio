@@ -38,7 +38,6 @@ async function handleLogin(credentials: LoginCredentials) {
     rememberMe,
     redirect: false,
   });
-  console.log('🚀 ~ handleLogin ~ signInResult:', signInResult);
 
   if (!signInResult) {
     showInvalid.value = true;

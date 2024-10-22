@@ -1,10 +1,7 @@
-import fetch from 'node-fetch';
-import type { LoginCredentials, TFA } from '@/types/auth/Auth';
+import type { LoginCredentials, TFA, User } from '@/types/auth/Auth';
 
 const API_BASE = process.env.API_BASE as string;
 const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
-
-const API_URL = `${API_BASE}/auth`;
 
 export const auth = () => {
   const login = async (credentials: LoginCredentials) => {
@@ -13,11 +10,11 @@ export const auth = () => {
       password: credentials.password,
     };
 
-    const response = await fetch(API_URL, {
+    const response = await fetch(`${API_BASE}/auth`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(ACCOUNT_KEY && { 'x-account-key': ACCOUNT_KEY }),
+        'x-account-key': ACCOUNT_KEY,
       },
       body: JSON.stringify(creds),
     });
@@ -35,6 +32,20 @@ export const auth = () => {
       throw new Error('Resource not found');
     }
     throw new Error(text);
+  };
+
+  const getUser = async (accessToken: string): Promise<User | undefined> => {
+    const response = await fetch(`${API_BASE}/user/me`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'x-account-key': ACCOUNT_KEY,
+      },
+    });
+
+    if (response.ok) {
+      return await response.json();
+    }
   };
 
   const verify = async (tfa: TFA) => {
@@ -71,6 +82,7 @@ export const auth = () => {
 
   return {
     login,
+    getUser,
     verify,
   };
 };
