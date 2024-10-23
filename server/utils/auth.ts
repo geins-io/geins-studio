@@ -6,7 +6,7 @@ const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
 export const auth = () => {
   const login = async (credentials: LoginCredentials) => {
     const creds = {
-      userName: credentials.username,
+      username: credentials.username,
       password: credentials.password,
     };
 
@@ -41,6 +41,21 @@ export const auth = () => {
         Authorization: `Bearer ${accessToken}`,
         'x-account-key': ACCOUNT_KEY,
       },
+    });
+
+    if (response.ok) {
+      return await response.json();
+    }
+  };
+
+  const refresh = async (refreshToken: string, accessToken: string) => {
+    const response = await fetch(`${API_BASE}/refresh`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'x-account-key': ACCOUNT_KEY,
+      },
+      body: JSON.stringify({ refreshToken }),
     });
 
     if (response.ok) {
@@ -83,6 +98,7 @@ export const auth = () => {
   return {
     login,
     getUser,
+    refresh,
     verify,
   };
 };

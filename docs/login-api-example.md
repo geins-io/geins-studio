@@ -30,7 +30,7 @@ To log in, send a POST request to the authentication endpoint with the following
 
 ```json
 {
-  "userName": "your_user_name",
+  "username": "your_user_name",
   "password": "your_password"
 }
 ```
@@ -47,7 +47,7 @@ fetch('/api/auth', {
     'x-account-key': 'your_account_key', // Required header
   },
   body: JSON.stringify({
-    userName: 'your_username',
+    username: 'your_username',
     password: 'your_password',
   }),
 })
