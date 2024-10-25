@@ -40,10 +40,15 @@ export default defineNuxtConfig({
   auth: {
     isEnabled: true,
     baseURL: getAuthBaseUrlVercel(),
+    sessionRefresh: {
+      handler: './app/utils/authRefreshHandler.ts',
+    },
     provider: {
       type: 'authjs',
     },
   },
+
+  plugins: ['./app/plugins/error-handler.ts', './app/plugins/auth-state.ts'],
 
   i18n: {
     defaultLocale: 'en',

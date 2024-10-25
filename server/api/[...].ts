@@ -3,7 +3,6 @@ import { useRuntimeConfig } from '#imports';
 import { getToken } from '#auth';
 
 export default defineEventHandler(async (event) => {
-  console.log('Received request:', event.method, event.path);
   const config = useRuntimeConfig(event);
 
   // Only read body for methods that typically include one
@@ -24,7 +23,7 @@ export default defineEventHandler(async (event) => {
   // Prepare headers
   const apiHeaders = {
     'x-account-key': config.public.accountKey,
-    ...headers, // Include original headers
+    ...headers,
   };
 
   const token = await getToken({ event });

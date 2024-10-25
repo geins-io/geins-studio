@@ -10,7 +10,7 @@ export interface User {
 }
 
 export interface Session {
-  isAuthorized: boolean;
+  isAuthorized?: boolean;
   accessToken?: string;
   refreshToken?: string;
   user?: User;

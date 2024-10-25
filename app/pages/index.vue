@@ -22,6 +22,8 @@ const triggerToast = (
     variant,
   });
 };
+
+const { refresh } = useAuth();
 </script>
 <template>
   <ContentTitleBlock
@@ -36,9 +38,7 @@ const triggerToast = (
       </CardHeader>
       <CardContent> Card Content </CardContent>
       <CardFooter>
-        <Button @click="triggerToast('destructive')">
-          Negative feedback
-        </Button>
+        <Button @click="refresh"> Refresh session </Button>
       </CardFooter>
     </Card>
     <Card>

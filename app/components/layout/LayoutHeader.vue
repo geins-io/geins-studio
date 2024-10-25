@@ -10,7 +10,7 @@ import {
 } from 'lucide-vue-next';
 
 const auth = useAuth();
-const { user, avatarInitials } = useUserStore();
+const { user, userInitials } = useUserStore();
 
 const colorMode = useColorMode();
 const setColorMode = () => {
@@ -53,7 +53,7 @@ const setColorMode = () => {
       <DropdownMenu>
         <DropdownMenuTrigger class="h-10 w-10">
           <Avatar class="h-10 w-10 border">
-            <AvatarFallback>{{ avatarInitials }}</AvatarFallback>
+            <AvatarFallback>{{ userInitials }}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent class="w-56">
