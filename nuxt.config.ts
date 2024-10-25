@@ -40,14 +40,15 @@ export default defineNuxtConfig({
   auth: {
     isEnabled: true,
     baseURL: getAuthBaseUrlVercel(),
+    sessionRefresh: {
+      handler: './app/utils/authRefreshHandler.ts',
+    },
     provider: {
       type: 'authjs',
-      trustHost: true, // this is only for development
-    },
-    globalAppMiddleware: {
-      isEnabled: false,
     },
   },
+
+  plugins: ['./app/plugins/error-handler.ts', './app/plugins/auth-state.ts'],
 
   i18n: {
     defaultLocale: 'en',
@@ -64,6 +65,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
+      accountKey: process.env.ACCOUNT_KEY,
+      apiBase: process.env.API_BASE,
       VERCEL: process.env.VERCEL,
       VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
       VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,

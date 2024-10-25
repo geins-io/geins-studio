@@ -2,6 +2,9 @@
 import type { LoginCredentials, AuthFormMode, TFA } from '@/types/auth/Auth';
 import { useToast } from '@/components/ui/toast/use-toast';
 
+const { toast } = useToast();
+const { t } = useI18n();
+
 definePageMeta({
   layout: 'auth',
   auth: {
@@ -56,12 +59,20 @@ async function handleLogin(credentials: LoginCredentials) {
       step.value = 'verify';
       pending.value = false;
       return;
+    } else if (authData?.isAuthorized) {
+      await router.push('/');
+      await nextTick();
+      const authData = auth.data.value;
+      const firstName = authData?.user?.firstName || '';
+
+      toast({
+        title: t('feedback_welcome_back', { name: firstName }),
+        description: t('feedback_welcome_back_description'),
+        variant: 'positive',
+      });
     }
   }
 }
-
-const { toast } = useToast();
-const { t } = useI18n();
 
 async function handleVerify(code: string) {
   pending.value = true;

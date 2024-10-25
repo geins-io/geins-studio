@@ -187,7 +187,6 @@ const verifyAccount = () => {
     </div>
 
     <Button
-      type="submit"
       class="w-full"
       :loading="pending"
       @click="loginMode ? login() : verifyAccount()"

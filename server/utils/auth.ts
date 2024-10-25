@@ -1,41 +1,60 @@
-import fetch from 'node-fetch';
-import type { LoginCredentials, TFA } from '@/types/auth/Auth';
+import type { LoginCredentials, TFA, User, Session } from '@/types/auth/Auth';
 
-const AUTH_API_URL = process.env.AUTH_API_URL;
+const API_BASE = process.env.API_BASE as string;
+const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
 
 export const auth = () => {
-  const apiUrl = AUTH_API_URL;
-
-  const login = async (credentials: LoginCredentials) => {
-    const creds = {
-      email: credentials.username,
-      password: credentials.password,
+  const callAPI = async <T>(
+    url: string,
+    method: string,
+    data?: object,
+    token?: string,
+  ): Promise<T> => {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      'x-account-key': ACCOUNT_KEY,
     };
-
-    const url = `${apiUrl}/auth`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': 'geins',
-        'x-session-id': 'geins',
-      },
-      body: JSON.stringify(creds),
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(`${API_BASE}/${url}`, {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
     });
 
     if (response.ok) {
-      return await response.json();
+      return response.json();
     }
 
     const text = await response.text();
     if (response.status === 401) {
-      throw new Error('Invalid credentials');
+      throw new Error('Unauthorized');
     } else if (response.status === 403) {
       throw new Error('Insufficient permissions');
     } else if (response.status === 404) {
       throw new Error('Resource not found');
     }
     throw new Error(text);
+  };
+
+  const login = async (credentials: LoginCredentials) => {
+    const creds = {
+      username: credentials.username,
+      password: credentials.password,
+    };
+    return callAPI<Session>('auth', 'POST', creds);
+  };
+
+  const getUser = async (accessToken: string): Promise<User | undefined> => {
+    return callAPI<User>('user/me', 'GET', undefined, accessToken);
+  };
+
+  const refresh = async (refreshToken?: string, accessToken?: string) => {
+    if (!refreshToken || !accessToken) {
+      return undefined;
+    }
+    return callAPI<Session>('refresh', 'POST', { refreshToken }, accessToken);
   };
 
   const verify = async (tfa: TFA) => {
@@ -46,32 +65,13 @@ export const auth = () => {
     const { username, token, code } = tfa;
     const credentials = { user: username, token, code };
 
-    const url = `${apiUrl}/dfa-verify`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(credentials),
-    });
-
-    if (response.ok) {
-      return await response.json();
-    }
-
-    const text = await response.text();
-    if (response.status === 401) {
-      throw new Error('Invalid credentials');
-    } else if (response.status === 403) {
-      throw new Error('Insufficient permissions');
-    } else if (response.status === 404) {
-      throw new Error('Resource not found');
-    }
-    throw new Error(text);
+    return callAPI<User>('dfa-verify', 'POST', credentials);
   };
 
   return {
     login,
+    getUser,
+    refresh,
     verify,
   };
 };
