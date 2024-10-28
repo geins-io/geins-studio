@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   // Prepare headers
   const apiHeaders = {
-    'x-account-key': config.public.accountKey,
+    'x-account-key': config.public.accountKey as string,
     ...headers,
   };
 

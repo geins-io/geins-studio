@@ -60,7 +60,9 @@ async function handleLogin(credentials: LoginCredentials) {
       pending.value = false;
       return;
     } else if (authData?.isAuthorized) {
-      await router.push('/');
+      const route = useRoute();
+      const redirect = route.query.redirect as string;
+      await router.push(redirect || '/');
       await nextTick();
       const authData = auth.data.value;
       const firstName = authData?.user?.firstName || '';
@@ -97,7 +99,9 @@ async function handleVerify(code: string) {
   }
 
   // Redirect to start page
-  await router.push('/');
+  const route = useRoute();
+  const redirect = route.query.redirect as string;
+  await router.push(redirect || '/');
 
   await nextTick();
   const authData = auth.data.value;

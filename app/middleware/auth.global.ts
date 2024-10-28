@@ -1,19 +1,19 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { status } = useAuth();
+  const { status, data } = useAuth() || {};
+  const authenticated =
+    status?.value === 'authenticated' && data?.value?.isAuthorized;
 
-  if (
-    to.path.includes('/login') ||
-    to.path.includes('/auth/') ||
-    to.path.includes('/api/')
-  ) {
+  if (to.path.startsWith('/auth')) {
+    return authenticated ? navigateTo('/') : true;
+  }
+
+  if (process.env.VITEST || authenticated) {
     return;
   }
 
-  if (process.env.VITEST || status.value === 'authenticated') {
-    return;
-  }
+  const redirect = to.path === '/' ? '' : `?redirect=${to.fullPath}`;
 
-  return navigateTo('/auth/login', {
+  return navigateTo(`/auth/login${redirect}`, {
     external: true,
   });
 });
