@@ -6,11 +6,16 @@ const _props = defineProps({
 });
 
 const handleError = () => clearError({ redirect: '/' });
+// TODO: Remove message and callstack before launch
 </script>
 
 <template>
   <div class="flex flex-col items-center justify-center h-screen">
-    <h1 class="text-xl font-bold mb-5">Error {{ error?.statusCode }}</h1>
+    <h1 class="text-xl font-bold mb-2">Error {{ error?.statusCode }}</h1>
+    <p v-if="error?.message" class="mb-5">{{ error?.message }}</p>
+    <p v-else>No message</p>
+    <!-- eslint-disable-next-line vue/no-v-html -->
+    <div class="text-xs mb-5" v-html="error?.stack" />
     <Button @click="handleError">Clear errors</Button>
   </div>
 </template>

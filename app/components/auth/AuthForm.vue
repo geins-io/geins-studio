@@ -52,7 +52,7 @@ const passwordValid = ref(true);
 const rememberMe = ref(false);
 
 const validatePassword = () => {
-  passwordValid.value = password.value.length > 6;
+  passwordValid.value = password.value.length > 5;
 };
 const validateEmail = () => {
   emailValid.value = email.value.includes('@');

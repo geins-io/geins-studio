@@ -17,10 +17,18 @@ export class CustomRefreshHandler implements RefreshHandler {
 
     const intervalTime = 14 * 60 * 1000; // 14 minutes in milliseconds, the access token is valid for 15 minutes
     this.refreshIntervalTimer = setInterval(() => {
-      if (this.auth?.data.value) {
+      if (this.auth?.data?.value?.isAuthorized) {
         this.auth.refresh();
       }
     }, intervalTime);
+
+    // Watch auth state and destroy if not authorized
+    watch(
+      () => this.auth?.data?.value?.isAuthorized,
+      (isAuthorized) => {
+        if (!isAuthorized) this.destroy();
+      },
+    );
   }
 
   destroy(): void {

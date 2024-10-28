@@ -37,10 +37,7 @@ export default NuxtAuthHandler({
         try {
           // Refresh the token
           const geinsAuth = auth();
-          const newTokens = await geinsAuth.refresh(
-            token.refreshToken,
-            token.accessToken,
-          );
+          const newTokens = await geinsAuth.refresh(token.refreshToken);
 
           if (newTokens) {
             token = {

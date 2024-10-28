@@ -50,11 +50,11 @@ export const auth = () => {
     return callAPI<User>('user/me', 'GET', undefined, accessToken);
   };
 
-  const refresh = async (refreshToken?: string, accessToken?: string) => {
-    if (!refreshToken || !accessToken) {
+  const refresh = async (refreshToken?: string) => {
+    if (!refreshToken) {
       return undefined;
     }
-    return callAPI<Session>('refresh', 'POST', { refreshToken }, accessToken);
+    return callAPI<Session>('refresh', 'POST', { refreshToken });
   };
 
   const verify = async (tfa: TFA) => {
