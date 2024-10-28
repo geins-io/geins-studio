@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import NextAuth from 'next-auth';
-import { JWT } from 'next-auth/jwt';
+import type { JWT, DefaultJWT } from 'next-auth/jwt';
+import type { DefaultUser } from 'next-auth';
 
 import type {
   Session as CustomSession,
@@ -8,11 +9,11 @@ import type {
 } from '@/types/auth/Auth';
 
 declare module 'next-auth' {
-  interface User extends CustomSession {}
+  interface User extends DefaultUser, CustomSession {}
   interface Session extends CustomSession {
     user?: CustomUser;
   }
 }
 declare module 'next-auth/jwt' {
-  interface JWT extends CustomSession {}
+  interface JWT extends DefaultJWT, CustomSession {}
 }
