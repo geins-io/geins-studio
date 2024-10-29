@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type NavigationItem } from '@/types/NavigationItem';
+import type { NavigationItem } from '@/types/NavigationItem';
 import {
   ChevronDown,
   ChevronRight,
@@ -115,7 +115,7 @@ watch(
 
 const rootItemClasses = computed(() => {
   return props.root
-    ? `navigation-item py-2 pl-5 pr-2 text-sm font-medium h-14 leading-10 transition-[background-color]`
+    ? `navigation-item py-2 pl-5 pr-2 text-sm font-medium h-12 leading-10 transition-[background-color]`
     : `py-2 pl-6 pr-4 text-sm ${isActive.value ? 'font-medium' : ''}`;
 });
 </script>
@@ -128,7 +128,7 @@ const rootItemClasses = computed(() => {
     <div
       :class="
         cn(
-          `w-full flex items-center justify-between ${isCollapsed && isOpen ? 'bg-muted' : ''}`,
+          `w-full flex items-center justify-between ${isCollapsed && isOpen ? '' : ''}`,
           rootItemClasses,
         )
       "
@@ -140,7 +140,7 @@ const rootItemClasses = computed(() => {
         <span class="flex flex-grow hover:underline">{{ item.label }}</span>
       </NuxtLink>
       <CollapsibleTrigger
-        class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border hover:text-accent-foreground size-9 border-transparent bg-transparent hover:bg-muted transition-colors"
+        class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border size-9 border-transparent bg-transparent hover:border-border hover:bg-background transition-colors"
       >
         <ChevronDown
           :class="
@@ -150,7 +150,7 @@ const rootItemClasses = computed(() => {
       </CollapsibleTrigger>
     </div>
     <CollapsibleContent>
-      <ul class="py-2 bg-muted">
+      <ul class="py-2 border-b">
         <li v-for="(child, index) in item.children" :key="index">
           <NavigationItem :item="child" :root="false" />
         </li>
@@ -162,7 +162,7 @@ const rootItemClasses = computed(() => {
     :to="item.href"
     :class="
       cn(
-        `flex items-center ${isCollapsed ? 'transition-colors hover:bg-muted' : ''} ${isActive ? 'bg-muted' : ''}`,
+        `flex items-center ${isCollapsed ? 'transition-colors hover:bg-muted' : ''} ${isActive ? '' : ''}`,
         rootItemClasses,
       )
     "
@@ -177,7 +177,7 @@ const rootItemClasses = computed(() => {
       {{ item.label }}
       <ChevronRight
         v-if="isActive"
-        :class="cn(`text-primary size-5 ${root ? 'mr-2' : ''}`)"
+        :class="cn(`text-muted size-5 ${root ? 'mr-2' : ''}`)"
       />
     </span>
   </NuxtLink>

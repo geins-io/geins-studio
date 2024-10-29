@@ -17,8 +17,8 @@ const fullName = computed(() => `${editUser.firstName} ${editUser.lastName}`);
   <ContentTitleBlock :title="`${user?.firstName} ${user?.lastName}`" />
   <ContentActionBar>
     <Button>{{ $t('save_entity', { entityName }) }}</Button>
-    <Button variant="outline">New</Button>
-    <Button variant="outline">Copy</Button>
+    <Button variant="secondary">New</Button>
+    <Button variant="secondary">Copy</Button>
   </ContentActionBar>
   <NuxtErrorBoundary>
     <div class="mx-auto max-w-6xl pt-12 lg:flex lg:flex-col">
@@ -77,7 +77,7 @@ const fullName = computed(() => `${editUser.firstName} ${editUser.lastName}`);
             </div>
           </CardContent>
           <CardFooter class="flex justify-end gap-2">
-            <Button variant="outline">Cancel</Button>
+            <Button variant="secondary">Cancel</Button>
             <Button>{{ $t('save_entity', { entityName }) }}</Button>
           </CardFooter>
         </Card>

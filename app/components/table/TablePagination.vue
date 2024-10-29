@@ -74,7 +74,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
       </div>
       <div class="flex items-center space-x-2">
         <Button
-          variant="outline"
+          variant="secondary"
           class="hidden w-8 h-8 p-0 lg:flex"
           :disabled="!table.getCanPreviousPage()"
           @click="table.setPageIndex(0)"
@@ -83,7 +83,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           <ChevronsLeft class="w-4 h-4" />
         </Button>
         <Button
-          variant="outline"
+          variant="secondary"
           class="w-8 h-8 p-0"
           :disabled="!table.getCanPreviousPage()"
           @click="table.previousPage()"
@@ -92,7 +92,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           <ChevronLeft class="w-4 h-4" />
         </Button>
         <Button
-          variant="outline"
+          variant="secondary"
           class="w-8 h-8 p-0"
           :disabled="!table.getCanNextPage()"
           @click="table.nextPage()"
@@ -101,7 +101,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           <ChevronRight class="w-4 h-4" />
         </Button>
         <Button
-          variant="outline"
+          variant="secondary"
           class="hidden w-8 h-8 p-0 lg:flex"
           :disabled="!table.getCanNextPage()"
           @click="table.setPageIndex(table.getPageCount() - 1)"

@@ -19,7 +19,7 @@ const setColorMode = () => {
 </script>
 <template>
   <header
-    class="layout-header flex flex-none items-center justify-start bg-background text-background-foreground"
+    class="layout-header flex flex-none items-center justify-start bg-card text-background-foreground"
   >
     <div class="relative w-full max-w-sm items-center">
       <Input
@@ -36,7 +36,7 @@ const setColorMode = () => {
     </div>
     <div class="ml-auto mr-4">
       <Button
-        variant="outline"
+        variant="secondary"
         size="icon"
         class="rounded-full w-8 h-8"
         @click="setColorMode"

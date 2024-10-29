@@ -22,7 +22,7 @@ const columns = computed(() =>
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <Button variant="outline" class="hidden ml-auto lg:flex">
+      <Button variant="secondary" class="hidden ml-auto lg:flex">
         <ListTodo class="w-4 h-4 mr-2" />
         Toggle columns
         <Badge v-if="choices" class="ml-2">

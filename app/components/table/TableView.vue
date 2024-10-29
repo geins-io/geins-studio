@@ -132,7 +132,7 @@ const table = useVueTable({
     <TableColumnToggle :table="table" :choices="columnVisibilityChoices" />
   </div>
   <div class="border rounded-md">
-    <Table class="relative">
+    <Table class="relative bg-card">
       <TableHeader>
         <TableRow
           v-for="headerGroup in table.getHeaderGroups()"

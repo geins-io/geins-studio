@@ -6,7 +6,7 @@ const entityName = 'user';
   <ContentTitleBlock title="Users" />
   <ContentActionBar>
     <Button>{{ $t('new_entity', { entityName }) }}</Button>
-    <Button variant="outline">Export all</Button>
-    <Button variant="outline">Export selected</Button>
+    <Button variant="secondary">Export all</Button>
+    <Button variant="secondary">Export selected</Button>
   </ContentActionBar>
 </template>

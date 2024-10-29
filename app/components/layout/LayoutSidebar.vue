@@ -17,7 +17,7 @@ const setIsCollapsed = (value: boolean) => {
   <aside
     :class="
       cn(
-        `layout-sidebar ${isCollapsed ? 'w-[3.75rem]' : 'w-60'} relative transition-[width]`,
+        `layout-sidebar ${isCollapsed ? 'w-[3.75rem]' : 'w-60'} relative transition-[width] bg-card`,
       )
     "
   >
@@ -30,9 +30,9 @@ const setIsCollapsed = (value: boolean) => {
       </div>
       <NavigationList :is-collapsed="isCollapsed" />
       <Button
-        variant="outline"
+        variant="secondary"
         size="icon"
-        class="absolute size-7 bg-background z-50 -right-4 top-1/2 hidden rounded-full md:inline-flex"
+        class="absolute size-7 bg-card border z-50 -right-4 top-1/2 hidden rounded-full md:inline-flex"
         @click="setIsCollapsed(!isCollapsed)"
       >
         <ChevronsLeft
