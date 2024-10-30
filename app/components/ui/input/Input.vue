@@ -37,16 +37,16 @@ const modelValue = useVModel(props, 'modelValue', emits, {
     v-model="modelValue"
     :class="
       cn(
-        `flex h-9 w-full rounded-md bg-input border ${valid ? '' : 'outline outline-offset-2 outline-2 outline-destructive'} px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50`,
+        `flex h-9 w-full rounded-lg bg-input border ${valid ? '' : 'outline outline-offset-2 outline-2 outline-destructive'} px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50`,
         props.class,
       )
     "
     v-bind="$attrs"
   />
-  <p v-if="!valid && feedback" class="text-destructive font-semibold text-sm">
+  <p v-if="!valid && feedback" class="text-sm font-semibold text-destructive">
     {{ feedback }}
   </p>
-  <p v-else-if="description" class="text-muted-foreground text-sm">
+  <p v-else-if="description" class="text-sm text-muted-foreground">
     {{ description }}
   </p>
 </template>

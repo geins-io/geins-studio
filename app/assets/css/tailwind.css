@@ -4,34 +4,34 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 0 0% 9%;
+    --background: 0 0% 98%; /* #f9f9f9 */
+    --foreground: 0 0% 9%; /* #161616 */
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
+    --card-foreground: 0 0% 30%; /* #4d4d4d */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
+    --popover: 0 0% 100%; /* #ffffff */
+    --popover-foreground: 0 0% 9%; /* #161616 */
 
-    --primary: 0 0% 13%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 13%; /* #222222 */
+    --primary-foreground: 0 0% 100%; /* #ffffff */
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 0%;
+    --secondary: 0 0% 96%; /* #f5f5f5 */
+    --secondary-foreground: 0 0% 0%; /* #000000 */
 
-    --muted: 0 0% 83%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 0 0% 83%; /* #d4d4d4 */
+    --muted-foreground: 0 0% 45%; /* #737373 */
 
-    --accent: 142 72% 29%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 0 0% 98%; /* #f9f9f9 */
+    --accent-foreground: 0 0% 9%; /* #ffffff */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 60 9.1% 97.8%;
+    --destructive: 0 84.2% 60.2%; /* #ff4d4d */
+    --destructive-foreground: 60 9.1% 97.8%; /* #f9f9f9 */
 
-    --border: 0 0% 90%;
-    --input: 0 0% 100%;
-    --ring: 0 0% 13%;
-    --radius: 0.375rem;
+    --border: 0 0% 90%; /* #e6e6e6 */
+    --input: 0 0% 100%; /* #ffffff */
+    --ring: 0 0% 13%; /* #222222 */
+    --radius: 0.375rem; /* 6px */
   }
 
   .dark {
@@ -53,8 +53,8 @@
     --muted: 0 0% 25%;
     --muted-foreground: 0 0% 70%;
 
-    --accent: 142 70% 35%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 0 0% 13%;
+    --accent-foreground: 0 0% 90%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 95%;
@@ -67,14 +67,14 @@
 
 @layer base {
   :root {
-    --positive: 104.54 67.06% 44.11%;
+    --positive: 142 70% 35%;
     --positive-foreground: 60 9.1% 97.8%;
 
     --positive-muted: 92.73 40.74% 94.71%;
     --destructive-muted: 0 100% 96.7%;
   }
   .dark {
-    --positive: 104.54 67.06% 44.11%;
+    --positive: 142 70% 35%;
     --positive-foreground: 60 9.1% 97.8%;
 
     --positive-muted: 92.73 29.79% 20.32%;
@@ -86,6 +86,7 @@
   body {
     @apply bg-background text-foreground;
     height: 100%;
+    scroll-behavior: smooth;
   }
   #__nuxt {
     height: 100%;

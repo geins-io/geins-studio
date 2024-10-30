@@ -1,9 +1,12 @@
 import { createConfigForNuxt } from '@nuxt/eslint-config/flat';
 import pkg from 'eslint-plugin-prettier/recommended';
+
+import tailwind from 'eslint-plugin-tailwindcss';
 const { eslintPluginPrettierRecommended } = pkg;
 
 export default createConfigForNuxt()
   .append(eslintPluginPrettierRecommended)
+  .append(tailwind.configs['flat/recommended'])
   .append({
     rules: {
       'vue/require-default-prop': 'off',
@@ -21,5 +24,6 @@ export default createConfigForNuxt()
           math: 'always',
         },
       ],
+      'tailwindcss/no-custom-classname': 'off',
     },
   });

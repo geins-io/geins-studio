@@ -17,12 +17,12 @@ const setIsCollapsed = (value: boolean) => {
   <aside
     :class="
       cn(
-        `layout-sidebar ${isCollapsed ? 'w-[3.75rem]' : 'w-60'} relative transition-[width] bg-card`,
+        `layout-sidebar ${isCollapsed ? 'w-[3.75rem]' : 'w-60'} relative bg-card transition-[width]`,
       )
     "
   >
     <div>
-      <div class="flex items-center h-header ml-5">
+      <div class="ml-5 flex h-header items-center">
         <NuxtLink to="/">
           <LogoLetter v-if="isCollapsed" :font-controlled="false" class="h-9" />
           <Logo v-else :font-controlled="false" class="h-9" />
@@ -32,7 +32,7 @@ const setIsCollapsed = (value: boolean) => {
       <Button
         variant="secondary"
         size="icon"
-        class="absolute size-7 bg-card border z-50 -right-4 top-1/2 hidden rounded-full md:inline-flex"
+        class="absolute -right-4 top-1/2 z-50 hidden size-7 rounded-full border bg-card md:inline-flex"
         @click="setIsCollapsed(!isCollapsed)"
       >
         <ChevronsLeft

@@ -3,14 +3,14 @@ import type { NavigationItem } from '@/types/NavigationItem';
 import {
   ChevronDown,
   ChevronRight,
-  Gauge,
+  ChartLine,
   ShoppingBasket,
   Brush,
   User,
   Warehouse,
   Layers,
-  Coins,
-  BarChart3,
+  Wallet,
+  Building2,
   Import,
   Settings,
   ShieldCheck,
@@ -31,8 +31,8 @@ const props = withDefaults(
 const item = ref(props.item);
 const iconComponents = [
   {
-    name: 'Gauge',
-    component: Gauge,
+    name: 'ChartLine',
+    component: ChartLine,
   },
   {
     name: 'ShoppingBasket',
@@ -55,12 +55,12 @@ const iconComponents = [
     component: Layers,
   },
   {
-    name: 'Coins',
-    component: Coins,
+    name: 'Wallet',
+    component: Wallet,
   },
   {
-    name: 'BarChart3',
-    component: BarChart3,
+    name: 'Building2',
+    component: Building2,
   },
   {
     name: 'Import',
@@ -128,29 +128,29 @@ const rootItemClasses = computed(() => {
     <div
       :class="
         cn(
-          `w-full flex items-center justify-between ${isCollapsed && isOpen ? '' : ''}`,
+          `flex w-full items-center justify-between ${isCollapsed && isOpen ? '' : ''}`,
           rootItemClasses,
         )
       "
     >
       <NuxtLink :to="item.href" :class="cn(`flex flex-grow items-center`)">
         <ClientOnly>
-          <component :is="item.icon" class="size-5 mr-3" />
+          <component :is="item.icon" stroke-width="1.5" class="mr-3 size-5" />
         </ClientOnly>
-        <span class="flex flex-grow hover:underline">{{ item.label }}</span>
+        <span class="flex grow hover:underline">{{ item.label }}</span>
       </NuxtLink>
       <CollapsibleTrigger
-        class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border size-9 border-transparent bg-transparent hover:border-border hover:bg-background transition-colors"
+        class="inline-flex size-9 items-center justify-center whitespace-nowrap rounded-lg border border-transparent bg-transparent text-sm font-medium ring-offset-background transition-colors hover:border-border hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
       >
         <ChevronDown
           :class="
-            cn(`transition-transform size-5 ${isOpen ? 'rotate-180' : ''}`)
+            cn(`size-5 transition-transform ${isOpen ? 'rotate-180' : ''}`)
           "
         />
       </CollapsibleTrigger>
     </div>
     <CollapsibleContent>
-      <ul class="py-2 border-b">
+      <ul class="border-b py-2">
         <li v-for="(child, index) in item.children" :key="index">
           <NavigationItem :item="child" :root="false" />
         </li>
@@ -162,22 +162,22 @@ const rootItemClasses = computed(() => {
     :to="item.href"
     :class="
       cn(
-        `flex items-center ${isCollapsed ? 'transition-colors hover:bg-muted' : ''} ${isActive ? '' : ''}`,
+        `flex items-center ${isCollapsed ? 'transition-colors hover:bg-background' : ''} ${isCollapsed && isActive ? 'bg-background' : ''}`,
         rootItemClasses,
       )
     "
   >
     <ClientOnly>
-      <component :is="item.icon" class="size-5 mr-3" />
+      <component :is="item.icon" stroke-width="1.5" class="mr-3 size-5" />
     </ClientOnly>
     <span
       v-show="!isCollapsed"
-      class="flex flex-grow justify-between items-center hover:underline"
+      class="flex grow items-center justify-between hover:underline"
     >
       {{ item.label }}
       <ChevronRight
         v-if="isActive"
-        :class="cn(`text-muted size-5 ${root ? 'mr-2' : ''}`)"
+        :class="cn(`size-5 text-muted ${root ? 'mr-2' : ''}`)"
       />
     </span>
   </NuxtLink>

@@ -3,10 +3,10 @@ export const navigation: NavigationItem[] = [
   {
     label: 'Dashboard',
     href: '/',
-    icon: 'Gauge',
+    icon: 'ChartLine',
   },
   {
-    label: 'Products (PIM)',
+    label: 'Products',
     href: '/pim/product/list',
     icon: 'ShoppingBasket',
     children: [
@@ -37,7 +37,7 @@ export const navigation: NavigationItem[] = [
     ],
   },
   {
-    label: 'Content (CMS)',
+    label: 'Content',
     href: '',
     icon: 'Brush',
     children: [
@@ -60,7 +60,7 @@ export const navigation: NavigationItem[] = [
     ],
   },
   {
-    label: 'Customers (CRM)',
+    label: 'Customers',
     href: '',
     icon: 'User',
     children: [
@@ -79,7 +79,7 @@ export const navigation: NavigationItem[] = [
     ],
   },
   {
-    label: 'Warehouse (WMS)',
+    label: 'Warehouse',
     href: '',
     icon: 'Warehouse',
     children: [
@@ -130,36 +130,9 @@ export const navigation: NavigationItem[] = [
     ],
   },
   {
-    label: 'Incoming Stock (PO)',
+    label: 'Accounting',
     href: '',
-    icon: 'Layers',
-    children: [
-      {
-        label: 'Incoming stock',
-        href: '',
-      },
-      {
-        label: 'Purchase orders',
-        href: '',
-      },
-      {
-        label: 'Missing stock',
-        href: '',
-      },
-      {
-        label: 'Reorder points',
-        href: '',
-      },
-      {
-        label: 'Suppliers',
-        href: '',
-      },
-    ],
-  },
-  {
-    label: 'Accounting (ERP)',
-    href: '',
-    icon: 'Coins',
+    icon: 'Wallet',
     children: [
       {
         label: 'Revenue',
@@ -176,35 +149,9 @@ export const navigation: NavigationItem[] = [
     ],
   },
   {
-    label: 'Statistics',
+    label: 'Wholesale',
     href: '',
-    icon: 'BarChart3',
-    children: [
-      {
-        label: 'Sales Demand',
-        href: '',
-      },
-      {
-        label: 'Products',
-        href: '',
-      },
-      {
-        label: 'Returns',
-        href: '',
-      },
-      {
-        label: 'Brands',
-        href: '',
-      },
-      {
-        label: 'Live',
-        href: '',
-      },
-      {
-        label: 'Customers',
-        href: '',
-      },
-    ],
+    icon: 'Building2',
   },
   {
     label: 'Import Tool',

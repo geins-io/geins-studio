@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TData">
-import { type Table } from '@tanstack/vue-table';
+import type { Table } from '@tanstack/vue-table';
 import {
   ChevronLeft,
   ChevronRight,
@@ -22,7 +22,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
 </script>
 
 <template>
-  <div class="flex items-center justify-between border-t py-3 px-4">
+  <div class="flex items-center justify-between border-t px-4 py-3">
     <div class="flex-1 text-sm text-muted-foreground">
       <span v-if="rowsSelectable">
         {{
@@ -75,39 +75,39 @@ const entity = computed(() => t(props.entityName, totalRows.value));
       <div class="flex items-center space-x-2">
         <Button
           variant="secondary"
-          class="hidden w-8 h-8 p-0 lg:flex"
+          class="hidden size-8 p-0 lg:flex"
           :disabled="!table.getCanPreviousPage()"
           @click="table.setPageIndex(0)"
         >
           <span class="sr-only">Go to first page</span>
-          <ChevronsLeft class="w-4 h-4" />
+          <ChevronsLeft class="size-4" />
         </Button>
         <Button
           variant="secondary"
-          class="w-8 h-8 p-0"
+          class="size-8 p-0"
           :disabled="!table.getCanPreviousPage()"
           @click="table.previousPage()"
         >
           <span class="sr-only">Go to previous page</span>
-          <ChevronLeft class="w-4 h-4" />
+          <ChevronLeft class="size-4" />
         </Button>
         <Button
           variant="secondary"
-          class="w-8 h-8 p-0"
+          class="size-8 p-0"
           :disabled="!table.getCanNextPage()"
           @click="table.nextPage()"
         >
           <span class="sr-only">Go to next page</span>
-          <ChevronRight class="w-4 h-4" />
+          <ChevronRight class="size-4" />
         </Button>
         <Button
           variant="secondary"
-          class="hidden w-8 h-8 p-0 lg:flex"
+          class="hidden size-8 p-0 lg:flex"
           :disabled="!table.getCanNextPage()"
           @click="table.setPageIndex(table.getPageCount() - 1)"
         >
           <span class="sr-only">Go to last page</span>
-          <ChevronsRight class="w-4 h-4" />
+          <ChevronsRight class="size-4" />
         </Button>
       </div>
     </div>
