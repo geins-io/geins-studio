@@ -137,6 +137,7 @@ const table = useVueTable({
         <TableRow
           v-for="headerGroup in table.getHeaderGroups()"
           :key="headerGroup.id"
+          class="hover:bg-card"
         >
           <TableHead
             v-for="header in headerGroup.headers"
