@@ -9,6 +9,7 @@ export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
   pages: {
     signIn: '/auth/login',
+    signOut: '/auth/login',
   },
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
@@ -48,9 +49,13 @@ export default NuxtAuthHandler({
           }
         } catch (error) {
           console.error('Error refreshing token:', error);
-          token = {
-            isAuthorized: false,
-          };
+          if (error === 'Unauthorized') {
+            token = {
+              isAuthorized: false,
+            };
+          } else {
+            // TODO: Decide if we should try to refresh the token again, or just log the user out
+          }
         }
       }
       return token;

@@ -60,8 +60,8 @@ setOrderForColumn(columns, 'image', 1);
   <ContentTitleBlock title="Products" />
   <ContentActionBar>
     <Button>{{ $t('new_entity', { entityName }) }}</Button>
-    <Button variant="outline">Export all</Button>
-    <Button variant="outline">Export selected</Button>
+    <Button variant="secondary">Export all</Button>
+    <Button variant="secondary">Export selected</Button>
   </ContentActionBar>
   <NuxtErrorBoundary>
     <TableView

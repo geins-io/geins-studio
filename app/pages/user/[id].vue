@@ -17,12 +17,12 @@ const fullName = computed(() => `${editUser.firstName} ${editUser.lastName}`);
   <ContentTitleBlock :title="`${user?.firstName} ${user?.lastName}`" />
   <ContentActionBar>
     <Button>{{ $t('save_entity', { entityName }) }}</Button>
-    <Button variant="outline">New</Button>
-    <Button variant="outline">Copy</Button>
+    <Button variant="secondary">New</Button>
+    <Button variant="secondary">Copy</Button>
   </ContentActionBar>
   <NuxtErrorBoundary>
     <div class="mx-auto max-w-6xl pt-12 lg:flex lg:flex-col">
-      <div class="flex items-center justify-between mb-4">
+      <div class="mb-4 flex items-center justify-between">
         <h1 class="text-2xl font-bold">Edit profile</h1>
         <div class="rounded-lg bg-muted px-3 py-1 text-sm font-medium">
           User ID: {{ user?.id }}
@@ -77,21 +77,21 @@ const fullName = computed(() => `${editUser.firstName} ${editUser.lastName}`);
             </div>
           </CardContent>
           <CardFooter class="flex justify-end gap-2">
-            <Button variant="outline">Cancel</Button>
+            <Button variant="secondary">Cancel</Button>
             <Button>{{ $t('save_entity', { entityName }) }}</Button>
           </CardFooter>
         </Card>
 
-        <div class="bg-muted rounded-lg p-6 shadow-sm">
+        <div class="rounded-lg bg-muted p-6 shadow-sm">
           <div class="flex items-center space-x-5">
-            <Avatar class="h-16 w-16 bg-background">
+            <Avatar class="size-16 bg-background">
               <AvatarFallback>
                 <User :size="36" />
               </AvatarFallback>
             </Avatar>
             <div>
               <h2 class="text-2xl font-bold">{{ fullName }}</h2>
-              <p class="text-muted-foreground text-lg">
+              <p class="text-lg text-muted-foreground">
                 {{ editUser?.company }}
               </p>
             </div>
@@ -102,7 +102,7 @@ const fullName = computed(() => `${editUser.firstName} ${editUser.lastName}`);
               <div class="grid gap-2">
                 <div
                   v-if="editUser.email"
-                  class="flex items-center align-center space-x-3"
+                  class="align-center flex items-center space-x-3"
                 >
                   <AtSign class="text-muted-foreground" :size="20" />
                   <span>{{ editUser.email }}</span>

@@ -17,6 +17,7 @@ export const auth = () => {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
+    console.log('🚀 ~ auth ~  `${API_BASE}/${url}`:', `${API_BASE}/${url}`);
     const response = await fetch(`${API_BASE}/${url}`, {
       method,
       headers,
@@ -54,7 +55,7 @@ export const auth = () => {
     if (!refreshToken) {
       return undefined;
     }
-    return callAPI<Session>('refresh', 'POST', { refreshToken });
+    return callAPI<Session>('auth/refresh', 'POST', { refreshToken });
   };
 
   const verify = async (tfa: TFA) => {

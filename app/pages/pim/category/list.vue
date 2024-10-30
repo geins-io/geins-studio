@@ -25,8 +25,8 @@ const columns = getColumns(categories.value);
   <ContentTitleBlock title="Categories" />
   <ContentActionBar>
     <Button>{{ $t('new_entity', { entityName }) }}</Button>
-    <Button variant="outline">Export all</Button>
-    <Button variant="outline">Export selected</Button>
+    <Button variant="secondary">Export all</Button>
+    <Button variant="secondary">Export selected</Button>
   </ContentActionBar>
   <NuxtErrorBoundary>
     <TableView

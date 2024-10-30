@@ -123,7 +123,7 @@ const table = useVueTable({
         @update:model-value="table.getColumn('name')?.setFilterValue($event)"
       />
       <span
-        class="absolute start-0 inset-y-0 flex items-center justify-center px-3"
+        class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
       >
         <Search class="size-4 text-foreground" />
       </span>
@@ -131,17 +131,18 @@ const table = useVueTable({
 
     <TableColumnToggle :table="table" :choices="columnVisibilityChoices" />
   </div>
-  <div class="border rounded-md">
-    <Table class="relative">
+  <div class="rounded-lg border">
+    <Table class="relative rounded-t-lg bg-card">
       <TableHeader>
         <TableRow
           v-for="headerGroup in table.getHeaderGroups()"
           :key="headerGroup.id"
+          class="hover:bg-card"
         >
           <TableHead
             v-for="header in headerGroup.headers"
             :key="header.id"
-            class="sticky z-20 -top-8 bg-background border-b rounded-t-md"
+            class="sticky -top-8 z-20 border-b"
           >
             <FlexRender
               v-if="!header.isPlaceholder"
@@ -177,7 +178,7 @@ const table = useVueTable({
       </TableBody>
     </Table>
     <TablePagination
-      class="sticky -bottom-8 bg-background rounded-b-md"
+      class="sticky -bottom-8 rounded-b-md bg-background"
       :entity-name="entityName"
       :rows-selectable="rowsSelectable"
       :table="table"
