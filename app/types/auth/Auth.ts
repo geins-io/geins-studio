@@ -2,16 +2,17 @@ export interface User {
   id: number | string;
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string;
-  company: string;
-  roles: string[];
+  email?: string | null;
+  phone?: string;
+  company?: string;
+  roles?: string[];
+  apiUserType?: string;
 }
 
 export interface Session {
-  isAuthorized: boolean;
+  isAuthorized?: boolean;
   accessToken?: string;
-  sessionId?: string;
+  refreshToken?: string;
   user?: User;
   tfa?: TFA;
 }

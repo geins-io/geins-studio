@@ -4,14 +4,14 @@ import Logo from '@/assets/logos/geins.svg';
 
 <template>
   <div
-    class="w-full h-screen lg:grid lg:grid-cols-2 lg:min-h-[600px] xl:min-h-[600px]"
+    class="h-screen w-full lg:grid lg:min-h-[600px] lg:grid-cols-2 xl:min-h-[600px]"
   >
-    <div class="flex items-center justify-center py-12">
+    <div class="flex items-center justify-center bg-card py-12">
       <div class="grid w-[350px] gap-6">
         <slot />
       </div>
     </div>
-    <div class="bg-muted flex items-center justify-center">
+    <div class="flex items-center justify-center bg-background">
       <Logo class="size-1/3" :font-controlled="false" />
     </div>
   </div>

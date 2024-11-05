@@ -77,10 +77,10 @@ export const useColumns = <T extends object>() => {
             return h('img', {
               src: value,
               alt: title,
-              class: 'size-7 ml-3 rounded-md',
+              class: 'size-7 mx-auto',
             });
           };
-          headerRenderer = () => h('div', { class: 'ml-3' }, title);
+          headerRenderer = () => h('div', { class: '' }, title);
           break;
         // case 'date':
         //   cellRenderer = ({ row }: { row: Row<T> }) => {

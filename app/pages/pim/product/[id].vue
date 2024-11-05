@@ -9,7 +9,7 @@ const entityName = 'product';
   <ContentTitleBlock :title="`Edit Product ${route.params.id}`" />
   <ContentActionBar>
     <Button>{{ $t('save_entity', { entityName }) }}</Button>
-    <Button variant="outline">New</Button>
-    <Button variant="outline">Copy</Button>
+    <Button variant="secondary">New</Button>
+    <Button variant="secondary">Copy</Button>
   </ContentActionBar>
 </template>

@@ -4,7 +4,7 @@ export const useUserStore = defineStore('user', () => {
   const auth = useAuth();
   const user = ref(auth.data.value?.user);
 
-  const avatarInitials = computed(() => {
+  const userInitials = computed(() => {
     if (!user.value) {
       return '';
     }
@@ -14,6 +14,6 @@ export const useUserStore = defineStore('user', () => {
 
   return {
     user,
-    avatarInitials,
+    userInitials,
   };
 });

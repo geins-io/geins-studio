@@ -52,7 +52,7 @@ const passwordValid = ref(true);
 const rememberMe = ref(false);
 
 const validatePassword = () => {
-  passwordValid.value = password.value.length > 6;
+  passwordValid.value = password.value.length > 5;
 };
 const validateEmail = () => {
   emailValid.value = email.value.includes('@');
@@ -92,7 +92,7 @@ const verifyAccount = () => {
 </script>
 
 <template>
-  <div class="auth-form grid gap-2 text-center">
+  <div class="grid gap-2 text-center">
     <h1 class="text-3xl font-bold">
       {{ loginMode ? 'Merchant Center' : 'Verify Account' }}
     </h1>
@@ -105,7 +105,7 @@ const verifyAccount = () => {
   </div>
 
   <Alert v-if="showInvalid" variant="destructive">
-    <ExclamationTriangleIcon class="w-4 h-4" />
+    <ExclamationTriangleIcon class="size-4" />
     <AlertTitle>
       {{ loginMode ? 'Invalid credentials' : 'Invalid code' }}
     </AlertTitle>
@@ -161,6 +161,7 @@ const verifyAccount = () => {
     <div v-if="loginMode" class="grid gap-2">
       <div class="flex items-center space-x-2.5">
         <Checkbox id="checkbox" v-model="rememberMe" />
+        <!-- TODO: Decide on what remember function should do -->
         <Label for="checkbox" class="ml-2 text-sm">Remember this device</Label>
       </div>
     </div>
@@ -187,7 +188,6 @@ const verifyAccount = () => {
     </div>
 
     <Button
-      type="submit"
       class="w-full"
       :loading="pending"
       @click="loginMode ? login() : verifyAccount()"

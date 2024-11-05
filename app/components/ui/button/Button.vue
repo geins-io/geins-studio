@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
     :as-child="asChild"
     :class="cn(buttonVariants({ variant, size }), props.class)"
   >
-    <ReloadIcon v-if="loading" class="w-4 h-4 mr-2 animate-spin" />
+    <ReloadIcon v-if="loading" class="mr-2 size-4 animate-spin" />
     <slot />
   </Primitive>
 </template>
