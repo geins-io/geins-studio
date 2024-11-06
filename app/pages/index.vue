@@ -27,6 +27,7 @@ const { refresh } = useAuth();
 </script>
 <template>
   <ContentTitleBlock
+    class="mb-6"
     :title="$t('dashboard_title')"
     :description="$t('dashboard_description')"
   />

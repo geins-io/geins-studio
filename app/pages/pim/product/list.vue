@@ -8,6 +8,7 @@ const entityName = 'product';
 const totalProducts = ref(500);
 const products = ref<Product[]>([]);
 const loading = ref(true);
+const editUrl = '/pim/product/{id}';
 
 // Fetch data
 const { data, error } = await useFetch<Product[]>('/api/products', {
@@ -27,13 +28,15 @@ loading.value = false;
 const { getColumns, extendColumns, setOrderForColumn } = useColumns<Product>();
 const columns = getColumns(products.value, {
   selectable: true,
-  columnTypes: { price: 'currency', image: 'image' },
+  columnTypes: { price: 'currency', image: 'image', name: 'link' },
+  editUrl,
 });
 
 const actionsColumn: ColumnDef<Product> = {
   id: 'actions',
   enableHiding: false,
   enableSorting: false,
+  size: 90,
   cell: ({ row }) => {
     const product = row.original;
 
@@ -42,7 +45,7 @@ const actionsColumn: ColumnDef<Product> = {
       { class: 'relative' },
       h(TableCellActions, {
         onEdit: () => navigateTo(`/pim/product/${product.id}`),
-        onDelete: () => console.log('Delete product', product.id),
+        onMore: () => console.log('More options', product.id),
       }),
     );
   },
@@ -57,12 +60,17 @@ setOrderForColumn(columns, 'image', 1);
 </script>
 
 <template>
-  <ContentTitleBlock title="Products" />
-  <ContentActionBar>
-    <Button>{{ $t('new_entity', { entityName }) }}</Button>
-    <Button variant="secondary">Export all</Button>
-    <Button variant="secondary">Export selected</Button>
-  </ContentActionBar>
+  <ContentHeader>
+    <template #title>
+      <ContentTitleBlock title="Products" />
+    </template>
+    <template #actions>
+      <ContentActionBar>
+        <ButtonExport />
+        <ButtonNew>{{ $t('new_entity', { entityName }) }}</ButtonNew>
+      </ContentActionBar>
+    </template>
+  </ContentHeader>
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"

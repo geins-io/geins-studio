@@ -14,12 +14,16 @@ const fullName = computed(() => `${editUser.firstName} ${editUser.lastName}`);
 </script>
 
 <template>
-  <ContentTitleBlock :title="`${user?.firstName} ${user?.lastName}`" />
-  <ContentActionBar>
-    <Button>{{ $t('save_entity', { entityName }) }}</Button>
-    <Button variant="secondary">New</Button>
-    <Button variant="secondary">Copy</Button>
-  </ContentActionBar>
+  <ContentHeader>
+    <template #title>
+      <ContentTitleBlock :title="`${user?.firstName} ${user?.lastName}`" />
+    </template>
+    <template #actions>
+      <ContentActionBar>
+        <ButtonSave>{{ $t('save_entity', { entityName }) }}</ButtonSave>
+      </ContentActionBar>
+    </template>
+  </ContentHeader>
   <NuxtErrorBoundary>
     <div class="mx-auto max-w-6xl pt-12 lg:flex lg:flex-col">
       <div class="mb-4 flex items-center justify-between">
@@ -82,7 +86,7 @@ const fullName = computed(() => `${editUser.firstName} ${editUser.lastName}`);
           </CardFooter>
         </Card>
 
-        <div class="rounded-lg bg-muted p-6 shadow-sm">
+        <div class="rounded-lg border bg-card p-6 shadow">
           <div class="flex items-center space-x-5">
             <Avatar class="size-16 bg-background">
               <AvatarFallback>

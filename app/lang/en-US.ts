@@ -2,7 +2,7 @@ export default defineI18nLocale(async () => {
   return {
     product: 'product | products',
     category: 'category | categories',
-    new_entity: 'New {entityName}',
+    new_entity: 'Create {entityName}',
     save_entity: 'Save {entityName}',
     error_loading_entity: "Couldn't load {entityName}",
     rows_per_page: '@.capitalize:{entityName} per page',

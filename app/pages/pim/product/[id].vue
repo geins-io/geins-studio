@@ -6,10 +6,16 @@ const entityName = 'product';
 </script>
 
 <template>
-  <ContentTitleBlock :title="`Edit Product ${route.params.id}`" />
-  <ContentActionBar>
-    <Button>{{ $t('save_entity', { entityName }) }}</Button>
-    <Button variant="secondary">New</Button>
-    <Button variant="secondary">Copy</Button>
-  </ContentActionBar>
+  <ContentHeader>
+    <template #title>
+      <ContentTitleBlock :title="`Edit Product ${route.params.id}`" />
+    </template>
+    <template #actions>
+      <ContentActionBar>
+        <ButtonNew variant="secondary">New</ButtonNew>
+        <ButtonCopy variant="secondary">Copy</ButtonCopy>
+        <ButtonSave>{{ $t('save_entity', { entityName }) }}</ButtonSave>
+      </ContentActionBar>
+    </template>
+  </ContentHeader>
 </template>

@@ -131,7 +131,7 @@ const table = useVueTable({
 
     <TableColumnToggle :table="table" :choices="columnVisibilityChoices" />
   </div>
-  <div class="rounded-lg border">
+  <div class="rounded-lg border shadow-sm">
     <Table class="relative rounded-t-lg bg-card">
       <TableHeader>
         <TableRow
@@ -142,7 +142,12 @@ const table = useVueTable({
           <TableHead
             v-for="header in headerGroup.headers"
             :key="header.id"
-            class="sticky -top-8 z-20 border-b"
+            class="sticky -top-8 z-20 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border"
+            :style="
+              header.getSize()
+                ? { width: `${header.getSize()}px` }
+                : { width: 'auto' }
+            "
           >
             <FlexRender
               v-if="!header.isPlaceholder"
@@ -160,7 +165,15 @@ const table = useVueTable({
             :data-state="row.getIsSelected() ? 'selected' : undefined"
             @click="emit('clicked', row)"
           >
-            <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
+            <TableCell
+              v-for="cell in row.getVisibleCells()"
+              :key="cell.id"
+              :style="
+                cell.column.getSize()
+                  ? { width: `${cell.column.getSize()}px` }
+                  : { width: 'auto' }
+              "
+            >
               <FlexRender
                 :render="cell.column.columnDef.cell"
                 :props="cell.getContext()"

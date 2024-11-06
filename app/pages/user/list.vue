@@ -3,10 +3,14 @@ const entityName = 'user';
 </script>
 
 <template>
-  <ContentTitleBlock title="Users" />
-  <ContentActionBar>
-    <Button>{{ $t('new_entity', { entityName }) }}</Button>
-    <Button variant="secondary">Export all</Button>
-    <Button variant="secondary">Export selected</Button>
-  </ContentActionBar>
+  <ContentHeader>
+    <template #title>
+      <ContentTitleBlock :title="`Users`" />
+    </template>
+    <template #actions>
+      <ContentActionBar>
+        <ButtonNew>{{ $t('new_entity', { entityName }) }}</ButtonNew>
+      </ContentActionBar>
+    </template>
+  </ContentHeader>
 </template>

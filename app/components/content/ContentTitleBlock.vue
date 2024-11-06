@@ -16,9 +16,9 @@ const unsavedChanges = ref(props.unsavedChanges);
 </script>
 
 <template>
-  <div class="content-title-block mb-5">
+  <div class="content-title-block">
     <div class="flex items-center">
-      <h1 class="mb-1 text-3xl font-bold">
+      <h1 class="text-3xl font-bold">
         {{ title }}
       </h1>
       <span v-show="unsavedChanges">Unsaved changes</span>

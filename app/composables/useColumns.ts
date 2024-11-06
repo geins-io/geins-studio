@@ -1,7 +1,7 @@
 import { h } from 'vue';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
 import { ArrowUpDown } from 'lucide-vue-next';
-import { Button, Checkbox } from '#components';
+import { Button, Checkbox, NuxtLink } from '#components';
 import type { ColumnOptions } from '@/types/Columns';
 
 export const useColumns = <T extends object>() => {
@@ -22,6 +22,8 @@ export const useColumns = <T extends object>() => {
       }),
     enableSorting: false,
     enableHiding: false,
+    size: 44,
+    maxSize: 44,
   };
 
   const getColumns = (data: T[], options: Partial<ColumnOptions> = {}) => {
@@ -42,6 +44,13 @@ export const useColumns = <T extends object>() => {
       const title = key.charAt(0).toUpperCase() + key.slice(1);
       const columnType = columnTypes[key] || 'string';
       const basicCellStyle = 'pl-3 min-h-8 leading-5 flex items-center';
+      const basicHeaderStyle = 'uppercase text-xs font-medium';
+      let columnSize = {
+        size: 0,
+        minSize: 0,
+        maxSize: 0,
+      };
+
       let cellRenderer;
       let headerRenderer = sortable
         ? ({ column }: { column: Column<T> }) => {
@@ -50,14 +59,14 @@ export const useColumns = <T extends object>() => {
               {
                 variant: 'ghost',
                 size: 'sm',
-                class: 'text-md',
+                class: basicHeaderStyle,
                 onClick: () =>
                   column.toggleSorting(column.getIsSorted() === 'asc'),
               },
-              () => [title, h(ArrowUpDown, { class: 'ml-1.5 size-3.5' })],
+              () => [title, h(ArrowUpDown, { class: 'ml-2.5 size-3' })],
             );
           }
-        : () => h('div', title);
+        : () => h('div', { class: basicHeaderStyle }, title);
 
       switch (columnType) {
         case 'currency':
@@ -80,7 +89,33 @@ export const useColumns = <T extends object>() => {
               class: 'size-7 mx-auto',
             });
           };
-          headerRenderer = () => h('div', { class: '' }, title);
+          headerRenderer = () =>
+            h('div', { class: cn(basicHeaderStyle, 'px-2') }, title);
+          columnSize = { size: 68, minSize: 68, maxSize: 68 };
+          break;
+        case 'link':
+          // get the value from the column 'id'
+          cellRenderer = ({ row }: { row: Row<T> }) => {
+            const match = options.editUrl?.match(/{([^}]+)}/);
+            const pathKey = match ? match[1] : null;
+            const editKey = row.getValue(pathKey || 'id') as string;
+            const fullEditUrl = options.editUrl?.replace(
+              `{${pathKey}}`,
+              editKey,
+            );
+            const value = row.getValue(key);
+            return h(
+              NuxtLink,
+              {
+                to: fullEditUrl,
+                class: cn(
+                  basicCellStyle,
+                  'underline hover:text-muted-foreground',
+                ),
+              },
+              () => String(value),
+            );
+          };
           break;
         // case 'date':
         //   cellRenderer = ({ row }: { row: Row<T> }) => {
@@ -112,6 +147,7 @@ export const useColumns = <T extends object>() => {
         header: headerRenderer,
         cell: cellRenderer,
         enableSorting: sortable,
+        ...columnSize,
       });
     });
 

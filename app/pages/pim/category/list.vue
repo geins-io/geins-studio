@@ -22,12 +22,18 @@ const columns = getColumns(categories.value);
 </script>
 
 <template>
-  <ContentTitleBlock title="Categories" />
-  <ContentActionBar>
-    <Button>{{ $t('new_entity', { entityName }) }}</Button>
-    <Button variant="secondary">Export all</Button>
-    <Button variant="secondary">Export selected</Button>
-  </ContentActionBar>
+  <ContentHeader>
+    <template #title>
+      <ContentTitleBlock title="Categories" />
+    </template>
+    <template #actions>
+      <ContentActionBar>
+        <ButtonExport />
+        <ButtonNew>{{ $t('new_entity', { entityName }) }}</ButtonNew>
+      </ContentActionBar>
+    </template>
+  </ContentHeader>
+
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"

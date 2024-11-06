@@ -169,7 +169,7 @@ export const navigation: NavigationItem[] = [
       },
       {
         label: 'Administrators',
-        href: '',
+        href: '/user/list',
       },
       {
         label: 'Markets',

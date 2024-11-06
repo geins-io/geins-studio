@@ -115,8 +115,8 @@ watch(
 
 const rootItemClasses = computed(() => {
   return props.root
-    ? `navigation-item py-2 pl-5 pr-2 text-sm font-medium h-12 leading-10 transition-[background-color]`
-    : `py-2 pl-6 pr-4 text-sm ${isActive.value ? 'font-medium' : ''}`;
+    ? `py-1.5 pl-5 pr-3 text-sm h-12 leading-10 transition-[background-color]`
+    : `py-2 pl-[3.25rem] pr-5 text-xs ${isActive.value ? 'font-medium border-primary bg-background' : ''}`;
 });
 </script>
 
@@ -140,11 +140,11 @@ const rootItemClasses = computed(() => {
         <span class="flex grow hover:underline">{{ item.label }}</span>
       </NuxtLink>
       <CollapsibleTrigger
-        class="inline-flex size-9 items-center justify-center whitespace-nowrap rounded-lg border border-transparent bg-transparent text-sm font-medium ring-offset-background transition-colors hover:border-border hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+        class="inline-flex size-7 items-center justify-center whitespace-nowrap rounded-lg border border-transparent bg-transparent text-sm font-medium ring-offset-background transition-colors hover:border-border hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
       >
         <ChevronDown
           :class="
-            cn(`size-5 transition-transform ${isOpen ? 'rotate-180' : ''}`)
+            cn(`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`)
           "
         />
       </CollapsibleTrigger>
@@ -162,13 +162,17 @@ const rootItemClasses = computed(() => {
     :to="item.href"
     :class="
       cn(
-        `flex items-center ${isCollapsed ? 'transition-colors hover:bg-background' : ''} ${isCollapsed && isActive ? 'bg-background' : ''}`,
+        `flex items-center ${isCollapsed ? 'transition-colors hover:bg-background' : ''} ${isCollapsed && isActive ? 'bg-background' : ''} ${isActive ? 'font-medium' : ''}`,
         rootItemClasses,
       )
     "
   >
     <ClientOnly>
-      <component :is="item.icon" stroke-width="1.5" class="mr-3 size-5" />
+      <component
+        :is="item.icon"
+        stroke-width="1.5"
+        :class="cn(`size-5 ${isCollapsed ? '' : 'mr-3'}`)"
+      />
     </ClientOnly>
     <span
       v-show="!isCollapsed"
@@ -177,7 +181,7 @@ const rootItemClasses = computed(() => {
       {{ item.label }}
       <ChevronRight
         v-if="isActive"
-        :class="cn(`size-5 text-muted ${root ? 'mr-2' : ''}`)"
+        :class="cn(`size-4 text-muted ${root ? 'mr-1.5' : ''}`)"
       />
     </span>
   </NuxtLink>
