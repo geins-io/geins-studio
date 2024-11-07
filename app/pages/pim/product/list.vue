@@ -60,16 +60,11 @@ setOrderForColumn(columns, 'image', 1);
 </script>
 
 <template>
-  <ContentHeader>
-    <template #title>
-      <ContentTitleBlock title="Products" />
-    </template>
-    <template #actions>
-      <ContentActionBar>
-        <ButtonExport />
-        <ButtonNew>{{ $t('new_entity', { entityName }) }}</ButtonNew>
-      </ContentActionBar>
-    </template>
+  <ContentHeader title="Products">
+    <ContentActionBar>
+      <ButtonExport />
+      <ButtonNew>{{ $t('new_entity', { entityName }) }}</ButtonNew>
+    </ContentActionBar>
   </ContentHeader>
   <NuxtErrorBoundary>
     <TableView

@@ -4,7 +4,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChartLine,
-  ShoppingBasket,
+  Tag,
   Brush,
   User,
   Warehouse,
@@ -35,8 +35,8 @@ const iconComponents = [
     component: ChartLine,
   },
   {
-    name: 'ShoppingBasket',
-    component: ShoppingBasket,
+    name: 'Tag',
+    component: Tag,
   },
   {
     name: 'Brush',
@@ -139,14 +139,17 @@ const rootItemClasses = computed(() => {
         </ClientOnly>
         <span class="flex grow hover:underline">{{ item.label }}</span>
       </NuxtLink>
-      <CollapsibleTrigger
-        class="inline-flex size-7 items-center justify-center whitespace-nowrap rounded-lg border border-transparent bg-transparent text-sm font-medium ring-offset-background transition-colors hover:border-border hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-      >
-        <ChevronDown
-          :class="
-            cn(`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`)
-          "
-        />
+      <CollapsibleTrigger as-child>
+        <Button
+          variant="ghost"
+          class="inline-flex size-7 items-center justify-center p-0"
+        >
+          <ChevronDown
+            :class="
+              cn(`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`)
+            "
+          />
+        </Button>
       </CollapsibleTrigger>
     </div>
     <CollapsibleContent>

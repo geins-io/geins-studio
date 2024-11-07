@@ -22,15 +22,19 @@ const triggerToast = (
     variant,
   });
 };
-
 const { refresh } = useAuth();
 </script>
 <template>
-  <ContentTitleBlock
-    class="mb-6"
+  <ContentHeader
+    :show-breadcrumb="false"
     :title="$t('dashboard_title')"
     :description="$t('dashboard_description')"
-  />
+  >
+    <ContentActionBar>
+      <Button @click="refresh"> Refresh session </Button>
+    </ContentActionBar>
+  </ContentHeader>
+
   <div class="grid grid-cols-3 gap-8">
     <Card>
       <CardHeader>
@@ -39,7 +43,9 @@ const { refresh } = useAuth();
       </CardHeader>
       <CardContent> Card Content </CardContent>
       <CardFooter>
-        <Button @click="refresh"> Refresh session </Button>
+        <Button @click="triggerToast('destructive')">
+          Negative feedback
+        </Button>
       </CardFooter>
     </Card>
     <Card>

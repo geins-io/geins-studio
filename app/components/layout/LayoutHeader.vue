@@ -26,7 +26,7 @@ const setColorMode = () => {
         id="search"
         type="text"
         :placeholder="$t('global_search_placeholder')"
-        class="bg-popover pl-10"
+        class="bg-input pl-10"
       />
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-2"
@@ -62,8 +62,8 @@ const setColorMode = () => {
             <AvatarFallback>{{ userInitials }}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
-        <DropdownMenuContent class="w-56">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuContent class="w-48">
+          <DropdownMenuLabel class="text-sm">My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
             <NuxtLink class="flex items-center" :to="`/user/${user?.id}`">
@@ -77,11 +77,11 @@ const setColorMode = () => {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="setColorMode">
-            <Sun class="mr-2 size-4 dark:hidden" />
-            <MoonStar class="mr-2 hidden size-4 dark:block" />
+            <Sun class="mr-2 hidden size-4 dark:block" />
+            <MoonStar class="mr-2 size-4 dark:hidden" />
             <span class="dark:hidden">Dark mode</span>
             <span class="hidden dark:block">Light mode</span>
-            <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
+            <!-- <DropdownMenuShortcut>⌘C</DropdownMenuShortcut> -->
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="auth.signOut()">

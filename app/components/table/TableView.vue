@@ -114,7 +114,7 @@ const table = useVueTable({
 </script>
 
 <template>
-  <div class="table-view flex items-center py-4">
+  <div class="table-view mb-4 flex items-center">
     <div class="relative w-full max-w-sm">
       <Input
         class="w-full pl-10"
@@ -191,7 +191,7 @@ const table = useVueTable({
       </TableBody>
     </Table>
     <TablePagination
-      class="sticky -bottom-8 rounded-b-md bg-background"
+      class="sticky -bottom-8 rounded-b-md bg-card"
       :entity-name="entityName"
       :rows-selectable="rowsSelectable"
       :table="table"

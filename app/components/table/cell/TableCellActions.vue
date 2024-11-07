@@ -26,7 +26,7 @@ const emit = defineEmits({
           <MoreHorizontal class="size-3.5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent class="w-56">
+      <DropdownMenuContent>
         <DropdownMenuItem>
           <Edit class="mr-2 size-4" />
           <span>Edit</span>

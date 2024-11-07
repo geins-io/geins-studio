@@ -16,12 +16,12 @@ export default defineComponent({
         Export list
       </Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent class="w-56">
+    <DropdownMenuContent>
       <DropdownMenuItem>
         <span>Export all</span>
       </DropdownMenuItem>
       <DropdownMenuItem>
-        <span>Export this selection</span>
+        <span>Export selection</span>
       </DropdownMenuItem>
       <slot />
     </DropdownMenuContent>

@@ -94,7 +94,6 @@ export const useColumns = <T extends object>() => {
           columnSize = { size: 68, minSize: 68, maxSize: 68 };
           break;
         case 'link':
-          // get the value from the column 'id'
           cellRenderer = ({ row }: { row: Row<T> }) => {
             const match = options.editUrl?.match(/{([^}]+)}/);
             const pathKey = match ? match[1] : null;
@@ -110,7 +109,7 @@ export const useColumns = <T extends object>() => {
                 to: fullEditUrl,
                 class: cn(
                   basicCellStyle,
-                  'underline hover:text-muted-foreground',
+                  'underline underline-offset-2 font-medium text-link hover:text-muted-foreground',
                 ),
               },
               () => String(value),
