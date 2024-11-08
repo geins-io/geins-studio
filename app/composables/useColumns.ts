@@ -40,7 +40,16 @@ export const useColumns = <T extends object>() => {
     }
 
     keys.forEach((key) => {
-      const title = key.charAt(0).toUpperCase() + key.slice(1);
+      let title = key;
+      if (options.columnTitles?.[key]) {
+        title = options.columnTitles[key];
+      } else {
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+        title = title.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+        title = title.toLowerCase();
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+      }
+
       const columnType = columnTypes[key] || 'string';
       const basicCellStyle = 'pl-3 min-h-8 leading-5 flex items-center';
       const basicHeaderStyle = 'uppercase text-xs font-medium';
@@ -139,6 +148,7 @@ export const useColumns = <T extends object>() => {
         header: headerRenderer,
         cell: cellRenderer,
         enableSorting: sortable,
+        meta: { type: columnType, title },
         ...columnSize,
       });
     });

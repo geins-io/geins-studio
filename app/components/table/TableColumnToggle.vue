@@ -1,19 +1,16 @@
 <script setup lang="ts" generic="TData">
 import draggable from 'vuedraggable';
-import type { Table } from '@tanstack/vue-table';
+import type { Table, Column } from '@tanstack/vue-table';
 
-import { Settings2, SearchIcon, XIcon, GripVertical } from 'lucide-vue-next';
+import { Settings2, XIcon, GripVertical } from 'lucide-vue-next';
 
 interface TableColumnToggleProps {
   table: Table<TData>;
-  choices?: number;
   staticColumns?: string[];
 }
 const props = withDefaults(defineProps<TableColumnToggleProps>(), {
   staticColumns: () => ['select', 'actions'],
 });
-
-const search = ref('');
 
 const columns = computed(() =>
   props.table
@@ -24,44 +21,64 @@ const columns = computed(() =>
     ),
 );
 
-console.log('🚀 ~ columns:', props.table.getAllColumns());
-
-const availableColumns = computed(() =>
-  columns.value.filter((column) =>
-    column.id.toLowerCase().includes(search.value.toLowerCase()),
-  ),
+const selectableColumns = ref(
+  columns.value.map((column) => {
+    return {
+      ...column,
+      isVisible: column.getIsVisible(),
+    };
+  }),
 );
+
+const setIsVisible = (id: string, isVisible: boolean) => {
+  const column = selectableColumns.value.find((column) => column.id === id);
+  if (column) {
+    column.isVisible = isVisible;
+  }
+};
 
 const visibleColumns = computed(() =>
-  columns.value.filter((column) => column.getIsVisible()),
+  selectableColumns.value.filter((column) => column.isVisible),
 );
 
-const currentOrder = ref(visibleColumns.value.map((column) => column.id));
-console.log('🚀 ~ currentOrder:', currentOrder);
-console.log('columOrder', props.table.getState().columnOrder);
+const mapColumns = (columns: Column<TData>[]) =>
+  columns.map((column) => {
+    return { id: column.id, title: column?.columnDef.meta?.title };
+  });
 
-// watch visible columns to update current order
+const currentOrder = ref(mapColumns(visibleColumns.value as Column<TData>[]));
+
 watch(visibleColumns, (newColumns) => {
-  currentOrder.value = newColumns.map((column) => column.id);
+  currentOrder.value = mapColumns(newColumns as Column<TData>[]);
 });
 
-const drag = ref(false);
+const hideProductColumn = (id: string) => {
+  const column = selectableColumns.value.find((column) => column.id === id);
+  if (column) {
+    column.isVisible = false;
+  }
+};
 
-const onDragEnd = (event) => {
-  // console.log('🚀 ~ onDragEnd ~ event:', event);
-  // const newOrder = event.to.children.map(
-  //   (child: HTMLElement) => child.dataset.id,
-  // );
-  // const newOrder = () => [
-  //   'image',
-  //   'id',
-  //   'name',
-  //   'description',
-  //   'category',
-  //   'categories',
-  //   'price',
-  // ];
-  // props.table.setColumnOrder(newOrder);
+const saveOrderAndVisibility = () => {
+  const newOrder = currentOrder.value.map((column) => column.id);
+  newOrder.unshift('select');
+  newOrder.push('actions');
+  props.table.setColumnOrder(newOrder);
+  selectableColumns.value.forEach((col) => {
+    const newVisibility = col.isVisible;
+    const column = props.table.getColumn(col.id);
+    column?.toggleVisibility(newVisibility);
+  });
+};
+
+const resetOrderAndVisibility = () => {
+  selectableColumns.value = columns.value.map((column) => {
+    return {
+      ...column,
+      isVisible: column.getIsVisible(),
+    };
+  });
+  currentOrder.value = mapColumns(visibleColumns.value as Column<TData>[]);
 };
 </script>
 
@@ -74,19 +91,18 @@ const onDragEnd = (event) => {
       </Button>
     </SheetTrigger>
     <SheetContent class="w-[784px] bg-card sm:w-[784px] sm:max-w-[784px]">
-      <SheetHeader>
-        <SheetTitle class="mb-1 text-lg font-semibold"
-          >Colums option</SheetTitle
-        >
+      <SheetHeader class="border-b">
+        <SheetTitle class="text-2xl font-semibold">Colums option</SheetTitle>
         <SheetDescription class="mb-6 text-sm text-muted-foreground">
           Choose which columns you want to see in this list view
         </SheetDescription>
-        <div class="w-full px-4 py-6">
-          <div class="grid gap-8 md:grid-cols-2">
-            <!-- Available Columns -->
-            <div>
-              <h4 class="mb-4 text-sm font-medium">Availble colums</h4>
-              <div class="relative mb-4">
+      </SheetHeader>
+      <div class="w-full px-4 py-6">
+        <div class="grid md:grid-cols-2">
+          <!-- Available Columns -->
+          <div class="mr-8 border-r pr-8">
+            <h4 class="text-md mb-4 font-medium">Availble colums</h4>
+            <!--      <div class="relative mb-4">
                 <SearchIcon
                   class="absolute left-2 top-2.5 size-4 text-muted-foreground"
                 />
@@ -95,69 +111,70 @@ const onDragEnd = (event) => {
                   placeholder="Search colums"
                   class="pl-8"
                 />
-              </div>
-              <div class="space-y-3">
-                <div
-                  v-for="column in columns"
-                  :key="column.id"
-                  class="flex items-center space-x-2"
-                >
-                  <Checkbox
-                    :id="column.id"
-                    :checked="column.getIsVisible()"
-                    @update:checked="
-                      (value) => column.toggleVisibility(!!value)
-                    "
-                  />
-                  <label
-                    :for="column.id"
-                    class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    {{ column.id }}
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Chosen Columns -->
-            <div>
-              <h4 class="mb-4 text-sm font-medium">Chosen columns</h4>
-              <draggable
-                v-model="currentOrder"
-                item-key="id"
-                class="space-y-2"
-                ghost-class="opacity-50"
-                @start="drag = true"
-                @end="drag = false"
+              </div> -->
+            <div class="space-y-4">
+              <div
+                v-for="column in selectableColumns"
+                :key="column.id"
+                class="flex items-center space-x-3"
               >
-                <template #item="{ element }">
-                  <div
-                    class="flex cursor-move items-center justify-between rounded-md bg-background px-4 py-2"
-                  >
-                    <div class="flex items-center space-x-2">
-                      <GripVertical class="size-4 text-muted-foreground" />
-                      <span class="text-sm">{{ element }}</span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      class="size-8"
-                      @click="element.toggleVisibility()"
-                    >
-                      <XIcon class="size-4" />
-                    </Button>
-                  </div>
-                </template>
-              </draggable>
+                <Checkbox
+                  :id="column.id"
+                  :checked="column.isVisible"
+                  @update:checked="setIsVisible(column.id, $event)"
+                />
+                <label
+                  :for="column.id"
+                  class="text-sm peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {{ column.columnDef.meta?.title }}
+                </label>
+              </div>
             </div>
           </div>
 
-          <div class="mt-8 flex justify-between">
-            <Button variant="outline">Cancel</Button>
-            <Button>Deploy</Button>
+          <!-- Chosen Columns -->
+          <div>
+            <h4 class="text-md mb-4 font-medium">Chosen columns</h4>
+            <draggable
+              v-model="currentOrder"
+              item-key="id"
+              class="space-y-2"
+              ghost-class="opacity-50"
+            >
+              <template #item="{ element }">
+                <div
+                  class="flex cursor-move items-center justify-between rounded-md bg-background px-4 py-2"
+                >
+                  <div class="flex items-center space-x-2">
+                    <GripVertical class="size-4 text-muted-foreground" />
+                    <span class="text-sm">{{ element.title }}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="size-8"
+                    @click="hideProductColumn(element.id)"
+                  >
+                    <XIcon class="size-4" />
+                  </Button>
+                </div>
+              </template>
+            </draggable>
           </div>
         </div>
-      </SheetHeader>
+
+        <div class="mt-8 flex justify-between border-t pt-8">
+          <SheetClose as-child>
+            <Button variant="outline" @click="resetOrderAndVisibility"
+              >Cancel</Button
+            >
+          </SheetClose>
+          <SheetClose as-child>
+            <Button @click="saveOrderAndVisibility">Save options</Button>
+          </SheetClose>
+        </div>
+      </div>
     </SheetContent>
   </Sheet>
 </template>

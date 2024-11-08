@@ -4,6 +4,7 @@ import type {
   ColumnFiltersState,
   SortingState,
   VisibilityState,
+  ColumnOrderState,
 } from '@tanstack/vue-table';
 import {
   FlexRender,
@@ -54,22 +55,23 @@ const columnVisibilityCookie = useCookie<VisibilityState>(
     default: () => ({}),
   },
 );
-
 const columnVisibility = ref(columnVisibilityCookie.value);
-
 const updateVisibilityCookie = () => {
   columnVisibilityCookie.value = columnVisibility.value;
 };
-
 watch(columnVisibility, updateVisibilityCookie, { deep: true });
 
-const columnVisibilityChoices = computed(() => {
-  let columnsArray = Object.keys(columnVisibility.value);
-  columnsArray = columnsArray.filter((col) => {
-    return !columnVisibility.value[col];
-  });
-  return columnsArray.length;
-});
+const columnOrderCookie = useCookie<ColumnOrderState>(
+  `geins-order-${cookieKey}`,
+  {
+    default: () => [],
+  },
+);
+const columnOrder = ref(columnOrderCookie.value);
+const updateSortingCookie = () => {
+  columnOrderCookie.value = columnOrder.value;
+};
+watch(columnOrder, updateSortingCookie, { deep: true });
 
 // Setup table
 const table = useVueTable({
@@ -91,6 +93,8 @@ const table = useVueTable({
   },
   onRowSelectionChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, rowSelection),
+  onColumnOrderChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, columnOrder),
   state: {
     get sorting() {
       return sorting.value;
@@ -103,6 +107,9 @@ const table = useVueTable({
     },
     get rowSelection() {
       return rowSelection.value;
+    },
+    get columnOrder() {
+      return columnOrder.value;
     },
   },
   initialState: {
@@ -129,7 +136,7 @@ const table = useVueTable({
       </span>
     </div>
 
-    <TableColumnToggle :table="table" :choices="columnVisibilityChoices" />
+    <TableColumnToggle :table="table" />
   </div>
   <div class="rounded-lg border shadow-sm">
     <Table class="relative rounded-t-lg bg-card">
