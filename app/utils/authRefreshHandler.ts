@@ -15,7 +15,7 @@ export class CustomRefreshHandler implements RefreshHandler {
     this.runtimeConfig = useRuntimeConfig();
     this.auth = useAuth();
 
-    const intervalTime = 3 * 60 * 1000; // 14 minutes in milliseconds, the access token is valid for 15 minutes
+    const intervalTime = 6 * 60 * 1000; // 14 minutes in milliseconds, the access token is valid for 15 minutes
     this.refreshIntervalTimer = setInterval(() => {
       if (this.auth?.data?.value?.isAuthorized) {
         this.auth.refresh();

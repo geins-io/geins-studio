@@ -1,7 +1,6 @@
 import { h } from 'vue';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
-import { ArrowUpDown } from 'lucide-vue-next';
-import { Button, Checkbox, NuxtLink } from '#components';
+import { Checkbox, NuxtLink, TableHeaderSort } from '#components';
 import type { ColumnOptions } from '@/types/Columns';
 
 export const useColumns = <T extends object>() => {
@@ -41,7 +40,16 @@ export const useColumns = <T extends object>() => {
     }
 
     keys.forEach((key) => {
-      const title = key.charAt(0).toUpperCase() + key.slice(1);
+      let title = key;
+      if (options.columnTitles?.[key]) {
+        title = options.columnTitles[key];
+      } else {
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+        title = title.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+        title = title.toLowerCase();
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+      }
+
       const columnType = columnTypes[key] || 'string';
       const basicCellStyle = 'pl-3 min-h-8 leading-5 flex items-center';
       const basicHeaderStyle = 'uppercase text-xs font-medium';
@@ -54,17 +62,11 @@ export const useColumns = <T extends object>() => {
       let cellRenderer;
       let headerRenderer = sortable
         ? ({ column }: { column: Column<T> }) => {
-            return h(
-              Button,
-              {
-                variant: 'ghost',
-                size: 'sm',
-                class: basicHeaderStyle,
-                onClick: () =>
-                  column.toggleSorting(column.getIsSorted() === 'asc'),
-              },
-              () => [title, h(ArrowUpDown, { class: 'ml-2.5 size-3' })],
-            );
+            return h(TableHeaderSort<T>, {
+              column,
+              title,
+              className: basicHeaderStyle,
+            });
           }
         : () => h('div', { class: basicHeaderStyle }, title);
 
@@ -94,7 +96,6 @@ export const useColumns = <T extends object>() => {
           columnSize = { size: 68, minSize: 68, maxSize: 68 };
           break;
         case 'link':
-          // get the value from the column 'id'
           cellRenderer = ({ row }: { row: Row<T> }) => {
             const match = options.editUrl?.match(/{([^}]+)}/);
             const pathKey = match ? match[1] : null;
@@ -110,7 +111,7 @@ export const useColumns = <T extends object>() => {
                 to: fullEditUrl,
                 class: cn(
                   basicCellStyle,
-                  'underline hover:text-muted-foreground',
+                  'underline underline-offset-2 font-medium text-link hover:text-muted-foreground',
                 ),
               },
               () => String(value),
@@ -147,6 +148,7 @@ export const useColumns = <T extends object>() => {
         header: headerRenderer,
         cell: cellRenderer,
         enableSorting: sortable,
+        meta: { type: columnType, title },
         ...columnSize,
       });
     });

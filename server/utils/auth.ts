@@ -52,6 +52,7 @@ export const auth = () => {
   };
 
   const refresh = async (refreshToken?: string) => {
+    console.log('🚀 ~ refresh ~ refreshToken:', refreshToken);
     if (!refreshToken) {
       return undefined;
     }

@@ -5,7 +5,7 @@ import { TableCellActions } from '#components';
 
 // Globals
 const entityName = 'product';
-const totalProducts = ref(500);
+const totalProducts = ref(3000);
 const products = ref<Product[]>([]);
 const loading = ref(true);
 const editUrl = '/pim/product/{id}';
@@ -28,8 +28,9 @@ loading.value = false;
 const { getColumns, extendColumns, setOrderForColumn } = useColumns<Product>();
 const columns = getColumns(products.value, {
   selectable: true,
-  columnTypes: { price: 'currency', image: 'image', name: 'link' },
   editUrl,
+  columnTitles: { price: 'Default price' },
+  columnTypes: { price: 'currency', image: 'image', name: 'link' },
 });
 
 const actionsColumn: ColumnDef<Product> = {
@@ -60,16 +61,11 @@ setOrderForColumn(columns, 'image', 1);
 </script>
 
 <template>
-  <ContentHeader>
-    <template #title>
-      <ContentTitleBlock title="Products" />
-    </template>
-    <template #actions>
-      <ContentActionBar>
-        <ButtonExport />
-        <ButtonNew>{{ $t('new_entity', { entityName }) }}</ButtonNew>
-      </ContentActionBar>
-    </template>
+  <ContentHeader title="Products">
+    <ContentActionBar>
+      <ButtonExport />
+      <ButtonNew>{{ $t('new_entity', { entityName }) }}</ButtonNew>
+    </ContentActionBar>
   </ContentHeader>
   <NuxtErrorBoundary>
     <TableView

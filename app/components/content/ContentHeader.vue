@@ -1,13 +1,29 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const _props = withDefaults(
+  defineProps<{
+    title?: string;
+    description?: string;
+    showBreadcrumb?: boolean;
+  }>(),
+  {
+    title: '',
+    description: '',
+    showBreadcrumb: true,
+  },
+);
+// TODO: Dynamic breadcrumbs
+</script>
 
 <template>
-  <Breadcrumb class="mb-6">
+  <Breadcrumb v-if="showBreadcrumb" class="mb-6">
     <BreadcrumbList>
       <BreadcrumbItem>
-        <BreadcrumbLink href="/"> Home </BreadcrumbLink>
+        <BreadcrumbLink as-child>
+          <NuxtLink to="/">Home</NuxtLink>
+        </BreadcrumbLink>
       </BreadcrumbItem>
       <BreadcrumbSeparator />
-      <BreadcrumbItem>
+      <!--       <BreadcrumbItem>
         <DropdownMenu>
           <DropdownMenuTrigger class="flex items-center gap-1">
             <BreadcrumbEllipsis class="size-4" />
@@ -26,14 +42,16 @@
           Components
         </BreadcrumbLink>
       </BreadcrumbItem>
-      <BreadcrumbSeparator />
+      <BreadcrumbSeparator /> -->
       <BreadcrumbItem>
-        <BreadcrumbPage>Breadcrumb</BreadcrumbPage>
+        <BreadcrumbPage>{{ title }}</BreadcrumbPage>
       </BreadcrumbItem>
     </BreadcrumbList>
   </Breadcrumb>
-  <div class="content-header mb-1 flex justify-between border-b pb-5">
-    <slot name="title" />
-    <slot name="actions" />
+  <div class="content-header mb-5 flex justify-between border-b pb-5">
+    <slot name="title">
+      <ContentTitleBlock :title="title" :description="description" />
+    </slot>
+    <slot />
   </div>
 </template>

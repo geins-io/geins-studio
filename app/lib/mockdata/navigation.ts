@@ -8,7 +8,7 @@ export const navigation: NavigationItem[] = [
   {
     label: 'Products',
     href: '/pim/product/list',
-    icon: 'ShoppingBasket',
+    icon: 'Tag',
     children: [
       {
         label: 'Products',

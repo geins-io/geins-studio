@@ -5,7 +5,9 @@ export interface Product {
   name: string;
   price: number;
   description: string;
-  category: string;
   categories: Category[];
   image: string;
+  sellingPrice: number;
+  category?: string;
+  status: 'published' | 'draft' | 'unpublished';
 }

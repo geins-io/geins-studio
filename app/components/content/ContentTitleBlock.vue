@@ -18,12 +18,12 @@ const unsavedChanges = ref(props.unsavedChanges);
 <template>
   <div class="content-title-block">
     <div class="flex items-center">
-      <h1 class="text-3xl font-bold">
+      <h1 class="mb-1 text-3xl font-bold">
         {{ title }}
       </h1>
       <span v-show="unsavedChanges">Unsaved changes</span>
     </div>
-    <p v-if="description">
+    <p v-if="description" class="text-sm">
       {{ description }}
     </p>
   </div>

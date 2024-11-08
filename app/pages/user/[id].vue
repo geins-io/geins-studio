@@ -14,15 +14,10 @@ const fullName = computed(() => `${editUser.firstName} ${editUser.lastName}`);
 </script>
 
 <template>
-  <ContentHeader>
-    <template #title>
-      <ContentTitleBlock :title="`${user?.firstName} ${user?.lastName}`" />
-    </template>
-    <template #actions>
-      <ContentActionBar>
-        <ButtonSave>{{ $t('save_entity', { entityName }) }}</ButtonSave>
-      </ContentActionBar>
-    </template>
+  <ContentHeader :title="`${user?.firstName} ${user?.lastName}`">
+    <ContentActionBar>
+      <ButtonSave>{{ $t('save_entity', { entityName }) }}</ButtonSave>
+    </ContentActionBar>
   </ContentHeader>
   <NuxtErrorBoundary>
     <div class="mx-auto max-w-6xl pt-12 lg:flex lg:flex-col">
