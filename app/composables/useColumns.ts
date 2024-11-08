@@ -1,7 +1,6 @@
 import { h } from 'vue';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
-import { ArrowUpDown } from 'lucide-vue-next';
-import { Button, Checkbox, NuxtLink } from '#components';
+import { Checkbox, NuxtLink, TableHeaderSort } from '#components';
 import type { ColumnOptions } from '@/types/Columns';
 
 export const useColumns = <T extends object>() => {
@@ -54,17 +53,11 @@ export const useColumns = <T extends object>() => {
       let cellRenderer;
       let headerRenderer = sortable
         ? ({ column }: { column: Column<T> }) => {
-            return h(
-              Button,
-              {
-                variant: 'ghost',
-                size: 'sm',
-                class: basicHeaderStyle,
-                onClick: () =>
-                  column.toggleSorting(column.getIsSorted() === 'asc'),
-              },
-              () => [title, h(ArrowUpDown, { class: 'ml-2.5 size-3' })],
-            );
+            return h(TableHeaderSort<T>, {
+              column,
+              title,
+              className: basicHeaderStyle,
+            });
           }
         : () => h('div', { class: basicHeaderStyle }, title);
 
