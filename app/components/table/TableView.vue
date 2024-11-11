@@ -61,6 +61,7 @@ const updateVisibilityCookie = () => {
 };
 watch(columnVisibility, updateVisibilityCookie, { deep: true });
 
+// Setup column order
 const columnOrderCookie = useCookie<ColumnOrderState>(
   `geins-order-${cookieKey}`,
   {

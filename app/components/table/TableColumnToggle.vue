@@ -1,7 +1,6 @@
 <script setup lang="ts" generic="TData">
 import draggable from 'vuedraggable';
 import type { Table, Column } from '@tanstack/vue-table';
-
 import { Settings2, XIcon, GripVertical } from 'lucide-vue-next';
 
 interface TableColumnToggleProps {
@@ -46,10 +45,51 @@ const mapColumns = (columns: Column<TData>[]) =>
     return { id: column.id, title: column?.columnDef.meta?.title };
   });
 
-const currentOrder = ref(mapColumns(visibleColumns.value as Column<TData>[]));
+const orderColumns = (
+  columns: Column<TData>[],
+  order: Record<number, string>,
+) => {
+  const orderedColumns = [];
+  const orderedColumnIds = new Set(Object.values(order));
+
+  // Add columns based on the order array
+  for (const key in order) {
+    const column = columns.find((col) => col.id === order[key]);
+    if (column) {
+      orderedColumns.push(column);
+    }
+  }
+
+  // Add any additional columns that are not in the order array
+  columns.forEach((column) => {
+    if (!orderedColumnIds.has(column.id)) {
+      orderedColumns.push(column);
+    }
+  });
+
+  return orderedColumns;
+};
+
+const orderFromState = props.table.getState().columnOrder;
+const currentOrder = ref(
+  mapColumns(
+    orderColumns(visibleColumns.value as Column<TData>[], orderFromState),
+  ),
+);
 
 watch(visibleColumns, (newColumns) => {
-  currentOrder.value = mapColumns(newColumns as Column<TData>[]);
+  // if there is already a column order, first order the columns according to that
+  const orderedNewColumns = orderColumns(
+    newColumns as Column<TData>[],
+    currentOrder.value.reduce(
+      (acc, col, index) => {
+        acc[index] = col.id;
+        return acc;
+      },
+      {} as Record<number, string>,
+    ),
+  );
+  currentOrder.value = mapColumns(orderedNewColumns);
 });
 
 const hideProductColumn = (id: string) => {

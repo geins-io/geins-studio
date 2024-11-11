@@ -1,7 +1,6 @@
 <script setup lang="ts" generic="T">
 import type { Column } from '@tanstack/vue-table';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-vue-next';
-import { defineProps } from 'vue';
 
 interface DataTableColumnHeaderProps {
   column: Column<T>;
