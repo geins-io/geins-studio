@@ -30,6 +30,9 @@ export const auth = () => {
 
     const text = await response.text();
     if (response.status === 401) {
+      console.log('🚀 ~ status 401 ~ text:', text);
+      const json = await response.json();
+      console.log('🚀 ~ status 401 ~ response json:', json);
       throw new Error('Unauthorized');
     } else if (response.status === 403) {
       throw new Error('Insufficient permissions');

@@ -8,6 +8,10 @@ const currentSidebarWidth = computed(() => {
 const mainWidthStyle = computed(() => {
   return { maxWidth: `calc(100vw - ${currentSidebarWidth.value})` };
 });
+
+const mainContentStyle = computed(() => {
+  return { height: `calc(100vh - 4rem)` };
+});
 </script>
 <template>
   <div class="flex h-screen overflow-hidden">
@@ -21,7 +25,8 @@ const mainWidthStyle = computed(() => {
     >
       <LayoutHeader class="sticky top-0 h-header" />
       <div
-        class="grow overflow-auto overflow-x-hidden rounded-tl-lg border-l border-t p-8"
+        class="flex grow flex-col overflow-hidden rounded-tl-lg border-l border-t p-8 pb-14"
+        :style="mainContentStyle"
       >
         <slot />
       </div>

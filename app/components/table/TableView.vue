@@ -5,6 +5,8 @@ import type {
   SortingState,
   VisibilityState,
   ColumnOrderState,
+  ColumnPinningState,
+  Column,
 } from '@tanstack/vue-table';
 import {
   FlexRender,
@@ -25,12 +27,17 @@ const props = withDefaults(
     entityName?: string;
     pageSize?: number;
     loading?: boolean;
+    columnPinningState?: ColumnPinningState;
   }>(),
   {
     rowsSelectable: false,
     entityName: 'row',
     pageSize: 30,
     loading: false,
+    columnPinningState: () => ({
+      left: ['select'],
+      right: ['actions'],
+    }),
   },
 );
 
@@ -73,6 +80,16 @@ const updateSortingCookie = () => {
   columnOrderCookie.value = columnOrder.value;
 };
 watch(columnOrder, updateSortingCookie, { deep: true });
+
+// Get pinned class of column
+const pinnedClasses = (column: Column<TData>, header: boolean = false) => {
+  const pinned = column.getIsPinned();
+  if (pinned) {
+    const zIndex = column.id === 'select' && header ? 'z-50' : 'z-30';
+    return `bg-card sticky ${pinned}-0 ${zIndex} shadow-lg`;
+  }
+  return 'relative';
+};
 
 // Setup table
 const table = useVueTable({
@@ -117,12 +134,13 @@ const table = useVueTable({
     pagination: {
       pageSize: props.pageSize,
     },
+    columnPinning: props.columnPinningState,
   },
 });
 </script>
 
 <template>
-  <div class="table-view mb-4 flex items-center">
+  <div class="mb-4 flex items-center">
     <div class="relative w-full max-w-sm">
       <Input
         class="w-full pl-10"
@@ -139,8 +157,10 @@ const table = useVueTable({
 
     <TableColumnToggle :table="table" />
   </div>
-  <div class="rounded-lg border shadow-sm">
-    <Table class="relative rounded-t-lg bg-card">
+  <div
+    class="relative -mb-14 overflow-hidden rounded-lg border pb-14 shadow-sm"
+  >
+    <Table>
       <TableHeader>
         <TableRow
           v-for="headerGroup in table.getHeaderGroups()"
@@ -150,7 +170,11 @@ const table = useVueTable({
           <TableHead
             v-for="header in headerGroup.headers"
             :key="header.id"
-            class="sticky -top-8 z-20 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border"
+            :class="
+              cn(
+                `z-40 ${pinnedClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
+              )
+            "
             :style="
               header.getSize()
                 ? { width: `${header.getSize()}px` }
@@ -176,6 +200,7 @@ const table = useVueTable({
             <TableCell
               v-for="cell in row.getVisibleCells()"
               :key="cell.id"
+              :class="cn(`${pinnedClasses(cell.column)}`)"
               :style="
                 cell.column.getSize()
                   ? { width: `${cell.column.getSize()}px` }
@@ -199,7 +224,6 @@ const table = useVueTable({
       </TableBody>
     </Table>
     <TablePagination
-      class="sticky -bottom-8 rounded-b-md bg-card"
       :entity-name="entityName"
       :rows-selectable="rowsSelectable"
       :table="table"

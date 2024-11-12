@@ -4,21 +4,44 @@ import { Checkbox, NuxtLink, TableHeaderSort } from '#components';
 import type { ColumnOptions } from '@/types/Columns';
 
 export const useColumns = <T extends object>() => {
+  const basicCellStyle =
+    'px-3 py-1.5 align-middle text-xs leading-8 h-10 flex items-center truncate';
+  const basicHeaderTextStyle = 'text-xs font-medium uppercase';
+  const basicHeaderStyle =
+    'h-12 px-1.5 flex items-center ' + basicHeaderTextStyle;
+
   const selectableColumn: ColumnDef<T> = {
     id: 'select',
     header: ({ table }: { table: Table<T> }) =>
-      h(Checkbox, {
-        checked: table.getIsAllPageRowsSelected(),
-        'onUpdate:checked': (value: boolean) =>
-          table.toggleAllPageRowsSelected(!!value),
-        ariaLabel: 'Select all',
-      }),
+      h(
+        'div',
+        {
+          class: cn(basicHeaderStyle, 'flex items-center justify-center '),
+          'data-checkbox': 'true',
+        },
+        h(Checkbox, {
+          checked: table.getIsAllPageRowsSelected(),
+          'onUpdate:checked': (value: boolean) =>
+            table.toggleAllPageRowsSelected(!!value),
+          ariaLabel: 'Select all',
+        }),
+      ),
     cell: ({ row }: { row: Row<T> }) =>
-      h(Checkbox, {
-        checked: row.getIsSelected(),
-        'onUpdate:checked': (value: boolean) => row.toggleSelected(!!value),
-        ariaLabel: 'Select row',
-      }),
+      h(
+        'div',
+        {
+          class: cn(
+            basicCellStyle,
+            'shadow-lg flex items-center justify-center',
+          ),
+        },
+        h(Checkbox, {
+          checked: row.getIsSelected(),
+          'onUpdate:checked': (value: boolean) => row.toggleSelected(!!value),
+          ariaLabel: 'Select row',
+        }),
+      ),
+
     enableSorting: false,
     enableHiding: false,
     size: 44,
@@ -51,9 +74,7 @@ export const useColumns = <T extends object>() => {
       }
 
       const columnType = columnTypes[key] || 'string';
-      const basicCellStyle =
-        'pl-3 min-h-8 leading-5 flex items-center truncate';
-      const basicHeaderStyle = 'uppercase text-xs font-medium';
+
       let columnSize = {
         size: 0,
         minSize: 0,
@@ -63,11 +84,15 @@ export const useColumns = <T extends object>() => {
       let cellRenderer;
       let headerRenderer = sortable
         ? ({ column }: { column: Column<T> }) => {
-            return h(TableHeaderSort<T>, {
-              column,
-              title,
-              className: basicHeaderStyle,
-            });
+            return h(
+              'div',
+              { class: basicHeaderStyle },
+              h(TableHeaderSort<T>, {
+                column,
+                title,
+                className: basicHeaderTextStyle,
+              }),
+            );
           }
         : () => h('div', { class: basicHeaderStyle }, title);
 
@@ -107,15 +132,18 @@ export const useColumns = <T extends object>() => {
             );
             const value = row.getValue(key);
             return h(
-              NuxtLink,
-              {
-                to: fullEditUrl,
-                class: cn(
-                  basicCellStyle,
-                  'underline underline-offset-2 font-medium text-link hover:text-muted-foreground',
-                ),
-              },
-              () => String(value),
+              'div',
+              { class: basicCellStyle },
+              h(
+                NuxtLink,
+                {
+                  to: fullEditUrl,
+                  class: cn(
+                    'underline underline-offset-2 font-medium text-link hover:text-muted-foreground',
+                  ),
+                },
+                () => String(value),
+              ),
             );
           };
           break;
