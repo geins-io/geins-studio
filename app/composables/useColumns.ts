@@ -51,7 +51,8 @@ export const useColumns = <T extends object>() => {
       }
 
       const columnType = columnTypes[key] || 'string';
-      const basicCellStyle = 'pl-3 min-h-8 leading-5 flex items-center';
+      const basicCellStyle =
+        'pl-3 min-h-8 leading-5 flex items-center truncate';
       const basicHeaderStyle = 'uppercase text-xs font-medium';
       let columnSize = {
         size: 0,

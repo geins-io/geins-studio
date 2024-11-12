@@ -4,22 +4,22 @@ import LogoLetter from '@/assets/logos/geins-g.svg';
 import { ChevronsLeft } from 'lucide-vue-next';
 
 const props = defineProps<{
-  open?: boolean;
-  isCollapsed?: boolean;
+  sidebarWidth: string;
 }>();
 
-const isCollapsed = ref(props.isCollapsed);
+const isCollapsed = defineModel<boolean>('collapsed');
 const setIsCollapsed = (value: boolean) => {
   isCollapsed.value = value;
 };
+
+const sidebarStyle = computed(() => {
+  return { width: props.sidebarWidth };
+});
 </script>
 <template>
   <aside
-    :class="
-      cn(
-        `layout-sidebar ${isCollapsed ? 'w-[3.75rem]' : 'w-60'} relative bg-card transition-[width]`,
-      )
-    "
+    :class="cn(`layout-sidebar relative bg-card transition-[width]`)"
+    :style="sidebarStyle"
   >
     <div>
       <div class="ml-5 flex h-header items-center">
