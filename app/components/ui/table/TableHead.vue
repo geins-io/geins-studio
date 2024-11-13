@@ -10,7 +10,7 @@ const props = defineProps<{
   <th
     :class="
       cn(
-        'font-medium [&:first-child]:rounded-tl-lg [&:last-child]:rounded-tr-lg [&:not(:last-child)]:border-r',
+        'border-l p-0 font-medium [&:first-child]:rounded-tl-lg [&:first-child]:border-0 [&:last-child]:rounded-tr-lg [&:last-child]:border-0 [&:nth-child(2)]:border-card',
         props.class,
       )
     "

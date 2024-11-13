@@ -85,8 +85,11 @@ watch(columnOrder, updateSortingCookie, { deep: true });
 const pinnedClasses = (column: Column<TData>, header: boolean = false) => {
   const pinned = column.getIsPinned();
   if (pinned) {
-    const zIndex = column.id === 'select' && header ? 'z-50' : 'z-30';
-    return `bg-card sticky ${pinned}-0 ${zIndex} shadow-lg`;
+    const zIndex =
+      header && (column.id === 'select' || column.id === 'actions')
+        ? 'z-40'
+        : 'z-20';
+    return `bg-card sticky ${pinned}-0 ${zIndex} after:absolute after:-bottom-px after:${pinned}-0 after:bg-border after:h-px after:w-full after:z-50`;
   }
   return 'relative';
 };
@@ -172,7 +175,7 @@ const table = useVueTable({
             :key="header.id"
             :class="
               cn(
-                `z-40 ${pinnedClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
+                `z-30 ${pinnedClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
               )
             "
             :style="

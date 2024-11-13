@@ -1,11 +1,16 @@
 import { h } from 'vue';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
-import { Checkbox, NuxtLink, TableHeaderSort } from '#components';
+import {
+  Checkbox,
+  NuxtLink,
+  TableHeaderSort,
+  TableCellActions,
+} from '#components';
 import type { ColumnOptions } from '@/types/Columns';
 
 export const useColumns = <T extends object>() => {
   const basicCellStyle =
-    'px-3 py-1.5 align-middle text-xs leading-8 h-10 flex items-center truncate';
+    'px-[1.2rem] align-middle text-xs leading-8 w-full h-10 flex items-center truncate';
   const basicHeaderTextStyle = 'text-xs font-medium uppercase';
   const basicHeaderStyle =
     'h-12 px-1.5 flex items-center ' + basicHeaderTextStyle;
@@ -16,8 +21,10 @@ export const useColumns = <T extends object>() => {
       h(
         'div',
         {
-          class: cn(basicHeaderStyle, 'flex items-center justify-center '),
-          'data-checkbox': 'true',
+          class: cn(
+            basicHeaderStyle,
+            'flex items-center justify-center shadow-only-right',
+          ),
         },
         h(Checkbox, {
           checked: table.getIsAllPageRowsSelected(),
@@ -32,7 +39,7 @@ export const useColumns = <T extends object>() => {
         {
           class: cn(
             basicCellStyle,
-            'shadow-lg flex items-center justify-center',
+            'px-3 shadow-only-right flex items-center justify-center',
           ),
         },
         h(Checkbox, {
@@ -215,21 +222,32 @@ export const useColumns = <T extends object>() => {
     return columns;
   };
 
-  // const disableSortingForColumn = (columns: ColumnDef<T>[], key: string) => {
-  //   const title = key.charAt(0).toUpperCase() + key.slice(1);
-
-  //   columns.forEach((column) => {
-  //     if (column.id === key) {
-  //       column.header = () => h('div', title);
-  //     }
-  //   });
-  //   return columns;
-  // };
+  const addActionsColumn = (columns: ColumnDef<T>[], props: object) => {
+    const actionsColumn: ColumnDef<T> = {
+      id: 'actions',
+      enableHiding: false,
+      enableSorting: false,
+      size: 90,
+      header: () =>
+        h('div', {
+          class: cn(basicHeaderStyle, 'shadow-only-left'),
+        }),
+      cell: ({ row }) => {
+        const rowData = row.original;
+        return h(
+          'div',
+          { class: cn(basicCellStyle, 'relative shadow-only-left px-2.5') },
+          h(TableCellActions, { ...props, rowData }),
+        );
+      },
+    };
+    extendColumns(columns, actionsColumn);
+  };
 
   return {
     getColumns,
     extendColumns,
     setOrderForColumn,
-    // disableSortingForColumn,
+    addActionsColumn,
   };
 };

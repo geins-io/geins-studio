@@ -17,6 +17,10 @@ module.exports = {
       height: {
         header: '4rem',
       },
+      boxShadow: {
+        'only-right': '3px 0 7px -2px rgb(0 0 0 / 0.1)',
+        'only-left': '-3px 0 7px -2px rgb(0 0 0 / 0.1)',
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
