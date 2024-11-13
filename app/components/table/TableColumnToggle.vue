@@ -130,14 +130,16 @@ const resetOrderAndVisibility = () => {
         Column options
       </Button>
     </SheetTrigger>
-    <SheetContent class="w-[784px] bg-card sm:w-[784px] sm:max-w-[784px]">
+    <SheetContent
+      class="flex w-[784px] flex-col bg-card sm:w-[784px] sm:max-w-[784px]"
+    >
       <SheetHeader class="border-b">
         <SheetTitle class="text-2xl font-semibold">Colums option</SheetTitle>
         <SheetDescription class="mb-6 text-sm text-muted-foreground">
           Choose which columns you want to see in this list view
         </SheetDescription>
       </SheetHeader>
-      <div class="w-full px-4 py-6">
+      <div class="flex w-full grow flex-col pt-6">
         <div class="grid md:grid-cols-2">
           <!-- Available Columns -->
           <div class="mr-8 border-r pr-8">
@@ -204,11 +206,11 @@ const resetOrderAndVisibility = () => {
           </div>
         </div>
 
-        <div class="mt-8 flex justify-between border-t pt-8">
+        <div class="mt-auto flex justify-between border-t px-0.5 pt-8">
           <SheetClose as-child>
-            <Button variant="outline" @click="resetOrderAndVisibility"
-              >Cancel</Button
-            >
+            <Button variant="outline" @click="resetOrderAndVisibility">
+              Cancel
+            </Button>
           </SheetClose>
           <SheetClose as-child>
             <Button @click="saveOrderAndVisibility">Save options</Button>

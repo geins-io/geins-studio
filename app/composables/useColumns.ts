@@ -5,6 +5,7 @@ import {
   NuxtLink,
   TableHeaderSort,
   TableCellActions,
+  TableCellLongText,
 } from '#components';
 import type { ColumnOptions } from '@/types/Columns';
 
@@ -56,7 +57,12 @@ export const useColumns = <T extends object>() => {
   };
 
   const getColumns = (data: T[], options: Partial<ColumnOptions> = {}) => {
-    const { selectable = false, sortable = true, columnTypes = {} } = options;
+    const {
+      selectable = false,
+      sortable = true,
+      columnTypes = {},
+      maxTextLength = 60,
+    } = options;
 
     const keys = data ? Object.keys(data[0] as object) : [];
     if (keys.length === 0) {
@@ -137,23 +143,31 @@ export const useColumns = <T extends object>() => {
               `{${pathKey}}`,
               editKey,
             );
-            const value = row.getValue(key);
-            return h(
-              'div',
-              { class: basicCellStyle },
-              h(
-                NuxtLink,
-                {
-                  to: fullEditUrl,
-                  class: cn(
-                    'underline underline-offset-2 font-medium text-link hover:text-muted-foreground',
-                  ),
-                },
-                () => String(value),
-              ),
+            const text = String(row.getValue(key));
+            const link = h(
+              NuxtLink,
+              {
+                to: fullEditUrl,
+                class: cn(
+                  'underline underline-offset-2 font-medium text-link hover:text-muted-foreground',
+                ),
+              },
+              () =>
+                text.length > maxTextLength
+                  ? text.slice(0, maxTextLength) + '...'
+                  : text,
             );
+            if (text.length > maxTextLength) {
+              return h(
+                TableCellLongText,
+                { text, className: basicCellStyle, maxTextLength },
+                link,
+              );
+            }
+            return h('div', { class: basicCellStyle }, link);
           };
           break;
+
         // case 'date':
         //   cellRenderer = ({ row }: { row: Row<T> }) => {
         //     const value = row.getValue(key);
@@ -170,11 +184,15 @@ export const useColumns = <T extends object>() => {
         //   break;
         default:
           cellRenderer = ({ row }: { row: Row<T> }) => {
-            const value = row.getValue(key);
-
-            if (typeof value === 'string' || typeof value === 'number') {
-              return h('div', { class: basicCellStyle }, value);
+            const text = String(row.getValue(key));
+            if (text.length > maxTextLength) {
+              return h(TableCellLongText, {
+                text,
+                className: basicCellStyle,
+                maxTextLength,
+              });
             }
+            return h('div', { class: basicCellStyle }, text);
           };
       }
 

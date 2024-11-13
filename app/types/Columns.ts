@@ -7,6 +7,7 @@ export interface ColumnOptions {
   editUrl?: string;
   columnTitles?: { [key: string]: string };
   columnTypes?: ColumnTypes;
+  maxTextLength?: number;
 }
 
 export interface ColumnTypes {
