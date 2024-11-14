@@ -31,7 +31,7 @@
     --border: 0 0% 90%; /* #e6e6e6 */
     --input: 0 0% 100%; /* #ffffff */
     --ring: 0 0% 13%; /* #222222 */
-    --link: 178 14% 44%;
+    --link: 178 14% 44%; /* #3b82f6 */
     --radius: 0.3rem; /* 5px */
   }
 
@@ -75,6 +75,7 @@
     --destructive-muted: 0 100% 96.7%;
   }
   .dark {
+    color-scheme: dark;
     --positive: 142 70% 35%;
     --positive-foreground: 60 9.1% 97.8%;
 

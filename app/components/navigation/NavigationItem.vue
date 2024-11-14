@@ -121,71 +121,91 @@ const rootItemClasses = computed(() => {
 </script>
 
 <template>
-  <Collapsible
-    v-if="item.children?.length && !isCollapsed"
-    v-model:open="isOpen"
-  >
-    <div
+  <div :class="`relative ${isCollapsed ? 'group' : ''}`">
+    <Collapsible
+      v-if="item.children?.length && !isCollapsed"
+      v-model:open="isOpen"
+    >
+      <div
+        :class="cn(`flex w-full items-center justify-between`, rootItemClasses)"
+      >
+        <NuxtLink :to="item.href" :class="cn(`flex flex-grow items-center`)">
+          <ClientOnly>
+            <component :is="item.icon" stroke-width="1.5" class="mr-3 size-5" />
+          </ClientOnly>
+          <span class="flex grow hover:underline">{{ item.label }}</span>
+        </NuxtLink>
+        <CollapsibleTrigger as-child>
+          <Button
+            variant="ghost"
+            class="inline-flex size-7 items-center justify-center p-0"
+          >
+            <ChevronDown
+              :class="
+                cn(`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`)
+              "
+            />
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent>
+        <ul class="border-b py-2">
+          <li v-for="(child, index) in item.children" :key="index">
+            <NavigationItem :item="child" :root="false" />
+          </li>
+        </ul>
+      </CollapsibleContent>
+    </Collapsible>
+
+    <NuxtLink
+      v-else
+      :to="item.href"
       :class="
         cn(
-          `flex w-full items-center justify-between ${isCollapsed && isOpen ? '' : ''}`,
+          `flex items-center ${isCollapsed ? 'transition-colors hover:bg-background' : ''} ${isCollapsed && isActive ? 'bg-background' : ''} ${isActive ? 'font-medium' : ''}`,
           rootItemClasses,
         )
       "
     >
-      <NuxtLink :to="item.href" :class="cn(`flex flex-grow items-center`)">
-        <ClientOnly>
-          <component :is="item.icon" stroke-width="1.5" class="mr-3 size-5" />
-        </ClientOnly>
-        <span class="flex grow hover:underline">{{ item.label }}</span>
-      </NuxtLink>
-      <CollapsibleTrigger as-child>
-        <Button
-          variant="ghost"
-          class="inline-flex size-7 items-center justify-center p-0"
-        >
-          <ChevronDown
-            :class="
-              cn(`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`)
-            "
-          />
-        </Button>
-      </CollapsibleTrigger>
-    </div>
-    <CollapsibleContent>
-      <ul class="border-b py-2">
-        <li v-for="(child, index) in item.children" :key="index">
-          <NavigationItem :item="child" :root="false" />
-        </li>
-      </ul>
-    </CollapsibleContent>
-  </Collapsible>
-  <NuxtLink
-    v-else
-    :to="item.href"
-    :class="
-      cn(
-        `flex items-center ${isCollapsed ? 'transition-colors hover:bg-background' : ''} ${isCollapsed && isActive ? 'bg-background' : ''} ${isActive ? 'font-medium' : ''}`,
-        rootItemClasses,
-      )
-    "
-  >
-    <ClientOnly>
-      <component
-        :is="item.icon"
-        stroke-width="1.5"
-        :class="cn(`size-5 ${isCollapsed ? '' : 'mr-3'}`)"
-      />
-    </ClientOnly>
-    <span
-      v-show="!isCollapsed"
-      class="flex grow items-center justify-between hover:underline"
+      <ClientOnly>
+        <component
+          :is="item.icon"
+          stroke-width="1.5"
+          :class="cn(`size-5 ${isCollapsed ? '' : 'mr-3'}`)"
+        />
+      </ClientOnly>
+      <span
+        v-show="!isCollapsed"
+        class="flex grow items-center justify-between hover:underline"
+      >
+        {{ item.label }}
+        <ChevronRight
+          v-if="isActive"
+          :class="cn(`size-4 text-muted ${root ? 'mr-1.5' : ''}`)"
+        />
+      </span>
+    </NuxtLink>
+
+    <!-- Child items for collapsed state with hover fix -->
+    <ul
+      v-if="isCollapsed && item.children?.length"
+      class="absolute left-full top-0 z-50 hidden w-48 rounded-lg pl-2 shadow-lg group-hover:block"
     >
-      {{ item.label }}
-      <ChevronRight
-        v-if="isActive"
-        :class="cn(`size-4 text-muted ${root ? 'mr-1.5' : ''}`)"
-      />
-    </span>
-  </NuxtLink>
+      <li
+        v-for="(child, index) in item.children"
+        :key="index"
+        class="[&:first-child>a]:pt-3 [&:last-child>a]:pb-3"
+      >
+        <NuxtLink
+          :to="child.href"
+          class="flex items-center justify-between bg-card px-4 py-2 text-xs hover:underline"
+          >{{ child.label }}
+          <ChevronRight
+            v-if="route.path === child.href"
+            :class="cn(`size-4 text-muted`)"
+          />
+        </NuxtLink>
+      </li>
+    </ul>
+  </div>
 </template>

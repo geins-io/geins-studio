@@ -1,14 +1,13 @@
 <script setup lang="ts" generic="TData">
 import type { Product } from '@/types/product/Product';
-import type { ColumnDef } from '@tanstack/vue-table';
-import { TableCellActions } from '#components';
 
-// Globals
+// List page globals
 const entityName = 'product';
 const totalProducts = ref(3000);
 const products = ref<Product[]>([]);
 const loading = ref(true);
 const editUrl = '/pim/product/{id}';
+const rowsSelectable = true;
 
 // Fetch data
 const { data, error } = await useFetch<Product[]>('/api/products', {
@@ -25,39 +24,23 @@ if (!data.value || error.value) {
 loading.value = false;
 
 // Fix columns
-const { getColumns, extendColumns, setOrderForColumn } = useColumns<Product>();
+const { getColumns, addActionsColumn, setOrderForColumn } =
+  useColumns<Product>();
 const columns = getColumns(products.value, {
-  selectable: true,
+  selectable: rowsSelectable,
   editUrl,
   columnTitles: { price: 'Default price' },
   columnTypes: { price: 'currency', image: 'image', name: 'link' },
 });
 
-const actionsColumn: ColumnDef<Product> = {
-  id: 'actions',
-  enableHiding: false,
-  enableSorting: false,
-  size: 90,
-  cell: ({ row }) => {
-    const product = row.original;
-
-    return h(
-      'div',
-      { class: 'relative' },
-      h(TableCellActions, {
-        onEdit: () => navigateTo(`/pim/product/${product.id}`),
-        onMore: () => console.log('More options', product.id),
-      }),
-    );
-  },
-};
-
-extendColumns(columns, actionsColumn);
+addActionsColumn(columns, {
+  onEdit: (product: Product) =>
+    navigateTo(`${editUrl.replace('{id}', String(product.id))}`),
+  onCopy: (product: Product) => console.log('Copy', product.id),
+  onDelete: (product: Product) => console.log('Delete', product.id),
+  onUnpublish: (product: Product) => console.log('Unpublish', product.id),
+});
 setOrderForColumn(columns, 'image', 1);
-
-// const handleClick = async (row: Row<Product>) => {
-//   await navigateTo(`/pim/product/${row.original.id}`);
-// };
 </script>
 
 <template>
@@ -71,7 +54,7 @@ setOrderForColumn(columns, 'image', 1);
     <TableView
       :loading="loading"
       :entity-name="entityName"
-      :rows-selectable="true"
+      :rows-selectable="rowsSelectable"
       :columns="columns"
       :data="products"
     />

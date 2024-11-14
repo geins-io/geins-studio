@@ -22,7 +22,9 @@ const entity = computed(() => t(props.entityName, totalRows.value));
 </script>
 
 <template>
-  <div class="flex items-center justify-between border-t px-4 py-3">
+  <div
+    class="absolute bottom-0 left-0 flex h-14 w-full items-center justify-between rounded-b-md border-t bg-card px-4 py-3"
+  >
     <div class="flex-1 text-sm">
       <span v-if="rowsSelectable">
         {{
