@@ -172,8 +172,8 @@ const table = useVueTable({
   <div
     :class="
       cn(
-        'relative -mb-[13.5rem] mt-40 overflow-hidden rounded-lg border pb-14 shadow-sm transition-[margin-top]',
-        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] mb-0 mt-0' : '-translate-y-40'}`,
+        'relative mb-[6.5rem] translate-y-40 overflow-hidden rounded-lg border pb-14 shadow-sm transition-[transform]',
+        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] mb-0 translate-y-0' : '-mt-40'}`,
       )
     "
   >
