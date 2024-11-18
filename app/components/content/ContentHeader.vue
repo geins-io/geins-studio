@@ -11,19 +11,28 @@ const _props = withDefaults(
     showBreadcrumb: true,
   },
 );
+const tableMaximized = useState<boolean>('table-maximized');
 // TODO: Dynamic breadcrumbs
 </script>
 
 <template>
-  <Breadcrumb v-if="showBreadcrumb" class="mb-6">
-    <BreadcrumbList>
-      <BreadcrumbItem>
-        <BreadcrumbLink as-child>
-          <NuxtLink to="/">Home</NuxtLink>
-        </BreadcrumbLink>
-      </BreadcrumbItem>
-      <BreadcrumbSeparator />
-      <!--       <BreadcrumbItem>
+  <div
+    :class="
+      cn(
+        'origin-top transform transition-[transform]',
+        `${tableMaximized ? 'scale-y-0' : ''}`,
+      )
+    "
+  >
+    <Breadcrumb v-if="showBreadcrumb" class="mb-3">
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink as-child>
+            <NuxtLink to="/">Home</NuxtLink>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <!--       <BreadcrumbItem>
         <DropdownMenu>
           <DropdownMenuTrigger class="flex items-center gap-1">
             <BreadcrumbEllipsis class="size-4" />
@@ -43,15 +52,16 @@ const _props = withDefaults(
         </BreadcrumbLink>
       </BreadcrumbItem>
       <BreadcrumbSeparator /> -->
-      <BreadcrumbItem>
-        <BreadcrumbPage>{{ title }}</BreadcrumbPage>
-      </BreadcrumbItem>
-    </BreadcrumbList>
-  </Breadcrumb>
-  <div class="content-header mb-5 flex justify-between border-b pb-5">
-    <slot name="title">
-      <ContentTitleBlock :title="title" :description="description" />
-    </slot>
-    <slot />
+        <BreadcrumbItem>
+          <BreadcrumbPage>{{ title }}</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+    <div class="content-header mb-3 flex justify-between border-b pb-2">
+      <slot name="title">
+        <ContentTitleBlock :title="title" :description="description" />
+      </slot>
+      <slot />
+    </div>
   </div>
 </template>

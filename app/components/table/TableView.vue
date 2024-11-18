@@ -17,7 +17,7 @@ import {
   useVueTable,
 } from '@tanstack/vue-table';
 
-import { Search } from 'lucide-vue-next';
+import { Search, Maximize2, Minimize2 } from 'lucide-vue-next';
 
 const props = withDefaults(
   defineProps<{
@@ -49,6 +49,8 @@ const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const rowSelection = ref({});
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
+
+const tableMaximized = useState<boolean>('table-maximized', () => false);
 
 // Setup column visibility
 const { path } = useRoute();
@@ -143,7 +145,14 @@ const table = useVueTable({
 </script>
 
 <template>
-  <div class="mb-4 flex items-center">
+  <div
+    :class="
+      cn(
+        'mb-3 flex origin-top transform items-center transition-[transform]',
+        `${tableMaximized ? 'scale-y-0' : ''}`,
+      )
+    "
+  >
     <div class="relative w-full max-w-sm">
       <Input
         class="w-full pl-10"
@@ -161,7 +170,12 @@ const table = useVueTable({
     <TableColumnToggle :table="table" />
   </div>
   <div
-    class="relative -mb-14 overflow-hidden rounded-lg border pb-14 shadow-sm"
+    :class="
+      cn(
+        'relative mb-[6.5rem] translate-y-40 overflow-hidden rounded-lg border pb-14 shadow-sm transition-[transform]',
+        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] mb-0 translate-y-0' : '-mt-40'}`,
+      )
+    "
   >
     <Table>
       <TableHeader>
@@ -231,5 +245,14 @@ const table = useVueTable({
       :rows-selectable="rowsSelectable"
       :table="table"
     />
+    <Button
+      variant="ghost"
+      size="icon"
+      class="absolute -right-px -top-px z-50 size-6 border-border bg-card"
+      @click="tableMaximized = !tableMaximized"
+    >
+      <Maximize2 v-if="!tableMaximized" class="size-3" />
+      <Minimize2 v-else class="size-3" />
+    </Button>
   </div>
 </template>
