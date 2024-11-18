@@ -16,6 +16,7 @@ module.exports = {
     extend: {
       height: {
         header: '4rem',
+        main: 'calc(100vh - 4rem)',
       },
       boxShadow: {
         'only-right': '3px 0 7px -2px rgb(0 0 0 / 0.1)',
