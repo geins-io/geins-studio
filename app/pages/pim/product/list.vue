@@ -54,7 +54,6 @@ setOrderForColumn(columns, 'image', 1);
     <TableView
       :loading="loading"
       :entity-name="entityName"
-      :rows-selectable="rowsSelectable"
       :columns="columns"
       :data="products"
     />

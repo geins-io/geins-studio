@@ -152,16 +152,18 @@ export const useColumns = <T extends object>() => {
                   'underline underline-offset-2 font-medium text-link hover:text-muted-foreground',
                 ),
               },
-              () =>
-                text.length > maxTextLength
-                  ? text.slice(0, maxTextLength) + '...'
-                  : text,
+              {
+                default: () =>
+                  text.length > maxTextLength
+                    ? text.slice(0, maxTextLength) + '...'
+                    : text,
+              },
             );
             if (text.length > maxTextLength) {
               return h(
                 TableCellLongText,
                 { text, className: basicCellStyle, maxTextLength },
-                link,
+                { default: () => link }, // Use function slot here
               );
             }
             return h('div', { class: basicCellStyle }, link);
@@ -190,6 +192,7 @@ export const useColumns = <T extends object>() => {
                 text,
                 className: basicCellStyle,
                 maxTextLength,
+                default: () => text, // Use function slot here
               });
             }
             return h('div', { class: basicCellStyle }, text);
@@ -245,7 +248,8 @@ export const useColumns = <T extends object>() => {
       id: 'actions',
       enableHiding: false,
       enableSorting: false,
-      size: 90,
+      size: 44,
+      maxSize: 44,
       header: () =>
         h('div', {
           class: cn(basicHeaderStyle, 'shadow-only-left'),

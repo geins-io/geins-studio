@@ -46,13 +46,13 @@ const emit = defineEmits({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-    <Button
+    <!-- <Button
       class="size-7 p-1"
       size="xs"
       variant="outline"
       @click="emit('edit', rowData)"
     >
       <Edit class="size-3.5" />
-    </Button>
+    </Button> -->
   </div>
 </template>

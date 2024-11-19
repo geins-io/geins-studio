@@ -23,21 +23,14 @@ const props = withDefaults(
   defineProps<{
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
-    rowsSelectable?: boolean;
     entityName?: string;
     pageSize?: number;
     loading?: boolean;
-    columnPinningState?: ColumnPinningState;
   }>(),
   {
-    rowsSelectable: false,
     entityName: 'row',
     pageSize: 30,
     loading: false,
-    columnPinningState: () => ({
-      left: ['select'],
-      right: ['actions'],
-    }),
   },
 );
 
@@ -45,14 +38,26 @@ const emit = defineEmits({
   clicked: (row) => row,
 });
 
+/**
+ * Setup table state
+ */
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const rowSelection = ref({});
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
 const tableMaximized = useState<boolean>('table-maximized', () => false);
+const rowsSelectable = computed(() =>
+  props.columns.some((column) => column.id === 'select'),
+);
 
-// Setup column visibility
+onUnmounted(() => {
+  tableMaximized.value = false;
+});
+
+/**
+ * Setup column visibility
+ **/
 const { path } = useRoute();
 const { user } = useUserStore();
 const userId = user?.id || 'default';
@@ -70,7 +75,9 @@ const updateVisibilityCookie = () => {
 };
 watch(columnVisibility, updateVisibilityCookie, { deep: true });
 
-// Setup column order
+/**
+ * Setup column order
+ **/
 const columnOrderCookie = useCookie<ColumnOrderState>(
   `geins-order-${cookieKey}`,
   {
@@ -83,7 +90,11 @@ const updateSortingCookie = () => {
 };
 watch(columnOrder, updateSortingCookie, { deep: true });
 
-// Get pinned class of column
+/**
+ * Handle pinned columns
+ **/
+
+// Get default pinned classes for cells
 const pinnedClasses = (column: Column<TData>, header: boolean = false) => {
   const pinned = column.getIsPinned();
   if (pinned) {
@@ -95,6 +106,37 @@ const pinnedClasses = (column: Column<TData>, header: boolean = false) => {
   }
   return 'relative';
 };
+
+// Set default pinned columns
+const defaultPinningState: ColumnPinningState = {
+  left: ['select'],
+  right: ['actions'],
+};
+
+// Remove select and actions columns from pinned state if not present in columns
+const columnPinningState = computed(() => {
+  const left = defaultPinningState?.left?.filter((id) =>
+    props.columns.some((column) => column.id === id),
+  );
+  const right = defaultPinningState.right?.filter((id) =>
+    props.columns.some((column) => column.id === id),
+  );
+  return { left, right };
+});
+
+// Assign extra classes to cells based on pinned columns
+const cellClasses = computed(() => {
+  const pinnedToLeft = columnPinningState.value?.left?.length || 0;
+  const pinnedToRight = columnPinningState.value?.right?.length || 0;
+  const classes = [];
+  if (pinnedToLeft) {
+    classes.push(`[&:nth-child(2)]:border-card`);
+  }
+  if (pinnedToRight) {
+    classes.push('[&:last-child]:border-0');
+  }
+  return classes.join(' ');
+});
 
 // Setup table
 const table = useVueTable({
@@ -139,7 +181,7 @@ const table = useVueTable({
     pagination: {
       pageSize: props.pageSize,
     },
-    columnPinning: props.columnPinningState,
+    columnPinning: columnPinningState.value,
   },
 });
 </script>
@@ -190,6 +232,7 @@ const table = useVueTable({
             :class="
               cn(
                 `z-30 ${pinnedClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
+                cellClasses,
               )
             "
             :style="
@@ -217,7 +260,7 @@ const table = useVueTable({
             <TableCell
               v-for="cell in row.getVisibleCells()"
               :key="cell.id"
-              :class="cn(`${pinnedClasses(cell.column)}`)"
+              :class="cn(`${pinnedClasses(cell.column)}`, cellClasses)"
               :style="
                 cell.column.getSize()
                   ? { width: `${cell.column.getSize()}px` }

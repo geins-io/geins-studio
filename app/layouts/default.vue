@@ -20,7 +20,7 @@ const mainContentStyle = computed(() => {
       :sidebar-width="currentSidebarWidth"
     />
     <main
-      class="relative flex grow flex-col transition-[width]"
+      class="relative flex grow flex-col transition-[max-width]"
       :style="mainWidthStyle"
     >
       <LayoutHeader class="sticky top-0 h-header" />
