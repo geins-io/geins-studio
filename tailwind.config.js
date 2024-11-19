@@ -22,6 +22,9 @@ module.exports = {
         'only-right': '3px 0 7px -2px rgb(0 0 0 / 0.1)',
         'only-left': '-3px 0 7px -2px rgb(0 0 0 / 0.1)',
       },
+      gridTemplateColumns: {
+        main: '1fr 360px',
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

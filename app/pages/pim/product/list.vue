@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="TData">
+<script setup lang="ts">
 import type { Product } from '@/types/product/Product';
 
 // List page globals
@@ -44,7 +44,7 @@ setOrderForColumn(columns, 'image', 1);
 </script>
 
 <template>
-  <ContentHeader title="Products">
+  <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
     <ContentActionBar>
       <ButtonExport />
       <ButtonNew>{{ $t('new_entity', { entityName }) }}</ButtonNew>
@@ -59,7 +59,7 @@ setOrderForColumn(columns, 'image', 1);
     />
     <template #error="{ errorCatched }">
       <h2 class="text-xl font-bold">
-        {{ $t('error_loading_entity', { entityName: 'products' }) }}
+        {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
       </h2>
       <p>{{ errorCatched }}</p>
     </template>

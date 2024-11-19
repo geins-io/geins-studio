@@ -152,6 +152,20 @@ export const navigation: NavigationItem[] = [
     label: 'Wholesale',
     href: '',
     icon: 'Building2',
+    children: [
+      {
+        label: 'Accounts',
+        href: '/wholesale/accounts',
+      },
+      {
+        label: 'Orders',
+        href: '/wholesale/orders',
+      },
+      {
+        label: 'Pricelists',
+        href: '/wholesale/pricelists',
+      },
+    ],
   },
   {
     label: 'Import Tool',

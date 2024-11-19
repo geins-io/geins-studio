@@ -2,6 +2,8 @@ export default defineI18nLocale(async () => {
   return {
     product: 'product | products',
     category: 'category | categories',
+    pricelist: 'pricelist | pricelists',
+    entity_caps: '@.capitalize:{entityName}',
     new_entity: 'Create {entityName}',
     save_entity: 'Save {entityName}',
     error_loading_entity: "Couldn't load {entityName}",
