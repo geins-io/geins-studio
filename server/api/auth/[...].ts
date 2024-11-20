@@ -40,6 +40,10 @@ export default NuxtAuthHandler({
         user === undefined
       ) {
         console.log('🚀 ~ jwt: ~ token in refresh:', token.refreshToken);
+        const parsedToken = token.accessToken
+          ? JSON.parse(atob(token.accessToken.split('.')[1]))
+          : null;
+        console.log('🚀 ~ jwt: ~ parsedToken:', parsedToken);
         try {
           // Refresh the token
           console.log('🚀 ~ jwt: ~ currentRefreshToken:', currentRefreshToken);
