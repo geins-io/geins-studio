@@ -4,7 +4,6 @@ import type { LoginCredentials } from '@/types/auth/Auth';
 import type { Session } from 'next-auth';
 
 let justSignedIn = false;
-let currentRefreshToken: string | undefined;
 
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
@@ -16,14 +15,19 @@ export default NuxtAuthHandler({
     jwt: async ({ token, user, trigger }) => {
       if (trigger === 'signIn' && user) {
         console.log('🚀 ~ jwt: ~ trigger:', trigger);
+        const parsedToken = user.accessToken
+          ? JSON.parse(atob(user.accessToken.split('.')[1]))
+          : null;
+        console.log('🚀 ~ jwt: ~ parsedToken:', parsedToken);
+
         // Set the token
         if (user.isAuthorized) {
           token = {
             isAuthorized: user.isAuthorized,
             accessToken: user.accessToken,
             refreshToken: user.refreshToken,
+            ...parsedToken,
           };
-          currentRefreshToken = user.refreshToken;
           justSignedIn = true;
         } else if (user.tfa) {
           token = {
@@ -39,11 +43,8 @@ export default NuxtAuthHandler({
         trigger === undefined &&
         user === undefined
       ) {
-        console.log('🚀 ~ jwt: ~ token in refresh:', token.refreshToken);
-        const parsedToken = token.accessToken
-          ? JSON.parse(atob(token.accessToken.split('.')[1]))
-          : null;
-        console.log('🚀 ~ jwt: ~ parsedToken:', parsedToken);
+        console.log('🚀 ~ jwt: ~ token in """refresh""":', token.refreshToken);
+        /*  console.log('🚀 ~ jwt: ~ token:', token);
         try {
           // Refresh the token
           console.log('🚀 ~ jwt: ~ currentRefreshToken:', currentRefreshToken);
@@ -57,10 +58,15 @@ export default NuxtAuthHandler({
               '🚀 ~ jwt: ~ received new tokens:',
               newTokens.refreshToken,
             );
+            const parsedToken = newTokens.accessToken
+              ? JSON.parse(atob(newTokens.accessToken.split('.')[1]))
+              : null;
+            console.log('🚀 ~ jwt: ~ parsedToken:', parsedToken);
             token = {
               isAuthorized: true,
               accessToken: newTokens.accessToken,
               refreshToken: newTokens.refreshToken,
+              ...parsedToken,
             };
             currentRefreshToken = newTokens.refreshToken;
           }
@@ -73,12 +79,14 @@ export default NuxtAuthHandler({
           } else {
             // TODO: Decide if we should try to refresh the token again, or just log the user out
           }
-        }
+        } */
       }
       return token;
     },
     session: async ({ session, token }) => {
-      console.log('🚀 ~ session: ~ refreshToken:', token.refreshToken);
+      console.log('🚀 ~ session: ~ session:', session);
+      console.log('🚀 ~ session: ~ token:', token);
+      // console.log('🚀 ~ session: ~ refreshToken:', token.refreshToken);
       if (token.isAuthorized && token.accessToken) {
         session = {
           ...session,
