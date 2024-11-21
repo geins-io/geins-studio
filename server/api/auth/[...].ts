@@ -15,13 +15,11 @@ export default NuxtAuthHandler({
       if (trigger === 'signIn' && user) {
         // Set the token
         if (user.isAuthorized) {
-          const parsedToken = geinsAuth.parseToken(user.accessToken);
-          console.log('🚀 ~ jwt: ~ parsedToken:', parsedToken);
           token = {
             isAuthorized: user.isAuthorized,
             accessToken: user.accessToken,
             refreshToken: user.refreshToken,
-            tokenExpires: parsedToken.exp,
+            tokenExpires: user.tokenExpires,
           };
         } else if (user.tfa) {
           token = {
@@ -36,8 +34,6 @@ export default NuxtAuthHandler({
         (geinsAuth.isExpired(token.tokenExpires) ||
           geinsAuth.expiresSoon(token.tokenExpires))
       ) {
-        console.log('🚀 ~ jwt: ~ token in """refresh""":', token.refreshToken);
-        console.log('🚀 ~ jwt: ~ token:', token);
         try {
           // Refresh the token
           const newTokens = await geinsAuth.refresh(token.refreshToken);
@@ -85,6 +81,7 @@ export default NuxtAuthHandler({
               console.log('🚀 ~ fetching user ~ unathorized - try again');
               try {
                 const newTokens = await geinsAuth.refresh(token.refreshToken);
+
                 if (newTokens?.accessToken) {
                   const user = await geinsAuth.getUser(newTokens.accessToken);
                   const parsedToken = geinsAuth.parseToken(
@@ -103,10 +100,7 @@ export default NuxtAuthHandler({
                 throw new Error('Unauthorized');
               }
             }
-            session = {
-              ...session,
-              isAuthorized: false,
-            };
+            // Keep session as is if we can't fetch the user, maybe there is a network error..
           }
         }
       } else {
@@ -140,10 +134,13 @@ export default NuxtAuthHandler({
             return null;
           }
 
+          const parsedToken = geinsAuth.parseToken(authResponse.accessToken);
+
           return {
             isAuthorized: true,
             accessToken: authResponse.accessToken,
             refreshToken: authResponse.refreshToken,
+            tokenExpires: parsedToken.exp,
           } as Session;
         }
 
