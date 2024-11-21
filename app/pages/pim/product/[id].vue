@@ -14,6 +14,9 @@ const entityName = 'product';
           <ButtonCopy variant="secondary">Copy</ButtonCopy>
           <ButtonSave>{{ $t('save_entity', { entityName }) }}</ButtonSave>
         </ContentActionBar>
+        <template #tabs>
+          <ContentTabs class="mt-5" />
+        </template>
       </ContentHeader>
     </template>
     <ContentEditMain>

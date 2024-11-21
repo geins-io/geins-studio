@@ -1,10 +1,6 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
 import type { LoginCredentials } from '@/types/auth/Auth';
-import type { Session } from 'next-auth';
-
-let justSignedIn = false;
-let currentRefreshToken: string | undefined;
 
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
@@ -14,55 +10,34 @@ export default NuxtAuthHandler({
   },
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
+      const geinsAuth = auth();
       if (trigger === 'signIn' && user) {
-        console.log('🚀 ~ jwt: ~ trigger:', trigger);
         // Set the token
         if (user.isAuthorized) {
           token = {
-            isAuthorized: user.isAuthorized,
-            accessToken: user.accessToken,
-            refreshToken: user.refreshToken,
+            ...user,
           };
-          currentRefreshToken = user.refreshToken;
-          justSignedIn = true;
         } else if (user.tfa) {
           token = {
             isAuthorized: false,
             tfa: user.tfa,
           };
         }
-      } else if (justSignedIn) {
-        console.log('🚀 ~ jwt: ~ justSignedIn:', justSignedIn);
-        justSignedIn = false;
       } else if (
-        token.isAuthorized &&
         trigger === undefined &&
-        user === undefined
+        user === undefined &&
+        token.isAuthorized &&
+        (geinsAuth.isExpired(token.tokenExpires) ||
+          geinsAuth.expiresSoon(token.tokenExpires))
       ) {
-        console.log('🚀 ~ jwt: ~ token in refresh:', token.refreshToken);
-        const parsedToken = token.accessToken
-          ? JSON.parse(atob(token.accessToken.split('.')[1]))
-          : null;
-        console.log('🚀 ~ jwt: ~ parsedToken:', parsedToken);
         try {
           // Refresh the token
-          console.log('🚀 ~ jwt: ~ currentRefreshToken:', currentRefreshToken);
-
-          const refreshToken = currentRefreshToken || token.refreshToken;
-          const geinsAuth = auth();
-          const newTokens = await geinsAuth.refresh(refreshToken);
-
+          const newTokens = await geinsAuth.refresh(token.refreshToken);
           if (newTokens) {
-            console.log(
-              '🚀 ~ jwt: ~ received new tokens:',
-              newTokens.refreshToken,
-            );
+            const session = geinsAuth.getSession(newTokens);
             token = {
-              isAuthorized: true,
-              accessToken: newTokens.accessToken,
-              refreshToken: newTokens.refreshToken,
+              ...session,
             };
-            currentRefreshToken = newTokens.refreshToken;
           }
         } catch (error) {
           console.error('Error refreshing token:', error);
@@ -75,10 +50,12 @@ export default NuxtAuthHandler({
           }
         }
       }
+      console.log('🚀 ~ jwt: ~ token RETURNED:', token);
+
       return token;
     },
     session: async ({ session, token }) => {
-      console.log('🚀 ~ session: ~ refreshToken:', token.refreshToken);
+      const geinsAuth = auth();
       if (token.isAuthorized && token.accessToken) {
         session = {
           ...session,
@@ -86,26 +63,45 @@ export default NuxtAuthHandler({
         };
         if (!session.user?.email) {
           try {
-            const geinsAuth = auth();
             const user = await geinsAuth.getUser(token.accessToken);
             session.user = user;
           } catch (error) {
             console.error('Error fetching user:', error);
-            session = {
-              ...session,
-              isAuthorized: false,
-            };
+            // TODO: type errors
+            // If unathorized, try to refresh the token
+            if (error.message === 'Unauthorized') {
+              console.log('🚀 ~ fetching user ~ unathorized - try again');
+              try {
+                const newTokens = await geinsAuth.refresh(token.refreshToken);
+
+                if (newTokens?.accessToken) {
+                  const newSession = geinsAuth.getSession(newTokens);
+                  const user = await geinsAuth.getUser(newTokens.accessToken);
+
+                  session = {
+                    ...session,
+                    ...newSession,
+                    user,
+                  };
+                }
+              } catch (error) {
+                console.error('Error refreshing unauthorized user:', error);
+                // Throw error to force log out
+                throw new Error('Unauthorized');
+              }
+            }
+            // Keep session as is if we can't fetch the user, maybe there is a network error..
           }
         }
       } else {
-        session = {
-          ...session,
-          isAuthorized: false,
-        };
+        // Throw error to force log out
+        throw new Error('Unauthorized');
       }
       if (token.tfa) {
         return { ...session, tfa: token.tfa };
       }
+      console.log('🚀 ~ session: ~ session RETURNED:', session);
+
       return session;
     },
   },
@@ -128,11 +124,7 @@ export default NuxtAuthHandler({
             return null;
           }
 
-          return {
-            isAuthorized: true,
-            accessToken: authResponse.accessToken,
-            refreshToken: authResponse.refreshToken,
-          } as Session;
+          return geinsAuth.getSession(authResponse);
         }
 
         return null;

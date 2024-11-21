@@ -23,6 +23,12 @@ const triggerToast = (
   });
 };
 const { refresh } = useAuth();
+
+const { callAPI } = useAPI();
+
+const { data, error } = await callAPI('/user/me');
+console.log('🚀 ~ error:', error.value);
+console.log('🚀 ~ data:', data.value);
 </script>
 <template>
   <ContentHeader
