@@ -31,41 +31,39 @@ export default defineEventHandler(async (event) => {
     apiHeaders['Authorization'] = `Bearer ${token.accessToken}`;
   }
 
-  // Make the API call
-  const response = (await $fetch(fullUrl.toString(), {
-    method: event.method,
-    body,
-    headers: apiHeaders,
-  })) as Response;
+  try {
+    // Make the API call
+    const response = (await $fetch(fullUrl.toString(), {
+      method: event.method,
+      body,
+      headers: apiHeaders,
+    })) as Response;
+    return response;
+  } catch (error) {
+    if (error.response && error.response.status === 401) {
+      // console log in big fat green letters that a retry has been made
+      console.log('401 - RETRY FROM CATCH ALL 😈😈😈😈😈😈😈😈😈😈');
 
-  console.log('🚀 ~ catchall ~ response status:', response.status);
+      const session = await getServerSession(event);
 
-  // If response is unathorized, try to refresh the token
-  // if (response.status === 401) {
-  if (response) {
-    // console log in big fat green letters that a retry has been made
-    console.log(
-      '%cRETRY FROM CATCH ALL 😈😈😈😈😈😈😈😈😈😈',
-      'color: green; font-size: 16px; font-weight: bold;',
-    );
+      console.log('😈😈😈 ~ CATCH ALL ~ session:', session);
 
-    const session = await getServerSession(event);
-    console.log('😈😈😈 ~ CATCH ALL ~ session:', session);
+      if (session?.isAuthorized) {
+        // Update the token in the headers
+        apiHeaders['Authorization'] = `Bearer ${session?.accessToken}`;
 
-    if (session?.accessToken) {
-      // Update the token in the headers
-      apiHeaders['Authorization'] = `Bearer ${session?.accessToken}`;
+        // Retry the request
+        const retryResponse = await $fetch(fullUrl.toString(), {
+          method: event.method,
+          body,
+          headers: apiHeaders,
+        });
 
-      // Retry the request
-      const retryResponse = await $fetch(fullUrl.toString(), {
-        method: event.method,
-        body,
-        headers: apiHeaders,
-      });
-
-      return retryResponse;
+        return retryResponse;
+      }
     }
-  }
 
-  return response;
+    // Handle other errors here
+    console.error('Error connecting to the API:', error);
+  }
 });

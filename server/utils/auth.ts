@@ -31,8 +31,6 @@ export const auth = () => {
     const text = await response.text();
     if (response.status === 401) {
       console.log('🚀 ~ status 401 ~ text:', text);
-      const json = await response.json();
-      console.log('🚀 ~ status 401 ~ response json:', json);
       throw new Error('Unauthorized');
     } else if (response.status === 403) {
       throw new Error('Insufficient permissions');
@@ -73,10 +71,29 @@ export const auth = () => {
     return callAPI<User>('dfa-verify', 'POST', credentials);
   };
 
+  const parseToken = (token?: string | null) => {
+    return token ? JSON.parse(atob(token.split('.')[1])) : null;
+  };
+
+  const isExpired = (exp: number) => {
+    exp = exp * 1000;
+    console.log('🚀 ~ isExpired:', Date.now() > exp);
+    return Date.now() > exp;
+  };
+
+  const expiresSoon = (exp: number, threshold = 300000) => {
+    exp = exp * 1000;
+    console.log('🚀 ~ expiresSoon:', Date.now() + threshold > exp);
+    return Date.now() + threshold > exp;
+  };
+
   return {
     login,
     getUser,
     refresh,
     verify,
+    parseToken,
+    isExpired,
+    expiresSoon,
   };
 };
