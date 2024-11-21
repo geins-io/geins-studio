@@ -20,8 +20,8 @@ const entityName = 'product';
       </ContentHeader>
     </template>
     <ContentEditMain>
-      <Card>Main</Card>
-      <Card>Details</Card>
+      <Card class="min-h-40 p-5">Main</Card>
+      <Card class="min-h-40 p-5">Details</Card>
     </ContentEditMain>
   </ContentEdit>
 </template>
