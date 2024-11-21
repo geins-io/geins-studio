@@ -21,7 +21,7 @@ export default NuxtAuthHandler({
             isAuthorized: user.isAuthorized,
             accessToken: user.accessToken,
             refreshToken: user.refreshToken,
-            ...parsedToken,
+            tokenExpires: parsedToken.exp,
           };
         } else if (user.tfa) {
           token = {
@@ -33,8 +33,8 @@ export default NuxtAuthHandler({
         trigger === undefined &&
         user === undefined &&
         token.isAuthorized &&
-        (geinsAuth.isExpired(Number(token.exp)) ||
-          geinsAuth.expiresSoon(Number(token.exp)))
+        (geinsAuth.isExpired(token.tokenExpires) ||
+          geinsAuth.expiresSoon(token.tokenExpires))
       ) {
         console.log('🚀 ~ jwt: ~ token in """refresh""":', token.refreshToken);
         console.log('🚀 ~ jwt: ~ token:', token);
@@ -49,7 +49,7 @@ export default NuxtAuthHandler({
               isAuthorized: true,
               accessToken: newTokens.accessToken,
               refreshToken: newTokens.refreshToken,
-              ...parsedToken,
+              tokenExpires: parsedToken.exp,
             };
           }
         } catch (error) {
@@ -87,14 +87,18 @@ export default NuxtAuthHandler({
                 const newTokens = await geinsAuth.refresh(token.refreshToken);
                 if (newTokens?.accessToken) {
                   const user = await geinsAuth.getUser(newTokens.accessToken);
+                  const parsedToken = geinsAuth.parseToken(
+                    newTokens.accessToken,
+                  );
                   session = {
                     ...session,
                     ...newTokens,
+                    tokenExpires: parsedToken.exp,
                     user,
                   };
                 }
               } catch (error) {
-                console.error('Error fetching user:', error);
+                console.error('Error refreshing unauthorized user:', error);
                 // Throw error to force log out
                 throw new Error('Unauthorized');
               }

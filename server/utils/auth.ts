@@ -75,13 +75,19 @@ export const auth = () => {
     return token ? JSON.parse(atob(token.split('.')[1])) : null;
   };
 
-  const isExpired = (exp: number) => {
+  const isExpired = (exp?: number) => {
+    if (!exp) {
+      return false;
+    }
     exp = exp * 1000;
     console.log('🚀 ~ isExpired:', Date.now() > exp);
     return Date.now() > exp;
   };
 
-  const expiresSoon = (exp: number, threshold = 300000) => {
+  const expiresSoon = (exp?: number, threshold = 300000) => {
+    if (!exp) {
+      return false;
+    }
     exp = exp * 1000;
     console.log('🚀 ~ expiresSoon:', Date.now() + threshold > exp);
     return Date.now() + threshold > exp;
