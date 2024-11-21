@@ -1,7 +1,6 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
 import type { LoginCredentials } from '@/types/auth/Auth';
-import type { Session } from 'next-auth';
 
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
@@ -16,10 +15,7 @@ export default NuxtAuthHandler({
         // Set the token
         if (user.isAuthorized) {
           token = {
-            isAuthorized: user.isAuthorized,
-            accessToken: user.accessToken,
-            refreshToken: user.refreshToken,
-            tokenExpires: user.tokenExpires,
+            ...user,
           };
         } else if (user.tfa) {
           token = {
@@ -37,15 +33,10 @@ export default NuxtAuthHandler({
         try {
           // Refresh the token
           const newTokens = await geinsAuth.refresh(token.refreshToken);
-
           if (newTokens) {
-            const parsedToken = geinsAuth.parseToken(newTokens.accessToken);
-
+            const session = geinsAuth.getSession(newTokens);
             token = {
-              isAuthorized: true,
-              accessToken: newTokens.accessToken,
-              refreshToken: newTokens.refreshToken,
-              tokenExpires: parsedToken.exp,
+              ...session,
             };
           }
         } catch (error) {
@@ -77,20 +68,19 @@ export default NuxtAuthHandler({
           } catch (error) {
             console.error('Error fetching user:', error);
             // TODO: type errors
+            // If unathorized, try to refresh the token
             if (error.message === 'Unauthorized') {
               console.log('🚀 ~ fetching user ~ unathorized - try again');
               try {
                 const newTokens = await geinsAuth.refresh(token.refreshToken);
 
                 if (newTokens?.accessToken) {
+                  const newSession = geinsAuth.getSession(newTokens);
                   const user = await geinsAuth.getUser(newTokens.accessToken);
-                  const parsedToken = geinsAuth.parseToken(
-                    newTokens.accessToken,
-                  );
+
                   session = {
                     ...session,
-                    ...newTokens,
-                    tokenExpires: parsedToken.exp,
+                    ...newSession,
                     user,
                   };
                 }
@@ -134,14 +124,7 @@ export default NuxtAuthHandler({
             return null;
           }
 
-          const parsedToken = geinsAuth.parseToken(authResponse.accessToken);
-
-          return {
-            isAuthorized: true,
-            accessToken: authResponse.accessToken,
-            refreshToken: authResponse.refreshToken,
-            tokenExpires: parsedToken.exp,
-          } as Session;
+          return geinsAuth.getSession(authResponse);
         }
 
         return null;
