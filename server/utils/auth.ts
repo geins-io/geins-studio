@@ -114,6 +114,22 @@ export const auth = () => {
     };
   };
 
+  const inRefresh = async (): Promise<boolean> => {
+    const response = await $fetch('/cookie/get/auth-refresh', {
+      credentials: 'include',
+    });
+
+    return !!response;
+  };
+
+  const setInRefresh = async (inRefresh: boolean) => {
+    if (inRefresh) {
+      await $fetch('/cookie/set/auth-refresh/true');
+    } else {
+      await $fetch('/cookie/remove/auth-refresh');
+    }
+  };
+
   return {
     login,
     getUser,
@@ -123,5 +139,7 @@ export const auth = () => {
     isExpired,
     expiresSoon,
     getSession,
+    inRefresh,
+    setInRefresh,
   };
 };

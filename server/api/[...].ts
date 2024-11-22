@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, getHeaders } from 'h3';
+import { defineEventHandler, readBody, getHeaders, getCookie } from 'h3';
 import { useRuntimeConfig } from '#imports';
 import { getToken, getServerSession } from '#auth';
 
@@ -31,6 +31,9 @@ export default defineEventHandler(async (event) => {
     apiHeaders['Authorization'] = `Bearer ${token.accessToken}`;
   }
 
+  const inRefresh = getCookie(event, 'auth-refresh');
+  console.log('😈😈😈 ~ CATCH ALL ~ inRefresh:', inRefresh);
+
   try {
     // Make the API call
     const response = (await $fetch(fullUrl.toString(), {
@@ -40,9 +43,9 @@ export default defineEventHandler(async (event) => {
     })) as Response;
     return response;
   } catch (error) {
-    if (error.response && error.response.status === 401) {
-      // console log in big fat green letters that a retry has been made
-      console.log('401 - RETRY FROM CATCH ALL 😈😈😈😈😈😈😈😈😈😈');
+    const inRefresh = getCookie(event, 'auth-refresh');
+    if (error.response && error.response.status === 401 && !inRefresh) {
+      console.log('😈😈😈 401 - RETRY FROM CATCH ALL');
 
       const session = await getServerSession(event);
 
@@ -64,6 +67,6 @@ export default defineEventHandler(async (event) => {
     }
 
     // Handle other errors here
-    console.error('Error connecting to the API:', error);
+    console.warn('Error connecting to the API:', error);
   }
 });

@@ -11,6 +11,7 @@ export default NuxtAuthHandler({
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
       const geinsAuth = auth();
+      const inRefresh = await geinsAuth.inRefresh();
       if (trigger === 'signIn' && user) {
         // Set the token
         if (user.isAuthorized) {
@@ -27,10 +28,12 @@ export default NuxtAuthHandler({
         trigger === undefined &&
         user === undefined &&
         token.isAuthorized &&
+        !inRefresh &&
         (geinsAuth.isExpired(token.tokenExpires) ||
           geinsAuth.expiresSoon(token.tokenExpires))
       ) {
         try {
+          await geinsAuth.setInRefresh(true);
           // Refresh the token
           const newTokens = await geinsAuth.refresh(token.refreshToken);
           if (newTokens) {
@@ -48,6 +51,8 @@ export default NuxtAuthHandler({
           } else {
             // TODO: Decide if we should try to refresh the token again, or just log the user out
           }
+        } finally {
+          await geinsAuth.setInRefresh(false);
         }
       }
       console.log('🚀 ~ jwt: ~ token RETURNED:', token);
@@ -61,35 +66,12 @@ export default NuxtAuthHandler({
           ...session,
           ...token,
         };
-        if (!session.user?.email) {
+        if (!session.user?.email && !geinsAuth.isExpired(token.tokenExpires)) {
           try {
             const user = await geinsAuth.getUser(token.accessToken);
             session.user = user;
           } catch (error) {
-            console.error('Error fetching user:', error);
-            // TODO: type errors
-            // If unathorized, try to refresh the token
-            if (error.message === 'Unauthorized') {
-              console.log('🚀 ~ fetching user ~ unathorized - try again');
-              try {
-                const newTokens = await geinsAuth.refresh(token.refreshToken);
-
-                if (newTokens?.accessToken) {
-                  const newSession = geinsAuth.getSession(newTokens);
-                  const user = await geinsAuth.getUser(newTokens.accessToken);
-
-                  session = {
-                    ...session,
-                    ...newSession,
-                    user,
-                  };
-                }
-              } catch (error) {
-                console.error('Error refreshing unauthorized user:', error);
-                // Throw error to force log out
-                throw new Error('Unauthorized');
-              }
-            }
+            console.warn('Error fetching user:', error);
             // Keep session as is if we can't fetch the user, maybe there is a network error..
           }
         }
