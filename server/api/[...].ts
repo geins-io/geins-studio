@@ -12,8 +12,12 @@ export default defineEventHandler(async (event) => {
   }
   const headers = getHeaders(event);
 
+  // console log cookies
+  console.log('😈😈😈 ~ CATCH ALL ~ cookies:', headers.cookie);
+
   // Extract the target URL from the request
   const targetUrl = event.context.params?._;
+  console.log('😈😈😈 ~ CATCH ALL ~ targetUrl:', targetUrl);
 
   if (!targetUrl) {
     return { success: false, error: 'Target URL is required' };
@@ -27,12 +31,17 @@ export default defineEventHandler(async (event) => {
   };
 
   const token = await getToken({ event });
+
   if (token) {
     apiHeaders['Authorization'] = `Bearer ${token.accessToken}`;
   }
 
+  const inRefresh = getCookie(event, 'auth-refresh');
+  console.log('😈😈😈 ~ CATCH ALL ~ inRefresh:', inRefresh);
+
   try {
     // Make the API call
+    console.log('😈😈😈 ~ CATCH ALL ~ making the call');
     const response = (await $fetch(fullUrl.toString(), {
       method: event.method,
       body,
@@ -40,9 +49,6 @@ export default defineEventHandler(async (event) => {
     })) as Response;
     return response;
   } catch (error) {
-    const inRefresh = getCookie(event, 'auth-refresh');
-    console.log('😈😈😈 ~ CATCH ALL ~ inRefresh:', inRefresh);
-
     if (error.response && error.response.status === 401 && !inRefresh) {
       console.log('😈😈😈 401 - RETRY FROM CATCH ALL');
 

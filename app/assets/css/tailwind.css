@@ -68,8 +68,17 @@
 
 @layer base {
   :root {
-    --positive: 142 70% 35%;
-    --positive-foreground: 60 9.1% 97.8%;
+    --positive: 151 45% 56%;
+    --positive-foreground: 0 0% 100%;
+
+    --warning: 32 78% 56%;
+    --warning-foreground: 0 0% 100%;
+
+    --negative: 0 59% 60%;
+    --negative-foreground: 0 0% 100%;
+
+    --info: 194 85% 89%;
+    --info-foreground: 0 0% 9%;
 
     --positive-muted: 92.73 40.74% 94.71%;
     --destructive-muted: 0 100% 96.7%;

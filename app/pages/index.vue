@@ -6,14 +6,14 @@ const { t } = useI18n();
 
 // TODO: Remove this function, only for testing purposes
 const triggerToast = (
-  variant: 'default' | 'destructive' | 'positive' | null | undefined,
+  variant: 'default' | 'negative' | 'positive' | null | undefined,
 ) => {
   const title =
-    variant === 'destructive'
+    variant === 'negative'
       ? t('feedback_error')
       : t('feedback_welcome_back', { name: 'Test' });
   const description =
-    variant === 'destructive'
+    variant === 'negative'
       ? t('feedback_try_again')
       : t('feedback_welcome_back_description');
   toast({
@@ -49,9 +49,7 @@ console.log('🚀 ~ data:', data.value);
       </CardHeader>
       <CardContent> Card Content </CardContent>
       <CardFooter>
-        <Button @click="triggerToast('destructive')">
-          Negative feedback
-        </Button>
+        <Button @click="triggerToast('negative')"> Negative feedback </Button>
       </CardFooter>
     </Card>
     <Card>

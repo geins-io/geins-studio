@@ -17,9 +17,10 @@ export const toastVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-muted',
-        destructive: 'bg-destructive-muted',
-        positive: 'bg-positive-muted',
+        default: 'bg-info text-info-foreground',
+        positive: 'bg-positive text-positive-foreground',
+        negative: 'bg-negative text-negative-foreground',
+        warning: 'bg-warning text-warning-foreground',
       },
     },
     defaultVariants: {
