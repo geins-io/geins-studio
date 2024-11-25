@@ -4,6 +4,8 @@ import type { Category } from '@/types/product/Category';
 const entityName = 'category';
 const categories = ref<Category[]>([]);
 const loading = ref(true);
+const editUrl = '/pim/category/{id}';
+const createUrl = '/pim/category/new';
 
 const { data, error } = await useFetch<Category[]>('/api/categories');
 if (!data.value || error.value) {
@@ -18,14 +20,19 @@ if (!data.value || error.value) {
 loading.value = false;
 
 const { getColumns } = useColumns<Category>();
-const columns = getColumns(categories.value);
+const columns = getColumns(categories.value, {
+  editUrl,
+  columnTypes: { name: 'link' },
+});
 </script>
 
 <template>
   <ContentHeader title="Categories">
     <ContentActionBar>
       <ButtonExport />
-      <ButtonNew>{{ $t('new_entity', { entityName }) }}</ButtonNew>
+      <ButtonNew :href="createUrl">
+        {{ $t('new_entity', { entityName }) }}
+      </ButtonNew>
     </ContentActionBar>
   </ContentHeader>
 

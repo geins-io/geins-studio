@@ -155,15 +155,15 @@ export const navigation: NavigationItem[] = [
     children: [
       {
         label: 'Accounts',
-        href: '/wholesale/accounts',
+        href: '/wholesale/account/list',
       },
       {
         label: 'Orders',
-        href: '/wholesale/orders',
+        href: '/wholesale/order/list',
       },
       {
         label: 'Pricelists',
-        href: '/wholesale/pricelists',
+        href: '/wholesale/pricelist/list',
       },
     ],
   },

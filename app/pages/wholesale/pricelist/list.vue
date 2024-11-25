@@ -1,9 +1,12 @@
-<script setup lang="ts" generic="TData">
+<script setup lang="ts">
 import type { Category } from '@/types/product/Category';
 
 const entityName = 'pricelist';
 const categories = ref<Category[]>([]);
 const loading = ref(true);
+const editUrl = '/wholesale/pricelist/{id}';
+const createUrl = '/wholesale/pricelist/new';
+const rowsSelectable = true;
 
 const { data, error } = await useFetch<Category[]>('/api/categories');
 if (!data.value || error.value) {
@@ -18,14 +21,20 @@ if (!data.value || error.value) {
 loading.value = false;
 
 const { getColumns } = useColumns<Category>();
-const columns = getColumns(categories.value);
+const columns = getColumns(categories.value, {
+  selectable: rowsSelectable,
+  editUrl,
+  columnTypes: { name: 'link' },
+});
 </script>
 
 <template>
   <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
     <ContentActionBar>
       <ButtonExport />
-      <ButtonNew>{{ $t('new_entity', { entityName }) }}</ButtonNew>
+      <ButtonNew :href="createUrl">
+        {{ $t('new_entity', { entityName }) }}
+      </ButtonNew>
     </ContentActionBar>
   </ContentHeader>
 

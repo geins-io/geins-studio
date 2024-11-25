@@ -7,6 +7,7 @@ const totalProducts = ref(3000);
 const products = ref<Product[]>([]);
 const loading = ref(true);
 const editUrl = '/pim/product/{id}';
+const createUrl = '/pim/product/new';
 const rowsSelectable = true;
 
 // Fetch data
@@ -47,7 +48,9 @@ setOrderForColumn(columns, 'image', 1);
   <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
     <ContentActionBar>
       <ButtonExport />
-      <ButtonNew>{{ $t('new_entity', { entityName }) }}</ButtonNew>
+      <ButtonNew :href="createUrl">
+        {{ $t('new_entity', { entityName }) }}
+      </ButtonNew>
     </ContentActionBar>
   </ContentHeader>
   <NuxtErrorBoundary>

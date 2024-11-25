@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 const { t } = useI18n();
 
 const route = useRoute();
-const entityName = 'product';
+const entityName = 'pricelist';
 const createMode = ref(route.params.id === 'new');
 const title = computed(() =>
   createMode.value
@@ -22,7 +22,7 @@ const currentStep = ref(1);
           <ButtonNew
             v-if="!createMode"
             variant="secondary"
-            href="/pim/product/new"
+            href="/wholesale/pricelist/new"
           >
             {{ $t('new') }}
           </ButtonNew>
