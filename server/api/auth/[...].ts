@@ -29,7 +29,7 @@ export default NuxtAuthHandler({
         user === undefined &&
         token.isAuthorized &&
         !inRefresh &&
-        (geinsAuth.isExpired(token.tokenExpires) ||
+        (geinsAuth.isExpired(token.tokenExpires, 'jwt refresh') ||
           geinsAuth.expiresSoon(token.tokenExpires))
       ) {
         try {
@@ -37,17 +37,21 @@ export default NuxtAuthHandler({
           // Refresh the token
           const newTokens = await geinsAuth.refresh(token.refreshToken);
           if (newTokens) {
-            const session = geinsAuth.getSession(newTokens);
+            const tokenData = geinsAuth.getTokenData(newTokens);
             token = {
-              ...session,
+              ...tokenData,
             };
+            console.log('🚀 ~ jwt: ~ token RETURNED:', token);
+            return token;
           }
         } catch (error) {
           console.error('Error refreshing token:', error);
-          if (error === 'Unauthorized') {
+          if (error.status === 401 || error.status === 403) {
             token = {
               isAuthorized: false,
             };
+            console.log('🚀 ~ jwt: ~ token RETURNED:', token);
+            return token;
           } else {
             // TODO: Decide if we should try to refresh the token again, or just log the user out
           }
@@ -56,7 +60,6 @@ export default NuxtAuthHandler({
         }
       }
       console.log('🚀 ~ jwt: ~ token RETURNED:', token);
-
       return token;
     },
     session: async ({ session, token }) => {
@@ -64,9 +67,13 @@ export default NuxtAuthHandler({
       if (token.isAuthorized && token.accessToken) {
         session = {
           ...session,
-          ...token,
+          isAuthorized: token.isAuthorized,
+          accessToken: token.accessToken,
         };
-        if (!session.user?.email && !geinsAuth.isExpired(token.tokenExpires)) {
+        if (
+          !session.user?.email &&
+          !geinsAuth.isExpired(token.tokenExpires, 'session get user')
+        ) {
           try {
             const user = await geinsAuth.getUser(token.accessToken);
             session.user = user;
@@ -106,7 +113,7 @@ export default NuxtAuthHandler({
             return null;
           }
 
-          return geinsAuth.getSession(authResponse);
+          return geinsAuth.getTokenData(authResponse);
         }
 
         return null;

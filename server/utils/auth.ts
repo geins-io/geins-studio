@@ -83,12 +83,12 @@ export const auth = () => {
     return token ? jwtDecode(token) : null;
   };
 
-  const isExpired = (exp?: number) => {
+  const isExpired = (exp: number | null | undefined, where: string) => {
     if (!exp) {
       return false;
     }
     exp = exp * 1000;
-    console.log('🚀 ~ isExpired:', Date.now() > exp);
+    console.log('🚀 ~ isExpired: ' + where + ':', Date.now() > exp);
     return Date.now() > exp;
   };
 
@@ -101,15 +101,15 @@ export const auth = () => {
     return Date.now() + threshold > exp;
   };
 
-  const getSession = (session: Session): Session => {
-    if (!session?.accessToken) {
+  const getTokenData = (tokens: Session): Session => {
+    if (!tokens?.accessToken) {
       return { isAuthorized: false };
     }
-    const parsedToken = parseToken(session.accessToken);
+    const parsedToken = parseToken(tokens.accessToken);
     return {
       isAuthorized: true,
-      accessToken: session.accessToken,
-      refreshToken: session.refreshToken,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
       tokenExpires: parsedToken?.exp,
     };
   };
@@ -138,7 +138,7 @@ export const auth = () => {
     parseToken,
     isExpired,
     expiresSoon,
-    getSession,
+    getTokenData,
     inRefresh,
     setInRefresh,
   };

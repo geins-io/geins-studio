@@ -31,9 +31,6 @@ export default defineEventHandler(async (event) => {
     apiHeaders['Authorization'] = `Bearer ${token.accessToken}`;
   }
 
-  const inRefresh = getCookie(event, 'auth-refresh');
-  console.log('😈😈😈 ~ CATCH ALL ~ inRefresh:', inRefresh);
-
   try {
     // Make the API call
     const response = (await $fetch(fullUrl.toString(), {
@@ -44,6 +41,8 @@ export default defineEventHandler(async (event) => {
     return response;
   } catch (error) {
     const inRefresh = getCookie(event, 'auth-refresh');
+    console.log('😈😈😈 ~ CATCH ALL ~ inRefresh:', inRefresh);
+
     if (error.response && error.response.status === 401 && !inRefresh) {
       console.log('😈😈😈 401 - RETRY FROM CATCH ALL');
 
