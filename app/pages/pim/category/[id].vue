@@ -38,19 +38,15 @@ const currentStep = ref(1);
       </ContentHeader>
     </template>
     <ContentEditMain>
-      <div class="flex flex-col gap-4">
-        <ContentCreateStep
-          :step="1"
-          :current-step="currentStep"
-          title="General"
-        >
-          Edit general
-        </ContentCreateStep>
-        <ContentCreateStep :step="2" :current-step="1" title="Details">
-          Edit details
-        </ContentCreateStep>
-      </div>
-      <Card class="min-h-40 p-5">Details</Card>
+      <ContentCreateStep :step="1" :current-step="currentStep" title="General">
+        Edit general
+      </ContentCreateStep>
+      <ContentCreateStep :step="2" :current-step="1" title="Details">
+        Edit details
+      </ContentCreateStep>
+      <template #sidebar>
+        <Card class="p-5">Details</Card>
+      </template>
     </ContentEditMain>
   </ContentEdit>
 </template>

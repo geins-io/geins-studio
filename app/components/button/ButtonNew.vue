@@ -11,7 +11,6 @@ const props = withDefaults(
 );
 
 const link = resolveComponent('NuxtLink');
-
 const elem = props.href ? link : 'div';
 </script>
 <template>

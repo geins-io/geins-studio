@@ -41,6 +41,7 @@ addActionsColumn(columns, {
   onDelete: (product: Product) => console.log('Delete', product.id),
   onUnpublish: (product: Product) => console.log('Unpublish', product.id),
 });
+
 setOrderForColumn(columns, 'image', 1);
 </script>
 

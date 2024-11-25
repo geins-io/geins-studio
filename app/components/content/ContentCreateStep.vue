@@ -39,8 +39,10 @@ watch(
           "
         />
       </CollapsibleTrigger>
-      <CollapsibleContent class="p-4">
-        <slot />
+      <CollapsibleContent>
+        <div class="p-4">
+          <slot />
+        </div>
       </CollapsibleContent>
     </Collapsible>
   </Card>

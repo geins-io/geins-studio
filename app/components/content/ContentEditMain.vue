@@ -1,5 +1,10 @@
 <template>
-  <div class="grid-cols-main grid gap-10">
-    <slot />
+  <div class="grid grid-cols-main gap-10">
+    <div class="flex flex-col gap-4">
+      <slot />
+    </div>
+    <div class="flex flex-col gap-4">
+      <slot name="sidebar" />
+    </div>
   </div>
 </template>
