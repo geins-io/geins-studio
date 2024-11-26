@@ -1,11 +1,21 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router';
 
-const { t } = useI18n();
+// EDIT PAGE OPTIONS
+const tabs = ['Main'];
 
+// GLOBALS
+const { t } = useI18n();
 const route = useRoute();
-const entityName = 'category';
-const createMode = ref(route.params.id === 'new');
+const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntity();
+
+// SETTINGS
+const entityName = getEntityName(route.fullPath);
+const newEntityUrl = getNewEntityUrl(route.fullPath);
+const currentTab = ref(0);
+
+// COMPUTED GLOBALS
+const createMode = ref(route.params.id === newEntityUrlAlias);
 const title = computed(() =>
   createMode.value
     ? t('new_entity', { entityName })
@@ -15,38 +25,52 @@ const currentStep = ref(1);
 </script>
 
 <template>
-  <ContentEdit>
+  <ContentEditWrap>
     <template #header>
       <ContentHeader :title="title">
         <ContentActionBar>
           <ButtonNew
             v-if="!createMode"
             variant="secondary"
-            href="/pim/category/new"
+            :href="newEntityUrl"
           >
             {{ $t('new') }}
           </ButtonNew>
-          <ButtonCopy v-if="!createMode" variant="secondary">{{
-            $t('copy')
-          }}</ButtonCopy>
+          <ButtonCopy v-if="!createMode" variant="secondary"
+            >{{ $t('copy') }}
+          </ButtonCopy>
           <Button v-if="createMode" variant="secondary">Cancel</Button>
           <ButtonSave>{{ $t('save_entity', { entityName }) }}</ButtonSave>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
-          <ContentTabs class="mt-5" />
+          <ContentTabs
+            v-model:current-tab="currentTab"
+            :tabs="tabs"
+            class="mt-5"
+          />
         </template>
       </ContentHeader>
     </template>
-    <ContentEditMain>
-      <ContentCreateStep :step="1" :current-step="currentStep" title="General">
+    <ContentEditMain v-if="currentTab === 0">
+      <ContentEditCard
+        :create-mode="createMode"
+        :step="1"
+        :current-step="currentStep"
+        title="General"
+      >
         Edit general
-      </ContentCreateStep>
-      <ContentCreateStep :step="2" :current-step="1" title="Details">
+      </ContentEditCard>
+      <ContentEditCard
+        :create-mode="createMode"
+        :step="2"
+        :current-step="1"
+        title="Details"
+      >
         Edit details
-      </ContentCreateStep>
+      </ContentEditCard>
       <template #sidebar>
         <Card class="p-5">Details</Card>
       </template>
     </ContentEditMain>
-  </ContentEdit>
+  </ContentEditWrap>
 </template>

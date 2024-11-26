@@ -6,6 +6,7 @@ const props = withDefaults(
     step: number;
     currentStep: number;
     title: string;
+    createMode: boolean;
   }>(),
   {
     step: 1,
@@ -17,19 +18,24 @@ const stepTitle = computed(() => {
   return `${props.step}. ${props.title}`;
 });
 
-const isOpen = ref(props.step === props.currentStep);
-watch(
-  () => props.currentStep,
-  (value) => {
-    isOpen.value = props.step === value;
-  },
-);
+const open = props.createMode ? props.step === props.currentStep : true;
+const isOpen = ref(open);
+
+if (props.createMode) {
+  watch(
+    () => props.currentStep,
+    (value) => {
+      isOpen.value = props.step === value;
+    },
+  );
+}
 </script>
 
 <template>
   <Card>
     <Collapsible v-model:open="isOpen">
       <CollapsibleTrigger
+        v-if="createMode"
         class="flex h-14 w-full items-center justify-between border-b p-4"
       >
         {{ stepTitle }}

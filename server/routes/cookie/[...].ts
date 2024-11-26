@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
       return { message: 'Invalid cookie name or value' };
     }
     setCookie(event, cookieName, cookieValue);
+    console.log('cookie set', cookieName, cookieValue);
     return { message: `Cookie ${cookieName} set to ${cookieValue}` };
   }
 
@@ -33,6 +34,7 @@ export default defineEventHandler(async (event) => {
       return { message: 'Invalid cookie name' };
     }
     setCookie(event, cookieName || '', '', { maxAge: 0 });
+    console.log('cookie removed', cookieName);
     return { message: `Cookie ${cookieName} removed` };
   }
 

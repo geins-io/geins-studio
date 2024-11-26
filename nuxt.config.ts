@@ -43,6 +43,9 @@ export default defineNuxtConfig({
     provider: {
       type: 'authjs',
     },
+    sessionRefresh: {
+      enableOnWindowFocus: false,
+    },
   },
 
   plugins: ['./app/plugins/error-handler.ts', './app/plugins/auth-state.ts'],

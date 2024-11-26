@@ -14,15 +14,15 @@ export const navigation: NavigationItem[] = [
         label: 'Products',
         href: '/pim/product/list',
       },
-      {
+      /*       {
         label: 'Brands',
         href: '',
-      },
+      }, */
       {
         label: 'Categories',
         href: '/pim/category/list',
       },
-      {
+      /*  {
         label: 'Campaigns',
         href: '',
       },
@@ -33,10 +33,10 @@ export const navigation: NavigationItem[] = [
       {
         label: 'Product reviews',
         href: '',
-      },
+      }, */
     ],
   },
-  {
+  /*   {
     label: 'Content',
     href: '',
     icon: 'Brush',
@@ -147,10 +147,10 @@ export const navigation: NavigationItem[] = [
         href: '',
       },
     ],
-  },
+  }, */
   {
     label: 'Wholesale',
-    href: '',
+    href: '/wholesale/account/list',
     icon: 'Building2',
     children: [
       {
@@ -167,7 +167,7 @@ export const navigation: NavigationItem[] = [
       },
     ],
   },
-  {
+  /*   {
     label: 'Import Tool',
     href: '',
     icon: 'Import',
@@ -257,5 +257,5 @@ export const navigation: NavigationItem[] = [
         href: '',
       },
     ],
-  },
+  }, */
 ];
