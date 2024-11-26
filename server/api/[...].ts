@@ -1,6 +1,6 @@
-import { defineEventHandler, readBody, getHeaders } from 'h3';
+import { defineEventHandler, readBody, getHeaders, getCookie } from 'h3';
 import { useRuntimeConfig } from '#imports';
-import { getToken } from '#auth';
+import { getToken, getServerSession } from '#auth';
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
@@ -12,8 +12,20 @@ export default defineEventHandler(async (event) => {
   }
   const headers = getHeaders(event);
 
+  // parse cookies to se if auth-refresh exists
+  const cookies = headers.cookie ? headers.cookie.split(';') : [];
+  let hasAuthRefresh = false;
+  cookies.forEach((cookie) => {
+    const cookieName = cookie.split('=')[0].trim();
+    if (cookieName === 'auth-refresh') {
+      hasAuthRefresh = true;
+    }
+  });
+  console.log('😈😈😈 ~ CATCH ALL ~ has auth-refresh cookie:', hasAuthRefresh);
+
   // Extract the target URL from the request
   const targetUrl = event.context.params?._;
+  console.log('😈😈😈 ~ CATCH ALL ~ targetUrl:', targetUrl);
 
   if (!targetUrl) {
     return { success: false, error: 'Target URL is required' };
@@ -27,16 +39,47 @@ export default defineEventHandler(async (event) => {
   };
 
   const token = await getToken({ event });
+
   if (token) {
     apiHeaders['Authorization'] = `Bearer ${token.accessToken}`;
   }
 
-  // Make the API call
-  const response = await $fetch(fullUrl.toString(), {
-    method: event.method,
-    body,
-    headers: apiHeaders,
-  });
+  const inRefresh = getCookie(event, 'auth-refresh');
+  console.log('😈😈😈 ~ CATCH ALL ~ inRefresh:', inRefresh);
 
-  return response;
+  try {
+    // Make the API call
+    console.log('😈😈😈 ~ CATCH ALL ~ making the call');
+    const response = (await $fetch(fullUrl.toString(), {
+      method: event.method,
+      body,
+      headers: apiHeaders,
+    })) as Response;
+    return response;
+  } catch (error) {
+    if (error.response && error.response.status === 401 && !inRefresh) {
+      console.log('😈😈😈 401 - RETRY FROM CATCH ALL');
+
+      const session = await getServerSession(event);
+
+      console.log('😈😈😈 ~ CATCH ALL ~ session:', session);
+
+      if (session?.isAuthorized) {
+        // Update the token in the headers
+        apiHeaders['Authorization'] = `Bearer ${session?.accessToken}`;
+
+        // Retry the request
+        const retryResponse = await $fetch(fullUrl.toString(), {
+          method: event.method,
+          body,
+          headers: apiHeaders,
+        });
+
+        return retryResponse;
+      }
+    }
+
+    // Handle other errors here
+    console.warn('Error connecting to the API:', error);
+  }
 });

@@ -9,7 +9,14 @@ export const useUserStore = defineStore('user', () => {
       return '';
     }
 
-    return `${user.value.firstName[0]}${user.value.lastName[0]}`;
+    const firstNameInitial = user.value.firstName?.length
+      ? user.value.firstName[0]
+      : '';
+    const lastNameInitial = user.value.lastName?.length
+      ? user.value.lastName[0]
+      : '';
+
+    return `${firstNameInitial}${lastNameInitial}` || 'N/A';
   });
 
   return {

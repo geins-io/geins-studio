@@ -1,16 +1,23 @@
-<script lang="ts">
-import { defineComponent } from 'vue';
+<script setup lang="ts">
 import { Plus } from 'lucide-vue-next';
 
-export default defineComponent({
-  components: {
-    Plus,
+const props = withDefaults(
+  defineProps<{
+    href?: string;
+  }>(),
+  {
+    href: '',
   },
-});
+);
+
+const link = resolveComponent('NuxtLink');
+const elem = props.href ? link : 'div';
 </script>
 <template>
-  <Button>
-    <Plus class="mr-2 size-4" />
-    <slot />
+  <Button as-child>
+    <component :is="elem" :to="href" class="flex">
+      <Plus class="mr-2 size-4" />
+      <slot />
+    </component>
   </Button>
 </template>

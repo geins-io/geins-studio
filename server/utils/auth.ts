@@ -1,9 +1,20 @@
 import type { LoginCredentials, TFA, User, Session } from '@/types/auth/Auth';
+import { jwtDecode } from 'jwt-decode';
+import { ref } from 'vue';
 
 const API_BASE = process.env.API_BASE as string;
 const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
 
+const ENDPOINTS = {
+  LOGIN: 'auth',
+  USER: 'user/me',
+  REFRESH: 'auth/refresh',
+  VERIFY: 'dfa-verify',
+};
+
 export const auth = () => {
+  const inRefresh = ref(false);
+
   const callAPI = async <T>(
     url: string,
     method: string,
@@ -31,13 +42,11 @@ export const auth = () => {
     const text = await response.text();
     if (response.status === 401) {
       console.log('🚀 ~ status 401 ~ text:', text);
-      const json = await response.json();
-      console.log('🚀 ~ status 401 ~ response json:', json);
-      throw new Error('Unauthorized');
+      throw { status: response.status, message: 'Unauthorized' };
     } else if (response.status === 403) {
-      throw new Error('Insufficient permissions');
+      throw { status: response.status, message: 'Insufficient permissions' };
     } else if (response.status === 404) {
-      throw new Error('Resource not found');
+      throw { status: response.status, message: 'Resource not found' };
     }
     throw new Error(text);
   };
@@ -47,11 +56,11 @@ export const auth = () => {
       username: credentials.username,
       password: credentials.password,
     };
-    return callAPI<Session>('auth', 'POST', creds);
+    return callAPI<Session>(ENDPOINTS.LOGIN, 'POST', creds);
   };
 
   const getUser = async (accessToken: string): Promise<User | undefined> => {
-    return callAPI<User>('user/me', 'GET', undefined, accessToken);
+    return callAPI<User>(ENDPOINTS.USER, 'GET', undefined, accessToken);
   };
 
   const refresh = async (refreshToken?: string) => {
@@ -59,7 +68,7 @@ export const auth = () => {
     if (!refreshToken) {
       return undefined;
     }
-    return callAPI<Session>('auth/refresh', 'POST', { refreshToken });
+    return callAPI<Session>(ENDPOINTS.REFRESH, 'POST', { refreshToken });
   };
 
   const verify = async (tfa: TFA) => {
@@ -70,13 +79,64 @@ export const auth = () => {
     const { username, token, code } = tfa;
     const credentials = { user: username, token, code };
 
-    return callAPI<User>('dfa-verify', 'POST', credentials);
+    return callAPI<User>(ENDPOINTS.VERIFY, 'POST', credentials);
+  };
+
+  const parseToken = (token?: string | null) => {
+    return token ? jwtDecode(token) : null;
+  };
+
+  const isExpired = (exp: number | null | undefined, where: string) => {
+    if (!exp) {
+      return false;
+    }
+    exp = exp * 1000;
+    console.log('🚀 ~ isExpired: ' + where + ':', Date.now() > exp);
+    return Date.now() > exp;
+  };
+
+  const expiresSoon = (exp?: number, threshold = 300000) => {
+    if (!exp) {
+      return false;
+    }
+    exp = exp * 1000;
+    console.log('🚀 ~ expiresSoon:', Date.now() + threshold > exp);
+    return Date.now() + threshold > exp;
+  };
+
+  const getTokenData = (tokens: Session): Session => {
+    if (!tokens?.accessToken) {
+      return { isAuthorized: false };
+    }
+    const parsedToken = parseToken(tokens.accessToken);
+    return {
+      isAuthorized: true,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      tokenExpires: parsedToken?.exp,
+    };
+  };
+
+  const setInRefresh = async (refreshing: boolean) => {
+    inRefresh.value = refreshing;
+
+    if (inRefresh.value) {
+      await $fetch('/cookie/set/auth-refresh/true');
+    } else {
+      await $fetch('/cookie/remove/auth-refresh');
+    }
   };
 
   return {
+    inRefresh,
     login,
     getUser,
     refresh,
     verify,
+    parseToken,
+    isExpired,
+    expiresSoon,
+    getTokenData,
+    setInRefresh,
   };
 };

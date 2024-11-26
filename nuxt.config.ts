@@ -40,11 +40,11 @@ export default defineNuxtConfig({
   auth: {
     isEnabled: true,
     baseURL: getAuthBaseUrlVercel(),
-    sessionRefresh: {
-      handler: './app/utils/authRefreshHandler.ts',
-    },
     provider: {
       type: 'authjs',
+    },
+    sessionRefresh: {
+      enableOnWindowFocus: false,
     },
   },
 

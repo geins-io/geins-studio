@@ -22,6 +22,9 @@ module.exports = {
         'only-right': '3px 0 7px -2px rgb(0 0 0 / 0.1)',
         'only-left': '-3px 0 7px -2px rgb(0 0 0 / 0.1)',
       },
+      gridTemplateColumns: {
+        main: 'minmax(50%, 1fr) minmax(min-content, 360px)',
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
@@ -60,6 +63,18 @@ module.exports = {
         positive: {
           DEFAULT: 'hsl(var(--positive))',
           foreground: 'hsl(var(--positive-foreground))',
+        },
+        negative: {
+          DEFAULT: 'hsl(var(--negative))',
+          foreground: 'hsl(var(--negative-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
+        info: {
+          DEFAULT: 'hsl(var(--info))',
+          foreground: 'hsl(var(--info-foreground))',
         },
         'positive-muted': {
           DEFAULT: 'hsl(var(--positive-muted))',

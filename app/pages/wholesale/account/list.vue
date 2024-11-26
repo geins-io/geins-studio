@@ -1,13 +1,15 @@
-<script setup lang="ts" generic="TData">
+<script setup lang="ts">
 import type { Category } from '@/types/product/Category';
+const { callAPI } = useAPI<Category[]>();
 
-const entityName = 'category';
+const entityName = 'account';
 const categories = ref<Category[]>([]);
 const loading = ref(true);
-const editUrl = '/pim/category/{id}';
-const createUrl = '/pim/category/new';
+const editUrl = '/wholesale/account/{id}';
+const createUrl = '/wholesale/account/new';
+const rowsSelectable = true;
 
-const { data, error } = await useFetch<Category[]>('/api/categories');
+const { data, error } = await callAPI('/categories');
 if (!data.value || error.value) {
   throw createError({
     ...error.value,
@@ -21,13 +23,14 @@ loading.value = false;
 
 const { getColumns } = useColumns<Category>();
 const columns = getColumns(categories.value, {
+  selectable: rowsSelectable,
   editUrl,
   columnTypes: { name: 'link' },
 });
 </script>
 
 <template>
-  <ContentHeader title="Categories">
+  <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
     <ContentActionBar>
       <ButtonExport />
       <ButtonNew :href="createUrl">
@@ -45,7 +48,7 @@ const columns = getColumns(categories.value, {
     />
     <template #error="{ errorCatched }">
       <h2 class="text-xl font-bold">
-        {{ $t('error_loading_entity', { entityName: 'categories' }) }}
+        {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
       </h2>
       <p>{{ errorCatched }}</p>
     </template>

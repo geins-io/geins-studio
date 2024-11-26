@@ -13,6 +13,7 @@ export interface Session {
   isAuthorized?: boolean;
   accessToken?: string;
   refreshToken?: string;
+  tokenExpires?: number;
   user?: User;
   tfa?: TFA;
 }
