@@ -12,8 +12,16 @@ export default defineEventHandler(async (event) => {
   }
   const headers = getHeaders(event);
 
-  // console log cookies
-  console.log('😈😈😈 ~ CATCH ALL ~ cookies:', headers.cookie);
+  // parse cookies to se if auth-refresh exists
+  const cookies = headers.cookie ? headers.cookie.split(';') : [];
+  let hasAuthRefresh = false;
+  cookies.forEach((cookie) => {
+    const cookieName = cookie.split('=')[0].trim();
+    if (cookieName === 'auth-refresh') {
+      hasAuthRefresh = true;
+    }
+  });
+  console.log('😈😈😈 ~ CATCH ALL ~ has auth-refresh cookie:', hasAuthRefresh);
 
   // Extract the target URL from the request
   const targetUrl = event.context.params?._;

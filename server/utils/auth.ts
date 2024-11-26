@@ -1,5 +1,6 @@
 import type { LoginCredentials, TFA, User, Session } from '@/types/auth/Auth';
 import { jwtDecode } from 'jwt-decode';
+import { ref } from 'vue';
 
 const API_BASE = process.env.API_BASE as string;
 const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
@@ -12,6 +13,8 @@ const ENDPOINTS = {
 };
 
 export const auth = () => {
+  const inRefresh = ref(false);
+
   const callAPI = async <T>(
     url: string,
     method: string,
@@ -114,16 +117,10 @@ export const auth = () => {
     };
   };
 
-  const inRefresh = async (): Promise<boolean> => {
-    const response = await $fetch('/cookie/get/auth-refresh', {
-      credentials: 'include',
-    });
+  const setInRefresh = async (refreshing: boolean) => {
+    inRefresh.value = refreshing;
 
-    return !!response;
-  };
-
-  const setInRefresh = async (inRefresh: boolean) => {
-    if (inRefresh) {
+    if (inRefresh.value) {
       await $fetch('/cookie/set/auth-refresh/true');
     } else {
       await $fetch('/cookie/remove/auth-refresh');
@@ -131,6 +128,7 @@ export const auth = () => {
   };
 
   return {
+    inRefresh,
     login,
     getUser,
     refresh,
@@ -139,7 +137,6 @@ export const auth = () => {
     isExpired,
     expiresSoon,
     getTokenData,
-    inRefresh,
     setInRefresh,
   };
 };

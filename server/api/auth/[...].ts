@@ -2,6 +2,8 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
 import type { LoginCredentials } from '@/types/auth/Auth';
 
+const geinsAuth = auth();
+
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
   pages: {
@@ -10,8 +12,10 @@ export default NuxtAuthHandler({
   },
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
-      const geinsAuth = auth();
-      const inRefresh = await geinsAuth.inRefresh();
+      console.log(
+        '🐣 ~ jwt: ~ geinsAuth.inRefresh:',
+        geinsAuth.inRefresh.value,
+      );
       if (trigger === 'signIn' && user) {
         // Set the token
         if (user.isAuthorized) {
@@ -28,12 +32,12 @@ export default NuxtAuthHandler({
         trigger === undefined &&
         user === undefined &&
         token.isAuthorized &&
-        !inRefresh &&
+        !geinsAuth.inRefresh.value &&
         (geinsAuth.isExpired(token.tokenExpires, 'jwt refresh') ||
           geinsAuth.expiresSoon(token.tokenExpires))
       ) {
+        await geinsAuth.setInRefresh(true);
         try {
-          await geinsAuth.setInRefresh(true);
           // Refresh the token
           const newTokens = await geinsAuth.refresh(token.refreshToken);
           if (newTokens) {
@@ -42,6 +46,10 @@ export default NuxtAuthHandler({
               ...tokenData,
             };
             console.log('🚀 ~ jwt: ~ token RETURNED:', token);
+            console.log(
+              '⏰ ~ jwt: ~ expires:',
+              new Date(Number(token.tokenExpires) * 1000),
+            );
             return token;
           }
         } catch (error) {
@@ -55,15 +63,17 @@ export default NuxtAuthHandler({
           } else {
             // TODO: Decide if we should try to refresh the token again, or just log the user out
           }
-        } finally {
-          await geinsAuth.setInRefresh(false);
         }
       }
       console.log('🚀 ~ jwt: ~ token RETURNED:', token);
+      console.log(
+        '⏰ ~ jwt: ~ expires:',
+        new Date(Number(token.tokenExpires) * 1000),
+      );
+
       return token;
     },
     session: async ({ session, token }) => {
-      const geinsAuth = auth();
       if (token.isAuthorized && token.accessToken) {
         session = {
           ...session,
@@ -90,7 +100,7 @@ export default NuxtAuthHandler({
         return { ...session, tfa: token.tfa };
       }
       console.log('🚀 ~ session: ~ session RETURNED:', session);
-
+      await geinsAuth.setInRefresh(false);
       return session;
     },
   },

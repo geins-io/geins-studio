@@ -10,8 +10,10 @@ export function useAPI<T>() {
 
     const apiUrl = `/api${url}`;
 
+    const refreshCookie = useCookie('auth-refresh');
+    console.log('🪲🪲🪲 ~ callAPI ~ refreshCookie:', refreshCookie.value);
+
     const requestHeaders = useRequestHeaders(['cookie']) as HeadersInit;
-    console.log('🚀 ~ callAPI ~ requestHeaders:', requestHeaders);
 
     const { data, error } = await useFetch(apiUrl, {
       ...options,
