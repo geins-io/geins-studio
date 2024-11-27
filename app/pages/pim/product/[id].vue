@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router';
-
 // EDIT PAGE OPTIONS
 const tabs = ['Main', 'Parameters', 'Images'];
 
 // GLOBALS
 const { t } = useI18n();
 const route = useRoute();
-const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntity();
-
-// SETTINGS
-const entityName = getEntityName(route.fullPath);
-const newEntityUrl = getNewEntityUrl(route.fullPath);
+const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntity(
+  route.fullPath,
+);
+const entityName = getEntityName();
+const newEntityUrl = getNewEntityUrl();
 const currentTab = ref(0);
 
 // COMPUTED GLOBALS

@@ -7,7 +7,7 @@ import {
   TableCellActions,
   TableCellLongText,
 } from '#components';
-import type { ColumnOptions } from '@/types/Columns';
+import type { ColumnOptions, ColumnType, ColumnTypes } from '@/types/Columns';
 
 export const useColumns = <T extends object>() => {
   const basicCellStyle =
@@ -56,15 +56,15 @@ export const useColumns = <T extends object>() => {
     maxSize: 44,
   };
 
-  const getColumns = (data: T[], options: Partial<ColumnOptions> = {}) => {
+  const getColumns = (data: T[], options: Partial<ColumnOptions<T>> = {}) => {
     const {
       selectable = false,
       sortable = true,
-      columnTypes = {},
+      columnTypes = {} as ColumnTypes<T>,
       maxTextLength = 60,
     } = options;
 
-    const keys = data ? Object.keys(data[0] as object) : [];
+    const keys = data && data.length ? Object.keys(data[0] as object) : [];
     if (keys.length === 0) {
       return [];
     }
@@ -77,8 +77,8 @@ export const useColumns = <T extends object>() => {
 
     keys.forEach((key) => {
       let title = key;
-      if (options.columnTitles?.[key]) {
-        title = options.columnTitles[key];
+      if (options.columnTitles?.[key as keyof T]) {
+        title = options.columnTitles[key as keyof T] as string;
       } else {
         title = title.charAt(0).toUpperCase() + title.slice(1);
         title = title.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
@@ -86,7 +86,7 @@ export const useColumns = <T extends object>() => {
         title = title.charAt(0).toUpperCase() + title.slice(1);
       }
 
-      const columnType = columnTypes[key] || 'string';
+      const columnType: ColumnType = columnTypes[key as keyof T] || 'string';
 
       let columnSize = {
         size: 0,

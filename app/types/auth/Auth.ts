@@ -7,6 +7,7 @@ export interface User {
   company?: string;
   roles?: string[];
   apiUserType?: string;
+  username?: string;
 }
 
 export interface Session {

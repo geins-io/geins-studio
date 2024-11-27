@@ -1,19 +1,6 @@
 import '@tanstack/vue-table';
 import type { RowData } from '@tanstack/vue-table';
 
-export interface ColumnOptions {
-  selectable?: boolean;
-  sortable?: boolean;
-  editUrl?: string;
-  columnTitles?: { [key: string]: string };
-  columnTypes?: ColumnTypes;
-  maxTextLength?: number;
-}
-
-export interface ColumnTypes {
-  [key: string]: ColumnType;
-}
-
 export type ColumnType =
   | 'string'
   | 'currency'
@@ -21,6 +8,17 @@ export type ColumnType =
   | 'number'
   | 'image'
   | 'link';
+
+export type ColumnTypes<T> = Partial<Record<keyof T, ColumnType>>;
+
+export interface ColumnOptions<T> {
+  selectable?: boolean;
+  sortable?: boolean;
+  editUrl?: string;
+  columnTitles?: Partial<Record<keyof T, string>>;
+  columnTypes?: ColumnTypes<T>;
+  maxTextLength?: number;
+}
 
 declare module '@tanstack/vue-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

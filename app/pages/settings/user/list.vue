@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Product } from '@/types/product/Product';
+import type { User } from '@/types/auth/Auth';
 import type { ColumnOptions } from '~/types/Columns';
 const route = useRoute();
 const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
@@ -7,9 +7,8 @@ const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
 );
 
 // GLOBAL SETUP
-const apiEndpoint = '/products';
-const totalListItems = ref(3000);
-const dataList = ref<Product[]>([]);
+const apiEndpoint = '/users';
+const dataList = ref<User[]>([]);
 const entityIdentifier = '{id}';
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
@@ -17,46 +16,24 @@ const editEntityUrl = getEditEntityUrl(entityIdentifier);
 const loading = ref(true);
 
 // SET UP COLUMNS FOR ENTITY
-const columnOptions: ColumnOptions<Product> = {
-  selectable: true,
+const columnOptions: ColumnOptions<User> = {
   editUrl: editEntityUrl,
-  columnTitles: { price: 'Default price' },
-  columnTypes: { price: 'currency', image: 'image', name: 'link' },
 };
 
 // FETCH DATA FOR ENTITY
-const { callAPI } = useAPI<Product[]>();
-const { data, error } = await callAPI(apiEndpoint, {
-  query: { total: totalListItems.value },
-});
+const { callAPI } = useAPI<User[]>();
+const { data, error } = await callAPI(apiEndpoint);
 
 if (!data.value || error.value) {
-  throw createError({
-    ...error.value,
-    statusMessage: 'Failed to fetch products',
-  });
+  // do nothing for now
 } else {
   dataList.value = data.value;
 }
 loading.value = false;
 
 // GET AND SET COLUMNS
-const { getColumns, addActionsColumn, setOrderForColumn } =
-  useColumns<Product>();
+const { getColumns } = useColumns<User>();
 const columns = getColumns(dataList.value, columnOptions);
-
-// ADD AND ORDER COLUMNS
-addActionsColumn(columns, {
-  onEdit: (product: Product) =>
-    navigateTo(
-      `${editEntityUrl.replace(entityIdentifier, String(product.id))}`,
-    ),
-  onCopy: (product: Product) => console.log('Copy', product.id),
-  onDelete: (product: Product) => console.log('Delete', product.id),
-  onUnpublish: (product: Product) => console.log('Unpublish', product.id),
-});
-
-setOrderForColumn(columns, 'image', 1);
 </script>
 
 <template>
