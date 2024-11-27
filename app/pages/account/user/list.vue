@@ -1,38 +1,42 @@
 <script setup lang="ts">
-import type { User } from '@/types/auth/Auth';
 import type { ColumnOptions } from '~/types/Columns';
+
+import type { User } from '@/types/auth/Auth';
+type Entity = User;
+
 const route = useRoute();
 const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
   route.fullPath,
 );
 
 // GLOBAL SETUP
-const apiEndpoint = '/users';
-const dataList = ref<User[]>([]);
-const entityIdentifier = '{id}';
+// const apiEndpoint = '/users';
+const dataList = ref<Entity[]>([]);
+const entityIdentifier = '{username}';
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
 const editEntityUrl = getEditEntityUrl(entityIdentifier);
 const loading = ref(true);
 
 // SET UP COLUMNS FOR ENTITY
-const columnOptions: ColumnOptions<User> = {
+const columnOptions: ColumnOptions<Entity> = {
   editUrl: editEntityUrl,
+  columnTypes: { username: 'link' },
 };
 
 // FETCH DATA FOR ENTITY
-const { callAPI } = useAPI<User[]>();
-const { data, error } = await callAPI(apiEndpoint);
+const { user } = useUserStore();
 
-if (!data.value || error.value) {
-  // do nothing for now
+if (user) {
+  dataList.value = [user];
 } else {
-  dataList.value = data.value;
+  dataList.value = [];
 }
+
 loading.value = false;
 
 // GET AND SET COLUMNS
-const { getColumns } = useColumns<User>();
+const { getColumns } = useColumns<Entity>();
 const columns = getColumns(dataList.value, columnOptions);
 </script>
 
@@ -51,6 +55,7 @@ const columns = getColumns(dataList.value, columnOptions);
       :entity-name="entityName"
       :columns="columns"
       :data="dataList"
+      searchable-field="firstName"
     />
     <template #error="{ errorCatched }">
       <h2 class="text-xl font-bold">

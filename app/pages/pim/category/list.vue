@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import type { Category } from '@/types/product/Category';
 import type { ColumnOptions } from '~/types/Columns';
+
+import type { Category } from '@/types/product/Category';
+type Entity = Category;
+
 const route = useRoute();
 const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
   route.fullPath,
@@ -8,7 +11,7 @@ const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
 
 // GLOBAL SETUP
 const apiEndpoint = '/categories';
-const dataList = ref<Category[]>([]);
+const dataList = ref<Entity[]>([]);
 const entityIdentifier = '{id}';
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
@@ -16,13 +19,13 @@ const editEntityUrl = getEditEntityUrl(entityIdentifier);
 const loading = ref(true);
 
 // SET UP COLUMNS FOR ENTITY
-const columnOptions: ColumnOptions<Category> = {
+const columnOptions: ColumnOptions<Entity> = {
   editUrl: editEntityUrl,
   columnTypes: { name: 'link' },
 };
 
 // FETCH DATA FOR ENTITY
-const { callAPI } = useAPI<Category[]>();
+const { callAPI } = useAPI<Entity[]>();
 const { data, error } = await callAPI(apiEndpoint);
 
 if (!data.value || error.value) {
@@ -36,7 +39,7 @@ if (!data.value || error.value) {
 loading.value = false;
 
 // GET AND SET COLUMNS
-const { getColumns } = useColumns<Category>();
+const { getColumns } = useColumns<Entity>();
 const columns = getColumns(dataList.value, columnOptions);
 </script>
 

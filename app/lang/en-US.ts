@@ -6,6 +6,7 @@ export default defineI18nLocale(async () => {
     order: 'order | orders',
     account: 'account | accounts',
     user: 'user | users',
+    market: 'market | markets',
     entity_caps: '@.capitalize:{entityName}',
     new_entity_url_alias: 'new',
     new_entity: 'New {entityName}',

@@ -23,12 +23,6 @@ const triggerToast = (
   });
 };
 const { refresh } = useAuth();
-
-const { callAPI } = useAPI();
-
-const { data, error } = await callAPI('/account/channel/list');
-console.log('🚀 ~ error:', error.value);
-console.log('🚀 ~ data:', data.value);
 </script>
 <template>
   <ContentHeader

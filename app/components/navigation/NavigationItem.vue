@@ -187,25 +187,30 @@ const rootItemClasses = computed(() => {
     </NuxtLink>
 
     <!-- Child items for collapsed state with hover fix -->
-    <ul
+    <div
       v-if="isCollapsed && item.children?.length"
-      class="absolute left-full top-0 z-50 hidden w-48 rounded-lg pl-2 shadow-lg group-hover:block"
+      class="absolute left-full top-0 z-50 hidden w-48 rounded-lg bg-card pl-2 shadow-lg group-hover:block"
     >
-      <li
-        v-for="(child, index) in item.children"
-        :key="index"
-        class="[&:first-child>a]:pt-3 [&:last-child>a]:pb-3"
-      >
-        <NuxtLink
-          :to="child.href"
-          class="flex items-center justify-between bg-card px-4 py-2 text-xs hover:underline"
-          >{{ child.label }}
-          <ChevronRight
-            v-if="route.path === child.href"
-            :class="cn(`size-4 text-muted`)"
-          />
-        </NuxtLink>
-      </li>
-    </ul>
+      <NuxtLink :to="item.href" class="block px-4 pb-2 pt-4 text-sm">
+        <span class="hover:underline">{{ item.label }}</span>
+      </NuxtLink>
+      <ul>
+        <li
+          v-for="(child, index) in item.children"
+          :key="index"
+          class="[&:first-child>a]:pt-3 [&:last-child>a]:pb-3"
+        >
+          <NuxtLink
+            :to="child.href"
+            class="flex items-center justify-between bg-card px-4 py-2 text-xs hover:underline"
+            >{{ child.label }}
+            <ChevronRight
+              v-if="route.path === child.href"
+              :class="cn(`size-4 text-muted`)"
+            />
+          </NuxtLink>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>

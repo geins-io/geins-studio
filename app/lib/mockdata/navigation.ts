@@ -172,11 +172,21 @@ export const navigation: NavigationItem[] = [
     href: '',
     icon: 'Import',
   },
+  */
   {
-    label: 'Settings',
-    href: '',
+    label: 'Account',
+    href: '/account/market/list',
     icon: 'Settings',
     children: [
+      {
+        label: 'Markets',
+        href: '/account/market/list',
+      },
+      {
+        label: 'Users',
+        href: '/account/user/list',
+      },
+      /*
       {
         label: 'API Users',
         href: '',
@@ -201,8 +211,9 @@ export const navigation: NavigationItem[] = [
         label: '404 Pages',
         href: '',
       },
+      */
     ],
-  },
+  } /*
   {
     label: 'Super Admin',
     href: '',
@@ -257,5 +268,5 @@ export const navigation: NavigationItem[] = [
         href: '',
       },
     ],
-  }, */
+  }, */,
 ];

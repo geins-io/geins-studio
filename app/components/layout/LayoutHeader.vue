@@ -68,7 +68,7 @@ const setColorMode = () => {
           <DropdownMenuItem>
             <NuxtLink
               class="flex items-center"
-              :to="`/settings/user/${user?.username}`"
+              :to="`/account/user/${user?.username}`"
             >
               <User class="mr-2 size-4" />
               <span>Profile</span>

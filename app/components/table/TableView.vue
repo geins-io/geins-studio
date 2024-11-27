@@ -26,11 +26,13 @@ const props = withDefaults(
     entityName?: string;
     pageSize?: number;
     loading?: boolean;
+    searchableField?: string;
   }>(),
   {
     entityName: 'row',
     pageSize: 30,
     loading: false,
+    searchableField: 'name',
   },
 );
 
@@ -197,10 +199,15 @@ const table = useVueTable({
   >
     <div class="relative w-full max-w-sm">
       <Input
+        v-if="table.getColumn(searchableField)"
         class="w-full pl-10"
         placeholder="Filter list..."
-        :model-value="table.getColumn('name')?.getFilterValue() as string"
-        @update:model-value="table.getColumn('name')?.setFilterValue($event)"
+        :model-value="
+          table.getColumn(searchableField)?.getFilterValue() as string
+        "
+        @update:model-value="
+          table.getColumn(searchableField)?.setFilterValue($event)
+        "
       />
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
