@@ -24,7 +24,6 @@ export default defineEventHandler(async (event) => {
       return { message: 'Invalid cookie name or value' };
     }
     setCookie(event, cookieName, cookieValue);
-    console.log('cookie set', cookieName, cookieValue);
     return { message: `Cookie ${cookieName} set to ${cookieValue}` };
   }
 

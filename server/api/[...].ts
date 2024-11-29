@@ -39,17 +39,23 @@ export default defineEventHandler(async (event) => {
   };
 
   const token = await getToken({ event });
+  console.log('😈😈😈 ~ CATCH ALL ~ server token:', token?.accessToken);
 
-  if (token) {
-    apiHeaders['Authorization'] = `Bearer ${token.accessToken}`;
-  }
-
-  const inRefresh = getCookie(event, 'auth-refresh');
-  console.log('😈😈😈 ~ CATCH ALL ~ inRefresh:', inRefresh);
+  const { wasRefreshedRecently, latestRefresh } = auth();
+  const lr = new Date(Number(latestRefresh) * 1000);
+  console.log('😈😈😈 ~ latest refresh:', lr);
+  const recentlyRefreshed = latestRefresh
+    ? wasRefreshedRecently(Number(latestRefresh))
+    : false;
+  console.log('😈😈😈 ~ recently refreshed:', recentlyRefreshed);
 
   try {
     // Make the API call
     console.log('😈😈😈 ~ CATCH ALL ~ making the call');
+    console.log(
+      "😈😈😈 ~ first call - apiHeaders['authorization']:",
+      apiHeaders['authorization'],
+    );
     const response = (await $fetch(fullUrl.toString(), {
       method: event.method,
       body,
@@ -57,16 +63,21 @@ export default defineEventHandler(async (event) => {
     })) as Response;
     return response;
   } catch (error) {
-    if (error.response && error.response.status === 401 && !inRefresh) {
+    if (error.response && error.response.status === 401 && !recentlyRefreshed) {
       console.log('😈😈😈 401 - RETRY FROM CATCH ALL');
 
       const session = await getServerSession(event);
 
-      console.log('😈😈😈 ~ CATCH ALL ~ session:', session);
+      console.log('😈😈😈 ~ CATCH ALL ~ RETRY new session:', session);
 
       if (session?.isAuthorized) {
         // Update the token in the headers
-        apiHeaders['Authorization'] = `Bearer ${session?.accessToken}`;
+        apiHeaders['authorization'] = `Bearer ${session?.accessToken}`;
+
+        console.log(
+          "😈😈😈 ~ retry ~ apiHeaders['authorization']:",
+          apiHeaders['authorization'],
+        );
 
         // Retry the request
         const retryResponse = await $fetch(fullUrl.toString(), {

@@ -12,10 +12,6 @@ export default NuxtAuthHandler({
   },
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
-      console.log(
-        '🐣 ~ jwt: ~ geinsAuth.inRefresh:',
-        geinsAuth.inRefresh.value,
-      );
       if (trigger === 'signIn' && user) {
         // Set the token
         if (user.isAuthorized) {
@@ -31,12 +27,8 @@ export default NuxtAuthHandler({
       } else if (
         trigger === undefined &&
         user === undefined &&
-        token.isAuthorized &&
-        !geinsAuth.inRefresh.value &&
-        (geinsAuth.isExpired(token.tokenExpires, 'jwt refresh') ||
-          geinsAuth.expiresSoon(token.tokenExpires))
+        geinsAuth.shouldRefresh(token)
       ) {
-        await geinsAuth.setInRefresh(true);
         try {
           // Refresh the token
           const newTokens = await geinsAuth.refresh(token.refreshToken);
@@ -80,10 +72,7 @@ export default NuxtAuthHandler({
           isAuthorized: token.isAuthorized,
           accessToken: token.accessToken,
         };
-        if (
-          !session.user?.email &&
-          !geinsAuth.isExpired(token.tokenExpires, 'session get user')
-        ) {
+        if (!session.user?.email && !geinsAuth.isExpired(token.tokenExpires)) {
           try {
             const user = await geinsAuth.getUser(token.accessToken);
             session.user = user;
@@ -100,7 +89,6 @@ export default NuxtAuthHandler({
         return { ...session, tfa: token.tfa };
       }
       console.log('🚀 ~ session: ~ session RETURNED:', session);
-      await geinsAuth.setInRefresh(false);
       return session;
     },
   },

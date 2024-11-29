@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ColumnDef } from '@tanstack/vue-table';
 import type { ColumnOptions } from '~/types/Columns';
 
 import type { User } from '@/types/auth/Auth';
@@ -17,6 +18,7 @@ const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
 const editEntityUrl = getEditEntityUrl(entityIdentifier);
 const loading = ref(true);
+const columns: Ref<ColumnDef<Entity>[]> = ref([]);
 
 // SET UP COLUMNS FOR ENTITY
 const columnOptions: ColumnOptions<Entity> = {
@@ -37,7 +39,7 @@ loading.value = false;
 
 // GET AND SET COLUMNS
 const { getColumns } = useColumns<Entity>();
-const columns = getColumns(dataList.value, columnOptions);
+columns.value = getColumns(dataList.value, columnOptions);
 </script>
 
 <template>

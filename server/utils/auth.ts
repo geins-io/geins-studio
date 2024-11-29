@@ -12,9 +12,9 @@ const ENDPOINTS = {
   VERIFY: 'dfa-verify',
 };
 
-export const auth = () => {
-  const inRefresh = ref(false);
+const latestRefresh = ref(0);
 
+export const auth = () => {
   const callAPI = async <T>(
     url: string,
     method: string,
@@ -64,10 +64,13 @@ export const auth = () => {
   };
 
   const refresh = async (refreshToken?: string) => {
-    console.log('🚀 ~ refresh ~ refreshToken:', refreshToken);
+    console.log('🚀 ~ refreshing ~ refreshToken:', refreshToken);
     if (!refreshToken) {
       return undefined;
     }
+    const timestamp = Math.floor(Date.now() / 1000);
+    latestRefresh.value = timestamp;
+    await $fetch(`/cookie/set/auth-refresh/${timestamp}`);
     return callAPI<Session>(ENDPOINTS.REFRESH, 'POST', { refreshToken });
   };
 
@@ -86,22 +89,34 @@ export const auth = () => {
     return token ? jwtDecode(token) : null;
   };
 
-  const isExpired = (exp: number | null | undefined, where: string) => {
+  const isExpired = (exp?: number) => {
     if (!exp) {
       return false;
     }
     exp = exp * 1000;
-    console.log('🚀 ~ isExpired: ' + where + ':', Date.now() > exp);
+    console.log('🚀 ~ isExpired:', Date.now() > exp);
     return Date.now() > exp;
   };
 
-  const expiresSoon = (exp?: number, threshold = 300000) => {
+  const expiresSoon = (exp?: number, threshold = 150000) => {
     if (!exp) {
       return false;
     }
     exp = exp * 1000;
     console.log('🚀 ~ expiresSoon:', Date.now() + threshold > exp);
     return Date.now() + threshold > exp;
+  };
+
+  const wasRefreshedRecently = (refreshedAt?: number, threshold = 150000) => {
+    if (!refreshedAt) {
+      return false;
+    }
+    refreshedAt = refreshedAt * 1000;
+    console.log(
+      '🚀 ~ wasRefreshedRecently:',
+      Date.now() - threshold < refreshedAt,
+    );
+    return Date.now() - threshold < refreshedAt;
   };
 
   const getTokenData = (tokens: Session): Session => {
@@ -117,18 +132,15 @@ export const auth = () => {
     };
   };
 
-  const setInRefresh = async (refreshing: boolean) => {
-    inRefresh.value = refreshing;
-
-    if (inRefresh.value) {
-      await $fetch('/cookie/set/auth-refresh/true');
-    } else {
-      await $fetch('/cookie/remove/auth-refresh');
-    }
+  const shouldRefresh = (token: Session) => {
+    return (
+      token.isAuthorized &&
+      (isExpired(token.tokenExpires) || expiresSoon(token.tokenExpires))
+    );
   };
 
   return {
-    inRefresh,
+    latestRefresh,
     login,
     getUser,
     refresh,
@@ -136,7 +148,8 @@ export const auth = () => {
     parseToken,
     isExpired,
     expiresSoon,
+    wasRefreshedRecently,
     getTokenData,
-    setInRefresh,
+    shouldRefresh,
   };
 };

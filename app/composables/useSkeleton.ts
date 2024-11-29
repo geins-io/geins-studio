@@ -32,7 +32,10 @@ export const useSkeleton = () => {
 
       return h(
         'div',
-        { class: 'relative' },
+        {
+          class:
+            'relative px-[1.2rem] align-middle text-xs leading-8 w-full h-10 flex items-center',
+        },
         h(Skeleton, {
           class: `${width} h-5`,
         }),
@@ -45,9 +48,9 @@ export const useSkeleton = () => {
         header: () =>
           h(
             'div',
-            { class: 'relative' },
+            { class: 'relative h-12 px-[1.2rem] flex items-center' },
             h(Skeleton, {
-              class: 'w-3/5 h-6',
+              class: 'w-4/5 h-6',
             }),
           ),
         cell: cellRenderer,

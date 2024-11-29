@@ -1,7 +1,8 @@
-import type { UseFetchOptions } from 'nuxt/app';
+import type { UseFetchOptions } from '#app';
 
 export function useAPI<T>() {
   const isFetching = ref(false);
+  const auth = useAuth();
 
   const callAPI = async (url: string, options?: UseFetchOptions<T>) => {
     console.log('🚀 ~ callAPI ~ url:', url);
@@ -15,17 +16,30 @@ export function useAPI<T>() {
 
     const requestHeaders = useRequestHeaders(['cookie']) as HeadersInit;
 
-    const { data, error } = await useFetch(apiUrl, {
-      ...options,
-      method: options?.method || 'GET',
-      headers: {
-        ...options?.headers,
-        ...requestHeaders,
-      },
-    });
+    const session = await auth.getSession();
+    const token = session?.accessToken;
+    console.log('🪲🪲🪲 ~ callAPI ~ accessToken:', token);
+    const authHeader = token ? { Authorization: `Bearer ${token}` } : null;
 
-    isFetching.value = false;
-    return { data, error };
+    const headers = {
+      ...options?.headers,
+      ...requestHeaders,
+      ...authHeader,
+    };
+
+    try {
+      const { data, error } = await useFetch(apiUrl, {
+        ...options,
+        method: options?.method || 'GET',
+        headers,
+      });
+      return { data, error };
+    } catch (error) {
+      console.error('🪲🪲🪲 ~ callAPI ~ error:', error);
+      return { data: null, error };
+    } finally {
+      isFetching.value = false;
+    }
   };
 
   return {
