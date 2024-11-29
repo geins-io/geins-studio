@@ -27,36 +27,32 @@ const columnOptions: ColumnOptions<Entity> = {
   editUrl: editEntityUrl,
 };
 
-onMounted(async () => {
-  // FETCH DATA FOR ENTITY
-  const { callAPI } = useAPI<Entity[]>();
-  const { data, error } = await callAPI(apiEndpoint);
+const { data, error } = await useAPI<Entity[]>(apiEndpoint);
 
-  if (!data?.value || error.value) {
-    // Couldn't fetch data... do nothing for now
-  } else {
-    const reshapedData: Entity[] = data.value.map((item) => {
-      const countryName =
-        typeof item.country === 'object' ? item.country?.name : item.country;
-      const currencyName =
-        typeof item.currency === 'object' ? item.currency?.name : item.currency;
+if (!data?.value || error.value) {
+  // Couldn't fetch data... do nothing for now
+} else {
+  const reshapedData: Entity[] = data.value.map((item) => {
+    const countryName =
+      typeof item.country === 'object' ? item.country?.name : item.country;
+    const currencyName =
+      typeof item.currency === 'object' ? item.currency?.name : item.currency;
 
-      return {
-        ...item,
-        name: countryName,
-        currency: currencyName,
-        country: countryName,
-      };
-    });
+    return {
+      ...item,
+      name: countryName,
+      currency: currencyName,
+      country: countryName,
+    };
+  });
 
-    dataList.value = reshapedData;
-  }
-  loading.value = false;
+  dataList.value = reshapedData;
+}
+loading.value = false;
 
-  // GET AND SET COLUMNS
-  const { getColumns } = useColumns<Entity>();
-  columns.value = getColumns(dataList.value, columnOptions);
-});
+// GET AND SET COLUMNS
+const { getColumns } = useColumns<Entity>();
+columns.value = getColumns(dataList.value, columnOptions);
 </script>
 
 <template>

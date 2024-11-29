@@ -25,22 +25,19 @@ const columnOptions: ColumnOptions<Entity> = {
   editUrl: editEntityUrl,
 };
 
-onMounted(async () => {
-  // FETCH DATA FOR ENTITY
-  const { callAPI } = useAPI<Entity[]>();
-  const { data, error } = await callAPI(apiEndpoint);
+// FETCH DATA FOR ENTITY
+const { data, error } = await useAPI<Entity[]>(apiEndpoint);
 
-  if (!data?.value || error.value) {
-    // Couldn't fetch data... do nothing for now
-  } else {
-    dataList.value = data?.value;
-  }
-  loading.value = false;
+if (!data?.value || error.value) {
+  // Couldn't fetch data... do nothing for now
+} else {
+  dataList.value = data?.value as Entity[];
+}
+loading.value = false;
 
-  // GET AND SET COLUMNS
-  const { getColumns } = useColumns<Entity>();
-  columns.value = getColumns(dataList.value, columnOptions);
-});
+// GET AND SET COLUMNS
+const { getColumns } = useColumns<Entity>();
+columns.value = getColumns(dataList.value, columnOptions);
 </script>
 
 <template>

@@ -25,8 +25,7 @@ const columnOptions: ColumnOptions<Entity> = {
 };
 
 // FETCH DATA FOR ENTITY
-const { callAPI } = useAPI<Entity[]>();
-const { data, error } = await callAPI(apiEndpoint);
+const { data, error } = await useAPI<Entity[]>(apiEndpoint);
 
 if (!data.value || error.value) {
   throw createError({
@@ -34,7 +33,7 @@ if (!data.value || error.value) {
     statusMessage: 'Failed to fetch categories',
   });
 } else {
-  dataList.value = data.value;
+  dataList.value = data.value as Entity[];
 }
 loading.value = false;
 

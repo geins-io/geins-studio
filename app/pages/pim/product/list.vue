@@ -28,18 +28,16 @@ const columnOptions: ColumnOptions<Entity> = {
 };
 
 // FETCH DATA FOR ENTITY
-const { callAPI } = useAPI<Entity[]>();
-const { data, error } = await callAPI(apiEndpoint, {
+const { data, error } = await useAPI<Entity[]>(apiEndpoint, {
   query: { total: totalListItems.value },
 });
-
 if (!data?.value || error.value) {
   throw createError({
     ...error.value,
     statusMessage: 'Failed to fetch products',
   });
 } else {
-  dataList.value = data.value;
+  dataList.value = data.value as Entity[];
 }
 loading.value = false;
 

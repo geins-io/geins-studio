@@ -107,7 +107,7 @@ export const auth = () => {
     return Date.now() + threshold > exp;
   };
 
-  const wasRefreshedRecently = (refreshedAt?: number, threshold = 150000) => {
+  const wasRefreshedRecently = (refreshedAt?: number, threshold = 10000) => {
     if (!refreshedAt) {
       return false;
     }
@@ -135,7 +135,8 @@ export const auth = () => {
   const shouldRefresh = (token: Session) => {
     return (
       token.isAuthorized &&
-      (isExpired(token.tokenExpires) || expiresSoon(token.tokenExpires))
+      (isExpired(token.tokenExpires) || expiresSoon(token.tokenExpires)) &&
+      !wasRefreshedRecently(latestRefresh.value)
     );
   };
 
