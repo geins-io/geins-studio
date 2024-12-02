@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ColumnDef } from '@tanstack/vue-table';
 import type { ColumnOptions } from '~/types/Columns';
 
 import type { Category } from '@/types/product/Category';
@@ -17,6 +18,7 @@ const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
 const editEntityUrl = getEditEntityUrl(entityIdentifier);
 const loading = ref(true);
+const columns: Ref<ColumnDef<Entity>[]> = ref([]);
 
 // SET UP COLUMNS FOR ENTITY
 const columnOptions: ColumnOptions<Entity> = {
@@ -25,22 +27,21 @@ const columnOptions: ColumnOptions<Entity> = {
 };
 
 // FETCH DATA FOR ENTITY
-const { callAPI } = useAPI<Entity[]>();
-const { data, error } = await callAPI(apiEndpoint);
+const { data, error } = await useAPI<Entity[]>(apiEndpoint);
 
-if (!data.value || error.value) {
+if (!data?.value || error.value) {
   throw createError({
     ...error.value,
     statusMessage: 'Failed to fetch categories',
   });
 } else {
-  dataList.value = data.value;
+  dataList.value = data.value as Entity[];
 }
 loading.value = false;
 
 // GET AND SET COLUMNS
 const { getColumns } = useColumns<Entity>();
-const columns = getColumns(dataList.value, columnOptions);
+columns.value = getColumns(dataList.value, columnOptions);
 </script>
 
 <template>

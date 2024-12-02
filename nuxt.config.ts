@@ -48,7 +48,11 @@ export default defineNuxtConfig({
     },
   },
 
-  plugins: ['./app/plugins/error-handler.ts', './app/plugins/auth-state.ts'],
+  plugins: [
+    './app/plugins/error-handler.ts',
+    './app/plugins/auth-state.ts',
+    './app/plugins/geins-api.ts',
+  ],
 
   i18n: {
     defaultLocale: 'en',

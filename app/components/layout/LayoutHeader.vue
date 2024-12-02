@@ -9,7 +9,7 @@ import {
   CreditCard,
 } from 'lucide-vue-next';
 
-const auth = useAuth();
+const { logout } = useGeinsAuth();
 const { user, userInitials } = useUserStore();
 
 const colorMode = useColorMode();
@@ -87,7 +87,7 @@ const setColorMode = () => {
             <!-- <DropdownMenuShortcut>⌘C</DropdownMenuShortcut> -->
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem @click="auth.signOut()">
+          <DropdownMenuItem @click="logout()">
             <LogOut class="mr-2 size-4" />
             <span>Log out</span>
           </DropdownMenuItem>

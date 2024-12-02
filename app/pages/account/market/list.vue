@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ColumnDef } from '@tanstack/vue-table';
 import type { ColumnOptions } from '~/types/Columns';
 
 import type { Market } from '@/types/Account';
@@ -19,17 +20,16 @@ const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
 const editEntityUrl = getEditEntityUrl(entityIdentifier);
 const loading = ref(true);
+const columns: Ref<ColumnDef<Entity>[]> = ref([]);
 
 // SET UP COLUMNS FOR ENTITY
 const columnOptions: ColumnOptions<Entity> = {
   editUrl: editEntityUrl,
 };
 
-// FETCH DATA FOR ENTITY
-const { callAPI } = useAPI<Entity[]>();
-const { data, error } = await callAPI(apiEndpoint);
+const { data, error } = await useAPI<Entity[]>(apiEndpoint);
 
-if (!data.value || error.value) {
+if (!data?.value || error.value) {
   // Couldn't fetch data... do nothing for now
 } else {
   const reshapedData: Entity[] = data.value.map((item) => {
@@ -52,7 +52,7 @@ loading.value = false;
 
 // GET AND SET COLUMNS
 const { getColumns } = useColumns<Entity>();
-const columns = getColumns(dataList.value, columnOptions);
+columns.value = getColumns(dataList.value, columnOptions);
 </script>
 
 <template>

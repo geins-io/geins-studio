@@ -63,13 +63,12 @@ export const useColumns = <T extends object>() => {
       columnTypes = {} as ColumnTypes<T>,
       maxTextLength = 60,
     } = options;
+    const columns: ColumnDef<T>[] = [];
 
     const keys = data && data.length ? Object.keys(data[0] as object) : [];
     if (keys.length === 0) {
-      return [];
+      return columns;
     }
-
-    const columns: ColumnDef<T>[] = [];
 
     if (selectable) {
       columns.push(selectableColumn);

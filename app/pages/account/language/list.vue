@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { ColumnDef } from '@tanstack/vue-table';
 import type { ColumnOptions } from '~/types/Columns';
 
-import type { Product } from '@/types/product/Product';
-type Entity = Product;
+import type { Language } from '@/types/Account';
+type Entity = Language;
 
 const route = useRoute();
 const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
@@ -10,54 +11,33 @@ const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
 );
 
 // GLOBAL SETUP
-const apiEndpoint = '/products';
-const totalListItems = ref(3000);
+const apiEndpoint = '/account/language/list';
 const dataList = ref<Entity[]>([]);
 const entityIdentifier = '{id}';
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
 const editEntityUrl = getEditEntityUrl(entityIdentifier);
 const loading = ref(true);
+const columns: Ref<ColumnDef<Entity>[]> = ref([]);
 
 // SET UP COLUMNS FOR ENTITY
 const columnOptions: ColumnOptions<Entity> = {
-  selectable: true,
   editUrl: editEntityUrl,
-  columnTitles: { price: 'Default price' },
-  columnTypes: { price: 'currency', image: 'image', name: 'link' },
 };
 
 // FETCH DATA FOR ENTITY
-const { data, error } = await useAPI<Entity[]>(apiEndpoint, {
-  query: { total: totalListItems.value },
-});
+const { data, error } = await useAPI<Entity[]>(apiEndpoint);
+
 if (!data?.value || error.value) {
-  throw createError({
-    ...error.value,
-    statusMessage: 'Failed to fetch products',
-  });
+  // Couldn't fetch data... do nothing for now
 } else {
-  dataList.value = data.value as Entity[];
+  dataList.value = data?.value as Entity[];
 }
 loading.value = false;
 
 // GET AND SET COLUMNS
-const { getColumns, addActionsColumn, setOrderForColumn } =
-  useColumns<Entity>();
-const columns = getColumns(dataList.value, columnOptions);
-
-// ADD AND ORDER COLUMNS
-addActionsColumn(columns, {
-  onEdit: (product: Entity) =>
-    navigateTo(
-      `${editEntityUrl.replace(entityIdentifier, String(product.id))}`,
-    ),
-  onCopy: (product: Entity) => console.log('Copy', product.id),
-  onDelete: (product: Entity) => console.log('Delete', product.id),
-  onUnpublish: (product: Entity) => console.log('Unpublish', product.id),
-});
-
-setOrderForColumn(columns, 'image', 1);
+const { getColumns } = useColumns<Entity>();
+columns.value = getColumns(dataList.value, columnOptions);
 </script>
 
 <template>

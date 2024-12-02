@@ -174,13 +174,17 @@ export const navigation: NavigationItem[] = [
   },
   */
   {
-    label: 'Account',
+    label: 'For dev',
     href: '/account/market/list',
     icon: 'Settings',
     children: [
       {
         label: 'Markets',
         href: '/account/market/list',
+      },
+      {
+        label: 'Languages',
+        href: '/account/language/list',
       },
       {
         label: 'Users',

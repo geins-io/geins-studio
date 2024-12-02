@@ -1,6 +1,5 @@
 import type { LoginCredentials, TFA, User, Session } from '@/types/auth/Auth';
 import { jwtDecode } from 'jwt-decode';
-import { ref } from 'vue';
 
 const API_BASE = process.env.API_BASE as string;
 const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
@@ -13,8 +12,6 @@ const ENDPOINTS = {
 };
 
 export const auth = () => {
-  const inRefresh = ref(false);
-
   const callAPI = async <T>(
     url: string,
     method: string,
@@ -28,7 +25,6 @@ export const auth = () => {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    console.log('🚀 ~ auth ~  `${API_BASE}/${url}`:', `${API_BASE}/${url}`);
     const response = await fetch(`${API_BASE}/${url}`, {
       method,
       headers,
@@ -41,7 +37,6 @@ export const auth = () => {
 
     const text = await response.text();
     if (response.status === 401) {
-      console.log('🚀 ~ status 401 ~ text:', text);
       throw { status: response.status, message: 'Unauthorized' };
     } else if (response.status === 403) {
       throw { status: response.status, message: 'Insufficient permissions' };
@@ -64,7 +59,6 @@ export const auth = () => {
   };
 
   const refresh = async (refreshToken?: string) => {
-    console.log('🚀 ~ refresh ~ refreshToken:', refreshToken);
     if (!refreshToken) {
       return undefined;
     }
@@ -86,21 +80,19 @@ export const auth = () => {
     return token ? jwtDecode(token) : null;
   };
 
-  const isExpired = (exp: number | null | undefined, where: string) => {
+  const isExpired = (exp?: number) => {
     if (!exp) {
       return false;
     }
     exp = exp * 1000;
-    console.log('🚀 ~ isExpired: ' + where + ':', Date.now() > exp);
     return Date.now() > exp;
   };
 
-  const expiresSoon = (exp?: number, threshold = 300000) => {
+  const expiresSoon = (exp?: number, threshold = 150000) => {
     if (!exp) {
       return false;
     }
     exp = exp * 1000;
-    console.log('🚀 ~ expiresSoon:', Date.now() + threshold > exp);
     return Date.now() + threshold > exp;
   };
 
@@ -114,21 +106,18 @@ export const auth = () => {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       tokenExpires: parsedToken?.exp,
+      refreshedAt: parsedToken?.iat,
     };
   };
 
-  const setInRefresh = async (refreshing: boolean) => {
-    inRefresh.value = refreshing;
-
-    if (inRefresh.value) {
-      await $fetch('/cookie/set/auth-refresh/true');
-    } else {
-      await $fetch('/cookie/remove/auth-refresh');
-    }
+  const shouldRefresh = (token: Session) => {
+    return (
+      token.isAuthorized &&
+      (isExpired(token.tokenExpires) || expiresSoon(token.tokenExpires))
+    );
   };
 
   return {
-    inRefresh,
     login,
     getUser,
     refresh,
@@ -137,6 +126,6 @@ export const auth = () => {
     isExpired,
     expiresSoon,
     getTokenData,
-    setInRefresh,
+    shouldRefresh,
   };
 };
