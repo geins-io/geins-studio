@@ -6,8 +6,9 @@ export function useGeinsAuth() {
 
   const isRefreshing = ref(false);
 
-  const isAuthorized = computed(() => auth.data.value?.isAuthorized);
-  const accessToken = computed(() => auth.data.value?.accessToken);
+  const session = computed(() => auth.data.value);
+  const isAuthorized = computed(() => session.value?.isAuthorized);
+  const accessToken = computed(() => session.value?.accessToken);
 
   const refresh = async (): Promise<Session> => {
     return (await auth.refresh()) as Session;
@@ -47,6 +48,7 @@ export function useGeinsAuth() {
   };
 
   return {
+    session,
     accessToken,
     isAuthorized,
     isRefreshing,

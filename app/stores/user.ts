@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 
 export const useUserStore = defineStore('user', () => {
-  const auth = useAuth();
-  const user = ref(auth.data.value?.user);
+  const { session } = useGeinsAuth();
+  const user = ref(session.value?.user);
 
   const userInitials = computed(() => {
     if (!user.value) {
