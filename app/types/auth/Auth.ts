@@ -15,6 +15,7 @@ export interface Session {
   accessToken?: string;
   refreshToken?: string;
   tokenExpires?: number;
+  refreshedAt?: number;
   user?: User;
   tfa?: TFA;
 }

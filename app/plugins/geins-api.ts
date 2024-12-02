@@ -1,30 +1,73 @@
+import type { Session } from '@/types/auth/Auth';
+
 export default defineNuxtPlugin((_nuxtApp) => {
-  const { data } = useAuth();
+  const {
+    isAuthorized,
+    accessToken,
+    isRefreshing,
+    refresh,
+    setIsRefreshing,
+    isExpired,
+    expiresSoon,
+    logout,
+  } = useGeinsAuth();
+
+  let refreshPromise: Promise<Session> | null = null;
+
+  const refreshAuthToken = async (): Promise<Session> => {
+    if (!refreshPromise) {
+      refreshPromise = (async () => {
+        setIsRefreshing(true);
+        try {
+          const newSession = await refresh();
+          return newSession;
+        } catch (error) {
+          logout();
+          throw error;
+        } finally {
+          setIsRefreshing(false);
+          refreshPromise = null; // Clear the refresh promise after completion
+        }
+      })();
+    }
+    return refreshPromise;
+  };
 
   const geinsApi = $fetch.create({
     baseURL: '/api',
-    onRequest({ options }) {
-      if (data.value?.isAuthorized) {
-        console.log(
-          '🚀 ~ onRequest ~ data.value?.accessToken:',
-          data.value?.accessToken,
-        );
+    async onRequest({ options }) {
+      // Check token expiration
+      if (isExpired() || expiresSoon()) {
+        if (!isRefreshing.value) {
+          await refreshAuthToken();
+        } else {
+          await refreshPromise; // Wait for the ongoing refresh to complete
+        }
+      }
 
-        options.headers.set(
-          'Authorization',
-          `Bearer ${data.value?.accessToken}`,
-        );
+      // Add the token to the request
+      if (isAuthorized.value) {
+        options.headers.set('Authorization', `Bearer ${accessToken.value}`);
       }
     },
-    async onResponseError({ response }) {
+    async onResponseError({ response, options }) {
       if (response.status === 401) {
-        // TODO: move retry here
-        console.log('🚀 ~ onResponseError ~ response:', response);
+        try {
+          await refreshAuthToken(); // Refresh the token
+          options.headers.set(
+            'Authorization',
+            `Bearer ${accessToken.value}`, // Retry with the new token
+          );
+          return await $fetch(response.url, options); // Retry the original request
+        } catch (error) {
+          logout();
+          throw error;
+        }
       }
+      throw response; // Propagate other errors
     },
   });
 
-  // Expose to useNuxtApp().$geinsApi
   return {
     provide: {
       geinsApi,

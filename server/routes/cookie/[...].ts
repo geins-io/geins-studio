@@ -33,7 +33,6 @@ export default defineEventHandler(async (event) => {
       return { message: 'Invalid cookie name' };
     }
     setCookie(event, cookieName || '', '', { maxAge: 0 });
-    console.log('cookie removed', cookieName);
     return { message: `Cookie ${cookieName} removed` };
   }
 

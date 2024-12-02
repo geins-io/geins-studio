@@ -1,6 +1,5 @@
 import type { LoginCredentials, TFA, User, Session } from '@/types/auth/Auth';
 import { jwtDecode } from 'jwt-decode';
-import { ref } from 'vue';
 
 const API_BASE = process.env.API_BASE as string;
 const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
@@ -11,8 +10,6 @@ const ENDPOINTS = {
   REFRESH: 'auth/refresh',
   VERIFY: 'dfa-verify',
 };
-
-const latestRefresh = ref(0);
 
 export const auth = () => {
   const callAPI = async <T>(
@@ -28,7 +25,6 @@ export const auth = () => {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    console.log('🚀 ~ auth ~  `${API_BASE}/${url}`:', `${API_BASE}/${url}`);
     const response = await fetch(`${API_BASE}/${url}`, {
       method,
       headers,
@@ -41,7 +37,6 @@ export const auth = () => {
 
     const text = await response.text();
     if (response.status === 401) {
-      console.log('🚀 ~ status 401 ~ text:', text);
       throw { status: response.status, message: 'Unauthorized' };
     } else if (response.status === 403) {
       throw { status: response.status, message: 'Insufficient permissions' };
@@ -64,13 +59,9 @@ export const auth = () => {
   };
 
   const refresh = async (refreshToken?: string) => {
-    console.log('🚀 ~ refreshing ~ refreshToken:', refreshToken);
     if (!refreshToken) {
       return undefined;
     }
-    const timestamp = Math.floor(Date.now() / 1000);
-    latestRefresh.value = timestamp;
-    await $fetch(`/cookie/set/auth-refresh/${timestamp}`);
     return callAPI<Session>(ENDPOINTS.REFRESH, 'POST', { refreshToken });
   };
 
@@ -94,7 +85,6 @@ export const auth = () => {
       return false;
     }
     exp = exp * 1000;
-    console.log('🚀 ~ isExpired:', Date.now() > exp);
     return Date.now() > exp;
   };
 
@@ -103,20 +93,7 @@ export const auth = () => {
       return false;
     }
     exp = exp * 1000;
-    console.log('🚀 ~ expiresSoon:', Date.now() + threshold > exp);
     return Date.now() + threshold > exp;
-  };
-
-  const wasRefreshedRecently = (refreshedAt?: number, threshold = 10000) => {
-    if (!refreshedAt) {
-      return false;
-    }
-    refreshedAt = refreshedAt * 1000;
-    console.log(
-      '🚀 ~ wasRefreshedRecently:',
-      Date.now() - threshold < refreshedAt,
-    );
-    return Date.now() - threshold < refreshedAt;
   };
 
   const getTokenData = (tokens: Session): Session => {
@@ -129,19 +106,18 @@ export const auth = () => {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       tokenExpires: parsedToken?.exp,
+      refreshedAt: parsedToken?.iat,
     };
   };
 
   const shouldRefresh = (token: Session) => {
     return (
       token.isAuthorized &&
-      (isExpired(token.tokenExpires) || expiresSoon(token.tokenExpires)) &&
-      !wasRefreshedRecently(latestRefresh.value)
+      (isExpired(token.tokenExpires) || expiresSoon(token.tokenExpires))
     );
   };
 
   return {
-    latestRefresh,
     login,
     getUser,
     refresh,
@@ -149,7 +125,6 @@ export const auth = () => {
     parseToken,
     isExpired,
     expiresSoon,
-    wasRefreshedRecently,
     getTokenData,
     shouldRefresh,
   };
