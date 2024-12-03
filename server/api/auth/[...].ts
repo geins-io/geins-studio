@@ -11,6 +11,25 @@ export default NuxtAuthHandler({
     signOut: '/auth/login',
   },
   callbacks: {
+    /**
+     * Callback function for handling JSON Web Tokens (JWT).
+     *
+     * @param {Object} params - The parameters for the callback.
+     * @param {Object} params.token - The current token object.
+     * @param {Object} [params.user] - The user object, if available.
+     * @param {string} [params.trigger] - The trigger event for the callback.
+     *
+     * @returns {Promise<Object>} The updated token object.
+     *
+     * This callback handles the following scenarios:
+     * - On sign-in (`trigger === 'signIn'`), it sets the token based on the user's authorization status.
+     *   - If the user is authorized, the token is set with the user's data.
+     *   - If the user requires two-factor authentication (TFA), the token is set with TFA information.
+     * - If the token needs to be refreshed (`trigger === undefined` and `user === undefined`), it attempts to refresh the token.
+     *   - If the refresh is successful, the token is updated with the new token data.
+     *   - If the refresh fails with a 401 or 403 status, the token is set to unauthorized to force a logout.
+     *   - Other errors are logged for further decision-making.
+     */
     jwt: async ({ token, user, trigger }) => {
       if (trigger === 'signIn' && user) {
         // Set the token
@@ -54,6 +73,21 @@ export default NuxtAuthHandler({
 
       return token;
     },
+
+    /**
+     * Callback function for handling sessions.
+     *
+     * @param {Object} params - The parameters for the callback.
+     * @param {Object} params.session - The current session object.
+     * @param {Object} params.token - The current token object.
+     *
+     * @returns {Promise<Object>} The updated session object.
+     *
+     * This callback function updates the session object with the user's data if the user is authorized.
+     * If the user requires two-factor authentication (TFA), the session object is updated with TFA information.
+     * If the token is expired, the session object is updated to force a logout.
+     * If the user's data cannot be fetched, the session object is kept as is.
+     */
     session: async ({ session, token }) => {
       if (token.isAuthorized && token.accessToken) {
         session = {
