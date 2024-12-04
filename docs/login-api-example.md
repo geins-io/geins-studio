@@ -1,7 +1,3 @@
----
-outline: deep
----
-
 # Login using the API
 
 ## Overview
@@ -14,43 +10,42 @@ Please note that tokens should be considered sensitive information. Care should 
 
 ## Single-factor authentication (SFA)
 
-The first step to authenticate a user is making a request to the **Authentication** endpoint with a pair of user credentials; a `username` and a `password`.  
+The first step to authenticate a user is making a request to the **Authentication** endpoint with a pair of user credentials; a `username` and a `password`.
 
-If the credentials are valid, the user is authenticated and an **access token** is provided.  
+If the credentials are valid, the user is authenticated and an **access token** is provided.
 
 This is the first step of the authentication process, but most likely not the only step. Please read more about **MFA** below.
 
 ## Multi-factor authentication (MFA)
 
-MFA provides increased security by requiring external credentials in addition to the `username` and `password`. While highly recommended, MFA is still *optional* and can be toggled on a per-user basis.
+MFA provides increased security by requiring external credentials in addition to the `username` and `password`. While highly recommended, MFA is still _optional_ and can be toggled on a per-user basis.
 
-If a user requires MFA, the authentication process will look a bit different and involve an additional step; **Verification**.  
+If a user requires MFA, the authentication process will look a bit different and involve an additional step; **Verification**.
 
-Instead of receiving an **access token** from the **Authentication** endpoint, you will instead receive a **login token**.  
-
+Instead of receiving an **access token** from the **Authentication** endpoint, you will instead receive a **login token**.
 
 ::: info
-The **login token** is very short-lived and should *not* be persisted.  
-It only acts as an *intermediary* credential for MFA and does not grant any access to the API.
+The **login token** is very short-lived and should _not_ be persisted.  
+It only acts as an _intermediary_ credential for MFA and does not grant any access to the API.
 :::
 
-Depending on which MFA method is used, a special **MFA code** must be received or generated externally by the user.  
+Depending on which MFA method is used, a special **MFA code** must be received or generated externally by the user.
 
 The **MFA code**, together with the login token, makes up the payload for a request to the **Verification** endpoint which, if successful, will return the **access token**.
 
 ## Refreshing Tokens
 
-The **access token** has a limited lifetime. When it expires, it can no longer be used, and a new **access token** is required.  
+The **access token** has a limited lifetime. When it expires, it can no longer be used, and a new **access token** is required.
 
-In order to retrieve a new **access token**, the user would either need to re-authenticate again via the **Authentication** endpoint *or* retrieve a new **access token** with the help of a **refresh token** (recommended).  
+In order to retrieve a new **access token**, the user would either need to re-authenticate again via the **Authentication** endpoint _or_ retrieve a new **access token** with the help of a **refresh token** (recommended).
 
 By making a request to the **Refresh token** endpoint and providing a valid **refresh token**, you can retrieve a new (valid) **access token**.  
 Any **refresh token** can be used once (and only once) for generating a new **access token** (and a new refresh token as well).
 
-This is the preferred way of retrieving new access tokens for previously authenticated users, as it can be done without any user interaction.  
+This is the preferred way of retrieving new access tokens for previously authenticated users, as it can be done without any user interaction.
 
 ::: tip
-There is no guarantee that the call to the **Refresh token** endpoint succeeds. If it fails, the user would need to re-authenticate from the beginning.  
+There is no guarantee that the call to the **Refresh token** endpoint succeeds. If it fails, the user would need to re-authenticate from the beginning.
 
 Also note that the **Refresh token** endpoint does not require MFA.
 :::
@@ -89,31 +84,32 @@ fetch('/auth', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'x-account-key': 'your_account_key' // Required header
+    'x-account-key': 'your_account_key', // Required header
   },
   body: JSON.stringify({
     username: 'your_username',
-    password: 'your_password'
+    password: 'your_password',
+  }),
+})
+  .then((response) => response.json())
+  .then((data) => {
+    if (response.ok) {
+      // Securely handle the access and refresh tokens and/or handle MFA
+    } else {
+      console.error('Authentication failed:', data);
+    }
   })
-})
-.then(response => response.json())
-.then(data => {
-  if (response.ok) {
-    // Securely handle the access and refresh tokens and/or handle MFA
-  } else {
-    console.error('Authentication failed:', data);
-  }
-})
-.catch(error => {
-  console.error('Error authenticating:', error);
-});
+  .catch((error) => {
+    console.error('Error authenticating:', error);
+  });
 ```
 
 #### Successful response
 
-Upon a successful authentication, the API will respond with a JSON object. This object will vary depending on if MFA is required or not for the user.  
+Upon a successful authentication, the API will respond with a JSON object. This object will vary depending on if MFA is required or not for the user.
 
-If MFA **is required**, the response will contain a **login token** and MFA details:  
+If MFA **is required**, the response will contain a **login token** and MFA details:
+
 ```json
 {
   "mfaRequired": true,
@@ -122,7 +118,8 @@ If MFA **is required**, the response will contain a **login token** and MFA deta
 }
 ```
 
-If MFA is **not** required, the response will contain **access and refresh tokens**:  
+If MFA is **not** required, the response will contain **access and refresh tokens**:
+
 ```json
 {
   "mfaRequired": false,
@@ -134,7 +131,6 @@ If MFA is **not** required, the response will contain **access and refresh token
 ::: tip
 Use the `mfaRequired` property to evaluate which type of response it is.
 :::
-
 
 ### 2. Verification (MFA)
 
@@ -162,24 +158,24 @@ fetch('/auth/verify', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'x-account-key': 'your_account_key' // Required header
+    'x-account-key': 'your_account_key', // Required header
   },
   body: JSON.stringify({
     loginToken: 'your_login_token',
-    mfaCode: 'your_mfa_code'
+    mfaCode: 'your_mfa_code',
+  }),
+})
+  .then((response) => response.json())
+  .then((data) => {
+    if (response.ok) {
+      // Securely handle the access and refresh tokens
+    } else {
+      console.error('Verification failed:', data);
+    }
   })
-})
-.then(response => response.json())
-.then(data => {
-  if (response.ok) {
-    // Securely handle the access and refresh tokens
-  } else {
-    console.error('Verification failed:', data);
-  }
-})
-.catch(error => {
-  console.error('Error verifying authentication:', error);
-});
+  .catch((error) => {
+    console.error('Error verifying authentication:', error);
+  });
 ```
 
 #### Successful response
@@ -219,23 +215,23 @@ fetch('/auth/refresh', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'x-account-key': 'your_account_key' // Required header
+    'x-account-key': 'your_account_key', // Required header
   },
   body: JSON.stringify({
-    refreshToken: 'your_refresh_token'
+    refreshToken: 'your_refresh_token',
+  }),
+})
+  .then((response) => response.json())
+  .then((data) => {
+    if (response.ok) {
+      // Securely handle the tokens
+    } else {
+      console.error('Token refresh failed:', data);
+    }
   })
-})
-.then(response => response.json())
-.then(data => {
-  if (response.ok) {
-    // Securely handle the tokens
-  } else {
-    console.error('Token refresh failed:', data);
-  }
-})
-.catch(error => {
-  console.error('Error refreshing token:', error);
-});
+  .catch((error) => {
+    console.error('Error refreshing token:', error);
+  });
 ```
 
 #### Successful response

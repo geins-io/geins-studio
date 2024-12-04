@@ -17,6 +17,7 @@ export default defineConfig({
     search: {
       provider: 'local',
     },
+    outline: 'deep',
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Docs', link: '/introduction/what-is-geins-mc' },
@@ -38,6 +39,10 @@ export default defineConfig({
           { text: 'Getting Started', link: '/introduction/getting-started' },
           { text: 'Deploy', link: '/introduction/deploy' },
         ],
+      },
+      {
+        text: 'Concepts',
+        items: [{ text: 'Entities', link: '/concepts/entities' }],
       },
       {
         text: 'Guides',
