@@ -10,15 +10,13 @@ const props = withDefaults(
   defineProps<{
     pending: boolean;
     showInvalid: boolean;
-    sentTo?: string;
-    username?: string;
+    mfaMethod?: string;
     mode: AuthFormMode;
   }>(),
   {
     pending: false,
     showInvalid: false,
-    sentTo: '',
-    username: '',
+    mfaMethod: '',
   },
 );
 
@@ -80,6 +78,19 @@ const login = () => {
 // Verification
 const verificationCode = ref<string[]>([]);
 
+const instructions = computed(() => {
+  if (loginMode.value) {
+    return '';
+  }
+  if (props.mfaMethod === 'email') {
+    return 'Check your inbox';
+  }
+  if (props.mfaMethod === 'app') {
+    return 'Check your authenticator app';
+  }
+  return '';
+});
+
 const verifyAccount = () => {
   showInvalid.value = false;
   if (verificationCode.value.length < 6) {
@@ -93,14 +104,14 @@ const verifyAccount = () => {
 
 <template>
   <div class="grid gap-2 text-center">
-    <h1 class="text-3xl font-bold">
+    <h1 class="mb-3 text-3xl font-bold">
       {{ loginMode ? 'Merchant Center' : 'Verify Account' }}
     </h1>
-    <p
-      v-if="verifyMode && sentTo.length > 0"
-      class="text-balance text-muted-foreground"
-    >
-      Authenticating as <strong>{{ username }}</strong>
+    <!-- <p v-if="instructions" class="text-xs text-muted-foreground">
+      {{ instructions }}
+    </p> -->
+    <p v-if="verifyMode && mfaMethod.length > 0" class="text-muted-foreground">
+      Enter the 6-digit code from your <strong>{{ mfaMethod }}</strong>
     </p>
   </div>
 
@@ -158,20 +169,7 @@ const verifyAccount = () => {
       />
     </div>
 
-    <div v-if="loginMode" class="grid gap-2">
-      <div class="flex items-center space-x-2.5">
-        <Checkbox id="checkbox" v-model="rememberMe" />
-        <!-- TODO: Decide on what remember function should do -->
-        <Label for="checkbox" class="ml-2 text-sm">Remember this device</Label>
-      </div>
-    </div>
-
     <div v-if="verifyMode" class="grid gap-3">
-      <div class="flex flex-col items-center">
-        <Label for="pin-input">
-          Enter the 6-digit code from your {{ sentTo }}
-        </Label>
-      </div>
       <div class="flex justify-center">
         <PinInput
           id="pin-input"

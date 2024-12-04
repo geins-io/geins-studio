@@ -10,27 +10,31 @@ export interface User {
   username?: string;
 }
 
-export interface Session {
-  isAuthorized?: boolean;
+export interface AuthTokens {
   accessToken?: string;
   refreshToken?: string;
+  loginToken?: string;
+  mfaCode?: string;
+}
+
+export interface AuthResponse extends AuthTokens {
+  mfaRequired?: boolean;
+  mfaMethod?: string;
+}
+
+export interface Session extends AuthTokens {
+  isAuthorized?: boolean;
   tokenExpires?: number;
   refreshedAt?: number;
   user?: User;
-  tfa?: TFA;
+  mfaActive?: boolean;
+  mfaMethod?: string;
 }
 
-export interface LoginCredentials extends TFA {
+export interface LoginCredentials extends AuthTokens {
   username: string;
   password?: string;
   rememberMe?: boolean;
-}
-
-export interface TFA {
-  token?: string;
-  sentTo?: string;
-  username?: string;
-  code?: string;
 }
 
 export type AuthFormMode = 'login' | 'verify';

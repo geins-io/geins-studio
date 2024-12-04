@@ -59,14 +59,13 @@ export default defineNuxtPlugin(() => {
    * This instance is created using the nuxt `$fetch.create` method.
    * It intercepts requests to add the authentication token to the headers.
    * If the token has expired, it refreshes the token before retrying the request.
-   * If a request fails with a 401 status, it attempts to refresh the token and retry the request
-   * with the new token.
+   * If a request fails with a 401 status, it attempts to refresh the token and retry the request.
    *
    * @example
    * ```ts
    * const response = await $geinsApi('/users', {
    *  method: 'POST',
-   * body: JSON.stringify({ name: 'John Doe' }),
+   *  body: JSON.stringify({ name: 'John Doe' }),
    * });
    * ```
    * */

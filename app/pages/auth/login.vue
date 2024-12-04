@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { LoginCredentials, AuthFormMode, TFA } from '@/types/auth/Auth';
+import type { LoginCredentials, AuthFormMode } from '@/types/auth/Auth';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 const { toast } = useToast();
@@ -16,7 +16,8 @@ definePageMeta({
 const auth = useAuth();
 const router = useRouter();
 
-const tfa = ref<TFA | null>(null);
+const loginToken = ref('');
+const mfaMethod = ref('');
 const pending = ref(false);
 const showInvalid = ref(false);
 const step = ref<AuthFormMode>('login');
@@ -32,30 +33,31 @@ async function handleLogin(credentials: LoginCredentials) {
     return;
   }
 
-  const signInResult = await auth.signIn('credentials', {
+  const authResponse = await auth.signIn('credentials', {
     username: credentials.username,
     password: credentials.password,
     rememberMe,
     redirect: false,
   });
 
-  if (!signInResult) {
+  if (!authResponse) {
     showInvalid.value = true;
     pending.value = false;
     return;
   }
 
-  if (signInResult.error || !signInResult.ok) {
+  if (authResponse.error || !authResponse.ok) {
     showInvalid.value = true;
     pending.value = false;
     return;
   }
 
-  if (signInResult.ok) {
+  if (authResponse.ok) {
     const authData = auth.data.value;
 
-    if (authData?.tfa) {
-      tfa.value = authData.tfa;
+    if (authData?.mfaActive && authData?.loginToken) {
+      loginToken.value = authData.loginToken;
+      mfaMethod.value = authData.mfaMethod || '';
       step.value = 'verify';
       pending.value = false;
       return;
@@ -64,7 +66,6 @@ async function handleLogin(credentials: LoginCredentials) {
       const redirect = route.query.redirect as string;
       await router.push(redirect || '/');
       await nextTick();
-      const authData = auth.data.value;
       const firstName = authData?.user?.firstName || '';
 
       toast({
@@ -76,19 +77,19 @@ async function handleLogin(credentials: LoginCredentials) {
   }
 }
 
-async function handleVerify(code: string) {
+async function handleVerify(mfaCode: string) {
   pending.value = true;
   showInvalid.value = false;
 
-  if (!tfa.value) {
+  if (!loginToken.value) {
     showInvalid.value = true;
     pending.value = false;
     return;
   }
 
   const verifyResult = await auth.signIn('credentials', {
-    ...tfa.value,
-    code,
+    mfaCode,
+    loginToken: loginToken.value,
     redirect: false,
   });
 
@@ -120,8 +121,7 @@ async function handleVerify(code: string) {
     :mode="step"
     :pending="pending"
     :show-invalid="showInvalid"
-    :sent-to="tfa?.sentTo"
-    :username="tfa?.username"
+    :mfa-method="mfaMethod"
     @login="handleLogin"
     @verify="handleVerify"
   />
