@@ -1,18 +1,23 @@
+import type { Session } from '@/types/auth/Auth';
+
 export default defineNuxtPlugin((_nuxtApp) => {
   const { data, status, signOut } = useAuth();
 
-  const authStateHandler = (isAuthorized?: boolean) => {
-    if (!isAuthorized && status.value === 'authenticated') {
+  const authStateHandler = (session?: Session | null) => {
+    if (session?.mfaActive) {
+      return;
+    }
+    if (!session?.isAuthorized && status.value === 'authenticated') {
       clearError();
       signOut();
     }
   };
 
-  authStateHandler(data?.value?.isAuthorized);
+  authStateHandler(data?.value);
 
   watch(
     () => data?.value?.isAuthorized,
-    (isAuthorized) => authStateHandler(isAuthorized),
+    () => authStateHandler(data?.value),
     { deep: true },
   );
 });

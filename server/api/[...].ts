@@ -3,12 +3,10 @@ import { useRuntimeConfig } from '#imports';
 /**
  * Event handler for processing API requests.
  *
- * This handler processes incoming HTTP requests, reads the request body if the method is POST, PUT, or PATCH,
- * and forwards the request to a target URL specified in the event context parameters. It also includes custom
- * headers required for the API request.
- *
- * @param {H3Event} event - The event object representing the incoming request.
- * @returns {Promise<Response | { success: boolean, error: string }>} - The response from the target API or an error message if the target URL is missing.
+ * This handler is a catch-all for API requests that are not handled by other routes.
+ * It forwards the request to the target API and returns the response.
+ * The target API URL is specified in the request query string.
+ * The handler adds the account key to the request headers.
  *
  */
 export default defineEventHandler(async (event) => {
@@ -41,6 +39,5 @@ export default defineEventHandler(async (event) => {
     return response;
   } catch (error) {
     console.warn('Error connecting to the API:', error);
-    // throw error;
   }
 });

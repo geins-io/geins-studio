@@ -1,4 +1,11 @@
-import type { LoginCredentials, TFA, User, Session } from '@/types/auth/Auth';
+import type { JWT } from 'next-auth/jwt';
+import type {
+  LoginCredentials,
+  AuthResponse,
+  User,
+  Session,
+} from '@/types/auth/Auth';
+
 import { jwtDecode } from 'jwt-decode';
 
 const API_BASE = process.env.API_BASE as string;
@@ -8,7 +15,7 @@ const ENDPOINTS = {
   LOGIN: 'auth',
   USER: 'user/me',
   REFRESH: 'auth/refresh',
-  VERIFY: 'dfa-verify',
+  VERIFY: 'auth/verify',
 };
 
 /**
@@ -23,7 +30,7 @@ export const auth = () => {
    * @param {string} method - The HTTP method (e.g., 'GET', 'POST').
    * @param {object} [data] - The request payload.
    * @param {string} [token] - The authorization token.
-   * @returns {Promise<T>} - The response data.
+   * @returns {Promise<T>} The response data.
    * @throws Will throw an error if the response status is not ok.
    */
   const callAPI = async <T>(
@@ -64,21 +71,23 @@ export const auth = () => {
    * Logs in a user with the provided credentials.
    *
    * @param {LoginCredentials} credentials - The user's login credentials.
-   * @returns {Promise<Session>} - The session data.
+   * @returns {Promise<AuthResponse>} The session data.
    */
-  const login = async (credentials: LoginCredentials) => {
+  const login = async (
+    credentials: LoginCredentials,
+  ): Promise<AuthResponse> => {
     const creds = {
       username: credentials.username,
       password: credentials.password,
     };
-    return callAPI<Session>(ENDPOINTS.LOGIN, 'POST', creds);
+    return callAPI<AuthResponse>(ENDPOINTS.LOGIN, 'POST', creds);
   };
 
   /**
    * Retrieves the user data using the provided access token.
    *
    * @param {string} accessToken - The access token.
-   * @returns {Promise<User | undefined>} - The user data or undefined if not found.
+   * @returns {Promise<User | undefined>} The user data or undefined if not found.
    */
   const getUser = async (accessToken: string): Promise<User | undefined> => {
     return callAPI<User>(ENDPOINTS.USER, 'GET', undefined, accessToken);
@@ -88,96 +97,114 @@ export const auth = () => {
    * Refreshes the session using the provided refresh token.
    *
    * @param {string} [refreshToken] - The refresh token.
-   * @returns {Promise<Session | undefined>} - The new session data or undefined if no refresh token is provided.
+   * @returns {Promise<Session | undefined>} The new session data or undefined if no refresh token is provided.
    */
-  const refresh = async (refreshToken?: string) => {
+  const refresh = async (
+    refreshToken?: string,
+  ): Promise<AuthResponse | undefined> => {
     if (!refreshToken) {
       return undefined;
     }
-    return callAPI<Session>(ENDPOINTS.REFRESH, 'POST', { refreshToken });
+    return callAPI<AuthResponse>(ENDPOINTS.REFRESH, 'POST', { refreshToken });
   };
+
   /**
-   * Verifies the two-factor authentication (TFA) credentials.
+   * Verifies the two-factor authentication (MFA) credentials.
    *
-   * @param {TFA} tfa - The TFA credentials.
-   * @returns {Promise<User>} - The verified user data.
-   * @throws Will throw an error if TFA credentials are missing.
+   * @param {LoginCredentials} credentials - The MFA login credentials.
+   * @returns {Promise<AuthResponse>} The verified user auth response.
+   * @throws Will throw an error if `loginToken` or `mfaCode` is missing from `credentials`.
    */
-  const verify = async (tfa: TFA) => {
-    if (!tfa || !tfa.code || !tfa.username || !tfa.token) {
-      throw new Error('Missing TFA credentials');
+  const verify = async (
+    credentials: LoginCredentials,
+  ): Promise<AuthResponse> => {
+    if (!credentials.loginToken || !credentials.mfaCode) {
+      throw new Error('Missing MFA credentials');
     }
 
-    const { username, token, code } = tfa;
-    const credentials = { user: username, token, code };
-
-    return callAPI<User>(ENDPOINTS.VERIFY, 'POST', credentials);
+    return callAPI<AuthResponse>(ENDPOINTS.VERIFY, 'POST', credentials);
   };
+
   /**
    * Parses the provided token.
    *
    * @param {string | null} [token] - The token to parse.
-   * @returns {any} - The parsed token data.
+   * @returns {JWT | null} The parsed token data.
    */
-  const parseToken = (token?: string | null) => {
+  const parseToken = (token?: string | null): JWT | null => {
     return token ? jwtDecode(token) : null;
   };
+
   /**
    * Checks if the token is expired.
    *
    * @param {number} [exp] - The expiration time in seconds.
-   * @returns {boolean} - True if the token is expired, false otherwise.
+   * @returns {boolean} True if the token is expired, false otherwise.
    */
-  const isExpired = (exp?: number) => {
+  const isExpired = (exp?: number): boolean => {
     if (!exp) {
       return false;
     }
     exp = exp * 1000;
     return Date.now() > exp;
   };
+
   /**
    * Checks if the token is about to expire soon.
    *
    * @param {number} [exp] - The expiration time in seconds.
-   * @param {number} [threshold=150000] - The threshold in milliseconds.
-   * @returns {boolean} - True if the token is about to expire soon, false otherwise.
+   * @param {number} [threshold=150000] - The threshold in milliseconds, default is 150000 (2.5 minutes).
+   * @returns {boolean} True if the token is about to expire soon, false otherwise.
    */
-  const expiresSoon = (exp?: number, threshold = 150000) => {
+  const expiresSoon = (exp?: number, threshold: number = 150000): boolean => {
+    // TODO: fix threshold value
     if (!exp) {
       return false;
     }
     exp = exp * 1000;
     return Date.now() + threshold > exp;
   };
+
   /**
-   * Extracts token data from the session.
+   * Transform the login/verify/refresh response into a session object.
    *
-   * @param {Session} tokens - The session tokens.
-   * @returns {Session} - The token data including authorization status and expiration times.
+   * @param {AuthResponse} response - The auth response.
+   * @returns {Session} The token data including authorization status and expiration times.
    */
-  const getTokenData = (tokens: Session): Session => {
-    if (!tokens?.accessToken) {
+  const getSession = (response: AuthResponse): Session => {
+    if (response.mfaRequired && response.loginToken) {
+      return {
+        isAuthorized: false,
+        mfaActive: true,
+        mfaMethod: response.mfaMethod,
+        loginToken: response.loginToken,
+      };
+    }
+    if (!response.mfaRequired && !response.accessToken) {
       return { isAuthorized: false };
     }
-    const parsedToken = parseToken(tokens.accessToken);
+
+    const parsedToken = parseToken(response.accessToken);
     return {
       isAuthorized: true,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      tokenExpires: parsedToken?.exp,
-      refreshedAt: parsedToken?.iat,
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+      tokenExpires: Number(parsedToken?.exp),
+      refreshedAt: Number(parsedToken?.iat),
+      mfaActive: false,
     };
   };
+
   /**
    * Determines if the token should be refreshed.
    *
-   * @param {Session} token - The session token.
-   * @returns {boolean} - True if the token should be refreshed, false otherwise.
+   * @param {Session} session - The session token.
+   * @returns {boolean} True if the token should be refreshed, false otherwise.
    */
-  const shouldRefresh = (token: Session) => {
-    return (
-      token.isAuthorized &&
-      (isExpired(token.tokenExpires) || expiresSoon(token.tokenExpires))
+  const shouldRefresh = (session: Session): boolean => {
+    return !!(
+      session.isAuthorized &&
+      (isExpired(session.tokenExpires) || expiresSoon(session.tokenExpires))
     );
   };
 
@@ -189,7 +216,7 @@ export const auth = () => {
     parseToken,
     isExpired,
     expiresSoon,
-    getTokenData,
+    getSession,
     shouldRefresh,
   };
 };
