@@ -8,7 +8,7 @@ import type {
 
 import { jwtDecode } from 'jwt-decode';
 
-const API_BASE = process.env.API_BASE as string;
+const API_URL = process.env.API_URL as string;
 const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
 
 const ENDPOINTS = {
@@ -17,6 +17,7 @@ const ENDPOINTS = {
   REFRESH: 'auth/refresh',
   VERIFY: 'auth/verify',
 };
+// TODO: move some of these functions to shared folder (Nuxt 3.14)
 
 /**
  * Utility functions for authentication.
@@ -46,7 +47,7 @@ export const auth = () => {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    const response = await fetch(`${API_BASE}/${url}`, {
+    const response = await fetch(`${API_URL}/${url}`, {
       method,
       headers,
       body: data ? JSON.stringify(data) : undefined,

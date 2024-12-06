@@ -70,13 +70,18 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       accountKey: process.env.ACCOUNT_KEY,
-      apiBase: process.env.API_BASE,
+      apiUrl: process.env.API_URL,
       VERCEL: process.env.VERCEL,
       VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
       VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
       VERCEL_ENV: process.env.VERCEL_ENV,
     },
     private: {},
+  },
+
+  sourcemap: {
+    server: false,
+    client: true,
   },
 
   compatibilityDate: '2024-07-05',
