@@ -13,7 +13,7 @@ npx create-geins-mc
 
 ## Environment variables
 
-Create a `.env` file in the root of your project and add the following environment variables:
+Create an `.env` file in the root of your project and add the following environment variables:
 
 | Variable      | Description                                                                               | Example                                       |
 | ------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------- |

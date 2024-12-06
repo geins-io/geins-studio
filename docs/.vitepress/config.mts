@@ -42,7 +42,10 @@ export default defineConfig({
       },
       {
         text: 'Concepts',
-        items: [{ text: 'Entities', link: '/concepts/entities' }],
+        items: [
+          { text: 'Entities', link: '/concepts/entities' },
+          { text: 'Authentication', link: '/concepts/authentication' },
+        ],
       },
       {
         text: 'Guides',
