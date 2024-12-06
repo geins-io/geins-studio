@@ -1,3 +1,5 @@
+// TODO: move all types to shared folder (Nuxt 3.14)
+
 export type ChannelType = 'webshop' | 'physical' | 'other';
 
 export interface Channel {

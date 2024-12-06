@@ -17,6 +17,7 @@ const ENDPOINTS = {
   REFRESH: 'auth/refresh',
   VERIFY: 'auth/verify',
 };
+// TODO: move some of these functions to shared folder (Nuxt 3.14)
 
 /**
  * Utility functions for authentication.
