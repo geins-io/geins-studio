@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   if (!targetUrl) {
     return { success: false, error: 'Target URL is required' };
   }
-  const fullUrl = `${config.public.apiBase}/${targetUrl}`;
+  const fullUrl = `${config.public.apiUrl}/${targetUrl}`;
 
   const apiHeaders = {
     'x-account-key': config.public.accountKey as string,

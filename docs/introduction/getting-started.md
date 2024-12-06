@@ -18,9 +18,9 @@ Create a `.env` file in the root of your project and add the following environme
 | Variable      | Description                                                                               | Example                                       |
 | ------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------- |
 | `AUTH_SECRET` | A secret key used to hash tokens, sign and encrypt cookie and generate cryptographic keys | `a01a01a01a01a01a01`                          |
-| `AUTH_ORIGIN` | The URL to your Nuxt app                                                                  | `http://localhost:3000`                       |
+| `AUTH_ORIGIN` | The URL to your application                                                               | `http://localhost:3000`                       |
 | `ACCOUNT_KEY` | Your Geins account key                                                                    | `xxxxxxxxxxxxx`                               |
-| `API_BASE`    | The base URL of the Geins API                                                             | `https://apim-mgmt-api-dev2.azure-api.net/v2` |
+| `API_URL`     | The URL to the Geins API                                                                  | `https://apim-mgmt-api-dev2.azure-api.net/v2` |
 
 ## Theming
 

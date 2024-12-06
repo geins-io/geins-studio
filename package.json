@@ -27,7 +27,7 @@
     "jwt-decode": "^4.0.0",
     "lucide-vue-next": "0.453.0",
     "next-auth": "4.21.1",
-    "nuxt": "^3.12.4",
+    "nuxt": "^3.14.1592",
     "nuxt-svgo": "^4.0.1",
     "pinia": "^2.1.7",
     "radix-vue": "^1.8.4",
