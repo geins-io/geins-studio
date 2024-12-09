@@ -9,8 +9,8 @@ import type {
 
 import { jwtDecode } from 'jwt-decode';
 
-const API_URL = process.env.API_URL as string;
-const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
+const API_URL = process.env.GEINS_API_URL as string;
+const ACCOUNT_KEY = process.env.GEINS_ACCOUNT_KEY as string;
 
 const ENDPOINTS = {
   LOGIN: 'auth',

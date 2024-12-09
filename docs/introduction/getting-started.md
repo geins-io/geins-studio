@@ -15,12 +15,13 @@ npx create-geins-mc
 
 Create an `.env` file in the root of your project and add the following environment variables:
 
-| Variable      | Description                                                                               | Example                                       |
-| ------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `AUTH_SECRET` | A secret key used to hash tokens, sign and encrypt cookie and generate cryptographic keys | `a01a01a01a01a01a01`                          |
-| `AUTH_ORIGIN` | The URL to your application                                                               | `http://localhost:3000`                       |
-| `ACCOUNT_KEY` | Your Geins account key                                                                    | `xxxxxxxxxxxxx`                               |
-| `API_URL`     | The URL to the Geins API                                                                  | `https://apim-mgmt-api-dev2.azure-api.net/v2` |
+| Variable            | Description                                                                               | Example                                       |
+| ------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `GEINS_ACCOUNT_KEY` | Your Geins account key                                                                    | `xxxxxxxxxxxxx`                               |
+| `GEINS_API_URL`     | The URL to the Geins API                                                                  | `https://apim-mgmt-api-dev2.azure-api.net/v2` |
+| `GEINS_DEBUG`       | Geins debug flag                                                                          | `true`                                        |
+| `AUTH_SECRET`       | A secret key used to hash tokens, sign and encrypt cookie and generate cryptographic keys | `a01a01a01a01a01a01`                          |
+| `AUTH_ORIGIN`       | The URL to your application                                                               | `http://localhost:3000`                       |
 
 ## Theming
 
