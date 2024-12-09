@@ -1,9 +1,13 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
-import type { LoginCredentials, AuthResponse } from '@/types/auth/Auth';
+import type {
+  LoginCredentials,
+  AuthResponse,
+  AuthTokens,
+} from '@/types/auth/Auth';
 
 const geinsAuth = auth();
-const { geinsLog } = log();
+const { geinsLog } = log('NuxtAuthHandler');
 
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
@@ -33,7 +37,7 @@ export default NuxtAuthHandler({
             token = {
               ...tokenData,
             };
-            geinsLog('jwt callback ::: token returned', token);
+            geinsLog('jwt callback return', token);
             return token;
           }
         } catch (error) {
@@ -44,14 +48,14 @@ export default NuxtAuthHandler({
             token = {
               isAuthenticated: false,
             };
-            geinsLog('jwt callback ::: token returned', token);
+            geinsLog('jwt callback return', token);
             return token;
           } else {
             // TODO: Decide what to do here
           }
         }
       }
-      geinsLog('jwt callback ::: token returned', token);
+      geinsLog('jwt callback return', token);
       return token;
     },
     session: async ({ session, token }) => {
@@ -83,7 +87,7 @@ export default NuxtAuthHandler({
         // Throw error to force log out
         throw { status: 401, message: 'Unauthorized' };
       }
-      geinsLog('session callback ::: session returned', session);
+      geinsLog('session callback return', session);
       return session;
     },
   },
@@ -96,14 +100,22 @@ export default NuxtAuthHandler({
         username: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials: LoginCredentials) {
+      async authorize(credentials: LoginCredentials | AuthTokens) {
         let authResponse: AuthResponse | null = null;
 
         // Check if we have a login token and MFA code, or a username and password
         // and call the appropriate login method
-        if (credentials.username && credentials.password) {
+        if (
+          'username' in credentials &&
+          credentials.username &&
+          credentials.password
+        ) {
           authResponse = await geinsAuth.login(credentials);
-        } else if (credentials.loginToken && credentials.mfaCode) {
+        } else if (
+          'loginToken' in credentials &&
+          credentials.loginToken &&
+          credentials.mfaCode
+        ) {
           authResponse = await geinsAuth.verify(credentials);
         }
 

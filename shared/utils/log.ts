@@ -21,7 +21,8 @@ export function log(scope?: string) {
       if (typeof window !== 'undefined') {
         console[method](logTag, logStyle, formattedMessage, ...args);
       } else {
-        console[method](`[geins] ${formattedMessage}`, ...args);
+        // TODO add colors for Node.js
+        console[method](`[[[geins]]] ${formattedMessage}`, ...args);
       }
     };
   };
