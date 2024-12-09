@@ -1,23 +1,20 @@
-import type { Session } from '@/types/auth/Auth';
+export default defineNuxtPlugin(async (_nuxtApp) => {
+  const { authStateDiffers, session, logout } = useGeinsAuth();
 
-export default defineNuxtPlugin((_nuxtApp) => {
-  const { data, status, signOut } = useAuth();
-
-  const authStateHandler = (session?: Session | null) => {
-    if (session?.mfaActive) {
+  const authStateHandler = async () => {
+    if (session.value?.mfaActive) {
       return;
     }
-    if (!session?.isAuthorized && status.value === 'authenticated') {
+    if (authStateDiffers.value) {
       clearError();
-      signOut();
+      await logout();
     }
   };
 
-  authStateHandler(data?.value);
+  await authStateHandler();
 
   watch(
-    () => data?.value?.isAuthorized,
-    () => authStateHandler(data?.value),
-    { deep: true },
+    () => authStateDiffers,
+    async () => await authStateHandler(),
   );
 });

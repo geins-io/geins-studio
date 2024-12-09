@@ -16,7 +16,7 @@ import type { Session } from '@/types/auth/Auth';
 
 export default defineNuxtPlugin(() => {
   const {
-    isAuthorized,
+    isAuthenticated,
     accessToken,
     isRefreshing,
     refresh,
@@ -85,7 +85,7 @@ export default defineNuxtPlugin(() => {
           }
         }
         // Add the token to the request
-        if (isAuthorized.value && accessToken.value) {
+        if (isAuthenticated.value && accessToken.value) {
           options.headers.set('Authorization', `Bearer ${accessToken.value}`);
         }
       } catch (error) {

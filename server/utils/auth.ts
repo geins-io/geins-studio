@@ -1,5 +1,6 @@
 import type { JWT } from 'next-auth/jwt';
 import type {
+  AuthTokens,
   LoginCredentials,
   AuthResponse,
   User,
@@ -116,9 +117,7 @@ export const auth = () => {
    * @returns {Promise<AuthResponse>} The verified user auth response.
    * @throws Will throw an error if `loginToken` or `mfaCode` is missing from `credentials`.
    */
-  const verify = async (
-    credentials: LoginCredentials,
-  ): Promise<AuthResponse> => {
+  const verify = async (credentials: AuthTokens): Promise<AuthResponse> => {
     if (!credentials.loginToken || !credentials.mfaCode) {
       throw new Error('Missing MFA credentials');
     }
@@ -175,19 +174,19 @@ export const auth = () => {
   const getSession = (response: AuthResponse): Session => {
     if (response.mfaRequired && response.loginToken) {
       return {
-        isAuthorized: false,
+        isAuthenticated: false,
         mfaActive: true,
         mfaMethod: response.mfaMethod,
         loginToken: response.loginToken,
       };
     }
     if (!response.mfaRequired && !response.accessToken) {
-      return { isAuthorized: false };
+      return { isAuthenticated: false };
     }
 
     const parsedToken = parseToken(response.accessToken);
     return {
-      isAuthorized: true,
+      isAuthenticated: true,
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
       tokenExpires: Number(parsedToken?.exp),
@@ -204,7 +203,7 @@ export const auth = () => {
    */
   const shouldRefresh = (session: Session): boolean => {
     return !!(
-      session.isAuthorized &&
+      session.isAuthenticated &&
       (isExpired(session.tokenExpires) || expiresSoon(session.tokenExpires))
     );
   };

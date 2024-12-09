@@ -40,7 +40,7 @@ export default NuxtAuthHandler({
           if (error.status === 401 || error.status === 403) {
             // This will force logout in session callback
             token = {
-              isAuthorized: false,
+              isAuthenticated: false,
             };
             return token;
           } else {
@@ -52,11 +52,11 @@ export default NuxtAuthHandler({
       return token;
     },
     session: async ({ session, token }) => {
-      if (token.isAuthorized && token.accessToken) {
+      if (token.isAuthenticated && token.accessToken) {
         // If we are authorized and have an access token, update the session
         session = {
           ...session,
-          isAuthorized: token.isAuthorized,
+          isAuthenticated: token.isAuthenticated,
           accessToken: token.accessToken,
           refreshedAt: token.refreshedAt,
         };
