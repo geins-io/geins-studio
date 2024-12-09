@@ -3,6 +3,7 @@ import { NuxtAuthHandler } from '#auth';
 import type { LoginCredentials, AuthResponse } from '@/types/auth/Auth';
 
 const geinsAuth = auth();
+const { geinsLog } = log();
 
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
@@ -32,6 +33,7 @@ export default NuxtAuthHandler({
             token = {
               ...tokenData,
             };
+            geinsLog('jwt callback ::: token returned', token);
             return token;
           }
         } catch (error) {
@@ -42,13 +44,14 @@ export default NuxtAuthHandler({
             token = {
               isAuthenticated: false,
             };
+            geinsLog('jwt callback ::: token returned', token);
             return token;
           } else {
             // TODO: Decide what to do here
           }
         }
       }
-
+      geinsLog('jwt callback ::: token returned', token);
       return token;
     },
     session: async ({ session, token }) => {
@@ -80,7 +83,7 @@ export default NuxtAuthHandler({
         // Throw error to force log out
         throw { status: 401, message: 'Unauthorized' };
       }
-
+      geinsLog('session callback ::: session returned', session);
       return session;
     },
   },
