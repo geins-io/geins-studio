@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import chalk from 'chalk';
 type LogMethod = 'log' | 'warn' | 'error' | 'info';
 
 /**
@@ -18,11 +19,13 @@ export function log(scope?: string) {
         return;
       }
       const formattedMessage = scope ? `${scope} ::: ${message}` : message;
-      if (typeof window !== 'undefined') {
-        console[method](logTag, logStyle, formattedMessage, ...args);
+      if (import.meta.nitro || import.meta.server) {
+        console[method](
+          `${chalk.bgWhite.bold.red(' geins ')} ${formattedMessage}`,
+          ...args,
+        );
       } else {
-        // TODO add colors for Node.js
-        console[method](`[[[geins]]] ${formattedMessage}`, ...args);
+        console[method](logTag, logStyle, formattedMessage, ...args);
       }
     };
   };

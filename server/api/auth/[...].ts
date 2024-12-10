@@ -7,7 +7,7 @@ import type {
 } from '@/types/auth/Auth';
 
 const geinsAuth = auth();
-const { geinsLog } = log('NuxtAuthHandler');
+const { geinsLog, geinsLogWarn } = log('NuxtAuthHandler');
 
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
@@ -37,7 +37,7 @@ export default NuxtAuthHandler({
             token = {
               ...tokenData,
             };
-            geinsLog('jwt callback return', token);
+            geinsLog('jwt returned ::: refresh', token);
             return token;
           }
         } catch (error) {
@@ -48,14 +48,14 @@ export default NuxtAuthHandler({
             token = {
               isAuthenticated: false,
             };
-            geinsLog('jwt callback return', token);
+            geinsLog('jwt returned ::: refresh fail', token);
             return token;
           } else {
             // TODO: Decide what to do here
           }
         }
       }
-      geinsLog('jwt callback return', token);
+      geinsLog('jwt returned', token);
       return token;
     },
     session: async ({ session, token }) => {
@@ -73,7 +73,7 @@ export default NuxtAuthHandler({
             const user = await geinsAuth.getUser(token.accessToken);
             session.user = user;
           } catch (error) {
-            console.warn('Error fetching user:', error);
+            geinsLogWarn('error fetching user', error);
             // Keep session as is if we can't fetch the user, maybe there is a network error..
           }
         }
@@ -85,9 +85,10 @@ export default NuxtAuthHandler({
         };
       } else {
         // Throw error to force log out
+        geinsLogWarn('user unauthorized, logging out');
         throw { status: 401, message: 'Unauthorized' };
       }
-      geinsLog('session callback return', session);
+      geinsLog('session', session);
       return session;
     },
   },
