@@ -19,6 +19,12 @@ The files you will find in the `app` directory that are handling authentication 
 - `app/stores/user.ts` - A Pinia store that holds the user data and computed properties related to the user
 - `app/plugins/auth-state.ts` - A plugin that watches the auth state and makes sure the NuxtAuth and Geins auth states are in sync, and logs out the user if one of them is not authenticated
 
+::: tip
+
+Read the full documentation of the `useGeinsAuth` composable here: [useGeinsAuth](/composables/useGeinsAuth.md)
+
+:::
+
 ## Authentication Flow
 
 1. The user logs in with their credentials using the `login` method found in `useGeinsAuth.ts`

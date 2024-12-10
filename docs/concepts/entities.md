@@ -23,7 +23,7 @@ const entityName = getEntityName();
 ```
 
 ::: tip
-You can read the full specification of the `useEntity` composable here: [useEntity](/docs/composables/useEntity.md)
+You can read the full specification of the `useEntity` composable here: [useEntity](/composables/useEntity.md)
 :::
 
 ## Using the Entity Name
