@@ -1,4 +1,4 @@
-import type { Session } from '@/types/auth/Auth';
+import type { AuthTokens, LoginCredentials, Session } from '@/types/auth/Auth';
 import { jwtDecode } from 'jwt-decode';
 
 export function useGeinsAuth() {
@@ -7,8 +7,33 @@ export function useGeinsAuth() {
   const isRefreshing = ref(false);
 
   const session = computed(() => auth.data.value);
-  const isAuthorized = computed(() => session.value?.isAuthorized);
+  const isAuthenticated = computed(
+    () =>
+      auth.status.value === 'authenticated' && session.value?.isAuthenticated,
+  );
   const accessToken = computed(() => session.value?.accessToken);
+  const authStateDiffers = computed(
+    () =>
+      auth.status.value === 'authenticated' && !session.value?.isAuthenticated,
+  );
+
+  const login = async (credentials: LoginCredentials) => {
+    return await auth.signIn('credentials', {
+      redirect: false,
+      ...credentials,
+    });
+  };
+
+  const verify = async (credentials: AuthTokens) => {
+    return await auth.signIn('credentials', {
+      redirect: false,
+      ...credentials,
+    });
+  };
+
+  const logout = async () => {
+    await auth.signOut();
+  };
 
   const refresh = async (): Promise<Session> => {
     return (await auth.refresh()) as Session;
@@ -33,6 +58,7 @@ export function useGeinsAuth() {
     return Date.now() > exp;
   };
 
+  // TODO: change back to 300000
   const expiresSoon = (token?: string | null, threshold = 150000) => {
     token = token || accessToken.value;
     let exp = parseToken(token)?.exp;
@@ -43,20 +69,19 @@ export function useGeinsAuth() {
     return Date.now() + threshold > exp;
   };
 
-  const logout = async () => {
-    await auth.signOut();
-  };
-
   return {
     session,
     accessToken,
-    isAuthorized,
+    isAuthenticated,
     isRefreshing,
+    authStateDiffers,
+    login,
+    verify,
+    logout,
     refresh,
     setIsRefreshing,
     parseToken,
     isExpired,
     expiresSoon,
-    logout,
   };
 }

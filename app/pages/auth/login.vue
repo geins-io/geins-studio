@@ -13,7 +13,7 @@ definePageMeta({
   },
 });
 
-const auth = useAuth();
+const { login, verify, session } = useGeinsAuth();
 const router = useRouter();
 
 const loginToken = ref('');
@@ -26,18 +26,15 @@ async function handleLogin(credentials: LoginCredentials) {
   pending.value = true;
   showInvalid.value = false;
 
-  const rememberMe = credentials.rememberMe || false;
   if (!credentials.username || !credentials.password) {
     showInvalid.value = true;
     pending.value = false;
     return;
   }
 
-  const authResponse = await auth.signIn('credentials', {
+  const authResponse = await login({
     username: credentials.username,
     password: credentials.password,
-    rememberMe,
-    redirect: false,
   });
 
   if (!authResponse) {
@@ -53,20 +50,18 @@ async function handleLogin(credentials: LoginCredentials) {
   }
 
   if (authResponse.ok) {
-    const authData = auth.data.value;
-
-    if (authData?.mfaActive && authData?.loginToken) {
-      loginToken.value = authData.loginToken;
-      mfaMethod.value = authData.mfaMethod || '';
+    if (session.value?.mfaActive && session.value?.loginToken) {
+      loginToken.value = session.value.loginToken;
+      mfaMethod.value = session.value.mfaMethod || '';
       step.value = 'verify';
       pending.value = false;
       return;
-    } else if (authData?.isAuthorized) {
+    } else if (session.value?.isAuthenticated) {
       const route = useRoute();
       const redirect = route.query.redirect as string;
       await router.push(redirect || '/');
       await nextTick();
-      const firstName = authData?.user?.firstName || '';
+      const firstName = session.value?.user?.firstName || '';
 
       toast({
         title: t('feedback_welcome_back', { name: firstName }),
@@ -87,10 +82,9 @@ async function handleVerify(mfaCode: string) {
     return;
   }
 
-  const verifyResult = await auth.signIn('credentials', {
+  const verifyResult = await verify({
     mfaCode,
     loginToken: loginToken.value,
-    redirect: false,
   });
 
   if (!verifyResult || verifyResult.error) {
@@ -105,8 +99,7 @@ async function handleVerify(mfaCode: string) {
   await router.push(redirect || '/');
 
   await nextTick();
-  const authData = auth.data.value;
-  const firstName = authData?.user?.firstName || '';
+  const firstName = session.value?.user?.firstName || '';
 
   toast({
     title: t('feedback_welcome_back', { name: firstName }),

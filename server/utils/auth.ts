@@ -1,5 +1,6 @@
 import type { JWT } from 'next-auth/jwt';
 import type {
+  AuthTokens,
   LoginCredentials,
   AuthResponse,
   User,
@@ -8,8 +9,8 @@ import type {
 
 import { jwtDecode } from 'jwt-decode';
 
-const API_URL = process.env.API_URL as string;
-const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
+const API_URL = process.env.GEINS_API_URL as string;
+const ACCOUNT_KEY = process.env.GEINS_ACCOUNT_KEY as string;
 
 const ENDPOINTS = {
   LOGIN: 'auth',
@@ -116,9 +117,7 @@ export const auth = () => {
    * @returns {Promise<AuthResponse>} The verified user auth response.
    * @throws Will throw an error if `loginToken` or `mfaCode` is missing from `credentials`.
    */
-  const verify = async (
-    credentials: LoginCredentials,
-  ): Promise<AuthResponse> => {
+  const verify = async (credentials: AuthTokens): Promise<AuthResponse> => {
     if (!credentials.loginToken || !credentials.mfaCode) {
       throw new Error('Missing MFA credentials');
     }
@@ -154,7 +153,7 @@ export const auth = () => {
    * Checks if the token is about to expire soon.
    *
    * @param {number} [exp] - The expiration time in seconds.
-   * @param {number} [threshold=150000] - The threshold in milliseconds, default is 150000 (2.5 minutes).
+   * @param {number} [threshold=150000] - The threshold in milliseconds, default is 150000 (5 minutes).
    * @returns {boolean} True if the token is about to expire soon, false otherwise.
    */
   const expiresSoon = (exp?: number, threshold: number = 150000): boolean => {
@@ -175,19 +174,19 @@ export const auth = () => {
   const getSession = (response: AuthResponse): Session => {
     if (response.mfaRequired && response.loginToken) {
       return {
-        isAuthorized: false,
+        isAuthenticated: false,
         mfaActive: true,
         mfaMethod: response.mfaMethod,
         loginToken: response.loginToken,
       };
     }
     if (!response.mfaRequired && !response.accessToken) {
-      return { isAuthorized: false };
+      return { isAuthenticated: false };
     }
 
     const parsedToken = parseToken(response.accessToken);
     return {
-      isAuthorized: true,
+      isAuthenticated: true,
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
       tokenExpires: Number(parsedToken?.exp),
@@ -204,7 +203,7 @@ export const auth = () => {
    */
   const shouldRefresh = (session: Session): boolean => {
     return !!(
-      session.isAuthorized &&
+      session.isAuthenticated &&
       (isExpired(session.tokenExpires) || expiresSoon(session.tokenExpires))
     );
   };

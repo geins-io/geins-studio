@@ -1,13 +1,11 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { status, data } = useAuth() || {};
-  const authenticated =
-    status?.value === 'authenticated' && data?.value?.isAuthorized;
+  const { isAuthenticated } = useGeinsAuth() || {};
 
   if (to.path.startsWith('/auth')) {
-    return authenticated ? navigateTo('/') : true;
+    return isAuthenticated.value ? navigateTo('/') : true;
   }
 
-  if (process.env.VITEST || authenticated) {
+  if (process.env.VITEST || isAuthenticated.value) {
     return;
   }
 

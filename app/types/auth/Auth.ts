@@ -23,7 +23,7 @@ export interface AuthResponse extends AuthTokens {
 }
 
 export interface Session extends AuthTokens {
-  isAuthorized?: boolean;
+  isAuthenticated?: boolean;
   tokenExpires?: number;
   refreshedAt?: number;
   user?: User;
@@ -31,7 +31,7 @@ export interface Session extends AuthTokens {
   mfaMethod?: string;
 }
 
-export interface LoginCredentials extends AuthTokens {
+export interface LoginCredentials {
   username: string;
   password?: string;
   rememberMe?: boolean;

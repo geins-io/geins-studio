@@ -1,4 +1,5 @@
 import type { Session } from '@/types/auth/Auth';
+const { geinsLogError } = log('$geinsApi');
 /**
  * Nuxt plugin for handling Geins API requests.
  *
@@ -16,7 +17,7 @@ import type { Session } from '@/types/auth/Auth';
 
 export default defineNuxtPlugin(() => {
   const {
-    isAuthorized,
+    isAuthenticated,
     accessToken,
     isRefreshing,
     refresh,
@@ -85,14 +86,15 @@ export default defineNuxtPlugin(() => {
           }
         }
         // Add the token to the request
-        if (isAuthorized.value && accessToken.value) {
+        if (isAuthenticated.value && accessToken.value) {
           options.headers.set('Authorization', `Bearer ${accessToken.value}`);
         }
       } catch (error) {
-        console.error('Error during request setup', error);
+        geinsLogError('error during request setup', error);
       }
     },
     async onResponseError({ response }) {
+      geinsLogError('response error', response);
       if (response.status === 401) {
         throw { status: response.status, message: 'Unauthorized' };
       } else if (response.status === 403) {

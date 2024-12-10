@@ -69,8 +69,9 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      accountKey: process.env.ACCOUNT_KEY,
-      apiUrl: process.env.API_URL,
+      accountKey: process.env.GEINS_ACCOUNT_KEY,
+      apiUrl: process.env.GEINS_API_URL,
+      debug: process.env.GEINS_DEBUG === 'true',
       VERCEL: process.env.VERCEL,
       VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
       VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,

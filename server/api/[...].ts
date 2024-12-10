@@ -11,6 +11,7 @@ import { useRuntimeConfig } from '#imports';
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
+  const { geinsLog, geinsLogWarn } = log('server api handler');
 
   let body;
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
@@ -25,6 +26,8 @@ export default defineEventHandler(async (event) => {
   }
   const fullUrl = `${config.public.apiUrl}/${targetUrl}`;
 
+  geinsLog('request to:', fullUrl);
+
   const apiHeaders = {
     'x-account-key': config.public.accountKey as string,
     ...headers,
@@ -38,6 +41,6 @@ export default defineEventHandler(async (event) => {
     })) as Response;
     return response;
   } catch (error) {
-    console.warn('Error connecting to the API:', error);
+    geinsLogWarn('error connecting to the API:', error);
   }
 });

@@ -22,7 +22,7 @@ const triggerToast = (
     variant,
   });
 };
-const { refresh } = useAuth();
+const { refresh } = useGeinsAuth();
 </script>
 <template>
   <ContentHeader

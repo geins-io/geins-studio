@@ -1,8 +1,13 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
-import type { LoginCredentials, AuthResponse } from '@/types/auth/Auth';
+import type {
+  LoginCredentials,
+  AuthResponse,
+  AuthTokens,
+} from '@/types/auth/Auth';
 
 const geinsAuth = auth();
+const { geinsLog, geinsLogWarn } = log('NuxtAuthHandler');
 
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
@@ -32,6 +37,7 @@ export default NuxtAuthHandler({
             token = {
               ...tokenData,
             };
+            geinsLog('jwt returned ::: refresh', token);
             return token;
           }
         } catch (error) {
@@ -40,23 +46,24 @@ export default NuxtAuthHandler({
           if (error.status === 401 || error.status === 403) {
             // This will force logout in session callback
             token = {
-              isAuthorized: false,
+              isAuthenticated: false,
             };
+            geinsLog('jwt returned ::: refresh fail', token);
             return token;
           } else {
             // TODO: Decide what to do here
           }
         }
       }
-
+      geinsLog('jwt returned', token);
       return token;
     },
     session: async ({ session, token }) => {
-      if (token.isAuthorized && token.accessToken) {
+      if (token.isAuthenticated && token.accessToken) {
         // If we are authorized and have an access token, update the session
         session = {
           ...session,
-          isAuthorized: token.isAuthorized,
+          isAuthenticated: token.isAuthenticated,
           accessToken: token.accessToken,
           refreshedAt: token.refreshedAt,
         };
@@ -66,7 +73,7 @@ export default NuxtAuthHandler({
             const user = await geinsAuth.getUser(token.accessToken);
             session.user = user;
           } catch (error) {
-            console.warn('Error fetching user:', error);
+            geinsLogWarn('error fetching user', error);
             // Keep session as is if we can't fetch the user, maybe there is a network error..
           }
         }
@@ -78,9 +85,10 @@ export default NuxtAuthHandler({
         };
       } else {
         // Throw error to force log out
+        geinsLogWarn('user unauthorized, logging out');
         throw { status: 401, message: 'Unauthorized' };
       }
-
+      geinsLog('session', session);
       return session;
     },
   },
@@ -93,14 +101,22 @@ export default NuxtAuthHandler({
         username: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials: LoginCredentials) {
+      async authorize(credentials: LoginCredentials | AuthTokens) {
         let authResponse: AuthResponse | null = null;
 
         // Check if we have a login token and MFA code, or a username and password
         // and call the appropriate login method
-        if (credentials.username && credentials.password) {
+        if (
+          'username' in credentials &&
+          credentials.username &&
+          credentials.password
+        ) {
           authResponse = await geinsAuth.login(credentials);
-        } else if (credentials.loginToken && credentials.mfaCode) {
+        } else if (
+          'loginToken' in credentials &&
+          credentials.loginToken &&
+          credentials.mfaCode
+        ) {
           authResponse = await geinsAuth.verify(credentials);
         }
 
