@@ -22,11 +22,7 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      # Step 4: Update documentation versions
-      - name: Update documentation
-        run: yarn docs:update
-
-      # Step 5: Commit and push changes
+      # Step 4: Commit and push changes
       - name: Commit and push updated docs
         run: |
           git config --global user.name "github-actions[bot]"
@@ -35,7 +31,7 @@ jobs:
           git diff --quiet && echo "No changes to commit" || git commit -m "Update docs with package versions"
           git push
 
-      # Step 6: Build and Deploy to Azure
+      # Step 5: Build and Deploy to Azure
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
