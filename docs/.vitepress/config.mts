@@ -5,13 +5,13 @@ export default defineConfig({
   title: 'Geins Merchant Center Developer Docs',
   description: 'Geins Merchant Center Developer Docs',
   lastUpdated: true,
-  head: [['link', { rel: 'icon', href: '/assets/favicon.ico' }]],
+  head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     siteTitle: 'Merchant Center',
     logo: {
-      light: '/assets/geins-g.svg',
-      dark: '/assets/geins-g-white.svg',
+      light: '/geins-g.svg',
+      dark: '/geins-g-white.svg',
       alt: 'Geins Merchant Center Developer Docs',
     },
     search: {
