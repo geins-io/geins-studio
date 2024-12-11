@@ -7,7 +7,7 @@ import type {
 } from '@/types/auth/Auth';
 
 const geinsAuth = auth();
-const { geinsLog, geinsLogWarn } = log('NuxtAuthHandler');
+const { geinsLog, geinsLogWarn } = log('server/api/auth/[...].ts');
 
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
@@ -37,7 +37,7 @@ export default NuxtAuthHandler({
             token = {
               ...tokenData,
             };
-            geinsLog('jwt returned ::: refresh', token);
+            geinsLog('jwt returned ::: refresh:', token);
             return token;
           }
         } catch (error) {
@@ -48,14 +48,14 @@ export default NuxtAuthHandler({
             token = {
               isAuthenticated: false,
             };
-            geinsLog('jwt returned ::: refresh fail', token);
+            geinsLog('jwt returned ::: refresh fail:', token);
             return token;
           } else {
             // TODO: Decide what to do here
           }
         }
       }
-      geinsLog('jwt returned', token);
+      geinsLog('jwt returned:', token);
       return token;
     },
     session: async ({ session, token }) => {
@@ -86,9 +86,9 @@ export default NuxtAuthHandler({
       } else {
         // Throw error to force log out
         geinsLogWarn('user unauthorized, logging out');
-        throw { status: 401, message: 'Unauthorized' };
+        throw { status: 401, message: 'AUTH_ERROR' };
       }
-      geinsLog('session', session);
+      geinsLog('session:', session);
       return session;
     },
   },

@@ -11,7 +11,7 @@ import { useRuntimeConfig } from '#imports';
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
-  const { geinsLog, geinsLogWarn } = log('server api handler');
+  const { geinsLog, geinsLogWarn } = log('server/api/[...].ts');
 
   let body;
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
@@ -42,5 +42,6 @@ export default defineEventHandler(async (event) => {
     return response;
   } catch (error) {
     geinsLogWarn('error connecting to the API:', error);
+    return null;
   }
 });

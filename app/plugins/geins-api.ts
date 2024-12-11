@@ -1,5 +1,5 @@
 import type { Session } from '@/types/auth/Auth';
-const { geinsLogError } = log('$geinsApi');
+
 /**
  * Nuxt plugin for handling Geins API requests.
  *
@@ -16,6 +16,7 @@ const { geinsLogError } = log('$geinsApi');
  */
 
 export default defineNuxtPlugin(() => {
+  const { geinsLog, geinsLogError } = useGeinsLog('app/plugins/geins-api.ts');
   const {
     isAuthenticated,
     accessToken,
@@ -92,6 +93,9 @@ export default defineNuxtPlugin(() => {
       } catch (error) {
         geinsLogError('error during request setup', error);
       }
+    },
+    async onResponse({ response }) {
+      geinsLog(response.url, '::: response data:', response?._data);
     },
     async onResponseError({ response }) {
       geinsLogError('response error', response);
