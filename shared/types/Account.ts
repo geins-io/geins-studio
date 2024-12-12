@@ -50,3 +50,9 @@ export interface CurrencySymbol {
   value: string;
   prefixed: boolean;
 }
+
+export interface Account {
+  accountKey: string;
+  name: string;
+  defaultCurrency: Currency;
+}
