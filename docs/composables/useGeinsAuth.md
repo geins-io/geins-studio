@@ -111,13 +111,13 @@ Checks if a given token (or the current `accessToken`) is expired.
   - `token`: Optional. The token to check.
 - **Returns:** `true` if the token is expired, otherwise `false`.
 
-### `expiresSoon(token?: string | null, threshold: number = 150000)`
+### `expiresSoon(token?: string | null, threshold: number = 300000)`
 
 Checks if a token (or the current `accessToken`) is close to expiration.
 
 - **Parameters:**
   - `token`: Optional. The token to check.
-  - `threshold`: Optional. Time (in milliseconds) before expiration to consider as "soon". Default is `150000`.
+  - `threshold`: Optional. Time (in milliseconds) before expiration to consider as "soon". Default is `300000`.
 - **Returns:** `true` if the token expires within the threshold, otherwise `false`.
 
 ## Example

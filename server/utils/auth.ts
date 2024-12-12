@@ -153,11 +153,10 @@ export const auth = () => {
    * Checks if the token is about to expire soon.
    *
    * @param {number} [exp] - The expiration time in seconds.
-   * @param {number} [threshold=150000] - The threshold in milliseconds, default is 150000 (5 minutes).
+   * @param {number} [threshold=300000] - The threshold in milliseconds, default is 300000 (5 minutes).
    * @returns {boolean} True if the token is about to expire soon, false otherwise.
    */
-  const expiresSoon = (exp?: number, threshold: number = 150000): boolean => {
-    // TODO: fix threshold value
+  const expiresSoon = (exp?: number, threshold: number = 300000): boolean => {
     if (!exp) {
       return false;
     }
