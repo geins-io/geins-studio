@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { ColumnDef } from '@tanstack/vue-table';
-import type { ColumnOptions } from '~/types/Columns';
+import type { ColumnOptions, Category } from '#shared/types';
 
-import type { Category } from '@/types/product/Category';
 type Entity = Category;
 
 const route = useRoute();

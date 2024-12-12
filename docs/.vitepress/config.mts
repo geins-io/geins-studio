@@ -54,6 +54,7 @@ export default defineConfig({
           { text: 'useColumns', link: '/composables/useColumns.md' },
           { text: 'useEntity', link: '/composables/useEntity.md' },
           { text: 'useGeinsAuth', link: '/composables/useGeinsAuth.md' },
+          { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
           { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
         ],
       },

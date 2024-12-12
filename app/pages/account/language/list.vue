@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { ColumnDef } from '@tanstack/vue-table';
-import type { ColumnOptions } from '~/types/Columns';
-
-import type { Language } from '@/types/Account';
+import type { ColumnOptions, Language } from '#shared/types';
 type Entity = Language;
 
 const route = useRoute();

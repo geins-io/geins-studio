@@ -1,4 +1,4 @@
-import type { Session } from '@/types/auth/Auth';
+import type { Session } from '#shared/types';
 
 /**
  * Nuxt plugin for handling Geins API requests.

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { ColumnDef } from '@tanstack/vue-table';
-import type { ColumnOptions } from '~/types/Columns';
-
-import type { Market } from '@/types/Account';
+import type { ColumnOptions, Market } from '#shared/types';
 interface Entity extends Market {
   name?: string;
 }

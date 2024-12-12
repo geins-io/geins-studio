@@ -5,7 +5,7 @@ import type {
   AuthResponse,
   User,
   Session,
-} from '@/types/auth/Auth';
+} from '#shared/types';
 
 import { jwtDecode } from 'jwt-decode';
 

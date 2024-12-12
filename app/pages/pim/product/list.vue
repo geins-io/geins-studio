@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { ColumnOptions } from '~/types/Columns';
-
-import type { Product } from '@/types/product/Product';
+import type { ColumnOptions } from '#shared/types';
 type Entity = Product;
 
 const route = useRoute();

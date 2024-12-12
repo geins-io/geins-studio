@@ -1,4 +1,4 @@
-import type { AuthTokens, LoginCredentials, Session } from '@/types/auth/Auth';
+import type { AuthTokens, LoginCredentials, Session } from '#shared/types';
 import { jwtDecode } from 'jwt-decode';
 
 export function useGeinsAuth() {
