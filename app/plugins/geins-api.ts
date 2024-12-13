@@ -94,6 +94,10 @@ export default defineNuxtPlugin(() => {
         geinsLogError('error during request setup', error);
       }
     },
+    async onRequestError({ error }) {
+      geinsLogError('request error', error);
+      throw error;
+    },
     async onResponse({ response }) {
       geinsLog(response.url, '::: response data:', response?._data);
     },

@@ -42,7 +42,22 @@ export const useAccountStore = defineStore('account', () => {
 
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        geinsLogError(`Error fetching  #${index + 1}:`, result.reason);
+        let callName = '';
+        switch (index) {
+          case 0:
+            callName = 'account';
+            break;
+          case 1:
+            callName = 'channels';
+            break;
+          case 2:
+            callName = 'currencies';
+            break;
+          case 3:
+            callName = 'languages';
+            break;
+        }
+        geinsLogError(`Error fetching #${callName}:`, result.reason);
       }
     });
   }

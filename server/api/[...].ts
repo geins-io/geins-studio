@@ -18,7 +18,6 @@ export default defineEventHandler(async (event) => {
     body = await readBody(event);
   }
   const headers = getHeaders(event);
-
   const targetUrl = event.context.params?._;
 
   if (!targetUrl) {
@@ -26,7 +25,7 @@ export default defineEventHandler(async (event) => {
   }
   const fullUrl = `${config.public.apiUrl}/${targetUrl}`;
 
-  geinsLog('request to:', fullUrl);
+  geinsLog(fullUrl);
 
   const apiHeaders = {
     'x-account-key': config.public.accountKey as string,
@@ -34,13 +33,14 @@ export default defineEventHandler(async (event) => {
   };
 
   try {
-    const response = (await $fetch(fullUrl, {
+    const response = await $fetch(fullUrl, {
       method: event.method,
       body,
       headers: apiHeaders,
-    })) as Response;
+    });
     return response;
   } catch (error) {
+    // TODO: Evaluate if we should throw an error here
     geinsLogWarn('error connecting to the API:', error);
     return null;
   }

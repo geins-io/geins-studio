@@ -7,7 +7,7 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
 
   // If user is authenticated, initialize the account store
   if (isAuthenticated.value) {
-    await accountStore.init();
+    accountStore.init();
     return;
   }
 
