@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { ColumnDef } from '@tanstack/vue-table';
-import type { ColumnOptions } from '~/types/Columns';
-
-import type { User } from '@/types/auth/Auth';
+import type { ColumnOptions, User } from '#shared/types';
 type Entity = User;
 
 const route = useRoute();

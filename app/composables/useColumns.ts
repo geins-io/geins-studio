@@ -7,7 +7,7 @@ import {
   TableCellActions,
   TableCellLongText,
 } from '#components';
-import type { ColumnOptions, ColumnType, ColumnTypes } from '@/types/Columns';
+import type { ColumnOptions, ColumnType, ColumnTypes } from '#shared/types';
 
 export const useColumns = <T extends object>() => {
   const basicCellStyle =

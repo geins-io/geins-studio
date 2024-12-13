@@ -1,10 +1,6 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
-import type {
-  LoginCredentials,
-  AuthResponse,
-  AuthTokens,
-} from '@/types/auth/Auth';
+import type { LoginCredentials, AuthResponse, AuthTokens } from '#shared/types';
 
 const geinsAuth = auth();
 const { geinsLog, geinsLogWarn } = log('server/api/auth/[...].ts');

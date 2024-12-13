@@ -20,6 +20,7 @@ logs
 .DS_Store
 .fleet
 .idea
+repomix.config.json
 
 # Local env files
 .env

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { LoginCredentials, AuthFormMode } from '@/types/auth/Auth';
+import type { LoginCredentials, AuthFormMode } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 const { toast } = useToast();

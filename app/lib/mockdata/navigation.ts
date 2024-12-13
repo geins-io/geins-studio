@@ -1,4 +1,4 @@
-import type { NavigationItem } from '@/types/NavigationItem';
+import type { NavigationItem } from '#shared/types';
 export const navigation: NavigationItem[] = [
   {
     label: 'Dashboard',

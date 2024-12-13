@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { LoginCredentials, AuthFormMode } from '@/types/auth/Auth';
+import type { LoginCredentials, AuthFormMode } from '#shared/types';
 import { Input } from '#components';
 import { ExclamationTriangleIcon } from '@radix-icons/vue';
-import { ref, watch, computed, onMounted } from 'vue';
 
 const emit = defineEmits(['login', 'verify']);
 

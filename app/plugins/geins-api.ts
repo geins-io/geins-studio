@@ -1,4 +1,4 @@
-import type { Session } from '@/types/auth/Auth';
+import type { Session } from '#shared/types';
 
 /**
  * Nuxt plugin for handling Geins API requests.
@@ -93,6 +93,10 @@ export default defineNuxtPlugin(() => {
       } catch (error) {
         geinsLogError('error during request setup', error);
       }
+    },
+    async onRequestError({ error }) {
+      geinsLogError('request error', error);
+      throw error;
     },
     async onResponse({ response }) {
       geinsLog(response.url, '::: response data:', response?._data);
