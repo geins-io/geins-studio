@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import chalk from 'chalk';
-type LogMethod = 'log' | 'warn' | 'error' | 'info';
+import type { LogMethod, GeinsLogger } from '#shared/types';
 
 /**
  * Utility to log messages with a Geins tag
  *
  * @returns Four logger functions: `geinsLog`, `geinsLogWarn`, `geinsLogError`, and `geinsLogInfo`
  */
-export function log(scope?: string, debug: boolean = false) {
+export function log(scope?: string, debug: boolean = false): GeinsLogger {
   if (import.meta.nitro || import.meta.server) {
     debug = import.meta.env.GEINS_DEBUG === 'true';
   }

@@ -1,4 +1,8 @@
-import type { Category } from '#shared/types';
+export interface Category {
+  id: number;
+  name: string;
+  market?: string;
+}
 
 export interface Product {
   id: number;
