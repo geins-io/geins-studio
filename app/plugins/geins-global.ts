@@ -1,23 +1,24 @@
 export default defineNuxtPlugin(async (_nuxtApp) => {
+  const accountStore = useAccountStore();
+  const { isAuthenticated } = useGeinsAuth();
+
+  // Prevent execution on the server
   if (import.meta.server) return;
 
-  const { $geinsApi } = useNuxtApp();
-  const api = repository($geinsApi);
+  // If user is authenticated, initialize the account store
+  if (isAuthenticated.value) {
+    await accountStore.init();
+    return;
+  }
 
-  api.account.get().then((account) => {
-    const { setCurrentAccount } = useAccountStore();
-    setCurrentAccount(account);
-  });
-  api.channel.list().then((channels) => {
-    const { setCurrentChannels } = useAccountStore();
-    setCurrentChannels(channels);
-  });
-  api.currency.list().then((currencies) => {
-    const { setCurrentCurrencies } = useAccountStore();
-    setCurrentCurrencies(currencies);
-  });
-  api.language.list().then((languages) => {
-    const { setCurrentLanguages } = useAccountStore();
-    setCurrentLanguages(languages);
-  });
+  // Watch for authentication changes
+  watch(
+    isAuthenticated,
+    async (value) => {
+      if (value) {
+        accountStore.init();
+      }
+    },
+    { immediate: false }, // Avoid triggering the watcher immediately
+  );
 });
