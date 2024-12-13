@@ -1,11 +1,5 @@
 <script setup lang="ts" generic="TData">
 import type { Table } from '@tanstack/vue-table';
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from 'lucide-vue-next';
 
 const { t } = useI18n();
 
@@ -82,7 +76,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           @click="table.setPageIndex(0)"
         >
           <span class="sr-only">Go to first page</span>
-          <ChevronsLeft class="size-4" />
+          <LucideChevronsLeft class="size-4" />
         </Button>
         <Button
           variant="secondary"
@@ -91,7 +85,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           @click="table.previousPage()"
         >
           <span class="sr-only">Go to previous page</span>
-          <ChevronLeft class="size-4" />
+          <LucideChevronLeft class="size-4" />
         </Button>
         <Button
           variant="secondary"
@@ -100,7 +94,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           @click="table.nextPage()"
         >
           <span class="sr-only">Go to next page</span>
-          <ChevronRight class="size-4" />
+          <LucideChevronRight class="size-4" />
         </Button>
         <Button
           variant="secondary"
@@ -109,7 +103,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           @click="table.setPageIndex(table.getPageCount() - 1)"
         >
           <span class="sr-only">Go to last page</span>
-          <ChevronsRight class="size-4" />
+          <LucideChevronsRight class="size-4" />
         </Button>
       </div>
     </div>

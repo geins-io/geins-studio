@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Plus } from 'lucide-vue-next';
-
 const props = withDefaults(
   defineProps<{
     href?: string;
@@ -16,7 +14,7 @@ const elem = props.href ? link : 'div';
 <template>
   <Button as-child>
     <component :is="elem" :to="href" class="flex">
-      <Plus class="mr-2 size-4" />
+      <LucidePlus class="mr-2 size-4" />
       <slot />
     </component>
   </Button>

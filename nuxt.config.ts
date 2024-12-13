@@ -15,6 +15,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',
+    'nuxt-lucide-icons',
   ],
 
   shadcn: {

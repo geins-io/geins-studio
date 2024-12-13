@@ -1,7 +1,6 @@
 <script setup lang="ts" generic="TData">
 import draggable from 'vuedraggable';
 import type { Table, Column } from '@tanstack/vue-table';
-import { Settings2, XIcon, GripVertical } from 'lucide-vue-next';
 
 interface TableColumnToggleProps {
   table: Table<TData>;
@@ -126,7 +125,7 @@ const resetOrderAndVisibility = () => {
   <Sheet>
     <SheetTrigger as-child>
       <Button variant="secondary" class="ml-auto hidden lg:flex">
-        <Settings2 class="mr-2 size-4" />
+        <LucideSettings2 class="mr-2 size-4" />
         Column options
       </Button>
     </SheetTrigger>
@@ -189,7 +188,7 @@ const resetOrderAndVisibility = () => {
                   class="flex cursor-move items-center justify-between rounded-md bg-background px-4 py-2"
                 >
                   <div class="flex items-center space-x-2">
-                    <GripVertical class="size-4 text-muted-foreground" />
+                    <LucideGripVertical class="size-4 text-muted-foreground" />
                     <span class="text-sm">{{ element.title }}</span>
                   </div>
                   <Button
@@ -198,7 +197,7 @@ const resetOrderAndVisibility = () => {
                     class="size-8"
                     @click="hideProductColumn(element.id)"
                   >
-                    <XIcon class="size-4" />
+                    <LucideX class="size-4" />
                   </Button>
                 </div>
               </template>

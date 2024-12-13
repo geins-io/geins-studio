@@ -17,8 +17,6 @@ import {
   useVueTable,
 } from '@tanstack/vue-table';
 
-import { Search, Maximize2, Minimize2 } from 'lucide-vue-next';
-
 const props = withDefaults(
   defineProps<{
     columns: ColumnDef<TData, TValue>[];
@@ -212,7 +210,7 @@ const table = useVueTable({
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
       >
-        <Search class="size-4 text-foreground" />
+        <LucideSearch class="size-4 text-foreground" />
       </span>
     </div>
 
@@ -301,8 +299,8 @@ const table = useVueTable({
       class="absolute -right-px -top-px z-50 size-6 border-border bg-card"
       @click="tableMaximized = !tableMaximized"
     >
-      <Maximize2 v-if="!tableMaximized" class="size-3" />
-      <Minimize2 v-else class="size-3" />
+      <LucideMaximize2 v-if="!tableMaximized" class="size-3" />
+      <LucideMinimize2 v-else class="size-3" />
     </Button>
   </div>
 </template>

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import type { Account, Channel, Currency } from '#shared/types';
 
 export const useAccountStore = defineStore('account', () => {
-  const { geinsLogError } = useGeinsLog();
+  const { geinsLogError } = useGeinsLog('store/account.ts');
   const api = repository(useNuxtApp().$geinsApi);
 
   // STATE
@@ -10,6 +10,7 @@ export const useAccountStore = defineStore('account', () => {
   const currentChannels = ref<Channel[]>();
   const currentCurrencies = ref<Currency[]>();
   const currentLanguages = ref<Language[]>();
+  const ready = ref(false);
 
   // ACTIONS
   async function fetchAccount(): Promise<Account> {
@@ -40,8 +41,12 @@ export const useAccountStore = defineStore('account', () => {
       fetchLanguages(),
     ]);
 
+    ready.value = results.every(
+      (result) => result.status === 'fulfilled' && result.value,
+    );
+
     results.forEach((result, index) => {
-      if (result.status === 'rejected') {
+      if (result.status === 'rejected' || !result.value) {
         let callName = '';
         switch (index) {
           case 0:
@@ -57,7 +62,7 @@ export const useAccountStore = defineStore('account', () => {
             callName = 'languages';
             break;
         }
-        geinsLogError(`Error fetching #${callName}:`, result.reason);
+        geinsLogError(`error fetching ${callName}:`, result);
       }
     });
   }
@@ -72,6 +77,7 @@ export const useAccountStore = defineStore('account', () => {
     currentChannels,
     currentCurrencies,
     currentLanguages,
+    ready,
     init,
     fetchAccount,
     fetchChannels,

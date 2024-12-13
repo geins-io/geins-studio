@@ -1,14 +1,4 @@
 <script setup lang="ts">
-import {
-  Search,
-  MoonStar,
-  Sun,
-  User,
-  LogOut,
-  CircleHelp,
-  CreditCard,
-} from 'lucide-vue-next';
-
 const { logout } = useGeinsAuth();
 const { user, userInitials } = useUserStore();
 
@@ -31,12 +21,12 @@ const setColorMode = () => {
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-2"
       >
-        <Search class="size-5 text-foreground" />
+        <LucideSearch class="size-5 text-foreground" />
       </span>
     </div>
     <div class="ml-auto mr-5">
       <NuxtLink to="/" class="flex items-center gap-1.5">
-        <CircleHelp class="size-4" />
+        <LucideCircleHelp class="size-4" />
         <span class="text-sm">Help center</span>
       </NuxtLink>
     </div>
@@ -70,25 +60,25 @@ const setColorMode = () => {
               class="flex items-center"
               :to="`/account/user/${user?.username}`"
             >
-              <User class="mr-2 size-4" />
+              <LucideUser class="mr-2 size-4" />
               <span>Profile</span>
             </NuxtLink>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <CreditCard class="mr-2 size-4" />
+            <LucideCreditCard class="mr-2 size-4" />
             <span>Billing</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="setColorMode">
-            <Sun class="mr-2 hidden size-4 dark:block" />
-            <MoonStar class="mr-2 size-4 dark:hidden" />
+            <LucideSun class="mr-2 hidden size-4 dark:block" />
+            <LucideMoonStar class="mr-2 size-4 dark:hidden" />
             <span class="dark:hidden">Dark mode</span>
             <span class="hidden dark:block">Light mode</span>
             <!-- <DropdownMenuShortcut>⌘C</DropdownMenuShortcut> -->
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="logout()">
-            <LogOut class="mr-2 size-4" />
+            <LucideLogOut class="mr-2 size-4" />
             <span>Log out</span>
           </DropdownMenuItem>
         </DropdownMenuContent>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import Logo from '@/assets/logos/geins.svg';
 import LogoLetter from '@/assets/logos/geins-g.svg';
-import { ChevronsLeft } from 'lucide-vue-next';
 
 const props = defineProps<{
   sidebarWidth: string;
@@ -32,10 +31,10 @@ const sidebarStyle = computed(() => {
       <Button
         variant="secondary"
         size="icon"
-        class="absolute -right-4 top-1/2 z-50 hidden size-7 rounded-full border bg-card md:inline-flex"
+        class="absolute bottom-4 right-4 z-50 inline-flex size-7 border bg-card"
         @click="setIsCollapsed(!isCollapsed)"
       >
-        <ChevronsLeft
+        <LucideChevronsLeft
           :class="
             cn(`size-4 transition-transform ${isCollapsed ? 'rotate-180' : ''}`)
           "

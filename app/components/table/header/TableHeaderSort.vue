@@ -1,6 +1,5 @@
 <script setup lang="ts" generic="T">
 import type { Column } from '@tanstack/vue-table';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-vue-next';
 
 interface DataTableColumnHeaderProps {
   column: Column<T>;
@@ -30,11 +29,14 @@ const handleClick = () => {
     @click="handleClick"
   >
     {{ title }}
-    <ArrowUp v-if="column.getIsSorted() === 'asc'" class="ml-2.5 size-3" />
-    <ArrowDown
+    <LucideArrowUp
+      v-if="column.getIsSorted() === 'asc'"
+      class="ml-2.5 size-3"
+    />
+    <LucideArrowDown
       v-else-if="column.getIsSorted() === 'desc'"
       class="ml-2.5 size-3"
     />
-    <ArrowUpDown v-else class="ml-2.5 size-3 text-muted-foreground" />
+    <LucideArrowUpDown v-else class="ml-2.5 size-3 text-muted-foreground" />
   </Button>
 </template>
