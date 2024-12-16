@@ -55,22 +55,20 @@ const currentStep = ref(1);
       </ContentHeader>
     </template>
     <ContentEditMain v-if="currentTab === 0">
-      <ContentEditCard
-        :create-mode="createMode"
-        :step="1"
-        :current-step="currentStep"
-        title="General"
-      >
-        Edit general
-      </ContentEditCard>
-      <ContentEditCard
-        :create-mode="createMode"
-        :step="2"
-        :current-step="1"
-        title="Details"
-      >
-        Edit details
-      </ContentEditCard>
+      <ContentCard>
+        <Selector mode="simple">
+          <template #selection>
+            <ButtonIcon icon="new">Add</ButtonIcon>
+          </template>
+          <template #list>
+            <Select>
+              <option>Option 1</option>
+              <option>Option 2</option>
+              <option>Option 3</option>
+            </Select>
+          </template>
+        </Selector>
+      </ContentCard>
       <template #sidebar>
         <Card class="p-5">Details</Card>
       </template>

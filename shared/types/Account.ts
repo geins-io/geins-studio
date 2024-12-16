@@ -54,5 +54,5 @@ export interface CurrencySymbol {
 export interface Account {
   accountKey: string;
   name: string;
-  defaultCurrency: Currency;
+  defaultCurrency: string;
 }
