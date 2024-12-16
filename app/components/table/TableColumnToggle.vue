@@ -124,10 +124,13 @@ const resetOrderAndVisibility = () => {
 <template>
   <Sheet>
     <SheetTrigger as-child>
-      <Button variant="secondary" class="ml-auto hidden lg:flex">
-        <LucideSettings2 class="mr-2 size-4" />
+      <ButtonIcon
+        icon="settings"
+        variant="secondary"
+        class="ml-auto hidden lg:flex"
+      >
         Column options
-      </Button>
+      </ButtonIcon>
     </SheetTrigger>
     <SheetContent
       class="flex w-[784px] flex-col bg-card sm:w-[784px] sm:max-w-[784px]"

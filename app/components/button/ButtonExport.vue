@@ -2,10 +2,7 @@
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <Button variant="secondary">
-        <LucideFile class="mr-2 size-4" />
-        Export list
-      </Button>
+      <ButtonIcon icon="export" variant="secondary"> Export list </ButtonIcon>
     </DropdownMenuTrigger>
     <DropdownMenuContent>
       <DropdownMenuItem>

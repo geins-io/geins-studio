@@ -62,9 +62,9 @@ setOrderForColumn(columns, 'image', 1);
   <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
     <ContentActionBar>
       <ButtonExport />
-      <ButtonNew :href="newEntityUrl">
+      <ButtonIcon icon="new" :href="newEntityUrl">
         {{ $t('new_entity', { entityName }) }}
-      </ButtonNew>
+      </ButtonIcon>
     </ContentActionBar>
   </ContentHeader>
   <NuxtErrorBoundary>

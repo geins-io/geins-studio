@@ -29,18 +29,21 @@ const currentStep = ref(1);
     <template #header>
       <ContentHeader :title="title">
         <ContentActionBar>
-          <ButtonNew
+          <ButtonIcon
             v-if="!createMode"
+            icon="new"
             variant="secondary"
             :href="newEntityUrl"
           >
             {{ $t('new') }}
-          </ButtonNew>
-          <ButtonCopy v-if="!createMode" variant="secondary"
+          </ButtonIcon>
+          <ButtonIcon v-if="!createMode" icon="copy" variant="secondary"
             >{{ $t('copy') }}
-          </ButtonCopy>
+          </ButtonIcon>
           <Button v-if="createMode" variant="secondary">Cancel</Button>
-          <ButtonSave>{{ $t('save_entity', { entityName }) }}</ButtonSave>
+          <ButtonIcon icon="save">{{
+            $t('save_entity', { entityName })
+          }}</ButtonIcon>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentTabs
