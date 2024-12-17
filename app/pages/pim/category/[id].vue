@@ -21,7 +21,15 @@ const title = computed(() =>
     ? t('new_entity', { entityName })
     : t('edit_entity', { entityName }),
 );
-const currentStep = ref(1);
+const _currentStep = ref(1);
+
+const selection = ref<SelectorSelection>({
+  categories: [],
+  brands: [],
+  price: [],
+  ids: [],
+  condition: 'or',
+});
 </script>
 
 <template>
@@ -56,17 +64,8 @@ const currentStep = ref(1);
     </template>
     <ContentEditMain v-if="currentTab === 0">
       <ContentCard>
-        <Selector mode="simple">
-          <template #selection>
-            <ButtonIcon icon="new">Add</ButtonIcon>
-          </template>
-          <template #list>
-            <Select>
-              <option>Option 1</option>
-              <option>Option 2</option>
-              <option>Option 3</option>
-            </Select>
-          </template>
+        <Selector v-model:selection="selection" mode="simple">
+          <Card class="p-2"> Extra content </Card>
         </Selector>
       </ContentCard>
       <template #sidebar>

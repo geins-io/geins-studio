@@ -6,11 +6,7 @@ const props = defineProps<{ class?: HTMLAttributes['class'] }>();
 </script>
 
 <template>
-  <div
-    :class="
-      cn('mt-auto flex justify-between border-t px-0.5 pt-8', props.class)
-    "
-  >
+  <div :class="cn('flex w-full grow flex-col pt-6', props.class)">
     <slot />
   </div>
 </template>

@@ -1,17 +1,9 @@
 <script setup lang="ts">
 const { defaultCurrency } = useAccountStore();
 
-interface Selection {
-  categories: Array<{ name: string }>;
-  brands: Array<{ name: string }>;
-  price: Array<{ condition: string; prices: number[] }>;
-  ids: Array<string>;
-  condition: 'and' | 'or';
-}
-
 const props = withDefaults(
   defineProps<{
-    selection: Selection;
+    selection: SelectorSelection;
     currency: string;
     emptyText?: string;
     emptyDesc: string;

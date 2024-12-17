@@ -35,12 +35,7 @@ const modelValue = useVModel(props, 'modelValue', emits, {
   <input
     :id="props.id"
     v-model="modelValue"
-    :class="
-      cn(
-        `flex h-9 w-full rounded-lg border bg-input ${valid ? '' : 'outline outline-2 outline-offset-2 outline-destructive'} px-3 py-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50`,
-        props.class,
-      )
-    "
+    :class="cn(`@`, props.class)"
     v-bind="$attrs"
   />
   <p v-if="!valid && feedback" class="text-sm font-semibold text-destructive">

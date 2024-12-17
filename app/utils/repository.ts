@@ -11,7 +11,7 @@ const ENDPOINTS = {
 
 export const repository = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
   product: {
-    async list(): Promise<Product> {
+    async list(): Promise<Product[]> {
       return await fetch(ENDPOINTS.PRODUCTS);
     },
   },

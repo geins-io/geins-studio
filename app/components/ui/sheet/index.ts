@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 
 export { default as Sheet } from './Sheet.vue';
+export { default as SheetBody } from './SheetBody.vue';
 export { default as SheetClose } from './SheetClose.vue';
 export { default as SheetContent } from './SheetContent.vue';
 export { default as SheetDescription } from './SheetDescription.vue';
@@ -10,7 +11,7 @@ export { default as SheetTitle } from './SheetTitle.vue';
 export { default as SheetTrigger } from './SheetTrigger.vue';
 
 export const sheetVariants = cva(
-  'fixed z-50 gap-4 bg-background p-7 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out',
+  'fixed z-50 flex max-w-full flex-col gap-4 bg-card p-7 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out',
   {
     variants: {
       side: {

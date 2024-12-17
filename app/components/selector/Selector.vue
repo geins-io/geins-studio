@@ -1,34 +1,43 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
+const { geinsLog } = useGeinsLog();
+
 const props = withDefaults(
   defineProps<{
     mode: 'simple' | 'advanced';
+    selection: SelectorSelection;
   }>(),
   {
     mode: 'simple',
   },
 );
 
-const searchString = ref('');
+const selection = ref(props.selection);
+
+const addToManuallySelected = (id: number) => {
+  console.log('🚀 ~ addToManuallySelected ~ id:', id);
+  selection.value.ids?.push(id);
+};
+const openBrowse = () => {
+  geinsLog('selector_browse_opened');
+};
 </script>
 <template>
-  <div class="flex justify-between">
+  <div class="mb-6 flex items-start justify-between">
     <slot name="header">
-      <SelectorHeader title="Product selection" />
+      <SelectorHeader />
     </slot>
     <slot name="search">
-      <div class="relative flex w-1/3">
-        <Input v-model="searchString" class="" placeholder="Quick search.." />
-        <span
-          class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
-        >
-          <LucideSearch class="size-4 text-foreground" />
-        </span>
-      </div>
+      <SelectorSearch
+        @add="addToManuallySelected($event)"
+        @browse="openBrowse"
+      />
     </slot>
   </div>
   <div>
     <slot name="selection" />
     <slot />
-    <slot name="list" />
+    <slot name="list">
+      {{ selection }}
+    </slot>
   </div>
 </template>

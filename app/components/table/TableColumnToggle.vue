@@ -132,16 +132,14 @@ const resetOrderAndVisibility = () => {
         Column options
       </ButtonIcon>
     </SheetTrigger>
-    <SheetContent
-      class="flex w-[784px] flex-col bg-card sm:w-[784px] sm:max-w-[784px]"
-    >
-      <SheetHeader class="border-b">
-        <SheetTitle class="text-2xl font-semibold">Colums option</SheetTitle>
-        <SheetDescription class="mb-6 text-sm text-muted-foreground">
+    <SheetContent width="medium">
+      <SheetHeader>
+        <SheetTitle>Colums option</SheetTitle>
+        <SheetDescription>
           Choose which columns you want to see in this list view
         </SheetDescription>
       </SheetHeader>
-      <div class="flex w-full grow flex-col pt-6">
+      <SheetBody>
         <div class="grid md:grid-cols-2">
           <!-- Available Columns -->
           <div class="mr-8 border-r pr-8">
@@ -207,8 +205,7 @@ const resetOrderAndVisibility = () => {
             </draggable>
           </div>
         </div>
-
-        <div class="mt-auto flex justify-between border-t px-0.5 pt-8">
+        <SheetFooter>
           <SheetClose as-child>
             <Button variant="outline" @click="resetOrderAndVisibility">
               Cancel
@@ -217,8 +214,8 @@ const resetOrderAndVisibility = () => {
           <SheetClose as-child>
             <Button @click="saveOrderAndVisibility">Save options</Button>
           </SheetClose>
-        </div>
-      </div>
+        </SheetFooter>
+      </SheetBody>
     </SheetContent>
   </Sheet>
 </template>

@@ -1,18 +1,13 @@
 <script setup lang="ts">
-const _props = withDefaults(
-  defineProps<{
-    title?: string;
-    description?: string;
-  }>(),
-  {
-    title: 'Product selection',
-    description: 'Quick add or browse to make a specific selection',
-  },
-);
+const _emits = defineEmits(['add']);
+const api = repository(useNuxtApp().$geinsApi);
+const products = await api.product.list();
 </script>
 <template>
-  <div>
-    <h2 class="text-xl font-semibold">{{ title }}</h2>
-    <p>{{ description }}</p>
+  <div class="flex w-1/2 gap-6">
+    <SelectorQuickAdd :data-set="products" @add="$emit('add', $event)" />
+    <SelectorPanel>
+      <Button>Browse</Button>
+    </SelectorPanel>
   </div>
 </template>

@@ -37,7 +37,7 @@ const link = resolveComponent('NuxtLink');
 const elem = props.href ? link : 'div';
 </script>
 <template>
-  <Button as-child>
+  <Button :as-child="!!href">
     <component :is="elem" :to="href" class="flex">
       <component :is="iconComponent" class="mr-2 size-4" />
       <slot />

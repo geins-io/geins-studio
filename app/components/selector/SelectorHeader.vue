@@ -12,7 +12,7 @@ const _props = withDefaults(
 </script>
 <template>
   <div>
-    <h2 class="text-xl font-semibold">{{ title }}</h2>
-    <p>{{ description }}</p>
+    <h2 class="mb-1.5 text-xl font-semibold">{{ title }}</h2>
+    <p class="text-sm text-muted-foreground">{{ description }}</p>
   </div>
 </template>
