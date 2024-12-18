@@ -1,30 +1,49 @@
-<script setup lang="ts" generic="T">
-const _props = defineProps<{
+<script setup lang="ts">
+const props = defineProps<{
   dataSet: Product[];
+  selection: SelectorSelection;
 }>();
-const selection = ref<number[]>([]);
 const focused = ref(false);
 const emit = defineEmits<{
-  (e: 'add', payload: number): void;
+  (e: 'add' | 'remove', payload: number): void;
 }>();
 const addItem = (id: number) => {
-  console.log('🚀 ~ add ~ id:', id);
   emit('add', id);
+  focused.value = false;
+};
+const removeItem = (id: number) => {
+  emit('remove', id);
+  focused.value = false;
+};
+const onBlur = (event: FocusEvent) => {
+  const searchResults = document.querySelector('.quick-search-results');
+  if (searchResults?.contains(event.relatedTarget as Node)) return;
+  focused.value = false;
+};
+const isSelected = (id: number) => {
+  return props.selection.ids?.includes(id);
 };
 </script>
 <template>
-  <Command v-model="selection" multiple class="relative overflow-visible">
+  <Command class="relative overflow-visible">
     <CommandInput
       placeholder="Quick add product.."
       @focus="focused = true"
-      @blur="focused = false"
+      @blur="onBlur"
     />
     <CommandList
-      v-if="focused"
-      class="absolute left-0 top-9 z-50 w-full overflow-x-hidden rounded-b-lg border border-t-0 bg-card"
+      :class="
+        cn(
+          'quick-search-results absolute left-0 top-9 z-50 w-full overflow-x-hidden rounded-b-lg border border-t-0 bg-card',
+          `${focused ? '' : '!hidden'}`,
+        )
+      "
     >
       <CommandEmpty>No products found.</CommandEmpty>
-      <CommandGroup heading="Products">
+      <CommandGroup
+        heading="Products"
+        :class="`${dataSet.length ? '!block' : ''}`"
+      >
         <CommandItem
           v-for="product in dataSet"
           :key="product.id"
@@ -40,12 +59,22 @@ const addItem = (id: number) => {
             <strong>{{ product.id }}</strong>
             <span class="truncate">{{ product.name }}</span>
             <Button
+              v-if="!isSelected(product.id)"
               class="ml-auto shrink-0 p-1"
               variant="ghost"
               size="icon"
               @click="addItem(product.id)"
             >
               <LucideCirclePlus class="size-4" />
+            </Button>
+            <Button
+              v-else
+              class="ml-auto shrink-0 p-1"
+              variant="ghost"
+              size="icon"
+              @click="removeItem(product.id)"
+            >
+              <LucideCircleCheck class="size-4 text-positive" />
             </Button>
           </div>
         </CommandItem>

@@ -25,12 +25,14 @@ const props = withDefaults(
     pageSize?: number;
     loading?: boolean;
     searchableField?: string;
+    mode?: 'simple' | 'advanced';
   }>(),
   {
     entityName: 'row',
     pageSize: 30,
     loading: false,
     searchableField: 'name',
+    mode: 'advanced',
   },
 );
 
@@ -219,7 +221,8 @@ const table = useVueTable({
   <div
     :class="
       cn(
-        'relative mb-[6.5rem] translate-y-40 overflow-hidden rounded-lg border pb-14 transition-[transform]',
+        'relative overflow-hidden rounded-lg border transition-[transform]',
+        `${mode === 'advanced' ? 'mb-[6.5rem] translate-y-40 pb-14' : ''}`,
         `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] mb-0 translate-y-0' : '-mt-40'}`,
       )
     "

@@ -14,22 +14,34 @@ const props = withDefaults(
 const selection = ref(props.selection);
 
 const addToManuallySelected = (id: number) => {
-  console.log('🚀 ~ addToManuallySelected ~ id:', id);
   selection.value.ids?.push(id);
 };
-const openBrowse = () => {
-  geinsLog('selector_browse_opened');
+const removeFromManuallySelected = (id: number) => {
+  selection.value.ids = selection.value.ids?.filter((i) => i !== id);
 };
+
+// Get dataset of entity
+const api = repository(useNuxtApp().$geinsApi);
+const products = await api.product.list();
+const entityName = 'product';
+const { getColumns } = useColumns();
+const columns = getColumns(products);
+
+const selectedProducts = computed(() => {
+  const selected = products.filter((product) =>
+    selection.value.ids?.includes(product.id),
+  );
+  return selected.length ? selected : products;
+});
 </script>
 <template>
   <div class="mb-6 flex items-start justify-between">
     <slot name="header">
-      <SelectorHeader />
-    </slot>
-    <slot name="search">
-      <SelectorSearch
+      <SelectorHeader
+        :products="products"
+        :selection="selection"
         @add="addToManuallySelected($event)"
-        @browse="openBrowse"
+        @remove="removeFromManuallySelected($event)"
       />
     </slot>
   </div>
@@ -37,7 +49,12 @@ const openBrowse = () => {
     <slot name="selection" />
     <slot />
     <slot name="list">
-      {{ selection }}
+      <TableView
+        :columns="columns"
+        :data="selectedProducts"
+        :entity-name="entityName"
+        mode="simple"
+      />
     </slot>
   </div>
 </template>

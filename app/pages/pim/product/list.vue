@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import type { ColumnOptions } from '#shared/types';
 type Entity = Product;
 
 const route = useRoute();
 const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
   route.fullPath,
 );
+
+definePageMeta({
+  pageType: 'list',
+});
 
 // GLOBAL SETUP
 const apiEndpoint = '/products';

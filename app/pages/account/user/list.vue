@@ -8,6 +8,10 @@ const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
   route.fullPath,
 );
 
+definePageMeta({
+  pageType: 'list',
+});
+
 // GLOBAL SETUP
 // const apiEndpoint = '/users';
 const dataList = ref<Entity[]>([]);

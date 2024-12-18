@@ -64,9 +64,7 @@ const selection = ref<SelectorSelection>({
     </template>
     <ContentEditMain v-if="currentTab === 0">
       <ContentCard>
-        <Selector v-model:selection="selection" mode="simple">
-          <Card class="p-2"> Extra content </Card>
-        </Selector>
+        <Selector v-model:selection="selection" mode="simple" />
       </ContentCard>
       <template #sidebar>
         <Card class="p-5">Details</Card>

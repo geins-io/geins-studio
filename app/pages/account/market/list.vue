@@ -10,6 +10,10 @@ const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
   route.fullPath,
 );
 
+definePageMeta({
+  pageType: 'list',
+});
+
 // GLOBAL SETUP
 const apiEndpoint = '/account/market/list';
 const dataList = ref<Entity[]>([]);
