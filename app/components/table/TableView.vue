@@ -221,9 +221,10 @@ const table = useVueTable({
   <div
     :class="
       cn(
-        'relative overflow-hidden rounded-lg border transition-[transform]',
-        `${mode === 'advanced' ? 'mb-[6.5rem] translate-y-40 pb-14' : ''}`,
-        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] mb-0 translate-y-0' : '-mt-40'}`,
+        'relative overflow-hidden rounded-lg border pb-14 transition-[transform]',
+        `${mode === 'advanced' ? 'mb-[6.5rem] translate-y-40' : ''}`,
+        `${mode === 'advanced' && !tableMaximized ? '-mt-40' : ''}`,
+        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] mb-0 translate-y-0' : ''}`,
       )
     "
   >

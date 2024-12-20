@@ -1,23 +1,59 @@
 <script setup lang="ts" generic="T">
-const { geinsLog } = useGeinsLog();
-
 const props = withDefaults(
   defineProps<{
     mode: 'simple' | 'advanced';
-    selection: SelectorSelection;
   }>(),
   {
     mode: 'simple',
   },
 );
 
-const selection = ref(props.selection);
+const { defaultCurrency } = useAccountStore();
+
+const dummyData: SelectorSelectionBase = {
+  include: {
+    condition: 'and',
+    categories: [
+      { id: 1, name: 'Electronics' },
+      { id: 2, name: 'Clothing' },
+      { id: 3, name: 'Shoes' },
+    ],
+    brands: [{ id: 1, name: 'BrandA' }],
+    price: [
+      {
+        condition: 'lt',
+        values: {
+          USD: 100,
+          EUR: 90,
+          SEK: 850,
+        },
+      },
+    ],
+    stock: [
+      {
+        condition: 'gt',
+        quantity: 10,
+      },
+    ],
+    ids: [1, 2, 3],
+  },
+  exclude: {
+    condition: 'or',
+    categories: [{ id: 22, name: 'Clottthhhing' }],
+    brands: [{ id: 2, name: 'BrandB' }],
+    ids: [4, 5, 6],
+  },
+};
+
+const selection = ref<SelectorSelectionBase>(dummyData);
 
 const addToManuallySelected = (id: number) => {
-  selection.value.ids?.push(id);
+  selection.value.include.ids?.push(id);
 };
 const removeFromManuallySelected = (id: number) => {
-  selection.value.ids = selection.value.ids?.filter((i) => i !== id);
+  selection.value.include.ids = selection.value.exclude.ids?.filter(
+    (i) => i !== id,
+  );
 };
 
 // Get dataset of entity
@@ -29,7 +65,7 @@ const columns = getColumns(products);
 
 const selectedProducts = computed(() => {
   const selected = products.filter((product) =>
-    selection.value.ids?.includes(product.id),
+    selection.value.include.ids?.includes(product.id),
   );
   return selected.length ? selected : products;
 });
@@ -46,7 +82,14 @@ const selectedProducts = computed(() => {
     </slot>
   </div>
   <div>
-    <slot name="selection" />
+    <div class="mb-4">
+      <slot name="selection" />
+      <SelectorSelection
+        type="include"
+        :selection="selection.include"
+        :currency="defaultCurrency"
+      />
+    </div>
     <slot />
     <slot name="list">
       <TableView
