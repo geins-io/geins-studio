@@ -25,7 +25,7 @@ const props = withDefaults(
     pageSize?: number;
     loading?: boolean;
     searchableField?: string;
-    mode?: 'simple' | 'advanced';
+    mode?: 'simple' | 'advanced' | 'minimal';
   }>(),
   {
     entityName: 'row',

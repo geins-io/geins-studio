@@ -8,7 +8,7 @@ const _props = withDefaults(
   }>(),
   {
     title: 'Product selection',
-    description: 'Quick add or browse to make a specific selection',
+    description: 'Quick add, or click browse to make a specific selection',
   },
 );
 const _emits = defineEmits(['add', 'remove']);

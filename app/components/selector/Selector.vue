@@ -18,14 +18,23 @@ const dummyData: SelectorSelectionBase = {
       { id: 2, name: 'Clothing' },
       { id: 3, name: 'Shoes' },
     ],
-    brands: [{ id: 1, name: 'BrandA' }],
+    brands: [
+      { id: 1, name: 'BrandA' },
+      { id: 2, name: 'BrandB' },
+    ],
     price: [
       {
         condition: 'lt',
         values: {
-          USD: 100,
           EUR: 90,
           SEK: 850,
+        },
+      },
+      {
+        condition: 'gt',
+        values: {
+          EUR: 10,
+          SEK: 100,
         },
       },
     ],
@@ -33,6 +42,10 @@ const dummyData: SelectorSelectionBase = {
       {
         condition: 'gt',
         quantity: 10,
+      },
+      {
+        condition: 'lt',
+        quantity: 1000,
       },
     ],
     ids: [1, 2, 3],
@@ -69,35 +82,45 @@ const selectedProducts = computed(() => {
   );
   return selected.length ? selected : products;
 });
+
+const shouldExclude = ref(false);
 </script>
 <template>
-  <div class="mb-6 flex items-start justify-between">
-    <slot name="header">
-      <SelectorHeader
-        :products="products"
-        :selection="selection"
-        @add="addToManuallySelected($event)"
-        @remove="removeFromManuallySelected($event)"
-      />
-    </slot>
-  </div>
   <div>
-    <div class="mb-4">
-      <slot name="selection" />
-      <SelectorSelection
-        type="include"
-        :selection="selection.include"
-        :currency="defaultCurrency"
-      />
+    <div class="mb-6 flex items-start justify-between">
+      <slot name="header">
+        <SelectorHeader
+          :products="products"
+          :selection="selection"
+          @add="addToManuallySelected($event)"
+          @remove="removeFromManuallySelected($event)"
+        />
+      </slot>
     </div>
-    <slot />
-    <slot name="list">
-      <TableView
-        :columns="columns"
-        :data="selectedProducts"
-        :entity-name="entityName"
-        mode="simple"
-      />
-    </slot>
+    <div>
+      <div class="mb-4">
+        <slot name="selection">
+          <SelectorSelection
+            class="mb-4"
+            type="include"
+            :selection="selection.include"
+            :currency="defaultCurrency"
+          />
+        </slot>
+        <FormSwitch
+          :checked="shouldExclude"
+          @update:checked="shouldExclude = $event"
+        />
+      </div>
+      <slot />
+      <slot name="list">
+        <TableView
+          :columns="columns"
+          :data="selectedProducts"
+          :entity-name="entityName"
+          mode="simple"
+        />
+      </slot>
+    </div>
   </div>
 </template>

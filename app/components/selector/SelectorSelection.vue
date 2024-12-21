@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import type { CurrencyField } from '~~/shared/types';
-import SelectorTagLink from './SelectorTagLink.vue';
-
 const props = withDefaults(
   defineProps<{
     selection: SelectorSelection;
@@ -44,14 +41,14 @@ const brandLinkingWord = computed(() =>
 
 const priceLinkingWord = computed(() =>
   props.selection.condition === 'or'
-    ? 'AND ALL PRODUCTS THAT COST'
-    : 'THAT COST',
+    ? 'AND ALL PRODUCTS THAT COSTS'
+    : 'THAT COSTS',
 );
 
 const stockLinkingWord = computed(() =>
   props.selection.condition === 'or'
-    ? 'AND ALL PRODUCTS WITH STOCK'
-    : 'WITH STOCK',
+    ? 'AND ALL PRODUCTS WHERE STOCK IS'
+    : 'WHERE STOCK IS',
 );
 
 const manuallySelectedText = computed(
@@ -197,7 +194,7 @@ watch(
     <SelectorLinkingWord
       v-if="selection.ids?.length && activeConditionTypes > 0"
     >
-      ALSO
+      AND ALSO
     </SelectorLinkingWord>
     <SelectorTags v-if="selection.ids?.length">
       <SelectorTag :label="manuallySelectedText" @remove="selection.ids = []" />
@@ -206,7 +203,7 @@ watch(
     <!-- Footer -->
     <div
       v-if="activeConditionTypes > 1"
-      class="flex items-center gap-5 border-t pt-4 text-sm"
+      class="mt-1 flex items-center gap-5 border-t pt-4 text-sm"
     >
       <div>{{ footerText }}</div>
       <RadioGroup

@@ -29,14 +29,27 @@ const handleClick = () => {
     @click="handleClick"
   >
     {{ title }}
-    <LucideArrowUp
-      v-if="column.getIsSorted() === 'asc'"
-      class="ml-2.5 size-3"
-    />
-    <LucideArrowDown
-      v-else-if="column.getIsSorted() === 'desc'"
-      class="ml-2.5 size-3"
-    />
-    <LucideArrowUpDown v-else class="ml-2.5 size-3 text-muted-foreground" />
+    <div
+      class="ml-1 flex size-5 flex-col items-center gap-0.5 text-muted-foreground"
+    >
+      <LucideChevronUp
+        :class="
+          cn(
+            `${column.getIsSorted() === 'desc' ? 'text-muted' : ''}`,
+            `${column.getIsSorted() === 'asc' ? 'text-primary' : ''}`,
+            '-mb-1',
+          )
+        "
+      />
+      <LucideChevronDown
+        :class="
+          cn(
+            `${column.getIsSorted() === 'desc' ? 'text-primary' : ''}`,
+            `${column.getIsSorted() === 'asc' ? 'text-muted' : ''}`,
+            '-mt-1',
+          )
+        "
+      />
+    </div>
   </Button>
 </template>
