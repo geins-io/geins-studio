@@ -3,7 +3,7 @@ const _props = withDefaults(
   defineProps<{
     title?: string;
     description?: string;
-    selection: SelectorSelectionBase;
+    selection: SelectorSelection;
     products: Product[];
   }>(),
   {
@@ -22,7 +22,7 @@ const _emits = defineEmits(['add', 'remove']);
     <SelectorQuickAdd
       v-if="products.length"
       :data-set="products"
-      :selection="selection.include"
+      :selection="selection"
       @add="$emit('add', $event)"
       @remove="$emit('remove', $event)"
     />

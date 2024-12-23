@@ -26,7 +26,12 @@ export interface SelectorSelection {
   ids?: number[];
 }
 
+export interface SelectorSelectionGroup {
+  condition?: SelectorCondition;
+  selections: SelectorSelection[];
+}
+
 export interface SelectorSelectionBase {
-  include: SelectorSelection;
-  exclude: SelectorSelection;
+  include?: SelectorSelectionGroup[];
+  exclude?: SelectorSelectionGroup[];
 }

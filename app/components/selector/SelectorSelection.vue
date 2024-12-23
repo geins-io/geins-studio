@@ -6,11 +6,13 @@ const props = withDefaults(
     emptyText?: string;
     emptyDesc?: string;
     footerText?: string;
+    type: 'include' | 'exclude';
   }>(),
   {
     emptyText: 'All products',
     emptyDesc: 'No conditions set',
     footerText: 'Include products that match:',
+    type: 'include',
   },
 );
 
@@ -118,108 +120,119 @@ watch(
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 rounded-lg border px-3 py-4">
-    <!-- All / No products tag -->
-    <SelectorTags v-if="showAllProductsTag && selection.condition === 'and'">
-      <SelectorTag label="All products" :removable="false" />
-    </SelectorTags>
-
-    <!-- Categories -->
-    <SelectorTags v-if="selection.categories?.length">
-      <SelectorTagLink
-        v-for="(item, index) in selection.categories"
-        :key="index"
-        linking-word="OR"
-        :is-last="index === selection.categories.length - 1"
-      >
-        <SelectorTag :label="item.name" @remove="removeCategory(index)" />
-      </SelectorTagLink>
-    </SelectorTags>
-
-    <!-- Brands -->
-    <SelectorLinkingWord v-if="selection.brands?.length">
-      {{ brandLinkingWord }}
-    </SelectorLinkingWord>
-    <SelectorTags v-if="selection.brands?.length">
-      <SelectorTagLink
-        v-for="(item, index) in selection.brands"
-        :key="index"
-        linking-word="OR"
-        :is-last="index === selection.brands.length - 1"
-      >
+  <div>
+    <h3 class="mb-1 text-sm font-medium">
+      {{ type === 'include' ? 'Select' : 'Exclude' }}
+    </h3>
+    <div class="flex flex-col gap-3 rounded-lg border px-3 py-4">
+      <!-- All / No products tag -->
+      <SelectorTags v-if="showAllProductsTag && selection.condition === 'and'">
         <SelectorTag
-          :label="item.name"
-          @remove="selection.brands?.splice(index, 1)"
+          :label="`${type === 'include' ? 'All products' : 'No products'}`"
+          :removable="false"
         />
-      </SelectorTagLink>
-    </SelectorTags>
+      </SelectorTags>
 
-    <!-- Price -->
-    <SelectorLinkingWord v-if="selection.price?.length">
-      {{ priceLinkingWord }}
-    </SelectorLinkingWord>
-    <SelectorTags v-if="selection.price?.length">
-      <SelectorTagLink
-        v-for="(price, index) in selection.price"
-        :key="index"
-        linking-word="AND"
-        :is-last="index === selection.price.length - 1"
+      <!-- Categories -->
+      <SelectorTags v-if="selection.categories?.length">
+        <SelectorTagLink
+          v-for="(item, index) in selection.categories"
+          :key="index"
+          linking-word="OR"
+          :is-last="index === selection.categories.length - 1"
+        >
+          <SelectorTag :label="item.name" @remove="removeCategory(index)" />
+        </SelectorTagLink>
+      </SelectorTags>
+
+      <!-- Brands -->
+      <SelectorLinkingWord v-if="selection.brands?.length">
+        {{ brandLinkingWord }}
+      </SelectorLinkingWord>
+      <SelectorTags v-if="selection.brands?.length">
+        <SelectorTagLink
+          v-for="(item, index) in selection.brands"
+          :key="index"
+          linking-word="OR"
+          :is-last="index === selection.brands.length - 1"
+        >
+          <SelectorTag
+            :label="item.name"
+            @remove="selection.brands?.splice(index, 1)"
+          />
+        </SelectorTagLink>
+      </SelectorTags>
+
+      <!-- Price -->
+      <SelectorLinkingWord v-if="selection.price?.length">
+        {{ priceLinkingWord }}
+      </SelectorLinkingWord>
+      <SelectorTags v-if="selection.price?.length">
+        <SelectorTagLink
+          v-for="(price, index) in selection.price"
+          :key="index"
+          linking-word="AND"
+          :is-last="index === selection.price.length - 1"
+        >
+          <SelectorTag
+            :label="getPriceTagText(price)"
+            @remove="selection.price?.splice(index, 1)"
+          />
+        </SelectorTagLink>
+      </SelectorTags>
+
+      <!-- Stock -->
+      <SelectorLinkingWord v-if="selection.stock?.length">
+        {{ stockLinkingWord }}
+      </SelectorLinkingWord>
+      <SelectorTags v-if="selection.stock?.length">
+        <SelectorTagLink
+          v-for="(stock, index) in selection.stock"
+          :key="index"
+          linking-word="AND"
+          :is-last="index === selection.stock.length - 1"
+        >
+          <SelectorTag
+            :label="`${getUnderstandableOperator(stock.condition)} ${stock.quantity}`"
+            @remove="selection.stock?.splice(index, 1)"
+          />
+        </SelectorTagLink>
+      </SelectorTags>
+
+      <!-- Products -->
+      <SelectorLinkingWord
+        v-if="selection.ids?.length && activeConditionTypes > 0"
       >
+        AND ALSO
+      </SelectorLinkingWord>
+      <SelectorTags v-if="selection.ids?.length">
         <SelectorTag
-          :label="getPriceTagText(price)"
-          @remove="selection.price?.splice(index, 1)"
+          :label="manuallySelectedText"
+          @remove="selection.ids = []"
         />
-      </SelectorTagLink>
-    </SelectorTags>
+      </SelectorTags>
 
-    <!-- Stock -->
-    <SelectorLinkingWord v-if="selection.stock?.length">
-      {{ stockLinkingWord }}
-    </SelectorLinkingWord>
-    <SelectorTags v-if="selection.stock?.length">
-      <SelectorTagLink
-        v-for="(stock, index) in selection.stock"
-        :key="index"
-        linking-word="AND"
-        :is-last="index === selection.stock.length - 1"
+      <!-- Footer -->
+      <div
+        v-if="activeConditionTypes > 1"
+        class="mt-1 flex items-center gap-5 border-t pt-4 text-sm"
       >
-        <SelectorTag
-          :label="`${getUnderstandableOperator(stock.condition)} ${stock.quantity}`"
-          @remove="selection.stock?.splice(index, 1)"
-        />
-      </SelectorTagLink>
-    </SelectorTags>
-
-    <!-- Products -->
-    <SelectorLinkingWord
-      v-if="selection.ids?.length && activeConditionTypes > 0"
-    >
-      AND ALSO
-    </SelectorLinkingWord>
-    <SelectorTags v-if="selection.ids?.length">
-      <SelectorTag :label="manuallySelectedText" @remove="selection.ids = []" />
-    </SelectorTags>
-
-    <!-- Footer -->
-    <div
-      v-if="activeConditionTypes > 1"
-      class="mt-1 flex items-center gap-5 border-t pt-4 text-sm"
-    >
-      <div>{{ footerText }}</div>
-      <RadioGroup
-        v-model="selection.condition"
-        default-value="and"
-        class="flex items-center gap-4"
-      >
-        <div class="flex items-center space-x-2">
-          <RadioGroupItem id="and" value="and" />
-          <Label for="and">All conditions above</Label>
-        </div>
-        <div class="flex items-center space-x-2">
-          <RadioGroupItem id="or" value="or" />
-          <Label for="or">Any condition above</Label>
-        </div>
-      </RadioGroup>
+        <div>{{ footerText }}</div>
+        <RadioGroup
+          v-model="selection.condition"
+          default-value="and"
+          class="flex items-center gap-4"
+        >
+          <div class="flex items-center space-x-2">
+            <RadioGroupItem id="and" value="and" />
+            <Label for="and">All conditions above</Label>
+          </div>
+          <div class="flex items-center space-x-2">
+            <RadioGroupItem id="or" value="or" />
+            <Label for="or">Any condition above</Label>
+          </div>
+        </RadioGroup>
+      </div>
     </div>
   </div>
 </template>
