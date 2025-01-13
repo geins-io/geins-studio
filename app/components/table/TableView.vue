@@ -53,6 +53,9 @@ const rowsSelectable = computed(() =>
   props.columns.some((column) => column.id === 'select'),
 );
 
+const advancedMode = computed(() => props.mode === 'advanced');
+const simpleMode = computed(() => props.mode === 'simple');
+
 onUnmounted(() => {
   tableMaximized.value = false;
 });
@@ -190,6 +193,7 @@ const table = useVueTable({
 
 <template>
   <div
+    v-if="advancedMode"
     :class="
       cn(
         'mb-3 flex origin-top transform items-center transition-[transform]',
@@ -222,8 +226,8 @@ const table = useVueTable({
     :class="
       cn(
         'relative overflow-hidden rounded-lg border pb-14 transition-[transform]',
-        `${mode === 'advanced' ? 'mb-[6.5rem] translate-y-40' : ''}`,
-        `${mode === 'advanced' && !tableMaximized ? '-mt-40' : ''}`,
+        `${advancedMode ? 'mb-[6.5rem] translate-y-40' : ''}`,
+        `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
         `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] mb-0 translate-y-0' : ''}`,
       )
     "
@@ -242,6 +246,7 @@ const table = useVueTable({
               cn(
                 `z-30 ${pinnedClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
                 cellClasses,
+                `${simpleMode ? 'bg-background [&>div>button]:px-2 [&>div>button]:normal-case [&>div]:h-10' : ''}`,
               )
             "
             :style="
@@ -269,7 +274,13 @@ const table = useVueTable({
             <TableCell
               v-for="cell in row.getVisibleCells()"
               :key="cell.id"
-              :class="cn(`${pinnedClasses(cell.column)}`, cellClasses)"
+              :class="
+                cn(
+                  `${pinnedClasses(cell.column)}`,
+                  cellClasses,
+                  `${simpleMode ? '[&>div]:px-3.5' : ''}`,
+                )
+              "
               :style="
                 cell.column.getSize()
                   ? { width: `${cell.column.getSize()}px` }
@@ -296,8 +307,10 @@ const table = useVueTable({
       :entity-name="entityName"
       :rows-selectable="rowsSelectable"
       :table="table"
+      :advanced="advancedMode"
     />
     <Button
+      v-if="advancedMode"
       variant="ghost"
       size="icon"
       class="absolute -right-px -top-px z-50 size-6 border-border bg-card"

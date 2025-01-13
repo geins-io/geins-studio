@@ -7,6 +7,7 @@ interface DataTablePaginationProps {
   table: Table<TData>;
   rowsSelectable: boolean;
   entityName: string;
+  advanced: boolean;
 }
 
 const props = defineProps<DataTablePaginationProps>();
@@ -34,7 +35,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
       </span>
     </div>
     <div class="flex items-center space-x-6 lg:space-x-8">
-      <div class="flex items-center space-x-2">
+      <div v-if="advanced" class="flex items-center space-x-2">
         <p class="text-sm font-medium">
           {{ $t('rows_per_page', { entityName }, 2) }}
         </p>
