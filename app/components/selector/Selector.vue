@@ -1,4 +1,6 @@
 <script setup lang="ts" generic="T">
+import { useToast } from '@/components/ui/toast/use-toast';
+
 const _props = withDefaults(
   defineProps<{
     mode: 'simple' | 'advanced';
@@ -9,6 +11,7 @@ const _props = withDefaults(
 );
 
 const { defaultCurrency } = useAccountStore();
+const { toast } = useToast();
 
 const dummyData: SelectorSelectionBase = {
   include: [
@@ -77,6 +80,10 @@ const excludeSelection = ref<SelectorSelection>(
 
 const addToManuallySelected = (id: number) => {
   includeSelection.value?.ids?.push(id);
+  toast({
+    title: `Product with id ${id} was added to selection`,
+    variant: 'positive',
+  });
 };
 const removeFromManuallySelected = (id: number) => {
   includeSelection.value?.ids?.splice(
@@ -121,16 +128,18 @@ const shouldExclude = ref(false);
             :selection="includeSelection"
             :currency="defaultCurrency"
           />
-          <FormSwitch
+          <ContentSwitch
+            label="Exclude products from selection"
+            description="Exclude a brand, category, product etc. from your selection"
             :checked="shouldExclude"
             @update:checked="shouldExclude = $event"
-          />
-          <SelectorSelection
-            v-if="shouldExclude"
-            type="exclude"
-            :selection="excludeSelection"
-            :currency="defaultCurrency"
-          />
+          >
+            <SelectorSelection
+              type="exclude"
+              :selection="excludeSelection"
+              :currency="defaultCurrency"
+            />
+          </ContentSwitch>
         </slot>
       </div>
       <slot />

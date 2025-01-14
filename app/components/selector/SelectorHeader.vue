@@ -18,7 +18,7 @@ const _emits = defineEmits(['add', 'remove']);
     <h2 class="mb-1.5 text-xl font-semibold">{{ title }}</h2>
     <p class="text-sm text-muted-foreground">{{ description }}</p>
   </div>
-  <div class="flex w-1/2 gap-6">
+  <div class="flex w-2/5 gap-6">
     <SelectorQuickAdd
       v-if="products.length"
       :data-set="products"
@@ -26,8 +26,5 @@ const _emits = defineEmits(['add', 'remove']);
       @add="$emit('add', $event)"
       @remove="$emit('remove', $event)"
     />
-    <SelectorPanel>
-      <Button>Browse</Button>
-    </SelectorPanel>
   </div>
 </template>

@@ -12,7 +12,7 @@ const emit = defineEmits(['remove']);
 </script>
 <template>
   <div
-    class="flex items-center gap-2 rounded-lg border bg-background px-3 py-1 text-sm"
+    class="flex items-center gap-2 rounded-lg border bg-background px-3 py-1 text-sm font-light"
   >
     {{ label }}
     <Button
