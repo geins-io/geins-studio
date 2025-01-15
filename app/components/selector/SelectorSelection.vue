@@ -6,7 +6,7 @@ const props = withDefaults(
     emptyText?: string;
     emptyDesc?: string;
     footerText?: string;
-    type: 'include' | 'exclude';
+    type: SelectorSelectionType;
   }>(),
   {
     emptyText: 'All products',
@@ -121,11 +121,11 @@ watch(
 
 <template>
   <div>
-    <h3 class="mb-1 text-sm font-medium">
+    <ContentHeading>
       {{ type === 'include' ? 'Select' : 'Exclude' }}
-    </h3>
+    </ContentHeading>
     <div class="relative rounded-lg border px-3 py-4">
-      <SelectorPanel>
+      <SelectorPanel :selection="selection" :type="type">
         <Button class="absolute right-3 top-3.5">Browse</Button>
       </SelectorPanel>
       <div class="flex w-[calc(100%-5.5rem)] flex-col gap-3">

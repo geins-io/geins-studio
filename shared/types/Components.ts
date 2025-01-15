@@ -2,6 +2,15 @@
 
 export type SelectorCondition = 'and' | 'or';
 export type CompareCondition = 'lt' | 'gt' | 'eq';
+export type SelectorSelectionType = 'include' | 'exclude';
+export type SelectorSelectionOption =
+  | 'product'
+  | 'category'
+  | 'brand'
+  | 'price'
+  | 'stock'
+  | 'import'
+  | 'entity';
 
 export interface CurrencyField {
   [currency: string]: number;
