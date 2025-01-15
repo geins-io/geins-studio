@@ -2,7 +2,7 @@
 
 <template>
   <nav>
-    <ul>
+    <ul class="space-y-0.5">
       <slot />
     </ul>
   </nav>

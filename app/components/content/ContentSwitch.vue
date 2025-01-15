@@ -15,19 +15,19 @@ watch(value, (newValue) => {
   emit('update:checked', newValue);
 });
 
-const beforeEnter = (el) => {
+const beforeEnter = (el: HTMLElement) => {
   el.style.height = '0';
 };
 
-const enter = (el) => {
+const enter = (el: HTMLElement) => {
   el.style.height = el.scrollHeight + 'px';
 };
 
-const beforeLeave = (el) => {
+const beforeLeave = (el: HTMLElement) => {
   el.style.height = el.scrollHeight + 'px';
 };
 
-const leave = (el) => {
+const leave = (el: HTMLElement) => {
   el.style.height = '0';
 };
 </script>

@@ -246,7 +246,7 @@ const table = useVueTable({
               cn(
                 `z-30 ${pinnedClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
                 cellClasses,
-                `${simpleMode ? 'bg-background [&>div>button]:px-2 [&>div>button]:normal-case [&>div]:h-10' : ''}`,
+                `${simpleMode ? 'bg-background [&>div>button]:px-2 [&>div>button]:normal-case [&>div]:h-10 [&>div]:normal-case' : ''}`,
               )
             "
             :style="

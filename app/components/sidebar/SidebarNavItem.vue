@@ -7,11 +7,13 @@ import {
   LucideCircleDollarSign,
   LucidePackage,
   LucideImport,
+  LucideCircleEllipsis,
 } from '#components';
 
 const props = withDefaults(
   defineProps<{
-    id: 'product' | 'category' | 'brand' | 'price' | 'stock' | 'import';
+    id: SelectorSelectionOptionsId;
+    current: boolean;
   }>(),
   {},
 );
@@ -33,7 +35,7 @@ const icon = computed(() => {
     case 'import':
       return LucideImport;
     default:
-      return LucideChevronRight;
+      return LucideCircleEllipsis;
   }
 });
 </script>
@@ -41,8 +43,15 @@ const icon = computed(() => {
 <template>
   <li>
     <button
-      class="flex w-full items-center gap-2.5 px-1 py-3.5 text-sm"
-      @click="$emit('click', props.id)"
+      :class="
+        cn(
+          '-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 px-3 py-3 text-sm transition-colors hover:bg-background',
+          {
+            'bg-background': props.current,
+          },
+        )
+      "
+      @click="$emit('click')"
     >
       <component :is="icon" class="size-4" />
       <slot />

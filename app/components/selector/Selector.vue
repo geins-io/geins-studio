@@ -81,7 +81,7 @@ const excludeSelection = ref<SelectorSelection>(
 const addToManuallySelected = (id: number) => {
   includeSelection.value?.ids?.push(id);
   toast({
-    title: `Product with id ${id} was added to selection`,
+    title: `Product with id ${id} added to selection`,
     variant: 'positive',
   });
 };
@@ -92,9 +92,7 @@ const removeFromManuallySelected = (id: number) => {
   );
 };
 
-// Get dataset of entity
-const api = repository(useNuxtApp().$geinsApi);
-const products = await api.product.list();
+const { products } = useProductsStore();
 const entityName = 'product';
 const { getColumns } = useColumns();
 const columns = getColumns(products);

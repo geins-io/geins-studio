@@ -3,7 +3,7 @@
 export type SelectorCondition = 'and' | 'or';
 export type CompareCondition = 'lt' | 'gt' | 'eq';
 export type SelectorSelectionType = 'include' | 'exclude';
-export type SelectorSelectionOption =
+export type SelectorSelectionOptionsId =
   | 'product'
   | 'category'
   | 'brand'
@@ -43,4 +43,10 @@ export interface SelectorSelectionGroup {
 export interface SelectorSelectionBase {
   include?: SelectorSelectionGroup[];
   exclude?: SelectorSelectionGroup[];
+}
+
+export interface SelectorSelectionOption {
+  id: SelectorSelectionOptionsId;
+  label: string;
+  selection: keyof SelectorSelection;
 }
