@@ -278,7 +278,7 @@ const table = useVueTable({
                 cn(
                   `${pinnedClasses(cell.column)}`,
                   cellClasses,
-                  `${simpleMode ? '[&>div]:px-3.5' : ''}`,
+                  `${simpleMode ? '[&>button]:px-3.5 [&>div]:px-3.5' : ''}`,
                 )
               "
               :style="

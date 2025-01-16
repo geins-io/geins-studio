@@ -85,7 +85,20 @@ export const useColumns = <T extends object>() => {
         title = title.charAt(0).toUpperCase() + title.slice(1);
       }
 
-      const columnType: ColumnType = columnTypes[key as keyof T] || 'string';
+      // Set column type
+      let columnType: ColumnType;
+      // Infer column type based on key
+      if (key.includes('date')) {
+        columnType = 'date';
+      } else if (key.includes('price') || key.includes('amount')) {
+        columnType = 'currency';
+      } else if (key.includes('image') || key.includes('img')) {
+        columnType = 'image';
+      } else {
+        columnType = 'string';
+      }
+      // Override column type if explicitly set in options
+      columnType = columnTypes[key as keyof T] || columnType;
 
       let columnSize = {
         size: 0,
@@ -162,27 +175,21 @@ export const useColumns = <T extends object>() => {
               return h(
                 TableCellLongText,
                 { text, className: basicCellStyle, maxTextLength },
-                { default: () => link }, // Use function slot here
+                { default: () => link },
               );
             }
             return h('div', { class: basicCellStyle }, link);
           };
           break;
 
-        // case 'date':
-        //   cellRenderer = ({ row }: { row: Row<T> }) => {
-        //     const value = row.getValue(key);
-        //     if (
-        //       typeof value !== 'string' ||
-        //       typeof value !== 'number') {
-        //       return;
-        //     }
-        //     const formatted = new Intl.DateTimeFormat('sv-SE').format(
-        //       new Date(value),
-        //     );
-        //     return h('div', { class: '' }, formatted);
-        //   };
-        //   break;
+        case 'date':
+          cellRenderer = ({ row }: { row: Row<T> }) => {
+            const value = row.getValue(key);
+            const date = new Date(value as string | number | Date);
+            const formatted = date.toLocaleDateString('sv-SE');
+            return h('div', { class: basicCellStyle }, formatted);
+          };
+          break;
         default:
           cellRenderer = ({ row }: { row: Row<T> }) => {
             const text = String(row.getValue(key));
@@ -191,7 +198,7 @@ export const useColumns = <T extends object>() => {
                 text,
                 className: basicCellStyle,
                 maxTextLength,
-                default: () => text, // Use function slot here
+                default: () => text,
               });
             }
             return h('div', { class: basicCellStyle }, text);
