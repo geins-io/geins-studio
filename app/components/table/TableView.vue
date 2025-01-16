@@ -26,18 +26,30 @@ const props = withDefaults(
     loading?: boolean;
     searchableField?: string;
     mode?: 'simple' | 'advanced' | 'minimal';
+    maxHeight?: string;
+    showSearch?: boolean;
+    pinnedState?: ColumnPinningState;
   }>(),
   {
     entityName: 'row',
     pageSize: 30,
     loading: false,
     searchableField: 'name',
+    showSearch: false,
     mode: 'advanced',
+    pinnedState: () => ({
+      left: ['select'],
+      right: ['actions'],
+    }),
   },
 );
 
+const showSearch =
+  props.mode === 'advanced' ? ref(true) : ref(props.showSearch);
+
 const emit = defineEmits({
   clicked: (row) => row,
+  selection: (selection: TData[]): TData[] => selection,
 });
 
 /**
@@ -107,23 +119,21 @@ const pinnedClasses = (column: Column<TData>, header: boolean = false) => {
       header && (column.id === 'select' || column.id === 'actions')
         ? 'z-40'
         : 'z-20';
-    return `bg-card sticky ${pinned}-0 ${zIndex} after:absolute after:-bottom-px after:${pinned}-0 after:bg-border after:h-px after:w-full after:z-50`;
+    const shadow =
+      pinned === 'left'
+        ? '[&>div]:shadow-only-right'
+        : '[&>div]:shadow-only-left';
+    return `bg-card sticky ${pinned}-0 ${zIndex} ${shadow} after:absolute after:-bottom-px after:${pinned}-0 after:bg-border after:h-px after:w-full after:z-50`;
   }
   return 'relative';
 };
 
-// Set default pinned columns
-const defaultPinningState: ColumnPinningState = {
-  left: ['select'],
-  right: ['actions'],
-};
-
 // Remove select and actions columns from pinned state if not present in columns
 const columnPinningState = computed(() => {
-  const left = defaultPinningState?.left?.filter((id) =>
+  const left = props.pinnedState.left?.filter((id) =>
     props.columns.some((column) => column.id === id),
   );
-  const right = defaultPinningState.right?.filter((id) =>
+  const right = props.pinnedState.right?.filter((id) =>
     props.columns.some((column) => column.id === id),
   );
   return { left, right };
@@ -161,8 +171,13 @@ const table = useVueTable({
   onColumnVisibilityChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, columnVisibility);
   },
-  onRowSelectionChange: (updaterOrValue) =>
-    valueUpdater(updaterOrValue, rowSelection),
+  onRowSelectionChange: (updaterOrValue) => {
+    valueUpdater(updaterOrValue, rowSelection);
+    emit(
+      'selection',
+      table.getSelectedRowModel().rows.map((row) => row.original),
+    );
+  },
   onColumnOrderChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnOrder),
   state: {
@@ -193,7 +208,7 @@ const table = useVueTable({
 
 <template>
   <div
-    v-if="advancedMode"
+    v-if="showSearch"
     :class="
       cn(
         'mb-3 flex origin-top transform items-center transition-[transform]',
@@ -201,7 +216,7 @@ const table = useVueTable({
       )
     "
   >
-    <div class="relative w-full max-w-sm">
+    <div :class="`relative w-full ${advancedMode ? 'max-w-sm' : ''}`">
       <Input
         v-if="table.getColumn(searchableField)"
         class="w-full pl-10"
@@ -220,7 +235,7 @@ const table = useVueTable({
       </span>
     </div>
 
-    <TableColumnToggle :table="table" />
+    <TableColumnToggle v-if="advancedMode" :table="table" />
   </div>
   <div
     :class="
@@ -232,7 +247,7 @@ const table = useVueTable({
       )
     "
   >
-    <Table>
+    <Table :style="maxHeight ? { maxHeight } : {}">
       <TableHeader>
         <TableRow
           v-for="headerGroup in table.getHeaderGroups()"

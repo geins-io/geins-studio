@@ -48,5 +48,5 @@ export interface SelectorSelectionBase {
 export interface SelectorSelectionOption {
   id: SelectorSelectionOptionsId;
   label: string;
-  selection: keyof SelectorSelection;
+  group: keyof SelectorSelection;
 }

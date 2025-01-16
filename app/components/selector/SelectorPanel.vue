@@ -12,38 +12,42 @@ const props = withDefaults(
       {
         id: 'product',
         label: 'Products',
-        selection: 'ids',
+        group: 'ids',
       },
       {
         id: 'category',
         label: 'Categories',
-        selection: 'categories',
+        group: 'categories',
       },
       {
         id: 'brand',
         label: 'Brands',
-        selection: 'brands',
+        group: 'brands',
       },
       {
         id: 'price',
         label: 'Prices',
-        selection: 'price',
+        group: 'price',
       },
       {
         id: 'stock',
         label: 'Stock',
-        selection: 'stock',
+        group: 'stock',
       },
       {
         id: 'import',
         label: 'Import',
-        selection: 'ids',
+        group: 'ids',
       },
     ],
   },
 );
 
+const currentSelection = ref(props.selection);
 const currentOption = ref(props.options?.[0]?.id ?? '');
+const currentSelectionGroup = computed(
+  () => props.options.find((o) => o.id === currentOption.value)?.group || 'ids',
+);
 
 const selectOption = (id: SelectorSelectionOptionsId) => {
   currentOption.value = id;
@@ -51,13 +55,29 @@ const selectOption = (id: SelectorSelectionOptionsId) => {
 
 const { products } = useProductsStore();
 const entityName = 'product';
-const { getColumns } = useColumns();
+const { getColumns, orderAndFilterColumns } = useColumns();
 const columnOptions: ColumnOptions<Product> = {
   selectable: true,
-  columnTitles: { price: 'Default price' },
-  columnTypes: { price: 'currency', image: 'image' },
 };
-const columns = getColumns(products, columnOptions);
+let columns = getColumns(products, columnOptions);
+columns = orderAndFilterColumns(columns, [
+  'select',
+  'image',
+  'id',
+  'name',
+  'price',
+]);
+
+const onSelection = (selection: object[]) => {
+  currentSelection.value = {
+    ...currentSelection.value,
+    [currentSelectionGroup.value]: selection,
+  };
+  console.log(
+    '🚀 ~ onSelection ~ currentSelection.value:',
+    currentSelection.value,
+  );
+};
 </script>
 <template>
   <Sheet>
@@ -69,7 +89,7 @@ const columns = getColumns(products, columnOptions);
         <SheetTitle>Product selection</SheetTitle>
         <SheetDescription> Make your selection </SheetDescription>
       </SheetHeader>
-      <div class="grid h-full grid-cols-5 rounded-lg border">
+      <div class="grid h-full grid-cols-6 rounded-lg border">
         <div class="flex flex-col p-2">
           <ContentHeading>Select from</ContentHeading>
           <SidebarNav>
@@ -84,7 +104,7 @@ const columns = getColumns(products, columnOptions);
             </SidebarNavItem>
           </SidebarNav>
         </div>
-        <div class="col-span-3 flex flex-col border-x p-2">
+        <div class="col-span-4 flex flex-col border-x p-2">
           <ContentHeading>Select</ContentHeading>
           <!-- PRODUCT -->
           <div v-if="currentOption === 'product'">
@@ -92,7 +112,12 @@ const columns = getColumns(products, columnOptions);
               :columns="columns"
               :data="products"
               :entity-name="entityName"
+              :page-size="20"
+              :show-search="true"
+              :pinned-state="{}"
+              max-height="calc(100vh - 23rem)"
               mode="simple"
+              @selection="onSelection"
             />
           </div>
           <!-- END PRODUCT -->

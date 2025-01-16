@@ -22,10 +22,7 @@ export const useColumns = <T extends object>() => {
       h(
         'div',
         {
-          class: cn(
-            basicHeaderStyle,
-            'flex items-center justify-center shadow-only-right',
-          ),
+          class: cn(basicHeaderStyle, 'flex items-center justify-center px-1'),
         },
         h(Checkbox, {
           checked: table.getIsAllPageRowsSelected(),
@@ -38,10 +35,7 @@ export const useColumns = <T extends object>() => {
       h(
         'div',
         {
-          class: cn(
-            basicCellStyle,
-            'px-3 shadow-only-right flex items-center justify-center',
-          ),
+          class: cn(basicCellStyle, 'px-3 flex items-center justify-center'),
         },
         h(Checkbox, {
           checked: row.getIsSelected(),
@@ -52,11 +46,14 @@ export const useColumns = <T extends object>() => {
 
     enableSorting: false,
     enableHiding: false,
-    size: 44,
-    maxSize: 44,
+    size: 40,
+    maxSize: 40,
   };
 
-  const getColumns = (data: T[], options: Partial<ColumnOptions<T>> = {}) => {
+  const getColumns = (
+    data: T[],
+    options: Partial<ColumnOptions<T>> = {},
+  ): ColumnDef<T>[] => {
     const {
       selectable = false,
       sortable = true,
@@ -139,12 +136,12 @@ export const useColumns = <T extends object>() => {
             return h('img', {
               src: value,
               alt: title,
-              class: 'size-7 mx-auto',
+              class: 'size-7 mx-auto max-w-10 p-0.5',
             });
           };
           headerRenderer = () =>
-            h('div', { class: cn(basicHeaderStyle, 'px-2') }, title);
-          columnSize = { size: 68, minSize: 68, maxSize: 68 };
+            h('div', { class: cn(basicHeaderStyle, 'px-2') }, '');
+          columnSize = { size: 40, minSize: 40, maxSize: 40 };
           break;
         case 'link':
           cellRenderer = ({ row }: { row: Row<T> }) => {
@@ -219,7 +216,10 @@ export const useColumns = <T extends object>() => {
     return columns;
   };
 
-  const extendColumns = (columns: ColumnDef<T>[], column: ColumnDef<T>) => {
+  const extendColumns = (
+    columns: ColumnDef<T>[],
+    column: ColumnDef<T>,
+  ): ColumnDef<T>[] => {
     columns.push(column);
     return columns;
   };
@@ -228,7 +228,7 @@ export const useColumns = <T extends object>() => {
     columns: ColumnDef<T>[],
     key: string,
     order: number,
-  ) => {
+  ): ColumnDef<T>[] => {
     // Find the index of the object with the given key
     const index = columns.findIndex((obj) => obj.id === key);
 
@@ -249,27 +249,41 @@ export const useColumns = <T extends object>() => {
     return columns;
   };
 
-  const addActionsColumn = (columns: ColumnDef<T>[], props: object) => {
+  const addActionsColumn = (
+    columns: ColumnDef<T>[],
+    props: object,
+  ): ColumnDef<T>[] => {
     const actionsColumn: ColumnDef<T> = {
       id: 'actions',
       enableHiding: false,
       enableSorting: false,
-      size: 44,
-      maxSize: 44,
+      size: 40,
+      maxSize: 40,
       header: () =>
         h('div', {
-          class: cn(basicHeaderStyle, 'shadow-only-left'),
+          class: cn(basicHeaderStyle),
         }),
       cell: ({ row }) => {
         const rowData = row.original;
         return h(
           'div',
-          { class: cn(basicCellStyle, 'relative shadow-only-left px-2.5') },
+          { class: cn(basicCellStyle, 'relative px-2.5') },
           h(TableCellActions, { ...props, rowData }),
         );
       },
     };
     extendColumns(columns, actionsColumn);
+    return columns;
+  };
+
+  const orderAndFilterColumns = (
+    columns: ColumnDef<T>[],
+    keys: string[],
+  ): ColumnDef<T>[] => {
+    const newColumns = keys
+      .map((key) => columns.find((column) => column.id === key))
+      .filter((column): column is ColumnDef<T> => column !== undefined);
+    return newColumns.length ? newColumns : columns;
   };
 
   return {
@@ -277,5 +291,6 @@ export const useColumns = <T extends object>() => {
     extendColumns,
     setOrderForColumn,
     addActionsColumn,
+    orderAndFilterColumns,
   };
 };
