@@ -7,7 +7,9 @@ export type ColumnType =
   | 'date'
   | 'number'
   | 'image'
-  | 'link';
+  | 'link'
+  | 'select'
+  | 'actions';
 
 export type ColumnTypes<T> = Partial<Record<keyof T, ColumnType>>;
 
@@ -23,7 +25,7 @@ export interface ColumnOptions<T> {
 declare module '@tanstack/vue-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
-    title: string;
+    title?: string;
     type: ColumnType;
   }
 }

@@ -6,6 +6,7 @@ import {
   TableHeaderSort,
   TableCellActions,
   TableCellLongText,
+  LucideImage,
 } from '#components';
 import type { ColumnOptions, ColumnType, ColumnTypes } from '#shared/types';
 
@@ -48,6 +49,7 @@ export const useColumns = <T extends object>() => {
     enableHiding: false,
     size: 40,
     maxSize: 40,
+    meta: { type: 'select' },
   };
 
   const getColumns = (
@@ -60,7 +62,7 @@ export const useColumns = <T extends object>() => {
       columnTypes = {} as ColumnTypes<T>,
       maxTextLength = 60,
     } = options;
-    const columns: ColumnDef<T>[] = [];
+    let columns: ColumnDef<T>[] = [];
 
     const keys = data && data.length ? Object.keys(data[0] as object) : [];
     if (keys.length === 0) {
@@ -133,14 +135,23 @@ export const useColumns = <T extends object>() => {
         case 'image':
           cellRenderer = ({ row }: { row: Row<T> }) => {
             const value = row.getValue(key);
-            return h('img', {
-              src: value,
-              alt: title,
-              class: 'size-7 mx-auto max-w-10 p-0.5',
-            });
+            return h(
+              'span',
+              { class: 'px-1.5 block' },
+              h('img', {
+                src: value,
+                alt: title,
+                class: 'size-7 mx-auto max-w-10 p-0.5',
+              }),
+            );
           };
+
           headerRenderer = () =>
-            h('div', { class: cn(basicHeaderStyle, 'px-2') }, '');
+            h(
+              'div',
+              { class: cn(basicHeaderStyle, 'px-2') },
+              h(LucideImage, { class: 'size-5 text-muted mx-auto' }),
+            );
           columnSize = { size: 40, minSize: 40, maxSize: 40 };
           break;
         case 'link':
@@ -213,6 +224,21 @@ export const useColumns = <T extends object>() => {
       });
     });
 
+    columns = columns.sort((a, b) => {
+      const getOrder = (col: ColumnDef<T>) => {
+        const type = col.meta?.type || '';
+        const title = col.meta?.title?.toLowerCase() || '';
+
+        if (type === 'select') return 0;
+        if (title.includes('id')) return 1;
+        if (type === 'image') return 2;
+        if (title.includes('name') || title.includes('title')) return 3;
+
+        return 4;
+      };
+      return getOrder(a) - getOrder(b);
+    });
+
     return columns;
   };
 
@@ -271,6 +297,7 @@ export const useColumns = <T extends object>() => {
           h(TableCellActions, { ...props, rowData }),
         );
       },
+      meta: { type: 'actions' },
     };
     extendColumns(columns, actionsColumn);
     return columns;

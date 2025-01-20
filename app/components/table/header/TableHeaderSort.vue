@@ -25,7 +25,9 @@ const handleClick = () => {
     v-if="column.getCanSort()"
     :variant="'ghost'"
     :size="'sm'"
-    :class="cn(className, `${column.getIsSorted() ? 'border-border' : ''}`)"
+    :class="
+      cn(className, `${column.getIsSorted() ? 'border-border' : ''}`, 'pr-2')
+    "
     @click="handleClick"
   >
     {{ title }}
