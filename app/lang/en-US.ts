@@ -14,6 +14,8 @@ export default defineI18nLocale(async () => {
     edit_entity: 'Edit {entityName}',
     save_entity: 'Save {entityName}',
     error_loading_entity: "Couldn't load {entityName}",
+    quick_add_entity: 'Quick add {entityName}..',
+    no_entities_found: 'No {entityName} found.',
     rows_per_page: '@.capitalize:{entityName} per page',
     rows_found: '{total} {entityName} found.',
     rows_selected: '{selected} of {total} {entityName} selected.',

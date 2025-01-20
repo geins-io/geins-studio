@@ -43,8 +43,7 @@ if (!data?.value || error.value) {
 loading.value = false;
 
 // GET AND SET COLUMNS
-const { getColumns, addActionsColumn, setOrderForColumn } =
-  useColumns<Entity>();
+const { getColumns, addActionsColumn } = useColumns<Entity>();
 const columns = getColumns(dataList.value, columnOptions);
 
 // ADD AND ORDER COLUMNS
@@ -57,8 +56,6 @@ addActionsColumn(columns, {
   onDelete: (product: Entity) => console.log('Delete', product.id),
   onUnpublish: (product: Entity) => console.log('Unpublish', product.id),
 });
-
-setOrderForColumn(columns, 'image', 1);
 </script>
 
 <template>

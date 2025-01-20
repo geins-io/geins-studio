@@ -1,19 +1,23 @@
-<script setup lang="ts" generic="T">
+<script setup lang="ts">
 import { useToast } from '@/components/ui/toast/use-toast';
 
-const _props = withDefaults(
+const props = withDefaults(
   defineProps<{
-    mode: 'simple' | 'advanced';
+    entities: Entity[];
+    entityName?: string;
+    mode?: 'simple' | 'advanced';
   }>(),
   {
-    mode: 'simple',
+    entityName: 'product',
+    mode: 'advanced',
   },
 );
 
+const entities = ref(props.entities);
 const { defaultCurrency } = useAccountStore();
 const { toast } = useToast();
 
-const dummyData: SelectorSelectionBase = {
+/* const dummyData: SelectorSelectionBase = {
   include: [
     {
       condition: 'and',
@@ -60,6 +64,24 @@ const dummyData: SelectorSelectionBase = {
       ],
     },
   ],
+}; */
+
+const dummyData: SelectorSelectionBase = {
+  include: [
+    {
+      condition: 'and',
+      selections: [
+        {
+          condition: 'and',
+          categories: [],
+          brands: [],
+          price: [],
+          stock: [],
+          ids: [],
+        },
+      ],
+    },
+  ],
 };
 
 const fallbackSelection: SelectorSelection = {
@@ -92,16 +114,14 @@ const removeFromManuallySelected = (id: number) => {
   );
 };
 
-const { products } = useProductsStore();
-const entityName = 'product';
 const { getColumns } = useColumns();
-const columns = getColumns(products);
+const columns = getColumns(entities.value);
 
-const selectedProducts = computed(() => {
-  const selected = products.filter((product) =>
-    includeSelection.value?.ids?.includes(product.id),
+const selectedEntities = computed(() => {
+  const selected = entities.value.filter((entity) =>
+    includeSelection.value?.ids?.includes(entity.id),
   );
-  return selected.length ? selected : products;
+  return selected.length ? selected : entities.value;
 });
 
 const shouldExclude = ref(false);
@@ -111,7 +131,8 @@ const shouldExclude = ref(false);
     <div class="mb-6 flex items-start justify-between">
       <slot name="header">
         <SelectorHeader
-          :products="products"
+          :entities="entities"
+          :entity-name="entityName"
           :selection="includeSelection"
           @add="addToManuallySelected($event)"
           @remove="removeFromManuallySelected($event)"
@@ -144,9 +165,9 @@ const shouldExclude = ref(false);
       <slot name="list">
         <TableView
           :columns="columns"
-          :data="selectedProducts"
+          :data="selectedEntities"
           :entity-name="entityName"
-          mode="simple"
+          :mode="mode"
         />
       </slot>
     </div>

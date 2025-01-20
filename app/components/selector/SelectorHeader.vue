@@ -4,7 +4,8 @@ const _props = withDefaults(
     title?: string;
     description?: string;
     selection: SelectorSelection;
-    products: Product[];
+    entities: Entity[];
+    entityName: string;
   }>(),
   {
     title: 'Product selection',
@@ -20,9 +21,10 @@ const _emits = defineEmits(['add', 'remove']);
   </div>
   <div class="flex w-2/5 gap-6">
     <SelectorQuickAdd
-      v-if="products.length"
-      :data-set="products"
+      v-if="entities.length"
+      :entities="entities"
       :selection="selection"
+      :entity-name="entityName"
       @add="$emit('add', $event)"
       @remove="$emit('remove', $event)"
     />

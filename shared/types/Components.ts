@@ -50,3 +50,10 @@ export interface SelectorSelectionOption {
   label: string;
   group: keyof SelectorSelection;
 }
+
+export interface Entity {
+  id: number;
+  name?: string;
+  title?: string;
+  image?: string;
+}

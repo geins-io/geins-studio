@@ -1,8 +1,10 @@
 <script setup lang="ts">
 const props = defineProps<{
-  dataSet: Product[];
+  entities: Entity[];
   selection: SelectorSelection;
+  entityName: string;
 }>();
+
 const focused = ref(false);
 const emit = defineEmits<{
   (e: 'add' | 'remove', payload: number): void;
@@ -23,11 +25,14 @@ const onBlur = (event: FocusEvent) => {
 const isSelected = (id: number) => {
   return props.selection.ids?.includes(id);
 };
+
+const { t } = useI18n();
+const entityNamePlural = t(props.entityName, 2);
 </script>
 <template>
   <Command class="relative overflow-visible">
     <CommandInput
-      placeholder="Quick add product.."
+      :placeholder="$t('quick_add_entity', { entityName: entityNamePlural })"
       @focus="focused = true"
       @blur="onBlur"
     />
@@ -39,31 +44,34 @@ const isSelected = (id: number) => {
         )
       "
     >
-      <CommandEmpty>No products found.</CommandEmpty>
+      <CommandEmpty>{{
+        $t('no_entities_found', { entityName: entityNamePlural })
+      }}</CommandEmpty>
       <CommandGroup
-        heading="Products"
-        :class="`${dataSet.length ? '!block' : ''}`"
+        :heading="$t('entity_caps', { entityName }, 2)"
+        :class="`${entities.length ? '!block' : ''}`"
       >
         <CommandItem
-          v-for="product in dataSet"
-          :key="product.id"
-          :value="product.id + ' ' + product.name"
+          v-for="entity in entities"
+          :key="entity.id"
+          :value="entity.id + ' ' + entity.name"
           class="pr-0 data-[highlighted]:bg-card"
         >
           <div class="flex w-full items-center gap-3 text-xs">
             <img
-              :src="product.image"
-              alt="Product image"
+              v-if="entity.image"
+              :src="entity.image"
+              alt="entity image"
               class="size-6 shrink-0 rounded-lg"
             />
-            <strong>{{ product.id }}</strong>
-            <span class="truncate">{{ product.name }}</span>
+            <strong>{{ entity.id }}</strong>
+            <span class="truncate">{{ entity.name || entity.title }}</span>
             <Button
-              v-if="!isSelected(product.id)"
+              v-if="!isSelected(entity.id)"
               class="ml-auto shrink-0 p-1"
               variant="ghost"
               size="icon"
-              @click="addItem(product.id)"
+              @click="addItem(entity.id)"
             >
               <LucideCirclePlus class="size-4" />
             </Button>
@@ -72,7 +80,7 @@ const isSelected = (id: number) => {
               class="ml-auto shrink-0 p-1"
               variant="ghost"
               size="icon"
-              @click="removeItem(product.id)"
+              @click="removeItem(entity.id)"
             >
               <LucideCircleCheck class="size-4 text-positive" />
             </Button>

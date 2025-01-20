@@ -23,13 +23,7 @@ const title = computed(() =>
 );
 const _currentStep = ref(1);
 
-const selection = ref<SelectorSelection>({
-  categories: [],
-  brands: [],
-  price: [],
-  ids: [],
-  condition: 'or',
-});
+const { products } = useProductsStore();
 </script>
 
 <template>
@@ -64,7 +58,7 @@ const selection = ref<SelectorSelection>({
     </template>
     <ContentEditMain v-if="currentTab === 0">
       <ContentCard>
-        <Selector mode="simple" />
+        <Selector mode="simple" :entities="products" />
       </ContentCard>
       <template #sidebar>
         <Card class="p-5">Details</Card>

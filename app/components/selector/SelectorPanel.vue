@@ -115,7 +115,7 @@ const onSelection = (selection: object[]) => {
               :page-size="20"
               :show-search="true"
               :pinned-state="{}"
-              max-height="calc(100vh - 23rem)"
+              max-height="calc(100vh - 26rem)"
               mode="simple"
               @selection="onSelection"
             />
