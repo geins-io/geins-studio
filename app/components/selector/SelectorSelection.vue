@@ -3,18 +3,15 @@ const props = withDefaults(
   defineProps<{
     selection: SelectorSelection;
     currency?: string;
-    emptyText?: string;
-    emptyDesc?: string;
-    footerText?: string;
     type: SelectorSelectionType;
+    entityName: string;
+    mode: SelectorMode;
+    entities: Entity[];
   }>(),
-  {
-    emptyText: 'All products',
-    emptyDesc: 'No conditions set',
-    footerText: 'Include products that match:',
-    type: 'include',
-  },
+  {},
 );
+
+const { t } = useI18n();
 
 const currentCurrency = ref(props.currency);
 const selection = ref(props.selection);
@@ -37,24 +34,20 @@ const activeConditionTypes = computed(() => {
   return active;
 });
 
-const brandLinkingWord = computed(() =>
-  props.selection.condition === 'or' ? 'AND ALL PRODUCTS FROM' : 'FROM',
-);
+const getLinkingWord = (option: 'brand' | 'price' | 'stock') => {
+  const condition = selection.value.condition;
+  return t(`selector_${option}_linking_word_${condition}`);
+};
 
-const priceLinkingWord = computed(() =>
-  props.selection.condition === 'or'
-    ? 'AND ALL PRODUCTS THAT COSTS'
-    : 'THAT COSTS',
-);
-
-const stockLinkingWord = computed(() =>
-  props.selection.condition === 'or'
-    ? 'AND ALL PRODUCTS WHERE STOCK IS'
-    : 'WHERE STOCK IS',
-);
-
-const manuallySelectedText = computed(
-  () => `Manually selected products (${props.selection.ids?.length ?? 0})`,
+const manuallySelectedText = computed(() =>
+  t(
+    'manually_selected_entitites',
+    {
+      entityName: props.entityName,
+      count: props.selection.ids?.length ?? 0,
+    },
+    props.selection.ids?.length ?? 0,
+  ),
 );
 
 const showAllProductsTag = computed(
@@ -77,7 +70,7 @@ function getCurrencyValue(field: CurrencyField, displayCurrency = true) {
   const currency = displayCurrency ? ' ' + currCurr : '';
   return field && field[currCurr]
     ? formatCurrencyNumber(field[currCurr]) + currency
-    : 'Not set';
+    : t('not_set');
 }
 
 function formatCurrencyNumber(value: number | string) {
@@ -92,9 +85,9 @@ function formatCurrencyNumber(value: number | string) {
 }
 
 const userUnderstandableOperators = {
-  lt: 'Less than',
-  gt: 'More than',
-  eq: 'Exactly',
+  lt: t('less_than'),
+  gt: t('more_than'),
+  eq: t('exactly'),
 };
 
 function getUnderstandableOperator(operator: CompareCondition) {
@@ -122,11 +115,17 @@ watch(
 <template>
   <div>
     <ContentHeading>
-      {{ type === 'include' ? 'Select' : 'Exclude' }}
+      {{ type === 'include' ? $t('select') : $t('exclude') }}
     </ContentHeading>
     <div class="relative rounded-lg border px-3 py-4">
-      <SelectorPanel :selection="selection" :type="type">
-        <Button class="absolute right-3 top-3.5">Browse</Button>
+      <SelectorPanel
+        :selection="selection"
+        :type="type"
+        :mode="mode"
+        :entity-name="entityName"
+        :entities="entities"
+      >
+        <Button class="absolute right-3 top-3.5">{{ $t('browse') }}</Button>
       </SelectorPanel>
       <div class="flex w-[calc(100%-5.5rem)] flex-col gap-3">
         <!-- All / No products tag -->
@@ -134,7 +133,7 @@ watch(
           v-if="showAllProductsTag && selection.condition === 'and'"
         >
           <SelectorTag
-            :label="`${type === 'include' ? 'All products' : 'No products'}`"
+            :label="`${type === 'include' ? $t('all_entities', { entityName }, 2) : $t('no_entities', { entityName }, 2)}`"
             :removable="false"
           />
         </SelectorTags>
@@ -144,7 +143,7 @@ watch(
           <SelectorTagLink
             v-for="(item, index) in selection.categories"
             :key="index"
-            linking-word="OR"
+            :linking-word="$t('or')"
             :is-last="index === selection.categories.length - 1"
           >
             <SelectorTag :label="item.name" @remove="removeCategory(index)" />
@@ -153,13 +152,13 @@ watch(
 
         <!-- Brands -->
         <SelectorLinkingWord v-if="selection.brands?.length">
-          {{ brandLinkingWord }}
+          {{ getLinkingWord('brand') }}
         </SelectorLinkingWord>
         <SelectorTags v-if="selection.brands?.length">
           <SelectorTagLink
             v-for="(item, index) in selection.brands"
             :key="index"
-            linking-word="OR"
+            :linking-word="$t('or')"
             :is-last="index === selection.brands.length - 1"
           >
             <SelectorTag
@@ -171,13 +170,13 @@ watch(
 
         <!-- Price -->
         <SelectorLinkingWord v-if="selection.price?.length">
-          {{ priceLinkingWord }}
+          {{ getLinkingWord('price') }}
         </SelectorLinkingWord>
         <SelectorTags v-if="selection.price?.length">
           <SelectorTagLink
             v-for="(price, index) in selection.price"
             :key="index"
-            linking-word="AND"
+            :linking-word="$t('and')"
             :is-last="index === selection.price.length - 1"
           >
             <SelectorTag
@@ -189,13 +188,13 @@ watch(
 
         <!-- Stock -->
         <SelectorLinkingWord v-if="selection.stock?.length">
-          {{ stockLinkingWord }}
+          {{ getLinkingWord('stock') }}
         </SelectorLinkingWord>
         <SelectorTags v-if="selection.stock?.length">
           <SelectorTagLink
             v-for="(stock, index) in selection.stock"
             :key="index"
-            linking-word="AND"
+            :linking-word="$t('and')"
             :is-last="index === selection.stock.length - 1"
           >
             <SelectorTag
@@ -209,7 +208,7 @@ watch(
         <SelectorLinkingWord
           v-if="selection.ids?.length && activeConditionTypes > 0"
         >
-          AND ALSO
+          {{ $t('selector_ids_linking_word') }}
         </SelectorLinkingWord>
         <SelectorTags v-if="selection.ids?.length">
           <SelectorTag
@@ -223,7 +222,9 @@ watch(
         v-if="activeConditionTypes > 1"
         class="mt-4 flex items-center gap-5 border-t pt-4 text-sm"
       >
-        <div>{{ footerText }}</div>
+        <div>
+          {{ $t('select_entities_that_match', { entityName }, 2) }}
+        </div>
         <RadioGroup
           v-model="selection.condition"
           default-value="and"
@@ -231,11 +232,11 @@ watch(
         >
           <div class="flex items-center space-x-2">
             <RadioGroupItem id="and" value="and" />
-            <Label for="and">All conditions above</Label>
+            <Label for="and">{{ $t('selector_condition_choice_and') }}</Label>
           </div>
           <div class="flex items-center space-x-2">
             <RadioGroupItem id="or" value="or" />
-            <Label for="or">Any condition above</Label>
+            <Label for="or">{{ $t('selector_condition_choice_or') }}</Label>
           </div>
         </RadioGroup>
       </div>

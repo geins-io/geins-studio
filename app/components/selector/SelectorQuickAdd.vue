@@ -25,14 +25,11 @@ const onBlur = (event: FocusEvent) => {
 const isSelected = (id: number) => {
   return props.selection.ids?.includes(id);
 };
-
-const { t } = useI18n();
-const entityNamePlural = t(props.entityName, 2);
 </script>
 <template>
   <Command class="relative overflow-visible">
     <CommandInput
-      :placeholder="$t('quick_add_entity', { entityName: entityNamePlural })"
+      :placeholder="$t('quick_add_entity', { entityName }, 2)"
       @focus="focused = true"
       @blur="onBlur"
     />
@@ -45,7 +42,7 @@ const entityNamePlural = t(props.entityName, 2);
       "
     >
       <CommandEmpty>{{
-        $t('no_entities_found', { entityName: entityNamePlural })
+        $t('no_entities_found', { entityName }, 2)
       }}</CommandEmpty>
       <CommandGroup
         :heading="$t('entity_caps', { entityName }, 2)"

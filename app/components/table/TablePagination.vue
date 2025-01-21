@@ -14,7 +14,6 @@ interface DataTablePaginationProps {
 const props = defineProps<DataTablePaginationProps>();
 
 const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
-const entity = computed(() => t(props.entityName, totalRows.value));
 </script>
 
 <template>
@@ -24,15 +23,19 @@ const entity = computed(() => t(props.entityName, totalRows.value));
     <div class="flex-1">
       <span v-if="rowsSelectable">
         {{
-          t('rows_selected', {
-            selected: table.getFilteredSelectedRowModel().rows.length,
-            total: totalRows,
-            entityName: entity,
-          })
+          t(
+            'rows_selected',
+            {
+              selected: table.getFilteredSelectedRowModel().rows.length,
+              total: totalRows,
+              entityName,
+            },
+            totalRows,
+          )
         }}
       </span>
       <span v-else>
-        {{ t('rows_found', { total: totalRows, entityName: entity }) }}
+        {{ t('rows_found', { total: totalRows, entityName }, totalRows) }}
       </span>
     </div>
     <div class="flex items-center space-x-6 lg:space-x-8">

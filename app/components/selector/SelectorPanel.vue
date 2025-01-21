@@ -2,51 +2,69 @@
 const props = withDefaults(
   defineProps<{
     selection: SelectorSelection;
+    mode: SelectorMode;
     currency?: string;
     type?: SelectorSelectionType;
     options?: SelectorSelectionOption[];
+    entityName: string;
+    entities: Entity[];
   }>(),
   {
     type: 'include',
     options: () => [
       {
-        id: 'product',
-        label: 'Products',
+        id: 'entity',
         group: 'ids',
+        type: 'multiple',
       },
       {
         id: 'category',
-        label: 'Categories',
         group: 'categories',
+        type: 'multiple',
       },
       {
         id: 'brand',
-        label: 'Brands',
         group: 'brands',
+        type: 'multiple',
       },
       {
         id: 'price',
-        label: 'Prices',
         group: 'price',
+        type: 'single',
       },
       {
         id: 'stock',
-        label: 'Stock',
         group: 'stock',
+        type: 'single',
       },
       {
         id: 'import',
-        label: 'Import',
         group: 'ids',
+        type: 'single',
       },
     ],
   },
 );
+const { t } = useI18n();
+
+// Set labels from lang keys
+const options = props.options.map((o) => {
+  if (o.id === 'entity') {
+    if (props.entityName === 'product') {
+      o.id = 'product';
+    }
+    o.label = t('entity_caps', { entityName: props.entityName }, 2);
+  } else {
+    const pluralization = o.type === 'multiple' ? 2 : 1;
+    o.label = t(`selector_option_${o.id}`, pluralization);
+  }
+  return o;
+});
 
 const currentSelection = ref(props.selection);
-const currentOption = ref(props.options?.[0]?.id ?? '');
+const currentOption = ref(options?.[0]?.id ?? '');
 const currentSelectionGroup = computed(
-  () => props.options.find((o) => o.id === currentOption.value)?.group || 'ids',
+  () => options.find((o) => o.id === currentOption.value)?.group || 'ids',
 );
 
 const selectOption = (id: SelectorSelectionOptionsId) => {
@@ -54,7 +72,6 @@ const selectOption = (id: SelectorSelectionOptionsId) => {
 };
 
 const { products } = useProductsStore();
-const entityName = 'product';
 const { getColumns, orderAndFilterColumns } = useColumns();
 const columnOptions: ColumnOptions<Product> = {
   selectable: true,
@@ -62,8 +79,8 @@ const columnOptions: ColumnOptions<Product> = {
 let columns = getColumns(products, columnOptions);
 columns = orderAndFilterColumns(columns, [
   'select',
-  'image',
   'id',
+  'image',
   'name',
   'price',
 ]);

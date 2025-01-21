@@ -3,14 +3,15 @@
 export type SelectorCondition = 'and' | 'or';
 export type CompareCondition = 'lt' | 'gt' | 'eq';
 export type SelectorSelectionType = 'include' | 'exclude';
+export type SelectorMode = 'simple' | 'advanced';
 export type SelectorSelectionOptionsId =
+  | 'entity'
   | 'product'
   | 'category'
   | 'brand'
   | 'price'
   | 'stock'
-  | 'import'
-  | 'entity';
+  | 'import';
 
 export interface CurrencyField {
   [currency: string]: number;
@@ -47,8 +48,9 @@ export interface SelectorSelectionBase {
 
 export interface SelectorSelectionOption {
   id: SelectorSelectionOptionsId;
-  label: string;
   group: keyof SelectorSelection;
+  type: 'single' | 'multiple';
+  label?: string;
 }
 
 export interface Entity {

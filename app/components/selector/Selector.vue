@@ -5,7 +5,7 @@ const props = withDefaults(
   defineProps<{
     entities: Entity[];
     entityName?: string;
-    mode?: 'simple' | 'advanced';
+    mode?: SelectorMode;
   }>(),
   {
     entityName: 'product',
@@ -16,8 +16,9 @@ const props = withDefaults(
 const entities = ref(props.entities);
 const { defaultCurrency } = useAccountStore();
 const { toast } = useToast();
+const { t } = useI18n();
 
-/* const dummyData: SelectorSelectionBase = {
+const dummyData: SelectorSelectionBase = {
   include: [
     {
       condition: 'and',
@@ -64,9 +65,9 @@ const { toast } = useToast();
       ],
     },
   ],
-}; */
+};
 
-const dummyData: SelectorSelectionBase = {
+/* const dummyData: SelectorSelectionBase = {
   include: [
     {
       condition: 'and',
@@ -82,7 +83,7 @@ const dummyData: SelectorSelectionBase = {
       ],
     },
   ],
-};
+}; */
 
 const fallbackSelection: SelectorSelection = {
   condition: 'and',
@@ -103,7 +104,10 @@ const excludeSelection = ref<SelectorSelection>(
 const addToManuallySelected = (id: number) => {
   includeSelection.value?.ids?.push(id);
   toast({
-    title: `Product with id ${id} added to selection`,
+    title: t('entity_with_id_added_to_selection', {
+      entityName: props.entityName,
+      id,
+    }),
     variant: 'positive',
   });
 };
@@ -134,6 +138,8 @@ const shouldExclude = ref(false);
           :entities="entities"
           :entity-name="entityName"
           :selection="includeSelection"
+          :title="t('entity_selection', { entityName })"
+          :description="t('selector_include_description')"
           @add="addToManuallySelected($event)"
           @remove="removeFromManuallySelected($event)"
         />
@@ -144,19 +150,25 @@ const shouldExclude = ref(false);
         <slot name="selection">
           <SelectorSelection
             type="include"
+            :mode="mode"
             :selection="includeSelection"
             :currency="defaultCurrency"
+            :entity-name="entityName"
+            :entities="entities"
           />
           <ContentSwitch
-            label="Exclude products from selection"
-            description="Exclude a brand, category, product etc. from your selection"
+            :label="$t('exclude_entities_from_selection', { entityName }, 2)"
+            :description="$t('selector_exclude_description')"
             :checked="shouldExclude"
             @update:checked="shouldExclude = $event"
           >
             <SelectorSelection
               type="exclude"
+              :mode="mode"
               :selection="excludeSelection"
               :currency="defaultCurrency"
+              :entity-name="entityName"
+              :entities="entities"
             />
           </ContentSwitch>
         </slot>

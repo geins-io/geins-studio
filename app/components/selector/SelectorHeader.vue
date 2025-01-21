@@ -1,16 +1,13 @@
 <script setup lang="ts">
 const _props = withDefaults(
   defineProps<{
-    title?: string;
-    description?: string;
+    title: string;
+    description: string;
     selection: SelectorSelection;
     entities: Entity[];
     entityName: string;
   }>(),
-  {
-    title: 'Product selection',
-    description: 'Quick add, or click browse to make a specific selection',
-  },
+  {},
 );
 const _emits = defineEmits(['add', 'remove']);
 </script>
