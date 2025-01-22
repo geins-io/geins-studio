@@ -25,7 +25,7 @@ const columnOptions: ColumnOptions<Entity> = {
   selectable: true,
   editUrl: editEntityUrl,
   columnTitles: { price: 'Default price' },
-  columnTypes: { price: 'currency', image: 'image', name: 'link' },
+  columnTypes: { name: 'link' },
 };
 
 // FETCH DATA FOR ENTITY

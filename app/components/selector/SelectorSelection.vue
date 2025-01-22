@@ -1,7 +1,7 @@
 <script setup lang="ts">
+// PROPS
 const props = withDefaults(
   defineProps<{
-    selection: SelectorSelection;
     currency?: string;
     type: SelectorSelectionType;
     entityName: string;
@@ -11,18 +11,17 @@ const props = withDefaults(
   {},
 );
 
+// TWO-WAY BINDING FOR SELECTION VIA V-MODEL
+const selection = defineModel<SelectorSelection>('selection', {
+  required: true,
+});
+
+// GLOBALS
 const { t } = useI18n();
-
 const currentCurrency = ref(props.currency);
-const selection = ref(props.selection);
-
-const removeCategory = (index: number) => {
-  selection.value.categories?.splice(index, 1);
-};
-
 const activeConditionTypes = computed(() => {
   let active = 0;
-  Object.keys(props.selection).forEach((key) => {
+  Object.keys(selection.value).forEach((key) => {
     if (
       key !== 'condition' &&
       key !== 'ids' &&
@@ -34,37 +33,44 @@ const activeConditionTypes = computed(() => {
   return active;
 });
 
-const getLinkingWord = (option: 'brand' | 'price' | 'stock') => {
-  const condition = selection.value.condition;
-  return t(`selector_${option}_linking_word_${condition}`);
-};
+// WATCHERS TO KEEP GLOBALS IN SYNC
+watch(activeConditionTypes, (newVal) => {
+  if (newVal <= 1) {
+    selection.value.condition = 'and';
+  }
+});
+watch(
+  () => props.currency,
+  (newVal) => {
+    currentCurrency.value = newVal;
+  },
+);
 
 const manuallySelectedText = computed(() =>
   t(
     'manually_selected_entitites',
     {
       entityName: props.entityName,
-      count: props.selection.ids?.length ?? 0,
+      count: selection.value.ids?.length ?? 0,
     },
-    props.selection.ids?.length ?? 0,
+    selection.value.ids?.length ?? 0,
   ),
 );
-
 const showAllProductsTag = computed(
   () =>
-    (props.selection.categories?.length === 0 &&
-      (props.selection.brands?.length ||
-        props.selection.price?.length ||
-        props.selection.stock?.length)) ||
+    (selection.value.categories?.length === 0 &&
+      (selection.value.brands?.length ||
+        selection.value.price?.length ||
+        selection.value.stock?.length)) ||
     allEmpty.value,
 );
-
 const allEmpty = computed(
   () =>
     activeConditionTypes.value === 0 &&
-    (!props.selection.ids || !props.selection.ids.length),
+    (!selection.value.ids || !selection.value.ids.length),
 );
 
+// TODO: Move this to utils/composable? -----
 function getCurrencyValue(field: CurrencyField, displayCurrency = true) {
   const currCurr = currentCurrency.value || 'SEK';
   const currency = displayCurrency ? ' ' + currCurr : '';
@@ -72,7 +78,6 @@ function getCurrencyValue(field: CurrencyField, displayCurrency = true) {
     ? formatCurrencyNumber(field[currCurr]) + currency
     : t('not_set');
 }
-
 function formatCurrencyNumber(value: number | string) {
   if (value === null || value === '') return '';
   const options =
@@ -83,33 +88,28 @@ function formatCurrencyNumber(value: number | string) {
     Number(value),
   );
 }
-
 const userUnderstandableOperators = {
   lt: t('less_than'),
   gt: t('more_than'),
   eq: t('exactly'),
 };
-
 function getUnderstandableOperator(operator: CompareCondition) {
   return userUnderstandableOperators[operator];
 }
+// ------------------------ //
 
-function getPriceTagText(price: PriceSelection) {
+const getPriceTagText = (price: PriceSelection) => {
   return `${getUnderstandableOperator(price.condition)} ${getCurrencyValue(price.values)}`;
-}
+};
 
-watch(activeConditionTypes, (newVal) => {
-  if (newVal <= 1) {
-    selection.value.condition = 'and';
-  }
-});
+const getLinkingWord = (option: 'brand' | 'price' | 'stock') => {
+  const condition = selection.value.condition;
+  return t(`selector_${option}_linking_word_${condition}`);
+};
 
-watch(
-  () => props.currency,
-  (newVal) => {
-    currentCurrency.value = newVal;
-  },
-);
+const updateSelection = (updatedSelection: SelectorSelection) => {
+  selection.value = updatedSelection;
+};
 </script>
 
 <template>
@@ -124,6 +124,7 @@ watch(
         :mode="mode"
         :entity-name="entityName"
         :entities="entities"
+        @save="updateSelection"
       >
         <Button class="absolute right-3 top-3.5">{{ $t('browse') }}</Button>
       </SelectorPanel>
@@ -146,7 +147,10 @@ watch(
             :linking-word="$t('or')"
             :is-last="index === selection.categories.length - 1"
           >
-            <SelectorTag :label="item.name" @remove="removeCategory(index)" />
+            <SelectorTag
+              :label="item.name"
+              @remove="selection.categories?.splice(index, 1)"
+            />
           </SelectorTagLink>
         </SelectorTags>
 

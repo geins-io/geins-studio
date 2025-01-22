@@ -26,6 +26,7 @@ export default defineI18nLocale(async () => {
     rows_found: '{total} @:{entityName} found.',
     rows_selected: '{selected} of {total} @:{entityName} selected.',
     select_entities_that_match: 'Select @:{entityName} that match:',
+    selected_entities: 'Selected @:{entityName}',
     manually_selected_entitites: 'Manually selected @:{entityName} ({count})',
     exclude_entities_from_selection: 'Exclude @:{entityName} from selection',
     entity_selection: '@.capitalize:{entityName} selection',
@@ -38,6 +39,10 @@ export default defineI18nLocale(async () => {
     or: 'or',
     and: 'and',
     select: 'Select',
+    selected: 'Selected',
+    add_selected: 'Add selected',
+    select_from: 'Select from',
+    cancel: 'Cancel',
     exclude: 'Exclude',
     copy: 'Copy',
     new: 'New',
@@ -69,5 +74,6 @@ export default defineI18nLocale(async () => {
     selector_option_price: '@.capitalize:price',
     selector_option_stock: '@.capitalize:stock',
     selector_option_import: '@.capitalize:import',
+    selector_panel_description: 'Make your selection',
   };
 });

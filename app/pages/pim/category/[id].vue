@@ -61,7 +61,6 @@ const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
     </template>
     <ContentEditMain v-if="currentTab === 0">
       <ContentCard>
-        {{ selection }}
         <Selector
           v-model:selection="selection"
           mode="simple"

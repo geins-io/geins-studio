@@ -7,7 +7,7 @@ import {
   LucideCircleDollarSign,
   LucidePackage,
   LucideImport,
-  LucideCircleEllipsis,
+  LucideCopyCheck,
 } from '#components';
 
 const props = withDefaults(
@@ -35,7 +35,7 @@ const icon = computed(() => {
     case 'import':
       return LucideImport;
     default:
-      return LucideCircleEllipsis;
+      return LucideCopyCheck;
   }
 });
 </script>

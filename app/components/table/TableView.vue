@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="TData extends object, TValue">
+<script setup lang="ts" generic="TData extends { id?: number }, TValue">
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -29,6 +29,7 @@ const props = withDefaults(
     maxHeight?: string;
     showSearch?: boolean;
     pinnedState?: ColumnPinningState;
+    selectedIds?: number[];
   }>(),
   {
     entityName: 'row',
@@ -57,20 +58,38 @@ const emit = defineEmits({
  */
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
-const rowSelection = ref({});
+
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
 const tableMaximized = useState<boolean>('table-maximized', () => false);
-const rowsSelectable = computed(() =>
-  props.columns.some((column) => column.id === 'select'),
-);
-
 const advancedMode = computed(() => props.mode === 'advanced');
 const simpleMode = computed(() => props.mode === 'simple');
 
 onUnmounted(() => {
   tableMaximized.value = false;
 });
+
+/**
+ * Setup row selection
+ **/
+const rowsSelectable = computed(() =>
+  props.columns.some((column) => column.id === 'select'),
+);
+const rowSelection = ref(
+  props.selectedIds?.reduce((acc, id) => ({ ...acc, [id]: true }), {}) || {},
+);
+watch(
+  () => props.selectedIds,
+  (newSelectedIds) => {
+    if (!newSelectedIds) {
+      return;
+    }
+    rowSelection.value = newSelectedIds.reduce(
+      (acc, id) => ({ ...acc, [id]: true }),
+      {},
+    );
+  },
+);
 
 /**
  * Setup column visibility
@@ -155,6 +174,7 @@ const cellClasses = computed(() => {
 
 // Setup table
 const table = useVueTable({
+  getRowId: (row) => String(row.id),
   get data() {
     return props.loading ? getSkeletonData<TData>() : props.data;
   },

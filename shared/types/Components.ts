@@ -49,7 +49,7 @@ export interface SelectorSelectionBase {
 export interface SelectorSelectionOption {
   id: SelectorSelectionOptionsId;
   group: keyof SelectorSelection;
-  type: 'single' | 'multiple';
+  type: 'single' | 'multiple'; // TODO: evaluate if this is needed
   label?: string;
 }
 

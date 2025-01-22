@@ -86,12 +86,13 @@ export const useColumns = <T extends object>() => {
 
       // Set column type
       let columnType: ColumnType;
+      const keyLower = key.toLowerCase();
       // Infer column type based on key
-      if (key.includes('date')) {
+      if (keyLower.includes('date')) {
         columnType = 'date';
-      } else if (key.includes('price') || key.includes('amount')) {
+      } else if (keyLower.includes('price') || keyLower.includes('amount')) {
         columnType = 'currency';
-      } else if (key.includes('image') || key.includes('img')) {
+      } else if (keyLower.includes('image') || keyLower.includes('img')) {
         columnType = 'image';
       } else {
         columnType = 'string';
