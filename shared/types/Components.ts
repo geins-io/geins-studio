@@ -42,8 +42,8 @@ export interface SelectorSelectionGroup {
 }
 
 export interface SelectorSelectionBase {
-  include?: SelectorSelectionGroup[];
-  exclude?: SelectorSelectionGroup[];
+  include: SelectorSelectionGroup[];
+  exclude: SelectorSelectionGroup[];
 }
 
 export interface SelectorSelectionOption {

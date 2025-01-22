@@ -24,6 +24,9 @@ const title = computed(() =>
 const _currentStep = ref(1);
 
 const { products } = useProductsStore();
+
+const { getEmptySelectionBase } = useSelector();
+const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
 </script>
 
 <template>
@@ -58,7 +61,12 @@ const { products } = useProductsStore();
     </template>
     <ContentEditMain v-if="currentTab === 0">
       <ContentCard>
-        <Selector mode="simple" :entities="products" />
+        {{ selection }}
+        <Selector
+          v-model:selection="selection"
+          mode="simple"
+          :entities="products"
+        />
       </ContentCard>
       <template #sidebar>
         <Card class="p-5">Details</Card>

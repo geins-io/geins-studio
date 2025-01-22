@@ -13,92 +13,35 @@ const props = withDefaults(
   },
 );
 
+const { getFallbackSelection } = useSelector();
+
+const selection = defineModel<SelectorSelectionBase>('selection', {
+  required: true,
+});
+
 const entities = ref(props.entities);
 const { defaultCurrency } = useAccountStore();
 const { toast } = useToast();
 const { t } = useI18n();
 
-const dummyData: SelectorSelectionBase = {
-  include: [
-    {
-      condition: 'and',
-      selections: [
-        {
-          condition: 'and',
-          categories: [
-            { id: 1, name: 'Electronics' },
-            { id: 2, name: 'Clothing' },
-            { id: 3, name: 'Shoes' },
-          ],
-          brands: [
-            { id: 1, name: 'BrandA' },
-            { id: 2, name: 'BrandB' },
-          ],
-          price: [
-            {
-              condition: 'lt',
-              values: {
-                EUR: 90,
-                SEK: 850,
-              },
-            },
-            {
-              condition: 'gt',
-              values: {
-                EUR: 10,
-                SEK: 100,
-              },
-            },
-          ],
-          stock: [
-            {
-              condition: 'gt',
-              quantity: 10,
-            },
-            {
-              condition: 'lt',
-              quantity: 1000,
-            },
-          ],
-          ids: [1, 2, 3],
-        },
-      ],
-    },
-  ],
-};
-
-/* const dummyData: SelectorSelectionBase = {
-  include: [
-    {
-      condition: 'and',
-      selections: [
-        {
-          condition: 'and',
-          categories: [],
-          brands: [],
-          price: [],
-          stock: [],
-          ids: [],
-        },
-      ],
-    },
-  ],
-}; */
-
-const fallbackSelection: SelectorSelection = {
-  condition: 'and',
-  categories: [],
-  brands: [],
-  price: [],
-  stock: [],
-  ids: [],
-};
-
 const includeSelection = ref<SelectorSelection>(
-  dummyData.include?.[0]?.selections?.[0] || fallbackSelection,
+  selection.value.include?.[0]?.selections?.[0] || getFallbackSelection(),
 );
 const excludeSelection = ref<SelectorSelection>(
-  dummyData.exclude?.[0]?.selections?.[0] || fallbackSelection,
+  selection.value.exclude?.[0]?.selections?.[0] || getFallbackSelection(),
+);
+
+watch(
+  () => includeSelection.value,
+  (value) => {
+    selection.value.include = [{ selections: [value] }];
+  },
+);
+watch(
+  () => excludeSelection.value,
+  (value) => {
+    selection.value.exclude = [{ selections: [value] }];
+  },
 );
 
 const addToManuallySelected = (id: number) => {
