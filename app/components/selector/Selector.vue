@@ -41,6 +41,7 @@ watch(
   (value) => {
     selection.value.include = [{ selections: [value] }];
   },
+  { deep: true },
 );
 watch(
   () => excludeSelection.value,
@@ -48,6 +49,7 @@ watch(
     showExclude.value = !!value.ids?.length;
     selection.value.exclude = [{ selections: [value] }];
   },
+  { deep: true },
 );
 watch(
   () => showExclude.value,
@@ -73,26 +75,44 @@ const addToManuallySelected = (id: number) => {
   });
 };
 const removeFromManuallySelected = (id: number) => {
-  includeSelection.value?.ids?.splice(
-    includeSelection.value?.ids?.indexOf(id),
-    1,
-  );
+  const index = includeSelection.value?.ids?.indexOf(id);
+  if (index !== -1 && index !== undefined) {
+    includeSelection.value?.ids?.splice(index, 1);
+  } else {
+    excludeSelection.value?.ids?.push(id);
+  }
 };
 
 // SETUP TABLE FOR SELECTED ENTITIES
-const { getColumns, orderAndFilterColumns } = useColumns();
+const { getColumns, orderAndFilterColumns, addActionsColumn } = useColumns();
 let columns = getColumns(entities.value);
 columns = orderAndFilterColumns(columns, ['id', 'image', 'name', 'price']);
+addActionsColumn(
+  columns,
+  {
+    onDelete: (entity: Entity) => removeFromManuallySelected(entity.id),
+  },
+  'delete',
+);
 
-const selectedEntities = computed(() => {
-  const included = entities.value.filter((entity) =>
-    includeSelection.value?.ids?.includes(entity.id),
+const _selectionMade = computed(() => {
+  return !!(
+    includeSelection.value.ids?.length || excludeSelection.value.ids?.length
   );
+});
+
+// SELECTED ENTITIES
+const selectedEntities = computed(() => {
+  const included = includeSelection.value.ids?.length
+    ? entities.value.filter((entity) =>
+        includeSelection.value?.ids?.includes(entity.id),
+      )
+    : entities.value;
   const excludedIds = excludeSelection.value?.ids || [];
   const selected = included.filter(
     (entity) => !excludedIds.includes(entity.id),
   );
-  return selected.length ? selected : entities.value;
+  return selected;
 });
 </script>
 <template>
@@ -122,10 +142,9 @@ const selectedEntities = computed(() => {
             :entities="entities"
           />
           <ContentSwitch
+            v-model="showExclude"
             :label="$t('exclude_entities_from_selection', { entityName }, 2)"
             :description="$t('selector_exclude_description')"
-            :checked="showExclude"
-            @update:checked="showExclude = $event"
           >
             <SelectorSelection
               v-model:selection="excludeSelection"
@@ -147,7 +166,7 @@ const selectedEntities = computed(() => {
           :columns="columns"
           :data="selectedEntities"
           :entity-name="entityName"
-          :mode="mode"
+          mode="simple"
           :page-size="15"
         />
       </slot>

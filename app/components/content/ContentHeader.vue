@@ -58,7 +58,7 @@ const tableMaximized = useState<boolean>('table-maximized');
       </BreadcrumbList>
     </Breadcrumb>
     <div
-      class="content-header mb-3 flex flex-wrap justify-between border-b pb-2"
+      class="content-header mb-4 flex flex-wrap justify-between border-b pb-2"
     >
       <slot name="title">
         <ContentTitleBlock :title="title" :description="description" />

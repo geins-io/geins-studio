@@ -19,7 +19,7 @@ const classes = computed(() => {
     case 'm':
       return 'text-xl font-semibold mb-1.5';
     default:
-      return 'text-sm font-medium mb-1';
+      return 'text-sm font-medium mb-1.5';
   }
 });
 </script>

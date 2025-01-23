@@ -5,8 +5,8 @@ import {
   NuxtLink,
   TableHeaderSort,
   TableCellActions,
+  TableCellDelete,
   TableCellLongText,
-  LucideImage,
 } from '#components';
 import type { ColumnOptions, ColumnType, ColumnTypes } from '#shared/types';
 
@@ -148,11 +148,7 @@ export const useColumns = <T extends object>() => {
           };
 
           headerRenderer = () =>
-            h(
-              'div',
-              { class: cn(basicHeaderStyle, 'px-2') },
-              h(LucideImage, { class: 'size-5 text-muted mx-auto' }),
-            );
+            h('div', { class: cn(basicHeaderStyle, 'px-2') });
           columnSize = { size: 40, minSize: 40, maxSize: 40 };
           break;
         case 'link':
@@ -279,6 +275,7 @@ export const useColumns = <T extends object>() => {
   const addActionsColumn = (
     columns: ColumnDef<T>[],
     props: object,
+    type: 'actions' | 'delete' = 'actions',
   ): ColumnDef<T>[] => {
     const actionsColumn: ColumnDef<T> = {
       id: 'actions',
@@ -295,7 +292,10 @@ export const useColumns = <T extends object>() => {
         return h(
           'div',
           { class: cn(basicCellStyle, 'relative px-2.5') },
-          h(TableCellActions, { ...props, rowData }),
+          h(type === 'actions' ? TableCellActions : TableCellDelete, {
+            ...props,
+            rowData,
+          }),
         );
       },
       meta: { type: 'actions' },

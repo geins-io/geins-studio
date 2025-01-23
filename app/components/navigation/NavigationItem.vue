@@ -188,7 +188,7 @@ const rootItemClasses = computed(() => {
     <!-- Child items for collapsed state with hover fix -->
     <div
       v-if="isCollapsed && item.children?.length"
-      class="absolute left-full top-0 z-50 hidden w-48 rounded-lg bg-card pl-2 shadow-lg group-hover:block"
+      class="absolute left-full top-0 z-50 ml-px hidden w-48 rounded-lg bg-card pl-2 shadow-lg group-hover:block"
     >
       <NuxtLink :to="item.href" class="block px-4 pb-2 pt-4 text-sm">
         <span class="hover:underline">{{ item.label }}</span>

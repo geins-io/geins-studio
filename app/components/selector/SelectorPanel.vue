@@ -155,8 +155,8 @@ const handleCancel = () => {
           {{ t('selector_panel_description') }}
         </SheetDescription>
       </SheetHeader>
-      <div class="grid h-full grid-cols-12 rounded-lg border">
-        <div class="col-span-2 flex flex-col p-2">
+      <div class="flex h-[calc(100vh-10.1rem)] grid-cols-12">
+        <div class="w-[170px] shrink-0 px-4 py-3">
           <ContentHeading>{{ t('select_from') }}</ContentHeading>
           <SidebarNav>
             <SidebarNavItem
@@ -170,7 +170,7 @@ const handleCancel = () => {
             </SidebarNavItem>
           </SidebarNav>
         </div>
-        <div class="col-span-8 flex flex-col border-x p-2">
+        <div class="w-full border-x px-4 py-3">
           <ContentHeading>{{ t('select') }}</ContentHeading>
           <!-- PRODUCT -->
           <div v-if="currentOption === 'product'">
@@ -178,21 +178,23 @@ const handleCancel = () => {
               :columns="columns"
               :data="entities"
               :entity-name="entityName"
-              :page-size="20"
               :show-search="true"
               :pinned-state="{}"
               :selected-ids="selectedIds"
-              max-height="calc(100vh - 26rem)"
+              max-height="calc(100vh - 20rem)"
               mode="simple"
               @selection="onSelection"
             />
           </div>
           <!-- END PRODUCT -->
         </div>
-        <div class="col-span-2 flex flex-col p-2">
+        <div class="h-full w-80 shrink-0 px-4 py-3">
           <ContentHeading>{{ t('selected') }}</ContentHeading>
           <!-- IDS -->
-          <ul v-if="currentSelectionGroup === 'ids'">
+          <ul
+            v-if="currentSelectionGroup === 'ids'"
+            class="h-[calc(100%-26px)] overflow-auto"
+          >
             <li
               v-for="entity in selectedEntities"
               :key="entity.id"
@@ -203,7 +205,7 @@ const handleCancel = () => {
               <Button
                 size="icon"
                 variant="outline"
-                class="size-5 shrink-0"
+                class="ml-auto mr-1 size-5 shrink-0 hover:text-negative"
                 @click="removeSelected(entity.id)"
               >
                 <LucideX class="size-3" />

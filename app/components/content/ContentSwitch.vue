@@ -1,34 +1,25 @@
 <script setup lang="ts">
-const props = defineProps<{
-  checked: boolean;
+const _props = defineProps<{
   label: string;
   description?: string;
 }>();
 
-const value = ref(props.checked);
+const checked = defineModel<boolean>();
 
-const emit = defineEmits<{
-  (event: 'update:checked', value: boolean): void;
-}>();
-
-watch(value, (newValue) => {
-  emit('update:checked', newValue);
-});
-
-const beforeEnter = (el: HTMLElement) => {
-  el.style.height = '0';
+const beforeEnter = (el: Element) => {
+  (el as HTMLElement).style.height = '0';
 };
 
-const enter = (el: HTMLElement) => {
-  el.style.height = el.scrollHeight + 'px';
+const enter = (el: Element) => {
+  (el as HTMLElement).style.height = (el as HTMLElement).scrollHeight + 'px';
 };
 
-const beforeLeave = (el: HTMLElement) => {
-  el.style.height = el.scrollHeight + 'px';
+const beforeLeave = (el: Element) => {
+  (el as HTMLElement).style.height = (el as HTMLElement).scrollHeight + 'px';
 };
 
-const leave = (el: HTMLElement) => {
-  el.style.height = '0';
+const leave = (el: Element) => {
+  (el as HTMLElement).style.height = '0';
 };
 </script>
 <template>
@@ -39,7 +30,7 @@ const leave = (el: HTMLElement) => {
         <p v-if="description">{{ description }}</p>
       </div>
       <div>
-        <Switch v-model:checked="value" />
+        <Switch v-model:checked="checked" />
       </div>
     </div>
     <transition

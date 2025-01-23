@@ -9,9 +9,9 @@ const setColorMode = () => {
 </script>
 <template>
   <header
-    class="text-background-foreground flex flex-none items-center justify-start bg-card"
+    class="text-background-foreground flex flex-none items-center justify-start border-b bg-card"
   >
-    <div class="relative w-full max-w-sm items-center">
+    <div class="relative ml-5 w-full max-w-96 items-center">
       <Input
         id="search"
         type="text"

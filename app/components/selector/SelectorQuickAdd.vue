@@ -52,7 +52,7 @@ const isSelected = (id: number) => {
           v-for="entity in entities"
           :key="entity.id"
           :value="entity.id + ' ' + entity.name"
-          class="pr-0 data-[highlighted]:bg-card"
+          class="data-[highlighted]:bg-card"
         >
           <div class="flex w-full items-center gap-3 text-xs">
             <img

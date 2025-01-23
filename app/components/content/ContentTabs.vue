@@ -31,7 +31,7 @@ onMounted(() => {
 </script>
 <template>
   <nav class="w-full">
-    <ul class="flex gap-4">
+    <ul class="flex gap-2">
       <li v-for="(tab, index) in tabs" :key="index">
         <Button
           variant="ghost"

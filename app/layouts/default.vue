@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const isCollapsed = ref(false);
+const isCollapsed = useCookie<boolean>(`geins-sidebar-collapsed`, {
+  default: () => false,
+});
 
 const currentSidebarWidth = computed(() => {
   return isCollapsed.value ? '3.75rem' : '15rem';
@@ -36,12 +38,7 @@ const contentClasses = computed(() => {
     >
       <LayoutHeader class="sticky top-0 h-header" />
       <div
-        :class="
-          cn(
-            'flex grow flex-col rounded-tl-lg border-l border-t p-8 pb-14',
-            contentClasses,
-          )
-        "
+        :class="cn('flex grow flex-col p-8 pb-14', contentClasses)"
         :style="mainContentStyle"
       >
         <slot />

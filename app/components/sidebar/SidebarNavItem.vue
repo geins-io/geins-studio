@@ -45,7 +45,7 @@ const icon = computed(() => {
     <button
       :class="
         cn(
-          '-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 px-3 py-3 text-sm transition-colors hover:bg-background',
+          '-mx-4 flex w-[calc(100%+2rem)] items-center gap-2.5 px-4 py-3 text-sm transition-colors hover:bg-background',
           {
             'bg-background': props.current,
           },

@@ -17,7 +17,7 @@ const sidebarStyle = computed(() => {
 </script>
 <template>
   <aside
-    :class="cn(`layout-sidebar relative bg-card transition-[width]`)"
+    :class="cn(`layout-sidebar relative border-r bg-card transition-[width]`)"
     :style="sidebarStyle"
   >
     <div>

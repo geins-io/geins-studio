@@ -8,7 +8,10 @@ const props = defineProps<{ class?: HTMLAttributes['class'] }>();
 <template>
   <div
     :class="
-      cn('flex flex-col gap-y-2 border-b text-center sm:text-left', props.class)
+      cn(
+        'flex flex-col gap-y-2 border-b p-4 text-center sm:text-left',
+        props.class,
+      )
     "
   >
     <slot />

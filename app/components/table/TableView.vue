@@ -263,7 +263,7 @@ const table = useVueTable({
         'relative overflow-hidden rounded-lg border pb-14 transition-[transform]',
         `${advancedMode ? 'mb-[6.5rem] translate-y-40' : ''}`,
         `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
-        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] mb-0 translate-y-0' : ''}`,
+        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] -mt-px mb-0 translate-y-0' : ''}`,
       )
     "
   >
