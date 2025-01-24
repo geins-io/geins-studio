@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="TData extends object, TValue">
+<script setup lang="ts" generic="TData extends { id?: number }, TValue">
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -17,8 +17,6 @@ import {
   useVueTable,
 } from '@tanstack/vue-table';
 
-import { Search, Maximize2, Minimize2 } from 'lucide-vue-next';
-
 const props = withDefaults(
   defineProps<{
     columns: ColumnDef<TData, TValue>[];
@@ -27,17 +25,32 @@ const props = withDefaults(
     pageSize?: number;
     loading?: boolean;
     searchableField?: string;
+    mode?: 'simple' | 'advanced' | 'minimal';
+    maxHeight?: string;
+    showSearch?: boolean;
+    pinnedState?: ColumnPinningState;
+    selectedIds?: number[];
   }>(),
   {
     entityName: 'row',
     pageSize: 30,
     loading: false,
     searchableField: 'name',
+    showSearch: false,
+    mode: 'advanced',
+    pinnedState: () => ({
+      left: ['select'],
+      right: ['actions'],
+    }),
   },
 );
 
+const showSearch =
+  props.mode === 'advanced' ? ref(true) : ref(props.showSearch);
+
 const emit = defineEmits({
   clicked: (row) => row,
+  selection: (selection: TData[]): TData[] => selection,
 });
 
 /**
@@ -45,17 +58,38 @@ const emit = defineEmits({
  */
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
-const rowSelection = ref({});
+
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
 const tableMaximized = useState<boolean>('table-maximized', () => false);
-const rowsSelectable = computed(() =>
-  props.columns.some((column) => column.id === 'select'),
-);
+const advancedMode = computed(() => props.mode === 'advanced');
+const simpleMode = computed(() => props.mode === 'simple');
 
 onUnmounted(() => {
   tableMaximized.value = false;
 });
+
+/**
+ * Setup row selection
+ **/
+const rowsSelectable = computed(() =>
+  props.columns.some((column) => column.id === 'select'),
+);
+const rowSelection = ref(
+  props.selectedIds?.reduce((acc, id) => ({ ...acc, [id]: true }), {}) || {},
+);
+watch(
+  () => props.selectedIds,
+  (newSelectedIds) => {
+    if (!newSelectedIds) {
+      return;
+    }
+    rowSelection.value = newSelectedIds.reduce(
+      (acc, id) => ({ ...acc, [id]: true }),
+      {},
+    );
+  },
+);
 
 /**
  * Setup column visibility
@@ -104,23 +138,21 @@ const pinnedClasses = (column: Column<TData>, header: boolean = false) => {
       header && (column.id === 'select' || column.id === 'actions')
         ? 'z-40'
         : 'z-20';
-    return `bg-card sticky ${pinned}-0 ${zIndex} after:absolute after:-bottom-px after:${pinned}-0 after:bg-border after:h-px after:w-full after:z-50`;
+    const shadow =
+      pinned === 'left'
+        ? '[&>div]:shadow-only-right'
+        : '[&>div]:shadow-only-left';
+    return `bg-card sticky ${pinned}-0 ${zIndex} ${shadow} after:absolute after:-bottom-px after:${pinned}-0 after:bg-border after:h-px after:w-full after:z-50`;
   }
   return 'relative';
 };
 
-// Set default pinned columns
-const defaultPinningState: ColumnPinningState = {
-  left: ['select'],
-  right: ['actions'],
-};
-
 // Remove select and actions columns from pinned state if not present in columns
 const columnPinningState = computed(() => {
-  const left = defaultPinningState?.left?.filter((id) =>
+  const left = props.pinnedState.left?.filter((id) =>
     props.columns.some((column) => column.id === id),
   );
-  const right = defaultPinningState.right?.filter((id) =>
+  const right = props.pinnedState.right?.filter((id) =>
     props.columns.some((column) => column.id === id),
   );
   return { left, right };
@@ -142,6 +174,7 @@ const cellClasses = computed(() => {
 
 // Setup table
 const table = useVueTable({
+  getRowId: (row) => String(row.id),
   get data() {
     return props.loading ? getSkeletonData<TData>() : props.data;
   },
@@ -158,8 +191,13 @@ const table = useVueTable({
   onColumnVisibilityChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, columnVisibility);
   },
-  onRowSelectionChange: (updaterOrValue) =>
-    valueUpdater(updaterOrValue, rowSelection),
+  onRowSelectionChange: (updaterOrValue) => {
+    valueUpdater(updaterOrValue, rowSelection);
+    emit(
+      'selection',
+      table.getSelectedRowModel().rows.map((row) => row.original),
+    );
+  },
   onColumnOrderChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnOrder),
   state: {
@@ -190,6 +228,7 @@ const table = useVueTable({
 
 <template>
   <div
+    v-if="showSearch"
     :class="
       cn(
         'mb-3 flex origin-top transform items-center transition-[transform]',
@@ -197,7 +236,7 @@ const table = useVueTable({
       )
     "
   >
-    <div class="relative w-full max-w-sm">
+    <div :class="`relative w-full ${advancedMode ? 'max-w-sm' : ''}`">
       <Input
         v-if="table.getColumn(searchableField)"
         class="w-full pl-10"
@@ -212,21 +251,23 @@ const table = useVueTable({
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
       >
-        <Search class="size-4 text-foreground" />
+        <LucideSearch class="size-4 text-foreground" />
       </span>
     </div>
 
-    <TableColumnToggle :table="table" />
+    <TableColumnToggle v-if="advancedMode" :table="table" />
   </div>
   <div
     :class="
       cn(
-        'relative mb-[6.5rem] translate-y-40 overflow-hidden rounded-lg border pb-14 transition-[transform]',
-        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] mb-0 translate-y-0' : '-mt-40'}`,
+        'relative overflow-hidden rounded-lg border pb-14 transition-[transform]',
+        `${advancedMode ? 'mb-[6.5rem] translate-y-40' : ''}`,
+        `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
+        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] -mt-px mb-0 translate-y-0' : ''}`,
       )
     "
   >
-    <Table>
+    <Table :style="maxHeight ? { maxHeight } : {}">
       <TableHeader>
         <TableRow
           v-for="headerGroup in table.getHeaderGroups()"
@@ -240,6 +281,7 @@ const table = useVueTable({
               cn(
                 `z-30 ${pinnedClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
                 cellClasses,
+                `${simpleMode ? 'bg-background [&>div>button]:pl-2 [&>div>button]:pr-1 [&>div>button]:normal-case [&>div]:h-10 [&>div]:normal-case' : ''}`,
               )
             "
             :style="
@@ -267,7 +309,13 @@ const table = useVueTable({
             <TableCell
               v-for="cell in row.getVisibleCells()"
               :key="cell.id"
-              :class="cn(`${pinnedClasses(cell.column)}`, cellClasses)"
+              :class="
+                cn(
+                  `${pinnedClasses(cell.column)}`,
+                  cellClasses,
+                  `${simpleMode ? '[&>button]:px-3.5 [&>div]:px-3.5' : ''}`,
+                )
+              "
               :style="
                 cell.column.getSize()
                   ? { width: `${cell.column.getSize()}px` }
@@ -294,15 +342,17 @@ const table = useVueTable({
       :entity-name="entityName"
       :rows-selectable="rowsSelectable"
       :table="table"
+      :advanced="advancedMode"
     />
     <Button
+      v-if="advancedMode"
       variant="ghost"
       size="icon"
       class="absolute -right-px -top-px z-50 size-6 border-border bg-card"
       @click="tableMaximized = !tableMaximized"
     >
-      <Maximize2 v-if="!tableMaximized" class="size-3" />
-      <Minimize2 v-else class="size-3" />
+      <LucideMaximize2 v-if="!tableMaximized" class="size-3" />
+      <LucideMinimize2 v-else class="size-3" />
     </Button>
   </div>
 </template>

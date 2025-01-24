@@ -21,7 +21,12 @@ const title = computed(() =>
     ? t('new_entity', { entityName })
     : t('edit_entity', { entityName }),
 );
-const currentStep = ref(1);
+const _currentStep = ref(1);
+
+const { products } = useProductsStore();
+
+const { getEmptySelectionBase } = useSelector();
+const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
 </script>
 
 <template>
@@ -29,18 +34,21 @@ const currentStep = ref(1);
     <template #header>
       <ContentHeader :title="title">
         <ContentActionBar>
-          <ButtonNew
+          <ButtonIcon
             v-if="!createMode"
+            icon="new"
             variant="secondary"
             :href="newEntityUrl"
           >
             {{ $t('new') }}
-          </ButtonNew>
-          <ButtonCopy v-if="!createMode" variant="secondary"
+          </ButtonIcon>
+          <ButtonIcon v-if="!createMode" icon="copy" variant="secondary"
             >{{ $t('copy') }}
-          </ButtonCopy>
+          </ButtonIcon>
           <Button v-if="createMode" variant="secondary">Cancel</Button>
-          <ButtonSave>{{ $t('save_entity', { entityName }) }}</ButtonSave>
+          <ButtonIcon icon="save">{{
+            $t('save_entity', { entityName })
+          }}</ButtonIcon>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentTabs
@@ -52,22 +60,13 @@ const currentStep = ref(1);
       </ContentHeader>
     </template>
     <ContentEditMain v-if="currentTab === 0">
-      <ContentEditCard
-        :create-mode="createMode"
-        :step="1"
-        :current-step="currentStep"
-        title="General"
-      >
-        Edit general
-      </ContentEditCard>
-      <ContentEditCard
-        :create-mode="createMode"
-        :step="2"
-        :current-step="1"
-        title="Details"
-      >
-        Edit details
-      </ContentEditCard>
+      <ContentCard>
+        <Selector
+          v-model:selection="selection"
+          mode="simple"
+          :entities="products"
+        />
+      </ContentCard>
       <template #sidebar>
         <Card class="p-5">Details</Card>
       </template>

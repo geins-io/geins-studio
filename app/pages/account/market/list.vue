@@ -10,6 +10,10 @@ const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
   route.fullPath,
 );
 
+definePageMeta({
+  pageType: 'list',
+});
+
 // GLOBAL SETUP
 const apiEndpoint = '/account/market/list';
 const dataList = ref<Entity[]>([]);
@@ -57,9 +61,9 @@ columns.value = getColumns(dataList.value, columnOptions);
   <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
     <ContentActionBar>
       <ButtonExport />
-      <ButtonNew :href="newEntityUrl">
+      <ButtonIcon icon="new" :href="newEntityUrl">
         {{ $t('new_entity', { entityName }) }}
-      </ButtonNew>
+      </ButtonIcon>
     </ContentActionBar>
   </ContentHeader>
   <NuxtErrorBoundary>

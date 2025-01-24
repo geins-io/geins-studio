@@ -1,20 +1,18 @@
 <script setup lang="ts">
-import type { NavigationItem } from '#shared/types';
 import {
-  ChevronDown,
-  ChevronRight,
-  ChartLine,
-  Tag,
-  Brush,
-  User,
-  Warehouse,
-  Layers,
-  Wallet,
-  Building2,
-  Import,
-  Settings,
-  ShieldCheck,
-} from 'lucide-vue-next';
+  LucideBrush,
+  LucideBuilding2,
+  LucideChartLine,
+  LucideImport,
+  LucideLayers,
+  LucideSettings,
+  LucideShieldCheck,
+  LucideTag,
+  LucideUser,
+  LucideWallet,
+  LucideWarehouse,
+} from '#components';
+import type { NavigationItem } from '#shared/types';
 
 const props = withDefaults(
   defineProps<{
@@ -32,47 +30,47 @@ const item = ref(props.item);
 const iconComponents = [
   {
     name: 'ChartLine',
-    component: ChartLine,
+    component: LucideChartLine,
   },
   {
     name: 'Tag',
-    component: Tag,
+    component: LucideTag,
   },
   {
     name: 'Brush',
-    component: Brush,
+    component: LucideBrush,
   },
   {
     name: 'User',
-    component: User,
+    component: LucideUser,
   },
   {
     name: 'Warehouse',
-    component: Warehouse,
+    component: LucideWarehouse,
   },
   {
     name: 'Layers',
-    component: Layers,
+    component: LucideLayers,
   },
   {
     name: 'Wallet',
-    component: Wallet,
+    component: LucideWallet,
   },
   {
     name: 'Building2',
-    component: Building2,
+    component: LucideBuilding2,
   },
   {
     name: 'Import',
-    component: Import,
+    component: LucideImport,
   },
   {
     name: 'Settings',
-    component: Settings,
+    component: LucideSettings,
   },
   {
     name: 'ShieldCheck',
-    component: ShieldCheck,
+    component: LucideShieldCheck,
   },
 ];
 
@@ -130,6 +128,7 @@ const rootItemClasses = computed(() => {
         :class="cn(`flex w-full items-center justify-between`, rootItemClasses)"
       >
         <NuxtLink :to="item.href" :class="cn(`flex flex-grow items-center`)">
+          <!--TODO: solve the issue with clientonly for dynamic icons-->
           <ClientOnly>
             <component :is="item.icon" stroke-width="1.5" class="mr-3 size-5" />
           </ClientOnly>
@@ -140,7 +139,7 @@ const rootItemClasses = computed(() => {
             variant="ghost"
             class="inline-flex size-7 items-center justify-center p-0"
           >
-            <ChevronDown
+            <LucideChevronDown
               :class="
                 cn(`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`)
               "
@@ -179,7 +178,7 @@ const rootItemClasses = computed(() => {
         class="flex grow items-center justify-between hover:underline"
       >
         {{ item.label }}
-        <ChevronRight
+        <LucideChevronRight
           v-if="isActive"
           :class="cn(`size-4 text-muted ${root ? 'mr-1.5' : ''}`)"
         />
@@ -189,7 +188,7 @@ const rootItemClasses = computed(() => {
     <!-- Child items for collapsed state with hover fix -->
     <div
       v-if="isCollapsed && item.children?.length"
-      class="absolute left-full top-0 z-50 hidden w-48 rounded-lg bg-card pl-2 shadow-lg group-hover:block"
+      class="absolute left-full top-0 z-50 ml-px hidden w-48 rounded-lg bg-card pl-2 shadow-lg group-hover:block"
     >
       <NuxtLink :to="item.href" class="block px-4 pb-2 pt-4 text-sm">
         <span class="hover:underline">{{ item.label }}</span>
@@ -204,7 +203,7 @@ const rootItemClasses = computed(() => {
             :to="child.href"
             class="flex items-center justify-between bg-card px-4 py-2 text-xs hover:underline"
             >{{ child.label }}
-            <ChevronRight
+            <LucideChevronRight
               v-if="route.path === child.href"
               :class="cn(`size-4 text-muted`)"
             />

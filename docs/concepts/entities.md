@@ -37,9 +37,9 @@ const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
 </script>
 <template>
-  <ButtonNew :href="newEntityUrl">
+  <ButtonIcon icon="new" :href="newEntityUrl">
     {{ $t('new_entity', { entityName }) }}
-  </ButtonNew>
+  </ButtonIcon>
 </template>
 ```
 

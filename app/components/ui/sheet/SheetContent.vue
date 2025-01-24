@@ -16,7 +16,19 @@ import { type SheetVariants, sheetVariants } from '.';
 interface SheetContentProps extends DialogContentProps {
   class?: HTMLAttributes['class'];
   side?: SheetVariants['side'];
+  width?: 'narrow' | 'medium' | 'wide';
 }
+
+const widthClasses = computed(() => {
+  switch (props.width) {
+    case 'medium':
+      return 'w-[785px] sm:w-[785px] sm:max-w-[785px]';
+    case 'wide':
+      return 'w-[1310px] sm:w-[1310px] sm:max-w-full';
+    default:
+      return '';
+  }
+});
 
 defineOptions({
   inheritAttrs: false,
@@ -41,7 +53,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       class="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
     />
     <DialogContent
-      :class="cn(sheetVariants({ side }), props.class)"
+      :class="cn(sheetVariants({ side }), widthClasses, props.class, 'h-full')"
       v-bind="{ ...forwarded, ...$attrs }"
     >
       <slot />

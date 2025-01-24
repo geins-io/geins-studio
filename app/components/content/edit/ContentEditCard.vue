@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ChevronDown } from 'lucide-vue-next';
-
 const props = withDefaults(
   defineProps<{
     step: number;
@@ -39,7 +37,7 @@ if (props.createMode) {
         class="flex h-14 w-full items-center justify-between border-b p-4"
       >
         {{ stepTitle }}
-        <ChevronDown
+        <LucideChevronDown
           :class="
             cn(`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`)
           "

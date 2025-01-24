@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const isCollapsed = ref(false);
+const isCollapsed = useCookie<boolean>(`geins-sidebar-collapsed`, {
+  default: () => false,
+});
 
 const currentSidebarWidth = computed(() => {
   return isCollapsed.value ? '3.75rem' : '15rem';
@@ -12,6 +14,17 @@ const mainWidthStyle = computed(() => {
 const mainContentStyle = computed(() => {
   return { height: `calc(100vh - 4rem)` };
 });
+
+const contentClasses = computed(() => {
+  const route = useRoute();
+  const pageType = route.meta.pageType;
+  return {
+    'overflow-hidden': pageType === 'list',
+    'overflow-y-auto': pageType !== 'list',
+  };
+});
+
+// If the page is a list page, only then add overflow-hidden
 </script>
 <template>
   <div class="flex h-screen overflow-hidden">
@@ -25,7 +38,7 @@ const mainContentStyle = computed(() => {
     >
       <LayoutHeader class="sticky top-0 h-header" />
       <div
-        class="flex grow flex-col overflow-hidden rounded-tl-lg border-l border-t p-8 pb-14"
+        :class="cn('flex grow flex-col p-8 pb-14', contentClasses)"
         :style="mainContentStyle"
       >
         <slot />

@@ -1,7 +1,6 @@
 <script setup lang="ts" generic="TData">
 import draggable from 'vuedraggable';
 import type { Table, Column } from '@tanstack/vue-table';
-import { Settings2, XIcon, GripVertical } from 'lucide-vue-next';
 
 interface TableColumnToggleProps {
   table: Table<TData>;
@@ -125,21 +124,22 @@ const resetOrderAndVisibility = () => {
 <template>
   <Sheet>
     <SheetTrigger as-child>
-      <Button variant="secondary" class="ml-auto hidden lg:flex">
-        <Settings2 class="mr-2 size-4" />
+      <ButtonIcon
+        icon="settings"
+        variant="secondary"
+        class="ml-auto hidden lg:flex"
+      >
         Column options
-      </Button>
+      </ButtonIcon>
     </SheetTrigger>
-    <SheetContent
-      class="flex w-[784px] flex-col bg-card sm:w-[784px] sm:max-w-[784px]"
-    >
-      <SheetHeader class="border-b">
-        <SheetTitle class="text-2xl font-semibold">Colums option</SheetTitle>
-        <SheetDescription class="mb-6 text-sm text-muted-foreground">
+    <SheetContent width="medium">
+      <SheetHeader>
+        <SheetTitle>Colums option</SheetTitle>
+        <SheetDescription>
           Choose which columns you want to see in this list view
         </SheetDescription>
       </SheetHeader>
-      <div class="flex w-full grow flex-col pt-6">
+      <SheetBody>
         <div class="grid md:grid-cols-2">
           <!-- Available Columns -->
           <div class="mr-8 border-r pr-8">
@@ -189,7 +189,7 @@ const resetOrderAndVisibility = () => {
                   class="flex cursor-move items-center justify-between rounded-md bg-background px-4 py-2"
                 >
                   <div class="flex items-center space-x-2">
-                    <GripVertical class="size-4 text-muted-foreground" />
+                    <LucideGripVertical class="size-4 text-muted-foreground" />
                     <span class="text-sm">{{ element.title }}</span>
                   </div>
                   <Button
@@ -198,15 +198,14 @@ const resetOrderAndVisibility = () => {
                     class="size-8"
                     @click="hideProductColumn(element.id)"
                   >
-                    <XIcon class="size-4" />
+                    <LucideX class="size-4" />
                   </Button>
                 </div>
               </template>
             </draggable>
           </div>
         </div>
-
-        <div class="mt-auto flex justify-between border-t px-0.5 pt-8">
+        <SheetFooter>
           <SheetClose as-child>
             <Button variant="outline" @click="resetOrderAndVisibility">
               Cancel
@@ -215,8 +214,8 @@ const resetOrderAndVisibility = () => {
           <SheetClose as-child>
             <Button @click="saveOrderAndVisibility">Save options</Button>
           </SheetClose>
-        </div>
-      </div>
+        </SheetFooter>
+      </SheetBody>
     </SheetContent>
   </Sheet>
 </template>

@@ -15,6 +15,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',
+    'nuxt-lucide-icons',
   ],
 
   shadcn: {
@@ -46,12 +47,6 @@ export default defineNuxtConfig({
       enableOnWindowFocus: false,
     },
   },
-
-  plugins: [
-    './app/plugins/error-handler.ts',
-    './app/plugins/auth-state.ts',
-    './app/plugins/geins-api.ts',
-  ],
 
   i18n: {
     defaultLocale: 'en',

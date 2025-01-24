@@ -2,35 +2,36 @@ import { defineStore } from 'pinia';
 import type { Account, Channel, Currency } from '#shared/types';
 
 export const useAccountStore = defineStore('account', () => {
-  const { geinsLogError } = useGeinsLog();
+  const { geinsLogError } = useGeinsLog('store/account.ts');
   const api = repository(useNuxtApp().$geinsApi);
 
   // STATE
-  const currentAccount = ref<Account>();
-  const currentChannels = ref<Channel[]>();
-  const currentCurrencies = ref<Currency[]>();
-  const currentLanguages = ref<Language[]>();
+  const account = ref<Account>();
+  const channels = ref<Channel[]>();
+  const currencies = ref<Currency[]>();
+  const languages = ref<Language[]>();
+  const ready = ref(false);
 
   // ACTIONS
   async function fetchAccount(): Promise<Account> {
-    const account = await api.account.get();
-    currentAccount.value = account;
-    return account;
+    const data = await api.account.get();
+    account.value = data;
+    return data;
   }
   async function fetchChannels(): Promise<Channel[]> {
-    const channels = await api.channel.list();
-    currentChannels.value = channels;
-    return channels;
+    const data = await api.channel.list();
+    channels.value = data;
+    return data;
   }
   async function fetchCurrencies(): Promise<Currency[]> {
-    const currencies = await api.currency.list();
-    currentCurrencies.value = currencies;
-    return currencies;
+    const data = await api.currency.list();
+    currencies.value = data;
+    return data;
   }
   async function fetchLanguages(): Promise<Language[]> {
-    const languages = await api.language.list();
-    currentLanguages.value = languages;
-    return languages;
+    const data = await api.language.list();
+    languages.value = data;
+    return data;
   }
   async function init(): Promise<void> {
     const results = await Promise.allSettled([
@@ -40,8 +41,12 @@ export const useAccountStore = defineStore('account', () => {
       fetchLanguages(),
     ]);
 
+    ready.value = results.every(
+      (result) => result.status === 'fulfilled' && result.value,
+    );
+
     results.forEach((result, index) => {
-      if (result.status === 'rejected') {
+      if (result.status === 'rejected' || !result.value) {
         let callName = '';
         switch (index) {
           case 0:
@@ -57,26 +62,36 @@ export const useAccountStore = defineStore('account', () => {
             callName = 'languages';
             break;
         }
-        geinsLogError(`Error fetching #${callName}:`, result.reason);
+        geinsLogError(`error fetching ${callName}:`, result);
       }
     });
   }
 
+  function reset(): void {
+    account.value = undefined;
+    channels.value = [];
+    currencies.value = [];
+    languages.value = [];
+    ready.value = false;
+  }
+
   // GETTERS
   const defaultCurrency = computed(
-    () => currentAccount.value?.defaultCurrency || 'SEK',
+    () => account.value?.defaultCurrency || 'SEK',
   );
 
   return {
-    currentAccount,
-    currentChannels,
-    currentCurrencies,
-    currentLanguages,
-    init,
+    account,
+    channels,
+    currencies,
+    languages,
+    ready,
     fetchAccount,
     fetchChannels,
     fetchCurrencies,
     fetchLanguages,
+    init,
+    reset,
     defaultCurrency,
   };
 });

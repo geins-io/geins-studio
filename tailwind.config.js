@@ -23,7 +23,7 @@ module.exports = {
         'only-left': '-3px 0 7px -2px rgb(0 0 0 / 0.1)',
       },
       gridTemplateColumns: {
-        main: 'minmax(50%, 1fr) minmax(min-content, 360px)',
+        main: 'minmax(72%, 1fr) minmax(25%, 360px)',
       },
       colors: {
         border: 'hsl(var(--border))',

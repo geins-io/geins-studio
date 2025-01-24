@@ -1,6 +1,5 @@
 <script setup lang="ts" generic="T">
 import type { Column } from '@tanstack/vue-table';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-vue-next';
 
 interface DataTableColumnHeaderProps {
   column: Column<T>;
@@ -26,15 +25,33 @@ const handleClick = () => {
     v-if="column.getCanSort()"
     :variant="'ghost'"
     :size="'sm'"
-    :class="cn(className, `${column.getIsSorted() ? 'border-border' : ''}`)"
+    :class="
+      cn(className, `${column.getIsSorted() ? 'border-border' : ''}`, 'pr-2')
+    "
     @click="handleClick"
   >
     {{ title }}
-    <ArrowUp v-if="column.getIsSorted() === 'asc'" class="ml-2.5 size-3" />
-    <ArrowDown
-      v-else-if="column.getIsSorted() === 'desc'"
-      class="ml-2.5 size-3"
-    />
-    <ArrowUpDown v-else class="ml-2.5 size-3 text-muted-foreground" />
+    <div
+      class="ml-1 flex size-5 flex-col items-center gap-0.5 text-muted-foreground"
+    >
+      <LucideChevronUp
+        :class="
+          cn(
+            `${column.getIsSorted() === 'desc' ? 'text-muted' : ''}`,
+            `${column.getIsSorted() === 'asc' ? 'text-primary' : ''}`,
+            '-mb-1',
+          )
+        "
+      />
+      <LucideChevronDown
+        :class="
+          cn(
+            `${column.getIsSorted() === 'desc' ? 'text-primary' : ''}`,
+            `${column.getIsSorted() === 'asc' ? 'text-muted' : ''}`,
+            '-mt-1',
+          )
+        "
+      />
+    </div>
   </Button>
 </template>

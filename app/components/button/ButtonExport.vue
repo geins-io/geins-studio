@@ -1,13 +1,8 @@
-<script setup lang="ts">
-import { File } from 'lucide-vue-next';
-</script>
+<script setup lang="ts"></script>
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <Button variant="secondary">
-        <File class="mr-2 size-4" />
-        Export list
-      </Button>
+      <ButtonIcon icon="export" variant="secondary"> Export list </ButtonIcon>
     </DropdownMenuTrigger>
     <DropdownMenuContent>
       <DropdownMenuItem>

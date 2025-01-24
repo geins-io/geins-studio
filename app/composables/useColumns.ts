@@ -5,6 +5,7 @@ import {
   NuxtLink,
   TableHeaderSort,
   TableCellActions,
+  TableCellDelete,
   TableCellLongText,
 } from '#components';
 import type { ColumnOptions, ColumnType, ColumnTypes } from '#shared/types';
@@ -22,10 +23,7 @@ export const useColumns = <T extends object>() => {
       h(
         'div',
         {
-          class: cn(
-            basicHeaderStyle,
-            'flex items-center justify-center shadow-only-right',
-          ),
+          class: cn(basicHeaderStyle, 'flex items-center justify-center px-1'),
         },
         h(Checkbox, {
           checked: table.getIsAllPageRowsSelected(),
@@ -38,10 +36,7 @@ export const useColumns = <T extends object>() => {
       h(
         'div',
         {
-          class: cn(
-            basicCellStyle,
-            'px-3 shadow-only-right flex items-center justify-center',
-          ),
+          class: cn(basicCellStyle, 'px-3 flex items-center justify-center'),
         },
         h(Checkbox, {
           checked: row.getIsSelected(),
@@ -52,18 +47,22 @@ export const useColumns = <T extends object>() => {
 
     enableSorting: false,
     enableHiding: false,
-    size: 44,
-    maxSize: 44,
+    size: 40,
+    maxSize: 40,
+    meta: { type: 'select' },
   };
 
-  const getColumns = (data: T[], options: Partial<ColumnOptions<T>> = {}) => {
+  const getColumns = (
+    data: T[],
+    options: Partial<ColumnOptions<T>> = {},
+  ): ColumnDef<T>[] => {
     const {
       selectable = false,
       sortable = true,
       columnTypes = {} as ColumnTypes<T>,
       maxTextLength = 60,
     } = options;
-    const columns: ColumnDef<T>[] = [];
+    let columns: ColumnDef<T>[] = [];
 
     const keys = data && data.length ? Object.keys(data[0] as object) : [];
     if (keys.length === 0) {
@@ -85,7 +84,21 @@ export const useColumns = <T extends object>() => {
         title = title.charAt(0).toUpperCase() + title.slice(1);
       }
 
-      const columnType: ColumnType = columnTypes[key as keyof T] || 'string';
+      // Set column type
+      let columnType: ColumnType;
+      const keyLower = key.toLowerCase();
+      // Infer column type based on key
+      if (keyLower.includes('date')) {
+        columnType = 'date';
+      } else if (keyLower.includes('price') || keyLower.includes('amount')) {
+        columnType = 'currency';
+      } else if (keyLower.includes('image') || keyLower.includes('img')) {
+        columnType = 'image';
+      } else {
+        columnType = 'string';
+      }
+      // Override column type if explicitly set in options
+      columnType = columnTypes[key as keyof T] || columnType;
 
       let columnSize = {
         size: 0,
@@ -123,15 +136,20 @@ export const useColumns = <T extends object>() => {
         case 'image':
           cellRenderer = ({ row }: { row: Row<T> }) => {
             const value = row.getValue(key);
-            return h('img', {
-              src: value,
-              alt: title,
-              class: 'size-7 mx-auto',
-            });
+            return h(
+              'span',
+              { class: 'px-1.5 block' },
+              h('img', {
+                src: value,
+                alt: title,
+                class: 'size-7 mx-auto max-w-10 p-0.5',
+              }),
+            );
           };
+
           headerRenderer = () =>
-            h('div', { class: cn(basicHeaderStyle, 'px-2') }, title);
-          columnSize = { size: 68, minSize: 68, maxSize: 68 };
+            h('div', { class: cn(basicHeaderStyle, 'px-2') });
+          columnSize = { size: 40, minSize: 40, maxSize: 40 };
           break;
         case 'link':
           cellRenderer = ({ row }: { row: Row<T> }) => {
@@ -162,27 +180,21 @@ export const useColumns = <T extends object>() => {
               return h(
                 TableCellLongText,
                 { text, className: basicCellStyle, maxTextLength },
-                { default: () => link }, // Use function slot here
+                { default: () => link },
               );
             }
             return h('div', { class: basicCellStyle }, link);
           };
           break;
 
-        // case 'date':
-        //   cellRenderer = ({ row }: { row: Row<T> }) => {
-        //     const value = row.getValue(key);
-        //     if (
-        //       typeof value !== 'string' ||
-        //       typeof value !== 'number') {
-        //       return;
-        //     }
-        //     const formatted = new Intl.DateTimeFormat('sv-SE').format(
-        //       new Date(value),
-        //     );
-        //     return h('div', { class: '' }, formatted);
-        //   };
-        //   break;
+        case 'date':
+          cellRenderer = ({ row }: { row: Row<T> }) => {
+            const value = row.getValue(key);
+            const date = new Date(value as string | number | Date);
+            const formatted = date.toLocaleDateString('sv-SE');
+            return h('div', { class: basicCellStyle }, formatted);
+          };
+          break;
         default:
           cellRenderer = ({ row }: { row: Row<T> }) => {
             const text = String(row.getValue(key));
@@ -191,7 +203,7 @@ export const useColumns = <T extends object>() => {
                 text,
                 className: basicCellStyle,
                 maxTextLength,
-                default: () => text, // Use function slot here
+                default: () => text,
               });
             }
             return h('div', { class: basicCellStyle }, text);
@@ -209,10 +221,28 @@ export const useColumns = <T extends object>() => {
       });
     });
 
+    columns = columns.sort((a, b) => {
+      const getOrder = (col: ColumnDef<T>) => {
+        const type = col.meta?.type || '';
+        const title = col.meta?.title?.toLowerCase() || '';
+
+        if (type === 'select') return 0;
+        if (title.includes('id')) return 1;
+        if (type === 'image') return 2;
+        if (title.includes('name') || title.includes('title')) return 3;
+
+        return 4;
+      };
+      return getOrder(a) - getOrder(b);
+    });
+
     return columns;
   };
 
-  const extendColumns = (columns: ColumnDef<T>[], column: ColumnDef<T>) => {
+  const extendColumns = (
+    columns: ColumnDef<T>[],
+    column: ColumnDef<T>,
+  ): ColumnDef<T>[] => {
     columns.push(column);
     return columns;
   };
@@ -221,7 +251,7 @@ export const useColumns = <T extends object>() => {
     columns: ColumnDef<T>[],
     key: string,
     order: number,
-  ) => {
+  ): ColumnDef<T>[] => {
     // Find the index of the object with the given key
     const index = columns.findIndex((obj) => obj.id === key);
 
@@ -242,27 +272,46 @@ export const useColumns = <T extends object>() => {
     return columns;
   };
 
-  const addActionsColumn = (columns: ColumnDef<T>[], props: object) => {
+  const addActionsColumn = (
+    columns: ColumnDef<T>[],
+    props: object,
+    type: 'actions' | 'delete' = 'actions',
+  ): ColumnDef<T>[] => {
     const actionsColumn: ColumnDef<T> = {
       id: 'actions',
       enableHiding: false,
       enableSorting: false,
-      size: 44,
-      maxSize: 44,
+      size: 40,
+      maxSize: 40,
       header: () =>
         h('div', {
-          class: cn(basicHeaderStyle, 'shadow-only-left'),
+          class: cn(basicHeaderStyle),
         }),
       cell: ({ row }) => {
         const rowData = row.original;
         return h(
           'div',
-          { class: cn(basicCellStyle, 'relative shadow-only-left px-2.5') },
-          h(TableCellActions, { ...props, rowData }),
+          { class: cn(basicCellStyle, 'relative px-2.5') },
+          h(type === 'actions' ? TableCellActions : TableCellDelete, {
+            ...props,
+            rowData,
+          }),
         );
       },
+      meta: { type: 'actions' },
     };
     extendColumns(columns, actionsColumn);
+    return columns;
+  };
+
+  const orderAndFilterColumns = (
+    columns: ColumnDef<T>[],
+    keys: string[],
+  ): ColumnDef<T>[] => {
+    const newColumns = keys
+      .map((key) => columns.find((column) => column.id === key))
+      .filter((column): column is ColumnDef<T> => column !== undefined);
+    return newColumns.length ? newColumns : columns;
   };
 
   return {
@@ -270,5 +319,6 @@ export const useColumns = <T extends object>() => {
     extendColumns,
     setOrderForColumn,
     addActionsColumn,
+    orderAndFilterColumns,
   };
 };
