@@ -61,7 +61,11 @@ const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
     </template>
     <ContentEditMain v-if="currentTab === 0">
       <ContentCard>
-        <Selector v-model:selection="selection" :entities="products" />
+        <Selector
+          v-model:selection="selection"
+          mode="simple"
+          :entities="products"
+        />
       </ContentCard>
       <template #sidebar>
         <Card class="p-5">Details</Card>

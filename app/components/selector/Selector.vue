@@ -146,7 +146,7 @@ const selectedEntities = computed(() => {
             :label="$t('exclude_entities_from_selection', { entityName }, 2)"
             :description="$t('selector_exclude_description')"
           >
-            <SelectorSelection
+            <LazySelectorSelection
               v-model:selection="excludeSelection"
               type="exclude"
               :mode="mode"
