@@ -1,25 +1,24 @@
 <script setup lang="ts">
 import Logo from '@/assets/logos/geins.svg';
 import LogoLetter from '@/assets/logos/geins-g.svg';
-import { ChevronsLeft } from 'lucide-vue-next';
 
 const props = defineProps<{
-  open?: boolean;
-  isCollapsed?: boolean;
+  sidebarWidth: string;
 }>();
 
-const isCollapsed = ref(props.isCollapsed);
+const isCollapsed = defineModel<boolean>('collapsed');
 const setIsCollapsed = (value: boolean) => {
   isCollapsed.value = value;
 };
+
+const sidebarStyle = computed(() => {
+  return { width: props.sidebarWidth };
+});
 </script>
 <template>
   <aside
-    :class="
-      cn(
-        `layout-sidebar ${isCollapsed ? 'w-[3.75rem]' : 'w-60'} relative bg-card transition-[width]`,
-      )
-    "
+    :class="cn(`layout-sidebar relative border-r bg-card transition-[width]`)"
+    :style="sidebarStyle"
   >
     <div>
       <div class="ml-5 flex h-header items-center">
@@ -32,10 +31,10 @@ const setIsCollapsed = (value: boolean) => {
       <Button
         variant="secondary"
         size="icon"
-        class="absolute -right-4 top-1/2 z-50 hidden size-7 rounded-full border bg-card md:inline-flex"
+        class="absolute bottom-4 right-4 z-50 inline-flex size-7 border bg-card"
         @click="setIsCollapsed(!isCollapsed)"
       >
-        <ChevronsLeft
+        <LucideChevronsLeft
           :class="
             cn(`size-4 transition-transform ${isCollapsed ? 'rotate-180' : ''}`)
           "

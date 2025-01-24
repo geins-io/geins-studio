@@ -1,79 +1,82 @@
-<script setup lang="ts" generic="TData">
-import type { Product } from '@/types/product/Product';
-import type { ColumnDef } from '@tanstack/vue-table';
-import { TableCellActions } from '#components';
+<script setup lang="ts">
+type Entity = Product;
 
-// Globals
-const entityName = 'product';
-const totalProducts = ref(500);
-const products = ref<Product[]>([]);
+const route = useRoute();
+const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
+  route.fullPath,
+);
+
+definePageMeta({
+  pageType: 'list',
+});
+
+// GLOBAL SETUP
+const apiEndpoint = '/products';
+const totalListItems = ref(3000);
+const dataList = ref<Entity[]>([]);
+const entityIdentifier = '{id}';
+const entityName = getEntityName();
+const newEntityUrl = getNewEntityUrl();
+const editEntityUrl = getEditEntityUrl(entityIdentifier);
 const loading = ref(true);
 
-// Fetch data
-const { data, error } = await useFetch<Product[]>('/api/products', {
-  query: { total: totalProducts.value },
+// SET UP COLUMNS FOR ENTITY
+const columnOptions: ColumnOptions<Entity> = {
+  selectable: true,
+  editUrl: editEntityUrl,
+  columnTitles: { price: 'Default price' },
+  columnTypes: { name: 'link' },
+};
+
+// FETCH DATA FOR ENTITY
+const { data, error } = await useAPI<Entity[]>(apiEndpoint, {
+  query: { total: totalListItems.value },
 });
-if (!data.value || error.value) {
+if (!data?.value || error.value) {
   throw createError({
     ...error.value,
     statusMessage: 'Failed to fetch products',
   });
 } else {
-  products.value = data.value;
+  dataList.value = data.value as Entity[];
 }
 loading.value = false;
 
-// Fix columns
-const { getColumns, extendColumns, setOrderForColumn } = useColumns<Product>();
-const columns = getColumns(products.value, {
-  selectable: true,
-  columnTypes: { price: 'currency', image: 'image' },
+// GET AND SET COLUMNS
+const { getColumns, addActionsColumn } = useColumns<Entity>();
+const columns = getColumns(dataList.value, columnOptions);
+
+// ADD AND ORDER COLUMNS
+addActionsColumn(columns, {
+  onEdit: (product: Entity) =>
+    navigateTo(
+      `${editEntityUrl.replace(entityIdentifier, String(product.id))}`,
+    ),
+  onCopy: (product: Entity) => console.log('Copy', product.id),
+  onDelete: (product: Entity) => console.log('Delete', product.id),
+  onUnpublish: (product: Entity) => console.log('Unpublish', product.id),
 });
-
-const actionsColumn: ColumnDef<Product> = {
-  id: 'actions',
-  enableHiding: false,
-  enableSorting: false,
-  cell: ({ row }) => {
-    const product = row.original;
-
-    return h(
-      'div',
-      { class: 'relative' },
-      h(TableCellActions, {
-        onEdit: () => navigateTo(`/pim/product/${product.id}`),
-        onDelete: () => console.log('Delete product', product.id),
-      }),
-    );
-  },
-};
-
-extendColumns(columns, actionsColumn);
-setOrderForColumn(columns, 'image', 1);
-
-// const handleClick = async (row: Row<Product>) => {
-//   await navigateTo(`/pim/product/${row.original.id}`);
-// };
 </script>
 
 <template>
-  <ContentTitleBlock title="Products" />
-  <ContentActionBar>
-    <Button>{{ $t('new_entity', { entityName }) }}</Button>
-    <Button variant="secondary">Export all</Button>
-    <Button variant="secondary">Export selected</Button>
-  </ContentActionBar>
+  <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
+    <ContentActionBar>
+      <ButtonExport />
+      <ButtonIcon icon="new" :href="newEntityUrl">
+        {{ $t('new_entity', { entityName }) }}
+      </ButtonIcon>
+    </ContentActionBar>
+  </ContentHeader>
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
       :entity-name="entityName"
-      :rows-selectable="true"
       :columns="columns"
-      :data="products"
+      :data="dataList"
     />
     <template #error="{ errorCatched }">
       <h2 class="text-xl font-bold">
-        {{ $t('error_loading_entity', { entityName: 'products' }) }}
+        {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
       </h2>
       <p>{{ errorCatched }}</p>
     </template>

@@ -1,11 +1,6 @@
 <script setup lang="ts" generic="TData">
 import type { Table } from '@tanstack/vue-table';
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 
@@ -13,34 +8,40 @@ interface DataTablePaginationProps {
   table: Table<TData>;
   rowsSelectable: boolean;
   entityName: string;
+  advanced: boolean;
 }
 
 const props = defineProps<DataTablePaginationProps>();
 
 const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
-const entity = computed(() => t(props.entityName, totalRows.value));
 </script>
 
 <template>
-  <div class="flex items-center justify-between border-t px-4 py-3">
-    <div class="flex-1 text-sm text-muted-foreground">
+  <div
+    class="absolute bottom-0 left-0 flex h-14 w-full items-center justify-between rounded-b-md border-t bg-card px-4 py-3 text-xs"
+  >
+    <div class="flex-1">
       <span v-if="rowsSelectable">
         {{
-          $t('rows_selected', {
-            selected: table.getFilteredSelectedRowModel().rows.length,
-            total: totalRows,
-            entityName: entity,
-          })
+          t(
+            'rows_selected',
+            {
+              selected: table.getFilteredSelectedRowModel().rows.length,
+              total: totalRows,
+              entityName,
+            },
+            totalRows,
+          )
         }}
       </span>
       <span v-else>
-        {{ $t('rows_found', { total: totalRows, entityName: entity }) }}
+        {{ t('rows_found', { total: totalRows, entityName }, totalRows) }}
       </span>
     </div>
     <div class="flex items-center space-x-6 lg:space-x-8">
-      <div class="flex items-center space-x-2">
-        <p class="text-sm font-medium">
-          {{ $t('rows_per_page', { entityName }, 2) }}
+      <div v-if="advanced" class="flex items-center space-x-2">
+        <p class="font-medium">
+          {{ t('rows_per_page', { entityName }, 2) }}
         </p>
         <Select
           :model-value="`${table.getState().pagination.pageSize}`"
@@ -62,11 +63,9 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           </SelectContent>
         </Select>
       </div>
-      <div
-        class="flex w-[100px] items-center justify-center text-sm font-medium"
-      >
+      <div class="flex w-[100px] items-center justify-center font-medium">
         {{
-          $t('page_of', {
+          t('page_of', {
             page: table.getState().pagination.pageIndex + 1,
             total: table.getPageCount(),
           })
@@ -80,7 +79,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           @click="table.setPageIndex(0)"
         >
           <span class="sr-only">Go to first page</span>
-          <ChevronsLeft class="size-4" />
+          <LucideChevronsLeft class="size-4" />
         </Button>
         <Button
           variant="secondary"
@@ -89,7 +88,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           @click="table.previousPage()"
         >
           <span class="sr-only">Go to previous page</span>
-          <ChevronLeft class="size-4" />
+          <LucideChevronLeft class="size-4" />
         </Button>
         <Button
           variant="secondary"
@@ -98,7 +97,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           @click="table.nextPage()"
         >
           <span class="sr-only">Go to next page</span>
-          <ChevronRight class="size-4" />
+          <LucideChevronRight class="size-4" />
         </Button>
         <Button
           variant="secondary"
@@ -107,7 +106,7 @@ const entity = computed(() => t(props.entityName, totalRows.value));
           @click="table.setPageIndex(table.getPageCount() - 1)"
         >
           <span class="sr-only">Go to last page</span>
-          <ChevronsRight class="size-4" />
+          <LucideChevronsRight class="size-4" />
         </Button>
       </div>
     </div>

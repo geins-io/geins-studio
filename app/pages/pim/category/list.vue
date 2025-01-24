@@ -1,43 +1,71 @@
-<script setup lang="ts" generic="TData">
-import type { Category } from '@/types/product/Category';
+<script setup lang="ts">
+import type { ColumnDef } from '@tanstack/vue-table';
+import type { ColumnOptions, Category } from '#shared/types';
 
-const entityName = 'category';
-const categories = ref<Category[]>([]);
+type Entity = Category;
+
+const route = useRoute();
+const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
+  route.fullPath,
+);
+
+definePageMeta({
+  pageType: 'list',
+});
+
+// GLOBAL SETUP
+const apiEndpoint = '/categories';
+const dataList = ref<Entity[]>([]);
+const entityIdentifier = '{id}';
+const entityName = getEntityName();
+const newEntityUrl = getNewEntityUrl();
+const editEntityUrl = getEditEntityUrl(entityIdentifier);
 const loading = ref(true);
+const columns: Ref<ColumnDef<Entity>[]> = ref([]);
 
-const { data, error } = await useFetch<Category[]>('/api/categories');
-if (!data.value || error.value) {
+// SET UP COLUMNS FOR ENTITY
+const columnOptions: ColumnOptions<Entity> = {
+  editUrl: editEntityUrl,
+  columnTypes: { name: 'link' },
+};
+
+// FETCH DATA FOR ENTITY
+const { data, error } = await useAPI<Entity[]>(apiEndpoint);
+
+if (!data?.value || error.value) {
   throw createError({
     ...error.value,
     statusMessage: 'Failed to fetch categories',
   });
 } else {
-  categories.value = data.value;
+  dataList.value = data.value as Entity[];
 }
-
 loading.value = false;
 
-const { getColumns } = useColumns<Category>();
-const columns = getColumns(categories.value);
+// GET AND SET COLUMNS
+const { getColumns } = useColumns<Entity>();
+columns.value = getColumns(dataList.value, columnOptions);
 </script>
 
 <template>
-  <ContentTitleBlock title="Categories" />
-  <ContentActionBar>
-    <Button>{{ $t('new_entity', { entityName }) }}</Button>
-    <Button variant="secondary">Export all</Button>
-    <Button variant="secondary">Export selected</Button>
-  </ContentActionBar>
+  <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
+    <ContentActionBar>
+      <ButtonExport />
+      <ButtonIcon icon="new" :href="newEntityUrl">
+        {{ $t('new_entity', { entityName }) }}
+      </ButtonIcon>
+    </ContentActionBar>
+  </ContentHeader>
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
       :entity-name="entityName"
       :columns="columns"
-      :data="categories"
+      :data="dataList"
     />
     <template #error="{ errorCatched }">
       <h2 class="text-xl font-bold">
-        {{ $t('error_loading_entity', { entityName: 'categories' }) }}
+        {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
       </h2>
       <p>{{ errorCatched }}</p>
     </template>

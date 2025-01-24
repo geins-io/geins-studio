@@ -1,11 +1,14 @@
 export default defineNuxtPlugin((nuxtApp) => {
+  const { geinsLogError } = useGeinsLog('app/plugins/error-handler.ts');
   nuxtApp.vueApp.config.errorHandler = (error, instance, info) => {
-    console.log('error', error);
     if (error instanceof Error && error.message === 'AUTH_ERROR') {
-      console.error('Authentication error occurred:', error);
+      geinsLogError('authentication error:', error, instance, info);
       navigateTo('/auth/login');
+    }
+    if (error instanceof Error && error.message === 'API_ERROR') {
+      geinsLogError('api connection error:', error, instance, info);
     } else {
-      console.error(error, instance, info);
+      geinsLogError(error, instance, info);
     }
   };
 });

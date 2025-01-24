@@ -6,14 +6,14 @@ const { t } = useI18n();
 
 // TODO: Remove this function, only for testing purposes
 const triggerToast = (
-  variant: 'default' | 'destructive' | 'positive' | null | undefined,
+  variant: 'default' | 'negative' | 'positive' | null | undefined,
 ) => {
   const title =
-    variant === 'destructive'
+    variant === 'negative'
       ? t('feedback_error')
       : t('feedback_welcome_back', { name: 'Test' });
   const description =
-    variant === 'destructive'
+    variant === 'negative'
       ? t('feedback_try_again')
       : t('feedback_welcome_back_description');
   toast({
@@ -22,14 +22,19 @@ const triggerToast = (
     variant,
   });
 };
-
-const { refresh } = useAuth();
+const { refresh } = useGeinsAuth();
 </script>
 <template>
-  <ContentTitleBlock
+  <ContentHeader
+    :show-breadcrumb="false"
     :title="$t('dashboard_title')"
     :description="$t('dashboard_description')"
-  />
+  >
+    <ContentActionBar>
+      <Button @click="refresh"> Refresh session </Button>
+    </ContentActionBar>
+  </ContentHeader>
+
   <div class="grid grid-cols-3 gap-8">
     <Card>
       <CardHeader>
@@ -38,7 +43,7 @@ const { refresh } = useAuth();
       </CardHeader>
       <CardContent> Card Content </CardContent>
       <CardFooter>
-        <Button @click="refresh"> Refresh session </Button>
+        <Button @click="triggerToast('negative')"> Negative feedback </Button>
       </CardFooter>
     </Card>
     <Card>

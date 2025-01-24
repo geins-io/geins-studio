@@ -1,9 +1,40 @@
-import type { LoginCredentials, TFA, User, Session } from '@/types/auth/Auth';
+import type { JWT } from 'next-auth/jwt';
+import type {
+  AuthTokens,
+  LoginCredentials,
+  AuthResponse,
+  User,
+  Session,
+} from '#shared/types';
 
-const API_BASE = process.env.API_BASE as string;
-const ACCOUNT_KEY = process.env.ACCOUNT_KEY as string;
+import { jwtDecode } from 'jwt-decode';
 
+const API_URL = process.env.GEINS_API_URL as string;
+const ACCOUNT_KEY = process.env.GEINS_ACCOUNT_KEY as string;
+
+const ENDPOINTS = {
+  LOGIN: 'auth',
+  USER: 'user/me',
+  REFRESH: 'auth/refresh',
+  VERIFY: 'auth/verify',
+};
+// TODO: move some of these functions to shared folder (Nuxt 3.14)
+
+/**
+ * Utility functions for authentication.
+ */
 export const auth = () => {
+  /**
+   * Calls the API with the specified parameters.
+   *
+   * @template T - The expected response type.
+   * @param {string} url - The endpoint URL.
+   * @param {string} method - The HTTP method (e.g., 'GET', 'POST').
+   * @param {object} [data] - The request payload.
+   * @param {string} [token] - The authorization token.
+   * @returns {Promise<T>} The response data.
+   * @throws Will throw an error if the response status is not ok.
+   */
   const callAPI = async <T>(
     url: string,
     method: string,
@@ -17,8 +48,7 @@ export const auth = () => {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    console.log('🚀 ~ auth ~  `${API_BASE}/${url}`:', `${API_BASE}/${url}`);
-    const response = await fetch(`${API_BASE}/${url}`, {
+    const response = await fetch(`${API_URL}/${url}`, {
       method,
       headers,
       body: data ? JSON.stringify(data) : undefined,
@@ -30,43 +60,151 @@ export const auth = () => {
 
     const text = await response.text();
     if (response.status === 401) {
-      throw new Error('Unauthorized');
+      throw { status: response.status, message: 'Unauthorized' };
     } else if (response.status === 403) {
-      throw new Error('Insufficient permissions');
+      throw { status: response.status, message: 'Insufficient permissions' };
     } else if (response.status === 404) {
-      throw new Error('Resource not found');
+      throw { status: response.status, message: 'Resource not found' };
     }
     throw new Error(text);
   };
 
-  const login = async (credentials: LoginCredentials) => {
+  /**
+   * Logs in a user with the provided credentials.
+   *
+   * @param {LoginCredentials} credentials - The user's login credentials.
+   * @returns {Promise<AuthResponse>} The session data.
+   */
+  const login = async (
+    credentials: LoginCredentials,
+  ): Promise<AuthResponse> => {
     const creds = {
       username: credentials.username,
       password: credentials.password,
     };
-    return callAPI<Session>('auth', 'POST', creds);
+    return callAPI<AuthResponse>(ENDPOINTS.LOGIN, 'POST', creds);
   };
 
+  /**
+   * Retrieves the user data using the provided access token.
+   *
+   * @param {string} accessToken - The access token.
+   * @returns {Promise<User | undefined>} The user data or undefined if not found.
+   */
   const getUser = async (accessToken: string): Promise<User | undefined> => {
-    return callAPI<User>('user/me', 'GET', undefined, accessToken);
+    return callAPI<User>(ENDPOINTS.USER, 'GET', undefined, accessToken);
   };
 
-  const refresh = async (refreshToken?: string) => {
+  /**
+   * Refreshes the session using the provided refresh token.
+   *
+   * @param {string} [refreshToken] - The refresh token.
+   * @returns {Promise<Session | undefined>} The new session data or undefined if no refresh token is provided.
+   */
+  const refresh = async (
+    refreshToken?: string,
+  ): Promise<AuthResponse | undefined> => {
     if (!refreshToken) {
       return undefined;
     }
-    return callAPI<Session>('auth/refresh', 'POST', { refreshToken });
+    return callAPI<AuthResponse>(ENDPOINTS.REFRESH, 'POST', { refreshToken });
   };
 
-  const verify = async (tfa: TFA) => {
-    if (!tfa || !tfa.code || !tfa.username || !tfa.token) {
-      throw new Error('Missing TFA credentials');
+  /**
+   * Verifies the two-factor authentication (MFA) credentials.
+   *
+   * @param {LoginCredentials} credentials - The MFA login credentials.
+   * @returns {Promise<AuthResponse>} The verified user auth response.
+   * @throws Will throw an error if `loginToken` or `mfaCode` is missing from `credentials`.
+   */
+  const verify = async (credentials: AuthTokens): Promise<AuthResponse> => {
+    if (!credentials.loginToken || !credentials.mfaCode) {
+      throw new Error('Missing MFA credentials');
     }
 
-    const { username, token, code } = tfa;
-    const credentials = { user: username, token, code };
+    return callAPI<AuthResponse>(ENDPOINTS.VERIFY, 'POST', credentials);
+  };
 
-    return callAPI<User>('dfa-verify', 'POST', credentials);
+  /**
+   * Parses the provided token.
+   *
+   * @param {string | null} [token] - The token to parse.
+   * @returns {JWT | null} The parsed token data.
+   */
+  const parseToken = (token?: string | null): JWT | null => {
+    return token ? jwtDecode(token) : null;
+  };
+
+  /**
+   * Checks if the token is expired.
+   *
+   * @param {number} [exp] - The expiration time in seconds.
+   * @returns {boolean} True if the token is expired, false otherwise.
+   */
+  const isExpired = (exp?: number): boolean => {
+    if (!exp) {
+      return false;
+    }
+    exp = exp * 1000;
+    return Date.now() > exp;
+  };
+
+  /**
+   * Checks if the token is about to expire soon.
+   *
+   * @param {number} [exp] - The expiration time in seconds.
+   * @param {number} [threshold=300000] - The threshold in milliseconds, default is 300000 (5 minutes).
+   * @returns {boolean} True if the token is about to expire soon, false otherwise.
+   */
+  const expiresSoon = (exp?: number, threshold: number = 300000): boolean => {
+    if (!exp) {
+      return false;
+    }
+    exp = exp * 1000;
+    return Date.now() + threshold > exp;
+  };
+
+  /**
+   * Transform the login/verify/refresh response into a session object.
+   *
+   * @param {AuthResponse} response - The auth response.
+   * @returns {Session} The token data including authorization status and expiration times.
+   */
+  const getSession = (response: AuthResponse): Session => {
+    if (response.mfaRequired && response.loginToken) {
+      return {
+        isAuthenticated: false,
+        mfaActive: true,
+        mfaMethod: response.mfaMethod,
+        loginToken: response.loginToken,
+      };
+    }
+    if (!response.mfaRequired && !response.accessToken) {
+      return { isAuthenticated: false };
+    }
+
+    const parsedToken = parseToken(response.accessToken);
+    return {
+      isAuthenticated: true,
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+      tokenExpires: Number(parsedToken?.exp),
+      refreshedAt: Number(parsedToken?.iat),
+      mfaActive: false,
+    };
+  };
+
+  /**
+   * Determines if the token should be refreshed.
+   *
+   * @param {Session} session - The session token.
+   * @returns {boolean} True if the token should be refreshed, false otherwise.
+   */
+  const shouldRefresh = (session: Session): boolean => {
+    return !!(
+      session.isAuthenticated &&
+      (isExpired(session.tokenExpires) || expiresSoon(session.tokenExpires))
+    );
   };
 
   return {
@@ -74,5 +212,10 @@ export const auth = () => {
     getUser,
     refresh,
     verify,
+    parseToken,
+    isExpired,
+    expiresSoon,
+    getSession,
+    shouldRefresh,
   };
 };

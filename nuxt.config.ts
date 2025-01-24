@@ -1,4 +1,3 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 import { getAuthBaseUrlVercel } from './app/lib/deployment';
 
 export default defineNuxtConfig({
@@ -16,6 +15,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',
+    'nuxt-lucide-icons',
   ],
 
   shadcn: {
@@ -40,15 +40,13 @@ export default defineNuxtConfig({
   auth: {
     isEnabled: true,
     baseURL: getAuthBaseUrlVercel(),
-    sessionRefresh: {
-      handler: './app/utils/authRefreshHandler.ts',
-    },
     provider: {
       type: 'authjs',
     },
+    sessionRefresh: {
+      enableOnWindowFocus: false,
+    },
   },
-
-  plugins: ['./app/plugins/error-handler.ts', './app/plugins/auth-state.ts'],
 
   i18n: {
     defaultLocale: 'en',
@@ -65,14 +63,20 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      accountKey: process.env.ACCOUNT_KEY,
-      apiBase: process.env.API_BASE,
+      accountKey: process.env.GEINS_ACCOUNT_KEY,
+      apiUrl: process.env.GEINS_API_URL,
+      debug: process.env.GEINS_DEBUG === 'true',
       VERCEL: process.env.VERCEL,
       VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
       VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
       VERCEL_ENV: process.env.VERCEL_ENV,
     },
     private: {},
+  },
+
+  sourcemap: {
+    server: false,
+    client: true,
   },
 
   compatibilityDate: '2024-07-05',

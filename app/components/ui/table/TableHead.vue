@@ -10,7 +10,7 @@ const props = defineProps<{
   <th
     :class="
       cn(
-        'h-12 px-2 text-left align-middle font-medium text-card-foreground [&:not(:last-child)]:border-r [&>[role=checkbox]]:translate-y-0.5',
+        'border-l p-0 font-medium [&:first-child]:rounded-tl-lg [&:first-child]:border-0 [&:last-child]:rounded-tr-lg',
         props.class,
       )
     "

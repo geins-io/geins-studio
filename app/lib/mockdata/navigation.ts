@@ -1,4 +1,4 @@
-import type { NavigationItem } from '@/types/NavigationItem';
+import type { NavigationItem } from '#shared/types';
 export const navigation: NavigationItem[] = [
   {
     label: 'Dashboard',
@@ -8,21 +8,21 @@ export const navigation: NavigationItem[] = [
   {
     label: 'Products',
     href: '/pim/product/list',
-    icon: 'ShoppingBasket',
+    icon: 'Tag',
     children: [
       {
         label: 'Products',
         href: '/pim/product/list',
       },
-      {
+      /*       {
         label: 'Brands',
         href: '',
-      },
+      }, */
       {
         label: 'Categories',
         href: '/pim/category/list',
       },
-      {
+      /*  {
         label: 'Campaigns',
         href: '',
       },
@@ -33,10 +33,10 @@ export const navigation: NavigationItem[] = [
       {
         label: 'Product reviews',
         href: '',
-      },
+      }, */
     ],
   },
-  {
+  /*   {
     label: 'Content',
     href: '',
     icon: 'Brush',
@@ -147,29 +147,57 @@ export const navigation: NavigationItem[] = [
         href: '',
       },
     ],
-  },
+  }, */
   {
     label: 'Wholesale',
-    href: '',
+    href: '/wholesale/account/list',
     icon: 'Building2',
+    children: [
+      {
+        label: 'Accounts',
+        href: '/wholesale/account/list',
+      },
+      {
+        label: 'Orders',
+        href: '/wholesale/order/list',
+      },
+      {
+        label: 'Pricelists',
+        href: '/wholesale/pricelist/list',
+      },
+    ],
   },
-  {
+  /*   {
     label: 'Import Tool',
     href: '',
     icon: 'Import',
   },
+  */
   {
-    label: 'Settings',
-    href: '',
+    label: 'For dev',
+    href: '/account/market/list',
     icon: 'Settings',
     children: [
+      {
+        label: 'Markets',
+        href: '/account/market/list',
+      },
+      {
+        label: 'Languages',
+        href: '/account/language/list',
+      },
+      {
+        label: 'Users',
+        href: '/account/user/list',
+      },
+      /*
       {
         label: 'API Users',
         href: '',
       },
       {
         label: 'Administrators',
-        href: '',
+        href: '/user/list',
       },
       {
         label: 'Markets',
@@ -187,8 +215,9 @@ export const navigation: NavigationItem[] = [
         label: '404 Pages',
         href: '',
       },
+      */
     ],
-  },
+  } /*
   {
     label: 'Super Admin',
     href: '',
@@ -243,5 +272,5 @@ export const navigation: NavigationItem[] = [
         href: '',
       },
     ],
-  },
+  }, */,
 ];

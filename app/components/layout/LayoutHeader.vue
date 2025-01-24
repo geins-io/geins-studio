@@ -1,15 +1,5 @@
 <script setup lang="ts">
-import {
-  Search,
-  MoonStar,
-  Sun,
-  User,
-  LogOut,
-  CircleHelp,
-  CreditCard,
-} from 'lucide-vue-next';
-
-const auth = useAuth();
+const { logout } = useGeinsAuth();
 const { user, userInitials } = useUserStore();
 
 const colorMode = useColorMode();
@@ -19,24 +9,24 @@ const setColorMode = () => {
 </script>
 <template>
   <header
-    class="text-background-foreground flex flex-none items-center justify-start bg-card"
+    class="text-background-foreground flex flex-none items-center justify-start border-b bg-card"
   >
-    <div class="relative w-full max-w-sm items-center">
+    <div class="relative ml-5 w-full max-w-96 items-center">
       <Input
         id="search"
         type="text"
         :placeholder="$t('global_search_placeholder')"
-        class="bg-popover pl-10"
+        class="bg-input pl-10"
       />
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-2"
       >
-        <Search class="size-5 text-foreground" />
+        <LucideSearch class="size-5 text-foreground" />
       </span>
     </div>
     <div class="ml-auto mr-5">
       <NuxtLink to="/" class="flex items-center gap-1.5">
-        <CircleHelp class="size-4" />
+        <LucideCircleHelp class="size-4" />
         <span class="text-sm">Help center</span>
       </NuxtLink>
     </div>
@@ -62,30 +52,33 @@ const setColorMode = () => {
             <AvatarFallback>{{ userInitials }}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
-        <DropdownMenuContent class="w-56">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuContent class="w-48">
+          <DropdownMenuLabel class="text-sm">My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
-            <NuxtLink class="flex items-center" :to="`/user/${user?.id}`">
-              <User class="mr-2 size-4" />
+            <NuxtLink
+              class="flex items-center"
+              :to="`/account/user/${user?.username}`"
+            >
+              <LucideUser class="mr-2 size-4" />
               <span>Profile</span>
             </NuxtLink>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <CreditCard class="mr-2 size-4" />
+            <LucideCreditCard class="mr-2 size-4" />
             <span>Billing</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="setColorMode">
-            <Sun class="mr-2 size-4 dark:hidden" />
-            <MoonStar class="mr-2 hidden size-4 dark:block" />
+            <LucideSun class="mr-2 hidden size-4 dark:block" />
+            <LucideMoonStar class="mr-2 size-4 dark:hidden" />
             <span class="dark:hidden">Dark mode</span>
             <span class="hidden dark:block">Light mode</span>
-            <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
+            <!-- <DropdownMenuShortcut>⌘C</DropdownMenuShortcut> -->
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem @click="auth.signOut()">
-            <LogOut class="mr-2 size-4" />
+          <DropdownMenuItem @click="logout()">
+            <LucideLogOut class="mr-2 size-4" />
             <span>Log out</span>
           </DropdownMenuItem>
         </DropdownMenuContent>

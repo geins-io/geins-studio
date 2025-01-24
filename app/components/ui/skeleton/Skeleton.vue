@@ -9,5 +9,5 @@ const props = defineProps<SkeletonProps>();
 </script>
 
 <template>
-  <div :class="cn('animate-pulse rounded-xl bg-primary/40', props.class)" />
+  <div :class="cn('animate-pulse rounded-xl bg-background', props.class)" />
 </template>

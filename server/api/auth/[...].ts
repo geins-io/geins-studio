@@ -1,9 +1,9 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
-import type { LoginCredentials } from '@/types/auth/Auth';
-import type { Session } from 'next-auth';
+import type { LoginCredentials, AuthResponse, AuthTokens } from '#shared/types';
 
-let justSignedIn = false;
+const geinsAuth = auth();
+const { geinsLog, geinsLogWarn } = log('server/api/auth/[...].ts');
 
 export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
@@ -14,80 +14,77 @@ export default NuxtAuthHandler({
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
       if (trigger === 'signIn' && user) {
-        // Set the token
-        if (user.isAuthorized) {
-          token = {
-            isAuthorized: user.isAuthorized,
-            accessToken: user.accessToken,
-            refreshToken: user.refreshToken,
-          };
-          justSignedIn = true;
-        } else if (user.tfa) {
-          token = {
-            isAuthorized: false,
-            tfa: user.tfa,
-          };
-        }
-      } else if (justSignedIn) {
-        justSignedIn = false;
+        // If this is a sign in, set the token to include the user object,
+        // where our session data is stored when returned from the API
+        token = {
+          ...user,
+        };
       } else if (
-        token.isAuthorized &&
         trigger === undefined &&
-        user === undefined
+        user === undefined &&
+        geinsAuth.shouldRefresh(token)
       ) {
+        // If the token should be refreshed, try to do so
         try {
-          // Refresh the token
-          const geinsAuth = auth();
           const newTokens = await geinsAuth.refresh(token.refreshToken);
-
           if (newTokens) {
+            // If refresh is successful, update the token with the new session data
+            const tokenData = geinsAuth.getSession(newTokens);
             token = {
-              isAuthorized: true,
-              accessToken: newTokens.accessToken,
-              refreshToken: newTokens.refreshToken,
+              ...tokenData,
             };
+            geinsLog('jwt returned ::: refresh:', token);
+            return token;
           }
         } catch (error) {
-          console.error('Error refreshing token:', error);
-          if (error === 'Unauthorized') {
+          // TODO: type errors
+          // If the refresh fails, check the error status and handle accordingly
+          if (error.status === 401 || error.status === 403) {
+            // This will force logout in session callback
             token = {
-              isAuthorized: false,
+              isAuthenticated: false,
             };
+            geinsLog('jwt returned ::: refresh fail:', token);
+            return token;
           } else {
-            // TODO: Decide if we should try to refresh the token again, or just log the user out
+            // TODO: Decide what to do here
           }
         }
       }
+      geinsLog('jwt returned:', token);
       return token;
     },
     session: async ({ session, token }) => {
-      if (token.isAuthorized && token.accessToken) {
+      if (token.isAuthenticated && token.accessToken) {
+        // If we are authorized and have an access token, update the session
+        session = {
+          ...session,
+          isAuthenticated: token.isAuthenticated,
+          accessToken: token.accessToken,
+          refreshedAt: token.refreshedAt,
+        };
+        // If we don't have a user object, fetch it
+        if (!session.user?.email && !geinsAuth.isExpired(token.tokenExpires)) {
+          try {
+            const user = await geinsAuth.getUser(token.accessToken);
+            session.user = user;
+          } catch (error) {
+            geinsLogWarn('error fetching user', error);
+            // Keep session as is if we can't fetch the user, maybe there is a network error..
+          }
+        }
+      } else if (token.mfaActive) {
+        // If MFA is active, set the session to reflect this
         session = {
           ...session,
           ...token,
         };
-        if (!session.user?.email) {
-          try {
-            const geinsAuth = auth();
-            const user = await geinsAuth.getUser(token.accessToken);
-            session.user = user;
-          } catch (error) {
-            console.error('Error fetching user:', error);
-            session = {
-              ...session,
-              isAuthorized: false,
-            };
-          }
-        }
       } else {
-        session = {
-          ...session,
-          isAuthorized: false,
-        };
+        // Throw error to force log out
+        geinsLogWarn('user unauthorized, logging out');
+        throw { status: 401, message: 'AUTH_ERROR' };
       }
-      if (token.tfa) {
-        return { ...session, tfa: token.tfa };
-      }
+      geinsLog('session:', session);
       return session;
     },
   },
@@ -100,24 +97,32 @@ export default NuxtAuthHandler({
         username: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials: LoginCredentials) {
-        const geinsAuth = auth();
+      async authorize(credentials: LoginCredentials | AuthTokens) {
+        let authResponse: AuthResponse | null = null;
 
-        if (credentials.username && credentials.password) {
-          const authResponse = await geinsAuth.login(credentials);
-
-          if (!authResponse) {
-            return null;
-          }
-
-          return {
-            isAuthorized: true,
-            accessToken: authResponse.accessToken,
-            refreshToken: authResponse.refreshToken,
-          } as Session;
+        // Check if we have a login token and MFA code, or a username and password
+        // and call the appropriate login method
+        if (
+          'username' in credentials &&
+          credentials.username &&
+          credentials.password
+        ) {
+          authResponse = await geinsAuth.login(credentials);
+        } else if (
+          'loginToken' in credentials &&
+          credentials.loginToken &&
+          credentials.mfaCode
+        ) {
+          authResponse = await geinsAuth.verify(credentials);
         }
 
-        return null;
+        // If we don't have a valid response, return null
+        if (!authResponse) {
+          return null;
+        }
+
+        // If we have a valid response, return the session data
+        return geinsAuth.getSession(authResponse);
       },
     }),
   ],

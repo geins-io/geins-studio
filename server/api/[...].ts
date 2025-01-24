@@ -1,42 +1,47 @@
 import { defineEventHandler, readBody, getHeaders } from 'h3';
 import { useRuntimeConfig } from '#imports';
-import { getToken } from '#auth';
-
+/**
+ * Event handler for processing API requests.
+ *
+ * This handler is a catch-all for API requests that are not handled by other routes.
+ * It forwards the request to the target API and returns the response.
+ * The target API URL is specified in the request query string.
+ * The handler adds the account key to the request headers.
+ *
+ */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
+  const { geinsLog, geinsLogWarn } = log('server/api/[...].ts');
 
-  // Only read body for methods that typically include one
   let body;
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
     body = await readBody(event);
   }
   const headers = getHeaders(event);
-
-  // Extract the target URL from the request
   const targetUrl = event.context.params?._;
 
   if (!targetUrl) {
     return { success: false, error: 'Target URL is required' };
   }
-  const fullUrl = `${config.public.apiBase}/${targetUrl}`;
+  const fullUrl = `${config.public.apiUrl}/${targetUrl}`;
 
-  // Prepare headers
+  geinsLog(fullUrl);
+
   const apiHeaders = {
     'x-account-key': config.public.accountKey as string,
     ...headers,
   };
 
-  const token = await getToken({ event });
-  if (token) {
-    apiHeaders['Authorization'] = `Bearer ${token.accessToken}`;
+  try {
+    const response = await $fetch(fullUrl, {
+      method: event.method,
+      body,
+      headers: apiHeaders,
+    });
+    return response;
+  } catch (error) {
+    // TODO: Evaluate if we should throw an error here
+    geinsLogWarn('error connecting to the API:', error);
+    return null;
   }
-
-  // Make the API call
-  const response = await $fetch(fullUrl.toString(), {
-    method: event.method,
-    body,
-    headers: apiHeaders,
-  });
-
-  return response;
 });

@@ -5,18 +5,19 @@ export default defineConfig({
   title: 'Geins Merchant Center Developer Docs',
   description: 'Geins Merchant Center Developer Docs',
   lastUpdated: true,
-  head: [['link', { rel: 'icon', href: '/assets/favicon.ico' }]],
+  head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     siteTitle: 'Merchant Center',
     logo: {
-      light: '/assets/geins-g.svg',
-      dark: '/assets/geins-g-white.svg',
+      light: '/geins-g.svg',
+      dark: '/geins-g-white.svg',
       alt: 'Geins Merchant Center Developer Docs',
     },
     search: {
       provider: 'local',
     },
+    outline: 'deep',
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Docs', link: '/introduction/what-is-geins-mc' },
@@ -37,6 +38,24 @@ export default defineConfig({
           },
           { text: 'Getting Started', link: '/introduction/getting-started' },
           { text: 'Deploy', link: '/introduction/deploy' },
+        ],
+      },
+      {
+        text: 'Concepts',
+        items: [
+          { text: 'Entities', link: '/concepts/entities' },
+          { text: 'Authentication', link: '/concepts/authentication' },
+        ],
+      },
+      {
+        text: 'Composables',
+        items: [
+          { text: 'useAPI', link: '/composables/useAPI.md' },
+          { text: 'useColumns', link: '/composables/useColumns.md' },
+          { text: 'useEntity', link: '/composables/useEntity.md' },
+          { text: 'useGeinsAuth', link: '/composables/useGeinsAuth.md' },
+          { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
+          { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
         ],
       },
       {

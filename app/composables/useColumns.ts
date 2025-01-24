@@ -1,63 +1,125 @@
 import { h } from 'vue';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
-import { ArrowUpDown } from 'lucide-vue-next';
-import { Button, Checkbox } from '#components';
-import type { ColumnOptions } from '@/types/Columns';
+import {
+  Checkbox,
+  NuxtLink,
+  TableHeaderSort,
+  TableCellActions,
+  TableCellDelete,
+  TableCellLongText,
+} from '#components';
+import type { ColumnOptions, ColumnType, ColumnTypes } from '#shared/types';
 
 export const useColumns = <T extends object>() => {
+  const basicCellStyle =
+    'px-[1.2rem] align-middle text-xs leading-8 w-full h-10 flex items-center truncate';
+  const basicHeaderTextStyle = 'text-xs font-medium uppercase';
+  const basicHeaderStyle =
+    'h-12 px-1.5 flex items-center ' + basicHeaderTextStyle;
+
   const selectableColumn: ColumnDef<T> = {
     id: 'select',
     header: ({ table }: { table: Table<T> }) =>
-      h(Checkbox, {
-        checked: table.getIsAllPageRowsSelected(),
-        'onUpdate:checked': (value: boolean) =>
-          table.toggleAllPageRowsSelected(!!value),
-        ariaLabel: 'Select all',
-      }),
+      h(
+        'div',
+        {
+          class: cn(basicHeaderStyle, 'flex items-center justify-center px-1'),
+        },
+        h(Checkbox, {
+          checked: table.getIsAllPageRowsSelected(),
+          'onUpdate:checked': (value: boolean) =>
+            table.toggleAllPageRowsSelected(!!value),
+          ariaLabel: 'Select all',
+        }),
+      ),
     cell: ({ row }: { row: Row<T> }) =>
-      h(Checkbox, {
-        checked: row.getIsSelected(),
-        'onUpdate:checked': (value: boolean) => row.toggleSelected(!!value),
-        ariaLabel: 'Select row',
-      }),
+      h(
+        'div',
+        {
+          class: cn(basicCellStyle, 'px-3 flex items-center justify-center'),
+        },
+        h(Checkbox, {
+          checked: row.getIsSelected(),
+          'onUpdate:checked': (value: boolean) => row.toggleSelected(!!value),
+          ariaLabel: 'Select row',
+        }),
+      ),
+
     enableSorting: false,
     enableHiding: false,
+    size: 40,
+    maxSize: 40,
+    meta: { type: 'select' },
   };
 
-  const getColumns = (data: T[], options: Partial<ColumnOptions> = {}) => {
-    const { selectable = false, sortable = true, columnTypes = {} } = options;
+  const getColumns = (
+    data: T[],
+    options: Partial<ColumnOptions<T>> = {},
+  ): ColumnDef<T>[] => {
+    const {
+      selectable = false,
+      sortable = true,
+      columnTypes = {} as ColumnTypes<T>,
+      maxTextLength = 60,
+    } = options;
+    let columns: ColumnDef<T>[] = [];
 
-    const keys = data ? Object.keys(data[0] as object) : [];
+    const keys = data && data.length ? Object.keys(data[0] as object) : [];
     if (keys.length === 0) {
-      return [];
+      return columns;
     }
-
-    const columns: ColumnDef<T>[] = [];
 
     if (selectable) {
       columns.push(selectableColumn);
     }
 
     keys.forEach((key) => {
-      const title = key.charAt(0).toUpperCase() + key.slice(1);
-      const columnType = columnTypes[key] || 'string';
-      const basicCellStyle = 'pl-3 min-h-8 leading-5 flex items-center';
+      let title = key;
+      if (options.columnTitles?.[key as keyof T]) {
+        title = options.columnTitles[key as keyof T] as string;
+      } else {
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+        title = title.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+        title = title.toLowerCase();
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+      }
+
+      // Set column type
+      let columnType: ColumnType;
+      const keyLower = key.toLowerCase();
+      // Infer column type based on key
+      if (keyLower.includes('date')) {
+        columnType = 'date';
+      } else if (keyLower.includes('price') || keyLower.includes('amount')) {
+        columnType = 'currency';
+      } else if (keyLower.includes('image') || keyLower.includes('img')) {
+        columnType = 'image';
+      } else {
+        columnType = 'string';
+      }
+      // Override column type if explicitly set in options
+      columnType = columnTypes[key as keyof T] || columnType;
+
+      let columnSize = {
+        size: 0,
+        minSize: 0,
+        maxSize: 0,
+      };
+
       let cellRenderer;
       let headerRenderer = sortable
         ? ({ column }: { column: Column<T> }) => {
             return h(
-              Button,
-              {
-                variant: 'ghost',
-                size: 'sm',
-                class: 'text-md',
-                onClick: () =>
-                  column.toggleSorting(column.getIsSorted() === 'asc'),
-              },
-              () => [title, h(ArrowUpDown, { class: 'ml-1.5 size-3.5' })],
+              'div',
+              { class: basicHeaderStyle },
+              h(TableHeaderSort<T>, {
+                column,
+                title,
+                className: basicHeaderTextStyle,
+              }),
             );
           }
-        : () => h('div', title);
+        : () => h('div', { class: basicHeaderStyle }, title);
 
       switch (columnType) {
         case 'currency':
@@ -74,35 +136,77 @@ export const useColumns = <T extends object>() => {
         case 'image':
           cellRenderer = ({ row }: { row: Row<T> }) => {
             const value = row.getValue(key);
-            return h('img', {
-              src: value,
-              alt: title,
-              class: 'size-7 mx-auto',
-            });
+            return h(
+              'span',
+              { class: 'px-1.5 block' },
+              h('img', {
+                src: value,
+                alt: title,
+                class: 'size-7 mx-auto max-w-10 p-0.5',
+              }),
+            );
           };
-          headerRenderer = () => h('div', { class: '' }, title);
+
+          headerRenderer = () =>
+            h('div', { class: cn(basicHeaderStyle, 'px-2') });
+          columnSize = { size: 40, minSize: 40, maxSize: 40 };
           break;
-        // case 'date':
-        //   cellRenderer = ({ row }: { row: Row<T> }) => {
-        //     const value = row.getValue(key);
-        //     if (
-        //       typeof value !== 'string' ||
-        //       typeof value !== 'number') {
-        //       return;
-        //     }
-        //     const formatted = new Intl.DateTimeFormat('sv-SE').format(
-        //       new Date(value),
-        //     );
-        //     return h('div', { class: '' }, formatted);
-        //   };
-        //   break;
-        default:
+        case 'link':
+          cellRenderer = ({ row }: { row: Row<T> }) => {
+            const match = options.editUrl?.match(/{([^}]+)}/);
+            const pathKey = match ? match[1] : null;
+            const editKey = row.getValue(pathKey || 'id') as string;
+            const fullEditUrl = options.editUrl?.replace(
+              `{${pathKey}}`,
+              editKey,
+            );
+            const text = String(row.getValue(key));
+            const link = h(
+              NuxtLink,
+              {
+                to: fullEditUrl,
+                class: cn(
+                  'underline underline-offset-2 font-medium text-link hover:text-muted-foreground',
+                ),
+              },
+              {
+                default: () =>
+                  text.length > maxTextLength
+                    ? text.slice(0, maxTextLength) + '...'
+                    : text,
+              },
+            );
+            if (text.length > maxTextLength) {
+              return h(
+                TableCellLongText,
+                { text, className: basicCellStyle, maxTextLength },
+                { default: () => link },
+              );
+            }
+            return h('div', { class: basicCellStyle }, link);
+          };
+          break;
+
+        case 'date':
           cellRenderer = ({ row }: { row: Row<T> }) => {
             const value = row.getValue(key);
-
-            if (typeof value === 'string' || typeof value === 'number') {
-              return h('div', { class: basicCellStyle }, value);
+            const date = new Date(value as string | number | Date);
+            const formatted = date.toLocaleDateString('sv-SE');
+            return h('div', { class: basicCellStyle }, formatted);
+          };
+          break;
+        default:
+          cellRenderer = ({ row }: { row: Row<T> }) => {
+            const text = String(row.getValue(key));
+            if (text.length > maxTextLength) {
+              return h(TableCellLongText, {
+                text,
+                className: basicCellStyle,
+                maxTextLength,
+                default: () => text,
+              });
             }
+            return h('div', { class: basicCellStyle }, text);
           };
       }
 
@@ -112,13 +216,33 @@ export const useColumns = <T extends object>() => {
         header: headerRenderer,
         cell: cellRenderer,
         enableSorting: sortable,
+        meta: { type: columnType, title },
+        ...columnSize,
       });
+    });
+
+    columns = columns.sort((a, b) => {
+      const getOrder = (col: ColumnDef<T>) => {
+        const type = col.meta?.type || '';
+        const title = col.meta?.title?.toLowerCase() || '';
+
+        if (type === 'select') return 0;
+        if (title.includes('id')) return 1;
+        if (type === 'image') return 2;
+        if (title.includes('name') || title.includes('title')) return 3;
+
+        return 4;
+      };
+      return getOrder(a) - getOrder(b);
     });
 
     return columns;
   };
 
-  const extendColumns = (columns: ColumnDef<T>[], column: ColumnDef<T>) => {
+  const extendColumns = (
+    columns: ColumnDef<T>[],
+    column: ColumnDef<T>,
+  ): ColumnDef<T>[] => {
     columns.push(column);
     return columns;
   };
@@ -127,7 +251,7 @@ export const useColumns = <T extends object>() => {
     columns: ColumnDef<T>[],
     key: string,
     order: number,
-  ) => {
+  ): ColumnDef<T>[] => {
     // Find the index of the object with the given key
     const index = columns.findIndex((obj) => obj.id === key);
 
@@ -148,21 +272,53 @@ export const useColumns = <T extends object>() => {
     return columns;
   };
 
-  // const disableSortingForColumn = (columns: ColumnDef<T>[], key: string) => {
-  //   const title = key.charAt(0).toUpperCase() + key.slice(1);
+  const addActionsColumn = (
+    columns: ColumnDef<T>[],
+    props: object,
+    type: 'actions' | 'delete' = 'actions',
+  ): ColumnDef<T>[] => {
+    const actionsColumn: ColumnDef<T> = {
+      id: 'actions',
+      enableHiding: false,
+      enableSorting: false,
+      size: 40,
+      maxSize: 40,
+      header: () =>
+        h('div', {
+          class: cn(basicHeaderStyle),
+        }),
+      cell: ({ row }) => {
+        const rowData = row.original;
+        return h(
+          'div',
+          { class: cn(basicCellStyle, 'relative px-2.5') },
+          h(type === 'actions' ? TableCellActions : TableCellDelete, {
+            ...props,
+            rowData,
+          }),
+        );
+      },
+      meta: { type: 'actions' },
+    };
+    extendColumns(columns, actionsColumn);
+    return columns;
+  };
 
-  //   columns.forEach((column) => {
-  //     if (column.id === key) {
-  //       column.header = () => h('div', title);
-  //     }
-  //   });
-  //   return columns;
-  // };
+  const orderAndFilterColumns = (
+    columns: ColumnDef<T>[],
+    keys: string[],
+  ): ColumnDef<T>[] => {
+    const newColumns = keys
+      .map((key) => columns.find((column) => column.id === key))
+      .filter((column): column is ColumnDef<T> => column !== undefined);
+    return newColumns.length ? newColumns : columns;
+  };
 
   return {
     getColumns,
     extendColumns,
     setOrderForColumn,
-    // disableSortingForColumn,
+    addActionsColumn,
+    orderAndFilterColumns,
   };
 };
