@@ -78,6 +78,9 @@ export default defineNuxtConfig({
     server: false,
     client: true,
   },
+  nitro: {
+    preset: 'azure',
+  },
 
   compatibilityDate: '2024-07-05',
 });
