@@ -1,4 +1,4 @@
-name: Release Main to Azure SWA
+name: CI Release Main to Azure SWA
 
 on:
   push:
