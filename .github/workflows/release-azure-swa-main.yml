@@ -1,7 +1,6 @@
 name: Release Main to Azure SWA
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
