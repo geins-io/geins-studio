@@ -20,8 +20,6 @@ onMounted(async () => {
   await preLogin();
 });
 
-
-
 const loginToken = ref('');
 const mfaMethod = ref('');
 const pending = ref(false);
