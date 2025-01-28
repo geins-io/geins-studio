@@ -13,8 +13,14 @@ definePageMeta({
   },
 });
 
-const { login, verify, session } = useGeinsAuth();
+const { login, preLogin, verify, session } = useGeinsAuth();
 const router = useRouter();
+
+onMounted(async () => {
+  await preLogin();
+});
+
+
 
 const loginToken = ref('');
 const mfaMethod = ref('');
@@ -110,12 +116,6 @@ async function handleVerify(mfaCode: string) {
 </script>
 
 <template>
-  <AuthForm
-    :mode="step"
-    :pending="pending"
-    :show-invalid="showInvalid"
-    :mfa-method="mfaMethod"
-    @login="handleLogin"
-    @verify="handleVerify"
-  />
+  <AuthForm :mode="step" :pending="pending" :show-invalid="showInvalid" :mfa-method="mfaMethod" @login="handleLogin"
+    @verify="handleVerify" />
 </template>

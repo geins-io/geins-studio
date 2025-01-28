@@ -17,6 +17,11 @@ export function useGeinsAuth() {
       auth.status.value === 'authenticated' && !session.value?.isAuthenticated,
   );
 
+  const preLogin = async () => {
+    $fetch('/api/ping/auth');
+    $fetch('/api/ping/account');
+  };
+
   const login = async (credentials: LoginCredentials) => {
     return await auth.signIn('credentials', {
       redirect: false,
@@ -74,6 +79,7 @@ export function useGeinsAuth() {
     isAuthenticated,
     isRefreshing,
     authStateDiffers,
+    preLogin,
     login,
     verify,
     logout,

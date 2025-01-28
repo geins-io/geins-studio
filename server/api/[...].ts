@@ -18,18 +18,25 @@ export default defineEventHandler(async (event) => {
     body = await readBody(event);
   }
   const headers = getHeaders(event);
-  const targetUrl = event.context.params?._;
 
+  const token = headers['x-geins-token'];
+  if (!token) {
+    return { success: false, error: 'Token is required' };
+  }
+
+  const targetUrl = event.context.params?._;
   if (!targetUrl) {
     return { success: false, error: 'Target URL is required' };
   }
+
   const fullUrl = `${config.public.apiUrl}/${targetUrl}`;
 
   geinsLog(fullUrl);
 
   const apiHeaders = {
+    'content-type': 'application/json',
     'x-account-key': config.public.accountKey as string,
-    ...headers,
+    authorization: `Bearer ${token}`,
   };
 
   try {
@@ -42,6 +49,9 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     // TODO: Evaluate if we should throw an error here
     geinsLogWarn('error connecting to the API:', error);
-    return null;
+    return {
+      success: false,
+      error: 'Error connecting to the API',
+    };
   }
 });
