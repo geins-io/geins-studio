@@ -1,6 +1,11 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
-import type { LoginCredentials, AuthResponse, AuthTokens } from '#shared/types';
+import type {
+  LoginCredentials,
+  AuthResponse,
+  AuthTokens,
+  AccountKey,
+} from '#shared/types';
 
 const geinsAuth = auth();
 const { geinsLog, geinsLogWarn } = log('server/api/auth/[...].ts');
@@ -13,6 +18,9 @@ export default NuxtAuthHandler({
   },
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
+      console.log('🚀 ~ jwt: ~ trigger:', trigger);
+      console.log('🚀 ~ jwt: ~ user:', user);
+      console.log('🚀 ~ jwt: ~ token:', token);
       if (trigger === 'signIn' && user) {
         // If this is a sign in, set the token to include the user object,
         // where our session data is stored when returned from the API
@@ -62,11 +70,20 @@ export default NuxtAuthHandler({
           isAuthenticated: token.isAuthenticated,
           accessToken: token.accessToken,
           refreshedAt: token.refreshedAt,
+          accountKey: token.accountKey,
+          accounts: token.accounts,
         };
         // If we don't have a user object, fetch it
-        if (!session.user?.email && !geinsAuth.isExpired(token.tokenExpires)) {
+        if (
+          !session.user?.email &&
+          !geinsAuth.isExpired(token.tokenExpires) &&
+          session.accountKey
+        ) {
           try {
-            const user = await geinsAuth.getUser(token.accessToken);
+            const user = await geinsAuth.getUser(
+              token.accessToken,
+              session.accountKey,
+            );
             session.user = user;
           } catch (error) {
             geinsLogWarn('error fetching user', error);
@@ -99,6 +116,14 @@ export default NuxtAuthHandler({
       },
       async authorize(credentials: LoginCredentials | AuthTokens) {
         let authResponse: AuthResponse | null = null;
+
+        // If we have an account key, return only that
+        if (typeof credentials === 'string') {
+          return {
+            isAuthenticated: true,
+            accountKey: credentials,
+          };
+        }
 
         // Check if we have a login token and MFA code, or a username and password
         // and call the appropriate login method

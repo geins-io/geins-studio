@@ -1,4 +1,9 @@
-import type { AuthTokens, LoginCredentials, Session } from '#shared/types';
+import type {
+  AccountKey,
+  AuthTokens,
+  LoginCredentials,
+  Session,
+} from '#shared/types';
 import { jwtDecode } from 'jwt-decode';
 
 export function useGeinsAuth() {
@@ -17,6 +22,8 @@ export function useGeinsAuth() {
       auth.status.value === 'authenticated' && !session.value?.isAuthenticated,
   );
 
+  const accountKey = computed(() => session.value?.accountKey);
+
   const login = async (credentials: LoginCredentials) => {
     return await auth.signIn('credentials', {
       redirect: false,
@@ -24,10 +31,17 @@ export function useGeinsAuth() {
     });
   };
 
-  const verify = async (credentials: AuthTokens) => {
+  const verify = async (tokens: AuthTokens) => {
     return await auth.signIn('credentials', {
       redirect: false,
-      ...credentials,
+      ...tokens,
+    });
+  };
+
+  const setAccount = async (tokens: AuthTokens) => {
+    return await auth.signIn('credentials', {
+      redirect: false,
+      ...tokens,
     });
   };
 
@@ -74,8 +88,10 @@ export function useGeinsAuth() {
     isAuthenticated,
     isRefreshing,
     authStateDiffers,
+    accountKey,
     login,
     verify,
+    setAccount,
     logout,
     refresh,
     setIsRefreshing,

@@ -28,7 +28,6 @@ export default defineEventHandler(async (event) => {
   geinsLog(fullUrl);
 
   const apiHeaders = {
-    'x-account-key': config.public.accountKey as string,
     ...headers,
   };
 

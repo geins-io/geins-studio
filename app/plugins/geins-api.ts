@@ -21,6 +21,7 @@ export default defineNuxtPlugin(() => {
     isAuthenticated,
     accessToken,
     isRefreshing,
+    accountKey,
     refresh,
     setIsRefreshing,
     isExpired,
@@ -89,6 +90,9 @@ export default defineNuxtPlugin(() => {
         // Add the token to the request
         if (isAuthenticated.value && accessToken.value) {
           options.headers.set('Authorization', `Bearer ${accessToken.value}`);
+        }
+        if (accountKey.value) {
+          options.headers.set('x-account-key', accountKey.value);
         }
       } catch (error) {
         geinsLogError('error during request setup', error);

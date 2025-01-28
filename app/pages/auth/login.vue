@@ -13,7 +13,7 @@ definePageMeta({
   },
 });
 
-const { login, verify, session } = useGeinsAuth();
+const { login, verify, setAccount, session } = useGeinsAuth();
 const router = useRouter();
 
 const loginToken = ref('');
@@ -21,6 +21,7 @@ const mfaMethod = ref('');
 const pending = ref(false);
 const showInvalid = ref(false);
 const step = ref<AuthFormMode>('login');
+const accounts = session.value?.accounts;
 
 async function handleLogin(credentials: LoginCredentials) {
   pending.value = true;
@@ -57,17 +58,7 @@ async function handleLogin(credentials: LoginCredentials) {
       pending.value = false;
       return;
     } else if (session.value?.isAuthenticated) {
-      const route = useRoute();
-      const redirect = route.query.redirect as string;
-      await router.push(redirect || '/');
-      await nextTick();
-      const firstName = session.value?.user?.firstName || '';
-
-      toast({
-        title: t('feedback_welcome_back', { name: firstName }),
-        description: t('feedback_welcome_back_description'),
-        variant: 'positive',
-      });
+      await redirectAndWelcome();
     }
   }
 }
@@ -87,13 +78,52 @@ async function handleVerify(mfaCode: string) {
     loginToken: loginToken.value,
   });
 
+  console.log('🚀 ~ handleVerify ~ verifyResult:', verifyResult);
+  console.log('🚀 ~ handleVerify ~ session.value:', session.value);
+
   if (!verifyResult || verifyResult.error) {
     showInvalid.value = true;
     pending.value = false;
     return;
   }
+  console.log(
+    '🚀 ~ handleVerify ~ session.value?.accounts?:',
+    session.value?.accounts,
+  );
+  console.log(
+    '🚀 ~ handleVerify ~ session.value?.accountKey:',
+    session.value?.accountKey,
+  );
 
-  // Redirect to start page
+  if (session.value?.accounts && !session.value?.accountKey) {
+    step.value = 'account';
+    pending.value = false;
+    return;
+  }
+
+  await redirectAndWelcome();
+}
+
+async function handleSetAccount(accountKey: AccountKey) {
+  console.log('🚀 ~ handleSetAccount ~ accountKey:', accountKey);
+  pending.value = true;
+  showInvalid.value = false;
+
+  const setAccountResult = await setAccount({ accountKey });
+
+  if (!setAccountResult || setAccountResult.error) {
+    showInvalid.value = true;
+    pending.value = false;
+    return;
+  }
+  console.log(
+    '🚀 ~ handleSetAccount ~ session.value?.accountKey:',
+    session.value?.accountKey,
+  );
+  // await redirectAndWelcome();
+}
+
+const redirectAndWelcome = async () => {
   const route = useRoute();
   const redirect = route.query.redirect as string;
   await router.push(redirect || '/');
@@ -106,7 +136,7 @@ async function handleVerify(mfaCode: string) {
     description: t('feedback_welcome_back_description'),
     variant: 'positive',
   });
-}
+};
 </script>
 
 <template>
@@ -115,7 +145,9 @@ async function handleVerify(mfaCode: string) {
     :pending="pending"
     :show-invalid="showInvalid"
     :mfa-method="mfaMethod"
+    :accounts="accounts"
     @login="handleLogin"
     @verify="handleVerify"
+    @set-account="handleSetAccount"
   />
 </template>

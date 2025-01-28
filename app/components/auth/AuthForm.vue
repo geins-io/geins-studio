@@ -3,14 +3,15 @@ import type { LoginCredentials, AuthFormMode } from '#shared/types';
 import { Input } from '#components';
 import { ExclamationTriangleIcon } from '@radix-icons/vue';
 
-const emit = defineEmits(['login', 'verify']);
+const emit = defineEmits(['login', 'verify', 'set-account']);
 
 const props = withDefaults(
   defineProps<{
     pending: boolean;
     showInvalid: boolean;
-    mfaMethod?: string;
     mode: AuthFormMode;
+    mfaMethod?: string;
+    accounts?: AuthAccounts;
   }>(),
   {
     pending: false,
@@ -22,6 +23,7 @@ const props = withDefaults(
 // Global
 const loginMode = computed(() => props.mode === 'login');
 const verifyMode = computed(() => props.mode === 'verify');
+const accountMode = computed(() => props.mode === 'account');
 const showInvalid = ref(props.showInvalid);
 
 watch(
@@ -99,12 +101,25 @@ const verifyAccount = () => {
   const code = verificationCode.value.join('');
   emit('verify', code);
 };
+
+// Account mode
+const accounts = computed(() => {
+  if (!props.accounts) {
+    return [];
+  }
+  return Object.keys(props.accounts).map((key) => {
+    return {
+      key,
+      name: props.accounts?.[key]?.displayName,
+    };
+  });
+});
 </script>
 
 <template>
   <div class="grid gap-2 text-center">
     <h1 class="mb-3 text-3xl font-bold">
-      {{ loginMode ? 'Merchant Center' : 'Verify Account' }}
+      {{ verifyMode ? 'Verify Account' : 'Merchant Center' }}
     </h1>
     <!-- <p v-if="instructions" class="text-xs text-muted-foreground">
       {{ instructions }}
@@ -185,11 +200,20 @@ const verifyAccount = () => {
     </div>
 
     <Button
+      v-if="loginMode || verifyMode"
       class="w-full"
       :loading="pending"
       @click="loginMode ? login() : verifyAccount()"
     >
       {{ loginMode ? 'Login' : 'Verify' }}
     </Button>
+
+    <ul v-if="accountMode">
+      <li v-for="account in accounts" :key="account.key">
+        <Button @click="$emit('set-account', account.key)">
+          {{ account.name }}
+        </Button>
+      </li>
+    </ul>
   </div>
 </template>
