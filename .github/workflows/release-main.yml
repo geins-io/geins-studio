@@ -1,6 +1,7 @@
 name: Release Main to Azure
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
