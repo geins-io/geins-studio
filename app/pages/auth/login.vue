@@ -56,10 +56,12 @@ async function handleStep() {
     pending.value = false;
     return;
   }
-  await redirectAndWelcome();
+  if (isAuthenticated.value) {
+    await redirectAndWelcome();
+  }
 }
 
-handleStep();
+await handleStep();
 
 async function handleLogin(credentials: LoginCredentials) {
   pending.value = true;
@@ -81,6 +83,8 @@ async function handleLogin(credentials: LoginCredentials) {
     pending.value = false;
     return;
   }
+
+  await handleStep();
 }
 
 async function handleVerify(mfaCode: string) {
@@ -107,7 +111,7 @@ async function handleVerify(mfaCode: string) {
   await handleStep();
 }
 
-async function handleSetAccount(accountKey: AccountKey) {
+async function handleSetAccount(accountKey: string) {
   pending.value = true;
   showInvalid.value = false;
 

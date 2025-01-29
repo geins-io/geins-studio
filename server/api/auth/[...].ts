@@ -9,7 +9,7 @@ export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
   pages: {
     signIn: '/auth/login',
-    signOut: '/auth/login',
+    signOut: '/auth/logout',
   },
   callbacks: {
     jwt: async ({ token, user, trigger }) => {

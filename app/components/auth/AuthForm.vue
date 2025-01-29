@@ -226,7 +226,7 @@ const alertDescription = computed(() => {
       :loading="pending"
       @click="loginMode ? login() : verifyAccount()"
     >
-      {{ loginMode ? 'Login' : 'Verify' }}
+      {{ loginMode ? 'Log in' : 'Verify' }}
     </Button>
 
     <ul v-if="accountMode && !pending" class="flex flex-col gap-2">
@@ -240,7 +240,7 @@ const alertDescription = computed(() => {
       v-if="accountMode && pending"
       class="relative flex items-center justify-center text-muted-foreground"
     >
-      <LucideLoaderCircle class="size-8 animate-spin" />
+      <LucideLoaderCircle class="size-10 animate-spin" />
     </div>
   </div>
 </template>

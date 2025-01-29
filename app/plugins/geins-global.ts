@@ -5,7 +5,6 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
 
   // Prevent execution on the server
   if (import.meta.server) return;
-  console.log('🚀 ~ defineNuxtPlugin ~ accountKey:', accountKey.value);
 
   // If user is authenticated, initialize the account store
   if (isAuthenticated.value && accountKey.value) {
