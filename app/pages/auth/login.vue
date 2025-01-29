@@ -13,8 +13,13 @@ definePageMeta({
   },
 });
 
-const { login, verify, setAccount, session, isAuthenticated } = useGeinsAuth();
+const { login, verify, setAccount, preLogin, session, isAuthenticated } =
+  useGeinsAuth();
 const router = useRouter();
+
+onMounted(async () => {
+  await preLogin();
+});
 
 const loginToken = ref('');
 const mfaMethod = ref('');

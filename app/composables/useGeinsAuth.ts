@@ -21,6 +21,11 @@ export function useGeinsAuth() {
 
   const accountKey = computed(() => session.value?.accountKey);
 
+  const preLogin = async () => {
+    $fetch('/api/ping/auth');
+    $fetch('/api/ping/account');
+  };
+
   const login = async (credentials: LoginCredentials) => {
     return await auth.signIn('credentials', {
       redirect: false,
@@ -90,6 +95,7 @@ export function useGeinsAuth() {
     isRefreshing,
     authStateDiffers,
     accountKey,
+    preLogin,
     login,
     verify,
     setAccount,

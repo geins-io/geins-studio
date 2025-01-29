@@ -89,7 +89,7 @@ export default defineNuxtPlugin(() => {
         }
         // Add the token to the request
         if (isAuthenticated.value && accessToken.value) {
-          options.headers.set('Authorization', `Bearer ${accessToken.value}`);
+          options.headers.set('x-access-token', `${accessToken.value}`);
         }
         if (accountKey.value) {
           options.headers.set('x-account-key', accountKey.value);

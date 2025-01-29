@@ -1,5 +1,11 @@
 import { getAuthBaseUrlVercel } from './app/lib/deployment';
 
+const nitroPreset = {
+  nitro: {
+    preset: process.env.NITRO_PRESET,
+  },
+};
+
 export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
@@ -77,9 +83,7 @@ export default defineNuxtConfig({
     server: false,
     client: true,
   },
-  nitro: {
-    preset: 'azure',
-  },
+  ...(process.env.NITRO_PRESET ? nitroPreset : {}),
 
   compatibilityDate: '2024-07-05',
 });
