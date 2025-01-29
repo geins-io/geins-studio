@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      # Step 5: Build and Deploy to Azure
+      # Step 4: Build and Deploy to Azure
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
