@@ -65,7 +65,7 @@ export default NuxtAuthHandler({
           accountKey: token.accountKey,
           accounts: token.accounts,
         };
-        // If we don't have a user object, fetch it
+        // If we don't have a user object yet, fetch it
         if (
           !session.user?.email &&
           !geinsAuth.isExpired(token.tokenExpires) &&
@@ -109,7 +109,8 @@ export default NuxtAuthHandler({
       async authorize(payload: LoginCredentials | AuthTokens | AuthResponse) {
         let authResponse: AuthResponse | null = null;
 
-        // Check if we have a login token and MFA code, or a username and password
+        // Check if we have a login token and MFA code, or a username and password,
+        // or an account key, and according to that, fetch or set the auth response accordingly
         // and call the appropriate login method
         if ('username' in payload && payload.username && payload.password) {
           authResponse = await geinsAuth.login(payload);
