@@ -9,7 +9,7 @@ export default NuxtAuthHandler({
   secret: process.env.AUTH_SECRET,
   pages: {
     signIn: '/auth/login',
-    signOut: '/auth/login',
+    signOut: '/auth/logout',
   },
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
@@ -62,11 +62,20 @@ export default NuxtAuthHandler({
           isAuthenticated: token.isAuthenticated,
           accessToken: token.accessToken,
           refreshedAt: token.refreshedAt,
+          accountKey: token.accountKey,
+          accounts: token.accounts,
         };
-        // If we don't have a user object, fetch it
-        if (!session.user?.email && !geinsAuth.isExpired(token.tokenExpires)) {
+        // If we don't have a user object yet, fetch it
+        if (
+          !session.user?.email &&
+          !geinsAuth.isExpired(token.tokenExpires) &&
+          session.accountKey
+        ) {
           try {
-            const user = await geinsAuth.getUser(token.accessToken);
+            const user = await geinsAuth.getUser(
+              token.accessToken,
+              session.accountKey,
+            );
             session.user = user;
           } catch (error) {
             geinsLogWarn('error fetching user', error);
@@ -97,23 +106,22 @@ export default NuxtAuthHandler({
         username: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials: LoginCredentials | AuthTokens) {
+      async authorize(payload: LoginCredentials | AuthTokens | AuthResponse) {
         let authResponse: AuthResponse | null = null;
 
-        // Check if we have a login token and MFA code, or a username and password
+        // Check if we have a login token and MFA code, or a username and password,
+        // or an account key, and according to that, fetch or set the auth response accordingly
         // and call the appropriate login method
-        if (
-          'username' in credentials &&
-          credentials.username &&
-          credentials.password
-        ) {
-          authResponse = await geinsAuth.login(credentials);
+        if ('username' in payload && payload.username && payload.password) {
+          authResponse = await geinsAuth.login(payload);
         } else if (
-          'loginToken' in credentials &&
-          credentials.loginToken &&
-          credentials.mfaCode
+          'loginToken' in payload &&
+          payload.loginToken &&
+          payload.mfaCode
         ) {
-          authResponse = await geinsAuth.verify(credentials);
+          authResponse = await geinsAuth.verify(payload);
+        } else if ('accountKey' in payload && payload.accountKey) {
+          authResponse = payload as AuthResponse;
         }
 
         // If we don't have a valid response, return null

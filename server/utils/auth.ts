@@ -10,7 +10,6 @@ import type {
 import { jwtDecode } from 'jwt-decode';
 
 const API_URL = process.env.GEINS_API_URL as string;
-const ACCOUNT_KEY = process.env.GEINS_ACCOUNT_KEY as string;
 
 const ENDPOINTS = {
   LOGIN: 'auth',
@@ -40,11 +39,14 @@ export const auth = () => {
     method: string,
     data?: object,
     token?: string,
+    accountKey?: string,
   ): Promise<T> => {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      'x-account-key': ACCOUNT_KEY,
     };
+    if (accountKey) {
+      headers['x-account-key'] = accountKey;
+    }
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -91,8 +93,17 @@ export const auth = () => {
    * @param {string} accessToken - The access token.
    * @returns {Promise<User | undefined>} The user data or undefined if not found.
    */
-  const getUser = async (accessToken: string): Promise<User | undefined> => {
-    return callAPI<User>(ENDPOINTS.USER, 'GET', undefined, accessToken);
+  const getUser = async (
+    accessToken: string,
+    accountKey: string,
+  ): Promise<User | undefined> => {
+    return callAPI<User>(
+      ENDPOINTS.USER,
+      'GET',
+      undefined,
+      accessToken,
+      accountKey,
+    );
   };
 
   /**
@@ -117,12 +128,12 @@ export const auth = () => {
    * @returns {Promise<AuthResponse>} The verified user auth response.
    * @throws Will throw an error if `loginToken` or `mfaCode` is missing from `credentials`.
    */
-  const verify = async (credentials: AuthTokens): Promise<AuthResponse> => {
-    if (!credentials.loginToken || !credentials.mfaCode) {
+  const verify = async (tokens: AuthTokens): Promise<AuthResponse> => {
+    if (!tokens.loginToken || !tokens.mfaCode) {
       throw new Error('Missing MFA credentials');
     }
 
-    return callAPI<AuthResponse>(ENDPOINTS.VERIFY, 'POST', credentials);
+    return callAPI<AuthResponse>(ENDPOINTS.VERIFY, 'POST', tokens);
   };
 
   /**
@@ -171,6 +182,7 @@ export const auth = () => {
    * @returns {Session} The token data including authorization status and expiration times.
    */
   const getSession = (response: AuthResponse): Session => {
+    // User is not authenticated because MFA is required
     if (response.mfaRequired && response.loginToken) {
       return {
         isAuthenticated: false,
@@ -179,19 +191,39 @@ export const auth = () => {
         loginToken: response.loginToken,
       };
     }
+
+    // User is not authenticated because no access token was provided
     if (!response.mfaRequired && !response.accessToken) {
       return { isAuthenticated: false };
     }
 
+    // User is authenticated, set up session
     const parsedToken = parseToken(response.accessToken);
-    return {
+    const session: Session = {
       isAuthenticated: true,
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
+      accountKey: response.accountKey,
       tokenExpires: Number(parsedToken?.exp),
       refreshedAt: Number(parsedToken?.iat),
       mfaActive: false,
     };
+
+    // If account is already selected or set, return session
+    if (session.accountKey) {
+      return session;
+    }
+
+    // Handle multiple accounts and no account selected
+    if (response.accounts && Object.keys(response.accounts).length > 0) {
+      session.accounts = response.accounts;
+      if (Object.keys(response.accounts).length === 1) {
+        session.accountKey = Object.keys(response.accounts)[0];
+      }
+      return session;
+    } else {
+      throw new Error('No account key found for user');
+    }
   };
 
   /**

@@ -15,6 +15,8 @@ export interface AuthTokens {
   refreshToken?: string;
   loginToken?: string;
   mfaCode?: string;
+  accounts?: AuthAccounts;
+  accountKey?: string;
 }
 
 export interface AuthResponse extends AuthTokens {
@@ -37,4 +39,10 @@ export interface LoginCredentials {
   rememberMe?: boolean;
 }
 
-export type AuthFormMode = 'login' | 'verify';
+export interface AuthAccounts {
+  [key: string]: {
+    displayName: string;
+  };
+}
+
+export type AuthFormMode = 'login' | 'verify' | 'account';

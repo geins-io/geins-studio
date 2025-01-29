@@ -9,13 +9,17 @@ export function useGeinsAuth() {
   const session = computed(() => auth.data.value);
   const isAuthenticated = computed(
     () =>
-      auth.status.value === 'authenticated' && session.value?.isAuthenticated,
+      auth.status.value === 'authenticated' &&
+      session.value?.isAuthenticated &&
+      session.value?.accountKey,
   );
   const accessToken = computed(() => session.value?.accessToken);
   const authStateDiffers = computed(
     () =>
       auth.status.value === 'authenticated' && !session.value?.isAuthenticated,
   );
+
+  const accountKey = computed(() => session.value?.accountKey);
 
   const preLogin = async () => {
     $fetch('/api/ping/auth');
@@ -29,10 +33,21 @@ export function useGeinsAuth() {
     });
   };
 
-  const verify = async (credentials: AuthTokens) => {
+  const verify = async (tokens: AuthTokens) => {
     return await auth.signIn('credentials', {
       redirect: false,
-      ...credentials,
+      ...tokens,
+    });
+  };
+
+  const setAccount = async (accountKey: string) => {
+    const session: Session = {
+      ...auth.data.value,
+      accountKey,
+    };
+    return await auth.signIn('credentials', {
+      redirect: false,
+      ...session,
     });
   };
 
@@ -79,9 +94,11 @@ export function useGeinsAuth() {
     isAuthenticated,
     isRefreshing,
     authStateDiffers,
+    accountKey,
     preLogin,
     login,
     verify,
+    setAccount,
     logout,
     refresh,
     setIsRefreshing,

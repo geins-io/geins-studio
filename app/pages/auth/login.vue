@@ -13,7 +13,8 @@ definePageMeta({
   },
 });
 
-const { login, preLogin, verify, session } = useGeinsAuth();
+const { login, verify, setAccount, preLogin, session, isAuthenticated } =
+  useGeinsAuth();
 const router = useRouter();
 
 onMounted(async () => {
@@ -25,6 +26,47 @@ const mfaMethod = ref('');
 const pending = ref(false);
 const showInvalid = ref(false);
 const step = ref<AuthFormMode>('login');
+
+const redirectAndWelcome = async () => {
+  if (!isAuthenticated.value) {
+    showInvalid.value = true;
+    pending.value = false;
+    return;
+  }
+
+  const route = useRoute();
+  const redirect = route.query.redirect as string;
+  await router.push(redirect || '/');
+
+  await nextTick();
+  const firstName = session.value?.user?.firstName || '';
+
+  toast({
+    title: t('feedback_welcome_back', { name: firstName }),
+    description: t('feedback_welcome_back_description'),
+    variant: 'positive',
+  });
+};
+
+async function handleStep() {
+  if (session.value?.mfaActive && session.value?.loginToken) {
+    loginToken.value = session.value.loginToken;
+    mfaMethod.value = session.value.mfaMethod || '';
+    step.value = 'verify';
+    pending.value = false;
+    return;
+  }
+  if (session.value?.accounts && !session.value?.accountKey) {
+    step.value = 'account';
+    pending.value = false;
+    return;
+  }
+  if (isAuthenticated.value) {
+    await redirectAndWelcome();
+  }
+}
+
+await handleStep();
 
 async function handleLogin(credentials: LoginCredentials) {
   pending.value = true;
@@ -41,39 +83,13 @@ async function handleLogin(credentials: LoginCredentials) {
     password: credentials.password,
   });
 
-  if (!authResponse) {
+  if (!authResponse || authResponse.error || !authResponse.ok) {
     showInvalid.value = true;
     pending.value = false;
     return;
   }
 
-  if (authResponse.error || !authResponse.ok) {
-    showInvalid.value = true;
-    pending.value = false;
-    return;
-  }
-
-  if (authResponse.ok) {
-    if (session.value?.mfaActive && session.value?.loginToken) {
-      loginToken.value = session.value.loginToken;
-      mfaMethod.value = session.value.mfaMethod || '';
-      step.value = 'verify';
-      pending.value = false;
-      return;
-    } else if (session.value?.isAuthenticated) {
-      const route = useRoute();
-      const redirect = route.query.redirect as string;
-      await router.push(redirect || '/');
-      await nextTick();
-      const firstName = session.value?.user?.firstName || '';
-
-      toast({
-        title: t('feedback_welcome_back', { name: firstName }),
-        description: t('feedback_welcome_back_description'),
-        variant: 'positive',
-      });
-    }
-  }
+  await handleStep();
 }
 
 async function handleVerify(mfaCode: string) {
@@ -97,23 +113,34 @@ async function handleVerify(mfaCode: string) {
     return;
   }
 
-  // Redirect to start page
-  const route = useRoute();
-  const redirect = route.query.redirect as string;
-  await router.push(redirect || '/');
+  await handleStep();
+}
 
-  await nextTick();
-  const firstName = session.value?.user?.firstName || '';
+async function handleSetAccount(accountKey: string) {
+  pending.value = true;
+  showInvalid.value = false;
 
-  toast({
-    title: t('feedback_welcome_back', { name: firstName }),
-    description: t('feedback_welcome_back_description'),
-    variant: 'positive',
-  });
+  const setAccountResult = await setAccount(accountKey);
+
+  if (!setAccountResult || setAccountResult.error) {
+    showInvalid.value = true;
+    pending.value = false;
+    return;
+  }
+
+  await redirectAndWelcome();
 }
 </script>
 
 <template>
-  <AuthForm :mode="step" :pending="pending" :show-invalid="showInvalid" :mfa-method="mfaMethod" @login="handleLogin"
-    @verify="handleVerify" />
+  <AuthForm
+    :mode="step"
+    :pending="pending"
+    :show-invalid="showInvalid"
+    :mfa-method="mfaMethod"
+    :accounts="session?.accounts"
+    @login="handleLogin"
+    @verify="handleVerify"
+    @set-account="handleSetAccount"
+  />
 </template>

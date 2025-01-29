@@ -17,11 +17,11 @@ export default defineEventHandler(async (event) => {
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
     body = await readBody(event);
   }
-  const headers = getHeaders(event);
 
-  const token = headers['x-geins-token'];
+  const headers = getHeaders(event);
+  const token = headers['x-access-token'];
   if (!token) {
-    return { success: false, error: 'Token is required' };
+    return { success: false, error: 'Access token is required' };
   }
 
   const targetUrl = event.context.params?._;
@@ -34,8 +34,8 @@ export default defineEventHandler(async (event) => {
   geinsLog(fullUrl);
 
   const apiHeaders = {
+    ...headers,
     'content-type': 'application/json',
-    'x-account-key': config.public.accountKey as string,
     authorization: `Bearer ${token}`,
   };
 

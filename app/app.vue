@@ -12,7 +12,8 @@ const loadingBarColor =
     <NuxtLoadingIndicator :color="loadingBarColor" />
     <NuxtLayout>
       <NuxtPage />
+
+      <Toaster />
     </NuxtLayout>
-    <Toaster />
   </ConfigProvider>
 </template>

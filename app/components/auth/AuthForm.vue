@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import type { LoginCredentials, AuthFormMode } from '#shared/types';
 import { Input } from '#components';
-import { ExclamationTriangleIcon } from '@radix-icons/vue';
 
-const emit = defineEmits(['login', 'verify']);
+const emit = defineEmits(['login', 'verify', 'set-account']);
 
 const props = withDefaults(
   defineProps<{
     pending: boolean;
     showInvalid: boolean;
-    mfaMethod?: string;
     mode: AuthFormMode;
+    mfaMethod?: string;
+    accounts?: AuthAccounts;
   }>(),
   {
     pending: false,
@@ -22,6 +22,7 @@ const props = withDefaults(
 // Global
 const loginMode = computed(() => props.mode === 'login');
 const verifyMode = computed(() => props.mode === 'verify');
+const accountMode = computed(() => props.mode === 'account');
 const showInvalid = ref(props.showInvalid);
 
 watch(
@@ -37,6 +38,28 @@ onMounted(() => {
     if (el instanceof HTMLInputElement) {
       el.focus();
     }
+  }
+});
+
+// Global feedback
+const alertTitle = computed(() => {
+  switch (props.mode) {
+    case 'login':
+      return 'Invalid credentials';
+    case 'verify':
+      return 'Invalid code';
+    default:
+      return 'Something went wrong';
+  }
+});
+const alertDescription = computed(() => {
+  switch (props.mode) {
+    case 'login':
+      return 'Please check your email and password and try again.';
+    case 'verify':
+      return 'Please check the code and try again.';
+    default:
+      return 'Please refresh this page and try again.';
   }
 });
 
@@ -99,12 +122,25 @@ const verifyAccount = () => {
   const code = verificationCode.value.join('');
   emit('verify', code);
 };
+
+// Account mode
+const accounts = computed(() => {
+  if (!props.accounts) {
+    return [];
+  }
+  return Object.keys(props.accounts).map((key) => {
+    return {
+      key,
+      name: props.accounts?.[key]?.displayName,
+    };
+  });
+});
 </script>
 
 <template>
   <div class="grid gap-2 text-center">
     <h1 class="mb-3 text-3xl font-bold">
-      {{ loginMode ? 'Merchant Center' : 'Verify Account' }}
+      {{ verifyMode ? 'Verify Account' : 'Merchant Center' }}
     </h1>
     <!-- <p v-if="instructions" class="text-xs text-muted-foreground">
       {{ instructions }}
@@ -112,23 +148,26 @@ const verifyAccount = () => {
     <p v-if="verifyMode && mfaMethod.length > 0" class="text-muted-foreground">
       Enter the 6-digit code from your <strong>{{ mfaMethod }}</strong>
     </p>
+    <p v-if="accountMode" class="text-muted-foreground">
+      Select the account you want to access
+    </p>
   </div>
 
   <Alert v-if="showInvalid" variant="destructive">
-    <ExclamationTriangleIcon class="size-4" />
+    <LucideTriangleAlert class="size-4" />
     <AlertTitle>
-      {{ loginMode ? 'Invalid credentials' : 'Invalid code' }}
+      {{ alertTitle }}
     </AlertTitle>
     <AlertDescription>
-      {{
-        loginMode
-          ? 'Please check your email and password and try again.'
-          : 'Please check the code and try again.'
-      }}
+      {{ alertDescription }}
     </AlertDescription>
   </Alert>
 
-  <div class="grid gap-4">
+  <form
+    v-if="loginMode || verifyMode"
+    class="grid gap-4"
+    @submit.prevent="loginMode ? login() : verifyAccount()"
+  >
     <div v-if="loginMode" class="grid gap-2">
       <Label for="email">Email</Label>
       <Input
@@ -184,12 +223,23 @@ const verifyAccount = () => {
       </div>
     </div>
 
-    <Button
-      class="w-full"
-      :loading="pending"
-      @click="loginMode ? login() : verifyAccount()"
-    >
-      {{ loginMode ? 'Login' : 'Verify' }}
+    <Button class="w-full" :loading="pending">
+      {{ loginMode ? 'Log in' : 'Verify' }}
     </Button>
+  </form>
+  <div v-if="accountMode">
+    <ul v-if="!pending" class="flex flex-col gap-2">
+      <li v-for="account in accounts" :key="account.key" class="w-full">
+        <Button class="w-full" @click="$emit('set-account', account.key)">
+          {{ account.name }}
+        </Button>
+      </li>
+    </ul>
+    <div
+      v-else
+      class="relative flex items-center justify-center text-muted-foreground"
+    >
+      <LucideLoaderCircle class="size-10 animate-spin" />
+    </div>
   </div>
 </template>

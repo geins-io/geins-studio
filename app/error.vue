@@ -15,7 +15,7 @@ const handleError = () => clearError({ redirect: '/' });
     <p v-if="error?.message" class="mb-5">{{ error?.message }}</p>
     <p v-else>No message</p>
     <!-- eslint-disable-next-line vue/no-v-html -->
-    <div class="mb-5 text-xs" v-html="error?.stack" />
+    <div class="mb-5 max-w-xl text-xs" v-html="error?.stack" />
     <Button @click="handleError">Clear errors</Button>
   </div>
 </template>
