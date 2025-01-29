@@ -182,6 +182,7 @@ export const auth = () => {
    * @returns {Session} The token data including authorization status and expiration times.
    */
   const getSession = (response: AuthResponse): Session => {
+    // User is not authenticated because MFA is required
     if (response.mfaRequired && response.loginToken) {
       return {
         isAuthenticated: false,
@@ -190,6 +191,8 @@ export const auth = () => {
         loginToken: response.loginToken,
       };
     }
+
+    // User is not authenticated because no access token was provided
     if (!response.mfaRequired && !response.accessToken) {
       return { isAuthenticated: false };
     }
@@ -200,17 +203,18 @@ export const auth = () => {
       isAuthenticated: true,
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
+      accountKey: response.accountKey,
       tokenExpires: Number(parsedToken?.exp),
       refreshedAt: Number(parsedToken?.iat),
       mfaActive: false,
     };
 
-    console.log(
-      '🚀 ~ getSession ~ Object.keys(response.accounts):',
-      Object.keys(response.accounts),
-    );
-    console.log('🚀 ~ getSession ~ response.accounts:', response.accounts);
-    // Handle multiple accounts
+    // If account is already selected or set, return session
+    if (session.accountKey) {
+      return session;
+    }
+
+    // Handle multiple accounts and no account selected
     if (response.accounts && Object.keys(response.accounts).length > 0) {
       session.accounts = response.accounts;
       if (Object.keys(response.accounts).length === 1) {

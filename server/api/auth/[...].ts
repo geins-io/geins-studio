@@ -1,11 +1,6 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NuxtAuthHandler } from '#auth';
-import type {
-  LoginCredentials,
-  AuthResponse,
-  AuthTokens,
-  AccountKey,
-} from '#shared/types';
+import type { LoginCredentials, AuthResponse, AuthTokens } from '#shared/types';
 
 const geinsAuth = auth();
 const { geinsLog, geinsLogWarn } = log('server/api/auth/[...].ts');
@@ -18,9 +13,6 @@ export default NuxtAuthHandler({
   },
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
-      console.log('🚀 ~ jwt: ~ trigger:', trigger);
-      console.log('🚀 ~ jwt: ~ user:', user);
-      console.log('🚀 ~ jwt: ~ token:', token);
       if (trigger === 'signIn' && user) {
         // If this is a sign in, set the token to include the user object,
         // where our session data is stored when returned from the API
@@ -114,31 +106,21 @@ export default NuxtAuthHandler({
         username: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials: LoginCredentials | AuthTokens) {
+      async authorize(payload: LoginCredentials | AuthTokens | AuthResponse) {
         let authResponse: AuthResponse | null = null;
-
-        // If we have an account key, return only that
-        if (typeof credentials === 'string') {
-          return {
-            isAuthenticated: true,
-            accountKey: credentials,
-          };
-        }
 
         // Check if we have a login token and MFA code, or a username and password
         // and call the appropriate login method
-        if (
-          'username' in credentials &&
-          credentials.username &&
-          credentials.password
-        ) {
-          authResponse = await geinsAuth.login(credentials);
+        if ('username' in payload && payload.username && payload.password) {
+          authResponse = await geinsAuth.login(payload);
         } else if (
-          'loginToken' in credentials &&
-          credentials.loginToken &&
-          credentials.mfaCode
+          'loginToken' in payload &&
+          payload.loginToken &&
+          payload.mfaCode
         ) {
-          authResponse = await geinsAuth.verify(credentials);
+          authResponse = await geinsAuth.verify(payload);
+        } else if ('accountKey' in payload && payload.accountKey) {
+          authResponse = payload as AuthResponse;
         }
 
         // If we don't have a valid response, return null

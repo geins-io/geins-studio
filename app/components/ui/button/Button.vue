@@ -3,8 +3,6 @@ import type { HTMLAttributes } from 'vue';
 import { Primitive, type PrimitiveProps } from 'radix-vue';
 import { type ButtonVariants, buttonVariants } from '.';
 
-import { ReloadIcon } from '@radix-icons/vue';
-
 interface Props extends PrimitiveProps {
   variant?: ButtonVariants['variant'];
   size?: ButtonVariants['size'];
@@ -24,7 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
     :as-child="asChild"
     :class="cn(buttonVariants({ variant, size }), props.class)"
   >
-    <ReloadIcon v-if="loading" class="mr-2 size-4 animate-spin" />
+    <LucideLoaderCircle v-if="loading" class="mr-2 size-4 animate-spin" />
     <slot />
   </Primitive>
 </template>

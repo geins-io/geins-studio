@@ -114,6 +114,28 @@ const accounts = computed(() => {
     };
   });
 });
+
+const alertTitle = computed(() => {
+  switch (props.mode) {
+    case 'login':
+      return 'Invalid credentials';
+    case 'verify':
+      return 'Invalid code';
+    default:
+      return 'Something went wrong';
+  }
+});
+
+const alertDescription = computed(() => {
+  switch (props.mode) {
+    case 'login':
+      return 'Please check your email and password and try again.';
+    case 'verify':
+      return 'Please check the code and try again.';
+    default:
+      return 'Please refresh this page and try again.';
+  }
+});
 </script>
 
 <template>
@@ -127,19 +149,18 @@ const accounts = computed(() => {
     <p v-if="verifyMode && mfaMethod.length > 0" class="text-muted-foreground">
       Enter the 6-digit code from your <strong>{{ mfaMethod }}</strong>
     </p>
+    <p v-if="accountMode" class="text-muted-foreground">
+      Select the account you want to access
+    </p>
   </div>
 
   <Alert v-if="showInvalid" variant="destructive">
     <ExclamationTriangleIcon class="size-4" />
     <AlertTitle>
-      {{ loginMode ? 'Invalid credentials' : 'Invalid code' }}
+      {{ alertTitle }}
     </AlertTitle>
     <AlertDescription>
-      {{
-        loginMode
-          ? 'Please check your email and password and try again.'
-          : 'Please check the code and try again.'
-      }}
+      {{ alertDescription }}
     </AlertDescription>
   </Alert>
 
@@ -208,12 +229,18 @@ const accounts = computed(() => {
       {{ loginMode ? 'Login' : 'Verify' }}
     </Button>
 
-    <ul v-if="accountMode">
-      <li v-for="account in accounts" :key="account.key">
-        <Button @click="$emit('set-account', account.key)">
+    <ul v-if="accountMode && !pending" class="flex flex-col gap-2">
+      <li v-for="account in accounts" :key="account.key" class="w-full">
+        <Button class="w-full" @click="$emit('set-account', account.key)">
           {{ account.name }}
         </Button>
       </li>
     </ul>
+    <div
+      v-if="accountMode && pending"
+      class="relative flex items-center justify-center text-muted-foreground"
+    >
+      <LucideLoaderCircle class="size-8 animate-spin" />
+    </div>
   </div>
 </template>
