@@ -1,75 +1,76 @@
-# Nuxt 3 Minimal Starter
+# Geins Merchant Center
 
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+## Introduction
 
-## Setup
+Geins Merchant Center is a comprehensive administrative interface designed for e-commerce solutions. This standalone application seamlessly integrates Geins PIM, CRM, WMS, CMS, and other essential tools into a unified, user-friendly platform.
 
-Make sure to install the dependencies:
+## Pre-requisites
 
-```bash
-# npm
-npm install
+Before setting up Geins Merchant Center, ensure you have the following:
 
-# pnpm
-pnpm install
+- [Node.js](https://nodejs.org) (v20.0.0 or higher)
+- A Geins account - [Get a free trial here](https://www.geins.io)
 
-# yarn
-yarn install
+## Getting Started
 
-# bun
-bun install
-```
+To set up Geins Merchant Center, follow these steps:
 
-## Development Server
+1. **Install Dependencies**
 
-Start the development server on `http://localhost:3000`:
+   ```bash
+   # npm
+   npm install
 
-```bash
-# npm
-npm run dev
+   # yarn
+   yarn install
+   ```
 
-# pnpm
-pnpm run dev
+2. **Set Up Environment Variables**
 
-# yarn
-yarn dev
+   Create an `.env` file in the project root and configure the following variables:
 
-# bun
-bun run dev
-```
+   ```ini
+   GEINS_API_URL=https://apim-mgmt-api-dev2.azure-api.net/v2
+   GEINS_DEBUG=true
+   AUTH_SECRET=your_secret_key
+   AUTH_ORIGIN=http://localhost:3000
+   ```
 
-## Production
+3. **Start the Development Server**
 
-Build the application for production:
+   ```bash
+   # npm
+   npm run dev
 
-```bash
-# npm
-npm run build
+   # yarn
+   yarn dev
+   ```
 
-# pnpm
-pnpm run build
+   The application should now be running at `http://localhost:3000`.
 
-# yarn
-yarn build
+## General Setup
 
-# bun
-bun run build
-```
+Geins Merchant Center is built using modern technologies to ensure flexibility and scalability. The core tech stack includes:
 
-Locally preview production build:
+- **Framework:** [Nuxt.js](https://nuxt.com)
+- **Language:** [TypeScript](https://www.typescriptlang.org)
+- **UI Library:** [shadcn-vue](https://www.shadcn-vue.com)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com)
+- **State Management:** [Pinia](https://pinia.vuejs.org)
 
-```bash
-# npm
-npm run preview
+## Theming
 
-# pnpm
-pnpm run preview
+Geins Merchant Center is fully customizable with Tailwind CSS and shadcn-vue. You can modify the styles in `assets/css/tailwind.css`. Explore more customization options at:
 
-# yarn
-yarn preview
+- [shadcn-vue Themes](https://www.shadcn-vue.com/themes.html)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 
-# bun
-bun run preview
-```
+For detailed deployment instructions, check the [Deployment Guide](docs/introduction/deploy.md).
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## Contributing
+
+We welcome contributions! Feel free to open issues or submit pull requests to improve Geins Merchant Center.
+
+## License
+
+This project is open-source and available under the MIT License.
