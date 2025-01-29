@@ -219,7 +219,6 @@ export const auth = () => {
       session.accounts = response.accounts;
       if (Object.keys(response.accounts).length === 1) {
         session.accountKey = Object.keys(response.accounts)[0];
-        console.log('🚀 ~ getSession ~ accountKey:', session.accountKey);
       }
       return session;
     } else {

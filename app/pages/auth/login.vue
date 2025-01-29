@@ -28,7 +28,7 @@ const showInvalid = ref(false);
 const step = ref<AuthFormMode>('login');
 
 const redirectAndWelcome = async () => {
-  if (!isAuthenticated) {
+  if (!isAuthenticated.value) {
     showInvalid.value = true;
     pending.value = false;
     return;

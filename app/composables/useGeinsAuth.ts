@@ -11,7 +11,7 @@ export function useGeinsAuth() {
     () =>
       auth.status.value === 'authenticated' &&
       session.value?.isAuthenticated &&
-      session.value.accountKey,
+      session.value?.accountKey,
   );
   const accessToken = computed(() => session.value?.accessToken);
   const authStateDiffers = computed(

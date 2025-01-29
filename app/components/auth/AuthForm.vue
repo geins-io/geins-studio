@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { LoginCredentials, AuthFormMode } from '#shared/types';
 import { Input } from '#components';
-import { ExclamationTriangleIcon } from '@radix-icons/vue';
 
 const emit = defineEmits(['login', 'verify', 'set-account']);
 
@@ -39,6 +38,28 @@ onMounted(() => {
     if (el instanceof HTMLInputElement) {
       el.focus();
     }
+  }
+});
+
+// Global feedback
+const alertTitle = computed(() => {
+  switch (props.mode) {
+    case 'login':
+      return 'Invalid credentials';
+    case 'verify':
+      return 'Invalid code';
+    default:
+      return 'Something went wrong';
+  }
+});
+const alertDescription = computed(() => {
+  switch (props.mode) {
+    case 'login':
+      return 'Please check your email and password and try again.';
+    case 'verify':
+      return 'Please check the code and try again.';
+    default:
+      return 'Please refresh this page and try again.';
   }
 });
 
@@ -114,28 +135,6 @@ const accounts = computed(() => {
     };
   });
 });
-
-const alertTitle = computed(() => {
-  switch (props.mode) {
-    case 'login':
-      return 'Invalid credentials';
-    case 'verify':
-      return 'Invalid code';
-    default:
-      return 'Something went wrong';
-  }
-});
-
-const alertDescription = computed(() => {
-  switch (props.mode) {
-    case 'login':
-      return 'Please check your email and password and try again.';
-    case 'verify':
-      return 'Please check the code and try again.';
-    default:
-      return 'Please refresh this page and try again.';
-  }
-});
 </script>
 
 <template>
@@ -155,7 +154,7 @@ const alertDescription = computed(() => {
   </div>
 
   <Alert v-if="showInvalid" variant="destructive">
-    <ExclamationTriangleIcon class="size-4" />
+    <LucideTriangleAlert class="size-4" />
     <AlertTitle>
       {{ alertTitle }}
     </AlertTitle>
@@ -164,7 +163,11 @@ const alertDescription = computed(() => {
     </AlertDescription>
   </Alert>
 
-  <div class="grid gap-4">
+  <form
+    v-if="loginMode || verifyMode"
+    class="grid gap-4"
+    @submit.prevent="loginMode ? login() : verifyAccount()"
+  >
     <div v-if="loginMode" class="grid gap-2">
       <Label for="email">Email</Label>
       <Input
@@ -220,16 +223,12 @@ const alertDescription = computed(() => {
       </div>
     </div>
 
-    <Button
-      v-if="loginMode || verifyMode"
-      class="w-full"
-      :loading="pending"
-      @click="loginMode ? login() : verifyAccount()"
-    >
+    <Button class="w-full" :loading="pending">
       {{ loginMode ? 'Log in' : 'Verify' }}
     </Button>
-
-    <ul v-if="accountMode && !pending" class="flex flex-col gap-2">
+  </form>
+  <div v-if="accountMode">
+    <ul v-if="!pending" class="flex flex-col gap-2">
       <li v-for="account in accounts" :key="account.key" class="w-full">
         <Button class="w-full" @click="$emit('set-account', account.key)">
           {{ account.name }}
@@ -237,7 +236,7 @@ const alertDescription = computed(() => {
       </li>
     </ul>
     <div
-      v-if="accountMode && pending"
+      v-else
       class="relative flex items-center justify-center text-muted-foreground"
     >
       <LucideLoaderCircle class="size-10 animate-spin" />

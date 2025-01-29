@@ -20,9 +20,8 @@ export default defineEventHandler(async (event) => {
 
   const headers = getHeaders(event);
   const token = headers['x-access-token'];
-
   if (!token) {
-    return { success: false, error: 'Token is required' };
+    return { success: false, error: 'Access token is required' };
   }
 
   const targetUrl = event.context.params?._;
@@ -36,6 +35,7 @@ export default defineEventHandler(async (event) => {
 
   const apiHeaders = {
     ...headers,
+    'content-type': 'application/json',
     authorization: `Bearer ${token}`,
   };
 
