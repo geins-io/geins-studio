@@ -87,10 +87,13 @@ export default defineNuxtPlugin(() => {
             await refreshPromise; // Wait for the ongoing refresh to complete
           }
         }
+        // Set the content type header
+        options.headers.set('content-type', 'application/json');
         // Add the token to the request
         if (isAuthenticated.value && accessToken.value) {
           options.headers.set('x-access-token', `${accessToken.value}`);
         }
+        // Add the account key to the request
         if (accountKey.value) {
           options.headers.set('x-account-key', accountKey.value);
         }
@@ -103,7 +106,7 @@ export default defineNuxtPlugin(() => {
       throw error;
     },
     async onResponse({ response }) {
-      geinsLog(response.url, '::: response data:', response?._data);
+      geinsLog(response.url, 'response data:', response?._data);
     },
     async onResponseError({ response }) {
       geinsLogError('response error', response);

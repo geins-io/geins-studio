@@ -35,10 +35,8 @@ export default defineEventHandler(async (event) => {
 
   const apiHeaders = {
     ...headers,
-    'content-type': 'application/json',
     authorization: `Bearer ${token}`,
   };
-
   try {
     const response = await $fetch(fullUrl, {
       method: event.method,

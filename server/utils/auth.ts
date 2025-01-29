@@ -42,13 +42,13 @@ export const auth = () => {
     accountKey?: string,
   ): Promise<T> => {
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      'content-type': 'application/json',
     };
     if (accountKey) {
       headers['x-account-key'] = accountKey;
     }
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers['authorization'] = `Bearer ${token}`;
     }
     const response = await fetch(`${API_URL}/${url}`, {
       method,
