@@ -62,7 +62,7 @@ jobs:
 
 
       - name: Bump Version and add to Changelog
-        run: yarn changelog:br
+        run: yarn changelog:release
 
   
       - name: Commit and push updated docs
