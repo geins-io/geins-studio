@@ -1,5 +1,6 @@
 import type { NavigationItem } from '#shared/types';
-export const navigation: NavigationItem[] = [
+export const navigation: NavigationItem[] = [];
+export const navigationDummy: NavigationItem[] = [
   {
     label: 'Dashboard',
     href: '/',
