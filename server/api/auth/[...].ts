@@ -78,7 +78,7 @@ export default NuxtAuthHandler({
             );
             session.user = user;
           } catch (error) {
-            geinsLogWarn('error fetching user', error);
+            geinsLogWarn('error fetching user:', error);
             // Keep session as is if we can't fetch the user, maybe there is a network error..
           }
         }
