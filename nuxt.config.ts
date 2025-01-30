@@ -7,10 +7,16 @@ const nitroPreset = {
 };
 
 export default defineNuxtConfig({
+  ssr: false,
+
+  spaLoadingTemplate: 'app-skeleton.html',
+
   future: {
     compatibilityVersion: 4,
   },
+
   devtools: { enabled: true },
+
   modules: [
     '@sidebase/nuxt-auth',
     '@nuxt/test-utils/module',
