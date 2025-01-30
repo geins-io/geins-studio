@@ -1,6 +1,6 @@
 {
   "name": "geins-merchant-center",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Geins",
   "private": true,
   "license": "MIT",
@@ -38,7 +38,7 @@
     "radix-vue": "^1.8.4",
     "shadcn-nuxt": "^0.10.4",
     "tailwind-merge": "^2.3.0",
-    "tailwindcss-animate": "^1.0.7",    
+    "tailwindcss-animate": "^1.0.7",
     "vue": "^3.4.29",
     "vue-router": "^4.3.3",
     "vuedraggable": "^4.1.0"
