@@ -25,54 +25,28 @@ jobs:
       GEINS_DEBUG: ${{ vars.AZURE_GEINS_DEBUG_PROD }}
       NITRO_PRESET: ${{ vars.NITRO_PRESET_AZURE_SWA }}
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout Repository        
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-          lfs: false
+    # Step 1: Checkout the repository
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+        lfs: false
 
-      - name: Identify for Git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20' # Adjust to your Node.js version
-
-
-      - name: Install dependencies
-        run: yarn install
-
-
-      - name: Build And Deploy
-        id: builddeploy
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APP_PROD_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
-          action: 'upload'
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: '/' # App source code path
-          api_location: '.output/server' # Api source code path - optional
-          app_build_command: 'yarn build'
-          output_location: '.output/public' # Built app content directory - optional
-          ###### End of Repository/Build Configurations ######
-
-
-      - name: Bump Version and add to Changelog
-        run: yarn changelog:release
-
+    # Step 2: Build and Deploy to Azure
+    - name: Build And Deploy
+      id: builddeploy
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APP_QA_TOKEN }}
+        repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
+        action: 'upload'
+        ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
+        # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+        app_build_command: 'yarn build'
+        app_location: '/' # App source code path
+        output_location: '.output/public' # Built app content directory - optional
+        api_location: '.output/server' # Api source code path - optional
+        ###### End of Repository/Build Configurations ######
   
-      - name: Commit and push updated docs
-        run: |
-          git add CHANGELOG.md
-          git diff --quiet && echo "No changes to commit" || git commit -m "Update ChangeLog"
-          git push
 
 
   close_pull_request_job:

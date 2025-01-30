@@ -23,7 +23,7 @@ jobs:
         run: yarn install
 
       - name: Bump Version and add to Changelog
-        run: yarn changelog:relase
+        run: yarn changelog:release
 
       - name: Commit and push updated docs
         run: |
