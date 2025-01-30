@@ -1,8 +1,16 @@
-name: Release and Bump Version
-on: workflow_dispatch
+name: Tag, Release and Bump Version
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
 
 permissions:
-  contents: write  # Allows pushing tags & commits
+  contents: write
 
 jobs:
   create_tag_and_release:    
