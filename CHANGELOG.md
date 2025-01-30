@@ -1,4 +1,15 @@
 
+## v0.0.6
+
+
+### 🏡 Chore
+
+- Ci wip ([08f5f77](https://github.com/geins-io/geins-merchant-center/commit/08f5f77))
+
+### ❤️ Contributors
+
+- Arvidsson-geins <arvidsson@geins.io>
+
 ## v0.0.5
 
 
