@@ -1,4 +1,4 @@
-name: changelog
+name: Release and Bump Version
 on: workflow_dispatch
 
 permissions:
