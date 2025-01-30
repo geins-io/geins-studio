@@ -1,4 +1,15 @@
 
+## v0.0.5
+
+
+### 🚀 Enhancements
+
+- Hybrid rendering ([#45](https://github.com/geins-io/geins-merchant-center/pull/45))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](http://github.com/olivia-geins))
+
 ## v0.0.4
 
 
