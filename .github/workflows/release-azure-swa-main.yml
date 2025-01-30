@@ -23,22 +23,28 @@ jobs:
       NITRO_PRESET: ${{ vars.NITRO_PRESET_AZURE_SWA }}
     steps:
       # Step 1: Checkout the repository
-      - uses: actions/checkout@v3
+      - name: Checkout Repository        
+        uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
 
-      # Step 2: Set up Node.js environment
+      - name: Identify for Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20' # Adjust to your Node.js version
 
-      # Step 3: Install dependencies
+
       - name: Install dependencies
         run: yarn install
 
-      # Step 4: Build and Deploy to Azure
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -53,6 +59,18 @@ jobs:
           app_build_command: 'yarn build'
           output_location: '.output/public' # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
+
+
+      - name: Bump Version and add to Changelog
+        run: yarn changelog:br
+
+  
+      - name: Commit and push updated docs
+        run: |
+          git add CHANGELOG.md
+          git diff --quiet && echo "No changes to commit" || git commit -m "Update ChangeLog"
+          git push
+
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
