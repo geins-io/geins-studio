@@ -7,12 +7,16 @@ const nitroPreset = {
 };
 
 export default defineNuxtConfig({
+  future: {
+    compatibilityVersion: 4,
+  },
+
   ssr: false,
 
   spaLoadingTemplate: 'app-skeleton.html',
 
-  future: {
-    compatibilityVersion: 4,
+  routeRules: {
+    '/auth/*': { prerender: true },
   },
 
   devtools: { enabled: true },
@@ -31,14 +35,7 @@ export default defineNuxtConfig({
   ],
 
   shadcn: {
-    /**
-     * Prefix for all the imported component
-     */
     prefix: '',
-    /**
-     * Directory that the component lives in.
-     * @default "./app/components/ui"
-     */
     componentDir: './app/components/ui',
   },
 
@@ -89,6 +86,7 @@ export default defineNuxtConfig({
     server: false,
     client: true,
   },
+
   ...(process.env.NITRO_PRESET ? nitroPreset : {}),
 
   compatibilityDate: '2024-07-05',
