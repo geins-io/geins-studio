@@ -1,4 +1,15 @@
 
+## v0.0.3
+
+
+### 🏡 Chore
+
+- Ci workflow ([30ee1d1](https://github.com/geins-io/geins-merchant-center/commit/30ee1d1))
+
+### ❤️ Contributors
+
+- Arvidsson-geins <arvidsson@geins.io>
+
 ## v0.0.2
 
 
