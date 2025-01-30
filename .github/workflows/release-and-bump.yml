@@ -24,9 +24,3 @@ jobs:
 
       - name: Bump Version and add to Changelog
         run: yarn changelog:release
-
-      - name: Commit and push updated docs
-        run: |
-          git add CHANGELOG.md
-          git diff --quiet && echo "No changes to commit" || git commit -m "Update ChangeLog"
-          git push
