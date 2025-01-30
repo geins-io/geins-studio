@@ -1,0 +1,32 @@
+name: changelog
+on: workflow_dispatch
+
+permissions:
+  contents: write  # Allows pushing tags & commits
+
+jobs:
+  create_tag_and_release:    
+    runs-on: ubuntu-latest    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:          
+          submodules: true
+          lfs: true
+
+      - name: Identify for Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Bump Version and add to Changelog
+        run: yarn changelog:relase
+
+      - name: Commit and push updated docs
+        run: |
+          git add CHANGELOG.md
+          git diff --quiet && echo "No changes to commit" || git commit -m "Update ChangeLog"
+          git push

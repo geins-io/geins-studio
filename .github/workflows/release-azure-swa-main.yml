@@ -1,5 +1,8 @@
 name: CI Release Main to Azure SWA
 
+permissions:
+  contents: write
+
 on:
   push:
     branches:
