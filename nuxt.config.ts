@@ -26,8 +26,7 @@ export default defineNuxtConfig({
     '@nuxt/test-utils/module',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
-    '@nuxtjs/i18n',
-    '@nuxtjs/robots',
+    '@nuxtjs/i18n',    
     '@pinia/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',
@@ -61,13 +60,6 @@ export default defineNuxtConfig({
     defaultLocale: 'en',
     langDir: 'lang/',
     locales: [{ code: 'en', language: 'en-US', file: 'en-US.ts' }],
-  },
-
-  robots: {
-    rules: {
-      UserAgent: '*',
-      Disallow: '/',
-    },
   },
 
   runtimeConfig: {
