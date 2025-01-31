@@ -1,7 +1,6 @@
 <script setup lang="ts">
-const isCollapsed = useCookie<boolean>(`geins-sidebar-collapsed`, {
-  default: () => true,
-});
+const isCollapsed = useCookie<boolean>('geins-sidebar-collapsed');
+isCollapsed.value = true;
 
 const currentSidebarWidth = computed(() => {
   return isCollapsed.value ? '3.75rem' : '15rem';
@@ -28,10 +27,7 @@ const contentClasses = computed(() => {
 </script>
 <template>
   <div class="flex h-screen overflow-hidden">
-    <LayoutSidebar
-      v-model:collapsed="isCollapsed"
-      :sidebar-width="currentSidebarWidth"
-    />
+    <LayoutSidebar :sidebar-width="currentSidebarWidth" />
     <main
       class="relative flex grow flex-col transition-[max-width]"
       :style="mainWidthStyle"

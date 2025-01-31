@@ -13,8 +13,15 @@ definePageMeta({
   },
 });
 
-const { login, verify, setAccount, preLogin, session, isAuthenticated } =
-  useGeinsAuth();
+const {
+  login,
+  verify,
+  setAccount,
+  preLogin,
+  session,
+  isAuthenticated,
+  authCookie,
+} = useGeinsAuth();
 const router = useRouter();
 
 onMounted(async () => {
@@ -33,6 +40,8 @@ const redirectAndWelcome = async () => {
     pending.value = false;
     return;
   }
+
+  authCookie.value = true;
 
   const route = useRoute();
   const redirect = route.query.redirect as string;

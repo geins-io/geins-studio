@@ -146,16 +146,16 @@ const backToLogin = () => {
 <template>
   <div class="grid gap-2 text-center">
     <h1 class="mb-3 text-3xl font-bold">
-      {{ verifyMode ? 'Verify Account' : 'Merchant Center' }}
+      {{ verifyMode ? $t('auth_verify_title') : $t('auth_login_title') }}
     </h1>
     <!-- <p v-if="instructions" class="text-xs text-muted-foreground">
       {{ instructions }}
     </p> -->
     <p v-if="verifyMode && mfaMethod.length > 0" class="text-muted-foreground">
-      Enter the 6-digit code from your <strong>{{ mfaMethod }}</strong>
+      {{ $t('auth_verify_description') }} <strong>{{ mfaMethod }}</strong>
     </p>
     <p v-if="accountMode" class="text-muted-foreground">
-      Select the account you want to access
+      {{ $t('auth_select_account') }}
     </p>
   </div>
 
@@ -175,7 +175,7 @@ const backToLogin = () => {
     @submit.prevent="loginMode ? login() : verifyAccount()"
   >
     <div v-if="loginMode" class="grid gap-2">
-      <Label for="email">Email</Label>
+      <Label for="email">{{ $t('email') }}</Label>
       <Input
         id="email"
         ref="emailInput"
@@ -192,7 +192,9 @@ const backToLogin = () => {
 
     <div v-if="loginMode" class="grid gap-2">
       <div class="flex items-center">
-        <Label for="password">Password</Label>
+        <Label for="password">
+          {{ $t('password') }}
+        </Label>
         <!-- <a
           href="/forgot-password"
           class="ml-auto inline-block text-sm underline"
@@ -230,7 +232,7 @@ const backToLogin = () => {
     </div>
 
     <Button class="w-full" :loading="pending">
-      {{ loginMode ? 'Log in' : 'Verify' }}
+      {{ loginMode ? $t('log_in') : $t('verify') }}
     </Button>
   </form>
   <div v-if="accountMode">
@@ -249,6 +251,6 @@ const backToLogin = () => {
     </div>
   </div>
   <Button v-if="verifyMode || accountMode" variant="link" @click="backToLogin">
-    {{ 'Back to login' }}
+    {{ $t('back_to_login') }}
   </Button>
 </template>

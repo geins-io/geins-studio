@@ -26,7 +26,7 @@ export default defineNuxtConfig({
     '@nuxt/test-utils/module',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
-    '@nuxtjs/i18n',    
+    '@nuxtjs/i18n',
     '@pinia/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',

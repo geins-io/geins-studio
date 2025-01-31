@@ -127,8 +127,33 @@
   .logo-full {
     height: 33.333333%;
     width: 33.333333%;
+    fill: currentColor;
   }
 </style>
+<script type="text/javascript">
+  function getCookie(cname) {
+    let name = cname + '=';
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return '';
+  }
+  const isAuthenticated = getCookie('geins-auth') === 'true';
+  console.log(
+    "🚀 ~ typeof getCookie('geins-auth'):",
+    typeof getCookie('geins-auth'),
+  );
+  console.log('🚀 ~ getCookie ~ document.cookie:', document.cookie);
+  console.log('🚀 ~ SKELETON isAuthenticated:', isAuthenticated);
+</script>
 <div class="h-screen">
   <!-- Default layout -->
   <div class="default-layout hidden h-screen">
@@ -311,26 +336,12 @@
   </div>
 </div>
 <script type="text/javascript">
-  if (!window.location.pathname.startsWith('/auth')) {
+  if (isAuthenticated || !window.location.pathname.startsWith('/auth')) {
     document.querySelector('.default-layout').classList.remove('hidden');
   } else {
     document.querySelector('.auth-layout').classList.remove('hidden');
   }
-  function getCookie(cname) {
-    let name = cname + '=';
-    let decodedCookie = decodeURIComponent(document.cookie);
-    let ca = decodedCookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-      let c = ca[i];
-      while (c.charAt(0) == ' ') {
-        c = c.substring(1);
-      }
-      if (c.indexOf(name) == 0) {
-        return c.substring(name.length, c.length);
-      }
-    }
-    return '';
-  }
+
   const sidebarCollapsed = getCookie('geins-sidebar-collapsed') === 'true';
   const sidebarWidth = sidebarCollapsed ? '3.75rem' : '15rem';
   document.documentElement.style.setProperty('--sidebar-width', sidebarWidth);
