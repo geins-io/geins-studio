@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const isCollapsed = useCookie<boolean>(`geins-sidebar-collapsed`, {
-  default: () => false,
+  default: () => true,
 });
 
 const currentSidebarWidth = computed(() => {

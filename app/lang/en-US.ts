@@ -49,7 +49,7 @@ export default defineI18nLocale(async () => {
     browse: 'Browse',
     page_of: 'Page {page} of {total}',
     global_search_placeholder: 'Search...',
-    dashboard_title: 'Hi, these are your latest stats.',
+    dashboard_title: 'Geins Merchant Center',
     dashboard_description:
       'All amounts will be shown excluding VAT. If you keep this page open, your stats will update every 60 seconds.',
     feedback_error: 'Something went wrong',

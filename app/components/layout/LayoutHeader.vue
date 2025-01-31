@@ -12,7 +12,7 @@ const setColorMode = () => {
     class="text-background-foreground flex flex-none items-center justify-start border-b bg-card"
   >
     <div class="relative ml-5 w-full max-w-96 items-center">
-      <Input
+      <!--   <Input
         id="search"
         type="text"
         :placeholder="$t('global_search_placeholder')"
@@ -22,14 +22,14 @@ const setColorMode = () => {
         class="absolute inset-y-0 start-0 flex items-center justify-center px-2"
       >
         <LucideSearch class="size-5 text-foreground" />
-      </span>
+      </span>-->
     </div>
-    <div class="ml-auto mr-5">
+    <!--  <div class="ml-auto mr-5">
       <NuxtLink to="/" class="flex items-center gap-1.5">
         <LucideCircleHelp class="size-4" />
         <span class="text-sm">Help center</span>
       </NuxtLink>
-    </div>
+    </div> -->
     <!--  <div class="mr-4">
       <Button
         variant="secondary"
@@ -45,7 +45,7 @@ const setColorMode = () => {
         />
       </Button>
     </div> -->
-    <div class="mr-5">
+    <div class="ml-auto mr-5">
       <DropdownMenu>
         <DropdownMenuTrigger class="size-10">
           <Avatar class="size-10 border">
@@ -55,7 +55,7 @@ const setColorMode = () => {
         <DropdownMenuContent class="w-48">
           <DropdownMenuLabel class="text-sm">My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <!--           <DropdownMenuItem>
             <NuxtLink
               class="flex items-center"
               :to="`/account/user/${user?.username}`"
@@ -68,7 +68,7 @@ const setColorMode = () => {
             <LucideCreditCard class="mr-2 size-4" />
             <span>Billing</span>
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator /> -->
           <DropdownMenuItem @click="setColorMode">
             <LucideSun class="mr-2 hidden size-4 dark:block" />
             <LucideMoonStar class="mr-2 size-4 dark:hidden" />

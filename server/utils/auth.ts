@@ -10,6 +10,7 @@ import type {
 import { jwtDecode } from 'jwt-decode';
 
 const API_URL = process.env.GEINS_API_URL as string;
+const { geinsLogInfo } = log('server/utils/auth.ts');
 
 const ENDPOINTS = {
   LOGIN: 'auth',
@@ -115,6 +116,8 @@ export const auth = () => {
   const refresh = async (
     refreshToken?: string,
   ): Promise<AuthResponse | undefined> => {
+    const date = new Date();
+    geinsLogInfo(date.toLocaleString(), '::: refreshing token:', refreshToken);
     if (!refreshToken) {
       return undefined;
     }
