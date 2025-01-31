@@ -1,12 +1,134 @@
-<script type="text/javascript">
-  // Check if the url path starts with /auth and set layout accordingly
-  if (!window.location.pathname.startsWith('/auth')) {
-    addEventListener('DOMContentLoaded', (event) => {
-      document.querySelector('.default-layout').classList.remove('hidden');
-      document.querySelector('.auth-layout').classList.add('hidden');
-    });
+<style>
+  :root {
+    --background: hsl(0, 0%, 98%); /* #fafafa */
+    --foreground: hsl(0, 0%, 9%); /* #161616 */
+
+    --card: hsl(0, 0%, 100%);
+    --foreground: hsl(0, 0%, 9%); /* #161616 */
+
+    --primary: hsl(0, 0%, 13%); /* #222222 */
+    --primary-foreground: hsl(0, 0%, 100%); /* #ffffff */
+
+    --border: 1px solid hsl(0, 0%, 90%); /* #e6e6e6 */
+    --radius: 0.3rem; /* 5px */
   }
-</script>
+
+  .dark {
+    --background: hsl(0, 0%, 13.5%);
+    --foreground: hsl(0, 0%, 90%);
+
+    --card: hsl(0, 0%, 11%);
+    --card-foreground: hsl(0, 0%, 90%);
+
+    --primary: hsl(0, 0%, 7%);
+    --primary-foreground: hsl(0, 0%, 100%);
+
+    --border: 1px solid hsl(0, 0%, 16%);
+  }
+
+  * {
+    border-color: var(--border);
+    box-sizing: border-box;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    height: 100%;
+    padding: 0;
+    margin: 0;
+  }
+  .hidden {
+    display: none !important;
+  }
+  .default-layout {
+    display: flex;
+  }
+  .h-screen {
+    height: 100vh;
+  }
+  .logo {
+    height: 4rem;
+    display: flex;
+    margin-left: 1.25rem;
+    align-items: center;
+  }
+  .logo svg {
+    height: 2.25rem;
+    fill: currentColor;
+  }
+  .sidebar {
+    background: var(--card);
+    border-right: var(--border);
+    width: var(--sidebar-width);
+    animation: pulse 1.5s infinite ease-in-out;
+  }
+  .sidebar-item {
+    height: 2.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .header {
+    height: 4rem;
+    background: var(--card);
+    border-bottom: var(--border);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    animation: pulse 1.5s infinite ease-in-out;
+  }
+  .header-item {
+    width: 24rem;
+    height: 2.25rem;
+    border: var(--border);
+    border-radius: var(--radius);
+    margin-left: 1.25rem;
+  }
+  .content {
+    padding: 2rem;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .loading-icon {
+    width: 5rem;
+    height: 5rem;
+  }
+  .animate-pulse {
+    animation: pulse 1.5s infinite ease-in-out;
+  }
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  .auth-layout {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .auth-layout-left {
+    background: var(--card);
+  }
+  .auth-layout-right {
+    background: var(--background);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .logo-full {
+    height: 33.333333%;
+    width: 33.333333%;
+  }
+</style>
 <div class="h-screen">
   <!-- Default layout -->
   <div class="default-layout hidden h-screen">
@@ -169,7 +291,7 @@
   </div>
 
   <!-- Auth layout -->
-  <div class="auth-layout h-screen">
+  <div class="auth-layout hidden h-screen">
     <div class="auth-layout-left"></div>
     <div class="auth-layout-right">
       <svg
@@ -188,139 +310,12 @@
     </div>
   </div>
 </div>
-
-<style>
-  :root {
-    --background: hsl(0, 0%, 98%); /* #fafafa */
-    --foreground: hsl(0, 0%, 9%); /* #161616 */
-
-    --card: hsl(0, 0%, 100%);
-    --foreground: hsl(0, 0%, 9%); /* #161616 */
-
-    --primary: hsl(0, 0%, 13%); /* #222222 */
-    --primary-foreground: hsl(0, 0%, 100%); /* #ffffff */
-
-    --border: 1px solid hsl(0, 0%, 90%); /* #e6e6e6 */
-    --radius: 0.3rem; /* 5px */
-  }
-
-  .dark {
-    --background: hsl(0, 0%, 13.5%);
-    --foreground: hsl(0, 0%, 90%);
-
-    --card: hsl(0, 0%, 11%);
-    --card-foreground: hsl(0, 0%, 90%);
-
-    --primary: hsl(0, 0%, 7%);
-    --primary-foreground: hsl(0, 0%, 100%);
-
-    --border: 1px solid hsl(0, 0%, 16%);
-  }
-
-  * {
-    border-color: var(--border);
-    box-sizing: border-box;
-  }
-  body {
-    background-color: var(--background);
-    color: var(--foreground);
-    height: 100%;
-    padding: 0;
-    margin: 0;
-  }
-  .hidden {
-    display: none !important;
-  }
-  .default-layout {
-    display: flex;
-  }
-  .h-screen {
-    height: 100vh;
-  }
-  .logo {
-    height: 4rem;
-    display: flex;
-    margin-left: 1.25rem;
-    align-items: center;
-  }
-  .logo svg {
-    height: 2.25rem;
-    fill: currentColor;
-  }
-  .sidebar {
-    background: var(--card);
-    border-right: var(--border);
-    width: var(--sidebar-width);
-    animation: pulse 1.5s infinite ease-in-out;
-  }
-  .sidebar-item {
-    height: 2.5rem;
-    border-radius: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
-  .main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  .header {
-    height: 4rem;
-    background: var(--card);
-    border-bottom: var(--border);
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-    animation: pulse 1.5s infinite ease-in-out;
-  }
-  .header-item {
-    width: 24rem;
-    height: 2.25rem;
-    border: var(--border);
-    border-radius: var(--radius);
-    margin-left: 1.25rem;
-  }
-  .content {
-    padding: 2rem;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .loading-icon {
-    width: 5rem;
-    height: 5rem;
-  }
-  .animate-pulse {
-    animation: pulse 1.5s infinite ease-in-out;
-  }
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-  .auth-layout {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .auth-layout-left {
-    background: var(--card);
-  }
-  .auth-layout-right {
-    background: var(--background);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  .logo-full {
-    height: 33.333333%;
-    width: 33.333333%;
-  }
-</style>
 <script type="text/javascript">
+  if (!window.location.pathname.startsWith('/auth')) {
+    document.querySelector('.default-layout').classList.remove('hidden');
+  } else {
+    document.querySelector('.auth-layout').classList.remove('hidden');
+  }
   function getCookie(cname) {
     let name = cname + '=';
     let decodedCookie = decodeURIComponent(document.cookie);

@@ -2,7 +2,7 @@
 import type { LoginCredentials, AuthFormMode } from '#shared/types';
 import { Input } from '#components';
 
-const emit = defineEmits(['login', 'verify', 'set-account']);
+const emit = defineEmits(['login', 'verify', 'set-account', 'set-mode']);
 
 const props = withDefaults(
   defineProps<{
@@ -135,6 +135,12 @@ const accounts = computed(() => {
     };
   });
 });
+
+// Go back to login
+const backToLogin = () => {
+  verificationCode.value = [];
+  emit('set-mode', 'login');
+};
 </script>
 
 <template>
@@ -187,13 +193,13 @@ const accounts = computed(() => {
     <div v-if="loginMode" class="grid gap-2">
       <div class="flex items-center">
         <Label for="password">Password</Label>
-        <a
+        <!-- <a
           href="/forgot-password"
           class="ml-auto inline-block text-sm underline"
           tabindex="3"
         >
           Forgot your password?
-        </a>
+        </a> -->
       </div>
       <Input
         id="password"
@@ -242,4 +248,7 @@ const accounts = computed(() => {
       <LucideLoaderCircle class="size-10 animate-spin" />
     </div>
   </div>
+  <Button v-if="verifyMode || accountMode" variant="link" @click="backToLogin">
+    {{ 'Back to login' }}
+  </Button>
 </template>

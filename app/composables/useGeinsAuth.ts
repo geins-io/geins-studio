@@ -52,7 +52,7 @@ export function useGeinsAuth() {
   };
 
   const logout = async () => {
-    await auth.signOut();
+    await auth.signOut({ callbackUrl: '/auth/logout' });
   };
 
   const refresh = async (): Promise<Session> => {

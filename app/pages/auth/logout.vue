@@ -2,10 +2,22 @@
 definePageMeta({
   layout: 'auth',
   auth: {
-    unauthenticatedOnly: true,
     navigateAuthenticatedTo: '/',
   },
 });
+
+await nextTick();
+
+const { isAuthenticated } = useGeinsAuth();
+watch(
+  isAuthenticated,
+  async (value) => {
+    if (!value) {
+      await navigateTo('/auth/login');
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
