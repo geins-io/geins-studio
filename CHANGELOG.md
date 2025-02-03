@@ -1,4 +1,15 @@
 
+## v0.0.8
+
+
+### 🤖 CI
+
+- Post to slack ([be18392](https://github.com/geins-io/geins-merchant-center/commit/be18392))
+
+### ❤️ Contributors
+
+- Olivia Axelsson <axelsson@geins.io>
+
 ## v0.0.7
 
 
