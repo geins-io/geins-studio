@@ -3,16 +3,16 @@ import { jwtDecode } from 'jwt-decode';
 
 export function useGeinsAuth() {
   const auth = useAuth();
-
   const isRefreshing = ref(false);
 
   const session = computed(() => auth.data.value);
-  const isAuthenticated = computed(
-    () =>
+  const isAuthenticated = computed<boolean>(() => {
+    return (
       auth.status.value === 'authenticated' &&
-      session.value?.isAuthenticated &&
-      session.value?.accountKey,
-  );
+      !!session.value?.isAuthenticated &&
+      !!session.value?.accountKey
+    );
+  });
   const accessToken = computed(() => session.value?.accessToken);
   const authStateDiffers = computed(
     () =>
@@ -52,7 +52,7 @@ export function useGeinsAuth() {
   };
 
   const logout = async () => {
-    await auth.signOut();
+    await auth.signOut({ callbackUrl: '/auth/logout' });
   };
 
   const refresh = async (): Promise<Session> => {

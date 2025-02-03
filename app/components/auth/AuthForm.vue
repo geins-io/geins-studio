@@ -2,7 +2,7 @@
 import type { LoginCredentials, AuthFormMode } from '#shared/types';
 import { Input } from '#components';
 
-const emit = defineEmits(['login', 'verify', 'set-account']);
+const emit = defineEmits(['login', 'verify', 'set-account', 'set-mode']);
 
 const props = withDefaults(
   defineProps<{
@@ -135,21 +135,27 @@ const accounts = computed(() => {
     };
   });
 });
+
+// Go back to login
+const backToLogin = () => {
+  verificationCode.value = [];
+  emit('set-mode', 'login');
+};
 </script>
 
 <template>
   <div class="grid gap-2 text-center">
     <h1 class="mb-3 text-3xl font-bold">
-      {{ verifyMode ? 'Verify Account' : 'Merchant Center' }}
+      {{ verifyMode ? $t('auth_verify_title') : $t('auth_login_title') }}
     </h1>
     <!-- <p v-if="instructions" class="text-xs text-muted-foreground">
       {{ instructions }}
     </p> -->
     <p v-if="verifyMode && mfaMethod.length > 0" class="text-muted-foreground">
-      Enter the 6-digit code from your <strong>{{ mfaMethod }}</strong>
+      {{ $t('auth_verify_description') }} <strong>{{ mfaMethod }}</strong>
     </p>
     <p v-if="accountMode" class="text-muted-foreground">
-      Select the account you want to access
+      {{ $t('auth_select_account') }}
     </p>
   </div>
 
@@ -169,7 +175,7 @@ const accounts = computed(() => {
     @submit.prevent="loginMode ? login() : verifyAccount()"
   >
     <div v-if="loginMode" class="grid gap-2">
-      <Label for="email">Email</Label>
+      <Label for="email">{{ $t('email') }}</Label>
       <Input
         id="email"
         ref="emailInput"
@@ -186,14 +192,16 @@ const accounts = computed(() => {
 
     <div v-if="loginMode" class="grid gap-2">
       <div class="flex items-center">
-        <Label for="password">Password</Label>
-        <a
+        <Label for="password">
+          {{ $t('password') }}
+        </Label>
+        <!-- <a
           href="/forgot-password"
           class="ml-auto inline-block text-sm underline"
           tabindex="3"
         >
           Forgot your password?
-        </a>
+        </a> -->
       </div>
       <Input
         id="password"
@@ -224,7 +232,7 @@ const accounts = computed(() => {
     </div>
 
     <Button class="w-full" :loading="pending">
-      {{ loginMode ? 'Log in' : 'Verify' }}
+      {{ loginMode ? $t('log_in') : $t('verify') }}
     </Button>
   </form>
   <div v-if="accountMode">
@@ -242,4 +250,7 @@ const accounts = computed(() => {
       <LucideLoaderCircle class="size-10 animate-spin" />
     </div>
   </div>
+  <Button v-if="verifyMode || accountMode" variant="link" @click="backToLogin">
+    {{ $t('back_to_login') }}
+  </Button>
 </template>

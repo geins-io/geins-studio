@@ -6,7 +6,9 @@ const props = defineProps<{
   sidebarWidth: string;
 }>();
 
-const isCollapsed = defineModel<boolean>('collapsed');
+const isCollapsed = useCookie<boolean>('geins-sidebar-collapsed', {
+  default: () => true,
+});
 const setIsCollapsed = (value: boolean) => {
   isCollapsed.value = value;
 };

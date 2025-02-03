@@ -48,6 +48,11 @@ export default defineI18nLocale(async () => {
     new: 'New',
     browse: 'Browse',
     page_of: 'Page {page} of {total}',
+    email: 'Email',
+    password: 'Password',
+    log_in: 'Log in',
+    verify: 'Verify',
+    back_to_login: 'Back to login',
     global_search_placeholder: 'Search...',
     dashboard_title: 'Geins Merchant Center',
     dashboard_description:
@@ -75,5 +80,9 @@ export default defineI18nLocale(async () => {
     selector_option_stock: '@.capitalize:stock',
     selector_option_import: '@.capitalize:import',
     selector_panel_description: 'Make your selection',
+    auth_login_title: 'Merchant Center',
+    auth_verify_title: 'Verify Account',
+    auth_verify_description: 'Enter the 6-digit code from your',
+    auth_select_account: 'Select the account you want to access',
   };
 });

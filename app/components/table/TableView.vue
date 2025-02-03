@@ -103,6 +103,7 @@ const columnVisibilityCookie = useCookie<VisibilityState>(
   `geins-cols-${cookieKey}`,
   {
     default: () => ({}),
+    maxAge: 60 * 60 * 24 * 365,
   },
 );
 const columnVisibility = ref(columnVisibilityCookie.value);
@@ -118,6 +119,7 @@ const columnOrderCookie = useCookie<ColumnOrderState>(
   `geins-order-${cookieKey}`,
   {
     default: () => [],
+    maxAge: 60 * 60 * 24 * 365,
   },
 );
 const columnOrder = ref(columnOrderCookie.value);

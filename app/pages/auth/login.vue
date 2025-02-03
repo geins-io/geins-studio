@@ -130,6 +130,12 @@ async function handleSetAccount(accountKey: string) {
 
   await redirectAndWelcome();
 }
+
+function handleSetMode(mode: AuthFormMode) {
+  step.value = mode;
+  showInvalid.value = false;
+  pending.value = false;
+}
 </script>
 
 <template>
@@ -142,5 +148,6 @@ async function handleSetAccount(accountKey: string) {
     @login="handleLogin"
     @verify="handleVerify"
     @set-account="handleSetAccount"
+    @set-mode="handleSetMode"
   />
 </template>
