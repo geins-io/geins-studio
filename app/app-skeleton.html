@@ -147,12 +147,6 @@
     return '';
   }
   const isAuthenticated = getCookie('geins-auth') === 'true';
-  console.log(
-    "🚀 ~ typeof getCookie('geins-auth'):",
-    typeof getCookie('geins-auth'),
-  );
-  console.log('🚀 ~ getCookie ~ document.cookie:', document.cookie);
-  console.log('🚀 ~ SKELETON isAuthenticated:', isAuthenticated);
 </script>
 <div class="h-screen">
   <!-- Default layout -->
@@ -336,7 +330,7 @@
   </div>
 </div>
 <script type="text/javascript">
-  if (isAuthenticated || !window.location.pathname.startsWith('/auth')) {
+  if (isAuthenticated && !window.location.pathname.startsWith('/auth')) {
     document.querySelector('.default-layout').classList.remove('hidden');
   } else {
     document.querySelector('.auth-layout').classList.remove('hidden');

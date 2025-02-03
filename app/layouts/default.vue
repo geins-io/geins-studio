@@ -1,6 +1,10 @@
 <script setup lang="ts">
-const isCollapsed = useCookie<boolean>('geins-sidebar-collapsed');
-isCollapsed.value = true;
+const isCollapsed = useCookie<boolean>('geins-sidebar-collapsed', {
+  default: () => true,
+  maxAge: 60 * 60 * 24 * 365,
+});
+
+isCollapsed.value = isCollapsed.value !== undefined ? isCollapsed.value : true;
 
 const currentSidebarWidth = computed(() => {
   return isCollapsed.value ? '3.75rem' : '15rem';

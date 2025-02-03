@@ -3,7 +3,6 @@ import { jwtDecode } from 'jwt-decode';
 
 export function useGeinsAuth() {
   const auth = useAuth();
-  const authCookie = useCookie<boolean>('geins-auth');
   const isRefreshing = ref(false);
 
   const session = computed(() => auth.data.value);
@@ -53,7 +52,6 @@ export function useGeinsAuth() {
   };
 
   const logout = async () => {
-    authCookie.value = false;
     await auth.signOut({ callbackUrl: '/auth/logout' });
   };
 
@@ -91,7 +89,6 @@ export function useGeinsAuth() {
   };
 
   return {
-    authCookie,
     session,
     accessToken,
     isAuthenticated,
