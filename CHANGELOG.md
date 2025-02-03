@@ -1,4 +1,15 @@
 
+## v0.0.7
+
+
+### 🚀 Enhancements
+
+- Release 1 ([#49](https://github.com/geins-io/geins-merchant-center/pull/49))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](http://github.com/olivia-geins))
+
 ## v0.0.6
 
 
