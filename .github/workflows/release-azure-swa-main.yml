@@ -50,7 +50,7 @@ jobs:
           URL: ${{ vars.AZURE_GEINS_AUTH_ORIGIN_PROD }}
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{
-          "text": "*A new release is live!* :rocket::sparkles:\n\n:point_right: <'"$URL"'|'"$URL"'>" :point_left:"
+          "text": "*A new release is live!* :rocket::sparkles:\n\n:point_right: <'"$URL"'|'"$URL"'> :point_left:"
           }' $SLACK_WEBHOOK_URL
 
   close_pull_request_job:

@@ -52,7 +52,7 @@ jobs:
           URL: ${{ vars.AZURE_GEINS_AUTH_ORIGIN_QA }}
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{
-          "text": "*The QA site has been updated!* :unicorn_face:\n\n:point_right: <'"$URL"'|'"$URL"'>" :point_left:"
+          "text": "*The QA site has been updated!* :unicorn_face:\n\n:point_right: <'"$URL"'|'"$URL"'> :point_left:"
           }' $SLACK_WEBHOOK_URL
 
   close_pull_request_job:
