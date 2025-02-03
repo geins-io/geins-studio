@@ -1,5 +1,5 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { isAuthenticated } = useGeinsAuth() || {};
+  const { isAuthenticated } = useGeinsAuth();
 
   if (to.path.startsWith('/auth')) {
     return isAuthenticated.value ? navigateTo('/') : true;
