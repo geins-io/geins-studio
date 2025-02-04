@@ -1,5 +1,8 @@
 export default defineNuxtPlugin(async (_nuxtApp) => {
   const { authStateDiffers, session, isAuthenticated, logout } = useGeinsAuth();
+  const { geinsLogInfo } = useGeinsLog('app/plugins/auth-state.ts');
+
+  geinsLogInfo('session:', session.value);
 
   // Watch for changes in the auth state to set the cookie that is used for the app skeleton state
   watch(

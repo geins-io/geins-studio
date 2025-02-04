@@ -106,10 +106,20 @@ export default defineNuxtPlugin(() => {
       throw error;
     },
     async onResponse({ response }) {
-      geinsLog(response.url, 'response data:', response?._data);
+      if (response.status === 200) {
+        geinsLog(
+          response.url,
+          '::: response success ::: data:',
+          response?._data,
+        );
+      }
     },
     async onResponseError({ response }) {
-      geinsLogError('response error', response);
+      geinsLogError(
+        response.url,
+        '::: response error ::: data:',
+        response?._data,
+      );
       if (response.status === 401) {
         throw { status: response.status, message: 'Unauthorized' };
       } else if (response.status === 403) {

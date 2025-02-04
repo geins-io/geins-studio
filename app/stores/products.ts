@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import type { Product, Category, Brand } from '#shared/types';
 
 export const useProductsStore = defineStore('products', () => {
-  const { geinsLogError } = useGeinsLog('store/account.ts');
+  const { geinsLogWarn } = useGeinsLog('store/account.ts');
   const api = repository(useNuxtApp().$geinsApi);
 
   // STATE
@@ -55,8 +55,9 @@ export const useProductsStore = defineStore('products', () => {
             callName = 'brands';
             break;
         }
-        geinsLogError(
-          `Failed to fetch ${callName} for the products store: ${result.reason}`,
+        geinsLogWarn(
+          `failed to fetch ${callName} for the products store:`,
+          result.reason,
         );
       }
     });
