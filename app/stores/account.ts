@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import type { Account, Channel, Currency } from '#shared/types';
 
 export const useAccountStore = defineStore('account', () => {
-  const { geinsLogError } = useGeinsLog('store/account.ts');
+  const { geinsLogWarn } = useGeinsLog('store/account.ts');
   const api = repository(useNuxtApp().$geinsApi);
 
   // STATE
@@ -62,7 +62,7 @@ export const useAccountStore = defineStore('account', () => {
             callName = 'languages';
             break;
         }
-        geinsLogError(`error fetching ${callName}:`, result);
+        geinsLogWarn(`error fetching ${callName}:`, result);
       }
     });
   }

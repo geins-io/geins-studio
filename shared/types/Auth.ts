@@ -1,13 +1,14 @@
 export interface User {
-  id: number | string;
-  firstName: string;
-  lastName: string;
+  id?: number | string;
+  firstName?: string;
+  lastName?: string;
   email?: string | null;
   phone?: string;
   company?: string;
   roles?: string[];
   apiUserType?: string;
   username?: string;
+  error?: unknown;
 }
 
 export interface AuthTokens {
