@@ -1,4 +1,15 @@
 
+## v0.0.11
+
+
+### 🤖 CI
+
+- Add missing conditions ([451b434](https://github.com/geins-io/geins-merchant-center/commit/451b434))
+
+### ❤️ Contributors
+
+- Olivia Axelsson <axelsson@geins.io>
+
 ## v0.0.10
 
 
