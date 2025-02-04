@@ -1,4 +1,15 @@
 
+## v0.0.10
+
+
+### 🤖 CI
+
+- Fix token ([3577441](https://github.com/geins-io/geins-merchant-center/commit/3577441))
+
+### ❤️ Contributors
+
+- Olivia Axelsson <axelsson@geins.io>
+
 ## v0.0.9
 
 ## v0.0.8
