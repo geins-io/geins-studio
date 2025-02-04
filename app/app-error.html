@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Error</title>
+    <style>
+        :root {
+            --error-color: #dc3545;
+            --bg-color: #f8f9fa;
+        }
+        body {
+            font-family: system-ui, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 2rem;
+            background-color: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+        }
+        .error-container {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border: 1px solid var(--error-color);
+            border-radius: 0.25rem;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        h1 {
+            color: var(--error-color);
+            margin-top: 0;
+        }
+        #gameCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="error-container">
+        <h1>Application Error</h1>
+        <p>An unexpected error occurred. Play with the character while we fix it!</p>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Game state
+        const player = {
+            x: 100,
+            y: 100,
+            width: 48,
+            height: 48,
+            velocityY: 0,
+            isJumping: false,
+            frame: 0,
+            state: 'idle',
+            lastUpdate: Date.now()
+        };
+
+        const platforms = [
+            { x: 0, y: canvas.height - 40, width: canvas.width, height: 40 },
+            { x: 300, y: canvas.height - 160, width: 200, height: 20 },
+            { x: 100, y: canvas.height - 280, width: 150, height: 20 },
+            { x: 500, y: canvas.height - 400, width: 180, height: 20 },
+            { x: 200, y: canvas.height - 520, width: 220, height: 20 },
+            { x: 400, y: canvas.height - 640, width: 160, height: 20 }
+        ];
+
+        // Sprite system
+        const sprite = {
+            image: new Image(),
+            frameWidth: 48,
+            frameHeight: 48,
+            animations: {
+                idle: { frames: [0], speed: 0 },
+                run: { frames: [1,2,3,4], speed: 100 },
+                jump: { frames: [5], speed: 0 }
+            },
+            loaded: false
+        };
+
+        // Fallback if image fails to load
+        sprite.image.onerror = () => {
+            sprite.loaded = false;
+        };
+        sprite.image.onload = () => {
+            sprite.loaded = true;
+        };
+        sprite.image.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA...'; // Base64 placeholder
+
+        // Initialize player on first platform
+        player.y = platforms[0].y - player.height;
+
+        // Game state additions
+        const bg = {
+            x: 0,
+            speed: 2,
+            img: new Image()
+        };
+        bg.img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZWVlIi8+PGNpcmNsZSBjeD0iNTAiIGN5PSIzNTAiIHI9IjMwIiBmaWxsPSIjZmZmIi8+PGNpcmNsZSBjeD0iMjAwIiBjeT0iMzAwIiByPSI0MCIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg==';
+
+        const obstacles = [];
+        let obstacleTimer = 0;
+        let gameOver = false;
+
+        // Game loop
+        function update() {
+            if (gameOver) return;
+
+            // Simple movement
+            if (keys.ArrowLeft) player.x -= 5;
+            if (keys.ArrowRight) player.x += 5;
+
+            // Apply gravity
+            player.velocityY += 0.5;
+            player.y += player.velocityY;
+
+            // Platform collision
+            platforms.forEach(platform => {
+                if (checkCollision(player, platform)) {
+                    player.velocityY = 0;
+                    player.y = platform.y - player.height;
+                    player.isJumping = false;
+                }
+            });
+
+            // Keep player in bounds
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+
+            // Background scroll
+            bg.x = (bg.x - bg.speed) % canvas.width;
+
+            // Spawn obstacles
+            obstacleTimer++;
+            if (obstacleTimer > 120) {
+                obstacles.push({
+                    x: canvas.width,
+                    y: platforms[0].y - 60,
+                    width: 40,
+                    height: 40
+                });
+                obstacleTimer = 0;
+            }
+
+            // Update obstacles
+            obstacles.forEach(obs => {
+                obs.x -= 5;
+                if (checkCollision(player, obs)) {
+                    gameOver = true;
+                }
+            });
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw scrolling background
+            ctx.drawImage(bg.img, bg.x, 0, canvas.width, canvas.height);
+            ctx.drawImage(bg.img, bg.x + canvas.width, 0, canvas.width, canvas.height);
+
+            // Draw platforms
+            ctx.fillStyle = '#666';
+            platforms.forEach(platform => {
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            });
+
+            // Draw obstacles
+            ctx.fillStyle = '#ff4444';
+            obstacles.forEach(obs => {
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+            });
+
+            // Draw player with fallback
+            if (sprite.loaded) {
+                const now = Date.now();
+                const anim = sprite.animations[player.state];
+                
+                if (now - player.lastUpdate > anim.speed) {
+                    player.frame = (player.frame + 1) % anim.frames.length;
+                    player.lastUpdate = now;
+                }
+
+                const frameX = anim.frames[player.frame] * sprite.frameWidth;
+                ctx.drawImage(
+                    sprite.image,
+                    frameX, 0,
+                    sprite.frameWidth, sprite.frameHeight,
+                    player.x, player.y,
+                    player.width, player.height
+                );
+            } else {
+                // Fallback rectangle
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
+
+            // Draw game over screen
+            if (gameOver) {
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.font = '48px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Game Over!', canvas.width/2, canvas.height/2);
+                ctx.font = '24px sans-serif';
+                ctx.fillText('Click to restart', canvas.width/2, canvas.height/2 + 40);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Collision detection
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        // Keyboard controls
+        const keys = {};
+        window.addEventListener('keydown', e => keys[e.key] = true);
+        window.addEventListener('keyup', e => keys[e.key] = false);
+        window.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                player.state = 'run';
+            }
+            if ((e.key === 'ArrowUp' || e.key === ' ') && !player.isJumping) {
+                player.state = 'jump';
+                player.velocityY = -15;
+                player.isJumping = true;
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            if (!keys.ArrowLeft && !keys.ArrowRight) {
+                player.state = 'idle';
+            }
+        });
+
+        // Add click to restart
+        canvas.addEventListener('click', () => {
+            if (gameOver) {
+                gameOver = false;
+                player.x = 100;
+                player.y = platforms[0].y - player.height;
+                obstacles.length = 0;
+            }
+        });
+
+        // Start game
+        gameLoop();
+    </script>
+</body>
+</html>
