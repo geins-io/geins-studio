@@ -45,11 +45,7 @@ export default defineEventHandler(async (event) => {
     });
     return response;
   } catch (error) {
-    // TODO: Evaluate if we should throw an error here
-    geinsLogWarn('error connecting to the API:', error);
-    return {
-      success: false,
-      error: 'Error connecting to the API',
-    };
+    geinsLogWarn('error connecting to the api:', error);
+    return error;
   }
 });
