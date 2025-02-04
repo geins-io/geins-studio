@@ -1,7 +1,9 @@
+import { SelectorCondition, CompareCondition } from '#shared/types';
+
 export function useSelector() {
   const getFallbackSelection = (): SelectorSelection => {
     return structuredClone({
-      condition: 'and',
+      condition: SelectorCondition.And,
       categories: [],
       brands: [],
       price: [],
@@ -14,13 +16,13 @@ export function useSelector() {
     return structuredClone({
       include: [
         {
-          condition: 'and',
+          condition: SelectorCondition.And,
           selections: [getFallbackSelection()],
         },
       ],
       exclude: [
         {
-          condition: 'and',
+          condition: SelectorCondition.And,
           selections: [getFallbackSelection()],
         },
       ],
@@ -30,10 +32,10 @@ export function useSelector() {
   const dummyData: SelectorSelectionBase = {
     include: [
       {
-        condition: 'and',
+        condition: SelectorCondition.And,
         selections: [
           {
-            condition: 'and',
+            condition: SelectorCondition.And,
             categories: [
               { id: 1, name: 'Electronics' },
               { id: 2, name: 'Clothing' },
@@ -45,14 +47,14 @@ export function useSelector() {
             ],
             price: [
               {
-                condition: 'lt',
+                condition: CompareCondition.LessThan,
                 values: {
                   EUR: 90,
                   SEK: 850,
                 },
               },
               {
-                condition: 'gt',
+                condition: CompareCondition.GreaterThan,
                 values: {
                   EUR: 10,
                   SEK: 100,
@@ -61,11 +63,11 @@ export function useSelector() {
             ],
             stock: [
               {
-                condition: 'gt',
+                condition: CompareCondition.GreaterThan,
                 quantity: 10,
               },
               {
-                condition: 'lt',
+                condition: CompareCondition.LessThan,
                 quantity: 1000,
               },
             ],
@@ -76,7 +78,7 @@ export function useSelector() {
     ],
     exclude: [
       {
-        condition: 'or',
+        condition: SelectorCondition.Or,
         selections: [getFallbackSelection()],
       },
     ],

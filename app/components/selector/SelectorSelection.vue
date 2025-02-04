@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SelectorCondition } from '#shared/types';
+
 // PROPS
 const props = withDefaults(
   defineProps<{
@@ -36,7 +38,7 @@ const activeConditionTypes = computed(() => {
 // WATCHERS TO KEEP GLOBALS IN SYNC
 watch(activeConditionTypes, (newVal) => {
   if (newVal <= 1) {
-    selection.value.condition = 'and';
+    selection.value.condition = SelectorCondition.And;
   }
 });
 watch(
@@ -88,7 +90,8 @@ function formatCurrencyNumber(value: number | string) {
     Number(value),
   );
 }
-const userUnderstandableOperators = {
+
+const userUnderstandableOperators: { [key in CompareCondition]: string } = {
   lt: t('less_than'),
   gt: t('more_than'),
   eq: t('exactly'),
@@ -131,7 +134,9 @@ const updateSelection = (updatedSelection: SelectorSelection) => {
       <div class="flex w-[calc(100%-5.5rem)] flex-col gap-3">
         <!-- All / No products tag -->
         <SelectorTags
-          v-if="showAllProductsTag && selection.condition === 'and'"
+          v-if="
+            showAllProductsTag && selection.condition === SelectorCondition.And
+          "
         >
           <SelectorTag
             :label="`${type === 'include' ? $t('all_entities', { entityName }, 2) : $t('no_entities', { entityName }, 2)}`"

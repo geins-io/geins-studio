@@ -28,30 +28,32 @@ export interface Market {
 }
 
 export interface Country {
-  id: string;
+  id: number;
   name: string;
   active: boolean;
 }
 
 export interface Language {
-  id: string;
+  id: number;
   name: string;
   active: boolean;
 }
 
 export interface Currency {
-  id: string;
+  id: number;
   name: string;
   symbol: CurrencySymbol;
   conversionRate: number;
 }
 
 export interface CurrencySymbol {
+  id: number;
   value: string;
   prefixed: boolean;
 }
 
 export interface Account {
+  id: number;
   accountKey: string;
   name: string;
   defaultCurrency: string;

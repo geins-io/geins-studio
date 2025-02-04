@@ -1,9 +1,16 @@
 // SELECTOR
-
-export type SelectorCondition = 'and' | 'or';
-export type CompareCondition = 'lt' | 'gt' | 'eq';
-export type SelectorSelectionType = 'include' | 'exclude';
+export const enum CompareCondition {
+  LessThan = 'lt',
+  GreaterThan = 'gt',
+  Equal = 'eq',
+}
+export const enum SelectorCondition {
+  And = 'and',
+  Or = 'or',
+}
 export type SelectorMode = 'simple' | 'advanced';
+export type SelectorSelectionType = 'include' | 'exclude';
+export type SelectorSelectionStrategy = 'all' | 'none';
 export type SelectorSelectionOptionsId =
   | 'entity'
   | 'product'

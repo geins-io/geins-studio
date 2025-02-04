@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useToast } from '@/components/ui/toast/use-toast';
+import type { ColumnDef } from '@tanstack/vue-table';
 
 // PROPS
 const props = withDefaults(
@@ -7,10 +8,14 @@ const props = withDefaults(
     entities: Entity[];
     entityName?: string;
     mode?: SelectorMode;
+    selectionStrategy?: SelectorSelectionStrategy;
+    allowExclusions?: boolean;
   }>(),
   {
     entityName: 'product',
     mode: 'advanced',
+    selectionStrategy: 'all',
+    allowExclusions: true,
   },
 );
 
@@ -20,7 +25,9 @@ const selection = defineModel<SelectorSelectionBase>('selection', {
 });
 
 // GLOBALS
-const entities = ref(props.entities);
+const entities = toRef(props, 'entities');
+const mode = toRef(props, 'mode');
+const entityName = toRef(props, 'entityName');
 const { defaultCurrency } = useAccountStore();
 const { toast } = useToast();
 const { t } = useI18n();
@@ -85,15 +92,20 @@ const removeFromManuallySelected = (id: number) => {
 
 // SETUP TABLE FOR SELECTED ENTITIES
 const { getColumns, orderAndFilterColumns, addActionsColumn } = useColumns();
-let columns = getColumns(entities.value);
-columns = orderAndFilterColumns(columns, ['id', 'image', 'name', 'price']);
-addActionsColumn(
-  columns,
-  {
-    onDelete: (entity: Entity) => removeFromManuallySelected(entity.id),
-  },
-  'delete',
-);
+let columns: ColumnDef<object>[] = [];
+
+const setupColumns = () => {
+  columns = getColumns(entities.value);
+  columns = orderAndFilterColumns(columns, ['id', 'image', 'name', 'price']);
+  addActionsColumn(
+    columns,
+    {
+      onDelete: (entity: Entity) => removeFromManuallySelected(entity.id),
+    },
+    'delete',
+  );
+};
+watch(entities, () => setupColumns(), { immediate: true });
 
 const _selectionMade = computed(() => {
   return !!(
