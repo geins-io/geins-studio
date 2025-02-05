@@ -61,21 +61,27 @@ const emit = defineEmits<{
 
 // GLOBALS
 const { t } = useI18n();
-const entityIsProduct = ref(props.entityName === 'product');
-const currentSelection = ref<SelectorSelection>(props.selection);
-// WATCH AND KEEP SELECTION IN SYNC
+const entityName = toRef(props, 'entityName');
+const entities = toRef(props, 'entities');
+const type = toRef(props, 'type');
+const currency = toRef(props, 'currency');
+const mode = toRef(props, 'mode');
+const entityIsProduct = computed(() => entityName.value === 'product');
+const currentSelection = toRef(props, 'selection');
+
+/* // WATCH AND KEEP SELECTION IN SYNC
 watch(
   () => props.selection,
   (value) => {
     currentSelection.value = value;
   },
   { deep: true },
-);
+); */
 
 // SETUP OPTIONS
 // Filter based on mode
 const options = ref(
-  props.mode === SelectorMode.Simple
+  mode.value === SelectorMode.Simple
     ? props.options.filter((o) => {
         const idToKeep = entityIsProduct.value ? 'product' : 'entity';
         return o.id === idToKeep;
@@ -88,7 +94,7 @@ const options = ref(
 // Set labels from lang keys
 options.value = options.value.map((o) => {
   if (o.id === 'entity' || o.id === 'product') {
-    o.label = t('entity_caps', { entityName: props.entityName }, 2);
+    o.label = t('entity_caps', { entityName: entityName.value }, 2);
   } else {
     const pluralization = o.type === 'multiple' ? 2 : 1;
     o.label = t(`selector_option_${o.id}`, pluralization);
@@ -101,7 +107,7 @@ const currentSelectionGroup = computed(
   () => options.value.find((o) => o.id === currentOption.value)?.group || 'ids',
 );
 const selectedEntities = computed(() =>
-  props.entities.filter((e) => currentSelection.value.ids?.includes(e.id)),
+  entities.value.filter((e) => currentSelection.value.ids?.includes(e.id)),
 );
 const selectedIds = computed(() => currentSelection.value.ids);
 
@@ -113,7 +119,7 @@ const { getColumns, orderAndFilterColumns } = useColumns();
 const columnOptions: ColumnOptions<Product> = {
   selectable: true,
 };
-let columns = getColumns(props.entities, columnOptions);
+let columns = getColumns(entities.value, columnOptions);
 columns = orderAndFilterColumns(columns, [
   'select',
   'id',

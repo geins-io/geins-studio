@@ -30,6 +30,7 @@ const props = withDefaults(
     showSearch?: boolean;
     pinnedState?: ColumnPinningState;
     selectedIds?: number[];
+    emptyText?: string;
   }>(),
   {
     entityName: 'row',
@@ -45,13 +46,14 @@ const props = withDefaults(
   },
 );
 
-const showSearch =
-  props.mode === 'advanced' ? ref(true) : ref(props.showSearch);
-
 const emit = defineEmits({
   clicked: (row) => row,
   selection: (selection: TData[]): TData[] => selection,
 });
+
+const { t } = useI18n();
+const showSearch =
+  props.mode === 'advanced' ? ref(true) : ref(props.showSearch);
 
 /**
  * Setup table state
@@ -226,6 +228,14 @@ const table = useVueTable({
     columnPinning: columnPinningState.value,
   },
 });
+
+const emptyText = computed(() => {
+  const emptyText =
+    props.emptyText || t('no_entities', { entityName: props.entityName }, 2);
+  return table.getColumn(props.searchableField)?.getFilterValue()
+    ? t('no_entities_found', { entityName: props.entityName }, 2)
+    : emptyText;
+});
 </script>
 
 <template>
@@ -334,7 +344,7 @@ const table = useVueTable({
         <template v-else>
           <TableRow>
             <TableCell :colspan="columns.length" class="h-24 text-center">
-              No results.
+              {{ emptyText }}
             </TableCell>
           </TableRow>
         </template>

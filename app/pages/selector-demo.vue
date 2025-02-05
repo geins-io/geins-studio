@@ -1,17 +1,33 @@
 <script setup lang="ts">
-import { SelectorMode } from '#shared/types';
+import { SelectorMode, SelectorSelectionStrategy } from '#shared/types';
 
-const tabs: { title: string; mode: SelectorMode; entity: string }[] = [
+const tabs: {
+  title: string;
+  mode: SelectorMode;
+  entity: string;
+  selectionStrategy: SelectorSelectionStrategy;
+  allowExclusions: boolean;
+}[] = [
   {
-    title: 'Products - Advanced',
+    title: 'Products - Advanced + Strategy All',
     mode: SelectorMode.Advanced,
     entity: 'product',
+    selectionStrategy: SelectorSelectionStrategy.All,
+    allowExclusions: true,
   },
-  { title: 'Products - Simple', mode: SelectorMode.Simple, entity: 'product' },
   {
-    title: 'Languages - Simple',
+    title: 'Products - Simple + Strategy None',
+    mode: SelectorMode.Simple,
+    entity: 'product',
+    selectionStrategy: SelectorSelectionStrategy.None,
+    allowExclusions: true,
+  },
+  {
+    title: 'Languages - Simple + Strategy None + No Exclusions',
     mode: SelectorMode.Simple,
     entity: 'language',
+    selectionStrategy: SelectorSelectionStrategy.None,
+    allowExclusions: false,
   },
 ];
 const currentTab = ref<number>(0);
@@ -32,6 +48,13 @@ const currentEntities = computed(() => {
   }
   return [];
 });
+const currentSelectionStrategy = computed<SelectorSelectionStrategy>(
+  () =>
+    tabs[currentTab.value]?.selectionStrategy || SelectorSelectionStrategy.All,
+);
+const currentAllowExclusions = computed<boolean>(
+  () => tabs[currentTab.value]?.allowExclusions,
+);
 
 const { getEmptySelectionBase } = useSelector();
 const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
@@ -58,6 +81,8 @@ const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
           :mode="currentMode"
           :entity-name="currentEntityName"
           :entities="currentEntities"
+          :selection-strategy="currentSelectionStrategy"
+          :allow-exclusions="currentAllowExclusions"
         />
       </ContentCard>
     </ContentEditMain>

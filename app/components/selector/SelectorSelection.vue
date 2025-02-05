@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { SelectorCondition, SelectorSelectionType } from '#shared/types';
+import type { SelectorMode, CompareCondition } from '#shared/types';
+import {
+  SelectorCondition,
+  SelectorSelectionType,
+  SelectorSelectionStrategy,
+} from '#shared/types';
 
 // PROPS
 const props = withDefaults(
@@ -9,6 +14,7 @@ const props = withDefaults(
     entityName: string;
     mode: SelectorMode;
     entities: Entity[];
+    selectionStrategy?: SelectorSelectionStrategy;
   }>(),
   {},
 );
@@ -20,7 +26,13 @@ const selection = defineModel<SelectorSelection>('selection', {
 
 // GLOBALS
 const { t } = useI18n();
-const currentCurrency = ref(props.currency);
+const currentCurrency = toRef(props, 'currency');
+const entityName = toRef(props, 'entityName');
+const entities = toRef(props, 'entities');
+const mode = toRef(props, 'mode');
+const selectionStrategy = toRef(props, 'selectionStrategy');
+const type = toRef(props, 'type');
+
 const activeConditionTypes = computed(() => {
   let active = 0;
   Object.keys(selection.value).forEach((key) => {
@@ -41,18 +53,12 @@ watch(activeConditionTypes, (newVal) => {
     selection.value.condition = SelectorCondition.And;
   }
 });
-watch(
-  () => props.currency,
-  (newVal) => {
-    currentCurrency.value = newVal;
-  },
-);
 
 const manuallySelectedText = computed(() =>
   t(
     'manually_selected_entitites',
     {
-      entityName: props.entityName,
+      entityName,
       count: selection.value.ids?.length ?? 0,
     },
     selection.value.ids?.length ?? 0,
@@ -113,6 +119,13 @@ const getLinkingWord = (option: 'brand' | 'price' | 'stock') => {
 const updateSelection = (updatedSelection: SelectorSelection) => {
   selection.value = updatedSelection;
 };
+
+const noSelectionLabel = computed(() => {
+  return type.value === SelectorSelectionType.Include &&
+    selectionStrategy.value === SelectorSelectionStrategy.All
+    ? t('all_entities', { entityName: entityName.value }, 2)
+    : t('no_entities', { entityName: entityName.value }, 2);
+});
 </script>
 
 <template>
@@ -140,10 +153,7 @@ const updateSelection = (updatedSelection: SelectorSelection) => {
             showAllProductsTag && selection.condition === SelectorCondition.And
           "
         >
-          <SelectorTag
-            :label="`${type === SelectorSelectionType.Include ? $t('all_entities', { entityName }, 2) : $t('no_entities', { entityName }, 2)}`"
-            :removable="false"
-          />
+          <SelectorTag :label="noSelectionLabel" :removable="false" />
         </SelectorTags>
 
         <!-- Categories -->

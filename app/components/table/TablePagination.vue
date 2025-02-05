@@ -35,7 +35,7 @@ const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
         }}
       </span>
       <span v-else>
-        {{ t('rows_found', { total: totalRows, entityName }, totalRows) }}
+        {{ t('rows_showing', { total: totalRows, entityName }, totalRows) }}
       </span>
     </div>
     <div class="flex items-center space-x-6 lg:space-x-8">

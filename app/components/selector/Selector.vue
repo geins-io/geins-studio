@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef } from '@tanstack/vue-table';
-import { SelectorMode, SelectorSelectionStrategy } from '#shared/types';
+import {
+  SelectorMode,
+  SelectorSelectionStrategy,
+  SelectorSelectionType,
+} from '#shared/types';
 
 // PROPS
 const props = withDefaults(
@@ -29,6 +33,8 @@ const selection = defineModel<SelectorSelectionBase>('selection', {
 const entities = toRef(props, 'entities');
 const mode: Ref<SelectorMode> = toRef(props, 'mode');
 const entityName = toRef(props, 'entityName');
+const selectionStrategy = toRef(props, 'selectionStrategy');
+const allowExclusions = toRef(props, 'allowExclusions');
 const { defaultCurrency } = useAccountStore();
 const { toast } = useToast();
 const { t } = useI18n();
@@ -62,9 +68,9 @@ watch(
 watch(
   () => showExclude.value,
   (value) => {
-    if (!value) {
+    /*     if (!value) {
       excludeSelection.value = getFallbackSelection();
-    }
+    } */
     if (!value && selection.value.exclude?.length) {
       showExclude.value = true;
     }
@@ -116,11 +122,15 @@ const _selectionMade = computed(() => {
 
 // SELECTED ENTITIES
 const selectedEntities = computed(() => {
+  const noSelectionMadeSelection =
+    selectionStrategy.value === SelectorSelectionStrategy.All
+      ? entities.value
+      : [];
   const included = includeSelection.value.ids?.length
     ? entities.value.filter((entity) =>
         includeSelection.value?.ids?.includes(entity.id),
       )
-    : entities.value;
+    : noSelectionMadeSelection;
   const excludedIds = excludeSelection.value?.ids || [];
   const selected = included.filter(
     (entity) => !excludedIds.includes(entity.id),
@@ -148,20 +158,22 @@ const selectedEntities = computed(() => {
         <slot name="selection">
           <SelectorSelection
             v-model:selection="includeSelection"
-            type="include"
+            :type="SelectorSelectionType.Include"
             :mode="mode"
             :currency="defaultCurrency"
             :entity-name="entityName"
             :entities="entities"
+            :selection-strategy="selectionStrategy"
           />
           <ContentSwitch
+            v-if="allowExclusions"
             v-model="showExclude"
             :label="$t('exclude_entities_from_selection', { entityName }, 2)"
             :description="$t('selector_exclude_description')"
           >
             <SelectorSelection
               v-model:selection="excludeSelection"
-              type="exclude"
+              :type="SelectorSelectionType.Exclude"
               :mode="mode"
               :currency="defaultCurrency"
               :entity-name="entityName"
@@ -179,6 +191,7 @@ const selectedEntities = computed(() => {
           :columns="columns"
           :data="selectedEntities"
           :entity-name="entityName"
+          :empty-text="$t('no_entities_selected', { entityName }, 2)"
           mode="simple"
           :page-size="15"
         />
