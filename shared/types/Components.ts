@@ -8,9 +8,18 @@ export const enum SelectorCondition {
   And = 'and',
   Or = 'or',
 }
-export type SelectorMode = 'simple' | 'advanced';
-export type SelectorSelectionType = 'include' | 'exclude';
-export type SelectorSelectionStrategy = 'all' | 'none';
+export const enum SelectorMode {
+  Simple = 'simple',
+  Advanced = 'advanced',
+}
+export const enum SelectorSelectionType {
+  Include = 'include',
+  Exclude = 'exclude',
+}
+export const enum SelectorSelectionStrategy {
+  All = 'all',
+  None = 'none',
+}
 export type SelectorSelectionOptionsId =
   | 'entity'
   | 'product'

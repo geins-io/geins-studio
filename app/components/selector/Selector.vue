@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef } from '@tanstack/vue-table';
+import { SelectorMode, SelectorSelectionStrategy } from '#shared/types';
 
 // PROPS
 const props = withDefaults(
@@ -13,8 +14,8 @@ const props = withDefaults(
   }>(),
   {
     entityName: 'product',
-    mode: 'advanced',
-    selectionStrategy: 'all',
+    mode: SelectorMode.Advanced,
+    selectionStrategy: SelectorSelectionStrategy.All,
     allowExclusions: true,
   },
 );
@@ -26,7 +27,7 @@ const selection = defineModel<SelectorSelectionBase>('selection', {
 
 // GLOBALS
 const entities = toRef(props, 'entities');
-const mode = toRef(props, 'mode');
+const mode: Ref<SelectorMode> = toRef(props, 'mode');
 const entityName = toRef(props, 'entityName');
 const { defaultCurrency } = useAccountStore();
 const { toast } = useToast();

@@ -1,12 +1,22 @@
 <script setup lang="ts">
+import { SelectorMode } from '#shared/types';
+
 const tabs: { title: string; mode: SelectorMode; entity: string }[] = [
-  { title: 'Products - Advanced', mode: 'advanced', entity: 'product' },
-  { title: 'Products - Simple', mode: 'simple', entity: 'product' },
-  { title: 'Languages - Simple', mode: 'simple', entity: 'language' },
+  {
+    title: 'Products - Advanced',
+    mode: SelectorMode.Advanced,
+    entity: 'product',
+  },
+  { title: 'Products - Simple', mode: SelectorMode.Simple, entity: 'product' },
+  {
+    title: 'Languages - Simple',
+    mode: SelectorMode.Simple,
+    entity: 'language',
+  },
 ];
 const currentTab = ref<number>(0);
 const currentMode = computed<SelectorMode>(
-  () => tabs[currentTab.value]?.mode || 'simple',
+  () => tabs[currentTab.value]?.mode || SelectorMode.Simple,
 );
 const currentEntityName = computed(
   () => tabs[currentTab.value]?.entity || 'product',

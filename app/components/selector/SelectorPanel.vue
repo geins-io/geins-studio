@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { SelectorMode, SelectorSelectionType } from '#shared/types';
+
 // PROPS
 const props = withDefaults(
   defineProps<{
@@ -11,7 +13,7 @@ const props = withDefaults(
     entities: Entity[];
   }>(),
   {
-    type: 'include',
+    type: SelectorSelectionType.Include,
     options: () => [
       {
         id: 'product',
@@ -73,7 +75,7 @@ watch(
 // SETUP OPTIONS
 // Filter based on mode
 const options = ref(
-  props.mode === 'simple'
+  props.mode === SelectorMode.Simple
     ? props.options.filter((o) => {
         const idToKeep = entityIsProduct.value ? 'product' : 'entity';
         return o.id === idToKeep;

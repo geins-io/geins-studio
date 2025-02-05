@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SelectorCondition } from '#shared/types';
+import { SelectorCondition, SelectorSelectionType } from '#shared/types';
 
 // PROPS
 const props = withDefaults(
@@ -118,7 +118,9 @@ const updateSelection = (updatedSelection: SelectorSelection) => {
 <template>
   <div>
     <ContentHeading>
-      {{ type === 'include' ? $t('select') : $t('exclude') }}
+      {{
+        type === SelectorSelectionType.Include ? $t('select') : $t('exclude')
+      }}
     </ContentHeading>
     <div class="relative rounded-lg border px-3 py-4">
       <SelectorPanel
@@ -139,7 +141,7 @@ const updateSelection = (updatedSelection: SelectorSelection) => {
           "
         >
           <SelectorTag
-            :label="`${type === 'include' ? $t('all_entities', { entityName }, 2) : $t('no_entities', { entityName }, 2)}`"
+            :label="`${type === SelectorSelectionType.Include ? $t('all_entities', { entityName }, 2) : $t('no_entities', { entityName }, 2)}`"
             :removable="false"
           />
         </SelectorTags>
