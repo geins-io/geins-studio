@@ -112,6 +112,8 @@ export default NuxtAuthHandler({
       async authorize(payload: LoginCredentials | AuthTokens | AuthResponse) {
         let authResponse: AuthResponse | null = null;
 
+        geinsLog('authorize payload:', payload);
+
         // Check if we have a login token and MFA code, or a username and password,
         // or an account key, and according to that, fetch or set the auth response accordingly
         // and call the appropriate login method

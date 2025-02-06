@@ -32,6 +32,7 @@ export interface Session extends AuthTokens {
   user?: User;
   mfaActive?: boolean;
   mfaMethod?: string;
+  expires?: string;
 }
 
 export interface LoginCredentials {
