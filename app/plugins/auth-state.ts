@@ -1,12 +1,8 @@
 import { useBroadcastChannel, useDebounceFn } from '@vueuse/core';
-import type { Session } from '#shared/types';
-interface AuthBroadcastData {
-  session?: Session | null;
-  isRefreshing: boolean;
-}
+import type { Session, AuthBroadcastData } from '#shared/types';
 
 export default defineNuxtPlugin(async (_nuxtApp) => {
-  const { route } = useRoute();
+  const { meta: routeMeta } = useRoute();
   const {
     authStateDiffers,
     session,
@@ -30,52 +26,64 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
 
   const broadcastChange = useDebounceFn(() => {
     broadcastPost({
-      session: toRaw(session.value),
+      session: structuredClone(toRaw(session.value)),
       isRefreshing: isRefreshing.value,
     });
     console.log('🚀 ~ broadcastChange');
-  }, 1000);
+  }, 500);
 
   watch(
     [isAuthenticated, accessToken, isRefreshing],
-    (newValues, oldValues) => {
+    async (newValues, oldValues) => {
       if (newValues.some((newVal, index) => newVal !== oldValues[index])) {
         broadcastChange();
+        if (newValues[0] === true && routeMeta.layout === 'auth') {
+          await navigateTo('/');
+        }
       }
     },
   );
 
   watch(
     broadcastData,
-    () => {
+    async () => {
       console.log('🚀 ~ broadcastData received');
-      if (broadcastData.value.isRefreshing !== isRefreshing.value) {
-        setIsRefreshing(broadcastData.value.isRefreshing);
-        geinsLog('isRefreshing set:', broadcastData.value.isRefreshing);
-      }
+      const refreshing = Boolean(broadcastData.value?.isRefreshing);
       let broadcastedSession: Session = {};
       let currentSession: Session = {};
-      if (broadcastData.value.session) {
-        broadcastedSession = toRaw(broadcastData.value.session) as Session;
-        console.log(
-          '🚀 ~ defineNuxtPlugin ~ broadcastedSession:',
-          broadcastedSession,
+      if (refreshing !== isRefreshing.value) {
+        setIsRefreshing(refreshing);
+        geinsLog('isRefreshing set:', refreshing);
+      } else if (broadcastData.value.session) {
+        broadcastedSession = structuredClone(
+          toRaw(broadcastData.value.session),
         );
         delete broadcastedSession.expires;
       }
       if (session.value) {
-        currentSession = toRaw(session.value) as Session;
-        console.log(
-          '🚀 ~ defineNuxtPlugin ~ currentRawSession:',
-          currentSession,
-        );
+        currentSession = structuredClone(toRaw(session.value));
         delete currentSession.expires;
       }
       if (
         JSON.stringify(broadcastedSession) !== JSON.stringify(currentSession)
       ) {
+        if (
+          broadcastedSession?.isAuthenticated === false ||
+          Object.keys(broadcastedSession).length === 0
+        ) {
+          await logout();
+          return;
+        }
         setSession(broadcastedSession);
-        geinsLog('new session set:', broadcastedSession);
+        geinsLog('✨ new session set:', broadcastedSession);
+        console.log(
+          '🚀 ~ defineNuxtPlugin ~ JSON.stringify(broadcastedSession):',
+          JSON.stringify(broadcastedSession),
+        );
+        console.log(
+          '🚀 ~ defineNuxtPlugin ~ JSON.stringify(currentSession):',
+          JSON.stringify(currentSession),
+        );
       }
     },
     { deep: true },
@@ -84,16 +92,13 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
   // Watch for changes in the auth state to set the cookie that is used for the app skeleton state
   watch(
     isAuthenticated,
-    (newValue, oldValue) => {
-      console.log('🚀 ~ defineNuxtPlugin ~ isAuthenticated:', newValue);
+    (value) => {
       const cookieSettings: { expires?: Date } = {};
       if (session.value?.expires) {
         cookieSettings.expires = new Date(session.value?.expires);
       }
       const authCookie = useCookie<boolean>('geins-auth', cookieSettings);
-      authCookie.value = newValue;
-      // Handle redirects to root when auhtenticated and /auth/login when getting logged out
-      // HANDLE REDIRECTS HERE
+      authCookie.value = value;
     },
     { immediate: true },
   );

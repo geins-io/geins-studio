@@ -61,6 +61,7 @@ export default NuxtAuthHandler({
           ...session,
           isAuthenticated: token.isAuthenticated,
           accessToken: token.accessToken,
+          refreshToken: token.refreshToken,
           refreshedAt: token.refreshedAt,
           accountKey: token.accountKey,
           accounts: token.accounts,

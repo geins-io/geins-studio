@@ -47,4 +47,9 @@ export interface AuthAccounts {
   };
 }
 
+export interface AuthBroadcastData {
+  session?: Session | null;
+  isRefreshing?: boolean;
+}
+
 export type AuthFormMode = 'login' | 'verify' | 'account';
