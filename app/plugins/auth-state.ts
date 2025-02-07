@@ -11,6 +11,7 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     isRefreshing,
     setIsRefreshing,
     setSession,
+    sessionsAreEqual,
     logout,
   } = useGeinsAuth();
   const { geinsLog, geinsLogInfo } = useGeinsLog('app/plugins/auth-state.ts');
@@ -26,10 +27,9 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
 
   const broadcastChange = useDebounceFn(() => {
     broadcastPost({
-      session: structuredClone(toRaw(session.value)),
+      session: toRaw(session.value),
       isRefreshing: isRefreshing.value,
     });
-    console.log('🚀 ~ broadcastChange');
   }, 500);
 
   watch(
@@ -47,7 +47,6 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
   watch(
     broadcastData,
     async () => {
-      console.log('🚀 ~ broadcastData received');
       const refreshing = Boolean(broadcastData.value?.isRefreshing);
       let broadcastedSession: Session = {};
       let currentSession: Session = {};
@@ -55,18 +54,12 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
         setIsRefreshing(refreshing);
         geinsLog('isRefreshing set:', refreshing);
       } else if (broadcastData.value.session) {
-        broadcastedSession = structuredClone(
-          toRaw(broadcastData.value.session),
-        );
-        delete broadcastedSession.expires;
+        broadcastedSession = toRaw(broadcastData.value.session);
       }
       if (session.value) {
         currentSession = structuredClone(toRaw(session.value));
-        delete currentSession.expires;
       }
-      if (
-        JSON.stringify(broadcastedSession) !== JSON.stringify(currentSession)
-      ) {
+      if (!sessionsAreEqual(broadcastedSession, currentSession)) {
         if (
           broadcastedSession?.isAuthenticated === false ||
           Object.keys(broadcastedSession).length === 0
@@ -75,15 +68,6 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
           return;
         }
         setSession(broadcastedSession);
-        geinsLog('✨ new session set:', broadcastedSession);
-        console.log(
-          '🚀 ~ defineNuxtPlugin ~ JSON.stringify(broadcastedSession):',
-          JSON.stringify(broadcastedSession),
-        );
-        console.log(
-          '🚀 ~ defineNuxtPlugin ~ JSON.stringify(currentSession):',
-          JSON.stringify(currentSession),
-        );
       }
     },
     { deep: true },

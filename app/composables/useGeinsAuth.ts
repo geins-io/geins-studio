@@ -61,6 +61,16 @@ export function useGeinsAuth() {
     });
   };
 
+  const sessionsAreEqual = (session1: Session, session2: Session) => {
+    const copy1 = { ...session1 };
+    const copy2 = { ...session2 };
+    delete copy1.expires;
+    delete copy1.accounts;
+    delete copy2.expires;
+    delete copy2.accounts;
+    return JSON.stringify(copy1) === JSON.stringify(copy2);
+  };
+
   const logout = async () => {
     await auth.signOut({ callbackUrl: '/auth/logout' });
   };
@@ -110,6 +120,7 @@ export function useGeinsAuth() {
     verify,
     setAccount,
     setSession,
+    sessionsAreEqual,
     logout,
     refresh,
     setIsRefreshing,
