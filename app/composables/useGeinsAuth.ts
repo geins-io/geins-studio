@@ -1,12 +1,9 @@
 import type { AuthTokens, LoginCredentials, Session } from '#shared/types';
-import { useBroadcastChannel, useDebounceFn } from '@vueuse/core';
 import { jwtDecode } from 'jwt-decode';
 
 export function useGeinsAuth() {
   const auth = useAuth();
   const isRefreshing = ref(false);
-
-  const { geinsLog } = useGeinsLog('app/composables/useGeinsAuth.ts');
 
   const session = toRef(auth.data);
   const isAuthenticated = computed<boolean>(() => {
@@ -98,7 +95,7 @@ export function useGeinsAuth() {
     return Date.now() > exp;
   };
 
-  const expiresSoon = (token?: string | null, threshold = 300000) => {
+  const expiresSoon = (token?: string | null, threshold = 3540000) => {
     token = token || accessToken.value;
     let exp = parseToken(token)?.exp;
     if (!exp) {

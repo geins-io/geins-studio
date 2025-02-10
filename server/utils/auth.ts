@@ -170,7 +170,7 @@ export const auth = () => {
    * @param {number} [threshold=300000] - The threshold in milliseconds, default is 300000 (5 minutes).
    * @returns {boolean} True if the token is about to expire soon, false otherwise.
    */
-  const expiresSoon = (exp?: number, threshold: number = 300000): boolean => {
+  const expiresSoon = (exp?: number, threshold: number = 3540000): boolean => {
     if (!exp) {
       return false;
     }
@@ -214,8 +214,11 @@ export const auth = () => {
 
     // If account is already selected or set, return session
     if (session.accountKey) {
+      console.log('🚀 ~ getSession ~ session.accountKey:', session.accountKey);
       return session;
     }
+
+    console.log('🚀 ~ getSession ~ response.accounts:', response.accounts);
 
     // Handle multiple accounts and no account selected
     if (response.accounts && Object.keys(response.accounts).length > 0) {

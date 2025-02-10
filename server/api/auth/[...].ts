@@ -32,6 +32,7 @@ export default NuxtAuthHandler({
             const tokenData = geinsAuth.getSession(newTokens);
             token = {
               ...tokenData,
+              accountKey: token.accountKey,
             };
             geinsLog('jwt returned ::: refresh:', token);
             return token;

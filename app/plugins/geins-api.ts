@@ -82,8 +82,10 @@ export default defineNuxtPlugin(() => {
         // Check token expiration
         if (isExpired() || expiresSoon()) {
           if (!isRefreshing.value) {
+            console.log(' starting token refresh from api');
             await refreshAuthToken();
           } else {
+            console.log('🌴 waiting for refresh to complete');
             await refreshPromise; // Wait for the ongoing refresh to complete
           }
         }

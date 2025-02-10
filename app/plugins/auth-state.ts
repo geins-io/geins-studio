@@ -14,7 +14,7 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     sessionsAreEqual,
     logout,
   } = useGeinsAuth();
-  const { geinsLog, geinsLogInfo } = useGeinsLog('app/plugins/auth-state.ts');
+  const { geinsLog } = useGeinsLog('app/plugins/auth-state.ts');
   const { data: broadcastData, post: broadcastPost } = useBroadcastChannel<
     AuthBroadcastData,
     AuthBroadcastData
@@ -22,9 +22,11 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     name: 'geins-auth',
   });
 
-  // Log session data
-  geinsLogInfo('session:', session.value);
+  if (session.value) {
+    geinsLog('current auth session:', session.value);
+  }
 
+  // Debounced function to broadcast changes
   const broadcastChange = useDebounceFn(() => {
     broadcastPost({
       session: toRaw(session.value),
@@ -32,9 +34,12 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     });
   }, 500);
 
+  // Watch for changes to isAuthenticated, accessToken, and isRefreshing
   watch(
     [isAuthenticated, accessToken, isRefreshing],
     async (newValues, oldValues) => {
+      console.log('🚀 ~ oldValues:', oldValues);
+      console.log('🚀 ~ newValues:', newValues);
       if (newValues.some((newVal, index) => newVal !== oldValues[index])) {
         broadcastChange();
         if (newValues[0] === true && routeMeta.layout === 'auth') {
@@ -44,6 +49,7 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     },
   );
 
+  // Watch for changes to broadcastData
   watch(
     broadcastData,
     async () => {
@@ -57,9 +63,13 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
         broadcastedSession = toRaw(broadcastData.value.session);
       }
       if (session.value) {
-        currentSession = structuredClone(toRaw(session.value));
+        currentSession = toRaw(session.value);
       }
       if (!sessionsAreEqual(broadcastedSession, currentSession)) {
+        console.log(
+          '🤷🏼‍♀️ sessions not equal ::: new session:',
+          broadcastedSession,
+        );
         if (
           broadcastedSession?.isAuthenticated === false ||
           Object.keys(broadcastedSession).length === 0
@@ -87,6 +97,7 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     { immediate: true },
   );
 
+  // Function to handle auth state changes
   const authStateHandler = async () => {
     if (session.value?.mfaActive) {
       return;
