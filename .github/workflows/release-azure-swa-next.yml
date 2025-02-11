@@ -46,6 +46,7 @@ jobs:
 
       # Step 3: Post to Slack
       - name: Post to Slack
+        if: github.event_name == 'push'
         id: posttoslack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
