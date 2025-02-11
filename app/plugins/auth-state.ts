@@ -56,7 +56,6 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
       let currentSession: Session = {};
       if (refreshing !== isRefreshing.value) {
         setIsRefreshing(refreshing);
-        geinsLog('isRefreshing set:', refreshing);
       } else if (broadcastData.value.session) {
         broadcastedSession = toRaw(broadcastData.value.session);
       }

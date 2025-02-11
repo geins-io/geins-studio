@@ -96,7 +96,7 @@ export default NuxtAuthHandler({
         geinsLogWarn('user unauthorized, logging out');
         throw { status: 401, message: 'AUTH_ERROR' };
       }
-      geinsLog('session:', session);
+      geinsLog('session returned:', session);
       return session;
     },
   },
