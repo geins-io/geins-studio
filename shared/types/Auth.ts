@@ -32,6 +32,7 @@ export interface Session extends AuthTokens {
   user?: User;
   mfaActive?: boolean;
   mfaMethod?: string;
+  expires?: string;
 }
 
 export interface LoginCredentials {
@@ -44,6 +45,11 @@ export interface AuthAccounts {
   [key: string]: {
     displayName: string;
   };
+}
+
+export interface AuthBroadcastData {
+  session?: Session | null;
+  isRefreshing?: boolean;
 }
 
 export type AuthFormMode = 'login' | 'verify' | 'account';
