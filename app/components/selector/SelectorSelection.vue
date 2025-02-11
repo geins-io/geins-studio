@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { SelectorMode, CompareCondition } from '#shared/types';
+import type { CompareCondition } from '#shared/types';
 import {
+  SelectorMode,
   SelectorCondition,
   SelectorSelectionType,
   SelectorSelectionStrategy,
@@ -32,6 +33,57 @@ const entities = toRef(props, 'entities');
 const mode = toRef(props, 'mode');
 const selectionStrategy = toRef(props, 'selectionStrategy');
 const type = toRef(props, 'type');
+const entityIsProduct = computed(() => entityName.value === 'product');
+const selectorOptions: Ref<SelectorSelectionOption[]> = computed(() => {
+  const options = [
+    {
+      id: 'product',
+      group: 'ids',
+      label: t('entity_caps', { entityName: entityName.value }, 2),
+    },
+    {
+      id: 'entity',
+      group: 'ids',
+      label: t('entity_caps', { entityName: entityName.value }, 2),
+    },
+    {
+      id: 'category',
+      group: 'categories',
+      label: t('entity_caps', { entityName: 'category' }, 2),
+    },
+    {
+      id: 'brand',
+      group: 'brands',
+      label: t('entity_caps', { entityName: 'brand' }, 2),
+    },
+    {
+      id: 'price',
+      group: 'price',
+      label: t('entity_caps', { entityName: 'price' }),
+    },
+    {
+      id: 'stock',
+      group: 'stock',
+      label: t('entity_caps', { entityName: 'stock' }),
+    },
+    {
+      id: 'import',
+      group: 'ids',
+      label: t('entity_caps', { entityName: 'import' }),
+    },
+  ];
+
+  const filteredOptions =
+    mode.value === SelectorMode.Simple
+      ? options.filter(
+          (o) => o.id === (entityIsProduct.value ? 'product' : 'entity'),
+        )
+      : options.filter(
+          (o) => o.id !== (entityIsProduct.value ? 'entity' : 'product'),
+        );
+
+  return filteredOptions as SelectorSelectionOption[];
+});
 
 const activeConditionTypes = computed(() => {
   let active = 0;
@@ -142,6 +194,7 @@ const noSelectionLabel = computed(() => {
         :mode="mode"
         :entity-name="entityName"
         :entities="entities"
+        :options="selectorOptions"
         @save="updateSelection"
       >
         <Button class="absolute right-3 top-3.5">{{ $t('browse') }}</Button>

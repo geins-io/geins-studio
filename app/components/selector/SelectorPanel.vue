@@ -8,49 +8,12 @@ const props = withDefaults(
     mode: SelectorMode;
     currency?: string;
     type?: SelectorSelectionType;
-    options?: SelectorSelectionOption[];
+    options: SelectorSelectionOption[];
     entityName: string;
     entities: Entity[];
   }>(),
   {
     type: SelectorSelectionType.Include,
-    options: () => [
-      {
-        id: 'product',
-        group: 'ids',
-        type: 'multiple',
-      },
-      {
-        id: 'entity',
-        group: 'ids',
-        type: 'multiple',
-      },
-      {
-        id: 'category',
-        group: 'categories',
-        type: 'multiple',
-      },
-      {
-        id: 'brand',
-        group: 'brands',
-        type: 'multiple',
-      },
-      {
-        id: 'price',
-        group: 'price',
-        type: 'single',
-      },
-      {
-        id: 'stock',
-        group: 'stock',
-        type: 'single',
-      },
-      {
-        id: 'import',
-        group: 'ids',
-        type: 'single',
-      },
-    ],
   },
 );
 
@@ -67,42 +30,29 @@ const type = toRef(props, 'type');
 const currency = toRef(props, 'currency');
 const mode = toRef(props, 'mode');
 const entityIsProduct = computed(() => entityName.value === 'product');
-const currentSelection = toRef(props, 'selection');
+const currentSelection = ref<SelectorSelection>(
+  toRef(props, 'selection').value,
+);
 
-/* // WATCH AND KEEP SELECTION IN SYNC
+// WATCH AND KEEP SELECTION IN SYNC
 watch(
   () => props.selection,
   (value) => {
     currentSelection.value = value;
   },
   { deep: true },
-); */
-
-// SETUP OPTIONS
-// Filter based on mode
-const options = ref(
-  mode.value === SelectorMode.Simple
-    ? props.options.filter((o) => {
-        const idToKeep = entityIsProduct.value ? 'product' : 'entity';
-        return o.id === idToKeep;
-      })
-    : props.options.filter((o) => {
-        const idToRemove = entityIsProduct.value ? 'entity' : 'product';
-        return o.id !== idToRemove;
-      }),
 );
-// Set labels from lang keys
-options.value = options.value.map((o) => {
-  if (o.id === 'entity' || o.id === 'product') {
-    o.label = t('entity_caps', { entityName: entityName.value }, 2);
-  } else {
-    const pluralization = o.type === 'multiple' ? 2 : 1;
-    o.label = t(`selector_option_${o.id}`, pluralization);
-  }
-  return o;
-});
 
+const options = toRef(props, 'options');
 const currentOption = ref(options.value?.[0]?.id ?? '');
+//watch options and set new current option to the first if changed
+watch(
+  options,
+  (value) => {
+    currentOption.value = value?.[0]?.id ?? '';
+  },
+  { deep: true },
+);
 const currentSelectionGroup = computed(
   () => options.value.find((o) => o.id === currentOption.value)?.group || 'ids',
 );
@@ -120,13 +70,30 @@ const columnOptions: ColumnOptions<Product> = {
   selectable: true,
 };
 let columns = getColumns(entities.value, columnOptions);
-columns = orderAndFilterColumns(columns, [
-  'select',
-  'id',
-  'image',
-  'name',
-  'price',
-]);
+
+if (entityIsProduct.value) {
+  columns = orderAndFilterColumns(columns, [
+    'select',
+    'id',
+    'image',
+    'name',
+    'price',
+  ]);
+}
+
+// watch entitites, if they change, update columns
+watch(entities, () => {
+  columns = getColumns(entities.value, columnOptions);
+  if (entityIsProduct.value) {
+    columns = orderAndFilterColumns(columns, [
+      'select',
+      'id',
+      'image',
+      'name',
+      'price',
+    ]);
+  }
+});
 
 const onSelection = (selection: { id?: number }[]) => {
   const ids = selection.map((s) => s.id);
@@ -181,7 +148,7 @@ const handleCancel = () => {
         <div class="w-full border-x px-4 py-3">
           <ContentHeading>{{ t('select') }}</ContentHeading>
           <!-- PRODUCT -->
-          <div v-if="currentOption === 'product'">
+          <div v-if="currentSelectionGroup === 'ids'">
             <TableView
               :columns="columns"
               :data="entities"
