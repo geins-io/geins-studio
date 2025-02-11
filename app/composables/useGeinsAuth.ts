@@ -113,7 +113,7 @@ export function useGeinsAuth() {
     return Date.now() > exp;
   };
 
-  const expiresSoon = (token?: string | null, threshold = 3540000) => {
+  const expiresSoon = (token?: string | null, threshold = 300000) => {
     token = token || accessToken.value;
     let exp = parseToken(token)?.exp;
     if (!exp) {
