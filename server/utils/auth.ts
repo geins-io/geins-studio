@@ -10,7 +10,7 @@ import type {
 import { jwtDecode } from 'jwt-decode';
 
 const API_URL = process.env.GEINS_API_URL as string;
-const { geinsLogInfo } = log('server/utils/auth.ts');
+const { geinsLog } = log('server/utils/auth.ts');
 
 const ENDPOINTS = {
   LOGIN: 'auth',
@@ -116,8 +116,7 @@ export const auth = () => {
   const refresh = async (
     refreshToken?: string,
   ): Promise<AuthResponse | undefined> => {
-    const date = new Date();
-    geinsLogInfo(date.toLocaleString(), '::: refreshing token:', refreshToken);
+    geinsLog('refreshing token:', refreshToken);
     if (!refreshToken) {
       return undefined;
     }
@@ -184,7 +183,7 @@ export const auth = () => {
    * @param {AuthResponse} response - The auth response.
    * @returns {Session} The token data including authorization status and expiration times.
    */
-  const getSession = (response: AuthResponse): Session => {
+  const getSessionFromResponse = (response: AuthResponse): Session => {
     // User is not authenticated because MFA is required
     if (response.mfaRequired && response.loginToken) {
       return {
@@ -201,24 +200,12 @@ export const auth = () => {
     }
 
     // User is authenticated, set up session
-    const parsedToken = parseToken(response.accessToken);
-    const session: Session = {
-      isAuthenticated: true,
-      accessToken: response.accessToken,
-      refreshToken: response.refreshToken,
-      accountKey: response.accountKey,
-      tokenExpires: Number(parsedToken?.exp),
-      refreshedAt: Number(parsedToken?.iat),
-      mfaActive: false,
-    };
+    const session: Session = getAuthenticatedSession(response);
 
     // If account is already selected or set, return session
     if (session.accountKey) {
-      console.log('🚀 ~ getSession ~ session.accountKey:', session.accountKey);
       return session;
     }
-
-    console.log('🚀 ~ getSession ~ response.accounts:', response.accounts);
 
     // Handle multiple accounts and no account selected
     if (response.accounts && Object.keys(response.accounts).length > 0) {
@@ -230,6 +217,22 @@ export const auth = () => {
     } else {
       throw new Error('No account key found for user');
     }
+  };
+
+  const getAuthenticatedSession = (session: Session): Session => {
+    const parsedToken = parseToken(session.accessToken);
+    const authenticatedSession: Session = {
+      isAuthenticated: true,
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      accountKey: session.accountKey,
+      tokenExpires: Number(parsedToken?.exp),
+      refreshedAt: Number(parsedToken?.iat),
+      mfaActive: false,
+      user: session.user,
+    };
+
+    return authenticatedSession;
   };
 
   /**
@@ -253,7 +256,8 @@ export const auth = () => {
     parseToken,
     isExpired,
     expiresSoon,
-    getSession,
+    getSessionFromResponse,
+    getAuthenticatedSession,
     shouldRefresh,
   };
 };

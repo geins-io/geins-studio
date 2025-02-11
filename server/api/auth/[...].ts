@@ -29,10 +29,12 @@ export default NuxtAuthHandler({
           const newTokens = await geinsAuth.refresh(token.refreshToken);
           if (newTokens) {
             // If refresh is successful, update the token with the new session data
-            const tokenData = geinsAuth.getSession(newTokens);
+            const tokenData = geinsAuth.getSessionFromResponse(newTokens);
+            // Set the new token data but keep accountKey and user as is
             token = {
               ...tokenData,
               accountKey: token.accountKey,
+              user: token.user,
             };
             geinsLog('jwt returned ::: refresh:', token);
             return token;
@@ -55,22 +57,18 @@ export default NuxtAuthHandler({
       geinsLog('jwt returned:', token);
       return token;
     },
+
     session: async ({ session, token }) => {
       if (token.isAuthenticated && token.accessToken) {
         // If we are authorized and have an access token, update the session
         session = {
           ...session,
-          isAuthenticated: token.isAuthenticated,
-          accessToken: token.accessToken,
-          refreshToken: token.refreshToken,
-          refreshedAt: token.refreshedAt,
-          accountKey: token.accountKey,
-          accounts: token.accounts,
+          ...geinsAuth.getAuthenticatedSession(token),
         };
         // If we don't have a user object yet, fetch it
         if (
           !session.user?.email &&
-          !geinsAuth.isExpired(token.tokenExpires) &&
+          !geinsAuth.isExpired(session.tokenExpires) &&
           session.accountKey
         ) {
           try {
@@ -111,10 +109,10 @@ export default NuxtAuthHandler({
         username: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(payload: LoginCredentials | AuthTokens | AuthResponse) {
+      async authorize(
+        payload: LoginCredentials | AuthTokens | AuthResponse | Session,
+      ) {
         let authResponse: AuthResponse | null = null;
-
-        geinsLog('authorize payload:', payload);
 
         // Check if we have a login token and MFA code, or a username and password,
         // or an account key, and according to that, fetch or set the auth response accordingly
@@ -127,6 +125,20 @@ export default NuxtAuthHandler({
           payload.mfaCode
         ) {
           authResponse = await geinsAuth.verify(payload);
+        } else if (
+          'user' in payload &&
+          payload.user &&
+          Object.keys(payload.user).length
+        ) {
+          const session: Session = {};
+          Object.entries(payload).forEach(([key, value]) => {
+            try {
+              session[key as keyof Session] = JSON.parse(value as string);
+            } catch {
+              session[key as keyof Session] = value;
+            }
+          });
+          return geinsAuth.getAuthenticatedSession(session);
         } else if ('accountKey' in payload && payload.accountKey) {
           authResponse = payload as AuthResponse;
         }
@@ -137,7 +149,7 @@ export default NuxtAuthHandler({
         }
 
         // If we have a valid response, return the session data
-        return geinsAuth.getSession(authResponse);
+        return geinsAuth.getSessionFromResponse(authResponse);
       },
     }),
   ],

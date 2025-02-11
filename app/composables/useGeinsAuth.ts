@@ -3,6 +3,7 @@ import { jwtDecode } from 'jwt-decode';
 
 export function useGeinsAuth() {
   const auth = useAuth();
+  // TODO: remove isrefreshing flow and replace with auth state loading
   const isRefreshing = ref(false);
 
   const session = toRef(auth.data);
@@ -45,6 +46,7 @@ export function useGeinsAuth() {
       ...auth.data.value,
       accountKey,
     };
+
     return await auth.signIn('credentials', {
       redirect: false,
       ...session,
@@ -52,10 +54,26 @@ export function useGeinsAuth() {
   };
 
   const setSession = async (session: Session) => {
+    const sessionObjectsStringified = stringifySessionObjects(session);
+
     return await auth.signIn('credentials', {
       redirect: false,
       ...session,
+      ...sessionObjectsStringified,
     });
+  };
+
+  const stringifySessionObjects = (session: Session) => {
+    return Object.keys(session).reduce<Record<keyof Session, string>>(
+      (acc, key) => {
+        const k = key as keyof Session;
+        if (typeof session[k] === 'object') {
+          acc[k] = JSON.stringify(session[k]);
+        }
+        return acc;
+      },
+      {} as Record<keyof Session, string>,
+    );
   };
 
   const sessionsAreEqual = (session1: Session, session2: Session) => {

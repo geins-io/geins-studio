@@ -38,8 +38,6 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
   watch(
     [isAuthenticated, accessToken, isRefreshing],
     async (newValues, oldValues) => {
-      console.log('🚀 ~ oldValues:', oldValues);
-      console.log('🚀 ~ newValues:', newValues);
       if (newValues.some((newVal, index) => newVal !== oldValues[index])) {
         broadcastChange();
         if (newValues[0] === true && routeMeta.layout === 'auth') {
@@ -66,10 +64,6 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
         currentSession = toRaw(session.value);
       }
       if (!sessionsAreEqual(broadcastedSession, currentSession)) {
-        console.log(
-          '🤷🏼‍♀️ sessions not equal ::: new session:',
-          broadcastedSession,
-        );
         if (
           broadcastedSession?.isAuthenticated === false ||
           Object.keys(broadcastedSession).length === 0
