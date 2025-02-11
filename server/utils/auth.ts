@@ -219,6 +219,12 @@ export const auth = () => {
     }
   };
 
+  /**
+   * Creates a session object that is authenticated.
+   *
+   * @param {Session} session - The session object to authenticate.
+   * @returns {Session} The authenticated session object.
+   */
   const getAuthenticatedSession = (session: Session): Session => {
     const parsedToken = parseToken(session.accessToken);
     const authenticatedSession: Session = {
@@ -233,6 +239,24 @@ export const auth = () => {
     };
 
     return authenticatedSession;
+  };
+
+  /**
+   * Parses a session object that contains JSON strings as values.
+   *
+   * @param {Session} payload - The session object to parse.
+   * @returns {Session} The parsed session object.
+   */
+  const parseSessionObjectStrings = (payload: Session): Session => {
+    const session: Session = {};
+    Object.entries(payload).forEach(([key, value]) => {
+      try {
+        session[key as keyof Session] = JSON.parse(value as string);
+      } catch {
+        session[key as keyof Session] = value;
+      }
+    });
+    return session;
   };
 
   /**
@@ -258,6 +282,7 @@ export const auth = () => {
     expiresSoon,
     getSessionFromResponse,
     getAuthenticatedSession,
+    parseSessionObjectStrings,
     shouldRefresh,
   };
 };

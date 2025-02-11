@@ -130,14 +130,7 @@ export default NuxtAuthHandler({
           payload.user &&
           Object.keys(payload.user).length
         ) {
-          const session: Session = {};
-          Object.entries(payload).forEach(([key, value]) => {
-            try {
-              session[key as keyof Session] = JSON.parse(value as string);
-            } catch {
-              session[key as keyof Session] = value;
-            }
-          });
+          const session: Session = geinsAuth.parseSessionObjectStrings(payload);
           return geinsAuth.getAuthenticatedSession(session);
         } else if ('accountKey' in payload && payload.accountKey) {
           authResponse = payload as AuthResponse;
