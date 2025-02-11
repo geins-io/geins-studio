@@ -20,9 +20,12 @@ export function log(scope?: string, debug: boolean = false): GeinsLogger {
       if (!alwaysLog && !debug) {
         return;
       }
-      let formattedMessage = scope ? `${scope} ::: ${message}` : message;
+      const timestamp = new Date().toLocaleTimeString();
+      let formattedMessage = `${timestamp} ::: `;
+      formattedMessage += scope ? `${scope} ::: ${message}` : message;
       if (import.meta.nitro || import.meta.server) {
-        formattedMessage = scope
+        formattedMessage = `${chalk.grey(timestamp)} ::: `;
+        formattedMessage += scope
           ? `${chalk.bold.bgBlack(scope)} ::: ${message}`
           : message;
         console[method](
