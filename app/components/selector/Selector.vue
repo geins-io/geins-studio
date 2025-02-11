@@ -65,17 +65,14 @@ watch(
   },
   { deep: true },
 );
-watch(
+/* watch(
   () => showExclude.value,
   (value) => {
     /*     if (!value) {
       excludeSelection.value = getFallbackSelection();
-    } */
-    if (!value && selection.value.exclude?.length) {
-      showExclude.value = true;
-    }
+    } 
   },
-);
+); */
 
 // HANDLERS FOR MANUALLY SELECTED ENTITIES
 const addToManuallySelected = (id: number) => {
@@ -112,7 +109,16 @@ const setupColumns = () => {
     'delete',
   );
 };
-watch(entities, () => setupColumns(), { immediate: true });
+
+watch(
+  entities,
+  () => {
+    setupColumns();
+    includeSelection.value = getFallbackSelection();
+    excludeSelection.value = getFallbackSelection();
+  },
+  { immediate: true },
+);
 
 const _selectionMade = computed(() => {
   return !!(
