@@ -52,7 +52,7 @@ const currentSelectionStrategy = computed<SelectorSelectionStrategy>(
   () =>
     tabs[currentTab.value]?.selectionStrategy || SelectorSelectionStrategy.All,
 );
-const currentAllowExclusions = computed<boolean>(
+const currentAllowExclusions = computed(
   () => tabs[currentTab.value]?.allowExclusions,
 );
 

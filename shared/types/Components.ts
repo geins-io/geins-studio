@@ -45,11 +45,15 @@ export interface StockSelection {
 
 export interface SelectorSelection {
   condition: SelectorCondition;
-  categories?: Category[];
-  brands?: Brand[];
-  price?: PriceSelection[];
-  stock?: StockSelection[];
+  categoryIds: number[];
+  brandIds: number[];
+  price: PriceSelection[];
+  stock: StockSelection[];
   ids?: number[];
+}
+
+export interface SelectorApiSelection extends SelectorSelection {
+  productIds: number[];
 }
 
 export interface SelectorSelectionGroup {

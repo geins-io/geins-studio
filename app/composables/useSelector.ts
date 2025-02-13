@@ -4,8 +4,8 @@ export function useSelector() {
   const getFallbackSelection = (): SelectorSelection => {
     return structuredClone({
       condition: SelectorCondition.And,
-      categories: [],
-      brands: [],
+      categoryIds: [],
+      brandIds: [],
       price: [],
       stock: [],
       ids: [],
@@ -29,6 +29,19 @@ export function useSelector() {
     });
   };
 
+  const convertToApiSelection = (
+    selection: SelectorSelection,
+  ): SelectorApiSelection => {
+    return {
+      condition: selection.condition,
+      categoryIds: selection.categoryIds,
+      brandIds: selection.brandIds,
+      price: selection.price,
+      stock: selection.stock,
+      productIds: selection.ids,
+    };
+  };
+
   const dummyData: SelectorSelectionBase = {
     include: [
       {
@@ -36,15 +49,8 @@ export function useSelector() {
         selections: [
           {
             condition: SelectorCondition.And,
-            categories: [
-              { id: 1, name: 'Electronics' },
-              { id: 2, name: 'Clothing' },
-              { id: 3, name: 'Shoes' },
-            ],
-            brands: [
-              { id: 1, name: 'BrandA' },
-              { id: 2, name: 'BrandB' },
-            ],
+            categoryIds: [1, 2, 3],
+            brandIds: [1, 2],
             price: [
               {
                 condition: CompareCondition.LessThan,
@@ -88,5 +94,6 @@ export function useSelector() {
     dummyData,
     getFallbackSelection,
     getEmptySelectionBase,
+    convertToApiSelection,
   };
 }

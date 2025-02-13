@@ -27,6 +27,7 @@ const selection = defineModel<SelectorSelection>('selection', {
 
 // GLOBALS
 const { t } = useI18n();
+const { getCategoryName, getBrandName } = useProductsStore();
 const currentCurrency = toRef(props, 'currency');
 const entityName = toRef(props, 'entityName');
 const entities = toRef(props, 'entities');
@@ -48,12 +49,12 @@ const selectorOptions: Ref<SelectorSelectionOption[]> = computed(() => {
     },
     {
       id: 'category',
-      group: 'categories',
+      group: 'categoryIds',
       label: t('entity_caps', { entityName: 'category' }, 2),
     },
     {
       id: 'brand',
-      group: 'brands',
+      group: 'brandIds',
       label: t('entity_caps', { entityName: 'brand' }, 2),
     },
     {
@@ -118,8 +119,8 @@ const manuallySelectedText = computed(() =>
 );
 const showAllProductsTag = computed(
   () =>
-    (selection.value.categories?.length === 0 &&
-      (selection.value.brands?.length ||
+    (selection.value.categoryIds?.length === 0 &&
+      (selection.value.brandIds?.length ||
         selection.value.price?.length ||
         selection.value.stock?.length)) ||
     allEmpty.value,
@@ -210,34 +211,34 @@ const noSelectionLabel = computed(() => {
         </SelectorTags>
 
         <!-- Categories -->
-        <SelectorTags v-if="selection.categories?.length">
+        <SelectorTags v-if="selection.categoryIds?.length">
           <SelectorTagLink
-            v-for="(item, index) in selection.categories"
+            v-for="(id, index) in selection.categoryIds"
             :key="index"
             :linking-word="$t('or')"
-            :is-last="index === selection.categories.length - 1"
+            :is-last="index === selection.categoryIds.length - 1"
           >
             <SelectorTag
-              :label="item.name"
-              @remove="selection.categories?.splice(index, 1)"
+              :label="getCategoryName(id)"
+              @remove="selection.categoryIds?.splice(index, 1)"
             />
           </SelectorTagLink>
         </SelectorTags>
 
         <!-- Brands -->
-        <SelectorLinkingWord v-if="selection.brands?.length">
+        <SelectorLinkingWord v-if="selection.brandIds?.length">
           {{ getLinkingWord('brand') }}
         </SelectorLinkingWord>
-        <SelectorTags v-if="selection.brands?.length">
+        <SelectorTags v-if="selection.brandIds?.length">
           <SelectorTagLink
-            v-for="(item, index) in selection.brands"
+            v-for="(id, index) in selection.brandIds"
             :key="index"
             :linking-word="$t('or')"
-            :is-last="index === selection.brands.length - 1"
+            :is-last="index === selection.brandIds.length - 1"
           >
             <SelectorTag
-              :label="item.name"
-              @remove="selection.brands?.splice(index, 1)"
+              :label="getBrandName(id)"
+              @remove="selection.brandIds?.splice(index, 1)"
             />
           </SelectorTagLink>
         </SelectorTags>

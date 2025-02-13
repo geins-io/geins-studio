@@ -2,8 +2,9 @@ import { defineStore } from 'pinia';
 import type { Product, Category, Brand } from '#shared/types';
 
 export const useProductsStore = defineStore('products', () => {
-  const { geinsLogWarn } = useGeinsLog('store/account.ts');
+  const { geinsLogWarn } = useGeinsLog('store/products.ts');
   const api = repository(useNuxtApp().$geinsApi);
+  const { currentLanguage } = useAccountStore();
 
   // STATE
   const products = ref<Product[]>([]);
@@ -70,6 +71,22 @@ export const useProductsStore = defineStore('products', () => {
     ready.value = false;
   }
 
+  function getCategoryName(categoryId: number): string {
+    const category: Category | undefined = categories.value.find(
+      (c) => c.categoryId === categoryId,
+    );
+    const text = category?.texts.find((t) => t.language === currentLanguage);
+    return text?.name || '';
+  }
+
+  function getBrandName(brandId: number): string {
+    const brand: Brand | undefined = brands.value.find(
+      (b) => b.brandId === brandId,
+    );
+    const text = brand?.texts.find((t) => t.language === currentLanguage);
+    return text?.name || '';
+  }
+
   return {
     products,
     categories,
@@ -80,5 +97,7 @@ export const useProductsStore = defineStore('products', () => {
     fetchBrands,
     init,
     reset,
+    getCategoryName,
+    getBrandName,
   };
 });

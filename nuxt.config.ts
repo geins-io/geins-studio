@@ -64,6 +64,11 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
+      fallback: {
+        language: 'en',
+        currency: 'SEK',
+        channel: 1,
+      },
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
       VERCEL: process.env.VERCEL,

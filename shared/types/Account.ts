@@ -17,8 +17,8 @@ export interface Channel {
 export interface Market {
   id: number;
   channelId: number;
-  country?: Country | string;
-  currency?: Currency | string;
+  country?: Country;
+  currency?: Currency;
   virtual: boolean;
   attributes: string[];
   allowedLanguages: string[];
@@ -34,13 +34,13 @@ export interface Country {
 }
 
 export interface Language {
-  id: number;
+  id: string;
   name: string;
   active: boolean;
 }
 
 export interface Currency {
-  id: number;
+  id: string;
   name: string;
   symbol: CurrencySymbol;
   conversionRate: number;
