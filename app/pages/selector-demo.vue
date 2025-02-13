@@ -37,14 +37,17 @@ const currentMode = computed<SelectorMode>(
 const currentEntityName = computed(
   () => tabs[currentTab.value]?.entity || 'product',
 );
+const productsStore = useProductsStore();
+const { products } = storeToRefs(productsStore);
+const accountStore = useAccountStore();
+const { languages, currentLanguage } = storeToRefs(accountStore);
+
 const currentEntities = computed(() => {
-  const { products } = useProductsStore();
-  const { languages } = useAccountStore();
   if (currentEntityName.value === 'product') {
-    return products;
+    return products.value;
   }
   if (currentEntityName.value === 'language') {
-    return languages;
+    return languages.value;
   }
   return [];
 });

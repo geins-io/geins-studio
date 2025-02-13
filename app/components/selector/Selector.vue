@@ -35,10 +35,10 @@ const mode: Ref<SelectorMode> = toRef(props, 'mode');
 const entityName = toRef(props, 'entityName');
 const selectionStrategy = toRef(props, 'selectionStrategy');
 const allowExclusions = toRef(props, 'allowExclusions');
-const { defaultCurrency } = useAccountStore();
+const { currentCurrency } = useAccountStore();
 const { toast } = useToast();
 const { t } = useI18n();
-const { getFallbackSelection } = useSelector();
+const { getFallbackSelection, convertToApiSelection } = useSelector();
 
 // SETUP REFS FOR INCLUDE/EXCLUDE SELECTION
 const includeSelection = ref<SelectorSelection>(
@@ -166,7 +166,7 @@ const selectedEntities = computed(() => {
             v-model:selection="includeSelection"
             :type="SelectorSelectionType.Include"
             :mode="mode"
-            :currency="defaultCurrency"
+            :currency="currentCurrency"
             :entity-name="entityName"
             :entities="entities"
             :selection-strategy="selectionStrategy"
@@ -181,7 +181,7 @@ const selectedEntities = computed(() => {
               v-model:selection="excludeSelection"
               :type="SelectorSelectionType.Exclude"
               :mode="mode"
-              :currency="defaultCurrency"
+              :currency="currentCurrency"
               :entity-name="entityName"
               :entities="entities"
             />

@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import type { Product, Category, Brand } from '#shared/types';
-
 export const useProductsStore = defineStore('products', () => {
   const { geinsLogWarn } = useGeinsLog('store/products.ts');
   const api = repository(useNuxtApp().$geinsApi);
@@ -14,28 +13,28 @@ export const useProductsStore = defineStore('products', () => {
 
   // ACTIONS
   async function fetchProducts(): Promise<Product[]> {
-    const data = await api.product.list();
-    products.value = data;
-    return data;
+    const data = await api.product.list.get();
+    products.value = data?.items || [];
+    return data?.items || [];
   }
 
   async function fetchCategories(): Promise<Category[]> {
-    const data = await api.category.list();
-    categories.value = data;
-    return data;
+    const data = await api.category.list.get();
+    categories.value = data?.items || [];
+    return data?.items || [];
   }
 
   async function fetchBrands(): Promise<Brand[]> {
-    const data = await api.brand.list();
-    brands.value = data;
-    return data;
+    const data = await api.brand.list.get();
+    brands.value = data?.items || [];
+    return data?.items || [];
   }
 
   async function init(): Promise<void> {
     const results = await Promise.allSettled([
       fetchProducts(),
       fetchCategories(),
-      //fetchBrands(),
+      fetchBrands(),
     ]);
 
     ready.value = results.every(

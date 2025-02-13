@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { NavigationItem } from '#shared/types';
-import { navigation } from '@/lib/mockdata/navigation';
+import { navigation } from '@/lib/navigation';
 
 const props = withDefaults(
   defineProps<{

@@ -1,4 +1,4 @@
-import { getAuthBaseUrlVercel } from './app/lib/deployment';
+import { getAuthBaseUrlVercel } from './shared/utils/deployment';
 
 const nitroPreset = {
   nitro: {
