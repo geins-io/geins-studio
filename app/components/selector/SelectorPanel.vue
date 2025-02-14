@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SelectorMode, SelectorSelectionType } from '#shared/types';
+import { type SelectorMode, SelectorSelectionType } from '#shared/types';
 
 // PROPS
 const props = withDefaults(
@@ -10,7 +10,7 @@ const props = withDefaults(
     type?: SelectorSelectionType;
     options: SelectorSelectionOption[];
     entityName: string;
-    entities: Entity[];
+    entities: SelectorEntity[];
   }>(),
   {
     type: SelectorSelectionType.Include,
@@ -24,11 +24,14 @@ const emit = defineEmits<{
 
 // GLOBALS
 const { t } = useI18n();
+const productsStore = useProductsStore();
+const { categories, brands } = storeToRefs(productsStore);
+
 const entityName = toRef(props, 'entityName');
 const entities = toRef(props, 'entities');
-const type = toRef(props, 'type');
+/* const type = toRef(props, 'type');
 const currency = toRef(props, 'currency');
-const mode = toRef(props, 'mode');
+const mode = toRef(props, 'mode'); */
 const entityIsProduct = computed(() => entityName.value === 'product');
 const currentSelection = ref<SelectorSelection>(
   toRef(props, 'selection').value,
@@ -56,44 +59,73 @@ watch(
 const currentSelectionGroup = computed(
   () => options.value.find((o) => o.id === currentOption.value)?.group || 'ids',
 );
-const selectedEntities = computed(() =>
-  entities.value.filter((e) => currentSelection.value.ids?.includes(e.id)),
-);
+const selectedEntities = computed(() => {
+  switch (currentSelectionGroup.value) {
+    case 'categoryIds':
+      return categories.value.filter((e) =>
+        currentSelection.value.categoryIds?.includes(e.id),
+      );
+    case 'brandIds':
+      return brands.value.filter((e) =>
+        currentSelection.value.brandIds?.includes(e.id),
+      );
+    default:
+      return entities.value.filter((e) =>
+        currentSelection.value.ids?.includes(e.id),
+      );
+  }
+});
 const selectedIds = computed(() => currentSelection.value.ids);
 
 const selectOption = (id: SelectorSelectionOptionsId) => {
   currentOption.value = id;
 };
 
+// Columns for Entity
 const { getColumns, orderAndFilterColumns } = useColumns();
 const columnOptions: ColumnOptions<Product> = {
   selectable: true,
 };
 let columns = getColumns(entities.value, columnOptions);
-
 if (entityIsProduct.value) {
-  columns = orderAndFilterColumns(columns, [
-    'select',
-    'id',
-    'image',
-    'name',
-    'price',
-  ]);
+  columns = orderAndFilterColumns(columns, ['select', 'id', 'name', 'slug']);
 }
 
 // watch entitites, if they change, update columns
 watch(entities, () => {
   columns = getColumns(entities.value, columnOptions);
   if (entityIsProduct.value) {
-    columns = orderAndFilterColumns(columns, [
-      'select',
-      'id',
-      'image',
-      'name',
-      'price',
-    ]);
+    columns = orderAndFilterColumns(columns, ['select', 'id', 'name', 'slug']);
   }
 });
+
+// Columns for categories
+const columnOptionsCategories: ColumnOptions<Category> = {
+  selectable: true,
+};
+let categoriesColumns = getColumns(categories.value, columnOptionsCategories);
+if (entityIsProduct.value) {
+  categoriesColumns = orderAndFilterColumns(categoriesColumns, [
+    'select',
+    'id',
+    'name',
+    'slug',
+  ]);
+}
+
+// Columns for brands
+const columnOptionsBrands: ColumnOptions<Brand> = {
+  selectable: true,
+};
+let brandsColumns = getColumns(brands.value, columnOptionsBrands);
+if (entityIsProduct.value) {
+  brandsColumns = orderAndFilterColumns(brandsColumns, [
+    'select',
+    'id',
+    'name',
+    'slug',
+  ]);
+}
 
 const onSelection = (selection: { id?: number }[]) => {
   const ids = selection.map((s) => s.id);
@@ -147,7 +179,7 @@ const handleCancel = () => {
         </div>
         <div class="w-full border-x px-4 py-3">
           <ContentHeading>{{ t('select') }}</ContentHeading>
-          <!-- PRODUCT -->
+          <!-- IDS -->
           <div v-if="currentSelectionGroup === 'ids'">
             <TableView
               :columns="columns"
@@ -161,7 +193,35 @@ const handleCancel = () => {
               @selection="onSelection"
             />
           </div>
-          <!-- END PRODUCT -->
+          <!-- END IDS -->
+          <!-- CATEGORIES -->
+          <div v-else-if="currentSelectionGroup === 'categoryIds'">
+            <TableView
+              :columns="categoriesColumns"
+              :data="categories"
+              entity-name="category"
+              :pinned-state="{}"
+              :selected-ids="currentSelection.categoryIds"
+              max-height="calc(100vh - 20rem)"
+              mode="simple"
+              @selection="onSelection"
+            />
+          </div>
+          <!-- END CATEGORIES -->
+          <!-- BRANDS -->
+          <div v-else-if="currentSelectionGroup === 'brandIds'">
+            <TableView
+              :columns="brandsColumns"
+              :data="brands"
+              entity-name="brand"
+              :pinned-state="{}"
+              :selected-ids="currentSelection.brandIds"
+              max-height="calc(100vh - 20rem)"
+              mode="simple"
+              @selection="onSelection"
+            />
+          </div>
+          <!-- END BRANDS -->
         </div>
         <div class="h-full w-80 shrink-0 px-4 py-3">
           <ContentHeading>{{ t('selected') }}</ContentHeading>
@@ -188,6 +248,52 @@ const handleCancel = () => {
             </li>
           </ul>
           <!-- END IDS -->
+          <!-- CATEGORIES -->
+          <ul
+            v-else-if="currentSelectionGroup === 'categoryIds'"
+            class="h-[calc(100%-26px)] overflow-auto"
+          >
+            <li
+              v-for="entity in selectedEntities"
+              :key="entity.id"
+              class="flex items-center gap-2.5 py-1.5 text-xs"
+            >
+              <span class="font-semibold">{{ entity.id }}</span>
+              <span class="truncate">{{ entity.name }}</span>
+              <Button
+                size="icon"
+                variant="outline"
+                class="ml-auto mr-1 size-5 shrink-0 hover:text-negative"
+                @click="removeSelected(entity.id)"
+              >
+                <LucideX class="size-3" />
+              </Button>
+            </li>
+          </ul>
+          <!-- END CATEGORIES -->
+          <!-- BRANDS -->
+          <ul
+            v-else-if="currentSelectionGroup === 'brandIds'"
+            class="h-[calc(100%-26px)] overflow-auto"
+          >
+            <li
+              v-for="entity in selectedEntities"
+              :key="entity.id"
+              class="flex items-center gap-2.5 py-1.5 text-xs"
+            >
+              <span class="font-semibold">{{ entity.id }}</span>
+              <span class="truncate">{{ entity.name }}</span>
+              <Button
+                size="icon"
+                variant="outline"
+                class="ml-auto mr-1 size-5 shrink-0 hover:text-negative"
+                @click="removeSelected(entity.id)"
+              >
+                <LucideX class="size-3" />
+              </Button>
+            </li>
+          </ul>
+          <!-- END BRANDS -->
         </div>
       </div>
       <SheetBody>

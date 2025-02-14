@@ -10,7 +10,7 @@ import {
 // PROPS
 const props = withDefaults(
   defineProps<{
-    entities: Entity[];
+    entities: SelectorEntity[];
     entityName?: string;
     mode?: SelectorMode;
     selectionStrategy?: SelectorSelectionStrategy;
@@ -70,7 +70,7 @@ watch(
   (value) => {
     /*     if (!value) {
       excludeSelection.value = getFallbackSelection();
-    } 
+    }
   },
 ); */
 
@@ -100,11 +100,12 @@ let columns: ColumnDef<object>[] = [];
 
 const setupColumns = () => {
   columns = getColumns(entities.value);
-  columns = orderAndFilterColumns(columns, ['id', 'image', 'name', 'price']);
+  columns = orderAndFilterColumns(columns, ['id', 'name', 'slug', 'price']);
   addActionsColumn(
     columns,
     {
-      onDelete: (entity: Entity) => removeFromManuallySelected(entity.id),
+      onDelete: (entity: SelectorEntity) =>
+        removeFromManuallySelected(entity.id),
     },
     'delete',
   );

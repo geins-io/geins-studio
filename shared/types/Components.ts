@@ -72,9 +72,8 @@ export interface SelectorSelectionOption {
   label?: string;
 }
 
-export interface Entity {
+export interface SelectorEntity {
   id: number;
   name?: string;
-  title?: string;
   image?: string;
 }

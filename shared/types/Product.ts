@@ -126,7 +126,7 @@ export interface VariantValues {
   values: Record<string, string>;
 }
 
-export interface Product {
+export interface ApiProduct {
   productId: number;
   articleNumber: string;
   dateCreated: string;
@@ -158,6 +158,12 @@ export interface Product {
   variantValues?: VariantValues;
 }
 
+export interface Product extends ApiProduct {
+  id: number;
+  name?: string;
+  slug?: string;
+}
+
 export interface BrandTexts {
   language: string;
   name: string;
@@ -166,11 +172,16 @@ export interface BrandTexts {
   slug: string;
 }
 
-export interface Brand {
+export interface ApiBrand {
   brandId: number;
-  name: string;
   active: boolean;
+  name: string;
   texts: BrandTexts[];
+}
+
+export interface Brand extends ApiBrand {
+  id: number;
+  slug?: string;
 }
 
 export interface CategoryTexts {
@@ -181,13 +192,23 @@ export interface CategoryTexts {
   slug: string;
 }
 
-export interface Category {
+export interface ApiCategory {
   categoryId: number;
   parentCategoryId: number;
   hidden: boolean;
   active: boolean;
   order: number;
   texts: CategoryTexts[];
+}
+
+export interface Category extends ApiCategory {
+  id: number;
+  name?: string;
+  slug?: string;
+}
+
+export interface CategoryTree extends Category {
+  children: CategoryTree[];
 }
 
 export interface PriceListProduct {

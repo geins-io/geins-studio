@@ -13,13 +13,15 @@ const ENDPOINTS = {
 
 export const repository = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
   product: {
-    async get(id: number): Promise<Product> {
-      return await fetch<Product>(`${ENDPOINTS.PRODUCT}/${id}`);
+    async get(id: number, fields?: string): Promise<Product> {
+      const queryParams = fields ? `?fields=${fields}` : '';
+      return await fetch<Product>(`${ENDPOINTS.PRODUCT}/${id}${queryParams}`);
     },
     list: {
-      async get(): Promise<QueryResult<Product>> {
+      async get(fields?: string): Promise<QueryResult<Product>> {
+        const queryParams = fields ? `?fields=${fields}` : '';
         return await fetch<QueryResult<Product>>(
-          `${ENDPOINTS.PRODUCT}/query?fields=texts,images,prices`,
+          `${ENDPOINTS.PRODUCT}/query${queryParams}`,
           {
             method: 'POST',
             body: {
@@ -30,13 +32,18 @@ export const repository = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
       },
       async query(
         selection?: SelectorSelectionBase,
+        fields?: string,
       ): Promise<QueryResult<Product>> {
-        return await fetch<QueryResult<Product>>(`${ENDPOINTS.PRODUCT}/query`, {
-          method: 'POST',
-          body: {
-            ...selection,
+        const queryParams = fields ? `?fields=${fields}` : '';
+        return await fetch<QueryResult<Product>>(
+          `${ENDPOINTS.PRODUCT}/query${queryParams}`,
+          {
+            method: 'POST',
+            body: {
+              ...selection,
+            },
           },
-        });
+        );
       },
     },
   },

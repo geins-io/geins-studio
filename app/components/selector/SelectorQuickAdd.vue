@@ -1,6 +1,6 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 const props = defineProps<{
-  entities: Entity[];
+  entities: T[];
   selection: SelectorSelection;
   entityName: string;
 }>();
