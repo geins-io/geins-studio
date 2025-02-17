@@ -1,4 +1,15 @@
 
+## v0.0.12
+
+
+### 🤖 CI
+
+- Change var ([6b2b3d6](https://github.com/geins-io/geins-merchant-center/commit/6b2b3d6))
+
+### ❤️ Contributors
+
+- Olivia Axelsson <axelsson@geins.io>
+
 ## v0.0.11
 
 
