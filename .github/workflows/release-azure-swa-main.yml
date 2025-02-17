@@ -18,8 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     env:
-      GEINS_API_URL: ${{ secrets.GEINS_API_URL }}
-      GEINS_ACCOUNT_KEY: ${{ secrets.GEINS_ACCOUNT_KEY }}
+      GEINS_API_URL: ${{ vars.GEINS_API_URL_PROD }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
       AUTH_ORIGIN: ${{ vars.AZURE_GEINS_AUTH_ORIGIN_PROD }}
       GEINS_DEBUG: ${{ vars.AZURE_GEINS_DEBUG_PROD }}
