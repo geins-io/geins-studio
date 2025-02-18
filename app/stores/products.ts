@@ -3,7 +3,8 @@ import type { Product, Category, Brand, ProductTexts } from '#shared/types';
 export const useProductsStore = defineStore('products', () => {
   const { geinsLogWarn } = useGeinsLog('store/products.ts');
   const api = repository(useNuxtApp().$geinsApi);
-  const { currentLanguage } = useAccountStore();
+  const accountStore = useAccountStore();
+  const { currentLanguage } = storeToRefs(accountStore);
 
   // STATE
   const products = ref<Product[]>([]);
@@ -81,7 +82,9 @@ export const useProductsStore = defineStore('products', () => {
     const brand: Brand | undefined = brands.value.find(
       (b) => b.brandId === brandId,
     );
-    return brand?.texts.find((t) => t.language === currentLanguage)?.name || '';
+    return (
+      brand?.texts.find((t) => t.language === currentLanguage.value)?.name || ''
+    );
   }
 
   function transformProducts(products: ApiProduct[]): Product[] {
@@ -89,11 +92,13 @@ export const useProductsStore = defineStore('products', () => {
     return products.map((product) => ({
       id: product.productId,
       name:
-        product.texts?.find((t: ProductTexts) => t.language === currentLanguage)
-          ?.name || '',
+        product.texts?.find(
+          (t: ProductTexts) => t.language === currentLanguage.value,
+        )?.name || '',
       slug:
-        product.texts?.find((t: ProductTexts) => t.language === currentLanguage)
-          ?.slug || '',
+        product.texts?.find(
+          (t: ProductTexts) => t.language === currentLanguage.value,
+        )?.slug || '',
       ...product,
     }));
   }
@@ -104,11 +109,11 @@ export const useProductsStore = defineStore('products', () => {
       id: category.categoryId,
       name:
         category.texts?.find(
-          (t: CategoryTexts) => t.language === currentLanguage,
+          (t: CategoryTexts) => t.language === currentLanguage.value,
         )?.name || '',
       slug:
         category.texts?.find(
-          (t: CategoryTexts) => t.language === currentLanguage,
+          (t: CategoryTexts) => t.language === currentLanguage.value,
         )?.slug || '',
       ...category,
     }));
@@ -119,8 +124,9 @@ export const useProductsStore = defineStore('products', () => {
     return brands.map((brand) => ({
       id: brand.brandId,
       slug:
-        brand.texts?.find((t: BrandTexts) => t.language === currentLanguage)
-          ?.slug || '',
+        brand.texts?.find(
+          (t: BrandTexts) => t.language === currentLanguage.value,
+        )?.slug || '',
       ...brand,
     }));
   }
@@ -137,5 +143,6 @@ export const useProductsStore = defineStore('products', () => {
     reset,
     getCategoryName,
     getBrandName,
+    transformProducts,
   };
 });

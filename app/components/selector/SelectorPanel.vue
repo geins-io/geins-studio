@@ -92,7 +92,7 @@ if (entityIsProduct.value) {
 }
 
 // watch entitites, if they change, update columns
-watch(entities, () => {
+watchEffect(() => {
   columns = getColumns(entities.value, columnOptions);
   if (entityIsProduct.value) {
     columns = orderAndFilterColumns(columns, ['select', 'id', 'name', 'slug']);

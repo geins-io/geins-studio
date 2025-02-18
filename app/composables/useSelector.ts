@@ -38,14 +38,26 @@ export function useSelector() {
       brandIds: selection.brandIds,
       price: selection.price,
       stock: selection.stock,
-      productIds: selection.ids,
+      productIds: selection.ids || [],
+    };
+  };
+
+  const convertToSimpleSelection = (
+    selection: SelectorSelectionBase,
+  ): SelectorSelectionBaseSimple => {
+    const include = selection?.include?.[0]?.selections?.[0];
+    const exclude = selection?.exclude?.[0]?.selections?.[0];
+    const isApiSelections =
+      include && exclude && 'productIds' in include && 'productIds' in exclude;
+    return {
+      include: isApiSelections ? include.productIds : include?.ids || [],
+      exclude: isApiSelections ? exclude.productIds : exclude?.ids || [],
     };
   };
 
   const dummyData: SelectorSelectionBase = {
     include: [
       {
-        condition: SelectorCondition.And,
         selections: [
           {
             condition: SelectorCondition.And,
@@ -95,5 +107,6 @@ export function useSelector() {
     getFallbackSelection,
     getEmptySelectionBase,
     convertToApiSelection,
+    convertToSimpleSelection,
   };
 }

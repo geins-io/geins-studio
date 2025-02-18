@@ -43,13 +43,15 @@ export interface StockSelection {
   quantity: number;
 }
 
+export type SelectorSelectionSimple = number[];
+
 export interface SelectorSelection {
   condition: SelectorCondition;
   categoryIds: number[];
   brandIds: number[];
   price: PriceSelection[];
   stock: StockSelection[];
-  ids?: number[];
+  ids?: SelectorSelectionSimple;
 }
 
 export interface SelectorApiSelection extends SelectorSelection {
@@ -58,12 +60,17 @@ export interface SelectorApiSelection extends SelectorSelection {
 
 export interface SelectorSelectionGroup {
   condition?: SelectorCondition;
-  selections: SelectorSelection[];
+  selections: SelectorSelection[] | SelectorApiSelection[];
 }
 
 export interface SelectorSelectionBase {
   include: SelectorSelectionGroup[];
   exclude: SelectorSelectionGroup[];
+}
+
+export interface SelectorSelectionBaseSimple {
+  include: SelectorSelectionSimple;
+  exclude: SelectorSelectionSimple;
 }
 
 export interface SelectorSelectionOption {

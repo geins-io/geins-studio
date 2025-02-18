@@ -35,7 +35,8 @@ const mode: Ref<SelectorMode> = toRef(props, 'mode');
 const entityName = toRef(props, 'entityName');
 const selectionStrategy = toRef(props, 'selectionStrategy');
 const allowExclusions = toRef(props, 'allowExclusions');
-const { currentCurrency } = useAccountStore();
+const accountStore = useAccountStore();
+const { currentCurrency } = storeToRefs(accountStore);
 const { toast } = useToast();
 const { t } = useI18n();
 const { getFallbackSelection, convertToApiSelection } = useSelector();
@@ -47,32 +48,41 @@ const includeSelection = ref<SelectorSelection>(
 const excludeSelection = ref<SelectorSelection>(
   selection.value.exclude?.[0]?.selections?.[0] || getFallbackSelection(),
 );
+const resetSelections = () => {
+  includeSelection.value = getFallbackSelection();
+  excludeSelection.value = getFallbackSelection();
+};
 const showExclude = ref(!!excludeSelection.value.ids?.length);
 
 // WATCH AND UPDATE SELECTION ON INCLUDE/EXCLUDE SELECTION CHANGE
 watch(
-  () => includeSelection.value,
+  includeSelection,
   (value) => {
-    selection.value.include = [{ selections: [value] }];
+    const newSelection =
+      mode.value === SelectorMode.Advanced
+        ? convertToApiSelection(value)
+        : value;
+    selection.value.include = [{ selections: [newSelection] }];
   },
   { deep: true },
 );
 watch(
-  () => excludeSelection.value,
+  excludeSelection,
   (value) => {
     showExclude.value = !!value.ids?.length;
-    selection.value.exclude = [{ selections: [value] }];
+    const newSelection =
+      mode.value === SelectorMode.Advanced
+        ? convertToApiSelection(value)
+        : value;
+    selection.value.exclude = [{ selections: [newSelection] }];
   },
   { deep: true },
 );
-/* watch(
-  () => showExclude.value,
-  (value) => {
-    /*     if (!value) {
-      excludeSelection.value = getFallbackSelection();
-    }
-  },
-); */
+watch(mode, (newValue, oldValue) => {
+  if (newValue !== oldValue) {
+    resetSelections();
+  }
+});
 
 // HANDLERS FOR MANUALLY SELECTED ENTITIES
 const addToManuallySelected = (id: number) => {
@@ -115,8 +125,7 @@ watch(
   entities,
   () => {
     setupColumns();
-    includeSelection.value = getFallbackSelection();
-    excludeSelection.value = getFallbackSelection();
+    resetSelections();
   },
   { immediate: true },
 );
@@ -128,7 +137,7 @@ const _selectionMade = computed(() => {
 });
 
 // SELECTED ENTITIES
-const selectedEntities = computed(() => {
+const selectedEntitiesSimple = computed(() => {
   const noSelectionMadeSelection =
     selectionStrategy.value === SelectorSelectionStrategy.All
       ? entities.value
@@ -143,6 +152,42 @@ const selectedEntities = computed(() => {
     (entity) => !excludedIds.includes(entity.id),
   );
   return selected;
+});
+
+const api = repository(useNuxtApp().$geinsApi);
+const selectedProducts = ref<Product[]>([]);
+const { transformProducts } = useProductsStore();
+const selectionMade = computed(() => {
+  return (
+    includeSelection.value.categoryIds?.length ||
+    includeSelection.value.brandIds?.length ||
+    includeSelection.value.ids?.length ||
+    Object.keys(includeSelection.value.price)?.length ||
+    Object.keys(includeSelection.value.stock)?.length ||
+    excludeSelection.value.categoryIds?.length ||
+    excludeSelection.value.brandIds?.length ||
+    excludeSelection.value.ids?.length ||
+    Object.keys(excludeSelection.value.price)?.length ||
+    Object.keys(excludeSelection.value.stock)?.length
+  );
+});
+watchEffect(async () => {
+  let products = null;
+  if (selectionMade.value && mode.value === SelectorMode.Advanced) {
+    products = await api.product.list.query(
+      selection.value,
+      'texts,images,prices',
+    );
+    selectedProducts.value = transformProducts(products?.items);
+  } else {
+    selectedProducts.value = selectedEntitiesSimple.value as Product[];
+  }
+});
+
+const selectedEntities = computed(() => {
+  return mode.value === SelectorMode.Simple
+    ? selectedEntitiesSimple.value
+    : selectedProducts.value;
 });
 </script>
 <template>

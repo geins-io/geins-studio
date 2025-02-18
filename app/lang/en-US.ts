@@ -24,7 +24,7 @@ export default defineI18nLocale(async () => {
     no_entities_selected: 'No @:{entityName} selected',
     all_entities: 'All @:{entityName}',
     rows_per_page: '@.capitalize:{entityName} per page',
-    rows_showing: 'Showing {total} @:{entityName}',
+    rows_total: '{total} @:{entityName} in total',
     rows_selected: '{selected} of {total} @:{entityName} selected.',
     select_entities_that_match: 'Select @:{entityName} that match:',
     selected_entities: 'Selected @:{entityName}',
