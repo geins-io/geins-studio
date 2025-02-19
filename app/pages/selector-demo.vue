@@ -40,7 +40,7 @@ const currentEntityName = computed(
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
 const accountStore = useAccountStore();
-const { languages, currentLanguage } = storeToRefs(accountStore);
+const { languages } = storeToRefs(accountStore);
 
 const currentEntities = computed(() => {
   if (currentEntityName.value === 'product') {
@@ -61,7 +61,7 @@ const currentAllowExclusions = computed(
 
 const { getEmptySelectionBase, convertToSimpleSelection } = useSelector();
 const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
-const simpleSelection = computed(() =>
+const _simpleSelection = computed(() =>
   convertToSimpleSelection(selection.value),
 );
 </script>

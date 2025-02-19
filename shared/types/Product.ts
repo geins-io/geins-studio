@@ -126,8 +126,23 @@ export interface VariantValues {
   values: Record<string, string>;
 }
 
-export interface ApiProduct {
+export interface Translated<T> {
+  [lang: string]: T;
+}
+
+export interface CurrencyConverted<T> {
+  [currency: string]: T;
+}
+
+export interface EntityBase {
+  id: string;
+  type: string;
+}
+
+export interface Product extends EntityBase {
   productId: number;
+  name: string;
+  slug: string;
   articleNumber: string;
   dateCreated: string;
   dateUpdated: string;
@@ -144,10 +159,10 @@ export interface ApiProduct {
   countryOfOrigin: string;
   externalProductId: string;
   mainCategoryId: number;
-  texts?: ProductTexts[];
+  texts?: Translated<ProductTexts>;
   skus?: Sku[];
   sortOrder?: number;
-  prices?: ProductPrices[];
+  prices?: CurrencyConverted<ProductPrices>;
   categories?: ProductCategory[];
   channels?: number[];
   images?: ProductImage[];
@@ -158,53 +173,34 @@ export interface ApiProduct {
   variantValues?: VariantValues;
 }
 
-export interface Product extends ApiProduct {
-  id: number;
-  name?: string;
-  slug?: string;
-}
-
 export interface BrandTexts {
-  language: string;
   name: string;
   info1: string;
   info2: string;
   slug: string;
 }
 
-export interface ApiBrand {
+export interface Brand extends EntityBase {
   brandId: number;
   active: boolean;
   name: string;
-  texts: BrandTexts[];
-}
-
-export interface Brand extends ApiBrand {
-  id: number;
-  slug?: string;
+  texts: Translated<BrandTexts>;
 }
 
 export interface CategoryTexts {
-  language: string;
-  name: string;
   description1: string;
   description2: string;
   slug: string;
 }
 
-export interface ApiCategory {
+export interface Category extends EntityBase {
   categoryId: number;
+  name: string;
   parentCategoryId: number;
   hidden: boolean;
   active: boolean;
   order: number;
-  texts: CategoryTexts[];
-}
-
-export interface Category extends ApiCategory {
-  id: number;
-  name?: string;
-  slug?: string;
+  texts: Translated<CategoryTexts>;
 }
 
 export interface CategoryTree extends Category {

@@ -39,7 +39,7 @@ const accountStore = useAccountStore();
 const { currentCurrency } = storeToRefs(accountStore);
 const { toast } = useToast();
 const { t } = useI18n();
-const { getFallbackSelection, convertToApiSelection } = useSelector();
+const { getFallbackSelection, convertToApiSelections } = useSelector();
 
 // SETUP REFS FOR INCLUDE/EXCLUDE SELECTION
 const includeSelection = ref<SelectorSelection>(
@@ -58,11 +58,12 @@ const showExclude = ref(!!excludeSelection.value.ids?.length);
 watch(
   includeSelection,
   (value) => {
-    const newSelection =
+    const newSelections =
       mode.value === SelectorMode.Advanced
-        ? convertToApiSelection(value)
-        : value;
-    selection.value.include = [{ selections: [newSelection] }];
+        ? convertToApiSelections(value)
+        : [value];
+
+    selection.value.include = [{ selections: newSelections }];
   },
   { deep: true },
 );
@@ -70,11 +71,11 @@ watch(
   excludeSelection,
   (value) => {
     showExclude.value = !!value.ids?.length;
-    const newSelection =
+    const newSelections =
       mode.value === SelectorMode.Advanced
-        ? convertToApiSelection(value)
-        : value;
-    selection.value.exclude = [{ selections: [newSelection] }];
+        ? convertToApiSelections(value)
+        : [value];
+    selection.value.exclude = [{ selections: newSelections }];
   },
   { deep: true },
 );

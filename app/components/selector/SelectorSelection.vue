@@ -14,7 +14,7 @@ const props = withDefaults(
     type: SelectorSelectionType;
     entityName: string;
     mode: SelectorMode;
-    entities: Entity[];
+    entities: SelectorEntity[];
     selectionStrategy?: SelectorSelectionStrategy;
   }>(),
   {},

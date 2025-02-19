@@ -46,21 +46,18 @@ export interface StockSelection {
 export type SelectorSelectionSimple = number[];
 
 export interface SelectorSelection {
-  condition: SelectorCondition;
-  categoryIds: number[];
-  brandIds: number[];
-  price: PriceSelection[];
-  stock: StockSelection[];
+  condition?: SelectorCondition;
+  categoryIds?: number[];
+  brandIds?: number[];
+  price?: PriceSelection[];
+  stock?: StockSelection[];
   ids?: SelectorSelectionSimple;
-}
-
-export interface SelectorApiSelection extends SelectorSelection {
-  productIds: number[];
+  productIds?: number[];
 }
 
 export interface SelectorSelectionGroup {
   condition?: SelectorCondition;
-  selections: SelectorSelection[] | SelectorApiSelection[];
+  selections: SelectorSelection[];
 }
 
 export interface SelectorSelectionBase {

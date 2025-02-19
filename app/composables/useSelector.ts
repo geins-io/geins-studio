@@ -29,17 +29,21 @@ export function useSelector() {
     });
   };
 
-  const convertToApiSelection = (
+  const convertToApiSelections = (
     selection: SelectorSelection,
-  ): SelectorApiSelection => {
-    return {
-      condition: selection.condition,
-      categoryIds: selection.categoryIds,
-      brandIds: selection.brandIds,
-      price: selection.price,
-      stock: selection.stock,
-      productIds: selection.ids || [],
-    };
+  ): SelectorSelection[] => {
+    return [
+      {
+        condition: selection.condition,
+        categoryIds: selection.categoryIds,
+        brandIds: selection.brandIds,
+        price: selection.price,
+        stock: selection.stock,
+      },
+      {
+        productIds: selection.ids || [],
+      },
+    ];
   };
 
   const convertToSimpleSelection = (
@@ -106,7 +110,7 @@ export function useSelector() {
     dummyData,
     getFallbackSelection,
     getEmptySelectionBase,
-    convertToApiSelection,
+    convertToApiSelections,
     convertToSimpleSelection,
   };
 }

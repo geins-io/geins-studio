@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Product, Category, Brand, ProductTexts } from '#shared/types';
+import type { Product, Category, Brand } from '#shared/types';
 export const useProductsStore = defineStore('products', () => {
   const { geinsLogWarn } = useGeinsLog('store/products.ts');
   const api = repository(useNuxtApp().$geinsApi);
@@ -71,62 +71,38 @@ export const useProductsStore = defineStore('products', () => {
     ready.value = false;
   }
 
-  function getCategoryName(categoryId: number): string {
+  function getCategoryName(id: string): string {
     const category: Category | undefined = categories.value.find(
-      (c) => c.categoryId === categoryId,
+      (c) => c.id === id,
     );
     return category?.name || '';
   }
 
-  function getBrandName(brandId: number): string {
-    const brand: Brand | undefined = brands.value.find(
-      (b) => b.brandId === brandId,
-    );
-    return (
-      brand?.texts.find((t) => t.language === currentLanguage.value)?.name || ''
-    );
+  function getBrandName(id: string): string {
+    const brand: Brand | undefined = brands.value.find((b) => b.id === id);
+    return brand?.name || '';
   }
 
-  function transformProducts(products: ApiProduct[]): Product[] {
+  function transformProducts(products: Product[]): Product[] {
     if (!products) return [];
     return products.map((product) => ({
-      id: product.productId,
-      name:
-        product.texts?.find(
-          (t: ProductTexts) => t.language === currentLanguage.value,
-        )?.name || '',
-      slug:
-        product.texts?.find(
-          (t: ProductTexts) => t.language === currentLanguage.value,
-        )?.slug || '',
+      ...product.texts?.[currentLanguage.value],
       ...product,
     }));
   }
 
-  function transformCategories(categories: ApiCategory[]): Category[] {
+  function transformCategories(categories: Category[]): Category[] {
     if (!categories) return [];
     return categories.map((category) => ({
-      id: category.categoryId,
-      name:
-        category.texts?.find(
-          (t: CategoryTexts) => t.language === currentLanguage.value,
-        )?.name || '',
-      slug:
-        category.texts?.find(
-          (t: CategoryTexts) => t.language === currentLanguage.value,
-        )?.slug || '',
+      ...category.texts[currentLanguage.value],
       ...category,
     }));
   }
 
-  function transformBrands(brands: ApiBrand[]): Brand[] {
+  function transformBrands(brands: Brand[]): Brand[] {
     if (!brands) return [];
     return brands.map((brand) => ({
-      id: brand.brandId,
-      slug:
-        brand.texts?.find(
-          (t: BrandTexts) => t.language === currentLanguage.value,
-        )?.slug || '',
+      ...brand.texts[currentLanguage.value],
       ...brand,
     }));
   }
