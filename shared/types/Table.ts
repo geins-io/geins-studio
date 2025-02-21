@@ -1,6 +1,12 @@
 import '@tanstack/vue-table';
 import type { RowData } from '@tanstack/vue-table';
 
+export const enum TableMode {
+  Simple = 'simple',
+  Advanced = 'advanced',
+  Minimal = 'minimal',
+}
+
 export type ColumnType =
   | 'string'
   | 'currency'
@@ -27,5 +33,10 @@ declare module '@tanstack/vue-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
     title?: string;
     type: ColumnType;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface TableMeta<TData extends RowData> {
+    mode: TableMode;
+    entityName: string;
   }
 }

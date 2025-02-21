@@ -1,4 +1,6 @@
 <script setup lang="ts" generic="TData extends { id?: number }, TValue">
+import { TableMode } from '#shared/types';
+
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -25,7 +27,7 @@ const props = withDefaults(
     pageSize?: number;
     loading?: boolean;
     searchableField?: string;
-    mode?: 'simple' | 'advanced' | 'minimal';
+    mode?: TableMode;
     maxHeight?: string;
     showSearch?: boolean;
     pinnedState?: ColumnPinningState;
@@ -38,7 +40,7 @@ const props = withDefaults(
     loading: false,
     searchableField: 'name',
     showSearch: false,
-    mode: 'advanced',
+    mode: TableMode.Advanced,
     pinnedState: () => ({
       left: ['select'],
       right: ['actions'],
@@ -53,7 +55,7 @@ const emit = defineEmits({
 
 const { t } = useI18n();
 const showSearch =
-  props.mode === 'advanced' ? ref(true) : ref(props.showSearch);
+  props.mode === TableMode.Advanced ? ref(true) : ref(props.showSearch);
 
 /**
  * Setup table state
@@ -64,8 +66,8 @@ const columnFilters = ref<ColumnFiltersState>([]);
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
 const tableMaximized = useState<boolean>('table-maximized', () => false);
-const advancedMode = computed(() => props.mode === 'advanced');
-const simpleMode = computed(() => props.mode === 'simple');
+const advancedMode = computed(() => props.mode === TableMode.Advanced);
+const simpleMode = computed(() => props.mode === TableMode.Simple);
 
 onUnmounted(() => {
   tableMaximized.value = false;
@@ -227,6 +229,10 @@ const table = useVueTable({
     },
     columnPinning: columnPinningState.value,
   },
+  meta: {
+    mode: props.mode,
+    entityName: props.entityName,
+  },
 });
 
 const emptyText = computed(() => {
@@ -293,7 +299,7 @@ const emptyText = computed(() => {
               cn(
                 `z-30 ${pinnedClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
                 cellClasses,
-                `${simpleMode ? 'bg-background [&>div>button]:pl-2 [&>div>button]:pr-1 [&>div>button]:normal-case [&>div]:h-10 [&>div]:normal-case' : ''}`,
+                `${simpleMode ? 'bg-background' : ''}`,
               )
             "
             :style="
@@ -321,13 +327,7 @@ const emptyText = computed(() => {
             <TableCell
               v-for="cell in row.getVisibleCells()"
               :key="cell.id"
-              :class="
-                cn(
-                  `${pinnedClasses(cell.column)}`,
-                  cellClasses,
-                  `${simpleMode ? '[&>button]:px-3.5 [&>div]:px-3.5' : ''}`,
-                )
-              "
+              :class="cn(`${pinnedClasses(cell.column)}`, cellClasses)"
               :style="
                 cell.column.getSize()
                   ? { width: `${cell.column.getSize()}px` }
