@@ -50,11 +50,11 @@ const columns = getColumns(dataList.value, columnOptions);
 addActionsColumn(columns, {
   onEdit: (product: Entity) =>
     navigateTo(
-      `${editEntityUrl.replace(entityIdentifier, String(product.id))}`,
+      `${editEntityUrl.replace(entityIdentifier, String(product._id))}`,
     ),
-  onCopy: (product: Entity) => console.log('Copy', product.id),
-  onDelete: (product: Entity) => console.log('Delete', product.id),
-  onUnpublish: (product: Entity) => console.log('Unpublish', product.id),
+  onCopy: (product: Entity) => console.log('Copy', product._id),
+  onDelete: (product: Entity) => console.log('Delete', product._id),
+  onUnpublish: (product: Entity) => console.log('Unpublish', product._id),
 });
 </script>
 

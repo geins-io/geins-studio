@@ -47,12 +47,12 @@ export type SelectorSelectionSimple = number[];
 
 export interface SelectorSelection {
   condition?: SelectorCondition;
-  categoryIds?: number[];
-  brandIds?: number[];
+  categoryIds?: string[];
+  brandIds?: string[];
   price?: PriceSelection[];
   stock?: StockSelection[];
   ids?: SelectorSelectionSimple;
-  productIds?: number[];
+  productIds?: string[];
 }
 
 export interface SelectorSelectionGroup {

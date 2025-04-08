@@ -127,14 +127,14 @@ if (entityIsProduct.value) {
   ]);
 }
 
-const onSelection = (selection: { id?: number }[]) => {
+const onSelection = (selection: { id?: string }[]) => {
   const ids = selection.map((s) => s.id);
   currentSelection.value = {
     ...currentSelection.value,
     [currentSelectionGroup.value]: ids,
   };
 };
-const removeSelected = (id: number) => {
+const removeSelected = (id: string) => {
   currentSelection.value = {
     ...currentSelection.value,
     [currentSelectionGroup.value]: currentSelection.value.ids?.filter(

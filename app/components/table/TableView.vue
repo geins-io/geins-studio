@@ -31,7 +31,7 @@ const props = withDefaults(
     maxHeight?: string;
     showSearch?: boolean;
     pinnedState?: ColumnPinningState;
-    selectedIds?: number[];
+    selectedIds?: string[];
     emptyText?: string;
   }>(),
   {
@@ -100,7 +100,7 @@ watch(
  **/
 const { path } = useRoute();
 const { user } = useUserStore();
-const userId = user?.id || 'default';
+const userId = user?._id || 'default';
 const cookieKey = `${userId + path}`;
 
 const columnVisibilityCookie = useCookie<VisibilityState>(

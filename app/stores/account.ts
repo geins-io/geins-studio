@@ -93,7 +93,7 @@ export const useAccountStore = defineStore('account', () => {
   // GETTERS
   const currentChannel = computed(() => {
     return channels.value?.find(
-      (channel) => channel.id === Number(currentChannelId.value),
+      (channel) => channel._id === currentChannelId.value,
     );
   });
 
