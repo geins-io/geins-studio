@@ -48,8 +48,8 @@ const isSelected = (id: number) => {
         >
           <CommandItem
             v-for="entity in entities"
-            :key="entity.id"
-            :value="entity.id + ' ' + entity.name"
+            :key="entity._id"
+            :value="entity._id + ' ' + entity.name"
             class="data-[highlighted]:bg-card"
           >
             <div class="flex w-full items-center gap-3 text-xs">
@@ -59,14 +59,14 @@ const isSelected = (id: number) => {
                 alt="entity image"
                 class="size-6 shrink-0 rounded-lg"
               />
-              <strong>{{ entity.id }}</strong>
+              <strong>{{ entity._id }}</strong>
               <span class="truncate">{{ entity.name || entity.title }}</span>
               <Button
-                v-if="!isSelected(entity.id)"
+                v-if="!isSelected(entity._id)"
                 class="ml-auto shrink-0 p-1"
                 variant="ghost"
                 size="icon"
-                @click="addItem(entity.id)"
+                @click="addItem(entity._id)"
               >
                 <LucideCirclePlus class="size-4" />
               </Button>
@@ -75,7 +75,7 @@ const isSelected = (id: number) => {
                 class="ml-auto shrink-0 p-1"
                 variant="ghost"
                 size="icon"
-                @click="removeItem(entity.id)"
+                @click="removeItem(entity._id)"
               >
                 <LucideCircleCheck class="size-4 text-positive" />
               </Button>

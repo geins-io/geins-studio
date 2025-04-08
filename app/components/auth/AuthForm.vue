@@ -23,7 +23,11 @@ const props = withDefaults(
 const loginMode = computed(() => props.mode === 'login');
 const verifyMode = computed(() => props.mode === 'verify');
 const accountMode = computed(() => props.mode === 'account');
-const showInvalid = toRef(props, 'showInvalid');
+const showInvalid = ref(props.showInvalid);
+
+watchEffect(() => {
+  showInvalid.value = props.showInvalid;
+});
 
 onMounted(() => {
   if (loginMode.value) {

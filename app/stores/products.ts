@@ -14,7 +14,7 @@ export const useProductsStore = defineStore('products', () => {
 
   // ACTIONS
   async function fetchProducts(): Promise<Product[]> {
-    const data = await api.product.list.get('texts,images,prices');
+    const data = await api.product.list.get('localizations,images,prices');
     products.value = transformProducts(data?.items) as Product[];
     return products.value;
   }
@@ -86,7 +86,7 @@ export const useProductsStore = defineStore('products', () => {
   function transformProducts(products: Product[]): Product[] {
     if (!products) return [];
     return products.map((product) => ({
-      ...product.texts?.[currentLanguage.value],
+      ...product.localizations?.[currentLanguage.value],
       ...product,
     }));
   }
@@ -94,7 +94,7 @@ export const useProductsStore = defineStore('products', () => {
   function transformCategories(categories: Category[]): Category[] {
     if (!categories) return [];
     return categories.map((category) => ({
-      ...category.texts[currentLanguage.value],
+      ...category.localizations[currentLanguage.value],
       ...category,
     }));
   }
@@ -102,7 +102,7 @@ export const useProductsStore = defineStore('products', () => {
   function transformBrands(brands: Brand[]): Brand[] {
     if (!brands) return [];
     return brands.map((brand) => ({
-      ...brand.texts[currentLanguage.value],
+      ...brand.localizations[currentLanguage.value],
       ...brand,
     }));
   }

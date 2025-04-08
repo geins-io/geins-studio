@@ -232,16 +232,16 @@ const handleCancel = () => {
           >
             <li
               v-for="entity in selectedEntities"
-              :key="entity.id"
+              :key="entity._id"
               class="flex items-center gap-2.5 py-1.5 text-xs"
             >
-              <span class="font-semibold">{{ entity.id }}</span>
+              <span class="font-semibold">{{ entity._id }}</span>
               <span class="truncate">{{ entity.name }}</span>
               <Button
                 size="icon"
                 variant="outline"
                 class="ml-auto mr-1 size-5 shrink-0 hover:text-negative"
-                @click="removeSelected(entity.id)"
+                @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />
               </Button>
@@ -255,16 +255,16 @@ const handleCancel = () => {
           >
             <li
               v-for="entity in selectedEntities"
-              :key="entity.id"
+              :key="entity._id"
               class="flex items-center gap-2.5 py-1.5 text-xs"
             >
-              <span class="font-semibold">{{ entity.id }}</span>
+              <span class="font-semibold">{{ entity._id }}</span>
               <span class="truncate">{{ entity.name }}</span>
               <Button
                 size="icon"
                 variant="outline"
                 class="ml-auto mr-1 size-5 shrink-0 hover:text-negative"
-                @click="removeSelected(entity.id)"
+                @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />
               </Button>
@@ -278,16 +278,16 @@ const handleCancel = () => {
           >
             <li
               v-for="entity in selectedEntities"
-              :key="entity.id"
+              :key="entity._id"
               class="flex items-center gap-2.5 py-1.5 text-xs"
             >
-              <span class="font-semibold">{{ entity.id }}</span>
+              <span class="font-semibold">{{ entity._id }}</span>
               <span class="truncate">{{ entity.name }}</span>
               <Button
                 size="icon"
                 variant="outline"
                 class="ml-auto mr-1 size-5 shrink-0 hover:text-negative"
-                @click="removeSelected(entity.id)"
+                @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />
               </Button>

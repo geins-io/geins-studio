@@ -116,7 +116,7 @@ const setupColumns = () => {
     columns,
     {
       onDelete: (entity: SelectorEntity) =>
-        removeFromManuallySelected(entity.id),
+        removeFromManuallySelected(entity._id),
     },
     'delete',
   );
@@ -145,12 +145,12 @@ const selectedEntitiesSimple = computed(() => {
       : [];
   const included = includeSelection.value.ids?.length
     ? entities.value.filter((entity) =>
-        includeSelection.value?.ids?.includes(entity.id),
+        includeSelection.value?.ids?.includes(entity._id),
       )
     : noSelectionMadeSelection;
   const excludedIds = excludeSelection.value?.ids || [];
   const selected = included.filter(
-    (entity) => !excludedIds.includes(entity.id),
+    (entity) => !excludedIds.includes(entity._id),
   );
   return selected;
 });
@@ -177,7 +177,7 @@ watchEffect(async () => {
   if (selectionMade.value && mode.value === SelectorMode.Advanced) {
     products = await api.product.list.query(
       selection.value,
-      'texts,images,prices',
+      'localizations,images,prices',
     );
     selectedProducts.value = transformProducts(products?.items);
   } else {

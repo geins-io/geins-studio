@@ -1,5 +1,6 @@
-export interface ProductTexts {
-  language: string;
+import type { GeinsEntity } from '#shared/types';
+
+export interface Localizations {
   name: string;
   text1: string;
   text2: string;
@@ -7,8 +8,7 @@ export interface ProductTexts {
   slug: string;
 }
 
-export interface Sku {
-  skuId: number;
+export interface Sku extends GeinsEntity {
   articleNumber: string;
   name: string;
   shelf: string;
@@ -60,30 +60,13 @@ export interface ProductPrices {
   priceLists?: PriceListPrice[];
 }
 
-export interface ProductCategoryTexts {
-  language: string;
-  name: string;
-  description1: string;
-  description2: string;
-  slug: string;
-}
-
-export interface ProductCategory {
-  categoryId: number;
-  parentCategoryId: number;
-  hidden: boolean;
-  active: boolean;
-  order: number;
-  texts: ProductCategoryTexts[];
-}
-
-export interface ProductImage {
+export interface Media extends GeinsEntity {
   filename: string;
   order: number;
   tags: string[];
 }
 
-export interface ProductCampaign {
+export interface ProductCampaign extends GeinsEntity {
   campaignId: string;
   name: string;
 }
@@ -110,10 +93,10 @@ export interface ProductParameter {
   type: ProductParameterType;
   valueId: number;
   value: string;
-  texts: ProductParameterTexts[];
+  localizations: ProductParameterTexts[];
 }
 
-export interface RelatedProducts {
+export interface RelatedProducts extends GeinsEntity {
   relationTypeId: number;
   relationTypeName: string;
   relatedProductIds: number[];
@@ -126,7 +109,7 @@ export interface VariantValues {
   values: Record<string, string>;
 }
 
-export interface Translated<T> {
+export interface Localized<T> {
   [lang: string]: T;
 }
 
@@ -134,12 +117,7 @@ export interface CurrencyConverted<T> {
   [currency: string]: T;
 }
 
-export interface EntityBase {
-  id: string;
-  type: string;
-}
-
-export interface Product extends EntityBase {
+export interface Product extends GeinsEntity {
   productId: number;
   name: string;
   slug: string;
@@ -152,55 +130,39 @@ export interface Product extends EntityBase {
   active: boolean;
   purchasePrice: number;
   purchasePriceCurrency: string;
-  brandId: number;
+  brand: Brand;
   supplierId: number;
   freightClassId: number;
   intrastatCode: string;
   countryOfOrigin: string;
   externalProductId: string;
   mainCategoryId: number;
-  texts?: Translated<ProductTexts>;
+  localizations?: Localized<Localizations>;
   skus?: Sku[];
   sortOrder?: number;
   prices?: CurrencyConverted<ProductPrices>;
-  categories?: ProductCategory[];
-  channels?: number[];
-  images?: ProductImage[];
-  languages?: string[];
+  categories?: Category[];
+  channels?: string[];
+  media?: Media[];
   campaigns?: ProductCampaign[];
   parameters?: ProductParameter[];
   relatedProducts?: RelatedProducts[];
   variantValues?: VariantValues;
 }
 
-export interface BrandTexts {
-  name: string;
-  info1: string;
-  info2: string;
-  slug: string;
-}
-
-export interface Brand extends EntityBase {
-  brandId: number;
+export interface Brand extends GeinsEntity {
   active: boolean;
   name: string;
-  texts: Translated<BrandTexts>;
+  localizations: Localized<Localizations>;
 }
 
-export interface CategoryTexts {
-  description1: string;
-  description2: string;
-  slug: string;
-}
-
-export interface Category extends EntityBase {
-  categoryId: number;
+export interface Category extends GeinsEntity {
   name: string;
   parentCategoryId: number;
   hidden: boolean;
   active: boolean;
   order: number;
-  texts: Translated<CategoryTexts>;
+  localizations: Localized<Localizations>;
 }
 
 export interface CategoryTree extends Category {
@@ -214,7 +176,7 @@ export interface PriceListProduct {
   staggeredCount: number;
 }
 
-export interface PriceList {
+export interface PriceList extends GeinsEntity {
   priceListId: number;
   channel: number;
   identifier: string;
