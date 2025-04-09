@@ -43,7 +43,7 @@ export interface StockSelection {
   quantity: number;
 }
 
-export type SelectorSelectionSimple = number[];
+export type SelectorSelectionSimple = string[];
 
 export interface SelectorSelection {
   condition?: SelectorCondition;
@@ -76,8 +76,7 @@ export interface SelectorSelectionOption {
   label?: string;
 }
 
-export interface SelectorEntity {
-  id: number;
+export interface SelectorEntity extends GeinsEntity {
   name?: string;
   image?: string;
 }

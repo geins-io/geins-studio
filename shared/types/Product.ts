@@ -1,5 +1,3 @@
-import type { GeinsEntity } from '#shared/types';
-
 export interface Localizations {
   name: string;
   text1: string;

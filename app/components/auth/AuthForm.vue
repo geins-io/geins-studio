@@ -97,7 +97,7 @@ const login = () => {
 // Verification
 const verificationCode = ref<string[]>([]);
 
-const instructions = computed(() => {
+const _instructions = computed(() => {
   if (loginMode.value) {
     return '';
   }

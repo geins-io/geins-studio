@@ -1,5 +1,3 @@
-import type { GeinsEntity } from '#shared/types';
-
 export interface User extends GeinsEntity {
   firstName?: string;
   lastName?: string;

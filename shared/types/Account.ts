@@ -1,5 +1,3 @@
-import type { GeinsEntity } from '#shared/types';
-
 export type ChannelType = 'webshop' | 'physical' | 'other';
 
 export interface Channel extends GeinsEntity {

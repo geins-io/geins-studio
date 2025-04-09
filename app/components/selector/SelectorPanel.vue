@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { type SelectorMode, SelectorSelectionType } from '#shared/types';
+import {
+  type SelectorMode,
+  SelectorSelectionType,
+  TableMode,
+} from '#shared/types';
 
 // PROPS
 const props = withDefaults(
@@ -63,15 +67,15 @@ const selectedEntities = computed(() => {
   switch (currentSelectionGroup.value) {
     case 'categoryIds':
       return categories.value.filter((e) =>
-        currentSelection.value.categoryIds?.includes(e.id),
+        currentSelection.value.categoryIds?.includes(e._id),
       );
     case 'brandIds':
       return brands.value.filter((e) =>
-        currentSelection.value.brandIds?.includes(e.id),
+        currentSelection.value.brandIds?.includes(e._id),
       );
     default:
       return entities.value.filter((e) =>
-        currentSelection.value.ids?.includes(e.id),
+        currentSelection.value.ids?.includes(e._id),
       );
   }
 });
@@ -88,14 +92,14 @@ const columnOptions: ColumnOptions<Product> = {
 };
 let columns = getColumns(entities.value, columnOptions);
 if (entityIsProduct.value) {
-  columns = orderAndFilterColumns(columns, ['select', 'id', 'name', 'slug']);
+  columns = orderAndFilterColumns(columns, ['select', '_id', 'name', 'slug']);
 }
 
 // watch entitites, if they change, update columns
 watchEffect(() => {
   columns = getColumns(entities.value, columnOptions);
   if (entityIsProduct.value) {
-    columns = orderAndFilterColumns(columns, ['select', 'id', 'name', 'slug']);
+    columns = orderAndFilterColumns(columns, ['select', '_id', 'name', 'slug']);
   }
 });
 
@@ -107,7 +111,7 @@ let categoriesColumns = getColumns(categories.value, columnOptionsCategories);
 if (entityIsProduct.value) {
   categoriesColumns = orderAndFilterColumns(categoriesColumns, [
     'select',
-    'id',
+    '_id',
     'name',
     'slug',
   ]);
@@ -121,14 +125,14 @@ let brandsColumns = getColumns(brands.value, columnOptionsBrands);
 if (entityIsProduct.value) {
   brandsColumns = orderAndFilterColumns(brandsColumns, [
     'select',
-    'id',
+    '_id',
     'name',
     'slug',
   ]);
 }
 
-const onSelection = (selection: { id?: string }[]) => {
-  const ids = selection.map((s) => s.id);
+const onSelection = (selection: { _id?: string }[]) => {
+  const ids = selection.map((s) => s._id);
   currentSelection.value = {
     ...currentSelection.value,
     [currentSelectionGroup.value]: ids,
@@ -189,7 +193,7 @@ const handleCancel = () => {
               :pinned-state="{}"
               :selected-ids="selectedIds"
               max-height="calc(100vh - 20rem)"
-              mode="simple"
+              :mode="TableMode.Simple"
               @selection="onSelection"
             />
           </div>
@@ -203,7 +207,7 @@ const handleCancel = () => {
               :pinned-state="{}"
               :selected-ids="currentSelection.categoryIds"
               max-height="calc(100vh - 20rem)"
-              mode="simple"
+              :mode="TableMode.Simple"
               @selection="onSelection"
             />
           </div>
@@ -217,7 +221,7 @@ const handleCancel = () => {
               :pinned-state="{}"
               :selected-ids="currentSelection.brandIds"
               max-height="calc(100vh - 20rem)"
-              mode="simple"
+              :mode="TableMode.Simple"
               @selection="onSelection"
             />
           </div>

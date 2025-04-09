@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T">
+<script setup lang="ts" generic="T extends SelectorEntity">
 const _props = withDefaults(
   defineProps<{
     title: string;

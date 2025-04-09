@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T">
+<script setup lang="ts" generic="T extends SelectorEntity">
 const props = defineProps<{
   entities: T[];
   selection: SelectorSelection;
@@ -7,20 +7,20 @@ const props = defineProps<{
 
 const focused = ref(false);
 const emit = defineEmits<{
-  (e: 'add' | 'remove', payload: number): void;
+  (e: 'add' | 'remove', payload: string): void;
 }>();
-const addItem = (id: number) => {
+const addItem = (id: string) => {
   emit('add', id);
   focused.value = false;
 };
-const removeItem = (id: number) => {
+const removeItem = (id: string) => {
   emit('remove', id);
   focused.value = false;
 };
 const handleOutsideClick = () => {
   focused.value = false;
 };
-const isSelected = (id: number) => {
+const isSelected = (id: string) => {
   return props.selection.ids?.includes(id);
 };
 </script>
@@ -60,7 +60,7 @@ const isSelected = (id: number) => {
                 class="size-6 shrink-0 rounded-lg"
               />
               <strong>{{ entity._id }}</strong>
-              <span class="truncate">{{ entity.name || entity.title }}</span>
+              <span class="truncate">{{ entity.name }}</span>
               <Button
                 v-if="!isSelected(entity._id)"
                 class="ml-auto shrink-0 p-1"

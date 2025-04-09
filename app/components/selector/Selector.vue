@@ -86,7 +86,7 @@ watch(mode, (newValue, oldValue) => {
 });
 
 // HANDLERS FOR MANUALLY SELECTED ENTITIES
-const addToManuallySelected = (id: number) => {
+const addToManuallySelected = (id: string) => {
   includeSelection.value?.ids?.push(id);
   toast({
     title: t('entity_with_id_added_to_selection', {
@@ -96,7 +96,7 @@ const addToManuallySelected = (id: number) => {
     variant: 'positive',
   });
 };
-const removeFromManuallySelected = (id: number) => {
+const removeFromManuallySelected = (id: string) => {
   const index = includeSelection.value?.ids?.indexOf(id);
   if (index !== -1 && index !== undefined) {
     includeSelection.value?.ids?.splice(index, 1);
@@ -111,7 +111,7 @@ let columns: ColumnDef<object>[] = [];
 
 const setupColumns = () => {
   columns = getColumns(entities.value);
-  columns = orderAndFilterColumns(columns, ['id', 'name', 'slug', 'price']);
+  columns = orderAndFilterColumns(columns, ['_id', 'name', 'slug', 'price']);
   addActionsColumn(
     columns,
     {
@@ -163,13 +163,13 @@ const selectionMade = computed(() => {
     includeSelection.value.categoryIds?.length ||
     includeSelection.value.brandIds?.length ||
     includeSelection.value.ids?.length ||
-    Object.keys(includeSelection.value.price)?.length ||
-    Object.keys(includeSelection.value.stock)?.length ||
+    //Object.keys(includeSelection.value.price)?.length ||
+    //Object.keys(includeSelection.value.stock)?.length ||
     excludeSelection.value.categoryIds?.length ||
     excludeSelection.value.brandIds?.length ||
-    excludeSelection.value.ids?.length ||
-    Object.keys(excludeSelection.value.price)?.length ||
-    Object.keys(excludeSelection.value.stock)?.length
+    excludeSelection.value.ids?.length
+    //Object.keys(excludeSelection.value.price)?.length ||
+    //Object.keys(excludeSelection.value.stock)?.length
   );
 });
 watchEffect(async () => {
@@ -245,7 +245,7 @@ const selectedEntities = computed(() => {
           :data="selectedEntities"
           :entity-name="entityName"
           :empty-text="$t('no_entities_selected', { entityName }, 2)"
-          mode="simple"
+          :mode="TableMode.Simple"
           :page-size="15"
         />
       </slot>

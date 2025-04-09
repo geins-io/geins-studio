@@ -112,6 +112,7 @@ export const useColumns = <T extends object>() => {
       if (options.columnTitles?.[key as keyof T]) {
         title = options.columnTitles[key as keyof T] as string;
       } else {
+        title = title.replace('_', '');
         title = title.charAt(0).toUpperCase() + title.slice(1);
         title = title.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
         title = title.toLowerCase();
@@ -193,7 +194,7 @@ export const useColumns = <T extends object>() => {
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const match = options.editUrl?.match(/{([^}]+)}/);
             const pathKey = match ? match[1] : null;
-            const editKey = row.getValue(pathKey || 'id') as string;
+            const editKey = row.getValue(pathKey || '_id') as string;
             const fullEditUrl = options.editUrl?.replace(
               `{${pathKey}}`,
               editKey,

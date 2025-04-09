@@ -1,5 +1,5 @@
-<script setup lang="ts" generic="TData extends { id?: number }, TValue">
-import { TableMode } from '#shared/types';
+<script setup lang="ts" generic="TData extends GeinsEntity, TValue">
+import { TableMode, type GeinsEntity } from '#shared/types';
 
 import type {
   ColumnDef,
@@ -80,7 +80,7 @@ const rowsSelectable = computed(() =>
   props.columns.some((column) => column.id === 'select'),
 );
 const rowSelection = ref(
-  props.selectedIds?.reduce((acc, id) => ({ ...acc, [id]: true }), {}) || {},
+  props.selectedIds?.reduce((acc, _id) => ({ ...acc, [_id]: true }), {}) || {},
 );
 watch(
   () => props.selectedIds,
@@ -89,7 +89,7 @@ watch(
       return;
     }
     rowSelection.value = newSelectedIds.reduce(
-      (acc, id) => ({ ...acc, [id]: true }),
+      (acc, _id) => ({ ...acc, [_id]: true }),
       {},
     );
   },
@@ -180,7 +180,7 @@ const cellClasses = computed(() => {
 
 // Setup table
 const table = useVueTable({
-  getRowId: (row) => String(row.id),
+  getRowId: (row) => String(row._id),
   get data() {
     return props.loading ? getSkeletonData<TData>() : props.data;
   },
