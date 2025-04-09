@@ -1,6 +1,6 @@
 import type { NavigationItem } from '#shared/types';
 export const navigation: NavigationItem[] = [
-  {
+  /*   {
     label: 'Dashboard',
     href: '/',
     icon: 'ChartLine',
@@ -9,7 +9,7 @@ export const navigation: NavigationItem[] = [
     label: 'Selector Demo',
     href: '/selector-demo',
     icon: 'Tag',
-  },
+  }, */
 ];
 export const navigationDummy: NavigationItem[] = [
   {
