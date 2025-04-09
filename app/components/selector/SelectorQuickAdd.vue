@@ -1,26 +1,26 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends SelectorEntity">
 const props = defineProps<{
-  entities: Entity[];
+  entities: T[];
   selection: SelectorSelection;
   entityName: string;
 }>();
 
 const focused = ref(false);
 const emit = defineEmits<{
-  (e: 'add' | 'remove', payload: number): void;
+  (e: 'add' | 'remove', payload: string): void;
 }>();
-const addItem = (id: number) => {
+const addItem = (id: string) => {
   emit('add', id);
   focused.value = false;
 };
-const removeItem = (id: number) => {
+const removeItem = (id: string) => {
   emit('remove', id);
   focused.value = false;
 };
 const handleOutsideClick = () => {
   focused.value = false;
 };
-const isSelected = (id: number) => {
+const isSelected = (id: string) => {
   return props.selection.ids?.includes(id);
 };
 </script>
@@ -48,8 +48,8 @@ const isSelected = (id: number) => {
         >
           <CommandItem
             v-for="entity in entities"
-            :key="entity.id"
-            :value="entity.id + ' ' + entity.name"
+            :key="entity._id"
+            :value="entity._id + ' ' + entity.name"
             class="data-[highlighted]:bg-card"
           >
             <div class="flex w-full items-center gap-3 text-xs">
@@ -59,14 +59,14 @@ const isSelected = (id: number) => {
                 alt="entity image"
                 class="size-6 shrink-0 rounded-lg"
               />
-              <strong>{{ entity.id }}</strong>
-              <span class="truncate">{{ entity.name || entity.title }}</span>
+              <strong>{{ entity._id }}</strong>
+              <span class="truncate">{{ entity.name }}</span>
               <Button
-                v-if="!isSelected(entity.id)"
+                v-if="!isSelected(entity._id)"
                 class="ml-auto shrink-0 p-1"
                 variant="ghost"
                 size="icon"
-                @click="addItem(entity.id)"
+                @click="addItem(entity._id)"
               >
                 <LucideCirclePlus class="size-4" />
               </Button>
@@ -75,7 +75,7 @@ const isSelected = (id: number) => {
                 class="ml-auto shrink-0 p-1"
                 variant="ghost"
                 size="icon"
-                @click="removeItem(entity.id)"
+                @click="removeItem(entity._id)"
               >
                 <LucideCircleCheck class="size-4 text-positive" />
               </Button>

@@ -9,13 +9,40 @@ import {
   TableCellLongText,
 } from '#components';
 import type { ColumnOptions, ColumnType, ColumnTypes } from '#shared/types';
+import { TableMode } from '#shared/types';
 
 export const useColumns = <T extends object>() => {
-  const basicCellStyle =
-    'px-[1.2rem] align-middle text-xs leading-8 w-full h-10 flex items-center truncate';
+  // BASIC HEADER STYLE
   const basicHeaderTextStyle = 'text-xs font-medium uppercase';
-  const basicHeaderStyle =
-    'h-12 px-1.5 flex items-center ' + basicHeaderTextStyle;
+
+  const getBasicHeaderStyle = (table: Table<T>) => {
+    const mode = table?.options?.meta?.mode || TableMode.Advanced;
+
+    const baseStyle = 'px-1.5 flex items-center ' + basicHeaderTextStyle;
+    const simpleStyle =
+      'h-10 normal-case [&>button]:pl-2 [&>button]:pr-1 [&>button]:normal-case';
+    const advancedStyle = 'h-12';
+    const fullStyle =
+      mode === TableMode.Simple
+        ? `${baseStyle} ${simpleStyle}`
+        : `${baseStyle} ${advancedStyle}`;
+
+    return fullStyle;
+  };
+
+  // BASIC CELL STYLE
+  const getBasicCellStyle = (table: Table<T>) => {
+    const mode = table?.options?.meta?.mode || TableMode.Advanced;
+    const baseStyle =
+      'align-middle text-xs leading-8 w-full h-10 flex items-center truncate';
+    const simpleStyle = '[&>button]:px-3.5 px-3.5';
+    const advancedStyle = 'px-[1.2rem]';
+    const fullStyle =
+      mode === TableMode.Simple
+        ? `${baseStyle} ${simpleStyle}`
+        : `${baseStyle} ${advancedStyle}`;
+    return fullStyle;
+  };
 
   const selectableColumn: ColumnDef<T> = {
     id: 'select',
@@ -23,7 +50,10 @@ export const useColumns = <T extends object>() => {
       h(
         'div',
         {
-          class: cn(basicHeaderStyle, 'flex items-center justify-center px-1'),
+          class: cn(
+            getBasicHeaderStyle(table),
+            'flex items-center justify-center px-1',
+          ),
         },
         h(Checkbox, {
           checked: table.getIsAllPageRowsSelected(),
@@ -32,11 +62,15 @@ export const useColumns = <T extends object>() => {
           ariaLabel: 'Select all',
         }),
       ),
-    cell: ({ row }: { row: Row<T> }) =>
+    cell: ({ table, row }: { table: Table<T>; row: Row<T> }) =>
       h(
         'div',
         {
-          class: cn(basicCellStyle, 'px-3 flex items-center justify-center'),
+          class: cn(
+            getBasicCellStyle(table),
+            'px-3 flex items-center justify-center',
+          ),
+          'data-checkbox': true,
         },
         h(Checkbox, {
           checked: row.getIsSelected(),
@@ -78,6 +112,7 @@ export const useColumns = <T extends object>() => {
       if (options.columnTitles?.[key as keyof T]) {
         title = options.columnTitles[key as keyof T] as string;
       } else {
+        title = title.replace('_', '');
         title = title.charAt(0).toUpperCase() + title.slice(1);
         title = title.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
         title = title.toLowerCase();
@@ -108,10 +143,10 @@ export const useColumns = <T extends object>() => {
 
       let cellRenderer;
       let headerRenderer = sortable
-        ? ({ column }: { column: Column<T> }) => {
+        ? ({ table, column }: { table: Table<T>; column: Column<T> }) => {
             return h(
               'div',
-              { class: basicHeaderStyle },
+              { class: getBasicHeaderStyle(table) },
               h(TableHeaderSort<T>, {
                 column,
                 title,
@@ -119,18 +154,20 @@ export const useColumns = <T extends object>() => {
               }),
             );
           }
-        : () => h('div', { class: basicHeaderStyle }, title);
+        : ({ table }: { table: Table<T> }) => {
+            return h('div', { class: getBasicHeaderStyle(table) }, title);
+          };
 
       switch (columnType) {
         case 'currency':
-          cellRenderer = ({ row }: { row: Row<T> }) => {
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
             const formatted = new Intl.NumberFormat('sv-SE', {
               style: 'currency',
               currency: 'SEK',
               minimumFractionDigits: 0,
             }).format(Number(value));
-            return h('div', { class: basicCellStyle }, formatted);
+            return h('div', { class: getBasicCellStyle(table) }, formatted);
           };
           break;
         case 'image':
@@ -147,15 +184,17 @@ export const useColumns = <T extends object>() => {
             );
           };
 
-          headerRenderer = () =>
-            h('div', { class: cn(basicHeaderStyle, 'px-2') });
+          headerRenderer = ({ table }: { table: Table<T> }) =>
+            h('div', {
+              class: cn(getBasicHeaderStyle(table), 'px-2'),
+            });
           columnSize = { size: 40, minSize: 40, maxSize: 40 };
           break;
         case 'link':
-          cellRenderer = ({ row }: { row: Row<T> }) => {
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const match = options.editUrl?.match(/{([^}]+)}/);
             const pathKey = match ? match[1] : null;
-            const editKey = row.getValue(pathKey || 'id') as string;
+            const editKey = row.getValue(pathKey || '_id') as string;
             const fullEditUrl = options.editUrl?.replace(
               `{${pathKey}}`,
               editKey,
@@ -179,34 +218,38 @@ export const useColumns = <T extends object>() => {
             if (text.length > maxTextLength) {
               return h(
                 TableCellLongText,
-                { text, className: basicCellStyle, maxTextLength },
+                {
+                  text,
+                  className: getBasicCellStyle(table),
+                  maxTextLength,
+                },
                 { default: () => link },
               );
             }
-            return h('div', { class: basicCellStyle }, link);
+            return h('div', { class: getBasicCellStyle(table) }, link);
           };
           break;
 
         case 'date':
-          cellRenderer = ({ row }: { row: Row<T> }) => {
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
             const date = new Date(value as string | number | Date);
             const formatted = date.toLocaleDateString('sv-SE');
-            return h('div', { class: basicCellStyle }, formatted);
+            return h('div', { class: getBasicCellStyle(table) }, formatted);
           };
           break;
         default:
-          cellRenderer = ({ row }: { row: Row<T> }) => {
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const text = String(row.getValue(key));
             if (text.length > maxTextLength) {
               return h(TableCellLongText, {
                 text,
-                className: basicCellStyle,
+                className: getBasicCellStyle(table),
                 maxTextLength,
                 default: () => text,
               });
             }
-            return h('div', { class: basicCellStyle }, text);
+            return h('div', { class: getBasicCellStyle(table) }, text);
           };
       }
 
@@ -283,15 +326,15 @@ export const useColumns = <T extends object>() => {
       enableSorting: false,
       size: 40,
       maxSize: 40,
-      header: () =>
+      header: ({ table }: { table: Table<T> }) =>
         h('div', {
-          class: cn(basicHeaderStyle),
+          class: cn(getBasicHeaderStyle(table)),
         }),
-      cell: ({ row }) => {
+      cell: ({ table, row }) => {
         const rowData = row.original;
         return h(
           'div',
-          { class: cn(basicCellStyle, 'relative px-2.5') },
+          { class: cn(getBasicCellStyle(table), 'relative px-2.5') },
           h(type === 'actions' ? TableCellActions : TableCellDelete, {
             ...props,
             rowData,

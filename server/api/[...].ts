@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, getHeaders } from 'h3';
+import { defineEventHandler, readBody, getHeaders, getQuery } from 'h3';
 import { useRuntimeConfig } from '#imports';
 /**
  * Event handler for processing API requests.
@@ -30,15 +30,31 @@ export default defineEventHandler(async (event) => {
   }
 
   const fullUrl = `${config.public.apiUrl}/${targetUrl}`;
+  const query = getQuery(event);
+  const queryStr = Object.keys(query)
+    .map((key) => {
+      const value = query[key];
+      if (Array.isArray(value)) {
+        return value
+          .map((v) => `${key}=${encodeURIComponent(String(v))}`)
+          .join('&');
+      }
+      return value !== undefined
+        ? `${key}=${encodeURIComponent(String(value))}`
+        : '';
+    })
+    .filter(Boolean)
+    .join('&');
+  const fetchUrl = queryStr ? `${fullUrl}?${queryStr}` : fullUrl;
 
-  geinsLog(fullUrl);
+  geinsLog(fetchUrl);
 
   const apiHeaders = {
     ...headers,
     authorization: `Bearer ${token}`,
   };
   try {
-    const response = await $fetch(fullUrl, {
+    const response = await $fetch(fetchUrl, {
       method: event.method,
       body,
       headers: apiHeaders,

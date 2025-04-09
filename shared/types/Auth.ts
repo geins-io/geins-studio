@@ -1,5 +1,4 @@
-export interface User {
-  id?: number | string;
+export interface User extends GeinsEntity {
   firstName?: string;
   lastName?: string;
   email?: string | null;
@@ -7,7 +6,6 @@ export interface User {
   company?: string;
   roles?: string[];
   apiUserType?: string;
-  username?: string;
   error?: unknown;
 }
 

@@ -4,6 +4,7 @@ import type { Account, Channel, Currency } from '#shared/types';
 export const useAccountStore = defineStore('account', () => {
   const { geinsLogWarn } = useGeinsLog('store/account.ts');
   const api = repository(useNuxtApp().$geinsApi);
+  const { fallback } = useRuntimeConfig().public;
 
   // STATE
   const account = ref<Account>();
@@ -11,6 +12,15 @@ export const useAccountStore = defineStore('account', () => {
   const currencies = ref<Currency[]>();
   const languages = ref<Language[]>();
   const ready = ref(false);
+  const currentChannelId = useCookie('geins-channel', {
+    default: () => fallback.channel.toString(),
+  });
+  const currentLanguage = useCookie('geins-language', {
+    default: () => fallback.language,
+  });
+  const currentCurrency = useCookie('geins-currency', {
+    default: () => fallback.currency,
+  });
 
   // ACTIONS
   async function fetchAccount(): Promise<Account> {
@@ -65,6 +75,11 @@ export const useAccountStore = defineStore('account', () => {
         geinsLogWarn(`error fetching ${callName}:`, result);
       }
     });
+
+    // Set default currency from account
+    if (account.value) {
+      currentCurrency.value = account.value.defaultCurrency;
+    }
   }
 
   function reset(): void {
@@ -76,9 +91,11 @@ export const useAccountStore = defineStore('account', () => {
   }
 
   // GETTERS
-  const defaultCurrency = computed(
-    () => account.value?.defaultCurrency || 'SEK',
-  );
+  const currentChannel = computed(() => {
+    return channels.value?.find(
+      (channel) => channel._id === currentChannelId.value,
+    );
+  });
 
   return {
     account,
@@ -86,12 +103,15 @@ export const useAccountStore = defineStore('account', () => {
     currencies,
     languages,
     ready,
+    currentChannelId,
+    currentLanguage,
+    currentCurrency,
     fetchAccount,
     fetchChannels,
     fetchCurrencies,
     fetchLanguages,
     init,
     reset,
-    defaultCurrency,
+    currentChannel,
   };
 });

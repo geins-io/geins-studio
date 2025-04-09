@@ -48,7 +48,7 @@ const redirectAndWelcome = async () => {
   });
 };
 
-async function handleStep() {
+async function handleStep(init: boolean = false) {
   if (session.value?.mfaActive && session.value?.loginToken) {
     loginToken.value = session.value.loginToken;
     mfaMethod.value = session.value.mfaMethod || '';
@@ -64,9 +64,13 @@ async function handleStep() {
   if (isAuthenticated.value) {
     await redirectAndWelcome();
   }
+  if (!init) {
+    pending.value = false;
+    showInvalid.value = true;
+  }
 }
 
-await handleStep();
+await handleStep(true);
 
 async function handleLogin(credentials: LoginCredentials) {
   pending.value = true;

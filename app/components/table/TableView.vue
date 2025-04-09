@@ -1,4 +1,6 @@
-<script setup lang="ts" generic="TData extends { id?: number }, TValue">
+<script setup lang="ts" generic="TData extends GeinsEntity, TValue">
+import { TableMode, type GeinsEntity } from '#shared/types';
+
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -25,11 +27,12 @@ const props = withDefaults(
     pageSize?: number;
     loading?: boolean;
     searchableField?: string;
-    mode?: 'simple' | 'advanced' | 'minimal';
+    mode?: TableMode;
     maxHeight?: string;
     showSearch?: boolean;
     pinnedState?: ColumnPinningState;
-    selectedIds?: number[];
+    selectedIds?: string[];
+    emptyText?: string;
   }>(),
   {
     entityName: 'row',
@@ -37,7 +40,7 @@ const props = withDefaults(
     loading: false,
     searchableField: 'name',
     showSearch: false,
-    mode: 'advanced',
+    mode: TableMode.Advanced,
     pinnedState: () => ({
       left: ['select'],
       right: ['actions'],
@@ -45,13 +48,14 @@ const props = withDefaults(
   },
 );
 
-const showSearch =
-  props.mode === 'advanced' ? ref(true) : ref(props.showSearch);
-
 const emit = defineEmits({
   clicked: (row) => row,
   selection: (selection: TData[]): TData[] => selection,
 });
+
+const { t } = useI18n();
+const showSearch =
+  props.mode === TableMode.Advanced ? ref(true) : ref(props.showSearch);
 
 /**
  * Setup table state
@@ -62,8 +66,8 @@ const columnFilters = ref<ColumnFiltersState>([]);
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
 const tableMaximized = useState<boolean>('table-maximized', () => false);
-const advancedMode = computed(() => props.mode === 'advanced');
-const simpleMode = computed(() => props.mode === 'simple');
+const advancedMode = computed(() => props.mode === TableMode.Advanced);
+const simpleMode = computed(() => props.mode === TableMode.Simple);
 
 onUnmounted(() => {
   tableMaximized.value = false;
@@ -76,7 +80,7 @@ const rowsSelectable = computed(() =>
   props.columns.some((column) => column.id === 'select'),
 );
 const rowSelection = ref(
-  props.selectedIds?.reduce((acc, id) => ({ ...acc, [id]: true }), {}) || {},
+  props.selectedIds?.reduce((acc, _id) => ({ ...acc, [_id]: true }), {}) || {},
 );
 watch(
   () => props.selectedIds,
@@ -85,7 +89,7 @@ watch(
       return;
     }
     rowSelection.value = newSelectedIds.reduce(
-      (acc, id) => ({ ...acc, [id]: true }),
+      (acc, _id) => ({ ...acc, [_id]: true }),
       {},
     );
   },
@@ -96,7 +100,7 @@ watch(
  **/
 const { path } = useRoute();
 const { user } = useUserStore();
-const userId = user?.id || 'default';
+const userId = user?._id || 'default';
 const cookieKey = `${userId + path}`;
 
 const columnVisibilityCookie = useCookie<VisibilityState>(
@@ -176,7 +180,7 @@ const cellClasses = computed(() => {
 
 // Setup table
 const table = useVueTable({
-  getRowId: (row) => String(row.id),
+  getRowId: (row) => String(row._id),
   get data() {
     return props.loading ? getSkeletonData<TData>() : props.data;
   },
@@ -225,6 +229,18 @@ const table = useVueTable({
     },
     columnPinning: columnPinningState.value,
   },
+  meta: {
+    mode: props.mode,
+    entityName: props.entityName,
+  },
+});
+
+const emptyText = computed(() => {
+  const emptyText =
+    props.emptyText || t('no_entities', { entityName: props.entityName }, 2);
+  return table.getColumn(props.searchableField)?.getFilterValue()
+    ? t('no_entities_found', { entityName: props.entityName }, 2)
+    : emptyText;
 });
 </script>
 
@@ -283,7 +299,7 @@ const table = useVueTable({
               cn(
                 `z-30 ${pinnedClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
                 cellClasses,
-                `${simpleMode ? 'bg-background [&>div>button]:pl-2 [&>div>button]:pr-1 [&>div>button]:normal-case [&>div]:h-10 [&>div]:normal-case' : ''}`,
+                `${simpleMode ? 'bg-background' : ''}`,
               )
             "
             :style="
@@ -311,13 +327,7 @@ const table = useVueTable({
             <TableCell
               v-for="cell in row.getVisibleCells()"
               :key="cell.id"
-              :class="
-                cn(
-                  `${pinnedClasses(cell.column)}`,
-                  cellClasses,
-                  `${simpleMode ? '[&>button]:px-3.5 [&>div]:px-3.5' : ''}`,
-                )
-              "
+              :class="cn(`${pinnedClasses(cell.column)}`, cellClasses)"
               :style="
                 cell.column.getSize()
                   ? { width: `${cell.column.getSize()}px` }
@@ -334,7 +344,7 @@ const table = useVueTable({
         <template v-else>
           <TableRow>
             <TableCell :colspan="columns.length" class="h-24 text-center">
-              No results.
+              {{ emptyText }}
             </TableCell>
           </TableRow>
         </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { logout } = useGeinsAuth();
-const { user, userInitials } = useUserStore();
+const { userInitials } = useUserStore();
 
 const colorMode = useColorMode();
 const setColorMode = () => {

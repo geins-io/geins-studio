@@ -1,9 +1,6 @@
-// TODO: move all types to shared folder (Nuxt 3.14)
-
 export type ChannelType = 'webshop' | 'physical' | 'other';
 
-export interface Channel {
-  id: number;
+export interface Channel extends GeinsEntity {
   name: string;
   displayName: string;
   location: string;
@@ -14,11 +11,10 @@ export interface Channel {
   languages: Language[];
 }
 
-export interface Market {
-  id: number;
+export interface Market extends GeinsEntity {
   channelId: number;
-  country?: Country | string;
-  currency?: Currency | string;
+  country?: Country;
+  currency?: Currency;
   virtual: boolean;
   attributes: string[];
   allowedLanguages: string[];
@@ -27,20 +23,17 @@ export interface Market {
   active: boolean;
 }
 
-export interface Country {
-  id: string;
+export interface Country extends GeinsEntity {
   name: string;
   active: boolean;
 }
 
-export interface Language {
-  id: string;
+export interface Language extends GeinsEntity {
   name: string;
   active: boolean;
 }
 
-export interface Currency {
-  id: string;
+export interface Currency extends GeinsEntity {
   name: string;
   symbol: CurrencySymbol;
   conversionRate: number;
@@ -51,7 +44,7 @@ export interface CurrencySymbol {
   prefixed: boolean;
 }
 
-export interface Account {
+export interface Account extends GeinsEntity {
   accountKey: string;
   name: string;
   defaultCurrency: string;

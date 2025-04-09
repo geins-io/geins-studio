@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia';
 import type { Product, Category, Brand } from '#shared/types';
-
 export const useProductsStore = defineStore('products', () => {
-  const { geinsLogWarn } = useGeinsLog('store/account.ts');
+  const { geinsLogWarn } = useGeinsLog('store/products.ts');
   const api = repository(useNuxtApp().$geinsApi);
+  const accountStore = useAccountStore();
+  const { currentLanguage } = storeToRefs(accountStore);
 
   // STATE
   const products = ref<Product[]>([]);
@@ -13,28 +14,28 @@ export const useProductsStore = defineStore('products', () => {
 
   // ACTIONS
   async function fetchProducts(): Promise<Product[]> {
-    const data = await api.product.list();
-    products.value = data;
-    return data;
+    const data = await api.product.list.get('localizations,images,prices');
+    products.value = transformProducts(data?.items) as Product[];
+    return products.value;
   }
 
   async function fetchCategories(): Promise<Category[]> {
-    const data = await api.category.list();
-    categories.value = data;
-    return data;
+    const data = await api.category.list.get();
+    categories.value = transformCategories(data?.items) as Category[];
+    return categories.value;
   }
 
   async function fetchBrands(): Promise<Brand[]> {
-    const data = await api.brand.list();
-    brands.value = data;
-    return data;
+    const data = await api.brand.list.get();
+    brands.value = transformBrands(data?.items) as Brand[];
+    return brands.value;
   }
 
   async function init(): Promise<void> {
     const results = await Promise.allSettled([
       fetchProducts(),
       fetchCategories(),
-      //fetchBrands(),
+      fetchBrands(),
     ]);
 
     ready.value = results.every(
@@ -70,6 +71,42 @@ export const useProductsStore = defineStore('products', () => {
     ready.value = false;
   }
 
+  function getCategoryName(id: string): string {
+    const category: Category | undefined = categories.value.find(
+      (c) => c._id === id,
+    );
+    return category?.name || '';
+  }
+
+  function getBrandName(id: string): string {
+    const brand: Brand | undefined = brands.value.find((b) => b._id === id);
+    return brand?.name || '';
+  }
+
+  function transformProducts(products: Product[]): Product[] {
+    if (!products) return [];
+    return products.map((product) => ({
+      ...product.localizations?.[currentLanguage.value],
+      ...product,
+    }));
+  }
+
+  function transformCategories(categories: Category[]): Category[] {
+    if (!categories) return [];
+    return categories.map((category) => ({
+      ...category.localizations[currentLanguage.value],
+      ...category,
+    }));
+  }
+
+  function transformBrands(brands: Brand[]): Brand[] {
+    if (!brands) return [];
+    return brands.map((brand) => ({
+      ...brand.localizations[currentLanguage.value],
+      ...brand,
+    }));
+  }
+
   return {
     products,
     categories,
@@ -80,5 +117,8 @@ export const useProductsStore = defineStore('products', () => {
     fetchBrands,
     init,
     reset,
+    getCategoryName,
+    getBrandName,
+    transformProducts,
   };
 });

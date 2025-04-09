@@ -64,6 +64,7 @@ export default NuxtAuthHandler({
         session = {
           ...session,
           ...geinsAuth.getAuthenticatedSession(token),
+          accounts: token.accounts,
         };
         // If we don't have a user object yet, fetch it
         if (

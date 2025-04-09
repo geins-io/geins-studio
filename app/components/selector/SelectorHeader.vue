@@ -1,10 +1,10 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends SelectorEntity">
 const _props = withDefaults(
   defineProps<{
     title: string;
     description: string;
     selection: SelectorSelection;
-    entities: Entity[];
+    entities: T[];
     entityName: string;
   }>(),
   {},

@@ -25,12 +25,9 @@ const verifyMode = computed(() => props.mode === 'verify');
 const accountMode = computed(() => props.mode === 'account');
 const showInvalid = ref(props.showInvalid);
 
-watch(
-  () => props.showInvalid,
-  (value) => {
-    showInvalid.value = value;
-  },
-);
+watchEffect(() => {
+  showInvalid.value = props.showInvalid;
+});
 
 onMounted(() => {
   if (loginMode.value) {
@@ -100,7 +97,7 @@ const login = () => {
 // Verification
 const verificationCode = ref<string[]>([]);
 
-const instructions = computed(() => {
+const _instructions = computed(() => {
   if (loginMode.value) {
     return '';
   }

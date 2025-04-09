@@ -4,7 +4,7 @@ const _props = defineProps<{
   description?: string;
 }>();
 
-const checked = defineModel<boolean>();
+const checked = defineModel<boolean>('checked');
 
 const beforeEnter = (el: Element) => {
   (el as HTMLElement).style.height = '0';
