@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ColumnOptions, Category } from '#shared/types';
-type Entity = Category;
+import type { ColumnOptions, WholesaleAccount } from '#shared/types';
+type Entity = WholesaleAccount;
 
 const route = useRoute();
 const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
@@ -12,7 +12,7 @@ definePageMeta({
 });
 
 // GLOBAL SETUP
-const apiEndpoint = '/categories';
+const apiEndpoint = '/wholesale/account/list';
 const dataList = ref<Entity[]>([]);
 const entityIdentifier = '{id}';
 const entityName = getEntityName();

@@ -1,11 +1,30 @@
 import type { NavigationItem } from '#shared/types';
 export const navigation: NavigationItem[] = [
-  /*   {
+  {
     label: 'Dashboard',
     href: '/',
     icon: 'ChartLine',
   },
   {
+    label: 'Wholesale',
+    href: '/wholesale/account/list',
+    icon: 'Building2',
+    children: [
+      {
+        label: 'Accounts',
+        href: '/wholesale/account/list',
+      },
+      {
+        label: 'Orders',
+        href: '/wholesale/order/list',
+      },
+      {
+        label: 'Pricelists',
+        href: '/wholesale/pricelist/list',
+      },
+    ],
+  },
+  /*{
     label: 'Selector Demo',
     href: '/selector-demo',
     icon: 'Tag',

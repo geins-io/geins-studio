@@ -5,7 +5,7 @@ export default defineI18nLocale(async () => {
     brand: 'brand | brands',
     pricelist: 'pricelist | pricelists',
     order: 'order | orders',
-    account: 'account | accounts',
+    account: 'wholesale account | wholesale accounts',
     user: 'user | users',
     market: 'market | markets',
     language: 'language | languages',

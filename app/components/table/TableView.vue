@@ -1,5 +1,5 @@
-<script setup lang="ts" generic="TData extends GeinsEntity, TValue">
-import { TableMode, type GeinsEntity } from '#shared/types';
+<script setup lang="ts" generic="TData extends Record<string, any>, TValue">
+import { TableMode } from '#shared/types';
 
 import type {
   ColumnDef,
@@ -24,6 +24,7 @@ const props = withDefaults(
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
     entityName?: string;
+    idColumn?: string;
     pageSize?: number;
     loading?: boolean;
     searchableField?: string;
@@ -36,11 +37,13 @@ const props = withDefaults(
   }>(),
   {
     entityName: 'row',
+    idColumn: '_id',
     pageSize: 30,
     loading: false,
     searchableField: 'name',
     showSearch: false,
     mode: TableMode.Advanced,
+
     pinnedState: () => ({
       left: ['select'],
       right: ['actions'],
@@ -180,7 +183,7 @@ const cellClasses = computed(() => {
 
 // Setup table
 const table = useVueTable({
-  getRowId: (row) => String(row._id),
+  getRowId: (row: TData) => String(row[props.idColumn as keyof TData]),
   get data() {
     return props.loading ? getSkeletonData<TData>() : props.data;
   },
