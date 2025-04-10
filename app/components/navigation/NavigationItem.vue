@@ -114,7 +114,7 @@ watch(
 const rootItemClasses = computed(() => {
   return props.root
     ? `py-1.5 pl-5 pr-3 text-sm h-12 leading-10 transition-[background-color]`
-    : `py-2 pl-[3.25rem] pr-5 text-xs ${isActive.value ? 'font-medium border-primary bg-background' : ''}`;
+    : `py-2 pl-[3.25rem] pr-5 text-xs ${isActive.value ? 'font-semibold border-primary bg-background' : ''}`;
 });
 </script>
 
@@ -161,7 +161,7 @@ const rootItemClasses = computed(() => {
       :to="item.href"
       :class="
         cn(
-          `flex items-center ${isCollapsed ? 'transition-colors hover:bg-background' : ''} ${isCollapsed && isActive ? 'bg-background' : ''} ${isActive ? 'font-medium' : ''}`,
+          `flex items-center ${isCollapsed ? 'transition-colors hover:bg-background' : ''} ${isCollapsed && isActive ? 'bg-background' : ''} ${isActive ? 'font-semibold' : ''}`,
           rootItemClasses,
         )
       "

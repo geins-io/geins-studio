@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+
 const _props = defineProps<{
   tabs: string[];
 }>();
@@ -8,27 +11,38 @@ const setCurrentTab = (value: number) => {
   currentTab.value = value;
 };
 
+const route = useRoute();
+const router = useRouter();
+
 onMounted(() => {
-  const url = new URL(window.location.href);
-  const tabParam = url.searchParams.get('tab');
-  if (tabParam) {
+  // Initialize currentTab from route query parameter
+  const tabParam = route.query.tab;
+  if (tabParam && typeof tabParam === 'string') {
     currentTab.value = parseInt(tabParam);
   }
-  // watch for changes and update url
+
+  // Watch for changes on currentTab and update the URL query without pushing a new history entry.
   watch(
     currentTab,
     (value) => {
+      // Clone the current query parameters
+      const query = { ...route.query };
+
+      // Remove tab parameter if it is 0, or update it otherwise.
       if (value === 0) {
-        url.searchParams.delete('tab');
+        delete query.tab;
       } else if (value) {
-        url.searchParams.set('tab', value.toString());
+        query.tab = value.toString();
       }
-      window.history.pushState({}, '', url);
+
+      // Replace the current route so that no new history entry is created.
+      router.replace({ query });
     },
     { immediate: true },
   );
 });
 </script>
+
 <template>
   <nav class="w-full">
     <ul class="flex gap-2">

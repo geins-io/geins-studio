@@ -13,7 +13,14 @@ module.exports = {
         '2xl': '1400px',
       },
     },
+    fontFamily: {
+      sans: ['Suisse\\ Intl'],
+    },
+
     extend: {
+      letterSpacing: {
+        normal: '0.01em',
+      },
       height: {
         header: '4rem',
         main: 'calc(100vh - 4rem)',
@@ -21,6 +28,9 @@ module.exports = {
       boxShadow: {
         'only-right': '3px 0 7px -2px rgb(0 0 0 / 0.1)',
         'only-left': '-3px 0 7px -2px rgb(0 0 0 / 0.1)',
+      },
+      fontSize: {
+        grid: '0.8125rem',
       },
       gridTemplateColumns: {
         main: 'minmax(72%, 1fr) minmax(25%, 360px)',

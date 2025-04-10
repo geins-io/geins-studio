@@ -3,7 +3,7 @@ import type { ColumnOptions, Category } from '#shared/types';
 type Entity = Category;
 
 const route = useRoute();
-const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
+const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
   route.fullPath,
 );
 
@@ -14,16 +14,16 @@ definePageMeta({
 // GLOBAL SETUP
 const apiEndpoint = '/categories';
 const dataList = ref<Entity[]>([]);
-const entityIdentifier = '{id}';
+const entityIdentifier = '{_id}';
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
-const editEntityUrl = getEditEntityUrl(entityIdentifier);
+const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 
 // SET UP COLUMNS FOR ENTITY
 const columnOptions: ColumnOptions<Entity> = {
-  editUrl: editEntityUrl,
-  columnTypes: { name: 'link' },
+  entityLinkUrl: entityUrl,
+  columnTypes: { name: 'entity-link' },
 };
 
 // FETCH DATA FOR ENTITY

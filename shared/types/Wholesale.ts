@@ -6,7 +6,7 @@ export interface WholesaleAccount {
   channels: string[];
   tags: string[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata: Record<string, any>;
+  meta: Record<string, any>;
   addresses: WholesaleAccountAddress[];
 }
 

@@ -7,13 +7,20 @@ import {
   TableCellActions,
   TableCellDelete,
   TableCellLongText,
+  TableCellChannels,
+  TableCellTags,
 } from '#components';
-import type { ColumnOptions, ColumnType, ColumnTypes } from '#shared/types';
+import type {
+  ColumnOptions,
+  ColumnType,
+  ColumnTypes,
+  StringKeyOf,
+} from '#shared/types';
 import { TableMode } from '#shared/types';
 
 export const useColumns = <T extends object>() => {
   // BASIC HEADER STYLE
-  const basicHeaderTextStyle = 'text-xs font-medium uppercase';
+  const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
 
   const getBasicHeaderStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
@@ -34,7 +41,7 @@ export const useColumns = <T extends object>() => {
   const getBasicCellStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
     const baseStyle =
-      'align-middle text-xs leading-8 w-full h-10 flex items-center truncate';
+      'align-middle text-grid leading-8 w-full h-10 flex items-center truncate';
     const simpleStyle = '[&>button]:px-3.5 px-3.5';
     const advancedStyle = 'px-[1.2rem]';
     const fullStyle =
@@ -98,7 +105,10 @@ export const useColumns = <T extends object>() => {
     } = options;
     let columns: ColumnDef<T>[] = [];
 
-    const keys = data && data.length ? Object.keys(data[0] as object) : [];
+    const keys: StringKeyOf<T>[] =
+      data && data.length
+        ? (Object.keys(data[0] as object) as StringKeyOf<T>[])
+        : [];
     if (keys.length === 0) {
       return columns;
     }
@@ -108,15 +118,27 @@ export const useColumns = <T extends object>() => {
     }
 
     keys.forEach((key) => {
-      let title = key;
-      if (options.columnTitles?.[key as keyof T]) {
-        title = options.columnTitles[key as keyof T] as string;
+      if (
+        key === '_type' ||
+        options.excludeColumns?.includes(key) ||
+        (options.includeColumns?.length &&
+          !options.includeColumns.includes(key))
+      ) {
+        return;
+      }
+
+      // Set column title
+      let columnTitle = String(key);
+      if (options.columnTitles?.[key]) {
+        columnTitle = options.columnTitles[key];
       } else {
-        title = title.replace('_', '');
-        title = title.charAt(0).toUpperCase() + title.slice(1);
-        title = title.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
-        title = title.toLowerCase();
-        title = title.charAt(0).toUpperCase() + title.slice(1);
+        columnTitle = columnTitle.replace('_', '');
+        columnTitle =
+          columnTitle.charAt(0).toUpperCase() + columnTitle.slice(1);
+        columnTitle = columnTitle.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+        columnTitle = columnTitle.toLowerCase();
+        columnTitle =
+          columnTitle.charAt(0).toUpperCase() + columnTitle.slice(1);
       }
 
       // Set column type
@@ -129,11 +151,15 @@ export const useColumns = <T extends object>() => {
         columnType = 'currency';
       } else if (keyLower.includes('image') || keyLower.includes('img')) {
         columnType = 'image';
+      } else if (keyLower === 'channels') {
+        columnType = 'channels';
+      } else if (keyLower === 'tags') {
+        columnType = 'tags';
       } else {
         columnType = 'string';
       }
       // Override column type if explicitly set in options
-      columnType = columnTypes[key as keyof T] || columnType;
+      columnType = columnTypes[key] || columnType;
 
       let columnSize = {
         size: 0,
@@ -149,13 +175,13 @@ export const useColumns = <T extends object>() => {
               { class: getBasicHeaderStyle(table) },
               h(TableHeaderSort<T>, {
                 column,
-                title,
+                title: columnTitle,
                 className: basicHeaderTextStyle,
               }),
             );
           }
         : ({ table }: { table: Table<T> }) => {
-            return h('div', { class: getBasicHeaderStyle(table) }, title);
+            return h('div', { class: getBasicHeaderStyle(table) }, columnTitle);
           };
 
       switch (columnType) {
@@ -178,7 +204,7 @@ export const useColumns = <T extends object>() => {
               { class: 'px-1.5 block' },
               h('img', {
                 src: value,
-                alt: title,
+                alt: columnTitle,
                 class: 'size-7 mx-auto max-w-10 p-0.5',
               }),
             );
@@ -190,12 +216,12 @@ export const useColumns = <T extends object>() => {
             });
           columnSize = { size: 40, minSize: 40, maxSize: 40 };
           break;
-        case 'link':
+        case 'entity-link':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const match = options.editUrl?.match(/{([^}]+)}/);
+            const match = options.entityLinkUrl?.match(/{([^}]+)}/);
             const pathKey = match ? match[1] : null;
             const editKey = row.getValue(pathKey || '_id') as string;
-            const fullEditUrl = options.editUrl?.replace(
+            const fullEditUrl = options.entityLinkUrl?.replace(
               `{${pathKey}}`,
               editKey,
             );
@@ -205,7 +231,7 @@ export const useColumns = <T extends object>() => {
               {
                 to: fullEditUrl,
                 class: cn(
-                  'underline underline-offset-2 font-medium text-link hover:text-muted-foreground',
+                  'underline underline-offset-2 font-semibold text-link hover:text-muted-foreground',
                 ),
               },
               {
@@ -238,6 +264,24 @@ export const useColumns = <T extends object>() => {
             return h('div', { class: getBasicCellStyle(table) }, formatted);
           };
           break;
+        case 'channels':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value = row.getValue(key) as Array<string>;
+            return h(TableCellChannels, {
+              class: getBasicCellStyle(table),
+              channelIds: value,
+            });
+          };
+          break;
+        case 'tags':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value = row.getValue(key) as Array<string>;
+            return h(TableCellTags, {
+              class: getBasicCellStyle(table),
+              tags: value,
+            });
+          };
+          break;
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const text = String(row.getValue(key));
@@ -259,20 +303,21 @@ export const useColumns = <T extends object>() => {
         header: headerRenderer,
         cell: cellRenderer,
         enableSorting: sortable,
-        meta: { type: columnType, title },
+        meta: { type: columnType, title: columnTitle },
         ...columnSize,
       });
     });
 
     columns = columns.sort((a, b) => {
       const getOrder = (col: ColumnDef<T>) => {
+        const id = col.id || '';
         const type = col.meta?.type || '';
         const title = col.meta?.title?.toLowerCase() || '';
 
         if (type === 'select') return 0;
-        if (title.includes('id')) return 1;
+        if (id === '_id') return 1;
         if (type === 'image') return 2;
-        if (title.includes('name') || title.includes('title')) return 3;
+        if (title === 'name') return 3;
 
         return 4;
       };
@@ -287,31 +332,6 @@ export const useColumns = <T extends object>() => {
     column: ColumnDef<T>,
   ): ColumnDef<T>[] => {
     columns.push(column);
-    return columns;
-  };
-
-  const setOrderForColumn = (
-    columns: ColumnDef<T>[],
-    key: string,
-    order: number,
-  ): ColumnDef<T>[] => {
-    // Find the index of the object with the given key
-    const index = columns.findIndex((obj) => obj.id === key);
-
-    // If the object is not found, return the original array
-    if (index === -1) {
-      console.error(`Key "${key}" not found in the array.`);
-      return columns;
-    }
-
-    // Remove the object from the array
-    const [item] = columns.splice(index, 1);
-
-    if (item) {
-      // Insert the object at the specified order position
-      columns.splice(order, 0, item);
-    }
-
     return columns;
   };
 
@@ -360,7 +380,6 @@ export const useColumns = <T extends object>() => {
   return {
     getColumns,
     extendColumns,
-    setOrderForColumn,
     addActionsColumn,
     orderAndFilterColumns,
   };

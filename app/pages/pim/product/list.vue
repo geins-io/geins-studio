@@ -2,7 +2,7 @@
 type Entity = Product;
 
 const route = useRoute();
-const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
+const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
   route.fullPath,
 );
 
@@ -14,18 +14,18 @@ definePageMeta({
 const apiEndpoint = '/products';
 const totalListItems = ref(3000);
 const dataList = ref<Entity[]>([]);
-const entityIdentifier = '{id}';
+const entityIdentifier = '{_id}';
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
-const editEntityUrl = getEditEntityUrl(entityIdentifier);
+const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 
 // SET UP COLUMNS FOR ENTITY
 const columnOptions: ColumnOptions<Entity> = {
   selectable: true,
-  editUrl: editEntityUrl,
+  entityLinkUrl: entityUrl,
   columnTitles: { price: 'Default price' },
-  columnTypes: { name: 'link' },
+  columnTypes: { name: 'entity-link' },
 };
 
 // FETCH DATA FOR ENTITY
@@ -49,9 +49,7 @@ const columns = getColumns(dataList.value, columnOptions);
 // ADD AND ORDER COLUMNS
 addActionsColumn(columns, {
   onEdit: (product: Entity) =>
-    navigateTo(
-      `${editEntityUrl.replace(entityIdentifier, String(product._id))}`,
-    ),
+    navigateTo(`${entityUrl.replace(entityIdentifier, String(product._id))}`),
   onCopy: (product: Entity) => console.log('Copy', product._id),
   onDelete: (product: Entity) => console.log('Delete', product._id),
   onUnpublish: (product: Entity) => console.log('Unpublish', product._id),

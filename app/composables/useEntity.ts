@@ -16,7 +16,7 @@ export function useEntity(fullPath: string) {
     return `${path}/${newEntityUrlAlias}`;
   };
 
-  const getEditEntityUrl = (dataProp: string) => {
+  const getEntityUrl = (dataProp: string) => {
     const parts = fullPath.split('/');
     parts.pop();
     const path = parts.join('/');
@@ -28,6 +28,6 @@ export function useEntity(fullPath: string) {
     newEntityUrlAlias,
     getEntityName,
     getNewEntityUrl,
-    getEditEntityUrl,
+    getEntityUrl,
   };
 }

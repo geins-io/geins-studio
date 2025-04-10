@@ -34,6 +34,7 @@ const props = withDefaults(
     pinnedState?: ColumnPinningState;
     selectedIds?: string[];
     emptyText?: string;
+    initVisibilityState?: VisibilityState;
   }>(),
   {
     entityName: 'row',
@@ -105,15 +106,18 @@ const { path } = useRoute();
 const { user } = useUserStore();
 const userId = user?._id || 'default';
 const cookieKey = `${userId + path}`;
-
 const columnVisibilityCookie = useCookie<VisibilityState>(
   `geins-cols-${cookieKey}`,
   {
-    default: () => ({}),
+    default: () => props.initVisibilityState || {},
     maxAge: 60 * 60 * 24 * 365,
   },
 );
-const columnVisibility = ref(columnVisibilityCookie.value);
+const columnVisibility = ref(
+  Object.keys(columnVisibilityCookie.value).length
+    ? columnVisibilityCookie.value
+    : props.initVisibilityState || {},
+);
 const updateVisibilityCookie = () => {
   columnVisibilityCookie.value = columnVisibility.value;
 };
@@ -325,7 +329,6 @@ const emptyText = computed(() => {
             v-for="row in table.getRowModel().rows"
             :key="row.id"
             :data-state="row.getIsSelected() ? 'selected' : undefined"
-            @click="emit('clicked', row)"
           >
             <TableCell
               v-for="cell in row.getVisibleCells()"

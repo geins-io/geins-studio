@@ -1,5 +1,5 @@
 <template>
-  <div class="text-xs font-medium uppercase">
+  <div class="text-xs font-semibold uppercase">
     <slot />
   </div>
 </template>

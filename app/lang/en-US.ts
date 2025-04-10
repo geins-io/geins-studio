@@ -5,7 +5,7 @@ export default defineI18nLocale(async () => {
     brand: 'brand | brands',
     pricelist: 'pricelist | pricelists',
     order: 'order | orders',
-    account: 'wholesale account | wholesale accounts',
+    account: 'account | accounts',
     user: 'user | users',
     market: 'market | markets',
     language: 'language | languages',
@@ -33,6 +33,7 @@ export default defineI18nLocale(async () => {
     entity_selection: '@.capitalize:{entityName} selection',
     entity_with_id_added_to_selection:
       '@.capitalize:{entityName} with ID {id} added to selection',
+    failed_to_fetch_entitity: 'Failed to fetch @:{entityName}',
     less_than: 'Less than',
     more_than: 'More than',
     exactly: 'Exactly',

@@ -10,7 +10,7 @@ const props = defineProps<{
   <tfoot
     :class="
       cn(
-        'rounded-b-lg border-t bg-muted/50 font-medium [&>tr]:last:border-b-0',
+        'rounded-b-lg border-t bg-muted/50 font-semibold [&>tr]:last:border-b-0',
         props.class,
       )
     "

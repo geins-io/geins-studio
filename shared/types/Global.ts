@@ -1,3 +1,5 @@
+export type StringKeyOf<T> = Extract<keyof T, string>;
+
 export interface GeinsEntity {
   _id: string;
   _type: string;

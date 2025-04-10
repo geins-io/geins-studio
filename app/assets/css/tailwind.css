@@ -5,10 +5,10 @@
 @layer base {
   :root {
     --background: 0 0% 98%; /* #fafafa */
-    --foreground: 0 0% 9%; /* #161616 */
+    --foreground: 240 2% 22%; /* #161616 */
 
     --card: 0 0% 100%;
-    --foreground: 0 0% 9%; /* #161616 */
+    --foreground: 240 2% 22%; /* #161616 */
 
     --popover: 0 0% 100%; /* #ffffff */
     --popover-foreground: 0 0% 9%; /* #161616 */
@@ -17,7 +17,7 @@
     --primary-foreground: 0 0% 100%; /* #ffffff */
 
     --secondary: 0 0% 98%; /* #fafafa */
-    --secondary-foreground: 0 0% 0%; /* #000000 */
+    --secondary-foreground: 240 2% 22%; /* #000000 */
 
     --muted: 0 0% 83%; /* #d4d4d4 */
     --muted-foreground: 0 0% 45%; /* #737373 */
@@ -67,6 +67,27 @@
 }
 
 @layer base {
+  @font-face {
+    font-family: 'Suisse Intl';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src:
+      url('/fonts/SuisseIntl-Regular.woff2') format('woff2'),
+      url('/fonts/SuisseIntl-Regular.woff') format('woff');
+  }
+  @font-face {
+    font-family: 'Suisse Intl';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src:
+      url('/fonts/SuisseIntl-Medium.woff2') format('woff2'),
+      url('/fonts/SuisseIntl-Medium.woff') format('woff');
+  }
+}
+
+@layer base {
   :root {
     --positive: 151 45% 56%;
     --positive-foreground: 0 0% 100%;
@@ -93,11 +114,14 @@
   }
   * {
     @apply border-border;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans tracking-normal text-foreground;
     height: 100%;
     scroll-behavior: smooth;
+    font-smooth: always;
   }
   #__nuxt {
     height: 100%;
