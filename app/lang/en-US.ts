@@ -86,5 +86,12 @@ export default defineI18nLocale(async () => {
     auth_verify_title: 'Verify Account',
     auth_verify_description: 'Enter the 6-digit code from your',
     auth_select_account: 'Select the account you want to access',
+    wholesale: {
+      account_name: 'Account name',
+      org_nr: 'Organization number',
+      external_id: 'External ID',
+      channels: 'Channels',
+      sales_reps: 'Sales reps',
+    },
   };
 });

@@ -10,9 +10,9 @@ const props = withDefaults(
   },
 );
 
-const title = ref(props.title);
-const description = ref(props.description);
-const unsavedChanges = ref(props.unsavedChanges);
+const title = toRef(props, 'title');
+const description = toRef(props, 'description');
+const unsavedChanges = toRef(props, 'unsavedChanges');
 </script>
 
 <template>

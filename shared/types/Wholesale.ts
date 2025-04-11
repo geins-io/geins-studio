@@ -1,13 +1,14 @@
-export interface WholesaleAccount {
-  id: string;
+export interface WholesaleAccount extends GeinsEntity {
   name: string;
+  active: boolean;
   organizationNumber: string;
   externalId: string;
   channels: string[];
   tags: string[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  meta: Record<string, any>;
   addresses: WholesaleAccountAddress[];
+  salesReps: string[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  meta?: Record<string, any>;
 }
 
 export interface WholesaleAccountAddress {

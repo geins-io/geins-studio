@@ -5,6 +5,7 @@ const props = withDefaults(
     currentStep: number;
     title: string;
     createMode: boolean;
+    description?: string;
   }>(),
   {
     step: 1,
@@ -34,17 +35,23 @@ if (props.createMode) {
     <Collapsible v-model:open="isOpen">
       <CollapsibleTrigger
         v-if="createMode"
-        class="flex h-14 w-full items-center justify-between border-b p-4"
+        class="flex w-full items-center justify-between p-6"
       >
-        {{ stepTitle }}
+        <div class="text-left">
+          <h3 class="text-xl font-semibold">{{ stepTitle }}</h3>
+          <p v-if="description" class="mt-1 text-sm text-muted-foreground">
+            {{ description }}
+          </p>
+        </div>
+
         <LucideChevronDown
           :class="
-            cn(`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`)
+            cn(`size-6 transition-transform ${isOpen ? 'rotate-180' : ''}`)
           "
         />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div class="p-4">
+        <div class="p-6 pt-0">
           <slot />
         </div>
       </CollapsibleContent>
