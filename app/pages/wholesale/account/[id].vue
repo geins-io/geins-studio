@@ -89,8 +89,8 @@ const onSubmit = form.handleSubmit((values) => {
           <ButtonIcon v-if="!createMode" icon="copy" variant="secondary"
             >{{ $t('copy') }}
           </ButtonIcon>
-          <Button v-if="createMode" variant="secondary">Cancel</Button>
-          <ButtonIcon icon="save">{{
+          <!-- <Button v-if="createMode" variant="secondary">Cancel</Button> -->
+          <ButtonIcon v-if="!createMode" icon="save">{{
             $t('save_entity', { entityName })
           }}</ButtonIcon>
         </ContentActionBar>
@@ -107,8 +107,10 @@ const onSubmit = form.handleSubmit((values) => {
       <ContentEditCard
         :create-mode="createMode"
         :step="1"
+        :total-steps="2"
         :current-step="currentStep"
         title="Account details"
+        @next="currentStep++"
       >
         <form @submit.prevent="onSubmit">
           <FormGridWrap>
@@ -199,28 +201,17 @@ const onSubmit = form.handleSubmit((values) => {
       <ContentEditCard
         :create-mode="createMode"
         :step="2"
-        :current-step="1"
+        :total-steps="2"
+        :current-step="currentStep"
         title="Billing and shipping addresses"
         description="Optional step, this information can be added later on"
+        @previous="currentStep--"
       >
         Edit billing and shipping addresses
       </ContentEditCard>
-      <div class="flex flex-row justify-end gap-4">
-        <ButtonIcon
-          v-if="!createMode"
-          icon="new"
-          variant="secondary"
-          :href="newEntityUrl"
-        >
-          {{ $t('new') }}
-        </ButtonIcon>
-        <ButtonIcon v-if="!createMode" icon="copy" variant="secondary"
-          >{{ $t('copy') }}
-        </ButtonIcon>
-        <Button v-if="createMode" variant="secondary">Cancel</Button>
-        <ButtonIcon icon="save">{{
-          $t('save_entity', { entityName })
-        }}</ButtonIcon>
+      <div v-if="createMode" class="flex flex-row justify-end gap-4">
+        <Button variant="secondary">Cancel</Button>
+        <Button>{{ $t('create_entity', { entityName }) }}</Button>
       </div>
       <template #sidebar>
         <Card class="p-6">

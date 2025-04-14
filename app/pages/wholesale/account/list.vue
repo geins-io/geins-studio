@@ -41,6 +41,7 @@ loading.value = false;
 // MODIFY DATA
 dataList.value = dataList.value.map((account) => {
   const groups = [];
+  const salesReps: string[] = [];
 
   for (let i = account.tags.length - 1; i >= 0; i--) {
     if (account.tags[i]?.includes('group:')) {
@@ -49,9 +50,18 @@ dataList.value = dataList.value.map((account) => {
     }
   }
 
+  account.salesReps.forEach((salesRep) => {
+    const firstName = salesRep?.firstName;
+    const lastName = salesRep?.lastName;
+    const fullName = `${firstName} ${lastName}`;
+    salesReps.push(fullName);
+    console.log('🚀 ~ account.salesReps.forEach ~ fullName:', fullName);
+  });
+
   return {
     ...account,
     groups,
+    salesRepsNames: salesReps,
   };
 });
 
@@ -59,7 +69,8 @@ dataList.value = dataList.value.map((account) => {
 const columnOptions: ColumnOptions<Entity> = {
   entityLinkUrl: entityUrl,
   columnTypes: { name: 'entity-link' },
-  excludeColumns: ['meta', 'addresses'],
+  columnTitles: { salesRepsNames: 'Sales reps' },
+  excludeColumns: ['meta', 'addresses', 'salesReps', 'buyers'],
 };
 // GET AND SET COLUMNS
 const { getColumns } = useColumns<Entity>();
