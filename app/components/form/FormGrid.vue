@@ -42,7 +42,7 @@ const gridColsClass = computed(() => {
 </script>
 
 <template>
-  <div :class="`grid gap-6 ${gridColsClass}`">
+  <div :class="`grid space-x-6 ${gridColsClass}`">
     <slot />
   </div>
 </template>

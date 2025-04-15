@@ -4,6 +4,7 @@ import type { ColumnOptions, Category } from '#shared/types';
 
 type Entity = Category;
 
+const { t } = useI18n();
 const route = useRoute();
 const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
   route.fullPath,
@@ -35,7 +36,7 @@ const { data, error } = await useAPI<Entity[]>(apiEndpoint);
 if (!data?.value || error.value) {
   throw createError({
     ...error.value,
-    statusMessage: 'Failed to fetch categories',
+    statusMessage: t('failed_to_fetch_entity', { entityName }, 2),
   });
 } else {
   dataList.value = data.value as Entity[];

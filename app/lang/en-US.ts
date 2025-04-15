@@ -34,7 +34,7 @@ export default defineI18nLocale(async () => {
     entity_selection: '@.capitalize:{entityName} selection',
     entity_with_id_added_to_selection:
       '@.capitalize:{entityName} with ID {id} added to selection',
-    failed_to_fetch_entitity: 'Failed to fetch @:{entityName}',
+    failed_to_fetch_entity: 'Failed to fetch @:{entityName}',
     less_than: 'Less than',
     more_than: 'More than',
     exactly: 'Exactly',

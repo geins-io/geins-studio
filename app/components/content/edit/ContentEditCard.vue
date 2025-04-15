@@ -7,12 +7,16 @@ const props = withDefaults(
     title?: string;
     createMode?: boolean;
     description?: string;
+    stepValid?: boolean;
   }>(),
   {
     step: 1,
     currentStep: 1,
     totalSteps: 1,
     createMode: false,
+    title: '',
+    description: '',
+    stepValid: true,
   },
 );
 
@@ -43,6 +47,9 @@ const lastStep = computed(() => {
 const futureStep = computed(() => {
   return props.createMode && props.step > props.currentStep;
 });
+const isCurrentStep = computed(() => {
+  return props.createMode && props.step === props.currentStep;
+});
 
 const changeStep = (direction: 'previous' | 'next') => {
   emit(direction);
@@ -61,12 +68,7 @@ const changeStep = (direction: 'previous' | 'next') => {
           )
         "
       >
-        <div class="text-left">
-          <h3 class="text-xl font-semibold">{{ stepTitle }}</h3>
-          <p v-if="description" class="mt-1 text-sm text-muted-foreground">
-            {{ description }}
-          </p>
-        </div>
+        <ContentCardHeader :title="stepTitle" :description="description" />
 
         <LucideChevronDown
           v-if="createMode"
@@ -76,15 +78,16 @@ const changeStep = (direction: 'previous' | 'next') => {
         />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div class="p-6 pt-0">
+        <div class="space-y-6 p-6 pt-0">
           <slot />
           <div
-            class="mt-6 flex items-center justify-between border-t border-dashed pt-6"
+            class="flex items-center justify-between border-t border-dashed pt-6"
           >
             <Button
               v-if="!firstStep"
               class="mr-auto"
               variant="secondary"
+              :disabled="!isCurrentStep"
               @click="changeStep('previous')"
             >
               {{ $t('previous') }}
@@ -92,6 +95,7 @@ const changeStep = (direction: 'previous' | 'next') => {
             <Button
               v-if="!lastStep"
               class="ml-auto"
+              :disabled="!isCurrentStep || !stepValid"
               @click="changeStep('next')"
             >
               {{ $t('next') }}

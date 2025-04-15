@@ -2,13 +2,13 @@
 const props = withDefaults(
   defineProps<{
     title: string;
-    description: string;
-    size: 'lg' | 'md' | 'sm';
-    headingLevel: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+    description?: string;
+    size?: 'lg' | 'md' | 'sm';
+    headingLevel?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
   }>(),
   {
     size: 'lg',
-    headingLevel: 'h3',
+    headingLevel: 'h2',
   },
 );
 

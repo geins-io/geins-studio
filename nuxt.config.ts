@@ -28,6 +28,7 @@ export default defineNuxtConfig({
     '@nuxtjs/color-mode',
     '@nuxtjs/i18n',
     '@pinia/nuxt',
+    '@formkit/auto-animate/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',
     'nuxt-lucide-icons',
