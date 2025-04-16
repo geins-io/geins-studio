@@ -17,6 +17,8 @@ const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntity(
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
 const currentTab = ref(0);
+const loading = ref(false);
+const { channels } = useAccountStore();
 
 // COMPUTED GLOBALS
 const createMode = ref(route.params.id === newEntityUrlAlias);
@@ -34,7 +36,7 @@ const totalSteps = ref(2);
 // WHOLESALE ACCOUNT
 const wholesaleAccount = ref<Partial<WholesaleAccountCreate>>({
   name: '',
-  active: false,
+  active: true,
   organizationNumber: '',
   externalId: '',
   channels: [],
@@ -65,7 +67,7 @@ const formSchema = toTypedSchema(
   z.object({
     details: z
       .object({
-        name: z.string().min(1, { message: 'Name is required' }),
+        name: z.string().min(1, { message: 'Account name is required' }),
         organizationNumber: z
           .string()
           .min(1, { message: 'Organization number is required' }),
@@ -117,12 +119,30 @@ const form = useForm({
 });
 
 const formValid = computed(() => form.meta.value.valid);
+const formTouched = computed(() => form.meta.value.touched);
+
+watch(
+  form.values,
+  useDebounceFn(async (values) => {
+    wholesaleAccount.value = {
+      ...wholesaleAccount.value,
+      ...values.details,
+      addresses: [
+        {
+          ...billingAddress.value,
+          ...values.addresses?.billing,
+        },
+        {
+          ...deliveryAddress.value,
+          ...values.addresses?.delivery,
+        },
+      ],
+    };
+  }, 500),
+  { deep: true },
+);
 
 const saveAccountDetails = async (changeStep: boolean = true) => {
-  wholesaleAccount.value = {
-    ...wholesaleAccount.value,
-    ...form.values.details,
-  };
   form.setValues({
     addresses: {
       billing: {
@@ -135,20 +155,73 @@ const saveAccountDetails = async (changeStep: boolean = true) => {
 
 const previousStep = () => {
   currentStep.value--;
-  form.setValues({
-    details: wholesaleAccount.value,
-    addresses: {
-      billing: billingAddress.value,
-      delivery: deliveryAddress.value,
-    },
-  });
 };
 
 const useDeliveryAddress = ref(false);
 
 /* Sales reps */
-const admins = await useAPI('/wholesale/salesrep/list');
-console.log('🚀 ~ admins:', admins);
+const salesReps = ref<WholesaleSalesRep[]>([]);
+const salesRepsResult = await useAPI('/wholesale/salesrep/list');
+if (!salesRepsResult.error.value) {
+  salesReps.value = salesRepsResult.data.value as WholesaleSalesRep[];
+  salesReps.value = salesReps.value.map((salesRep) => ({
+    ...salesRep,
+    name: salesRep.firstName + ' ' + salesRep.lastName,
+  }));
+}
+
+const getEntityNameById = (id: string, dataList: GeinsEntity[]) => {
+  const entity = dataList?.find((entity) => entity._id === id);
+  return entity ? entity.name : '';
+};
+
+// SUMMMARY
+const summary = computed<DataList>(() => {
+  const dataList: DataList = [];
+  if (wholesaleAccount.value.name) {
+    dataList.push({
+      label: t('wholesale.account_name'),
+      value: wholesaleAccount.value.name,
+    });
+  }
+  if (wholesaleAccount.value.organizationNumber) {
+    dataList.push({
+      label: t('wholesale.org_nr'),
+      value: wholesaleAccount.value.organizationNumber,
+    });
+  }
+  if (wholesaleAccount.value.salesReps?.length) {
+    const displayValue = wholesaleAccount.value.salesReps
+      .map((id) => getEntityNameById(id, salesReps.value))
+      .join(', ');
+    dataList.push({
+      label: t('wholesale.sales_reps'),
+      value: displayValue,
+    });
+  }
+  if (wholesaleAccount.value.channels?.length) {
+    const displayValue = wholesaleAccount.value.channels
+      .map((id) => getEntityNameById(id, channels))
+      .join(', ');
+    dataList.push({
+      label: t('wholesale.channels'),
+      value: displayValue,
+    });
+  }
+  return dataList;
+});
+
+// CREATE ACCOUNT
+
+const createAccount = async () => {
+  loading.value = true;
+  const result = await useAPI('/wholesale/account', {
+    method: 'POST',
+    body: JSON.stringify(wholesaleAccount.value),
+  });
+  console.log('🚀 ~ createAccount ~ result:', result);
+  loading.value = false;
+};
 </script>
 
 <template>
@@ -230,23 +303,11 @@ console.log('🚀 ~ admins:', admins);
                 <FormItem v-auto-animate>
                   <FormLabel>{{ $t('wholesale.sales_reps') }}</FormLabel>
                   <FormControl>
-                    <TagsInput
-                      :model-value="componentField.modelValue"
-                      @update:model-value="
-                        componentField['onUpdate:modelValue']
-                      "
-                    >
-                      <TagsInputItem
-                        v-for="item in componentField.modelValue"
-                        :key="item"
-                        :value="item"
-                      >
-                        <TagsInputItemText />
-                        <TagsInputItemDelete />
-                      </TagsInputItem>
-
-                      <TagsInputInput placeholder="Choose..." />
-                    </TagsInput>
+                    <FormInputTagsSearch
+                      v-model="componentField.modelValue"
+                      entity-name="sales_rep"
+                      :data-set="salesReps"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -257,23 +318,11 @@ console.log('🚀 ~ admins:', admins);
                 <FormItem v-auto-animate>
                   <FormLabel>{{ $t('wholesale.channels') }}</FormLabel>
                   <FormControl>
-                    <TagsInput
-                      :model-value="componentField.modelValue"
-                      @update:model-value="
-                        componentField['onUpdate:modelValue']
-                      "
-                    >
-                      <TagsInputItem
-                        v-for="item in componentField.modelValue"
-                        :key="item"
-                        :value="item"
-                      >
-                        <TagsInputItemText />
-                        <TagsInputItemDelete />
-                      </TagsInputItem>
-
-                      <TagsInputInput placeholder="Choose..." />
-                    </TagsInput>
+                    <FormInputTagsSearch
+                      v-model="componentField.modelValue"
+                      entity-name="channel"
+                      :data-set="channels"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -612,12 +661,20 @@ console.log('🚀 ~ admins:', admins);
         </ContentEditCard>
         <div v-if="createMode" class="flex flex-row justify-end gap-4">
           <Button variant="secondary">Cancel</Button>
-          <Button>{{ $t('create_entity', { entityName }) }}</Button>
+          <Button
+            :disabled="!formValid"
+            :loading="loading"
+            @click="createAccount"
+            >{{ $t('create_entity', { entityName }) }}</Button
+          >
         </div>
         <template #sidebar>
-          <Card class="p-6">
-            <h3 class="text-xl font-semibold">Summary</h3>
-          </Card>
+          <ContentEditSummary
+            v-model="wholesaleAccount.active"
+            :create-mode="createMode"
+            :form-touched="formTouched"
+            :summary="summary"
+          />
         </template>
       </ContentEditMain>
     </form>

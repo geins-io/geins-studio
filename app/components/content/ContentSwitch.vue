@@ -25,10 +25,12 @@ const leave = (el: Element) => {
 <template>
   <div class="rounded-lg border p-4 text-sm">
     <div class="flex flex-row items-center justify-between">
-      <div class="space-y-0.5">
-        <p class="font-semibold">{{ label }}</p>
-        <p v-if="description">{{ description }}</p>
-      </div>
+      <ContentCardHeader
+        :title="label"
+        :description="description"
+        size="sm"
+        heading-level="h4"
+      />
       <div>
         <Switch v-model:checked="checked" />
       </div>
@@ -42,7 +44,7 @@ const leave = (el: Element) => {
       <div
         v-show="checked"
         :data-state="checked ? 'open' : 'closed'"
-        class="overflow-hidden pt-4 transition-all"
+        class="overflow-hidden pt-4 transition-all duration-300"
       >
         <slot />
       </div>

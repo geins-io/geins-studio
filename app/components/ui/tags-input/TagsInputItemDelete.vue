@@ -1,24 +1,33 @@
 <script setup lang="ts">
-import { cn } from '@/utils'
-import { Cross2Icon } from '@radix-icons/vue'
-import { TagsInputItemDelete, type TagsInputItemDeleteProps, useForwardProps } from 'radix-vue'
-import { computed, type HTMLAttributes } from 'vue'
+import { cn } from '@/utils';
+import { X } from 'lucide-vue-next';
+import {
+  TagsInputItemDelete,
+  type TagsInputItemDeleteProps,
+  useForwardProps,
+} from 'reka-ui';
+import { computed, type HTMLAttributes } from 'vue';
 
-const props = defineProps<TagsInputItemDeleteProps & { class?: HTMLAttributes['class'] }>()
+const props = defineProps<
+  TagsInputItemDeleteProps & { class?: HTMLAttributes['class'] }
+>();
 
 const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props
+  const { class: _, ...delegated } = props;
 
-  return delegated
-})
+  return delegated;
+});
 
-const forwardedProps = useForwardProps(delegatedProps)
+const forwardedProps = useForwardProps(delegatedProps);
 </script>
 
 <template>
-  <TagsInputItemDelete v-bind="forwardedProps" :class="cn('flex rounded bg-transparent mr-1', props.class)">
+  <TagsInputItemDelete
+    v-bind="forwardedProps"
+    :class="cn('mr-1 flex rounded bg-transparent', props.class)"
+  >
     <slot>
-      <Cross2Icon class="size-4" />
+      <X class="size-4" />
     </slot>
   </TagsInputItemDelete>
 </template>

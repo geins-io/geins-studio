@@ -8,9 +8,9 @@ export const useAccountStore = defineStore('account', () => {
 
   // STATE
   const account = ref<Account>();
-  const channels = ref<Channel[]>();
-  const currencies = ref<Currency[]>();
-  const languages = ref<Language[]>();
+  const channels = ref<Channel[]>([]);
+  const currencies = ref<Currency[]>([]);
+  const languages = ref<Language[]>([]);
   const ready = ref(false);
   const currentChannelId = useCookie('geins-channel', {
     default: () => fallback.channel.toString(),
@@ -99,9 +99,9 @@ export const useAccountStore = defineStore('account', () => {
 
   return {
     account,
-    channels,
-    currencies,
-    languages,
+    channels: computed(() => channels.value),
+    currencies: computed(() => currencies.value),
+    languages: computed(() => languages.value),
     ready,
     currentChannelId,
     currentLanguage,

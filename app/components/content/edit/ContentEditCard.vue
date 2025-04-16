@@ -52,13 +52,16 @@ const isCurrentStep = computed(() => {
 });
 
 const changeStep = (direction: 'previous' | 'next') => {
+  if (!props.stepValid) {
+    return;
+  }
   emit(direction);
 };
 </script>
 
 <template>
   <Card>
-    <Collapsible v-model:open="isOpen">
+    <Collapsible v-model:open="isOpen" :unmount-on-hide="false">
       <CollapsibleTrigger
         :class="
           cn(
