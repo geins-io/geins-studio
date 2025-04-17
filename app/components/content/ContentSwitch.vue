@@ -21,11 +21,15 @@ const beforeLeave = (el: Element) => {
 const leave = (el: Element) => {
   (el as HTMLElement).style.height = '0';
 };
+
+const slots = useSlots();
+const hasSlotContent = computed(() => !!slots.default);
 </script>
 <template>
   <div class="rounded-lg border p-4 text-sm">
     <div class="flex flex-row items-center justify-between">
       <ContentCardHeader
+        v-auto-animate
         :title="label"
         :description="description"
         size="sm"
@@ -36,6 +40,7 @@ const leave = (el: Element) => {
       </div>
     </div>
     <transition
+      v-if="hasSlotContent"
       @before-enter="beforeEnter"
       @enter="enter"
       @before-leave="beforeLeave"

@@ -23,8 +23,14 @@ const description = computed(() => {
 });
 </script>
 <template>
-  <Card class="p-6">
+  <Card class="space-y-4 p-6">
     <ContentCardHeader title="Summary" :description="description" />
+    <ContentSwitch
+      v-if="!props.createMode"
+      v-model:checked="active"
+      :label="active ? 'Active' : 'Inactive'"
+      :description="active ? 'Account is active' : 'Account is inactive'"
+    />
     <ContentDataList v-if="summary.length" :data-list="summary" />
   </Card>
 </template>

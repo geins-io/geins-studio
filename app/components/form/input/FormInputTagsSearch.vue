@@ -1,5 +1,4 @@
 <script setup lang="ts" generic="T extends GeinsEntity">
-import { get } from '@vueuse/core';
 import {
   useFilter,
   type AcceptableValue,
@@ -60,6 +59,18 @@ const handleSelect = (event: ListboxItemSelectEvent<AcceptableValue>) => {
   }
 };
 
+const handleFocus = async () => {
+  setTimeout(() => {
+    open.value = true;
+  }, 0);
+};
+
+const handleBlur = async () => {
+  setTimeout(() => {
+    open.value = false;
+  }, 5);
+};
+
 const getName = (id: AcceptableValue): string => {
   const item = dataSet.value?.find((i) => i._id === id);
   return item?.name || '';
@@ -84,8 +95,8 @@ const getName = (id: AcceptableValue): string => {
           <TagsInputInput
             :placeholder="placeholder"
             class="h-auto w-full min-w-[200px] border-none p-0 focus-visible:ring-0"
-            @focus="open = true"
-            @blur="open = false"
+            @focus.stop="handleFocus"
+            @blur.stop="handleBlur"
             @keydown.enter.prevent
           />
         </ComboboxInput>

@@ -18,7 +18,8 @@ const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
 const currentTab = ref(0);
 const loading = ref(false);
-const { channels } = useAccountStore();
+const accountStore = useAccountStore();
+const { channels } = storeToRefs(accountStore);
 
 // COMPUTED GLOBALS
 const createMode = ref(route.params.id === newEntityUrlAlias);
@@ -26,7 +27,7 @@ const title = computed(() =>
   createMode.value
     ? t('new_entity', { entityName }) +
       (wholesaleAccount.value.name ? ': ' + wholesaleAccount.value.name : '')
-    : t('edit_entity', { entityName }),
+    : wholesaleAccount.value.name || t('edit_entity', { entityName }),
 );
 
 // STEPS SETUP
@@ -44,6 +45,69 @@ const wholesaleAccount = ref<Partial<WholesaleAccountCreate>>({
   salesReps: [],
   addresses: [],
 });
+
+/* Addresses */
+const getAddressObj = (type: AddressType) =>
+  ref<Partial<WholesaleAccountAddress>>({
+    addressType: type,
+    email: '',
+    phone: '',
+    companyName: '',
+    firstName: '',
+    lastName: '',
+    careOf: '',
+    address1: '',
+    address2: '',
+    address3: '',
+    zip: '',
+    city: '',
+    region: '',
+    country: '',
+  });
+
+const billingAddress = getAddressObj('billing');
+const deliveryAddress = getAddressObj('delivery');
+
+// GET DATA IF NOT CREATE MODE
+if (!createMode.value) {
+  const { data, error } = await useAPI(
+    `/wholesale/account/${route.params.id}`,
+    {
+      method: 'GET',
+    },
+  );
+  if (error.value) {
+    console.error('Error fetching wholesale account:', error.value);
+  } else if (data.value) {
+    const account = data.value as WholesaleAccount;
+    const wholesaleAccountCreate: WholesaleAccountCreate = (data.value = {
+      ...wholesaleAccount.value,
+      ...account,
+      salesReps: account.salesReps?.map((salesRep) => salesRep._id || ''),
+    });
+    wholesaleAccount.value = wholesaleAccountCreate;
+    billingAddress.value = {
+      ...account.addresses?.find(
+        (address) => address.addressType === 'billing',
+      ),
+    };
+    deliveryAddress.value = {
+      ...account.addresses?.find(
+        (address) => address.addressType === 'delivery',
+      ),
+    };
+  }
+}
+/* Sales reps */
+const salesReps = ref<WholesaleSalesRep[]>([]);
+const salesRepsResult = await useAPI('/wholesale/salesrep/list');
+if (!salesRepsResult.error.value) {
+  salesReps.value = salesRepsResult.data.value as WholesaleSalesRep[];
+  salesReps.value = salesReps.value.map((salesRep) => ({
+    ...salesRep,
+    name: salesRep.firstName + ' ' + salesRep.lastName,
+  }));
+}
 
 // FORMS SETTINGS
 const addressSchema = z
@@ -85,28 +149,6 @@ const formSchema = toTypedSchema(
   }),
 );
 
-/* Addresses */
-const getAddressObj = (type: AddressType) =>
-  ref<Partial<WholesaleAccountAddress>>({
-    addressType: type,
-    email: '',
-    phone: '',
-    companyName: '',
-    firstName: '',
-    lastName: '',
-    careOf: '',
-    address1: '',
-    address2: '',
-    address3: '',
-    zip: '',
-    city: '',
-    region: '',
-    country: '',
-  });
-
-const billingAddress = getAddressObj('billing');
-const deliveryAddress = getAddressObj('delivery');
-
 const form = useForm({
   validationSchema: formSchema,
   initialValues: {
@@ -138,6 +180,10 @@ watch(
         },
       ],
     };
+    // TODO: solve before launch, need to trigger validation here if channel is last
+    if (wholesaleAccount.value.channels?.length) {
+      await form.validate();
+    }
   }, 500),
   { deep: true },
 );
@@ -158,17 +204,6 @@ const previousStep = () => {
 };
 
 const useDeliveryAddress = ref(false);
-
-/* Sales reps */
-const salesReps = ref<WholesaleSalesRep[]>([]);
-const salesRepsResult = await useAPI('/wholesale/salesrep/list');
-if (!salesRepsResult.error.value) {
-  salesReps.value = salesRepsResult.data.value as WholesaleSalesRep[];
-  salesReps.value = salesReps.value.map((salesRep) => ({
-    ...salesRep,
-    name: salesRep.firstName + ' ' + salesRep.lastName,
-  }));
-}
 
 const getEntityNameById = (id: string, dataList: GeinsEntity[]) => {
   const entity = dataList?.find((entity) => entity._id === id);
@@ -201,7 +236,7 @@ const summary = computed<DataList>(() => {
   }
   if (wholesaleAccount.value.channels?.length) {
     const displayValue = wholesaleAccount.value.channels
-      .map((id) => getEntityNameById(id, channels))
+      .map((id) => getEntityNameById(id, channels.value))
       .join(', ');
     dataList.push({
       label: t('wholesale.channels'),
@@ -670,7 +705,7 @@ const createAccount = async () => {
         </div>
         <template #sidebar>
           <ContentEditSummary
-            v-model="wholesaleAccount.active"
+            v-model:active="wholesaleAccount.active"
             :create-mode="createMode"
             :form-touched="formTouched"
             :summary="summary"

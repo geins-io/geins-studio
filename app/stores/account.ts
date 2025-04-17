@@ -99,9 +99,9 @@ export const useAccountStore = defineStore('account', () => {
 
   return {
     account,
-    channels: computed(() => channels.value),
-    currencies: computed(() => currencies.value),
-    languages: computed(() => languages.value),
+    channels,
+    currencies,
+    languages,
     ready,
     currentChannelId,
     currentLanguage,

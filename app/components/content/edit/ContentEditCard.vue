@@ -84,6 +84,7 @@ const changeStep = (direction: 'previous' | 'next') => {
         <div class="space-y-6 p-6 pt-0">
           <slot />
           <div
+            v-if="createMode"
             class="flex items-center justify-between border-t border-dashed pt-6"
           >
             <Button

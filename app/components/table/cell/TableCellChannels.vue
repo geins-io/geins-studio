@@ -3,9 +3,10 @@ const _props = defineProps<{
   channelIds: string[];
 }>();
 
-const { channels } = useAccountStore();
+const accountStore = useAccountStore();
+const { channels } = storeToRefs(accountStore);
 const getChannelName = (channelId: string) => {
-  const channel = channels?.find((channel) => channel._id === channelId);
+  const channel = channels.value.find((channel) => channel._id === channelId);
   return channel ? channel.name : '';
 };
 </script>

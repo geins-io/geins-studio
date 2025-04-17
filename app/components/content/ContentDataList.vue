@@ -9,7 +9,7 @@ const _props = withDefaults(
 );
 </script>
 <template>
-  <ul v-auto-animate class="mt-4 space-y-3 border-t pt-4 text-sm">
+  <ul v-auto-animate class="space-y-3 border-t pt-4 text-sm">
     <li
       v-for="(item, index) in dataList"
       :key="index"
