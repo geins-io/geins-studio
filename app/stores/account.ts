@@ -90,12 +90,27 @@ export const useAccountStore = defineStore('account', () => {
     ready.value = false;
   }
 
+  function getChannelNameById(id: string): string {
+    const channel = channels.value.find((channel) => channel._id === id);
+    return channel ? channel.name : '';
+  }
+
   // GETTERS
   const currentChannel = computed(() => {
     return channels.value?.find(
       (channel) => channel._id === currentChannelId.value,
     );
   });
+
+  const currentCountries = computed(() => {
+    return (
+      currentChannel.value?.markets.map((market) => {
+        return market.country;
+      }) || []
+    );
+  });
+
+  // ACTIONS
 
   return {
     account,
@@ -112,6 +127,8 @@ export const useAccountStore = defineStore('account', () => {
     fetchLanguages,
     init,
     reset,
+    getChannelNameById,
     currentChannel,
+    currentCountries,
   };
 });

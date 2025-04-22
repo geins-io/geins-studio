@@ -72,7 +72,7 @@ const columnOptions: ColumnOptions<EntityList> = {
   entityLinkUrl: entityUrl,
   columnTypes: { name: 'entity-link' },
   columnTitles: { salesReps: 'Sales reps' },
-  excludeColumns: ['meta', 'addresses', 'buyers'],
+  excludeColumns: ['meta', 'addresses', 'buyers', 'tags'],
 };
 // GET AND SET COLUMNS
 const { getColumns } = useColumns<EntityList>();

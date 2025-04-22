@@ -79,7 +79,7 @@ const _simpleSelection = computed(() =>
         </template>
       </ContentHeader>
     </template>
-    <ContentEditMain :has-sidebar="false">
+    <ContentEditMain>
       <ContentCard>
         <Selector
           v-if="currentEntities?.length"

@@ -13,6 +13,9 @@ const _props = withDefaults(
 );
 const tableMaximized = useState<boolean>('table-maximized');
 // TODO: Dynamic breadcrumbs
+
+const slots = useSlots();
+const hasTabs = computed(() => !!slots.tabs);
 </script>
 
 <template>
@@ -58,7 +61,12 @@ const tableMaximized = useState<boolean>('table-maximized');
       </BreadcrumbList>
     </Breadcrumb>
     <div
-      class="content-header mb-4 flex flex-wrap justify-between border-b pb-2"
+      :class="
+        cn(
+          'content-header mb-4 flex flex-wrap justify-between border-b',
+          `${hasTabs ? 'pb-0' : 'pb-2'}`,
+        )
+      "
     >
       <slot name="title">
         <ContentTitleBlock :title="title" :description="description" />

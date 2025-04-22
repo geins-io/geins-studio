@@ -47,17 +47,18 @@ onMounted(() => {
   <nav class="w-full">
     <ul class="flex gap-2">
       <li v-for="(tab, index) in tabs" :key="index">
-        <Button
-          variant="ghost"
+        <button
+          type="button"
           :class="
             cn(
-              `${currentTab === index ? 'border-border bg-card hover:bg-card' : ''}`,
+              'border-b-4 border-transparent px-3 py-1.5 text-sm font-bold text-muted-foreground transition-colors duration-200 ease-in-out',
+              `${currentTab === index ? 'border-primary text-primary' : ''}`,
             )
           "
           @click="setCurrentTab(index)"
         >
           {{ tab }}
-        </Button>
+        </button>
       </li>
     </ul>
   </nav>

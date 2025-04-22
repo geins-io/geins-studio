@@ -19,7 +19,6 @@ const newEntityUrl = getNewEntityUrl();
 const currentTab = ref(0);
 const loading = ref(false);
 const accountStore = useAccountStore();
-const { channels } = storeToRefs(accountStore);
 
 // COMPUTED GLOBALS
 const createMode = ref(route.params.id === newEntityUrlAlias);
@@ -236,7 +235,7 @@ const summary = computed<DataList>(() => {
   }
   if (wholesaleAccount.value.channels?.length) {
     const displayValue = wholesaleAccount.value.channels
-      .map((id) => getEntityNameById(id, channels.value))
+      .map((id) => accountStore.getChannelNameById(id))
       .join(', ');
     dataList.push({
       label: t('wholesale.channels'),
@@ -290,259 +289,95 @@ const createAccount = async () => {
       </ContentHeader>
     </template>
     <form @submit.prevent>
-      <ContentEditMain v-if="currentTab === 0">
-        <ContentEditCard
-          :create-mode="createMode"
-          :step="1"
-          :total-steps="totalSteps"
-          :current-step="currentStep"
-          :step-valid="formValid"
-          title="Account details"
-          @next="saveAccountDetails"
-        >
-          <FormGridWrap>
-            <FormGrid design="2+1+1">
-              <FormField v-slot="{ componentField }" name="details.name">
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('wholesale.account_name') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-              <FormField
-                v-slot="{ componentField }"
-                name="details.organizationNumber"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('wholesale.org_nr') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-              <FormField v-slot="{ componentField }" name="details.externalId">
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('wholesale.external_id') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-            <FormGrid design="1">
-              <FormField v-slot="{ componentField }" name="details.salesReps">
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('wholesale.sales_reps') }}</FormLabel>
-                  <FormControl>
-                    <FormInputTagsSearch
-                      v-model="componentField.modelValue"
-                      entity-name="sales_rep"
-                      :data-set="salesReps"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-            <FormGrid design="1">
-              <FormField v-slot="{ componentField }" name="details.channels">
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('wholesale.channels') }}</FormLabel>
-                  <FormControl>
-                    <FormInputTagsSearch
-                      v-model="componentField.modelValue"
-                      entity-name="channel"
-                      :data-set="channels"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-          </FormGridWrap>
-        </ContentEditCard>
-        <ContentEditCard
-          :create-mode="createMode"
-          :step="2"
-          :total-steps="totalSteps"
-          :current-step="currentStep"
-          title="Billing and shipping addresses"
-          description="Optional step, this information can be added later on"
-          @previous="previousStep"
-        >
-          <FormGridWrap>
-            <FormGrid design="2+1+1">
-              <FormField
-                v-slot="{ componentField }"
-                name="addresses.billing.companyName"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('address.company_name') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-            <FormGrid design="2+1+1">
-              <FormField
-                v-slot="{ componentField }"
-                name="addresses.billing.address1"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('address.address1') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-              <FormField
-                v-slot="{ componentField }"
-                name="addresses.billing.zip"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('address.zip') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-              <FormField
-                v-slot="{ componentField }"
-                name="addresses.billing.city"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('address.city') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-            <FormGrid design="1+1">
-              <FormField
-                v-slot="{ componentField }"
-                name="addresses.billing.address2"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('address.address2') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-              <FormField
-                v-slot="{ componentField }"
-                name="addresses.billing.country"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('address.country') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-            <FormGrid design="1+1">
-              <FormField
-                v-slot="{ componentField }"
-                name="addresses.billing.region"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('address.region') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-          </FormGridWrap>
-          <ContentCardHeader
-            size="md"
-            heading-level="h3"
-            title="Contact person"
-            description="Contact person related to the address"
-          />
-          <FormGridWrap>
-            <FormGrid design="1+1">
-              <FormField
-                v-slot="{ componentField }"
-                name="addresses.billing.firstName"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('address.first_name') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-              <FormField
-                v-slot="{ componentField }"
-                name="addresses.billing.lastName"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('address.last_name') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-            <FormGrid design="1+1">
-              <FormField
-                v-slot="{ componentField }"
-                name="addresses.billing.email"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('address.email') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="email" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-              <FormField
-                v-slot="{ componentField }"
-                name="addresses.billing.phone"
-              >
-                <FormItem v-auto-animate>
-                  <FormLabel>{{ $t('address.phone') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" type="text" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-          </FormGridWrap>
-          <ContentCardHeader
-            size="md"
-            heading-level="h3"
-            title="Shipping address"
-          />
-          <ContentSwitch
-            v-model:checked="useDeliveryAddress"
-            label="Add different shipping address"
-            description="Activate to add a different shipping address"
+      <KeepAlive>
+        <ContentEditMain v-if="currentTab === 0">
+          <ContentEditCard
+            :create-mode="createMode"
+            :step="1"
+            :total-steps="totalSteps"
+            :current-step="currentStep"
+            :step-valid="formValid"
+            title="Account details"
+            @next="saveAccountDetails"
+          >
+            <FormGridWrap>
+              <FormGrid design="2+1+1">
+                <FormField v-slot="{ componentField }" name="details.name">
+                  <FormItem v-auto-animate>
+                    <FormLabel>{{ $t('wholesale.account_name') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" type="text" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+                <FormField
+                  v-slot="{ componentField }"
+                  name="details.organizationNumber"
+                >
+                  <FormItem v-auto-animate>
+                    <FormLabel>{{ $t('wholesale.org_nr') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" type="text" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+                <FormField
+                  v-slot="{ componentField }"
+                  name="details.externalId"
+                >
+                  <FormItem v-auto-animate>
+                    <FormLabel>{{ $t('wholesale.external_id') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" type="text" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </FormGrid>
+              <FormGrid design="1">
+                <FormField v-slot="{ componentField }" name="details.salesReps">
+                  <FormItem v-auto-animate>
+                    <FormLabel>{{ $t('wholesale.sales_reps') }}</FormLabel>
+                    <FormControl>
+                      <FormInputTagsSearch
+                        v-model="componentField.modelValue"
+                        entity-name="sales_rep"
+                        :data-set="salesReps"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </FormGrid>
+              <FormGrid design="1">
+                <FormField v-slot="{ componentField }" name="details.channels">
+                  <FormItem v-auto-animate>
+                    <FormLabel>{{ $t('wholesale.channels') }}</FormLabel>
+                    <FormControl>
+                      <FormInputChannels v-model="componentField.modelValue" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </FormGrid>
+            </FormGridWrap>
+          </ContentEditCard>
+          <ContentEditCard
+            :create-mode="createMode"
+            :step="2"
+            :total-steps="totalSteps"
+            :current-step="currentStep"
+            title="Billing and shipping addresses"
+            description="Optional step, this information can be added later on"
+            @previous="previousStep"
           >
             <FormGridWrap>
               <FormGrid design="2+1+1">
                 <FormField
                   v-slot="{ componentField }"
-                  name="addresses.delivery.companyName"
+                  name="addresses.billing.companyName"
                 >
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('address.company_name') }}</FormLabel>
@@ -556,7 +391,7 @@ const createAccount = async () => {
               <FormGrid design="2+1+1">
                 <FormField
                   v-slot="{ componentField }"
-                  name="addresses.delivery.address1"
+                  name="addresses.billing.address1"
                 >
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('address.address1') }}</FormLabel>
@@ -568,7 +403,7 @@ const createAccount = async () => {
                 </FormField>
                 <FormField
                   v-slot="{ componentField }"
-                  name="addresses.delivery.zip"
+                  name="addresses.billing.zip"
                 >
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('address.zip') }}</FormLabel>
@@ -580,7 +415,7 @@ const createAccount = async () => {
                 </FormField>
                 <FormField
                   v-slot="{ componentField }"
-                  name="addresses.delivery.city"
+                  name="addresses.billing.city"
                 >
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('address.city') }}</FormLabel>
@@ -594,7 +429,7 @@ const createAccount = async () => {
               <FormGrid design="1+1">
                 <FormField
                   v-slot="{ componentField }"
-                  name="addresses.delivery.address2"
+                  name="addresses.billing.address2"
                 >
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('address.address2') }}</FormLabel>
@@ -606,12 +441,14 @@ const createAccount = async () => {
                 </FormField>
                 <FormField
                   v-slot="{ componentField }"
-                  name="addresses.delivery.country"
+                  name="addresses.billing.country"
                 >
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('address.country') }}</FormLabel>
                     <FormControl>
-                      <Input v-bind="componentField" type="text" />
+                      <FormInputCountrySelect
+                        v-model="componentField.modelValue"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -620,7 +457,7 @@ const createAccount = async () => {
               <FormGrid design="1+1">
                 <FormField
                   v-slot="{ componentField }"
-                  name="addresses.delivery.region"
+                  name="addresses.billing.region"
                 >
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('address.region') }}</FormLabel>
@@ -631,87 +468,266 @@ const createAccount = async () => {
                   </FormItem>
                 </FormField>
               </FormGrid>
-              <ContentCardHeader
-                size="md"
-                heading-level="h3"
-                title="Contact person"
-                description="Contact person related to the address"
-              />
-              <FormGridWrap>
-                <FormGrid design="1+1">
-                  <FormField
-                    v-slot="{ componentField }"
-                    name="addresses.delivery.firstName"
-                  >
-                    <FormItem v-auto-animate>
-                      <FormLabel>{{ $t('address.first_name') }}</FormLabel>
-                      <FormControl>
-                        <Input v-bind="componentField" type="text" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                  <FormField
-                    v-slot="{ componentField }"
-                    name="addresses.delivery.lastName"
-                  >
-                    <FormItem v-auto-animate>
-                      <FormLabel>{{ $t('address.last_name') }}</FormLabel>
-                      <FormControl>
-                        <Input v-bind="componentField" type="text" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                </FormGrid>
-                <FormGrid design="1+1">
-                  <FormField
-                    v-slot="{ componentField }"
-                    name="addresses.delivery.email"
-                  >
-                    <FormItem v-auto-animate>
-                      <FormLabel>{{ $t('address.email') }}</FormLabel>
-                      <FormControl>
-                        <Input v-bind="componentField" type="email" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                  <FormField
-                    v-slot="{ componentField }"
-                    name="addresses.delivery.phone"
-                  >
-                    <FormItem v-auto-animate>
-                      <FormLabel>{{ $t('address.phone') }}</FormLabel>
-                      <FormControl>
-                        <Input v-bind="componentField" type="text" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                </FormGrid>
-              </FormGridWrap>
             </FormGridWrap>
-          </ContentSwitch>
-        </ContentEditCard>
-        <div v-if="createMode" class="flex flex-row justify-end gap-4">
-          <Button variant="secondary">Cancel</Button>
-          <Button
-            :disabled="!formValid"
-            :loading="loading"
-            @click="createAccount"
-            >{{ $t('create_entity', { entityName }) }}</Button
-          >
-        </div>
-        <template #sidebar>
-          <ContentEditSummary
-            v-model:active="wholesaleAccount.active"
+            <ContentCardHeader
+              size="md"
+              heading-level="h3"
+              title="Contact person"
+              description="Contact person related to the address"
+            />
+            <FormGridWrap>
+              <FormGrid design="1+1">
+                <FormField
+                  v-slot="{ componentField }"
+                  name="addresses.billing.firstName"
+                >
+                  <FormItem v-auto-animate>
+                    <FormLabel>{{ $t('address.first_name') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" type="text" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+                <FormField
+                  v-slot="{ componentField }"
+                  name="addresses.billing.lastName"
+                >
+                  <FormItem v-auto-animate>
+                    <FormLabel>{{ $t('address.last_name') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" type="text" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </FormGrid>
+              <FormGrid design="1+1">
+                <FormField
+                  v-slot="{ componentField }"
+                  name="addresses.billing.email"
+                >
+                  <FormItem v-auto-animate>
+                    <FormLabel>{{ $t('address.email') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" type="email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+                <FormField
+                  v-slot="{ componentField }"
+                  name="addresses.billing.phone"
+                >
+                  <FormItem v-auto-animate>
+                    <FormLabel>{{ $t('address.phone') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" type="text" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </FormGrid>
+            </FormGridWrap>
+            <ContentCardHeader
+              size="md"
+              heading-level="h3"
+              title="Shipping address"
+            />
+            <ContentSwitch
+              v-model:checked="useDeliveryAddress"
+              label="Add different shipping address"
+              description="Activate to add a different shipping address"
+            >
+              <FormGridWrap>
+                <FormGrid design="2+1+1">
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="addresses.delivery.companyName"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel>{{ $t('address.company_name') }}</FormLabel>
+                      <FormControl>
+                        <Input v-bind="componentField" type="text" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+                <FormGrid design="2+1+1">
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="addresses.delivery.address1"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel>{{ $t('address.address1') }}</FormLabel>
+                      <FormControl>
+                        <Input v-bind="componentField" type="text" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="addresses.delivery.zip"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel>{{ $t('address.zip') }}</FormLabel>
+                      <FormControl>
+                        <Input v-bind="componentField" type="text" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="addresses.delivery.city"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel>{{ $t('address.city') }}</FormLabel>
+                      <FormControl>
+                        <Input v-bind="componentField" type="text" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+                <FormGrid design="1+1">
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="addresses.delivery.address2"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel>{{ $t('address.address2') }}</FormLabel>
+                      <FormControl>
+                        <Input v-bind="componentField" type="text" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="addresses.delivery.country"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel>{{ $t('address.country') }}</FormLabel>
+                      <FormControl>
+                        <FormInputCountrySelect
+                          v-model="componentField.modelValue"
+                        />
+                        <Input v-bind="componentField" type="text" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+                <FormGrid design="1+1">
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="addresses.delivery.region"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel>{{ $t('address.region') }}</FormLabel>
+                      <FormControl>
+                        <Input v-bind="componentField" type="text" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+                <ContentCardHeader
+                  size="md"
+                  heading-level="h3"
+                  title="Contact person"
+                  description="Contact person related to the address"
+                />
+                <FormGridWrap>
+                  <FormGrid design="1+1">
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="addresses.delivery.firstName"
+                    >
+                      <FormItem v-auto-animate>
+                        <FormLabel>{{ $t('address.first_name') }}</FormLabel>
+                        <FormControl>
+                          <Input v-bind="componentField" type="text" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="addresses.delivery.lastName"
+                    >
+                      <FormItem v-auto-animate>
+                        <FormLabel>{{ $t('address.last_name') }}</FormLabel>
+                        <FormControl>
+                          <Input v-bind="componentField" type="text" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                  <FormGrid design="1+1">
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="addresses.delivery.email"
+                    >
+                      <FormItem v-auto-animate>
+                        <FormLabel>{{ $t('address.email') }}</FormLabel>
+                        <FormControl>
+                          <Input v-bind="componentField" type="email" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="addresses.delivery.phone"
+                    >
+                      <FormItem v-auto-animate>
+                        <FormLabel>{{ $t('address.phone') }}</FormLabel>
+                        <FormControl>
+                          <Input v-bind="componentField" type="text" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                </FormGridWrap>
+              </FormGridWrap>
+            </ContentSwitch>
+          </ContentEditCard>
+          <div v-if="createMode" class="flex flex-row justify-end gap-4">
+            <Button variant="secondary">Cancel</Button>
+            <Button
+              :disabled="!formValid"
+              :loading="loading"
+              @click="createAccount"
+              >{{ $t('create_entity', { entityName }) }}</Button
+            >
+          </div>
+          <template #sidebar>
+            <ContentEditSummary
+              v-model:active="wholesaleAccount.active"
+              :create-mode="createMode"
+              :form-touched="formTouched"
+              :summary="summary"
+            />
+          </template>
+        </ContentEditMain>
+      </KeepAlive>
+      <KeepAlive>
+        <ContentEditMain v-if="currentTab === 1">
+          <ContentEditCard
             :create-mode="createMode"
-            :form-touched="formTouched"
-            :summary="summary"
-          />
-        </template>
-      </ContentEditMain>
+            title="Buyers"
+            description="Add buyers to the account"
+          >
+            LALALA...
+          </ContentEditCard>
+        </ContentEditMain>
+      </KeepAlive>
     </form>
   </ContentEditWrap>
 </template>

@@ -13,7 +13,7 @@ useHead({
 
 <template>
   <ConfigProvider :use-id="useIdFunction">
-    <NuxtLoadingIndicator :color="loadingBarColor" />
+    <NuxtLoadingIndicator :color="loadingBarColor" :height="6" />
     <NuxtLayout>
       <NuxtPage />
       <Toaster />
