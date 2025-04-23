@@ -3,7 +3,7 @@ import type { GeinsEntity } from './Global';
 export interface WholesaleAccount extends GeinsEntity {
   name: string;
   active: boolean;
-  organizationNumber: string;
+  orgNr: string;
   externalId: string;
   channels: string[];
   tags: string[];
@@ -22,19 +22,19 @@ export interface WholesaleAccountList extends WholesaleAccountCreate {
   groups: string[];
 }
 
-export type AddressType = 'billing' | 'delivery';
+export type AddressType = 'billing' | 'shipping' | 'billingAndShipping';
 
 export interface WholesaleAccountAddress extends GeinsEntity {
   addressType?: AddressType;
   email?: string;
   phone?: string;
-  companyName?: string;
+  company?: string;
   firstName?: string;
   lastName?: string;
   careOf?: string;
-  address1?: string;
-  address2?: string;
-  address3?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressLine3?: string;
   zip?: string;
   city?: string;
   region?: string;

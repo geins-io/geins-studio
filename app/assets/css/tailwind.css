@@ -121,7 +121,6 @@
     @apply bg-background font-sans tracking-normal text-foreground;
     height: 100%;
     scroll-behavior: smooth;
-    font-smooth: always;
   }
   #__nuxt {
     height: 100%;

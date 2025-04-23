@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { useToast } from '@/components/ui/toast/use-toast';
 import { useRoute } from 'vue-router';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import * as z from 'zod';
+import { parse } from 'vue/compiler-sfc';
 
 // EDIT PAGE OPTIONS
 const tabs = ['Account details', 'Buyers', 'Pricing', 'Orders'];
@@ -19,6 +21,7 @@ const newEntityUrl = getNewEntityUrl();
 const currentTab = ref(0);
 const loading = ref(false);
 const accountStore = useAccountStore();
+const useShippingAddress = ref(false);
 
 // COMPUTED GLOBALS
 const createMode = ref(route.params.id === newEntityUrlAlias);
@@ -37,7 +40,7 @@ const totalSteps = ref(2);
 const wholesaleAccount = ref<Partial<WholesaleAccountCreate>>({
   name: '',
   active: true,
-  organizationNumber: '',
+  orgNr: '',
   externalId: '',
   channels: [],
   tags: [],
@@ -46,27 +49,67 @@ const wholesaleAccount = ref<Partial<WholesaleAccountCreate>>({
 });
 
 /* Addresses */
-const getAddressObj = (type: AddressType) =>
-  ref<Partial<WholesaleAccountAddress>>({
-    addressType: type,
-    email: '',
-    phone: '',
-    companyName: '',
-    firstName: '',
-    lastName: '',
-    careOf: '',
-    address1: '',
-    address2: '',
-    address3: '',
-    zip: '',
-    city: '',
-    region: '',
-    country: '',
+const addressObj: WholesaleAccountAddress = {
+  email: '',
+  phone: '',
+  company: '',
+  firstName: '',
+  lastName: '',
+  careOf: '',
+  addressLine1: '',
+  addressLine2: '',
+  addressLine3: '',
+  zip: '',
+  city: '',
+  region: '',
+  country: 'HK',
+};
+
+const billingAddress = ref(addressObj);
+const shippingAddress = ref(addressObj);
+
+const getAddresses = (
+  billing: WholesaleAccountAddress,
+  shipping?: WholesaleAccountAddress,
+) => {
+  const addresses = [];
+  const billingType = shipping ? 'billing' : 'billingAndShipping';
+
+  addresses.push({
+    ...billing,
+    addressType: billingType,
   });
 
-const billingAddress = getAddressObj('billing');
-const deliveryAddress = getAddressObj('delivery');
-
+  if (shipping) {
+    addresses.push({
+      ...shipping,
+      addressType: 'shipping',
+    });
+  }
+  return addresses;
+};
+const parseAndSaveData = (account: WholesaleAccount): void => {
+  const wholesaleAccountCreate: WholesaleAccountCreate = {
+    ...wholesaleAccount.value,
+    ...account,
+    salesReps: account.salesReps?.map((salesRep) => salesRep._id || ''),
+  };
+  wholesaleAccount.value = wholesaleAccountCreate;
+  billingAddress.value = {
+    ...account.addresses?.find(
+      (address) =>
+        address.addressType === 'billing' ||
+        address.addressType === 'billingAndShipping',
+    ),
+  };
+  const shipping = account.addresses?.find(
+    (address) => address.addressType === 'shipping',
+  );
+  useShippingAddress.value = !!shipping;
+  shippingAddress.value = {
+    ...shipping,
+  };
+};
 // GET DATA IF NOT CREATE MODE
 if (!createMode.value) {
   const { data, error } = await useAPI(
@@ -78,33 +121,18 @@ if (!createMode.value) {
   if (error.value) {
     console.error('Error fetching wholesale account:', error.value);
   } else if (data.value) {
-    const account = data.value as WholesaleAccount;
-    const wholesaleAccountCreate: WholesaleAccountCreate = (data.value = {
-      ...wholesaleAccount.value,
-      ...account,
-      salesReps: account.salesReps?.map((salesRep) => salesRep._id || ''),
-    });
-    wholesaleAccount.value = wholesaleAccountCreate;
-    billingAddress.value = {
-      ...account.addresses?.find(
-        (address) => address.addressType === 'billing',
-      ),
-    };
-    deliveryAddress.value = {
-      ...account.addresses?.find(
-        (address) => address.addressType === 'delivery',
-      ),
-    };
+    parseAndSaveData(data.value as WholesaleAccount);
   }
 }
-/* Sales reps */
-const salesReps = ref<WholesaleSalesRep[]>([]);
-const salesRepsResult = await useAPI('/wholesale/salesrep/list');
-if (!salesRepsResult.error.value) {
-  salesReps.value = salesRepsResult.data.value as WholesaleSalesRep[];
-  salesReps.value = salesReps.value.map((salesRep) => ({
-    ...salesRep,
-    name: salesRep.firstName + ' ' + salesRep.lastName,
+
+/* Sales reps data source */
+const users = ref<User[]>([]);
+const usersResult = await useAPI('/user/list');
+if (!usersResult.error.value) {
+  users.value = usersResult.data.value as User[];
+  users.value = users.value.map((user) => ({
+    ...user,
+    name: user.firstName + ' ' + user.lastName,
   }));
 }
 
@@ -113,11 +141,11 @@ const addressSchema = z
   .object({
     email: z.string().optional(),
     phone: z.string().optional(),
-    companyName: z.string().optional(),
+    company: z.string().optional(),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
-    address1: z.string().optional(),
-    address2: z.string().optional(),
+    addressLine1: z.string().optional(),
+    addressLine2: z.string().optional(),
     zip: z.string().optional(),
     city: z.string().optional(),
     region: z.string().optional(),
@@ -131,7 +159,7 @@ const formSchema = toTypedSchema(
     details: z
       .object({
         name: z.string().min(1, { message: 'Account name is required' }),
-        organizationNumber: z
+        orgNr: z
           .string()
           .min(1, { message: 'Organization number is required' }),
         externalId: z.string().optional(),
@@ -143,7 +171,7 @@ const formSchema = toTypedSchema(
       .required(),
     addresses: z.object({
       billing: addressSchema,
-      delivery: addressSchema,
+      shipping: addressSchema,
     }),
   }),
 );
@@ -154,7 +182,7 @@ const form = useForm({
     details: wholesaleAccount.value,
     addresses: {
       billing: billingAddress.value,
-      delivery: deliveryAddress.value,
+      shipping: shippingAddress.value,
     },
   },
 });
@@ -165,19 +193,22 @@ const formTouched = computed(() => form.meta.value.touched);
 watch(
   form.values,
   useDebounceFn(async (values) => {
+    const addresses = getAddresses(
+      {
+        ...billingAddress.value,
+        ...values.addresses?.billing,
+      },
+      useShippingAddress.value
+        ? {
+            ...shippingAddress.value,
+            ...values.addresses?.shipping,
+          }
+        : undefined,
+    );
     wholesaleAccount.value = {
       ...wholesaleAccount.value,
       ...values.details,
-      addresses: [
-        {
-          ...billingAddress.value,
-          ...values.addresses?.billing,
-        },
-        {
-          ...deliveryAddress.value,
-          ...values.addresses?.delivery,
-        },
-      ],
+      addresses,
     };
     // TODO: solve before launch, need to trigger validation here if channel is last
     if (wholesaleAccount.value.channels?.length) {
@@ -191,7 +222,7 @@ const saveAccountDetails = async (changeStep: boolean = true) => {
   form.setValues({
     addresses: {
       billing: {
-        companyName: wholesaleAccount.value.name,
+        company: wholesaleAccount.value.name,
       },
     },
   });
@@ -201,8 +232,6 @@ const saveAccountDetails = async (changeStep: boolean = true) => {
 const previousStep = () => {
   currentStep.value--;
 };
-
-const useDeliveryAddress = ref(false);
 
 const getEntityNameById = (id: string, dataList: GeinsEntity[]) => {
   const entity = dataList?.find((entity) => entity._id === id);
@@ -218,15 +247,15 @@ const summary = computed<DataList>(() => {
       value: wholesaleAccount.value.name,
     });
   }
-  if (wholesaleAccount.value.organizationNumber) {
+  if (wholesaleAccount.value.orgNr) {
     dataList.push({
       label: t('wholesale.org_nr'),
-      value: wholesaleAccount.value.organizationNumber,
+      value: wholesaleAccount.value.orgNr,
     });
   }
   if (wholesaleAccount.value.salesReps?.length) {
     const displayValue = wholesaleAccount.value.salesReps
-      .map((id) => getEntityNameById(id, salesReps.value))
+      .map((id) => getEntityNameById(id, users.value))
       .join(', ');
     dataList.push({
       label: t('wholesale.sales_reps'),
@@ -246,15 +275,40 @@ const summary = computed<DataList>(() => {
 });
 
 // CREATE ACCOUNT
-
+const { toast } = useToast();
 const createAccount = async () => {
   loading.value = true;
-  const result = await useAPI('/wholesale/account', {
-    method: 'POST',
-    body: JSON.stringify(wholesaleAccount.value),
-  });
-  console.log('🚀 ~ createAccount ~ result:', result);
-  loading.value = false;
+  try {
+    const result: GeinsEntity = await useNuxtApp().$geinsApi(
+      '/wholesale/account',
+      {
+        method: 'POST',
+        body: JSON.stringify(wholesaleAccount.value),
+      },
+    );
+    const id = result._id || '';
+
+    const newUrl = newEntityUrl.replace(newEntityUrlAlias, id);
+    await useRouter().replace(newUrl);
+
+    parseAndSaveData(result as WholesaleAccount);
+
+    toast({
+      title: t('entity_created', { entityName }),
+      variant: 'positive',
+    });
+
+    loading.value = false;
+  } catch (error) {
+    toast({
+      title: t('error_creating_entity', { entityName }),
+      description: error as string,
+      variant: 'negative',
+    });
+    console.error('Error creating account:', error);
+    loading.value = false;
+    return;
+  }
 };
 </script>
 
@@ -311,10 +365,7 @@ const createAccount = async () => {
                     <FormMessage />
                   </FormItem>
                 </FormField>
-                <FormField
-                  v-slot="{ componentField }"
-                  name="details.organizationNumber"
-                >
+                <FormField v-slot="{ componentField }" name="details.orgNr">
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('wholesale.org_nr') }}</FormLabel>
                     <FormControl>
@@ -342,9 +393,12 @@ const createAccount = async () => {
                     <FormLabel>{{ $t('wholesale.sales_reps') }}</FormLabel>
                     <FormControl>
                       <FormInputTagsSearch
-                        v-model="componentField.modelValue"
+                        :model-value="componentField.modelValue"
                         entity-name="sales_rep"
-                        :data-set="salesReps"
+                        :data-set="users"
+                        @update:model-value="
+                          componentField['onUpdate:modelValue']
+                        "
                       />
                     </FormControl>
                     <FormMessage />
@@ -356,7 +410,12 @@ const createAccount = async () => {
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('wholesale.channels') }}</FormLabel>
                     <FormControl>
-                      <FormInputChannels v-model="componentField.modelValue" />
+                      <FormInputChannels
+                        :model-value="componentField.modelValue"
+                        @update:model-value="
+                          componentField['onUpdate:modelValue']
+                        "
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -377,7 +436,7 @@ const createAccount = async () => {
               <FormGrid design="2+1+1">
                 <FormField
                   v-slot="{ componentField }"
-                  name="addresses.billing.companyName"
+                  name="addresses.billing.company"
                 >
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('address.company_name') }}</FormLabel>
@@ -391,10 +450,10 @@ const createAccount = async () => {
               <FormGrid design="2+1+1">
                 <FormField
                   v-slot="{ componentField }"
-                  name="addresses.billing.address1"
+                  name="addresses.billing.addressLine1"
                 >
                   <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('address.address1') }}</FormLabel>
+                    <FormLabel>{{ $t('address.addressLine1') }}</FormLabel>
                     <FormControl>
                       <Input v-bind="componentField" type="text" />
                     </FormControl>
@@ -429,10 +488,10 @@ const createAccount = async () => {
               <FormGrid design="1+1">
                 <FormField
                   v-slot="{ componentField }"
-                  name="addresses.billing.address2"
+                  name="addresses.billing.addressLine2"
                 >
                   <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('address.address2') }}</FormLabel>
+                    <FormLabel>{{ $t('address.addressLine2') }}</FormLabel>
                     <FormControl>
                       <Input v-bind="componentField" type="text" />
                     </FormControl>
@@ -447,7 +506,10 @@ const createAccount = async () => {
                     <FormLabel>{{ $t('address.country') }}</FormLabel>
                     <FormControl>
                       <FormInputCountrySelect
-                        v-model="componentField.modelValue"
+                        :model-value="componentField.modelValue"
+                        @update:model-value="
+                          componentField['onUpdate:modelValue']
+                        "
                       />
                     </FormControl>
                     <FormMessage />
@@ -535,7 +597,7 @@ const createAccount = async () => {
               title="Shipping address"
             />
             <ContentSwitch
-              v-model:checked="useDeliveryAddress"
+              v-model:checked="useShippingAddress"
               label="Add different shipping address"
               description="Activate to add a different shipping address"
             >
@@ -543,7 +605,7 @@ const createAccount = async () => {
                 <FormGrid design="2+1+1">
                   <FormField
                     v-slot="{ componentField }"
-                    name="addresses.delivery.companyName"
+                    name="addresses.shipping.company"
                   >
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.company_name') }}</FormLabel>
@@ -557,10 +619,10 @@ const createAccount = async () => {
                 <FormGrid design="2+1+1">
                   <FormField
                     v-slot="{ componentField }"
-                    name="addresses.delivery.address1"
+                    name="addresses.shipping.addressLine1"
                   >
                     <FormItem v-auto-animate>
-                      <FormLabel>{{ $t('address.address1') }}</FormLabel>
+                      <FormLabel>{{ $t('address.addressLine1') }}</FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="text" />
                       </FormControl>
@@ -569,7 +631,7 @@ const createAccount = async () => {
                   </FormField>
                   <FormField
                     v-slot="{ componentField }"
-                    name="addresses.delivery.zip"
+                    name="addresses.shipping.zip"
                   >
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.zip') }}</FormLabel>
@@ -581,7 +643,7 @@ const createAccount = async () => {
                   </FormField>
                   <FormField
                     v-slot="{ componentField }"
-                    name="addresses.delivery.city"
+                    name="addresses.shipping.city"
                   >
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.city') }}</FormLabel>
@@ -595,10 +657,10 @@ const createAccount = async () => {
                 <FormGrid design="1+1">
                   <FormField
                     v-slot="{ componentField }"
-                    name="addresses.delivery.address2"
+                    name="addresses.shipping.addressLine2"
                   >
                     <FormItem v-auto-animate>
-                      <FormLabel>{{ $t('address.address2') }}</FormLabel>
+                      <FormLabel>{{ $t('address.addressLine2') }}</FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="text" />
                       </FormControl>
@@ -607,15 +669,17 @@ const createAccount = async () => {
                   </FormField>
                   <FormField
                     v-slot="{ componentField }"
-                    name="addresses.delivery.country"
+                    name="addresses.shipping.country"
                   >
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.country') }}</FormLabel>
                       <FormControl>
                         <FormInputCountrySelect
-                          v-model="componentField.modelValue"
+                          :model-value="componentField.modelValue"
+                          @update:model-value="
+                            componentField['onUpdate:modelValue']
+                          "
                         />
-                        <Input v-bind="componentField" type="text" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -624,7 +688,7 @@ const createAccount = async () => {
                 <FormGrid design="1+1">
                   <FormField
                     v-slot="{ componentField }"
-                    name="addresses.delivery.region"
+                    name="addresses.shipping.region"
                   >
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.region') }}</FormLabel>
@@ -645,7 +709,7 @@ const createAccount = async () => {
                   <FormGrid design="1+1">
                     <FormField
                       v-slot="{ componentField }"
-                      name="addresses.delivery.firstName"
+                      name="addresses.shipping.firstName"
                     >
                       <FormItem v-auto-animate>
                         <FormLabel>{{ $t('address.first_name') }}</FormLabel>
@@ -657,7 +721,7 @@ const createAccount = async () => {
                     </FormField>
                     <FormField
                       v-slot="{ componentField }"
-                      name="addresses.delivery.lastName"
+                      name="addresses.shipping.lastName"
                     >
                       <FormItem v-auto-animate>
                         <FormLabel>{{ $t('address.last_name') }}</FormLabel>
@@ -671,7 +735,7 @@ const createAccount = async () => {
                   <FormGrid design="1+1">
                     <FormField
                       v-slot="{ componentField }"
-                      name="addresses.delivery.email"
+                      name="addresses.shipping.email"
                     >
                       <FormItem v-auto-animate>
                         <FormLabel>{{ $t('address.email') }}</FormLabel>
@@ -683,7 +747,7 @@ const createAccount = async () => {
                     </FormField>
                     <FormField
                       v-slot="{ componentField }"
-                      name="addresses.delivery.phone"
+                      name="addresses.shipping.phone"
                     >
                       <FormItem v-auto-animate>
                         <FormLabel>{{ $t('address.phone') }}</FormLabel>
