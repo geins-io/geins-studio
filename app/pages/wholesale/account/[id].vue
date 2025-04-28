@@ -5,7 +5,6 @@ import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import * as z from 'zod';
-import { parse } from 'vue/compiler-sfc';
 
 // EDIT PAGE OPTIONS
 const tabs = ['Account details', 'Buyers', 'Pricing', 'Orders'];
@@ -55,14 +54,12 @@ const addressObj: WholesaleAccountAddress = {
   company: '',
   firstName: '',
   lastName: '',
-  careOf: '',
   addressLine1: '',
   addressLine2: '',
-  addressLine3: '',
   zip: '',
   city: '',
   region: '',
-  country: 'HK',
+  country: '',
 };
 
 const billingAddress = ref(addressObj);
@@ -73,7 +70,7 @@ const getAddresses = (
   shipping?: WholesaleAccountAddress,
 ) => {
   const addresses = [];
-  const billingType = shipping ? 'billing' : 'billingAndShipping';
+  const billingType = shipping ? 'billing' : 'billingandshipping';
 
   addresses.push({
     ...billing,
@@ -99,16 +96,18 @@ const parseAndSaveData = (account: WholesaleAccount): void => {
     ...account.addresses?.find(
       (address) =>
         address.addressType === 'billing' ||
-        address.addressType === 'billingAndShipping',
+        address.addressType === 'billingandshipping',
     ),
   };
   const shipping = account.addresses?.find(
     (address) => address.addressType === 'shipping',
   );
+  if (shipping) {
+    shippingAddress.value = {
+      ...shipping,
+    };
+  }
   useShippingAddress.value = !!shipping;
-  shippingAddress.value = {
-    ...shipping,
-  };
 };
 // GET DATA IF NOT CREATE MODE
 if (!createMode.value) {
@@ -135,43 +134,38 @@ if (!usersResult.error.value) {
     name: user.firstName + ' ' + user.lastName,
   }));
 }
-
 // FORMS SETTINGS
-const addressSchema = z
-  .object({
-    email: z.string().optional(),
-    phone: z.string().optional(),
-    company: z.string().optional(),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
-    addressLine1: z.string().optional(),
-    addressLine2: z.string().optional(),
-    zip: z.string().optional(),
-    city: z.string().optional(),
-    region: z.string().optional(),
-    country: z.string().optional(),
-  })
-  .optional();
+const addressSchema = z.object({
+  email: z.string().min(1, { message: t('form.field_required') }),
+  phone: z.string().optional(),
+  company: z.string().min(1, { message: t('form.field_required') }),
+  firstName: z.string().min(1, { message: t('form.field_required') }),
+  lastName: z.string().min(1, { message: t('form.field_required') }),
+  addressLine1: z.string().min(1, { message: t('form.field_required') }),
+  addressLine2: z.string().optional(),
+  zip: z.string().min(1, { message: t('form.field_required') }),
+  city: z.string().min(1, { message: t('form.field_required') }),
+  region: z.string().optional(),
+  country: z.string().min(1, { message: t('form.field_required') }),
+});
 
 /* Account details */
 const formSchema = toTypedSchema(
   z.object({
     details: z
       .object({
-        name: z.string().min(1, { message: 'Account name is required' }),
-        orgNr: z
-          .string()
-          .min(1, { message: 'Organization number is required' }),
+        name: z.string().min(1, { message: t('form.field_required') }),
+        orgNr: z.string().min(1, { message: t('form.field_required') }),
         externalId: z.string().optional(),
         channels: z.array(z.string()).min(1, {
-          message: 'At least one channel is required',
+          message: t('form.field_required'),
         }),
         salesReps: z.array(z.string()).optional(),
       })
       .required(),
     addresses: z.object({
       billing: addressSchema,
-      shipping: addressSchema,
+      shipping: addressSchema.optional(),
     }),
   }),
 );
@@ -186,6 +180,28 @@ const form = useForm({
     },
   },
 });
+console.log('🚀 ~ form:', form);
+
+const validateOnChange = ref(false);
+const stepValidationMap: Record<number, string> = {
+  1: 'details',
+  2: useShippingAddress.value ? 'addresses' : 'billing',
+};
+
+const validateSteps = async (steps: number[]) => {
+  const validation = await form.validate();
+  const errors = Object.keys(validation.errors);
+  console.log('🚀 ~ validateSteps ~ errors:', errors);
+  const stepKeys = steps.map((step) => stepValidationMap[step]);
+  const stepErrors = errors.filter((error) =>
+    stepKeys.some((stepKey) => stepKey && error.includes(stepKey)),
+  );
+  console.log('🚀 ~ validateSteps ~ stepErrors:', stepErrors);
+  if (stepErrors.length > 0) {
+    return false;
+  }
+  return true;
+};
 
 const formValid = computed(() => form.meta.value.valid);
 const formTouched = computed(() => form.meta.value.touched);
@@ -193,6 +209,9 @@ const formTouched = computed(() => form.meta.value.touched);
 watch(
   form.values,
   useDebounceFn(async (values) => {
+    if (validateOnChange.value) {
+      await form.validate();
+    }
     const addresses = getAddresses(
       {
         ...billingAddress.value,
@@ -210,23 +229,31 @@ watch(
       ...values.details,
       addresses,
     };
-    // TODO: solve before launch, need to trigger validation here if channel is last
-    if (wholesaleAccount.value.channels?.length) {
-      await form.validate();
-    }
   }, 500),
   { deep: true },
 );
 
-const saveAccountDetails = async (changeStep: boolean = true) => {
-  form.setValues({
-    addresses: {
-      billing: {
-        company: wholesaleAccount.value.name,
+const saveAccountDetails = async () => {
+  const stepValid = await validateSteps([1]);
+
+  if (stepValid) {
+    validateOnChange.value = false;
+    form.resetForm();
+    form.setValues({
+      details: {
+        ...wholesaleAccount.value,
       },
-    },
-  });
-  if (changeStep) currentStep.value++;
+      addresses: {
+        billing: {
+          company: wholesaleAccount.value.name,
+        },
+      },
+    });
+
+    currentStep.value++;
+  } else {
+    validateOnChange.value = true;
+  }
 };
 
 const previousStep = () => {
@@ -276,16 +303,23 @@ const summary = computed<DataList>(() => {
 
 // CREATE ACCOUNT
 const { toast } = useToast();
+const { $geinsApi } = useNuxtApp();
 const createAccount = async () => {
   loading.value = true;
+
   try {
-    const result: GeinsEntity = await useNuxtApp().$geinsApi(
-      '/wholesale/account',
-      {
-        method: 'POST',
-        body: JSON.stringify(wholesaleAccount.value),
-      },
-    );
+    const stepsValid = await validateSteps([1, 2]);
+    return;
+    if (!stepsValid) {
+      validateOnChange.value = true;
+      loading.value = false;
+      return;
+    }
+    validateOnChange.value = false;
+    const result: GeinsEntity = await $geinsApi('/wholesale/account', {
+      method: 'POST',
+      body: JSON.stringify(wholesaleAccount.value),
+    });
     const id = result._id || '';
 
     const newUrl = newEntityUrl.replace(newEntityUrlAlias, id);
@@ -328,7 +362,6 @@ const createAccount = async () => {
           <ButtonIcon v-if="!createMode" icon="copy" variant="secondary"
             >{{ $t('copy') }}
           </ButtonIcon>
-          <!-- <Button v-if="createMode" variant="secondary">Cancel</Button> -->
           <ButtonIcon v-if="!createMode" icon="save">{{
             $t('save_entity', { entityName })
           }}</ButtonIcon>
@@ -379,7 +412,9 @@ const createAccount = async () => {
                   name="details.externalId"
                 >
                   <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('wholesale.external_id') }}</FormLabel>
+                    <FormLabel :optional="true">{{
+                      $t('wholesale.external_id')
+                    }}</FormLabel>
                     <FormControl>
                       <Input v-bind="componentField" type="text" />
                     </FormControl>
@@ -390,7 +425,9 @@ const createAccount = async () => {
               <FormGrid design="1">
                 <FormField v-slot="{ componentField }" name="details.salesReps">
                   <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('wholesale.sales_reps') }}</FormLabel>
+                    <FormLabel :optional="true">{{
+                      $t('wholesale.sales_reps')
+                    }}</FormLabel>
                     <FormControl>
                       <FormInputTagsSearch
                         :model-value="componentField.modelValue"
@@ -429,7 +466,6 @@ const createAccount = async () => {
             :total-steps="totalSteps"
             :current-step="currentStep"
             title="Billing and shipping addresses"
-            description="Optional step, this information can be added later on"
             @previous="previousStep"
           >
             <FormGridWrap>
@@ -491,7 +527,9 @@ const createAccount = async () => {
                   name="addresses.billing.addressLine2"
                 >
                   <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('address.addressLine2') }}</FormLabel>
+                    <FormLabel :optional="true">{{
+                      $t('address.addressLine2')
+                    }}</FormLabel>
                     <FormControl>
                       <Input v-bind="componentField" type="text" />
                     </FormControl>
@@ -521,8 +559,10 @@ const createAccount = async () => {
                   v-slot="{ componentField }"
                   name="addresses.billing.region"
                 >
-                  <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('address.region') }}</FormLabel>
+                  <FormItem>
+                    <FormLabel :optional="true">{{
+                      $t('address.region')
+                    }}</FormLabel>
                     <FormControl>
                       <Input v-bind="componentField" type="text" />
                     </FormControl>
@@ -582,7 +622,9 @@ const createAccount = async () => {
                   name="addresses.billing.phone"
                 >
                   <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('address.phone') }}</FormLabel>
+                    <FormLabel :optional="true">{{
+                      $t('address.phone')
+                    }}</FormLabel>
                     <FormControl>
                       <Input v-bind="componentField" type="text" />
                     </FormControl>
@@ -660,7 +702,9 @@ const createAccount = async () => {
                     name="addresses.shipping.addressLine2"
                   >
                     <FormItem v-auto-animate>
-                      <FormLabel>{{ $t('address.addressLine2') }}</FormLabel>
+                      <FormLabel :optional="true">{{
+                        $t('address.addressLine2')
+                      }}</FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="text" />
                       </FormControl>
@@ -691,7 +735,9 @@ const createAccount = async () => {
                     name="addresses.shipping.region"
                   >
                     <FormItem v-auto-animate>
-                      <FormLabel>{{ $t('address.region') }}</FormLabel>
+                      <FormLabel :optional="true">{{
+                        $t('address.region')
+                      }}</FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="text" />
                       </FormControl>
@@ -750,7 +796,9 @@ const createAccount = async () => {
                       name="addresses.shipping.phone"
                     >
                       <FormItem v-auto-animate>
-                        <FormLabel>{{ $t('address.phone') }}</FormLabel>
+                        <FormLabel :optional="true">
+                          {{ $t('address.phone') }}
+                        </FormLabel>
                         <FormControl>
                           <Input v-bind="componentField" type="text" />
                         </FormControl>
@@ -764,12 +812,9 @@ const createAccount = async () => {
           </ContentEditCard>
           <div v-if="createMode" class="flex flex-row justify-end gap-4">
             <Button variant="secondary">Cancel</Button>
-            <Button
-              :disabled="!formValid"
-              :loading="loading"
-              @click="createAccount"
-              >{{ $t('create_entity', { entityName }) }}</Button
-            >
+            <Button :loading="loading" @click="createAccount">{{
+              $t('create_entity', { entityName })
+            }}</Button>
           </div>
           <template #sidebar>
             <ContentEditSummary

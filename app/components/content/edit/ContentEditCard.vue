@@ -52,9 +52,6 @@ const isCurrentStep = computed(() => {
 });
 
 const changeStep = (direction: 'previous' | 'next') => {
-  if (!props.stepValid) {
-    return;
-  }
   emit(direction);
 };
 </script>
@@ -99,7 +96,7 @@ const changeStep = (direction: 'previous' | 'next') => {
             <Button
               v-if="!lastStep"
               class="ml-auto"
-              :disabled="!isCurrentStep || !stepValid"
+              :disabled="!isCurrentStep"
               @click="changeStep('next')"
             >
               {{ $t('next') }}

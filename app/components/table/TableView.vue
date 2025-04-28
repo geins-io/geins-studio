@@ -244,9 +244,9 @@ const table = useVueTable({
 
 const emptyText = computed(() => {
   const emptyText =
-    props.emptyText || t('no_entities', { entityName: props.entityName }, 2);
+    props.emptyText || t('no_entity', { entityName: props.entityName }, 2);
   return table.getColumn(props.searchableField)?.getFilterValue()
-    ? t('no_entities_found', { entityName: props.entityName }, 2)
+    ? t('no_entity_found', { entityName: props.entityName }, 2)
     : emptyText;
 });
 </script>

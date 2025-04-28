@@ -104,9 +104,11 @@ export const useAccountStore = defineStore('account', () => {
 
   const currentCountries = computed(() => {
     return (
-      currentChannel.value?.markets.map((market) => {
-        return market.country;
-      }) || []
+      currentChannel.value?.markets
+        .filter((market) => !market.virtual)
+        .map((market) => {
+          return market.country;
+        }) || []
     );
   });
 

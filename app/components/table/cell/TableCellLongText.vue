@@ -17,7 +17,7 @@ const shortText = processTextLength(props.text);
 <template>
   <TooltipProvider>
     <Tooltip>
-      <TooltipTrigger :class="className">
+      <TooltipTrigger :class="cn(className, 'w-auto')">
         <slot>
           {{ shortText }}
         </slot>

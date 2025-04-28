@@ -58,7 +58,7 @@ watch([model, () => props.dataSet], ([newModelValue]) => {
       </div>
 
       <ComboboxEmpty>
-        {{ t('no_entities_found', { entityName }) }}
+        {{ t('no_entity_found', { entityName }) }}
       </ComboboxEmpty>
 
       <ComboboxGroup>

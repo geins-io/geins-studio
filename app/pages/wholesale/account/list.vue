@@ -38,14 +38,13 @@ if (!data.value || error.value) {
 } else {
   responseList.value = data.value as Entity[];
 }
-loading.value = false;
 
 // MODIFY DATA
 dataList.value = responseList.value.map((account) => {
   const groups: string[] = [];
   const salesReps: string[] = [];
 
-  for (let i = account.tags.length - 1; i >= 0; i--) {
+  for (let i = account.tags?.length - 1; i >= 0; i--) {
     if (account.tags[i]?.includes('group:')) {
       const tag = account.tags[i] || '';
       groups.push(tag.replace('group:', ''));
@@ -53,7 +52,7 @@ dataList.value = responseList.value.map((account) => {
     }
   }
 
-  account.salesReps.forEach((salesRep) => {
+  account.salesReps?.forEach((salesRep) => {
     const firstName = salesRep?.firstName;
     const lastName = salesRep?.lastName;
     const fullName = `${firstName} ${lastName}`;
@@ -75,13 +74,23 @@ const columnOptions: ColumnOptions<EntityList> = {
   excludeColumns: ['meta', 'addresses', 'buyers', 'tags'],
 };
 // GET AND SET COLUMNS
-const { getColumns } = useColumns<EntityList>();
+const { getColumns, addActionsColumn } = useColumns<EntityList>();
 const columns = getColumns(dataList.value, columnOptions);
+
+addActionsColumn(columns, {
+  onEdit: (item: Entity) =>
+    navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+  onCopy: (item: Entity) => console.log('Copy', item._id),
+  onDelete: (item: Entity) => console.log('Delete', item._id),
+  onUnpublish: (item: Entity) => console.log('Unpublish', item._id),
+});
 
 // SET COLUMN VISIBILITY STATE
 const { getVisibilityState } = useTable<EntityList>();
 const hiddenColumns: StringKeyOf<EntityList>[] = ['externalId'];
 const visibilityState = getVisibilityState(hiddenColumns);
+
+loading.value = false;
 </script>
 
 <template>

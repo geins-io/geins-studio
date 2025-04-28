@@ -29,7 +29,7 @@ const placeholder = computed(() => {
   if (props.entityName) {
     return (
       t(
-        'choose_entity',
+        'add_entity',
         {
           entityName: props.entityName,
         },

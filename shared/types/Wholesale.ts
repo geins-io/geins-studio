@@ -22,10 +22,11 @@ export interface WholesaleAccountList extends WholesaleAccountCreate {
   groups: string[];
 }
 
-export type AddressType = 'billing' | 'shipping' | 'billingAndShipping';
+export type AddressType = 'billing' | 'shipping' | 'billingandshipping';
 
 export interface WholesaleAccountAddress extends GeinsEntity {
   addressType?: AddressType;
+  addressReferenceId?: string;
   email?: string;
   phone?: string;
   company?: string;

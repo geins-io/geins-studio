@@ -33,7 +33,7 @@ export const useProductsStore = defineStore('products', () => {
 
   async function init(): Promise<void> {
     const results = await Promise.allSettled([
-      fetchProducts(),
+      //fetchProducts(),
       fetchCategories(),
       fetchBrands(),
     ]);

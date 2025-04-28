@@ -34,6 +34,7 @@ const hasSlotContent = computed(() => !!slots.default);
         :description="description"
         size="sm"
         heading-level="h4"
+        class="p-px"
       />
       <div>
         <Switch v-model:checked="checked" />
@@ -49,7 +50,7 @@ const hasSlotContent = computed(() => !!slots.default);
       <div
         v-show="checked"
         :data-state="checked ? 'open' : 'closed'"
-        class="overflow-hidden pt-4 transition-all duration-300"
+        class="overflow-hidden p-px pt-4 transition-all duration-300"
       >
         <slot />
       </div>
