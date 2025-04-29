@@ -106,7 +106,7 @@ export default defineNuxtPlugin(() => {
       throw error;
     },
     async onResponse({ response }) {
-      if (response.status === 200) {
+      if (response.status >= 200 && response.status < 300) {
         geinsLog(
           response.url,
           '::: response success ::: data:',
@@ -120,12 +120,24 @@ export default defineNuxtPlugin(() => {
         '::: response error ::: data:',
         response?._data,
       );
-      if (response.status === 401) {
-        throw { status: response.status, message: 'Unauthorized' };
+      if (response.status === 400) {
+        throw { status: response.status, message: 'Bad request', response };
+      } else if (response.status === 401) {
+        throw { status: response.status, message: 'Unauthorized', response };
       } else if (response.status === 403) {
-        throw { status: response.status, message: 'Insufficient permissions' };
+        throw {
+          status: response.status,
+          message: 'Insufficient permissions',
+          response,
+        };
       } else if (response.status === 404) {
-        throw { status: response.status, message: 'Resource not found' };
+        throw {
+          status: response.status,
+          message: 'Resource not found',
+          response,
+        };
+      } else {
+        throw { status: response.status, message: 'Unknown error', response };
       }
     },
   });

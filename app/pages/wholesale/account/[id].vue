@@ -10,6 +10,7 @@ import * as z from 'zod';
 const tabs = ['Account details', 'Buyers', 'Pricing', 'Orders'];
 
 // GLOBALS
+const { wholesaleApi, deleteAccount } = useWholesale();
 const { t } = useI18n();
 const route = useRoute();
 const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntity(
@@ -36,7 +37,7 @@ const currentStep = ref(1);
 const totalSteps = ref(2);
 
 // WHOLESALE ACCOUNT
-const wholesaleAccount = ref<Partial<WholesaleAccountCreate>>({
+const wholesaleAccount = ref<Partial<WholesaleAccountInput>>({
   name: '',
   active: true,
   orgNr: '',
@@ -86,12 +87,12 @@ const getAddresses = (
   return addresses;
 };
 const parseAndSaveData = (account: WholesaleAccount): void => {
-  const wholesaleAccountCreate: WholesaleAccountCreate = {
+  const WholesaleAccountInput: WholesaleAccountInput = {
     ...wholesaleAccount.value,
     ...account,
     salesReps: account.salesReps?.map((salesRep) => salesRep._id || ''),
   };
-  wholesaleAccount.value = wholesaleAccountCreate;
+  wholesaleAccount.value = WholesaleAccountInput;
   billingAddress.value = {
     ...account.addresses?.find(
       (address) =>
@@ -111,11 +112,9 @@ const parseAndSaveData = (account: WholesaleAccount): void => {
 };
 // GET DATA IF NOT CREATE MODE
 if (!createMode.value) {
-  const { data, error } = await useAPI(
-    `/wholesale/account/${route.params.id}`,
-    {
-      method: 'GET',
-    },
+  const id = ref<string>(String(route.params.id));
+  const { data, error } = await useAsyncData<WholesaleAccount>(() =>
+    wholesaleApi.account.get(id.value),
   );
   if (error.value) {
     console.error('Error fetching wholesale account:', error.value);
@@ -126,7 +125,8 @@ if (!createMode.value) {
 
 /* Sales reps data source */
 const users = ref<User[]>([]);
-const usersResult = await useAPI('/user/list');
+const { useGeinsFetch } = useGeinsApi();
+const usersResult = await useGeinsFetch<User[]>('/user/list');
 if (!usersResult.error.value) {
   users.value = usersResult.data.value as User[];
   users.value = users.value.map((user) => ({
@@ -180,7 +180,6 @@ const form = useForm({
     },
   },
 });
-console.log('🚀 ~ form:', form);
 
 const validateOnChange = ref(false);
 const stepValidationMap: Record<number, string> = {
@@ -191,12 +190,10 @@ const stepValidationMap: Record<number, string> = {
 const validateSteps = async (steps: number[]) => {
   const validation = await form.validate();
   const errors = Object.keys(validation.errors);
-  console.log('🚀 ~ validateSteps ~ errors:', errors);
   const stepKeys = steps.map((step) => stepValidationMap[step]);
   const stepErrors = errors.filter((error) =>
     stepKeys.some((stepKey) => stepKey && error.includes(stepKey)),
   );
-  console.log('🚀 ~ validateSteps ~ stepErrors:', stepErrors);
   if (stepErrors.length > 0) {
     return false;
   }
@@ -303,36 +300,30 @@ const summary = computed<DataList>(() => {
 
 // CREATE ACCOUNT
 const { toast } = useToast();
-const { $geinsApi } = useNuxtApp();
 const createAccount = async () => {
   loading.value = true;
 
   try {
     const stepsValid = await validateSteps([1, 2]);
-    return;
+
     if (!stepsValid) {
       validateOnChange.value = true;
       loading.value = false;
       return;
     }
     validateOnChange.value = false;
-    const result: GeinsEntity = await $geinsApi('/wholesale/account', {
-      method: 'POST',
-      body: JSON.stringify(wholesaleAccount.value),
-    });
+    const result: GeinsEntity = await wholesaleApi.account.create(
+      wholesaleAccount.value as WholesaleAccountInput,
+    );
     const id = result._id || '';
 
     const newUrl = newEntityUrl.replace(newEntityUrlAlias, id);
     await useRouter().replace(newUrl);
 
-    parseAndSaveData(result as WholesaleAccount);
-
     toast({
       title: t('entity_created', { entityName }),
       variant: 'positive',
     });
-
-    loading.value = false;
   } catch (error) {
     toast({
       title: t('error_creating_entity', { entityName }),
@@ -340,8 +331,26 @@ const createAccount = async () => {
       variant: 'negative',
     });
     console.error('Error creating account:', error);
-    loading.value = false;
+
     return;
+  } finally {
+    loading.value = false;
+  }
+};
+
+const deleteAcc = async (id?: string) => {
+  const deleted = await deleteAccount(id);
+  if (deleted) {
+    toast({
+      title: t('entity_deleted', { entityName }),
+      variant: 'positive',
+    });
+    navigateTo('/wholesale/account/list');
+  } else {
+    toast({
+      title: t('entity_delete_failed', { entityName }),
+      variant: 'negative',
+    });
   }
 };
 </script>
@@ -351,20 +360,29 @@ const createAccount = async () => {
     <template #header>
       <ContentHeader :title="title">
         <ContentActionBar>
-          <ButtonIcon
-            v-if="!createMode"
-            icon="new"
-            variant="secondary"
-            :href="newEntityUrl"
-          >
-            {{ $t('new') }}
-          </ButtonIcon>
-          <ButtonIcon v-if="!createMode" icon="copy" variant="secondary"
-            >{{ $t('copy') }}
-          </ButtonIcon>
           <ButtonIcon v-if="!createMode" icon="save">{{
             $t('save_entity', { entityName })
           }}</ButtonIcon>
+          <DropdownMenu v-if="!createMode">
+            <DropdownMenuTrigger as-child>
+              <Button class="size-9 p-1" size="sm" variant="outline">
+                <LucideMoreHorizontal class="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem as-child>
+                <NuxtLink :to="newEntityUrl">
+                  <LucidePlus class="mr-2 size-4" />
+                  <span>{{ $t('new_entity', { entityName }) }}</span>
+                </NuxtLink>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem @click="deleteAcc(wholesaleAccount._id)">
+                <LucideTrash class="mr-2 size-4" />
+                <span>{{ $t('delete_entity', { entityName }) }}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentTabs
@@ -819,6 +837,7 @@ const createAccount = async () => {
           <template #sidebar>
             <ContentEditSummary
               v-model:active="wholesaleAccount.active"
+              :entity-name="entityName"
               :create-mode="createMode"
               :form-touched="formTouched"
               :summary="summary"

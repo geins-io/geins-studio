@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import type { Product, Category, Brand } from '#shared/types';
 export const useProductsStore = defineStore('products', () => {
   const { geinsLogWarn } = useGeinsLog('store/products.ts');
-  const api = repository(useNuxtApp().$geinsApi);
+  const api = repo.global(useNuxtApp().$geinsApi);
   const accountStore = useAccountStore();
   const { currentLanguage } = storeToRefs(accountStore);
 

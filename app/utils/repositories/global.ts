@@ -11,7 +11,7 @@ const ENDPOINTS = {
   LANGUAGE: '/account/language/list',
 };
 
-export const repository = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
+export const globalRepo = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
   product: {
     async get(id: number, fields?: string): Promise<Product> {
       const queryParams = fields ? `?fields=${fields}` : '';

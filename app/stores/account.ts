@@ -3,7 +3,7 @@ import type { Account, Channel, Currency } from '#shared/types';
 
 export const useAccountStore = defineStore('account', () => {
   const { geinsLogWarn } = useGeinsLog('store/account.ts');
-  const api = repository(useNuxtApp().$geinsApi);
+  const api = repo.global(useNuxtApp().$geinsApi);
   const { fallback } = useRuntimeConfig().public;
 
   // STATE

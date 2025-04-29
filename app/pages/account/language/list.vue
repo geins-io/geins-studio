@@ -28,7 +28,8 @@ const columnOptions: ColumnOptions<Entity> = {
 };
 
 // FETCH DATA FOR ENTITY
-const { data, error } = await useAPI<Entity[]>(apiEndpoint);
+const { useGeinsFetch } = useGeinsApi();
+const { data, error } = await useGeinsFetch<Entity[]>(apiEndpoint);
 
 if (!data?.value || error.value) {
   // Couldn't fetch data... do nothing for now

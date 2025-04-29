@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useToast } from '@/components/ui/toast/use-toast';
+
 import type {
   ColumnOptions,
   StringKeyOf,
@@ -9,6 +11,7 @@ type EntityList = WholesaleAccountList;
 
 const { t } = useI18n();
 const route = useRoute();
+const { toast } = useToast();
 const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
   route.fullPath,
 );
@@ -18,7 +21,7 @@ definePageMeta({
 });
 
 // GLOBAL SETUP
-const apiEndpoint = '/wholesale/account/list';
+const { wholesaleApi, deleteAccount } = useWholesale();
 const responseList = ref<Entity[]>([]);
 const dataList = ref<EntityList[]>([]);
 const entityIdentifier = '{_id}';
@@ -28,7 +31,9 @@ const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 
 // FETCH DATA FOR ENTITY
-const { data, error } = await useAPI<Entity[]>(apiEndpoint);
+const { data, error, refresh } = await useAsyncData<Entity[]>(() =>
+  wholesaleApi.account.list(),
+);
 
 if (!data.value || error.value) {
   throw createError({
@@ -77,13 +82,30 @@ const columnOptions: ColumnOptions<EntityList> = {
 const { getColumns, addActionsColumn } = useColumns<EntityList>();
 const columns = getColumns(dataList.value, columnOptions);
 
-addActionsColumn(columns, {
-  onEdit: (item: Entity) =>
-    navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
-  onCopy: (item: Entity) => console.log('Copy', item._id),
-  onDelete: (item: Entity) => console.log('Delete', item._id),
-  onUnpublish: (item: Entity) => console.log('Unpublish', item._id),
-});
+addActionsColumn(
+  columns,
+  {
+    onEdit: (item: Entity) =>
+      navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+    onDelete: async (item: Entity) => {
+      const deleted = await deleteAccount(item._id);
+      if (deleted) {
+        refresh();
+        toast({
+          title: t('entity_deleted', { entityName }),
+          variant: 'positive',
+        });
+      } else {
+        toast({
+          title: t('entity_delete_failed', { entityName }),
+          variant: 'negative',
+        });
+      }
+    },
+  },
+  'actions',
+  ['edit', 'delete'],
+);
 
 // SET COLUMN VISIBILITY STATE
 const { getVisibilityState } = useTable<EntityList>();

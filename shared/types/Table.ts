@@ -1,6 +1,8 @@
 import '@tanstack/vue-table';
 import type { RowData } from '@tanstack/vue-table';
 
+export type TableRowAction = 'edit' | 'copy' | 'delete';
+
 export const enum TableMode {
   Simple = 'simple',
   Advanced = 'advanced',

@@ -13,12 +13,12 @@ export interface WholesaleAccount extends GeinsEntity {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   meta?: Record<string, any>;
 }
-export interface WholesaleAccountCreate
+export interface WholesaleAccountInput
   extends Omit<WholesaleAccount, 'salesReps'> {
   salesReps: string[];
 }
 
-export interface WholesaleAccountList extends WholesaleAccountCreate {
+export interface WholesaleAccountList extends WholesaleAccountInput {
   groups: string[];
 }
 

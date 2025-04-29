@@ -30,9 +30,9 @@ const columnOptions: ColumnOptions<Entity> = {
 };
 
 // FETCH DATA FOR ENTITY
-const { data, error } = await useAPI<Entity[]>(apiEndpoint, {
-  query: { total: totalListItems.value },
-});
+const { useGeinsFetch } = useGeinsApi();
+const { data, error } = await useGeinsFetch<Entity[]>(apiEndpoint);
+
 if (!data?.value || error.value) {
   throw createError({
     ...error.value,

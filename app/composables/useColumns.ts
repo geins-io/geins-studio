@@ -15,6 +15,7 @@ import type {
   ColumnType,
   ColumnTypes,
   StringKeyOf,
+  TableRowAction,
 } from '#shared/types';
 import { TableMode } from '#shared/types';
 
@@ -284,7 +285,20 @@ export const useColumns = <T extends object>() => {
           break;
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const text = String(row.getValue(key));
+            const value = row.getValue(key);
+            let text = String(row.getValue(key));
+
+            // Convert arrays to comma-separated strings
+            if (Array.isArray(value)) {
+              text = '';
+              value.forEach((item: unknown, index) => {
+                text += String(item);
+                if (index < value.length - 1) {
+                  text += ', ';
+                }
+              });
+            }
+
             if (text.length > maxTextLength) {
               return h(TableCellLongText, {
                 text,
@@ -339,6 +353,7 @@ export const useColumns = <T extends object>() => {
     columns: ColumnDef<T>[],
     props: object,
     type: 'actions' | 'delete' = 'actions',
+    availableActions?: TableRowAction[],
   ): ColumnDef<T>[] => {
     const actionsColumn: ColumnDef<T> = {
       id: 'actions',
@@ -358,6 +373,7 @@ export const useColumns = <T extends object>() => {
           h(type === 'actions' ? TableCellActions : TableCellDelete, {
             ...props,
             rowData,
+            availableActions,
           }),
         );
       },
