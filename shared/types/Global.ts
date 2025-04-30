@@ -20,3 +20,24 @@ export interface NavigationItem {
   icon?: unknown;
   children?: NavigationItem[];
 }
+
+export interface GeinsApiError {
+  status: number;
+  method: string;
+  url: string;
+  message: string;
+  timestamp: string;
+  type: GeinsErrorType;
+  originalError: unknown;
+}
+
+export type GeinsErrorType =
+  | 'AUTH_ERROR'
+  | 'PERMISSION_ERROR'
+  | 'NOT_FOUND_ERROR'
+  | 'SERVER_ERROR'
+  | 'RATE_LIMIT_ERROR'
+  | 'API_ERROR'
+  | 'TIMEOUT_ERROR'
+  | 'CANCELLED_ERROR'
+  | 'NETWORK_ERROR';

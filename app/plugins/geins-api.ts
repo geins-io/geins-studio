@@ -1,5 +1,4 @@
-import type { Session } from '#shared/types';
-
+import type { GeinsApiError, Session } from '#shared/types';
 /**
  * Nuxt plugin for handling Geins API requests.
  *
@@ -88,7 +87,12 @@ export default defineNuxtPlugin(() => {
           }
         }
         // Set the content type header
-        options.headers.set('content-type', 'application/json');
+        if (
+          !options.headers.get('content-type') &&
+          !(options.body instanceof FormData)
+        ) {
+          options.headers.set('content-type', 'application/json');
+        }
         // Add the token to the request
         if (isAuthenticated.value && accessToken.value) {
           options.headers.set('x-access-token', `${accessToken.value}`);
@@ -98,12 +102,37 @@ export default defineNuxtPlugin(() => {
           options.headers.set('x-account-key', accountKey.value);
         }
       } catch (error) {
-        geinsLogError('error during request setup', error);
+        const errorMessage = getErrorMessage(error);
+        geinsLogError('error during request setup', errorMessage);
       }
     },
-    async onRequestError({ error }) {
-      geinsLogError('request error', error);
-      throw error;
+    async onRequestError({ error, options, request }) {
+      const timestamp = new Date().toISOString();
+
+      // Determine error type based on error properties
+      let errorType: GeinsErrorType = 'NETWORK_ERROR';
+
+      if (error.name === 'AbortError') {
+        errorType = 'CANCELLED_ERROR';
+      } else if (error.name === 'TimeoutError') {
+        errorType = 'TIMEOUT_ERROR';
+      }
+
+      const method = options.method || 'UNKNOWN';
+      const url = String(request);
+
+      const geinsApiError: GeinsApiError = {
+        status: 0,
+        method,
+        url,
+        message: error.message,
+        timestamp,
+        type: errorType,
+        originalError: error,
+      };
+
+      geinsLogError(`${method} ${url} ::: request error ::: `, geinsApiError);
+      throw geinsApiError;
     },
     async onResponse({ response }) {
       if (response.status >= 200 && response.status < 300) {
@@ -114,31 +143,23 @@ export default defineNuxtPlugin(() => {
         );
       }
     },
-    async onResponseError({ response }) {
-      geinsLogError(
-        response.url,
-        '::: response error ::: data:',
-        response?._data,
-      );
-      if (response.status === 400) {
-        throw { status: response.status, message: 'Bad request', response };
-      } else if (response.status === 401) {
-        throw { status: response.status, message: 'Unauthorized', response };
-      } else if (response.status === 403) {
-        throw {
-          status: response.status,
-          message: 'Insufficient permissions',
-          response,
-        };
-      } else if (response.status === 404) {
-        throw {
-          status: response.status,
-          message: 'Resource not found',
-          response,
-        };
-      } else {
-        throw { status: response.status, message: 'Unknown error', response };
-      }
+    async onResponseError({ response, options }) {
+      const errorData = response?._data || {};
+      const url = response.url;
+
+      const geinsApiError: GeinsApiError = {
+        status: response.status,
+        method: options.method || 'UNKNOWN',
+        url,
+        message: getFallbackErrorMessage(response.status, errorData),
+        timestamp: new Date().toISOString(),
+        type: getErrorType(response.status),
+        originalError: errorData,
+      };
+
+      geinsLogError(`${url} ::: response error ::: `, geinsApiError);
+
+      throw geinsApiError;
     },
   });
 

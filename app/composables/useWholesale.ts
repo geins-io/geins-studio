@@ -6,12 +6,11 @@ export function useWholesale() {
   const nuxtApp = useNuxtApp();
   const geinsApi = nuxtApp.$geinsApi;
 
-  const { geinsLogError } = useGeinsLog('useWholesale');
+  const { geinsLogError } = useGeinsLog('composables/useWholesale.ts');
 
   const wholesaleApi = repo.wholesale(geinsApi);
 
   const deleteAccount = async (id?: string): Promise<boolean> => {
-    console.log('🚀 ~ deleteAccount ~ id:', id);
     if (!id) {
       return false;
     }
@@ -19,7 +18,7 @@ export function useWholesale() {
       await wholesaleApi.account.delete(id);
       return true;
     } catch (error) {
-      geinsLogError(error);
+      geinsLogError('deleteAccount :::', getErrorMessage(error));
       return false;
     }
   };

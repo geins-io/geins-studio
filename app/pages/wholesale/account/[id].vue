@@ -325,12 +325,11 @@ const createAccount = async () => {
       variant: 'positive',
     });
   } catch (error) {
+    const _errorMessage = getErrorMessage(error);
     toast({
       title: t('error_creating_entity', { entityName }),
-      description: error as string,
       variant: 'negative',
     });
-    console.error('Error creating account:', error);
 
     return;
   } finally {

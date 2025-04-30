@@ -11,7 +11,7 @@ import { useRuntimeConfig } from '#imports';
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
-  const { geinsLog, geinsLogWarn } = log('server/api/[...].ts');
+  const { geinsLog, geinsLogError } = log('server/api/[...].ts');
 
   let body;
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
@@ -53,6 +53,11 @@ export default defineEventHandler(async (event) => {
     ...headers,
     authorization: `Bearer ${token}`,
   };
+
+  // if (event.method === 'DELETE' && apiHeaders['content-length'] === '0') {
+  //   delete apiHeaders['content-length'];
+  // }
+
   try {
     const response = await $fetch(fetchUrl, {
       method: event.method,
@@ -61,7 +66,7 @@ export default defineEventHandler(async (event) => {
     });
     return response;
   } catch (error) {
-    geinsLogWarn('error connecting to the api:', error);
+    geinsLogError('error connecting to the api:', error);
     return error;
   }
 });

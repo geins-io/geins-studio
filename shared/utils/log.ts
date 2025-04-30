@@ -17,6 +17,12 @@ export function log(scope?: string, debug: boolean = false): GeinsLogger {
 
   const createLogger = (method: LogMethod, alwaysLog: boolean = false) => {
     return (message: any, ...args: any[]) => {
+      args.map((arg) => {
+        if (typeof arg === 'object' && arg !== null) {
+          return JSON.parse(JSON.stringify(arg));
+        }
+        return arg;
+      });
       if (!alwaysLog && !debug) {
         return;
       }
