@@ -14,7 +14,7 @@ export default defineNuxtPlugin(async (_nuxtApp) => {
     sessionsAreEqual,
     logout,
   } = useGeinsAuth();
-  const { geinsLog } = useGeinsLog('app/plugins/auth-state.ts');
+  const { geinsLog } = useGeinsLog('plugins/auth-state.ts');
   const { data: broadcastData, post: broadcastPost } = useBroadcastChannel<
     AuthBroadcastData,
     AuthBroadcastData

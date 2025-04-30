@@ -12,6 +12,7 @@ type EntityList = WholesaleAccountList;
 const { t } = useI18n();
 const route = useRoute();
 const { toast } = useToast();
+const { geinsLogError } = useGeinsLog();
 const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
   route.fullPath,
 );
@@ -22,7 +23,6 @@ definePageMeta({
 
 // GLOBAL SETUP
 const { wholesaleApi, deleteAccount } = useWholesale();
-const responseList = ref<Entity[]>([]);
 const dataList = ref<EntityList[]>([]);
 const entityIdentifier = '{_id}';
 const entityName = getEntityName();
@@ -30,46 +30,56 @@ const newEntityUrl = getNewEntityUrl();
 const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 
+// Add the mapping function
+const mapToListData = (accounts: Entity[]): EntityList[] => {
+  return accounts.map((account) => {
+    const groups: string[] = [];
+    const salesReps: string[] = [];
+
+    for (let i = account.tags?.length - 1; i >= 0; i--) {
+      if (account.tags[i]?.includes('group:')) {
+        const tag = account.tags[i] || '';
+        groups.push(tag.replace('group:', ''));
+        account.tags.splice(i, 1);
+      }
+    }
+
+    account.salesReps?.forEach((salesRep) => {
+      const firstName = salesRep?.firstName;
+      const lastName = salesRep?.lastName;
+      const fullName = `${firstName} ${lastName}`;
+      salesReps.push(fullName);
+    });
+
+    return {
+      ...account,
+      groups,
+      salesReps,
+    };
+  });
+};
+
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(() =>
   wholesaleApi.account.list(),
 );
 
 if (!data.value || error.value) {
-  throw createError({
-    ...error.value,
-    statusMessage: t('failed_to_fetch_entity', { entityName }, 2),
-  });
-} else {
-  responseList.value = data.value as Entity[];
+  geinsLogError(
+    `${t('failed_to_fetch_entity', { entityName }, 2)}`,
+    error.value,
+  );
 }
 
-// MODIFY DATA
-dataList.value = responseList.value.map((account) => {
-  const groups: string[] = [];
-  const salesReps: string[] = [];
-
-  for (let i = account.tags?.length - 1; i >= 0; i--) {
-    if (account.tags[i]?.includes('group:')) {
-      const tag = account.tags[i] || '';
-      groups.push(tag.replace('group:', ''));
-      account.tags.splice(i, 1);
+watch(
+  data,
+  (newData) => {
+    if (newData) {
+      dataList.value = mapToListData(newData);
     }
-  }
-
-  account.salesReps?.forEach((salesRep) => {
-    const firstName = salesRep?.firstName;
-    const lastName = salesRep?.lastName;
-    const fullName = `${firstName} ${lastName}`;
-    salesReps.push(fullName);
-  });
-
-  return {
-    ...account,
-    groups,
-    salesReps,
-  };
-});
+  },
+  { immediate: true },
+);
 
 // SET UP COLUMN OPTIONS FOR ENTITY
 const columnOptions: ColumnOptions<EntityList> = {

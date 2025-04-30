@@ -15,7 +15,7 @@ import type { GeinsApiError, Session } from '#shared/types';
  */
 
 export default defineNuxtPlugin(() => {
-  const { geinsLog, geinsLogError } = useGeinsLog('app/plugins/geins-api.ts');
+  const { geinsLog, geinsLogError } = useGeinsLog('plugins/geins-api.ts');
   const {
     isAuthenticated,
     accessToken,
@@ -118,7 +118,7 @@ export default defineNuxtPlugin(() => {
         errorType = 'TIMEOUT_ERROR';
       }
 
-      const method = options.method || 'UNKNOWN';
+      const method = options.method || 'GET';
       const url = String(request);
 
       const geinsApiError: GeinsApiError = {
@@ -131,25 +131,29 @@ export default defineNuxtPlugin(() => {
         originalError: error,
       };
 
-      geinsLogError(`${method} ${url} ::: request error ::: `, geinsApiError);
+      geinsLogError(`[${method}] ${url} ::: request error ::: `, geinsApiError);
       throw geinsApiError;
     },
-    async onResponse({ response }) {
+    async onResponse({ response, options }) {
+      const method = options.method || 'GET';
+
       if (response.status >= 200 && response.status < 300) {
-        geinsLog(
-          response.url,
-          '::: response success ::: data:',
-          response?._data,
-        );
+        const logMessage = `[${method}] ${response.url} ::: success`;
+        const logData =
+          response._data !== undefined
+            ? [logMessage, '::: data:', response._data]
+            : [logMessage];
+        geinsLog(...logData);
       }
     },
     async onResponseError({ response, options }) {
       const errorData = response?._data || {};
       const url = response.url;
+      const method = options.method || 'GET';
 
       const geinsApiError: GeinsApiError = {
         status: response.status,
-        method: options.method || 'UNKNOWN',
+        method,
         url,
         message: getFallbackErrorMessage(response.status, errorData),
         timestamp: new Date().toISOString(),
@@ -157,7 +161,10 @@ export default defineNuxtPlugin(() => {
         originalError: errorData,
       };
 
-      geinsLogError(`${url} ::: response error ::: `, geinsApiError);
+      geinsLogError(
+        `[${method}] ${url} ::: response error ::: `,
+        geinsApiError,
+      );
 
       throw geinsApiError;
     },

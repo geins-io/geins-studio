@@ -54,9 +54,9 @@ export default defineEventHandler(async (event) => {
     authorization: `Bearer ${token}`,
   };
 
-  // if (event.method === 'DELETE' && apiHeaders['content-length'] === '0') {
-  //   delete apiHeaders['content-length'];
-  // }
+  if (event.method === 'DELETE' && apiHeaders['content-length'] === '0') {
+    delete apiHeaders['content-length'];
+  }
 
   try {
     const response = await $fetch(fetchUrl, {
