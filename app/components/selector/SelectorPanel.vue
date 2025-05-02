@@ -300,20 +300,18 @@ const handleCancel = () => {
           <!-- END BRANDS -->
         </div>
       </div>
-      <SheetBody>
-        <SheetFooter>
-          <SheetClose as-child>
-            <Button variant="outline" @click="handleCancel">
-              {{ t('cancel') }}
-            </Button>
-          </SheetClose>
-          <SheetClose as-child>
-            <Button @click="handleSave">
-              {{ t('add_selected') }}
-            </Button>
-          </SheetClose>
-        </SheetFooter>
-      </SheetBody>
+      <SheetFooter>
+        <SheetClose as-child>
+          <Button variant="outline" @click="handleCancel">
+            {{ t('cancel') }}
+          </Button>
+        </SheetClose>
+        <SheetClose as-child>
+          <Button @click="handleSave">
+            {{ t('add_selected') }}
+          </Button>
+        </SheetClose>
+      </SheetFooter>
     </SheetContent>
   </Sheet>
 </template>

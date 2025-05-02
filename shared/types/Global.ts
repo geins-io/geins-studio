@@ -41,3 +41,23 @@ export type GeinsErrorType =
   | 'TIMEOUT_ERROR'
   | 'CANCELLED_ERROR'
   | 'NETWORK_ERROR';
+
+export type AddressType = 'billing' | 'shipping' | 'billingandshipping';
+
+export interface Address extends GeinsEntity {
+  addressType?: AddressType;
+  addressReferenceId?: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  firstName?: string;
+  lastName?: string;
+  careOf?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressLine3?: string;
+  zip?: string;
+  city?: string;
+  region?: string;
+  country?: string;
+}

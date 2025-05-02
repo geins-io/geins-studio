@@ -54,6 +54,9 @@ const isCurrentStep = computed(() => {
 const changeStep = (direction: 'previous' | 'next') => {
   emit(direction);
 };
+
+const slots = useSlots();
+const hasCreateView = computed(() => !!slots.create);
 </script>
 
 <template>
@@ -79,7 +82,8 @@ const changeStep = (direction: 'previous' | 'next') => {
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div class="space-y-6 p-6 pt-0">
-          <slot />
+          <slot v-if="hasCreateView && createMode" name="create" />
+          <slot v-else />
           <div
             v-if="createMode"
             class="flex items-center justify-between border-t border-dashed pt-6"

@@ -7,7 +7,7 @@ export interface WholesaleAccount extends GeinsEntity {
   externalId: string;
   channels: string[];
   tags: string[];
-  addresses: WholesaleAccountAddress[];
+  addresses: Address[];
   salesReps: WholesaleSalesRep[];
   buyers: WholesaleBuyer[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,26 +20,6 @@ export interface WholesaleAccountInput
 
 export interface WholesaleAccountList extends WholesaleAccountInput {
   groups: string[];
-}
-
-export type AddressType = 'billing' | 'shipping' | 'billingandshipping';
-
-export interface WholesaleAccountAddress extends GeinsEntity {
-  addressType?: AddressType;
-  addressReferenceId?: string;
-  email?: string;
-  phone?: string;
-  company?: string;
-  firstName?: string;
-  lastName?: string;
-  careOf?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  addressLine3?: string;
-  zip?: string;
-  city?: string;
-  region?: string;
-  country?: string;
 }
 
 export interface WholesaleSalesRep extends GeinsEntity {

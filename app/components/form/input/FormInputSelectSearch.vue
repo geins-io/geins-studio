@@ -33,7 +33,7 @@ watch([model, () => props.dataSet], ([newModelValue]) => {
   <Combobox v-model="choice" by="label">
     <ComboboxAnchor
       as-child
-      class="flex h-10 w-full items-center justify-between rounded-lg border bg-input px-3 py-1 text-sm transition-colors data-[state=open]:border-primary"
+      class="pointer-events-auto flex h-10 w-full items-center justify-between rounded-lg border bg-input px-3 py-1 text-sm transition-colors data-[state=open]:border-primary"
     >
       <ComboboxTrigger as-child>
         <button type="button">
@@ -49,7 +49,7 @@ watch([model, () => props.dataSet], ([newModelValue]) => {
         class="sticky top-0 z-50 w-full items-center rounded-t border-b bg-card"
       >
         <ComboboxInput
-          class="h-10 rounded-none border-0 border-b pl-9 focus-visible:ring-0"
+          class="pointer-events-auto h-10 rounded-none border-0 border-b pl-9 focus-visible:ring-0"
           :placeholder="t('search_entity', { entityName }) + '...'"
         />
         <span

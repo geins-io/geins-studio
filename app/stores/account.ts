@@ -12,7 +12,7 @@ export const useAccountStore = defineStore('account', () => {
   const currencies = ref<Currency[]>([]);
   const languages = ref<Language[]>([]);
   const ready = ref(false);
-  const currentChannelId = useCookie('geins-channel', {
+  const currentChannelId = useCookie<string>('geins-channel', {
     default: () => fallback.channel.toString(),
   });
   const currentLanguage = useCookie('geins-language', {
@@ -95,10 +95,17 @@ export const useAccountStore = defineStore('account', () => {
     return channel ? channel.name : '';
   }
 
+  function getCountryNameById(id: string): string {
+    const country = currentCountries.value.find(
+      (country) => country?._id === id,
+    );
+    return country ? country.name : '';
+  }
+
   // GETTERS
   const currentChannel = computed(() => {
-    return channels.value?.find(
-      (channel) => channel._id === currentChannelId.value,
+    return channels.value.find(
+      (channel) => channel._id === String(currentChannelId.value),
     );
   });
 
@@ -130,6 +137,7 @@ export const useAccountStore = defineStore('account', () => {
     init,
     reset,
     getChannelNameById,
+    getCountryNameById,
     currentChannel,
     currentCountries,
   };

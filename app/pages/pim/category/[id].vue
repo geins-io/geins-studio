@@ -51,7 +51,7 @@ const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
           }}</ButtonIcon>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
-          <ContentTabs
+          <ContentEditTabs
             v-model:current-tab="currentTab"
             :tabs="tabs"
             class="mt-5"

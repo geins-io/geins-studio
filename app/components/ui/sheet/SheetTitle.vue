@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { cn } from '@/utils';
-import { DialogTitle, type DialogTitleProps } from 'radix-vue';
+import { DialogTitle, type DialogTitleProps } from 'reka-ui';
 import { computed, type HTMLAttributes } from 'vue';
 
 const props = defineProps<

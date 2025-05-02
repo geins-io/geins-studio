@@ -71,7 +71,7 @@ const _simpleSelection = computed(() =>
     <template #header>
       <ContentHeader title="Selector Demo">
         <template #tabs>
-          <ContentTabs
+          <ContentEditTabs
             v-model:current-tab="currentTab"
             :tabs="tabs.map((tab) => tab.title)"
             class="mt-5"

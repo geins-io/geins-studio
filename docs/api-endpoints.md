@@ -295,17 +295,17 @@ Symbol details of a currency.
 
 ### Endpoints
 
-| Verb | Payload | Path                                                                                                       | Response                                                | Req. `x-account-key` |
-| ---- | ------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------- |
-| GET  | -       | `/v2/api/wholesale/account/<wholesaleAccountId:int>`                                                       | [`WholesaleAccount`](#wholesaleaccount)                 | &check;              |
-| GET  | -       | `/v2/api/wholesale/account/list`                                                                           | [`WholesaleAccount[]`](#wholesaleaccount)               | &check;              |
-| GET  | -       | `/v2/api/wholesale/accountgroup/list`                                                                      | `string[]`                                              | &check;              |
-| GET  | -       | `/v2/api/wholesale/accountaddress/<wholesaleAccountAddressId:int>`                                         | [`WholesaleAccountAddress`](#wholesaleaccountaddress)   | &check;              |
-| GET  | -       | `/v2/api/wholesale/account/<wholesaleAccountId:int>/address/list`                                          | [`WholesaleAccountAddress[]`](#wholesaleaccountaddress) | &check;              |
-| GET  | -       | `/v2/api/wholesale/buyer/<buyerId:int>`                                                                    | [`Buyer`](#buyer)                                       | &check;              |
-| GET  | -       | `/v2/api/wholesale/buyer/list` <br/> `/v2/api/wholesale/account/<wholesaleAccountId:int>/buyer/list`       | [`Buyer[]`](#buyer)                                     | &check;              |
-| GET  | -       | `/v2/api/wholesale/salesrep/<salesrepId:int>`                                                              | [`SalesRep`](#salesrep)                                 | &check;              |
-| GET  | -       | `/v2/api/wholesale/salesrep/list` <br/> `/v2/api/wholesale/account/<wholesaleAccountId:int>/salesrep/list` | [`SalesRep[]`](#salesrep)                               | &check;              |
+| Verb | Payload | Path                                                                                                       | Response                                  | Req. `x-account-key` |
+| ---- | ------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------- | -------------------- |
+| GET  | -       | `/v2/api/wholesale/account/<wholesaleAccountId:int>`                                                       | [`WholesaleAccount`](#wholesaleaccount)   | &check;              |
+| GET  | -       | `/v2/api/wholesale/account/list`                                                                           | [`WholesaleAccount[]`](#wholesaleaccount) | &check;              |
+| GET  | -       | `/v2/api/wholesale/accountgroup/list`                                                                      | `string[]`                                | &check;              |
+| GET  | -       | `/v2/api/wholesale/accountaddress/<wholesaleAccountAddressId:int>`                                         | [`Address`](#wholesaleaccountaddress)     | &check;              |
+| GET  | -       | `/v2/api/wholesale/account/<wholesaleAccountId:int>/address/list`                                          | [`Address[]`](#wholesaleaccountaddress)   | &check;              |
+| GET  | -       | `/v2/api/wholesale/buyer/<buyerId:int>`                                                                    | [`Buyer`](#buyer)                         | &check;              |
+| GET  | -       | `/v2/api/wholesale/buyer/list` <br/> `/v2/api/wholesale/account/<wholesaleAccountId:int>/buyer/list`       | [`Buyer[]`](#buyer)                       | &check;              |
+| GET  | -       | `/v2/api/wholesale/salesrep/<salesrepId:int>`                                                              | [`SalesRep`](#salesrep)                   | &check;              |
+| GET  | -       | `/v2/api/wholesale/salesrep/list` <br/> `/v2/api/wholesale/account/<wholesaleAccountId:int>/salesrep/list` | [`SalesRep[]`](#salesrep)                 | &check;              |
 
 ### Response Models
 
@@ -315,19 +315,19 @@ _Note: Not to be confused with the Account model under the Account API._
 
 A wholesale account refers to a business entity that purchases goods or services from a merchant within the Geins platform.
 
-| Type                                                    | Name       | Example                            | Description                                                                                     |
-| ------------------------------------------------------- | ---------- | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `int`                                                   | id         | `100`                              | The unique identifier for the wholesale account.                                                |
-| `string`                                                | name       | `'ACME Corp'`                      | The name of the wholesale account.                                                              |
-| `string`                                                | orgNr      | `'556677-8899'`                    | The organization number of the wholesale account.                                               |
-| `string`                                                | externalId | `'EXT123'`                         | The external identifier for the wholesale account, if any.                                      |
-| `int[]`                                                 | channels   | `[1, 2, 3]`                        | The sales channels that the wholesale account can manage.                                       |
-| `string[]`                                              | tags       | `['vip', '2024', 'group:Primary']` | Any custom tags that are associated with the wholesale account.                                 |
-| `string[]`                                              | groups     | `['Primary']`                      | The groups that the wholesale account is a member of. Groups are tags prefixed with `'group:'`. |
-| `string`                                                | meta       | `'{"customField": "value"}'`       | Any additional metadata that is associated with the wholesale account.                          |
-| [`WholesaleAccountAddress[]`](#wholesaleaccountaddress) | addresses  |                                    | The addresses associated with the wholesale account.                                            |
+| Type                                    | Name       | Example                            | Description                                                                                     |
+| --------------------------------------- | ---------- | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `int`                                   | id         | `100`                              | The unique identifier for the wholesale account.                                                |
+| `string`                                | name       | `'ACME Corp'`                      | The name of the wholesale account.                                                              |
+| `string`                                | orgNr      | `'556677-8899'`                    | The organization number of the wholesale account.                                               |
+| `string`                                | externalId | `'EXT123'`                         | The external identifier for the wholesale account, if any.                                      |
+| `int[]`                                 | channels   | `[1, 2, 3]`                        | The sales channels that the wholesale account can manage.                                       |
+| `string[]`                              | tags       | `['vip', '2024', 'group:Primary']` | Any custom tags that are associated with the wholesale account.                                 |
+| `string[]`                              | groups     | `['Primary']`                      | The groups that the wholesale account is a member of. Groups are tags prefixed with `'group:'`. |
+| `string`                                | meta       | `'{"customField": "value"}'`       | Any additional metadata that is associated with the wholesale account.                          |
+| [`Address[]`](#wholesaleaccountaddress) | addresses  |                                    | The addresses associated with the wholesale account.                                            |
 
-#### WholesaleAccountAddress
+#### Address
 
 Represents address details of a wholesale account.
 

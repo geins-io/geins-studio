@@ -101,7 +101,7 @@ export const useColumns = <T extends object>() => {
     const {
       selectable = false,
       sortable = true,
-      columnTypes = {} as ColumnTypes<T>,
+      columnTypes,
       maxTextLength = 60,
     } = options;
     let columns: ColumnDef<T>[] = [];
@@ -160,7 +160,7 @@ export const useColumns = <T extends object>() => {
         columnType = 'string';
       }
       // Override column type if explicitly set in options
-      columnType = columnTypes[key] || columnType;
+      columnType = columnTypes?.[key] || columnType;
 
       let columnSize = {
         size: 0,
