@@ -44,8 +44,10 @@ watch([model, () => props.dataSet], ([newModelValue]) => {
       </ComboboxTrigger>
     </ComboboxAnchor>
 
-    <ComboboxList class="w-[--reka-popper-anchor-width]">
-      <div class="relative w-full items-center">
+    <ComboboxList class="relative w-[--reka-popper-anchor-width]">
+      <div
+        class="sticky top-0 z-50 w-full items-center rounded-t border-b bg-card"
+      >
         <ComboboxInput
           class="h-10 rounded-none border-0 border-b pl-9 focus-visible:ring-0"
           :placeholder="t('search_entity', { entityName }) + '...'"

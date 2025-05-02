@@ -86,13 +86,17 @@ const getAddresses = (
   }
   return addresses;
 };
+const originalAccountData = ref<string>('');
+
 const parseAndSaveData = (account: WholesaleAccount): void => {
-  const WholesaleAccountInput: WholesaleAccountInput = {
+  const wholesaleAccountInput: WholesaleAccountInput = {
     ...wholesaleAccount.value,
     ...account,
     salesReps: account.salesReps?.map((salesRep) => salesRep._id || ''),
   };
-  wholesaleAccount.value = WholesaleAccountInput;
+  wholesaleAccount.value = wholesaleAccountInput;
+  originalAccountData.value = JSON.stringify(wholesaleAccountInput);
+
   billingAddress.value = {
     ...account.addresses?.find(
       (address) =>
@@ -110,6 +114,16 @@ const parseAndSaveData = (account: WholesaleAccount): void => {
   }
   useShippingAddress.value = !!shipping;
 };
+
+const hasUnsavedChanges = computed(() => {
+  if (createMode.value) return false;
+
+  // Deep compare the current account data with the original data
+  const currentData = JSON.stringify(wholesaleAccount.value);
+
+  return currentData !== originalAccountData.value;
+});
+
 // GET DATA IF NOT CREATE MODE
 if (!createMode.value) {
   const id = ref<string>(String(route.params.id));
@@ -384,11 +398,10 @@ const deleteAcc = async (id?: string) => {
           </DropdownMenu>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
-          <ContentTabs
-            v-model:current-tab="currentTab"
-            :tabs="tabs"
-            class="mt-5"
-          />
+          <ContentTabs v-model:current-tab="currentTab" :tabs="tabs" />
+        </template>
+        <template v-if="!createMode" #changes>
+          <ContentUnsavedChanges :changes="hasUnsavedChanges" />
         </template>
       </ContentHeader>
     </template>

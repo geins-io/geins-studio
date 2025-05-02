@@ -110,6 +110,7 @@ export default defineI18nLocale(async () => {
     auth_verify_title: 'Verify Account',
     auth_verify_description: 'Enter the 6-digit code from your',
     auth_select_account: 'Select the account you want to access',
+    unsaved_changes: 'Unsaved changes',
     form: {
       field_required: 'This field is required',
       optional: 'optional',

@@ -16,6 +16,7 @@ const tableMaximized = useState<boolean>('table-maximized');
 
 const slots = useSlots();
 const hasTabs = computed(() => !!slots.tabs);
+const hasChanges = computed(() => !!slots.changes);
 </script>
 
 <template>
@@ -64,7 +65,7 @@ const hasTabs = computed(() => !!slots.tabs);
       :class="
         cn(
           'content-header mb-4 flex flex-wrap justify-between border-b',
-          `${hasTabs ? 'pb-0' : 'pb-2'}`,
+          `${hasTabs || hasChanges ? 'pb-0' : 'pb-2'}`,
         )
       "
     >
@@ -72,7 +73,14 @@ const hasTabs = computed(() => !!slots.tabs);
         <ContentTitleBlock :title="title" :description="description" />
       </slot>
       <slot />
-      <slot name="tabs" />
+      <div
+        v-if="hasTabs || hasChanges"
+        v-auto-animate
+        class="mt-5 flex w-full justify-between"
+      >
+        <slot name="tabs" />
+        <slot name="changes" />
+      </div>
     </div>
   </div>
 </template>
