@@ -1,7 +1,7 @@
 import type { AuthTokens, LoginCredentials, Session } from '#shared/types';
 import { jwtDecode } from 'jwt-decode';
 
-export function useGeinsAuth() {
+export const useGeinsAuth = () => {
   const auth = useAuth();
   // TODO: remove isrefreshing flow and replace with auth state loading
   const isRefreshing = ref(false);
@@ -143,4 +143,4 @@ export function useGeinsAuth() {
     isExpired,
     expiresSoon,
   };
-}
+};

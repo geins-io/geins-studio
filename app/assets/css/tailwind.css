@@ -16,8 +16,8 @@
     --primary: 0 0% 13%; /* #222222 */
     --primary-foreground: 0 0% 100%; /* #ffffff */
 
-    --secondary: 0 0% 98%; /* #fafafa */
-    --secondary-foreground: 240 2% 22%; /* #000000 */
+    --secondary: 0 0% 96%; /* #fafafa */
+    --secondary-foreground: 0 0% 32%; /* #000000 */
 
     --muted: 0 0% 83%; /* #d4d4d4 */
     --muted-foreground: 0 0% 45%; /* #737373 */

@@ -6,13 +6,12 @@ const _props = defineProps<{
 const { getCountryNameById } = useAccountStore();
 </script>
 <template>
-  <div class="text-sm text-muted-foreground">
+  <div class="text-xs">
+    <p v-if="address.firstName || address.lastName">
+      {{ address.firstName }} {{ address.lastName }}
+    </p>
     <p v-if="address.company">
       {{ address.company }}
-    </p>
-    <p v-if="address.firstName || address.lastName">
-      <span v-if="address.company">att: </span>{{ address.firstName }}
-      {{ address.lastName }}
     </p>
     <p v-if="address.addressLine1">
       {{ address.addressLine1 }}

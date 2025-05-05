@@ -22,7 +22,7 @@ interface UseGeinsApiReturnType {
  * @property {function} useGeinsFetch - Wrapper around useFetch that uses the Geins API.
  * @property {function} geinsFetch - Wrapper around $fetch to directly fetch data from the Geins API using.
  */
-export function useGeinsApi(): UseGeinsApiReturnType {
+export const useGeinsApi = (): UseGeinsApiReturnType => {
   const nuxtApp = useNuxtApp();
   const geinsApi = nuxtApp.$geinsApi;
 
@@ -47,4 +47,4 @@ export function useGeinsApi(): UseGeinsApiReturnType {
     useGeinsFetch,
     geinsFetch,
   };
-}
+};

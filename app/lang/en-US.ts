@@ -72,6 +72,7 @@ export default defineI18nLocale(async () => {
     exclude: 'Exclude',
     copy: 'Copy',
     new: 'New',
+    edit: 'Edit',
     browse: 'Browse',
     page_of: 'Page {page} of {total}',
     email: 'Email',

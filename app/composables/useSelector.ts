@@ -1,6 +1,6 @@
 import { SelectorCondition, CompareCondition } from '#shared/types';
 
-export function useSelector() {
+export const useSelector = () => {
   const getFallbackSelection = (): SelectorSelection => {
     return structuredClone({
       condition: SelectorCondition.And,
@@ -113,4 +113,4 @@ export function useSelector() {
     convertToApiSelections,
     convertToSimpleSelection,
   };
-}
+};

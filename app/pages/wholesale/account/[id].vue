@@ -37,7 +37,7 @@ const currentStep = ref(1);
 const totalSteps = ref(2);
 
 // WHOLESALE ACCOUNT
-const wholesaleAccount = ref<Partial<WholesaleAccountInput>>({
+const wholesaleAccount = ref<WholesaleAccountInput>({
   name: '',
   active: true,
   orgNr: '',
@@ -46,6 +46,7 @@ const wholesaleAccount = ref<Partial<WholesaleAccountInput>>({
   tags: [],
   salesReps: [],
   addresses: [],
+  buyers: [],
 });
 
 /* Addresses */
@@ -63,8 +64,14 @@ const addressObj: Address = {
   country: '',
 };
 
-const billingAddress = ref(addressObj);
-const shippingAddress = ref(addressObj);
+const billingAddress = ref<Partial<Address>>({
+  ...addressObj,
+  addressType: 'billing',
+});
+const shippingAddress = ref<Partial<Address>>({
+  ...addressObj,
+  addressType: 'shipping',
+});
 
 const getAddresses = (billing: Address, shipping?: Address) => {
   const addresses = [];
@@ -364,17 +371,73 @@ const deleteAcc = async (id?: string) => {
   }
 };
 
+const hasShippingAddress = computed(() => {
+  return wholesaleAccount.value.addresses?.some(
+    (address) => address.addressType === 'shipping',
+  );
+});
+
 const saveAddress = async (address: Address) => {
-  console.log('🚀 ~ saveAddress ~ address:', address);
-  // update the address in wholesaleaAccount.addresses with the same _id to the new address
-  const updatedAddresses = wholesaleAccount.value.addresses?.map((addr) => {
-    if (addr._id === address._id) {
-      return { ...addr, ...address };
+  const isNewShipping = !address._id && address.addressType === 'shipping';
+  if (isNewShipping) {
+    wholesaleAccount.value.addresses?.push(address);
+
+    wholesaleAccount.value.addresses?.map((addr) => {
+      if (addr.addressType === 'billingandshipping') {
+        addr.addressType = 'billing';
+      }
+      return addr;
+    });
+  } else {
+    const updatedAddresses = wholesaleAccount.value.addresses?.map((addr) => {
+      if (addr._id === address._id) {
+        return { ...addr, ...address };
+      }
+      return addr;
+    });
+    wholesaleAccount.value.addresses = updatedAddresses;
+  }
+  if (address.addressType?.includes('billing')) {
+    billingAddress.value = address;
+  } else {
+    shippingAddress.value = address;
+    useShippingAddress.value = true;
+  }
+};
+
+const saveAccount = async () => {
+  loading.value = true;
+
+  try {
+    const stepsValid = await validateSteps([1]);
+
+    if (!stepsValid) {
+      validateOnChange.value = true;
+      loading.value = false;
+      return;
     }
-    return addr;
-  });
-  wholesaleAccount.value.addresses = updatedAddresses;
-  billingAddress.value = address;
+    validateOnChange.value = false;
+    const result: WholesaleAccount = await wholesaleApi.account.update(
+      wholesaleAccount.value,
+    );
+
+    parseAndSaveData(result);
+
+    toast({
+      title: t('entity_updated', { entityName }),
+      variant: 'positive',
+    });
+  } catch (error) {
+    const _errorMessage = getErrorMessage(error);
+    toast({
+      title: t('error_updating_entity', { entityName }),
+      variant: 'negative',
+    });
+
+    return;
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 
@@ -383,9 +446,13 @@ const saveAddress = async (address: Address) => {
     <template #header>
       <ContentHeader :title="title">
         <ContentActionBar>
-          <ButtonIcon v-if="!createMode" icon="save">{{
-            $t('save_entity', { entityName })
-          }}</ButtonIcon>
+          <ButtonIcon
+            v-if="!createMode"
+            icon="save"
+            :loading="loading"
+            @click="saveAccount"
+            >{{ $t('save_entity', { entityName }) }}</ButtonIcon
+          >
           <DropdownMenu v-if="!createMode">
             <DropdownMenuTrigger as-child>
               <Button class="size-9 p-1" size="sm" variant="outline">
@@ -509,20 +576,66 @@ const saveAddress = async (address: Address) => {
             @previous="previousStep"
           >
             <Tabs default-value="billing">
-              <TabsList class="grid w-full grid-cols-2">
-                <TabsTrigger value="billing"> Billing address </TabsTrigger>
-                <TabsTrigger value="shipping"> Shipping address </TabsTrigger>
+              <TabsList>
+                <TabsTrigger value="billing">
+                  {{ $t('entity_caps', { entityName: 'billing_address' }) }}
+                </TabsTrigger>
+                <TabsTrigger value="shipping">
+                  {{ $t('entity_caps', { entityName: 'shipping_address' }) }}
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="billing">
-                <ContentAddressDisplay
-                  :address="billingAddress"
-                  @save="saveAddress"
-                />
-                <ContentEditAddressPanel :address="billingAddress">
-                  <Button>Edit</Button>
-                </ContentEditAddressPanel>
+                <div
+                  class="mt-4 flex items-center justify-between border-t pt-4"
+                >
+                  <ContentAddressDisplay :address="billingAddress" />
+                  <ContentEditAddressPanel
+                    :address="billingAddress"
+                    @save="saveAddress"
+                  >
+                    <Button variant="outline" size="sm">{{
+                      $t('edit')
+                    }}</Button>
+                  </ContentEditAddressPanel>
+                </div>
               </TabsContent>
-              <TabsContent value="shipping">SHIPPING</TabsContent>
+              <TabsContent value="shipping">
+                <div
+                  v-if="!hasShippingAddress"
+                  v-auto-animate
+                  class="mt-4 border-t pt-4"
+                >
+                  <ContentSwitch
+                    :checked="!useShippingAddress"
+                    label="Same as billing address"
+                    description="Use the billing address as your shipping address"
+                    @update:checked="useShippingAddress = !$event"
+                  />
+                  <ContentEditAddressPanel
+                    v-if="!hasShippingAddress && useShippingAddress"
+                    :address="shippingAddress"
+                    @save="saveAddress"
+                  >
+                    <Button class="mt-4" variant="outline">
+                      {{ $t('add_entity', { entityName: 'shipping_address' }) }}
+                    </Button>
+                  </ContentEditAddressPanel>
+                </div>
+                <div
+                  v-else
+                  class="mt-4 flex items-center justify-between border-t pt-4"
+                >
+                  <ContentAddressDisplay :address="shippingAddress" />
+                  <ContentEditAddressPanel
+                    :address="shippingAddress"
+                    @save="saveAddress"
+                  >
+                    <Button variant="outline" size="sm">{{
+                      $t('edit')
+                    }}</Button>
+                  </ContentEditAddressPanel>
+                </div>
+              </TabsContent>
             </Tabs>
 
             <template #create>

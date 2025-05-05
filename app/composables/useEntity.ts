@@ -1,4 +1,4 @@
-export function useEntity(fullPath: string) {
+export const useEntity = (fullPath: string) => {
   const { t } = useI18n();
 
   const newEntityUrlAlias = t('new_entity_url_alias');
@@ -30,4 +30,4 @@ export function useEntity(fullPath: string) {
     getNewEntityUrl,
     getEntityUrl,
   };
-}
+};

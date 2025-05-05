@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const _props = defineProps<{
-  changes: boolean;
+  changes?: boolean;
 }>();
 </script>
 <template>

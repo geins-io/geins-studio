@@ -2,6 +2,7 @@
 import * as z from 'zod';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
+import { useDebounceFn } from '@vueuse/core';
 
 const props = defineProps<{
   address: Address;
@@ -12,6 +13,7 @@ const emit = defineEmits<{
 }>();
 
 const open = ref(false);
+const validateOnChange = ref(false);
 
 watch(open, (value) => {
   if (value) {
@@ -44,6 +46,16 @@ const form = useForm({
   },
 });
 
+watch(
+  form.values,
+  useDebounceFn(async () => {
+    if (validateOnChange.value) {
+      await form.validate();
+    }
+  }, 500),
+  { deep: true },
+);
+
 const entityName = computed(() => {
   const entity =
     props.address.addressType === 'shipping' ? 'shipping' : 'billing';
@@ -53,12 +65,19 @@ const entityName = computed(() => {
 const handleSave = async () => {
   const validation = await form.validate();
   if (!validation.valid) {
+    validateOnChange.value = true;
     return;
   }
-  console.log('🚀 ~ handleSave ~ form.values:', form.values);
-  emit('save', form.values);
+  validateOnChange.value = false;
+  const newAddress: Address = {
+    ...props.address,
+    ...form.values,
+  };
+
+  emit('save', newAddress);
   open.value = false;
 };
+
 const handleCancel = () => {
   open.value = false;
 };
@@ -212,7 +231,7 @@ const handleCancel = () => {
         <Button variant="outline" @click="handleCancel">
           {{ t('cancel') }}
         </Button>
-        <Button @click="handleSave">
+        <Button @click.stop="handleSave">
           {{ t('update_entity', { entityName }) }}
         </Button>
       </SheetFooter>

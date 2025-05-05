@@ -26,9 +26,10 @@ export function entityRepo<T extends GeinsEntity, InputT extends GeinsEntity>(
       });
     },
 
-    async update(id: string, data: InputT): Promise<T> {
+    async update(data: InputT): Promise<T> {
+      const id = data._id;
       return await fetch<T>(`${entityEndpoint}/${id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: data,
       });
     },

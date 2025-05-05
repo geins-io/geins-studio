@@ -2,7 +2,7 @@
  * Composable for wholesale API operations, supporting both reactive and imperative usage
  */
 
-export function useWholesale() {
+export const useWholesale = () => {
   const nuxtApp = useNuxtApp();
   const geinsApi = nuxtApp.$geinsApi;
 
@@ -27,4 +27,4 @@ export function useWholesale() {
     wholesaleApi,
     deleteAccount,
   };
-}
+};
