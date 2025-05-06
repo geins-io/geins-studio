@@ -19,7 +19,7 @@ watch(model, (val) => {
 const accountStore = useAccountStore();
 const { currentCountries } = storeToRefs(accountStore);
 
-const countries = computed<DataItem[]>(() => {
+const countries = computed<PlainDataItem[]>(() => {
   return currentCountries.value.map((country) => ({
     label: country?.name || '',
     value: country?._id || '',

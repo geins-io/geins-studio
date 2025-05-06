@@ -1,5 +1,9 @@
 export type StringKeyOf<T> = Extract<keyof T, string>;
 
+export const enum DataItemDisplayType {
+  String = 'string',
+  ArraySummary = 'arraySummary',
+}
 export interface GeinsEntity {
   _id?: string;
   _type?: string;
@@ -8,10 +12,21 @@ export interface GeinsEntity {
 
 export interface DataItem {
   label: string;
+  value:
+    | string
+    | number
+    | boolean
+    | Array<string>
+    | Array<number>
+    | Array<Record<string, unknown>>
+    | Record<string, unknown>;
+  displayValue?: string;
+  displayType?: DataItemDisplayType;
+}
+export interface PlainDataItem {
+  label: string;
   value: string;
 }
-
-export type DataList = DataItem[];
 
 export interface NavigationItem {
   label: string;

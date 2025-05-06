@@ -4,7 +4,7 @@ const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
-    dataSet: DataItem[];
+    dataSet: PlainDataItem[];
     entityName?: string;
   }>(),
   {},
@@ -13,10 +13,10 @@ const model = defineModel<string>();
 
 const findItem = (value: string | undefined) =>
   value
-    ? props.dataSet.find((item: DataItem) => item.value === value)
+    ? props.dataSet.find((item: PlainDataItem) => item.value === value)
     : undefined;
 
-const choice = ref<DataItem | undefined>(findItem(model.value));
+const choice = ref<PlainDataItem | undefined>(findItem(model.value));
 
 watch(choice, (newChoice) => {
   model.value = newChoice?.value ?? '';

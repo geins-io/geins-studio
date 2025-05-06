@@ -4,13 +4,18 @@ const _props = withDefaults(
     title?: string;
     description?: string;
     showBreadcrumb?: boolean;
+    entityName?: string;
   }>(),
   {
     title: '',
     description: '',
     showBreadcrumb: true,
+    entityName: '',
   },
 );
+const route = useRoute();
+const { getEntityListUrl } = useEntity(route.fullPath);
+const listPageUrl = getEntityListUrl();
 const tableMaximized = useState<boolean>('table-maximized');
 // TODO: Dynamic breadcrumbs
 
@@ -36,6 +41,14 @@ const hasChanges = computed(() => !!slots.changes);
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
+        <BreadcrumbItem v-if="listPageUrl">
+          <BreadcrumbLink as-child>
+            <NuxtLink :to="listPageUrl">{{
+              $t('entity_caps', { entityName }, 2)
+            }}</NuxtLink>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator v-if="listPageUrl" />
         <!--       <BreadcrumbItem>
         <DropdownMenu>
           <DropdownMenuTrigger class="flex items-center gap-1">

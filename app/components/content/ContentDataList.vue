@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { DataItemDisplayType } from '#shared/types';
+
 const _props = withDefaults(
   defineProps<{
-    dataList?: DataList;
+    dataList?: DataItem[];
   }>(),
   {
     dataList: () => [],
@@ -13,10 +15,30 @@ const _props = withDefaults(
     <li
       v-for="(item, index) in dataList"
       :key="index"
-      class="flex items-center justify-between gap-2"
+      class="flex items-center justify-between gap-2 text-muted-foreground"
     >
-      <span class="font-bold">{{ item.label }}:</span>
-      <span class="text-muted-foreground">{{ item.value }}</span>
+      <span class="font-bold text-foreground">{{ item.label }}:</span>
+      <div
+        v-if="
+          Array.isArray(item.value) &&
+          item.displayType === DataItemDisplayType.ArraySummary
+        "
+      >
+        <TooltipProvider :delay-duration="100">
+          <Tooltip>
+            <TooltipTrigger>
+              <span
+                class="underline decoration-muted-foreground decoration-dashed decoration-1 underline-offset-4"
+                >{{ item.value.length }} added</span
+              >
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{{ item.displayValue }}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      <span v-else>{{ item.value }}</span>
     </li>
   </ul>
 </template>

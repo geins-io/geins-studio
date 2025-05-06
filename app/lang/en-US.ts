@@ -20,6 +20,7 @@ export default defineI18nLocale(async () => {
     addrress: 'address | addresses',
     sales_rep: 'sales rep | sales reps',
     new_entity_url_alias: 'new',
+    list_entity_url_alias: 'list',
     entity_caps: '@.capitalize:{entityName}',
     new_entity: 'New @:{entityName}',
     edit_entity: 'Edit @:{entityName}',
@@ -44,6 +45,10 @@ export default defineI18nLocale(async () => {
     all_entity: 'All @:{entityName}',
     entity_is_active: '@.capitalize:{entityName} is active',
     entity_is_inactive: '@.capitalize:{entityName} is inactive',
+    entity_will_activate:
+      '@.capitalize:{entityName} will be activated when saved',
+    entity_will_deactivate:
+      '@.capitalize:{entityName} will be deactivated when saved',
     rows_per_page: '@.capitalize:{entityName} per page',
     rows_total: '{total} @:{entityName} in total',
     rows_selected: '{selected} of {total} @:{entityName} selected.',

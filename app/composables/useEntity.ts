@@ -2,6 +2,7 @@ export const useEntity = (fullPath: string) => {
   const { t } = useI18n();
 
   const newEntityUrlAlias = t('new_entity_url_alias');
+  const listEntitytUrlAlias = t('list_entity_url_alias');
 
   const getEntityName = () => {
     const parts = fullPath.split('/');
@@ -24,10 +25,21 @@ export const useEntity = (fullPath: string) => {
     return `${path}/${dataProp}`;
   };
 
+  const getEntityListUrl = () => {
+    const parts = fullPath.split('/');
+    if (parts[parts.length - 1] === listEntitytUrlAlias) {
+      return '';
+    }
+    parts.pop();
+    const path = parts.join('/');
+    return `${path}/${listEntitytUrlAlias}`;
+  };
+
   return {
     newEntityUrlAlias,
     getEntityName,
     getNewEntityUrl,
     getEntityUrl,
+    getEntityListUrl,
   };
 };

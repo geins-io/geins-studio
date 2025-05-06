@@ -22,7 +22,8 @@ definePageMeta({
 });
 
 // GLOBAL SETUP
-const { wholesaleApi, deleteAccount } = useWholesale();
+const { wholesaleApi, deleteAccount, extractAccountGroupsfromTags } =
+  useWholesale();
 const dataList = ref<EntityList[]>([]);
 const entityIdentifier = '{_id}';
 const entityName = getEntityName();
@@ -33,16 +34,8 @@ const loading = ref(true);
 // Add the mapping function
 const mapToListData = (accounts: Entity[]): EntityList[] => {
   return accounts.map((account) => {
-    const groups: string[] = [];
+    const accountGroups: string[] = extractAccountGroupsfromTags(account.tags);
     const salesReps: string[] = [];
-
-    for (let i = account.tags?.length - 1; i >= 0; i--) {
-      if (account.tags[i]?.includes('group:')) {
-        const tag = account.tags[i] || '';
-        groups.push(tag.replace('group:', ''));
-        account.tags.splice(i, 1);
-      }
-    }
 
     account.salesReps?.forEach((salesRep) => {
       const firstName = salesRep?.firstName;
@@ -53,7 +46,7 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
 
     return {
       ...account,
-      groups,
+      accountGroups,
       salesReps,
     };
   });
@@ -85,7 +78,7 @@ watch(
 const columnOptions: ColumnOptions<EntityList> = {
   entityLinkUrl: entityUrl,
   columnTypes: { name: 'entity-link' },
-  columnTitles: { salesReps: 'Sales reps' },
+  columnTitles: { active: 'Status' },
   excludeColumns: ['meta', 'addresses', 'buyers', 'tags'],
 };
 // GET AND SET COLUMNS
@@ -128,7 +121,6 @@ loading.value = false;
 <template>
   <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
     <ContentActionBar>
-      <ButtonExport />
       <ButtonIcon icon="new" :href="newEntityUrl">
         {{ $t('new_entity', { entityName }) }}
       </ButtonIcon>

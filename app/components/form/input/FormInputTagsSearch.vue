@@ -12,8 +12,11 @@ const props = withDefaults(
     dataSet?: T[];
     entityName?: string;
     placeholder?: string;
+    allowCustomTags?: boolean; // New prop to enable custom tags
   }>(),
-  {},
+  {
+    allowCustomTags: false, // Default to false
+  },
 );
 const dataSet = toRef(props, 'dataSet');
 const model = defineModel<string[]>({
@@ -51,10 +54,24 @@ const filteredData = computed(() => {
   return returnVal;
 });
 
+const showAddNewOption = computed(() => {
+  return (
+    props.allowCustomTags && searchTerm.value && !filteredData.value?.length
+  );
+});
+
 const handleSelect = (event: ListboxItemSelectEvent<AcceptableValue>) => {
   if (typeof event.detail.value === 'string') {
     searchTerm.value = '';
     model.value.push(event.detail.value);
+    open.value = false;
+  }
+};
+
+const handleAddNewOption = () => {
+  if (searchTerm.value) {
+    model.value.push(searchTerm.value);
+    searchTerm.value = '';
     open.value = false;
   }
 };
@@ -114,6 +131,13 @@ const getName = (id: AcceptableValue): string => {
             {{ item.name }}
           </ComboboxItem>
         </ComboboxGroup>
+        <ComboboxItem
+          v-if="showAddNewOption"
+          :value="searchTerm"
+          @select.prevent="handleAddNewOption"
+        >
+          {{ searchTerm }}
+        </ComboboxItem>
       </ComboboxList>
     </ComboboxAnchor>
   </Combobox>

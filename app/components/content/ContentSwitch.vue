@@ -27,7 +27,7 @@ const hasSlotContent = computed(() => !!slots.default);
 </script>
 <template>
   <div class="rounded-lg border p-4 text-sm">
-    <div class="flex flex-row items-center justify-between">
+    <div class="flex flex-row items-center justify-between gap-4">
       <ContentCardHeader
         v-auto-animate
         :title="label"

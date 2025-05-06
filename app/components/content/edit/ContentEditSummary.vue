@@ -4,14 +4,16 @@ const props = withDefaults(
     createMode?: boolean;
     description?: string;
     formTouched?: boolean;
-    summary?: DataList;
+    summary?: DataItem[];
     entityName?: string;
+    liveStatus?: boolean;
   }>(),
   {
     createMode: false,
     description: '',
     formTouched: false,
     summary: () => [],
+    liveStatus: false,
   },
 );
 
@@ -24,19 +26,39 @@ const description = computed(() => {
     ? t('create_summary_description')
     : props.description;
 });
+
+const activeDescription = computed(() => {
+  if (active.value && props.liveStatus) {
+    return t('entity_is_active', { entityName: props.entityName });
+  }
+  if (!active.value && !props.liveStatus) {
+    return t('entity_is_inactive', { entityName: props.entityName });
+  }
+  if (active.value && !props.liveStatus) {
+    return t('entity_will_activate', { entityName: props.entityName });
+  }
+  if (!active.value && props.liveStatus) {
+    return t('entity_will_deactivate', { entityName: props.entityName });
+  }
+  return '';
+});
 </script>
 <template>
   <Card class="space-y-4 p-6">
-    <ContentCardHeader :title="t('summary')" :description="description" />
+    <div class="flex items-center justify-between">
+      <ContentCardHeader :title="t('summary')" :description="description" />
+      <Badge
+        v-if="!createMode"
+        :variant="liveStatus ? 'positive' : 'secondary'"
+      >
+        {{ liveStatus ? t('active') : t('inactive') }}
+      </Badge>
+    </div>
     <ContentSwitch
       v-if="!props.createMode"
       v-model:checked="active"
       :label="active ? t('active') : t('inactive')"
-      :description="
-        active
-          ? t('entity_is_active', { entityName })
-          : t('entity_is_inactive', { entityName })
-      "
+      :description="activeDescription"
     />
     <ContentDataList v-if="summary.length" :data-list="summary" />
   </Card>

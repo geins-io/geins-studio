@@ -13,11 +13,11 @@ import {
 import type {
   ColumnOptions,
   ColumnType,
-  ColumnTypes,
   StringKeyOf,
   TableRowAction,
 } from '#shared/types';
 import { TableMode } from '#shared/types';
+import TableCellStatus from '~/components/table/cell/TableCellStatus.vue';
 
 export const useColumns = <T extends object>() => {
   // BASIC HEADER STYLE
@@ -156,6 +156,8 @@ export const useColumns = <T extends object>() => {
         columnType = 'channels';
       } else if (keyLower === 'tags') {
         columnType = 'tags';
+      } else if (keyLower === 'active') {
+        columnType = 'status';
       } else {
         columnType = 'string';
       }
@@ -267,7 +269,14 @@ export const useColumns = <T extends object>() => {
           break;
         case 'channels':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const value = row.getValue(key) as Array<string>;
+            const value = row.getValue(key);
+            if (!Array.isArray(value)) {
+              return h(
+                'div',
+                { class: getBasicCellStyle(table) },
+                String(value),
+              );
+            }
             return h(TableCellChannels, {
               class: getBasicCellStyle(table),
               channelIds: value,
@@ -276,10 +285,33 @@ export const useColumns = <T extends object>() => {
           break;
         case 'tags':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const value = row.getValue(key) as Array<string>;
+            const value = row.getValue(key);
+            if (!Array.isArray(value)) {
+              return h(
+                'div',
+                { class: getBasicCellStyle(table) },
+                String(value),
+              );
+            }
             return h(TableCellTags, {
               class: getBasicCellStyle(table),
               tags: value,
+            });
+          };
+          break;
+        case 'status':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value = row.getValue(key);
+            if (typeof value !== 'string' && typeof value !== 'boolean') {
+              return h(
+                'div',
+                { class: getBasicCellStyle(table) },
+                String(value),
+              );
+            }
+            return h(TableCellStatus, {
+              class: getBasicCellStyle(table),
+              status: value,
             });
           };
           break;

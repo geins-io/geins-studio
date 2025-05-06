@@ -52,7 +52,7 @@ onMounted(() => {
           :class="
             cn(
               'border-b-4 border-transparent px-3 py-1.5 text-sm font-bold text-muted-foreground transition-colors duration-200 ease-in-out',
-              `${currentTab === index ? 'border-primary text-primary' : ''}`,
+              `${currentTab === index ? 'border-foreground text-foreground' : ''}`,
             )
           "
           @click="setCurrentTab(index)"

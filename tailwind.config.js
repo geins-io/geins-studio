@@ -86,12 +86,6 @@ module.exports = {
           DEFAULT: 'hsl(var(--info))',
           foreground: 'hsl(var(--info-foreground))',
         },
-        'positive-muted': {
-          DEFAULT: 'hsl(var(--positive-muted))',
-        },
-        'destructive-muted': {
-          DEFAULT: 'hsl(var(--destructive-muted))',
-        },
       },
       borderRadius: {
         xl: 'calc(var(--radius) + 4px)',

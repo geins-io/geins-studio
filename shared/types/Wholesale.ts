@@ -19,7 +19,7 @@ export interface WholesaleAccountInput
 }
 
 export interface WholesaleAccountList extends WholesaleAccountInput {
-  groups: string[];
+  accountGroups: string[];
 }
 
 export interface WholesaleSalesRep extends GeinsEntity {

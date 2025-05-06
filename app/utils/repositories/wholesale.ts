@@ -1,5 +1,5 @@
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
-import type { WholesaleAccount, WholesaleAccountInput } from '#shared/types'; // Define these types
+import type { WholesaleAccount, WholesaleAccountInput } from '#shared/types';
 
 const BASE_ENDPOINT = '/wholesale';
 
@@ -8,14 +8,20 @@ const BASE_ENDPOINT = '/wholesale';
  */
 export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   // Create repositories for subsections
+  const entityEndpoint = `${BASE_ENDPOINT}/account`;
   const accountRepo = repo.entity<WholesaleAccount, WholesaleAccountInput>(
-    `${BASE_ENDPOINT}/account`,
+    entityEndpoint,
     fetch,
   );
 
   return {
     account: {
       ...accountRepo,
+      tags: {
+        async get(id: string): Promise<string[]> {
+          return await fetch<string[]>(`${entityEndpoint}/${id}/tag/list`);
+        },
+      },
     },
   };
 }

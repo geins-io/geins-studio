@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { DataItemDisplayType } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { useRoute } from 'vue-router';
 import { useForm } from 'vee-validate';
@@ -10,7 +11,12 @@ import * as z from 'zod';
 const tabs = ['Account details', 'Buyers'];
 
 // GLOBALS
-const { wholesaleApi, deleteAccount } = useWholesale();
+const {
+  wholesaleApi,
+  deleteAccount,
+  extractAccountGroupsfromTags,
+  convertAccountGroupsToTags,
+} = useWholesale();
 const { t } = useI18n();
 const route = useRoute();
 const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntity(
@@ -18,10 +24,13 @@ const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntity(
 );
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
+
 const currentTab = ref(0);
 const loading = ref(false);
 const accountStore = useAccountStore();
 const useShippingAddress = ref(false);
+const originalAccountData = ref<string>('');
+const liveStatus = ref(true);
 
 // COMPUTED GLOBALS
 const createMode = ref(route.params.id === newEntityUrlAlias);
@@ -72,6 +81,8 @@ const shippingAddress = ref<Partial<Address>>({
   ...addressObj,
   addressType: 'shipping',
 });
+const accountGroups = ref<string[]>([]);
+const accountTags = ref<GeinsEntity[]>([]);
 
 const getAddresses = (billing: Address, shipping?: Address) => {
   const addresses = [];
@@ -90,7 +101,6 @@ const getAddresses = (billing: Address, shipping?: Address) => {
   }
   return addresses;
 };
-const originalAccountData = ref<string>('');
 
 const parseAndSaveData = (account: WholesaleAccount): void => {
   const wholesaleAccountInput: WholesaleAccountInput = {
@@ -99,6 +109,10 @@ const parseAndSaveData = (account: WholesaleAccount): void => {
     salesReps: account.salesReps?.map((salesRep) => salesRep._id || ''),
   };
   wholesaleAccount.value = wholesaleAccountInput;
+  liveStatus.value = wholesaleAccountInput.active;
+  accountGroups.value = extractAccountGroupsfromTags(
+    wholesaleAccountInput.tags,
+  );
   originalAccountData.value = JSON.stringify(wholesaleAccountInput);
 
   billingAddress.value = {
@@ -139,19 +153,40 @@ if (!createMode.value) {
   } else if (data.value) {
     parseAndSaveData(data.value as WholesaleAccount);
   }
+
+  let tags = await wholesaleApi.account.tags.get(id.value);
+  if (tags) {
+    tags = extractAccountGroupsfromTags(tags);
+    accountTags.value = tags.map((tag) => ({
+      _id: tag,
+      name: tag,
+    }));
+    console.log(
+      '🚀 ~ accountTags.value=tags.map ~ accountTags.value:',
+      accountTags.value,
+    );
+  }
 }
 
 /* Sales reps data source */
 const users = ref<User[]>([]);
 const { useGeinsFetch } = useGeinsApi();
-const usersResult = await useGeinsFetch<User[]>('/user/list');
-if (!usersResult.error.value) {
-  users.value = usersResult.data.value as User[];
-  users.value = users.value.map((user) => ({
-    ...user,
-    name: user.firstName + ' ' + user.lastName,
-  }));
-}
+
+// Fetch users data asynchronously without blocking page render
+const fetchUsers = async () => {
+  const usersResult = await useGeinsFetch<User[]>('/user/list');
+  if (!usersResult.error.value) {
+    users.value = usersResult.data.value as User[];
+    users.value = users.value.map((user) => ({
+      ...user,
+      name: user.firstName + ' ' + user.lastName,
+    }));
+  }
+};
+
+// Start the fetch but don't await it directly in the setup
+fetchUsers();
+
 // FORMS SETTINGS
 const addressSchema = z.object({
   email: z.string().min(1, { message: t('form.field_required') }),
@@ -179,6 +214,7 @@ const formSchema = toTypedSchema(
           message: t('form.field_required'),
         }),
         salesReps: z.array(z.string()).optional(),
+        tags: z.array(z.string()).optional(),
       })
       .required(),
     addresses: z.object({
@@ -191,7 +227,10 @@ const formSchema = toTypedSchema(
 const form = useForm({
   validationSchema: formSchema,
   initialValues: {
-    details: wholesaleAccount.value,
+    details: {
+      ...wholesaleAccount.value,
+      tags: accountGroups.value,
+    },
     addresses: {
       billing: billingAddress.value,
       shipping: shippingAddress.value,
@@ -239,10 +278,13 @@ watch(
           }
         : undefined,
     );
+    accountGroups.value = values.details.tags || [];
+    const tags = convertAccountGroupsToTags(accountGroups.value);
     wholesaleAccount.value = {
       ...wholesaleAccount.value,
       ...values.details,
       addresses,
+      tags,
     };
   }, 500),
   { deep: true },
@@ -257,6 +299,7 @@ const saveAccountDetails = async () => {
     form.setValues({
       details: {
         ...wholesaleAccount.value,
+        tags: accountGroups.value,
       },
       addresses: {
         billing: {
@@ -281,8 +324,8 @@ const getEntityNameById = (id: string, dataList: GeinsEntity[]) => {
 };
 
 // SUMMMARY
-const summary = computed<DataList>(() => {
-  const dataList: DataList = [];
+const summary = computed<DataItem[]>(() => {
+  const dataList: DataItem[] = [];
   if (wholesaleAccount.value.name) {
     dataList.push({
       label: t('wholesale.account_name'),
@@ -301,7 +344,9 @@ const summary = computed<DataList>(() => {
       .join(', ');
     dataList.push({
       label: t('wholesale.sales_reps'),
-      value: displayValue,
+      value: wholesaleAccount.value.salesReps,
+      displayValue,
+      displayType: DataItemDisplayType.ArraySummary,
     });
   }
   if (wholesaleAccount.value.channels?.length) {
@@ -310,7 +355,18 @@ const summary = computed<DataList>(() => {
       .join(', ');
     dataList.push({
       label: t('wholesale.channels'),
-      value: displayValue,
+      value: wholesaleAccount.value.channels,
+      displayValue,
+      displayType: DataItemDisplayType.ArraySummary,
+    });
+  }
+  if (accountGroups.value.length) {
+    const displayValue = accountGroups.value.join(', ');
+    dataList.push({
+      label: t('wholesale.account_groups'),
+      value: accountGroups.value,
+      displayValue,
+      displayType: DataItemDisplayType.ArraySummary,
     });
   }
   return dataList;
@@ -330,8 +386,9 @@ const createAccount = async () => {
       return;
     }
     validateOnChange.value = false;
+
     const result: GeinsEntity = await wholesaleApi.account.create(
-      wholesaleAccount.value as WholesaleAccountInput,
+      wholesaleAccount.value,
     );
     const id = result._id || '';
 
@@ -444,7 +501,7 @@ const saveAccount = async () => {
 <template>
   <ContentEditWrap>
     <template #header>
-      <ContentHeader :title="title">
+      <ContentHeader :title="title" :entity-name="entityName">
         <ContentActionBar>
           <ButtonIcon
             v-if="!createMode"
@@ -455,7 +512,7 @@ const saveAccount = async () => {
           >
           <DropdownMenu v-if="!createMode">
             <DropdownMenuTrigger as-child>
-              <Button class="size-9 p-1" size="sm" variant="outline">
+              <Button class="size-9 p-1" size="sm" variant="secondary">
                 <LucideMoreHorizontal class="size-3.5" />
               </Button>
             </DropdownMenuTrigger>
@@ -556,6 +613,25 @@ const saveAccount = async () => {
                     <FormControl>
                       <FormInputChannels
                         :model-value="componentField.modelValue"
+                        @update:model-value="
+                          componentField['onUpdate:modelValue']
+                        "
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </FormGrid>
+              <FormGrid v-if="!createMode" design="1">
+                <FormField v-slot="{ componentField }" name="details.tags">
+                  <FormItem v-auto-animate>
+                    <FormLabel>{{ $t('wholesale.account_groups') }}</FormLabel>
+                    <FormControl>
+                      <FormInputTagsSearch
+                        :model-value="componentField.modelValue"
+                        entity-name="account_group"
+                        :data-set="accountTags"
+                        :allow-custom-tags="true"
                         @update:model-value="
                           componentField['onUpdate:modelValue']
                         "
@@ -994,6 +1070,7 @@ const saveAccount = async () => {
               :entity-name="entityName"
               :create-mode="createMode"
               :form-touched="formTouched"
+              :live-status="liveStatus"
               :summary="summary"
             />
           </template>

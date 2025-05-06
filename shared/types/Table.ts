@@ -19,7 +19,8 @@ export type ColumnType =
   | 'select'
   | 'actions'
   | 'channels'
-  | 'tags';
+  | 'tags'
+  | 'status';
 
 export type ColumnTypes<T> = Partial<Record<keyof T, ColumnType>>;
 
