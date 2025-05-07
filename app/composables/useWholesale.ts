@@ -28,13 +28,11 @@ export const useWholesale = () => {
       return [];
     }
     const accountGroups: string[] = [];
-    for (let i = tags.length - 1; i >= 0; i--) {
-      if (tags[i]?.includes('group:')) {
-        const tag = tags[i] || '';
+    tags.forEach((tag) => {
+      if (tag?.includes('group:')) {
         accountGroups.push(tag.replace('group:', ''));
-        tags.splice(i, 1);
       }
-    }
+    });
     return accountGroups;
   };
 
@@ -43,11 +41,11 @@ export const useWholesale = () => {
       return [];
     }
     const tags: string[] = [];
-    for (let i = accountGroups.length - 1; i >= 0; i--) {
-      const group = accountGroups[i] || '';
-      tags.push(`group:${group}`);
-      accountGroups.splice(i, 1);
-    }
+    accountGroups.forEach((group) => {
+      if (group) {
+        tags.push(`group:${group}`);
+      }
+    });
     return tags;
   };
 

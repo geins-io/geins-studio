@@ -33,7 +33,7 @@ module.exports = {
         grid: '0.8125rem',
       },
       gridTemplateColumns: {
-        main: 'minmax(72%, 1fr) minmax(25%, 360px)',
+        main: 'minmax(50%, 1fr) minmax(300px, 360px)',
       },
       colors: {
         border: 'hsl(var(--border))',

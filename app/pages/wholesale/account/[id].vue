@@ -7,9 +7,6 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import * as z from 'zod';
 
-// EDIT PAGE OPTIONS
-const tabs = ['Account details', 'Buyers'];
-
 // GLOBALS
 const {
   wholesaleApi,
@@ -19,11 +16,11 @@ const {
 } = useWholesale();
 const { t } = useI18n();
 const route = useRoute();
-const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntity(
-  route.fullPath,
-);
+const { newEntityUrlAlias, getEntityName, getNewEntityUrl, getEntityListUrl } =
+  useEntity(route.fullPath);
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
+const entityListUrl = getEntityListUrl();
 
 const currentTab = ref(0);
 const loading = ref(false);
@@ -31,6 +28,9 @@ const accountStore = useAccountStore();
 const useShippingAddress = ref(false);
 const originalAccountData = ref<string>('');
 const liveStatus = ref(true);
+
+// EDIT PAGE OPTIONS
+const tabs = [t('wholesale.account_details'), t('wholesale.buyers')];
 
 // COMPUTED GLOBALS
 const createMode = ref(route.params.id === newEntityUrlAlias);
@@ -107,7 +107,6 @@ const parseAndSaveData = (account: WholesaleAccount): void => {
     ...wholesaleAccount.value,
     ...account,
     salesReps: account.salesReps?.map((salesRep) => salesRep._id || ''),
-    buyers: account.buyers?.map((buyer) => buyer._id || ''),
   };
   wholesaleAccount.value = wholesaleAccountInput;
   liveStatus.value = wholesaleAccountInput.active;
@@ -344,6 +343,7 @@ const summary = computed<DataItem[]>(() => {
       value: wholesaleAccount.value.salesReps,
       displayValue,
       displayType: DataItemDisplayType.ArraySummary,
+      entityName: 'sales_rep',
     });
   }
   if (wholesaleAccount.value.channels?.length) {
@@ -355,6 +355,7 @@ const summary = computed<DataItem[]>(() => {
       value: wholesaleAccount.value.channels,
       displayValue,
       displayType: DataItemDisplayType.ArraySummary,
+      entityName: 'channel',
     });
   }
   if (accountGroups.value.length) {
@@ -364,6 +365,7 @@ const summary = computed<DataItem[]>(() => {
       value: accountGroups.value,
       displayValue,
       displayType: DataItemDisplayType.ArraySummary,
+      entityName: 'account_group',
     });
   }
   return dataList;
@@ -410,6 +412,7 @@ const createAccount = async () => {
 };
 
 const deleteAcc = async (id?: string) => {
+  deleting.value = true;
   const deleted = await deleteAccount(id);
   if (deleted) {
     toast({
@@ -423,6 +426,8 @@ const deleteAcc = async (id?: string) => {
       variant: 'negative',
     });
   }
+  deleting.value = false;
+  deleteDialogOpen.value = false;
 };
 
 const hasShippingAddress = computed(() => {
@@ -493,11 +498,39 @@ const saveAccount = async () => {
     loading.value = false;
   }
 };
+
+const deleting = ref(false);
+const deleteDialogOpen = ref(false);
+const openDeleteDialog = async () => {
+  await nextTick();
+  deleteDialogOpen.value = true;
+};
 </script>
 
 <template>
   <ContentEditWrap>
     <template #header>
+      <AlertDialog v-model:open="deleteDialogOpen">
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle> Are you absolutely sure? </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this
+              account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction as-child>
+              <Button
+                :loading="deleting"
+                @click.prevent.stop="deleteAcc(wholesaleAccount._id)"
+                >Continue</Button
+              >
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <ContentHeader :title="title" :entity-name="entityName">
         <ContentActionBar>
           <ButtonIcon
@@ -521,7 +554,7 @@ const saveAccount = async () => {
                 </NuxtLink>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem @click="deleteAcc(wholesaleAccount._id)">
+              <DropdownMenuItem @click="openDeleteDialog">
                 <LucideTrash class="mr-2 size-4" />
                 <span>{{ $t('delete_entity', { entityName }) }}</span>
               </DropdownMenuItem>
@@ -545,7 +578,7 @@ const saveAccount = async () => {
             :total-steps="totalSteps"
             :current-step="currentStep"
             :step-valid="formValid"
-            title="Account details"
+            :title="$t('wholesale.account_details')"
             @next="saveAccountDetails"
           >
             <FormGridWrap>
@@ -1058,7 +1091,11 @@ const saveAccount = async () => {
             </template>
           </ContentEditCard>
           <div v-if="createMode" class="flex flex-row justify-end gap-4">
-            <Button variant="secondary">Cancel</Button>
+            <Button variant="secondary" as-child>
+              <NuxtLink :to="entityListUrl">
+                {{ $t('cancel') }}
+              </NuxtLink>
+            </Button>
             <Button :loading="loading" @click="createAccount">{{
               $t('create_entity', { entityName })
             }}</Button>

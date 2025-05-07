@@ -22,6 +22,7 @@ export interface DataItem {
     | Record<string, unknown>;
   displayValue?: string;
   displayType?: DataItemDisplayType;
+  entityName?: string;
 }
 export interface PlainDataItem {
   label: string;

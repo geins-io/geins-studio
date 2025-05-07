@@ -8208,10 +8208,10 @@ regjsparser@^0.10.0:
   dependencies:
     jsesc "~0.5.0"
 
-reka-ui@^2.2.0:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/reka-ui/-/reka-ui-2.2.0.tgz#8e9cb672bbc6731feb37946e442a0b9c620b808d"
-  integrity sha512-eeRrLI4LwJ6dkdwks6KFNKGs0+beqZlHO3JMHen7THDTh+yJ5Z0KNwONmOhhV/0hZC2uJCEExgG60QPzGstkQg==
+reka-ui@^2.2.1:
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/reka-ui/-/reka-ui-2.2.1.tgz#b9868080be9f1f960ffa7f0889108061a8190033"
+  integrity sha512-oLHiyBn6gTIQGnTnv8G5LQuFp9j8HuUNl0qdnW3XPhFb/07hrxzFpjo2kt/jxOZive+n/XWDbOjSj2h9Hih3qA==
   dependencies:
     "@floating-ui/dom" "^1.6.13"
     "@floating-ui/vue" "^1.1.6"

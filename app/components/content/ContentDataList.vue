@@ -15,9 +15,9 @@ const _props = withDefaults(
     <li
       v-for="(item, index) in dataList"
       :key="index"
-      class="flex items-center justify-between gap-2 text-muted-foreground"
+      class="flex items-center justify-between gap-2 text-right text-muted-foreground"
     >
-      <span class="font-bold text-foreground">{{ item.label }}:</span>
+      <span class="text-left font-bold text-foreground">{{ item.label }}:</span>
       <div
         v-if="
           Array.isArray(item.value) &&
@@ -29,8 +29,15 @@ const _props = withDefaults(
             <TooltipTrigger>
               <span
                 class="underline decoration-muted-foreground decoration-dashed decoration-1 underline-offset-4"
-                >{{ item.value.length }} added</span
               >
+                {{
+                  $t(
+                    'nr_of_entity',
+                    { count: item.value.length, entityName: item.entityName },
+                    item.value.length,
+                  )
+                }}
+              </span>
             </TooltipTrigger>
             <TooltipContent>
               <p>{{ item.displayValue }}</p>
