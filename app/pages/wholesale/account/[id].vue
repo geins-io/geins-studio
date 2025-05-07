@@ -107,6 +107,7 @@ const parseAndSaveData = (account: WholesaleAccount): void => {
     ...wholesaleAccount.value,
     ...account,
     salesReps: account.salesReps?.map((salesRep) => salesRep._id || ''),
+    buyers: account.buyers?.map((buyer) => buyer._id || ''),
   };
   wholesaleAccount.value = wholesaleAccountInput;
   liveStatus.value = wholesaleAccountInput.active;
@@ -151,20 +152,16 @@ if (!createMode.value) {
   if (error.value) {
     console.error('Error fetching wholesale account:', error.value);
   } else if (data.value) {
-    parseAndSaveData(data.value as WholesaleAccount);
+    parseAndSaveData(data.value);
   }
 
-  let tags = await wholesaleApi.account.tags.get(id.value);
+  let tags = await wholesaleApi.account.tags.get();
   if (tags) {
     tags = extractAccountGroupsfromTags(tags);
     accountTags.value = tags.map((tag) => ({
       _id: tag,
       name: tag,
     }));
-    console.log(
-      '🚀 ~ accountTags.value=tags.map ~ accountTags.value:',
-      accountTags.value,
-    );
   }
 }
 
@@ -625,7 +622,9 @@ const saveAccount = async () => {
               <FormGrid v-if="!createMode" design="1">
                 <FormField v-slot="{ componentField }" name="details.tags">
                   <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('wholesale.account_groups') }}</FormLabel>
+                    <FormLabel :optional="true">{{
+                      $t('wholesale.account_groups')
+                    }}</FormLabel>
                     <FormControl>
                       <FormInputTagsSearch
                         :model-value="componentField.modelValue"

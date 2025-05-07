@@ -90,7 +90,7 @@ const handleBlur = async () => {
 
 const getName = (id: AcceptableValue): string => {
   const item = dataSet.value?.find((i) => i._id === id);
-  return item?.name || '';
+  return item?.name || String(id) || '';
 };
 </script>
 <template>
@@ -120,7 +120,12 @@ const getName = (id: AcceptableValue): string => {
       </TagsInput>
 
       <ComboboxList class="w-[--reka-popper-anchor-width]">
-        <ComboboxEmpty />
+        <ComboboxEmpty v-if="allowCustomTags">
+          {{ t('add_entity_by_typing', { entityName }, 2) }}
+        </ComboboxEmpty>
+        <ComboboxEmpty v-else>
+          {{ t('no_entity', { entityName }, 2) }}
+        </ComboboxEmpty>
         <ComboboxGroup>
           <ComboboxItem
             v-for="item in filteredData"
@@ -134,8 +139,12 @@ const getName = (id: AcceptableValue): string => {
         <ComboboxItem
           v-if="showAddNewOption"
           :value="searchTerm"
+          class="flex items-center justify-start"
           @select.prevent="handleAddNewOption"
         >
+          <span class="text-xs text-muted-foreground">
+            {{ $t('add_entity', { entityName }) }}:
+          </span>
           {{ searchTerm }}
         </ComboboxItem>
       </ComboboxList>

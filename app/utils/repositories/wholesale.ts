@@ -18,8 +18,8 @@ export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     account: {
       ...accountRepo,
       tags: {
-        async get(id: string): Promise<string[]> {
-          return await fetch<string[]>(`${entityEndpoint}/${id}/tag/list`);
+        async get(): Promise<string[]> {
+          return await fetch<string[]>(`${entityEndpoint}/tag/list`);
         },
       },
     },

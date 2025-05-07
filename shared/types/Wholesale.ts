@@ -14,8 +14,9 @@ export interface WholesaleAccount extends GeinsEntity {
   meta?: Record<string, any>;
 }
 export interface WholesaleAccountInput
-  extends Omit<WholesaleAccount, 'salesReps'> {
+  extends Omit<WholesaleAccount, 'salesReps' | 'buyers'> {
   salesReps: string[];
+  buyers: string[];
 }
 
 export interface WholesaleAccountList extends WholesaleAccountInput {
