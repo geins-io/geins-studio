@@ -322,6 +322,13 @@ const getEntityNameById = (id: string, dataList: GeinsEntity[]) => {
 // SUMMMARY
 const summary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
+  if (!createMode.value) {
+    dataList.push({
+      label: t('entity_id', { entityName }),
+      value: String(wholesaleAccount.value._id),
+      displayType: DataItemDisplayType.Copy,
+    });
+  }
   if (wholesaleAccount.value.name) {
     dataList.push({
       label: t('wholesale.account_name'),
@@ -342,7 +349,7 @@ const summary = computed<DataItem[]>(() => {
       label: t('wholesale.sales_reps'),
       value: wholesaleAccount.value.salesReps,
       displayValue,
-      displayType: DataItemDisplayType.ArraySummary,
+      displayType: DataItemDisplayType.Array,
       entityName: 'sales_rep',
     });
   }
@@ -354,7 +361,7 @@ const summary = computed<DataItem[]>(() => {
       label: t('wholesale.channels'),
       value: wholesaleAccount.value.channels,
       displayValue,
-      displayType: DataItemDisplayType.ArraySummary,
+      displayType: DataItemDisplayType.Array,
       entityName: 'channel',
     });
   }
@@ -364,7 +371,7 @@ const summary = computed<DataItem[]>(() => {
       label: t('wholesale.account_groups'),
       value: accountGroups.value,
       displayValue,
-      displayType: DataItemDisplayType.ArraySummary,
+      displayType: DataItemDisplayType.Array,
       entityName: 'account_group',
     });
   }
@@ -499,38 +506,32 @@ const saveAccount = async () => {
   }
 };
 
-const deleting = ref(false);
 const deleteDialogOpen = ref(false);
+const deleting = ref(false);
 const openDeleteDialog = async () => {
   await nextTick();
   deleteDialogOpen.value = true;
 };
+const confirmDelete = async () => {
+  deleting.value = true;
+  const success = await deleteAccount(wholesaleAccount.value._id, entityName);
+  if (success) {
+    navigateTo('/wholesale/account/list');
+  }
+  deleting.value = false;
+  deleteDialogOpen.value = false;
+};
 </script>
 
 <template>
+  <DialogDelete
+    v-model:open="deleteDialogOpen"
+    :entity-name="entityName"
+    :loading="deleting"
+    @confirm="confirmDelete"
+  />
   <ContentEditWrap>
     <template #header>
-      <AlertDialog v-model:open="deleteDialogOpen">
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle> Are you absolutely sure? </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this
-              account.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction as-child>
-              <Button
-                :loading="deleting"
-                @click.prevent.stop="deleteAcc(wholesaleAccount._id)"
-                >Continue</Button
-              >
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       <ContentHeader :title="title" :entity-name="entityName">
         <ContentActionBar>
           <ButtonIcon

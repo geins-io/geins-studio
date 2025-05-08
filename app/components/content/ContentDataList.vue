@@ -18,33 +18,31 @@ const _props = withDefaults(
       class="flex items-center justify-between gap-2 text-right text-muted-foreground"
     >
       <span class="text-left font-bold text-foreground">{{ item.label }}:</span>
-      <div
+
+      <ContentTextTooltip
         v-if="
           Array.isArray(item.value) &&
-          item.displayType === DataItemDisplayType.ArraySummary
+          item.displayType === DataItemDisplayType.Array
         "
       >
-        <TooltipProvider :delay-duration="100">
-          <Tooltip>
-            <TooltipTrigger>
-              <span
-                class="underline decoration-muted-foreground decoration-dashed decoration-1 underline-offset-4"
-              >
-                {{
-                  $t(
-                    'nr_of_entity',
-                    { count: item.value.length, entityName: item.entityName },
-                    item.value.length,
-                  )
-                }}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{{ item.displayValue }}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
+        {{
+          $t(
+            'nr_of_entity',
+            { count: item.value.length, entityName: item.entityName },
+            item.value.length,
+          )
+        }}
+        <template #tooltip>
+          {{ item.displayValue }}
+        </template>
+      </ContentTextTooltip>
+      <ContentTextCopy
+        v-else-if="item.displayType === DataItemDisplayType.Copy"
+        :label="item.label"
+        :value="item.value"
+      >
+        {{ item.displayValue || item.value }}
+      </ContentTextCopy>
       <span v-else>{{ item.value }}</span>
     </li>
   </ul>

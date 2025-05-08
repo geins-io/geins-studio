@@ -23,6 +23,7 @@ export default defineI18nLocale(async () => {
     new_entity_url_alias: 'new',
     list_entity_url_alias: 'list',
     entity_caps: '@.capitalize:{entityName}',
+    entity_id: '@.capitalize:{entityName} ID',
     new_entity: 'New @:{entityName}',
     edit_entity: 'Edit @:{entityName}',
     save_entity: 'Save @:{entityName}',
@@ -64,6 +65,7 @@ export default defineI18nLocale(async () => {
     entity_with_id_added_to_selection:
       '@.capitalize:{entityName} with ID {id} added to selection',
     failed_to_fetch_entity: 'Failed to fetch @:{entityName}',
+    copied_to_clipboard: '{label} copied to clipboard!',
     active: 'Active',
     inactive: 'Inactive',
     summary: 'Summary',
@@ -140,8 +142,8 @@ export default defineI18nLocale(async () => {
       buyers: 'Buyers',
     },
     address: {
-      addressLine1: 'Address row 1',
-      addressLine2: 'Address row 2',
+      addressLine1: 'Street address',
+      addressLine2: 'Building, floor, etc.',
       care_of: 'Care of',
       city: 'City',
       company_name: 'Company',

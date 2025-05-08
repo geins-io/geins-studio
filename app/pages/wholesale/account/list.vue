@@ -103,55 +103,32 @@ const visibilityState = getVisibilityState(hiddenColumns);
 
 loading.value = false;
 
-const deleteAcc = async () => {
-  deleting.value = true;
-  const deleted = await deleteAccount(deleteId.value);
-  if (deleted) {
-    refresh();
-    toast({
-      title: t('entity_deleted', { entityName }),
-      variant: 'positive',
-    });
-  } else {
-    toast({
-      title: t('entity_delete_failed', { entityName }),
-      variant: 'negative',
-    });
-  }
-  deleting.value = false;
-};
-
-const deleting = ref(false);
 const deleteDialogOpen = ref(false);
+const deleting = ref(false);
 const deleteId = ref<string | undefined>();
 const openDeleteDialog = async (id?: string) => {
-  deleteId.value = id;
-  console.log('🚀 ~ openDeleteDialog ~ deleteId.value:', deleteId.value);
   await nextTick();
+  deleteId.value = id;
   deleteDialogOpen.value = true;
+};
+const confirmDelete = async () => {
+  deleting.value = true;
+  const success = await deleteAccount(deleteId.value, entityName);
+  if (success) {
+    refresh();
+  }
+  deleting.value = false;
+  deleteDialogOpen.value = false;
 };
 </script>
 
 <template>
-  <AlertDialog v-model:open="deleteDialogOpen">
-    <AlertDialogContent>
-      <AlertDialogHeader>
-        <AlertDialogTitle> Are you absolutely sure? </AlertDialogTitle>
-        <AlertDialogDescription>
-          This action cannot be undone. This will permanently delete this
-          account.
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
-        <AlertDialogAction as-child>
-          <Button :loading="deleting" @click.prevent.stop="deleteAcc()"
-            >Continue</Button
-          >
-        </AlertDialogAction>
-      </AlertDialogFooter>
-    </AlertDialogContent>
-  </AlertDialog>
+  <DialogDelete
+    v-model:open="deleteDialogOpen"
+    :entity-name="entityName"
+    :loading="deleting"
+    @confirm="confirmDelete"
+  />
   <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
     <ContentActionBar>
       <ButtonIcon icon="new" :href="newEntityUrl">

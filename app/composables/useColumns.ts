@@ -9,6 +9,7 @@ import {
   TableCellLongText,
   TableCellChannels,
   TableCellTags,
+  TableCellStatus,
 } from '#components';
 import type {
   ColumnOptions,
@@ -17,7 +18,6 @@ import type {
   TableRowAction,
 } from '#shared/types';
 import { TableMode } from '#shared/types';
-import TableCellStatus from '~/components/table/cell/TableCellStatus.vue';
 
 export const useColumns = <T extends object>() => {
   // BASIC HEADER STYLE
@@ -364,6 +364,7 @@ export const useColumns = <T extends object>() => {
         if (id === '_id') return 1;
         if (type === 'image') return 2;
         if (title === 'name') return 3;
+        if (type === 'status') return 5;
 
         return 4;
       };
@@ -425,10 +426,24 @@ export const useColumns = <T extends object>() => {
     return newColumns.length ? newColumns : columns;
   };
 
+  const orderColumnLast = (
+    columns: ColumnDef<T>[],
+    key: string,
+  ): ColumnDef<T>[] => {
+    const column = columns.find((column) => column.id === key);
+    if (!column) {
+      return columns;
+    }
+    const newColumns = columns.filter((col) => col.id !== key);
+    newColumns.push(column);
+    return newColumns;
+  };
+
   return {
     getColumns,
     extendColumns,
     addActionsColumn,
     orderAndFilterColumns,
+    orderColumnLast,
   };
 };

@@ -2,7 +2,8 @@ export type StringKeyOf<T> = Extract<keyof T, string>;
 
 export const enum DataItemDisplayType {
   String = 'string',
-  ArraySummary = 'arraySummary',
+  Array = 'array',
+  Copy = 'copy',
 }
 export interface GeinsEntity {
   _id?: string;
