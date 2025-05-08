@@ -17,7 +17,7 @@ const descriptionClasses = ref('');
 
 switch (props.size) {
   case 'md':
-    headerClasses.value = 'text-md';
+    headerClasses.value = 'text-base';
     descriptionClasses.value = 'text-sm';
     break;
   case 'sm':

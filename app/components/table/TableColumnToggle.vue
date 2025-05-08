@@ -142,7 +142,7 @@ const resetOrderAndVisibility = () => {
       <div class="grid p-4 md:grid-cols-2">
         <!-- Available Columns -->
         <div class="mr-8 border-r pr-8">
-          <h4 class="text-md mb-4 font-semibold">Availble colums</h4>
+          <h4 class="mb-4 text-base font-semibold">Availble colums</h4>
           <!--      <div class="relative mb-4">
                 <SearchIcon
                   class="absolute left-2 top-2.5 size-4 text-muted-foreground"
@@ -176,7 +176,7 @@ const resetOrderAndVisibility = () => {
 
         <!-- Chosen Columns -->
         <div>
-          <h4 class="text-md mb-4 font-semibold">Chosen columns</h4>
+          <h4 class="mb-4 text-base font-semibold">Chosen columns</h4>
           <draggable
             v-model="currentOrder"
             item-key="id"

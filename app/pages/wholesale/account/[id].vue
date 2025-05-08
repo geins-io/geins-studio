@@ -851,13 +851,13 @@ const confirmDelete = async () => {
                   </FormField>
                 </FormGrid>
               </FormGridWrap>
-              <ContentCardHeader
-                size="md"
-                heading-level="h3"
-                title="Contact person"
-                description="Contact person related to the address"
-              />
               <FormGridWrap>
+                <ContentCardHeader
+                  size="md"
+                  heading-level="h3"
+                  title="Contact person"
+                  description="Contact person related to the address"
+                />
                 <FormGrid design="1+1">
                   <FormField
                     v-slot="{ componentField }"
@@ -913,132 +913,43 @@ const confirmDelete = async () => {
                   </FormField>
                 </FormGrid>
               </FormGridWrap>
-              <ContentCardHeader
-                size="md"
-                heading-level="h3"
-                title="Shipping address"
-              />
-              <ContentSwitch
-                v-model:checked="useShippingAddress"
-                label="Add different shipping address"
-                description="Activate to add a different shipping address"
-              >
-                <FormGridWrap>
-                  <FormGrid design="2+1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="addresses.shipping.company"
-                    >
-                      <FormItem v-auto-animate>
-                        <FormLabel>{{ $t('address.company_name') }}</FormLabel>
-                        <FormControl>
-                          <Input v-bind="componentField" type="text" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                  <FormGrid design="2+1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="addresses.shipping.addressLine1"
-                    >
-                      <FormItem v-auto-animate>
-                        <FormLabel>{{ $t('address.addressLine1') }}</FormLabel>
-                        <FormControl>
-                          <Input v-bind="componentField" type="text" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="addresses.shipping.zip"
-                    >
-                      <FormItem v-auto-animate>
-                        <FormLabel>{{ $t('address.zip') }}</FormLabel>
-                        <FormControl>
-                          <Input v-bind="componentField" type="text" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="addresses.shipping.city"
-                    >
-                      <FormItem v-auto-animate>
-                        <FormLabel>{{ $t('address.city') }}</FormLabel>
-                        <FormControl>
-                          <Input v-bind="componentField" type="text" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                  <FormGrid design="1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="addresses.shipping.addressLine2"
-                    >
-                      <FormItem v-auto-animate>
-                        <FormLabel :optional="true">{{
-                          $t('address.addressLine2')
-                        }}</FormLabel>
-                        <FormControl>
-                          <Input v-bind="componentField" type="text" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="addresses.shipping.country"
-                    >
-                      <FormItem v-auto-animate>
-                        <FormLabel>{{ $t('address.country') }}</FormLabel>
-                        <FormControl>
-                          <FormInputCountrySelect
-                            :model-value="componentField.modelValue"
-                            @update:model-value="
-                              componentField['onUpdate:modelValue']
-                            "
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                  <FormGrid design="1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="addresses.shipping.region"
-                    >
-                      <FormItem v-auto-animate>
-                        <FormLabel :optional="true">{{
-                          $t('address.region')
-                        }}</FormLabel>
-                        <FormControl>
-                          <Input v-bind="componentField" type="text" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                  <ContentCardHeader
-                    size="md"
-                    heading-level="h3"
-                    title="Contact person"
-                    description="Contact person related to the address"
-                  />
+              <FormGridWrap>
+                <ContentCardHeader
+                  size="md"
+                  heading-level="h3"
+                  title="Shipping address"
+                />
+                <ContentSwitch
+                  v-model:checked="useShippingAddress"
+                  label="Add different shipping address"
+                  description="Activate to add a different shipping address"
+                >
                   <FormGridWrap>
-                    <FormGrid design="1+1">
+                    <FormGrid design="2+1+1">
                       <FormField
                         v-slot="{ componentField }"
-                        name="addresses.shipping.firstName"
+                        name="addresses.shipping.company"
                       >
                         <FormItem v-auto-animate>
-                          <FormLabel>{{ $t('address.first_name') }}</FormLabel>
+                          <FormLabel>{{
+                            $t('address.company_name')
+                          }}</FormLabel>
+                          <FormControl>
+                            <Input v-bind="componentField" type="text" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
+                    </FormGrid>
+                    <FormGrid design="2+1+1">
+                      <FormField
+                        v-slot="{ componentField }"
+                        name="addresses.shipping.addressLine1"
+                      >
+                        <FormItem v-auto-animate>
+                          <FormLabel>{{
+                            $t('address.addressLine1')
+                          }}</FormLabel>
                           <FormControl>
                             <Input v-bind="componentField" type="text" />
                           </FormControl>
@@ -1047,10 +958,22 @@ const confirmDelete = async () => {
                       </FormField>
                       <FormField
                         v-slot="{ componentField }"
-                        name="addresses.shipping.lastName"
+                        name="addresses.shipping.zip"
                       >
                         <FormItem v-auto-animate>
-                          <FormLabel>{{ $t('address.last_name') }}</FormLabel>
+                          <FormLabel>{{ $t('address.zip') }}</FormLabel>
+                          <FormControl>
+                            <Input v-bind="componentField" type="text" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
+                      <FormField
+                        v-slot="{ componentField }"
+                        name="addresses.shipping.city"
+                      >
+                        <FormItem v-auto-animate>
+                          <FormLabel>{{ $t('address.city') }}</FormLabel>
                           <FormControl>
                             <Input v-bind="componentField" type="text" />
                           </FormControl>
@@ -1061,24 +984,45 @@ const confirmDelete = async () => {
                     <FormGrid design="1+1">
                       <FormField
                         v-slot="{ componentField }"
-                        name="addresses.shipping.email"
+                        name="addresses.shipping.addressLine2"
                       >
                         <FormItem v-auto-animate>
-                          <FormLabel>{{ $t('address.email') }}</FormLabel>
+                          <FormLabel :optional="true">{{
+                            $t('address.addressLine2')
+                          }}</FormLabel>
                           <FormControl>
-                            <Input v-bind="componentField" type="email" />
+                            <Input v-bind="componentField" type="text" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       </FormField>
                       <FormField
                         v-slot="{ componentField }"
-                        name="addresses.shipping.phone"
+                        name="addresses.shipping.country"
                       >
                         <FormItem v-auto-animate>
-                          <FormLabel :optional="true">
-                            {{ $t('address.phone') }}
-                          </FormLabel>
+                          <FormLabel>{{ $t('address.country') }}</FormLabel>
+                          <FormControl>
+                            <FormInputCountrySelect
+                              :model-value="componentField.modelValue"
+                              @update:model-value="
+                                componentField['onUpdate:modelValue']
+                              "
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
+                    </FormGrid>
+                    <FormGrid design="1+1">
+                      <FormField
+                        v-slot="{ componentField }"
+                        name="addresses.shipping.region"
+                      >
+                        <FormItem v-auto-animate>
+                          <FormLabel :optional="true">{{
+                            $t('address.region')
+                          }}</FormLabel>
                           <FormControl>
                             <Input v-bind="componentField" type="text" />
                           </FormControl>
@@ -1087,8 +1031,74 @@ const confirmDelete = async () => {
                       </FormField>
                     </FormGrid>
                   </FormGridWrap>
-                </FormGridWrap>
-              </ContentSwitch>
+                  <FormGridWrap>
+                    <ContentCardHeader
+                      size="md"
+                      heading-level="h3"
+                      title="Contact person"
+                      description="Contact person related to the address"
+                    />
+                    <FormGridWrap>
+                      <FormGrid design="1+1">
+                        <FormField
+                          v-slot="{ componentField }"
+                          name="addresses.shipping.firstName"
+                        >
+                          <FormItem v-auto-animate>
+                            <FormLabel>{{
+                              $t('address.first_name')
+                            }}</FormLabel>
+                            <FormControl>
+                              <Input v-bind="componentField" type="text" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        </FormField>
+                        <FormField
+                          v-slot="{ componentField }"
+                          name="addresses.shipping.lastName"
+                        >
+                          <FormItem v-auto-animate>
+                            <FormLabel>{{ $t('address.last_name') }}</FormLabel>
+                            <FormControl>
+                              <Input v-bind="componentField" type="text" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        </FormField>
+                      </FormGrid>
+                      <FormGrid design="1+1">
+                        <FormField
+                          v-slot="{ componentField }"
+                          name="addresses.shipping.email"
+                        >
+                          <FormItem v-auto-animate>
+                            <FormLabel>{{ $t('address.email') }}</FormLabel>
+                            <FormControl>
+                              <Input v-bind="componentField" type="email" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        </FormField>
+                        <FormField
+                          v-slot="{ componentField }"
+                          name="addresses.shipping.phone"
+                        >
+                          <FormItem v-auto-animate>
+                            <FormLabel :optional="true">
+                              {{ $t('address.phone') }}
+                            </FormLabel>
+                            <FormControl>
+                              <Input v-bind="componentField" type="text" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        </FormField>
+                      </FormGrid>
+                    </FormGridWrap>
+                  </FormGridWrap>
+                </ContentSwitch>
+              </FormGridWrap>
             </template>
           </ContentEditCard>
           <div v-if="createMode" class="flex flex-row justify-end gap-4">

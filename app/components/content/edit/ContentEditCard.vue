@@ -81,7 +81,7 @@ const hasCreateView = computed(() => !!slots.create);
         />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div class="space-y-6 p-6 pt-0">
+        <div :class="cn('space-y-8 p-6 pt-0', `${createMode ? '' : 'pb-8'}`)">
           <slot v-if="hasCreateView && createMode" name="create" />
           <slot v-else />
           <div

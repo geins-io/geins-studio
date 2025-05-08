@@ -12,6 +12,9 @@ const beforeEnter = (el: Element) => {
 
 const enter = (el: Element) => {
   (el as HTMLElement).style.height = (el as HTMLElement).scrollHeight + 'px';
+  setTimeout(() => {
+    (el as HTMLElement).style.height = 'auto';
+  }, 300);
 };
 
 const beforeLeave = (el: Element) => {

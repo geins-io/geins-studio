@@ -121,3 +121,9 @@
     height: 100%;
   }
 }
+
+@layer components {
+  .form-grid-wrap + .form-grid-wrap {
+    @apply mt-8 !important;
+  }
+}

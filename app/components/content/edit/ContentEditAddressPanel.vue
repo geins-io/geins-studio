@@ -174,7 +174,8 @@ const handleCancel = () => {
                 </FormItem>
               </FormField>
             </FormGrid>
-
+          </FormGridWrap>
+          <FormGridWrap>
             <ContentCardHeader
               size="md"
               heading-level="h3"
