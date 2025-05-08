@@ -98,7 +98,11 @@ const getName = (id: AcceptableValue): string => {
     <ComboboxAnchor as-child>
       <TagsInput
         v-model="model"
-        class="w-full gap-2 px-2"
+        :class="
+          cn('w-full gap-2 px-2', {
+            'border border-primary': open,
+          })
+        "
         :display-value="getName"
       >
         <div class="flex flex-wrap items-center gap-2">

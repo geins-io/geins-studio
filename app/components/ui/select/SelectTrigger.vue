@@ -31,6 +31,7 @@ const forwardedProps = useForwardProps(delegatedProps);
         props.class,
       )
     "
+    tabindex="0"
   >
     <slot />
     <SelectIcon as-child>

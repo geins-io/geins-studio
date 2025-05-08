@@ -19,7 +19,11 @@ const findItem = (value: string | undefined) =>
 const choice = ref<PlainDataItem | undefined>(findItem(model.value));
 
 watch(choice, (newChoice) => {
+  if (newChoice?.value === model.value) {
+    return;
+  }
   model.value = newChoice?.value ?? '';
+  open.value = false;
 });
 
 watch([model, () => props.dataSet], ([newModelValue]) => {
@@ -27,16 +31,41 @@ watch([model, () => props.dataSet], ([newModelValue]) => {
     choice.value = findItem(newModelValue);
   }
 });
+
+const open = ref(false);
+const handleFocus = async (event: FocusEvent) => {
+  await nextTick();
+  console.log('relatedTarget:', event.relatedTarget);
+  console.log('target:', event.target);
+  console.log('🚀 ~ handleFocus ~ event:', event);
+  if (event.relatedTarget && event.relatedTarget === event.currentTarget) {
+    return;
+  }
+  open.value = true;
+};
+const handleClick = async (event: MouseEvent) => {
+  await nextTick();
+
+  console.log('CLICK relatedTarget:', event.relatedTarget);
+  console.log('CLICK target:', event.target);
+  console.log('🚀 ~ handleClick ~ event:', event);
+};
 </script>
 
 <template>
-  <Combobox v-model="choice" by="label">
+  <Combobox v-model="choice" v-model:open="open" by="label">
     <ComboboxAnchor
       as-child
       class="pointer-events-auto flex h-10 w-full items-center justify-between rounded-lg border bg-input px-3 py-1 text-sm transition-colors data-[state=open]:border-primary"
     >
       <ComboboxTrigger as-child>
-        <button type="button">
+        <button
+          type="button"
+          tabindex="0"
+          class="focus:border-primary focus-visible:border-primary focus-visible:outline-none focus-visible:ring-0"
+          @focus="handleFocus"
+          @click="handleClick"
+        >
           {{ choice?.label ?? t('select_entity', { entityName }) }}
 
           <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
@@ -51,6 +80,7 @@ watch([model, () => props.dataSet], ([newModelValue]) => {
         <ComboboxInput
           class="pointer-events-auto h-10 rounded-none border-0 border-b pl-9 focus-visible:ring-0"
           :placeholder="t('search_entity', { entityName }) + '...'"
+          @blur="open = false"
         />
         <span
           class="absolute inset-y-0 start-0 flex items-center justify-center px-3"

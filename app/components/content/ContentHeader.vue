@@ -37,7 +37,7 @@ const hasChanges = computed(() => !!slots.changes);
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink as-child>
-            <NuxtLink to="/">Home</NuxtLink>
+            <NuxtLink to="/wholesale/account/list">Wholesale</NuxtLink>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
