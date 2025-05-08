@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ConfigProvider } from 'radix-vue';
+import { ConfigProvider } from 'reka-ui';
 
 const useIdFunction = () => useId();
 

@@ -3,6 +3,7 @@ import * as z from 'zod';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
+import { VisuallyHidden } from 'reka-ui';
 
 const props = defineProps<{
   address: Address;
@@ -90,6 +91,11 @@ const handleCancel = () => {
     <SheetContent width="medium">
       <SheetHeader>
         <SheetTitle>{{ $t('edit_entity', { entityName }) }}</SheetTitle>
+        <VisuallyHidden>
+          <SheetDescription>
+            {{ $t('edit_entity', { entityName }) }}
+          </SheetDescription>
+        </VisuallyHidden>
       </SheetHeader>
       <div class="p-6">
         <form @submit.prevent>
