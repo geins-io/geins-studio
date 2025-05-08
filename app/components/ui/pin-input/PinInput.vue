@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from 'vue';
+import { cn } from '@/utils';
 import {
   PinInputRoot,
   type PinInputRootEmits,
   type PinInputRootProps,
   useForwardPropsEmits,
-} from 'radix-vue';
+} from 'reka-ui';
+import { computed, type HTMLAttributes } from 'vue';
 
 const props = withDefaults(
   defineProps<PinInputRootProps & { class?: HTMLAttributes['class'] }>(),
@@ -26,7 +27,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
 <template>
   <PinInputRoot
     v-bind="forwarded"
-    :class="cn('flex gap-2 items-center', props.class)"
+    :class="cn('flex items-center gap-2', props.class)"
   >
     <slot />
   </PinInputRoot>

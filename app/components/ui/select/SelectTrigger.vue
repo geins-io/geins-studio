@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from 'vue';
+import { cn } from '@/utils';
+import { ChevronDown } from 'lucide-vue-next';
 import {
   SelectIcon,
   SelectTrigger,
   type SelectTriggerProps,
   useForwardProps,
-} from 'radix-vue';
-import { CaretSortIcon } from '@radix-icons/vue';
+} from 'reka-ui';
+import { computed, type HTMLAttributes } from 'vue';
 
 const props = defineProps<
   SelectTriggerProps & { class?: HTMLAttributes['class'] }
@@ -33,7 +34,7 @@ const forwardedProps = useForwardProps(delegatedProps);
   >
     <slot />
     <SelectIcon as-child>
-      <CaretSortIcon class="size-4 opacity-50" />
+      <ChevronDown class="size-4 shrink-0 opacity-50" />
     </SelectIcon>
   </SelectTrigger>
 </template>

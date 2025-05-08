@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from 'vue';
+import { cn } from '@/utils';
 import {
   PinInputInput,
   type PinInputInputProps,
   useForwardProps,
-} from 'radix-vue';
+} from 'reka-ui';
+import { computed, type HTMLAttributes } from 'vue';
 
 const props = defineProps<
   PinInputInputProps & { class?: HTMLAttributes['class'] }

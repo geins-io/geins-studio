@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from 'vue';
-import type { CheckboxRootEmits, CheckboxRootProps } from 'radix-vue';
-import {
-  CheckboxIndicator,
-  CheckboxRoot,
-  useForwardPropsEmits,
-} from 'radix-vue';
-import { CheckIcon } from '@radix-icons/vue';
+import type { CheckboxRootEmits, CheckboxRootProps } from 'reka-ui';
+import { cn } from '@/utils';
+import { Check } from 'lucide-vue-next';
+import { CheckboxIndicator, CheckboxRoot, useForwardPropsEmits } from 'reka-ui';
+import { computed, type HTMLAttributes } from 'vue';
 
 const props = defineProps<
   CheckboxRootProps & { class?: HTMLAttributes['class'] }
@@ -34,7 +31,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
   >
     <CheckboxIndicator class="flex size-full items-center justify-center">
       <slot>
-        <CheckIcon class="size-5 text-current transition-colors" />
+        <Check class="size-5 text-current transition-colors" />
       </slot>
     </CheckboxIndicator>
   </CheckboxRoot>
