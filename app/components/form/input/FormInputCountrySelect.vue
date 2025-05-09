@@ -32,5 +32,6 @@ const countries = computed<PlainDataItem[]>(() => {
     v-model="countryCode"
     :data-set="countries"
     entity-name="country"
+    autocomplete="country"
   />
 </template>

@@ -57,10 +57,11 @@ watch(
   { deep: true },
 );
 
+const autocompleteGroup = computed(() => {
+  return props.address.addressType === 'shipping' ? 'shipping' : 'billing';
+});
 const entityName = computed(() => {
-  const entity =
-    props.address.addressType === 'shipping' ? 'shipping' : 'billing';
-  return `${entity}_address`;
+  return `${autocompleteGroup.value}_address`;
 });
 
 const handleSave = async () => {
@@ -105,7 +106,11 @@ const handleCancel = () => {
                 <FormItem v-auto-animate>
                   <FormLabel>{{ t('address.company_name') }}</FormLabel>
                   <FormControl>
-                    <Input v-bind="componentField" type="text" />
+                    <Input
+                      v-bind="componentField"
+                      type="text"
+                      :autocomplete="`${autocompleteGroup} organization`"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -116,7 +121,11 @@ const handleCancel = () => {
                 <FormItem v-auto-animate>
                   <FormLabel>{{ t('address.addressLine1') }}</FormLabel>
                   <FormControl>
-                    <Input v-bind="componentField" type="text" />
+                    <Input
+                      v-bind="componentField"
+                      type="text"
+                      :autocomplete="`${autocompleteGroup} address-line1`"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -125,7 +134,11 @@ const handleCancel = () => {
                 <FormItem v-auto-animate>
                   <FormLabel>{{ t('address.zip') }}</FormLabel>
                   <FormControl>
-                    <Input v-bind="componentField" type="text" />
+                    <Input
+                      v-bind="componentField"
+                      type="text"
+                      :autocomplete="`${autocompleteGroup} postal-code`"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -134,7 +147,11 @@ const handleCancel = () => {
                 <FormItem v-auto-animate>
                   <FormLabel>{{ t('address.city') }}</FormLabel>
                   <FormControl>
-                    <Input v-bind="componentField" type="text" />
+                    <Input
+                      v-bind="componentField"
+                      type="text"
+                      :autocomplete="`${autocompleteGroup} address-level2`"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -147,7 +164,11 @@ const handleCancel = () => {
                     t('address.addressLine2')
                   }}</FormLabel>
                   <FormControl>
-                    <Input v-bind="componentField" type="text" />
+                    <Input
+                      v-bind="componentField"
+                      type="text"
+                      :autocomplete="`${autocompleteGroup} address-line2`"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -174,7 +195,11 @@ const handleCancel = () => {
                     t('address.region')
                   }}</FormLabel>
                   <FormControl>
-                    <Input v-bind="componentField" type="text" />
+                    <Input
+                      v-bind="componentField"
+                      type="text"
+                      :autocomplete="`${autocompleteGroup} address-level1`"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -194,7 +219,11 @@ const handleCancel = () => {
                 <FormItem v-auto-animate>
                   <FormLabel>{{ t('address.first_name') }}</FormLabel>
                   <FormControl>
-                    <Input v-bind="componentField" type="text" />
+                    <Input
+                      v-bind="componentField"
+                      type="text"
+                      :autocomplete="`${autocompleteGroup} given-name`"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -203,7 +232,11 @@ const handleCancel = () => {
                 <FormItem v-auto-animate>
                   <FormLabel>{{ t('address.last_name') }}</FormLabel>
                   <FormControl>
-                    <Input v-bind="componentField" type="text" />
+                    <Input
+                      v-bind="componentField"
+                      type="text"
+                      :autocomplete="`${autocompleteGroup} family-name`"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -214,7 +247,11 @@ const handleCancel = () => {
                 <FormItem v-auto-animate>
                   <FormLabel>{{ t('address.email') }}</FormLabel>
                   <FormControl>
-                    <Input v-bind="componentField" type="email" />
+                    <Input
+                      v-bind="componentField"
+                      type="email"
+                      :autocomplete="`${autocompleteGroup} email`"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -225,7 +262,11 @@ const handleCancel = () => {
                     t('address.phone')
                   }}</FormLabel>
                   <FormControl>
-                    <Input v-bind="componentField" type="text" />
+                    <Input
+                      v-bind="componentField"
+                      type="text"
+                      :autocomplete="`${autocompleteGroup} tel`"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

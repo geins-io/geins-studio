@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
+import { useWholesale } from '@/composables/useWholesale';
 import * as z from 'zod';
 
 // GLOBALS
@@ -418,25 +419,6 @@ const createAccount = async () => {
   }
 };
 
-const deleteAcc = async (id?: string) => {
-  deleting.value = true;
-  const deleted = await deleteAccount(id);
-  if (deleted) {
-    toast({
-      title: t('entity_deleted', { entityName }),
-      variant: 'positive',
-    });
-    navigateTo('/wholesale/account/list');
-  } else {
-    toast({
-      title: t('entity_delete_failed', { entityName }),
-      variant: 'negative',
-    });
-  }
-  deleting.value = false;
-  deleteDialogOpen.value = false;
-};
-
 const hasShippingAddress = computed(() => {
   return wholesaleAccount.value.addresses?.some(
     (address) => address.addressType === 'shipping',
@@ -757,7 +739,11 @@ const confirmDelete = async () => {
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.company_name') }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="text" />
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          autocomplete="billing organization"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -771,7 +757,11 @@ const confirmDelete = async () => {
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.addressLine1') }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="text" />
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          autocomplete="billing address-line1"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -783,7 +773,11 @@ const confirmDelete = async () => {
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.zip') }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="text" />
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          autocomplete="billing postal-code"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -795,7 +789,11 @@ const confirmDelete = async () => {
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.city') }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="text" />
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          autocomplete="billing address-level2"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -811,7 +809,11 @@ const confirmDelete = async () => {
                         $t('address.addressLine2')
                       }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="text" />
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          autocomplete="billing address-line2"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -844,7 +846,11 @@ const confirmDelete = async () => {
                         $t('address.region')
                       }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="text" />
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          autocomplete="billing address-level1"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -866,7 +872,11 @@ const confirmDelete = async () => {
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.first_name') }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="text" />
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          autocomplete="billing given-name"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -878,7 +888,11 @@ const confirmDelete = async () => {
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.last_name') }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="text" />
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          autocomplete="billing family-name"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -892,7 +906,11 @@ const confirmDelete = async () => {
                     <FormItem v-auto-animate>
                       <FormLabel>{{ $t('address.email') }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="email" />
+                        <Input
+                          v-bind="componentField"
+                          type="email"
+                          autocomplete="billing email"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -906,7 +924,11 @@ const confirmDelete = async () => {
                         $t('address.phone')
                       }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="text" />
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          autocomplete="billing tel"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -935,7 +957,11 @@ const confirmDelete = async () => {
                             $t('address.company_name')
                           }}</FormLabel>
                           <FormControl>
-                            <Input v-bind="componentField" type="text" />
+                            <Input
+                              v-bind="componentField"
+                              type="text"
+                              autocomplete="shipping organization"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -951,7 +977,11 @@ const confirmDelete = async () => {
                             $t('address.addressLine1')
                           }}</FormLabel>
                           <FormControl>
-                            <Input v-bind="componentField" type="text" />
+                            <Input
+                              v-bind="componentField"
+                              type="text"
+                              autocomplete="shipping address-line1"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -963,7 +993,11 @@ const confirmDelete = async () => {
                         <FormItem v-auto-animate>
                           <FormLabel>{{ $t('address.zip') }}</FormLabel>
                           <FormControl>
-                            <Input v-bind="componentField" type="text" />
+                            <Input
+                              v-bind="componentField"
+                              type="text"
+                              autocomplete="shipping postal-code"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -975,7 +1009,11 @@ const confirmDelete = async () => {
                         <FormItem v-auto-animate>
                           <FormLabel>{{ $t('address.city') }}</FormLabel>
                           <FormControl>
-                            <Input v-bind="componentField" type="text" />
+                            <Input
+                              v-bind="componentField"
+                              type="text"
+                              autocomplete="shipping address-level2"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -991,7 +1029,11 @@ const confirmDelete = async () => {
                             $t('address.addressLine2')
                           }}</FormLabel>
                           <FormControl>
-                            <Input v-bind="componentField" type="text" />
+                            <Input
+                              v-bind="componentField"
+                              type="text"
+                              autocomplete="shipping address-line2"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1024,7 +1066,11 @@ const confirmDelete = async () => {
                             $t('address.region')
                           }}</FormLabel>
                           <FormControl>
-                            <Input v-bind="componentField" type="text" />
+                            <Input
+                              v-bind="componentField"
+                              type="text"
+                              autocomplete="shipping address-level1"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1049,7 +1095,11 @@ const confirmDelete = async () => {
                               $t('address.first_name')
                             }}</FormLabel>
                             <FormControl>
-                              <Input v-bind="componentField" type="text" />
+                              <Input
+                                v-bind="componentField"
+                                type="text"
+                                autocomplete="shipping given-name"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1061,7 +1111,11 @@ const confirmDelete = async () => {
                           <FormItem v-auto-animate>
                             <FormLabel>{{ $t('address.last_name') }}</FormLabel>
                             <FormControl>
-                              <Input v-bind="componentField" type="text" />
+                              <Input
+                                v-bind="componentField"
+                                type="text"
+                                autocomplete="shipping family-name"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1075,7 +1129,11 @@ const confirmDelete = async () => {
                           <FormItem v-auto-animate>
                             <FormLabel>{{ $t('address.email') }}</FormLabel>
                             <FormControl>
-                              <Input v-bind="componentField" type="email" />
+                              <Input
+                                v-bind="componentField"
+                                type="email"
+                                autocomplete="shipping email"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1089,7 +1147,11 @@ const confirmDelete = async () => {
                               {{ $t('address.phone') }}
                             </FormLabel>
                             <FormControl>
-                              <Input v-bind="componentField" type="text" />
+                              <Input
+                                v-bind="componentField"
+                                type="text"
+                                autocomplete="shipping tel"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

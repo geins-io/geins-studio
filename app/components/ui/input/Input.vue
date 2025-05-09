@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
+import type { HTMLAttributes, FormHTMLAttributes } from 'vue';
 import { useVModel } from '@vueuse/core';
 
 defineOptions({
@@ -12,6 +12,7 @@ const props = withDefaults(
     modelValue?: string | number;
     class?: HTMLAttributes['class'];
     id?: HTMLAttributes['id'];
+    autocomplete?: FormHTMLAttributes['autocomplete'];
     valid?: boolean;
     feedback?: string;
     description?: string;
@@ -41,6 +42,7 @@ const modelValue = useVModel(props, 'modelValue', emits, {
         props.class,
       )
     "
+    :autocomplete="autocomplete"
     v-bind="$attrs"
   />
   <p v-if="!valid && feedback" class="text-sm font-semibold text-destructive">

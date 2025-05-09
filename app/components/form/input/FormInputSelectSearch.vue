@@ -6,6 +6,7 @@ const props = withDefaults(
   defineProps<{
     dataSet: PlainDataItem[];
     entityName?: string;
+    autocomplete?: string;
   }>(),
   {},
 );
@@ -61,10 +62,14 @@ const handleFocus = async (event: FocusEvent) => {
 
 const handleBlur = (event: FocusEvent) => {
   // If tabbing out of the search input (not clicking within dropdown)
+  const relatedTarget = event.relatedTarget as Node | null;
+  const listElement = comboboxList.value;
+
   if (
-    !event.relatedTarget ||
-    (comboboxList.value &&
-      !comboboxList.value.contains(event.relatedTarget as Node))
+    !relatedTarget ||
+    (listElement &&
+      typeof listElement.contains === 'function' &&
+      !listElement.contains(relatedTarget))
   ) {
     open.value = false;
 
@@ -97,6 +102,12 @@ const handleKeyDown = () => {
 </script>
 
 <template>
+  <input
+    v-if="autocomplete"
+    v-model="model"
+    :autocomplete="autocomplete"
+    class="pointer-events-none absolute h-0 opacity-0"
+  />
   <Combobox v-model="choice" v-model:open="open" by="label">
     <ComboboxAnchor
       as-child
@@ -128,6 +139,7 @@ const handleKeyDown = () => {
           ref="searchInput"
           class="h-10 rounded-none border-0 border-b pl-9 focus:rounded-lg focus:border focus:border-primary focus-visible:border-primary focus-visible:outline-none focus-visible:ring-0"
           :placeholder="t('search_entity', { entityName }) + '...'"
+          :autocomplete="autocomplete"
           @blur="handleBlur"
         />
         <span
