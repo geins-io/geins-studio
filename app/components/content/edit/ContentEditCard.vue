@@ -70,6 +70,7 @@ const hasCreateView = computed(() => !!slots.create);
             `${futureStep ? 'pointer-events-none opacity-50' : ''}`,
           )
         "
+        :disabled="futureStep || !createMode"
       >
         <ContentCardHeader :title="stepTitle" :description="description" />
 
