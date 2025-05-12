@@ -30,8 +30,10 @@ export interface WholesaleSalesRep extends GeinsEntity {
 }
 
 export interface WholesaleBuyer extends GeinsEntity {
+  active: boolean;
   firstName: string;
   lastName: string;
+  email: string;
   phone: string;
   accountId: string;
 }

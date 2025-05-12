@@ -66,7 +66,6 @@ const hasCreateView = computed(() => !!slots.create);
         :class="
           cn(
             `flex w-full items-center justify-between p-6`,
-            `${!createMode ? 'pointer-events-none' : ''}`,
             `${futureStep ? 'pointer-events-none opacity-50' : ''}`,
           )
         "
@@ -80,6 +79,7 @@ const hasCreateView = computed(() => !!slots.create);
             cn(`size-6 transition-transform ${isOpen ? 'rotate-180' : ''}`)
           "
         />
+        <slot name="header-action" />
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div :class="cn('space-y-8 p-6 pt-0', `${createMode ? '' : 'pb-8'}`)">

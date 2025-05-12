@@ -1235,9 +1235,30 @@ const confirmAddressDelete = async () => {
           <ContentEditCard
             :create-mode="createMode"
             title="Buyers"
-            description="Add buyers to the account"
+            description="Buyers connected to this account"
           >
-            LALALA...
+            <template #header-action>
+              <WholesaleBuyerPanel mode="add">
+                <ButtonIcon
+                  v-if="!createMode"
+                  icon="new"
+                  variant="outline"
+                  size="sm"
+                >
+                  {{ $t('add_entity', { entityName: 'buyer' }) }}
+                </ButtonIcon>
+              </WholesaleBuyerPanel>
+            </template>
+            <div
+              class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
+            >
+              <p class="text-xl font-bold">
+                {{ $t('no_entity', { entityName: 'buyer' }, 2) }}
+              </p>
+              <p class="text-xs text-muted-foreground">
+                No buyers are connected to this account
+              </p>
+            </div>
           </ContentEditCard>
         </ContentEditMain>
       </KeepAlive>

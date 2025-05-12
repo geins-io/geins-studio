@@ -26,7 +26,7 @@ switch (props.size) {
     break;
   default:
     headerClasses.value = 'text-xl';
-    descriptionClasses.value = 'text-sm mt-2';
+    descriptionClasses.value = 'text-sm mt-1';
 }
 </script>
 <template>
