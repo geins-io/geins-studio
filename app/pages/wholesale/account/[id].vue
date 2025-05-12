@@ -26,9 +26,10 @@ const entityListUrl = getEntityListUrl();
 const currentTab = ref(0);
 const loading = ref(false);
 const accountStore = useAccountStore();
-const useShippingAddress = ref(false);
+const addShippingAddress = ref(false);
 const originalAccountData = ref<string>('');
 const liveStatus = ref(true);
+const formValidation = ref();
 
 // EDIT PAGE OPTIONS
 const tabs = [t('wholesale.account_details'), t('wholesale.buyers')];
@@ -131,7 +132,7 @@ const parseAndSaveData = (account: WholesaleAccount): void => {
       ...shipping,
     };
   }
-  useShippingAddress.value = !!shipping;
+  addShippingAddress.value = !!shipping;
 };
 
 const hasUnsavedChanges = computed(() => {
@@ -238,12 +239,12 @@ const form = useForm({
 const validateOnChange = ref(false);
 const stepValidationMap: Record<number, string> = {
   1: 'details',
-  2: useShippingAddress.value ? 'addresses' : 'billing',
+  2: addShippingAddress.value ? 'addresses' : 'billing',
 };
 
 const validateSteps = async (steps: number[]) => {
-  const validation = await form.validate();
-  const errors = Object.keys(validation.errors);
+  formValidation.value = await form.validate();
+  const errors = Object.keys(formValidation.value.errors);
   const stepKeys = steps.map((step) => stepValidationMap[step]);
   const stepErrors = errors.filter((error) =>
     stepKeys.some((stepKey) => stepKey && error.includes(stepKey)),
@@ -261,14 +262,14 @@ watch(
   form.values,
   useDebounceFn(async (values) => {
     if (validateOnChange.value) {
-      await form.validate();
+      formValidation.value = await form.validate();
     }
     const addresses = getAddresses(
       {
         ...billingAddress.value,
         ...values.addresses?.billing,
       },
-      useShippingAddress.value
+      addShippingAddress.value
         ? {
             ...shippingAddress.value,
             ...values.addresses?.shipping,
@@ -449,7 +450,7 @@ const saveAddress = async (address: Address) => {
     billingAddress.value = address;
   } else {
     shippingAddress.value = address;
-    useShippingAddress.value = true;
+    addShippingAddress.value = true;
   }
 };
 
@@ -503,6 +504,38 @@ const confirmDelete = async () => {
   deleting.value = false;
   deleteDialogOpen.value = false;
 };
+
+const deleteAddressDialogOpen = ref(false);
+const deletingAddressId = ref<string>('');
+const openAddressDeleteDialog = async (addressId: string) => {
+  deletingAddressId.value = addressId;
+  await nextTick();
+  deleteAddressDialogOpen.value = true;
+};
+const confirmAddressDelete = async () => {
+  deleting.value = true;
+  if (deletingAddressId.value === 'new') {
+    wholesaleAccount.value.addresses = wholesaleAccount.value.addresses?.filter(
+      (address) => address.addressType !== 'shipping',
+    );
+  } else {
+    wholesaleAccount.value.addresses = wholesaleAccount.value.addresses?.filter(
+      (address) => address._id !== deletingAddressId.value,
+    );
+  }
+  shippingAddress.value = {
+    ...addressObj,
+    addressType: 'shipping',
+  };
+  addShippingAddress.value = false;
+  toast({
+    title: t('entity_deleted', { entityName: 'shipping_address' }),
+    variant: 'positive',
+  });
+
+  deleting.value = false;
+  deleteAddressDialogOpen.value = false;
+};
 </script>
 
 <template>
@@ -511,6 +544,12 @@ const confirmDelete = async () => {
     :entity-name="entityName"
     :loading="deleting"
     @confirm="confirmDelete"
+  />
+  <DialogDelete
+    v-model:open="deleteAddressDialogOpen"
+    entity-name="shipping_address"
+    :loading="deleting"
+    @confirm="confirmAddressDelete"
   />
   <ContentEditWrap>
     <template #header>
@@ -697,15 +736,16 @@ const confirmDelete = async () => {
                   class="mt-4 border-t pt-4"
                 >
                   <ContentSwitch
-                    :checked="!useShippingAddress"
+                    :checked="!addShippingAddress"
                     label="Same as billing address"
                     description="Use the billing address as your shipping address"
-                    @update:checked="useShippingAddress = !$event"
+                    @update:checked="addShippingAddress = !$event"
                   />
                   <ContentEditAddressPanel
-                    v-if="!hasShippingAddress && useShippingAddress"
+                    v-if="!hasShippingAddress && addShippingAddress"
                     :address="shippingAddress"
                     @save="saveAddress"
+                    @delete="openAddressDeleteDialog"
                   >
                     <Button class="mt-4" variant="outline">
                       {{ $t('add_entity', { entityName: 'shipping_address' }) }}
@@ -720,6 +760,7 @@ const confirmDelete = async () => {
                   <ContentEditAddressPanel
                     :address="shippingAddress"
                     @save="saveAddress"
+                    @delete="openAddressDeleteDialog"
                   >
                     <Button variant="outline" size="sm">{{
                       $t('edit')
@@ -939,10 +980,14 @@ const confirmDelete = async () => {
                 <ContentCardHeader
                   size="md"
                   heading-level="h3"
-                  title="Shipping address"
+                  :title="
+                    $t('entity_caps', {
+                      entityName: 'shipping_address',
+                    })
+                  "
                 />
                 <ContentSwitch
-                  v-model:checked="useShippingAddress"
+                  v-model:checked="addShippingAddress"
                   label="Add different shipping address"
                   description="Activate to add a different shipping address"
                 >

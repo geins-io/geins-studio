@@ -17,18 +17,20 @@ const _emit = defineEmits(['confirm', 'cancel']);
         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
         <AlertDialogDescription>
           This will permanently delete this
-          {{ props.entityName }}. This action cannot be undone.
+          {{ $t(props.entityName) }}. This action cannot be undone.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="$emit('cancel')">Cancel</AlertDialogCancel>
+        <AlertDialogCancel @click="$emit('cancel')">{{
+          $t('cancel')
+        }}</AlertDialogCancel>
 
         <Button
           :loading="loading"
           variant="destructive"
           @click.prevent.stop="$emit('confirm')"
         >
-          Continue
+          {{ $t('continue') }}
         </Button>
       </AlertDialogFooter>
     </AlertDialogContent>

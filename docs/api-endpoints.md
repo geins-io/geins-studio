@@ -7,7 +7,7 @@ toc_max_heading_level: 4
 sidebar_position: 10
 ---
 
-# Endpoints for the Wholesale Module and New Merchant Center
+# Endpoints for the Wholesale Module and New Geins Studio
 
 ## Auth Service
 

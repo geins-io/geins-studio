@@ -142,7 +142,7 @@ const backToLogin = () => {
 
 <template>
   <div class="grid gap-2 text-center">
-    <h1 class="mb-3 text-3xl font-bold">
+    <h1 class="mb-2 text-3xl font-bold">
       {{ verifyMode ? $t('auth_verify_title') : $t('auth_login_title') }}
     </h1>
     <!-- <p v-if="instructions" class="text-xs text-muted-foreground">

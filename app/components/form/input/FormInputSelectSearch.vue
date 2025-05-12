@@ -102,13 +102,14 @@ const handleKeyDown = () => {
 </script>
 
 <template>
-  <input
-    v-if="autocomplete"
-    v-model="model"
-    :autocomplete="autocomplete"
-    class="pointer-events-none absolute h-0 opacity-0"
-  />
   <Combobox v-model="choice" v-model:open="open" by="label">
+    <input
+      v-if="autocomplete"
+      v-model="model"
+      tabindex="-1"
+      :autocomplete="autocomplete"
+      class="pointer-events-none absolute h-0 opacity-0"
+    />
     <ComboboxAnchor
       as-child
       class="flex h-10 w-full items-center justify-between rounded-lg border bg-input px-3 py-1 text-sm transition-colors data-[state=open]:border-primary"

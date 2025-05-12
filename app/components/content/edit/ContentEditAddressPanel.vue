@@ -11,10 +11,17 @@ const props = defineProps<{
 const { t } = useI18n();
 const emit = defineEmits<{
   (event: 'save', address: Address): void;
+  (event: 'delete', id: string): void;
 }>();
 
 const open = ref(false);
 const validateOnChange = ref(false);
+const loading = ref(false);
+const addressHasValues = ref(false);
+
+onMounted(() => {
+  addressHasValues.value = !!(props.address.addressLine1 && props.address.zip);
+});
 
 watch(open, (value) => {
   if (value) {
@@ -78,6 +85,16 @@ const handleSave = async () => {
 
   emit('save', newAddress);
   open.value = false;
+};
+
+const handleDelete = () => {
+  const id = props.address._id || 'new';
+  loading.value = true;
+  emit('delete', id);
+  open.value = false;
+  setTimeout(() => {
+    loading.value = false;
+  }, 1000);
 };
 
 const handleCancel = () => {
@@ -274,6 +291,29 @@ const handleCancel = () => {
             </FormGrid>
           </FormGridWrap>
         </form>
+        <div
+          v-if="autocompleteGroup === 'shipping' && addressHasValues"
+          class="mt-8 flex items-center justify-between border-t pt-8"
+        >
+          <ContentCardHeader
+            size="md"
+            heading-level="h3"
+            :title="
+              t('delete_entity', {
+                entityName,
+              })
+            "
+            description="Delete this shipping address from your account"
+          />
+          <Button
+            size="sm"
+            variant="destructive"
+            :loading="loading"
+            @click.stop="handleDelete"
+          >
+            {{ t('delete') }}
+          </Button>
+        </div>
       </div>
       <SheetFooter>
         <Button variant="outline" @click="handleCancel">

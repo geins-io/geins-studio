@@ -12,9 +12,9 @@ const beforeEnter = (el: Element) => {
 
 const enter = (el: Element) => {
   (el as HTMLElement).style.height = (el as HTMLElement).scrollHeight + 'px';
-  setTimeout(() => {
-    (el as HTMLElement).style.height = 'auto';
-  }, 300);
+  // setTimeout(() => {
+  //   (el as HTMLElement).style.height = 'auto';
+  // }, 300);
 };
 
 const beforeLeave = (el: Element) => {
@@ -40,7 +40,7 @@ const hasSlotContent = computed(() => !!slots.default);
         class="p-px"
       />
       <div>
-        <Switch v-model:checked="checked" />
+        <Switch v-model="checked" />
       </div>
     </div>
     <transition
