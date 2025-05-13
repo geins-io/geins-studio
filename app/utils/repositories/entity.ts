@@ -6,18 +6,14 @@ import type { NitroFetchRequest, $Fetch } from 'nitropack';
  * @param entity Base entity for this entity type
  * @param fetch Fetch function to use
  */
-export function entityRepo<T extends GeinsEntity, InputT extends GeinsEntity>(
-  entityEndpoint: string,
-  fetch: $Fetch<T, NitroFetchRequest>,
-) {
-  return {
-    async get(id: string): Promise<T> {
-      return await fetch<T>(`${entityEndpoint}/${id}`);
-    },
+export function entityRepo<
+  T extends GeinsEntity,
+  InputT extends GeinsEntityInput,
+>(entityEndpoint: string, fetch: $Fetch<T, NitroFetchRequest>) {
+  const entityBase = repo.entityBase<T>(entityEndpoint, fetch);
 
-    async list(): Promise<T[]> {
-      return await fetch<T[]>(`${entityEndpoint}/list`);
-    },
+  return {
+    ...entityBase,
 
     async create(data: InputT): Promise<T> {
       return await fetch<T>(entityEndpoint, {

@@ -45,9 +45,7 @@ const placeholder = computed(() => {
 
 const { contains } = useFilter({ sensitivity: 'base' });
 const filteredData = computed(() => {
-  const options = dataSet.value?.filter(
-    (i) => !model.value.includes(i._id || ''),
-  );
+  const options = dataSet.value?.filter((i) => !model.value.includes(i._id));
   const returnVal = searchTerm.value
     ? options?.filter((option) => contains(option.name || '', searchTerm.value))
     : options;
@@ -134,7 +132,7 @@ const getName = (id: AcceptableValue): string => {
           <ComboboxItem
             v-for="item in filteredData"
             :key="item._id"
-            :value="item._id || ''"
+            :value="item._id"
             @select.prevent="handleSelect"
           >
             {{ item.name }}

@@ -37,6 +37,7 @@ export default defineI18nLocale(async () => {
     entity_created: '@.capitalize:{entityName} successfully created!',
     entity_deleted: '@.capitalize:{entityName} successfully deleted!',
     entity_updated: '@.capitalize:{entityName} successfully updated!',
+    entity_added: '@.capitalize:{entityName} successfully added!',
     entity_delete_failed: 'Failed to delete @:{entityName}',
     add_entity_by_typing: 'Add @:{entityName} by typing',
     nr_of_entity_added: '{count} @:{entityName} added',

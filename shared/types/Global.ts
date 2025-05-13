@@ -6,6 +6,12 @@ export const enum DataItemDisplayType {
   Copy = 'copy',
 }
 export interface GeinsEntity {
+  _id: string;
+  _type?: string;
+  name?: string;
+}
+
+export interface GeinsEntityInput {
   _id?: string;
   _type?: string;
   name?: string;

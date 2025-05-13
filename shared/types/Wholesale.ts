@@ -14,12 +14,14 @@ export interface WholesaleAccount extends GeinsEntity {
   meta?: Record<string, any>;
 }
 export interface WholesaleAccountInput
-  extends Omit<WholesaleAccount, 'salesReps'> {
+  extends Omit<WholesaleAccount, '_id' | 'salesReps'> {
   salesReps: string[];
 }
 
-export interface WholesaleAccountList extends WholesaleAccountInput {
+export interface WholesaleAccountList
+  extends Omit<WholesaleAccount, 'salesReps'> {
   accountGroups: string[];
+  salesReps: string[];
 }
 
 export interface WholesaleSalesRep extends GeinsEntity {
@@ -30,10 +32,10 @@ export interface WholesaleSalesRep extends GeinsEntity {
 }
 
 export interface WholesaleBuyer extends GeinsEntity {
-  active: boolean;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  accountId: string;
+  active?: boolean;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  accountId?: string;
 }

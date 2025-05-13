@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { DataItemDisplayType } from '#shared/types';
+import type { ColumnDef } from '@tanstack/vue-table';
+
 import { useToast } from '@/components/ui/toast/use-toast';
 import { useRoute } from 'vue-router';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import { useWholesale } from '@/composables/useWholesale';
+import { DataItemDisplayType, TableMode } from '#shared/types';
+
 import * as z from 'zod';
 
 // GLOBALS
@@ -108,7 +111,7 @@ const parseAndSaveData = (account: WholesaleAccount): void => {
   const wholesaleAccountInput: WholesaleAccountInput = {
     ...wholesaleAccount.value,
     ...account,
-    salesReps: account.salesReps?.map((salesRep) => salesRep._id || ''),
+    salesReps: account.salesReps?.map((salesRep) => salesRep._id),
   };
   wholesaleAccount.value = wholesaleAccountInput;
   liveStatus.value = wholesaleAccountInput.active;
@@ -144,10 +147,11 @@ const hasUnsavedChanges = computed(() => {
   return currentData !== originalAccountData.value;
 });
 
+let handleBuyerAdded = () => {};
 // GET DATA IF NOT CREATE MODE
 if (!createMode.value) {
   const id = ref<string>(String(route.params.id));
-  const { data, error } = await useAsyncData<WholesaleAccount>(() =>
+  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
     wholesaleApi.account.get(id.value),
   );
   if (error.value) {
@@ -164,6 +168,10 @@ if (!createMode.value) {
       name: tag,
     }));
   }
+  handleBuyerAdded = () => {
+    console.log('😈 Buyer added');
+    refresh();
+  };
 }
 
 /* Sales reps data source */
@@ -398,7 +406,7 @@ const createAccount = async () => {
     const result: GeinsEntity = await wholesaleApi.account.create(
       wholesaleAccount.value,
     );
-    const id = result._id || '';
+    const id = result._id;
 
     const newUrl = newEntityUrl.replace(newEntityUrlAlias, id);
     await useRouter().replace(newUrl);
@@ -536,6 +544,11 @@ const confirmAddressDelete = async () => {
   deleting.value = false;
   deleteAddressDialogOpen.value = false;
 };
+
+// GET AND SET COLUMNS
+const buyerColumns: Ref<ColumnDef<WholesaleBuyer>[]> = ref([]);
+const { getColumns } = useColumns<WholesaleBuyer>();
+buyerColumns.value = getColumns(wholesaleAccount.value.buyers);
 </script>
 
 <template>
@@ -1238,7 +1251,11 @@ const confirmAddressDelete = async () => {
             description="Buyers connected to this account"
           >
             <template #header-action>
-              <WholesaleBuyerPanel mode="add">
+              <WholesaleBuyerPanel
+                mode="add"
+                :account-id="wholesaleAccount._id"
+                @added="handleBuyerAdded"
+              >
                 <ButtonIcon
                   v-if="!createMode"
                   icon="new"
@@ -1250,6 +1267,7 @@ const confirmAddressDelete = async () => {
               </WholesaleBuyerPanel>
             </template>
             <div
+              v-if="!wholesaleAccount?.buyers?.length"
               class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
             >
               <p class="text-xl font-bold">
@@ -1259,6 +1277,13 @@ const confirmAddressDelete = async () => {
                 No buyers are connected to this account
               </p>
             </div>
+            <TableView
+              v-else
+              :mode="TableMode.Simple"
+              entity-name="buyer"
+              :columns="buyerColumns"
+              :data="wholesaleAccount.buyers"
+            />
           </ContentEditCard>
         </ContentEditMain>
       </KeepAlive>

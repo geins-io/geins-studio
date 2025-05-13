@@ -73,7 +73,7 @@ export default defineNuxtPlugin(() => {
    * */
   const geinsApi = $fetch.create({
     baseURL: '/api',
-    retryStatusCodes: [401, 408, 409, 425, 429, 500, 502, 503, 504],
+    retryStatusCodes: [401, 500, 502, 503, 504],
     retry: 1,
     retryDelay: 1000,
     async onRequest({ options }) {

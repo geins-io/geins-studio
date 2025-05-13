@@ -20,6 +20,36 @@ export function getErrorMessage(error: unknown): string {
   return JSON.stringify(error);
 }
 
+export function getErrorStatus(error: unknown): number {
+  if (error && typeof error === 'object') {
+    if ('status' in error) {
+      return (error as { status: number }).status;
+    }
+    if ('statusCode' in error) {
+      return (error as { statusCode: number }).statusCode;
+    }
+    if ('code' in error) {
+      return (error as { code: number }).code;
+    }
+    if ('response' in error) {
+      const response = (error as { response: { status: number } }).response;
+      if (response && 'status' in response) {
+        return (response as { status: number }).status;
+      }
+    }
+  }
+  if (error && typeof error === 'number') {
+    return error;
+  }
+  if (error && typeof error === 'string') {
+    const parsedError = JSON.parse(error);
+    if (parsedError && 'status' in parsedError) {
+      return (parsedError as { status: number }).status;
+    }
+  }
+  return 0;
+}
+
 // Helper function to get appropriate error messages
 export function getFallbackErrorMessage(status: number, data: any): string {
   // Extract meaningful message from response data if possible

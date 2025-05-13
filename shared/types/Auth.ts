@@ -1,12 +1,18 @@
+export type ApiUserType = 'api' | 'personal';
+
 export interface User extends GeinsEntity {
   firstName?: string;
   lastName?: string;
   email?: string | null;
-  phone?: string;
+  phoneNumber?: string;
   company?: string;
   roles?: string[];
-  apiUserType?: string;
+  apiUserType?: ApiUserType;
   error?: unknown;
+}
+
+export interface UserInput extends Omit<User, '_id'> {
+  password?: string;
 }
 
 export interface AuthTokens {
