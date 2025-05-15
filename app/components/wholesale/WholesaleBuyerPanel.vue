@@ -10,6 +10,7 @@ const props = withDefaults(
   defineProps<{
     buyer?: WholesaleBuyer;
     accountId: string;
+    accountName: string;
     mode: 'edit' | 'add';
   }>(),
   {
@@ -26,18 +27,20 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const { wholesaleApi } = useWholesale();
 const { toast } = useToast();
-const { geinsLogWarn, geinsLogError } = useGeinsLog(
-  'components/WholesaleBuyerPanel.vue',
-);
+const { geinsLogError } = useGeinsLog('components/WholesaleBuyerPanel.vue');
 const { $geinsApi } = useNuxtApp();
 const userApi = repo.user($geinsApi);
 
 const open = ref(false);
-const validateOnChange = ref(false);
 const loading = ref(false);
 const entityName = ref('buyer');
 const buyerExists = ref(false);
 const existingUser = ref<User>();
+const updateUser = ref(false);
+const buyerCreated = ref('');
+const buyerSaved = ref(false);
+const newBuyer = ref<WholesaleBuyer>();
+const creatingUser = ref(false);
 
 const initValues = {
   ...props.buyer,
@@ -49,16 +52,25 @@ watch(open, (value) => {
     form.setValues({
       ...initValues,
     });
+  } else {
+    if (buyerCreated.value && !buyerSaved.value) {
+      handleDelete(buyerId.value, false);
+    }
+    buyerExists.value = false;
+    existingUser.value = undefined;
+    updateUser.value = false;
+    buyerCreated.value = '';
+    buyerSaved.value = false;
   }
 });
 
 const formSchema = toTypedSchema(
   z.object({
     active: z.boolean(),
-    email: z.string().min(1, { message: t('form.field_required') }),
+    email: z.string().email({ message: t('form.invalid_email') }),
     phone: z.string().optional(),
-    firstName: z.string().min(1, { message: t('form.field_required') }),
-    lastName: z.string().min(1, { message: t('form.field_required') }),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
   }),
 );
 
@@ -69,15 +81,72 @@ const form = useForm({
   },
 });
 
+const createNewBuyer = async () => {
+  if (!form.values.email) {
+    return;
+  }
+  newBuyer.value = markRaw({
+    ...props.buyer,
+    ...form.values,
+    _id: form.values.email,
+    accountId: props.accountId,
+  });
+  creatingUser.value = true;
+  try {
+    if (newBuyer.value._id === buyerCreated.value) {
+      return;
+    }
+
+    if (buyerCreated.value !== '') {
+      await handleDelete(buyerCreated.value, false);
+      buyerCreated.value = '';
+    }
+    await wholesaleApi.account.id(props.accountId).buyer.create(newBuyer.value);
+    buyerCreated.value = newBuyer.value._id;
+    buyerExists.value = false;
+    existingUser.value = undefined;
+  } catch (error) {
+    const status = getErrorStatus(error);
+    const message = getErrorMessage(error);
+
+    if (status === 409) {
+      buyerExists.value = true;
+      try {
+        existingUser.value = await userApi.get(newBuyer.value._id);
+      } catch (error) {
+        const message = getErrorMessage(error);
+        geinsLogError('error fetching existing user:', message);
+        existingUser.value = newBuyer.value;
+      }
+    } else {
+      geinsLogError(message);
+    }
+  } finally {
+    creatingUser.value = false;
+  }
+};
+
 watch(
   form.values,
   useDebounceFn(async () => {
-    if (validateOnChange.value) {
-      await form.validate();
+    if (!form.values.email) {
+      return;
     }
+    const validation = await form.validate();
+    if (!validation.valid) {
+      return;
+    }
+    await createNewBuyer();
   }, 500),
   { deep: true },
 );
+
+const saveDisabled = computed(() => {
+  if (buyerCreated.value || (buyerExists.value && updateUser.value)) {
+    return false;
+  }
+  return true;
+});
 
 const handleSuccess = () => {
   open.value = false;
@@ -88,60 +157,74 @@ const handleSuccess = () => {
   });
 };
 
+const buyerId = computed(() => {
+  return newBuyer.value?._id || props.buyer?._id || '';
+});
+
 const handleSave = async () => {
   const validation = await form.validate();
   if (!validation.valid) {
-    validateOnChange.value = true;
     return;
   }
-  validateOnChange.value = false;
-  const newBuyer: WholesaleBuyer = {
+  loading.value = true;
+
+  newBuyer.value = markRaw({
     ...props.buyer,
     ...form.values,
     _id: form.values.email || '',
     accountId: props.accountId,
-  };
-  loading.value = true;
+  });
 
-  if (buyerExists.value) {
+  if (buyerCreated.value !== newBuyer.value._id) {
+    await createNewBuyer();
+  }
+
+  if (buyerExists.value && updateUser.value) {
     try {
-      await wholesaleApi.account.id(props.accountId).buyer.assign(newBuyer._id);
-      await wholesaleApi.account.id(props.accountId).buyer.update(newBuyer);
+      await wholesaleApi.account
+        .id(props.accountId)
+        .buyer.assign(newBuyer.value._id);
+      await wholesaleApi.account
+        .id(props.accountId)
+        .buyer.update(newBuyer.value);
+      buyerSaved.value = true;
       handleSuccess();
-      return;
     } catch (error) {
       const message = getErrorMessage(error);
-      geinsLogError('error assigning buyer:', message);
+      geinsLogError('error updating buyer:', message);
+      return;
+    }
+  }
+
+  if (buyerCreated.value === newBuyer.value._id) {
+    try {
+      await wholesaleApi.account
+        .id(props.accountId)
+        .buyer.update(newBuyer.value);
+      buyerSaved.value = true;
+      handleSuccess();
+    } catch (error) {
+      const message = getErrorMessage(error);
+      geinsLogError('error updating buyer:', message);
       return;
     } finally {
       loading.value = false;
     }
   }
-
-  try {
-    if (!newBuyer._id) {
-      throw new Error('Buyer ID is required');
-    }
-    await wholesaleApi.account.id(props.accountId).buyer.create(newBuyer);
-    handleSuccess();
-  } catch (error) {
-    const status = getErrorStatus(error);
-    const message = getErrorMessage(error);
-
-    if (status === 409) {
-      existingUser.value = await userApi.get(newBuyer._id);
-      buyerExists.value = true;
-
-      geinsLogWarn('buyer email already in use');
-    } else {
-      geinsLogError(message);
-    }
-  } finally {
-    loading.value = false;
-  }
 };
 
-const handleDelete = () => {};
+const handleDelete = async (
+  id: string = buyerId.value,
+  showToast: boolean = true,
+) => {
+  await wholesaleApi.account.id(props.accountId).buyer.delete(id);
+  if (showToast) {
+    toast({
+      title: t('entity_deleted', { entityName: entityName.value }),
+      variant: 'positive',
+    });
+  }
+};
 
 const handleCancel = () => {
   open.value = false;
@@ -173,7 +256,9 @@ const existingUserName = computed(() =>
             <FormGrid design="1+1">
               <FormField v-slot="{ componentField }" name="firstName">
                 <FormItem v-auto-animate>
-                  <FormLabel>{{ t('address.first_name') }}</FormLabel>
+                  <FormLabel :optional="true">{{
+                    t('address.first_name')
+                  }}</FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -186,7 +271,9 @@ const existingUserName = computed(() =>
               </FormField>
               <FormField v-slot="{ componentField }" name="lastName">
                 <FormItem v-auto-animate>
-                  <FormLabel>{{ t('address.last_name') }}</FormLabel>
+                  <FormLabel :optional="true">{{
+                    t('address.last_name')
+                  }}</FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -207,6 +294,7 @@ const existingUserName = computed(() =>
                       v-bind="componentField"
                       type="email"
                       autocomplete="email"
+                      :loading="creatingUser"
                     />
                   </FormControl>
                   <FormMessage />
@@ -269,36 +357,19 @@ const existingUserName = computed(() =>
               <LucideInfo class="size-4" />
               <AlertTitle>Email already in use!</AlertTitle>
               <AlertDescription>
-                The provided email address is already associated with this
-                existing customer account:
+                The provided email address (<span class="font-bold">{{
+                  existingUser?._id
+                }}</span
+                >) is already associated with this existing customer account.
               </AlertDescription>
-              <div>
-                <div
-                  v-if="existingUser"
-                  class="mt-3 inline-flex w-auto items-center gap-4 rounded-md border bg-background p-3 px-5"
-                >
-                  <LucideUser class="size-8 text-muted-foreground" />
-                  <div>
-                    <p
-                      v-if="existingUser.firstName || existingUser.lastName"
-                      class="font-medium"
-                    >
-                      {{ existingUser.firstName }} {{ existingUser.lastName }}
-                    </p>
-                    <p v-else class="italic">(No name)</p>
-                    <p class="text-muted-foreground">
-                      {{ existingUser.email }}
-                    </p>
-                  </div>
-                </div>
+              <div class="mt-2">
+                <ContentSwitch
+                  v-model:checked="updateUser"
+                  :label="`Assign ${existingUserName} as buyer for ${accountName}`"
+                  description="Toggle this if you want to assign this existing user as a buyer and update it with the information above"
+                />
               </div>
             </Alert>
-            <ContentSwitch
-              v-model:checked="buyerExists"
-              class="mt-4"
-              :label="`Assign ${existingUserName} as buyer`"
-              description="Toggle this if you want to assign this existing user as a buyer and update it with the information above"
-            />
           </div>
         </div>
       </div>
@@ -306,7 +377,11 @@ const existingUserName = computed(() =>
         <Button variant="outline" @click="handleCancel">
           {{ t('cancel') }}
         </Button>
-        <Button :loading="loading" @click.stop="handleSave">
+        <Button
+          :loading="loading"
+          :disabled="saveDisabled"
+          @click.stop="handleSave"
+        >
           {{ t(`${mode === 'add' ? mode : 'update'}_entity`, { entityName }) }}
         </Button>
       </SheetFooter>

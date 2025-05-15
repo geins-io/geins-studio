@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useToast } from '@/components/ui/toast/use-toast';
-
 import type {
   ColumnOptions,
   StringKeyOf,
@@ -11,7 +9,6 @@ type EntityList = WholesaleAccountList;
 
 const { t } = useI18n();
 const route = useRoute();
-const { toast } = useToast();
 const { geinsLogError } = useGeinsLog();
 const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
   route.fullPath,

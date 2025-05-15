@@ -134,6 +134,7 @@ export default defineI18nLocale(async () => {
     unsaved_changes: 'Unsaved changes',
     form: {
       field_required: 'This field is required',
+      invalid_email: 'Invalid email address',
       optional: 'optional',
     },
     wholesale: {

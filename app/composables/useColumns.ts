@@ -6,6 +6,7 @@ import {
   TableHeaderSort,
   TableCellActions,
   TableCellDelete,
+  TableCellEdit,
   TableCellLongText,
   TableCellChannels,
   TableCellTags,
@@ -385,7 +386,7 @@ export const useColumns = <T extends object>() => {
   const addActionsColumn = (
     columns: ColumnDef<T>[],
     props: object,
-    type: 'actions' | 'delete' = 'actions',
+    type: 'actions' | 'delete' | 'edit' = 'actions',
     availableActions?: TableRowAction[],
   ): ColumnDef<T>[] => {
     const actionsColumn: ColumnDef<T> = {
@@ -403,7 +404,7 @@ export const useColumns = <T extends object>() => {
         return h(
           'div',
           { class: cn(getBasicCellStyle(table), 'relative px-2.5') },
-          h(type === 'actions' ? TableCellActions : TableCellDelete, {
+          h(getActionsComponent(type), {
             ...props,
             rowData,
             availableActions,
@@ -414,6 +415,18 @@ export const useColumns = <T extends object>() => {
     };
     extendColumns(columns, actionsColumn);
     return columns;
+  };
+
+  const getActionsComponent = (
+    type: 'actions' | 'delete' | 'edit' = 'actions',
+  ) => {
+    const component =
+      {
+        actions: TableCellActions,
+        delete: TableCellDelete,
+        edit: TableCellEdit,
+      }[type] || TableCellActions;
+    return component;
   };
 
   const orderAndFilterColumns = (

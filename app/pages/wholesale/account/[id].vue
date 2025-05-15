@@ -546,9 +546,23 @@ const confirmAddressDelete = async () => {
 };
 
 // GET AND SET COLUMNS
+const buyersList = computed(() => {
+  return wholesaleAccount.value.buyers;
+});
+const columnOptions: ColumnOptions<WholesaleBuyer> = {
+  columnTitles: { _id: 'Email' },
+  excludeColumns: ['accountId'],
+};
 const buyerColumns: Ref<ColumnDef<WholesaleBuyer>[]> = ref([]);
-const { getColumns } = useColumns<WholesaleBuyer>();
-buyerColumns.value = getColumns(wholesaleAccount.value.buyers);
+const { getColumns, addActionsColumn } = useColumns<WholesaleBuyer>();
+buyerColumns.value = getColumns(wholesaleAccount.value.buyers, columnOptions);
+addActionsColumn(
+  buyerColumns.value,
+  {
+    onEdit: (entity: SelectorEntity) => console.log('Edit', entity._id),
+  },
+  'edit',
+);
 </script>
 
 <template>
@@ -1254,6 +1268,7 @@ buyerColumns.value = getColumns(wholesaleAccount.value.buyers);
               <WholesaleBuyerPanel
                 mode="add"
                 :account-id="wholesaleAccount._id"
+                :account-name="wholesaleAccount.name"
                 @added="handleBuyerAdded"
               >
                 <ButtonIcon
@@ -1282,7 +1297,7 @@ buyerColumns.value = getColumns(wholesaleAccount.value.buyers);
               :mode="TableMode.Simple"
               entity-name="buyer"
               :columns="buyerColumns"
-              :data="wholesaleAccount.buyers"
+              :data="buyersList"
             />
           </ContentEditCard>
         </ContentEditMain>
