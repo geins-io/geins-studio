@@ -25,6 +25,7 @@ const { newEntityUrlAlias, getEntityName, getNewEntityUrl, getEntityListUrl } =
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
 const entityListUrl = getEntityListUrl();
+const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
 
 const currentTab = ref(0);
 const loading = ref(false);
@@ -107,7 +108,7 @@ const getAddresses = (billing: Address, shipping?: Address) => {
   return addresses;
 };
 
-const parseAndSaveData = (account: WholesaleAccount): void => {
+const parseAndSaveData = async (account: WholesaleAccount): Promise<void> => {
   const wholesaleAccountInput: WholesaleAccountInput = {
     ...wholesaleAccount.value,
     ...account,
@@ -146,33 +147,6 @@ const hasUnsavedChanges = computed(() => {
 
   return currentData !== originalAccountData.value;
 });
-
-let handleBuyerAdded = () => {};
-// GET DATA IF NOT CREATE MODE
-if (!createMode.value) {
-  const id = ref<string>(String(route.params.id));
-  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
-    wholesaleApi.account.get(id.value),
-  );
-  if (error.value) {
-    console.error('Error fetching wholesale account:', error.value);
-  } else if (data.value) {
-    parseAndSaveData(data.value);
-  }
-
-  let tags = await wholesaleApi.account.tags.get();
-  if (tags) {
-    tags = extractAccountGroupsfromTags(tags);
-    accountTags.value = tags.map((tag) => ({
-      _id: tag,
-      name: tag,
-    }));
-  }
-  handleBuyerAdded = () => {
-    console.log('😈 Buyer added');
-    refresh();
-  };
-}
 
 /* Sales reps data source */
 const users = ref<User[]>([]);
@@ -230,20 +204,6 @@ const formSchema = toTypedSchema(
   }),
 );
 
-const form = useForm({
-  validationSchema: formSchema,
-  initialValues: {
-    details: {
-      ...wholesaleAccount.value,
-      tags: accountGroups.value,
-    },
-    addresses: {
-      billing: billingAddress.value,
-      shipping: shippingAddress.value,
-    },
-  },
-});
-
 const validateOnChange = ref(false);
 const stepValidationMap: Record<number, string> = {
   1: 'details',
@@ -262,39 +222,6 @@ const validateSteps = async (steps: number[]) => {
   }
   return true;
 };
-
-const formValid = computed(() => form.meta.value.valid);
-const formTouched = computed(() => form.meta.value.touched);
-
-watch(
-  form.values,
-  useDebounceFn(async (values) => {
-    if (validateOnChange.value) {
-      formValidation.value = await form.validate();
-    }
-    const addresses = getAddresses(
-      {
-        ...billingAddress.value,
-        ...values.addresses?.billing,
-      },
-      addShippingAddress.value
-        ? {
-            ...shippingAddress.value,
-            ...values.addresses?.shipping,
-          }
-        : undefined,
-    );
-    accountGroups.value = values.details.tags || [];
-    const tags = convertAccountGroupsToTags(accountGroups.value);
-    wholesaleAccount.value = {
-      ...wholesaleAccount.value,
-      ...values.details,
-      addresses,
-      tags,
-    };
-  }, 500),
-  { deep: true },
-);
 
 const saveAccountDetails = async () => {
   const stepValid = await validateSteps([1]);
@@ -478,7 +405,7 @@ const saveAccount = async () => {
       wholesaleAccount.value,
     );
 
-    parseAndSaveData(result);
+    await parseAndSaveData(result);
 
     toast({
       title: t('entity_updated', { entityName }),
@@ -545,23 +472,127 @@ const confirmAddressDelete = async () => {
   deleteAddressDialogOpen.value = false;
 };
 
-// GET AND SET COLUMNS
+let refreshData = async () => {};
+const buyerPanelOpen = ref(false);
+const buyerToEdit = ref<WholesaleBuyer | undefined>();
+const buyerPanelMode = ref<'edit' | 'add'>('add');
+const columnOptions: ColumnOptions<WholesaleBuyer> = {
+  columnTitles: { _id: 'Email', active: 'Status' },
+  excludeColumns: ['accountId'],
+};
 const buyersList = computed(() => {
   return wholesaleAccount.value.buyers;
 });
-const columnOptions: ColumnOptions<WholesaleBuyer> = {
-  columnTitles: { _id: 'Email' },
-  excludeColumns: ['accountId'],
-};
 const buyerColumns: Ref<ColumnDef<WholesaleBuyer>[]> = ref([]);
 const { getColumns, addActionsColumn } = useColumns<WholesaleBuyer>();
-buyerColumns.value = getColumns(wholesaleAccount.value.buyers, columnOptions);
-addActionsColumn(
-  buyerColumns.value,
-  {
-    onEdit: (entity: SelectorEntity) => console.log('Edit', entity._id),
+const setupColumns = () => {
+  buyerColumns.value = getColumns(buyersList.value, columnOptions);
+  addActionsColumn(
+    buyerColumns.value,
+    {
+      onEdit: (entity: WholesaleBuyer) => {
+        buyerToEdit.value = entity;
+        buyerPanelOpen.value = true;
+        buyerPanelMode.value = 'edit';
+      },
+    },
+    'edit',
+  );
+};
+
+watch(buyerPanelOpen, async (open) => {
+  if (!open) {
+    buyerToEdit.value = undefined;
+    buyerPanelMode.value = 'add';
+    await refreshData();
+  }
+});
+
+// GET DATA IF NOT CREATE MODE
+if (!createMode.value) {
+  const id = ref<string>(String(route.params.id));
+  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
+    wholesaleApi.account.get(id.value),
+  );
+  if (error.value) {
+    geinsLogError('error fetching wholesale account:', error.value);
+  }
+
+  refreshData = refresh;
+
+  watch(
+    data,
+    async (newData) => {
+      if (newData) {
+        await parseAndSaveData(newData);
+        await nextTick();
+        setupColumns();
+      }
+    },
+    { immediate: true },
+  );
+
+  const { data: tagsData, error: tagsError } = await useAsyncData<string[]>(
+    () => wholesaleApi.account.tags.get(),
+  );
+  if (tagsError.value) {
+    geinsLogError('error fetching tags:', tagsError.value);
+  }
+
+  if (tagsData.value) {
+    const extractedTags = extractAccountGroupsfromTags(tagsData.value);
+    accountTags.value = extractedTags.map((tag) => ({
+      _id: tag,
+      name: tag,
+    }));
+  }
+}
+
+const form = useForm({
+  validationSchema: formSchema,
+  initialValues: {
+    details: {
+      ...wholesaleAccount.value,
+      tags: accountGroups.value,
+    },
+    addresses: {
+      billing: billingAddress.value,
+      shipping: shippingAddress.value,
+    },
   },
-  'edit',
+});
+
+const formValid = computed(() => form.meta.value.valid);
+const formTouched = computed(() => form.meta.value.touched);
+
+watch(
+  form.values,
+  useDebounceFn(async (values) => {
+    if (validateOnChange.value) {
+      formValidation.value = await form.validate();
+    }
+    const addresses = getAddresses(
+      {
+        ...billingAddress.value,
+        ...values.addresses?.billing,
+      },
+      addShippingAddress.value
+        ? {
+            ...shippingAddress.value,
+            ...values.addresses?.shipping,
+          }
+        : undefined,
+    );
+    accountGroups.value = values.details.tags || [];
+    const tags = convertAccountGroupsToTags(accountGroups.value);
+    wholesaleAccount.value = {
+      ...wholesaleAccount.value,
+      ...values.details,
+      addresses,
+      tags,
+    };
+  }, 500),
+  { deep: true },
 );
 </script>
 
@@ -1266,10 +1297,11 @@ addActionsColumn(
           >
             <template #header-action>
               <WholesaleBuyerPanel
-                mode="add"
+                v-model:open="buyerPanelOpen"
+                :mode="buyerPanelMode"
+                :buyer="buyerToEdit"
                 :account-id="wholesaleAccount._id"
                 :account-name="wholesaleAccount.name"
-                @added="handleBuyerAdded"
               >
                 <ButtonIcon
                   v-if="!createMode"
@@ -1281,24 +1313,26 @@ addActionsColumn(
                 </ButtonIcon>
               </WholesaleBuyerPanel>
             </template>
-            <div
-              v-if="!wholesaleAccount?.buyers?.length"
-              class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
-            >
-              <p class="text-xl font-bold">
-                {{ $t('no_entity', { entityName: 'buyer' }, 2) }}
-              </p>
-              <p class="text-xs text-muted-foreground">
-                No buyers are connected to this account
-              </p>
+            <div>
+              <div
+                v-if="buyersList.length === 0"
+                class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
+              >
+                <p class="text-xl font-bold">
+                  {{ $t('no_entity', { entityName: 'buyer' }, 2) }}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  No buyers are connected to this account
+                </p>
+              </div>
+              <TableView
+                v-else
+                :mode="TableMode.Simple"
+                entity-name="buyer"
+                :columns="buyerColumns"
+                :data="buyersList"
+              />
             </div>
-            <TableView
-              v-else
-              :mode="TableMode.Simple"
-              entity-name="buyer"
-              :columns="buyerColumns"
-              :data="buyersList"
-            />
           </ContentEditCard>
         </ContentEditMain>
       </KeepAlive>

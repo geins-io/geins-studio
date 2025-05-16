@@ -46,13 +46,13 @@ export const useProductsStore = defineStore('products', () => {
       if (result.status === 'rejected' || !result.value) {
         let callName = '';
         switch (index) {
+          // case 0:
+          //   callName = 'products';
+          //   break;
           case 0:
-            callName = 'products';
-            break;
-          case 1:
             callName = 'categories';
             break;
-          case 2:
+          case 1:
             callName = 'brands';
             break;
         }

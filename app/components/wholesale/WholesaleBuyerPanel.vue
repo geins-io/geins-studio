@@ -31,36 +31,37 @@ const { geinsLogError } = useGeinsLog('components/WholesaleBuyerPanel.vue');
 const { $geinsApi } = useNuxtApp();
 const userApi = repo.user($geinsApi);
 
-const open = ref(false);
+const open = defineModel<boolean>('open');
 const loading = ref(false);
 const entityName = ref('buyer');
 const buyerExists = ref(false);
 const existingUser = ref<User>();
 const updateUser = ref(false);
 const buyerCreated = ref('');
-const buyerSaved = ref(false);
+const buyerActionTaken = ref(props.mode === 'edit' ? true : false);
 const newBuyer = ref<WholesaleBuyer>();
 const creatingUser = ref(false);
-
-const initValues = {
-  ...props.buyer,
-  active: props.mode === 'add' ? true : props.buyer?.active,
-};
+const isDeleting = ref(false);
+const buyer = toRef(props, 'buyer');
+const buyerActive = computed(() =>
+  props.mode === 'edit' ? props.buyer?.active : true,
+);
 
 watch(open, (value) => {
   if (value) {
+    buyerCreated.value = props.buyer?._id || '';
     form.setValues({
-      ...initValues,
+      ...buyer.value,
+      email: buyer.value?._id,
+      active: buyerActive.value,
     });
   } else {
-    if (buyerCreated.value && !buyerSaved.value) {
-      handleDelete(buyerId.value, false);
-    }
     buyerExists.value = false;
     existingUser.value = undefined;
     updateUser.value = false;
     buyerCreated.value = '';
-    buyerSaved.value = false;
+    buyerActionTaken.value = false;
+    loading.value = false;
   }
 });
 
@@ -76,9 +77,6 @@ const formSchema = toTypedSchema(
 
 const form = useForm({
   validationSchema: formSchema,
-  initialValues: {
-    ...initValues,
-  },
 });
 
 const createNewBuyer = async () => {
@@ -91,14 +89,14 @@ const createNewBuyer = async () => {
     _id: form.values.email,
     accountId: props.accountId,
   });
-  creatingUser.value = true;
+
   try {
     if (newBuyer.value._id === buyerCreated.value) {
       return;
     }
-
+    creatingUser.value = true;
     if (buyerCreated.value !== '') {
-      await handleDelete(buyerCreated.value, false);
+      await deleteBuyer(buyerCreated.value);
       buyerCreated.value = '';
     }
     await wholesaleApi.account.id(props.accountId).buyer.create(newBuyer.value);
@@ -119,7 +117,7 @@ const createNewBuyer = async () => {
         existingUser.value = newBuyer.value;
       }
     } else {
-      geinsLogError(message);
+      geinsLogError('error creating buyer:', message);
     }
   } finally {
     creatingUser.value = false;
@@ -130,6 +128,9 @@ watch(
   form.values,
   useDebounceFn(async () => {
     if (!form.values.email) {
+      return;
+    }
+    if (props.mode === 'edit' && buyer.value?._id === form.values.email) {
       return;
     }
     const validation = await form.validate();
@@ -151,8 +152,9 @@ const saveDisabled = computed(() => {
 const handleSuccess = () => {
   open.value = false;
   emit('added');
+  const feedbackWord = props.mode === 'edit' ? 'updated' : 'added';
   toast({
-    title: t('entity_added', { entityName: entityName.value }),
+    title: t(`entity_${feedbackWord}`, { entityName: entityName.value }),
     variant: 'positive',
   });
 };
@@ -169,7 +171,6 @@ const handleSave = async () => {
   loading.value = true;
 
   newBuyer.value = markRaw({
-    ...props.buyer,
     ...form.values,
     _id: form.values.email || '',
     accountId: props.accountId,
@@ -187,11 +188,11 @@ const handleSave = async () => {
       await wholesaleApi.account
         .id(props.accountId)
         .buyer.update(newBuyer.value);
-      buyerSaved.value = true;
+      buyerActionTaken.value = true;
       handleSuccess();
     } catch (error) {
       const message = getErrorMessage(error);
-      geinsLogError('error updating buyer:', message);
+      geinsLogError('error assigning+updating buyer:', message);
       return;
     }
   }
@@ -201,7 +202,7 @@ const handleSave = async () => {
       await wholesaleApi.account
         .id(props.accountId)
         .buyer.update(newBuyer.value);
-      buyerSaved.value = true;
+      buyerActionTaken.value = true;
       handleSuccess();
     } catch (error) {
       const message = getErrorMessage(error);
@@ -213,16 +214,25 @@ const handleSave = async () => {
   }
 };
 
-const handleDelete = async (
-  id: string = buyerId.value,
-  showToast: boolean = true,
-) => {
-  await wholesaleApi.account.id(props.accountId).buyer.delete(id);
-  if (showToast) {
-    toast({
-      title: t('entity_deleted', { entityName: entityName.value }),
-      variant: 'positive',
-    });
+const handleDeleteClick = async () => {
+  await deleteBuyer();
+  buyerActionTaken.value = true;
+  toast({
+    title: t('entity_deleted', { entityName: entityName.value }),
+    variant: 'positive',
+  });
+  open.value = false;
+};
+
+const deleteBuyer = async (id: string = buyerId.value) => {
+  isDeleting.value = true;
+  try {
+    await wholesaleApi.account.id(props.accountId).buyer.delete(id);
+  } catch (error) {
+    const message = getErrorMessage(error);
+    geinsLogError('error deleting buyer:', message);
+  } finally {
+    isDeleting.value = false;
   }
 };
 
@@ -328,11 +338,8 @@ const existingUserName = computed(() =>
             </FormGrid>
           </FormGridWrap>
         </form>
-        <div
-          v-auto-animate
-          class="mt-8 flex items-center justify-between border-t pt-8"
-        >
-          <div v-if="mode === 'edit'">
+        <div v-auto-animate class="mt-8 border-t pt-8">
+          <div v-if="mode === 'edit'" class="flex items-center justify-between">
             <ContentCardHeader
               size="md"
               heading-level="h3"
@@ -346,8 +353,8 @@ const existingUserName = computed(() =>
             <Button
               size="sm"
               variant="destructive"
-              :loading="loading"
-              @click.stop="handleDelete"
+              :loading="isDeleting"
+              @click.stop="handleDeleteClick"
             >
               {{ t('delete') }}
             </Button>
@@ -360,7 +367,7 @@ const existingUserName = computed(() =>
                 The provided email address (<span class="font-bold">{{
                   existingUser?._id
                 }}</span
-                >) is already associated with this existing customer account.
+                >) is already associated with an existing customer account.
               </AlertDescription>
               <div class="mt-2">
                 <ContentSwitch
