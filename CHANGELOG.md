@@ -1,4 +1,15 @@
 
+## v0.0.13
+
+
+### 🏡 Chore
+
+- Geins studio renaming ([4633a9a](https://github.com/geins-io/geins-studio/commit/4633a9a))
+
+### ❤️ Contributors
+
+- Olivia Axelsson <axelsson@geins.io>
+
 ## v0.0.12
 
 
