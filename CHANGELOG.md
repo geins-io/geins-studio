@@ -4,7 +4,7 @@
 
 ### 🤖 CI
 
-- Change var ([6b2b3d6](https://github.com/geins-io/geins-merchant-center/commit/6b2b3d6))
+- Change var ([6b2b3d6](https://github.com/geins-io/geins-studio/commit/6b2b3d6))
 
 ### ❤️ Contributors
 
@@ -15,7 +15,7 @@
 
 ### 🤖 CI
 
-- Add missing conditions ([451b434](https://github.com/geins-io/geins-merchant-center/commit/451b434))
+- Add missing conditions ([451b434](https://github.com/geins-io/geins-studio/commit/451b434))
 
 ### ❤️ Contributors
 
@@ -26,7 +26,7 @@
 
 ### 🤖 CI
 
-- Fix token ([3577441](https://github.com/geins-io/geins-merchant-center/commit/3577441))
+- Fix token ([3577441](https://github.com/geins-io/geins-studio/commit/3577441))
 
 ### ❤️ Contributors
 
@@ -39,7 +39,7 @@
 
 ### 🤖 CI
 
-- Post to slack ([be18392](https://github.com/geins-io/geins-merchant-center/commit/be18392))
+- Post to slack ([be18392](https://github.com/geins-io/geins-studio/commit/be18392))
 
 ### ❤️ Contributors
 
@@ -50,7 +50,7 @@
 
 ### 🚀 Enhancements
 
-- Release 1 ([#49](https://github.com/geins-io/geins-merchant-center/pull/49))
+- Release 1 ([#49](https://github.com/geins-io/geins-studio/pull/49))
 
 ### ❤️ Contributors
 
@@ -61,7 +61,7 @@
 
 ### 🏡 Chore
 
-- Ci wip ([08f5f77](https://github.com/geins-io/geins-merchant-center/commit/08f5f77))
+- Ci wip ([08f5f77](https://github.com/geins-io/geins-studio/commit/08f5f77))
 
 ### ❤️ Contributors
 
@@ -72,7 +72,7 @@
 
 ### 🚀 Enhancements
 
-- Hybrid rendering ([#45](https://github.com/geins-io/geins-merchant-center/pull/45))
+- Hybrid rendering ([#45](https://github.com/geins-io/geins-studio/pull/45))
 
 ### ❤️ Contributors
 
@@ -83,7 +83,7 @@
 
 ### 🏡 Chore
 
-- Ci wip ([7ec8bfb](https://github.com/geins-io/geins-merchant-center/commit/7ec8bfb))
+- Ci wip ([7ec8bfb](https://github.com/geins-io/geins-studio/commit/7ec8bfb))
 
 ### ❤️ Contributors
 
@@ -94,7 +94,7 @@
 
 ### 🏡 Chore
 
-- Ci workflow ([30ee1d1](https://github.com/geins-io/geins-merchant-center/commit/30ee1d1))
+- Ci workflow ([30ee1d1](https://github.com/geins-io/geins-studio/commit/30ee1d1))
 
 ### ❤️ Contributors
 
@@ -105,7 +105,7 @@
 
 ### 🏡 Chore
 
-- CI split workflows ([6c8c6c0](https://github.com/geins-io/geins-merchant-center/commit/6c8c6c0))
+- CI split workflows ([6c8c6c0](https://github.com/geins-io/geins-studio/commit/6c8c6c0))
 
 ### ❤️ Contributors
 
