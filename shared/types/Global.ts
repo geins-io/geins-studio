@@ -84,3 +84,10 @@ export interface Address extends GeinsEntity {
   region?: string;
   country?: string;
 }
+
+export interface Customer extends GeinsEntity {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+}

@@ -346,6 +346,7 @@ const createAccount = async () => {
     const _errorMessage = getErrorMessage(error);
     toast({
       title: t('error_creating_entity', { entityName }),
+      description: t('feedback_error_description'),
       variant: 'negative',
     });
 
@@ -415,6 +416,7 @@ const saveAccount = async () => {
     const _errorMessage = getErrorMessage(error);
     toast({
       title: t('error_updating_entity', { entityName }),
+      description: t('feedback_error_description'),
       variant: 'negative',
     });
 

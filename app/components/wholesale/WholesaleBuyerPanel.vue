@@ -20,7 +20,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (event: 'save', address: Address): void;
-  (event: 'delete', id: string): void;
+  (event: 'remove', id: string): void;
   (event: 'added'): void;
 }>();
 
@@ -29,19 +29,19 @@ const { wholesaleApi } = useWholesale();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('components/WholesaleBuyerPanel.vue');
 const { $geinsApi } = useNuxtApp();
-const userApi = repo.user($geinsApi);
+const customerApi = repo.customer($geinsApi);
+
+const entityName = 'buyer';
 
 const open = defineModel<boolean>('open');
 const loading = ref(false);
-const entityName = ref('buyer');
-const buyerExists = ref(false);
-const existingUser = ref<User>();
-const updateUser = ref(false);
-const buyerCreated = ref('');
-const buyerActionTaken = ref(props.mode === 'edit' ? true : false);
+const buyerExistsAsCustomer = ref(false);
+const existingCustomer = ref<Customer>();
+const updateCustomer = ref(false);
 const newBuyer = ref<WholesaleBuyer>();
-const creatingUser = ref(false);
+const isChecking = ref(false);
 const isDeleting = ref(false);
+const formValid = ref(false);
 const buyer = toRef(props, 'buyer');
 const buyerActive = computed(() =>
   props.mode === 'edit' ? props.buyer?.active : true,
@@ -49,25 +49,22 @@ const buyerActive = computed(() =>
 
 watch(open, (value) => {
   if (value) {
-    buyerCreated.value = props.buyer?._id || '';
     form.setValues({
       ...buyer.value,
       email: buyer.value?._id,
       active: buyerActive.value,
     });
   } else {
-    buyerExists.value = false;
-    existingUser.value = undefined;
-    updateUser.value = false;
-    buyerCreated.value = '';
-    buyerActionTaken.value = false;
+    buyerExistsAsCustomer.value = false;
+    existingCustomer.value = undefined;
+    updateCustomer.value = false;
     loading.value = false;
   }
 });
 
 const formSchema = toTypedSchema(
   z.object({
-    active: z.boolean(),
+    active: z.boolean().optional(),
     email: z.string().email({ message: t('form.invalid_email') }),
     phone: z.string().optional(),
     firstName: z.string().optional(),
@@ -79,74 +76,56 @@ const form = useForm({
   validationSchema: formSchema,
 });
 
-const createNewBuyer = async () => {
-  if (!form.values.email) {
+// Check if customer exists without creating a buyer
+const checkCustomerExists = async (email: string) => {
+  if (!email) return;
+
+  // Skip check if we're in edit mode and email hasn't changed
+  if (props.mode === 'edit' && buyer.value?._id === email) {
+    buyerExistsAsCustomer.value = false;
     return;
   }
-  newBuyer.value = markRaw({
-    ...props.buyer,
-    ...form.values,
-    _id: form.values.email,
-    accountId: props.accountId,
-  });
 
+  isChecking.value = true;
   try {
-    if (newBuyer.value._id === buyerCreated.value) {
-      return;
-    }
-    creatingUser.value = true;
-    if (buyerCreated.value !== '') {
-      await deleteBuyer(buyerCreated.value);
-      buyerCreated.value = '';
-    }
-    await wholesaleApi.account.id(props.accountId).buyer.create(newBuyer.value);
-    buyerCreated.value = newBuyer.value._id;
-    buyerExists.value = false;
-    existingUser.value = undefined;
+    existingCustomer.value = await customerApi.get(email);
+    buyerExistsAsCustomer.value = true;
   } catch (error) {
     const status = getErrorStatus(error);
-    const message = getErrorMessage(error);
-
-    if (status === 409) {
-      buyerExists.value = true;
-      try {
-        existingUser.value = await userApi.get(newBuyer.value._id);
-      } catch (error) {
-        const message = getErrorMessage(error);
-        geinsLogError('error fetching existing user:', message);
-        existingUser.value = newBuyer.value;
-      }
+    if (status === 404) {
+      buyerExistsAsCustomer.value = false;
+      existingCustomer.value = undefined;
     } else {
-      geinsLogError('error creating buyer:', message);
+      const message = getErrorMessage(error);
+      geinsLogError('error checking existing customer:', message);
     }
   } finally {
-    creatingUser.value = false;
+    isChecking.value = false;
   }
 };
 
 watch(
-  form.values,
-  useDebounceFn(async () => {
-    if (!form.values.email) {
-      return;
-    }
-    if (props.mode === 'edit' && buyer.value?._id === form.values.email) {
-      return;
-    }
+  () => form.values.email,
+  useDebounceFn(async (email) => {
+    if (!email) return;
+
     const validation = await form.validate();
-    if (!validation.valid) {
-      return;
-    }
-    await createNewBuyer();
+    formValid.value = validation.valid;
+    if (!formValid.value) return;
+
+    await checkCustomerExists(email);
   }, 500),
-  { deep: true },
 );
 
 const saveDisabled = computed(() => {
-  if (buyerCreated.value || (buyerExists.value && updateUser.value)) {
-    return false;
+  if (
+    (buyerExistsAsCustomer.value && !updateCustomer.value) ||
+    isChecking.value ||
+    !formValid.value
+  ) {
+    return true;
   }
-  return true;
+  return false;
 });
 
 const handleSuccess = () => {
@@ -154,7 +133,7 @@ const handleSuccess = () => {
   emit('added');
   const feedbackWord = props.mode === 'edit' ? 'updated' : 'added';
   toast({
-    title: t(`entity_${feedbackWord}`, { entityName: entityName.value }),
+    title: t(`entity_${feedbackWord}`, { entityName }),
     variant: 'positive',
   });
 };
@@ -170,67 +149,64 @@ const handleSave = async () => {
   }
   loading.value = true;
 
-  newBuyer.value = markRaw({
-    ...form.values,
-    _id: form.values.email || '',
-    accountId: props.accountId,
-  });
+  try {
+    newBuyer.value = markRaw({
+      ...form.values,
+      _id: form.values.email || '',
+      accountId: props.accountId,
+    });
 
-  if (buyerCreated.value !== newBuyer.value._id) {
-    await createNewBuyer();
-  }
-
-  if (buyerExists.value && updateUser.value) {
-    try {
+    if (props.mode === 'edit') {
+      // Just updating an existing buyer
+      await wholesaleApi.account
+        .id(props.accountId)
+        .buyer.update(newBuyer.value);
+    } else if (buyerExistsAsCustomer.value) {
+      // Customer exists, so assign and update
       await wholesaleApi.account
         .id(props.accountId)
         .buyer.assign(newBuyer.value._id);
       await wholesaleApi.account
         .id(props.accountId)
         .buyer.update(newBuyer.value);
-      buyerActionTaken.value = true;
-      handleSuccess();
-    } catch (error) {
-      const message = getErrorMessage(error);
-      geinsLogError('error assigning+updating buyer:', message);
-      return;
-    }
-  }
-
-  if (buyerCreated.value === newBuyer.value._id) {
-    try {
+    } else {
+      // Create a new buyer
       await wholesaleApi.account
         .id(props.accountId)
-        .buyer.update(newBuyer.value);
-      buyerActionTaken.value = true;
-      handleSuccess();
-    } catch (error) {
-      const message = getErrorMessage(error);
-      geinsLogError('error updating buyer:', message);
-      return;
-    } finally {
-      loading.value = false;
+        .buyer.create(newBuyer.value);
     }
+
+    handleSuccess();
+  } catch (error) {
+    const feedbackWord = props.mode === 'edit' ? 'updating' : 'adding';
+    toast({
+      title: t(`error_${feedbackWord}_entity`, { entityName }),
+      description: t('feedback_error_description'),
+      variant: 'negative',
+    });
+    const message = getErrorMessage(error);
+    geinsLogError('error saving buyer:', message);
+  } finally {
+    loading.value = false;
   }
 };
 
-const handleDeleteClick = async () => {
-  await deleteBuyer();
-  buyerActionTaken.value = true;
+const handleRemoveClick = async () => {
+  await removeBuyer();
   toast({
-    title: t('entity_deleted', { entityName: entityName.value }),
+    title: t('entity_removed', { entityName }),
     variant: 'positive',
   });
   open.value = false;
 };
 
-const deleteBuyer = async (id: string = buyerId.value) => {
+const removeBuyer = async (id: string = buyerId.value) => {
   isDeleting.value = true;
   try {
     await wholesaleApi.account.id(props.accountId).buyer.delete(id);
   } catch (error) {
     const message = getErrorMessage(error);
-    geinsLogError('error deleting buyer:', message);
+    geinsLogError('error removing buyer:', message);
   } finally {
     isDeleting.value = false;
   }
@@ -240,11 +216,14 @@ const handleCancel = () => {
   open.value = false;
 };
 
-const existingUserName = computed(() =>
-  existingUser.value?.firstName || existingUser.value?.lastName
-    ? `${existingUser.value.firstName} ${existingUser.value.lastName}`
-    : existingUser.value?.email,
-);
+const existingCustomerName = computed(() => {
+  // First try to get name from existing customer
+  if (existingCustomer.value?.firstName || existingCustomer.value?.lastName) {
+    return `${existingCustomer.value.firstName} ${existingCustomer.value.lastName}`.trim();
+  }
+
+  return existingCustomer.value?._id || 'customer';
+});
 </script>
 <template>
   <Sheet v-model:open="open">
@@ -304,7 +283,7 @@ const existingUserName = computed(() =>
                       v-bind="componentField"
                       type="email"
                       autocomplete="email"
-                      :loading="creatingUser"
+                      :loading="isChecking"
                     />
                   </FormControl>
                   <FormMessage />
@@ -344,36 +323,36 @@ const existingUserName = computed(() =>
               size="md"
               heading-level="h3"
               :title="
-                t('delete_entity', {
+                t('remove_entity', {
                   entityName,
                 })
               "
-              description="This will delete the buyer and anonymize the customer account connected to it"
+              description="This will remove the buyer from this account but keep its customer account"
             />
             <Button
               size="sm"
               variant="destructive"
               :loading="isDeleting"
-              @click.stop="handleDeleteClick"
+              @click.stop="handleRemoveClick"
             >
-              {{ t('delete') }}
+              {{ t('remove') }}
             </Button>
           </div>
-          <div v-else-if="buyerExists" class="w-full space-y-6">
+          <div v-else-if="buyerExistsAsCustomer" class="w-full space-y-6">
             <Alert variant="info">
               <LucideInfo class="size-4" />
               <AlertTitle>Email already in use!</AlertTitle>
               <AlertDescription>
                 The provided email address (<span class="font-bold">{{
-                  existingUser?._id
+                  existingCustomer?._id
                 }}</span
                 >) is already associated with an existing customer account.
               </AlertDescription>
               <div class="mt-2">
                 <ContentSwitch
-                  v-model:checked="updateUser"
-                  :label="`Assign ${existingUserName} as buyer for ${accountName}`"
-                  description="Toggle this if you want to assign this existing user as a buyer and update it with the information above"
+                  v-model:checked="updateCustomer"
+                  :label="`Assign ${existingCustomerName} as buyer for ${accountName}`"
+                  description="Toggle this if you want to assign this existing customer as a buyer and update it with the information above"
                 />
               </div>
             </Alert>
