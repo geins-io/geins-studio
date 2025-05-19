@@ -1,4 +1,15 @@
 
+## v0.0.14
+
+
+### 🏡 Chore
+
+- Geins studio ([afd099f](https://github.com/geins-io/geins-studio/commit/afd099f))
+
+### ❤️ Contributors
+
+- Olivia Axelsson <axelsson@geins.io>
+
 ## v0.0.13
 
 
