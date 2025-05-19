@@ -25,7 +25,7 @@ Create an `.env` file in the root of your project and add the following environm
 
 ## Theming
 
-Geins Merchant Center is built with **[shadcn-vue](https://www.shadcn-vue.com/)** and is using it's theming functionality, which is based on **[Tailwind CSS](https://tailwindcss.com)**. You can easily customize the look and feel of your application by changing the theme located in `assets/css/tailwind.css`. Head on over to shadcn-vue's [themes page](https://www.shadcn-vue.com/themes.html) to try out and customize your theme, which you then can copy into your `tailwind.css` file.
+Geins Studio is built with **[shadcn-vue](https://www.shadcn-vue.com/)** and is using it's theming functionality, which is based on **[Tailwind CSS](https://tailwindcss.com)**. You can easily customize the look and feel of your application by changing the theme located in `assets/css/tailwind.css`. Head on over to shadcn-vue's [themes page](https://www.shadcn-vue.com/themes.html) to try out and customize your theme, which you then can copy into your `tailwind.css` file.
 
 ### Design system
 

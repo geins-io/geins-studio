@@ -1,6 +1,6 @@
 # Authentication
 
-The Geins Merchant Center uses a JWT-based authentication system that is built upon [
+The Geins Studio uses a JWT-based authentication system that is built upon [
 `@sidebase/nuxt-auth`](https://auth.sidebase.io/). The authentication logic is handled in a series of server and application files, which are described below.
 
 ## Server Files

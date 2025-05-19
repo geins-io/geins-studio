@@ -1,19 +1,19 @@
-# Geins Merchant Center
+# Geins Studio
 
 ## Introduction
 
-Geins Merchant Center is a comprehensive administrative interface designed for e-commerce solutions. This standalone application seamlessly integrates Geins PIM, CRM, WMS, CMS, and other essential tools into a unified, user-friendly platform.
+Geins Studio is a comprehensive administrative interface designed for e-commerce solutions. This standalone application seamlessly integrates Geins PIM, CRM, WMS, CMS, and other essential tools into a unified, user-friendly platform.
 
 ## Pre-requisites
 
-Before setting up Geins Merchant Center, ensure you have the following:
+Before setting up Geins Studio, ensure you have the following:
 
 - [Node.js](https://nodejs.org) (v20.0.0 or higher)
 - A Geins account - [Get a free trial here](https://www.geins.io)
 
 ## Getting Started
 
-To set up Geins Merchant Center, follow these steps:
+To set up Geins Studio, follow these steps:
 
 1. **Install Dependencies**
 
@@ -50,7 +50,7 @@ To set up Geins Merchant Center, follow these steps:
 
 ## General Setup
 
-Geins Merchant Center is built using modern technologies to ensure flexibility and scalability. The core tech stack includes:
+Geins Studio is built using modern technologies to ensure flexibility and scalability. The core tech stack includes:
 
 - **Framework:** [Nuxt.js](https://nuxt.com)
 - **Language:** [TypeScript](https://www.typescriptlang.org)
@@ -60,7 +60,7 @@ Geins Merchant Center is built using modern technologies to ensure flexibility a
 
 ## Theming
 
-Geins Merchant Center is fully customizable with Tailwind CSS and shadcn-vue. You can modify the styles in `assets/css/tailwind.css`. Explore more customization options at:
+Geins Studio is fully customizable with Tailwind CSS and shadcn-vue. You can modify the styles in `assets/css/tailwind.css`. Explore more customization options at:
 
 - [shadcn-vue Themes](https://www.shadcn-vue.com/themes.html)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
@@ -69,7 +69,7 @@ For detailed deployment instructions, check the [Deployment Guide](docs/introduc
 
 ## Contributing
 
-We welcome contributions! Feel free to open issues or submit pull requests to improve Geins Merchant Center.
+We welcome contributions! Feel free to open issues or submit pull requests to improve Geins Studio.
 
 ## License
 

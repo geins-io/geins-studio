@@ -1,6 +1,6 @@
 # Data Table Composables
 
-To easily integrate the data tables in your list pages, Geins Merchant Center provides composables for handling the data tables.
+To easily integrate the data tables in your list pages, Geins Studio provides composables for handling the data tables.
 
 ## `useColumns`
 
