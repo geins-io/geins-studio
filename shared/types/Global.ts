@@ -7,14 +7,12 @@ export const enum DataItemDisplayType {
 }
 export interface GeinsEntity {
   _id: string;
-  _type?: string;
-  name?: string;
+  _type: string;
 }
 
 export interface GeinsEntityInput {
   _id?: string;
   _type?: string;
-  name?: string;
 }
 
 export interface DataItem {
@@ -67,7 +65,7 @@ export type GeinsErrorType =
 
 export type AddressType = 'billing' | 'shipping' | 'billingandshipping';
 
-export interface Address extends GeinsEntity {
+export interface AddressInput {
   addressType?: AddressType;
   addressReferenceId?: string;
   email?: string;
@@ -84,6 +82,8 @@ export interface Address extends GeinsEntity {
   region?: string;
   country?: string;
 }
+
+export interface Address extends AddressInput, GeinsEntity {}
 
 export interface Customer extends GeinsEntity {
   firstName?: string;

@@ -75,8 +75,8 @@ watch(
 const columnOptions: ColumnOptions<EntityList> = {
   entityLinkUrl: entityUrl,
   columnTypes: { name: 'entity-link' },
-  columnTitles: { active: 'Status' },
-  excludeColumns: ['meta', 'addresses', 'buyers', 'tags'],
+  columnTitles: { active: t('status') },
+  excludeColumns: ['meta', 'addresses', 'buyers', 'tags', 'exVat'],
 };
 // GET AND SET COLUMNS
 const { getColumns, addActionsColumn } = useColumns<EntityList>();
@@ -141,7 +141,7 @@ const confirmDelete = async () => {
       :data="dataList"
       :init-visibility-state="visibilityState"
     />
-    <template #error="{ errorCatched }">
+    <template #error="{ error: errorCatched }">
       <h2 class="text-xl font-bold">
         {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
       </h2>

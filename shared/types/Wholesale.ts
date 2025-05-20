@@ -1,25 +1,28 @@
 import type { GeinsEntity } from './Global';
 
-export interface WholesaleAccount extends GeinsEntity {
-  name: string;
+export interface WholesaleAccountInput {
+  name?: string;
   active: boolean;
   orgNr: string;
   externalId: string;
   channels: string[];
   tags: string[];
+  salesReps: string[];
+  exVat: boolean;
   addresses: Address[];
-  salesReps: WholesaleSalesRep[];
   buyers: WholesaleBuyer[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   meta?: Record<string, any>;
 }
-export interface WholesaleAccountInput
-  extends Omit<WholesaleAccount, '_id' | 'salesReps'> {
-  salesReps: string[];
+export interface WholesaleAccount
+  extends GeinsEntity,
+    Omit<WholesaleAccountInput, 'salesReps'> {
+  salesReps: WholesaleSalesRep[];
 }
 
 export interface WholesaleAccountList
-  extends Omit<WholesaleAccount, 'salesReps'> {
+  extends GeinsEntity,
+    WholesaleAccountInput {
   accountGroups: string[];
   salesReps: string[];
 }
@@ -31,11 +34,15 @@ export interface WholesaleSalesRep extends GeinsEntity {
   accountIds: string[];
 }
 
-export interface WholesaleBuyer extends GeinsEntity {
+export interface WholesaleBuyerInput {
   active?: boolean;
   firstName?: string;
   lastName?: string;
   email?: string;
   phone?: string;
   accountId?: string;
+  // TODO: Remove when fixed
+  _id: string;
 }
+
+export interface WholesaleBuyer extends WholesaleBuyerInput, GeinsEntity {}

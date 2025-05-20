@@ -22,8 +22,7 @@ export function entityRepo<
       });
     },
 
-    async update(data: InputT): Promise<T> {
-      const id = data._id;
+    async update(id: string, data: InputT): Promise<T> {
       return await fetch<T>(`${entityEndpoint}/${id}`, {
         method: 'PATCH',
         body: data,

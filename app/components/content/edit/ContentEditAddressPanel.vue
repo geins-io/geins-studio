@@ -234,7 +234,7 @@ const handleCancel = () => {
             <FormGrid design="1+1">
               <FormField v-slot="{ componentField }" name="firstName">
                 <FormItem v-auto-animate>
-                  <FormLabel>{{ t('address.first_name') }}</FormLabel>
+                  <FormLabel>{{ t('person.first_name') }}</FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -247,7 +247,7 @@ const handleCancel = () => {
               </FormField>
               <FormField v-slot="{ componentField }" name="lastName">
                 <FormItem v-auto-animate>
-                  <FormLabel>{{ t('address.last_name') }}</FormLabel>
+                  <FormLabel>{{ t('person.last_name') }}</FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -262,7 +262,7 @@ const handleCancel = () => {
             <FormGrid design="1+1">
               <FormField v-slot="{ componentField }" name="email">
                 <FormItem v-auto-animate>
-                  <FormLabel>{{ t('address.email') }}</FormLabel>
+                  <FormLabel>{{ t('person.email') }}</FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -276,7 +276,7 @@ const handleCancel = () => {
               <FormField v-slot="{ componentField }" name="phone">
                 <FormItem v-auto-animate>
                   <FormLabel :optional="true">{{
-                    t('address.phone')
+                    t('person.phone')
                   }}</FormLabel>
                   <FormControl>
                     <Input

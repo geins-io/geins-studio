@@ -8,7 +8,6 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import { useWholesale } from '@/composables/useWholesale';
 import { DataItemDisplayType, TableMode } from '#shared/types';
-
 import * as z from 'zod';
 
 // GLOBALS
@@ -36,15 +35,19 @@ const liveStatus = ref(true);
 const formValidation = ref();
 
 // EDIT PAGE OPTIONS
-const tabs = [t('wholesale.account_details'), t('wholesale.buyers')];
+const tabs = [
+  t('wholesale.account_details'),
+  t('wholesale.buyers'),
+  t('settings'),
+];
 
 // COMPUTED GLOBALS
 const createMode = ref(route.params.id === newEntityUrlAlias);
 const title = computed(() =>
   createMode.value
     ? t('new_entity', { entityName }) +
-      (wholesaleAccount.value.name ? ': ' + wholesaleAccount.value.name : '')
-    : wholesaleAccount.value.name || t('edit_entity', { entityName }),
+      (entityDataInput.value.name ? ': ' + entityDataInput.value.name : '')
+    : entityDataInput.value.name || t('edit_entity', { entityName }),
 );
 
 // STEPS SETUP
@@ -52,7 +55,9 @@ const currentStep = ref(1);
 const totalSteps = ref(2);
 
 // WHOLESALE ACCOUNT
-const wholesaleAccount = ref<WholesaleAccountInput>({
+const entityId = ref<string>(String(route.params.id));
+const entityData = ref<WholesaleAccount>();
+const entityDataInput = ref<WholesaleAccountInput>({
   name: '',
   active: true,
   orgNr: '',
@@ -62,10 +67,11 @@ const wholesaleAccount = ref<WholesaleAccountInput>({
   salesReps: [],
   addresses: [],
   buyers: [],
+  exVat: false,
 });
 
 /* Addresses */
-const addressObj: Address = {
+const addressObj: Partial<Address> = {
   email: '',
   phone: '',
   company: '',
@@ -88,7 +94,7 @@ const shippingAddress = ref<Partial<Address>>({
   addressType: 'shipping',
 });
 const accountGroups = ref<string[]>([]);
-const accountTags = ref<GeinsEntity[]>([]);
+const accountTags = ref<{ _id: string; name: string }[]>([]);
 
 const getAddresses = (billing: Address, shipping?: Address) => {
   const addresses = [];
@@ -110,11 +116,12 @@ const getAddresses = (billing: Address, shipping?: Address) => {
 
 const parseAndSaveData = async (account: WholesaleAccount): Promise<void> => {
   const wholesaleAccountInput: WholesaleAccountInput = {
-    ...wholesaleAccount.value,
+    ...entityDataInput.value,
     ...account,
     salesReps: account.salesReps?.map((salesRep) => salesRep._id),
   };
-  wholesaleAccount.value = wholesaleAccountInput;
+  entityData.value = account;
+  entityDataInput.value = wholesaleAccountInput;
   liveStatus.value = wholesaleAccountInput.active;
   accountGroups.value = extractAccountGroupsfromTags(
     wholesaleAccountInput.tags,
@@ -143,7 +150,7 @@ const hasUnsavedChanges = computed(() => {
   if (createMode.value) return false;
 
   // Deep compare the current account data with the original data
-  const currentData = JSON.stringify(wholesaleAccount.value);
+  const currentData = JSON.stringify(entityDataInput.value);
 
   return currentData !== originalAccountData.value;
 });
@@ -231,12 +238,12 @@ const saveAccountDetails = async () => {
     form.resetForm();
     form.setValues({
       details: {
-        ...wholesaleAccount.value,
+        ...entityDataInput.value,
         tags: accountGroups.value,
       },
       addresses: {
         billing: {
-          company: wholesaleAccount.value.name,
+          company: entityDataInput.value.name,
         },
       },
     });
@@ -251,7 +258,10 @@ const previousStep = () => {
   currentStep.value--;
 };
 
-const getEntityNameById = (id: string, dataList: GeinsEntity[]) => {
+const getEntityNameById = (
+  id: string,
+  dataList: { _id?: string; name?: string }[],
+) => {
   const entity = dataList?.find((entity) => entity._id === id);
   return entity ? entity.name : '';
 };
@@ -262,41 +272,41 @@ const summary = computed<DataItem[]>(() => {
   if (!createMode.value) {
     dataList.push({
       label: t('entity_id', { entityName }),
-      value: String(wholesaleAccount.value._id),
+      value: String(entityData.value?._id),
       displayType: DataItemDisplayType.Copy,
     });
   }
-  if (wholesaleAccount.value.name) {
+  if (entityDataInput.value.name) {
     dataList.push({
       label: t('wholesale.account_name'),
-      value: wholesaleAccount.value.name,
+      value: entityDataInput.value.name,
     });
   }
-  if (wholesaleAccount.value.orgNr) {
+  if (entityDataInput.value.orgNr) {
     dataList.push({
       label: t('wholesale.org_nr'),
-      value: wholesaleAccount.value.orgNr,
+      value: entityDataInput.value.orgNr,
     });
   }
-  if (wholesaleAccount.value.salesReps?.length) {
-    const displayValue = wholesaleAccount.value.salesReps
+  if (entityDataInput.value.salesReps?.length) {
+    const displayValue = entityDataInput.value.salesReps
       .map((id) => getEntityNameById(id, users.value))
       .join(', ');
     dataList.push({
       label: t('wholesale.sales_reps'),
-      value: wholesaleAccount.value.salesReps,
+      value: entityDataInput.value.salesReps,
       displayValue,
       displayType: DataItemDisplayType.Array,
       entityName: 'sales_rep',
     });
   }
-  if (wholesaleAccount.value.channels?.length) {
-    const displayValue = wholesaleAccount.value.channels
+  if (entityDataInput.value.channels?.length) {
+    const displayValue = entityDataInput.value.channels
       .map((id) => accountStore.getChannelNameById(id))
       .join(', ');
     dataList.push({
       label: t('wholesale.channels'),
-      value: wholesaleAccount.value.channels,
+      value: entityDataInput.value.channels,
       displayValue,
       displayType: DataItemDisplayType.Array,
       entityName: 'channel',
@@ -312,6 +322,18 @@ const summary = computed<DataItem[]>(() => {
       entityName: 'account_group',
     });
   }
+  return dataList;
+});
+
+const settingsSummary = computed<DataItem[]>(() => {
+  const dataList: DataItem[] = [];
+  dataList.push({
+    label: t('wholesale.vat'),
+    value: entityDataInput.value.exVat
+      ? t('wholesale.vat_true')
+      : t('wholesale.vat_false'),
+  });
+
   return dataList;
 });
 
@@ -331,7 +353,7 @@ const createAccount = async () => {
     validateOnChange.value = false;
 
     const result: GeinsEntity = await wholesaleApi.account.create(
-      wholesaleAccount.value,
+      entityDataInput.value,
     );
     const id = result._id;
 
@@ -357,7 +379,7 @@ const createAccount = async () => {
 };
 
 const hasShippingAddress = computed(() => {
-  return wholesaleAccount.value.addresses?.some(
+  return entityDataInput.value.addresses?.some(
     (address) => address.addressType === 'shipping',
   );
 });
@@ -365,22 +387,22 @@ const hasShippingAddress = computed(() => {
 const saveAddress = async (address: Address) => {
   const isNewShipping = !address._id && address.addressType === 'shipping';
   if (isNewShipping) {
-    wholesaleAccount.value.addresses?.push(address);
+    entityDataInput.value.addresses?.push(address);
 
-    wholesaleAccount.value.addresses?.map((addr) => {
+    entityDataInput.value.addresses?.map((addr) => {
       if (addr.addressType === 'billingandshipping') {
         addr.addressType = 'billing';
       }
       return addr;
     });
   } else {
-    const updatedAddresses = wholesaleAccount.value.addresses?.map((addr) => {
+    const updatedAddresses = entityDataInput.value.addresses?.map((addr) => {
       if (addr._id === address._id) {
         return { ...addr, ...address };
       }
       return addr;
     });
-    wholesaleAccount.value.addresses = updatedAddresses;
+    entityDataInput.value.addresses = updatedAddresses;
   }
   if (address.addressType?.includes('billing')) {
     billingAddress.value = address;
@@ -402,8 +424,10 @@ const saveAccount = async () => {
       return;
     }
     validateOnChange.value = false;
+    const id = entityData.value?._id || entityId.value;
     const result: WholesaleAccount = await wholesaleApi.account.update(
-      wholesaleAccount.value,
+      id,
+      entityDataInput.value,
     );
 
     await parseAndSaveData(result);
@@ -434,7 +458,7 @@ const openDeleteDialog = async () => {
 };
 const confirmDelete = async () => {
   deleting.value = true;
-  const success = await deleteAccount(wholesaleAccount.value._id, entityName);
+  const success = await deleteAccount(entityId.value, entityName);
   if (success) {
     navigateTo('/wholesale/account/list');
   }
@@ -452,11 +476,11 @@ const openAddressDeleteDialog = async (addressId: string) => {
 const confirmAddressDelete = async () => {
   deleting.value = true;
   if (deletingAddressId.value === 'new') {
-    wholesaleAccount.value.addresses = wholesaleAccount.value.addresses?.filter(
+    entityDataInput.value.addresses = entityDataInput.value.addresses?.filter(
       (address) => address.addressType !== 'shipping',
     );
   } else {
-    wholesaleAccount.value.addresses = wholesaleAccount.value.addresses?.filter(
+    entityDataInput.value.addresses = entityDataInput.value.addresses?.filter(
       (address) => address._id !== deletingAddressId.value,
     );
   }
@@ -479,11 +503,11 @@ const buyerPanelOpen = ref(false);
 const buyerToEdit = ref<WholesaleBuyer | undefined>();
 const buyerPanelMode = ref<'edit' | 'add'>('add');
 const columnOptions: ColumnOptions<WholesaleBuyer> = {
-  columnTitles: { _id: 'Email', active: 'Status' },
+  columnTitles: { _id: t('person.email'), active: t('status') },
   excludeColumns: ['accountId'],
 };
 const buyersList = computed(() => {
-  return wholesaleAccount.value.buyers;
+  return entityDataInput.value.buyers;
 });
 const buyerColumns: Ref<ColumnDef<WholesaleBuyer>[]> = ref([]);
 const { getColumns, addActionsColumn } = useColumns<WholesaleBuyer>();
@@ -512,9 +536,8 @@ watch(buyerPanelOpen, async (open) => {
 
 // GET DATA IF NOT CREATE MODE
 if (!createMode.value) {
-  const id = ref<string>(String(route.params.id));
   const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
-    wholesaleApi.account.get(id.value),
+    wholesaleApi.account.get(entityId.value),
   );
   if (error.value) {
     geinsLogError('error fetching wholesale account:', error.value);
@@ -554,7 +577,7 @@ const form = useForm({
   validationSchema: formSchema,
   initialValues: {
     details: {
-      ...wholesaleAccount.value,
+      ...entityDataInput.value,
       tags: accountGroups.value,
     },
     addresses: {
@@ -587,8 +610,8 @@ watch(
     );
     accountGroups.value = values.details.tags || [];
     const tags = convertAccountGroupsToTags(accountGroups.value);
-    wholesaleAccount.value = {
-      ...wholesaleAccount.value,
+    entityDataInput.value = {
+      ...entityDataInput.value,
       ...values.details,
       addresses,
       tags,
@@ -762,7 +785,7 @@ watch(
             :step="2"
             :total-steps="totalSteps"
             :current-step="currentStep"
-            title="Billing and shipping addresses"
+            :title="$t('wholesale.billing_shipping_addresses')"
             @previous="previousStep"
           >
             <Tabs default-value="billing">
@@ -797,8 +820,8 @@ watch(
                 >
                   <ContentSwitch
                     :checked="!addShippingAddress"
-                    label="Same as billing address"
-                    description="Use the billing address as your shipping address"
+                    :label="$t('wholesale.same_as_billing')"
+                    :description="$t('wholesale.use_billing_as_shipping')"
                     @update:checked="addShippingAddress = !$event"
                   />
                   <ContentEditAddressPanel
@@ -962,8 +985,8 @@ watch(
                 <ContentCardHeader
                   size="md"
                   heading-level="h3"
-                  title="Contact person"
-                  description="Contact person related to the address"
+                  :title="$t('contact_person')"
+                  :description="$t('contact_person_description')"
                 />
                 <FormGrid design="1+1">
                   <FormField
@@ -971,7 +994,7 @@ watch(
                     name="addresses.billing.firstName"
                   >
                     <FormItem v-auto-animate>
-                      <FormLabel>{{ $t('address.first_name') }}</FormLabel>
+                      <FormLabel>{{ $t('person.first_name') }}</FormLabel>
                       <FormControl>
                         <Input
                           v-bind="componentField"
@@ -987,7 +1010,7 @@ watch(
                     name="addresses.billing.lastName"
                   >
                     <FormItem v-auto-animate>
-                      <FormLabel>{{ $t('address.last_name') }}</FormLabel>
+                      <FormLabel>{{ $t('person.last_name') }}</FormLabel>
                       <FormControl>
                         <Input
                           v-bind="componentField"
@@ -1005,7 +1028,7 @@ watch(
                     name="addresses.billing.email"
                   >
                     <FormItem v-auto-animate>
-                      <FormLabel>{{ $t('address.email') }}</FormLabel>
+                      <FormLabel>{{ $t('person.email') }}</FormLabel>
                       <FormControl>
                         <Input
                           v-bind="componentField"
@@ -1022,7 +1045,7 @@ watch(
                   >
                     <FormItem v-auto-animate>
                       <FormLabel :optional="true">{{
-                        $t('address.phone')
+                        $t('person.phone')
                       }}</FormLabel>
                       <FormControl>
                         <Input
@@ -1048,8 +1071,8 @@ watch(
                 />
                 <ContentSwitch
                   v-model:checked="addShippingAddress"
-                  label="Add different shipping address"
-                  description="Activate to add a different shipping address"
+                  :label="$t('wholesale.add_different_shipping')"
+                  :description="$t('wholesale.activate_different_shipping')"
                 >
                   <FormGridWrap>
                     <FormGrid design="2+1+1">
@@ -1186,8 +1209,8 @@ watch(
                     <ContentCardHeader
                       size="md"
                       heading-level="h3"
-                      title="Contact person"
-                      description="Contact person related to the address"
+                      :title="$t('contact_person')"
+                      :description="$t('contact_person_description')"
                     />
                     <FormGridWrap>
                       <FormGrid design="1+1">
@@ -1196,9 +1219,7 @@ watch(
                           name="addresses.shipping.firstName"
                         >
                           <FormItem v-auto-animate>
-                            <FormLabel>{{
-                              $t('address.first_name')
-                            }}</FormLabel>
+                            <FormLabel>{{ $t('person.first_name') }}</FormLabel>
                             <FormControl>
                               <Input
                                 v-bind="componentField"
@@ -1214,7 +1235,7 @@ watch(
                           name="addresses.shipping.lastName"
                         >
                           <FormItem v-auto-animate>
-                            <FormLabel>{{ $t('address.last_name') }}</FormLabel>
+                            <FormLabel>{{ $t('person.last_name') }}</FormLabel>
                             <FormControl>
                               <Input
                                 v-bind="componentField"
@@ -1232,7 +1253,7 @@ watch(
                           name="addresses.shipping.email"
                         >
                           <FormItem v-auto-animate>
-                            <FormLabel>{{ $t('address.email') }}</FormLabel>
+                            <FormLabel>{{ $t('person.email') }}</FormLabel>
                             <FormControl>
                               <Input
                                 v-bind="componentField"
@@ -1249,7 +1270,7 @@ watch(
                         >
                           <FormItem v-auto-animate>
                             <FormLabel :optional="true">
-                              {{ $t('address.phone') }}
+                              {{ $t('person.phone') }}
                             </FormLabel>
                             <FormControl>
                               <Input
@@ -1280,12 +1301,13 @@ watch(
           </div>
           <template #sidebar>
             <ContentEditSummary
-              v-model:active="wholesaleAccount.active"
+              v-model:active="entityDataInput.active"
               :entity-name="entityName"
               :create-mode="createMode"
               :form-touched="formTouched"
               :live-status="liveStatus"
               :summary="summary"
+              :settings-summary="settingsSummary"
             />
           </template>
         </ContentEditMain>
@@ -1293,8 +1315,9 @@ watch(
       <KeepAlive>
         <ContentEditMain v-if="currentTab === 1">
           <ContentEditCard
+            v-if="currentTab === 1"
             :create-mode="createMode"
-            title="Buyers"
+            :title="t('wholesale.buyers')"
             description="Buyers connected to this account"
           >
             <template #header-action>
@@ -1302,8 +1325,8 @@ watch(
                 v-model:open="buyerPanelOpen"
                 :mode="buyerPanelMode"
                 :buyer="buyerToEdit"
-                :account-id="wholesaleAccount._id"
-                :account-name="wholesaleAccount.name"
+                :account-id="entityData?._id || ''"
+                :account-name="entityDataInput.name || ''"
               >
                 <ButtonIcon
                   v-if="!createMode"
@@ -1324,7 +1347,7 @@ watch(
                   {{ $t('no_entity', { entityName: 'buyer' }, 2) }}
                 </p>
                 <p class="text-xs text-muted-foreground">
-                  No buyers are connected to this account
+                  {{ $t('wholesale.no_buyers_connected') }}
                 </p>
               </div>
               <TableView
@@ -1336,6 +1359,40 @@ watch(
               />
             </div>
           </ContentEditCard>
+        </ContentEditMain>
+      </KeepAlive>
+
+      <KeepAlive>
+        <ContentEditMain v-if="currentTab === 2">
+          <ContentEditCard
+            :create-mode="false"
+            :title="t('settings')"
+            description="Settings for this account"
+          >
+            <div class="space-y-4">
+              <ContentCardHeader
+                title="VAT settings"
+                description="Set whether this account should be charged VAT on orders"
+                size="md"
+              />
+              <ContentSwitch
+                v-model:checked="entityDataInput.exVat"
+                label="VAT included"
+                description="Orders from this account will include VAT"
+              />
+            </div>
+          </ContentEditCard>
+          <template #sidebar>
+            <ContentEditSummary
+              v-model:active="entityDataInput.active"
+              :entity-name="entityName"
+              :create-mode="createMode"
+              :form-touched="formTouched"
+              :live-status="liveStatus"
+              :summary="summary"
+              :settings-summary="settingsSummary"
+            />
+          </template>
         </ContentEditMain>
       </KeepAlive>
     </form>

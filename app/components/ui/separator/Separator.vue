@@ -1,17 +1,14 @@
 <script setup lang="ts">
-import { cn } from '@/utils';
+import type { HTMLAttributes } from 'vue';
+import { reactiveOmit } from '@vueuse/core';
 import { Separator, type SeparatorProps } from 'reka-ui';
-import { computed, type HTMLAttributes } from 'vue';
+import { cn } from '@/utils';
 
 const props = defineProps<
   SeparatorProps & { class?: HTMLAttributes['class']; label?: string }
 >();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, 'class');
 </script>
 
 <template>
@@ -19,7 +16,7 @@ const delegatedProps = computed(() => {
     v-bind="delegatedProps"
     :class="
       cn(
-        'relative shrink-0 bg-border dark:bg-black',
+        'relative shrink-0 bg-border',
         props.orientation === 'vertical' ? 'h-full w-px' : 'h-px w-full',
         props.class,
       )
@@ -29,9 +26,9 @@ const delegatedProps = computed(() => {
       v-if="props.label"
       :class="
         cn(
-          'absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-background text-xs text-muted-foreground',
+          'absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-card text-xs text-muted-foreground',
           props.orientation === 'vertical'
-            ? 'w-[1px] px-1 py-2'
+            ? 'w-[1px] px-1.5 py-2'
             : 'h-[1px] px-2 py-1',
         )
       "

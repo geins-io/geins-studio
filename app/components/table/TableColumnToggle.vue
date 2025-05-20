@@ -161,8 +161,8 @@ const resetOrderAndVisibility = () => {
             >
               <Checkbox
                 :id="column.id"
-                :checked="column.isVisible"
-                @update:checked="setIsVisible(column.id, $event)"
+                :model-value="column.isVisible"
+                @update:model-value="setIsVisible(column.id, !!$event)"
               />
               <label
                 :for="column.id"

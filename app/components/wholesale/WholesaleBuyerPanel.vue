@@ -19,9 +19,7 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (event: 'save', address: Address): void;
-  (event: 'remove', id: string): void;
-  (event: 'added'): void;
+  (event: 'added' | 'removed'): void;
 }>();
 
 const { t } = useI18n();
@@ -156,11 +154,13 @@ const handleSave = async () => {
       accountId: props.accountId,
     });
 
+    const id = props.buyer?._id || newBuyer.value._id;
+
     if (props.mode === 'edit') {
       // Just updating an existing buyer
       await wholesaleApi.account
         .id(props.accountId)
-        .buyer.update(newBuyer.value);
+        .buyer.update(id, newBuyer.value);
     } else if (buyerExistsAsCustomer.value) {
       // Customer exists, so assign and update
       await wholesaleApi.account
@@ -168,7 +168,7 @@ const handleSave = async () => {
         .buyer.assign(newBuyer.value._id);
       await wholesaleApi.account
         .id(props.accountId)
-        .buyer.update(newBuyer.value);
+        .buyer.update(id, newBuyer.value);
     } else {
       // Create a new buyer
       await wholesaleApi.account
@@ -198,6 +198,7 @@ const handleRemoveClick = async () => {
     variant: 'positive',
   });
   open.value = false;
+  emit('removed');
 };
 
 const removeBuyer = async (id: string = buyerId.value) => {
@@ -246,7 +247,7 @@ const existingCustomerName = computed(() => {
               <FormField v-slot="{ componentField }" name="firstName">
                 <FormItem v-auto-animate>
                   <FormLabel :optional="true">{{
-                    t('address.first_name')
+                    t('person.first_name')
                   }}</FormLabel>
                   <FormControl>
                     <Input
@@ -261,7 +262,7 @@ const existingCustomerName = computed(() => {
               <FormField v-slot="{ componentField }" name="lastName">
                 <FormItem v-auto-animate>
                   <FormLabel :optional="true">{{
-                    t('address.last_name')
+                    t('person.last_name')
                   }}</FormLabel>
                   <FormControl>
                     <Input
@@ -277,7 +278,7 @@ const existingCustomerName = computed(() => {
             <FormGrid design="1+1">
               <FormField v-slot="{ componentField }" name="email">
                 <FormItem v-auto-animate>
-                  <FormLabel>{{ t('address.email') }}</FormLabel>
+                  <FormLabel>{{ t('person.email') }}</FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -292,7 +293,7 @@ const existingCustomerName = computed(() => {
               <FormField v-slot="{ componentField }" name="phone">
                 <FormItem v-auto-animate>
                   <FormLabel :optional="true">{{
-                    t('address.phone')
+                    t('person.phone')
                   }}</FormLabel>
                   <FormControl>
                     <Input
@@ -309,7 +310,7 @@ const existingCustomerName = computed(() => {
               <FormField v-slot="{ value, handleChange }" name="active">
                 <FormItemSwitch
                   :label="t('active')"
-                  description="Toggle active state"
+                  :description="t('toggle_active_state')"
                   :model-value="value"
                   @update:model-value="handleChange"
                 />
@@ -318,7 +319,10 @@ const existingCustomerName = computed(() => {
           </FormGridWrap>
         </form>
         <div v-auto-animate class="mt-8 border-t pt-8">
-          <div v-if="mode === 'edit'" class="flex items-center justify-between">
+          <div
+            v-if="mode === 'edit'"
+            class="mb-8 flex items-center justify-between"
+          >
             <ContentCardHeader
               size="md"
               heading-level="h3"
@@ -327,7 +331,7 @@ const existingCustomerName = computed(() => {
                   entityName,
                 })
               "
-              description="This will remove the buyer from this account but keep its customer account"
+              :description="t('wholesale.buyers_remove_description')"
             />
             <Button
               size="sm"
@@ -338,21 +342,32 @@ const existingCustomerName = computed(() => {
               {{ t('remove') }}
             </Button>
           </div>
-          <div v-else-if="buyerExistsAsCustomer" class="w-full space-y-6">
+          <div v-if="buyerExistsAsCustomer" class="w-full space-y-6">
             <Alert variant="info">
               <LucideInfo class="size-4" />
-              <AlertTitle>Email already in use!</AlertTitle>
+              <AlertTitle>{{
+                t('wholesale.buyers_feedback_existing_title')
+              }}</AlertTitle>
               <AlertDescription>
-                The provided email address (<span class="font-bold">{{
-                  existingCustomer?._id
-                }}</span
-                >) is already associated with an existing customer account.
+                <i18n-t
+                  keypath="wholesale.buyers_feedback_existing_description"
+                  tag="span"
+                >
+                  <template #email>
+                    <span class="font-bold">{{ existingCustomer?._id }}</span>
+                  </template>
+                </i18n-t>
               </AlertDescription>
               <div class="mt-2">
                 <ContentSwitch
                   v-model:checked="updateCustomer"
-                  :label="`Assign ${existingCustomerName} as buyer for ${accountName}`"
-                  description="Toggle this if you want to assign this existing customer as a buyer and update it with the information above"
+                  :label="
+                    t('wholesale.buyers_assign_existing', {
+                      customerName: existingCustomerName,
+                      accountName: accountName,
+                    })
+                  "
+                  :description="t('wholesale.buyers_assign_description')"
                 />
               </div>
             </Alert>

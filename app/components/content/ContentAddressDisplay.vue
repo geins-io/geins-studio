@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const _props = defineProps<{
-  address: Address;
+  address: AddressInput;
 }>();
 
 const { getCountryNameById } = useAccountStore();

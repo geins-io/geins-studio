@@ -5,6 +5,7 @@ const props = withDefaults(
     description?: string;
     formTouched?: boolean;
     summary?: DataItem[];
+    settingsSummary?: DataItem[];
     entityName?: string;
     liveStatus?: boolean;
   }>(),
@@ -13,6 +14,7 @@ const props = withDefaults(
     description: '',
     formTouched: false,
     summary: () => [],
+    settingsSummary: () => [],
     liveStatus: false,
   },
 );
@@ -61,5 +63,10 @@ const activeDescription = computed(() => {
       :description="activeDescription"
     />
     <ContentDataList v-if="summary.length" :data-list="summary" />
+    <ContentDataList
+      v-if="!props.createMode && settingsSummary.length"
+      :data-list="settingsSummary"
+      :label="t('settings')"
+    />
   </Card>
 </template>

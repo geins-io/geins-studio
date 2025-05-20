@@ -94,6 +94,8 @@ export default defineI18nLocale(async () => {
     browse: 'Browse',
     delete: 'Delete',
     remove: 'Remove',
+    status: 'Status',
+    settings: 'Settings',
     page_of: 'Page {page} of {total}',
     email: 'Email',
     password: 'Password',
@@ -136,11 +138,30 @@ export default defineI18nLocale(async () => {
     auth_verify_description: 'Enter the 6-digit code from your',
     auth_select_account: 'Select the account you want to access',
     unsaved_changes: 'Unsaved changes',
+    toggle_active_state: 'Toggle active state',
     form: {
       field_required: 'This field is required',
       invalid_email: 'Invalid email address',
       optional: 'optional',
     },
+    address: {
+      addressLine1: 'Street address',
+      addressLine2: 'Building, floor, etc.',
+      care_of: 'Care of',
+      city: 'City',
+      company_name: 'Company',
+      country: 'Country',
+      region: 'State/Region',
+      zip: 'Zip code',
+    },
+    person: {
+      email: 'Email',
+      first_name: 'First name',
+      last_name: 'Last name',
+      phone: 'Phone',
+    },
+    contact_person: 'Contact person',
+    contact_person_description: 'Contact person related to the address',
     wholesale: {
       account_details: 'Account details',
       account_name: 'Account name',
@@ -150,20 +171,26 @@ export default defineI18nLocale(async () => {
       sales_reps: 'Sales reps',
       account_groups: 'Account groups',
       buyers: 'Buyers',
-    },
-    address: {
-      addressLine1: 'Street address',
-      addressLine2: 'Building, floor, etc.',
-      care_of: 'Care of',
-      city: 'City',
-      company_name: 'Company',
-      country: 'Country',
-      email: 'Email',
-      first_name: 'First name',
-      last_name: 'Last name',
-      phone: 'Phone',
-      region: 'State/Region',
-      zip: 'Zip code',
+      buyers_feedback_existing_title: 'Email already in use!',
+      buyers_feedback_existing_description:
+        'The provided email address ({email}) is already associated with an existing customer account.',
+      buyers_remove_description:
+        'This will remove the buyer from this account but keep its customer account',
+      buyers_assign_existing:
+        'Assign {customerName} as buyer for {accountName}',
+      buyers_assign_description:
+        'Toggle this if you want to assign this existing customer as a buyer and update it with the information above',
+      billing_shipping_addresses: 'Billing and shipping addresses',
+      same_as_billing: 'Same as billing address',
+      use_billing_as_shipping:
+        'Use the billing address as your shipping address',
+      add_different_shipping: 'Add different shipping address',
+      activate_different_shipping:
+        'Activate to add a different shipping address',
+      no_buyers_connected: 'No buyers are connected to this account',
+      vat: 'VAT',
+      vat_true: 'VAT included',
+      vat_false: 'VAT excluded',
     },
   };
 });
