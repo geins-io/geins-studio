@@ -1,14 +1,5 @@
 <script setup lang="ts">
 import type { ColumnDef } from '@tanstack/vue-table';
-import type {
-  WholesaleAccount,
-  WholesaleAccountCreate,
-  WholesaleAccountUpdate,
-  WholesaleBuyer,
-  Address,
-  AddressBase,
-  AddressUpdate,
-} from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { useRoute } from 'vue-router';
 import { useForm } from 'vee-validate';
@@ -41,6 +32,7 @@ const addShippingAddress = ref(false);
 const originalAccountData = ref<string>('');
 const liveStatus = ref(true);
 const formValidation = ref();
+const createDisabled = ref(true);
 
 // EDIT PAGE OPTIONS
 const tabs = [
@@ -108,7 +100,7 @@ const shippingAddress = ref<AddressUpdate>({
 const accountGroups = ref<string[]>([]);
 const accountTags = ref<EntityBaseWithName[]>([]);
 
-const getAddresses = (billing: Address, shipping?: Address) => {
+const getAddresses = (billing: AddressUpdate, shipping?: AddressUpdate) => {
   const addresses = [];
   const billingType = shipping ? 'billing' : 'billingandshipping';
 
@@ -260,6 +252,7 @@ const saveAccountDetails = async () => {
     });
 
     currentStep.value++;
+    createDisabled.value = false;
   } else {
     validateOnChange.value = true;
   }
@@ -635,9 +628,35 @@ watch(
   }, 500),
   { deep: true },
 );
+
+const unsavedChangesDialogOpen = ref(false);
+const leavingTo = ref<string | null>(null);
+const confirmedLeave = ref(false);
+onBeforeRouteLeave((to) => {
+  if (!confirmedLeave.value && hasUnsavedChanges.value) {
+    unsavedChangesDialogOpen.value = true;
+    leavingTo.value = to.fullPath;
+    return false;
+  }
+  return true;
+});
+const confirmLeave = () => {
+  unsavedChangesDialogOpen.value = false;
+  confirmedLeave.value = true;
+
+  if (leavingTo.value) {
+    navigateTo(leavingTo.value);
+  }
+};
 </script>
 
 <template>
+  <DialogUnsavedChanges
+    v-model:open="unsavedChangesDialogOpen"
+    :entity-name="entityName"
+    :loading="loading"
+    @confirm="confirmLeave"
+  />
   <DialogDelete
     v-model:open="deleteDialogOpen"
     :entity-name="entityName"
@@ -1311,9 +1330,13 @@ watch(
                 {{ $t('cancel') }}
               </NuxtLink>
             </Button>
-            <Button :loading="loading" @click="createAccount">{{
-              $t('create_entity', { entityName })
-            }}</Button>
+            <Button
+              :loading="loading"
+              :disabled="createDisabled"
+              @click="createAccount"
+            >
+              {{ $t('create_entity', { entityName }) }}
+            </Button>
           </div>
           <template #sidebar>
             <ContentEditSummary
