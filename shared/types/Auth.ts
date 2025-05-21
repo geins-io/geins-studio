@@ -1,7 +1,7 @@
 export type ApiUserType = 'api' | 'personal';
 
-export interface UserInput {
-  name?: string;
+export interface UserBase {
+  name: string;
   firstName?: string;
   lastName?: string;
   email?: string | null;
@@ -12,7 +12,9 @@ export interface UserInput {
   error?: unknown;
 }
 
-export interface User extends GeinsEntity, UserInput {
+export type UserCreate = CreateEntity<UserBase>;
+export type UserUpdate = UpdateEntity<UserBase>;
+export interface User extends ResponseEntity<UserBase> {
   password?: string;
 }
 

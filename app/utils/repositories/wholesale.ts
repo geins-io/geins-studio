@@ -1,8 +1,11 @@
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 import type {
   WholesaleAccount,
-  WholesaleAccountInput,
+  WholesaleAccountCreate,
+  WholesaleAccountUpdate,
   WholesaleBuyer,
+  WholesaleBuyerCreate,
+  WholesaleBuyerUpdate,
 } from '#shared/types';
 
 const BASE_ENDPOINT = '/wholesale';
@@ -12,10 +15,11 @@ const BASE_ENDPOINT = '/wholesale';
  */
 export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   const accountEndpoint = `${BASE_ENDPOINT}/account`;
-  const accountRepo = repo.entity<WholesaleAccount, WholesaleAccountInput>(
-    accountEndpoint,
-    fetch,
-  );
+  const accountRepo = repo.entity<
+    WholesaleAccount,
+    WholesaleAccountCreate,
+    WholesaleAccountUpdate
+  >(accountEndpoint, fetch);
 
   const buyerEndpoint = `${BASE_ENDPOINT}/buyer`;
   const buyerRepo = repo.entityBase<WholesaleBuyer>(buyerEndpoint, fetch);
@@ -32,15 +36,16 @@ export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         const accountIdEndpoint = `${accountEndpoint}/${accountId}`;
 
         const accountBuyerEndpoint = `${accountIdEndpoint}/buyer`;
-        const buyerEntityRepo = repo.entity<WholesaleBuyer, WholesaleBuyer>(
-          accountBuyerEndpoint,
-          fetch,
-        );
+        const buyerEntityRepo = repo.entity<
+          WholesaleBuyer,
+          WholesaleBuyerCreate,
+          WholesaleBuyerUpdate
+        >(accountBuyerEndpoint, fetch);
         return {
           buyer: {
             ...buyerEntityRepo,
             async assign(id: string): Promise<void> {
-              return await fetch(`${accountBuyerEndpoint}/${id}`, {
+              await fetch<null>(`${accountBuyerEndpoint}/${id}`, {
                 method: 'POST',
               });
             },

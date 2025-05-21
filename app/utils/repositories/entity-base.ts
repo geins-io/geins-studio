@@ -1,22 +1,20 @@
+// entity-base.ts
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 /**
- * Creates a base repository with common CRUD operations
- *
- * @param entity Base entity for this entity type
- * @param fetch Fetch function to use
+ * Creates a base repository with common read operations
  */
-export function entityBaseRepo<T extends GeinsEntity>(
+export function entityBaseRepo<TResponse extends EntityBase>(
   entityEndpoint: string,
-  fetch: $Fetch<T, NitroFetchRequest>,
+  fetch: $Fetch<TResponse, NitroFetchRequest>,
 ) {
   return {
-    async get(id: string): Promise<T> {
-      return await fetch<T>(`${entityEndpoint}/${id}`);
+    async get(id: string): Promise<TResponse> {
+      return await fetch<TResponse>(`${entityEndpoint}/${id}`);
     },
 
-    async list(): Promise<T[]> {
-      return await fetch<T[]>(`${entityEndpoint}/list`);
+    async list(): Promise<TResponse[]> {
+      return await fetch<TResponse[]>(`${entityEndpoint}/list`);
     },
   };
 }

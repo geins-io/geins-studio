@@ -6,11 +6,11 @@ import { useDebounceFn } from '@vueuse/core';
 import { VisuallyHidden } from 'reka-ui';
 
 const props = defineProps<{
-  address: Address;
+  address: AddressUpdate;
 }>();
 const { t } = useI18n();
 const emit = defineEmits<{
-  (event: 'save', address: Address): void;
+  (event: 'save', address: AddressUpdate): void;
   (event: 'delete', id: string): void;
 }>();
 
@@ -78,7 +78,7 @@ const handleSave = async () => {
     return;
   }
   validateOnChange.value = false;
-  const newAddress: Address = {
+  const newAddress: AddressUpdate = {
     ...props.address,
     ...form.values,
   };

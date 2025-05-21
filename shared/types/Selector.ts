@@ -76,7 +76,6 @@ export interface SelectorSelectionOption {
   label?: string;
 }
 
-export interface SelectorEntity extends GeinsEntity {
-  name?: string;
+export interface SelectorEntity extends EntityBaseWithName {
   image?: string;
 }

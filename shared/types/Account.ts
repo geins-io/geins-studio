@@ -1,6 +1,6 @@
 export type ChannelType = 'webshop' | 'physical' | 'other';
 
-export interface Channel extends GeinsEntity {
+export interface Channel extends EntityBase {
   name: string;
   displayName: string;
   location: string;
@@ -11,7 +11,7 @@ export interface Channel extends GeinsEntity {
   languages: Language[];
 }
 
-export interface Market extends GeinsEntity {
+export interface Market extends EntityBase {
   channelId: number;
   country?: Country;
   currency?: Currency;
@@ -23,17 +23,17 @@ export interface Market extends GeinsEntity {
   active: boolean;
 }
 
-export interface Country extends GeinsEntity {
+export interface Country extends EntityBase {
   name: string;
   active: boolean;
 }
 
-export interface Language extends GeinsEntity {
+export interface Language extends EntityBase {
   name: string;
   active: boolean;
 }
 
-export interface Currency extends GeinsEntity {
+export interface Currency extends EntityBase {
   name: string;
   symbol: CurrencySymbol;
   conversionRate: number;
@@ -44,7 +44,7 @@ export interface CurrencySymbol {
   prefixed: boolean;
 }
 
-export interface Account extends GeinsEntity {
+export interface Account extends EntityBase {
   accountKey: string;
   name: string;
   defaultCurrency: string;

@@ -1,36 +1,33 @@
-import type { NitroFetchRequest, $Fetch } from 'nitropack';
+import type { $Fetch } from 'nitropack';
+import { entityBaseRepo } from './entity-base';
 
-/**
- * Creates a base repository with common CRUD operations
- *
- * @param entity Base entity for this entity type
- * @param fetch Fetch function to use
- */
 export function entityRepo<
-  T extends GeinsEntity,
-  InputT extends GeinsEntityInput,
->(entityEndpoint: string, fetch: $Fetch<T, NitroFetchRequest>) {
-  const entityBase = repo.entityBase<T>(entityEndpoint, fetch);
+  TResponse extends EntityBase,
+  TCreate extends object,
+  TUpdate extends object,
+>(entityEndpoint: string, fetch: $Fetch) {
+  const entityBase = entityBaseRepo<TResponse>(entityEndpoint, fetch);
 
   return {
     ...entityBase,
 
-    async create(data: InputT): Promise<T> {
-      return await fetch<T>(entityEndpoint, {
+    async create(data: TCreate): Promise<TResponse> {
+      return await fetch<TResponse>(entityEndpoint, {
         method: 'POST',
         body: data,
       });
     },
 
-    async update(id: string, data: InputT): Promise<T> {
-      return await fetch<T>(`${entityEndpoint}/${id}`, {
+    async update(id: string, data: TUpdate): Promise<TResponse> {
+      // Type assertion only at the API boundary
+      return await fetch<TResponse>(`${entityEndpoint}/${id}`, {
         method: 'PATCH',
         body: data,
       });
     },
 
     async delete(id: string): Promise<void> {
-      return await fetch(`${entityEndpoint}/${id}`, {
+      await fetch<null>(`${entityEndpoint}/${id}`, {
         method: 'DELETE',
       });
     },

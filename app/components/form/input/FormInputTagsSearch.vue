@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T extends GeinsEntity">
+<script setup lang="ts" generic="T extends EntityBaseWithName">
 import {
   useFilter,
   type AcceptableValue,

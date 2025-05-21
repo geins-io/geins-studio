@@ -1,4 +1,4 @@
-export interface QueryResult<T> extends GeinsEntity {
+export interface QueryResult<T> extends EntityBase {
   page: number;
   pageSize: number;
   totalItemCount: number;

@@ -319,7 +319,7 @@ A wholesale account refers to a business entity that purchases goods or services
 | --------------------------------------- | ---------- | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `int`                                   | id         | `100`                              | The unique identifier for the wholesale account.                                                |
 | `string`                                | name       | `'ACME Corp'`                      | The name of the wholesale account.                                                              |
-| `string`                                | orgNr      | `'556677-8899'`                    | The organization number of the wholesale account.                                               |
+| `string`                                | vatNumber  | `'556677-8899'`                    | The vat number of the wholesale account.                                                        |
 | `string`                                | externalId | `'EXT123'`                         | The external identifier for the wholesale account, if any.                                      |
 | `int[]`                                 | channels   | `[1, 2, 3]`                        | The sales channels that the wholesale account can manage.                                       |
 | `string[]`                              | tags       | `['vip', '2024', 'group:Primary']` | Any custom tags that are associated with the wholesale account.                                 |

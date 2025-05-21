@@ -5,15 +5,19 @@ export const enum DataItemDisplayType {
   Array = 'array',
   Copy = 'copy',
 }
-export interface GeinsEntity {
+export interface EntityBase {
   _id: string;
   _type: string;
 }
 
-export interface GeinsEntityInput {
-  _id?: string;
-  _type?: string;
+export interface EntityBaseWithName extends Omit<EntityBase, '_type'> {
+  name: string;
 }
+
+// Utility types for consistent CRUD operations
+export type CreateEntity<T> = Omit<T, keyof EntityBase>;
+export type UpdateEntity<T> = Partial<CreateEntity<T>> & Partial<EntityBase>;
+export type ResponseEntity<T> = T & EntityBase;
 
 export interface DataItem {
   label: string;
@@ -65,7 +69,7 @@ export type GeinsErrorType =
 
 export type AddressType = 'billing' | 'shipping' | 'billingandshipping';
 
-export interface AddressInput {
+export interface AddressBase {
   addressType?: AddressType;
   addressReferenceId?: string;
   email?: string;
@@ -83,11 +87,17 @@ export interface AddressInput {
   country?: string;
 }
 
-export interface Address extends AddressInput, GeinsEntity {}
+export type AddressCreate = CreateEntity<AddressBase>;
+export type AddressUpdate = UpdateEntity<AddressBase>;
+export type Address = ResponseEntity<AddressBase>;
 
-export interface Customer extends GeinsEntity {
+export interface CustomerBase {
   firstName?: string;
   lastName?: string;
   email?: string;
   phone?: string;
 }
+
+export type CustomerCreate = CreateEntity<CustomerBase>;
+export type CustomerUpdate = UpdateEntity<CustomerBase>;
+export type Customer = ResponseEntity<CustomerBase>;

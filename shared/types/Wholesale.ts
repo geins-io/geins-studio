@@ -1,48 +1,71 @@
-import type { GeinsEntity } from './Global';
+import type { AddressCreate } from './Global';
 
-export interface WholesaleAccountInput {
-  name?: string;
+// Wholesale Account types
+export interface WholesaleAccountBase {
+  name: string;
   active: boolean;
-  orgNr: string;
+  vatNumber: string;
   externalId: string;
   channels: string[];
   tags: string[];
-  salesReps: string[];
   exVat: boolean;
-  addresses: Address[];
-  buyers: WholesaleBuyer[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   meta?: Record<string, any>;
 }
-export interface WholesaleAccount
-  extends GeinsEntity,
-    Omit<WholesaleAccountInput, 'salesReps'> {
+
+export interface WholesaleAccountCreate
+  extends CreateEntity<WholesaleAccountBase> {
+  buyers: WholesaleBuyerCreate[];
+  salesReps: string[];
+  addresses: AddressCreate[];
+}
+
+export interface WholesaleAccountUpdate
+  extends UpdateEntity<WholesaleAccountBase> {
+  buyers?: WholesaleBuyerUpdate[];
+  addresses?: AddressUpdate[];
+  salesReps?: string[];
+}
+
+export interface WholesaleAccount extends ResponseEntity<WholesaleAccountBase> {
+  buyers: WholesaleBuyer[];
   salesReps: WholesaleSalesRep[];
+  addresses: Address[];
 }
 
 export interface WholesaleAccountList
-  extends GeinsEntity,
-    WholesaleAccountInput {
+  extends Omit<WholesaleAccount, 'salesReps'>,
+    EntityBase {
   accountGroups: string[];
   salesReps: string[];
 }
 
-export interface WholesaleSalesRep extends GeinsEntity {
+export interface WholesaleSalesRepBase {
   firstName: string;
   lastName: string;
   phone: string;
   accountIds: string[];
 }
 
-export interface WholesaleBuyerInput {
+export type WholesaleSalesRepCreate = CreateEntity<WholesaleSalesRepBase>;
+export type WholesaleSalesRepUpdate = UpdateEntity<WholesaleSalesRepBase>;
+export type WholesaleSalesRep = ResponseEntity<WholesaleSalesRepBase>;
+
+export interface WholesaleBuyerBase {
   active?: boolean;
   firstName?: string;
   lastName?: string;
   email?: string;
   phone?: string;
   accountId?: string;
-  // TODO: Remove when fixed
-  _id: string;
 }
 
-export interface WholesaleBuyer extends WholesaleBuyerInput, GeinsEntity {}
+export interface WholesaleBuyerCreate extends CreateEntity<WholesaleBuyerBase> {
+  _id: string; // TODO: Remove when fixed
+}
+
+export interface WholesaleBuyerUpdate extends UpdateEntity<WholesaleBuyerBase> {
+  _id?: string; // TODO: Remove when fixed
+}
+
+export type WholesaleBuyer = ResponseEntity<WholesaleBuyerBase> & {};

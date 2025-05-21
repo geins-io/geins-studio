@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import type { ColumnDef } from '@tanstack/vue-table';
-
+import type {
+  WholesaleAccount,
+  WholesaleAccountCreate,
+  WholesaleAccountUpdate,
+  WholesaleBuyer,
+  Address,
+  AddressBase,
+  AddressUpdate,
+} from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { useRoute } from 'vue-router';
 import { useForm } from 'vee-validate';
@@ -46,8 +54,8 @@ const createMode = ref(route.params.id === newEntityUrlAlias);
 const title = computed(() =>
   createMode.value
     ? t('new_entity', { entityName }) +
-      (entityDataInput.value.name ? ': ' + entityDataInput.value.name : '')
-    : entityDataInput.value.name || t('edit_entity', { entityName }),
+      (entityData.value?.name ? ': ' + entityData.value.name : '')
+    : entityData.value?.name || t('edit_entity', { entityName }),
 );
 
 // STEPS SETUP
@@ -56,11 +64,10 @@ const totalSteps = ref(2);
 
 // WHOLESALE ACCOUNT
 const entityId = ref<string>(String(route.params.id));
-const entityData = ref<WholesaleAccount>();
-const entityDataInput = ref<WholesaleAccountInput>({
+const entityBase = {
   name: '',
   active: true,
-  orgNr: '',
+  vatNumber: '',
   externalId: '',
   channels: [],
   tags: [],
@@ -68,10 +75,15 @@ const entityDataInput = ref<WholesaleAccountInput>({
   addresses: [],
   buyers: [],
   exVat: false,
-});
+};
+const entityDataCreate = ref<WholesaleAccountCreate>({ ...entityBase });
+const entityDataUpdate = ref<WholesaleAccountUpdate>({ ...entityBase });
+const entityData = computed(() =>
+  createMode.value ? entityDataCreate.value : entityDataUpdate.value,
+);
 
 /* Addresses */
-const addressObj: Partial<Address> = {
+const addressBase: AddressBase = {
   email: '',
   phone: '',
   company: '',
@@ -85,16 +97,16 @@ const addressObj: Partial<Address> = {
   country: '',
 };
 
-const billingAddress = ref<Partial<Address>>({
-  ...addressObj,
+const billingAddress = ref<AddressUpdate>({
+  ...addressBase,
   addressType: 'billing',
 });
-const shippingAddress = ref<Partial<Address>>({
-  ...addressObj,
+const shippingAddress = ref<AddressUpdate>({
+  ...addressBase,
   addressType: 'shipping',
 });
 const accountGroups = ref<string[]>([]);
-const accountTags = ref<{ _id: string; name: string }[]>([]);
+const accountTags = ref<EntityBaseWithName[]>([]);
 
 const getAddresses = (billing: Address, shipping?: Address) => {
   const addresses = [];
@@ -115,18 +127,17 @@ const getAddresses = (billing: Address, shipping?: Address) => {
 };
 
 const parseAndSaveData = async (account: WholesaleAccount): Promise<void> => {
-  const wholesaleAccountInput: WholesaleAccountInput = {
-    ...entityDataInput.value,
+  entityDataUpdate.value = {
+    ...entityDataUpdate.value,
     ...account,
     salesReps: account.salesReps?.map((salesRep) => salesRep._id),
   };
-  entityData.value = account;
-  entityDataInput.value = wholesaleAccountInput;
-  liveStatus.value = wholesaleAccountInput.active;
+  buyersList.value = account.buyers || [];
+  liveStatus.value = entityDataUpdate.value.active || false;
   accountGroups.value = extractAccountGroupsfromTags(
-    wholesaleAccountInput.tags,
+    entityDataUpdate.value.tags || [],
   );
-  originalAccountData.value = JSON.stringify(wholesaleAccountInput);
+  originalAccountData.value = JSON.stringify(entityDataUpdate.value);
 
   billingAddress.value = {
     ...account.addresses?.find(
@@ -150,7 +161,7 @@ const hasUnsavedChanges = computed(() => {
   if (createMode.value) return false;
 
   // Deep compare the current account data with the original data
-  const currentData = JSON.stringify(entityDataInput.value);
+  const currentData = JSON.stringify(entityDataUpdate.value);
 
   return currentData !== originalAccountData.value;
 });
@@ -195,7 +206,7 @@ const formSchema = toTypedSchema(
     details: z
       .object({
         name: z.string().min(1, { message: t('form.field_required') }),
-        orgNr: z.string().min(1, { message: t('form.field_required') }),
+        vatNumber: z.string().min(1, { message: t('form.field_required') }),
         externalId: z.string().optional(),
         channels: z.array(z.string()).min(1, {
           message: t('form.field_required'),
@@ -238,12 +249,12 @@ const saveAccountDetails = async () => {
     form.resetForm();
     form.setValues({
       details: {
-        ...entityDataInput.value,
+        ...entityDataCreate.value,
         tags: accountGroups.value,
       },
       addresses: {
         billing: {
-          company: entityDataInput.value.name,
+          company: entityDataCreate.value.name,
         },
       },
     });
@@ -272,41 +283,41 @@ const summary = computed<DataItem[]>(() => {
   if (!createMode.value) {
     dataList.push({
       label: t('entity_id', { entityName }),
-      value: String(entityData.value?._id),
+      value: String(entityDataUpdate.value?._id),
       displayType: DataItemDisplayType.Copy,
     });
   }
-  if (entityDataInput.value.name) {
+  if (entityData.value?.name) {
     dataList.push({
       label: t('wholesale.account_name'),
-      value: entityDataInput.value.name,
+      value: entityData.value.name,
     });
   }
-  if (entityDataInput.value.orgNr) {
+  if (entityData.value?.vatNumber) {
     dataList.push({
       label: t('wholesale.org_nr'),
-      value: entityDataInput.value.orgNr,
+      value: entityData.value.vatNumber,
     });
   }
-  if (entityDataInput.value.salesReps?.length) {
-    const displayValue = entityDataInput.value.salesReps
+  if (entityData.value?.salesReps?.length) {
+    const displayValue = entityData.value.salesReps
       .map((id) => getEntityNameById(id, users.value))
       .join(', ');
     dataList.push({
       label: t('wholesale.sales_reps'),
-      value: entityDataInput.value.salesReps,
+      value: entityData.value.salesReps,
       displayValue,
       displayType: DataItemDisplayType.Array,
       entityName: 'sales_rep',
     });
   }
-  if (entityDataInput.value.channels?.length) {
-    const displayValue = entityDataInput.value.channels
+  if (entityData.value?.channels?.length) {
+    const displayValue = entityData.value.channels
       .map((id) => accountStore.getChannelNameById(id))
       .join(', ');
     dataList.push({
       label: t('wholesale.channels'),
-      value: entityDataInput.value.channels,
+      value: entityData.value.channels,
       displayValue,
       displayType: DataItemDisplayType.Array,
       entityName: 'channel',
@@ -329,7 +340,7 @@ const settingsSummary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   dataList.push({
     label: t('wholesale.vat'),
-    value: entityDataInput.value.exVat
+    value: entityData.value?.exVat
       ? t('wholesale.vat_true')
       : t('wholesale.vat_false'),
   });
@@ -352,9 +363,7 @@ const createAccount = async () => {
     }
     validateOnChange.value = false;
 
-    const result: GeinsEntity = await wholesaleApi.account.create(
-      entityDataInput.value,
-    );
+    const result = await wholesaleApi.account.create(entityDataCreate.value);
     const id = result._id;
 
     const newUrl = newEntityUrl.replace(newEntityUrlAlias, id);
@@ -379,30 +388,30 @@ const createAccount = async () => {
 };
 
 const hasShippingAddress = computed(() => {
-  return entityDataInput.value.addresses?.some(
+  return entityData.value.addresses?.some(
     (address) => address.addressType === 'shipping',
   );
 });
 
-const saveAddress = async (address: Address) => {
+const saveAddress = async (address: AddressUpdate) => {
   const isNewShipping = !address._id && address.addressType === 'shipping';
   if (isNewShipping) {
-    entityDataInput.value.addresses?.push(address);
+    entityDataUpdate.value.addresses?.push(address);
 
-    entityDataInput.value.addresses?.map((addr) => {
+    entityDataUpdate.value.addresses?.map((addr) => {
       if (addr.addressType === 'billingandshipping') {
         addr.addressType = 'billing';
       }
       return addr;
     });
   } else {
-    const updatedAddresses = entityDataInput.value.addresses?.map((addr) => {
+    const updatedAddresses = entityDataUpdate.value?.addresses?.map((addr) => {
       if (addr._id === address._id) {
         return { ...addr, ...address };
       }
       return addr;
     });
-    entityDataInput.value.addresses = updatedAddresses;
+    entityDataUpdate.value.addresses = updatedAddresses;
   }
   if (address.addressType?.includes('billing')) {
     billingAddress.value = address;
@@ -412,7 +421,7 @@ const saveAddress = async (address: Address) => {
   }
 };
 
-const saveAccount = async () => {
+const updateAccount = async () => {
   loading.value = true;
 
   try {
@@ -424,10 +433,13 @@ const saveAccount = async () => {
       return;
     }
     validateOnChange.value = false;
-    const id = entityData.value?._id || entityId.value;
+    const id = entityDataUpdate.value?._id || entityId.value;
+
+    // Ensure we're using the update type
+    const accountData = entityDataUpdate.value;
     const result: WholesaleAccount = await wholesaleApi.account.update(
       id,
-      entityDataInput.value,
+      accountData,
     );
 
     await parseAndSaveData(result);
@@ -476,16 +488,16 @@ const openAddressDeleteDialog = async (addressId: string) => {
 const confirmAddressDelete = async () => {
   deleting.value = true;
   if (deletingAddressId.value === 'new') {
-    entityDataInput.value.addresses = entityDataInput.value.addresses?.filter(
+    entityDataUpdate.value.addresses = entityDataUpdate.value.addresses?.filter(
       (address) => address.addressType !== 'shipping',
     );
   } else {
-    entityDataInput.value.addresses = entityDataInput.value.addresses?.filter(
+    entityDataUpdate.value.addresses = entityDataUpdate.value.addresses?.filter(
       (address) => address._id !== deletingAddressId.value,
     );
   }
   shippingAddress.value = {
-    ...addressObj,
+    ...addressBase,
     addressType: 'shipping',
   };
   addShippingAddress.value = false;
@@ -499,6 +511,7 @@ const confirmAddressDelete = async () => {
 };
 
 let refreshData = async () => {};
+const buyersList = ref<WholesaleBuyer[]>([]);
 const buyerPanelOpen = ref(false);
 const buyerToEdit = ref<WholesaleBuyer | undefined>();
 const buyerPanelMode = ref<'edit' | 'add'>('add');
@@ -506,9 +519,6 @@ const columnOptions: ColumnOptions<WholesaleBuyer> = {
   columnTitles: { _id: t('person.email'), active: t('status') },
   excludeColumns: ['accountId'],
 };
-const buyersList = computed(() => {
-  return entityDataInput.value.buyers;
-});
 const buyerColumns: Ref<ColumnDef<WholesaleBuyer>[]> = ref([]);
 const { getColumns, addActionsColumn } = useColumns<WholesaleBuyer>();
 const setupColumns = () => {
@@ -577,7 +587,7 @@ const form = useForm({
   validationSchema: formSchema,
   initialValues: {
     details: {
-      ...entityDataInput.value,
+      ...entityData.value,
       tags: accountGroups.value,
     },
     addresses: {
@@ -610,12 +620,18 @@ watch(
     );
     accountGroups.value = values.details.tags || [];
     const tags = convertAccountGroupsToTags(accountGroups.value);
-    entityDataInput.value = {
-      ...entityDataInput.value,
+    const newValues = {
+      ...entityData.value,
       ...values.details,
       addresses,
       tags,
     };
+
+    if (createMode.value) {
+      entityDataCreate.value = newValues;
+    } else {
+      entityDataUpdate.value = newValues;
+    }
   }, 500),
   { deep: true },
 );
@@ -642,7 +658,7 @@ watch(
             v-if="!createMode"
             icon="save"
             :loading="loading"
-            @click="saveAccount"
+            @click="updateAccount"
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
           <DropdownMenu v-if="!createMode">
@@ -697,7 +713,7 @@ watch(
                     <FormMessage />
                   </FormItem>
                 </FormField>
-                <FormField v-slot="{ componentField }" name="details.orgNr">
+                <FormField v-slot="{ componentField }" name="details.vatNumber">
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('wholesale.org_nr') }}</FormLabel>
                     <FormControl>
@@ -1301,7 +1317,7 @@ watch(
           </div>
           <template #sidebar>
             <ContentEditSummary
-              v-model:active="entityDataInput.active"
+              v-model:active="entityDataUpdate.active"
               :entity-name="entityName"
               :create-mode="createMode"
               :form-touched="formTouched"
@@ -1325,8 +1341,8 @@ watch(
                 v-model:open="buyerPanelOpen"
                 :mode="buyerPanelMode"
                 :buyer="buyerToEdit"
-                :account-id="entityData?._id || ''"
-                :account-name="entityDataInput.name || ''"
+                :account-id="entityDataUpdate?._id || ''"
+                :account-name="entityDataUpdate.name || ''"
               >
                 <ButtonIcon
                   v-if="!createMode"
@@ -1376,7 +1392,7 @@ watch(
                 size="md"
               />
               <ContentSwitch
-                v-model:checked="entityDataInput.exVat"
+                v-model:checked="entityDataUpdate.exVat"
                 label="VAT included"
                 description="Orders from this account will include VAT"
               />
@@ -1384,7 +1400,7 @@ watch(
           </ContentEditCard>
           <template #sidebar>
             <ContentEditSummary
-              v-model:active="entityDataInput.active"
+              v-model:active="entityDataUpdate.active"
               :entity-name="entityName"
               :create-mode="createMode"
               :form-touched="formTouched"
