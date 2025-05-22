@@ -69,3 +69,11 @@ export interface WholesaleBuyerUpdate extends UpdateEntity<WholesaleBuyerBase> {
 }
 
 export type WholesaleBuyer = ResponseEntity<WholesaleBuyerBase> & {};
+
+export interface VatValidationResponse {
+  vatNumber: string;
+  countryCode: string;
+  valid: boolean;
+  name: string;
+  address: string;
+}

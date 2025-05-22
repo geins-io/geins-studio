@@ -31,6 +31,8 @@ const modelValue = useVModel(props, 'modelValue', emits, {
   passive: true,
   defaultValue: props.defaultValue,
 });
+
+const slots = useSlots();
 </script>
 
 <template>
@@ -39,6 +41,12 @@ const modelValue = useVModel(props, 'modelValue', emits, {
       v-if="loading"
       class="absolute right-3 top-2 animate-spin"
     />
+    <div
+      v-else-if="slots.icon"
+      class="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center"
+    >
+      <slot name="icon" />
+    </div>
     <input
       :id="props.id"
       v-model="modelValue"

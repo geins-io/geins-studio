@@ -6,7 +6,11 @@ import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import { useWholesale } from '@/composables/useWholesale';
-import { DataItemDisplayType, TableMode } from '#shared/types';
+import {
+  DataItemDisplayType,
+  TableMode,
+  type VatValidationResponse,
+} from '#shared/types';
 import * as z from 'zod';
 
 // GLOBALS
@@ -147,6 +151,7 @@ const parseAndSaveData = async (account: WholesaleAccount): Promise<void> => {
     };
   }
   addShippingAddress.value = !!shipping;
+  await validateVatNumber(account.vatNumber);
 };
 
 const hasUnsavedChanges = computed(() => {
@@ -288,7 +293,7 @@ const summary = computed<DataItem[]>(() => {
   }
   if (entityData.value?.vatNumber) {
     dataList.push({
-      label: t('wholesale.org_nr'),
+      label: t('wholesale.vat_number'),
       value: entityData.value.vatNumber,
     });
   }
@@ -537,6 +542,30 @@ watch(buyerPanelOpen, async (open) => {
   }
 });
 
+// VAT VALIDATION
+const hasValidatedVat = ref(false);
+const vatValid = ref(false);
+const vatValidating = ref(false);
+const vatNumberValidated = ref('');
+const vatValidation = ref<VatValidationResponse>();
+
+const validateVatNumber = async (vatNumber: string) => {
+  if (vatNumber === vatNumberValidated.value) {
+    return;
+  }
+  vatValidating.value = true;
+  try {
+    vatValidation.value = await wholesaleApi.validateVatNumber(vatNumber);
+    vatValid.value = vatValidation.value.valid;
+  } catch (error) {
+    geinsLogError('error validating VAT number:', error);
+  } finally {
+    hasValidatedVat.value = true;
+    vatValidating.value = false;
+    vatNumberValidated.value = vatNumber;
+  }
+};
+
 // GET DATA IF NOT CREATE MODE
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
@@ -624,6 +653,9 @@ watch(
       entityDataCreate.value = newValues;
     } else {
       entityDataUpdate.value = newValues;
+    }
+    if (entityData.value?.vatNumber) {
+      await validateVatNumber(entityData.value.vatNumber);
     }
   }, 500),
   { deep: true },
@@ -722,7 +754,7 @@ const confirmLeave = () => {
             @next="saveAccountDetails"
           >
             <FormGridWrap>
-              <FormGrid design="2+1+1">
+              <FormGrid design="1+1+1">
                 <FormField v-slot="{ componentField }" name="details.name">
                   <FormItem v-auto-animate>
                     <FormLabel>{{ $t('wholesale.account_name') }}</FormLabel>
@@ -734,9 +766,54 @@ const confirmLeave = () => {
                 </FormField>
                 <FormField v-slot="{ componentField }" name="details.vatNumber">
                   <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('wholesale.org_nr') }}</FormLabel>
+                    <FormLabel>{{ $t('wholesale.vat_number') }}</FormLabel>
                     <FormControl>
-                      <Input v-bind="componentField" type="text" />
+                      <Input
+                        v-bind="componentField"
+                        type="text"
+                        :loading="vatValidating"
+                      >
+                        <template #icon>
+                          <TooltipProvider
+                            v-if="hasValidatedVat"
+                            :delay-duration="100"
+                          >
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <LucideCircleCheck
+                                  v-if="vatValid"
+                                  class="size-5 text-positive"
+                                />
+                                <LucideInfo
+                                  v-else
+                                  class="size-5 text-warning"
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <i18n-t
+                                  class="block max-w-[300px]"
+                                  :keypath="
+                                    vatValid
+                                      ? 'wholesale.vat_veis_valid'
+                                      : 'wholesale.vat_veis_invalid'
+                                  "
+                                  tag="span"
+                                  scope="global"
+                                >
+                                  <template #veis>
+                                    <a
+                                      class="underline underline-offset-2"
+                                      href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
+                                      target="_blank"
+                                      >{{ $t('wholesale.veis') }}</a
+                                    >
+                                  </template>
+                                </i18n-t>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </template>
+                      </Input>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -165,7 +165,7 @@ export default defineI18nLocale(async () => {
     wholesale: {
       account_details: 'Account details',
       account_name: 'Account name',
-      org_nr: 'Organization number',
+      vat_number: 'VAT nr. / Company reg. nr.',
       external_id: 'External ID',
       channels: 'Channels',
       sales_reps: 'Sales reps',
@@ -191,6 +191,11 @@ export default defineI18nLocale(async () => {
       vat: 'VAT',
       vat_true: 'VAT included',
       vat_false: 'VAT excluded',
+      vat_veis_valid:
+        'This VAT number was successfully validated using the {veis} system.',
+      vat_veis_invalid:
+        'This number could not be validated using the {veis} system. Manual review recommended',
+      veis: 'EU VEIS',
     },
   };
 });

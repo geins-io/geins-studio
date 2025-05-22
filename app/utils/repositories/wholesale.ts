@@ -56,5 +56,15 @@ export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     buyer: {
       ...buyerRepo,
     },
+    validateVatNumber: async (
+      vatNumber: string,
+    ): Promise<VatValidationResponse> => {
+      return await fetch<VatValidationResponse>(
+        `${BASE_ENDPOINT}/validateVatNumber/${vatNumber}`,
+        {
+          method: 'POST',
+        },
+      );
+    },
   };
 }
