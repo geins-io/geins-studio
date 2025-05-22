@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for geins-merchant-center on 2024-05-30T16:43:17+02:00
+# fly.toml app configuration file generated for geins-studio on 2024-05-30T16:43:17+02:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'geins-merchant-center'
+app = 'geins-studio'
 primary_region = 'arn'
 
 [build]

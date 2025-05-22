@@ -1,1 +1,1 @@
-# Deploy your Geins Merchant Center
+# Deploy your Geins Studio

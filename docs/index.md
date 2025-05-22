@@ -3,9 +3,9 @@
 layout: home
 
 hero:
-  name: Merchant Center
+  name: Geins Studio
   text: Developer Docs
-  tagline: Create your own e-commerce user interface with Geins Merchant Center
+  tagline: Create your own e-commerce user interface with Geins Studio
   image:
     light: /geins.svg
     dark: /geins-white.svg
@@ -27,7 +27,7 @@ features:
       light: /github-logo.svg
       dark: /github-logo-white.svg
     title: Open source
-    details: Own your code and extend your Geins Merchant Center to your needs
+    details: Own your code and extend your Geins Studio to your needs
   - icon:
       src: /box-logo.svg
     title: Out-of-the-box solution
