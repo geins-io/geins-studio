@@ -7,6 +7,7 @@
 .yarn
 .temp
 .vitepress
+
 dist
 
 # Node dependencies
@@ -21,6 +22,7 @@ logs
 .fleet
 .idea
 repomix.config.json
+.windsurfrules
 
 # Local env files
 .env
