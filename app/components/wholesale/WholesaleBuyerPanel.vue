@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = withDefaults(
   defineProps<{
-    buyer?: WholesaleBuyer;
+    buyer?: WholesaleBuyerUpdate;
     accountId: string;
     accountName: string;
     mode: 'edit' | 'add';
@@ -36,7 +36,7 @@ const loading = ref(false);
 const buyerExistsAsCustomer = ref(false);
 const existingCustomer = ref<Customer>();
 const updateCustomer = ref(false);
-const newBuyer = ref<WholesaleBuyer>();
+const newBuyer = ref<WholesaleBuyerCreate>();
 const isChecking = ref(false);
 const isDeleting = ref(false);
 const formValid = ref(false);
@@ -351,6 +351,7 @@ const existingCustomerName = computed(() => {
               <AlertDescription>
                 <i18n-t
                   keypath="wholesale.buyers_feedback_existing_description"
+                  scope="global"
                   tag="span"
                 >
                   <template #email>
