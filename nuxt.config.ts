@@ -28,6 +28,7 @@ export default defineNuxtConfig({
     '@nuxtjs/color-mode',
     '@nuxtjs/i18n',
     '@pinia/nuxt',
+    '@formkit/auto-animate/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',
     'nuxt-lucide-icons',
@@ -67,7 +68,7 @@ export default defineNuxtConfig({
       fallback: {
         language: 'en',
         currency: 'SEK',
-        channel: 1,
+        channel: '1',
       },
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',

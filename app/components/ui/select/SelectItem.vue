@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from 'vue';
+import { cn } from '@/utils';
+import { Check } from 'lucide-vue-next';
 import {
   SelectItem,
   SelectItemIndicator,
   type SelectItemProps,
   SelectItemText,
   useForwardProps,
-} from 'radix-vue';
-import { CheckIcon } from '@radix-icons/vue';
+} from 'reka-ui';
+import { computed, type HTMLAttributes } from 'vue';
 
 const props = defineProps<
   SelectItemProps & { class?: HTMLAttributes['class'] }
@@ -34,7 +35,7 @@ const forwardedProps = useForwardProps(delegatedProps);
   >
     <span class="absolute right-2 flex size-3.5 items-center justify-center">
       <SelectItemIndicator>
-        <CheckIcon class="size-4" />
+        <Check class="size-4" />
       </SelectItemIndicator>
     </span>
 

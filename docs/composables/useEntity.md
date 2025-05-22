@@ -19,12 +19,12 @@ Here is how you can use the `useEntity` composable in your project:
 
 ```ts
 const route = useRoute();
-const { newEntityUrlAlias, getEntityName, getNewEntityUrl, getEditEntityUrl } =
+const { newEntityUrlAlias, getEntityName, getNewEntityUrl, getEntityUrl } =
   useEntity(route.fullPath);
 
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
-const editEntityUrl = getEditEntityUrl();
+const entityUrl = getEntityUrl();
 ```
 
 ## Parameters
@@ -58,7 +58,7 @@ Constructs a URL for creating a new entity.
 - **Example**:  
   For a `fullPath` of `/parent/entity/list` and a `newEntityUrlAlias` of `new`, the result is `/parent/entity/new`.
 
-### `getEditEntityUrl(dataProp: string): string`
+### `getEntityUrl(dataProp: string): string`
 
 Constructs a URL for editing an entity using the provided `dataProp`.
 

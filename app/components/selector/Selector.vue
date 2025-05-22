@@ -155,7 +155,7 @@ const selectedEntitiesSimple = computed(() => {
   return selected;
 });
 
-const api = repository(useNuxtApp().$geinsApi);
+const api = repo.global(useNuxtApp().$geinsApi);
 const selectedProducts = ref<Product[]>([]);
 const { transformProducts } = useProductsStore();
 const selectionMade = computed(() => {
@@ -221,7 +221,7 @@ const selectedEntities = computed(() => {
           <ContentSwitch
             v-if="allowExclusions"
             v-model="showExclude"
-            :label="$t('exclude_entities_from_selection', { entityName }, 2)"
+            :label="$t('exclude_entity_from_selection', { entityName }, 2)"
             :description="$t('selector_exclude_description')"
           >
             <SelectorSelection
@@ -238,13 +238,13 @@ const selectedEntities = computed(() => {
       <slot />
       <slot name="list">
         <ContentHeading>
-          {{ $t('selected_entities', { entityName }, 2) }}
+          {{ $t('selected_entity', { entityName }, 2) }}
         </ContentHeading>
         <TableView
           :columns="columns"
           :data="selectedEntities"
           :entity-name="entityName"
-          :empty-text="$t('no_entities_selected', { entityName }, 2)"
+          :empty-text="$t('no_entity_selected', { entityName }, 2)"
           :mode="TableMode.Simple"
           :page-size="15"
         />

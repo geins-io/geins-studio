@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import type { Product, Category, Brand } from '#shared/types';
 export const useProductsStore = defineStore('products', () => {
   const { geinsLogWarn } = useGeinsLog('store/products.ts');
-  const api = repository(useNuxtApp().$geinsApi);
+  const api = repo.global(useNuxtApp().$geinsApi);
   const accountStore = useAccountStore();
   const { currentLanguage } = storeToRefs(accountStore);
 
@@ -33,7 +33,7 @@ export const useProductsStore = defineStore('products', () => {
 
   async function init(): Promise<void> {
     const results = await Promise.allSettled([
-      fetchProducts(),
+      //fetchProducts(),
       fetchCategories(),
       fetchBrands(),
     ]);
@@ -46,13 +46,13 @@ export const useProductsStore = defineStore('products', () => {
       if (result.status === 'rejected' || !result.value) {
         let callName = '';
         switch (index) {
+          // case 0:
+          //   callName = 'products';
+          //   break;
           case 0:
-            callName = 'products';
-            break;
-          case 1:
             callName = 'categories';
             break;
-          case 2:
+          case 1:
             callName = 'brands';
             break;
         }

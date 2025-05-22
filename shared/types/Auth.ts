@@ -1,12 +1,21 @@
-export interface User extends GeinsEntity {
+export type ApiUserType = 'api' | 'personal';
+
+export interface UserBase {
+  name: string;
   firstName?: string;
   lastName?: string;
   email?: string | null;
-  phone?: string;
+  phoneNumber?: string;
   company?: string;
   roles?: string[];
-  apiUserType?: string;
+  apiUserType?: ApiUserType;
   error?: unknown;
+}
+
+export type UserCreate = CreateEntity<UserBase>;
+export type UserUpdate = UpdateEntity<UserBase>;
+export interface User extends ResponseEntity<UserBase> {
+  password?: string;
 }
 
 export interface AuthTokens {

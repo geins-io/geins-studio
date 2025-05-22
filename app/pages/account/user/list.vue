@@ -4,7 +4,7 @@ import type { ColumnOptions, User } from '#shared/types';
 type Entity = User;
 
 const route = useRoute();
-const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
+const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
   route.fullPath,
 );
 
@@ -15,17 +15,17 @@ definePageMeta({
 // GLOBAL SETUP
 // const apiEndpoint = '/users';
 const dataList = ref<Entity[]>([]);
-const entityIdentifier = '{username}';
+const entityIdentifier = '{_id}';
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
-const editEntityUrl = getEditEntityUrl(entityIdentifier);
+const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 const columns: Ref<ColumnDef<Entity>[]> = ref([]);
 
 // SET UP COLUMNS FOR ENTITY
 const columnOptions: ColumnOptions<Entity> = {
-  editUrl: editEntityUrl,
-  columnTypes: { username: 'link' },
+  entityLinkUrl: entityUrl,
+  columnTypes: { username: 'entity-link' },
 };
 
 // FETCH DATA FOR ENTITY

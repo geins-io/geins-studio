@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { cn } from '@/utils';
-import { MagnifyingGlassIcon } from '@radix-icons/vue';
+import { Search } from 'lucide-vue-next';
 import {
-  ComboboxInput,
-  type ComboboxInputProps,
+  ListboxFilter,
+  type ListboxFilterProps,
   useForwardProps,
-} from 'radix-vue';
+} from 'reka-ui';
 import { computed, type HTMLAttributes } from 'vue';
+import { useCommand } from '.';
 
 defineOptions({
   inheritAttrs: false,
 });
 
 const props = defineProps<
-  ComboboxInputProps & {
+  ListboxFilterProps & {
     class?: HTMLAttributes['class'];
     autoFocus?: boolean;
   }
@@ -26,6 +27,8 @@ const delegatedProps = computed(() => {
 });
 
 const forwardedProps = useForwardProps(delegatedProps);
+
+const { filterState } = useCommand();
 </script>
 
 <template>
@@ -33,9 +36,10 @@ const forwardedProps = useForwardProps(delegatedProps);
     class="flex items-center rounded-lg border bg-input px-3"
     cmdk-input-wrapper
   >
-    <MagnifyingGlassIcon class="mr-2 size-4 shrink-0" />
-    <ComboboxInput
+    <Search class="mr-2 size-4 shrink-0" />
+    <ListboxFilter
       v-bind="{ ...forwardedProps, ...$attrs }"
+      v-model="filterState.search"
       :auto-focus="autoFocus"
       :class="
         cn(

@@ -4,8 +4,9 @@ import type { ColumnOptions, Category } from '#shared/types';
 
 type Entity = Category;
 
+const { t } = useI18n();
 const route = useRoute();
-const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
+const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
   route.fullPath,
 );
 
@@ -16,26 +17,27 @@ definePageMeta({
 // GLOBAL SETUP
 const apiEndpoint = '/categories';
 const dataList = ref<Entity[]>([]);
-const entityIdentifier = '{id}';
+const entityIdentifier = '{_id}';
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
-const editEntityUrl = getEditEntityUrl(entityIdentifier);
+const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 const columns: Ref<ColumnDef<Entity>[]> = ref([]);
 
 // SET UP COLUMNS FOR ENTITY
 const columnOptions: ColumnOptions<Entity> = {
-  editUrl: editEntityUrl,
-  columnTypes: { name: 'link' },
+  entityLinkUrl: entityUrl,
+  columnTypes: { name: 'entity-link' },
 };
 
 // FETCH DATA FOR ENTITY
-const { data, error } = await useAPI<Entity[]>(apiEndpoint);
+const { useGeinsFetch } = useGeinsApi();
+const { data, error } = await useGeinsFetch<Entity[]>(apiEndpoint);
 
 if (!data?.value || error.value) {
   throw createError({
     ...error.value,
-    statusMessage: 'Failed to fetch categories',
+    statusMessage: t('failed_to_fetch_entity', { entityName }, 2),
   });
 } else {
   dataList.value = data.value as Entity[];

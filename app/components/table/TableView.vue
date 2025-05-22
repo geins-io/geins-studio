@@ -1,5 +1,5 @@
-<script setup lang="ts" generic="TData extends GeinsEntity, TValue">
-import { TableMode, type GeinsEntity } from '#shared/types';
+<script setup lang="ts" generic="TData extends Record<string, any>, TValue">
+import { TableMode } from '#shared/types';
 
 import type {
   ColumnDef,
@@ -24,6 +24,7 @@ const props = withDefaults(
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
     entityName?: string;
+    idColumn?: string;
     pageSize?: number;
     loading?: boolean;
     searchableField?: string;
@@ -33,14 +34,17 @@ const props = withDefaults(
     pinnedState?: ColumnPinningState;
     selectedIds?: string[];
     emptyText?: string;
+    initVisibilityState?: VisibilityState;
   }>(),
   {
     entityName: 'row',
+    idColumn: '_id',
     pageSize: 30,
     loading: false,
     searchableField: 'name',
     showSearch: false,
     mode: TableMode.Advanced,
+
     pinnedState: () => ({
       left: ['select'],
       right: ['actions'],
@@ -102,15 +106,18 @@ const { path } = useRoute();
 const { user } = useUserStore();
 const userId = user?._id || 'default';
 const cookieKey = `${userId + path}`;
-
 const columnVisibilityCookie = useCookie<VisibilityState>(
   `geins-cols-${cookieKey}`,
   {
-    default: () => ({}),
+    default: () => props.initVisibilityState || {},
     maxAge: 60 * 60 * 24 * 365,
   },
 );
-const columnVisibility = ref(columnVisibilityCookie.value);
+const columnVisibility = ref(
+  Object.keys(columnVisibilityCookie.value).length
+    ? columnVisibilityCookie.value
+    : props.initVisibilityState || {},
+);
 const updateVisibilityCookie = () => {
   columnVisibilityCookie.value = columnVisibility.value;
 };
@@ -180,7 +187,7 @@ const cellClasses = computed(() => {
 
 // Setup table
 const table = useVueTable({
-  getRowId: (row) => String(row._id),
+  getRowId: (row: TData) => String(row[props.idColumn as keyof TData]),
   get data() {
     return props.loading ? getSkeletonData<TData>() : props.data;
   },
@@ -237,9 +244,9 @@ const table = useVueTable({
 
 const emptyText = computed(() => {
   const emptyText =
-    props.emptyText || t('no_entities', { entityName: props.entityName }, 2);
+    props.emptyText || t('no_entity', { entityName: props.entityName }, 2);
   return table.getColumn(props.searchableField)?.getFilterValue()
-    ? t('no_entities_found', { entityName: props.entityName }, 2)
+    ? t('no_entity_found', { entityName: props.entityName }, 2)
     : emptyText;
 });
 </script>
@@ -278,7 +285,7 @@ const emptyText = computed(() => {
   <div
     :class="
       cn(
-        'relative overflow-hidden rounded-lg border pb-14 transition-[transform]',
+        'relative overflow-hidden rounded-lg border pb-14 text-card-foreground transition-[transform]',
         `${advancedMode ? 'mb-[6.5rem] translate-y-40' : ''}`,
         `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
         `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] -mt-px mb-0 translate-y-0' : ''}`,
@@ -322,7 +329,6 @@ const emptyText = computed(() => {
             v-for="row in table.getRowModel().rows"
             :key="row.id"
             :data-state="row.getIsSelected() ? 'selected' : undefined"
-            @click="emit('clicked', row)"
           >
             <TableCell
               v-for="cell in row.getVisibleCells()"

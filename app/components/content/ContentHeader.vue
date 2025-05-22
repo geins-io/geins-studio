@@ -4,15 +4,24 @@ const _props = withDefaults(
     title?: string;
     description?: string;
     showBreadcrumb?: boolean;
+    entityName?: string;
   }>(),
   {
     title: '',
     description: '',
     showBreadcrumb: true,
+    entityName: '',
   },
 );
+const route = useRoute();
+const { getEntityListUrl } = useEntity(route.fullPath);
+const listPageUrl = getEntityListUrl();
 const tableMaximized = useState<boolean>('table-maximized');
 // TODO: Dynamic breadcrumbs
+
+const slots = useSlots();
+const hasTabs = computed(() => !!slots.tabs);
+const hasChanges = computed(() => !!slots.changes);
 </script>
 
 <template>
@@ -28,10 +37,18 @@ const tableMaximized = useState<boolean>('table-maximized');
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink as-child>
-            <NuxtLink to="/">Home</NuxtLink>
+            <NuxtLink to="/wholesale/account/list">Wholesale</NuxtLink>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
+        <BreadcrumbItem v-if="listPageUrl">
+          <BreadcrumbLink as-child>
+            <NuxtLink :to="listPageUrl">{{
+              $t('entity_caps', { entityName }, 2)
+            }}</NuxtLink>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator v-if="listPageUrl" />
         <!--       <BreadcrumbItem>
         <DropdownMenu>
           <DropdownMenuTrigger class="flex items-center gap-1">
@@ -58,13 +75,25 @@ const tableMaximized = useState<boolean>('table-maximized');
       </BreadcrumbList>
     </Breadcrumb>
     <div
-      class="content-header mb-4 flex flex-wrap justify-between border-b pb-2"
+      :class="
+        cn(
+          'content-header mb-4 flex flex-wrap justify-between border-b',
+          `${hasTabs || hasChanges ? 'pb-0' : 'pb-2'}`,
+        )
+      "
     >
       <slot name="title">
         <ContentTitleBlock :title="title" :description="description" />
       </slot>
       <slot />
-      <slot name="tabs" />
+      <div
+        v-if="hasTabs || hasChanges"
+        v-auto-animate
+        class="mt-5 flex w-full justify-between"
+      >
+        <slot name="tabs" />
+        <slot name="changes" />
+      </div>
     </div>
   </div>
 </template>

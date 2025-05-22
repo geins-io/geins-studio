@@ -1,6 +1,8 @@
 import '@tanstack/vue-table';
 import type { RowData } from '@tanstack/vue-table';
 
+export type TableRowAction = 'edit' | 'copy' | 'delete';
+
 export const enum TableMode {
   Simple = 'simple',
   Advanced = 'advanced',
@@ -13,18 +15,24 @@ export type ColumnType =
   | 'date'
   | 'number'
   | 'image'
-  | 'link'
+  | 'entity-link'
   | 'select'
-  | 'actions';
+  | 'actions'
+  | 'channels'
+  | 'tags'
+  | 'status';
 
 export type ColumnTypes<T> = Partial<Record<keyof T, ColumnType>>;
 
 export interface ColumnOptions<T> {
   selectable?: boolean;
   sortable?: boolean;
-  editUrl?: string;
-  columnTitles?: Partial<Record<keyof T, string>>;
+  columnTitles?: Partial<Record<StringKeyOf<T>, string>>;
   columnTypes?: ColumnTypes<T>;
+  columnOrder?: StringKeyOf<T>[];
+  excludeColumns?: StringKeyOf<T>[];
+  includeColumns?: StringKeyOf<T>[];
+  entityLinkUrl?: string;
   maxTextLength?: number;
 }
 

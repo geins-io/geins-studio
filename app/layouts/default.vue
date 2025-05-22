@@ -26,8 +26,6 @@ const contentClasses = computed(() => {
     'overflow-y-auto': pageType !== 'list',
   };
 });
-
-// If the page is a list page, only then add overflow-hidden
 </script>
 <template>
   <div class="flex h-screen overflow-hidden">

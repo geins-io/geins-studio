@@ -40,7 +40,7 @@ const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
     </div>
     <div class="flex items-center space-x-6 lg:space-x-8">
       <div v-if="advanced" class="flex items-center space-x-2">
-        <p class="font-medium">
+        <p class="font-semibold">
           {{ t('rows_per_page', { entityName }, 2) }}
         </p>
         <Select
@@ -63,7 +63,7 @@ const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
           </SelectContent>
         </Select>
       </div>
-      <div class="flex w-[100px] items-center justify-center font-medium">
+      <div class="flex w-[100px] items-center justify-center font-semibold">
         {{
           t('page_of', {
             page: table.getState().pagination.pageIndex + 1,

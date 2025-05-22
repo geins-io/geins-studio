@@ -40,7 +40,7 @@ const isSelected = (id: string) => {
         "
       >
         <CommandEmpty>{{
-          $t('no_entities_found', { entityName }, 2)
+          $t('no_entity_found', { entityName }, 2)
         }}</CommandEmpty>
         <CommandGroup
           :heading="$t('entity_caps', { entityName }, 2)"

@@ -4,6 +4,6 @@ export * from './Auth';
 export * from './Global';
 export * from './Table';
 export * from './Selector';
-export * from './NavigationItem';
 export * from './Product';
 export * from './Utils';
+export * from './Wholesale';

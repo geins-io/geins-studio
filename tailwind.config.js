@@ -13,7 +13,14 @@ module.exports = {
         '2xl': '1400px',
       },
     },
+    fontFamily: {
+      sans: ['Suisse\\ Intl'],
+    },
+
     extend: {
+      letterSpacing: {
+        normal: '0.01em',
+      },
       height: {
         header: '4rem',
         main: 'calc(100vh - 4rem)',
@@ -22,8 +29,11 @@ module.exports = {
         'only-right': '3px 0 7px -2px rgb(0 0 0 / 0.1)',
         'only-left': '-3px 0 7px -2px rgb(0 0 0 / 0.1)',
       },
+      fontSize: {
+        grid: '0.8125rem',
+      },
       gridTemplateColumns: {
-        main: 'minmax(72%, 1fr) minmax(25%, 360px)',
+        main: 'minmax(50%, 1fr) minmax(300px, 360px)',
       },
       colors: {
         border: 'hsl(var(--border))',
@@ -76,12 +86,6 @@ module.exports = {
           DEFAULT: 'hsl(var(--info))',
           foreground: 'hsl(var(--info-foreground))',
         },
-        'positive-muted': {
-          DEFAULT: 'hsl(var(--positive-muted))',
-        },
-        'destructive-muted': {
-          DEFAULT: 'hsl(var(--destructive-muted))',
-        },
       },
       borderRadius: {
         xl: 'calc(var(--radius) + 4px)',
@@ -93,26 +97,26 @@ module.exports = {
       keyframes: {
         'accordion-down': {
           from: { height: 0 },
-          to: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: 'var(--reka-accordion-content-height)' },
         },
         'accordion-up': {
-          from: { height: 'var(--radix-accordion-content-height)' },
+          from: { height: 'var(--reka-accordion-content-height)' },
           to: { height: 0 },
         },
         'collapsible-down': {
           from: { height: 0 },
-          to: { height: 'var(--radix-collapsible-content-height)' },
+          to: { height: 'var(--reka-collapsible-content-height)' },
         },
         'collapsible-up': {
-          from: { height: 'var(--radix-collapsible-content-height)' },
+          from: { height: 'var(--reka-collapsible-content-height)' },
           to: { height: 0 },
         },
       },
       animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
-        'collapsible-down': 'collapsible-down 0.2s ease-in-out',
-        'collapsible-up': 'collapsible-up 0.2s ease-in-out',
+        'accordion-down': 'accordion-down 0.3s ease-out',
+        'accordion-up': 'accordion-up 0.3s ease-out',
+        'collapsible-down': 'collapsible-down 0.3s ease-in-out',
+        'collapsible-up': 'collapsible-up 0.3s ease-in-out',
       },
     },
   },

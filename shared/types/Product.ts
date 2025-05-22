@@ -6,7 +6,7 @@ export interface Localizations {
   slug: string;
 }
 
-export interface Sku extends GeinsEntity {
+export interface Sku extends EntityBase {
   articleNumber: string;
   name: string;
   shelf: string;
@@ -58,13 +58,13 @@ export interface ProductPrices {
   priceLists?: PriceListPrice[];
 }
 
-export interface Media extends GeinsEntity {
+export interface Media extends EntityBase {
   filename: string;
   order: number;
   tags: string[];
 }
 
-export interface ProductCampaign extends GeinsEntity {
+export interface ProductCampaign extends EntityBase {
   campaignId: string;
   name: string;
 }
@@ -94,7 +94,7 @@ export interface ProductParameter {
   localizations: ProductParameterTexts[];
 }
 
-export interface RelatedProducts extends GeinsEntity {
+export interface RelatedProducts extends EntityBase {
   relationTypeId: number;
   relationTypeName: string;
   relatedProductIds: number[];
@@ -115,7 +115,7 @@ export interface CurrencyConverted<T> {
   [currency: string]: T;
 }
 
-export interface Product extends GeinsEntity {
+export interface Product extends EntityBase {
   productId: number;
   name: string;
   slug: string;
@@ -148,13 +148,13 @@ export interface Product extends GeinsEntity {
   variantValues?: VariantValues;
 }
 
-export interface Brand extends GeinsEntity {
+export interface Brand extends EntityBase {
   active: boolean;
   name: string;
   localizations: Localized<Localizations>;
 }
 
-export interface Category extends GeinsEntity {
+export interface Category extends EntityBase {
   name: string;
   parentCategoryId: number;
   hidden: boolean;
@@ -174,7 +174,7 @@ export interface PriceListProduct {
   staggeredCount: number;
 }
 
-export interface PriceList extends GeinsEntity {
+export interface PriceList extends EntityBase {
   priceListId: number;
   channel: number;
   identifier: string;

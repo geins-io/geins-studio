@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from 'vue';
-import { ToastClose, type ToastCloseProps } from 'radix-vue';
-import { Cross2Icon } from '@radix-icons/vue';
+import { cn } from '@/utils';
+import { X } from 'lucide-vue-next';
+import { ToastClose, type ToastCloseProps } from 'reka-ui';
+import { computed, type HTMLAttributes } from 'vue';
 
 const props = defineProps<
   ToastCloseProps & {
@@ -26,6 +27,6 @@ const delegatedProps = computed(() => {
       )
     "
   >
-    <Cross2Icon class="size-4" />
+    <X class="size-4" />
   </ToastClose>
 </template>

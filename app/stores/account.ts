@@ -3,16 +3,16 @@ import type { Account, Channel, Currency } from '#shared/types';
 
 export const useAccountStore = defineStore('account', () => {
   const { geinsLogWarn } = useGeinsLog('store/account.ts');
-  const api = repository(useNuxtApp().$geinsApi);
+  const api = repo.global(useNuxtApp().$geinsApi);
   const { fallback } = useRuntimeConfig().public;
 
   // STATE
   const account = ref<Account>();
-  const channels = ref<Channel[]>();
-  const currencies = ref<Currency[]>();
-  const languages = ref<Language[]>();
+  const channels = ref<Channel[]>([]);
+  const currencies = ref<Currency[]>([]);
+  const languages = ref<Language[]>([]);
   const ready = ref(false);
-  const currentChannelId = useCookie('geins-channel', {
+  const currentChannelId = useCookie<string>('geins-channel', {
     default: () => fallback.channel.toString(),
   });
   const currentLanguage = useCookie('geins-language', {
@@ -90,12 +90,36 @@ export const useAccountStore = defineStore('account', () => {
     ready.value = false;
   }
 
+  function getChannelNameById(id: string): string {
+    const channel = channels.value.find((channel) => channel._id === id);
+    return channel ? channel.name : '';
+  }
+
+  function getCountryNameById(id: string): string {
+    const country = currentCountries.value.find(
+      (country) => country?._id === id,
+    );
+    return country ? country.name : '';
+  }
+
   // GETTERS
   const currentChannel = computed(() => {
-    return channels.value?.find(
-      (channel) => channel._id === currentChannelId.value,
+    return channels.value.find(
+      (channel) => channel._id === String(currentChannelId.value),
     );
   });
+
+  const currentCountries = computed(() => {
+    return (
+      currentChannel.value?.markets
+        .filter((market) => !market.virtual)
+        .map((market) => {
+          return market.country;
+        }) || []
+    );
+  });
+
+  // ACTIONS
 
   return {
     account,
@@ -112,6 +136,9 @@ export const useAccountStore = defineStore('account', () => {
     fetchLanguages,
     init,
     reset,
+    getChannelNameById,
+    getCountryNameById,
     currentChannel,
+    currentCountries,
   };
 });

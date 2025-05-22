@@ -109,7 +109,7 @@ watch(activeConditionTypes, (newVal) => {
 
 const manuallySelectedText = computed(() =>
   t(
-    'manually_selected_entitites',
+    'manually_selected_entity',
     {
       entityName,
       count: selection.value.ids?.length ?? 0,
@@ -176,8 +176,8 @@ const updateSelection = (updatedSelection: SelectorSelection) => {
 const noSelectionLabel = computed(() => {
   return type.value === SelectorSelectionType.Include &&
     selectionStrategy.value === SelectorSelectionStrategy.All
-    ? t('all_entities', { entityName: entityName.value }, 2)
-    : t('no_entities', { entityName: entityName.value }, 2);
+    ? t('all_entity', { entityName: entityName.value }, 2)
+    : t('no_entity', { entityName: entityName.value }, 2);
 });
 </script>
 
@@ -298,7 +298,7 @@ const noSelectionLabel = computed(() => {
         class="mt-4 flex items-center gap-5 border-t pt-4 text-sm"
       >
         <div>
-          {{ $t('select_entities_that_match', { entityName }, 2) }}
+          {{ $t('select_entity_that_match', { entityName }, 2) }}
         </div>
         <RadioGroup
           v-model="selection.condition"

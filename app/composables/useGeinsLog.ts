@@ -15,7 +15,7 @@ interface GeinsLogger {
  * - `geinsLogInfo`: Info log function.
  * - `geinsLogWarn`: Warning log function.
  */
-export function useGeinsLog(scope: string = ''): GeinsLogger {
+export const useGeinsLog = (scope: string = ''): GeinsLogger => {
   const config = useRuntimeConfig();
   const { geinsLog, geinsLogError, geinsLogInfo, geinsLogWarn } = log(
     scope,
@@ -28,4 +28,4 @@ export function useGeinsLog(scope: string = ''): GeinsLogger {
     geinsLogInfo,
     geinsLogWarn,
   };
-}
+};
