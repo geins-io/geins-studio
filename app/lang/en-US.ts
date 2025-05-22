@@ -102,6 +102,8 @@ export default defineI18nLocale(async () => {
     log_in: 'Log in',
     verify: 'Verify',
     next: 'Next',
+    number: 'Number',
+    name: 'Name',
     previous: 'Previous',
     back_to_login: 'Back to login',
     global_search_placeholder: 'Search...',
@@ -165,7 +167,7 @@ export default defineI18nLocale(async () => {
     wholesale: {
       account_details: 'Account details',
       account_name: 'Account name',
-      vat_number: 'VAT nr. / Company reg. nr.',
+      vat_number: 'VAT / Company reg. nr.',
       external_id: 'External ID',
       channels: 'Channels',
       sales_reps: 'Sales reps',
@@ -192,10 +194,12 @@ export default defineI18nLocale(async () => {
       vat_true: 'VAT included',
       vat_false: 'VAT excluded',
       vat_veis_valid:
-        'This VAT number was successfully validated using the {veis} system.',
+        'This VAT number was successfully validated using the {veis}.',
       vat_veis_invalid:
-        'This number could not be validated using the {veis} system. Manual review recommended',
-      veis: 'EU VEIS',
+        'This number could not be validated using the {veis}. Manual review recommended.',
+      veis: 'EU VAT Information Exchange System (VIES)',
+      name: 'Name',
+      address: 'Address',
     },
   };
 });

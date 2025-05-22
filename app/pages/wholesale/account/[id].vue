@@ -548,6 +548,7 @@ const vatValid = ref(false);
 const vatValidating = ref(false);
 const vatNumberValidated = ref('');
 const vatValidation = ref<VatValidationResponse>();
+const vatValidationSummary = ref<DataItem[]>([]);
 
 const validateVatNumber = async (vatNumber: string) => {
   if (vatNumber === vatNumberValidated.value) {
@@ -556,6 +557,17 @@ const validateVatNumber = async (vatNumber: string) => {
   vatValidating.value = true;
   try {
     vatValidation.value = await wholesaleApi.validateVatNumber(vatNumber);
+    if (vatValidation.value) {
+      vatValidationSummary.value = Object.keys(vatValidation.value)
+        .filter((key) => {
+          return key === 'name' || key === 'address';
+        })
+        .map((key) => ({
+          label: t('wholesale.' + key),
+          value:
+            vatValidation.value?.[key as keyof VatValidationResponse] ?? '',
+        }));
+    }
     vatValid.value = vatValidation.value.valid;
   } catch (error) {
     geinsLogError('error validating VAT number:', error);
@@ -1424,7 +1436,59 @@ const confirmLeave = () => {
               :live-status="liveStatus"
               :summary="summary"
               :settings-summary="settingsSummary"
-            />
+            >
+              <template v-if="vatNumberValidated" #after-summary>
+                <Separator class="my-5" :label="t('wholesale.vat_number')" />
+                <div class="rounded-lg border p-4">
+                  <ul v-auto-animate class="space-y-3 text-sm">
+                    <li
+                      class="flex items-center justify-between gap-2 text-right text-muted-foreground"
+                    >
+                      <span class="text-left font-bold text-foreground"
+                        >{{ t('number') }}:</span
+                      >
+                      <ContentTextTooltip
+                        :trigger-class="
+                          cn(
+                            vatValid
+                              ? 'decoration-positive'
+                              : 'decoration-warning',
+                            'decoration-2',
+                          )
+                        "
+                      >
+                        {{ entityData.vatNumber }}
+                        <template #tooltip>
+                          <i18n-t
+                            class="block max-w-[300px]"
+                            :keypath="
+                              vatValid
+                                ? 'wholesale.vat_veis_valid'
+                                : 'wholesale.vat_veis_invalid'
+                            "
+                            tag="span"
+                            scope="global"
+                          >
+                            <template #veis>
+                              <a
+                                class="underline underline-offset-2"
+                                href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
+                                target="_blank"
+                                >{{ $t('wholesale.veis') }}</a
+                              >
+                            </template>
+                          </i18n-t>
+                        </template>
+                      </ContentTextTooltip>
+                    </li>
+                  </ul>
+                  <ContentDataList
+                    v-if="vatValid"
+                    :data-list="vatValidationSummary"
+                  />
+                </div>
+              </template>
+            </ContentEditSummary>
           </template>
         </ContentEditMain>
       </KeepAlive>
@@ -1507,7 +1571,59 @@ const confirmLeave = () => {
               :live-status="liveStatus"
               :summary="summary"
               :settings-summary="settingsSummary"
-            />
+            >
+              <template v-if="vatNumberValidated" #after-summary>
+                <Separator class="my-5" :label="t('wholesale.vat_number')" />
+                <div class="rounded-lg border p-4">
+                  <ul v-auto-animate class="space-y-3 text-sm">
+                    <li
+                      class="flex items-center justify-between gap-2 text-right text-muted-foreground"
+                    >
+                      <span class="text-left font-bold text-foreground"
+                        >{{ t('number') }}:</span
+                      >
+                      <ContentTextTooltip
+                        :trigger-class="
+                          cn(
+                            vatValid
+                              ? 'decoration-positive'
+                              : 'decoration-warning',
+                            'decoration-2',
+                          )
+                        "
+                      >
+                        {{ entityData.vatNumber }}
+                        <template #tooltip>
+                          <i18n-t
+                            class="block max-w-[300px]"
+                            :keypath="
+                              vatValid
+                                ? 'wholesale.vat_veis_valid'
+                                : 'wholesale.vat_veis_invalid'
+                            "
+                            tag="span"
+                            scope="global"
+                          >
+                            <template #veis>
+                              <a
+                                class="underline underline-offset-2"
+                                href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
+                                target="_blank"
+                                >{{ $t('wholesale.veis') }}</a
+                              >
+                            </template>
+                          </i18n-t>
+                        </template>
+                      </ContentTextTooltip>
+                    </li>
+                  </ul>
+                  <ContentDataList
+                    v-if="vatValid"
+                    :data-list="vatValidationSummary"
+                  />
+                </div>
+              </template>
+            </ContentEditSummary>
           </template>
         </ContentEditMain>
       </KeepAlive>

@@ -9,6 +9,7 @@ export interface WholesaleAccountBase {
   channels: string[];
   tags: string[];
   exVat: boolean;
+  limitedProductAccess: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   meta?: Record<string, any>;
 }

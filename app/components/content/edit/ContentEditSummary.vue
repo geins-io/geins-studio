@@ -56,17 +56,21 @@ const activeDescription = computed(() => {
         {{ liveStatus ? t('active') : t('inactive') }}
       </Badge>
     </div>
+    <slot name="before-active-switch" />
     <ContentSwitch
       v-if="!props.createMode"
       v-model:checked="active"
       :label="active ? t('active') : t('inactive')"
       :description="activeDescription"
     />
+    <slot name="before-summary" />
     <ContentDataList v-if="summary.length" :data-list="summary" />
+    <slot name="after-summary" />
     <ContentDataList
       v-if="!props.createMode && settingsSummary.length"
       :data-list="settingsSummary"
       :label="t('settings')"
     />
+    <slot name="after-settings" />
   </Card>
 </template>

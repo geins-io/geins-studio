@@ -76,7 +76,14 @@ const columnOptions: ColumnOptions<EntityList> = {
   entityLinkUrl: entityUrl,
   columnTypes: { name: 'entity-link' },
   columnTitles: { active: t('status') },
-  excludeColumns: ['meta', 'addresses', 'buyers', 'tags', 'exVat'],
+  excludeColumns: [
+    'meta',
+    'addresses',
+    'buyers',
+    'tags',
+    'exVat',
+    'limitedProductAccess',
+  ],
 };
 // GET AND SET COLUMNS
 const { getColumns, addActionsColumn } = useColumns<EntityList>();
