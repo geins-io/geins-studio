@@ -118,14 +118,6 @@ export default NuxtAuthHandler({
 
       return session;
     },
-
-    authorized: ({ auth, request }) => {
-      geinsLog('Authorized callback triggered:', {
-        url: request.nextUrl?.pathname,
-        isAuthenticated: !!auth?.user,
-      });
-      return true;
-    },
   },
   providers: [
     // @ts-expect-error You need to use .default here for it to work during SSR. May be fixed via Vite at some point

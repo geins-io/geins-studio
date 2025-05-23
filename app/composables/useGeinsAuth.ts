@@ -28,10 +28,22 @@ export const useGeinsAuth = () => {
   };
 
   const login = async (credentials: LoginCredentials) => {
-    return await auth.signIn('credentials', {
-      redirect: false,
-      ...credentials,
-    });
+    try {
+      return await auth.signIn('credentials', {
+        redirect: false,
+        ...credentials,
+      });
+    } catch (error) {
+      const message = getErrorMessage(error);
+      const nuxtApp = useNuxtApp();
+      nuxtApp.$appInsights?.trackTrace({
+        message: message,
+        severity: 'Error',
+        properties: {
+          error: error,
+        },
+      });
+    }
   };
 
   const verify = async (tokens: AuthTokens) => {
