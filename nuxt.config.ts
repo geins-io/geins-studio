@@ -85,15 +85,8 @@ export default defineNuxtConfig({
       VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
       VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
       VERCEL_ENV: process.env.VERCEL_ENV,
-      applicationinsights: {
-        connectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
-      },
     },
-    private: {
-      applicationinsights: {
-        connectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
-      },
-    },
+    private: {},
   },
 
   sourcemap: {

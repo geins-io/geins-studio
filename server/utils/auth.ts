@@ -10,7 +10,7 @@ import type {
 import { jwtDecode } from 'jwt-decode';
 
 const API_URL = process.env.GEINS_API_URL as string;
-const { geinsLog, geinsLogWarn } = log('server/utils/auth.ts');
+const { geinsLog } = log('server/utils/auth.ts');
 
 const ENDPOINTS = {
   LOGIN: 'auth',
@@ -51,42 +51,25 @@ export const auth = () => {
     if (token) {
       headers['authorization'] = `Bearer ${token}`;
     }
+    const response = await fetch(`${API_URL}/${url}`, {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+    });
 
-    const fullUrl = `${API_URL}/${url}`;
-    geinsLog(`API call to ${method} ${fullUrl}`);
-
-    try {
-      const response = await fetch(fullUrl, {
-        method,
-        headers,
-        body: data ? JSON.stringify(data) : undefined,
-      });
-
-      geinsLog(`API response from ${url}:`, { status: response.status });
-
-      if (response.ok) {
-        const jsonData = await response.json();
-        return jsonData;
-      }
-
-      const text = await response.text();
-      geinsLogWarn(`API error response from ${url}:`, {
-        status: response.status,
-        text,
-      });
-
-      if (response.status === 401) {
-        throw { status: response.status, message: 'Unauthorized' };
-      } else if (response.status === 403) {
-        throw { status: response.status, message: 'Insufficient permissions' };
-      } else if (response.status === 404) {
-        throw { status: response.status, message: 'Resource not found' };
-      }
-      throw new Error(text);
-    } catch (error) {
-      geinsLogWarn(`Error in API call to ${url}:`, error);
-      throw error;
+    if (response.ok) {
+      return response.json();
     }
+
+    const text = await response.text();
+    if (response.status === 401) {
+      throw { status: response.status, message: 'Unauthorized' };
+    } else if (response.status === 403) {
+      throw { status: response.status, message: 'Insufficient permissions' };
+    } else if (response.status === 404) {
+      throw { status: response.status, message: 'Resource not found' };
+    }
+    throw new Error(text);
   };
 
   /**
@@ -98,28 +81,11 @@ export const auth = () => {
   const login = async (
     credentials: LoginCredentials,
   ): Promise<AuthResponse> => {
-    geinsLog('Attempting login with credentials:', {
-      username: credentials.username,
-    });
     const creds = {
       username: credentials.username,
       password: credentials.password,
     };
-    try {
-      const response = await callAPI<AuthResponse>(
-        ENDPOINTS.LOGIN,
-        'POST',
-        creds,
-      );
-      geinsLog('Login response received:', {
-        success: !!response,
-        mfaRequired: response?.mfaRequired,
-      });
-      return response;
-    } catch (error) {
-      geinsLogWarn('Login error:', error);
-      throw error;
-    }
+    return callAPI<AuthResponse>(ENDPOINTS.LOGIN, 'POST', creds);
   };
 
   /**
