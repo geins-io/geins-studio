@@ -8,6 +8,7 @@ import type { LogMethod, GeinsLogger } from '#shared/types';
  * @returns Four logger functions: `geinsLog`, `geinsLogWarn`, `geinsLogError`, and `geinsLogInfo`
  */
 export function log(scope?: string, debug: boolean = false): GeinsLogger {
+  const isAzure = process.env.NITRO_PRESET?.includes('azure');
   if (import.meta.nitro || import.meta.server) {
     debug = import.meta.env.GEINS_DEBUG === 'true';
   }
@@ -40,6 +41,14 @@ export function log(scope?: string, debug: boolean = false): GeinsLogger {
         );
       } else {
         console[method](logTag, logStyle, formattedMessage, ...args);
+      }
+      if (isAzure) {
+        const nuxtApp = useNuxtApp();
+        nuxtApp.$appInsights?.trackTrace({
+          message: formattedMessage,
+          severity: method === 'error' ? 'Error' : 'Information', // Error or Information
+          properties: args.length > 0 ? args : undefined,
+        });
       }
     };
   };

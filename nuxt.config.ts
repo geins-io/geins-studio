@@ -32,7 +32,13 @@ export default defineNuxtConfig({
     'shadcn-nuxt',
     'nuxt-svgo',
     'nuxt-lucide-icons',
+    'nuxt-applicationinsights', // Add Application Insights module
   ],
+
+  // Add the logging module to our build setup
+  nitro: {
+    ...(process.env.NITRO_PRESET ? nitroPreset.nitro : {}),
+  },
 
   shadcn: {
     prefix: '',
@@ -64,6 +70,9 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    applicationinsights: {
+      connectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+    },
     public: {
       fallback: {
         language: 'en',
@@ -76,8 +85,15 @@ export default defineNuxtConfig({
       VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
       VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
       VERCEL_ENV: process.env.VERCEL_ENV,
+      applicationinsights: {
+        connectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+      },
     },
-    private: {},
+    private: {
+      applicationinsights: {
+        connectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
+      },
+    },
   },
 
   sourcemap: {
