@@ -39,7 +39,7 @@ jobs:
         env:
           GEINS_API_URL: ${{ vars.GEINS_API_URL_QA }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          AUTH_ORIGIN: 'https://geins-qa.merchant-center.app'
+          AUTH_ORIGIN: ${{ vars.AZURE_GEINS_AUTH_ORIGIN_QA }}
           GEINS_DEBUG: ${{ vars.AZURE_GEINS_DEBUG_QA }}
           NITRO_PRESET: ${{ vars.NITRO_PRESET_AZURE_SWA }}
           APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.AZURE_APP_INSIGHTS_CONNECTION_STRING }}
