@@ -14,13 +14,6 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
-    env:
-      GEINS_API_URL: ${{ vars.GEINS_API_URL_QA }}
-      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-      AUTH_ORIGIN: 'https://geins-qa.merchant-center.app'
-      GEINS_DEBUG: ${{ vars.AZURE_GEINS_DEBUG_QA }}
-      NITRO_PRESET: ${{ vars.NITRO_PRESET_AZURE_SWA }}
-      APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.AZURE_APP_INSIGHTS_CONNECTION_STRING }}
     steps:
       # Step 1: Checkout the repository
       - uses: actions/checkout@v3
@@ -43,7 +36,13 @@ jobs:
           output_location: '.output/public' # Built app content directory - optional
           api_location: '.output/server' # Api source code path - optional
           ###### End of Repository/Build Configurations ######
-
+        env:
+          GEINS_API_URL: ${{ vars.GEINS_API_URL_QA }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          AUTH_ORIGIN: 'https://geins-qa.merchant-center.app'
+          GEINS_DEBUG: ${{ vars.AZURE_GEINS_DEBUG_QA }}
+          NITRO_PRESET: ${{ vars.NITRO_PRESET_AZURE_SWA }}
+          APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.AZURE_APP_INSIGHTS_CONNECTION_STRING }}
       # Step 3: Post to Slack
       - name: Post to Slack
         if: github.event_name == 'push'
