@@ -35,11 +35,6 @@ export default defineNuxtConfig({
     'nuxt-applicationinsights', // Add Application Insights module
   ],
 
-  // Add the logging module to our build setup
-  nitro: {
-    ...(process.env.NITRO_PRESET ? nitroPreset.nitro : {}),
-  },
-
   shadcn: {
     prefix: '',
     componentDir: './app/components/ui',
