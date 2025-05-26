@@ -6,6 +6,7 @@ import type {
   WholesaleBuyer,
   WholesaleBuyerCreate,
   WholesaleBuyerUpdate,
+  VatValidationResponse,
 } from '#shared/types';
 
 const BASE_ENDPOINT = '/wholesale';
@@ -23,6 +24,9 @@ export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
   const buyerEndpoint = `${BASE_ENDPOINT}/buyer`;
   const buyerRepo = repo.entityBase<WholesaleBuyer>(buyerEndpoint, fetch);
+
+  const pricelistEndpoint = `${BASE_ENDPOINT}/pricelist`;
+  const pricelistRepo = repo.entity<any, any, any>(pricelistEndpoint, fetch);
 
   return {
     account: {
@@ -55,6 +59,9 @@ export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
     buyer: {
       ...buyerRepo,
+    },
+    pricelist: {
+      ...pricelistRepo,
     },
     validateVatNumber: async (
       vatNumber: string,

@@ -14,7 +14,6 @@ const formPrefix = computed(
   () =>
     `${props.formInputPrefix ? `${props.formInputPrefix}.` : ''}${props.addressType ? `${props.addressType}.` : ''}`,
 );
-console.log('🚀 ~ formPrefix:', formPrefix.value);
 </script>
 
 <template>

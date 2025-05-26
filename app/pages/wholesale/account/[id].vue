@@ -2,7 +2,6 @@
 import type { ColumnDef } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { useRoute } from 'vue-router';
-import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import { useWholesale } from '@/composables/useWholesale';
@@ -10,33 +9,20 @@ import {
   DataItemDisplayType,
   TableMode,
   type VatValidationResponse,
+  type WholesaleAccountBase,
 } from '#shared/types';
 import * as z from 'zod';
 
-// GLOBALS
+// COMPOSABLES
 const {
   wholesaleApi,
-  deleteAccount,
   extractAccountGroupsfromTags,
   convertAccountGroupsToTags,
 } = useWholesale();
 const { t } = useI18n();
 const route = useRoute();
-const { newEntityUrlAlias, getEntityName, getNewEntityUrl, getEntityListUrl } =
-  useEntity(route.fullPath);
-const entityName = getEntityName();
-const newEntityUrl = getNewEntityUrl();
-const entityListUrl = getEntityListUrl();
 const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
-
-const currentTab = ref(0);
-const loading = ref(false);
 const accountStore = useAccountStore();
-const addShippingAddress = ref(false);
-const originalAccountData = ref<string>('');
-const liveStatus = ref(true);
-const formValidation = ref();
-const createDisabled = ref(true);
 
 // EDIT PAGE OPTIONS
 const tabs = [
@@ -45,21 +31,43 @@ const tabs = [
   t('settings'),
 ];
 
-// COMPUTED GLOBALS
-const createMode = ref(route.params.id === newEntityUrlAlias);
-const title = computed(() =>
-  createMode.value
-    ? t('new_entity', { entityName }) +
-      (entityData.value?.name ? ': ' + entityData.value.name : '')
-    : entityData.value?.name || t('edit_entity', { entityName }),
+// FORM SCHEMAS
+const addressSchema = z.object({
+  email: z.string().min(1, { message: t('form.field_required') }),
+  phone: z.string().optional(),
+  company: z.string().min(1, { message: t('form.field_required') }),
+  firstName: z.string().min(1, { message: t('form.field_required') }),
+  lastName: z.string().min(1, { message: t('form.field_required') }),
+  addressLine1: z.string().min(1, { message: t('form.field_required') }),
+  addressLine2: z.string().optional(),
+  zip: z.string().min(1, { message: t('form.field_required') }),
+  city: z.string().min(1, { message: t('form.field_required') }),
+  region: z.string().optional(),
+  country: z.string().min(1, { message: t('form.field_required') }),
+});
+
+const formSchema = toTypedSchema(
+  z.object({
+    details: z
+      .object({
+        name: z.string().min(1, { message: t('form.field_required') }),
+        vatNumber: z.string().min(1, { message: t('form.field_required') }),
+        externalId: z.string().optional(),
+        channels: z.array(z.string()).min(1, {
+          message: t('form.field_required'),
+        }),
+        salesReps: z.array(z.string()).optional(),
+        tags: z.array(z.string()).optional(),
+      })
+      .required(),
+    addresses: z.object({
+      billing: addressSchema,
+      shipping: addressSchema.optional(),
+    }),
+  }),
 );
 
-// STEPS SETUP
-const currentStep = ref(1);
-const totalSteps = ref(2);
-
-// WHOLESALE ACCOUNT
-const entityId = ref<string>(String(route.params.id));
+// ENTITY DATA SETUP
 const entityBase = {
   name: '',
   active: true,
@@ -73,13 +81,8 @@ const entityBase = {
   exVat: false,
   limitedProductAccess: false,
 };
-const entityDataCreate = ref<WholesaleAccountCreate>({ ...entityBase });
-const entityDataUpdate = ref<WholesaleAccountUpdate>({ ...entityBase });
-const entityData = computed(() =>
-  createMode.value ? entityDataCreate.value : entityDataUpdate.value,
-);
 
-/* Addresses */
+// ADDRESS HANDLING
 const addressBase: AddressBase = {
   email: '',
   phone: '',
@@ -102,9 +105,153 @@ const shippingAddress = ref<AddressUpdate>({
   ...addressBase,
   addressType: 'shipping',
 });
+const addShippingAddress = ref(false);
 const accountGroups = ref<string[]>([]);
 const accountTags = ref<EntityBaseWithName[]>([]);
 
+// STEP MANAGEMENT
+const { currentStep, nextStep, previousStep } = useStepManagement(2);
+
+// ENTITY EDIT COMPOSABLE
+const {
+  entityName,
+  createMode,
+  loading,
+  title,
+  newEntityUrl,
+  entityListUrl,
+  entityDataCreate,
+  entityDataUpdate,
+  entityData,
+  form,
+  hasUnsavedChanges,
+  unsavedChangesDialogOpen,
+  confirmLeave,
+  createEntity,
+  updateEntity,
+  deleteEntity,
+  parseAndSaveData,
+} = useEntityEdit<
+  WholesaleAccount,
+  WholesaleAccountCreate,
+  WholesaleAccountUpdate,
+  WholesaleAccountBase
+>({
+  entityName: '',
+  repository: wholesaleApi.account,
+  validationSchema: formSchema,
+  initialEntityData: entityBase,
+  getInitialFormValues: (entityData, createMode) => ({
+    details: {
+      name: entityData.name || '',
+      vatNumber: entityData.vatNumber || '',
+      externalId: entityData.externalId || '',
+      channels: entityData.channels || [],
+      salesReps: entityData.salesReps || [],
+      tags: accountGroups.value,
+    },
+    addresses: {
+      billing: billingAddress.value,
+      shipping: shippingAddress.value,
+    },
+  }),
+  parseEntityData: async (account: WholesaleAccount) => {
+    // Custom parsing logic
+    buyersList.value = account.buyers || [];
+    liveStatus.value = entityDataUpdate.value.active || false;
+    accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
+
+    // Handle addresses
+    billingAddress.value = {
+      ...account.addresses?.find(
+        (address) =>
+          address.addressType === 'billing' ||
+          address.addressType === 'billingandshipping',
+      ),
+    };
+    const shipping = account.addresses?.find(
+      (address) => address.addressType === 'shipping',
+    );
+    if (shipping) {
+      shippingAddress.value = { ...shipping };
+      addShippingAddress.value = true;
+    }
+
+    await validateVatNumber(account.vatNumber);
+
+    // Update form values after parsing
+    form?.setValues({
+      details: {
+        name: account.name || '',
+        vatNumber: account.vatNumber || '',
+        externalId: account.externalId || '',
+        channels: account.channels || [],
+        salesReps: account.salesReps?.map((rep) => rep._id || rep) || [],
+        tags: accountGroups.value,
+      },
+      addresses: {
+        billing: billingAddress.value,
+        shipping: shippingAddress.value,
+      },
+    });
+  },
+  prepareCreateData: (formData) => {
+    const addresses = getAddresses(
+      { ...billingAddress.value, ...formData.addresses?.billing },
+      addShippingAddress.value
+        ? { ...shippingAddress.value, ...formData.addresses?.shipping }
+        : undefined,
+    );
+    const tags = convertAccountGroupsToTags(accountGroups.value);
+
+    return {
+      ...entityBase,
+      ...formData.details,
+      addresses,
+      tags,
+    };
+  },
+  prepareUpdateData: (formData, entity) => {
+    const addresses = getAddresses(
+      { ...billingAddress.value, ...formData.addresses?.billing },
+      addShippingAddress.value
+        ? { ...shippingAddress.value, ...formData.addresses?.shipping }
+        : undefined,
+    );
+    const tags = convertAccountGroupsToTags(accountGroups.value);
+
+    return {
+      ...entity,
+      ...formData.details,
+      addresses,
+      tags,
+    };
+  },
+  reShapeEntityData: (entityData) => {
+    return {
+      ...entityData,
+      salesReps: entityData.salesReps?.map((salesRep) => salesRep._id),
+    };
+  },
+});
+
+// DELETE FUNCTIONALITY
+const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
+  useDeleteDialog(deleteEntity, entityListUrl);
+
+// TAB MANAGEMENT
+const currentTab = ref(0);
+const liveStatus = ref(true);
+
+// FORM VALIDATION
+const validateOnChange = ref(false);
+const createDisabled = ref(true);
+const stepValidationMap: Record<number, string> = {
+  1: 'details',
+  2: addShippingAddress.value ? 'addresses' : 'billing',
+};
+
+// HELPER FUNCTIONS
 const getAddresses = (billing: AddressUpdate, shipping?: AddressUpdate) => {
   const addresses = [];
   const billingType = shipping ? 'billing' : 'billingandshipping';
@@ -123,124 +270,20 @@ const getAddresses = (billing: AddressUpdate, shipping?: AddressUpdate) => {
   return addresses;
 };
 
-const parseAndSaveData = async (account: WholesaleAccount): Promise<void> => {
-  entityDataUpdate.value = {
-    ...entityDataUpdate.value,
-    ...account,
-    salesReps: account.salesReps?.map((salesRep) => salesRep._id),
-  };
-  buyersList.value = account.buyers || [];
-  liveStatus.value = entityDataUpdate.value.active || false;
-  accountGroups.value = extractAccountGroupsfromTags(
-    entityDataUpdate.value.tags || [],
-  );
-  originalAccountData.value = JSON.stringify(entityDataUpdate.value);
-
-  billingAddress.value = {
-    ...account.addresses?.find(
-      (address) =>
-        address.addressType === 'billing' ||
-        address.addressType === 'billingandshipping',
-    ),
-  };
-  const shipping = account.addresses?.find(
-    (address) => address.addressType === 'shipping',
-  );
-  if (shipping) {
-    shippingAddress.value = {
-      ...shipping,
-    };
-  }
-  addShippingAddress.value = !!shipping;
-  await validateVatNumber(account.vatNumber);
-};
-
-const hasUnsavedChanges = computed(() => {
-  if (createMode.value) return false;
-
-  // Deep compare the current account data with the original data
-  const currentData = JSON.stringify(entityDataUpdate.value);
-
-  return currentData !== originalAccountData.value;
-});
-
-/* Sales reps data source */
-const users = ref<User[]>([]);
-const { useGeinsFetch } = useGeinsApi();
-
-// Fetch users data asynchronously without blocking page render
-const fetchUsers = async () => {
-  const usersResult = await useGeinsFetch<User[]>('/user/list');
-  if (!usersResult.error.value) {
-    users.value = usersResult.data.value as User[];
-    users.value = users.value.map((user) => ({
-      ...user,
-      name: user.firstName + ' ' + user.lastName,
-    }));
-  }
-};
-
-// Start the fetch but don't await it directly in the setup
-fetchUsers();
-
-// FORMS SETTINGS
-const addressSchema = z.object({
-  email: z.string().min(1, { message: t('form.field_required') }),
-  phone: z.string().optional(),
-  company: z.string().min(1, { message: t('form.field_required') }),
-  firstName: z.string().min(1, { message: t('form.field_required') }),
-  lastName: z.string().min(1, { message: t('form.field_required') }),
-  addressLine1: z.string().min(1, { message: t('form.field_required') }),
-  addressLine2: z.string().optional(),
-  zip: z.string().min(1, { message: t('form.field_required') }),
-  city: z.string().min(1, { message: t('form.field_required') }),
-  region: z.string().optional(),
-  country: z.string().min(1, { message: t('form.field_required') }),
-});
-
-/* Account details */
-const formSchema = toTypedSchema(
-  z.object({
-    details: z
-      .object({
-        name: z.string().min(1, { message: t('form.field_required') }),
-        vatNumber: z.string().min(1, { message: t('form.field_required') }),
-        externalId: z.string().optional(),
-        channels: z.array(z.string()).min(1, {
-          message: t('form.field_required'),
-        }),
-        salesReps: z.array(z.string()).optional(),
-        tags: z.array(z.string()).optional(),
-      })
-      .required(),
-    addresses: z.object({
-      billing: addressSchema,
-      shipping: addressSchema.optional(),
-    }),
-  }),
-);
-
-const validateOnChange = ref(false);
-const stepValidationMap: Record<number, string> = {
-  1: 'details',
-  2: addShippingAddress.value ? 'addresses' : 'billing',
-};
-
-const validateSteps = async (steps: number[]) => {
-  formValidation.value = await form.validate();
-  const errors = Object.keys(formValidation.value.errors);
+// CUSTOM VALIDATION FOR STEPS
+const validateAccountSteps = async (steps: number[]) => {
+  const formValidation = await form.validate();
+  const errors = Object.keys(formValidation.errors);
   const stepKeys = steps.map((step) => stepValidationMap[step]);
   const stepErrors = errors.filter((error) =>
     stepKeys.some((stepKey) => stepKey && error.includes(stepKey)),
   );
-  if (stepErrors.length > 0) {
-    return false;
-  }
-  return true;
+  return stepErrors.length === 0;
 };
 
+// STEP ACTIONS
 const saveAccountDetails = async () => {
-  const stepValid = await validateSteps([1]);
+  const stepValid = await validateAccountSteps([1]);
 
   if (stepValid) {
     validateOnChange.value = false;
@@ -257,17 +300,199 @@ const saveAccountDetails = async () => {
       },
     });
 
-    currentStep.value++;
+    nextStep();
     createDisabled.value = false;
   } else {
     validateOnChange.value = true;
   }
 };
 
-const previousStep = () => {
-  currentStep.value--;
+// CUSTOM CREATE/UPDATE WITH ADDITIONAL VALIDATION
+const handleCreateAccount = async () => {
+  await createEntity(async () => {
+    const stepsValid = await validateAccountSteps([1, 2]);
+    if (!stepsValid) {
+      validateOnChange.value = true;
+      return false;
+    }
+    validateOnChange.value = false;
+    return true;
+  });
 };
 
+const handleUpdateAccount = async () => {
+  await updateEntity(async () => {
+    const stepsValid = await validateAccountSteps([1]);
+    if (!stepsValid) {
+      validateOnChange.value = true;
+      return false;
+    }
+    validateOnChange.value = false;
+    return true;
+  });
+};
+
+// ...existing code for users, buyers, VAT validation, addresses...
+const users = ref<User[]>([]);
+const { useGeinsFetch } = useGeinsApi();
+
+const fetchUsers = async () => {
+  const usersResult = await useGeinsFetch<User[]>('/user/list');
+  if (!usersResult.error.value) {
+    users.value = usersResult.data.value as User[];
+    users.value = users.value.map((user) => ({
+      ...user,
+      name: user.firstName + ' ' + user.lastName,
+    }));
+  }
+};
+
+fetchUsers();
+
+// BUYERS MANAGEMENT
+let refreshData = async () => {};
+const buyersList = ref<WholesaleBuyer[]>([]);
+const buyerPanelOpen = ref(false);
+const buyerToEdit = ref<WholesaleBuyer | undefined>();
+const buyerPanelMode = ref<'edit' | 'add'>('add');
+const columnOptions: ColumnOptions<WholesaleBuyer> = {
+  columnTitles: { _id: t('person.email'), active: t('status') },
+  excludeColumns: ['accountId'],
+};
+const buyerColumns: Ref<ColumnDef<WholesaleBuyer>[]> = ref([]);
+const { getColumns, addActionsColumn } = useColumns<WholesaleBuyer>();
+
+const setupColumns = () => {
+  buyerColumns.value = getColumns(buyersList.value, columnOptions);
+  addActionsColumn(
+    buyerColumns.value,
+    {
+      onEdit: (entity: WholesaleBuyer) => {
+        buyerToEdit.value = entity;
+        buyerPanelOpen.value = true;
+        buyerPanelMode.value = 'edit';
+      },
+    },
+    'edit',
+  );
+};
+
+watch(buyerPanelOpen, async (open) => {
+  if (!open) {
+    buyerToEdit.value = undefined;
+    buyerPanelMode.value = 'add';
+    await refreshData();
+  }
+});
+
+// VAT VALIDATION
+const hasValidatedVat = ref(false);
+const vatValid = ref(false);
+const vatValidating = ref(false);
+const vatNumberValidated = ref('');
+const vatValidation = ref<VatValidationResponse>();
+const vatValidationSummary = ref<DataItem[]>([]);
+
+const validateVatNumber = async (vatNumber: string) => {
+  if (vatNumber === vatNumberValidated.value) {
+    return;
+  }
+  vatValidating.value = true;
+  try {
+    vatValidation.value = await wholesaleApi.validateVatNumber(vatNumber);
+    if (vatValidation.value) {
+      vatValidationSummary.value = Object.keys(vatValidation.value)
+        .filter((key) => {
+          return key === 'name' || key === 'address';
+        })
+        .map((key) => ({
+          label: t('wholesale.' + key),
+          value:
+            vatValidation.value?.[key as keyof VatValidationResponse] ?? '',
+        }));
+    }
+    vatValid.value = vatValidation.value.valid;
+  } catch (error) {
+    geinsLogError('error validating VAT number:', error);
+  } finally {
+    hasValidatedVat.value = true;
+    vatValidating.value = false;
+    vatNumberValidated.value = vatNumber;
+  }
+};
+
+// ADDRESS MANAGEMENT
+const deleteAddressDialogOpen = ref(false);
+const deletingAddressId = ref<string>('');
+
+const openAddressDeleteDialog = async (addressId: string) => {
+  deletingAddressId.value = addressId;
+  await nextTick();
+  deleteAddressDialogOpen.value = true;
+};
+
+const confirmAddressDelete = async () => {
+  deleting.value = true;
+  if (deletingAddressId.value === 'new') {
+    entityDataUpdate.value.addresses = entityDataUpdate.value.addresses?.filter(
+      (address) => address.addressType !== 'shipping',
+    );
+  } else {
+    entityDataUpdate.value.addresses = entityDataUpdate.value.addresses?.filter(
+      (address) => address._id !== deletingAddressId.value,
+    );
+  }
+  shippingAddress.value = {
+    ...addressBase,
+    addressType: 'shipping',
+  };
+  addShippingAddress.value = false;
+
+  const { toast } = useToast();
+  toast({
+    title: t('entity_deleted', { entityName: 'shipping_address' }),
+    variant: 'positive',
+  });
+
+  deleting.value = false;
+  deleteAddressDialogOpen.value = false;
+};
+
+const hasShippingAddress = computed(() => {
+  return entityData.value.addresses?.some(
+    (address) => address.addressType === 'shipping',
+  );
+});
+
+const saveAddress = async (address: AddressUpdate) => {
+  const isNewShipping = !address._id && address.addressType === 'shipping';
+  if (isNewShipping) {
+    entityDataUpdate.value.addresses?.push(address);
+
+    entityDataUpdate.value.addresses?.map((addr) => {
+      if (addr.addressType === 'billingandshipping') {
+        addr.addressType = 'billing';
+      }
+      return addr;
+    });
+  } else {
+    const updatedAddresses = entityDataUpdate.value?.addresses?.map((addr) => {
+      if (addr._id === address._id) {
+        return { ...addr, ...address };
+      }
+      return addr;
+    });
+    entityDataUpdate.value.addresses = updatedAddresses;
+  }
+  if (address.addressType?.includes('billing')) {
+    billingAddress.value = address;
+  } else {
+    shippingAddress.value = address;
+    addShippingAddress.value = true;
+  }
+};
+
+// SUMMARY DATA
 const getEntityNameById = (
   id: string,
   dataList: { _id?: string; name?: string }[],
@@ -276,7 +501,6 @@ const getEntityNameById = (
   return entity ? entity.name : '';
 };
 
-// SUMMMARY
 const summary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   if (!createMode.value) {
@@ -347,242 +571,10 @@ const settingsSummary = computed<DataItem[]>(() => {
   return dataList;
 });
 
-// CREATE ACCOUNT
-const { toast } = useToast();
-const createAccount = async () => {
-  loading.value = true;
-
-  try {
-    const stepsValid = await validateSteps([1, 2]);
-
-    if (!stepsValid) {
-      validateOnChange.value = true;
-      loading.value = false;
-      return;
-    }
-    validateOnChange.value = false;
-
-    const result = await wholesaleApi.account.create(entityDataCreate.value);
-    const id = result._id;
-
-    const newUrl = newEntityUrl.replace(newEntityUrlAlias, id);
-    await useRouter().replace(newUrl);
-
-    toast({
-      title: t('entity_created', { entityName }),
-      variant: 'positive',
-    });
-  } catch (error) {
-    const _errorMessage = getErrorMessage(error);
-    toast({
-      title: t('error_creating_entity', { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
-
-    return;
-  } finally {
-    loading.value = false;
-  }
-};
-
-const hasShippingAddress = computed(() => {
-  return entityData.value.addresses?.some(
-    (address) => address.addressType === 'shipping',
-  );
-});
-
-const saveAddress = async (address: AddressUpdate) => {
-  const isNewShipping = !address._id && address.addressType === 'shipping';
-  if (isNewShipping) {
-    entityDataUpdate.value.addresses?.push(address);
-
-    entityDataUpdate.value.addresses?.map((addr) => {
-      if (addr.addressType === 'billingandshipping') {
-        addr.addressType = 'billing';
-      }
-      return addr;
-    });
-  } else {
-    const updatedAddresses = entityDataUpdate.value?.addresses?.map((addr) => {
-      if (addr._id === address._id) {
-        return { ...addr, ...address };
-      }
-      return addr;
-    });
-    entityDataUpdate.value.addresses = updatedAddresses;
-  }
-  if (address.addressType?.includes('billing')) {
-    billingAddress.value = address;
-  } else {
-    shippingAddress.value = address;
-    addShippingAddress.value = true;
-  }
-};
-
-const updateAccount = async () => {
-  loading.value = true;
-
-  try {
-    const stepsValid = await validateSteps([1]);
-
-    if (!stepsValid) {
-      validateOnChange.value = true;
-      loading.value = false;
-      return;
-    }
-    validateOnChange.value = false;
-    const id = entityDataUpdate.value?._id || entityId.value;
-
-    // Ensure we're using the update type
-    const accountData = entityDataUpdate.value;
-    const result: WholesaleAccount = await wholesaleApi.account.update(
-      id,
-      accountData,
-    );
-
-    await parseAndSaveData(result);
-
-    toast({
-      title: t('entity_updated', { entityName }),
-      variant: 'positive',
-    });
-  } catch (error) {
-    const _errorMessage = getErrorMessage(error);
-    toast({
-      title: t('error_updating_entity', { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
-
-    return;
-  } finally {
-    loading.value = false;
-  }
-};
-
-const deleteDialogOpen = ref(false);
-const deleting = ref(false);
-const openDeleteDialog = async () => {
-  await nextTick();
-  deleteDialogOpen.value = true;
-};
-const confirmDelete = async () => {
-  deleting.value = true;
-  const success = await deleteAccount(entityId.value, entityName);
-  if (success) {
-    navigateTo('/wholesale/account/list');
-  }
-  deleting.value = false;
-  deleteDialogOpen.value = false;
-};
-
-const deleteAddressDialogOpen = ref(false);
-const deletingAddressId = ref<string>('');
-const openAddressDeleteDialog = async (addressId: string) => {
-  deletingAddressId.value = addressId;
-  await nextTick();
-  deleteAddressDialogOpen.value = true;
-};
-const confirmAddressDelete = async () => {
-  deleting.value = true;
-  if (deletingAddressId.value === 'new') {
-    entityDataUpdate.value.addresses = entityDataUpdate.value.addresses?.filter(
-      (address) => address.addressType !== 'shipping',
-    );
-  } else {
-    entityDataUpdate.value.addresses = entityDataUpdate.value.addresses?.filter(
-      (address) => address._id !== deletingAddressId.value,
-    );
-  }
-  shippingAddress.value = {
-    ...addressBase,
-    addressType: 'shipping',
-  };
-  addShippingAddress.value = false;
-  toast({
-    title: t('entity_deleted', { entityName: 'shipping_address' }),
-    variant: 'positive',
-  });
-
-  deleting.value = false;
-  deleteAddressDialogOpen.value = false;
-};
-
-let refreshData = async () => {};
-const buyersList = ref<WholesaleBuyer[]>([]);
-const buyerPanelOpen = ref(false);
-const buyerToEdit = ref<WholesaleBuyer | undefined>();
-const buyerPanelMode = ref<'edit' | 'add'>('add');
-const columnOptions: ColumnOptions<WholesaleBuyer> = {
-  columnTitles: { _id: t('person.email'), active: t('status') },
-  excludeColumns: ['accountId'],
-};
-const buyerColumns: Ref<ColumnDef<WholesaleBuyer>[]> = ref([]);
-const { getColumns, addActionsColumn } = useColumns<WholesaleBuyer>();
-const setupColumns = () => {
-  buyerColumns.value = getColumns(buyersList.value, columnOptions);
-  addActionsColumn(
-    buyerColumns.value,
-    {
-      onEdit: (entity: WholesaleBuyer) => {
-        buyerToEdit.value = entity;
-        buyerPanelOpen.value = true;
-        buyerPanelMode.value = 'edit';
-      },
-    },
-    'edit',
-  );
-};
-
-watch(buyerPanelOpen, async (open) => {
-  if (!open) {
-    buyerToEdit.value = undefined;
-    buyerPanelMode.value = 'add';
-    await refreshData();
-  }
-});
-
-// VAT VALIDATION
-const hasValidatedVat = ref(false);
-const vatValid = ref(false);
-const vatValidating = ref(false);
-const vatNumberValidated = ref('');
-const vatValidation = ref<VatValidationResponse>();
-const vatValidationSummary = ref<DataItem[]>([]);
-
-const validateVatNumber = async (vatNumber: string) => {
-  if (vatNumber === vatNumberValidated.value) {
-    return;
-  }
-  vatValidating.value = true;
-  try {
-    vatValidation.value = await wholesaleApi.validateVatNumber(vatNumber);
-    if (vatValidation.value) {
-      vatValidationSummary.value = Object.keys(vatValidation.value)
-        .filter((key) => {
-          return key === 'name' || key === 'address';
-        })
-        .map((key) => ({
-          label: t('wholesale.' + key),
-          value:
-            vatValidation.value?.[key as keyof VatValidationResponse] ?? '',
-        }));
-    }
-    vatValid.value = vatValidation.value.valid;
-  } catch (error) {
-    geinsLogError('error validating VAT number:', error);
-  } finally {
-    hasValidatedVat.value = true;
-    vatValidating.value = false;
-    vatNumberValidated.value = vatNumber;
-  }
-};
-
-// GET DATA IF NOT CREATE MODE
+// LOAD DATA FOR EDIT MODE
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
-    wholesaleApi.account.get(entityId.value),
+    wholesaleApi.account.get(String(route.params.id)),
   );
   if (error.value) {
     geinsLogError('error fetching wholesale account:', error.value);
@@ -618,20 +610,7 @@ if (!createMode.value) {
   }
 }
 
-const form = useForm({
-  validationSchema: formSchema,
-  initialValues: {
-    details: {
-      ...entityData.value,
-      tags: accountGroups.value,
-    },
-    addresses: {
-      billing: billingAddress.value,
-      shipping: shippingAddress.value,
-    },
-  },
-});
-
+// FORM WATCHERS
 const formValid = computed(() => form.meta.value.valid);
 const formTouched = computed(() => form.meta.value.touched);
 
@@ -639,7 +618,7 @@ watch(
   form.values,
   useDebounceFn(async (values) => {
     if (validateOnChange.value) {
-      formValidation.value = await form.validate();
+      await form.validate();
     }
     const addresses = getAddresses(
       {
@@ -673,26 +652,6 @@ watch(
   }, 500),
   { deep: true },
 );
-
-const unsavedChangesDialogOpen = ref(false);
-const leavingTo = ref<string | null>(null);
-const confirmedLeave = ref(false);
-onBeforeRouteLeave((to) => {
-  if (!confirmedLeave.value && hasUnsavedChanges.value) {
-    unsavedChangesDialogOpen.value = true;
-    leavingTo.value = to.fullPath;
-    return false;
-  }
-  return true;
-});
-const confirmLeave = () => {
-  unsavedChangesDialogOpen.value = false;
-  confirmedLeave.value = true;
-
-  if (leavingTo.value) {
-    navigateTo(leavingTo.value);
-  }
-};
 </script>
 
 <template>
@@ -722,7 +681,7 @@ const confirmLeave = () => {
             v-if="!createMode"
             icon="save"
             :loading="loading"
-            @click="updateAccount"
+            @click="handleUpdateAccount"
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
           <DropdownMenu v-if="!createMode">
@@ -760,7 +719,7 @@ const confirmLeave = () => {
           <ContentEditCard
             :create-mode="createMode"
             :step="1"
-            :total-steps="totalSteps"
+            :total-steps="2"
             :current-step="currentStep"
             :step-valid="formValid"
             :title="$t('wholesale.account_details')"
@@ -908,7 +867,7 @@ const confirmLeave = () => {
           <ContentEditCard
             :create-mode="createMode"
             :step="2"
-            :total-steps="totalSteps"
+            :total-steps="2"
             :current-step="currentStep"
             :title="$t('wholesale.billing_shipping_addresses')"
             @previous="previousStep"
@@ -1015,7 +974,7 @@ const confirmLeave = () => {
             <Button
               :loading="loading"
               :disabled="createDisabled"
-              @click="createAccount"
+              @click="handleCreateAccount"
             >
               {{ $t('create_entity', { entityName }) }}
             </Button>
