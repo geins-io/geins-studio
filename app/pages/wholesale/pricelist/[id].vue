@@ -62,6 +62,8 @@ const {
   entityDataUpdate,
   entityData,
   form,
+  formValid,
+  formTouched,
   hasUnsavedChanges,
   unsavedChangesDialogOpen,
   confirmLeave,
@@ -91,6 +93,19 @@ const {
     description: formData.description,
     channels: formData.channels,
   }),
+  onFormValuesChange: async (values) => {
+    // Update entity data with form values
+    const newValues = {
+      ...entityData.value,
+      ...values,
+    };
+
+    if (createMode.value) {
+      entityDataCreate.value = newValues;
+    } else {
+      entityDataUpdate.value = newValues;
+    }
+  },
 });
 
 // Delete functionality

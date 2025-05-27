@@ -3,7 +3,6 @@ import type { ColumnDef } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { useRoute } from 'vue-router';
 import { toTypedSchema } from '@vee-validate/zod';
-import { useDebounceFn } from '@vueuse/core';
 import { useWholesale } from '@/composables/useWholesale';
 import {
   DataItemDisplayType,
@@ -112,18 +111,34 @@ const accountTags = ref<EntityBaseWithName[]>([]);
 // STEP MANAGEMENT
 const { currentStep, nextStep, previousStep } = useStepManagement(2);
 
+interface WholesaleFormValues {
+  details: WholesaleAccountUpdate;
+  addresses: {
+    billing: AddressUpdate;
+    shipping?: AddressUpdate;
+  };
+}
+
+const title = computed(() =>
+  createMode.value
+    ? t('new_entity', { entityName }) +
+      (entityData.value?.name ? ': ' + entityData.value.name : '')
+    : entityData.value?.name || t('edit_entity', { entityName }),
+);
+
 // ENTITY EDIT COMPOSABLE
 const {
   entityName,
   createMode,
   loading,
-  title,
   newEntityUrl,
   entityListUrl,
   entityDataCreate,
   entityDataUpdate,
   entityData,
   form,
+  formValid,
+  formTouched,
   hasUnsavedChanges,
   unsavedChangesDialogOpen,
   confirmLeave,
@@ -135,13 +150,14 @@ const {
   WholesaleAccount,
   WholesaleAccountCreate,
   WholesaleAccountUpdate,
-  WholesaleAccountBase
+  WholesaleAccountBase,
+  WholesaleFormValues
 >({
   entityName: '',
   repository: wholesaleApi.account,
   validationSchema: formSchema,
   initialEntityData: entityBase,
-  getInitialFormValues: (entityData, createMode) => ({
+  getInitialFormValues: (entityData) => ({
     details: {
       name: entityData.name || '',
       vatNumber: entityData.vatNumber || '',
@@ -233,6 +249,37 @@ const {
       salesReps: entityData.salesReps?.map((salesRep) => salesRep._id),
     };
   },
+  onFormValuesChange: async (values) => {
+    const addresses = getAddresses(
+      {
+        ...billingAddress.value,
+        ...values.addresses?.billing,
+      },
+      addShippingAddress.value
+        ? {
+            ...shippingAddress.value,
+            ...values.addresses?.shipping,
+          }
+        : undefined,
+    );
+    accountGroups.value = values.details.tags || [];
+    const tags = convertAccountGroupsToTags(accountGroups.value);
+    const newValues = {
+      ...entityData.value,
+      ...values.details,
+      addresses,
+      tags,
+    };
+
+    if (createMode.value) {
+      entityDataCreate.value = newValues as WholesaleAccountCreate;
+    } else {
+      entityDataUpdate.value = newValues as WholesaleAccountUpdate;
+    }
+    if (entityData.value?.vatNumber) {
+      await validateVatNumber(entityData.value.vatNumber);
+    }
+  },
 });
 
 // DELETE FUNCTIONALITY
@@ -272,8 +319,8 @@ const getAddresses = (billing: AddressUpdate, shipping?: AddressUpdate) => {
 
 // CUSTOM VALIDATION FOR STEPS
 const validateAccountSteps = async (steps: number[]) => {
-  const formValidation = await form.validate();
-  const errors = Object.keys(formValidation.errors);
+  const formValidation = await form?.validate();
+  const errors = Object.keys(formValidation?.errors || {});
   const stepKeys = steps.map((step) => stepValidationMap[step]);
   const stepErrors = errors.filter((error) =>
     stepKeys.some((stepKey) => stepKey && error.includes(stepKey)),
@@ -287,8 +334,8 @@ const saveAccountDetails = async () => {
 
   if (stepValid) {
     validateOnChange.value = false;
-    form.resetForm();
-    form.setValues({
+    form?.resetForm();
+    form?.setValues({
       details: {
         ...entityDataCreate.value,
         tags: accountGroups.value,
@@ -460,7 +507,7 @@ const confirmAddressDelete = async () => {
 
 const hasShippingAddress = computed(() => {
   return entityData.value.addresses?.some(
-    (address) => address.addressType === 'shipping',
+    (address: AddressUpdate) => address.addressType === 'shipping',
   );
 });
 
@@ -610,48 +657,44 @@ if (!createMode.value) {
   }
 }
 
-// FORM WATCHERS
-const formValid = computed(() => form.meta.value.valid);
-const formTouched = computed(() => form.meta.value.touched);
+// LOAD DATA FOR EDIT MODE
+if (!createMode.value) {
+  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
+    wholesaleApi.account.get(String(route.params.id)),
+  );
+  if (error.value) {
+    geinsLogError('error fetching wholesale account:', error.value);
+  }
 
-watch(
-  form.values,
-  useDebounceFn(async (values) => {
-    if (validateOnChange.value) {
-      await form.validate();
-    }
-    const addresses = getAddresses(
-      {
-        ...billingAddress.value,
-        ...values.addresses?.billing,
-      },
-      addShippingAddress.value
-        ? {
-            ...shippingAddress.value,
-            ...values.addresses?.shipping,
-          }
-        : undefined,
-    );
-    accountGroups.value = values.details.tags || [];
-    const tags = convertAccountGroupsToTags(accountGroups.value);
-    const newValues = {
-      ...entityData.value,
-      ...values.details,
-      addresses,
-      tags,
-    };
+  refreshData = refresh;
 
-    if (createMode.value) {
-      entityDataCreate.value = newValues;
-    } else {
-      entityDataUpdate.value = newValues;
-    }
-    if (entityData.value?.vatNumber) {
-      await validateVatNumber(entityData.value.vatNumber);
-    }
-  }, 500),
-  { deep: true },
-);
+  watch(
+    data,
+    async (newData) => {
+      if (newData) {
+        await parseAndSaveData(newData);
+        await nextTick();
+        setupColumns();
+      }
+    },
+    { immediate: true },
+  );
+
+  const { data: tagsData, error: tagsError } = await useAsyncData<string[]>(
+    () => wholesaleApi.account.tags.get(),
+  );
+  if (tagsError.value) {
+    geinsLogError('error fetching tags:', tagsError.value);
+  }
+
+  if (tagsData.value) {
+    const extractedTags = extractAccountGroupsfromTags(tagsData.value);
+    accountTags.value = extractedTags.map((tag) => ({
+      _id: tag,
+      name: tag,
+    }));
+  }
+}
 </script>
 
 <template>

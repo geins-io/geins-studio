@@ -1,28 +1,50 @@
 import { useToast } from '@/components/ui/toast/use-toast';
 import { useForm } from 'vee-validate';
 import { useDebounceFn } from '@vueuse/core';
+import type { toTypedSchema } from '@vee-validate/zod';
+import type { UnwrapRef } from 'vue';
 
-export interface EntityEditOptions<T, C, U, B> {
-  entityName: string;
+export interface EntityEditOptions<
+  TBase,
+  TResponse = ResponseEntity<TBase>,
+  TCreate = CreateEntity<TBase>,
+  TUpdate = UpdateEntity<TBase>,
+  TForm = Record<string, unknown>,
+> {
+  entityName?: string;
   newEntityUrlAlias?: string;
   repository: {
-    get: (id: string) => Promise<T>;
-    create: (data: C) => Promise<T>;
-    update: (id: string, data: U) => Promise<T>;
+    get: (id: string) => Promise<TResponse>;
+    create: (data: TCreate) => Promise<TResponse>;
+    update: (id: string, data: TUpdate) => Promise<TResponse>;
     delete?: (id: string) => Promise<void>;
   };
-  validationSchema?: any;
-  initialEntityData: C | U;
-  parseEntityData?: (entity: T) => Promise<void> | void;
-  prepareCreateData?: (formData: any) => C;
-  prepareUpdateData?: (formData: any, entity: T) => U;
-  reShapeEntityData?: (entity: T) => C | U;
-  getInitialFormValues?: (entityData: C | U, createMode: boolean) => any;
+  validationSchema: ReturnType<typeof toTypedSchema>;
+  initialEntityData: Partial<TResponse>;
+  parseEntityData?: (entity: TResponse) => Promise<void> | void;
+  prepareCreateData?: (formData: TForm) => TCreate;
+  prepareUpdateData?: (formData: TForm, entity: TResponse) => TUpdate;
+  reShapeEntityData?: (entity: TResponse) => TUpdate;
+  getInitialFormValues?: (
+    entityData: TCreate | TUpdate,
+    createMode: boolean,
+  ) => object;
+  onFormValuesChange?: (
+    values: TForm,
+    entityDataCreate: Ref<TCreate> | Ref<UnwrapRef<TCreate>>,
+    entityDataUpdate: Ref<TUpdate> | Ref<UnwrapRef<TUpdate>>,
+    createMode: Ref<boolean>,
+  ) => Promise<void> | void;
+  debounceMs?: number;
 }
 
-export function useEntityEdit<T extends EntityBase, C, U, B>(
-  options: EntityEditOptions<T, C, U, B>,
-) {
+export function useEntityEdit<
+  TBase,
+  TResponse = ResponseEntity<TBase>,
+  TCreate = CreateEntity<TBase>,
+  TUpdate = UpdateEntity<TBase>,
+  TForm = Record<string, unknown>,
+>(options: EntityEditOptions<TBase, TResponse, TCreate, TUpdate, TForm>) {
   const { t } = useI18n();
   const route = useRoute();
   const { toast } = useToast();
@@ -44,9 +66,13 @@ export function useEntityEdit<T extends EntityBase, C, U, B>(
   const loading = ref(false);
 
   // Entity data - maintain the same pattern as account edit
-  const entityDataCreate = ref<C>({ ...options.initialEntityData });
-  const entityDataUpdate = ref<U>({ ...options.initialEntityData });
-  const entityData = computed(() =>
+  const entityDataCreate = ref<TCreate>({
+    ...(options.initialEntityData as TCreate),
+  });
+  const entityDataUpdate = ref<TUpdate>({
+    ...(options.initialEntityData as TUpdate),
+  });
+  const entityData = computed<TCreate | TUpdate>(() =>
     createMode.value ? entityDataCreate.value : entityDataUpdate.value,
   );
 
@@ -62,30 +88,46 @@ export function useEntityEdit<T extends EntityBase, C, U, B>(
   const formValidation = ref();
 
   // Initialize form with proper initial values
-  const form = options.validationSchema
-    ? useForm({
-        validationSchema: options.validationSchema,
-        initialValues: options.getInitialFormValues
-          ? options.getInitialFormValues(entityData.value, createMode.value)
-          : {},
-      })
-    : null;
+  const form = useForm({
+    validationSchema: options.validationSchema,
+    initialValues: options.getInitialFormValues
+      ? options.getInitialFormValues(entityData.value, createMode.value)
+      : {},
+  });
 
-  // Title computation
-  const title = computed(() =>
-    createMode.value
-      ? t('new_entity', { entityName }) +
-        (entityData.value?.name ? ': ' + entityData.value.name : '')
-      : entityData.value?.name || t('edit_entity', { entityName }),
-  );
+  // Form state computeds
+  const formValid = computed(() => form?.meta.value.valid ?? true);
+  const formTouched = computed(() => form?.meta.value.touched ?? false);
+
+  // Form values watcher
+  if (form && options.onFormValuesChange) {
+    watch(
+      form.values,
+      useDebounceFn(async (values) => {
+        if (validateOnChange.value && form) {
+          await form.validate();
+        }
+
+        if (options.onFormValuesChange) {
+          await options.onFormValuesChange(
+            values,
+            entityDataCreate,
+            entityDataUpdate,
+            createMode,
+          );
+        }
+      }, options.debounceMs || 500),
+      { deep: true },
+    );
+  }
 
   // Parse and save data helper
-  const parseAndSaveData = async (entity: T): Promise<void> => {
-    let data = entity;
+  const parseAndSaveData = async (entity: TResponse): Promise<void> => {
     if (options.reShapeEntityData) {
-      data = options.reShapeEntityData(entity);
+      entityDataUpdate.value = options.reShapeEntityData(entity);
+    } else {
+      entityDataUpdate.value = { ...entity };
     }
-    entityDataUpdate.value = { ...data };
     originalEntityData.value = JSON.stringify(entityDataUpdate.value);
 
     if (options.parseEntityData) {
@@ -121,7 +163,7 @@ export function useEntityEdit<T extends EntityBase, C, U, B>(
       }
 
       const createData = options.prepareCreateData
-        ? options.prepareCreateData(form?.values || {})
+        ? options.prepareCreateData(form.values)
         : entityDataCreate.value;
 
       const result = await options.repository.create(createData);
@@ -166,7 +208,7 @@ export function useEntityEdit<T extends EntityBase, C, U, B>(
 
       const id = entityDataUpdate.value._id || entityId.value;
       const updateData = options.prepareUpdateData
-        ? options.prepareUpdateData(form?.values || {}, entityDataUpdate.value)
+        ? options.prepareUpdateData(form.values, entityDataUpdate.value)
         : entityDataUpdate.value;
 
       const result = await options.repository.update(id, updateData);
@@ -216,7 +258,6 @@ export function useEntityEdit<T extends EntityBase, C, U, B>(
     entityId,
     createMode,
     loading,
-    title,
     newEntityUrl,
     entityListUrl,
 
@@ -229,6 +270,8 @@ export function useEntityEdit<T extends EntityBase, C, U, B>(
     form,
     validateOnChange,
     formValidation,
+    formValid,
+    formTouched,
 
     // Unsaved changes
     hasUnsavedChanges,
