@@ -4,12 +4,7 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import { useRoute } from 'vue-router';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useWholesale } from '@/composables/useWholesale';
-import {
-  DataItemDisplayType,
-  TableMode,
-  type VatValidationResponse,
-  type WholesaleAccountBase,
-} from '#shared/types';
+import { DataItemDisplayType, TableMode } from '#shared/types';
 import * as z from 'zod';
 
 // COMPOSABLES
@@ -67,7 +62,7 @@ const formSchema = toTypedSchema(
 );
 
 // ENTITY DATA SETUP
-const entityBase = {
+const entityBase: WholesaleAccountCreate = {
   name: '',
   active: true,
   vatNumber: '',
@@ -111,14 +106,6 @@ const accountTags = ref<EntityBaseWithName[]>([]);
 // STEP MANAGEMENT
 const { currentStep, nextStep, previousStep } = useStepManagement(2);
 
-interface WholesaleFormValues {
-  details: WholesaleAccountUpdate;
-  addresses: {
-    billing: AddressUpdate;
-    shipping?: AddressUpdate;
-  };
-}
-
 const title = computed(() =>
   createMode.value
     ? t('new_entity', { entityName }) +
@@ -147,16 +134,16 @@ const {
   deleteEntity,
   parseAndSaveData,
 } = useEntityEdit<
+  WholesaleAccountBase,
   WholesaleAccount,
   WholesaleAccountCreate,
-  WholesaleAccountUpdate,
-  WholesaleAccountBase,
-  WholesaleFormValues
+  WholesaleAccountUpdate
 >({
   entityName: '',
   repository: wholesaleApi.account,
   validationSchema: formSchema,
   initialEntityData: entityBase,
+  initialUpdateData: entityBase,
   getInitialFormValues: (entityData) => ({
     details: {
       name: entityData.name || '',
@@ -174,7 +161,7 @@ const {
   parseEntityData: async (account: WholesaleAccount) => {
     // Custom parsing logic
     buyersList.value = account.buyers || [];
-    liveStatus.value = entityDataUpdate.value.active || false;
+    liveStatus.value = entityDataUpdate.value?.active || false;
     accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
 
     // Handle addresses
@@ -514,9 +501,9 @@ const hasShippingAddress = computed(() => {
 const saveAddress = async (address: AddressUpdate) => {
   const isNewShipping = !address._id && address.addressType === 'shipping';
   if (isNewShipping) {
-    entityDataUpdate.value.addresses?.push(address);
+    entityDataUpdate.value?.addresses?.push(address);
 
-    entityDataUpdate.value.addresses?.map((addr) => {
+    entityDataUpdate.value?.addresses?.map((addr) => {
       if (addr.addressType === 'billingandshipping') {
         addr.addressType = 'billing';
       }
@@ -571,7 +558,7 @@ const summary = computed<DataItem[]>(() => {
   }
   if (entityData.value?.salesReps?.length) {
     const displayValue = entityData.value.salesReps
-      .map((id) => getEntityNameById(id, users.value))
+      .map((id: string) => getEntityNameById(id, users.value))
       .join(', ');
     dataList.push({
       label: t('wholesale.sales_reps'),
@@ -583,7 +570,7 @@ const summary = computed<DataItem[]>(() => {
   }
   if (entityData.value?.channels?.length) {
     const displayValue = entityData.value.channels
-      .map((id) => accountStore.getChannelNameById(id))
+      .map((id: string) => accountStore.getChannelNameById(id))
       .join(', ');
     dataList.push({
       label: t('wholesale.channels'),

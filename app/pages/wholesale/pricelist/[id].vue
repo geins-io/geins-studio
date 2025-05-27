@@ -76,7 +76,7 @@ const {
   repository: pricelistRepo,
   validationSchema: formSchema,
   initialEntityData: initialPricelistData,
-  getInitialFormValues: (entityData, createMode) => ({
+  getInitialFormValues: (entityData) => ({
     name: entityData.name || '',
     description: entityData.description || '',
     channels: entityData.channels || [],

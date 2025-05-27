@@ -1,15 +1,13 @@
 import { useToast } from '@/components/ui/toast/use-toast';
-import { useForm } from 'vee-validate';
+import { useForm, type GenericObject } from 'vee-validate';
 import { useDebounceFn } from '@vueuse/core';
 import type { toTypedSchema } from '@vee-validate/zod';
-import type { UnwrapRef } from 'vue';
 
 export interface EntityEditOptions<
   TBase,
-  TResponse = ResponseEntity<TBase>,
-  TCreate = CreateEntity<TBase>,
-  TUpdate = UpdateEntity<TBase>,
-  TForm = Record<string, unknown>,
+  TResponse extends ResponseEntity<TBase>,
+  TCreate extends CreateEntity<TBase>,
+  TUpdate extends UpdateEntity<TBase>,
 > {
   entityName?: string;
   newEntityUrlAlias?: string;
@@ -20,31 +18,31 @@ export interface EntityEditOptions<
     delete?: (id: string) => Promise<void>;
   };
   validationSchema: ReturnType<typeof toTypedSchema>;
-  initialEntityData: Partial<TResponse>;
+  initialEntityData: TCreate;
+  initialUpdateData: TUpdate;
   parseEntityData?: (entity: TResponse) => Promise<void> | void;
-  prepareCreateData?: (formData: TForm) => TCreate;
-  prepareUpdateData?: (formData: TForm, entity: TResponse) => TUpdate;
-  reShapeEntityData?: (entity: TResponse) => TUpdate;
+  prepareCreateData?: (formData: GenericObject) => TCreate;
+  prepareUpdateData?: (formData: GenericObject, entity?: TUpdate) => TUpdate;
+  reShapeEntityData: (entity: TResponse) => TUpdate;
   getInitialFormValues?: (
     entityData: TCreate | TUpdate,
-    createMode: boolean,
+    createMode?: boolean,
   ) => object;
   onFormValuesChange?: (
-    values: TForm,
-    entityDataCreate: Ref<TCreate> | Ref<UnwrapRef<TCreate>>,
-    entityDataUpdate: Ref<TUpdate> | Ref<UnwrapRef<TUpdate>>,
-    createMode: Ref<boolean>,
+    values: GenericObject,
+    entityDataCreate: Ref<TCreate>,
+    entityDataUpdate: Ref<TUpdate> | ComputedRef<TUpdate>,
+    createMode: Ref<boolean> | ComputedRef<boolean>,
   ) => Promise<void> | void;
   debounceMs?: number;
 }
 
 export function useEntityEdit<
   TBase,
-  TResponse = ResponseEntity<TBase>,
-  TCreate = CreateEntity<TBase>,
-  TUpdate = UpdateEntity<TBase>,
-  TForm = Record<string, unknown>,
->(options: EntityEditOptions<TBase, TResponse, TCreate, TUpdate, TForm>) {
+  TResponse extends ResponseEntity<TBase>,
+  TCreate extends CreateEntity<TBase>,
+  TUpdate extends UpdateEntity<TBase>,
+>(options: EntityEditOptions<TBase, TResponse, TCreate, TUpdate>) {
   const { t } = useI18n();
   const route = useRoute();
   const { toast } = useToast();
@@ -64,15 +62,10 @@ export function useEntityEdit<
     route.params.id === (options.newEntityUrlAlias || newEntityUrlAlias),
   );
   const loading = ref(false);
-
-  // Entity data - maintain the same pattern as account edit
-  const entityDataCreate = ref<TCreate>({
-    ...(options.initialEntityData as TCreate),
-  });
-  const entityDataUpdate = ref<TUpdate>({
-    ...(options.initialEntityData as TUpdate),
-  });
-  const entityData = computed<TCreate | TUpdate>(() =>
+  // Entity data
+  const entityDataCreate = ref<TCreate>(options.initialEntityData);
+  const entityDataUpdate = ref<TUpdate>(options.initialUpdateData);
+  const entityData = computed(() =>
     createMode.value ? entityDataCreate.value : entityDataUpdate.value,
   );
 
@@ -100,19 +93,19 @@ export function useEntityEdit<
   const formTouched = computed(() => form?.meta.value.touched ?? false);
 
   // Form values watcher
-  if (form && options.onFormValuesChange) {
+  if (options.onFormValuesChange) {
     watch(
       form.values,
       useDebounceFn(async (values) => {
-        if (validateOnChange.value && form) {
+        if (validateOnChange.value) {
           await form.validate();
         }
 
         if (options.onFormValuesChange) {
           await options.onFormValuesChange(
             values,
-            entityDataCreate,
-            entityDataUpdate,
+            entityDataCreate as Ref<TCreate>,
+            entityDataUpdate as Ref<TUpdate>,
             createMode,
           );
         }
@@ -123,11 +116,8 @@ export function useEntityEdit<
 
   // Parse and save data helper
   const parseAndSaveData = async (entity: TResponse): Promise<void> => {
-    if (options.reShapeEntityData) {
-      entityDataUpdate.value = options.reShapeEntityData(entity);
-    } else {
-      entityDataUpdate.value = { ...entity };
-    }
+    entityDataUpdate.value = options.reShapeEntityData(entity);
+
     originalEntityData.value = JSON.stringify(entityDataUpdate.value);
 
     if (options.parseEntityData) {
@@ -206,11 +196,14 @@ export function useEntityEdit<
         return;
       }
 
-      const id = entityDataUpdate.value._id || entityId.value;
+      const id = entityDataUpdate.value?._id || entityId.value;
       const updateData = options.prepareUpdateData
         ? options.prepareUpdateData(form.values, entityDataUpdate.value)
         : entityDataUpdate.value;
 
+      if (!updateData) {
+        return;
+      }
       const result = await options.repository.update(id, updateData);
       await parseAndSaveData(result);
 
@@ -233,7 +226,7 @@ export function useEntityEdit<
   };
 
   // Delete entity
-  const deleteEntity = async () => {
+  const deleteEntity = async (): Promise<boolean> => {
     if (!options.repository.delete) return false;
 
     try {
@@ -244,6 +237,7 @@ export function useEntityEdit<
       });
       return true;
     } catch (error) {
+      const _message = getErrorMessage(error);
       toast({
         title: t('entity_delete_failed', { entityName }),
         variant: 'negative',
