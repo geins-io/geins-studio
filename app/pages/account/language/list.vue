@@ -4,7 +4,7 @@ import type { ColumnOptions, Language } from '#shared/types';
 type Entity = Language;
 
 const route = useRoute();
-const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
+const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
   route.fullPath,
 );
 

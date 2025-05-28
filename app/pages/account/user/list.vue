@@ -4,7 +4,7 @@ import type { ColumnOptions, User } from '#shared/types';
 type Entity = User;
 
 const route = useRoute();
-const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
+const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
   route.fullPath,
 );
 

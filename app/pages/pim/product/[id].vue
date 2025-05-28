@@ -5,7 +5,7 @@ const tabs = ['Main', 'Parameters', 'Images'];
 // GLOBALS
 const { t } = useI18n();
 const route = useRoute();
-const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntity(
+const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntityUrl(
   route.fullPath,
 );
 const entityName = getEntityName();

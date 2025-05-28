@@ -18,7 +18,7 @@ For example, if the current route path is `/pim/product/list`, the entity name w
 
 ```javascript
 const route = useRoute();
-const { getEntityName } = useEntity(route.fullPath);
+const { getEntityName } = useEntityUrl(route.fullPath);
 const entityName = getEntityName();
 ```
 
@@ -32,7 +32,7 @@ The entity name is mainly used as param to a set of language keys to retrieve th
 
 ```vue
 <script setup>
-const { getEntityName, getNewEntityUrl } = useEntity(route.fullPath);
+const { getEntityName, getNewEntityUrl } = useEntityUrl(route.fullPath);
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
 </script>

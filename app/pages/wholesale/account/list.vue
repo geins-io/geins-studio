@@ -10,7 +10,7 @@ type EntityList = WholesaleAccountList;
 const { t } = useI18n();
 const route = useRoute();
 const { geinsLogError } = useGeinsLog();
-const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
+const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
   route.fullPath,
 );
 

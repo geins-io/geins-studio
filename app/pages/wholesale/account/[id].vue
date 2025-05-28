@@ -139,7 +139,6 @@ const {
   WholesaleAccountCreate,
   WholesaleAccountUpdate
 >({
-  entityName: '',
   repository: wholesaleApi.account,
   validationSchema: formSchema,
   initialEntityData: entityBase,
@@ -159,12 +158,10 @@ const {
     },
   }),
   parseEntityData: async (account: WholesaleAccount) => {
-    // Custom parsing logic
     buyersList.value = account.buyers || [];
     liveStatus.value = entityDataUpdate.value?.active || false;
     accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
 
-    // Handle addresses
     billingAddress.value = {
       ...account.addresses?.find(
         (address) =>
@@ -182,8 +179,7 @@ const {
 
     await validateVatNumber(account.vatNumber);
 
-    // Update form values after parsing
-    form?.setValues({
+    form.setValues({
       details: {
         name: account.name || '',
         vatNumber: account.vatNumber || '',
@@ -230,7 +226,7 @@ const {
       tags,
     };
   },
-  reShapeEntityData: (entityData) => {
+  reshapeEntityData: (entityData) => {
     return {
       ...entityData,
       salesReps: entityData.salesReps?.map((salesRep) => salesRep._id),
@@ -526,14 +522,8 @@ const saveAddress = async (address: AddressUpdate) => {
   }
 };
 
+const { getEntityNameById } = useEntity();
 // SUMMARY DATA
-const getEntityNameById = (
-  id: string,
-  dataList: { _id?: string; name?: string }[],
-) => {
-  const entity = dataList?.find((entity) => entity._id === id);
-  return entity ? entity.name : '';
-};
 
 const summary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];

@@ -23,7 +23,7 @@ export interface EntityEditOptions<
   parseEntityData?: (entity: TResponse) => Promise<void> | void;
   prepareCreateData?: (formData: GenericObject) => TCreate;
   prepareUpdateData?: (formData: GenericObject, entity?: TUpdate) => TUpdate;
-  reShapeEntityData: (entity: TResponse) => TUpdate;
+  reshapeEntityData: (entity: TResponse) => TUpdate;
   getInitialFormValues?: (
     entityData: TCreate | TUpdate,
     createMode?: boolean,
@@ -51,7 +51,7 @@ export function useEntityEdit<
     getEntityName,
     getNewEntityUrl,
     getEntityListUrl,
-  } = useEntity(route.fullPath);
+  } = useEntityUrl(route.fullPath);
 
   // Core state
   const entityName = options.entityName || getEntityName();
@@ -116,7 +116,7 @@ export function useEntityEdit<
 
   // Parse and save data helper
   const parseAndSaveData = async (entity: TResponse): Promise<void> => {
-    entityDataUpdate.value = options.reShapeEntityData(entity);
+    entityDataUpdate.value = options.reshapeEntityData(entity);
 
     originalEntityData.value = JSON.stringify(entityDataUpdate.value);
 

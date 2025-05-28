@@ -14,7 +14,7 @@ const _props = withDefaults(
   },
 );
 const route = useRoute();
-const { getEntityListUrl } = useEntity(route.fullPath);
+const { getEntityListUrl } = useEntityUrl(route.fullPath);
 const listPageUrl = getEntityListUrl();
 const tableMaximized = useState<boolean>('table-maximized');
 // TODO: Dynamic breadcrumbs
