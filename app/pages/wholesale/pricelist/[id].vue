@@ -1,61 +1,48 @@
 <script setup lang="ts">
+// IMPORTS
 import { toTypedSchema } from '@vee-validate/zod';
+import { useI18n } from '#imports';
 import * as z from 'zod';
-import { useRoute } from 'vue-router';
 
-// Types (you'll need to define these)
-interface PricelistCreate {
-  name: string;
-  description?: string;
-  active: boolean;
-  channels: string[];
-}
+// GLOBALS
+const route = useRoute();
+const { t } = useI18n();
+const totalSteps = 2; // Total number of steps in the create form
+const { currentStep, nextStep, previousStep } = useStepManagement(totalSteps);
+const { $geinsApi } = useNuxtApp();
+const productApi = repo.product($geinsApi);
 
-interface PricelistUpdate extends PricelistCreate {
-  _id?: string;
-}
-
-interface Pricelist extends PricelistUpdate {
-  _id: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Initial entity data
-const initialPricelistData: PricelistCreate = {
-  name: '',
-  description: '',
-  active: true,
-  channels: [],
-};
-
-// Validation schema
+// FORM VALIDATION SCHEMA
 const formSchema = toTypedSchema(
   z.object({
-    name: z.string().min(1, { message: 'Name is required' }),
-    description: z.string().optional(),
-    channels: z
-      .array(z.string())
-      .min(1, { message: 'At least one channel is required' }),
+    vat: z.object({
+      exVat: z.boolean().optional(),
+    }),
+    default: z.object({
+      name: z.string().min(1, 'Name is required'),
+      channel: z.string().min(1, 'Channel is required'),
+      currency: z.string().min(1, 'Currency is required'),
+    }),
   }),
 );
 
-// Repository (you'll need to implement this)
-const { wholesaleApi } = useWholesale();
-const pricelistRepo = {
-  get: (id: string) => wholesaleApi.pricelist.get(id),
-  create: (data: PricelistCreate) => wholesaleApi.pricelist.create(data),
-  update: (id: string, data: PricelistUpdate) =>
-    wholesaleApi.pricelist.update(id, data),
-  delete: (id: string) => wholesaleApi.pricelist.delete(id),
+// BASE DATA STRUCTURE
+const entityBase: WholesalePricelistCreate = {
+  name: '',
+  active: true,
+  channel: '',
+  currency: '',
+  identifier: '',
+  dateCreated: '',
+  exVat: true,
+  products: [],
 };
 
-// Main entity edit composable
+// SETUP EDIT ENTITY COMPOSABLE
 const {
   entityName,
   createMode,
   loading,
-  title,
   newEntityUrl,
   entityListUrl,
   entityDataCreate,
@@ -71,42 +58,78 @@ const {
   updateEntity,
   deleteEntity,
   parseAndSaveData,
-} = useEntityEdit<Pricelist, PricelistCreate, PricelistUpdate>({
-  entityName: 'pricelist',
-  repository: pricelistRepo,
+} = useEntityEdit<
+  WholesalePricelistBase,
+  WholesalePricelist,
+  WholesalePricelistCreate,
+  WholesalePricelistUpdate
+>({
+  repository: productApi.pricelist,
   validationSchema: formSchema,
-  initialEntityData: initialPricelistData,
+  initialEntityData: entityBase,
+  initialUpdateData: entityBase,
   getInitialFormValues: (entityData) => ({
-    name: entityData.name || '',
-    description: entityData.description || '',
-    channels: entityData.channels || [],
+    vat: {
+      exVat: entityData.exVat || false,
+    },
+    default: {
+      name: entityData.name || '',
+      channel: entityData.channel || '',
+      currency: entityData.currency || '',
+    },
   }),
-  prepareCreateData: (formData) => ({
-    name: formData.name,
-    description: formData.description,
-    active: true,
-    channels: formData.channels,
-  }),
-  prepareUpdateData: (formData, entity) => ({
-    ...entity,
-    name: formData.name,
-    description: formData.description,
-    channels: formData.channels,
-  }),
+  parseEntityData: (entity) => {
+    form.setValues({
+      vat: {
+        exVat: entity.exVat || false,
+      },
+      default: {
+        name: entity.name || '',
+        channel: entity.channel || '',
+        currency: entity.currency || '',
+      },
+    });
+  },
+  prepareCreateData: (formData) => {
+    return {
+      ...entityBase,
+      ...formData.vat,
+      ...formData.default,
+    };
+  },
+  prepareUpdateData: (formData, entity) => {
+    return {
+      ...entity,
+      ...formData.vat,
+      ...formData.default,
+    };
+  },
+  reshapeEntityData: (entityData) => {
+    return {
+      ...entityData,
+    };
+  },
   onFormValuesChange: async (values) => {
-    // Update entity data with form values
     const newValues = {
       ...entityData.value,
-      ...values,
+      ...values.vat,
+      ...values.default,
     };
 
     if (createMode.value) {
-      entityDataCreate.value = newValues;
+      entityDataCreate.value = newValues as WholesalePricelistCreate;
     } else {
-      entityDataUpdate.value = newValues;
+      entityDataUpdate.value = newValues as WholesalePricelistUpdate;
     }
   },
 });
+
+const title = computed(() =>
+  createMode.value
+    ? t('new_entity', { entityName }) +
+      (entityData.value?.name ? ': ' + entityData.value.name : '')
+    : entityData.value?.name || t('edit_entity', { entityName }),
+);
 
 // Delete functionality
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
@@ -114,12 +137,12 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
 
 // Tabs
 const currentTab = ref(0);
-const tabs = ['Main', 'Products'];
+const tabs = ['General', 'Products & Pricing'];
 
 // Load data for edit mode
 if (!createMode.value) {
-  const { data, error } = await useAsyncData<Pricelist>(() =>
-    pricelistRepo.get(String(route.params.id)),
+  const { data, error } = await useAsyncData<WholesalePricelist>(() =>
+    productApi.pricelist.get(String(route.params.id)),
   );
 
   if (error.value) {
@@ -128,12 +151,6 @@ if (!createMode.value) {
 
   if (data.value) {
     await parseAndSaveData(data.value);
-    // Update form values after data is loaded
-    form?.setValues({
-      name: data.value.name,
-      description: data.value.description || '',
-      channels: data.value.channels,
-    });
   }
 }
 
@@ -165,10 +182,33 @@ const handleSave = () => {
     <template #header>
       <ContentHeader :title="title" :entity-name="entityName">
         <ContentActionBar>
-          <ButtonIcon icon="save" :loading="loading" @click="handleSave">
-            {{ $t('save_entity', { entityName }) }}
-          </ButtonIcon>
-          <!-- ...other buttons... -->
+          <ButtonIcon
+            v-if="!createMode"
+            icon="save"
+            :loading="loading"
+            @click="updateEntity"
+            >{{ $t('save_entity', { entityName }) }}</ButtonIcon
+          >
+          <DropdownMenu v-if="!createMode">
+            <DropdownMenuTrigger as-child>
+              <Button class="size-9 p-1" size="sm" variant="secondary">
+                <LucideMoreHorizontal class="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem as-child>
+                <NuxtLink :to="newEntityUrl">
+                  <LucidePlus class="mr-2 size-4" />
+                  <span>{{ $t('new_entity', { entityName }) }}</span>
+                </NuxtLink>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem @click="openDeleteDialog">
+                <LucideTrash class="mr-2 size-4" />
+                <span>{{ $t('delete_entity', { entityName }) }}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
@@ -180,53 +220,82 @@ const handleSave = () => {
     </template>
 
     <form @submit.prevent="handleSave">
-      <ContentEditMain v-if="currentTab === 0">
-        <ContentEditCard :create-mode="createMode" title="General">
-          <FormGridWrap>
-            <FormGrid design="1+1">
-              <FormField v-slot="{ componentField }" name="name">
-                <FormItem>
-                  <FormLabel>{{ $t('name') }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-
-              <FormField v-slot="{ componentField }" name="description">
-                <FormItem>
-                  <FormLabel :optional="true">{{
-                    $t('description')
-                  }}</FormLabel>
-                  <FormControl>
-                    <Input v-bind="componentField" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-
-            <FormGrid design="1">
-              <FormField v-slot="{ componentField }" name="channels">
-                <FormItem>
-                  <FormLabel>{{ $t('channels') }}</FormLabel>
-                  <FormControl>
-                    <FormInputChannels
-                      :model-value="componentField.modelValue"
-                      @update:model-value="
-                        componentField['onUpdate:modelValue']
-                      "
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-          </FormGridWrap>
-        </ContentEditCard>
-      </ContentEditMain>
-
+      <KeepAlive>
+        <ContentEditMain v-if="currentTab === 0">
+          <ContentEditCard
+            v-if="createMode"
+            title="Pricelist VAT"
+            description="Set if the pricelist should be created with prices ex or inc VAT. Cannot be changed upon creation. Ex VAT prices are calculated from the VAT rate set on your default country set in Geins"
+            :step="1"
+            :total-steps="totalSteps"
+            :create-mode="createMode"
+            :current-step="currentStep"
+            :step-valid="true"
+            @next="nextStep"
+          >
+            <FormGridWrap>
+              <FormGrid design="1">
+                <FormField v-slot="{ value, handleChange }" name="vat.exVat">
+                  <FormItemSwitch
+                    label="Enter prices ex VAT"
+                    description="Create this pricelist with prices ex VAT. Cannot be changed upon creation."
+                    :model-value="value"
+                    @update:model-value="handleChange"
+                  />
+                </FormField>
+              </FormGrid>
+            </FormGridWrap>
+          </ContentEditCard>
+          <ContentEditCard
+            title="Pricelist details"
+            :step="2"
+            :total-steps="totalSteps"
+            :create-mode="createMode"
+            :current-step="currentStep"
+            :step-valid="formValid"
+            @previous="previousStep"
+          >
+            <FormGridWrap>
+              <FormGrid design="1+1+1">
+                <FormField v-slot="{ componentField }" name="default.name">
+                  <FormItem v-auto-animate>
+                    <FormLabel>{{ $t('wholesale.pricelist_name') }}</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" type="text" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </FormGrid>
+            </FormGridWrap>
+          </ContentEditCard>
+          <div v-if="createMode" class="flex flex-row justify-end gap-4">
+            <Button variant="secondary" as-child>
+              <NuxtLink :to="entityListUrl">
+                {{ $t('cancel') }}
+              </NuxtLink>
+            </Button>
+            <Button
+              :loading="loading"
+              :disabled="!formValid || loading"
+              @click="createEntity"
+            >
+              {{ $t('create_entity', { entityName }) }}
+            </Button>
+          </div>
+          <template #sidebar>
+            <ContentEditSummary
+              v-model:active="entityDataUpdate.active"
+              :entity-name="entityName"
+              :create-mode="createMode"
+              :form-touched="formTouched"
+              :live-status="liveStatus"
+              :summary="summary"
+              :settings-summary="settingsSummary"
+            />
+          </template>
+        </ContentEditMain>
+      </KeepAlive>
       <!-- Add more tabs as needed -->
     </form>
   </ContentEditWrap>

@@ -6,6 +6,11 @@ export function useUnsavedChanges<T>(
   const hasUnsavedChanges = computed(() => {
     if (createMode.value) return false;
     const current = JSON.stringify(currentData.value);
+    console.log('🚀 ~ hasUnsavedChanges ~ current:', current);
+    console.log(
+      '🚀 ~ hasUnsavedChanges ~ originalData.value:',
+      originalData.value,
+    );
     return current !== originalData.value;
   });
 

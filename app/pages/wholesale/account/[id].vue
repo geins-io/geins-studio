@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ColumnDef } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
-import { useRoute } from 'vue-router';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useWholesale } from '@/composables/useWholesale';
 import { DataItemDisplayType, TableMode } from '#shared/types';
@@ -126,6 +125,7 @@ const {
   form,
   formValid,
   formTouched,
+  validateOnChange,
   hasUnsavedChanges,
   unsavedChangesDialogOpen,
   confirmLeave,
@@ -274,7 +274,6 @@ const currentTab = ref(0);
 const liveStatus = ref(true);
 
 // FORM VALIDATION
-const validateOnChange = ref(false);
 const createDisabled = ref(true);
 const stepValidationMap: Record<number, string> = {
   1: 'details',
@@ -420,7 +419,7 @@ const hasValidatedVat = ref(false);
 const vatValid = ref(false);
 const vatValidating = ref(false);
 const vatNumberValidated = ref('');
-const vatValidation = ref<VatValidationResponse>();
+const vatValidation = ref<WholesaleVatValidation>();
 const vatValidationSummary = ref<DataItem[]>([]);
 
 const validateVatNumber = async (vatNumber: string) => {
@@ -438,7 +437,7 @@ const validateVatNumber = async (vatNumber: string) => {
         .map((key) => ({
           label: t('wholesale.' + key),
           value:
-            vatValidation.value?.[key as keyof VatValidationResponse] ?? '',
+            vatValidation.value?.[key as keyof WholesaleVatValidation] ?? '',
         }));
     }
     vatValid.value = vatValidation.value.valid;

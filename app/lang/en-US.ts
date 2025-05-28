@@ -200,6 +200,7 @@ export default defineI18nLocale(async () => {
       veis: 'EU VAT Information Exchange System (VIES)',
       name: 'Name',
       address: 'Address',
+      pricelist_name: 'Pricelist name',
     },
   };
 });

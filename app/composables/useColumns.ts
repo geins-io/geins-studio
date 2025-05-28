@@ -270,13 +270,9 @@ export const useColumns = <T extends object>() => {
           break;
         case 'channels':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const value = row.getValue(key);
+            let value: string[] = row.getValue(key);
             if (!Array.isArray(value)) {
-              return h(
-                'div',
-                { class: getBasicCellStyle(table) },
-                String(value),
-              );
+              value = [String(value)];
             }
             return h(TableCellChannels, {
               class: getBasicCellStyle(table),

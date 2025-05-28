@@ -9,6 +9,10 @@ export const navigation: NavigationItem[] = [
         label: 'Accounts',
         href: '/wholesale/account/list',
       },
+      {
+        label: 'Pricelists',
+        href: '/wholesale/pricelist/list',
+      },
     ],
   },
   /*{
