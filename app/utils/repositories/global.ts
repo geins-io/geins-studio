@@ -5,7 +5,7 @@ const ENDPOINTS = {
   PRODUCT: '/product',
   CATEGORY: '/product/category',
   BRAND: '/product/brand',
-  ACCOUNT: '/user/me',
+  ACCOUNT: '/account',
   CHANNELS: '/account/channel/list',
   CURRENCY: '/account/currency/list',
   LANGUAGE: '/account/language/list',

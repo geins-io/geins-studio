@@ -26,6 +26,7 @@ export const useAccountStore = defineStore('account', () => {
   async function fetchAccount(): Promise<Account> {
     const data = await api.account.get();
     account.value = data;
+    console.log('🚀 ~ fetchAccount ~ account.value:', account.value);
     return data;
   }
   async function fetchChannels(): Promise<Channel[]> {
@@ -78,7 +79,9 @@ export const useAccountStore = defineStore('account', () => {
 
     // Set default currency from account
     if (account.value) {
+      console.log('🚀 ~ init ~ account.value:', account.value);
       currentCurrency.value = account.value.defaultCurrency;
+      console.log('🚀 ~ init ~ currentCurrency.value:', currentCurrency.value);
     }
   }
 
@@ -102,6 +105,26 @@ export const useAccountStore = defineStore('account', () => {
     return country ? country.name : '';
   }
 
+  function getCurrenciesByChannelId(channelId: string): string[] {
+    if (!channels.value || channels.value.length === 0) {
+      return currentCurrencies.value.length > 0
+        ? currentCurrencies.value.map((currency) => currency._id)
+        : [];
+    }
+    const channel = channels.value.find((c) => c._id === String(channelId));
+    console.log('🚀 ~ getCurrenciesByChannelId ~ channel:', channel);
+
+    if (!channel) return [];
+
+    return channel.markets
+      .filter((market) => !market.virtual)
+      .map((market) => market.currency._id)
+      .filter(
+        (currency, index, self) =>
+          index === self.findIndex((c) => c === currency),
+      );
+  }
+
   // GETTERS
   const currentChannel = computed(() => {
     return channels.value.find(
@@ -116,6 +139,21 @@ export const useAccountStore = defineStore('account', () => {
         .map((market) => {
           return market.country;
         }) || []
+    );
+  });
+
+  const currentCurrencies = computed(() => {
+    if (!currentChannel.value) return [];
+
+    const currencies = currentChannel.value.markets
+      .filter((market) => !market.virtual)
+      .map((market) => {
+        return market.currency;
+      });
+
+    return currencies.filter(
+      (currency, index, self) =>
+        index === self.findIndex((c) => c?._id === currency?._id),
     );
   });
 
@@ -138,7 +176,9 @@ export const useAccountStore = defineStore('account', () => {
     reset,
     getChannelNameById,
     getCountryNameById,
+    getCurrenciesByChannelId,
     currentChannel,
     currentCountries,
+    currentCurrencies,
   };
 });

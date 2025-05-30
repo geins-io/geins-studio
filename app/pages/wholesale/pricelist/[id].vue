@@ -3,6 +3,7 @@
 import { toTypedSchema } from '@vee-validate/zod';
 import { useI18n } from '#imports';
 import * as z from 'zod';
+import type { AcceptableValue } from 'reka-ui';
 
 // GLOBALS
 const route = useRoute();
@@ -11,6 +12,11 @@ const totalSteps = 2; // Total number of steps in the create form
 const { currentStep, nextStep, previousStep } = useStepManagement(totalSteps);
 const { $geinsApi } = useNuxtApp();
 const productApi = repo.product($geinsApi);
+const accountStore = useAccountStore();
+
+const { channels, currentCurrencies, currentChannelId, currentCurrency } =
+  storeToRefs(accountStore);
+const selectableCurrencies = ref(currentCurrencies.value.map((i) => i._id));
 
 // FORM VALIDATION SCHEMA
 const formSchema = toTypedSchema(
@@ -30,8 +36,8 @@ const formSchema = toTypedSchema(
 const entityBase: WholesalePricelistCreate = {
   name: '',
   active: true,
-  channel: '',
-  currency: '',
+  channel: currentChannelId.value || '',
+  currency: currentCurrency.value || '',
   identifier: '',
   dateCreated: '',
   exVat: true,
@@ -110,19 +116,75 @@ const {
     };
   },
   onFormValuesChange: async (values) => {
-    const newValues = {
-      ...entityData.value,
-      ...values.vat,
-      ...values.default,
-    };
-
     if (createMode.value) {
-      entityDataCreate.value = newValues as WholesalePricelistCreate;
+      entityDataCreate.value = {
+        ...entityData.value,
+        ...values.vat,
+        ...values.default,
+      };
     } else {
-      entityDataUpdate.value = newValues as WholesalePricelistUpdate;
+      entityDataUpdate.value = {
+        ...entityData.value,
+        ...values.vat,
+        ...values.default,
+      };
     }
   },
 });
+
+watch(
+  currentChannelId,
+  (newChannelId) => {
+    if (formTouched.value) {
+      return;
+    }
+    console.log('🚀 ~ newChannelId:', newChannelId);
+    const id = String(newChannelId);
+    selectableCurrencies.value = accountStore.getCurrenciesByChannelId(id);
+    console.log('🚀 ~ selectableCurrencies.value:', selectableCurrencies.value);
+
+    form.setValues({
+      ...form.values,
+      default: {
+        ...form.values.default,
+        channel: id,
+      },
+    });
+    console.log('set to form: ', form.values.default.channel);
+  },
+  { immediate: true },
+);
+
+watch(channels, () => {
+  selectableCurrencies.value = accountStore.getCurrenciesByChannelId(
+    String(currentChannelId.value),
+  );
+});
+
+watch(entityData, (newEntityData, oldEntityData) => {
+  if (newEntityData.channel === oldEntityData?.channel) {
+    return;
+  }
+  selectableCurrencies.value = accountStore.getCurrenciesByChannelId(
+    String(newEntityData.channel),
+  );
+});
+
+const handleChannelChange = async (value: AcceptableValue) => {
+  const stringValue = String(value);
+  selectableCurrencies.value =
+    accountStore.getCurrenciesByChannelId(stringValue);
+  if (!selectableCurrencies.value.includes(stringValue)) {
+    await nextTick();
+    form.setValues({
+      ...form.values,
+      default: {
+        ...form.values.default,
+        currency: selectableCurrencies.value[0],
+      },
+    });
+  }
+};
 
 const title = computed(() =>
   createMode.value
@@ -136,6 +198,7 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
   useDeleteDialog(deleteEntity, '/wholesale/pricelist/list');
 
 // Tabs
+const liveStatus = ref(true);
 const currentTab = ref(0);
 const tabs = ['General', 'Products & Pricing'];
 
@@ -162,6 +225,57 @@ const handleSave = () => {
     updateEntity();
   }
 };
+
+// SUMMARY DATA
+
+const summary = computed<DataItem[]>(() => {
+  if (createMode.value && currentStep.value === 1) {
+    return [];
+  }
+  const dataList: DataItem[] = [];
+  if (!createMode.value) {
+    dataList.push({
+      label: t('entity_id', { entityName }),
+      value: String(entityDataUpdate.value?._id),
+      displayType: DataItemDisplayType.Copy,
+    });
+  }
+  if (entityData.value?.name) {
+    dataList.push({
+      label: t('wholesale.pricelist_name'),
+      value: entityData.value.name,
+    });
+  }
+
+  if (entityData.value?.channel) {
+    const displayValue = accountStore.getChannelNameById(
+      entityData.value.channel,
+    );
+    dataList.push({
+      label: 'Channel',
+      value: displayValue,
+    });
+  }
+
+  if (entityData.value?.currency) {
+    dataList.push({
+      label: t('wholesale.pricelist_currency'),
+      value: entityData.value.currency,
+    });
+  }
+
+  dataList.push({
+    label: 'VAT',
+    value: entityData.value?.exVat ? 'Ex VAT' : 'Inc VAT',
+  });
+  return dataList;
+});
+
+const settingsSummary = computed<DataItem[]>(() => {
+  const dataList: DataItem[] = [];
+
+  return dataList;
+});
 </script>
 
 <template>
@@ -262,6 +376,57 @@ const handleSave = () => {
                     <FormLabel>{{ $t('wholesale.pricelist_name') }}</FormLabel>
                     <FormControl>
                       <Input v-bind="componentField" type="text" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+                <FormField v-slot="{ componentField }" name="default.channel">
+                  <FormItem v-auto-animate>
+                    <FormLabel>
+                      {{ $t('wholesale.pricelist_channel') }}
+                    </FormLabel>
+                    <FormControl>
+                      <Select
+                        v-bind="componentField"
+                        @update:model-value="handleChannelChange"
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem
+                            v-for="channel in channels"
+                            :key="channel._id"
+                            :value="channel._id"
+                          >
+                            {{ channel.name }}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+                <FormField v-slot="{ componentField }" name="default.currency">
+                  <FormItem v-auto-animate>
+                    <FormLabel>
+                      {{ $t('wholesale.pricelist_currency') }}
+                    </FormLabel>
+                    <FormControl>
+                      <Select v-bind="componentField">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem
+                            v-for="currency in selectableCurrencies"
+                            :key="currency"
+                            :value="currency"
+                          >
+                            {{ currency }}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

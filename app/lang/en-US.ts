@@ -201,6 +201,8 @@ export default defineI18nLocale(async () => {
       name: 'Name',
       address: 'Address',
       pricelist_name: 'Pricelist name',
+      pricelist_channel: 'Channel',
+      pricelist_currency: 'Currency',
     },
   };
 });
