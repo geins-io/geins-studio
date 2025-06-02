@@ -535,7 +535,7 @@ const summary = computed<DataItem[]>(() => {
   }
   if (entityData.value?.name) {
     dataList.push({
-      label: t('wholesale.account_name'),
+      label: t('entity_name', { entityName }),
       value: entityData.value.name,
     });
   }
@@ -748,7 +748,9 @@ if (!createMode.value) {
               <FormGrid design="1+1+1">
                 <FormField v-slot="{ componentField }" name="details.name">
                   <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('wholesale.account_name') }}</FormLabel>
+                    <FormLabel>{{
+                      $t('entity_name', { entityName })
+                    }}</FormLabel>
                     <FormControl>
                       <Input v-bind="componentField" type="text" />
                     </FormControl>

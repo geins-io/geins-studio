@@ -11,6 +11,8 @@ import {
   TableCellChannels,
   TableCellTags,
   TableCellStatus,
+  TableCellTooltip,
+  TableCellBoolean,
 } from '#components';
 import type {
   ColumnOptions,
@@ -160,7 +162,7 @@ export const useColumns = <T extends object>() => {
       } else if (keyLower === 'active') {
         columnType = 'status';
       } else {
-        columnType = 'string';
+        columnType = 'default';
       }
       // Override column type if explicitly set in options
       columnType = columnTypes?.[key] || columnType;
@@ -312,12 +314,50 @@ export const useColumns = <T extends object>() => {
             });
           };
           break;
+        case 'tooltip':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value: Tooltip = row.getValue(key);
+            return h(TableCellTooltip, {
+              class: getBasicCellStyle(table),
+              ...value,
+            });
+          };
+          break;
+        case 'boolean':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value = row.getValue(key);
+            return h(TableCellBoolean, {
+              className: getBasicCellStyle(table),
+              isTrue: Boolean(value),
+            });
+          };
+          break;
+        case 'string':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const text = String(row.getValue(key));
+            if (text.length > maxTextLength) {
+              return h(TableCellLongText, {
+                text,
+                className: getBasicCellStyle(table),
+                maxTextLength,
+                default: () => text,
+              });
+            }
+            return h('div', { class: getBasicCellStyle(table) }, text);
+          };
+          break;
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
             let text = String(row.getValue(key));
 
-            // Convert arrays to comma-separated strings
+            if (typeof value === 'boolean') {
+              return h(TableCellBoolean, {
+                className: getBasicCellStyle(table),
+                isTrue: value,
+              });
+            }
+
             if (Array.isArray(value)) {
               text = '';
               value.forEach((item: unknown, index) => {

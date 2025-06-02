@@ -31,20 +31,32 @@ const loading = ref(true);
 // Add the mapping function
 const mapToListData = (accounts: Entity[]): EntityList[] => {
   return accounts.map((account) => {
-    const accountGroups: string[] = extractAccountGroupsfromTags(account.tags);
-    const salesReps: string[] = [];
+    const groups = extractAccountGroupsfromTags(account.tags);
 
-    account.salesReps?.forEach((salesRep) => {
-      const firstName = salesRep?.firstName;
-      const lastName = salesRep?.lastName;
-      const fullName = `${firstName} ${lastName}`;
-      salesReps.push(fullName);
+    const accountGroups = createTooltip({
+      items: groups,
+      entityName: 'account_group',
+      formatter: (group) => `${group}`,
+    });
+
+    const buyers = createTooltip({
+      items: account.buyers,
+      entityName: 'buyer',
+      formatter: (buyer) =>
+        `${buyer.firstName} ${buyer.lastName} (${buyer._id})`,
+    });
+
+    const salesReps = createTooltip({
+      items: account.salesReps,
+      entityName: 'sales_rep',
+      formatter: (salesRep) => `${salesRep?.firstName} ${salesRep?.lastName}`,
     });
 
     return {
       ...account,
       accountGroups,
       salesReps,
+      buyers,
     };
   });
 };
@@ -55,10 +67,7 @@ const { data, error, refresh } = await useAsyncData<Entity[]>(() =>
 );
 
 if (!data.value || error.value) {
-  geinsLogError(
-    `${t('failed_to_fetch_entity', { entityName }, 2)}`,
-    error.value,
-  );
+  geinsLogError(t('failed_to_fetch_entity', { entityName }, 2), error.value);
 }
 
 watch(
@@ -74,16 +83,14 @@ watch(
 // SET UP COLUMN OPTIONS FOR ENTITY
 const columnOptions: ColumnOptions<EntityList> = {
   entityLinkUrl: entityUrl,
-  columnTypes: { name: 'entity-link' },
+  columnTypes: {
+    name: 'entity-link',
+    buyers: 'tooltip',
+    salesReps: 'tooltip',
+    accountGroups: 'tooltip',
+  },
   columnTitles: { active: t('status') },
-  excludeColumns: [
-    'meta',
-    'addresses',
-    'buyers',
-    'tags',
-    'exVat',
-    'limitedProductAccess',
-  ],
+  excludeColumns: ['meta', 'addresses', 'tags'],
 };
 // GET AND SET COLUMNS
 const { getColumns, addActionsColumn } = useColumns<EntityList>();
@@ -102,7 +109,11 @@ addActionsColumn(
 
 // SET COLUMN VISIBILITY STATE
 const { getVisibilityState } = useTable<EntityList>();
-const hiddenColumns: StringKeyOf<EntityList>[] = ['externalId'];
+const hiddenColumns: StringKeyOf<EntityList>[] = [
+  'externalId',
+  'exVat',
+  'limitedProductAccess',
+];
 const visibilityState = getVisibilityState(hiddenColumns);
 
 loading.value = false;

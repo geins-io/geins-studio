@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ColumnOptions, StringKeyOf } from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
 
 type Entity = WholesalePricelist;
 type EntityList = WholesalePricelist;
@@ -61,7 +62,7 @@ const columnOptions: ColumnOptions<EntityList> = {
   entityLinkUrl: entityUrl,
   columnTypes: { name: 'entity-link', channel: 'channels' },
   columnTitles: { active: t('status') },
-  excludeColumns: [],
+  excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
 };
 // GET AND SET COLUMNS
 const { getColumns, addActionsColumn } = useColumns<EntityList>();
@@ -82,6 +83,30 @@ addActionsColumn(
 // const { getVisibilityState } = useTable<EntityList>();
 // const hiddenColumns: StringKeyOf<EntityList>[] = [];
 // const visibilityState = getVisibilityState(hiddenColumns);
+const { toast } = useToast();
+const deletePricelist = async (
+  id?: string,
+  entityName?: string,
+): Promise<boolean> => {
+  try {
+    if (!id) {
+      throw new Error('ID is required for deletion');
+    }
+    await productApi.pricelist.delete(id);
+    toast({
+      title: t('entity_deleted', { entityName }),
+      variant: 'positive',
+    });
+    return true;
+  } catch (error) {
+    geinsLogError('deletePricelist :::', getErrorMessage(error));
+    toast({
+      title: t('entity_delete_failed', { entityName }),
+      variant: 'negative',
+    });
+    return false;
+  }
+};
 
 loading.value = false;
 
@@ -95,7 +120,7 @@ const openDeleteDialog = async (id?: string) => {
 };
 const confirmDelete = async () => {
   deleting.value = true;
-  const success = await deleteAccount(deleteId.value, entityName);
+  const success = await deletePricelist(deleteId.value, entityName);
   if (success) {
     refresh();
   }

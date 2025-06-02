@@ -26,7 +26,6 @@ export const useAccountStore = defineStore('account', () => {
   async function fetchAccount(): Promise<Account> {
     const data = await api.account.get();
     account.value = data;
-    console.log('🚀 ~ fetchAccount ~ account.value:', account.value);
     return data;
   }
   async function fetchChannels(): Promise<Channel[]> {
@@ -79,9 +78,7 @@ export const useAccountStore = defineStore('account', () => {
 
     // Set default currency from account
     if (account.value) {
-      console.log('🚀 ~ init ~ account.value:', account.value);
       currentCurrency.value = account.value.defaultCurrency;
-      console.log('🚀 ~ init ~ currentCurrency.value:', currentCurrency.value);
     }
   }
 
@@ -112,7 +109,6 @@ export const useAccountStore = defineStore('account', () => {
         : [];
     }
     const channel = channels.value.find((c) => c._id === String(channelId));
-    console.log('🚀 ~ getCurrenciesByChannelId ~ channel:', channel);
 
     if (!channel) return [];
 

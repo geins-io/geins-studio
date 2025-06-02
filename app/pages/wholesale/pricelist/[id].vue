@@ -38,9 +38,10 @@ const entityBase: WholesalePricelistCreate = {
   active: true,
   channel: currentChannelId.value || '',
   currency: currentCurrency.value || '',
-  identifier: '',
   dateCreated: '',
   exVat: true,
+  autoAddProducts: false,
+  forced: false,
   products: [],
 };
 
@@ -59,6 +60,7 @@ const {
   formTouched,
   hasUnsavedChanges,
   unsavedChangesDialogOpen,
+  validateOnChange,
   confirmLeave,
   createEntity,
   updateEntity,
@@ -138,10 +140,8 @@ watch(
     if (formTouched.value) {
       return;
     }
-    console.log('🚀 ~ newChannelId:', newChannelId);
     const id = String(newChannelId);
     selectableCurrencies.value = accountStore.getCurrenciesByChannelId(id);
-    console.log('🚀 ~ selectableCurrencies.value:', selectableCurrencies.value);
 
     form.setValues({
       ...form.values,
@@ -150,7 +150,6 @@ watch(
         channel: id,
       },
     });
-    console.log('set to form: ', form.values.default.channel);
   },
   { immediate: true },
 );
@@ -183,6 +182,7 @@ const handleChannelChange = async (value: AcceptableValue) => {
         currency: selectableCurrencies.value[0],
       },
     });
+    validateOnChange.value = true;
   }
 };
 
@@ -242,7 +242,7 @@ const summary = computed<DataItem[]>(() => {
   }
   if (entityData.value?.name) {
     dataList.push({
-      label: t('wholesale.pricelist_name'),
+      label: t('entity_name', { entityName }),
       value: entityData.value.name,
     });
   }
@@ -373,7 +373,9 @@ const settingsSummary = computed<DataItem[]>(() => {
               <FormGrid design="1+1+1">
                 <FormField v-slot="{ componentField }" name="default.name">
                   <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('wholesale.pricelist_name') }}</FormLabel>
+                    <FormLabel>{{
+                      $t('entity_name', { entityName })
+                    }}</FormLabel>
                     <FormControl>
                       <Input v-bind="componentField" type="text" />
                     </FormControl>

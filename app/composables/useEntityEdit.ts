@@ -147,7 +147,11 @@ export function useEntityEdit<
   ) => {
     loading.value = true;
     try {
-      if (additionalValidation && !(await additionalValidation())) {
+      if (
+        additionalValidation &&
+        typeof additionalValidation === 'function' &&
+        !(await additionalValidation())
+      ) {
         validateOnChange.value = true;
         return;
       }
@@ -191,7 +195,11 @@ export function useEntityEdit<
   ) => {
     loading.value = true;
     try {
-      if (additionalValidation && !(await additionalValidation())) {
+      if (
+        additionalValidation &&
+        typeof additionalValidation === 'function' &&
+        !(await additionalValidation())
+      ) {
         validateOnChange.value = true;
         return;
       }

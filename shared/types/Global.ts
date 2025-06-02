@@ -101,3 +101,9 @@ export interface CustomerBase {
 export type CustomerCreate = CreateEntity<CustomerBase>;
 export type CustomerUpdate = UpdateEntity<CustomerBase>;
 export type Customer = ResponseEntity<CustomerBase>;
+
+export interface Tooltip {
+  displayValue: string;
+  contentValue: string;
+  disabled: boolean;
+}

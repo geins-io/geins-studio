@@ -177,7 +177,6 @@ export interface PriceListProduct {
 export interface PriceList extends EntityBase {
   priceListId: number;
   channel: number;
-  identifier: string;
   name: string;
   dateCreated: string;
   active: boolean;

@@ -10,6 +10,7 @@ export const enum TableMode {
 }
 
 export type ColumnType =
+  | 'default'
   | 'string'
   | 'currency'
   | 'date'
@@ -20,7 +21,9 @@ export type ColumnType =
   | 'actions'
   | 'channels'
   | 'tags'
-  | 'status';
+  | 'status'
+  | 'tooltip'
+  | 'boolean';
 
 export type ColumnTypes<T> = Partial<Record<keyof T, ColumnType>>;
 

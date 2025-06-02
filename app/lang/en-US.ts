@@ -70,6 +70,7 @@ export default defineI18nLocale(async () => {
     entity_with_id_added_to_selection:
       '@.capitalize:{entityName} with ID {id} added to selection',
     failed_to_fetch_entity: 'Failed to fetch @:{entityName}',
+    entity_name: '@.capitalize:{entityName} name',
     copied_to_clipboard: '{label} copied to clipboard!',
     active: 'Active',
     inactive: 'Inactive',
@@ -78,6 +79,8 @@ export default defineI18nLocale(async () => {
     more_than: 'More than',
     exactly: 'Exactly',
     not_set: 'Not set',
+    yes: 'Yes',
+    no: 'No',
     or: 'or',
     and: 'and',
     select: 'Select',
@@ -166,7 +169,6 @@ export default defineI18nLocale(async () => {
     contact_person_description: 'Contact person related to the address',
     wholesale: {
       account_details: 'Account details',
-      account_name: 'Account name',
       vat_number: 'VAT / Company reg. nr.',
       external_id: 'External ID',
       channels: 'Channels',
@@ -200,7 +202,6 @@ export default defineI18nLocale(async () => {
       veis: 'EU VAT Information Exchange System (VIES)',
       name: 'Name',
       address: 'Address',
-      pricelist_name: 'Pricelist name',
       pricelist_channel: 'Channel',
       pricelist_currency: 'Currency',
     },
