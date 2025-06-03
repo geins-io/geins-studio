@@ -26,8 +26,8 @@ module.exports = {
         main: 'calc(100vh - 4rem)',
       },
       boxShadow: {
-        'only-right': '3px 0 7px -2px rgb(0 0 0 / 0.1)',
-        'only-left': '-3px 0 7px -2px rgb(0 0 0 / 0.1)',
+        'only-right': '3px 0 7px -2px var(--shadow)',
+        'only-left': '-3px 0 7px -2px var(--shadow)',
       },
       fontSize: {
         grid: '0.8125rem',

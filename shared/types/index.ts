@@ -1,6 +1,7 @@
 export * from './Account';
 export * from './Api';
 export * from './Auth';
+export * from './Entity';
 export * from './Global';
 export * from './Table';
 export * from './Selector';

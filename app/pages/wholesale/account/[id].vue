@@ -273,6 +273,10 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
 const currentTab = ref(0);
 const liveStatus = ref(true);
 
+const showSidebar = computed(() => {
+  return currentTab.value !== 1;
+});
+
 // FORM VALIDATION
 const createDisabled = ref(true);
 const stepValidationMap: Record<number, string> = {
@@ -539,12 +543,6 @@ const summary = computed<DataItem[]>(() => {
       value: entityData.value.name,
     });
   }
-  if (entityData.value?.vatNumber) {
-    dataList.push({
-      label: t('wholesale.vat_number'),
-      value: entityData.value.vatNumber,
-    });
-  }
   if (entityData.value?.salesReps?.length) {
     const displayValue = entityData.value.salesReps
       .map((id: string) => getEntityNameById(id, users.value))
@@ -671,6 +669,15 @@ if (!createMode.value) {
     }));
   }
 }
+
+const { summaryProps } = useEntityEditSummary({
+  createMode,
+  formTouched,
+  summary,
+  settingsSummary,
+  entityName,
+  liveStatus,
+});
 </script>
 
 <template>
@@ -692,6 +699,7 @@ if (!createMode.value) {
     :loading="deleting"
     @confirm="confirmAddressDelete"
   />
+
   <ContentEditWrap>
     <template #header>
       <ContentHeader :title="title" :entity-name="entityName">
@@ -733,473 +741,416 @@ if (!createMode.value) {
       </ContentHeader>
     </template>
     <form @submit.prevent>
-      <KeepAlive>
-        <ContentEditMain v-if="currentTab === 0">
-          <ContentEditCard
-            :create-mode="createMode"
-            :step="1"
-            :total-steps="2"
-            :current-step="currentStep"
-            :step-valid="formValid"
-            :title="$t('wholesale.account_details')"
-            @next="saveAccountDetails"
-          >
-            <FormGridWrap>
-              <FormGrid design="1+1+1">
-                <FormField v-slot="{ componentField }" name="details.name">
-                  <FormItem v-auto-animate>
-                    <FormLabel>{{
-                      $t('entity_name', { entityName })
-                    }}</FormLabel>
-                    <FormControl>
-                      <Input v-bind="componentField" type="text" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-                <FormField v-slot="{ componentField }" name="details.vatNumber">
-                  <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('wholesale.vat_number') }}</FormLabel>
-                    <FormControl>
-                      <Input
-                        v-bind="componentField"
-                        type="text"
-                        :loading="vatValidating"
-                      >
-                        <template #icon>
-                          <TooltipProvider
-                            v-if="hasValidatedVat"
-                            :delay-duration="100"
-                          >
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <LucideCircleCheck
-                                  v-if="vatValid"
-                                  class="size-5 text-positive"
-                                />
-                                <LucideInfo
-                                  v-else
-                                  class="size-5 text-warning"
-                                />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <i18n-t
-                                  class="block max-w-[300px]"
-                                  :keypath="
-                                    vatValid
-                                      ? 'wholesale.vat_veis_valid'
-                                      : 'wholesale.vat_veis_invalid'
-                                  "
-                                  tag="span"
-                                  scope="global"
-                                >
-                                  <template #veis>
-                                    <a
-                                      class="underline underline-offset-2"
-                                      href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
-                                      target="_blank"
-                                      >{{ $t('wholesale.veis') }}</a
-                                    >
-                                  </template>
-                                </i18n-t>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </template>
-                      </Input>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-                <FormField
-                  v-slot="{ componentField }"
-                  name="details.externalId"
-                >
-                  <FormItem v-auto-animate>
-                    <FormLabel :optional="true">{{
-                      $t('wholesale.external_id')
-                    }}</FormLabel>
-                    <FormControl>
-                      <Input v-bind="componentField" type="text" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-              </FormGrid>
-              <FormGrid design="1">
-                <FormField v-slot="{ componentField }" name="details.salesReps">
-                  <FormItem v-auto-animate>
-                    <FormLabel :optional="true">{{
-                      $t('wholesale.sales_reps')
-                    }}</FormLabel>
-                    <FormControl>
-                      <FormInputTagsSearch
-                        :model-value="componentField.modelValue"
-                        entity-name="sales_rep"
-                        :data-set="users"
-                        @update:model-value="
-                          componentField['onUpdate:modelValue']
-                        "
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-              </FormGrid>
-              <FormGrid design="1">
-                <FormField v-slot="{ componentField }" name="details.channels">
-                  <FormItem v-auto-animate>
-                    <FormLabel>{{ $t('wholesale.channels') }}</FormLabel>
-                    <FormControl>
-                      <FormInputChannels
-                        :model-value="componentField.modelValue"
-                        @update:model-value="
-                          componentField['onUpdate:modelValue']
-                        "
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-              </FormGrid>
-              <FormGrid v-if="!createMode" design="1">
-                <FormField v-slot="{ componentField }" name="details.tags">
-                  <FormItem v-auto-animate>
-                    <FormLabel :optional="true">{{
-                      $t('wholesale.account_groups')
-                    }}</FormLabel>
-                    <FormControl>
-                      <FormInputTagsSearch
-                        :model-value="componentField.modelValue"
-                        entity-name="account_group"
-                        :data-set="accountTags"
-                        :allow-custom-tags="true"
-                        @update:model-value="
-                          componentField['onUpdate:modelValue']
-                        "
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-              </FormGrid>
-            </FormGridWrap>
-          </ContentEditCard>
-          <ContentEditCard
-            :create-mode="createMode"
-            :step="2"
-            :total-steps="2"
-            :current-step="currentStep"
-            :title="$t('wholesale.billing_shipping_addresses')"
-            @previous="previousStep"
-          >
-            <Tabs default-value="billing">
-              <TabsList>
-                <TabsTrigger value="billing">
-                  {{ $t('entity_caps', { entityName: 'billing_address' }) }}
-                </TabsTrigger>
-                <TabsTrigger value="shipping">
-                  {{ $t('entity_caps', { entityName: 'shipping_address' }) }}
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="billing">
-                <div
-                  class="mt-4 flex items-center justify-between border-t pt-4"
-                >
-                  <ContentAddressDisplay :address="billingAddress" />
-                  <ContentEditAddressPanel
-                    :address="billingAddress"
-                    @save="saveAddress"
-                  >
-                    <Button variant="outline" size="sm">{{
-                      $t('edit')
-                    }}</Button>
-                  </ContentEditAddressPanel>
-                </div>
-              </TabsContent>
-              <TabsContent value="shipping">
-                <div
-                  v-if="!hasShippingAddress"
-                  v-auto-animate
-                  class="mt-4 border-t pt-4"
-                >
-                  <ContentSwitch
-                    :checked="!addShippingAddress"
-                    :label="$t('wholesale.same_as_billing')"
-                    :description="$t('wholesale.use_billing_as_shipping')"
-                    @update:checked="addShippingAddress = !$event"
-                  />
-                  <ContentEditAddressPanel
-                    v-if="!hasShippingAddress && addShippingAddress"
-                    :address="shippingAddress"
-                    @save="saveAddress"
-                    @delete="openAddressDeleteDialog"
-                  >
-                    <Button class="mt-4" variant="outline">
-                      {{ $t('add_entity', { entityName: 'shipping_address' }) }}
-                    </Button>
-                  </ContentEditAddressPanel>
-                </div>
-                <div
-                  v-else
-                  class="mt-4 flex items-center justify-between border-t pt-4"
-                >
-                  <ContentAddressDisplay :address="shippingAddress" />
-                  <ContentEditAddressPanel
-                    :address="shippingAddress"
-                    @save="saveAddress"
-                    @delete="openAddressDeleteDialog"
-                  >
-                    <Button variant="outline" size="sm">{{
-                      $t('edit')
-                    }}</Button>
-                  </ContentEditAddressPanel>
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            <template #create>
-              <ContentAddressForm
-                form-input-prefix="addresses"
-                address-type="billing"
-              />
+      <ContentEditMain :show-sidebar="showSidebar">
+        <KeepAlive>
+          <ContentEditMainContent v-if="currentTab === 0">
+            <ContentEditCard
+              :create-mode="createMode"
+              :step="1"
+              :total-steps="2"
+              :current-step="currentStep"
+              :step-valid="formValid"
+              :title="$t('wholesale.account_details')"
+              @next="saveAccountDetails"
+            >
               <FormGridWrap>
+                <FormGrid design="1+1+1">
+                  <FormField v-slot="{ componentField }" name="details.name">
+                    <FormItem v-auto-animate>
+                      <FormLabel>{{
+                        $t('entity_name', { entityName })
+                      }}</FormLabel>
+                      <FormControl>
+                        <Input v-bind="componentField" type="text" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="details.vatNumber"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel>{{ $t('wholesale.vat_number') }}</FormLabel>
+                      <FormControl>
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          :loading="vatValidating"
+                        >
+                          <template #icon>
+                            <TooltipProvider
+                              v-if="hasValidatedVat"
+                              :delay-duration="100"
+                            >
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <LucideCircleCheck
+                                    v-if="vatValid"
+                                    class="size-5 text-positive"
+                                  />
+                                  <LucideInfo
+                                    v-else
+                                    class="size-5 text-warning"
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <i18n-t
+                                    class="block max-w-[300px]"
+                                    :keypath="
+                                      vatValid
+                                        ? 'wholesale.vat_veis_valid'
+                                        : 'wholesale.vat_veis_invalid'
+                                    "
+                                    tag="span"
+                                    scope="global"
+                                  >
+                                    <template #veis>
+                                      <a
+                                        class="underline underline-offset-2"
+                                        href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
+                                        target="_blank"
+                                        >{{ $t('wholesale.veis') }}</a
+                                      >
+                                    </template>
+                                  </i18n-t>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </template>
+                        </Input>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="details.externalId"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel :optional="true">{{
+                        $t('wholesale.external_id')
+                      }}</FormLabel>
+                      <FormControl>
+                        <Input v-bind="componentField" type="text" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+                <FormGrid design="1">
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="details.salesReps"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel :optional="true">{{
+                        $t('wholesale.sales_reps')
+                      }}</FormLabel>
+                      <FormControl>
+                        <FormInputTagsSearch
+                          :model-value="componentField.modelValue"
+                          entity-name="sales_rep"
+                          :data-set="users"
+                          @update:model-value="
+                            componentField['onUpdate:modelValue']
+                          "
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+                <FormGrid design="1">
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="details.channels"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel>{{ $t('wholesale.channels') }}</FormLabel>
+                      <FormControl>
+                        <FormInputChannels
+                          :model-value="componentField.modelValue"
+                          @update:model-value="
+                            componentField['onUpdate:modelValue']
+                          "
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+                <FormGrid v-if="!createMode" design="1">
+                  <FormField v-slot="{ componentField }" name="details.tags">
+                    <FormItem v-auto-animate>
+                      <FormLabel :optional="true">{{
+                        $t('wholesale.account_groups')
+                      }}</FormLabel>
+                      <FormControl>
+                        <FormInputTagsSearch
+                          :model-value="componentField.modelValue"
+                          entity-name="account_group"
+                          :data-set="accountTags"
+                          :allow-custom-tags="true"
+                          @update:model-value="
+                            componentField['onUpdate:modelValue']
+                          "
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+              </FormGridWrap>
+            </ContentEditCard>
+            <ContentEditCard
+              :create-mode="createMode"
+              :step="2"
+              :total-steps="2"
+              :current-step="currentStep"
+              :title="$t('wholesale.billing_shipping_addresses')"
+              @previous="previousStep"
+            >
+              <Tabs default-value="billing">
+                <TabsList>
+                  <TabsTrigger value="billing">
+                    {{ $t('entity_caps', { entityName: 'billing_address' }) }}
+                  </TabsTrigger>
+                  <TabsTrigger value="shipping">
+                    {{ $t('entity_caps', { entityName: 'shipping_address' }) }}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="billing">
+                  <div
+                    class="mt-4 flex items-center justify-between border-t pt-4"
+                  >
+                    <ContentAddressDisplay :address="billingAddress" />
+                    <ContentEditAddressPanel
+                      :address="billingAddress"
+                      @save="saveAddress"
+                    >
+                      <Button variant="outline" size="sm">{{
+                        $t('edit')
+                      }}</Button>
+                    </ContentEditAddressPanel>
+                  </div>
+                </TabsContent>
+                <TabsContent value="shipping">
+                  <div
+                    v-if="!hasShippingAddress"
+                    v-auto-animate
+                    class="mt-4 border-t pt-4"
+                  >
+                    <ContentSwitch
+                      :checked="!addShippingAddress"
+                      :label="$t('wholesale.same_as_billing')"
+                      :description="$t('wholesale.use_billing_as_shipping')"
+                      @update:checked="addShippingAddress = !$event"
+                    />
+                    <ContentEditAddressPanel
+                      v-if="!hasShippingAddress && addShippingAddress"
+                      :address="shippingAddress"
+                      @save="saveAddress"
+                      @delete="openAddressDeleteDialog"
+                    >
+                      <Button class="mt-4" variant="outline">
+                        {{
+                          $t('add_entity', { entityName: 'shipping_address' })
+                        }}
+                      </Button>
+                    </ContentEditAddressPanel>
+                  </div>
+                  <div
+                    v-else
+                    class="mt-4 flex items-center justify-between border-t pt-4"
+                  >
+                    <ContentAddressDisplay :address="shippingAddress" />
+                    <ContentEditAddressPanel
+                      :address="shippingAddress"
+                      @save="saveAddress"
+                      @delete="openAddressDeleteDialog"
+                    >
+                      <Button variant="outline" size="sm">{{
+                        $t('edit')
+                      }}</Button>
+                    </ContentEditAddressPanel>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              <template #create>
+                <ContentAddressForm
+                  form-input-prefix="addresses"
+                  address-type="billing"
+                />
+                <FormGridWrap>
+                  <ContentCardHeader
+                    size="md"
+                    heading-level="h3"
+                    :title="
+                      $t('entity_caps', {
+                        entityName: 'shipping_address',
+                      })
+                    "
+                  />
+                  <ContentSwitch
+                    v-model:checked="addShippingAddress"
+                    :label="$t('wholesale.add_different_shipping')"
+                    :description="$t('wholesale.activate_different_shipping')"
+                  >
+                    <ContentAddressForm
+                      form-input-prefix="addresses"
+                      address-type="shipping"
+                    />
+                  </ContentSwitch>
+                </FormGridWrap>
+              </template>
+            </ContentEditCard>
+            <div v-if="createMode" class="flex flex-row justify-end gap-4">
+              <Button variant="secondary" as-child>
+                <NuxtLink :to="entityListUrl">
+                  {{ $t('cancel') }}
+                </NuxtLink>
+              </Button>
+              <Button
+                :loading="loading"
+                :disabled="createDisabled"
+                @click="handleCreateAccount"
+              >
+                {{ $t('create_entity', { entityName }) }}
+              </Button>
+            </div>
+          </ContentEditMainContent>
+        </KeepAlive>
+        <KeepAlive>
+          <ContentEditMainContent v-if="currentTab === 1">
+            <ContentEditCard
+              v-if="currentTab === 1"
+              :create-mode="createMode"
+              :title="t('wholesale.buyers')"
+              description="Buyers connected to this account"
+            >
+              <template #header-action>
+                <WholesaleBuyerPanel
+                  v-model:open="buyerPanelOpen"
+                  :mode="buyerPanelMode"
+                  :buyer="buyerToEdit"
+                  :account-id="entityDataUpdate?._id || ''"
+                  :account-name="entityDataUpdate.name || ''"
+                >
+                  <ButtonIcon
+                    v-if="!createMode"
+                    icon="new"
+                    variant="outline"
+                    size="sm"
+                  >
+                    {{ $t('add_entity', { entityName: 'buyer' }) }}
+                  </ButtonIcon>
+                </WholesaleBuyerPanel>
+              </template>
+              <div>
+                <div
+                  v-if="buyersList.length === 0"
+                  class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
+                >
+                  <p class="text-xl font-bold">
+                    {{ $t('no_entity', { entityName: 'buyer' }, 2) }}
+                  </p>
+                  <p class="text-xs text-muted-foreground">
+                    {{ $t('wholesale.no_buyers_connected') }}
+                  </p>
+                </div>
+                <TableView
+                  v-else
+                  :mode="TableMode.Simple"
+                  entity-name="buyer"
+                  :columns="buyerColumns"
+                  :data="buyersList"
+                />
+              </div>
+            </ContentEditCard>
+          </ContentEditMainContent>
+        </KeepAlive>
+        <KeepAlive>
+          <ContentEditMainContent v-if="currentTab === 2">
+            <ContentEditCard
+              :create-mode="false"
+              :title="t('settings')"
+              description="Settings for this account"
+            >
+              <div class="space-y-4">
                 <ContentCardHeader
+                  title="VAT settings"
+                  description="Set whether this account should be charged VAT on orders"
                   size="md"
-                  heading-level="h3"
-                  :title="
-                    $t('entity_caps', {
-                      entityName: 'shipping_address',
-                    })
-                  "
                 />
                 <ContentSwitch
-                  v-model:checked="addShippingAddress"
-                  :label="$t('wholesale.add_different_shipping')"
-                  :description="$t('wholesale.activate_different_shipping')"
-                >
-                  <ContentAddressForm
-                    form-input-prefix="addresses"
-                    address-type="shipping"
-                  />
-                </ContentSwitch>
-              </FormGridWrap>
-            </template>
-          </ContentEditCard>
-          <div v-if="createMode" class="flex flex-row justify-end gap-4">
-            <Button variant="secondary" as-child>
-              <NuxtLink :to="entityListUrl">
-                {{ $t('cancel') }}
-              </NuxtLink>
-            </Button>
-            <Button
-              :loading="loading"
-              :disabled="createDisabled"
-              @click="handleCreateAccount"
-            >
-              {{ $t('create_entity', { entityName }) }}
-            </Button>
-          </div>
-          <template #sidebar>
-            <ContentEditSummary
-              v-model:active="entityDataUpdate.active"
-              :entity-name="entityName"
-              :create-mode="createMode"
-              :form-touched="formTouched"
-              :live-status="liveStatus"
-              :summary="summary"
-              :settings-summary="settingsSummary"
-            >
-              <template v-if="vatNumberValidated" #after-summary>
-                <Separator class="my-5" :label="t('wholesale.vat_number')" />
-                <div class="rounded-lg border p-4">
-                  <ul v-auto-animate class="space-y-3 text-sm">
-                    <li
-                      class="flex items-center justify-between gap-2 text-right text-muted-foreground"
-                    >
-                      <span class="text-left font-bold text-foreground"
-                        >{{ t('number') }}:</span
-                      >
-                      <ContentTextTooltip
-                        :trigger-class="
-                          cn(
-                            vatValid
-                              ? 'decoration-positive'
-                              : 'decoration-warning',
-                            'decoration-2',
-                          )
-                        "
-                      >
-                        {{ entityData.vatNumber }}
-                        <template #tooltip>
-                          <i18n-t
-                            class="block max-w-[300px]"
-                            :keypath="
-                              vatValid
-                                ? 'wholesale.vat_veis_valid'
-                                : 'wholesale.vat_veis_invalid'
-                            "
-                            tag="span"
-                            scope="global"
-                          >
-                            <template #veis>
-                              <a
-                                class="underline underline-offset-2"
-                                href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
-                                target="_blank"
-                                >{{ $t('wholesale.veis') }}</a
-                              >
-                            </template>
-                          </i18n-t>
-                        </template>
-                      </ContentTextTooltip>
-                    </li>
-                  </ul>
-                  <ContentDataList
-                    v-if="vatValid"
-                    :data-list="vatValidationSummary"
-                  />
-                </div>
-              </template>
-            </ContentEditSummary>
-          </template>
-        </ContentEditMain>
-      </KeepAlive>
-      <KeepAlive>
-        <ContentEditMain v-if="currentTab === 1">
-          <ContentEditCard
-            v-if="currentTab === 1"
-            :create-mode="createMode"
-            :title="t('wholesale.buyers')"
-            description="Buyers connected to this account"
-          >
-            <template #header-action>
-              <WholesaleBuyerPanel
-                v-model:open="buyerPanelOpen"
-                :mode="buyerPanelMode"
-                :buyer="buyerToEdit"
-                :account-id="entityDataUpdate?._id || ''"
-                :account-name="entityDataUpdate.name || ''"
-              >
-                <ButtonIcon
-                  v-if="!createMode"
-                  icon="new"
-                  variant="outline"
-                  size="sm"
-                >
-                  {{ $t('add_entity', { entityName: 'buyer' }) }}
-                </ButtonIcon>
-              </WholesaleBuyerPanel>
-            </template>
-            <div>
-              <div
-                v-if="buyersList.length === 0"
-                class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
-              >
-                <p class="text-xl font-bold">
-                  {{ $t('no_entity', { entityName: 'buyer' }, 2) }}
-                </p>
-                <p class="text-xs text-muted-foreground">
-                  {{ $t('wholesale.no_buyers_connected') }}
-                </p>
+                  v-model:checked="entityDataUpdate.exVat"
+                  label="VAT included"
+                  description="Orders from this account will include VAT"
+                />
               </div>
-              <TableView
-                v-else
-                :mode="TableMode.Simple"
-                entity-name="buyer"
-                :columns="buyerColumns"
-                :data="buyersList"
-              />
-            </div>
-          </ContentEditCard>
-        </ContentEditMain>
-      </KeepAlive>
-
-      <KeepAlive>
-        <ContentEditMain v-if="currentTab === 2">
-          <ContentEditCard
-            :create-mode="false"
-            :title="t('settings')"
-            description="Settings for this account"
+            </ContentEditCard>
+          </ContentEditMainContent>
+        </KeepAlive>
+        <template #sidebar>
+          <ContentEditSummary
+            v-model:active="entityDataUpdate.active"
+            v-bind="summaryProps"
           >
-            <div class="space-y-4">
-              <ContentCardHeader
-                title="VAT settings"
-                description="Set whether this account should be charged VAT on orders"
-                size="md"
-              />
-              <ContentSwitch
-                v-model:checked="entityDataUpdate.exVat"
-                label="VAT included"
-                description="Orders from this account will include VAT"
-              />
-            </div>
-          </ContentEditCard>
-          <template #sidebar>
-            <ContentEditSummary
-              v-model:active="entityDataUpdate.active"
-              :entity-name="entityName"
-              :create-mode="createMode"
-              :form-touched="formTouched"
-              :live-status="liveStatus"
-              :summary="summary"
-              :settings-summary="settingsSummary"
-            >
-              <template v-if="vatNumberValidated" #after-summary>
-                <Separator class="my-5" :label="t('wholesale.vat_number')" />
-                <div class="rounded-lg border p-4">
-                  <ul v-auto-animate class="space-y-3 text-sm">
-                    <li
-                      class="flex items-center justify-between gap-2 text-right text-muted-foreground"
-                    >
-                      <span class="text-left font-bold text-foreground"
-                        >{{ t('number') }}:</span
-                      >
-                      <ContentTextTooltip
-                        :trigger-class="
-                          cn(
+            <template v-if="vatNumberValidated" #after-summary>
+              <ul v-auto-animate class="-mt-1 space-y-3 text-sm">
+                <li
+                  class="flex items-center justify-between gap-2 text-right text-muted-foreground"
+                >
+                  <span class="text-left font-bold text-foreground">
+                    {{ t('wholesale.vat_number') }}:
+                  </span>
+                  <ContentTextTooltip
+                    :trigger-class="
+                      cn(
+                        vatValid ? 'decoration-positive' : 'decoration-warning',
+                        'decoration-2',
+                      )
+                    "
+                  >
+                    {{ entityData.vatNumber }}
+                    <template #tooltip>
+                      <p :class="cn('p-2', vatValid ? 'pb-0' : '')">
+                        <i18n-t
+                          class="block max-w-[300px]"
+                          :keypath="
                             vatValid
-                              ? 'decoration-positive'
-                              : 'decoration-warning',
-                            'decoration-2',
-                          )
-                        "
-                      >
-                        {{ entityData.vatNumber }}
-                        <template #tooltip>
-                          <i18n-t
-                            class="block max-w-[300px]"
-                            :keypath="
-                              vatValid
-                                ? 'wholesale.vat_veis_valid'
-                                : 'wholesale.vat_veis_invalid'
-                            "
-                            tag="span"
-                            scope="global"
-                          >
-                            <template #veis>
-                              <a
-                                class="underline underline-offset-2"
-                                href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
-                                target="_blank"
-                                >{{ $t('wholesale.veis') }}</a
-                              >
-                            </template>
-                          </i18n-t>
-                        </template>
-                      </ContentTextTooltip>
-                    </li>
-                  </ul>
-                  <ContentDataList
-                    v-if="vatValid"
-                    :data-list="vatValidationSummary"
-                  />
-                </div>
-              </template>
-            </ContentEditSummary>
-          </template>
-        </ContentEditMain>
-      </KeepAlive>
+                              ? 'wholesale.vat_veis_valid'
+                              : 'wholesale.vat_veis_invalid'
+                          "
+                          tag="span"
+                          scope="global"
+                        >
+                          <template #veis>
+                            <a
+                              class="underline underline-offset-2"
+                              href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
+                              target="_blank"
+                              >{{ $t('wholesale.veis') }}</a
+                            >
+                          </template>
+                        </i18n-t>
+                      </p>
+                      <ContentDataList
+                        v-if="vatValid"
+                        class="block max-w-[300px] pb-2"
+                        label="VEIS Information"
+                        :data-list="vatValidationSummary"
+                      />
+                    </template>
+                  </ContentTextTooltip>
+                </li>
+              </ul>
+            </template>
+          </ContentEditSummary>
+        </template>
+      </ContentEditMain>
     </form>
   </ContentEditWrap>
 </template>

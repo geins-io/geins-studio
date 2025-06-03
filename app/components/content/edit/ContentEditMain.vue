@@ -1,6 +1,15 @@
 <script setup lang="ts">
+const props = withDefaults(
+  defineProps<{
+    showSidebar?: boolean;
+  }>(),
+  {
+    showSidebar: true,
+  },
+);
+
 const slots = useSlots();
-const hasSidebar = computed(() => !!slots.sidebar);
+const hasSidebar = computed(() => props.showSidebar && !!slots.sidebar);
 </script>
 <template>
   <div
@@ -8,9 +17,7 @@ const hasSidebar = computed(() => !!slots.sidebar);
       cn(`grid gap-4`, `${hasSidebar ? 'grid-cols-main' : 'grid-cols-1'}`)
     "
   >
-    <div class="flex flex-col gap-4">
-      <slot />
-    </div>
+    <slot />
     <div v-if="hasSidebar" class="flex flex-col gap-4">
       <slot name="sidebar" />
     </div>
