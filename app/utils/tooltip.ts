@@ -3,11 +3,15 @@ interface TooltipOptions<T> {
   entityName: string;
   formatter?: (item: T) => string;
   emptyMessage?: string;
+  t: (
+    key: string,
+    values?: Record<string, unknown>,
+    pluralCount?: number,
+  ) => string;
 }
 
 export const createTooltip = <T>(options: TooltipOptions<T>): Tooltip => {
-  const { items = [], entityName, formatter, emptyMessage } = options;
-  const { t } = useI18n();
+  const { items = [], entityName, formatter, emptyMessage, t } = options;
 
   const hasItems = items && items.length > 0;
 

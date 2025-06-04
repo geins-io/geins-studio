@@ -128,6 +128,7 @@ const saveDisabled = computed(() => {
 
 const handleSuccess = () => {
   open.value = false;
+  newBuyer.value = undefined;
   emit('added');
   const feedbackWord = props.mode === 'edit' ? 'updated' : 'added';
   toast({

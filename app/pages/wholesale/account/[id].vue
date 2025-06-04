@@ -16,15 +16,9 @@ const { t } = useI18n();
 const route = useRoute();
 const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
 const accountStore = useAccountStore();
+const { getEntityNameById } = useEntity();
 
-// EDIT PAGE OPTIONS
-const tabs = [
-  t('wholesale.account_details'),
-  t('wholesale.buyers'),
-  t('settings'),
-];
-
-// FORM SCHEMAS
+// FORM SCHEMA AND VALIDATION
 const addressSchema = z.object({
   email: z.string().min(1, { message: t('form.field_required') }),
   phone: z.string().optional(),
@@ -75,7 +69,6 @@ const entityBase: WholesaleAccountCreate = {
   limitedProductAccess: false,
 };
 
-// ADDRESS HANDLING
 const addressBase: AddressBase = {
   email: '',
   phone: '',
@@ -99,18 +92,26 @@ const shippingAddress = ref<AddressUpdate>({
   addressType: 'shipping',
 });
 const addShippingAddress = ref(false);
+
 const accountGroups = ref<string[]>([]);
 const accountTags = ref<EntityBaseWithName[]>([]);
 
-// STEP MANAGEMENT
-const { currentStep, nextStep, previousStep } = useStepManagement(2);
+// TABS MANAGEMENT
+const tabs = [
+  t('wholesale.account_details'),
+  t('wholesale.buyers'),
+  t('settings'),
+];
 
-const title = computed(() =>
-  createMode.value
-    ? t('new_entity', { entityName }) +
-      (entityData.value?.name ? ': ' + entityData.value.name : '')
-    : entityData.value?.name || t('edit_entity', { entityName }),
-);
+// STEP MANAGEMENT
+const totalCreateSteps = 2;
+const { currentStep, nextStep, previousStep } =
+  useStepManagement(totalCreateSteps);
+
+const stepValidationMap: Record<number, string> = {
+  1: 'details',
+  2: addShippingAddress.value ? 'addresses' : 'billing',
+};
 
 // ENTITY EDIT COMPOSABLE
 const {
@@ -122,6 +123,8 @@ const {
   entityDataCreate,
   entityDataUpdate,
   entityData,
+  entityPageTitle,
+  refreshEntityData,
   form,
   formValid,
   formTouched,
@@ -133,6 +136,7 @@ const {
   updateEntity,
   deleteEntity,
   parseAndSaveData,
+  validateSteps,
 } = useEntityEdit<
   WholesaleAccountBase,
   WholesaleAccount,
@@ -143,6 +147,7 @@ const {
   validationSchema: formSchema,
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
+  stepValidationMap,
   getInitialFormValues: (entityData) => ({
     details: {
       name: entityData.name || '',
@@ -211,18 +216,11 @@ const {
     };
   },
   prepareUpdateData: (formData, entity) => {
-    const addresses = getAddresses(
-      { ...billingAddress.value, ...formData.addresses?.billing },
-      addShippingAddress.value
-        ? { ...shippingAddress.value, ...formData.addresses?.shipping }
-        : undefined,
-    );
     const tags = convertAccountGroupsToTags(accountGroups.value);
 
     return {
       ...entity,
       ...formData.details,
-      addresses,
       tags,
     };
   },
@@ -255,9 +253,9 @@ const {
     };
 
     if (createMode.value) {
-      entityDataCreate.value = newValues as WholesaleAccountCreate;
+      entityDataCreate.value = newValues;
     } else {
-      entityDataUpdate.value = newValues as WholesaleAccountUpdate;
+      entityDataUpdate.value = newValues;
     }
     if (entityData.value?.vatNumber) {
       await validateVatNumber(entityData.value.vatNumber);
@@ -279,14 +277,13 @@ const showSidebar = computed(() => {
 
 // FORM VALIDATION
 const createDisabled = ref(true);
-const stepValidationMap: Record<number, string> = {
-  1: 'details',
-  2: addShippingAddress.value ? 'addresses' : 'billing',
-};
 
 // HELPER FUNCTIONS
-const getAddresses = (billing: AddressUpdate, shipping?: AddressUpdate) => {
-  const addresses = [];
+const getAddresses = (
+  billing: AddressUpdate,
+  shipping?: AddressUpdate,
+): AddressUpdate[] => {
+  const addresses: AddressUpdate[] = [];
   const billingType = shipping ? 'billing' : 'billingandshipping';
 
   addresses.push({
@@ -303,20 +300,9 @@ const getAddresses = (billing: AddressUpdate, shipping?: AddressUpdate) => {
   return addresses;
 };
 
-// CUSTOM VALIDATION FOR STEPS
-const validateAccountSteps = async (steps: number[]) => {
-  const formValidation = await form?.validate();
-  const errors = Object.keys(formValidation?.errors || {});
-  const stepKeys = steps.map((step) => stepValidationMap[step]);
-  const stepErrors = errors.filter((error) =>
-    stepKeys.some((stepKey) => stepKey && error.includes(stepKey)),
-  );
-  return stepErrors.length === 0;
-};
-
 // STEP ACTIONS
 const saveAccountDetails = async () => {
-  const stepValid = await validateAccountSteps([1]);
+  const stepValid = await validateSteps([1]);
 
   if (stepValid) {
     validateOnChange.value = false;
@@ -343,7 +329,7 @@ const saveAccountDetails = async () => {
 // CUSTOM CREATE/UPDATE WITH ADDITIONAL VALIDATION
 const handleCreateAccount = async () => {
   await createEntity(async () => {
-    const stepsValid = await validateAccountSteps([1, 2]);
+    const stepsValid = await validateSteps([1, 2]);
     if (!stepsValid) {
       validateOnChange.value = true;
       return false;
@@ -355,7 +341,7 @@ const handleCreateAccount = async () => {
 
 const handleUpdateAccount = async () => {
   await updateEntity(async () => {
-    const stepsValid = await validateAccountSteps([1]);
+    const stepsValid = await validateSteps([1]);
     if (!stepsValid) {
       validateOnChange.value = true;
       return false;
@@ -365,7 +351,7 @@ const handleUpdateAccount = async () => {
   });
 };
 
-// ...existing code for users, buyers, VAT validation, addresses...
+// SALES REPS MANAGEMENT
 const users = ref<User[]>([]);
 const { useGeinsFetch } = useGeinsApi();
 
@@ -383,7 +369,6 @@ const fetchUsers = async () => {
 fetchUsers();
 
 // BUYERS MANAGEMENT
-let refreshData = async () => {};
 const buyersList = ref<WholesaleBuyer[]>([]);
 const buyerPanelOpen = ref(false);
 const buyerToEdit = ref<WholesaleBuyer | undefined>();
@@ -414,7 +399,7 @@ watch(buyerPanelOpen, async (open) => {
   if (!open) {
     buyerToEdit.value = undefined;
     buyerPanelMode.value = 'add';
-    await refreshData();
+    await refreshEntityData.value();
   }
 });
 
@@ -499,35 +484,39 @@ const hasShippingAddress = computed(() => {
 
 const saveAddress = async (address: AddressUpdate) => {
   const isNewShipping = !address._id && address.addressType === 'shipping';
-  if (isNewShipping) {
-    entityDataUpdate.value?.addresses?.push(address);
 
-    entityDataUpdate.value?.addresses?.map((addr) => {
-      if (addr.addressType === 'billingandshipping') {
-        addr.addressType = 'billing';
-      }
-      return addr;
-    });
-  } else {
-    const updatedAddresses = entityDataUpdate.value?.addresses?.map((addr) => {
-      if (addr._id === address._id) {
-        return { ...addr, ...address };
-      }
-      return addr;
-    });
-    entityDataUpdate.value.addresses = updatedAddresses;
-  }
-  if (address.addressType?.includes('billing')) {
-    billingAddress.value = address;
-  } else {
+  if (isNewShipping) {
+    // Update local refs first
     shippingAddress.value = address;
     addShippingAddress.value = true;
+
+    // Regenerate addresses using the helper function
+    entityDataUpdate.value.addresses = getAddresses(
+      billingAddress.value,
+      shippingAddress.value,
+    );
+  } else {
+    // Update existing address
+    const updatedAddresses: AddressUpdate[] | undefined =
+      entityDataUpdate.value?.addresses?.map((addr) => {
+        if (addr._id === address._id) {
+          return { ...addr, ...address };
+        }
+        return addr;
+      });
+    entityDataUpdate.value.addresses = updatedAddresses;
+
+    // Update local refs
+    if (address.addressType?.includes('billing')) {
+      billingAddress.value = address;
+    } else {
+      shippingAddress.value = address;
+      addShippingAddress.value = true;
+    }
   }
 };
 
-const { getEntityNameById } = useEntity();
 // SUMMARY DATA
-
 const summary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   if (!createMode.value) {
@@ -601,46 +590,7 @@ if (!createMode.value) {
     geinsLogError('error fetching wholesale account:', error.value);
   }
 
-  refreshData = refresh;
-
-  watch(
-    data,
-    async (newData) => {
-      if (newData) {
-        await parseAndSaveData(newData);
-        await nextTick();
-        setupColumns();
-      }
-    },
-    { immediate: true },
-  );
-
-  const { data: tagsData, error: tagsError } = await useAsyncData<string[]>(
-    () => wholesaleApi.account.tags.get(),
-  );
-  if (tagsError.value) {
-    geinsLogError('error fetching tags:', tagsError.value);
-  }
-
-  if (tagsData.value) {
-    const extractedTags = extractAccountGroupsfromTags(tagsData.value);
-    accountTags.value = extractedTags.map((tag) => ({
-      _id: tag,
-      name: tag,
-    }));
-  }
-}
-
-// LOAD DATA FOR EDIT MODE
-if (!createMode.value) {
-  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
-    wholesaleApi.account.get(String(route.params.id)),
-  );
-  if (error.value) {
-    geinsLogError('error fetching wholesale account:', error.value);
-  }
-
-  refreshData = refresh;
+  refreshEntityData.value = refresh;
 
   watch(
     data,
@@ -702,7 +652,7 @@ const { summaryProps } = useEntityEditSummary({
 
   <ContentEditWrap>
     <template #header>
-      <ContentHeader :title="title" :entity-name="entityName">
+      <ContentHeader :title="entityPageTitle" :entity-name="entityName">
         <ContentActionBar>
           <ButtonIcon
             v-if="!createMode"
@@ -1073,11 +1023,7 @@ const { summaryProps } = useEntityEditSummary({
         </KeepAlive>
         <KeepAlive>
           <ContentEditMainContent v-if="currentTab === 2">
-            <ContentEditCard
-              :create-mode="false"
-              :title="t('settings')"
-              description="Settings for this account"
-            >
+            <ContentEditCard :create-mode="false" :title="t('settings')">
               <div class="space-y-4">
                 <ContentCardHeader
                   title="VAT settings"

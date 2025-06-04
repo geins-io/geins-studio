@@ -37,6 +37,7 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
       items: groups,
       entityName: 'account_group',
       formatter: (group) => `${group}`,
+      t,
     });
 
     const buyers = createTooltip({
@@ -44,14 +45,15 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
       entityName: 'buyer',
       formatter: (buyer) =>
         `${buyer.firstName} ${buyer.lastName} (${buyer._id})`,
+      t,
     });
 
     const salesReps = createTooltip({
       items: account.salesReps,
       entityName: 'sales_rep',
       formatter: (salesRep) => `${salesRep?.firstName} ${salesRep?.lastName}`,
+      t,
     });
-
     return {
       ...account,
       accountGroups,

@@ -34,6 +34,7 @@ export interface EntityEditOptions<
     entityDataUpdate: Ref<TUpdate> | ComputedRef<TUpdate>,
     createMode: Ref<boolean> | ComputedRef<boolean>,
   ) => Promise<void> | void;
+  stepValidationMap?: Record<number, string>;
   debounceMs?: number;
 }
 
@@ -62,11 +63,20 @@ export function useEntityEdit<
     route.params.id === (options.newEntityUrlAlias || newEntityUrlAlias),
   );
   const loading = ref(false);
+  const refreshEntityData = ref<() => Promise<void>>(() => Promise.resolve());
+
   // Entity data
   const entityDataCreate = ref<TCreate>(options.initialEntityData);
   const entityDataUpdate = ref<TUpdate>(options.initialUpdateData);
   const entityData = computed(() =>
     createMode.value ? entityDataCreate.value : entityDataUpdate.value,
+  );
+
+  const entityPageTitle = computed(() =>
+    createMode.value
+      ? t('new_entity', { entityName }) +
+        (entityData.value?.name ? ': ' + entityData.value.name : '')
+      : entityData.value?.name || t('edit_entity', { entityName }),
   );
 
   // Original data tracking for unsaved changes
@@ -128,13 +138,14 @@ export function useEntityEdit<
   // Step validation
   const validateSteps = async (
     steps: number[],
-    stepValidationMap: Record<number, string>,
+    stepValidationMap?: Record<number, string>,
   ) => {
     if (!form) return true;
 
     formValidation.value = await form.validate();
     const errors = Object.keys(formValidation.value.errors);
-    const stepKeys = steps.map((step) => stepValidationMap[step]);
+    const mapToUse = stepValidationMap || options.stepValidationMap || {};
+    const stepKeys = steps.map((step) => mapToUse[step]);
     const stepErrors = errors.filter((error) =>
       stepKeys.some((stepKey) => stepKey && error.includes(stepKey)),
     );
@@ -264,9 +275,11 @@ export function useEntityEdit<
     entityListUrl,
 
     // Entity data
+    refreshEntityData,
     entityDataCreate,
     entityDataUpdate,
     entityData,
+    entityPageTitle,
 
     // Form
     form,
