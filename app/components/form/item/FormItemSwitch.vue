@@ -15,9 +15,14 @@ const modelValue = defineModel<boolean>();
 </script>
 <template>
   <FormItem
-    class="flex flex-row items-center justify-between gap-4 rounded-lg border p-4 text-sm"
+    :class="
+      cn(
+        'flex flex-row items-center justify-between gap-4 rounded-lg border p-4 text-sm',
+        disabled ? 'border-color-border/80' : '',
+      )
+    "
   >
-    <div class="text-left">
+    <div :class="cn('text-left', disabled ? 'opacity-60' : '')">
       <FormLabel class="text-sm font-semibold">{{ label }}</FormLabel>
       <FormDescription class="mt-1 text-xs text-muted-foreground">
         {{ description }}

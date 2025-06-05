@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ColumnOptions, StringKeyOf } from '#shared/types';
+import type { ColumnOptions } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 type Entity = WholesalePricelist;

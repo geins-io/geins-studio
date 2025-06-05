@@ -7,7 +7,7 @@ const props = withDefaults(defineProps<EntityEditSummary>(), {
   formTouched: false,
   summary: () => [],
   settingsSummary: () => [],
-  liveStatus: false,
+  entityLiveStatus: false,
 });
 
 const { t } = useI18n();
@@ -21,16 +21,16 @@ const description = computed(() => {
 });
 
 const activeDescription = computed(() => {
-  if (active.value && props.liveStatus) {
+  if (active.value && props.entityLiveStatus) {
     return t('entity_is_active', { entityName: props.entityName });
   }
-  if (!active.value && !props.liveStatus) {
+  if (!active.value && !props.entityLiveStatus) {
     return t('entity_is_inactive', { entityName: props.entityName });
   }
-  if (active.value && !props.liveStatus) {
+  if (active.value && !props.entityLiveStatus) {
     return t('entity_will_activate', { entityName: props.entityName });
   }
-  if (!active.value && props.liveStatus) {
+  if (!active.value && props.entityLiveStatus) {
     return t('entity_will_deactivate', { entityName: props.entityName });
   }
   return '';
@@ -42,9 +42,9 @@ const activeDescription = computed(() => {
       <ContentCardHeader :title="t('summary')" :description="description" />
       <Badge
         v-if="!createMode"
-        :variant="liveStatus ? 'positive' : 'secondary'"
+        :variant="entityLiveStatus ? 'positive' : 'secondary'"
       >
-        {{ liveStatus ? t('active') : t('inactive') }}
+        {{ entityLiveStatus ? t('active') : t('inactive') }}
       </Badge>
     </div>
     <slot name="before-active-switch" />

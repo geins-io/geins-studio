@@ -64,6 +64,7 @@ export function useEntityEdit<
   );
   const loading = ref(false);
   const refreshEntityData = ref<() => Promise<void>>(() => Promise.resolve());
+  const entityLiveStatus = ref<boolean>(false);
 
   // Entity data
   const entityDataCreate = ref<TCreate>(options.initialEntityData);
@@ -224,7 +225,8 @@ export function useEntityEdit<
         return;
       }
       const result = await options.repository.update(id, updateData);
-      await parseAndSaveData(result);
+      const newData = result ?? (await options.repository.get(id));
+      await parseAndSaveData(newData);
 
       toast({
         title: t('entity_updated', { entityName }),
@@ -276,6 +278,7 @@ export function useEntityEdit<
 
     // Entity data
     refreshEntityData,
+    entityLiveStatus,
     entityDataCreate,
     entityDataUpdate,
     entityData,

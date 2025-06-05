@@ -115,7 +115,7 @@ export interface CurrencyConverted<T> {
   [currency: string]: T;
 }
 
-export interface Product extends EntityBase {
+export interface ProductBase {
   productId: number;
   name: string;
   slug: string;
@@ -147,6 +147,10 @@ export interface Product extends EntityBase {
   relatedProducts?: RelatedProducts[];
   variantValues?: VariantValues;
 }
+
+export type ProductCreate = CreateEntity<ProductBase>;
+export type ProductUpdate = UpdateEntity<ProductBase>;
+export type Product = ResponseEntity<ProductBase>;
 
 export interface Brand extends EntityBase {
   active: boolean;

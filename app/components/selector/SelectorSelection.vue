@@ -57,21 +57,21 @@ const selectorOptions: Ref<SelectorSelectionOption[]> = computed(() => {
       group: 'brandIds',
       label: t('entity_caps', { entityName: 'brand' }, 2),
     },
-    {
-      id: 'price',
-      group: 'price',
-      label: t('entity_caps', { entityName: 'price' }),
-    },
-    {
-      id: 'stock',
-      group: 'stock',
-      label: t('entity_caps', { entityName: 'stock' }),
-    },
-    {
-      id: 'import',
-      group: 'ids',
-      label: t('entity_caps', { entityName: 'import' }),
-    },
+    // {
+    //   id: 'price',
+    //   group: 'price',
+    //   label: t('entity_caps', { entityName: 'price' }),
+    // },
+    // {
+    //   id: 'stock',
+    //   group: 'stock',
+    //   label: t('entity_caps', { entityName: 'stock' }),
+    // },
+    // {
+    //   id: 'import',
+    //   group: 'ids',
+    //   label: t('entity_caps', { entityName: 'import' }),
+    // },
   ];
 
   const filteredOptions =

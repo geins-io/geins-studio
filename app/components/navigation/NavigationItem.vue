@@ -98,7 +98,8 @@ const route = useRoute();
 const isActive = computed(() => {
   return route.path === item.value.href;
 });
-watch(
+
+const routeWatcher = watch(
   () => route.path,
   (val) => {
     item.value.active = isActive.value;
@@ -110,6 +111,10 @@ watch(
   },
   { immediate: true },
 );
+
+onBeforeUnmount(() => {
+  routeWatcher();
+});
 
 const rootItemClasses = computed(() => {
   return props.root
@@ -129,8 +134,11 @@ const rootItemClasses = computed(() => {
       >
         <NuxtLink :to="item.href" :class="cn(`flex flex-grow items-center`)">
           <!--TODO: solve the issue with clientonly for dynamic icons-->
-          <ClientOnly>
+          <ClientOnly :key="item.label">
             <component :is="item.icon" stroke-width="1.5" class="mr-3 size-5" />
+            <template #fallback>
+              <div class="mr-3 size-5" />
+            </template>
           </ClientOnly>
           <span class="flex grow hover:underline">{{ item.label }}</span>
         </NuxtLink>

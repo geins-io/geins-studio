@@ -40,6 +40,11 @@ const { currentCurrency } = storeToRefs(accountStore);
 const { toast } = useToast();
 const { t } = useI18n();
 const { getFallbackSelection, convertToApiSelections } = useSelector();
+const productsStore = useProductsStore();
+
+if (props.mode == SelectorMode.Advanced) {
+  productsStore.init();
+}
 
 // SETUP REFS FOR INCLUDE/EXCLUDE SELECTION
 const includeSelection = ref<SelectorSelection>(

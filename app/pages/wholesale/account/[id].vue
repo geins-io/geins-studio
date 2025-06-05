@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// IMPORTS
 import type { ColumnDef } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
@@ -17,6 +18,7 @@ const route = useRoute();
 const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
 const accountStore = useAccountStore();
 const { getEntityNameById } = useEntity();
+const { toast } = useToast();
 
 // FORM SCHEMA AND VALIDATION
 const addressSchema = z.object({
@@ -97,11 +99,15 @@ const accountGroups = ref<string[]>([]);
 const accountTags = ref<EntityBaseWithName[]>([]);
 
 // TABS MANAGEMENT
+const currentTab = ref(0);
 const tabs = [
   t('wholesale.account_details'),
   t('wholesale.buyers'),
   t('settings'),
 ];
+const showSidebar = computed(() => {
+  return currentTab.value !== 1;
+});
 
 // STEP MANAGEMENT
 const totalCreateSteps = 2;
@@ -112,6 +118,9 @@ const stepValidationMap: Record<number, string> = {
   1: 'details',
   2: addShippingAddress.value ? 'addresses' : 'billing',
 };
+
+// FORM VALIDATION
+const createDisabled = ref(true);
 
 // ENTITY EDIT COMPOSABLE
 const {
@@ -124,6 +133,7 @@ const {
   entityDataUpdate,
   entityData,
   entityPageTitle,
+  entityLiveStatus,
   refreshEntityData,
   form,
   formValid,
@@ -164,7 +174,7 @@ const {
   }),
   parseEntityData: async (account: WholesaleAccount) => {
     buyersList.value = account.buyers || [];
-    liveStatus.value = entityDataUpdate.value?.active || false;
+    entityLiveStatus.value = entityDataUpdate.value?.active || false;
     accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
 
     billingAddress.value = {
@@ -266,17 +276,6 @@ const {
 // DELETE FUNCTIONALITY
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
   useDeleteDialog(deleteEntity, entityListUrl);
-
-// TAB MANAGEMENT
-const currentTab = ref(0);
-const liveStatus = ref(true);
-
-const showSidebar = computed(() => {
-  return currentTab.value !== 1;
-});
-
-// FORM VALIDATION
-const createDisabled = ref(true);
 
 // HELPER FUNCTIONS
 const getAddresses = (
@@ -466,7 +465,6 @@ const confirmAddressDelete = async () => {
   };
   addShippingAddress.value = false;
 
-  const { toast } = useToast();
   toast({
     title: t('entity_deleted', { entityName: 'shipping_address' }),
     variant: 'positive',
@@ -581,13 +579,26 @@ const settingsSummary = computed<DataItem[]>(() => {
   return dataList;
 });
 
+const { summaryProps } = useEntityEditSummary({
+  createMode,
+  formTouched,
+  summary,
+  settingsSummary,
+  entityName,
+  entityLiveStatus,
+});
+
 // LOAD DATA FOR EDIT MODE
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
     wholesaleApi.account.get(String(route.params.id)),
   );
   if (error.value) {
-    geinsLogError('error fetching wholesale account:', error.value);
+    toast({
+      title: t(`error_fetching_entity`, { entityName }),
+      description: t('feedback_error_description'),
+      variant: 'negative',
+    });
   }
 
   refreshEntityData.value = refresh;
@@ -619,15 +630,6 @@ if (!createMode.value) {
     }));
   }
 }
-
-const { summaryProps } = useEntityEditSummary({
-  createMode,
-  formTouched,
-  summary,
-  settingsSummary,
-  entityName,
-  liveStatus,
-});
 </script>
 
 <template>
@@ -693,11 +695,14 @@ const { summaryProps } = useEntityEditSummary({
     <form @submit.prevent>
       <ContentEditMain :show-sidebar="showSidebar">
         <KeepAlive>
-          <ContentEditMainContent v-if="currentTab === 0">
+          <ContentEditMainContent
+            v-if="currentTab === 0"
+            :key="`tab-${currentTab}`"
+          >
             <ContentEditCard
               :create-mode="createMode"
               :step="1"
-              :total-steps="2"
+              :total-steps="totalCreateSteps"
               :current-step="currentStep"
               :step-valid="formValid"
               :title="$t('wholesale.account_details')"
@@ -856,7 +861,7 @@ const { summaryProps } = useEntityEditSummary({
             <ContentEditCard
               :create-mode="createMode"
               :step="2"
-              :total-steps="2"
+              :total-steps="totalCreateSteps"
               :current-step="currentStep"
               :title="$t('wholesale.billing_shipping_addresses')"
               @previous="previousStep"
@@ -973,7 +978,10 @@ const { summaryProps } = useEntityEditSummary({
           </ContentEditMainContent>
         </KeepAlive>
         <KeepAlive>
-          <ContentEditMainContent v-if="currentTab === 1">
+          <ContentEditMainContent
+            v-if="currentTab === 1"
+            :key="`tab-${currentTab}`"
+          >
             <ContentEditCard
               v-if="currentTab === 1"
               :create-mode="createMode"
@@ -1022,7 +1030,10 @@ const { summaryProps } = useEntityEditSummary({
           </ContentEditMainContent>
         </KeepAlive>
         <KeepAlive>
-          <ContentEditMainContent v-if="currentTab === 2">
+          <ContentEditMainContent
+            v-if="currentTab === 2"
+            :key="`tab-${currentTab}`"
+          >
             <ContentEditCard :create-mode="false" :title="t('settings')">
               <div class="space-y-4">
                 <ContentCardHeader

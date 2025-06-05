@@ -5,5 +5,5 @@ export interface EntityEditSummary {
   summary?: DataItem[];
   settingsSummary?: DataItem[];
   entityName?: string;
-  liveStatus?: boolean;
+  entityLiveStatus?: boolean;
 }

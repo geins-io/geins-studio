@@ -48,6 +48,7 @@ export default defineI18nLocale(async () => {
     error_updating_entity: 'Something went wrong while updating @:{entityName}',
     error_adding_entity: 'Something went wrong while adding @:{entityName}',
     error_loading_entity: 'Something went wrong while loading @:{entityName}',
+    error_fetching_entity: 'Something went wrong while fetching @:{entityName}',
     quick_add_entity: 'Quick add @:{entityName}..',
     no_entity_found: 'No @:{entityName} found.',
     no_entity: 'No @:{entityName}',
@@ -99,6 +100,7 @@ export default defineI18nLocale(async () => {
     remove: 'Remove',
     status: 'Status',
     settings: 'Settings',
+    created: 'Created',
     page_of: 'Page {page} of {total}',
     email: 'Email',
     password: 'Password',
@@ -204,6 +206,7 @@ export default defineI18nLocale(async () => {
       address: 'Address',
       pricelist_channel: 'Channel',
       pricelist_currency: 'Currency',
+      pricelist_forced: 'Override prices',
     },
   };
 });

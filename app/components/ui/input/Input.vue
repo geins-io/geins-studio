@@ -36,7 +36,7 @@ const slots = useSlots();
 </script>
 
 <template>
-  <div class="relative">
+  <div class="relative w-full">
     <LucideLoaderCircle
       v-if="loading"
       class="absolute right-3 top-2 animate-spin"

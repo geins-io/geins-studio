@@ -4,19 +4,20 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { useI18n } from '#imports';
 import * as z from 'zod';
 import type { AcceptableValue } from 'reka-ui';
+import { useToast } from '@/components/ui/toast/use-toast';
+import { SelectorSelectionStrategy } from '#shared/types';
 
-// GLOBALS
+// COMPOSABLES
 const route = useRoute();
 const { t } = useI18n();
-const totalSteps = 2; // Total number of steps in the create form
-const { currentStep, nextStep, previousStep } = useStepManagement(totalSteps);
 const { $geinsApi } = useNuxtApp();
-const productApi = repo.product($geinsApi);
 const accountStore = useAccountStore();
+const { toast } = useToast();
 
+// GLOBALS
+const productApi = repo.product($geinsApi);
 const { channels, currentCurrencies, currentChannelId, currentCurrency } =
   storeToRefs(accountStore);
-const selectableCurrencies = ref(currentCurrencies.value.map((i) => i._id));
 
 // FORM VALIDATION SCHEMA
 const formSchema = toTypedSchema(
@@ -28,14 +29,16 @@ const formSchema = toTypedSchema(
       name: z.string().min(1, 'Name is required'),
       channel: z.string().min(1, 'Channel is required'),
       currency: z.string().min(1, 'Currency is required'),
+      forced: z.boolean().optional(),
+      autoAddProducts: z.boolean().optional(),
     }),
   }),
 );
 
-// BASE DATA STRUCTURE
+// ENTITY DATA SETUP
 const entityBase: WholesalePricelistCreate = {
   name: '',
-  active: true,
+  active: false,
   channel: currentChannelId.value || '',
   currency: currentCurrency.value || '',
   dateCreated: '',
@@ -45,7 +48,26 @@ const entityBase: WholesalePricelistCreate = {
   products: [],
 };
 
-// SETUP EDIT ENTITY COMPOSABLE
+const selectableCurrencies = ref(currentCurrencies.value.map((i) => i._id));
+
+// TABS MANAGEMENT
+const currentTab = ref(0);
+const tabs = ['General', 'Products & Pricing'];
+const showSidebar = computed(() => {
+  return true;
+});
+
+// STEP MANAGEMENT
+const totalCreateSteps = 2;
+const { currentStep, nextStep, previousStep } =
+  useStepManagement(totalCreateSteps);
+
+const stepValidationMap: Record<number, string> = {
+  1: 'vat',
+  2: 'default',
+};
+
+// ENTITY EDIT COMPOSABLE
 const {
   entityName,
   createMode,
@@ -55,6 +77,9 @@ const {
   entityDataCreate,
   entityDataUpdate,
   entityData,
+  entityPageTitle,
+  entityLiveStatus,
+  refreshEntityData,
   form,
   formValid,
   formTouched,
@@ -76,25 +101,31 @@ const {
   validationSchema: formSchema,
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
+  stepValidationMap,
   getInitialFormValues: (entityData) => ({
     vat: {
-      exVat: entityData.exVat || false,
+      exVat: entityData.exVat,
     },
     default: {
       name: entityData.name || '',
       channel: entityData.channel || '',
       currency: entityData.currency || '',
+      forced: entityData.forced,
+      autoAddProducts: entityData.autoAddProducts,
     },
   }),
   parseEntityData: (entity) => {
+    entityLiveStatus.value = entityDataUpdate.value?.active || false;
     form.setValues({
       vat: {
-        exVat: entity.exVat || false,
+        exVat: entity.exVat,
       },
       default: {
         name: entity.name || '',
         channel: entity.channel || '',
         currency: entity.currency || '',
+        forced: entity.forced,
+        autoAddProducts: entity.autoAddProducts,
       },
     });
   },
@@ -134,6 +165,7 @@ const {
   },
 });
 
+// FORM VALUE WATCHERS
 watch(
   currentChannelId,
   (newChannelId) => {
@@ -186,36 +218,9 @@ const handleChannelChange = async (value: AcceptableValue) => {
   }
 };
 
-const title = computed(() =>
-  createMode.value
-    ? t('new_entity', { entityName }) +
-      (entityData.value?.name ? ': ' + entityData.value.name : '')
-    : entityData.value?.name || t('edit_entity', { entityName }),
-);
-
-// Delete functionality
+// DELETE FUNCTIONALITY
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
   useDeleteDialog(deleteEntity, '/wholesale/pricelist/list');
-
-// Tabs
-const liveStatus = ref(true);
-const currentTab = ref(0);
-const tabs = ['General', 'Products & Pricing'];
-
-// Load data for edit mode
-if (!createMode.value) {
-  const { data, error } = await useAsyncData<WholesalePricelist>(() =>
-    productApi.pricelist.get(String(route.params.id)),
-  );
-
-  if (error.value) {
-    console.error('Error fetching pricelist:', error.value);
-  }
-
-  if (data.value) {
-    await parseAndSaveData(data.value);
-  }
-}
 
 // Form submission
 const handleSave = () => {
@@ -227,7 +232,6 @@ const handleSave = () => {
 };
 
 // SUMMARY DATA
-
 const summary = computed<DataItem[]>(() => {
   if (createMode.value && currentStep.value === 1) {
     return [];
@@ -265,9 +269,23 @@ const summary = computed<DataItem[]>(() => {
   }
 
   dataList.push({
-    label: 'VAT',
+    label: t('wholesale.pricelist_forced'),
+    value: entityData.value?.forced ? 'Yes' : 'No',
+  });
+
+  dataList.push({
+    label: 'VAT config',
     value: entityData.value?.exVat ? 'Ex VAT' : 'Inc VAT',
   });
+
+  if (!createMode.value) {
+    const date = new Date(entityData.value?.dateCreated || '');
+    const formatted = date.toLocaleDateString('sv-SE');
+    dataList.push({
+      label: t('created'),
+      value: formatted,
+    });
+  }
   return dataList;
 });
 
@@ -276,6 +294,44 @@ const settingsSummary = computed<DataItem[]>(() => {
 
   return dataList;
 });
+
+const { summaryProps } = useEntityEditSummary({
+  createMode,
+  formTouched,
+  summary,
+  settingsSummary,
+  entityName,
+  entityLiveStatus,
+});
+
+// LOAD DATA FOR EDIT MODE
+if (!createMode.value) {
+  const { data, error, refresh } = await useAsyncData<WholesalePricelist>(() =>
+    productApi.pricelist.get(String(route.params.id)),
+  );
+
+  if (error.value) {
+    toast({
+      title: t(`error_fetching_entity`, { entityName }),
+      description: t('feedback_error_description'),
+      variant: 'negative',
+    });
+  }
+
+  refreshEntityData.value = refresh;
+
+  if (data.value) {
+    await parseAndSaveData(data.value);
+  }
+}
+
+// PRODUCT SELECTOR
+const productsStore = useProductsStore();
+productsStore.init();
+const { products } = storeToRefs(productsStore);
+
+const { getEmptySelectionBase } = useSelector();
+const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
 </script>
 
 <template>
@@ -294,7 +350,7 @@ const settingsSummary = computed<DataItem[]>(() => {
 
   <ContentEditWrap>
     <template #header>
-      <ContentHeader :title="title" :entity-name="entityName">
+      <ContentHeader :title="entityPageTitle" :entity-name="entityName">
         <ContentActionBar>
           <ButtonIcon
             v-if="!createMode"
@@ -333,137 +389,218 @@ const settingsSummary = computed<DataItem[]>(() => {
       </ContentHeader>
     </template>
 
-    <form @submit.prevent="handleSave">
-      <KeepAlive>
-        <ContentEditMain v-if="currentTab === 0">
-          <ContentEditCard
-            v-if="createMode"
-            title="Pricelist VAT"
-            description="Set if the pricelist should be created with prices ex or inc VAT. Cannot be changed upon creation. Ex VAT prices are calculated from the VAT rate set on your default country set in Geins"
-            :step="1"
-            :total-steps="totalSteps"
-            :create-mode="createMode"
-            :current-step="currentStep"
-            :step-valid="true"
-            @next="nextStep"
+    <form @submit.prevent>
+      <ContentEditMain :show-sidebar="showSidebar">
+        <KeepAlive>
+          <ContentEditMainContent
+            v-if="currentTab === 0"
+            :key="`tab-${currentTab}`"
           >
-            <FormGridWrap>
-              <FormGrid design="1">
-                <FormField v-slot="{ value, handleChange }" name="vat.exVat">
-                  <FormItemSwitch
-                    label="Enter prices ex VAT"
-                    description="Create this pricelist with prices ex VAT. Cannot be changed upon creation."
-                    :model-value="value"
-                    @update:model-value="handleChange"
-                  />
-                </FormField>
-              </FormGrid>
-            </FormGridWrap>
-          </ContentEditCard>
-          <ContentEditCard
-            title="Pricelist details"
-            :step="2"
-            :total-steps="totalSteps"
-            :create-mode="createMode"
-            :current-step="currentStep"
-            :step-valid="formValid"
-            @previous="previousStep"
-          >
-            <FormGridWrap>
-              <FormGrid design="1+1+1">
-                <FormField v-slot="{ componentField }" name="default.name">
-                  <FormItem v-auto-animate>
-                    <FormLabel>{{
-                      $t('entity_name', { entityName })
-                    }}</FormLabel>
-                    <FormControl>
-                      <Input v-bind="componentField" type="text" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-                <FormField v-slot="{ componentField }" name="default.channel">
-                  <FormItem v-auto-animate>
-                    <FormLabel>
-                      {{ $t('wholesale.pricelist_channel') }}
-                    </FormLabel>
-                    <FormControl>
-                      <Select
-                        v-bind="componentField"
-                        @update:model-value="handleChannelChange"
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem
-                            v-for="channel in channels"
-                            :key="channel._id"
-                            :value="channel._id"
-                          >
-                            {{ channel.name }}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-                <FormField v-slot="{ componentField }" name="default.currency">
-                  <FormItem v-auto-animate>
-                    <FormLabel>
-                      {{ $t('wholesale.pricelist_currency') }}
-                    </FormLabel>
-                    <FormControl>
-                      <Select v-bind="componentField">
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem
-                            v-for="currency in selectableCurrencies"
-                            :key="currency"
-                            :value="currency"
-                          >
-                            {{ currency }}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-              </FormGrid>
-            </FormGridWrap>
-          </ContentEditCard>
-          <div v-if="createMode" class="flex flex-row justify-end gap-4">
-            <Button variant="secondary" as-child>
-              <NuxtLink :to="entityListUrl">
-                {{ $t('cancel') }}
-              </NuxtLink>
-            </Button>
-            <Button
-              :loading="loading"
-              :disabled="!formValid || loading"
-              @click="createEntity"
-            >
-              {{ $t('create_entity', { entityName }) }}
-            </Button>
-          </div>
-          <template #sidebar>
-            <ContentEditSummary
-              v-model:active="entityDataUpdate.active"
-              :entity-name="entityName"
+            <ContentEditCard
+              v-if="createMode"
+              title="Price VAT configuration"
+              description="Set if the pricelist should be created with prices ex or inc VAT. Cannot be changed upon creation. Ex VAT prices are calculated from the VAT rate set on your default country set in Geins"
+              :step="1"
+              :total-steps="totalCreateSteps"
               :create-mode="createMode"
-              :form-touched="formTouched"
-              :live-status="liveStatus"
-              :summary="summary"
-              :settings-summary="settingsSummary"
+              :current-step="currentStep"
+              :step-valid="true"
+              @next="nextStep"
+            >
+              <FormGridWrap>
+                <FormGrid design="1">
+                  <FormField v-slot="{ value, handleChange }" name="vat.exVat">
+                    <FormItemSwitch
+                      label="Enter prices ex VAT"
+                      description="Create this pricelist with prices ex VAT. Cannot be changed upon creation."
+                      :model-value="value"
+                      @update:model-value="handleChange"
+                    />
+                  </FormField>
+                </FormGrid>
+              </FormGridWrap>
+            </ContentEditCard>
+            <ContentEditCard
+              title="Pricelist details"
+              :step="2"
+              :total-steps="totalCreateSteps"
+              :create-mode="createMode"
+              :current-step="currentStep"
+              :step-valid="formValid"
+              @previous="previousStep"
+            >
+              <FormGridWrap>
+                <FormGrid design="1+1+1">
+                  <FormField v-slot="{ componentField }" name="default.name">
+                    <FormItem v-auto-animate>
+                      <FormLabel>{{
+                        $t('entity_name', { entityName })
+                      }}</FormLabel>
+                      <FormControl>
+                        <Input v-bind="componentField" type="text" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                  <FormField v-slot="{ componentField }" name="default.channel">
+                    <FormItem v-auto-animate>
+                      <FormLabel>
+                        {{ $t('wholesale.pricelist_channel') }}
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          v-bind="componentField"
+                          @update:model-value="handleChannelChange"
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem
+                              v-for="channel in channels"
+                              :key="channel._id"
+                              :value="channel._id"
+                            >
+                              {{ channel.name }}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="default.currency"
+                  >
+                    <FormItem v-auto-animate>
+                      <FormLabel>
+                        {{ $t('wholesale.pricelist_currency') }}
+                      </FormLabel>
+                      <FormControl>
+                        <Select v-bind="componentField">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem
+                              v-for="currency in selectableCurrencies"
+                              :key="currency"
+                              :value="currency"
+                            >
+                              {{ currency }}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+              </FormGridWrap>
+
+              <FormGridWrap class="border-t pt-6">
+                <ContentCardHeader
+                  title="Product and prices options"
+                  size="md"
+                  heading-level="h3"
+                />
+                <FormGrid design="1">
+                  <FormField
+                    v-slot="{ value, handleChange }"
+                    name="default.forced"
+                  >
+                    <FormItemSwitch
+                      label="Override prices"
+                      description="If enabled, the pricelist's prices will override lower available prices such as campaigns and sale prices."
+                      :model-value="value"
+                      @update:model-value="handleChange"
+                    />
+                  </FormField>
+                </FormGrid>
+                <FormGrid design="1">
+                  <FormField
+                    v-slot="{ value, handleChange }"
+                    name="default.autoAddProducts"
+                  >
+                    <FormItemSwitch
+                      label="Automatically add products"
+                      description="If enabled, products of selected categories or brands will be automatically added to the pricelist."
+                      :disabled="true"
+                      :model-value="value"
+                      @update:model-value="handleChange"
+                    />
+                  </FormField>
+                </FormGrid>
+              </FormGridWrap>
+            </ContentEditCard>
+            <div v-if="createMode" class="flex flex-row justify-end gap-4">
+              <Button variant="secondary" as-child>
+                <NuxtLink :to="entityListUrl">
+                  {{ $t('cancel') }}
+                </NuxtLink>
+              </Button>
+              <Button
+                :loading="loading"
+                :disabled="!formValid || loading"
+                @click="createEntity"
+              >
+                {{ $t('create_entity', { entityName }) }}
+              </Button>
+            </div>
+          </ContentEditMainContent>
+        </KeepAlive>
+        <KeepAlive>
+          <ContentEditMainContent
+            v-if="currentTab === 1 && !createMode"
+            :key="`tab-${currentTab}`"
+          >
+            <ContentEditCard
+              title="Full range adjustments"
+              description="Calculates lists priced based on either margin or discount. Will apply value to all rows."
+              :create-mode="createMode"
+              :step-valid="true"
+            >
+              <Tabs default-value="margin">
+                <TabsList>
+                  <TabsTrigger value="margin"> Margin </TabsTrigger>
+                  <TabsTrigger value="discount"> Discount </TabsTrigger>
+                </TabsList>
+                <TabsContent value="margin" class="pt-2">
+                  <Label>Margin %</Label>
+                  <div class="flex w-1/3 gap-2">
+                    <Input />
+                    <Button variant="outline" size="lg"> Apply</Button>
+                  </div>
+                </TabsContent>
+                <TabsContent value="discount" class="pt-2">
+                  <Label>Discount %</Label>
+                  <div class="flex w-1/3 gap-2">
+                    <Input />
+                    <Button variant="outline" size="lg"> Apply</Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </ContentEditCard>
+          </ContentEditMainContent>
+        </KeepAlive>
+        <template #sidebar>
+          <ContentEditSummary
+            v-model:active="entityDataUpdate.active"
+            v-bind="summaryProps"
+          />
+        </template>
+        <template v-if="currentTab === 1 && !createMode" #secondary>
+          <ContentEditCard :create-mode="createMode">
+            <Selector
+              v-if="products.length"
+              v-model:selection="selection"
+              :entities="products"
+              :selection-strategy="SelectorSelectionStrategy.None"
             />
-          </template>
-        </ContentEditMain>
-      </KeepAlive>
-      <!-- Add more tabs as needed -->
+          </ContentEditCard>
+        </template>
+      </ContentEditMain>
     </form>
   </ContentEditWrap>
 </template>

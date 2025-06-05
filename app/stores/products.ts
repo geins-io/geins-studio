@@ -2,7 +2,9 @@ import { defineStore } from 'pinia';
 import type { Product, Category, Brand } from '#shared/types';
 export const useProductsStore = defineStore('products', () => {
   const { geinsLogWarn } = useGeinsLog('store/products.ts');
-  const api = repo.global(useNuxtApp().$geinsApi);
+  const { $geinsApi } = useNuxtApp();
+  const globalApi = repo.global($geinsApi);
+  const productApi = repo.product($geinsApi);
   const accountStore = useAccountStore();
   const { currentLanguage } = storeToRefs(accountStore);
 
@@ -11,33 +13,36 @@ export const useProductsStore = defineStore('products', () => {
   const categories = ref<Category[]>([]);
   const brands = ref<Brand[]>([]);
   const ready = ref(false);
+  const initialized = ref(false);
 
   // ACTIONS
-  async function fetchProducts(): Promise<Product[]> {
-    const data = await api.product.list.get('localizations,images,prices');
-    products.value = transformProducts(data?.items) as Product[];
+  async function fetchProducts(
+    fields: string = 'localizations,images,prices',
+  ): Promise<Product[]> {
+    const data = await productApi.list({ fields });
+    products.value = transformProducts(data?.items);
     return products.value;
   }
 
   async function fetchCategories(): Promise<Category[]> {
-    const data = await api.category.list.get();
+    const data = await globalApi.category.list.get();
     categories.value = transformCategories(data?.items) as Category[];
     return categories.value;
   }
 
   async function fetchBrands(): Promise<Brand[]> {
-    const data = await api.brand.list.get();
+    const data = await globalApi.brand.list.get();
     brands.value = transformBrands(data?.items) as Brand[];
     return brands.value;
   }
 
   async function init(): Promise<void> {
+    if (initialized.value) return;
     const results = await Promise.allSettled([
-      //fetchProducts(),
+      fetchProducts(),
       fetchCategories(),
       fetchBrands(),
     ]);
-
     ready.value = results.every(
       (result) => result.status === 'fulfilled' && result.value,
     );
@@ -62,6 +67,7 @@ export const useProductsStore = defineStore('products', () => {
         );
       }
     });
+    initialized.value = true;
   }
 
   function reset(): void {

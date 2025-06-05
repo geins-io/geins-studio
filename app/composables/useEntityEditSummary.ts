@@ -6,7 +6,7 @@ interface EntityEditSummaryProps {
   summary: Ref<DataItem[]> | ComputedRef<DataItem[]>;
   settingsSummary: Ref<DataItem[]> | ComputedRef<DataItem[]>;
   entityName: string;
-  liveStatus: Ref<boolean> | ComputedRef<boolean>;
+  entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
 }
 
 export const useEntityEditSummary = (props: EntityEditSummaryProps) => {
@@ -16,7 +16,7 @@ export const useEntityEditSummary = (props: EntityEditSummaryProps) => {
     summary: unref(props.summary),
     settingsSummary: unref(props.settingsSummary),
     entityName: props.entityName,
-    liveStatus: unref(props.liveStatus),
+    entityLiveStatus: unref(props.entityLiveStatus),
   }));
 
   return { summaryProps };

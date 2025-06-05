@@ -205,6 +205,8 @@ const table = useVueTable({
     valueUpdater(updaterOrValue, columnVisibility);
   },
   onRowSelectionChange: (updaterOrValue) => {
+    console.log('🚀 ~ updaterOrValue:', updaterOrValue);
+
     valueUpdater(updaterOrValue, rowSelection);
     emit(
       'selection',
