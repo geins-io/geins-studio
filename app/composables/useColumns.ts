@@ -84,8 +84,9 @@ export const useColumns = <T extends object>() => {
           'data-checkbox': true,
         },
         h(Checkbox, {
-          checked: row.getIsSelected(),
-          'onUpdate:checked': (value: boolean) => row.toggleSelected(!!value),
+          modelValue: row.getIsSelected(),
+          'onUpdate:model-value': (value: boolean) =>
+            row.toggleSelected(!!value),
           ariaLabel: 'Select row',
         }),
       ),

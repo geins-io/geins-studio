@@ -36,7 +36,7 @@ const formSchema = toTypedSchema(
 );
 
 // ENTITY DATA SETUP
-const entityBase: WholesalePricelistCreate = {
+const entityBase: ProductPricelistCreate = {
   name: '',
   active: false,
   channel: currentChannelId.value || '',
@@ -46,9 +46,17 @@ const entityBase: WholesalePricelistCreate = {
   autoAddProducts: false,
   forced: false,
   products: [],
+  rules: [],
+  productSelectionQuery: {
+    include: [],
+    exclude: [],
+  },
 };
 
 const selectableCurrencies = ref(currentCurrencies.value.map((i) => i._id));
+
+const { getEmptySelectionBase } = useSelector();
+let productSelection: SelectorSelectionBase = getEmptySelectionBase();
 
 // TABS MANAGEMENT
 const currentTab = ref(0);
@@ -92,10 +100,10 @@ const {
   deleteEntity,
   parseAndSaveData,
 } = useEntityEdit<
-  WholesalePricelistBase,
-  WholesalePricelist,
-  WholesalePricelistCreate,
-  WholesalePricelistUpdate
+  ProductPricelistBase,
+  ProductPricelist,
+  ProductPricelistCreate,
+  ProductPricelistUpdate
 >({
   repository: productApi.pricelist,
   validationSchema: formSchema,
@@ -114,8 +122,32 @@ const {
       autoAddProducts: entityData.autoAddProducts,
     },
   }),
+  reshapeEntityData: (entityData) => {
+    console.log('🚀 ~ entityData:', entityData.productSelectionQuery);
+    return {
+      ...entityData,
+      productSelectionQuery: JSON.parse(
+        JSON.stringify(entityData.productSelectionQuery),
+      ),
+    };
+  },
   parseEntityData: (entity) => {
     entityLiveStatus.value = entityDataUpdate.value?.active || false;
+    if (entity.productSelectionQuery) {
+      console.log(
+        '🚀 ~ entity.productSelectionQuery:',
+        entity.productSelectionQuery,
+      );
+
+      const cleanData = structuredClone(toRaw(entity.productSelectionQuery));
+      console.log('🚀 ~ cleanData:', cleanData);
+      productSelection = markRaw(cleanData);
+
+      console.log(
+        '🚀 parseEntityData ~ productSelection.value:',
+        productSelection,
+      );
+    }
     form.setValues({
       vat: {
         exVat: entity.exVat,
@@ -129,39 +161,26 @@ const {
       },
     });
   },
-  prepareCreateData: (formData) => {
-    return {
-      ...entityBase,
-      ...formData.vat,
-      ...formData.default,
+
+  prepareCreateData: (formData) => ({
+    ...entityBase,
+    ...formData.vat,
+    ...formData.default,
+  }),
+
+  prepareUpdateData: (formData, entity) => ({
+    ...entity,
+    ...formData.vat,
+    ...formData.default,
+  }),
+
+  onFormValuesChange: (values) => {
+    const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
+    targetEntity.value = {
+      ...entityData.value,
+      ...values.vat,
+      ...values.default,
     };
-  },
-  prepareUpdateData: (formData, entity) => {
-    return {
-      ...entity,
-      ...formData.vat,
-      ...formData.default,
-    };
-  },
-  reshapeEntityData: (entityData) => {
-    return {
-      ...entityData,
-    };
-  },
-  onFormValuesChange: async (values) => {
-    if (createMode.value) {
-      entityDataCreate.value = {
-        ...entityData.value,
-        ...values.vat,
-        ...values.default,
-      };
-    } else {
-      entityDataUpdate.value = {
-        ...entityData.value,
-        ...values.vat,
-        ...values.default,
-      };
-    }
   },
 });
 
@@ -304,10 +323,15 @@ const { summaryProps } = useEntityEditSummary({
   entityLiveStatus,
 });
 
+const productsStore = useProductsStore();
+const { products } = storeToRefs(productsStore);
+
 // LOAD DATA FOR EDIT MODE
 if (!createMode.value) {
-  const { data, error, refresh } = await useAsyncData<WholesalePricelist>(() =>
-    productApi.pricelist.get(String(route.params.id)),
+  const { data, error, refresh } = await useAsyncData<ProductPricelist>(() =>
+    productApi.pricelist.get(String(route.params.id), {
+      fields: 'all',
+    }),
   );
 
   if (error.value) {
@@ -323,15 +347,19 @@ if (!createMode.value) {
   if (data.value) {
     await parseAndSaveData(data.value);
   }
+
+  // PRODUCT SELECTOR
+  productsStore.init();
+
+  watch(
+    productSelection,
+    (newSelection) => {
+      // Ensure we're not making the data reactive when assigning
+      entityDataUpdate.value.productSelectionQuery = newSelection;
+    },
+    { deep: true },
+  );
 }
-
-// PRODUCT SELECTOR
-const productsStore = useProductsStore();
-productsStore.init();
-const { products } = storeToRefs(productsStore);
-
-const { getEmptySelectionBase } = useSelector();
-const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
 </script>
 
 <template>
@@ -594,7 +622,7 @@ const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
           <ContentEditCard :create-mode="createMode">
             <Selector
               v-if="products.length"
-              v-model:selection="selection"
+              v-model:selection="productSelection"
               :entities="products"
               :selection-strategy="SelectorSelectionStrategy.None"
             />

@@ -1,9 +1,9 @@
 export interface Localizations {
-  name: string;
-  text1: string;
-  text2: string;
-  text3: string;
-  slug: string;
+  name?: string;
+  text1?: string;
+  text2?: string;
+  text3?: string;
+  slug?: string;
 }
 
 export interface Sku extends EntityBase {
@@ -141,7 +141,6 @@ export interface ProductBase {
   prices?: CurrencyConverted<ProductPrices>;
   categories?: Category[];
   channels?: string[];
-  media?: Media[];
   campaigns?: ProductCampaign[];
   parameters?: ProductParameter[];
   relatedProducts?: RelatedProducts[];
@@ -171,18 +170,44 @@ export interface CategoryTree extends Category {
   children: CategoryTree[];
 }
 
-export interface PriceListProduct {
-  productId: number;
-  priceIncVat: number;
-  priceExVat: number;
-  staggeredCount: number;
-}
-
-export interface PriceList extends EntityBase {
-  priceListId: number;
-  channel: number;
+export interface ProductPricelistBase {
+  channel: string;
+  currency: string;
+  identifier?: string;
   name: string;
   dateCreated: string;
   active: boolean;
-  products?: PriceListProduct[];
+  exVat: boolean;
+  autoAddProducts: boolean;
+  forced: boolean;
+  products: PricelistProduct[];
+  rules: PricelistRule[];
+  productSelectionQuery: SelectorSelectionBase;
+}
+
+export type ProductPricelistCreate = CreateEntity<ProductPricelistBase>;
+export type ProductPricelistUpdate = UpdateEntity<ProductPricelistBase>;
+export type ProductPricelist = ResponseEntity<ProductPricelistBase>;
+
+export interface PricelistProduct {
+  _id: string;
+  productId: string;
+  price: number;
+  staggeredCount: number;
+}
+
+export interface PricelistProductReference {
+  productId: string;
+  staggeredCount: number;
+}
+
+export interface PricelistProductPatch {
+  create: PricelistProduct[];
+  delete: PricelistProductReference[];
+}
+
+export interface PricelistRule {
+  quantity: number;
+  margin: number;
+  discountPercent: number;
 }

@@ -6,7 +6,7 @@ import type {
   WholesaleBuyer,
   WholesaleBuyerCreate,
   WholesaleBuyerUpdate,
-  WholesalePricelistCreate,
+  ProductPricelistCreate,
   WholesaleVatValidation,
 } from '#shared/types';
 
@@ -28,9 +28,9 @@ export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
   const pricelistEndpoint = `${BASE_ENDPOINT}/pricelist`;
   const pricelistRepo = repo.entity<
-    WholesalePricelist,
-    WholesalePricelistCreate,
-    WholesalePricelistUpdate
+    ProductPricelist,
+    ProductPricelistCreate,
+    ProductPricelistUpdate
   >(pricelistEndpoint, fetch);
 
   return {
@@ -72,9 +72,9 @@ export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return {
           products: {
             async patch(
-              productsPatch: WholesalePricelistProductPatch,
-            ): Promise<WholesalePricelistProduct[]> {
-              return await fetch<WholesalePricelistProduct[]>(
+              productsPatch: PricelistProductPatch,
+            ): Promise<PricelistProduct[]> {
+              return await fetch<PricelistProduct[]>(
                 `${pricelistIdEndpoint}/products`,
                 {
                   method: 'PATCH',

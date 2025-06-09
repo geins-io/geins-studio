@@ -6,8 +6,8 @@ export const useSelector = () => {
       condition: SelectorCondition.And,
       categoryIds: [],
       brandIds: [],
-      price: [],
-      stock: [],
+      // price: [],
+      // stock: [],
       ids: [],
     });
   };
@@ -37,8 +37,8 @@ export const useSelector = () => {
         condition: selection.condition,
         categoryIds: selection.categoryIds,
         brandIds: selection.brandIds,
-        price: selection.price,
-        stock: selection.stock,
+        // price: selection.price,
+        // stock: selection.stock,
       },
       {
         productIds: selection.ids || [],

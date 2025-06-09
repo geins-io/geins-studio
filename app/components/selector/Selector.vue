@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends SelectorEntity">
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef } from '@tanstack/vue-table';
 import {
@@ -10,7 +10,7 @@ import {
 // PROPS
 const props = withDefaults(
   defineProps<{
-    entities: SelectorEntity[];
+    entities: T[];
     entityName?: string;
     mode?: SelectorMode;
     selectionStrategy?: SelectorSelectionStrategy;
@@ -24,10 +24,15 @@ const props = withDefaults(
   },
 );
 
+const emit = defineEmits<{
+  (e: 'selectionChange', entities: T[]): void;
+}>();
+
 // TWO-WAY BINDING FOR SELECTION VIA V-MODEL
 const selection = defineModel<SelectorSelectionBase>('selection', {
   required: true,
 });
+console.log('🚀 ~ selection:', selection.value);
 
 // GLOBALS
 const entities = toRef(props, 'entities');
@@ -160,7 +165,7 @@ const selectedEntitiesSimple = computed(() => {
   return selected;
 });
 
-const api = repo.global(useNuxtApp().$geinsApi);
+const productApi = repo.product(useNuxtApp().$geinsApi);
 const selectedProducts = ref<Product[]>([]);
 const { transformProducts } = useProductsStore();
 const selectionMade = computed(() => {
@@ -180,13 +185,10 @@ const selectionMade = computed(() => {
 watchEffect(async () => {
   let products = null;
   if (selectionMade.value && mode.value === SelectorMode.Advanced) {
-    products = await api.product.list.query(
-      selection.value,
-      'localizations,images,prices',
-    );
+    products = await productApi.query(selection.value, {
+      fields: 'localizations,images,prices',
+    });
     selectedProducts.value = transformProducts(products?.items);
-  } else {
-    selectedProducts.value = selectedEntitiesSimple.value as Product[];
   }
 });
 
@@ -195,6 +197,15 @@ const selectedEntities = computed(() => {
     ? selectedEntitiesSimple.value
     : selectedProducts.value;
 });
+
+// emit selectedEnteties when selection changes
+watch(
+  selectedEntities,
+  (newValue) => {
+    emit('selectionChange', newValue as T[]);
+  },
+  { deep: true },
+);
 </script>
 <template>
   <div>

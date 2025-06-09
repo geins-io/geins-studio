@@ -127,7 +127,12 @@ export function useEntityEdit<
 
   // Parse and save data helper
   const parseAndSaveData = async (entity: TResponse): Promise<void> => {
+    console.log('🚀 ~ parseAndSaveData ~ entity:', entity);
     entityDataUpdate.value = options.reshapeEntityData(entity);
+    console.log(
+      '🚀 ~ parseAndSaveData ~ entityDataUpdate.value.productSelectionQuery:',
+      entityDataUpdate.value.productSelectionQuery,
+    );
 
     originalEntityData.value = JSON.stringify(entityDataUpdate.value);
 

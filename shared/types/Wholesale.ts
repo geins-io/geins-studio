@@ -79,36 +79,3 @@ export interface WholesaleVatValidation {
   name: string;
   address: string;
 }
-
-export interface WholesalePricelistBase {
-  channel: string;
-  currency: string;
-  identifier?: string;
-  name: string;
-  dateCreated: string;
-  active: boolean;
-  exVat: boolean;
-  autoAddProducts: boolean;
-  forced: boolean;
-  products: WholesalePricelistProduct[];
-}
-
-export type WholesalePricelistCreate = CreateEntity<WholesalePricelistBase>;
-export type WholesalePricelistUpdate = UpdateEntity<WholesalePricelistBase>;
-export type WholesalePricelist = ResponseEntity<WholesalePricelistBase>;
-
-export interface WholesalePricelistProduct {
-  productId: string;
-  price: number;
-  staggeredCount: number;
-}
-
-export interface WholesalePricelistProductReference {
-  productId: string;
-  staggeredCount: number;
-}
-
-export interface WholesalePricelistProductPatch {
-  create: WholesalePricelistProduct[];
-  delete: WholesalePricelistProductReference[];
-}

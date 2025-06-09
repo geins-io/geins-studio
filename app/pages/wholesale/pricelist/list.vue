@@ -2,8 +2,8 @@
 import type { ColumnOptions } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 
-type Entity = WholesalePricelist;
-type EntityList = WholesalePricelist;
+type Entity = ProductPricelist;
+type EntityList = ProductPricelist;
 
 const { t } = useI18n();
 const route = useRoute();
