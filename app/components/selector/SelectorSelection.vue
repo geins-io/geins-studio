@@ -25,6 +25,10 @@ const selection = defineModel<SelectorSelection>('selection', {
   required: true,
 });
 
+//TODO: remove when lowercase condition fixed
+selection.value.condition =
+  selection.value.condition?.toLowerCase() || SelectorCondition.And;
+
 // GLOBALS
 const { t } = useI18n();
 const { getCategoryName, getBrandName } = useProductsStore();

@@ -44,13 +44,14 @@ const props = withDefaults(
     searchableField: 'name',
     showSearch: false,
     mode: TableMode.Advanced,
-
     pinnedState: () => ({
       left: ['select'],
       right: ['actions'],
     }),
   },
 );
+
+const pinnedState = toRef(props, 'pinnedState');
 
 const emit = defineEmits({
   clicked: (row) => row,
@@ -162,10 +163,10 @@ const pinnedClasses = (column: Column<TData>, header: boolean = false) => {
 
 // Remove select and actions columns from pinned state if not present in columns
 const columnPinningState = computed(() => {
-  const left = props.pinnedState.left?.filter((id) =>
+  const left = pinnedState.value.left?.filter((id) =>
     props.columns.some((column) => column.id === id),
   );
-  const right = props.pinnedState.right?.filter((id) =>
+  const right = pinnedState.value.right?.filter((id) =>
     props.columns.some((column) => column.id === id),
   );
   return { left, right };
@@ -205,8 +206,6 @@ const table = useVueTable({
     valueUpdater(updaterOrValue, columnVisibility);
   },
   onRowSelectionChange: (updaterOrValue) => {
-    console.log('🚀 ~ updaterOrValue:', updaterOrValue);
-
     valueUpdater(updaterOrValue, rowSelection);
     emit(
       'selection',

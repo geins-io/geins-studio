@@ -15,24 +15,53 @@ const props = withDefaults(
     mode?: SelectorMode;
     selectionStrategy?: SelectorSelectionStrategy;
     allowExclusions?: boolean;
+    productQueryParams?: Record<string, string>;
   }>(),
   {
     entityName: 'product',
     mode: SelectorMode.Advanced,
     selectionStrategy: SelectorSelectionStrategy.All,
     allowExclusions: true,
+    productQueryParams: () => ({ fields: 'localizations,media,prices' }),
   },
 );
+
+const productQueryParams = toRef(props, 'productQueryParams');
 
 const emit = defineEmits<{
   (e: 'selectionChange', entities: T[]): void;
 }>();
 
-// TWO-WAY BINDING FOR SELECTION VIA V-MODEL
-const selection = defineModel<SelectorSelectionBase>('selection', {
-  required: true,
-});
-console.log('🚀 ~ selection:', selection.value);
+const {
+  getFallbackSelection,
+  getEmptyInternalSelectionBase,
+  convertToQuerySelection,
+  convertToInternalSelectionBase,
+  convertToSimpleSelection,
+  convertSimpleToInternalSelectionBase,
+} = useSelector();
+
+const selection = defineModel<SelectorSelectionQueryBase>('selection');
+const simpleSelection =
+  defineModel<SelectorSelectionSimpleBase>('simple-selection');
+
+const internalSelection = ref<SelectorSelectionInternalBase>(
+  getEmptyInternalSelectionBase(),
+);
+
+watch(
+  [selection, simpleSelection],
+  ([sel, simpleSel]) => {
+    if (props.mode === SelectorMode.Simple && simpleSel) {
+      internalSelection.value = convertSimpleToInternalSelectionBase(simpleSel);
+    } else if (sel) {
+      internalSelection.value = convertToInternalSelectionBase(sel);
+    } else {
+      internalSelection.value = getEmptyInternalSelectionBase();
+    }
+  },
+  { immediate: true, deep: true },
+);
 
 // GLOBALS
 const entities = toRef(props, 'entities');
@@ -44,7 +73,7 @@ const accountStore = useAccountStore();
 const { currentCurrency } = storeToRefs(accountStore);
 const { toast } = useToast();
 const { t } = useI18n();
-const { getFallbackSelection, convertToApiSelections } = useSelector();
+
 const productsStore = useProductsStore();
 
 if (props.mode == SelectorMode.Advanced) {
@@ -52,11 +81,11 @@ if (props.mode == SelectorMode.Advanced) {
 }
 
 // SETUP REFS FOR INCLUDE/EXCLUDE SELECTION
-const includeSelection = ref<SelectorSelection>(
-  selection.value.include?.[0]?.selections?.[0] || getFallbackSelection(),
+const includeSelection = ref<SelectorSelectionInternal>(
+  internalSelection.value.include || getFallbackSelection(),
 );
-const excludeSelection = ref<SelectorSelection>(
-  selection.value.exclude?.[0]?.selections?.[0] || getFallbackSelection(),
+const excludeSelection = ref<SelectorSelectionInternal>(
+  internalSelection.value.exclude || getFallbackSelection(),
 );
 const resetSelections = () => {
   includeSelection.value = getFallbackSelection();
@@ -68,12 +97,15 @@ const showExclude = ref(!!excludeSelection.value.ids?.length);
 watch(
   includeSelection,
   (value) => {
-    const newSelections =
-      mode.value === SelectorMode.Advanced
-        ? convertToApiSelections(value)
-        : [value];
-
-    selection.value.include = [{ selections: newSelections }];
+    if (mode.value === SelectorMode.Simple && simpleSelection.value) {
+      simpleSelection.value.include = convertToSimpleSelection(value);
+    } else if (selection.value) {
+      selection.value.include = [
+        {
+          selections: convertToQuerySelection(value),
+        },
+      ];
+    }
   },
   { deep: true },
 );
@@ -81,14 +113,19 @@ watch(
   excludeSelection,
   (value) => {
     showExclude.value = !!value.ids?.length;
-    const newSelections =
-      mode.value === SelectorMode.Advanced
-        ? convertToApiSelections(value)
-        : [value];
-    selection.value.exclude = [{ selections: newSelections }];
+    if (mode.value === SelectorMode.Simple && simpleSelection.value) {
+      simpleSelection.value.exclude = convertToSimpleSelection(value);
+    } else if (selection.value) {
+      selection.value.exclude = [
+        {
+          selections: convertToQuerySelection(value),
+        },
+      ];
+    }
   },
   { deep: true },
 );
+
 watch(mode, (newValue, oldValue) => {
   if (newValue !== oldValue) {
     resetSelections();
@@ -134,9 +171,12 @@ const setupColumns = () => {
 
 watch(
   entities,
-  () => {
+  (oldVal, newVal) => {
     setupColumns();
-    resetSelections();
+    if (oldVal && oldVal.length && oldVal.length !== newVal?.length) {
+      // If entities changed, reset selections
+      //resetSelections();
+    }
   },
   { immediate: true },
 );
@@ -185,9 +225,10 @@ const selectionMade = computed(() => {
 watchEffect(async () => {
   let products = null;
   if (selectionMade.value && mode.value === SelectorMode.Advanced) {
-    products = await productApi.query(selection.value, {
-      fields: 'localizations,images,prices',
-    });
+    products = await productApi.query(
+      selection.value,
+      productQueryParams.value,
+    );
     selectedProducts.value = transformProducts(products?.items);
   }
 });
@@ -198,7 +239,7 @@ const selectedEntities = computed(() => {
     : selectedProducts.value;
 });
 
-// emit selectedEnteties when selection changes
+// emit selectedEntities when selection changes
 watch(
   selectedEntities,
   (newValue) => {
@@ -236,7 +277,7 @@ watch(
           />
           <ContentSwitch
             v-if="allowExclusions"
-            v-model="showExclude"
+            v-model:checked="showExclude"
             :label="$t('exclude_entity_from_selection', { entityName }, 2)"
             :description="$t('selector_exclude_description')"
           >
@@ -252,7 +293,7 @@ watch(
         </slot>
       </div>
       <slot />
-      <slot name="list">
+      <slot name="list" :selector-entity-name="entityName">
         <ContentHeading>
           {{ $t('selected_entity', { entityName }, 2) }}
         </ContentHeading>

@@ -45,34 +45,43 @@ export interface StockSelection {
 
 export type SelectorSelectionSimple = string[];
 
-export interface SelectorSelection {
+export interface SelectorSelectionQuery {
   condition?: SelectorCondition;
   categoryIds?: string[];
   brandIds?: string[];
   price?: PriceSelection[];
   stock?: StockSelection[];
-  ids?: SelectorSelectionSimple;
   productIds?: string[];
+}
+
+export interface SelectorSelectionInternal
+  extends Omit<SelectorSelectionQuery, 'productIds'> {
+  ids?: string[];
 }
 
 export interface SelectorSelectionGroup {
   condition?: SelectorCondition;
-  selections: SelectorSelection[];
+  selections: SelectorSelectionQuery[];
 }
 
-export interface SelectorSelectionBase {
+export interface SelectorSelectionQueryBase {
   include: SelectorSelectionGroup[];
   exclude: SelectorSelectionGroup[];
 }
 
-export interface SelectorSelectionBaseSimple {
+export interface SelectorSelectionInternalBase {
+  include: SelectorSelectionInternal;
+  exclude: SelectorSelectionInternal;
+}
+
+export interface SelectorSelectionSimpleBase {
   include: SelectorSelectionSimple;
   exclude: SelectorSelectionSimple;
 }
 
 export interface SelectorSelectionOption {
   id: SelectorSelectionOptionsId;
-  group: keyof SelectorSelection;
+  group: keyof SelectorSelectionInternal;
   label?: string;
 }
 

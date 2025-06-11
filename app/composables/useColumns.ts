@@ -67,8 +67,8 @@ export const useColumns = <T extends object>() => {
           ),
         },
         h(Checkbox, {
-          checked: table.getIsAllPageRowsSelected(),
-          'onUpdate:checked': (value: boolean) =>
+          modelValue: table.getIsAllPageRowsSelected(),
+          'onUpdate:model-value': (value: boolean) =>
             table.toggleAllPageRowsSelected(!!value),
           ariaLabel: 'Select all',
         }),
@@ -154,7 +154,11 @@ export const useColumns = <T extends object>() => {
         columnType = 'date';
       } else if (keyLower.includes('price') || keyLower.includes('amount')) {
         columnType = 'currency';
-      } else if (keyLower.includes('image') || keyLower.includes('img')) {
+      } else if (
+        keyLower.includes('image') ||
+        keyLower.includes('img') ||
+        keyLower.includes('thumbnail')
+      ) {
         columnType = 'image';
       } else if (keyLower === 'channels') {
         columnType = 'channels';

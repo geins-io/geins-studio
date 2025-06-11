@@ -5,7 +5,12 @@ import { useI18n } from '#imports';
 import * as z from 'zod';
 import type { AcceptableValue } from 'reka-ui';
 import { useToast } from '@/components/ui/toast/use-toast';
-import { SelectorSelectionStrategy } from '#shared/types';
+import type { ColumnDef } from '@tanstack/vue-table';
+import {
+  SelectorSelectionStrategy,
+  type PricelistProductList,
+  type Product,
+} from '#shared/types';
 
 // COMPOSABLES
 const route = useRoute();
@@ -55,8 +60,10 @@ const entityBase: ProductPricelistCreate = {
 
 const selectableCurrencies = ref(currentCurrencies.value.map((i) => i._id));
 
-const { getEmptySelectionBase } = useSelector();
-let productSelection: SelectorSelectionBase = getEmptySelectionBase();
+const { getEmptyQuerySelectionBase } = useSelector();
+const productSelection = ref<SelectorSelectionQueryBase>(
+  getEmptyQuerySelectionBase(),
+);
 
 // TABS MANAGEMENT
 const currentTab = ref(0);
@@ -123,30 +130,14 @@ const {
     },
   }),
   reshapeEntityData: (entityData) => {
-    console.log('🚀 ~ entityData:', entityData.productSelectionQuery);
     return {
       ...entityData,
-      productSelectionQuery: JSON.parse(
-        JSON.stringify(entityData.productSelectionQuery),
-      ),
     };
   },
   parseEntityData: (entity) => {
-    entityLiveStatus.value = entityDataUpdate.value?.active || false;
+    entityLiveStatus.value = entity.active;
     if (entity.productSelectionQuery) {
-      console.log(
-        '🚀 ~ entity.productSelectionQuery:',
-        entity.productSelectionQuery,
-      );
-
-      const cleanData = structuredClone(toRaw(entity.productSelectionQuery));
-      console.log('🚀 ~ cleanData:', cleanData);
-      productSelection = markRaw(cleanData);
-
-      console.log(
-        '🚀 parseEntityData ~ productSelection.value:',
-        productSelection,
-      );
+      productSelection.value = entity.productSelectionQuery;
     }
     form.setValues({
       vat: {
@@ -172,6 +163,7 @@ const {
     ...entity,
     ...formData.vat,
     ...formData.default,
+    rules: undefined,
   }),
 
   onFormValuesChange: (values) => {
@@ -240,15 +232,6 @@ const handleChannelChange = async (value: AcceptableValue) => {
 // DELETE FUNCTIONALITY
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
   useDeleteDialog(deleteEntity, '/wholesale/pricelist/list');
-
-// Form submission
-const handleSave = () => {
-  if (createMode.value) {
-    createEntity();
-  } else {
-    updateEntity();
-  }
-};
 
 // SUMMARY DATA
 const summary = computed<DataItem[]>(() => {
@@ -325,6 +308,55 @@ const { summaryProps } = useEntityEditSummary({
 
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
+const selectedProducts = ref<PricelistProductList[]>([]);
+const productQueryParams = ref<ProductQueryParams>({
+  fields: 'localizations,media,defaultprice',
+  defaultChannel: entityData.value?.channel,
+  defaultCurrency: entityData.value?.currency,
+  defaultCountry: accountStore.getDefaultCountryByChannelId(
+    entityData.value?.channel,
+  ),
+});
+
+const { getColumns } = useColumns<PricelistProductList>();
+let columns: ColumnDef<PricelistProductList>[] = [];
+
+const setupColumns = () => {
+  columns = getColumns(selectedProducts.value);
+};
+
+const pinnedState = ref({
+  left: [],
+  right: ['discount', 'margin', 'quantityLevels', 'manual'],
+});
+
+const transformProductsForList = (
+  products: Product[],
+): PricelistProductList[] => {
+  return products.map((product) => ({
+    _id: product._id,
+    name: product.name,
+    thumbnail: product.thumbnail || '',
+    purchasePrice: product.purchasePrice,
+    catalogPrice: product.defaultPrice?.sellingPriceExVat || 0,
+    listPrice: product.defaultPrice?.sellingPriceIncVat || 0,
+    discount: 0,
+    margin: 0,
+    quantityLevels: [
+      {
+        quantity: 0,
+        margin: 0,
+        discountPercent: 0,
+      },
+    ],
+    manual: false,
+  }));
+};
+
+const handleSelectionChange = (products: Product[]) => {
+  selectedProducts.value = transformProductsForList(products);
+  setupColumns();
+};
 
 // LOAD DATA FOR EDIT MODE
 if (!createMode.value) {
@@ -619,14 +651,39 @@ if (!createMode.value) {
           />
         </template>
         <template v-if="currentTab === 1 && !createMode" #secondary>
-          <ContentEditCard :create-mode="createMode">
+          <ContentCard>
             <Selector
               v-if="products.length"
               v-model:selection="productSelection"
               :entities="products"
               :selection-strategy="SelectorSelectionStrategy.None"
-            />
-          </ContentEditCard>
+              :product-query-params="productQueryParams"
+              @selection-change="handleSelectionChange"
+            >
+              <template #list="{ selectorEntityName }">
+                <ContentHeading>
+                  {{
+                    $t('selected_entity', { entityName: selectorEntityName }, 2)
+                  }}
+                </ContentHeading>
+                <TableView
+                  :columns="columns"
+                  :data="selectedProducts"
+                  :entity-name="selectorEntityName"
+                  :empty-text="
+                    $t(
+                      'no_entity_selected',
+                      { entityName: selectorEntityName },
+                      2,
+                    )
+                  "
+                  :mode="TableMode.Simple"
+                  :page-size="15"
+                  :pinned-state="pinnedState"
+                />
+              </template>
+            </Selector>
+          </ContentCard>
         </template>
       </ContentEditMain>
     </form>

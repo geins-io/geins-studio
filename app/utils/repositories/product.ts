@@ -47,8 +47,8 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     async query(
-      selection?: SelectorSelectionBase,
-      query?: Record<string, unknown>,
+      selection?: SelectorSelectionQueryBase,
+      query?: Record<string, string>,
     ): Promise<QueryResult<Product>> {
       return await fetch<QueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
         method: 'POST',

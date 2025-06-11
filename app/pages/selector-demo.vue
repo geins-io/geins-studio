@@ -59,10 +59,11 @@ const currentAllowExclusions = computed(
   () => tabs[currentTab.value]?.allowExclusions,
 );
 
-const { getEmptySelectionBase, convertToSimpleSelection } = useSelector();
-const selection = ref<SelectorSelectionBase>(getEmptySelectionBase());
+const { getEmptyQuerySelectionBase, convertToSimpleSelectionBase } =
+  useSelector();
+const selection = ref<SelectorSelectionQueryBase>(getEmptyQuerySelectionBase());
 const _simpleSelection = computed(() =>
-  convertToSimpleSelection(selection.value),
+  convertToSimpleSelectionBase(selection.value),
 );
 </script>
 

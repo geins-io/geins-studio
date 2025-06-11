@@ -73,6 +73,7 @@ export default defineNuxtConfig({
         language: 'en',
         currency: 'SEK',
         channel: '1',
+        country: 'SE',
       },
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',

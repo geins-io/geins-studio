@@ -102,6 +102,16 @@ export const useAccountStore = defineStore('account', () => {
     return country ? country.name : '';
   }
 
+  function getDefaultCountryByChannelId(channelId: string): string {
+    const channel = channels.value.find((c) => c._id === String(channelId));
+
+    if (!channel) return fallback.country;
+    const defaultMarket = channel.markets.find(
+      (market) => market._id === String(channel.defaultMarket),
+    );
+    return defaultMarket ? defaultMarket.country._id : '';
+  }
+
   function getCurrenciesByChannelId(channelId: string): string[] {
     if (!channels.value || channels.value.length === 0) {
       return currentCurrencies.value.length > 0
@@ -172,6 +182,7 @@ export const useAccountStore = defineStore('account', () => {
     reset,
     getChannelNameById,
     getCountryNameById,
+    getDefaultCountryByChannelId,
     getCurrenciesByChannelId,
     currentChannel,
     currentCountries,

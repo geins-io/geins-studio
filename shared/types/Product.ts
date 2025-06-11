@@ -37,25 +37,29 @@ export interface CampaignPrice {
   campaignId: string;
 }
 
-export interface PriceListPrice {
-  priceIncVat: number;
-  priceExVat: number;
-  priceListId: number;
-  priceListName: string;
-  staggeredCount: number;
-}
-
-export interface ProductPrices {
-  currency: string;
+export interface ProductPrice {
   sellingPriceIncVat: number;
   sellingPriceExVat: number;
   regularPriceIncVat: number;
   regularPriceExVat: number;
   vatRate: number;
-  countries: string[];
   salePrice?: SalePrice;
   campaignPrice?: CampaignPrice;
-  priceLists?: PriceListPrice[];
+}
+
+export interface ProductPricesGrouped {
+  [channel: string]: {
+    [currency: string]: {
+      [country: string]: ProductPrice;
+    };
+  };
+}
+
+export interface ProductQueryParams {
+  fields?: string;
+  defaultChannel?: string;
+  defaultCurrency?: string;
+  defaultCountry?: string;
 }
 
 export interface Media extends EntityBase {
@@ -112,13 +116,17 @@ export interface Localized<T> {
 }
 
 export interface CurrencyConverted<T> {
-  [currency: string]: T;
+  [channel: string]: {
+    [currency: string]: {
+      [country: string]: T;
+    };
+  };
 }
 
 export interface ProductBase {
   productId: number;
   name: string;
-  slug: string;
+  thumbnail?: string;
   articleNumber: string;
   dateCreated: string;
   dateUpdated: string;
@@ -128,17 +136,19 @@ export interface ProductBase {
   active: boolean;
   purchasePrice: number;
   purchasePriceCurrency: string;
-  brand: Brand;
+  brandId: number;
   supplierId: number;
   freightClassId: number;
   intrastatCode: string;
   countryOfOrigin: string;
   externalProductId: string;
   mainCategoryId: number;
+  media?: Media[];
   localizations?: Localized<Localizations>;
   skus?: Sku[];
   sortOrder?: number;
-  prices?: CurrencyConverted<ProductPrices>;
+  defaultPrice: ProductPrice;
+  prices?: CurrencyConverted<ProductPrice>;
   categories?: Category[];
   channels?: string[];
   campaigns?: ProductCampaign[];
@@ -182,7 +192,7 @@ export interface ProductPricelistBase {
   forced: boolean;
   products: PricelistProduct[];
   rules: PricelistRule[];
-  productSelectionQuery: SelectorSelectionBase;
+  productSelectionQuery: SelectorSelectionQueryBase;
 }
 
 export type ProductPricelistCreate = CreateEntity<ProductPricelistBase>;
@@ -194,6 +204,17 @@ export interface PricelistProduct {
   productId: string;
   price: number;
   staggeredCount: number;
+}
+
+export interface PricelistProductList extends EntityBaseWithName {
+  thumbnail: string;
+  purchasePrice: number;
+  catalogPrice: number;
+  listPrice: number;
+  discount: number;
+  margin: number;
+  quantityLevels: PricelistRule[];
+  manual: boolean;
 }
 
 export interface PricelistProductReference {

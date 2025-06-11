@@ -6,7 +6,7 @@ export const useProductsStore = defineStore('products', () => {
   const globalApi = repo.global($geinsApi);
   const productApi = repo.product($geinsApi);
   const accountStore = useAccountStore();
-  const { currentLanguage } = storeToRefs(accountStore);
+  const { account, currentLanguage } = storeToRefs(accountStore);
 
   // STATE
   const products = ref<Product[]>([]);
@@ -17,7 +17,7 @@ export const useProductsStore = defineStore('products', () => {
 
   // ACTIONS
   async function fetchProducts(
-    fields: string = 'localizations,images,prices',
+    fields: string = 'localizations,media,prices',
   ): Promise<Product[]> {
     const data = await productApi.list({ fields });
     products.value = transformProducts(data?.items);
@@ -94,6 +94,7 @@ export const useProductsStore = defineStore('products', () => {
     return products.map((product) => ({
       ...product.localizations?.[currentLanguage.value],
       ...product,
+      thumbnail: `https://${account.value?.name}.commerce.services/product/100x100/${product.media?.[0]?._id}`,
     }));
   }
 
