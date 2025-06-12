@@ -77,6 +77,15 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
               );
             },
           },
+          async copy(query?: Record<string, string>) {
+            return await fetch<ProductPricelist>(
+              `${pricelistIdEndpoint}/copy`,
+              {
+                method: 'POST',
+                query,
+              },
+            );
+          },
         };
       },
     },

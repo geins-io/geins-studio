@@ -13,6 +13,7 @@ import {
   TableCellStatus,
   TableCellTooltip,
   TableCellBoolean,
+  TableCellEditable,
 } from '#components';
 import type {
   ColumnOptions,
@@ -195,6 +196,27 @@ export const useColumns = <T extends object>() => {
             return h('div', { class: getBasicHeaderStyle(table) }, columnTitle);
           };
 
+      const getEditableColumn = (type: EditableColumnType) => {
+        return ({
+          table,
+          row,
+          column,
+        }: {
+          table: Table<T>;
+          row: Row<T>;
+          column: Column<T>;
+        }) => {
+          return h(TableCellEditable<T>, {
+            table,
+            row,
+            column,
+            colKey: key,
+            type,
+            className: getBasicCellStyle(table),
+          });
+        };
+      };
+
       switch (columnType) {
         case 'currency':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
@@ -351,6 +373,20 @@ export const useColumns = <T extends object>() => {
             return h('div', { class: getBasicCellStyle(table) }, text);
           };
           break;
+        case 'editable-string':
+        case 'editable-number':
+        case 'editable-select':
+        case 'editable-currency':
+        case 'editable-percentage':
+        case 'editable-boolean': {
+          const editableType = columnType.replace(
+            'editable-',
+            '',
+          ) as EditableColumnType;
+          cellRenderer = getEditableColumn(editableType);
+          columnSize = { size: 125, minSize: 125, maxSize: 125 };
+          break;
+        }
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);

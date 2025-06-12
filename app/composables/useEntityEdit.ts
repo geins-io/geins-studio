@@ -58,7 +58,6 @@ export function useEntityEdit<
   const entityName = options.entityName || getEntityName();
   const newEntityUrl = getNewEntityUrl();
   const entityListUrl = getEntityListUrl();
-  const entityId = ref<string>(String(route.params.id));
   const createMode = ref(
     route.params.id === (options.newEntityUrlAlias || newEntityUrlAlias),
   );
@@ -71,6 +70,10 @@ export function useEntityEdit<
   const entityDataUpdate = ref<TUpdate>(options.initialUpdateData);
   const entityData = computed(() =>
     createMode.value ? entityDataCreate.value : entityDataUpdate.value,
+  );
+
+  const entityId = computed<string>(
+    () => entityData.value?._id || String(route.params.id),
   );
 
   const entityPageTitle = computed(() =>
@@ -173,20 +176,19 @@ export function useEntityEdit<
         : entityDataCreate.value;
 
       const result = await options.repository.create(createData);
-      const id = result._id;
 
-      if (id) {
+      if (result?._id) {
         const newUrl = newEntityUrl.replace(
           options.newEntityUrlAlias || newEntityUrlAlias,
-          id,
+          result._id,
         );
         await useRouter().replace(newUrl);
-      }
 
-      toast({
-        title: t('entity_created', { entityName }),
-        variant: 'positive',
-      });
+        toast({
+          title: t('entity_created', { entityName }),
+          variant: 'positive',
+        });
+      }
 
       return result;
     } catch (error) {
@@ -216,7 +218,7 @@ export function useEntityEdit<
         return;
       }
 
-      const id = entityDataUpdate.value?._id || entityId.value;
+      const id = entityId.value;
       const updateData = options.prepareUpdateData
         ? options.prepareUpdateData(form.values, entityDataUpdate.value)
         : entityDataUpdate.value;

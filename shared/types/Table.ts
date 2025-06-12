@@ -9,6 +9,14 @@ export const enum TableMode {
   Minimal = 'minimal',
 }
 
+export type EditableColumnType =
+  | 'string'
+  | 'number'
+  | 'select'
+  | 'currency'
+  | 'boolean'
+  | 'percentage';
+
 export type ColumnType =
   | 'default'
   | 'string'
@@ -23,7 +31,9 @@ export type ColumnType =
   | 'tags'
   | 'status'
   | 'tooltip'
-  | 'boolean';
+  | 'boolean'
+  | `editable-${EditableColumnType}`
+  | 'pricelist-quantity-levels';
 
 export type ColumnTypes<T> = Partial<Record<keyof T, ColumnType>>;
 

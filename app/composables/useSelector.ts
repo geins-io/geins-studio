@@ -55,7 +55,6 @@ export const useSelector = () => {
       // Merge arrays instead of overwriting them
       selectorSelection = {
         ...selectorSelection,
-        ...selection,
         // Merge categoryIds arrays
         categoryIds: [
           ...(selectorSelection.categoryIds || []),

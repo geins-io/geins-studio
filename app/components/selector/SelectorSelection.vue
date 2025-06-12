@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { CompareCondition } from '#shared/types';
+import type {
+  CompareCondition,
+  SelectorSelectionInternal,
+} from '#shared/types';
 import {
   SelectorMode,
   SelectorCondition,
@@ -21,7 +24,7 @@ const props = withDefaults(
 );
 
 // TWO-WAY BINDING FOR SELECTION VIA V-MODEL
-const selection = defineModel<SelectorSelection>('selection', {
+const selection = defineModel<SelectorSelectionInternal>('selection', {
   required: true,
 });
 
@@ -96,7 +99,7 @@ const activeConditionTypes = computed(() => {
     if (
       key !== 'condition' &&
       key !== 'ids' &&
-      selection.value[key as keyof SelectorSelection]?.length
+      selection.value[key as keyof SelectorSelectionInternal]?.length
     ) {
       active++;
     }
@@ -173,7 +176,7 @@ const getLinkingWord = (option: 'brand' | 'price' | 'stock') => {
   return t(`selector_${option}_linking_word_${condition}`);
 };
 
-const updateSelection = (updatedSelection: SelectorSelection) => {
+const updateSelection = (updatedSelection: SelectorSelectionInternal) => {
   selection.value = updatedSelection;
 };
 

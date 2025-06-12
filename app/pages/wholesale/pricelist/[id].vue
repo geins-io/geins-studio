@@ -18,6 +18,7 @@ const { t } = useI18n();
 const { $geinsApi } = useNuxtApp();
 const accountStore = useAccountStore();
 const { toast } = useToast();
+const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');
 
 // GLOBALS
 const productApi = repo.product($geinsApi);
@@ -85,6 +86,7 @@ const stepValidationMap: Record<number, string> = {
 // ENTITY EDIT COMPOSABLE
 const {
   entityName,
+  entityId,
   createMode,
   loading,
   newEntityUrl,
@@ -212,6 +214,38 @@ watch(entityData, (newEntityData, oldEntityData) => {
   );
 });
 
+const copyEntity = async () => {
+  if (!entityId.value) {
+    return;
+  }
+
+  loading.value = true;
+
+  try {
+    const result = await productApi.pricelist.id(entityId.value).copy();
+    if (result?._id) {
+      const currentPath = route.path;
+      const newPath = currentPath.replace(entityId.value, result._id);
+      await parseAndSaveData(result);
+      await useRouter().replace(newPath);
+
+      toast({
+        title: t('entity_copied', { entityName }),
+        variant: 'positive',
+      });
+    }
+  } catch (error) {
+    geinsLogError('error validating VAT number:', error);
+    toast({
+      title: t('error_copying_entity', { entityName }),
+      description: t('feedback_error_description'),
+      variant: 'negative',
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
 const handleChannelChange = async (value: AcceptableValue) => {
   const stringValue = String(value);
   selectableCurrencies.value =
@@ -320,14 +354,22 @@ const productQueryParams = ref<ProductQueryParams>({
 
 const { getColumns } = useColumns<PricelistProductList>();
 let columns: ColumnDef<PricelistProductList>[] = [];
+const columnOptions: ColumnOptions<PricelistProductList> = {
+  columnTypes: {
+    listPrice: 'editable-currency',
+    discount: 'editable-currency',
+    margin: 'editable-percentage',
+  },
+  excludeColumns: ['quantityLevels', 'manual'],
+};
 
 const setupColumns = () => {
-  columns = getColumns(selectedProducts.value);
+  columns = getColumns(selectedProducts.value, columnOptions);
 };
 
 const pinnedState = ref({
   left: [],
-  right: ['discount', 'margin', 'quantityLevels', 'manual'],
+  right: ['listPrice', 'discount', 'margin', 'quantityLevels', 'manual'],
 });
 
 const transformProductsForList = (
@@ -361,7 +403,7 @@ const handleSelectionChange = (products: Product[]) => {
 // LOAD DATA FOR EDIT MODE
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<ProductPricelist>(() =>
-    productApi.pricelist.get(String(route.params.id), {
+    productApi.pricelist.get(entityId.value, {
       fields: 'all',
     }),
   );
@@ -431,6 +473,12 @@ if (!createMode.value) {
                   <LucidePlus class="mr-2 size-4" />
                   <span>{{ $t('new_entity', { entityName }) }}</span>
                 </NuxtLink>
+              </DropdownMenuItem>
+              <DropdownMenuItem as-child>
+                <button type="button" class="w-full" @click="copyEntity">
+                  <LucideCopy class="mr-2 size-4" />
+                  <span>{{ $t('copy_entity', { entityName }) }}</span>
+                </button>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem @click="openDeleteDialog">

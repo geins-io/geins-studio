@@ -146,20 +146,42 @@ watch(columnOrder, updateSortingCookie, { deep: true });
 
 // Get default pinned classes for cells
 const pinnedClasses = (column: Column<TData>, header: boolean = false) => {
-  const pinned = column.getIsPinned();
-  if (pinned) {
-    const zIndex =
-      header && (column.id === 'select' || column.id === 'actions')
-        ? 'z-40'
-        : 'z-20';
-    const shadow =
-      pinned === 'left'
-        ? '[&>div]:shadow-only-right'
-        : '[&>div]:shadow-only-left';
-    return `bg-card sticky ${pinned}-0 ${zIndex} ${shadow} after:absolute after:-bottom-px after:${pinned}-0 after:bg-border after:h-px after:w-full after:z-50`;
+  const isPinned = column.getIsPinned();
+  const isLastLeftPinnedColumn =
+    isPinned === 'left' && column.getIsLastColumn('left');
+  const isFirstRightPinnedColumn =
+    isPinned === 'right' && column.getIsFirstColumn('right');
+
+  if (isPinned) {
+    const zIndex = header ? 'z-40' : 'z-20';
+    const shadow = isLastLeftPinnedColumn
+      ? '[&>div]:shadow-only-right'
+      : isFirstRightPinnedColumn
+        ? '[&>div]:shadow-only-left'
+        : '';
+    return `bg-card sticky ${zIndex} ${shadow} after:absolute after:${isPinned}-0 after:-bottom-px after:bg-border after:h-px after:w-full after:z-50`;
   }
   return 'relative';
 };
+
+const pinnedStyles = computed(() => {
+  return (column: Column<TData>) => {
+    const isPinned = column.getIsPinned();
+    const width = column.getSize();
+    if (isPinned) {
+      const position =
+        isPinned === 'left'
+          ? column.getStart('left')
+          : column.getAfter('right');
+
+      return {
+        [isPinned]: `${position}px`,
+        width: `${width}px`,
+      };
+    }
+    return { width: width ? `${width}px` : 'auto' };
+  };
+});
 
 // Remove select and actions columns from pinned state if not present in columns
 const columnPinningState = computed(() => {
@@ -205,6 +227,8 @@ const table = useVueTable({
   onColumnVisibilityChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, columnVisibility);
   },
+  onColumnPinningChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, columnPinningState),
   onRowSelectionChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, rowSelection);
     emit(
@@ -229,6 +253,9 @@ const table = useVueTable({
     },
     get columnOrder() {
       return columnOrder.value;
+    },
+    get columnPinning() {
+      return columnPinningState.value;
     },
   },
   initialState: {
@@ -310,11 +337,7 @@ const emptyText = computed(() => {
                 `${simpleMode ? 'bg-background' : ''}`,
               )
             "
-            :style="
-              header.getSize()
-                ? { width: `${header.getSize()}px` }
-                : { width: 'auto' }
-            "
+            :style="pinnedStyles(header.column)"
           >
             <FlexRender
               v-if="!header.isPlaceholder"
@@ -335,11 +358,7 @@ const emptyText = computed(() => {
               v-for="cell in row.getVisibleCells()"
               :key="cell.id"
               :class="cn(`${pinnedClasses(cell.column)}`, cellClasses)"
-              :style="
-                cell.column.getSize()
-                  ? { width: `${cell.column.getSize()}px` }
-                  : { width: 'auto' }
-              "
+              :style="pinnedStyles(cell.column)"
             >
               <FlexRender
                 :render="cell.column.columnDef.cell"

@@ -1046,6 +1046,12 @@ if (!createMode.value) {
                   label="VAT included"
                   description="Orders from this account will include VAT"
                 />
+                <ContentCardHeader title="Product access" size="md" />
+                <ContentSwitch
+                  v-model:checked="entityDataUpdate.limitedProductAccess"
+                  label="Only access products included in the assigned pricelists"
+                  description="Controls which products this account can view and purchase"
+                />
               </div>
             </ContentEditCard>
           </ContentEditMainContent>
