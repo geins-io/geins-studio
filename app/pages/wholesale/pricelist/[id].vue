@@ -24,6 +24,7 @@ const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');
 const productApi = repo.product($geinsApi);
 const { channels, currentCurrencies, currentChannelId, currentCurrency } =
   storeToRefs(accountStore);
+const productSelector = ref();
 
 // FORM VALIDATION SCHEMA
 const formSchema = toTypedSchema(
@@ -352,12 +353,12 @@ const productQueryParams = ref<ProductQueryParams>({
   ),
 });
 
-const { getColumns } = useColumns<PricelistProductList>();
+const { getColumns, addActionsColumn } = useColumns<PricelistProductList>();
 let columns: ColumnDef<PricelistProductList>[] = [];
 const columnOptions: ColumnOptions<PricelistProductList> = {
   columnTypes: {
     listPrice: 'editable-currency',
-    discount: 'editable-currency',
+    discount: 'editable-percentage',
     margin: 'editable-percentage',
   },
   excludeColumns: ['quantityLevels', 'manual'],
@@ -365,12 +366,22 @@ const columnOptions: ColumnOptions<PricelistProductList> = {
 
 const setupColumns = () => {
   columns = getColumns(selectedProducts.value, columnOptions);
+  addActionsColumn(
+    columns,
+    {
+      onDelete: (entity: SelectorEntity) =>
+        productSelector.value.removeFromManuallySelected(entity._id),
+    },
+    'delete',
+  );
 };
 
 const pinnedState = ref({
   left: [],
-  right: ['listPrice', 'discount', 'margin', 'quantityLevels', 'manual'],
+  right: ['listPrice', 'discount', 'margin', 'actions'],
 });
+
+const { convertToPrice } = usePrice();
 
 const transformProductsForList = (
   products: Product[],
@@ -379,9 +390,18 @@ const transformProductsForList = (
     _id: product._id,
     name: product.name,
     thumbnail: product.thumbnail || '',
-    purchasePrice: product.purchasePrice,
-    catalogPrice: product.defaultPrice?.sellingPriceExVat || 0,
-    listPrice: product.defaultPrice?.sellingPriceIncVat || 0,
+    purchasePrice: convertToPrice(
+      product.purchasePrice,
+      product.purchasePriceCurrency,
+    ),
+    catalogPrice: convertToPrice(
+      product.defaultPrice?.sellingPriceIncVat || 0,
+      entityData.value?.currency,
+    ),
+    listPrice: convertToPrice(
+      product.defaultPrice?.sellingPriceIncVat || 0,
+      entityData.value?.currency,
+    ),
     discount: 0,
     margin: 0,
     quantityLevels: [
@@ -395,10 +415,16 @@ const transformProductsForList = (
   }));
 };
 
-const handleSelectionChange = (products: Product[]) => {
-  selectedProducts.value = transformProductsForList(products);
-  setupColumns();
-};
+const selectedEntities = computed(() => {
+  return productSelector.value?.selectedEntities || [];
+});
+
+watch(selectedEntities, (newSelection: Product[]) => {
+  if (newSelection.length) {
+    selectedProducts.value = transformProductsForList(newSelection);
+    setupColumns();
+  }
+});
 
 // LOAD DATA FOR EDIT MODE
 if (!createMode.value) {
@@ -701,12 +727,11 @@ if (!createMode.value) {
         <template v-if="currentTab === 1 && !createMode" #secondary>
           <ContentCard>
             <Selector
-              v-if="products.length"
+              ref="productSelector"
               v-model:selection="productSelection"
               :entities="products"
               :selection-strategy="SelectorSelectionStrategy.None"
               :product-query-params="productQueryParams"
-              @selection-change="handleSelectionChange"
             >
               <template #list="{ selectorEntityName }">
                 <ContentHeading>

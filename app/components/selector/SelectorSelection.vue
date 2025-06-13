@@ -181,8 +181,9 @@ const updateSelection = (updatedSelection: SelectorSelectionInternal) => {
 };
 
 const noSelectionLabel = computed(() => {
-  return type.value === SelectorSelectionType.Include &&
-    selectionStrategy.value === SelectorSelectionStrategy.All
+  return (type.value === SelectorSelectionType.Include &&
+    selectionStrategy.value === SelectorSelectionStrategy.All) ||
+    activeConditionTypes.value > 0
     ? t('all_entity', { entityName: entityName.value }, 2)
     : t('no_entity', { entityName: entityName.value }, 2);
 });

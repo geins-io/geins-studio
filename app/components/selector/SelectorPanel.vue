@@ -1,6 +1,8 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends SelectorEntity">
 import {
+  type SelectorEntity,
   type SelectorMode,
+  type SelectorSelectionInternal,
   SelectorSelectionType,
   TableMode,
 } from '#shared/types';
@@ -8,13 +10,13 @@ import {
 // PROPS
 const props = withDefaults(
   defineProps<{
-    selection: SelectorSelection;
+    selection: SelectorSelectionInternal;
     mode: SelectorMode;
     currency?: string;
     type?: SelectorSelectionType;
     options: SelectorSelectionOption[];
     entityName: string;
-    entities: SelectorEntity[];
+    entities: T[];
   }>(),
   {
     type: SelectorSelectionType.Include,
@@ -23,7 +25,7 @@ const props = withDefaults(
 
 // EMITS
 const emit = defineEmits<{
-  (event: 'save', selection: SelectorSelection): void;
+  (event: 'save', selection: SelectorSelectionInternal): void;
 }>();
 
 // GLOBALS
@@ -37,7 +39,7 @@ const entities = toRef(props, 'entities');
 const currency = toRef(props, 'currency');
 const mode = toRef(props, 'mode'); */
 const entityIsProduct = computed(() => entityName.value === 'product');
-const currentSelection = ref<SelectorSelection>(
+const currentSelection = ref<SelectorSelectionInternal>(
   toRef(props, 'selection').value,
 );
 
@@ -86,49 +88,85 @@ const selectOption = (id: SelectorSelectionOptionsId) => {
 };
 
 // Columns for Entity
-const { getColumns, orderAndFilterColumns } = useColumns();
-const columnOptions: ColumnOptions<Product> = {
+const { getColumns, orderAndFilterColumns } = useColumns<T>();
+const columnOptions: ColumnOptions<T> = {
   selectable: true,
 };
 let columns = getColumns(entities.value, columnOptions);
 if (entityIsProduct.value) {
-  columns = orderAndFilterColumns(columns, ['select', '_id', 'name', 'slug']);
+  columns = orderAndFilterColumns(columns, [
+    'select',
+    'thumbnail',
+    '_id',
+    'name',
+  ]);
 }
 
 // watch entitites, if they change, update columns
 watchEffect(() => {
   columns = getColumns(entities.value, columnOptions);
   if (entityIsProduct.value) {
-    columns = orderAndFilterColumns(columns, ['select', '_id', 'name', 'slug']);
+    columns = orderAndFilterColumns(columns, [
+      'select',
+      'thumbnail',
+      '_id',
+      'name',
+    ]);
   }
 });
-
+let categoriesColumns: Column<T>[] = [];
+let brandsColumns: Column<T>[] = [];
 // Columns for categories
-const columnOptionsCategories: ColumnOptions<Category> = {
-  selectable: true,
-};
-let categoriesColumns = getColumns(categories.value, columnOptionsCategories);
-if (entityIsProduct.value) {
-  categoriesColumns = orderAndFilterColumns(categoriesColumns, [
+const setupCategoryColumns = () => {
+  const {
+    getColumns: getCategoryColumns,
+    orderAndFilterColumns: orderAndFilterCategoryColumns,
+  } = useColumns<Category>();
+  const columnOptionsCategories: ColumnOptions<Category> = {
+    selectable: true,
+  };
+  categoriesColumns = getCategoryColumns(
+    categories.value,
+    columnOptionsCategories,
+  );
+  categoriesColumns = orderAndFilterCategoryColumns(categoriesColumns, [
     'select',
     '_id',
     'name',
-    'slug',
   ]);
-}
+};
 
-// Columns for brands
-const columnOptionsBrands: ColumnOptions<Brand> = {
-  selectable: true,
-};
-let brandsColumns = getColumns(brands.value, columnOptionsBrands);
-if (entityIsProduct.value) {
-  brandsColumns = orderAndFilterColumns(brandsColumns, [
+const setupBrandsColumns = () => {
+  const {
+    getColumns: getBrandColumns,
+    orderAndFilterColumns: orderAndFilterBrandColumns,
+  } = useColumns<Brand>();
+  const columnOptionsBrands: ColumnOptions<Brand> = {
+    selectable: true,
+  };
+  brandsColumns = getBrandColumns(brands.value, columnOptionsBrands);
+  brandsColumns = orderAndFilterBrandColumns(brandsColumns, [
     'select',
     '_id',
     'name',
-    'slug',
   ]);
+};
+
+if (entityIsProduct.value) {
+  watch(
+    categories,
+    () => {
+      setupCategoryColumns();
+    },
+    { immediate: true },
+  );
+  watch(
+    brands,
+    () => {
+      setupBrandsColumns();
+    },
+    { immediate: true },
+  );
 }
 
 const onSelection = (selection: { _id?: string }[]) => {
@@ -205,6 +243,7 @@ const handleCancel = () => {
               :data="categories"
               entity-name="category"
               :pinned-state="{}"
+              :show-search="true"
               :selected-ids="currentSelection.categoryIds"
               max-height="calc(100vh - 20rem)"
               :mode="TableMode.Simple"
@@ -219,6 +258,7 @@ const handleCancel = () => {
               :data="brands"
               entity-name="brand"
               :pinned-state="{}"
+              :show-search="true"
               :selected-ids="currentSelection.brandIds"
               max-height="calc(100vh - 20rem)"
               :mode="TableMode.Simple"

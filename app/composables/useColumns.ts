@@ -14,6 +14,7 @@ import {
   TableCellTooltip,
   TableCellBoolean,
   TableCellEditable,
+  TableCellCurrency,
 } from '#components';
 import type {
   ColumnOptions,
@@ -26,6 +27,8 @@ import { TableMode } from '#shared/types';
 export const useColumns = <T extends object>() => {
   // BASIC HEADER STYLE
   const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
+  const accountStore = useAccountStore();
+  const { currentCurrency } = storeToRefs(accountStore);
 
   const getBasicHeaderStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
@@ -218,23 +221,26 @@ export const useColumns = <T extends object>() => {
       };
 
       switch (columnType) {
-        case 'currency':
+        case 'price':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
             const formatted = new Intl.NumberFormat('sv-SE', {
               style: 'currency',
-              currency: 'SEK',
+              currency: currentCurrency.value,
               minimumFractionDigits: 0,
             }).format(Number(value));
             return h('div', { class: getBasicCellStyle(table) }, formatted);
           };
           break;
         case 'image':
-          cellRenderer = ({ row }: { row: Row<T> }) => {
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
             return h(
-              'span',
-              { class: 'px-1.5 block' },
+              'div',
+              {
+                class: cn(getBasicCellStyle(table), 'px-1'),
+              },
+
               h('img', {
                 src: value,
                 alt: columnTitle,
@@ -373,10 +379,71 @@ export const useColumns = <T extends object>() => {
             return h('div', { class: getBasicCellStyle(table) }, text);
           };
           break;
+        case 'currency':
+          cellRenderer = ({ row, table }: { row: Row<T>; table: Table<T> }) => {
+            const price = row.getValue(key);
+            let priceValue: string = '';
+            let priceCurrency: string = 'XXX';
+
+            if (
+              typeof price === 'object' &&
+              price !== null &&
+              'price' in price &&
+              'currency' in price
+            ) {
+              priceValue = String(price.price);
+              priceCurrency = String(price.currency);
+            }
+
+            return h(TableCellCurrency, {
+              price: priceValue,
+              currency: priceCurrency,
+              className: getBasicCellStyle(table),
+            });
+          };
+          columnSize = { size: 134, minSize: 134, maxSize: 134 };
+          break;
+
+        case 'editable-currency':
+          cellRenderer = ({
+            table,
+            row,
+            column,
+          }: {
+            table: Table<T>;
+            row: Row<T>;
+            column: Column<T>;
+          }) => {
+            const price = row.getValue(key);
+            let priceValue: string = '';
+            let priceCurrency: string = 'XXX';
+
+            if (
+              typeof price === 'object' &&
+              price !== null &&
+              'price' in price &&
+              'currency' in price
+            ) {
+              priceValue = String(price.price);
+              priceCurrency = String(price.currency);
+            }
+
+            return h(TableCellEditable<T>, {
+              table,
+              row,
+              column,
+              colKey: key,
+              type: 'currency',
+              className: getBasicCellStyle(table),
+              initialValue: priceValue,
+              valueDescriptor: priceCurrency,
+            });
+          };
+          columnSize = { size: 134, minSize: 134, maxSize: 134 };
+          break;
         case 'editable-string':
         case 'editable-number':
         case 'editable-select':
-        case 'editable-currency':
         case 'editable-percentage':
         case 'editable-boolean': {
           const editableType = columnType.replace(
@@ -384,7 +451,7 @@ export const useColumns = <T extends object>() => {
             '',
           ) as EditableColumnType;
           cellRenderer = getEditableColumn(editableType);
-          columnSize = { size: 125, minSize: 125, maxSize: 125 };
+          columnSize = { size: 134, minSize: 134, maxSize: 134 };
           break;
         }
         default:
@@ -470,8 +537,9 @@ export const useColumns = <T extends object>() => {
       id: 'actions',
       enableHiding: false,
       enableSorting: false,
-      size: 40,
-      maxSize: 40,
+      size: 48,
+      maxSize: 48,
+      minSize: 48,
       header: ({ table }: { table: Table<T> }) =>
         h('div', {
           class: cn(getBasicHeaderStyle(table)),

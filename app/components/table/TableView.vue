@@ -144,30 +144,49 @@ watch(columnOrder, updateSortingCookie, { deep: true });
  * Handle pinned columns
  **/
 
-// Get default pinned classes for cells
-const pinnedClasses = (column: Column<TData>, header: boolean = false) => {
+const getCellClasses = (column: Column<TData>, header: boolean = false) => {
   const isPinned = column.getIsPinned();
   const isLastLeftPinnedColumn =
     isPinned === 'left' && column.getIsLastColumn('left');
   const isFirstRightPinnedColumn =
     isPinned === 'right' && column.getIsFirstColumn('right');
 
+  const colsPinnedToLeft = columnPinningState.value.left || [];
+  const noBorderLeftClass = (() => {
+    switch (colsPinnedToLeft.length) {
+      case 1:
+        return '[&:nth-child(2)]:border-0';
+      case 2:
+        return '[&:nth-child(3)]:border-0';
+      case 3:
+        return '[&:nth-child(4)]:border-0';
+      default:
+        return '';
+    }
+  })();
+
   if (isPinned) {
     const zIndex = header ? 'z-40' : 'z-20';
     const shadow = isLastLeftPinnedColumn
       ? '[&>div]:shadow-only-right'
       : isFirstRightPinnedColumn
-        ? '[&>div]:shadow-only-left'
+        ? '[&>div]:shadow-only-left border-l-0 [&>div]:border-l-0'
         : '';
-    return `bg-card sticky ${zIndex} ${shadow} after:absolute after:${isPinned}-0 after:-bottom-px after:bg-border after:h-px after:w-full after:z-50`;
+    return `bg-card sticky border-0 [&:first-child>div]:border-l-0 [&>div]:border-l ${zIndex} ${shadow} after:absolute after:${isPinned}-0 after:-bottom-px after:bg-border after:h-px after:w-full after:z-50`;
   }
-  return 'relative';
+  return `relative ${noBorderLeftClass}`;
 };
 
 const pinnedStyles = computed(() => {
   return (column: Column<TData>) => {
     const isPinned = column.getIsPinned();
-    const width = column.getSize();
+    const isFirstRightPinnedColumn =
+      isPinned === 'right' && column.getIsFirstColumn('right');
+
+    const subtractWidth = isFirstRightPinnedColumn ? 1 : 0;
+
+    const width = column.getSize() - subtractWidth;
+
     if (isPinned) {
       const position =
         isPinned === 'left'
@@ -179,7 +198,7 @@ const pinnedStyles = computed(() => {
         width: `${width}px`,
       };
     }
-    return { width: width ? `${width}px` : 'auto' };
+    return { width: width ? `${width}px` : undefined };
   };
 });
 
@@ -192,20 +211,6 @@ const columnPinningState = computed(() => {
     props.columns.some((column) => column.id === id),
   );
   return { left, right };
-});
-
-// Assign extra classes to cells based on pinned columns
-const cellClasses = computed(() => {
-  const pinnedToLeft = columnPinningState.value?.left?.length || 0;
-  const pinnedToRight = columnPinningState.value?.right?.length || 0;
-  const classes = [];
-  if (pinnedToLeft) {
-    classes.push(`[&:nth-child(2)]:border-card`);
-  }
-  if (pinnedToRight) {
-    classes.push('[&:last-child]:border-0');
-  }
-  return classes.join(' ');
 });
 
 // Setup table
@@ -332,8 +337,7 @@ const emptyText = computed(() => {
             :key="header.id"
             :class="
               cn(
-                `z-30 ${pinnedClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
-                cellClasses,
+                `z-30 ${getCellClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
                 `${simpleMode ? 'bg-background' : ''}`,
               )
             "
@@ -357,7 +361,7 @@ const emptyText = computed(() => {
             <TableCell
               v-for="cell in row.getVisibleCells()"
               :key="cell.id"
-              :class="cn(`${pinnedClasses(cell.column)}`, cellClasses)"
+              :class="cn(`${getCellClasses(cell.column)}`)"
               :style="pinnedStyles(cell.column)"
             >
               <FlexRender

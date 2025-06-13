@@ -21,6 +21,7 @@ export type ColumnType =
   | 'default'
   | 'string'
   | 'currency'
+  | 'price'
   | 'date'
   | 'number'
   | 'image'

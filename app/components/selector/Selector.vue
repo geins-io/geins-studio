@@ -28,10 +28,6 @@ const props = withDefaults(
 
 const productQueryParams = toRef(props, 'productQueryParams');
 
-const emit = defineEmits<{
-  (e: 'selectionChange', entities: T[]): void;
-}>();
-
 const {
   getFallbackSelection,
   getEmptyInternalSelectionBase,
@@ -181,12 +177,6 @@ watch(
   { immediate: true },
 );
 
-const _selectionMade = computed(() => {
-  return !!(
-    includeSelection.value.ids?.length || excludeSelection.value.ids?.length
-  );
-});
-
 // SELECTED ENTITIES
 const selectedEntitiesSimple = computed(() => {
   const noSelectionMadeSelection =
@@ -230,6 +220,8 @@ watchEffect(async () => {
       productQueryParams.value,
     );
     selectedProducts.value = transformProducts(products?.items);
+  } else if (!selectionMade.value) {
+    selectedProducts.value = [];
   }
 });
 
@@ -239,14 +231,15 @@ const selectedEntities = computed(() => {
     : selectedProducts.value;
 });
 
-// emit selectedEntities when selection changes
-watch(
+defineExpose({
+  resetSelections,
+  includeSelection,
+  excludeSelection,
   selectedEntities,
-  (newValue) => {
-    emit('selectionChange', newValue as T[]);
-  },
-  { deep: true },
-);
+  selectionMade,
+  addToManuallySelected,
+  removeFromManuallySelected,
+});
 </script>
 <template>
   <div>

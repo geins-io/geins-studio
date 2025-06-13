@@ -6,34 +6,38 @@ const props = defineProps<{
   column: Column<T>;
   colKey: string;
   type: EditableColumnType;
+  valueDescriptor?: string;
+  initialValue?: string | number;
 }>();
-
-const initialValue = props.row.getValue(props.colKey);
-const inputValue = ref<string>(String(initialValue));
-
-const accountStore = useAccountStore();
-const { currentCurrency } = storeToRefs(accountStore);
-
-const valueTypeIcon = computed(() => {
-  switch (props.type) {
-    case 'currency':
-      return currentCurrency.value;
-    case 'percentage':
-      return '%';
-    default:
-      return '';
-  }
-});
+let value: string | number = String(props.row.getValue(props.colKey));
+const valueDesc = ref(props.valueDescriptor);
+if (props.type === 'number') {
+  value = parseFloat(value);
+}
+if (props.type === 'percentage') {
+  valueDesc.value = '%';
+}
+const initValue = ref<string | number>(props.initialValue ?? value);
+const inputValue = ref<string | number>(initValue.value);
 </script>
 <template>
   <div>
     <div
       class="flex h-[30px] w-[105px] items-center rounded-lg border bg-input px-2 focus-within:border-primary focus-within:outline-none"
     >
-      <span v-if="valueTypeIcon" class="mr-2 border-r pr-2 text-xs">
-        {{ valueTypeIcon }}
-      </span>
+      <label
+        :for="`${row.id}-${column.id}-${colKey}`"
+        :class="
+          cn(
+            'mr-2 border-r pr-2 text-xs text-muted-foreground',
+            valueDesc ? '' : 'hidden',
+          )
+        "
+      >
+        {{ valueDesc || colKey }}
+      </label>
       <input
+        :id="`${row.id}-${column.id}-${colKey}`"
         v-model="inputValue"
         class="size-full rounded-lg bg-transparent text-xs focus-within:border-transparent focus-within:outline-none"
       />

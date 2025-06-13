@@ -107,3 +107,8 @@ export interface Tooltip {
   contentValue: string;
   disabled: boolean;
 }
+
+export interface Price {
+  price: string;
+  currency: string;
+}
