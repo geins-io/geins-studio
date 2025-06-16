@@ -17,9 +17,11 @@ const props = withDefaults(
     feedback?: string;
     description?: string;
     loading?: boolean;
+    size?: 'default' | 'sm';
   }>(),
   {
     valid: true,
+    size: 'default',
   },
 );
 
@@ -31,33 +33,46 @@ const modelValue = useVModel(props, 'modelValue', emits, {
   passive: true,
   defaultValue: props.defaultValue,
 });
-
-const slots = useSlots();
 </script>
 
 <template>
-  <div class="relative w-full">
+  <div
+    :class="
+      cn(
+        'relative w-full rounded-lg border',
+        $slots.valueDescriptor ? 'flex items-center' : '',
+        props.size === 'sm' ? 'px-2' : 'px-3',
+        'focus-within:border-primary focus-within:outline-none',
+        props.class,
+      )
+    "
+  >
     <LucideLoaderCircle
       v-if="loading"
       class="absolute right-3 top-2 animate-spin"
     />
     <div
-      v-else-if="slots.icon"
+      v-else-if="$slots.icon"
       class="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center"
     >
       <slot name="icon" />
     </div>
+    <span
+      v-if="$slots.valueDescriptor"
+      :class="cn('mr-2 border-r pr-2 text-xs text-muted-foreground')"
+    >
+      <slot name="valueDescriptor" />
+    </span>
     <input
       :id="props.id"
       v-model="modelValue"
       :class="
         cn(
-          `flex h-10 w-full rounded-lg border bg-input ${valid ? '' : 'outline outline-2 outline-offset-2 outline-destructive'} px-3 py-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-semibold placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50`,
-          props.class,
+          `flex h-10 w-full rounded-lg bg-input ${valid ? '' : 'outline outline-2 outline-offset-2 outline-destructive'} py-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-semibold placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50`,
+          props.size === 'sm' ? 'h-7 text-xs' : '',
         )
       "
       :autocomplete="autocomplete"
-      v-bind="$attrs"
     />
   </div>
   <p v-if="!valid && feedback" class="text-sm font-semibold text-destructive">

@@ -1,7 +1,7 @@
 export const usePrice = () => {
-  const convertToPrice = (price: string, currency: string): Price => {
+  const convertToPrice = (price: string | number, currency: string): Price => {
     return {
-      price,
+      price: String(price),
       currency,
     };
   };

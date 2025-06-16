@@ -22,25 +22,20 @@ const inputValue = ref<string | number>(initValue.value);
 </script>
 <template>
   <div>
-    <div
-      class="flex h-[30px] w-[105px] items-center rounded-lg border bg-input px-2 focus-within:border-primary focus-within:outline-none"
-    >
-      <label
-        :for="`${row.id}-${column.id}-${colKey}`"
-        :class="
-          cn(
-            'mr-2 border-r pr-2 text-xs text-muted-foreground',
-            valueDesc ? '' : 'hidden',
-          )
-        "
+    <Label :for="`${row.id}-${column.id}-${colKey}`" class="hidden">
       >
-        {{ valueDesc || colKey }}
-      </label>
-      <input
-        :id="`${row.id}-${column.id}-${colKey}`"
-        v-model="inputValue"
-        class="size-full rounded-lg bg-transparent text-xs focus-within:border-transparent focus-within:outline-none"
-      />
-    </div>
+      {{ colKey }}
+    </Label>
+    <Input
+      :id="`${row.id}-${column.id}-${colKey}`"
+      v-model="inputValue"
+      size="sm"
+      :valid="true"
+      class="w-[105px]"
+    >
+      <template v-if="valueDesc" #valueDescriptor>
+        {{ valueDesc }}
+      </template>
+    </Input>
   </div>
 </template>

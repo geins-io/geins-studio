@@ -715,6 +715,11 @@ if (!createMode.value) {
                   </div>
                 </TabsContent>
               </Tabs>
+              <Separator />
+              <PricelistRules
+                v-if="!createMode"
+                :rules="entityDataUpdate.rules || []"
+              />
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
