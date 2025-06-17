@@ -200,7 +200,7 @@ export type ProductPricelistUpdate = UpdateEntity<ProductPricelistBase>;
 export type ProductPricelist = ResponseEntity<ProductPricelistBase>;
 
 export interface PricelistProduct {
-  _id: string;
+  _id?: string;
   productId: string;
   price: number;
   staggeredCount: number;
@@ -209,7 +209,7 @@ export interface PricelistProduct {
 export interface PricelistProductList extends EntityBaseWithName {
   thumbnail: string;
   purchasePrice: Price;
-  catalogPrice: Price;
+  sellingPrice: Price;
   listPrice: Price;
   discount: number;
   margin: number;
@@ -229,6 +229,9 @@ export interface PricelistProductPatch {
 
 export interface PricelistRule {
   quantity: number;
-  margin: number;
-  discountPercent: number;
+  margin?: number;
+  discountPercent?: number;
+  applied?: boolean;
 }
+
+export type PricelistRuleMode = 'margin' | 'discount';

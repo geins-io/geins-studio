@@ -31,7 +31,7 @@ const inputValue = ref<string | number>(initValue.value);
       v-model="inputValue"
       size="sm"
       :valid="true"
-      class="w-[105px]"
+      class="w-full min-w-[105px]"
     >
       <template v-if="valueDesc" #valueDescriptor>
         {{ valueDesc }}

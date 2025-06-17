@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef } from '@tanstack/vue-table';
 import {
   SelectorSelectionStrategy,
+  type PricelistRuleMode,
   type PricelistProductList,
   type Product,
 } from '#shared/types';
@@ -166,6 +167,11 @@ const {
     ...entity,
     ...formData.vat,
     ...formData.default,
+    products: selectedProducts.value.map((product) => ({
+      productId: product._id,
+      price: Number(product.listPrice.price),
+      staggeredCount: 1,
+    })),
     rules: undefined,
   }),
 
@@ -353,18 +359,32 @@ const productQueryParams = ref<ProductQueryParams>({
   ),
 });
 
+const vatDescription = computed(() => {
+  return entityData.value?.exVat ? t('ex_vat') : t('inc_vat');
+});
 const { getColumns, addActionsColumn } = useColumns<PricelistProductList>();
 let columns: ColumnDef<PricelistProductList>[] = [];
-const columnOptions: ColumnOptions<PricelistProductList> = {
+const columnOptions: ColumnOptions<PricelistProductList> = reactive({
   columnTypes: {
     listPrice: 'editable-currency',
     discount: 'editable-percentage',
     margin: 'editable-percentage',
   },
+  // (${vatDescription.value})
+  columnTitles: {
+    listPrice: `Pricelist price`,
+    sellingPrice: `Selling price`,
+  },
   excludeColumns: ['quantityLevels', 'manual'],
-};
+});
+
+watch(vatDescription, () => {
+  setupColumns();
+});
 
 const setupColumns = () => {
+  console.log('🚀 ~ setupColumns ~ columnOptions:', columnOptions.columnTitles);
+
   columns = getColumns(selectedProducts.value, columnOptions);
   addActionsColumn(
     columns,
@@ -386,33 +406,40 @@ const { convertToPrice } = usePrice();
 const transformProductsForList = (
   products: Product[],
 ): PricelistProductList[] => {
-  return products.map((product) => ({
-    _id: product._id,
-    name: product.name,
-    thumbnail: product.thumbnail || '',
-    purchasePrice: convertToPrice(
-      product.purchasePrice,
-      product.purchasePriceCurrency,
-    ),
-    catalogPrice: convertToPrice(
-      product.defaultPrice?.sellingPriceIncVat || 0,
-      entityData.value?.currency,
-    ),
-    listPrice: convertToPrice(
-      product.defaultPrice?.sellingPriceIncVat || 0,
-      entityData.value?.currency,
-    ),
-    discount: 0,
-    margin: 0,
-    quantityLevels: [
-      {
-        quantity: 0,
-        margin: 0,
-        discountPercent: 0,
-      },
-    ],
-    manual: false,
-  }));
+  return products.map((product) => {
+    const sellingPriceExVat = product.defaultPrice?.sellingPriceIncVat
+      ? product.defaultPrice.sellingPriceIncVat /
+        (1 + (product.defaultPrice.vatRate || 0))
+      : 0;
+    const sellingPrice = entityData.value?.exVat
+      ? Math.round(sellingPriceExVat * 100) / 100
+      : product.defaultPrice?.sellingPriceIncVat || 0;
+    const prod = {
+      _id: product._id,
+      name: product.name,
+      thumbnail: product.thumbnail || '',
+      purchasePrice: convertToPrice(
+        product.purchasePrice,
+        product.purchasePriceCurrency,
+      ),
+      sellingPrice: convertToPrice(
+        product.defaultPrice?.sellingPriceIncVat,
+        entityData.value?.currency,
+      ),
+      listPrice: convertToPrice(sellingPrice, entityData.value?.currency),
+      discount: 0,
+      margin: 0,
+      quantityLevels: [
+        {
+          quantity: 0,
+          margin: 0,
+          discountPercent: 0,
+        },
+      ],
+      manual: false,
+    };
+    return prod;
+  });
 };
 
 const selectedEntities = computed(() => {
@@ -460,6 +487,11 @@ if (!createMode.value) {
     { deep: true },
   );
 }
+
+const pricelistRulesMode = ref<PricelistRuleMode>('margin');
+const updatePricelistMode = (mode: string | number) => {
+  pricelistRulesMode.value = mode as PricelistRuleMode;
+};
 </script>
 
 <template>
@@ -695,30 +727,20 @@ if (!createMode.value) {
               :create-mode="createMode"
               :step-valid="true"
             >
-              <Tabs default-value="margin">
+              <Tabs
+                default-value="margin"
+                @update:model-value="updatePricelistMode"
+              >
                 <TabsList>
                   <TabsTrigger value="margin"> Margin </TabsTrigger>
                   <TabsTrigger value="discount"> Discount </TabsTrigger>
                 </TabsList>
-                <TabsContent value="margin" class="pt-2">
-                  <Label>Margin %</Label>
-                  <div class="flex w-1/3 gap-2">
-                    <Input />
-                    <Button variant="outline" size="lg"> Apply</Button>
-                  </div>
-                </TabsContent>
-                <TabsContent value="discount" class="pt-2">
-                  <Label>Discount %</Label>
-                  <div class="flex w-1/3 gap-2">
-                    <Input />
-                    <Button variant="outline" size="lg"> Apply</Button>
-                  </div>
-                </TabsContent>
               </Tabs>
-              <Separator />
               <PricelistRules
                 v-if="!createMode"
                 :rules="entityDataUpdate.rules || []"
+                :mode="pricelistRulesMode"
+                @update="entityDataUpdate.rules = $event"
               />
             </ContentEditCard>
           </ContentEditMainContent>

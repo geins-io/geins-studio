@@ -39,9 +39,8 @@ const modelValue = useVModel(props, 'modelValue', emits, {
   <div
     :class="
       cn(
-        'relative w-full rounded-lg border',
+        'relative w-full rounded-lg border bg-input px-3',
         $slots.valueDescriptor ? 'flex items-center' : '',
-        props.size === 'sm' ? 'px-2' : 'px-3',
         'focus-within:border-primary focus-within:outline-none',
         props.class,
       )
@@ -59,7 +58,12 @@ const modelValue = useVModel(props, 'modelValue', emits, {
     </div>
     <span
       v-if="$slots.valueDescriptor"
-      :class="cn('mr-2 border-r pr-2 text-xs text-muted-foreground')"
+      :class="
+        cn(
+          'mr-2 border-r pr-2 text-xs text-muted-foreground',
+          props.size === 'sm' ? '-ml-1 mr-2 pr-2' : 'mr-3 pr-3',
+        )
+      "
     >
       <slot name="valueDescriptor" />
     </span>
@@ -73,6 +77,7 @@ const modelValue = useVModel(props, 'modelValue', emits, {
         )
       "
       :autocomplete="autocomplete"
+      :placeholder="$attrs?.placeholder ? String($attrs.placeholder) : ''"
     />
   </div>
   <p v-if="!valid && feedback" class="text-sm font-semibold text-destructive">

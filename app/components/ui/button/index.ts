@@ -16,7 +16,7 @@ export const buttonVariants = cva(
           'border bg-card hover:bg-secondary/90 dark:bg-secondary/80 dark:hover:bg-secondary',
         ghost:
           'hover:secondary-foreground border border-transparent hover:border-border hover:bg-secondary',
-        link: 'text-primary underline underline-offset-4 dark:text-foreground',
+        link: '!px-0 text-primary underline underline-offset-4 dark:text-foreground',
       },
       size: {
         default: 'h-9 px-4 py-2',

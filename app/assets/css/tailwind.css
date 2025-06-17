@@ -5,10 +5,10 @@
 @layer base {
   :root {
     --background: 0 0% 98%; /* #fafafa */
-    --foreground: 0 0% 9%; /* #161616 */
+    --foreground: 240 2% 22%; /* #161616 */
 
     --card: 0 0% 100%;
-    --foreground: 240 2% 22%; /* #161616 */
+    --card-foreground: 0 0% 9%; /* #161616 */
 
     --popover: 0 0% 100%; /* #ffffff */
     --popover-foreground: 0 0% 9%; /* #161616 */

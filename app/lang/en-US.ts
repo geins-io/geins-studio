@@ -114,6 +114,8 @@ export default defineI18nLocale(async () => {
     previous: 'Previous',
     back_to_login: 'Back to login',
     global_search_placeholder: 'Search...',
+    inc_vat: 'inc vat',
+    ex_vat: 'ex vat',
     create_summary_description:
       'This area will display a summary of the data you add in this section.',
     dashboard_title: 'Geins Studio',
