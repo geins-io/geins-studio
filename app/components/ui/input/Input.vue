@@ -78,6 +78,7 @@ const modelValue = useVModel(props, 'modelValue', emits, {
       "
       :autocomplete="autocomplete"
       :placeholder="$attrs?.placeholder ? String($attrs.placeholder) : ''"
+      :disabled="$attrs?.disabled ? Boolean($attrs.disabled) : false"
     />
   </div>
   <p v-if="!valid && feedback" class="text-sm font-semibold text-destructive">

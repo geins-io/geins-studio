@@ -12,6 +12,7 @@ import {
   type PricelistProductList,
   type Product,
 } from '#shared/types';
+import { PricelistQtyLevelsCell } from '#components';
 
 // COMPOSABLES
 const route = useRoute();
@@ -67,6 +68,8 @@ const { getEmptyQuerySelectionBase } = useSelector();
 const productSelection = ref<SelectorSelectionQueryBase>(
   getEmptyQuerySelectionBase(),
 );
+
+const pricelistRulesMode = ref<PricelistRuleMode>('margin');
 
 // TABS MANAGEMENT
 const currentTab = ref(0);
@@ -143,6 +146,13 @@ const {
     if (entity.productSelectionQuery) {
       productSelection.value = entity.productSelectionQuery;
     }
+    if (entity.rules && entity.rules.length) {
+      const firstRuleMargin = entity.rules[0]?.margin;
+      pricelistRulesMode.value =
+        firstRuleMargin !== undefined && firstRuleMargin !== 0
+          ? 'margin'
+          : 'discount';
+    }
     form.setValues({
       vat: {
         exVat: entity.exVat,
@@ -169,10 +179,11 @@ const {
     ...formData.default,
     products: selectedProducts.value.map((product) => ({
       productId: product._id,
-      price: Number(product.listPrice.price),
+      price: Number(
+        product.listPrice?.price || product.regularPrice?.price || 0,
+      ),
       staggeredCount: 1,
     })),
-    rules: undefined,
   }),
 
   onFormValuesChange: (values) => {
@@ -362,30 +373,55 @@ const productQueryParams = ref<ProductQueryParams>({
 const vatDescription = computed(() => {
   return entityData.value?.exVat ? t('ex_vat') : t('inc_vat');
 });
-const { getColumns, addActionsColumn } = useColumns<PricelistProductList>();
+const { getColumns, addActionsColumn, extendColumns } =
+  useColumns<PricelistProductList>();
 let columns: ColumnDef<PricelistProductList>[] = [];
-const columnOptions: ColumnOptions<PricelistProductList> = reactive({
+const columnOptions: ColumnOptions<PricelistProductList> = {
   columnTypes: {
     listPrice: 'editable-currency',
     discount: 'editable-percentage',
     margin: 'editable-percentage',
   },
-  // (${vatDescription.value})
   columnTitles: {
-    listPrice: `Pricelist price`,
-    sellingPrice: `Selling price`,
+    listPrice: `Pricelist price (${vatDescription.value})`,
+    regularPrice: `Price (${vatDescription.value})`,
   },
-  excludeColumns: ['quantityLevels', 'manual'],
-});
+  excludeColumns: ['manual', 'quantityLevels'],
+};
 
 watch(vatDescription, () => {
+  if (!columnOptions.columnTitles) {
+    return;
+  }
+  columnOptions.columnTitles.listPrice = `Pricelist price (${vatDescription.value})`;
+  columnOptions.columnTitles.regularPrice = `Price (${vatDescription.value})`;
   setupColumns();
 });
 
-const setupColumns = () => {
-  console.log('🚀 ~ setupColumns ~ columnOptions:', columnOptions.columnTitles);
+const addQuantityLevelsColumn = (
+  columns: ColumnDef<PricelistProductList>[],
+): ColumnDef<PricelistProductList>[] => {
+  const quantityLevelsColumn: ColumnDef<PricelistProductList> = {
+    id: 'quantityLevels',
+    enableHiding: false,
+    enableSorting: false,
+    size: 40,
+    maxSize: 40,
+    minSize: 40,
+    cell: ({ row }) => {
+      const rowData = row.original;
+      return h(PricelistQtyLevelsCell, {
+        quantityLevels: rowData.quantityLevels,
+      });
+    },
+  };
+  return extendColumns(columns, quantityLevelsColumn);
+};
 
+const setupColumns = () => {
   columns = getColumns(selectedProducts.value, columnOptions);
+  columns = addQuantityLevelsColumn(columns);
+  console.log('🚀 ~ setupColumns ~ columns:', columns);
   addActionsColumn(
     columns,
     {
@@ -398,7 +434,7 @@ const setupColumns = () => {
 
 const pinnedState = ref({
   left: [],
-  right: ['listPrice', 'discount', 'margin', 'actions'],
+  right: ['listPrice', 'discount', 'margin', 'quantityLevels', 'actions'],
 });
 
 const { convertToPrice } = usePrice();
@@ -406,14 +442,17 @@ const { convertToPrice } = usePrice();
 const transformProductsForList = (
   products: Product[],
 ): PricelistProductList[] => {
+  const pricelistProducts: PricelistProduct[] =
+    entityData.value?.products || [];
+
   return products.map((product) => {
-    const sellingPriceExVat = product.defaultPrice?.sellingPriceIncVat
-      ? product.defaultPrice.sellingPriceIncVat /
+    const regularPriceExVat = product.defaultPrice?.regularPriceIncVat
+      ? product.defaultPrice.regularPriceIncVat /
         (1 + (product.defaultPrice.vatRate || 0))
       : 0;
-    const sellingPrice = entityData.value?.exVat
-      ? Math.round(sellingPriceExVat * 100) / 100
-      : product.defaultPrice?.sellingPriceIncVat || 0;
+    const regularPrice = entityData.value?.exVat
+      ? Math.round(regularPriceExVat * 100) / 100
+      : product.defaultPrice?.regularPriceIncVat || 0;
     const prod = {
       _id: product._id,
       name: product.name,
@@ -422,20 +461,20 @@ const transformProductsForList = (
         product.purchasePrice,
         product.purchasePriceCurrency,
       ),
-      sellingPrice: convertToPrice(
-        product.defaultPrice?.sellingPriceIncVat,
+      regularPrice: convertToPrice(regularPrice, entityData.value?.currency),
+      listPrice: convertToPrice(
+        undefined,
         entityData.value?.currency,
+        regularPrice,
       ),
-      listPrice: convertToPrice(sellingPrice, entityData.value?.currency),
       discount: 0,
       margin: 0,
-      quantityLevels: [
-        {
-          quantity: 0,
-          margin: 0,
-          discountPercent: 0,
-        },
-      ],
+      quantityLevels: pricelistProducts
+        .filter((p) => p.productId === product._id)
+        .map((p) => ({
+          quantity: p.staggeredCount,
+          price: p.price,
+        })),
       manual: false,
     };
     return prod;
@@ -445,6 +484,10 @@ const transformProductsForList = (
 const selectedEntities = computed(() => {
   return productSelector.value?.selectedEntities || [];
 });
+
+const updatePricelistMode = (mode: string | number) => {
+  pricelistRulesMode.value = mode as PricelistRuleMode;
+};
 
 watch(selectedEntities, (newSelection: Product[]) => {
   if (newSelection.length) {
@@ -487,11 +530,6 @@ if (!createMode.value) {
     { deep: true },
   );
 }
-
-const pricelistRulesMode = ref<PricelistRuleMode>('margin');
-const updatePricelistMode = (mode: string | number) => {
-  pricelistRulesMode.value = mode as PricelistRuleMode;
-};
 </script>
 
 <template>
@@ -728,7 +766,7 @@ const updatePricelistMode = (mode: string | number) => {
               :step-valid="true"
             >
               <Tabs
-                default-value="margin"
+                :default-value="pricelistRulesMode"
                 @update:model-value="updatePricelistMode"
               >
                 <TabsList>

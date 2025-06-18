@@ -1,8 +1,13 @@
 export const usePrice = () => {
-  const convertToPrice = (price: string | number, currency: string): Price => {
+  const convertToPrice = (
+    price: string | number | undefined,
+    currency: string,
+    placeholder?: string | number,
+  ): Price => {
     return {
-      price: String(price),
+      price: price ? String(price) : undefined,
       currency,
+      placeholder: placeholder ? String(placeholder) : undefined,
     };
   };
 

@@ -109,6 +109,7 @@ export interface Tooltip {
 }
 
 export interface Price {
-  price: string;
+  price?: string;
   currency: string;
+  placeholder?: string;
 }

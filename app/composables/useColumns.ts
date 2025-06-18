@@ -415,8 +415,9 @@ export const useColumns = <T extends object>() => {
             column: Column<T>;
           }) => {
             const price = row.getValue(key);
-            let priceValue: string = '';
+            let priceValue: string | undefined = '';
             let priceCurrency: string = 'XXX';
+            let placeholder: string = '';
 
             if (
               typeof price === 'object' &&
@@ -424,8 +425,17 @@ export const useColumns = <T extends object>() => {
               'price' in price &&
               'currency' in price
             ) {
-              priceValue = String(price.price);
+              priceValue = price.price ? String(price.price) : '';
               priceCurrency = String(price.currency);
+            }
+
+            if (
+              typeof price === 'object' &&
+              price !== null &&
+              'placeholder' in price &&
+              price.placeholder
+            ) {
+              placeholder = String(price.placeholder);
             }
 
             return h(TableCellEditable<T>, {
@@ -437,6 +447,7 @@ export const useColumns = <T extends object>() => {
               className: getBasicCellStyle(table),
               initialValue: priceValue,
               valueDescriptor: priceCurrency,
+              placeholder,
             });
           };
           columnSize = { size: 134, minSize: 134, maxSize: 134 };
@@ -523,6 +534,12 @@ export const useColumns = <T extends object>() => {
     columns: ColumnDef<T>[],
     column: ColumnDef<T>,
   ): ColumnDef<T>[] => {
+    if (!column.header) {
+      column.header = ({ table }: { table: Table<T> }) =>
+        h('div', {
+          class: cn(getBasicHeaderStyle(table)),
+        });
+    }
     columns.push(column);
     return columns;
   };

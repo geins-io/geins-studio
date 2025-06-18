@@ -8,6 +8,7 @@ const props = defineProps<{
   type: EditableColumnType;
   valueDescriptor?: string;
   initialValue?: string | number;
+  placeholder?: string;
 }>();
 let value: string | number = String(props.row.getValue(props.colKey));
 const valueDesc = ref(props.valueDescriptor);
@@ -32,6 +33,7 @@ const inputValue = ref<string | number>(initValue.value);
       size="sm"
       :valid="true"
       class="w-full min-w-[105px]"
+      :placeholder="placeholder"
     >
       <template v-if="valueDesc" #valueDescriptor>
         {{ valueDesc }}

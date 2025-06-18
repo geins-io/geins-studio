@@ -2,6 +2,7 @@
 const props = withDefaults(
   defineProps<{
     mode: 'margin' | 'discount';
+    index: number;
   }>(),
   {
     mode: 'margin',
@@ -51,7 +52,11 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
 <template>
   <tr class="border-b first:border-t">
     <td :class="tdClasses">
-      <Input v-model.number="quantity" size="sm" />
+      <Input
+        v-model.number="quantity"
+        size="sm"
+        :disabled="index === 0 && quantity === 1"
+      />
     </td>
     <td v-if="mode === 'margin'" :class="tdClasses">
       <Input v-model.number="margin" size="sm" placeholder="0">
@@ -73,13 +78,14 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         >Apply and overwrite</Button
       >
       <Button
+        :disabled="index === 0 && quantity === 1"
         size="icon"
         variant="outline"
         class="size-7 hover:text-destructive"
         @click="$emit('remove')"
       >
-        <LucideX class="size-3.5"
-      /></Button>
+        <LucideX class="size-3.5" />
+      </Button>
     </td>
   </tr>
 </template>
