@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HTMLAttributes, FormHTMLAttributes } from 'vue';
+import type { HTMLAttributes } from 'vue';
 import { useVModel } from '@vueuse/core';
 
 defineOptions({
@@ -11,8 +11,6 @@ const props = withDefaults(
     defaultValue?: string | number;
     modelValue?: string | number;
     class?: HTMLAttributes['class'];
-    id?: HTMLAttributes['id'];
-    autocomplete?: FormHTMLAttributes['autocomplete'];
     valid?: boolean;
     feedback?: string;
     description?: string;
@@ -33,13 +31,19 @@ const modelValue = useVModel(props, 'modelValue', emits, {
   passive: true,
   defaultValue: props.defaultValue,
 });
+const attributes = useAttrs();
+const inputAttrs = computed(() => {
+  const { class: _, ...attrs } = attributes;
+  return attrs;
+});
 </script>
 
 <template>
   <div
     :class="
       cn(
-        'relative w-full rounded-lg border bg-input px-3',
+        'relative h-10 w-full rounded-lg border bg-input',
+        props.size === 'sm' ? 'h-7' : '',
         $slots.valueDescriptor ? 'flex items-center' : '',
         'focus-within:border-primary focus-within:outline-none',
         props.class,
@@ -60,25 +64,27 @@ const modelValue = useVModel(props, 'modelValue', emits, {
       v-if="$slots.valueDescriptor"
       :class="
         cn(
-          'mr-2 border-r pr-2 text-xs text-muted-foreground',
-          props.size === 'sm' ? '-ml-1 mr-2 pr-2' : 'mr-3 pr-3',
+          'border-r bg-input text-xs text-muted-foreground',
+          props.size === 'sm' ? 'pl-2 pr-2' : 'pl-3 pr-3',
         )
       "
     >
       <slot name="valueDescriptor" />
     </span>
     <input
-      :id="props.id"
       v-model="modelValue"
       :class="
         cn(
-          `flex h-10 w-full rounded-lg bg-input ${valid ? '' : 'outline outline-2 outline-offset-2 outline-destructive'} py-1 text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-semibold placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50`,
-          props.size === 'sm' ? 'h-7 text-xs' : '',
+          `flex h-full w-full bg-input ${valid ? '' : 'outline outline-2 outline-offset-2 outline-destructive'} text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-semibold placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50`,
+          props.size === 'sm' ? 'text-xs' : '',
+          $slots.valueDescriptor
+            ? props.size === 'sm'
+              ? 'rounded-r-lg py-1 pl-2 pr-3'
+              : 'rounded-r-lg py-1 pl-3 pr-3'
+            : 'rounded-lg px-3 py-1',
         )
       "
-      :autocomplete="autocomplete"
-      :placeholder="$attrs?.placeholder ? String($attrs.placeholder) : ''"
-      :disabled="$attrs?.disabled ? Boolean($attrs.disabled) : false"
+      v-bind="inputAttrs"
     />
   </div>
   <p v-if="!valid && feedback" class="text-sm font-semibold text-destructive">

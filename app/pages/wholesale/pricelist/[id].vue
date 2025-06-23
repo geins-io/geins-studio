@@ -373,8 +373,13 @@ const productQueryParams = ref<ProductQueryParams>({
 const vatDescription = computed(() => {
   return entityData.value?.exVat ? t('ex_vat') : t('inc_vat');
 });
-const { getColumns, addActionsColumn, extendColumns } =
-  useColumns<PricelistProductList>();
+const {
+  getBasicCellStyle,
+  getBasicHeaderStyle,
+  getColumns,
+  addActionsColumn,
+  extendColumns,
+} = useColumns<PricelistProductList>();
 let columns: ColumnDef<PricelistProductList>[] = [];
 const columnOptions: ColumnOptions<PricelistProductList> = {
   columnTypes: {
@@ -386,7 +391,7 @@ const columnOptions: ColumnOptions<PricelistProductList> = {
     listPrice: `Pricelist price (${vatDescription.value})`,
     regularPrice: `Price (${vatDescription.value})`,
   },
-  excludeColumns: ['manual', 'quantityLevels'],
+  excludeColumns: ['manual', 'quantityLevels', 'margin', 'discount'],
 };
 
 watch(vatDescription, () => {
@@ -408,11 +413,19 @@ const addQuantityLevelsColumn = (
     size: 40,
     maxSize: 40,
     minSize: 40,
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const rowData = row.original;
       return h(PricelistQtyLevelsCell, {
         quantityLevels: rowData.quantityLevels,
+        className: getBasicCellStyle(table),
       });
+    },
+    header: ({ table }) => {
+      return h(
+        'div',
+        { class: cn(getBasicHeaderStyle(table), 'px-3') },
+        'Qty levels',
+      );
     },
   };
   return extendColumns(columns, quantityLevelsColumn);
@@ -469,16 +482,34 @@ const transformProductsForList = (
       ),
       discount: 0,
       margin: 0,
-      quantityLevels: pricelistProducts
-        .filter((p) => p.productId === product._id)
-        .map((p) => ({
-          quantity: p.staggeredCount,
-          price: p.price,
-        })),
+      quantityLevels: getQuantityLevels(pricelistProducts, product),
       manual: false,
     };
     return prod;
   });
+};
+
+const getQuantityLevels = (
+  products: PricelistProduct[],
+  product: Product,
+): PricelistRule[] => {
+  const productLevels = products
+    .filter((p) => p.productId === product._id)
+    .map((p) => ({
+      quantity: p.staggeredCount,
+      price: p.price,
+    }));
+  const entityLevels = entityData.value.rules
+    .filter((rule: PricelistRule) => rule.quantity > 1)
+    .map((rule: PricelistRule) => ({
+      quantity: rule.quantity,
+      price: rule.price,
+      global: true,
+    }));
+
+  return [...productLevels, ...entityLevels].sort(
+    (a, b) => a.quantity - b.quantity,
+  );
 };
 
 const selectedEntities = computed(() => {

@@ -33,7 +33,8 @@ export const useColumns = <T extends object>() => {
   const getBasicHeaderStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
 
-    const baseStyle = 'px-1.5 flex items-center ' + basicHeaderTextStyle;
+    const baseStyle =
+      'px-1.5 flex items-center whitespace-nowrap ' + basicHeaderTextStyle;
     const simpleStyle =
       'h-10 normal-case [&>button]:pl-2 [&>button]:pr-1 [&>button]:normal-case';
     const advancedStyle = 'h-12';
@@ -196,7 +197,13 @@ export const useColumns = <T extends object>() => {
             );
           }
         : ({ table }: { table: Table<T> }) => {
-            return h('div', { class: getBasicHeaderStyle(table) }, columnTitle);
+            return h(
+              'div',
+              {
+                class: cn(getBasicHeaderStyle(table), 'px-3'),
+              },
+              columnTitle,
+            );
           };
 
       const getEditableColumn = (type: EditableColumnType) => {
@@ -391,8 +398,10 @@ export const useColumns = <T extends object>() => {
               'price' in price &&
               'currency' in price
             ) {
-              priceValue = String(price.price);
-              priceCurrency = String(price.currency);
+              priceValue =
+                price.price !== undefined ? String(price.price) : '---';
+              priceCurrency =
+                price.currency !== undefined ? String(price.currency) : 'XXX';
             }
 
             return h(TableCellCurrency, {
@@ -615,6 +624,8 @@ export const useColumns = <T extends object>() => {
   };
 
   return {
+    getBasicHeaderStyle,
+    getBasicCellStyle,
     getColumns,
     extendColumns,
     addActionsColumn,

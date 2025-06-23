@@ -78,6 +78,7 @@ export default defineI18nLocale(async () => {
     active: 'Active',
     inactive: 'Inactive',
     summary: 'Summary',
+    quantity: 'Quantity',
     less_than: 'Less than',
     more_than: 'More than',
     exactly: 'Exactly',

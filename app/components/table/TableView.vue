@@ -144,7 +144,11 @@ watch(columnOrder, updateSortingCookie, { deep: true });
  * Handle pinned columns
  **/
 
-const getCellClasses = (column: Column<TData>, header: boolean = false) => {
+const getCellClasses = (
+  column: Column<TData>,
+  header: boolean = false,
+  lastRow: boolean = false,
+) => {
   const isPinned = column.getIsPinned();
   const isLastLeftPinnedColumn =
     isPinned === 'left' && column.getIsLastColumn('left');
@@ -172,7 +176,10 @@ const getCellClasses = (column: Column<TData>, header: boolean = false) => {
       : isFirstRightPinnedColumn
         ? '[&>div]:shadow-only-left border-l-0 [&>div]:border-l-0'
         : '';
-    return `bg-card sticky border-0 [&:first-child>div]:border-l-0 [&>div]:border-l ${zIndex} ${shadow} after:absolute after:${isPinned}-0 after:-bottom-px after:bg-border after:h-px after:w-full after:z-50`;
+    const afterStyles = !lastRow
+      ? `after:absolute after:${isPinned}-0 after:-bottom-px after:bg-border after:h-px after:w-full after:z-50`
+      : '';
+    return `bg-card sticky border-0 [&:first-child>div]:border-l-0 [&>div]:border-l ${zIndex} ${shadow} ${afterStyles}`;
   }
   return `relative ${noBorderLeftClass}`;
 };
@@ -361,7 +368,11 @@ const emptyText = computed(() => {
             <TableCell
               v-for="cell in row.getVisibleCells()"
               :key="cell.id"
-              :class="cn(`${getCellClasses(cell.column)}`)"
+              :class="
+                cn(
+                  `${getCellClasses(cell.column, false, row.index === table.getRowModel().rows.length - 1)}`,
+                )
+              "
               :style="pinnedStyles(cell.column)"
             >
               <FlexRender

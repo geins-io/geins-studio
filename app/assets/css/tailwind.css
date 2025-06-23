@@ -119,6 +119,22 @@
     height: 100%;
     scroll-behavior: smooth;
   }
+
+  input:is(:-webkit-autofill, :autofill) {
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--input)) inset !important;
+    -webkit-text-fill-color: hsl(var(--foreground)) !important;
+    border-radius: inherit !important;
+    border-bottom: 2px dashed hsl(var(--warning) / 60%) !important;
+    border-right: 2px dashed hsl(var(--warning) / 60%) !important;
+    top: 1px !important;
+    bottom: 1px !important;
+    position: relative !important;
+    width: calc(100% - 2px) !important;
+    height: calc(100% - 2px) !important;
+    left: 1px !important;
+    right: 1px !important;
+  }
+
   #__nuxt {
     height: 100%;
   }

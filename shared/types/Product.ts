@@ -233,6 +233,7 @@ export interface PricelistRule {
   discountPercent?: number;
   price?: number;
   applied?: boolean;
+  global?: boolean;
 }
 
 export type PricelistRuleMode = 'margin' | 'discount';
