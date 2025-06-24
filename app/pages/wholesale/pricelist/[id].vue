@@ -5,7 +5,7 @@ import { useI18n } from '#imports';
 import * as z from 'zod';
 import type { AcceptableValue } from 'reka-ui';
 import { useToast } from '@/components/ui/toast/use-toast';
-import type { ColumnDef } from '@tanstack/vue-table';
+import type { ColumnDef, Row } from '@tanstack/vue-table';
 import {
   SelectorSelectionStrategy,
   type PricelistRuleMode,
@@ -392,6 +392,28 @@ const columnOptions: ColumnOptions<PricelistProductList> = {
     regularPrice: `Price (${vatDescription.value})`,
   },
   excludeColumns: ['manual', 'quantityLevels', 'margin', 'discount'],
+  columnCellProps: {
+    listPrice: {
+      onBlur: (value: string | number, row: Row<PricelistProductList>) => {
+        updatePricelistProductsPrice(row.original._id, String(value));
+      },
+    },
+  },
+};
+
+const updatePricelistProductsPrice = (id: string, price: string) => {
+  const product = selectedProducts.value.find((p) => p._id === id);
+  if (product && product.listPrice) {
+    console.log(
+      '🚀 ~ updatePricelistProductsPrice ~ product.listPrice:',
+      product.listPrice,
+    );
+    product.listPrice.price = price;
+  }
+  console.log(
+    '🚀 ~ updatePricelistProductsPrice ~ selectedProducts.value:',
+    selectedProducts.value,
+  );
 };
 
 watch(vatDescription, () => {
@@ -418,6 +440,18 @@ const addQuantityLevelsColumn = (
       return h(PricelistQtyLevelsCell, {
         quantityLevels: rowData.quantityLevels,
         className: getBasicCellStyle(table),
+        id: rowData._id,
+        onEdit: (id: string) => {
+          console.log('🚀 ~ id:', id);
+          const rules = selectedProducts.value.find(
+            (p) => p._id === id,
+          )?.quantityLevels;
+          console.log('🚀 ~ rules:', rules);
+
+          rulesToEdit.value = rules ? [...rules] : [];
+          rulesId.value = id;
+          rulesPanelOpen.value = true;
+        },
       });
     },
     header: ({ table }) => {
@@ -466,6 +500,11 @@ const transformProductsForList = (
     const regularPrice = entityData.value?.exVat
       ? Math.round(regularPriceExVat * 100) / 100
       : product.defaultPrice?.regularPriceIncVat || 0;
+
+    const listPrice =
+      entityData.value?.products.find(
+        (p: PricelistProduct) => p.productId === product._id,
+      )?.price || undefined;
     const prod = {
       _id: product._id,
       name: product.name,
@@ -476,9 +515,9 @@ const transformProductsForList = (
       ),
       regularPrice: convertToPrice(regularPrice, entityData.value?.currency),
       listPrice: convertToPrice(
-        undefined,
+        listPrice,
         entityData.value?.currency,
-        regularPrice,
+        listPrice ?? regularPrice,
       ),
       discount: 0,
       margin: 0,
@@ -487,6 +526,18 @@ const transformProductsForList = (
     };
     return prod;
   });
+};
+
+const rulesToEdit = ref<PricelistRule[]>([]);
+const rulesPanelOpen = ref(false);
+const rulesId = ref<string>('');
+
+const handleSaveRules = (rules: PricelistRule[]) => {
+  console.log('🚀 ~ handleSaveRules ~ rules:', rules);
+  selectedProducts.value = selectedProducts.value.map((p) =>
+    p._id === rulesId.value ? { ...p, quantityLevels: rules } : p,
+  );
+  rulesId.value = '';
 };
 
 const getQuantityLevels = (
@@ -575,6 +626,13 @@ if (!createMode.value) {
     :entity-name="entityName"
     :loading="deleting"
     @confirm="confirmDelete"
+  />
+  <PricelistQtyLevelsPanel
+    v-model:open="rulesPanelOpen"
+    :product-id="rulesId"
+    :rules="rulesToEdit"
+    :currency="entityData.currency"
+    @save="handleSaveRules"
   />
 
   <ContentEditWrap>

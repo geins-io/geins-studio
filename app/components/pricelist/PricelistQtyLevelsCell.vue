@@ -1,7 +1,12 @@
 <script setup lang="ts">
 const _props = defineProps<{
+  id: string;
   quantityLevels: PricelistRule[];
   className?: string;
+}>();
+
+const emit = defineEmits<{
+  (e: 'edit', id: string): void;
 }>();
 </script>
 <template>
@@ -32,13 +37,13 @@ const _props = defineProps<{
             </div>
           </template>
         </ContentTextTooltip>
-        <Button size="icon-xs" variant="ghost">
+        <Button size="icon-xs" variant="ghost" @click="emit('edit', id)">
           <LucideEdit class="size-3" />
         </Button>
       </div>
       <div v-else class="flex w-full items-center justify-between gap-2">
         <span class="text-muted-foreground">0</span>
-        <Button size="icon-xs" variant="ghost">
+        <Button size="icon-xs" variant="ghost" @click="emit('edit', id)">
           <LucidePlus class="size-3.5" />
         </Button>
       </div>

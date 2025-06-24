@@ -20,6 +20,22 @@ if (props.type === 'percentage') {
 }
 const initValue = ref<string | number>(props.initialValue ?? value);
 const inputValue = ref<string | number>(initValue.value);
+
+const emit = defineEmits<{
+  (e: 'change' | 'blur', newValue: string | number, row: Row<T>): void;
+}>();
+
+watch(inputValue, (newValue) => {
+  if (initValue.value === newValue) return;
+  emit('change', newValue, props.row);
+});
+
+const handleBlur = () => {
+  if (initValue.value !== inputValue.value) {
+    initValue.value = inputValue.value;
+    emit('blur', inputValue.value, props.row);
+  }
+};
 </script>
 <template>
   <div>
@@ -34,6 +50,7 @@ const inputValue = ref<string | number>(initValue.value);
       :valid="true"
       class="w-full min-w-[105px]"
       :placeholder="placeholder"
+      @blur="handleBlur"
     >
       <template v-if="valueDesc" #valueDescriptor>
         {{ valueDesc }}

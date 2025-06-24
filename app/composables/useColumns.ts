@@ -112,6 +112,7 @@ export const useColumns = <T extends object>() => {
       sortable = true,
       columnTypes,
       maxTextLength = 60,
+      columnCellProps,
     } = options;
     let columns: ColumnDef<T>[] = [];
 
@@ -136,6 +137,12 @@ export const useColumns = <T extends object>() => {
       ) {
         return;
       }
+
+      // Extract cell props for this column
+      const cellProps =
+        columnCellProps && key in columnCellProps
+          ? columnCellProps[key] || {}
+          : {};
 
       // Set column title
       let columnTitle = String(key);
@@ -223,6 +230,7 @@ export const useColumns = <T extends object>() => {
             colKey: key,
             type,
             className: getBasicCellStyle(table),
+            ...cellProps,
           });
         };
       };
@@ -319,6 +327,7 @@ export const useColumns = <T extends object>() => {
             return h(TableCellChannels, {
               class: getBasicCellStyle(table),
               channelIds: value,
+              ...cellProps,
             });
           };
           break;
@@ -335,6 +344,7 @@ export const useColumns = <T extends object>() => {
             return h(TableCellTags, {
               class: getBasicCellStyle(table),
               tags: value,
+              ...cellProps,
             });
           };
           break;
@@ -351,6 +361,7 @@ export const useColumns = <T extends object>() => {
             return h(TableCellStatus, {
               class: getBasicCellStyle(table),
               status: value,
+              ...cellProps,
             });
           };
           break;
@@ -360,6 +371,7 @@ export const useColumns = <T extends object>() => {
             return h(TableCellTooltip, {
               class: getBasicCellStyle(table),
               ...value,
+              ...cellProps,
             });
           };
           break;
@@ -369,6 +381,7 @@ export const useColumns = <T extends object>() => {
             return h(TableCellBoolean, {
               className: getBasicCellStyle(table),
               isTrue: Boolean(value),
+              ...cellProps,
             });
           };
           break;
@@ -380,6 +393,7 @@ export const useColumns = <T extends object>() => {
                 text,
                 className: getBasicCellStyle(table),
                 maxTextLength,
+                ...cellProps,
                 default: () => text,
               });
             }
@@ -408,6 +422,7 @@ export const useColumns = <T extends object>() => {
               price: priceValue,
               currency: priceCurrency,
               className: getBasicCellStyle(table),
+              ...cellProps,
             });
           };
           columnSize = { size: 134, minSize: 134, maxSize: 134 };
@@ -457,6 +472,7 @@ export const useColumns = <T extends object>() => {
               initialValue: priceValue,
               valueDescriptor: priceCurrency,
               placeholder,
+              ...cellProps,
             });
           };
           columnSize = { size: 134, minSize: 134, maxSize: 134 };
@@ -483,6 +499,7 @@ export const useColumns = <T extends object>() => {
               return h(TableCellBoolean, {
                 className: getBasicCellStyle(table),
                 isTrue: value,
+                ...cellProps,
               });
             }
 
@@ -501,6 +518,7 @@ export const useColumns = <T extends object>() => {
                 text,
                 className: getBasicCellStyle(table),
                 maxTextLength,
+                ...cellProps,
                 default: () => text,
               });
             }

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 const props = defineProps<{
   rules: PricelistRule[];
-  mode: 'margin' | 'discount';
+  mode: 'margin' | 'discount' | 'price';
+  currency?: string;
 }>();
 
 const emit = defineEmits<{
@@ -19,7 +20,8 @@ const emptyRule: PricelistRule = {
   quantity: 1,
   margin: undefined,
   discountPercent: undefined,
-  applied: false,
+  price: undefined,
+  applied: props.mode === 'price' ? true : false,
 };
 
 const addRule = () => {
@@ -36,12 +38,15 @@ watch(
   localRules,
   (newRules) => {
     const appliedRules = newRules
-      .filter((rule) => rule.applied)
+      .filter((rule) => props.mode === 'price' || rule.applied)
       .map((rule) => ({
         quantity: rule.quantity,
         margin: props.mode === 'margin' ? rule.margin : 0,
         discountPercent: props.mode === 'discount' ? rule.discountPercent : 0,
+        price: props.mode === 'price' ? rule.price : undefined,
       }));
+    console.log('🚀 ~ appliedRules:', appliedRules);
+
     emit('update', appliedRules);
   },
   { deep: true },
@@ -56,7 +61,8 @@ const thClasses = 'text-xs font-bold text-left py-2';
         <th :class="thClasses">Quantity</th>
         <th v-if="mode === 'margin'" :class="thClasses">Margin</th>
         <th v-if="mode === 'discount'" :class="thClasses">Discount</th>
-        <th :class="thClasses">Applied</th>
+        <th v-if="mode === 'price'" :class="thClasses">Price</th>
+        <th v-else :class="thClasses">Applied</th>
       </tr>
     </thead>
     <tbody>
@@ -67,8 +73,10 @@ const thClasses = 'text-xs font-bold text-left py-2';
         v-model:margin="rule.margin"
         v-model:discount="rule.discountPercent"
         v-model:applied="rule.applied"
+        v-model:price="rule.price"
         :mode="mode"
         :index="index"
+        :currency="currency"
         @apply="rule.applied = true"
         @apply-and-overwrite="rule.applied = true"
         @remove="localRules.splice(index, 1)"

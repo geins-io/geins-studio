@@ -46,6 +46,7 @@ export interface ColumnOptions<T> {
   columnOrder?: StringKeyOf<T>[];
   excludeColumns?: StringKeyOf<T>[];
   includeColumns?: StringKeyOf<T>[];
+  columnCellProps?: Partial<Record<StringKeyOf<T>, Record<string, unknown>>>;
   entityLinkUrl?: string;
   maxTextLength?: number;
 }
