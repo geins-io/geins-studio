@@ -212,6 +212,30 @@ export default defineI18nLocale(async () => {
       pricelist_channel: 'Channel',
       pricelist_currency: 'Currency',
       pricelist_forced: 'Override prices',
+      // New pricelist-specific translations
+      pricelist_tab_general: 'General',
+      pricelist_tab_products_pricing: 'Products & Pricing',
+      pricelist_vat_config_title: 'Price VAT configuration',
+      pricelist_vat_config_description:
+        'Set if the pricelist should be created with prices ex or inc VAT. Cannot be changed upon creation. Ex VAT prices are calculated from the VAT rate set on your default country set in Geins',
+      pricelist_enter_prices_ex_vat: 'Enter prices ex VAT',
+      pricelist_enter_prices_ex_vat_description:
+        'Create this pricelist with prices ex VAT. Cannot be changed upon creation.',
+      pricelist_details_title: 'Pricelist details',
+      pricelist_product_prices_options_title: 'Product and prices options',
+      pricelist_override_prices_description:
+        "If enabled, the pricelist's prices will override lower available prices such as campaigns and sale prices.",
+      pricelist_auto_add_products: 'Automatically add products',
+      pricelist_auto_add_products_description:
+        'If enabled, products of selected categories or brands will be automatically added to the pricelist.',
+      pricelist_full_range_adjustments_title: 'Full range adjustments',
+      pricelist_full_range_adjustments_description:
+        'Calculates lists priced based on either margin or discount. Will apply value to all rows.',
+      pricelist_margin: 'Margin',
+      pricelist_discount: 'Discount',
+      pricelist_vat_config_label: 'VAT config',
+      pricelist_ex_vat: 'Ex VAT',
+      pricelist_inc_vat: 'Inc VAT',
     },
   };
 });

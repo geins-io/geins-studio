@@ -126,7 +126,7 @@ const manuallySelectedText = computed(() =>
 );
 const showAllProductsTag = computed(
   () =>
-    (selection.value.categoryIds?.length === 0 &&
+    (!selection.value.categoryIds?.length &&
       (selection.value.brandIds?.length ||
         selection.value.price?.length ||
         selection.value.stock?.length)) ||

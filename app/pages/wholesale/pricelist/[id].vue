@@ -45,9 +45,13 @@ const formSchema = toTypedSchema(
       exVat: z.boolean().optional(),
     }),
     default: z.object({
-      name: z.string().min(1, 'Name is required'),
-      channel: z.string().min(1, 'Channel is required'),
-      currency: z.string().min(1, 'Currency is required'),
+      name: z.string().min(1, t('entity_required', { entityName: t('name') })),
+      channel: z
+        .string()
+        .min(1, t('entity_required', { entityName: t('channel') })),
+      currency: z
+        .string()
+        .min(1, t('entity_required', { entityName: t('currency') })),
       forced: z.boolean().optional(),
       autoAddProducts: z.boolean().optional(),
     }),
@@ -79,7 +83,10 @@ const entityBase: ProductPricelistCreate = {
 // =====================================================================================
 // Tabs & Steps
 const currentTab = ref(0);
-const tabs = ['General', 'Products & Pricing'];
+const tabs = [
+  t('wholesale.pricelist_tab_general'),
+  t('wholesale.pricelist_tab_products_pricing'),
+];
 const showSidebar = computed(() => true);
 
 const totalCreateSteps = 2;
@@ -405,7 +412,7 @@ const summary = computed<DataItem[]>(() => {
       entityData.value.channel,
     );
     dataList.push({
-      label: 'Channel',
+      label: t('wholesale.pricelist_channel'),
       value: displayValue,
     });
   }
@@ -419,12 +426,14 @@ const summary = computed<DataItem[]>(() => {
 
   dataList.push({
     label: t('wholesale.pricelist_forced'),
-    value: entityData.value?.forced ? 'Yes' : 'No',
+    value: entityData.value?.forced ? t('yes') : t('no'),
   });
 
   dataList.push({
-    label: 'VAT config',
-    value: entityData.value?.exVat ? 'Ex VAT' : 'Inc VAT',
+    label: t('wholesale.pricelist_vat_config_label'),
+    value: entityData.value?.exVat
+      ? t('wholesale.pricelist_ex_vat')
+      : t('wholesale.pricelist_inc_vat'),
   });
 
   if (!createMode.value) {
@@ -574,8 +583,8 @@ if (!createMode.value) {
           >
             <ContentEditCard
               v-if="createMode"
-              title="Price VAT configuration"
-              description="Set if the pricelist should be created with prices ex or inc VAT. Cannot be changed upon creation. Ex VAT prices are calculated from the VAT rate set on your default country set in Geins"
+              :title="$t('wholesale.pricelist_vat_config_title')"
+              :description="$t('wholesale.pricelist_vat_config_description')"
               :step="1"
               :total-steps="totalCreateSteps"
               :create-mode="createMode"
@@ -587,8 +596,12 @@ if (!createMode.value) {
                 <FormGrid design="1">
                   <FormField v-slot="{ value, handleChange }" name="vat.exVat">
                     <FormItemSwitch
-                      label="Enter prices ex VAT"
-                      description="Create this pricelist with prices ex VAT. Cannot be changed upon creation."
+                      :label="$t('wholesale.pricelist_enter_prices_ex_vat')"
+                      :description="
+                        $t(
+                          'wholesale.pricelist_enter_prices_ex_vat_description',
+                        )
+                      "
                       :model-value="value"
                       @update:model-value="handleChange"
                     />
@@ -597,7 +610,7 @@ if (!createMode.value) {
               </FormGridWrap>
             </ContentEditCard>
             <ContentEditCard
-              title="Pricelist details"
+              :title="$t('wholesale.pricelist_details_title')"
               :step="2"
               :total-steps="totalCreateSteps"
               :create-mode="createMode"
@@ -677,7 +690,9 @@ if (!createMode.value) {
 
               <FormGridWrap class="border-t pt-6">
                 <ContentCardHeader
-                  title="Product and prices options"
+                  :title="
+                    $t('wholesale.pricelist_product_prices_options_title')
+                  "
                   size="md"
                   heading-level="h3"
                 />
@@ -687,8 +702,10 @@ if (!createMode.value) {
                     name="default.forced"
                   >
                     <FormItemSwitch
-                      label="Override prices"
-                      description="If enabled, the pricelist's prices will override lower available prices such as campaigns and sale prices."
+                      :label="$t('wholesale.pricelist_forced')"
+                      :description="
+                        $t('wholesale.pricelist_override_prices_description')
+                      "
                       :model-value="value"
                       @update:model-value="handleChange"
                     />
@@ -700,8 +717,10 @@ if (!createMode.value) {
                     name="default.autoAddProducts"
                   >
                     <FormItemSwitch
-                      label="Automatically add products"
-                      description="If enabled, products of selected categories or brands will be automatically added to the pricelist."
+                      :label="$t('wholesale.pricelist_auto_add_products')"
+                      :description="
+                        $t('wholesale.pricelist_auto_add_products_description')
+                      "
                       :disabled="true"
                       :model-value="value"
                       @update:model-value="handleChange"
@@ -732,8 +751,10 @@ if (!createMode.value) {
             :key="`tab-${currentTab}`"
           >
             <ContentEditCard
-              title="Full range adjustments"
-              description="Calculates lists priced based on either margin or discount. Will apply value to all rows."
+              :title="$t('wholesale.pricelist_full_range_adjustments_title')"
+              :description="
+                $t('wholesale.pricelist_full_range_adjustments_description')
+              "
               :create-mode="createMode"
               :step-valid="true"
             >
@@ -742,8 +763,12 @@ if (!createMode.value) {
                 @update:model-value="updatePricelistMode"
               >
                 <TabsList>
-                  <TabsTrigger value="margin"> Margin </TabsTrigger>
-                  <TabsTrigger value="discount"> Discount </TabsTrigger>
+                  <TabsTrigger value="margin">
+                    {{ $t('wholesale.pricelist_margin') }}
+                  </TabsTrigger>
+                  <TabsTrigger value="discount">
+                    {{ $t('wholesale.pricelist_discount') }}
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
               <PricelistRules
