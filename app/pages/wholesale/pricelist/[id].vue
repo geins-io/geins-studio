@@ -1,5 +1,7 @@
 <script setup lang="ts">
-// IMPORTS
+// =====================================================================================
+// IMPORTS & TYPES
+// =====================================================================================
 import { toTypedSchema } from '@vee-validate/zod';
 import { useI18n } from '#imports';
 import * as z from 'zod';
@@ -11,10 +13,12 @@ import {
   type PricelistRuleMode,
   type PricelistProductList,
   type Product,
+  type PricelistRule,
 } from '#shared/types';
-import { PricelistQtyLevelsCell } from '#components';
 
-// COMPOSABLES
+// =====================================================================================
+// COMPOSABLES & STORES
+// =====================================================================================
 const route = useRoute();
 const { t } = useI18n();
 const { $geinsApi } = useNuxtApp();
@@ -22,13 +26,19 @@ const accountStore = useAccountStore();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');
 
-// GLOBALS
+const productsStore = useProductsStore();
+const { products } = storeToRefs(productsStore);
+
+// =====================================================================================
+// API & REPOSITORY SETUP
+// =====================================================================================
 const productApi = repo.product($geinsApi);
 const { channels, currentCurrencies, currentChannelId, currentCurrency } =
   storeToRefs(accountStore);
-const productSelector = ref();
 
+// =====================================================================================
 // FORM VALIDATION SCHEMA
+// =====================================================================================
 const formSchema = toTypedSchema(
   z.object({
     vat: z.object({
@@ -44,7 +54,9 @@ const formSchema = toTypedSchema(
   }),
 );
 
+// =====================================================================================
 // ENTITY DATA SETUP
+// =====================================================================================
 const entityBase: ProductPricelistCreate = {
   name: '',
   active: false,
@@ -62,33 +74,49 @@ const entityBase: ProductPricelistCreate = {
   },
 };
 
-const selectableCurrencies = ref(currentCurrencies.value.map((i) => i._id));
-
-const { getEmptyQuerySelectionBase } = useSelector();
-const productSelection = ref<SelectorSelectionQueryBase>(
-  getEmptyQuerySelectionBase(),
-);
-
-const pricelistRulesMode = ref<PricelistRuleMode>('margin');
-
-// TABS MANAGEMENT
+// =====================================================================================
+// UI STATE MANAGEMENT
+// =====================================================================================
+// Tabs & Steps
 const currentTab = ref(0);
 const tabs = ['General', 'Products & Pricing'];
-const showSidebar = computed(() => {
-  return true;
-});
+const showSidebar = computed(() => true);
 
-// STEP MANAGEMENT
 const totalCreateSteps = 2;
 const { currentStep, nextStep, previousStep } =
   useStepManagement(totalCreateSteps);
-
 const stepValidationMap: Record<number, string> = {
   1: 'vat',
   2: 'default',
 };
 
+// Currency selection
+const selectableCurrencies = ref(currentCurrencies.value.map((i) => i._id));
+
+// Product selection
+const { getEmptyQuerySelectionBase } = useSelector();
+const productSelection = ref<SelectorSelectionQueryBase>(
+  getEmptyQuerySelectionBase(),
+);
+const productSelector = ref();
+
+// Pricelist rules
+const pricelistRulesMode = ref<PricelistRuleMode>('margin');
+
+// =====================================================================================
+// PRODUCT & PRICING COMPOSABLES
+// =====================================================================================
+const {
+  transformProductsForList,
+  getPricelistProducts,
+  updatePricelistProductsPrice,
+} = usePricelistProducts();
+
+const { setupPricelistColumns, getPinnedState } = usePricelistProductsTable();
+
+// =====================================================================================
 // ENTITY EDIT COMPOSABLE
+// =====================================================================================
 const {
   entityName,
   entityId,
@@ -136,11 +164,9 @@ const {
       autoAddProducts: entityData.autoAddProducts,
     },
   }),
-  reshapeEntityData: (entityData) => {
-    return {
-      ...entityData,
-    };
-  },
+  reshapeEntityData: (entityData) => ({
+    ...entityData,
+  }),
   parseEntityData: (entity) => {
     entityLiveStatus.value = entity.active;
     if (entity.productSelectionQuery) {
@@ -166,26 +192,17 @@ const {
       },
     });
   },
-
   prepareCreateData: (formData) => ({
     ...entityBase,
     ...formData.vat,
     ...formData.default,
   }),
-
   prepareUpdateData: (formData, entity) => ({
     ...entity,
     ...formData.vat,
     ...formData.default,
-    products: selectedProducts.value.map((product) => ({
-      productId: product._id,
-      price: Number(
-        product.listPrice?.price || product.regularPrice?.price || 0,
-      ),
-      staggeredCount: 1,
-    })),
+    products: getPricelistProducts(selectedProducts.value),
   }),
-
   onFormValuesChange: (values) => {
     const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
     targetEntity.value = {
@@ -196,16 +213,75 @@ const {
   },
 });
 
+// =====================================================================================
+// PRODUCT TABLE STATE
+// =====================================================================================
+const selectedProducts = ref<PricelistProductList[]>([]);
+const productQueryParams = ref<ProductQueryParams>({
+  fields: 'localizations,media,defaultprice',
+  defaultChannel: entityData.value?.channel,
+  defaultCurrency: entityData.value?.currency,
+  defaultCountry: accountStore.getDefaultCountryByChannelId(
+    entityData.value?.channel,
+  ),
+});
+
+const vatDescription = computed(() => {
+  return entityData.value?.exVat ? t('ex_vat') : t('inc_vat');
+});
+
+let columns: ColumnDef<PricelistProductList>[] = [];
+const pinnedState = ref(getPinnedState());
+
+// =====================================================================================
+// QUANTITY LEVELS MANAGEMENT
+// =====================================================================================
+const rulesToEdit = ref<PricelistRule[]>([]);
+const rulesPanelOpen = ref(false);
+const rulesId = ref<string>('');
+
+const handleSaveRules = (rules: PricelistRule[]) => {
+  selectedProducts.value = selectedProducts.value.map((p) =>
+    p._id === rulesId.value ? { ...p, quantityLevels: rules } : p,
+  );
+  rulesId.value = '';
+};
+
+// =====================================================================================
+// COLUMN SETUP FUNCTIONS
+// =====================================================================================
+const setupColumns = () => {
+  columns = setupPricelistColumns(
+    selectedProducts.value,
+    vatDescription.value,
+    (id: string) => {
+      const rules = selectedProducts.value.find(
+        (p) => p._id === id,
+      )?.quantityLevels;
+      rulesToEdit.value = rules ? [...rules] : [];
+      rulesId.value = id;
+      rulesPanelOpen.value = true;
+    },
+    (id: string) => productSelector.value.removeFromManuallySelected(id),
+    (value: string | number, row: Row<PricelistProductList>) => {
+      updatePricelistProductsPrice(
+        selectedProducts.value,
+        row.original._id,
+        String(value),
+      );
+    },
+  );
+};
+
+// =====================================================================================
 // FORM VALUE WATCHERS
+// =====================================================================================
 watch(
   currentChannelId,
   (newChannelId) => {
-    if (formTouched.value) {
-      return;
-    }
+    if (formTouched.value) return;
     const id = String(newChannelId);
     selectableCurrencies.value = accountStore.getCurrenciesByChannelId(id);
-
     form.setValues({
       ...form.values,
       default: {
@@ -224,19 +300,34 @@ watch(channels, () => {
 });
 
 watch(entityData, (newEntityData, oldEntityData) => {
-  if (newEntityData.channel === oldEntityData?.channel) {
-    return;
-  }
+  if (newEntityData.channel === oldEntityData?.channel) return;
   selectableCurrencies.value = accountStore.getCurrenciesByChannelId(
     String(newEntityData.channel),
   );
 });
 
-const copyEntity = async () => {
-  if (!entityId.value) {
-    return;
-  }
+watch(vatDescription, () => {
+  setupColumns();
+});
 
+watch(
+  () => productSelector.value?.selectedEntities || [],
+  (newSelection: Product[]) => {
+    if (newSelection.length) {
+      selectedProducts.value = transformProductsForList(
+        newSelection,
+        entityData.value,
+      );
+      setupColumns();
+    }
+  },
+);
+
+// =====================================================================================
+// ENTITY ACTIONS
+// =====================================================================================
+const copyEntity = async () => {
+  if (!entityId.value) return;
   loading.value = true;
 
   try {
@@ -246,14 +337,13 @@ const copyEntity = async () => {
       const newPath = currentPath.replace(entityId.value, result._id);
       await parseAndSaveData(result);
       await useRouter().replace(newPath);
-
       toast({
         title: t('entity_copied', { entityName }),
         variant: 'positive',
       });
     }
   } catch (error) {
-    geinsLogError('error validating VAT number:', error);
+    geinsLogError('error copying entity:', error);
     toast({
       title: t('error_copying_entity', { entityName }),
       description: t('feedback_error_description'),
@@ -281,16 +371,20 @@ const handleChannelChange = async (value: AcceptableValue) => {
   }
 };
 
+// =====================================================================================
 // DELETE FUNCTIONALITY
+// =====================================================================================
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
   useDeleteDialog(deleteEntity, '/wholesale/pricelist/list');
 
+// =====================================================================================
 // SUMMARY DATA
+// =====================================================================================
 const summary = computed<DataItem[]>(() => {
-  if (createMode.value && currentStep.value === 1) {
-    return [];
-  }
+  if (createMode.value && currentStep.value === 1) return [];
+
   const dataList: DataItem[] = [];
+
   if (!createMode.value) {
     dataList.push({
       label: t('entity_id', { entityName }),
@@ -298,6 +392,7 @@ const summary = computed<DataItem[]>(() => {
       displayType: DataItemDisplayType.Copy,
     });
   }
+
   if (entityData.value?.name) {
     dataList.push({
       label: t('entity_name', { entityName }),
@@ -340,14 +435,11 @@ const summary = computed<DataItem[]>(() => {
       value: formatted,
     });
   }
-  return dataList;
-});
-
-const settingsSummary = computed<DataItem[]>(() => {
-  const dataList: DataItem[] = [];
 
   return dataList;
 });
+
+const settingsSummary = computed<DataItem[]>(() => []);
 
 const { summaryProps } = useEntityEditSummary({
   createMode,
@@ -358,227 +450,16 @@ const { summaryProps } = useEntityEditSummary({
   entityLiveStatus,
 });
 
-const productsStore = useProductsStore();
-const { products } = storeToRefs(productsStore);
-const selectedProducts = ref<PricelistProductList[]>([]);
-const productQueryParams = ref<ProductQueryParams>({
-  fields: 'localizations,media,defaultprice',
-  defaultChannel: entityData.value?.channel,
-  defaultCurrency: entityData.value?.currency,
-  defaultCountry: accountStore.getDefaultCountryByChannelId(
-    entityData.value?.channel,
-  ),
-});
-
-const vatDescription = computed(() => {
-  return entityData.value?.exVat ? t('ex_vat') : t('inc_vat');
-});
-const {
-  getBasicCellStyle,
-  getBasicHeaderStyle,
-  getColumns,
-  addActionsColumn,
-  extendColumns,
-} = useColumns<PricelistProductList>();
-let columns: ColumnDef<PricelistProductList>[] = [];
-const columnOptions: ColumnOptions<PricelistProductList> = {
-  columnTypes: {
-    listPrice: 'editable-currency',
-    discount: 'editable-percentage',
-    margin: 'editable-percentage',
-  },
-  columnTitles: {
-    listPrice: `Pricelist price (${vatDescription.value})`,
-    regularPrice: `Price (${vatDescription.value})`,
-  },
-  excludeColumns: ['manual', 'quantityLevels', 'margin', 'discount'],
-  columnCellProps: {
-    listPrice: {
-      onBlur: (value: string | number, row: Row<PricelistProductList>) => {
-        updatePricelistProductsPrice(row.original._id, String(value));
-      },
-    },
-  },
-};
-
-const updatePricelistProductsPrice = (id: string, price: string) => {
-  const product = selectedProducts.value.find((p) => p._id === id);
-  if (product && product.listPrice) {
-    console.log(
-      '🚀 ~ updatePricelistProductsPrice ~ product.listPrice:',
-      product.listPrice,
-    );
-    product.listPrice.price = price;
-  }
-  console.log(
-    '🚀 ~ updatePricelistProductsPrice ~ selectedProducts.value:',
-    selectedProducts.value,
-  );
-};
-
-watch(vatDescription, () => {
-  if (!columnOptions.columnTitles) {
-    return;
-  }
-  columnOptions.columnTitles.listPrice = `Pricelist price (${vatDescription.value})`;
-  columnOptions.columnTitles.regularPrice = `Price (${vatDescription.value})`;
-  setupColumns();
-});
-
-const addQuantityLevelsColumn = (
-  columns: ColumnDef<PricelistProductList>[],
-): ColumnDef<PricelistProductList>[] => {
-  const quantityLevelsColumn: ColumnDef<PricelistProductList> = {
-    id: 'quantityLevels',
-    enableHiding: false,
-    enableSorting: false,
-    size: 40,
-    maxSize: 40,
-    minSize: 40,
-    cell: ({ row, table }) => {
-      const rowData = row.original;
-      return h(PricelistQtyLevelsCell, {
-        quantityLevels: rowData.quantityLevels,
-        className: getBasicCellStyle(table),
-        id: rowData._id,
-        onEdit: (id: string) => {
-          console.log('🚀 ~ id:', id);
-          const rules = selectedProducts.value.find(
-            (p) => p._id === id,
-          )?.quantityLevels;
-          console.log('🚀 ~ rules:', rules);
-
-          rulesToEdit.value = rules ? [...rules] : [];
-          rulesId.value = id;
-          rulesPanelOpen.value = true;
-        },
-      });
-    },
-    header: ({ table }) => {
-      return h(
-        'div',
-        { class: cn(getBasicHeaderStyle(table), 'px-3') },
-        'Qty levels',
-      );
-    },
-  };
-  return extendColumns(columns, quantityLevelsColumn);
-};
-
-const setupColumns = () => {
-  columns = getColumns(selectedProducts.value, columnOptions);
-  columns = addQuantityLevelsColumn(columns);
-  console.log('🚀 ~ setupColumns ~ columns:', columns);
-  addActionsColumn(
-    columns,
-    {
-      onDelete: (entity: SelectorEntity) =>
-        productSelector.value.removeFromManuallySelected(entity._id),
-    },
-    'delete',
-  );
-};
-
-const pinnedState = ref({
-  left: [],
-  right: ['listPrice', 'discount', 'margin', 'quantityLevels', 'actions'],
-});
-
-const { convertToPrice } = usePrice();
-
-const transformProductsForList = (
-  products: Product[],
-): PricelistProductList[] => {
-  const pricelistProducts: PricelistProduct[] =
-    entityData.value?.products || [];
-
-  return products.map((product) => {
-    const regularPriceExVat = product.defaultPrice?.regularPriceIncVat
-      ? product.defaultPrice.regularPriceIncVat /
-        (1 + (product.defaultPrice.vatRate || 0))
-      : 0;
-    const regularPrice = entityData.value?.exVat
-      ? Math.round(regularPriceExVat * 100) / 100
-      : product.defaultPrice?.regularPriceIncVat || 0;
-
-    const listPrice =
-      entityData.value?.products.find(
-        (p: PricelistProduct) => p.productId === product._id,
-      )?.price || undefined;
-    const prod = {
-      _id: product._id,
-      name: product.name,
-      thumbnail: product.thumbnail || '',
-      purchasePrice: convertToPrice(
-        product.purchasePrice,
-        product.purchasePriceCurrency,
-      ),
-      regularPrice: convertToPrice(regularPrice, entityData.value?.currency),
-      listPrice: convertToPrice(
-        listPrice,
-        entityData.value?.currency,
-        listPrice ?? regularPrice,
-      ),
-      discount: 0,
-      margin: 0,
-      quantityLevels: getQuantityLevels(pricelistProducts, product),
-      manual: false,
-    };
-    return prod;
-  });
-};
-
-const rulesToEdit = ref<PricelistRule[]>([]);
-const rulesPanelOpen = ref(false);
-const rulesId = ref<string>('');
-
-const handleSaveRules = (rules: PricelistRule[]) => {
-  console.log('🚀 ~ handleSaveRules ~ rules:', rules);
-  selectedProducts.value = selectedProducts.value.map((p) =>
-    p._id === rulesId.value ? { ...p, quantityLevels: rules } : p,
-  );
-  rulesId.value = '';
-};
-
-const getQuantityLevels = (
-  products: PricelistProduct[],
-  product: Product,
-): PricelistRule[] => {
-  const productLevels = products
-    .filter((p) => p.productId === product._id)
-    .map((p) => ({
-      quantity: p.staggeredCount,
-      price: p.price,
-    }));
-  const entityLevels = entityData.value.rules
-    .filter((rule: PricelistRule) => rule.quantity > 1)
-    .map((rule: PricelistRule) => ({
-      quantity: rule.quantity,
-      price: rule.price,
-      global: true,
-    }));
-
-  return [...productLevels, ...entityLevels].sort(
-    (a, b) => a.quantity - b.quantity,
-  );
-};
-
-const selectedEntities = computed(() => {
-  return productSelector.value?.selectedEntities || [];
-});
-
+// =====================================================================================
+// UTILITY FUNCTIONS
+// =====================================================================================
 const updatePricelistMode = (mode: string | number) => {
   pricelistRulesMode.value = mode as PricelistRuleMode;
 };
 
-watch(selectedEntities, (newSelection: Product[]) => {
-  if (newSelection.length) {
-    selectedProducts.value = transformProductsForList(newSelection);
-    setupColumns();
-  }
-});
-
-// LOAD DATA FOR EDIT MODE
+// =====================================================================================
+// DATA LOADING FOR EDIT MODE
+// =====================================================================================
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<ProductPricelist>(() =>
     productApi.pricelist.get(entityId.value, {
@@ -600,13 +481,11 @@ if (!createMode.value) {
     await parseAndSaveData(data.value);
   }
 
-  // PRODUCT SELECTOR
   productsStore.init();
 
   watch(
     productSelection,
     (newSelection) => {
-      // Ensure we're not making the data reactive when assigning
       entityDataUpdate.value.productSelectionQuery = newSelection;
     },
     { deep: true },
@@ -643,7 +522,11 @@ if (!createMode.value) {
             v-if="!createMode"
             icon="save"
             :loading="loading"
-            @click="updateEntity"
+            @click="
+              updateEntity(undefined, {
+                fields: 'all',
+              })
+            "
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
           <DropdownMenu v-if="!createMode">

@@ -22,6 +22,7 @@ const emptyRule: PricelistRule = {
   discountPercent: undefined,
   price: undefined,
   applied: props.mode === 'price' ? true : false,
+  global: false,
 };
 
 const addRule = () => {
@@ -30,7 +31,10 @@ const addRule = () => {
 
 if (localRules.value.length === 0) {
   addRule();
-} else if (!localRules.value.some((rule) => rule.quantity === 1)) {
+} else if (
+  !localRules.value.some((rule) => rule.quantity === 1) &&
+  props.mode !== 'price'
+) {
   localRules.value.unshift({ ...emptyRule });
 }
 
@@ -45,7 +49,6 @@ watch(
         discountPercent: props.mode === 'discount' ? rule.discountPercent : 0,
         price: props.mode === 'price' ? rule.price : undefined,
       }));
-    console.log('🚀 ~ appliedRules:', appliedRules);
 
     emit('update', appliedRules);
   },
@@ -74,6 +77,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
         v-model:discount="rule.discountPercent"
         v-model:applied="rule.applied"
         v-model:price="rule.price"
+        v-model:global="rule.global"
         :mode="mode"
         :index="index"
         :currency="currency"

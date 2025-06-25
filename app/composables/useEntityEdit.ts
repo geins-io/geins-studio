@@ -12,7 +12,7 @@ export interface EntityEditOptions<
   entityName?: string;
   newEntityUrlAlias?: string;
   repository: {
-    get: (id: string) => Promise<TResponse>;
+    get: (id: string, query?: Record<string, string>) => Promise<TResponse>;
     create: (data: TCreate) => Promise<TResponse>;
     update: (id: string, data: TUpdate) => Promise<TResponse>;
     delete?: (id: string) => Promise<void>;
@@ -206,6 +206,7 @@ export function useEntityEdit<
   // Update entity
   const updateEntity = async (
     additionalValidation?: () => Promise<boolean>,
+    query?: Record<string, string>,
   ) => {
     loading.value = true;
     try {
@@ -227,7 +228,7 @@ export function useEntityEdit<
         return;
       }
       const result = await options.repository.update(id, updateData);
-      const newData = result ?? (await options.repository.get(id));
+      const newData = result ?? (await options.repository.get(id, query));
       await parseAndSaveData(newData);
 
       toast({

@@ -3,22 +3,23 @@ const props = withDefaults(
   defineProps<{
     mode: 'margin' | 'discount' | 'price';
     index: number;
-    global?: boolean;
     currency?: string;
   }>(),
   {
     mode: 'margin',
   },
 );
-const quantity = defineModel<number>('quantity');
+const quantity = defineModel<number | string>('quantity');
 const margin = defineModel<number | undefined>('margin');
 const discount = defineModel<number | undefined>('discount');
 const price = defineModel<number | undefined>('price');
 const applied = defineModel<boolean>('applied');
+const global = defineModel<boolean>('global');
 
 const initialQuantity = quantity.value;
 const initialMargin = margin.value;
 const initialDiscount = discount.value;
+const initialPrice = price.value;
 const currency = ref(props.currency ?? 'XXX');
 
 const _emit = defineEmits<{
@@ -42,14 +43,20 @@ watch(
 );
 
 watch(
-  () => [quantity.value, margin.value, discount.value],
+  () => [quantity, margin, discount],
   ([newQuantity, newMargin, newDiscount]) => {
     applied.value =
-      newQuantity === initialQuantity &&
-      newMargin === initialMargin &&
-      newDiscount === initialDiscount;
+      newQuantity?.value === initialQuantity &&
+      newMargin?.value === initialMargin &&
+      newDiscount?.value === initialDiscount;
   },
 );
+
+watch(price, (newPrice) => {
+  if (props.mode === 'price' && newPrice !== initialPrice) {
+    global.value = false;
+  }
+});
 
 const tdClasses = 'text-xs text-left py-3 pr-5';
 </script>
@@ -59,7 +66,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
       <Input
         v-model.number="quantity"
         size="sm"
-        :disabled="index === 0 && quantity === 1"
+        :disabled="index === 0 && mode !== 'price' && quantity === 1"
       />
     </td>
     <td v-if="mode === 'margin'" :class="tdClasses">
