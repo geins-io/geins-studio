@@ -89,6 +89,7 @@ export const usePricelistProducts = () => {
 
   const getPricelistProducts = (
     selectedProducts: PricelistProductList[],
+    currentProducts: PricelistProduct[] = [],
   ): PricelistProduct[] => {
     const products = selectedProducts.map((product) => ({
       productId: product._id,
@@ -111,7 +112,30 @@ export const usePricelistProducts = () => {
         });
       }
     });
-    return products;
+
+    const updatedProducts: PricelistProduct[] = [...currentProducts];
+
+    products.forEach((product) => {
+      const existingIndex = updatedProducts.findIndex(
+        (p) =>
+          p.productId === product.productId &&
+          p.staggeredCount === product.staggeredCount,
+      );
+
+      if (existingIndex >= 0) {
+        updatedProducts[existingIndex] = {
+          _id: updatedProducts[existingIndex]?._id || undefined,
+          ...updatedProducts[existingIndex],
+          productId: product.productId!,
+          price: product.price,
+          staggeredCount: product.staggeredCount,
+        };
+      } else {
+        updatedProducts.push(product);
+      }
+    });
+
+    return updatedProducts;
   };
 
   const updatePricelistProductsPrice = (

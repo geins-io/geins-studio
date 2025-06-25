@@ -159,6 +159,7 @@ const {
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
   stepValidationMap,
+  excludeSaveFields: ['productSelectionQuery'],
   getInitialFormValues: (entityData) => ({
     vat: {
       exVat: entityData.exVat,
@@ -208,7 +209,7 @@ const {
     ...entity,
     ...formData.vat,
     ...formData.default,
-    products: getPricelistProducts(selectedProducts.value),
+    products: getPricelistProducts(selectedProducts.value, entity.products),
   }),
   onFormValuesChange: (values) => {
     const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
@@ -326,6 +327,7 @@ watch(
         entityData.value,
       );
       setupColumns();
+      entityData.value.products = getPricelistProducts(selectedProducts.value);
     }
   },
 );

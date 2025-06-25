@@ -20,6 +20,7 @@ export interface EntityEditOptions<
   validationSchema: ReturnType<typeof toTypedSchema>;
   initialEntityData: TCreate;
   initialUpdateData: TUpdate;
+  excludeSaveFields: StringKeyOf<TBase>[];
   parseEntityData?: (entity: TResponse) => Promise<void> | void;
   prepareCreateData?: (formData: GenericObject) => TCreate;
   prepareUpdateData?: (formData: GenericObject, entity?: TUpdate) => TUpdate;
@@ -88,7 +89,12 @@ export function useEntityEdit<
 
   // Unsaved changes integration
   const { hasUnsavedChanges, unsavedChangesDialogOpen, confirmLeave } =
-    useUnsavedChanges(entityDataUpdate, originalEntityData, createMode);
+    useUnsavedChanges(
+      entityDataUpdate,
+      originalEntityData,
+      createMode,
+      options.excludeSaveFields,
+    );
 
   // Form management
   const validateOnChange = ref(false);
