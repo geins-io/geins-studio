@@ -1,5 +1,7 @@
 <script setup lang="ts">
-// IMPORTS
+// =====================================================================================
+// IMPORTS & TYPES
+// =====================================================================================
 import type { ColumnDef } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
@@ -7,11 +9,20 @@ import { useWholesale } from '@/composables/useWholesale';
 import { DataItemDisplayType, TableMode } from '#shared/types';
 import * as z from 'zod';
 
-// COMPOSABLES
+// =====================================================================================
+// COMPOSABLES & STORES
+// =====================================================================================
 const {
   wholesaleApi,
+  hasValidatedVat,
+  vatValid,
+  vatValidating,
+  vatNumberValidated,
+  vatValidationSummary,
   extractAccountGroupsfromTags,
   convertAccountGroupsToTags,
+  validateVatNumber,
+  getAddresses,
 } = useWholesale();
 const { t } = useI18n();
 const route = useRoute();
@@ -20,7 +31,9 @@ const accountStore = useAccountStore();
 const { getEntityNameById } = useEntity();
 const { toast } = useToast();
 
-// FORM SCHEMA AND VALIDATION
+// =====================================================================================
+// FORM VALIDATION SCHEMA
+// =====================================================================================
 const addressSchema = z.object({
   email: z.string().min(1, { message: t('form.field_required') }),
   phone: z.string().optional(),
@@ -56,7 +69,9 @@ const formSchema = toTypedSchema(
   }),
 );
 
+// =====================================================================================
 // ENTITY DATA SETUP
+// =====================================================================================
 const entityBase: WholesaleAccountCreate = {
   name: '',
   active: true,
@@ -85,20 +100,10 @@ const addressBase: AddressBase = {
   country: '',
 };
 
-const billingAddress = ref<AddressUpdate>({
-  ...addressBase,
-  addressType: 'billing',
-});
-const shippingAddress = ref<AddressUpdate>({
-  ...addressBase,
-  addressType: 'shipping',
-});
-const addShippingAddress = ref(false);
-
-const accountGroups = ref<string[]>([]);
-const accountTags = ref<EntityBaseWithName[]>([]);
-
-// TABS MANAGEMENT
+// =====================================================================================
+// UI STATE MANAGEMENT
+// =====================================================================================
+// Tabs & Steps
 const currentTab = ref(0);
 const tabs = [
   t('wholesale.account_details'),
@@ -109,20 +114,36 @@ const showSidebar = computed(() => {
   return currentTab.value !== 1;
 });
 
-// STEP MANAGEMENT
 const totalCreateSteps = 2;
 const { currentStep, nextStep, previousStep } =
   useStepManagement(totalCreateSteps);
+
+// Address management
+const billingAddress = ref<AddressUpdate>({
+  ...addressBase,
+  addressType: 'billing',
+});
+const shippingAddress = ref<AddressUpdate>({
+  ...addressBase,
+  addressType: 'shipping',
+});
+const addShippingAddress = ref(false);
 
 const stepValidationMap: Record<number, string> = {
   1: 'details',
   2: addShippingAddress.value ? 'addresses' : 'billing',
 };
 
-// FORM VALIDATION
+// Account data
+const accountGroups = ref<string[]>([]);
+const accountTags = ref<EntityBaseWithName[]>([]);
+
+// Form validation
 const createDisabled = ref(true);
 
+// =====================================================================================
 // ENTITY EDIT COMPOSABLE
+// =====================================================================================
 const {
   entityName,
   createMode,
@@ -273,84 +294,9 @@ const {
   },
 });
 
-// DELETE FUNCTIONALITY
-const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteEntity, entityListUrl);
-
-// HELPER FUNCTIONS
-const getAddresses = (
-  billing: AddressUpdate,
-  shipping?: AddressUpdate,
-): AddressUpdate[] => {
-  const addresses: AddressUpdate[] = [];
-  const billingType = shipping ? 'billing' : 'billingandshipping';
-
-  addresses.push({
-    ...billing,
-    addressType: billingType,
-  });
-
-  if (shipping) {
-    addresses.push({
-      ...shipping,
-      addressType: 'shipping',
-    });
-  }
-  return addresses;
-};
-
-// STEP ACTIONS
-const saveAccountDetails = async () => {
-  const stepValid = await validateSteps([1]);
-
-  if (stepValid) {
-    validateOnChange.value = false;
-    form?.resetForm();
-    form?.setValues({
-      details: {
-        ...entityDataCreate.value,
-        tags: accountGroups.value,
-      },
-      addresses: {
-        billing: {
-          company: entityDataCreate.value.name,
-        },
-      },
-    });
-
-    nextStep();
-    createDisabled.value = false;
-  } else {
-    validateOnChange.value = true;
-  }
-};
-
-// CUSTOM CREATE/UPDATE WITH ADDITIONAL VALIDATION
-const handleCreateAccount = async () => {
-  await createEntity(async () => {
-    const stepsValid = await validateSteps([1, 2]);
-    if (!stepsValid) {
-      validateOnChange.value = true;
-      return false;
-    }
-    validateOnChange.value = false;
-    return true;
-  });
-};
-
-const handleUpdateAccount = async () => {
-  await updateEntity(async () => {
-    const stepsValid = await validateSteps([1]);
-    if (!stepsValid) {
-      validateOnChange.value = true;
-      return false;
-    }
-    validateOnChange.value = false;
-    return true;
-  });
-};
-
+// =====================================================================================
 // SALES REPS MANAGEMENT
+// =====================================================================================
 const users = ref<User[]>([]);
 const { useGeinsFetch } = useGeinsApi();
 
@@ -367,7 +313,9 @@ const fetchUsers = async () => {
 
 fetchUsers();
 
+// =====================================================================================
 // BUYERS MANAGEMENT
+// =====================================================================================
 const buyersList = ref<WholesaleBuyer[]>([]);
 const buyerPanelOpen = ref(false);
 const buyerToEdit = ref<WholesaleBuyer | undefined>();
@@ -402,43 +350,9 @@ watch(buyerPanelOpen, async (open) => {
   }
 });
 
-// VAT VALIDATION
-const hasValidatedVat = ref(false);
-const vatValid = ref(false);
-const vatValidating = ref(false);
-const vatNumberValidated = ref('');
-const vatValidation = ref<WholesaleVatValidation>();
-const vatValidationSummary = ref<DataItem[]>([]);
-
-const validateVatNumber = async (vatNumber: string) => {
-  if (vatNumber === vatNumberValidated.value) {
-    return;
-  }
-  vatValidating.value = true;
-  try {
-    vatValidation.value = await wholesaleApi.validateVatNumber(vatNumber);
-    if (vatValidation.value) {
-      vatValidationSummary.value = Object.keys(vatValidation.value)
-        .filter((key) => {
-          return key === 'name' || key === 'address';
-        })
-        .map((key) => ({
-          label: t('wholesale.' + key),
-          value:
-            vatValidation.value?.[key as keyof WholesaleVatValidation] ?? '',
-        }));
-    }
-    vatValid.value = vatValidation.value.valid;
-  } catch (error) {
-    geinsLogError('error validating VAT number:', error);
-  } finally {
-    hasValidatedVat.value = true;
-    vatValidating.value = false;
-    vatNumberValidated.value = vatNumber;
-  }
-};
-
+// =====================================================================================
 // ADDRESS MANAGEMENT
+// =====================================================================================
 const deleteAddressDialogOpen = ref(false);
 const deletingAddressId = ref<string>('');
 
@@ -484,17 +398,13 @@ const saveAddress = async (address: AddressUpdate) => {
   const isNewShipping = !address._id && address.addressType === 'shipping';
 
   if (isNewShipping) {
-    // Update local refs first
     shippingAddress.value = address;
     addShippingAddress.value = true;
-
-    // Regenerate addresses using the helper function
     entityDataUpdate.value.addresses = getAddresses(
       billingAddress.value,
       shippingAddress.value,
     );
   } else {
-    // Update existing address
     const updatedAddresses: AddressUpdate[] | undefined =
       entityDataUpdate.value?.addresses?.map((addr) => {
         if (addr._id === address._id) {
@@ -504,7 +414,6 @@ const saveAddress = async (address: AddressUpdate) => {
       });
     entityDataUpdate.value.addresses = updatedAddresses;
 
-    // Update local refs
     if (address.addressType?.includes('billing')) {
       billingAddress.value = address;
     } else {
@@ -514,7 +423,67 @@ const saveAddress = async (address: AddressUpdate) => {
   }
 };
 
+// =====================================================================================
+// STEP ACTIONS & CUSTOM HANDLERS
+// =====================================================================================
+const saveAccountDetails = async () => {
+  const stepValid = await validateSteps([1]);
+
+  if (stepValid) {
+    validateOnChange.value = false;
+    form?.resetForm();
+    form?.setValues({
+      details: {
+        ...entityDataCreate.value,
+        tags: accountGroups.value,
+      },
+      addresses: {
+        billing: {
+          company: entityDataCreate.value.name,
+        },
+      },
+    });
+
+    nextStep();
+    createDisabled.value = false;
+  } else {
+    validateOnChange.value = true;
+  }
+};
+
+const handleCreateAccount = async () => {
+  await createEntity(async () => {
+    const stepsValid = await validateSteps([1, 2]);
+    if (!stepsValid) {
+      validateOnChange.value = true;
+      return false;
+    }
+    validateOnChange.value = false;
+    return true;
+  });
+};
+
+const handleUpdateAccount = async () => {
+  await updateEntity(async () => {
+    const stepsValid = await validateSteps([1]);
+    if (!stepsValid) {
+      validateOnChange.value = true;
+      return false;
+    }
+    validateOnChange.value = false;
+    return true;
+  });
+};
+
+// =====================================================================================
+// DELETE FUNCTIONALITY
+// =====================================================================================
+const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
+  useDeleteDialog(deleteEntity, entityListUrl);
+
+// =====================================================================================
 // SUMMARY DATA
+// =====================================================================================
 const summary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   if (!createMode.value) {
@@ -588,7 +557,9 @@ const { summaryProps } = useEntityEditSummary({
   entityLiveStatus,
 });
 
-// LOAD DATA FOR EDIT MODE
+// =====================================================================================
+// DATA LOADING FOR EDIT MODE
+// =====================================================================================
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
     wholesaleApi.account.get(String(route.params.id)),
