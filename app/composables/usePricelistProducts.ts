@@ -121,12 +121,10 @@ export const usePricelistProducts = () => {
           p.productId === product.productId &&
           p.staggeredCount === product.staggeredCount,
       );
-
       if (existingIndex >= 0) {
         updatedProducts[existingIndex] = {
           _id: updatedProducts[existingIndex]?._id || undefined,
-          ...updatedProducts[existingIndex],
-          productId: product.productId!,
+          productId: product.productId,
           price: product.price,
           staggeredCount: product.staggeredCount,
         };

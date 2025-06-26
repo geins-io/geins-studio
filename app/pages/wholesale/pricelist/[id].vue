@@ -209,7 +209,7 @@ const {
     ...entity,
     ...formData.vat,
     ...formData.default,
-    products: getPricelistProducts(selectedProducts.value, entity.products),
+    products: getPricelistProducts(selectedProducts.value, entity?.products),
   }),
   onFormValuesChange: (values) => {
     const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
@@ -327,9 +327,22 @@ watch(
         entityData.value,
       );
       setupColumns();
-      entityData.value.products = getPricelistProducts(selectedProducts.value);
+      entityData.value.products = getPricelistProducts(
+        selectedProducts.value,
+        entityData.value.products,
+      );
     }
   },
+);
+watch(
+  selectedProducts,
+  (newSelection) => {
+    entityDataUpdate.value.products = getPricelistProducts(
+      newSelection,
+      entityDataUpdate.value.products,
+    );
+  },
+  { deep: true },
 );
 
 // =====================================================================================
