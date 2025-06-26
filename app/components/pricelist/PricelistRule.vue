@@ -95,14 +95,14 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         size="xs"
         variant="outline"
         @click="$emit('apply')"
-        >Apply</Button
+        >{{ $t('apply') }}</Button
       >
       <Button
         v-if="props.mode !== 'price'"
         size="xs"
         variant="outline"
         @click="$emit('applyAndOverwrite')"
-        >Apply and overwrite</Button
+        >{{ $t('wholesale.pricelist_apply_overwrite') }}</Button
       >
       <Button
         :disabled="(index === 0 && quantity === 1) || global"

@@ -285,9 +285,16 @@ const table = useVueTable({
 const emptyText = computed(() => {
   const emptyText =
     props.emptyText || t('no_entity', { entityName: props.entityName }, 2);
-  return table.getColumn(props.searchableField)?.getFilterValue()
+  const column = searchableColumn.value;
+  return column && column.getFilterValue()
     ? t('no_entity_found', { entityName: props.entityName }, 2)
     : emptyText;
+});
+
+const searchableColumn = computed(() => {
+  return props.columns.length
+    ? table.getColumn(props.searchableField)
+    : undefined;
 });
 </script>
 
@@ -303,15 +310,11 @@ const emptyText = computed(() => {
   >
     <div :class="`relative w-full ${advancedMode ? 'max-w-sm' : ''}`">
       <Input
-        v-if="table.getColumn(searchableField)"
+        v-if="searchableColumn"
         class="w-full pl-10"
         placeholder="Filter list..."
-        :model-value="
-          table.getColumn(searchableField)?.getFilterValue() as string
-        "
-        @update:model-value="
-          table.getColumn(searchableField)?.setFilterValue($event)
-        "
+        :model-value="searchableColumn.getFilterValue() as string"
+        @update:model-value="searchableColumn.setFilterValue($event)"
       />
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-3"

@@ -61,11 +61,19 @@ const thClasses = 'text-xs font-bold text-left py-2';
   <table class="w-full table-auto">
     <thead v-if="localRules.length">
       <tr>
-        <th :class="thClasses">Quantity</th>
-        <th v-if="mode === 'margin'" :class="thClasses">Margin</th>
-        <th v-if="mode === 'discount'" :class="thClasses">Discount</th>
-        <th v-if="mode === 'price'" :class="thClasses">Price</th>
-        <th v-else :class="thClasses">Applied</th>
+        <th :class="thClasses">{{ $t('quantity') }}</th>
+        <th v-if="mode === 'margin'" :class="thClasses">
+          {{ $t('wholesale.pricelist_margin') }}
+        </th>
+        <th v-if="mode === 'discount'" :class="thClasses">
+          {{ $t('wholesale.pricelist_discount') }}
+        </th>
+        <th v-if="mode === 'price'" :class="thClasses">
+          {{ $t('wholesale.pricelist_price') }}
+        </th>
+        <th v-else :class="thClasses">
+          {{ $t('wholesale.pricelist_applied') }}
+        </th>
       </tr>
     </thead>
     <tbody>
@@ -89,7 +97,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
         <td colspan="5" class="pt-2">
           <Button size="sm" variant="link" class="flex" @click="addRule">
             <LucidePlus class="mr-2 size-3.5" />
-            Add price rule
+            {{ $t('wholesale.pricelist_add_rule') }}
           </Button>
         </td>
       </tr>

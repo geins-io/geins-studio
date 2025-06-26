@@ -3,6 +3,7 @@ import type { PricelistProductList } from '#shared/types';
 import { PricelistQtyLevelsCell } from '#components';
 
 export const usePricelistProductsTable = () => {
+  const { t } = useI18n();
   const {
     getBasicCellStyle,
     getBasicHeaderStyle,
@@ -28,8 +29,8 @@ export const usePricelistProductsTable = () => {
         margin: 'editable-percentage',
       },
       columnTitles: {
-        listPrice: `Pricelist price (${vatDescription})`,
-        regularPrice: `Price (${vatDescription})`,
+        listPrice: `${t('wholesale.pricelist_pricelist_price')} (${vatDescription})`,
+        regularPrice: `${t('wholesale.pricelist_price')} (${vatDescription})`,
       },
       excludeColumns: ['manual', 'quantityLevels', 'margin', 'discount'],
       columnCellProps: {
@@ -76,7 +77,7 @@ export const usePricelistProductsTable = () => {
         return h(
           'div',
           { class: cn(getBasicHeaderStyle(table), 'px-3') },
-          'Qty levels',
+          t('wholesale.pricelist_qty_levels'),
         );
       },
     };
