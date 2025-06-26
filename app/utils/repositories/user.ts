@@ -11,5 +11,22 @@ export function userRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
   return {
     ...userRepo,
+    password: {
+      beginRestore: async (
+        email: string,
+        callbackUrl: string,
+      ): Promise<void> => {
+        await fetch(`${BASE_ENDPOINT}/password/restore`, {
+          method: 'POST',
+          body: { username: email, callbackUrl },
+        });
+      },
+      restore: async (token: string, password: string): Promise<void> => {
+        await fetch(`${BASE_ENDPOINT}/password`, {
+          method: 'POST',
+          body: { token, newPassword: password },
+        });
+      },
+    },
   };
 }

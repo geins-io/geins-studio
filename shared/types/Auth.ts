@@ -59,4 +59,9 @@ export interface AuthBroadcastData {
   isRefreshing?: boolean;
 }
 
-export type AuthFormMode = 'login' | 'verify' | 'account';
+export type AuthFormMode =
+  | 'login'
+  | 'verify'
+  | 'account'
+  | 'forgot-password'
+  | 'reset-password';

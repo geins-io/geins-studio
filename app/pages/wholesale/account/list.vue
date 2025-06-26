@@ -9,7 +9,7 @@ type EntityList = WholesaleAccountList;
 
 const { t } = useI18n();
 const route = useRoute();
-const { geinsLogError } = useGeinsLog();
+const { geinsLogError } = useGeinsLog('pages/wholesale/account/list.vue');
 const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
   route.fullPath,
 );

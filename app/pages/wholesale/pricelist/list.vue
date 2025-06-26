@@ -7,7 +7,7 @@ type EntityList = ProductPricelist;
 
 const { t } = useI18n();
 const route = useRoute();
-const { geinsLogError } = useGeinsLog();
+const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/list.vue');
 const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
   route.fullPath,
 );

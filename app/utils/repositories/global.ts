@@ -1,5 +1,5 @@
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
-import type { Account, Channel, Product } from '#shared/types';
+import type { Account, Channel } from '#shared/types';
 
 const ENDPOINTS = {
   PRODUCT: '/product',

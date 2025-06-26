@@ -4,6 +4,8 @@ import { Input } from '#components';
 
 const emit = defineEmits(['login', 'verify', 'set-account', 'set-mode']);
 
+const { t } = useI18n();
+
 const props = withDefaults(
   defineProps<{
     pending: boolean;
@@ -11,6 +13,7 @@ const props = withDefaults(
     mode: AuthFormMode;
     mfaMethod?: string;
     accounts?: AuthAccounts;
+    token?: string;
   }>(),
   {
     pending: false,
@@ -19,11 +22,28 @@ const props = withDefaults(
   },
 );
 
+const { geinsLogError } = useGeinsLog('components/AuthForm.vue');
+const { $geinsApi } = useNuxtApp();
+const userApi = repo.user($geinsApi);
+const baseUrl = useRuntimeConfig().public.baseUrl;
+
 // Global
 const loginMode = computed(() => props.mode === 'login');
 const verifyMode = computed(() => props.mode === 'verify');
 const accountMode = computed(() => props.mode === 'account');
+const forgotPasswordMode = computed(() => props.mode === 'forgot-password');
+const resetPasswordMode = computed(() => props.mode === 'reset-password');
 const showInvalid = ref(props.showInvalid);
+const pending = toRef(props, 'pending');
+const resetRequestSuccess = ref(false);
+const resetSuccess = ref(false);
+const resetLoading = ref(false);
+const newPassword = ref('');
+const passwordRepeat = ref('');
+
+const passwordsMatching = computed(() => {
+  return newPassword.value === passwordRepeat.value;
+});
 
 watchEffect(() => {
   showInvalid.value = props.showInvalid;
@@ -45,6 +65,10 @@ const alertTitle = computed(() => {
       return 'Invalid credentials';
     case 'verify':
       return 'Invalid code';
+    case 'reset-password':
+      return passwordsMatching.value
+        ? 'Something went wrong'
+        : 'Passwords not matching';
     default:
       return 'Something went wrong';
   }
@@ -55,6 +79,10 @@ const alertDescription = computed(() => {
       return 'Please check your email and password and try again.';
     case 'verify':
       return 'Please check the code and try again.';
+    case 'reset-password':
+      return passwordsMatching.value
+        ? 'Your token is invalid or expired. Please try again.'
+        : 'Please check your passwords and try again.';
     default:
       return 'Please refresh this page and try again.';
   }
@@ -120,6 +148,49 @@ const verifyAccount = () => {
   emit('verify', code);
 };
 
+const beginRestorePassword = async () => {
+  showInvalid.value = false;
+  validateEmail();
+  if (!emailValid.value) {
+    showInvalid.value = true;
+    return;
+  }
+  resetLoading.value = true;
+  try {
+    await userApi.password.beginRestore(
+      email.value,
+      `${baseUrl}/auth/reset-password?token={token}`,
+    );
+    resetRequestSuccess.value = true;
+  } catch (error) {
+    showInvalid.value = true;
+    const message = getErrorMessage(error);
+    geinsLogError('error saving buyer:', message);
+  } finally {
+    resetLoading.value = false;
+  }
+};
+
+const restorePassword = async () => {
+  showInvalid.value = false;
+
+  if (newPassword.value !== passwordRepeat.value) {
+    showInvalid.value = true;
+    return;
+  }
+  resetLoading.value = true;
+  try {
+    await userApi.password.restore(String(props.token), newPassword.value);
+    resetSuccess.value = true;
+  } catch (error) {
+    showInvalid.value = true;
+    const message = getErrorMessage(error);
+    geinsLogError('error restoring password:', message);
+  } finally {
+    resetLoading.value = false;
+  }
+};
+
 // Account mode
 const accounts = computed(() => {
   if (!props.accounts) {
@@ -133,9 +204,31 @@ const accounts = computed(() => {
   });
 });
 
+const buttonText = computed(() => {
+  if (verifyMode.value) {
+    return t('verify');
+  }
+  if (forgotPasswordMode.value || resetPasswordMode.value) {
+    return t('reset_password');
+  }
+  return t('log_in');
+});
+
+const handleSubmit = () => {
+  if (loginMode.value) {
+    login();
+  } else if (verifyMode.value) {
+    verifyAccount();
+  } else if (forgotPasswordMode.value || resetPasswordMode.value) {
+    beginRestorePassword();
+  }
+};
+
 // Go back to login
 const backToLogin = () => {
   verificationCode.value = [];
+  resetRequestSuccess.value = false;
+  resetSuccess.value = false;
   emit('set-mode', 'login');
 };
 </script>
@@ -165,13 +258,32 @@ const backToLogin = () => {
       {{ alertDescription }}
     </AlertDescription>
   </Alert>
+  <Alert v-if="resetRequestSuccess" variant="info">
+    <LucideInfo class="size-4" />
+    <AlertTitle> Password reset requested </AlertTitle>
+    <AlertDescription>
+      Check your email for instructions to reset your password.
+    </AlertDescription>
+  </Alert>
+  <Alert v-if="resetSuccess" variant="positive">
+    <LucideInfo class="size-4" />
+    <AlertTitle> Password successfully reset </AlertTitle>
+    <AlertDescription>
+      You can now log in with your new password.
+    </AlertDescription>
+    <div class="mt-2">
+      <Button variant="secondary" as-child>
+        <NuxtLink to="/auth/login"> Go to login </NuxtLink>
+      </Button>
+    </div>
+  </Alert>
 
   <form
-    v-if="loginMode || verifyMode"
+    v-if="loginMode || verifyMode || forgotPasswordMode || resetPasswordMode"
     class="grid gap-4"
-    @submit.prevent="loginMode ? login() : verifyAccount()"
+    @submit.prevent="handleSubmit"
   >
-    <div v-if="loginMode" class="grid gap-2">
+    <div v-if="loginMode || forgotPasswordMode" class="grid gap-2">
       <Label for="email">{{ $t('email') }}</Label>
       <Input
         id="email"
@@ -183,7 +295,7 @@ const backToLogin = () => {
         required
         :valid="emailValid"
         @blur="validateEmail"
-        @keydown.enter="login"
+        @keydown.enter="loginMode ? login() : beginRestorePassword()"
       />
     </div>
 
@@ -192,13 +304,14 @@ const backToLogin = () => {
         <Label for="password">
           {{ $t('password') }}
         </Label>
-        <!-- <a
-          href="/forgot-password"
-          class="ml-auto inline-block text-sm underline"
+        <Button
+          variant="link"
           tabindex="3"
+          class="ml-auto h-auto p-0 pb-1 text-xs"
+          @click="$emit('set-mode', 'forgot-password')"
         >
-          Forgot your password?
-        </a> -->
+          {{ $t('forgot_password') }}
+        </Button>
       </div>
       <Input
         id="password"
@@ -228,8 +341,33 @@ const backToLogin = () => {
       </div>
     </div>
 
-    <Button class="w-full" :loading="pending">
-      {{ loginMode ? $t('log_in') : $t('verify') }}
+    <div v-if="resetPasswordMode" class="mt-3 grid gap-4">
+      <div class="grid gap-2">
+        <Label for="new-password">{{ $t('new_password') }}</Label>
+        <Input
+          id="new-password"
+          v-model="newPassword"
+          type="password"
+          tabindex="1"
+          required
+          @keydown.enter="restorePassword"
+        />
+      </div>
+      <div class="grid gap-2">
+        <Label for="password-repeat">{{ $t('repeat_password') }}</Label>
+        <Input
+          id="password-repeat"
+          v-model="passwordRepeat"
+          type="password"
+          tabindex="2"
+          required
+          @keydown.enter="restorePassword"
+        />
+      </div>
+    </div>
+
+    <Button class="w-full" :loading="pending || resetLoading">
+      {{ buttonText }}
     </Button>
   </form>
   <div v-if="accountMode">
@@ -247,7 +385,11 @@ const backToLogin = () => {
       <LucideLoaderCircle class="size-10 animate-spin" />
     </div>
   </div>
-  <Button v-if="verifyMode || accountMode" variant="link" @click="backToLogin">
+  <Button
+    v-if="verifyMode || accountMode || forgotPasswordMode"
+    variant="link"
+    @click="backToLogin"
+  >
     {{ $t('back_to_login') }}
   </Button>
 </template>

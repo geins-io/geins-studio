@@ -75,6 +75,7 @@ export default defineNuxtConfig({
         channel: '1',
         country: 'SE',
       },
+      baseUrl: getAuthBaseUrlVercel(),
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
       VERCEL: process.env.VERCEL,

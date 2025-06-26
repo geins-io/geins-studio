@@ -20,9 +20,6 @@ export default defineEventHandler(async (event) => {
 
   const headers = getHeaders(event);
   const token = headers['x-access-token'];
-  if (!token) {
-    return { success: false, error: 'Access token is required' };
-  }
 
   const targetUrl = event.context.params?._;
   if (!targetUrl) {
@@ -30,6 +27,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const fullUrl = `${config.public.apiUrl}/${targetUrl}`;
+
   const query = getQuery(event);
   const queryStr = Object.keys(query)
     .map((key) => {
@@ -64,6 +62,7 @@ export default defineEventHandler(async (event) => {
       body,
       headers: apiHeaders,
     });
+
     return response;
   } catch (error) {
     geinsLogError('error connecting to the api:', error);

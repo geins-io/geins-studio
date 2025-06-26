@@ -10,9 +10,10 @@ export const alertVariants = cva(
     variants: {
       variant: {
         default: 'bg-background text-foreground',
-        info: 'border-info border-2 bg-card text-foreground',
+        info: 'border-2 border-info bg-background text-foreground',
         destructive:
           'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
+        positive: 'border-positive bg-background [&>svg]:text-positive',
       },
     },
     defaultVariants: {
