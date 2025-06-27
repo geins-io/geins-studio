@@ -682,7 +682,7 @@ if (!createMode.value) {
               <FormGridWrap>
                 <FormGrid design="1+1+1">
                   <FormField v-slot="{ componentField }" name="details.name">
-                    <FormItem v-auto-animate>
+                    <FormItem>
                       <FormLabel>{{
                         $t('entity_name', { entityName })
                       }}</FormLabel>
@@ -696,7 +696,7 @@ if (!createMode.value) {
                     v-slot="{ componentField }"
                     name="details.vatNumber"
                   >
-                    <FormItem v-auto-animate>
+                    <FormItem>
                       <FormLabel>{{ $t('wholesale.vat_number') }}</FormLabel>
                       <FormControl>
                         <Input
@@ -753,7 +753,7 @@ if (!createMode.value) {
                     v-slot="{ componentField }"
                     name="details.externalId"
                   >
-                    <FormItem v-auto-animate>
+                    <FormItem>
                       <FormLabel :optional="true">{{
                         $t('wholesale.external_id')
                       }}</FormLabel>
@@ -769,7 +769,7 @@ if (!createMode.value) {
                     v-slot="{ componentField }"
                     name="details.salesReps"
                   >
-                    <FormItem v-auto-animate>
+                    <FormItem>
                       <FormLabel :optional="true">{{
                         $t('wholesale.sales_reps')
                       }}</FormLabel>
@@ -792,7 +792,7 @@ if (!createMode.value) {
                     v-slot="{ componentField }"
                     name="details.channels"
                   >
-                    <FormItem v-auto-animate>
+                    <FormItem>
                       <FormLabel>{{ $t('wholesale.channels') }}</FormLabel>
                       <FormControl>
                         <FormInputChannels
@@ -808,7 +808,7 @@ if (!createMode.value) {
                 </FormGrid>
                 <FormGrid v-if="!createMode" design="1">
                   <FormField v-slot="{ componentField }" name="details.tags">
-                    <FormItem v-auto-animate>
+                    <FormItem>
                       <FormLabel :optional="true">{{
                         $t('wholesale.account_groups')
                       }}</FormLabel>

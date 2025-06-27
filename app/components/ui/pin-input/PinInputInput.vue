@@ -34,7 +34,7 @@ onMounted(() => {
     v-bind="forwardedProps"
     :class="
       cn(
-        'relative flex size-16 items-center justify-center border-y border-r border-border bg-transparent text-center text-lg transition-all first:rounded-l-lg first:border-l last:rounded-r-lg focus:relative focus:z-10 focus:outline-none focus:ring-1 focus:ring-ring',
+        'text-xxl relative flex size-16 items-center justify-center border-y border-r border-border bg-transparent text-center transition-all first:rounded-l-lg first:border-l last:rounded-r-lg focus:relative focus:z-10 focus:outline-none focus:ring-1 focus:ring-ring',
         props.class,
       )
     "

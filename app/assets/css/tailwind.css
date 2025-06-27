@@ -103,6 +103,7 @@
 
     --info: 194 85% 89%;
     --info-foreground: 0 0% 9%;
+    --info-icon: 194 100% 64%;
   }
   .dark {
     color-scheme: dark;
@@ -124,15 +125,16 @@
     -webkit-box-shadow: 0 0 0 1000px hsl(var(--input)) inset !important;
     -webkit-text-fill-color: hsl(var(--foreground)) !important;
     border-radius: inherit !important;
-    border-bottom: 2px dashed hsl(var(--warning) / 60%) !important;
-    border-right: 2px dashed hsl(var(--warning) / 60%) !important;
-    top: 1px !important;
-    bottom: 1px !important;
+    border-bottom: 1px solid #c2ebff !important;
+    border-right: 1px solid #c2ebff !important;
+    background-size: 58.6px 22.49px !important;
+    top: 2px !important;
+    bottom: 2px !important;
     position: relative !important;
-    width: calc(100% - 2px) !important;
-    height: calc(100% - 2px) !important;
-    left: 1px !important;
-    right: 1px !important;
+    width: calc(100% - 4px) !important;
+    height: calc(100% - 4px) !important;
+    left: 2px !important;
+    right: 2px !important;
   }
 
   #__nuxt {

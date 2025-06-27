@@ -636,7 +636,7 @@ if (!createMode.value) {
               <FormGridWrap>
                 <FormGrid design="1+1+1">
                   <FormField v-slot="{ componentField }" name="default.name">
-                    <FormItem v-auto-animate>
+                    <FormItem>
                       <FormLabel>{{
                         $t('entity_name', { entityName })
                       }}</FormLabel>
@@ -647,7 +647,7 @@ if (!createMode.value) {
                     </FormItem>
                   </FormField>
                   <FormField v-slot="{ componentField }" name="default.channel">
-                    <FormItem v-auto-animate>
+                    <FormItem>
                       <FormLabel>
                         {{ $t('wholesale.pricelist_channel') }}
                       </FormLabel>
@@ -677,7 +677,7 @@ if (!createMode.value) {
                     v-slot="{ componentField }"
                     name="default.currency"
                   >
-                    <FormItem v-auto-animate>
+                    <FormItem>
                       <FormLabel>
                         {{ $t('wholesale.pricelist_currency') }}
                       </FormLabel>

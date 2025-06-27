@@ -31,6 +31,7 @@ module.exports = {
       },
       fontSize: {
         grid: '0.8125rem',
+        xxl: '1.8rem',
       },
       gridTemplateColumns: {
         main: 'minmax(50%, 1fr) minmax(300px, 360px)',
@@ -85,6 +86,7 @@ module.exports = {
         info: {
           DEFAULT: 'hsl(var(--info))',
           foreground: 'hsl(var(--info-foreground))',
+          icon: 'hsl(var(--info-icon))',
         },
       },
       borderRadius: {

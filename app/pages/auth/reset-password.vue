@@ -13,7 +13,7 @@ definePageMeta({
 <template>
   <div>
     <AuthForm
-      :pending="false"
+      :loading="false"
       :show-invalid="false"
       mode="reset-password"
       :token="token"

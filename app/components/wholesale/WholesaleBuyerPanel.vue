@@ -246,7 +246,7 @@ const existingCustomerName = computed(() => {
           <FormGridWrap>
             <FormGrid design="1+1">
               <FormField v-slot="{ componentField }" name="firstName">
-                <FormItem v-auto-animate>
+                <FormItem>
                   <FormLabel :optional="true">{{
                     t('person.first_name')
                   }}</FormLabel>
@@ -261,7 +261,7 @@ const existingCustomerName = computed(() => {
                 </FormItem>
               </FormField>
               <FormField v-slot="{ componentField }" name="lastName">
-                <FormItem v-auto-animate>
+                <FormItem>
                   <FormLabel :optional="true">{{
                     t('person.last_name')
                   }}</FormLabel>
@@ -278,7 +278,7 @@ const existingCustomerName = computed(() => {
             </FormGrid>
             <FormGrid design="1+1">
               <FormField v-slot="{ componentField }" name="email">
-                <FormItem v-auto-animate>
+                <FormItem>
                   <FormLabel>{{ t('person.email') }}</FormLabel>
                   <FormControl>
                     <Input
@@ -292,7 +292,7 @@ const existingCustomerName = computed(() => {
                 </FormItem>
               </FormField>
               <FormField v-slot="{ componentField }" name="phone">
-                <FormItem v-auto-animate>
+                <FormItem>
                   <FormLabel :optional="true">{{
                     t('person.phone')
                   }}</FormLabel>
@@ -319,7 +319,7 @@ const existingCustomerName = computed(() => {
             </FormGrid>
           </FormGridWrap>
         </form>
-        <div v-auto-animate class="mt-8 border-t pt-8">
+        <div class="mt-8 border-t pt-8">
           <div
             v-if="mode === 'edit'"
             class="mb-8 flex items-center justify-between"
@@ -344,12 +344,11 @@ const existingCustomerName = computed(() => {
             </Button>
           </div>
           <div v-if="buyerExistsAsCustomer" class="w-full space-y-6">
-            <Alert variant="info">
-              <LucideInfo class="size-4" />
-              <AlertTitle>{{
-                t('wholesale.buyers_feedback_existing_title')
-              }}</AlertTitle>
-              <AlertDescription>
+            <Feedback type="info">
+              <template #title>
+                {{ t('wholesale.buyers_feedback_existing_title') }}
+              </template>
+              <template #description>
                 <i18n-t
                   keypath="wholesale.buyers_feedback_existing_description"
                   scope="global"
@@ -359,8 +358,8 @@ const existingCustomerName = computed(() => {
                     <span class="font-bold">{{ existingCustomer?._id }}</span>
                   </template>
                 </i18n-t>
-              </AlertDescription>
-              <div class="mt-2">
+              </template>
+              <template #actions>
                 <ContentSwitch
                   v-model:checked="updateCustomer"
                   :label="
@@ -371,8 +370,8 @@ const existingCustomerName = computed(() => {
                   "
                   :description="t('wholesale.buyers_assign_description')"
                 />
-              </div>
-            </Alert>
+              </template>
+            </Feedback>
           </div>
         </div>
       </div>

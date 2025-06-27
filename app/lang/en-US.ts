@@ -112,9 +112,11 @@ export default defineI18nLocale(async () => {
     log_in: 'Log in',
     verify: 'Verify',
     reset_password: 'Reset password',
+    send_reset_link: 'Send reset link',
     forgot_password: 'Forgot your password?',
     new_password: 'New password',
     repeat_password: 'Repeat password',
+    remember_me: 'Remember me',
     next: 'Next',
     number: 'Number',
     name: 'Name',
@@ -156,11 +158,33 @@ export default defineI18nLocale(async () => {
     auth_verify_title: 'Verify Account',
     auth_verify_description: 'Enter the 6-digit code from your',
     auth_select_account: 'Select the account you want to access',
+    auth: {
+      invalid_credentials_title: 'Invalid credentials',
+      invalid_credentials_description:
+        'Please check your email and password and try again.',
+      invalid_code_title: 'Invalid code',
+      invalid_code_description:
+        'Please check the verification code and try again.',
+      reset_password_error_title: 'Password reset failed',
+      reset_password_error_description:
+        'Your token is invalid or expired. Please try again.',
+      general_error_title: 'Something went wrong',
+      general_error_description: 'Please refresh this page and try again.',
+      password_reset_requested_title: 'Password reset requested',
+      password_reset_requested_description:
+        'Check your email for instructions to reset your password.',
+      password_reset_success_title: 'Password successfully reset',
+      password_reset_success_description:
+        'You can now log in with your new password.',
+      go_to_login: 'Go to login',
+    },
     unsaved_changes: 'Unsaved changes',
     toggle_active_state: 'Toggle active state',
     form: {
       field_required: 'This field is required',
       invalid_email: 'Invalid email address',
+      password_min_length: 'Password must be at least 6 characters',
+      passwords_not_matching: 'Passwords do not match',
       optional: 'optional',
     },
     address: {
