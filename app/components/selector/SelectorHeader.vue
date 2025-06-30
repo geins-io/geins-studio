@@ -1,15 +1,16 @@
 <script setup lang="ts" generic="T extends SelectorEntity">
-const _props = withDefaults(
+const props = withDefaults(
   defineProps<{
     title: string;
     description: string;
-    selection: SelectorSelection;
+    selection: SelectorSelectionInternal;
     entities: T[];
     entityName: string;
   }>(),
   {},
 );
 const _emits = defineEmits(['add', 'remove']);
+const selectedIds = computed(() => props.selection?.ids || []);
 </script>
 <template>
   <div>
@@ -20,7 +21,7 @@ const _emits = defineEmits(['add', 'remove']);
     <SelectorQuickAdd
       v-if="entities.length"
       :entities="entities"
-      :selection="selection"
+      :selection="selectedIds"
       :entity-name="entityName"
       @add="$emit('add', $event)"
       @remove="$emit('remove', $event)"

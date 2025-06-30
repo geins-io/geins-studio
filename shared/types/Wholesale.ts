@@ -79,3 +79,7 @@ export interface WholesaleVatValidation {
   name: string;
   address: string;
 }
+
+export interface WholesalePricelist extends Omit<ProductPricelist, 'products'> {
+  products: number;
+}

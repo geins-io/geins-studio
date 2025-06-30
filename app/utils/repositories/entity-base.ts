@@ -13,8 +13,8 @@ export function entityBaseRepo<TResponse extends EntityBase>(
       return await fetch<TResponse>(`${entityEndpoint}/${id}`, { query });
     },
 
-    async list(): Promise<TResponse[]> {
-      return await fetch<TResponse[]>(`${entityEndpoint}/list`);
+    async list(query?: Record<string, unknown>): Promise<TResponse[]> {
+      return await fetch<TResponse[]>(`${entityEndpoint}/list`, { query });
     },
   };
 }

@@ -1,8 +1,9 @@
 <script setup lang="ts" generic="T extends SelectorEntity">
 const props = defineProps<{
   entities: T[];
-  selection: SelectorSelection;
+  selection: string[];
   entityName: string;
+  showImage?: boolean;
 }>();
 
 const focused = ref(false);
@@ -21,7 +22,7 @@ const handleOutsideClick = () => {
   focused.value = false;
 };
 const isSelected = (id: string) => {
-  return props.selection.ids?.includes(id);
+  return props.selection.includes(id);
 };
 </script>
 <template>
@@ -54,7 +55,7 @@ const isSelected = (id: string) => {
           >
             <div class="flex w-full items-center gap-3 text-xs">
               <img
-                v-if="entity.image"
+                v-if="showImage && entity.image"
                 :src="entity.image"
                 alt="entity image"
                 class="size-6 shrink-0 rounded-lg"

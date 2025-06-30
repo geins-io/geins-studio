@@ -154,11 +154,11 @@ export default defineI18nLocale(async () => {
     selector_option_stock: '@.capitalize:stock',
     selector_option_import: '@.capitalize:import',
     selector_panel_description: 'Make your selection',
-    auth_login_title: 'Geins Studio',
-    auth_verify_title: 'Verify Account',
-    auth_verify_description: 'Enter the 6-digit code from your',
-    auth_select_account: 'Select the account you want to access',
     auth: {
+      login_title: 'Geins Studio',
+      verify_title: 'Verify Account',
+      verify_description: 'Enter the 6-digit code from your',
+      select_account: 'Select the account you want to access',
       invalid_credentials_title: 'Invalid credentials',
       invalid_credentials_description:
         'Please check your email and password and try again.',
@@ -176,6 +176,8 @@ export default defineI18nLocale(async () => {
       password_reset_success_title: 'Password successfully reset',
       password_reset_success_description:
         'You can now log in with your new password.',
+      password_min_length: 'Password must be at least 6 characters',
+      passwords_not_matching: 'Passwords do not match',
       go_to_login: 'Go to login',
     },
     unsaved_changes: 'Unsaved changes',
@@ -183,8 +185,6 @@ export default defineI18nLocale(async () => {
     form: {
       field_required: 'This field is required',
       invalid_email: 'Invalid email address',
-      password_min_length: 'Password must be at least 6 characters',
-      passwords_not_matching: 'Passwords do not match',
       optional: 'optional',
     },
     address: {
@@ -212,6 +212,7 @@ export default defineI18nLocale(async () => {
       channels: 'Channels',
       sales_reps: 'Sales reps',
       account_groups: 'Account groups',
+      pricelists_description: 'Pricelists assigned to this account',
       buyers: 'Buyers',
       buyers_feedback_existing_title: 'Email already in use!',
       buyers_feedback_existing_description:
@@ -240,6 +241,7 @@ export default defineI18nLocale(async () => {
       veis: 'EU VAT Information Exchange System (VIES)',
       name: 'Name',
       address: 'Address',
+      pricelists: 'Pricelists',
       pricelist_channel: 'Channel',
       pricelist_currency: 'Currency',
       pricelist_forced: 'Override prices',
@@ -273,6 +275,7 @@ export default defineI18nLocale(async () => {
       pricelist_add_rule: 'Add rule',
       pricelist_qty_levels: 'Qty levels',
       pricelist_pricelist_price: 'Pricelist price',
+      no_pricelists_connected: 'No pricelists are connected to this account',
     },
   };
 });

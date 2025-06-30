@@ -57,7 +57,7 @@ const formSchema = computed(() => {
     return toTypedSchema(
       z.object({
         email: z.string().email({ message: t('form.invalid_email') }),
-        password: z.string().min(6, { message: t('form.password_min_length') }),
+        password: z.string().min(6, { message: t('auth.password_min_length') }),
         rememberMe: z.boolean().optional(),
       }),
     );
@@ -77,13 +77,13 @@ const formSchema = computed(() => {
         .object({
           newPassword: z
             .string()
-            .min(6, { message: t('form.password_min_length') }),
+            .min(6, { message: t('auth.password_min_length') }),
           passwordRepeat: z
             .string()
-            .min(6, { message: t('form.password_min_length') }),
+            .min(6, { message: t('auth.password_min_length') }),
         })
         .refine((data) => data.newPassword === data.passwordRepeat, {
-          message: t('form.passwords_not_matching'),
+          message: t('auth.passwords_not_matching'),
           path: ['passwordRepeat'],
         }),
     );
@@ -294,16 +294,16 @@ const backToLogin = () => {
   <div class="grid gap-4">
     <div class="grid gap-2 text-center">
       <h1 class="mb-2 text-3xl font-bold">
-        {{ verifyMode ? $t('auth_verify_title') : $t('auth_login_title') }}
+        {{ verifyMode ? $t('auth.verify_title') : $t('auth.login_title') }}
       </h1>
       <p
         v-if="verifyMode && mfaMethod.length > 0"
         class="text-muted-foreground"
       >
-        {{ $t('auth_verify_description') }} <strong>{{ mfaMethod }}</strong>
+        {{ $t('auth.verify_description') }} <strong>{{ mfaMethod }}</strong>
       </p>
       <p v-if="accountMode" class="text-muted-foreground">
-        {{ $t('auth_select_account') }}
+        {{ $t('auth.select_account') }}
       </p>
     </div>
 

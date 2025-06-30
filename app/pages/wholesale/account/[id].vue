@@ -2,7 +2,6 @@
 // =====================================================================================
 // IMPORTS & TYPES
 // =====================================================================================
-import type { ColumnDef } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useWholesale } from '@/composables/useWholesale';
@@ -108,6 +107,7 @@ const currentTab = ref(0);
 const tabs = [
   t('wholesale.account_details'),
   t('wholesale.buyers'),
+  t('wholesale.pricelists'),
   t('settings'),
 ];
 const showSidebar = computed(() => {
@@ -324,13 +324,15 @@ const columnOptions: ColumnOptions<WholesaleBuyer> = {
   columnTitles: { _id: t('person.email'), active: t('status') },
   excludeColumns: ['accountId'],
 };
-const buyerColumns: Ref<ColumnDef<WholesaleBuyer>[]> = ref([]);
 const { getColumns, addActionsColumn } = useColumns<WholesaleBuyer>();
 
-const setupColumns = () => {
-  buyerColumns.value = getColumns(buyersList.value, columnOptions);
+// Use computed for reactive columns
+const buyerColumns = computed(() => {
+  if (buyersList.value.length === 0) return [];
+
+  const columns = getColumns(buyersList.value, columnOptions);
   addActionsColumn(
-    buyerColumns.value,
+    columns,
     {
       onEdit: (entity: WholesaleBuyer) => {
         buyerToEdit.value = entity;
@@ -340,7 +342,8 @@ const setupColumns = () => {
     },
     'edit',
   );
-};
+  return columns;
+});
 
 watch(buyerPanelOpen, async (open) => {
   if (!open) {
@@ -349,6 +352,88 @@ watch(buyerPanelOpen, async (open) => {
     await refreshEntityData.value();
   }
 });
+
+// =====================================================================================
+// PRICELISTS MANAGEMENT
+// =====================================================================================
+
+const productApi = repo.product(useNuxtApp().$geinsApi);
+const addedPricelists = ref<WholesalePricelist[]>([]);
+const addedPricelistsIds = computed(() => {
+  return addedPricelists.value.map((pl) => pl._id);
+});
+const allPricelists = ref<WholesalePricelist[]>([]);
+
+const {
+  getColumns: getPricelistColumns,
+  addActionsColumn: addPricelistActionsColumn,
+} = useColumns<WholesalePricelist>();
+
+const columnOptionsPricelists: ColumnOptions<WholesalePricelist> = {
+  entityLinkUrl: '/wholesale/pricelist/{_id}',
+  columnTypes: {
+    name: 'entity-link',
+  },
+  includeColumns: ['_id', 'name', 'currency', 'products', 'exVat', 'active'],
+};
+
+// Use computed for reactive columns
+const pricelistColumns = computed(() => {
+  if (addedPricelists.value.length === 0) return [];
+
+  const columns = getPricelistColumns(
+    addedPricelists.value,
+    columnOptionsPricelists,
+  );
+
+  addPricelistActionsColumn(
+    columns,
+    {
+      onDelete: (entity: WholesalePricelist) => {
+        removePricelist(entity._id);
+      },
+    },
+    'delete',
+  );
+  return columns;
+});
+
+// SET COLUMN VISIBILITY STATE
+const { getVisibilityState } = useTable<WholesalePricelist>();
+const hiddenColumns: StringKeyOf<WholesalePricelist>[] = ['_id'];
+const visibilityState = getVisibilityState(hiddenColumns);
+
+const addPricelist = async (id: string) => {
+  const pricelist = allPricelists.value.find((pl) => pl._id === id);
+  if (pricelist && !addedPricelistsIds.value.includes(pricelist._id)) {
+    addedPricelists.value.push(pricelist);
+  }
+};
+
+const removePricelist = (id: string) => {
+  const index = addedPricelistsIds.value.indexOf(id);
+  if (index !== -1) {
+    addedPricelists.value.splice(index, 1);
+  }
+};
+
+if (!createMode.value) {
+  const { data, error } = await useAsyncData<ProductPricelist[]>(() =>
+    productApi.pricelist.list({ fields: 'products' }),
+  );
+
+  if (!data.value || error.value) {
+    geinsLogError(
+      `${t('failed_to_fetch_entity', { entityName: 'pricelist' }, 2)}`,
+      error.value,
+    );
+  } else {
+    allPricelists.value = data.value.map((pricelist) => ({
+      ...pricelist,
+      products: pricelist.products.length,
+    }));
+  }
+}
 
 // =====================================================================================
 // ADDRESS MANAGEMENT
@@ -580,7 +665,7 @@ if (!createMode.value) {
       if (newData) {
         await parseAndSaveData(newData);
         await nextTick();
-        setupColumns();
+        // Columns are now computed and will update automatically
       }
     },
     { immediate: true },
@@ -1003,6 +1088,50 @@ if (!createMode.value) {
         <KeepAlive>
           <ContentEditMainContent
             v-if="currentTab === 2"
+            :key="`tab-${currentTab}`"
+          >
+            <ContentCard>
+              <ContentCardHeader
+                :title="t('wholesale.pricelists')"
+                :description="t('wholesale.pricelists_description')"
+                class="mb-6"
+              />
+              <div>
+                <SelectorQuickAdd
+                  :entities="allPricelists"
+                  :selection="addedPricelistsIds"
+                  entity-name="pricelist"
+                  :show-image="false"
+                  class="mb-8 lg:w-2/3"
+                  @add="addPricelist($event)"
+                  @remove="removePricelist($event)"
+                />
+                <div
+                  v-if="addedPricelists.length === 0"
+                  class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
+                >
+                  <p class="text-xl font-bold">
+                    {{ $t('no_entity', { entityName: 'pricelist' }, 2) }}
+                  </p>
+                  <p class="text-xs text-muted-foreground">
+                    {{ $t('wholesale.no_pricelists_connected') }}
+                  </p>
+                </div>
+                <TableView
+                  v-else
+                  :mode="TableMode.Simple"
+                  entity-name="pricelist"
+                  :columns="pricelistColumns"
+                  :data="addedPricelists"
+                  :init-visibility-state="visibilityState"
+                />
+              </div>
+            </ContentCard>
+          </ContentEditMainContent>
+        </KeepAlive>
+        <KeepAlive>
+          <ContentEditMainContent
+            v-if="currentTab === 3"
             :key="`tab-${currentTab}`"
           >
             <ContentEditCard :create-mode="false" :title="t('settings')">

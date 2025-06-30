@@ -20,7 +20,7 @@ export interface EntityEditOptions<
   validationSchema: ReturnType<typeof toTypedSchema>;
   initialEntityData: TCreate;
   initialUpdateData: TUpdate;
-  excludeSaveFields: StringKeyOf<TBase>[];
+  excludeSaveFields?: StringKeyOf<TBase>[];
   parseEntityData?: (entity: TResponse) => Promise<void> | void;
   prepareCreateData?: (formData: GenericObject) => TCreate;
   prepareUpdateData?: (formData: GenericObject, entity?: TUpdate) => TUpdate;
