@@ -475,13 +475,6 @@ const { summaryProps } = useEntityEditSummary({
 });
 
 // =====================================================================================
-// UTILITY FUNCTIONS
-// =====================================================================================
-const updatePricelistMode = (mode: string | number) => {
-  pricelistRulesMode.value = mode as PricelistRuleMode;
-};
-
-// =====================================================================================
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
@@ -518,12 +511,12 @@ if (!createMode.value) {
 </script>
 
 <template>
-  <!-- <DialogUnsavedChanges
+  <DialogUnsavedChanges
     v-model:open="unsavedChangesDialogOpen"
     :entity-name="entityName"
     :loading="loading"
     @confirm="confirmLeave"
-  /> -->
+  />
   <DialogDelete
     v-model:open="deleteDialogOpen"
     :entity-name="entityName"
@@ -855,9 +848,9 @@ if (!createMode.value) {
                   />
                   <PricelistRules
                     v-if="entityDataUpdate.rules"
-                    v-model:rules="entityDataUpdate.rules"
+                    :rules="entityDataUpdate.rules || []"
                     :mode="pricelistRulesMode"
-                    @update-mode="updatePricelistMode"
+                    @update="entityDataUpdate.rules = $event"
                   />
                 </TabsContent>
               </Tabs>
