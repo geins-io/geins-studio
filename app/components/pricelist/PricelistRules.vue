@@ -17,7 +17,7 @@ const appliedRules = props.rules.map((rule) => ({
 const localRules = ref<PricelistRule[]>(appliedRules);
 
 const emptyRule: PricelistRule = {
-  quantity: 1,
+  quantity: undefined,
   margin: undefined,
   discountPercent: undefined,
   price: undefined,
@@ -28,15 +28,6 @@ const emptyRule: PricelistRule = {
 const addRule = () => {
   localRules.value.push({ ...emptyRule });
 };
-
-if (localRules.value.length === 0) {
-  addRule();
-} else if (
-  !localRules.value.some((rule) => rule.quantity === 1) &&
-  props.mode !== 'price'
-) {
-  localRules.value.unshift({ ...emptyRule });
-}
 
 watch(
   localRules,

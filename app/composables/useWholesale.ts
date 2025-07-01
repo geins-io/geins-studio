@@ -9,7 +9,9 @@ export const useWholesale = () => {
   const geinsApi = nuxtApp.$geinsApi;
   const { toast } = useToast();
   const { t } = useI18n();
-  const { geinsLogError } = useGeinsLog('composables/useWholesale.ts');
+  const { geinsLogError, geinsLogInfo } = useGeinsLog(
+    'composables/useWholesale.ts',
+  );
 
   const wholesaleApi = repo.wholesale(geinsApi);
 
@@ -92,14 +94,17 @@ export const useWholesale = () => {
             return key === 'name' || key === 'address';
           })
           .map((key) => ({
-            label: t('wholesale.' + key),
+            label: key === 'address' ? t(`${key}.title`) : t(key),
             value:
               vatValidation.value?.[key as keyof WholesaleVatValidation] ?? '',
           }));
       }
       vatValid.value = vatValidation.value.valid;
     } catch (error) {
-      geinsLogError('error validating VAT number:', error);
+      geinsLogInfo(
+        'VAT number could not be validated using VEIS :::',
+        getErrorMessage(error),
+      );
     } finally {
       hasValidatedVat.value = true;
       vatValidating.value = false;

@@ -31,7 +31,7 @@ const props = withDefaults(
     mode?: TableMode;
     maxHeight?: string;
     showSearch?: boolean;
-    pinnedState?: ColumnPinningState;
+    pinnedState?: ColumnPinningState | null;
     selectedIds?: string[];
     emptyText?: string;
     initVisibilityState?: VisibilityState;
@@ -211,12 +211,14 @@ const pinnedStyles = computed(() => {
 
 // Remove select and actions columns from pinned state if not present in columns
 const columnPinningState = computed(() => {
-  const left = pinnedState.value.left?.filter((id) =>
-    props.columns.some((column) => column.id === id),
-  );
-  const right = pinnedState.value.right?.filter((id) =>
-    props.columns.some((column) => column.id === id),
-  );
+  const left =
+    pinnedState.value?.left?.filter((id) =>
+      props.columns.some((column) => column.id === id),
+    ) || [];
+  const right =
+    pinnedState.value?.right?.filter((id) =>
+      props.columns.some((column) => column.id === id),
+    ) || [];
   return { left, right };
 });
 

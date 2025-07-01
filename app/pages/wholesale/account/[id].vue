@@ -105,13 +105,13 @@ const addressBase: AddressBase = {
 // Tabs & Steps
 const currentTab = ref(0);
 const tabs = [
-  t('wholesale.account_details'),
+  t('general'),
   t('wholesale.buyers'),
   t('wholesale.pricelists'),
   t('settings'),
 ];
 const showSidebar = computed(() => {
-  return currentTab.value !== 1;
+  return currentTab.value === 0;
 });
 
 const totalCreateSteps = 2;
@@ -323,6 +323,7 @@ const buyerPanelMode = ref<'edit' | 'add'>('add');
 const columnOptions: ColumnOptions<WholesaleBuyer> = {
   columnTitles: { _id: t('person.email'), active: t('status') },
   excludeColumns: ['accountId'],
+  sortable: false,
 };
 const { getColumns, addActionsColumn } = useColumns<WholesaleBuyer>();
 
@@ -375,6 +376,7 @@ const columnOptionsPricelists: ColumnOptions<WholesalePricelist> = {
     name: 'entity-link',
   },
   includeColumns: ['_id', 'name', 'currency', 'products', 'exVat', 'active'],
+  sortable: false,
 };
 
 // Use computed for reactive columns
@@ -406,14 +408,19 @@ const visibilityState = getVisibilityState(hiddenColumns);
 const addPricelist = async (id: string) => {
   const pricelist = allPricelists.value.find((pl) => pl._id === id);
   if (pricelist && !addedPricelistsIds.value.includes(pricelist._id)) {
-    addedPricelists.value.push(pricelist);
+    addedPricelists.value = [
+      ...addedPricelists.value,
+      {
+        ...pricelist,
+      },
+    ];
   }
 };
 
 const removePricelist = (id: string) => {
   const index = addedPricelistsIds.value.indexOf(id);
   if (index !== -1) {
-    addedPricelists.value.splice(index, 1);
+    addedPricelists.value = addedPricelists.value.filter((pl) => pl._id !== id);
   }
 };
 
@@ -1042,7 +1049,7 @@ if (!createMode.value) {
               v-if="currentTab === 1"
               :create-mode="createMode"
               :title="t('wholesale.buyers')"
-              description="Buyers connected to this account"
+              :description="$t('wholesale.buyers_description')"
             >
               <template #header-action>
                 <WholesaleBuyerPanel
@@ -1080,6 +1087,7 @@ if (!createMode.value) {
                   entity-name="buyer"
                   :columns="buyerColumns"
                   :data="buyersList"
+                  :pinned-state="null"
                 />
               </div>
             </ContentEditCard>
@@ -1090,22 +1098,23 @@ if (!createMode.value) {
             v-if="currentTab === 2"
             :key="`tab-${currentTab}`"
           >
-            <ContentCard>
-              <ContentCardHeader
-                :title="t('wholesale.pricelists')"
-                :description="t('wholesale.pricelists_description')"
-                class="mb-6"
-              />
-              <div>
+            <ContentEditCard
+              :create-mode="createMode"
+              :title="t('wholesale.pricelists')"
+              description="Pricelists connected to this account"
+            >
+              <template #header-action>
                 <SelectorQuickAdd
                   :entities="allPricelists"
                   :selection="addedPricelistsIds"
                   entity-name="pricelist"
                   :show-image="false"
-                  class="mb-8 lg:w-2/3"
+                  class="!w-2/5"
                   @add="addPricelist($event)"
                   @remove="removePricelist($event)"
                 />
+              </template>
+              <div>
                 <div
                   v-if="addedPricelists.length === 0"
                   class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
@@ -1124,9 +1133,10 @@ if (!createMode.value) {
                   :columns="pricelistColumns"
                   :data="addedPricelists"
                   :init-visibility-state="visibilityState"
+                  :pinned-state="null"
                 />
               </div>
-            </ContentCard>
+            </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
         <KeepAlive>
@@ -1203,7 +1213,7 @@ if (!createMode.value) {
                       <ContentDataList
                         v-if="vatValid"
                         class="block max-w-[300px] pb-2"
-                        label="VEIS Information"
+                        :label="t('wholesale.vat_validation_summary_label')"
                         :data-list="vatValidationSummary"
                       />
                     </template>

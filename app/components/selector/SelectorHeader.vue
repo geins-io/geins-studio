@@ -23,6 +23,8 @@ const selectedIds = computed(() => props.selection?.ids || []);
       :entities="entities"
       :selection="selectedIds"
       :entity-name="entityName"
+      :show-id="true"
+      :show-image="true"
       @add="$emit('add', $event)"
       @remove="$emit('remove', $event)"
     />

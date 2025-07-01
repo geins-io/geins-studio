@@ -33,7 +33,7 @@ const { filterState } = useCommand();
 
 <template>
   <div
-    class="flex items-center rounded-lg border bg-input px-3"
+    class="flex items-center rounded-lg border bg-input px-3 focus-within:border-primary"
     cmdk-input-wrapper
   >
     <Search class="mr-2 size-4 shrink-0" />

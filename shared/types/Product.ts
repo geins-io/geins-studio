@@ -228,7 +228,7 @@ export interface PricelistProductPatch {
 }
 
 export interface PricelistRule {
-  quantity: number;
+  quantity?: number;
   margin?: number;
   discountPercent?: number;
   price?: number;

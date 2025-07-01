@@ -15,7 +15,7 @@ const props = withDefaults(
     feedback?: string;
     description?: string;
     loading?: boolean;
-    size?: 'default' | 'sm';
+    size?: 'default' | 'sm' | 'md';
   }>(),
   {
     valid: true,
@@ -44,6 +44,7 @@ const inputAttrs = computed(() => {
       cn(
         'relative h-10 w-full rounded-lg border bg-input',
         props.size === 'sm' ? 'h-7' : '',
+        props.size === 'md' ? 'h-9' : '',
         $slots.valueDescriptor ? 'flex items-center' : '',
         'focus-within:border-primary focus-within:outline-none',
         props.class,

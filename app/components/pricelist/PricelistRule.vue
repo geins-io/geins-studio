@@ -92,6 +92,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
     <td class="flex items-center justify-end gap-2 py-3">
       <Button
         v-if="props.mode !== 'price'"
+        :disabled="applied || quantity === undefined"
         size="xs"
         variant="outline"
         @click="$emit('apply')"
@@ -99,6 +100,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
       >
       <Button
         v-if="props.mode !== 'price'"
+        :disabled="quantity === undefined"
         size="xs"
         variant="outline"
         @click="$emit('applyAndOverwrite')"

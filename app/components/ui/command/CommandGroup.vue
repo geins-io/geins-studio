@@ -48,7 +48,7 @@ onUnmounted(() => {
   >
     <ListboxGroupLabel
       v-if="heading"
-      class="px-2 py-1.5 text-xs font-semibold text-muted-foreground"
+      class="mb-1 border-b px-3 py-1.5 text-xs font-semibold text-muted-foreground"
     >
       {{ heading }}
     </ListboxGroupLabel>

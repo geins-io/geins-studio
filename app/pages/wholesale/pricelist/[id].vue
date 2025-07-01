@@ -83,11 +83,10 @@ const entityBase: ProductPricelistCreate = {
 // =====================================================================================
 // Tabs & Steps
 const currentTab = ref(0);
-const tabs = [
-  t('wholesale.pricelist_tab_general'),
-  t('wholesale.pricelist_tab_products_pricing'),
-];
-const showSidebar = computed(() => true);
+const tabs = [t('general'), t('wholesale.pricelist_products_pricing')];
+const showSidebar = computed(() => {
+  return currentTab.value === 0;
+});
 
 const totalCreateSteps = 2;
 const { currentStep, nextStep, previousStep } =
@@ -108,7 +107,8 @@ const productSelection = ref<SelectorSelectionQueryBase>(
 const productSelector = ref();
 
 // Pricelist rules
-const pricelistRulesMode = ref<PricelistRuleMode>('margin');
+const pricelistActionsMode = ref<PricelistRuleMode>('discount');
+const pricelistRulesMode = ref<PricelistRuleMode>('discount');
 
 // =====================================================================================
 // PRODUCT & PRICING COMPOSABLES
@@ -518,12 +518,12 @@ if (!createMode.value) {
 </script>
 
 <template>
-  <DialogUnsavedChanges
+  <!-- <DialogUnsavedChanges
     v-model:open="unsavedChangesDialogOpen"
     :entity-name="entityName"
     :loading="loading"
     @confirm="confirmLeave"
-  />
+  /> -->
   <DialogDelete
     v-model:open="deleteDialogOpen"
     :entity-name="entityName"
@@ -654,6 +654,7 @@ if (!createMode.value) {
                       <FormControl>
                         <Select
                           v-bind="componentField"
+                          :disabled="!createMode"
                           @update:model-value="handleChannelChange"
                         >
                           <SelectTrigger>
@@ -670,6 +671,9 @@ if (!createMode.value) {
                           </SelectContent>
                         </Select>
                       </FormControl>
+                      <FormDescription v-if="createMode">
+                        {{ $t('form.cannot_be_changed') }}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   </FormField>
@@ -682,7 +686,7 @@ if (!createMode.value) {
                         {{ $t('wholesale.pricelist_currency') }}
                       </FormLabel>
                       <FormControl>
-                        <Select v-bind="componentField">
+                        <Select v-bind="componentField" :disabled="!createMode">
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -697,6 +701,9 @@ if (!createMode.value) {
                           </SelectContent>
                         </Select>
                       </FormControl>
+                      <FormDescription v-if="createMode">
+                        {{ $t('form.cannot_be_changed') }}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   </FormField>
@@ -773,25 +780,87 @@ if (!createMode.value) {
               :create-mode="createMode"
               :step-valid="true"
             >
-              <Tabs
-                :default-value="pricelistRulesMode"
-                @update:model-value="updatePricelistMode"
-              >
-                <TabsList>
-                  <TabsTrigger value="margin">
-                    {{ $t('wholesale.pricelist_margin') }}
+              <Tabs default-value="quick-actions" class="relative">
+                <TabsList class="mb-6">
+                  <TabsTrigger value="quick-actions">
+                    Quick Actions
                   </TabsTrigger>
-                  <TabsTrigger value="discount">
-                    {{ $t('wholesale.pricelist_discount') }}
-                  </TabsTrigger>
+                  <TabsTrigger value="qty-rules"> Quantity Rules </TabsTrigger>
                 </TabsList>
+                <TabsContent value="quick-actions">
+                  <div class="absolute right-0 top-px flex items-center gap-2">
+                    <Label for="pricelistActionsMode">
+                      Price mode
+                      <!-- {{ $t('wholesale.pricelist_actions_mode') }} -->
+                    </Label>
+                    <Select
+                      id="pricelistActionsMode"
+                      v-model="pricelistActionsMode"
+                      class="mb-4 !w-48"
+                    >
+                      <SelectTrigger class="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem
+                          v-for="item in ['discount', 'margin']"
+                          :key="item"
+                          :value="item"
+                        >
+                          {{ $t('wholesale.pricelist_' + item) }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <Label class="w-full">{{
+                      $t('wholesale.pricelist_' + pricelistActionsMode)
+                    }}</Label>
+                    <Input class="w-48" size="md">
+                      <template #valueDescriptor>%</template>
+                    </Input>
+                    <Button variant="outline">Apply</Button>
+                    <Button variant="outline">Apply and overwrite</Button>
+                  </div>
+                </TabsContent>
+                <TabsContent value="qty-rules">
+                  <div class="absolute right-0 top-px flex items-center gap-2">
+                    <Label for="pricelistRulesMode">
+                      Price mode
+                      <!-- {{ $t('wholesale.pricelist_actions_mode') }} -->
+                    </Label>
+                    <Select
+                      id="pricelistRulesMode"
+                      v-model="pricelistRulesMode"
+                      class="mb-4 !w-48"
+                    >
+                      <SelectTrigger class="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem
+                          v-for="item in ['discount', 'margin']"
+                          :key="item"
+                          :value="item"
+                        >
+                          {{ $t('wholesale.pricelist_' + item) }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <ContentCardHeader
+                    size="sm"
+                    title="Quantity Rules"
+                    class="mb-2"
+                  />
+                  <PricelistRules
+                    v-if="entityDataUpdate.rules"
+                    v-model:rules="entityDataUpdate.rules"
+                    :mode="pricelistRulesMode"
+                    @update-mode="updatePricelistMode"
+                  />
+                </TabsContent>
               </Tabs>
-              <PricelistRules
-                v-if="!createMode"
-                :rules="entityDataUpdate.rules || []"
-                :mode="pricelistRulesMode"
-                @update="entityDataUpdate.rules = $event"
-              />
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
