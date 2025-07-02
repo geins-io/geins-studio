@@ -65,34 +65,51 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
     <td :class="tdClasses">
       <Input
         v-model.number="quantity"
+        type="number"
+        min="2"
         size="sm"
-        :disabled="index === 0 && mode !== 'price' && quantity === 1"
+        :disabled="global"
       />
     </td>
     <td v-if="mode === 'margin'" :class="tdClasses">
-      <Input v-model.number="margin" size="sm" placeholder="0">
+      <Input
+        v-model.number="margin"
+        size="sm"
+        placeholder="0"
+        :disabled="global"
+      >
         <template #valueDescriptor>%</template>
       </Input>
     </td>
     <td v-if="mode === 'discount'" :class="tdClasses">
-      <Input v-model.number="discount" size="sm" placeholder="0">
+      <Input
+        v-model.number="discount"
+        size="sm"
+        placeholder="0"
+        :disabled="global"
+      >
         <template #valueDescriptor>%</template>
       </Input>
     </td>
     <td v-if="mode === 'price'" :class="tdClasses">
-      <Input v-model.number="price" size="sm" placeholder="0">
+      <Input
+        v-model.number="price"
+        size="sm"
+        placeholder="0"
+        :disabled="global"
+      >
         <template #valueDescriptor>{{ currency }}</template>
       </Input>
     </td>
 
     <td v-else :class="cn(tdClasses, 'text-center')">
-      <LucideCircleCheck v-if="applied" class="mx-auto size-4 text-positive" />
-      <LucideCircleDashed v-else class="mx-auto size-4 text-foreground/30" />
+      <LucideCircleCheck v-if="applied" class="size-4 text-positive" />
+      <LucideCircleDashed v-else class="size-4 text-foreground/30" />
     </td>
     <td class="flex items-center justify-end gap-2 py-3">
       <Button
         v-if="props.mode !== 'price'"
-        :disabled="applied || quantity === undefined"
+        :disabled="applied || quantity === undefined || global"
         size="xs"
         variant="outline"
         @click="$emit('apply')"
@@ -107,7 +124,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         >{{ $t('wholesale.pricelist_apply_overwrite') }}</Button
       >
       <Button
-        :disabled="(index === 0 && quantity === 1) || global"
+        :disabled="global"
         size="icon"
         variant="outline"
         class="size-7 hover:text-destructive"

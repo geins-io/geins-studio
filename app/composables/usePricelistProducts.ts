@@ -61,7 +61,7 @@ export const usePricelistProducts = () => {
     entityData: ProductPricelist,
   ): PricelistRule[] => {
     const productLevels = products
-      .filter((p) => p.productId === product._id)
+      .filter((p) => p.productId === product._id && p.staggeredCount > 1)
       .map((p) => ({
         quantity: p.staggeredCount,
         price: p.price,

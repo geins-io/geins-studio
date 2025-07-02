@@ -10,10 +10,18 @@ const props = withDefaults(
 
 const open = defineModel<boolean>('open');
 const propRules = toRef(props, 'rules');
-const rules = ref<PricelistRule[]>(props.rules);
+
+const globalRules = computed(() => {
+  return props.rules.filter((rule: PricelistRule) => rule.global);
+});
+const productRules = computed(() => {
+  return props.rules.filter((rule: PricelistRule) => !rule.global);
+});
+
+const editableRules = ref<PricelistRule[]>(productRules.value);
 
 watch(propRules, (newRules) => {
-  rules.value = newRules;
+  editableRules.value = newRules.filter((rule: PricelistRule) => !rule.global);
 });
 
 const emit = defineEmits<{
@@ -25,7 +33,8 @@ const handleCancel = () => {
 };
 const handleSave = () => {
   open.value = false;
-  emit('save', rules.value);
+  const rulesToSave = [...globalRules.value, ...editableRules.value];
+  emit('save', rulesToSave);
 };
 </script>
 <template>
@@ -37,17 +46,34 @@ const handleSave = () => {
       <SheetHeader>
         <SheetTitle>Quantity levels</SheetTitle>
         <SheetDescription>
-          Add volume based price rules for the producyt. Margin and disocunt
-          will be calculated basd on the set list price if no quantity break
-          price is set.
+          Add quantity based price rules for this product.
         </SheetDescription>
       </SheetHeader>
       <div class="p-6">
+        <ContentCardHeader
+          size="sm"
+          title="Global quantity levels"
+          description="These price rules are applied globally to all products"
+          class="mb-4"
+        />
         <PricelistRules
-          :rules="rules"
+          :rules="globalRules"
+          :disabled="true"
           mode="price"
           :currency="currency"
-          @update="rules = $event"
+        />
+        <ContentCardHeader
+          size="sm"
+          title="Product quantity levels"
+          description="These price rules are applied only to this product. If you add a rule with the same quantity as a global rule, the global rule will be overridden."
+          class="mb-4 mt-6"
+        />
+        <PricelistRules
+          :rules="productRules"
+          :product-id="props.productId"
+          mode="price"
+          :currency="currency"
+          @update="editableRules = $event"
         />
       </div>
       <SheetFooter>

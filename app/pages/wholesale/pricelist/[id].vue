@@ -3,7 +3,6 @@
 // IMPORTS & TYPES
 // =====================================================================================
 import { toTypedSchema } from '@vee-validate/zod';
-import { useI18n } from '#imports';
 import * as z from 'zod';
 import type { AcceptableValue } from 'reka-ui';
 import { useToast } from '@/components/ui/toast/use-toast';
@@ -109,6 +108,8 @@ const productSelector = ref();
 // Pricelist rules
 const pricelistActionsMode = ref<PricelistRuleMode>('discount');
 const pricelistRulesMode = ref<PricelistRuleMode>('discount');
+
+const pricelistQuickActionInput = ref<number>();
 
 // =====================================================================================
 // PRODUCT & PRICING COMPOSABLES
@@ -220,6 +221,21 @@ const {
     };
   },
 });
+
+// =====================================================================================
+// PRICELIST ACTIONS AND RULES
+// =====================================================================================
+
+const applyQuickAction = (overwrite: boolean) => {
+  if (!pricelistQuickActionInput.value) return;
+
+  toast({
+    title: `${pricelistQuickActionInput.value}% ${pricelistActionsMode.value} applied to all products.`,
+    variant: 'default',
+  });
+
+  setupColumns();
+};
 
 // =====================================================================================
 // PRODUCT TABLE STATE
@@ -774,84 +790,53 @@ if (!createMode.value) {
               :step-valid="true"
             >
               <Tabs default-value="quick-actions" class="relative">
-                <TabsList class="mb-6">
+                <TabsList class="mb-3">
                   <TabsTrigger value="quick-actions">
                     Quick Actions
                   </TabsTrigger>
-                  <TabsTrigger value="qty-rules"> Quantity Rules </TabsTrigger>
+                  <TabsTrigger value="qty-levels">
+                    Quantity Levels
+                  </TabsTrigger>
                 </TabsList>
                 <TabsContent value="quick-actions">
-                  <div class="absolute right-0 top-px flex items-center gap-2">
-                    <Label for="pricelistActionsMode">
-                      Price mode
-                      <!-- {{ $t('wholesale.pricelist_actions_mode') }} -->
+                  <PricelistActionCard
+                    v-model:mode="pricelistActionsMode"
+                    title="Quick Actions"
+                    mode-id="pricelistActionsMode"
+                  >
+                    <Label class="w-full">
+                      {{ $t('wholesale.pricelist_' + pricelistActionsMode) }}
                     </Label>
-                    <Select
-                      id="pricelistActionsMode"
-                      v-model="pricelistActionsMode"
-                      class="mb-4 !w-48"
+                    <Input
+                      v-model="pricelistQuickActionInput"
+                      class="w-48"
+                      size="md"
                     >
-                      <SelectTrigger class="w-48">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem
-                          v-for="item in ['discount', 'margin']"
-                          :key="item"
-                          :value="item"
-                        >
-                          {{ $t('wholesale.pricelist_' + item) }}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div class="flex flex-wrap items-center gap-2">
-                    <Label class="w-full">{{
-                      $t('wholesale.pricelist_' + pricelistActionsMode)
-                    }}</Label>
-                    <Input class="w-48" size="md">
                       <template #valueDescriptor>%</template>
                     </Input>
-                    <Button variant="outline">Apply</Button>
-                    <Button variant="outline">Apply and overwrite</Button>
-                  </div>
-                </TabsContent>
-                <TabsContent value="qty-rules">
-                  <div class="absolute right-0 top-px flex items-center gap-2">
-                    <Label for="pricelistRulesMode">
-                      Price mode
-                      <!-- {{ $t('wholesale.pricelist_actions_mode') }} -->
-                    </Label>
-                    <Select
-                      id="pricelistRulesMode"
-                      v-model="pricelistRulesMode"
-                      class="mb-4 !w-48"
+                    <Button
+                      variant="outline"
+                      @click="applyQuickAction(false)"
+                      >{{ $t('apply') }}</Button
                     >
-                      <SelectTrigger class="w-48">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem
-                          v-for="item in ['discount', 'margin']"
-                          :key="item"
-                          :value="item"
-                        >
-                          {{ $t('wholesale.pricelist_' + item) }}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <ContentCardHeader
-                    size="sm"
-                    title="Quantity Rules"
-                    class="mb-2"
-                  />
-                  <PricelistRules
-                    v-if="entityDataUpdate.rules"
-                    :rules="entityDataUpdate.rules || []"
-                    :mode="pricelistRulesMode"
-                    @update="entityDataUpdate.rules = $event"
-                  />
+                    <Button variant="outline" @click="applyQuickAction(true)">
+                      {{ $t('wholesale.pricelist_apply_overwrite') }}
+                    </Button>
+                  </PricelistActionCard>
+                </TabsContent>
+                <TabsContent value="qty-levels">
+                  <PricelistActionCard
+                    v-model:mode="pricelistRulesMode"
+                    title="Quantity Levels"
+                    mode-id="pricelistRulesMode"
+                  >
+                    <PricelistRules
+                      v-if="entityDataUpdate.rules"
+                      :rules="entityDataUpdate.rules || []"
+                      :mode="pricelistRulesMode"
+                      @update="entityDataUpdate.rules = $event"
+                    />
+                  </PricelistActionCard>
                 </TabsContent>
               </Tabs>
             </ContentEditCard>
