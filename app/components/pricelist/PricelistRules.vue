@@ -96,7 +96,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
       @click="addRule"
     >
       <LucidePlus class="mr-2 size-3.5" />
-      {{ $t('wholesale.pricelist_add_rule') }}
+      {{ $t('wholesale.pricelist_add_level') }}
     </Button>
   </div>
 </template>

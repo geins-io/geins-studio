@@ -274,7 +274,7 @@ export default defineI18nLocale(async () => {
       pricelist_ex_vat: 'Ex VAT',
       pricelist_inc_vat: 'Inc VAT',
       pricelist_apply_overwrite: 'Apply and overwrite',
-      pricelist_add_rule: 'Add rule',
+      pricelist_add_level: 'Add level',
       pricelist_qty_levels: 'Qty levels',
       pricelist_pricelist_price: 'Pricelist price',
       no_pricelists_connected: 'No pricelists are connected to this account',

@@ -234,7 +234,7 @@ const applyQuickAction = (overwrite: boolean) => {
     variant: 'default',
   });
 
-  setupColumns();
+  pricelistQuickActionInput.value = undefined;
 };
 
 // =====================================================================================

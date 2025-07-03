@@ -43,12 +43,12 @@ watch(
 );
 
 watch(
-  () => [quantity, margin, discount],
+  () => [quantity.value, margin.value, discount.value],
   ([newQuantity, newMargin, newDiscount]) => {
     applied.value =
-      newQuantity?.value === initialQuantity &&
-      newMargin?.value === initialMargin &&
-      newDiscount?.value === initialDiscount;
+      newQuantity === initialQuantity &&
+      newMargin === initialMargin &&
+      newDiscount === initialDiscount;
   },
 );
 
