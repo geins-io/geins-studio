@@ -792,16 +792,16 @@ if (!createMode.value) {
               <Tabs default-value="quick-actions" class="relative">
                 <TabsList class="mb-3">
                   <TabsTrigger value="quick-actions">
-                    Quick Actions
+                    Quick actions
                   </TabsTrigger>
                   <TabsTrigger value="qty-levels">
-                    Quantity Levels
+                    Quantity levels
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="quick-actions">
                   <PricelistActionCard
                     v-model:mode="pricelistActionsMode"
-                    title="Quick Actions"
+                    title="Quick actions"
                     mode-id="pricelistActionsMode"
                   >
                     <Label class="w-full">
@@ -827,7 +827,7 @@ if (!createMode.value) {
                 <TabsContent value="qty-levels">
                   <PricelistActionCard
                     v-model:mode="pricelistRulesMode"
-                    title="Quantity Levels"
+                    title="Quantity levels"
                     mode-id="pricelistRulesMode"
                   >
                     <PricelistRules

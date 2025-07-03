@@ -92,7 +92,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
       v-if="!disabled"
       size="sm"
       variant="link"
-      class="mt-2 flex"
+      :class="cn('flex', localRules.length ? 'mt-2' : '')"
       @click="addRule"
     >
       <LucidePlus class="mr-2 size-3.5" />
