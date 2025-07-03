@@ -102,6 +102,35 @@ export const useAccountStore = defineStore('account', () => {
     return country ? country.name : '';
   }
 
+  function getDefaultCountryByChannelId(channelId: string): string {
+    const channel = channels.value.find((c) => c._id === String(channelId));
+
+    if (!channel) return fallback.country;
+    const defaultMarket = channel.markets.find(
+      (market) => market._id === String(channel.defaultMarket),
+    );
+    return defaultMarket ? defaultMarket.country._id : '';
+  }
+
+  function getCurrenciesByChannelId(channelId: string): string[] {
+    if (!channels.value || channels.value.length === 0) {
+      return currentCurrencies.value.length > 0
+        ? currentCurrencies.value.map((currency) => currency._id)
+        : [];
+    }
+    const channel = channels.value.find((c) => c._id === String(channelId));
+
+    if (!channel) return [];
+
+    return channel.markets
+      .filter((market) => !market.virtual)
+      .map((market) => market.currency._id)
+      .filter(
+        (currency, index, self) =>
+          index === self.findIndex((c) => c === currency),
+      );
+  }
+
   // GETTERS
   const currentChannel = computed(() => {
     return channels.value.find(
@@ -116,6 +145,21 @@ export const useAccountStore = defineStore('account', () => {
         .map((market) => {
           return market.country;
         }) || []
+    );
+  });
+
+  const currentCurrencies = computed(() => {
+    if (!currentChannel.value) return [];
+
+    const currencies = currentChannel.value.markets
+      .filter((market) => !market.virtual)
+      .map((market) => {
+        return market.currency;
+      });
+
+    return currencies.filter(
+      (currency, index, self) =>
+        index === self.findIndex((c) => c?._id === currency?._id),
     );
   });
 
@@ -138,7 +182,10 @@ export const useAccountStore = defineStore('account', () => {
     reset,
     getChannelNameById,
     getCountryNameById,
+    getDefaultCountryByChannelId,
+    getCurrenciesByChannelId,
     currentChannel,
     currentCountries,
+    currentCurrencies,
   };
 });

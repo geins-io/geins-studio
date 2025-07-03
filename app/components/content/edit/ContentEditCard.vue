@@ -71,7 +71,11 @@ const hasCreateView = computed(() => !!slots.create);
         "
         :disabled="futureStep || !createMode"
       >
-        <ContentCardHeader :title="stepTitle" :description="description" />
+        <ContentCardHeader
+          :title="stepTitle"
+          :description="description"
+          class="max-w-[650px]"
+        />
 
         <LucideChevronDown
           v-if="createMode"

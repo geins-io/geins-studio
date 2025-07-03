@@ -11,6 +11,10 @@ import {
   TableCellChannels,
   TableCellTags,
   TableCellStatus,
+  TableCellTooltip,
+  TableCellBoolean,
+  TableCellEditable,
+  TableCellCurrency,
 } from '#components';
 import type {
   ColumnOptions,
@@ -23,11 +27,14 @@ import { TableMode } from '#shared/types';
 export const useColumns = <T extends object>() => {
   // BASIC HEADER STYLE
   const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
+  const accountStore = useAccountStore();
+  const { currentCurrency } = storeToRefs(accountStore);
 
   const getBasicHeaderStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
 
-    const baseStyle = 'px-1.5 flex items-center ' + basicHeaderTextStyle;
+    const baseStyle =
+      'px-1.5 flex items-center whitespace-nowrap ' + basicHeaderTextStyle;
     const simpleStyle =
       'h-10 normal-case [&>button]:pl-2 [&>button]:pr-1 [&>button]:normal-case';
     const advancedStyle = 'h-12';
@@ -65,8 +72,8 @@ export const useColumns = <T extends object>() => {
           ),
         },
         h(Checkbox, {
-          checked: table.getIsAllPageRowsSelected(),
-          'onUpdate:checked': (value: boolean) =>
+          modelValue: table.getIsAllPageRowsSelected(),
+          'onUpdate:model-value': (value: boolean) =>
             table.toggleAllPageRowsSelected(!!value),
           ariaLabel: 'Select all',
         }),
@@ -82,8 +89,9 @@ export const useColumns = <T extends object>() => {
           'data-checkbox': true,
         },
         h(Checkbox, {
-          checked: row.getIsSelected(),
-          'onUpdate:checked': (value: boolean) => row.toggleSelected(!!value),
+          modelValue: row.getIsSelected(),
+          'onUpdate:model-value': (value: boolean) =>
+            row.toggleSelected(!!value),
           ariaLabel: 'Select row',
         }),
       ),
@@ -104,6 +112,7 @@ export const useColumns = <T extends object>() => {
       sortable = true,
       columnTypes,
       maxTextLength = 60,
+      columnCellProps,
     } = options;
     let columns: ColumnDef<T>[] = [];
 
@@ -129,6 +138,12 @@ export const useColumns = <T extends object>() => {
         return;
       }
 
+      // Extract cell props for this column
+      const cellProps =
+        columnCellProps && key in columnCellProps
+          ? columnCellProps[key] || {}
+          : {};
+
       // Set column title
       let columnTitle = String(key);
       if (options.columnTitles?.[key]) {
@@ -151,7 +166,11 @@ export const useColumns = <T extends object>() => {
         columnType = 'date';
       } else if (keyLower.includes('price') || keyLower.includes('amount')) {
         columnType = 'currency';
-      } else if (keyLower.includes('image') || keyLower.includes('img')) {
+      } else if (
+        keyLower.includes('image') ||
+        keyLower.includes('img') ||
+        keyLower.includes('thumbnail')
+      ) {
         columnType = 'image';
       } else if (keyLower === 'channels') {
         columnType = 'channels';
@@ -160,7 +179,7 @@ export const useColumns = <T extends object>() => {
       } else if (keyLower === 'active') {
         columnType = 'status';
       } else {
-        columnType = 'string';
+        columnType = 'default';
       }
       // Override column type if explicitly set in options
       columnType = columnTypes?.[key] || columnType;
@@ -185,27 +204,58 @@ export const useColumns = <T extends object>() => {
             );
           }
         : ({ table }: { table: Table<T> }) => {
-            return h('div', { class: getBasicHeaderStyle(table) }, columnTitle);
+            return h(
+              'div',
+              {
+                class: cn(getBasicHeaderStyle(table), 'px-3'),
+              },
+              columnTitle,
+            );
           };
 
+      const getEditableColumn = (type: EditableColumnType) => {
+        return ({
+          table,
+          row,
+          column,
+        }: {
+          table: Table<T>;
+          row: Row<T>;
+          column: Column<T>;
+        }) => {
+          return h(TableCellEditable<T>, {
+            table,
+            row,
+            column,
+            colKey: key,
+            type,
+            className: getBasicCellStyle(table),
+            ...cellProps,
+          });
+        };
+      };
+
       switch (columnType) {
-        case 'currency':
+        case 'price':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
             const formatted = new Intl.NumberFormat('sv-SE', {
               style: 'currency',
-              currency: 'SEK',
+              currency: currentCurrency.value,
               minimumFractionDigits: 0,
             }).format(Number(value));
             return h('div', { class: getBasicCellStyle(table) }, formatted);
           };
           break;
         case 'image':
-          cellRenderer = ({ row }: { row: Row<T> }) => {
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
             return h(
-              'span',
-              { class: 'px-1.5 block' },
+              'div',
+              {
+                class: cn(getBasicCellStyle(table), 'px-1'),
+              },
+
               h('img', {
                 src: value,
                 alt: columnTitle,
@@ -270,17 +320,14 @@ export const useColumns = <T extends object>() => {
           break;
         case 'channels':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const value = row.getValue(key);
+            let value: string[] = row.getValue(key);
             if (!Array.isArray(value)) {
-              return h(
-                'div',
-                { class: getBasicCellStyle(table) },
-                String(value),
-              );
+              value = [String(value)];
             }
             return h(TableCellChannels, {
               class: getBasicCellStyle(table),
               channelIds: value,
+              ...cellProps,
             });
           };
           break;
@@ -297,6 +344,7 @@ export const useColumns = <T extends object>() => {
             return h(TableCellTags, {
               class: getBasicCellStyle(table),
               tags: value,
+              ...cellProps,
             });
           };
           break;
@@ -313,15 +361,148 @@ export const useColumns = <T extends object>() => {
             return h(TableCellStatus, {
               class: getBasicCellStyle(table),
               status: value,
+              ...cellProps,
             });
           };
           break;
+        case 'tooltip':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value: Tooltip = row.getValue(key);
+            return h(TableCellTooltip, {
+              class: getBasicCellStyle(table),
+              ...value,
+              ...cellProps,
+            });
+          };
+          break;
+        case 'boolean':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value = row.getValue(key);
+            return h(TableCellBoolean, {
+              className: getBasicCellStyle(table),
+              isTrue: Boolean(value),
+              ...cellProps,
+            });
+          };
+          break;
+        case 'string':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const text = String(row.getValue(key));
+            if (text.length > maxTextLength) {
+              return h(TableCellLongText, {
+                text,
+                className: getBasicCellStyle(table),
+                maxTextLength,
+                ...cellProps,
+                default: () => text,
+              });
+            }
+            return h('div', { class: getBasicCellStyle(table) }, text);
+          };
+          break;
+        case 'currency':
+          cellRenderer = ({ row, table }: { row: Row<T>; table: Table<T> }) => {
+            const price = row.getValue(key);
+            let priceValue: string = '';
+            let priceCurrency: string = 'XXX';
+
+            if (
+              typeof price === 'object' &&
+              price !== null &&
+              'price' in price &&
+              'currency' in price
+            ) {
+              priceValue =
+                price.price !== undefined ? String(price.price) : '---';
+              priceCurrency =
+                price.currency !== undefined ? String(price.currency) : 'XXX';
+            }
+
+            return h(TableCellCurrency, {
+              price: priceValue,
+              currency: priceCurrency,
+              className: getBasicCellStyle(table),
+              ...cellProps,
+            });
+          };
+          columnSize = { size: 134, minSize: 134, maxSize: 134 };
+          break;
+
+        case 'editable-currency':
+          cellRenderer = ({
+            table,
+            row,
+            column,
+          }: {
+            table: Table<T>;
+            row: Row<T>;
+            column: Column<T>;
+          }) => {
+            const price = row.getValue(key);
+            let priceValue: string | undefined = '';
+            let priceCurrency: string = 'XXX';
+            let placeholder: string = '';
+
+            if (
+              typeof price === 'object' &&
+              price !== null &&
+              'price' in price &&
+              'currency' in price
+            ) {
+              priceValue = price.price ? String(price.price) : '';
+              priceCurrency = String(price.currency);
+            }
+
+            if (
+              typeof price === 'object' &&
+              price !== null &&
+              'placeholder' in price &&
+              price.placeholder
+            ) {
+              placeholder = String(price.placeholder);
+            }
+
+            return h(TableCellEditable<T>, {
+              table,
+              row,
+              column,
+              colKey: key,
+              type: 'currency',
+              className: getBasicCellStyle(table),
+              initialValue: priceValue,
+              valueDescriptor: priceCurrency,
+              placeholder,
+              ...cellProps,
+            });
+          };
+          columnSize = { size: 134, minSize: 134, maxSize: 134 };
+          break;
+        case 'editable-string':
+        case 'editable-number':
+        case 'editable-select':
+        case 'editable-percentage':
+        case 'editable-boolean': {
+          const editableType = columnType.replace(
+            'editable-',
+            '',
+          ) as EditableColumnType;
+          cellRenderer = getEditableColumn(editableType);
+          columnSize = { size: 134, minSize: 134, maxSize: 134 };
+          break;
+        }
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
             let text = String(row.getValue(key));
 
-            // Convert arrays to comma-separated strings
+            if (typeof value === 'boolean') {
+              return h(TableCellBoolean, {
+                className: getBasicCellStyle(table),
+                isTrue: value,
+                ...cellProps,
+              });
+            }
+
             if (Array.isArray(value)) {
               text = '';
               value.forEach((item: unknown, index) => {
@@ -337,6 +518,7 @@ export const useColumns = <T extends object>() => {
                 text,
                 className: getBasicCellStyle(table),
                 maxTextLength,
+                ...cellProps,
                 default: () => text,
               });
             }
@@ -379,6 +561,12 @@ export const useColumns = <T extends object>() => {
     columns: ColumnDef<T>[],
     column: ColumnDef<T>,
   ): ColumnDef<T>[] => {
+    if (!column.header) {
+      column.header = ({ table }: { table: Table<T> }) =>
+        h('div', {
+          class: cn(getBasicHeaderStyle(table)),
+        });
+    }
     columns.push(column);
     return columns;
   };
@@ -393,8 +581,9 @@ export const useColumns = <T extends object>() => {
       id: 'actions',
       enableHiding: false,
       enableSorting: false,
-      size: 40,
-      maxSize: 40,
+      size: 48,
+      maxSize: 48,
+      minSize: 48,
       header: ({ table }: { table: Table<T> }) =>
         h('div', {
           class: cn(getBasicHeaderStyle(table)),
@@ -453,6 +642,8 @@ export const useColumns = <T extends object>() => {
   };
 
   return {
+    getBasicHeaderStyle,
+    getBasicCellStyle,
     getColumns,
     extendColumns,
     addActionsColumn,

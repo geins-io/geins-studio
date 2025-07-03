@@ -6,6 +6,8 @@ import type {
   WholesaleBuyer,
   WholesaleBuyerCreate,
   WholesaleBuyerUpdate,
+  ProductPricelistCreate,
+  WholesaleVatValidation,
 } from '#shared/types';
 
 const BASE_ENDPOINT = '/wholesale';
@@ -23,6 +25,13 @@ export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
   const buyerEndpoint = `${BASE_ENDPOINT}/buyer`;
   const buyerRepo = repo.entityBase<WholesaleBuyer>(buyerEndpoint, fetch);
+
+  const pricelistEndpoint = `${BASE_ENDPOINT}/pricelist`;
+  const pricelistRepo = repo.entity<
+    ProductPricelist,
+    ProductPricelistCreate,
+    ProductPricelistUpdate
+  >(pricelistEndpoint, fetch);
 
   return {
     account: {
@@ -56,10 +65,31 @@ export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     buyer: {
       ...buyerRepo,
     },
+    pricelist: {
+      ...pricelistRepo,
+      id: (pricelistId: string) => {
+        const pricelistIdEndpoint = `${pricelistEndpoint}/${pricelistId}`;
+        return {
+          products: {
+            async patch(
+              productsPatch: PricelistProductPatch,
+            ): Promise<PricelistProduct[]> {
+              return await fetch<PricelistProduct[]>(
+                `${pricelistIdEndpoint}/products`,
+                {
+                  method: 'PATCH',
+                  body: productsPatch,
+                },
+              );
+            },
+          },
+        };
+      },
+    },
     validateVatNumber: async (
       vatNumber: string,
-    ): Promise<VatValidationResponse> => {
-      return await fetch<VatValidationResponse>(
+    ): Promise<WholesaleVatValidation> => {
+      return await fetch<WholesaleVatValidation>(
         `${BASE_ENDPOINT}/validateVatNumber/${vatNumber}`,
         {
           method: 'POST',

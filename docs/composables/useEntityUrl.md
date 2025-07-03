@@ -1,6 +1,6 @@
-# `useEntity`
+# `useEntityUrl`
 
-The `useEntity` composable provides utility functions for manipulating entity-related URLs and extracting entity names based on a given `fullPath`. It integrates localization through `useI18n`.
+The `useEntityUrl` composable provides utility functions for manipulating entity-related URLs and extracting entity names based on a given `fullPath`. It integrates localization through `useI18n`.
 
 ::: tip
 Read more about the concept of entities in Geins MC here: [Entities](/concepts/entities)
@@ -15,12 +15,12 @@ Read more about the concept of entities in Geins MC here: [Entities](/concepts/e
 
 ## Usage
 
-Here is how you can use the `useEntity` composable in your project:
+Here is how you can use the `useEntityUrl` composable in your project:
 
 ```ts
 const route = useRoute();
 const { newEntityUrlAlias, getEntityName, getNewEntityUrl, getEntityUrl } =
-  useEntity(route.fullPath);
+  useEntityUrl(route.fullPath);
 
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();

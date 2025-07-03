@@ -26,11 +26,12 @@ module.exports = {
         main: 'calc(100vh - 4rem)',
       },
       boxShadow: {
-        'only-right': '3px 0 7px -2px rgb(0 0 0 / 0.1)',
-        'only-left': '-3px 0 7px -2px rgb(0 0 0 / 0.1)',
+        'only-right': '3px 0 7px -2px var(--shadow)',
+        'only-left': '-3px 0 7px -2px var(--shadow)',
       },
       fontSize: {
         grid: '0.8125rem',
+        xxl: '1.8rem',
       },
       gridTemplateColumns: {
         main: 'minmax(50%, 1fr) minmax(300px, 360px)',
@@ -85,6 +86,7 @@ module.exports = {
         info: {
           DEFAULT: 'hsl(var(--info))',
           foreground: 'hsl(var(--info-foreground))',
+          icon: 'hsl(var(--info-icon))',
         },
       },
       borderRadius: {

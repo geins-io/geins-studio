@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import type { ColumnOptions, Category } from '#shared/types';
-type Entity = Category;
+import type { ColumnOptions } from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
+
+type Entity = ProductPricelist;
+type EntityList = ProductPricelist;
 
 const { t } = useI18n();
 const route = useRoute();
-const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntity(
+const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/list.vue');
+const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
   route.fullPath,
 );
 
@@ -13,43 +17,127 @@ definePageMeta({
 });
 
 // GLOBAL SETUP
-const apiEndpoint = '/categories';
-const dataList = ref<Entity[]>([]);
+const { $geinsApi } = useNuxtApp();
+const productApi = repo.product($geinsApi);
+const dataList = ref<EntityList[]>([]);
 const entityIdentifier = '{_id}';
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
 const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 
-// SET UP COLUMNS FOR ENTITY
-const columnOptions: ColumnOptions<Entity> = {
-  entityLinkUrl: entityUrl,
-  columnTypes: { name: 'entity-link' },
+// Add the mapping function
+const mapToListData = (list: Entity[]): EntityList[] => {
+  return list.map((item) => {
+    return {
+      ...item,
+    };
+  });
 };
 
 // FETCH DATA FOR ENTITY
-const { useGeinsFetch } = useGeinsApi();
-const { data, error } = await useGeinsFetch<Entity[]>(apiEndpoint);
+const { data, error, refresh } = await useAsyncData<Entity[]>(() =>
+  productApi.pricelist.list(),
+);
 
 if (!data.value || error.value) {
-  throw createError({
-    ...error.value,
-    statusMessage: t('failed_to_fetch_entity', { entityName }, 2),
-  });
-} else {
-  dataList.value = data.value as Entity[];
+  geinsLogError(
+    `${t('failed_to_fetch_entity', { entityName }, 2)}`,
+    error.value,
+  );
 }
+
+watch(
+  data,
+  (newData) => {
+    if (newData) {
+      dataList.value = mapToListData(newData);
+    }
+  },
+  { immediate: true },
+);
+
+// SET UP COLUMN OPTIONS FOR ENTITY
+const columnOptions: ColumnOptions<EntityList> = {
+  entityLinkUrl: entityUrl,
+  columnTypes: { name: 'entity-link', channel: 'channels' },
+  columnTitles: { active: t('status') },
+  excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
+};
+// GET AND SET COLUMNS
+const { getColumns, addActionsColumn } = useColumns<EntityList>();
+const columns = getColumns(dataList.value, columnOptions);
+
+addActionsColumn(
+  columns,
+  {
+    onEdit: (item: Entity) =>
+      navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+    onDelete: async (item: Entity) => await openDeleteDialog(item._id),
+  },
+  'actions',
+  ['edit', 'delete'],
+);
+
+// SET COLUMN VISIBILITY STATE
+// const { getVisibilityState } = useTable<EntityList>();
+// const hiddenColumns: StringKeyOf<EntityList>[] = [];
+// const visibilityState = getVisibilityState(hiddenColumns);
+const { toast } = useToast();
+const deletePricelist = async (
+  id?: string,
+  entityName?: string,
+): Promise<boolean> => {
+  try {
+    if (!id) {
+      throw new Error('ID is required for deletion');
+    }
+    await productApi.pricelist.delete(id);
+    toast({
+      title: t('entity_deleted', { entityName }),
+      variant: 'positive',
+    });
+    return true;
+  } catch (error) {
+    geinsLogError('deletePricelist :::', getErrorMessage(error));
+    toast({
+      title: t('entity_delete_failed', { entityName }),
+      variant: 'negative',
+    });
+    return false;
+  }
+};
+
 loading.value = false;
 
-// GET AND SET COLUMNS
-const { getColumns } = useColumns<Entity>();
-const columns = getColumns(dataList.value, columnOptions);
+const deleteDialogOpen = ref(false);
+const deleting = ref(false);
+const deleteId = ref<string | undefined>();
+const openDeleteDialog = async (id?: string) => {
+  await nextTick();
+  deleteId.value = id;
+  deleteDialogOpen.value = true;
+};
+const confirmDelete = async () => {
+  deleting.value = true;
+  const success = await deletePricelist(deleteId.value, entityName);
+  if (success) {
+    refresh();
+  }
+  deleting.value = false;
+  deleteDialogOpen.value = false;
+};
 </script>
 
 <template>
+  <DialogDelete
+    v-model:open="deleteDialogOpen"
+    :entity-name="entityName"
+    :loading="deleting"
+    @confirm="confirmDelete"
+  />
   <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
     <ContentActionBar>
-      <ButtonExport />
       <ButtonIcon icon="new" :href="newEntityUrl">
         {{ $t('new_entity', { entityName }) }}
       </ButtonIcon>
@@ -62,7 +150,7 @@ const columns = getColumns(dataList.value, columnOptions);
       :columns="columns"
       :data="dataList"
     />
-    <template #error="{ errorCatched }">
+    <template #error="{ error: errorCatched }">
       <h2 class="text-xl font-bold">
         {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
       </h2>

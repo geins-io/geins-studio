@@ -101,3 +101,15 @@ export interface CustomerBase {
 export type CustomerCreate = CreateEntity<CustomerBase>;
 export type CustomerUpdate = UpdateEntity<CustomerBase>;
 export type Customer = ResponseEntity<CustomerBase>;
+
+export interface Tooltip {
+  displayValue: string;
+  contentValue: string;
+  disabled: boolean;
+}
+
+export interface Price {
+  price?: string;
+  currency: string;
+  placeholder?: string;
+}

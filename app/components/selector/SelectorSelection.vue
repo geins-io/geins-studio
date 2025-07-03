@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { CompareCondition } from '#shared/types';
+import type {
+  CompareCondition,
+  SelectorSelectionInternal,
+} from '#shared/types';
 import {
   SelectorMode,
   SelectorCondition,
@@ -21,9 +24,13 @@ const props = withDefaults(
 );
 
 // TWO-WAY BINDING FOR SELECTION VIA V-MODEL
-const selection = defineModel<SelectorSelection>('selection', {
+const selection = defineModel<SelectorSelectionInternal>('selection', {
   required: true,
 });
+
+//TODO: remove when lowercase condition fixed
+selection.value.condition =
+  selection.value.condition?.toLowerCase() || SelectorCondition.And;
 
 // GLOBALS
 const { t } = useI18n();
@@ -57,21 +64,21 @@ const selectorOptions: Ref<SelectorSelectionOption[]> = computed(() => {
       group: 'brandIds',
       label: t('entity_caps', { entityName: 'brand' }, 2),
     },
-    {
-      id: 'price',
-      group: 'price',
-      label: t('entity_caps', { entityName: 'price' }),
-    },
-    {
-      id: 'stock',
-      group: 'stock',
-      label: t('entity_caps', { entityName: 'stock' }),
-    },
-    {
-      id: 'import',
-      group: 'ids',
-      label: t('entity_caps', { entityName: 'import' }),
-    },
+    // {
+    //   id: 'price',
+    //   group: 'price',
+    //   label: t('entity_caps', { entityName: 'price' }),
+    // },
+    // {
+    //   id: 'stock',
+    //   group: 'stock',
+    //   label: t('entity_caps', { entityName: 'stock' }),
+    // },
+    // {
+    //   id: 'import',
+    //   group: 'ids',
+    //   label: t('entity_caps', { entityName: 'import' }),
+    // },
   ];
 
   const filteredOptions =
@@ -92,7 +99,7 @@ const activeConditionTypes = computed(() => {
     if (
       key !== 'condition' &&
       key !== 'ids' &&
-      selection.value[key as keyof SelectorSelection]?.length
+      selection.value[key as keyof SelectorSelectionInternal]?.length
     ) {
       active++;
     }
@@ -119,7 +126,7 @@ const manuallySelectedText = computed(() =>
 );
 const showAllProductsTag = computed(
   () =>
-    (selection.value.categoryIds?.length === 0 &&
+    (!selection.value.categoryIds?.length &&
       (selection.value.brandIds?.length ||
         selection.value.price?.length ||
         selection.value.stock?.length)) ||
@@ -169,13 +176,14 @@ const getLinkingWord = (option: 'brand' | 'price' | 'stock') => {
   return t(`selector_${option}_linking_word_${condition}`);
 };
 
-const updateSelection = (updatedSelection: SelectorSelection) => {
+const updateSelection = (updatedSelection: SelectorSelectionInternal) => {
   selection.value = updatedSelection;
 };
 
 const noSelectionLabel = computed(() => {
-  return type.value === SelectorSelectionType.Include &&
-    selectionStrategy.value === SelectorSelectionStrategy.All
+  return (type.value === SelectorSelectionType.Include &&
+    selectionStrategy.value === SelectorSelectionStrategy.All) ||
+    activeConditionTypes.value > 0
     ? t('all_entity', { entityName: entityName.value }, 2)
     : t('no_entity', { entityName: entityName.value }, 2);
 });

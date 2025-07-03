@@ -35,10 +35,11 @@ export interface WholesaleAccount extends ResponseEntity<WholesaleAccountBase> {
 }
 
 export interface WholesaleAccountList
-  extends Omit<WholesaleAccount, 'salesReps'>,
+  extends Omit<WholesaleAccount, 'salesReps' | 'buyers'>,
     EntityBase {
-  accountGroups: string[];
-  salesReps: string[];
+  accountGroups: Tooltip;
+  salesReps: Tooltip;
+  buyers: Tooltip;
 }
 
 export interface WholesaleSalesRepBase {
@@ -71,10 +72,14 @@ export interface WholesaleBuyerUpdate extends UpdateEntity<WholesaleBuyerBase> {
 
 export type WholesaleBuyer = ResponseEntity<WholesaleBuyerBase> & {};
 
-export interface VatValidationResponse {
+export interface WholesaleVatValidation {
   vatNumber: string;
   countryCode: string;
   valid: boolean;
   name: string;
   address: string;
+}
+
+export interface WholesalePricelist extends Omit<ProductPricelist, 'products'> {
+  products: number;
 }

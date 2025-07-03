@@ -1,52 +1,17 @@
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
-import type { Account, Channel, Product } from '#shared/types';
+import type { Account, Channel } from '#shared/types';
 
 const ENDPOINTS = {
   PRODUCT: '/product',
   CATEGORY: '/product/category',
   BRAND: '/product/brand',
-  ACCOUNT: '/user/me',
+  ACCOUNT: '/account',
   CHANNELS: '/account/channel/list',
   CURRENCY: '/account/currency/list',
   LANGUAGE: '/account/language/list',
 };
 
 export const globalRepo = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
-  product: {
-    async get(id: number, fields?: string): Promise<Product> {
-      const queryParams = fields ? `?fields=${fields}` : '';
-      return await fetch<Product>(`${ENDPOINTS.PRODUCT}/${id}${queryParams}`);
-    },
-    list: {
-      async get(fields?: string): Promise<QueryResult<Product>> {
-        const queryParams = fields ? `?fields=${fields}` : '';
-        return await fetch<QueryResult<Product>>(
-          `${ENDPOINTS.PRODUCT}/query${queryParams}`,
-          {
-            method: 'POST',
-            body: {
-              all: true,
-            },
-          },
-        );
-      },
-      async query(
-        selection?: SelectorSelectionBase,
-        fields?: string,
-      ): Promise<QueryResult<Product>> {
-        const queryParams = fields ? `?fields=${fields}` : '';
-        return await fetch<QueryResult<Product>>(
-          `${ENDPOINTS.PRODUCT}/query${queryParams}`,
-          {
-            method: 'POST',
-            body: {
-              ...selection,
-            },
-          },
-        );
-      },
-    },
-  },
   category: {
     async get(id: number): Promise<Category> {
       return await fetch<Category>(`${ENDPOINTS.CATEGORY}/${id}`);

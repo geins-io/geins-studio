@@ -5,10 +5,10 @@
 @layer base {
   :root {
     --background: 0 0% 98%; /* #fafafa */
-    --foreground: 0 0% 9%; /* #161616 */
+    --foreground: 240 2% 22%; /* #161616 */
 
     --card: 0 0% 100%;
-    --foreground: 240 2% 22%; /* #161616 */
+    --card-foreground: 0 0% 9%; /* #161616 */
 
     --popover: 0 0% 100%; /* #ffffff */
     --popover-foreground: 0 0% 9%; /* #161616 */
@@ -32,14 +32,15 @@
     --input: 0 0% 100%; /* #ffffff */
     --ring: 0 0% 13%; /* #222222 */
     --link: 178 14% 44%; /* #3b82f6 */
+    --shadow: rgb(0 0 0 / 10%);
     --radius: 0.4rem;
   }
 
   .dark {
-    --background: 220 10% 10%;
+    --background: 220 10% 11%;
     --foreground: 210 15% 92%;
 
-    --card: 215 10% 15%;
+    --card: 215 10% 14%;
     --card-foreground: 210 15% 92%;
 
     --popover: 215 12% 12%;
@@ -60,10 +61,11 @@
     --destructive: 0 75% 60%;
     --destructive-foreground: 210 15% 92%;
 
-    --border: 215 10% 32%;
-    --input: 215 10% 15%;
+    --border: 215 10% 27%;
+    --input: 215 10% 14%;
     --ring: 210 15% 85%;
     --link: 178 30% 64%;
+    --shadow: rgb(0 0 0 / 50%);
   }
 }
 
@@ -101,10 +103,11 @@
 
     --info: 194 85% 89%;
     --info-foreground: 0 0% 9%;
+    --info-icon: 194 100% 64%;
   }
   .dark {
     color-scheme: dark;
-    --positive: 151 45% 36%;
+    --positive: 151 45% 46%;
     --positive-foreground: 0 0% 100%;
   }
   * {
@@ -117,6 +120,23 @@
     height: 100%;
     scroll-behavior: smooth;
   }
+
+  input:is(:-webkit-autofill, :autofill) {
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--input)) inset !important;
+    -webkit-text-fill-color: hsl(var(--foreground)) !important;
+    border-radius: inherit !important;
+    border-bottom: 1px solid #c2ebff !important;
+    border-right: 1px solid #c2ebff !important;
+    background-size: 58.6px 22.49px !important;
+    top: 2px !important;
+    bottom: 2px !important;
+    position: relative !important;
+    width: calc(100% - 4px) !important;
+    height: calc(100% - 4px) !important;
+    left: 2px !important;
+    right: 2px !important;
+  }
+
   #__nuxt {
     height: 100%;
   }

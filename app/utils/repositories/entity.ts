@@ -19,7 +19,6 @@ export function entityRepo<
     },
 
     async update(id: string, data: TUpdate): Promise<TResponse> {
-      // Type assertion only at the API boundary
       return await fetch<TResponse>(`${entityEndpoint}/${id}`, {
         method: 'PATCH',
         body: data,

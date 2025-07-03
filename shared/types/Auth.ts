@@ -59,4 +59,24 @@ export interface AuthBroadcastData {
   isRefreshing?: boolean;
 }
 
-export type AuthFormMode = 'login' | 'verify' | 'account';
+export type AuthFormMode =
+  | 'login'
+  | 'verify'
+  | 'account'
+  | 'forgot-password'
+  | 'reset-password';
+
+export interface LoginFormValues {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface ForgotPasswordFormValues {
+  email: string;
+}
+
+export interface ResetPasswordFormValues {
+  newPassword: string;
+  passwordRepeat: string;
+}

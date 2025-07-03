@@ -31,7 +31,7 @@ const props = withDefaults(
     mode?: TableMode;
     maxHeight?: string;
     showSearch?: boolean;
-    pinnedState?: ColumnPinningState;
+    pinnedState?: ColumnPinningState | null;
     selectedIds?: string[];
     emptyText?: string;
     initVisibilityState?: VisibilityState;
@@ -44,13 +44,14 @@ const props = withDefaults(
     searchableField: 'name',
     showSearch: false,
     mode: TableMode.Advanced,
-
     pinnedState: () => ({
       left: ['select'],
       right: ['actions'],
     }),
   },
 );
+
+const pinnedState = toRef(props, 'pinnedState');
 
 const emit = defineEmits({
   clicked: (row) => row,
@@ -143,46 +144,82 @@ watch(columnOrder, updateSortingCookie, { deep: true });
  * Handle pinned columns
  **/
 
-// Get default pinned classes for cells
-const pinnedClasses = (column: Column<TData>, header: boolean = false) => {
-  const pinned = column.getIsPinned();
-  if (pinned) {
-    const zIndex =
-      header && (column.id === 'select' || column.id === 'actions')
-        ? 'z-40'
-        : 'z-20';
-    const shadow =
-      pinned === 'left'
-        ? '[&>div]:shadow-only-right'
-        : '[&>div]:shadow-only-left';
-    return `bg-card sticky ${pinned}-0 ${zIndex} ${shadow} after:absolute after:-bottom-px after:${pinned}-0 after:bg-border after:h-px after:w-full after:z-50`;
+const getCellClasses = (
+  column: Column<TData>,
+  header: boolean = false,
+  lastRow: boolean = false,
+) => {
+  const isPinned = column.getIsPinned();
+  const isLastLeftPinnedColumn =
+    isPinned === 'left' && column.getIsLastColumn('left');
+  const isFirstRightPinnedColumn =
+    isPinned === 'right' && column.getIsFirstColumn('right');
+
+  const colsPinnedToLeft = columnPinningState.value.left || [];
+  const noBorderLeftClass = (() => {
+    switch (colsPinnedToLeft.length) {
+      case 1:
+        return '[&:nth-child(2)]:border-0';
+      case 2:
+        return '[&:nth-child(3)]:border-0';
+      case 3:
+        return '[&:nth-child(4)]:border-0';
+      default:
+        return '';
+    }
+  })();
+
+  if (isPinned) {
+    const zIndex = header ? 'z-40' : 'z-20';
+    const shadow = isLastLeftPinnedColumn
+      ? '[&>div]:shadow-only-right'
+      : isFirstRightPinnedColumn
+        ? '[&>div]:shadow-only-left border-l-0 [&>div]:border-l-0'
+        : '';
+    const afterStyles = !lastRow
+      ? `after:absolute after:${isPinned}-0 after:-bottom-px after:bg-border after:h-px after:w-full after:z-50`
+      : '';
+    return `bg-card sticky border-0 [&:first-child>div]:border-l-0 [&>div]:border-l ${zIndex} ${shadow} ${afterStyles}`;
   }
-  return 'relative';
+  return `relative ${noBorderLeftClass}`;
 };
+
+const pinnedStyles = computed(() => {
+  return (column: Column<TData>) => {
+    const isPinned = column.getIsPinned();
+    const isFirstRightPinnedColumn =
+      isPinned === 'right' && column.getIsFirstColumn('right');
+
+    const subtractWidth = isFirstRightPinnedColumn ? 1 : 0;
+
+    const width = column.getSize() - subtractWidth;
+
+    if (isPinned) {
+      const position =
+        isPinned === 'left'
+          ? column.getStart('left')
+          : column.getAfter('right');
+
+      return {
+        [isPinned]: `${position}px`,
+        width: `${width}px`,
+      };
+    }
+    return { width: width ? `${width}px` : undefined };
+  };
+});
 
 // Remove select and actions columns from pinned state if not present in columns
 const columnPinningState = computed(() => {
-  const left = props.pinnedState.left?.filter((id) =>
-    props.columns.some((column) => column.id === id),
-  );
-  const right = props.pinnedState.right?.filter((id) =>
-    props.columns.some((column) => column.id === id),
-  );
+  const left =
+    pinnedState.value?.left?.filter((id) =>
+      props.columns.some((column) => column.id === id),
+    ) || [];
+  const right =
+    pinnedState.value?.right?.filter((id) =>
+      props.columns.some((column) => column.id === id),
+    ) || [];
   return { left, right };
-});
-
-// Assign extra classes to cells based on pinned columns
-const cellClasses = computed(() => {
-  const pinnedToLeft = columnPinningState.value?.left?.length || 0;
-  const pinnedToRight = columnPinningState.value?.right?.length || 0;
-  const classes = [];
-  if (pinnedToLeft) {
-    classes.push(`[&:nth-child(2)]:border-card`);
-  }
-  if (pinnedToRight) {
-    classes.push('[&:last-child]:border-0');
-  }
-  return classes.join(' ');
 });
 
 // Setup table
@@ -204,6 +241,8 @@ const table = useVueTable({
   onColumnVisibilityChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, columnVisibility);
   },
+  onColumnPinningChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, columnPinningState),
   onRowSelectionChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, rowSelection);
     emit(
@@ -229,6 +268,9 @@ const table = useVueTable({
     get columnOrder() {
       return columnOrder.value;
     },
+    get columnPinning() {
+      return columnPinningState.value;
+    },
   },
   initialState: {
     pagination: {
@@ -245,9 +287,16 @@ const table = useVueTable({
 const emptyText = computed(() => {
   const emptyText =
     props.emptyText || t('no_entity', { entityName: props.entityName }, 2);
-  return table.getColumn(props.searchableField)?.getFilterValue()
+  const column = searchableColumn.value;
+  return column && column.getFilterValue()
     ? t('no_entity_found', { entityName: props.entityName }, 2)
     : emptyText;
+});
+
+const searchableColumn = computed(() => {
+  return props.columns.length
+    ? table.getColumn(props.searchableField)
+    : undefined;
 });
 </script>
 
@@ -263,15 +312,11 @@ const emptyText = computed(() => {
   >
     <div :class="`relative w-full ${advancedMode ? 'max-w-sm' : ''}`">
       <Input
-        v-if="table.getColumn(searchableField)"
+        v-if="searchableColumn"
         class="w-full pl-10"
         placeholder="Filter list..."
-        :model-value="
-          table.getColumn(searchableField)?.getFilterValue() as string
-        "
-        @update:model-value="
-          table.getColumn(searchableField)?.setFilterValue($event)
-        "
+        :model-value="searchableColumn.getFilterValue() as string"
+        @update:model-value="searchableColumn.setFilterValue($event)"
       />
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
@@ -304,16 +349,11 @@ const emptyText = computed(() => {
             :key="header.id"
             :class="
               cn(
-                `z-30 ${pinnedClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
-                cellClasses,
+                `z-30 ${getCellClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
                 `${simpleMode ? 'bg-background' : ''}`,
               )
             "
-            :style="
-              header.getSize()
-                ? { width: `${header.getSize()}px` }
-                : { width: 'auto' }
-            "
+            :style="pinnedStyles(header.column)"
           >
             <FlexRender
               v-if="!header.isPlaceholder"
@@ -333,12 +373,12 @@ const emptyText = computed(() => {
             <TableCell
               v-for="cell in row.getVisibleCells()"
               :key="cell.id"
-              :class="cn(`${pinnedClasses(cell.column)}`, cellClasses)"
-              :style="
-                cell.column.getSize()
-                  ? { width: `${cell.column.getSize()}px` }
-                  : { width: 'auto' }
+              :class="
+                cn(
+                  `${getCellClasses(cell.column, false, row.index === table.getRowModel().rows.length - 1)}`,
+                )
               "
+              :style="pinnedStyles(cell.column)"
             >
               <FlexRender
                 :render="cell.column.columnDef.cell"

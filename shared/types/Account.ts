@@ -13,8 +13,8 @@ export interface Channel extends EntityBase {
 
 export interface Market extends EntityBase {
   channelId: number;
-  country?: Country;
-  currency?: Currency;
+  country: Country;
+  currency: Currency;
   virtual: boolean;
   attributes: string[];
   allowedLanguages: string[];

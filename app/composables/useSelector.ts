@@ -1,44 +1,111 @@
-import { SelectorCondition, CompareCondition } from '#shared/types';
+import {
+  SelectorCondition,
+  CompareCondition,
+  type SelectorSelectionInternalBase,
+} from '#shared/types';
 
 export const useSelector = () => {
-  const getFallbackSelection = (): SelectorSelection => {
+  const getFallbackSelection = (): SelectorSelectionInternal => {
     return structuredClone({
       condition: SelectorCondition.And,
       categoryIds: [],
       brandIds: [],
-      price: [],
-      stock: [],
+      // price: [],
+      // stock: [],
       ids: [],
     });
   };
 
-  const getEmptySelectionBase = (): SelectorSelectionBase => {
+  const getEmptyInternalSelectionBase = (): SelectorSelectionInternalBase => {
+    return structuredClone({
+      include: getFallbackSelection(),
+      exclude: getFallbackSelection(),
+    });
+  };
+
+  const getEmptyQuerySelectionBase = (): SelectorSelectionQueryBase => {
     return structuredClone({
       include: [
         {
-          condition: SelectorCondition.And,
           selections: [getFallbackSelection()],
         },
       ],
+
       exclude: [
         {
-          condition: SelectorCondition.And,
           selections: [getFallbackSelection()],
         },
       ],
     });
   };
 
-  const convertToApiSelections = (
-    selection: SelectorSelection,
-  ): SelectorSelection[] => {
+  const getEmptySimpleSelectionBase = (): SelectorSelectionSimpleBase => {
+    return structuredClone({
+      include: [],
+      exclude: [],
+    });
+  };
+
+  const convertToInternalSelection = (
+    selections: SelectorSelectionQuery[],
+  ): SelectorSelectionInternal => {
+    let selectorSelection: SelectorSelectionInternal = {};
+
+    selections.forEach((selection) => {
+      // Merge arrays instead of overwriting them
+      selectorSelection = {
+        ...selectorSelection,
+        // Merge categoryIds arrays
+        categoryIds: [
+          ...(selectorSelection.categoryIds || []),
+          ...(selection.categoryIds || []),
+        ],
+        // Merge brandIds arrays
+        brandIds: [
+          ...(selectorSelection.brandIds || []),
+          ...(selection.brandIds || []),
+        ],
+        // Handle productIds -> ids conversion and merging
+        ids: [
+          ...(selectorSelection.ids || []),
+          ...(selection.productIds || []),
+        ],
+      };
+    });
+    return selectorSelection;
+  };
+
+  const convertToInternalSelectionBase = (
+    selection: SelectorSelectionQueryBase,
+  ): SelectorSelectionInternalBase => {
+    const createSelectionFromQuery = (
+      querySelections: SelectorSelectionGroup[],
+    ) => {
+      const result = convertToInternalSelection(
+        querySelections[0]?.selections || [],
+      );
+      return result;
+    };
+
+    const include = createSelectionFromQuery(selection.include);
+    const exclude = createSelectionFromQuery(selection.exclude);
+
+    return {
+      include,
+      exclude,
+    };
+  };
+
+  const convertToQuerySelection = (
+    selection: SelectorSelectionInternal,
+  ): SelectorSelectionQuery[] => {
     return [
       {
         condition: selection.condition,
         categoryIds: selection.categoryIds,
         brandIds: selection.brandIds,
-        price: selection.price,
-        stock: selection.stock,
+        // price: selection.price,
+        // stock: selection.stock,
       },
       {
         productIds: selection.ids || [],
@@ -46,27 +113,63 @@ export const useSelector = () => {
     ];
   };
 
-  const convertToSimpleSelection = (
-    selection: SelectorSelectionBase,
-  ): SelectorSelectionBaseSimple => {
-    const include = selection?.include?.[0]?.selections?.[0];
-    const exclude = selection?.exclude?.[0]?.selections?.[0];
-    const isApiSelections =
-      include && exclude && 'productIds' in include && 'productIds' in exclude;
+  const convertToQuerySelectionBase = (
+    selection: SelectorSelectionInternalBase,
+  ): SelectorSelectionQueryBase => {
     return {
-      include: isApiSelections ? include.productIds : include?.ids || [],
-      exclude: isApiSelections ? exclude.productIds : exclude?.ids || [],
+      include: [
+        {
+          selections: convertToQuerySelection(selection.include),
+        },
+      ],
+      exclude: [
+        {
+          selections: convertToQuerySelection(selection.exclude),
+        },
+      ],
     };
   };
 
-  const dummyData: SelectorSelectionBase = {
+  const convertSimpleToInternalSelectionBase = (
+    selection: SelectorSelectionSimpleBase,
+  ): SelectorSelectionInternalBase => {
+    return {
+      include: {
+        condition: SelectorCondition.And,
+        ids: selection.include,
+      },
+      exclude: {
+        condition: SelectorCondition.And,
+        ids: selection.exclude,
+      },
+    };
+  };
+
+  const convertToSimpleSelectionBase = (
+    selection: SelectorSelectionQueryBase,
+  ): SelectorSelectionSimpleBase => {
+    const internalSelection = convertToInternalSelectionBase(selection);
+
+    return {
+      include: convertToSimpleSelection(internalSelection.include),
+      exclude: convertToSimpleSelection(internalSelection.exclude),
+    };
+  };
+
+  const convertToSimpleSelection = (
+    selection: SelectorSelectionInternal,
+  ): SelectorSelectionSimple => {
+    return selection.ids || [];
+  };
+
+  const dummyData: SelectorSelectionQueryBase = {
     include: [
       {
         selections: [
           {
             condition: SelectorCondition.And,
-            categoryIds: [1, 2, 3],
-            brandIds: [1, 2],
+            categoryIds: ['1', '2'],
+            brandIds: ['1', '2'],
             price: [
               {
                 condition: CompareCondition.LessThan,
@@ -93,7 +196,7 @@ export const useSelector = () => {
                 quantity: 1000,
               },
             ],
-            ids: [1, 2, 3],
+            productIds: ['1', '2', '3'],
           },
         ],
       },
@@ -109,8 +212,15 @@ export const useSelector = () => {
   return {
     dummyData,
     getFallbackSelection,
-    getEmptySelectionBase,
-    convertToApiSelections,
+    getEmptyInternalSelectionBase,
+    getEmptyQuerySelectionBase,
+    getEmptySimpleSelectionBase,
+    convertToInternalSelection,
+    convertToInternalSelectionBase,
+    convertToQuerySelection,
+    convertToQuerySelectionBase,
+    convertSimpleToInternalSelectionBase,
     convertToSimpleSelection,
+    convertToSimpleSelectionBase,
   };
 };

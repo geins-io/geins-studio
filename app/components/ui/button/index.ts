@@ -16,14 +16,15 @@ export const buttonVariants = cva(
           'border bg-card hover:bg-secondary/90 dark:bg-secondary/80 dark:hover:bg-secondary',
         ghost:
           'hover:secondary-foreground border border-transparent hover:border-border hover:bg-secondary',
-        link: 'text-primary underline underline-offset-4 dark:text-foreground',
+        link: '!px-0 text-primary underline underline-offset-4 dark:text-foreground',
       },
       size: {
         default: 'h-9 px-4 py-2',
         xs: 'h-7 rounded px-2',
         sm: 'h-8 rounded-lg px-3 text-xs',
-        lg: 'h-10 rounded-lg px-8',
+        lg: 'h-10 rounded-lg px-4',
         icon: 'size-9',
+        'icon-xs': 'size-6 text-xs',
       },
     },
     defaultVariants: {

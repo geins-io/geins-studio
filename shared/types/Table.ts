@@ -9,9 +9,19 @@ export const enum TableMode {
   Minimal = 'minimal',
 }
 
+export type EditableColumnType =
+  | 'string'
+  | 'number'
+  | 'select'
+  | 'currency'
+  | 'boolean'
+  | 'percentage';
+
 export type ColumnType =
+  | 'default'
   | 'string'
   | 'currency'
+  | 'price'
   | 'date'
   | 'number'
   | 'image'
@@ -20,7 +30,11 @@ export type ColumnType =
   | 'actions'
   | 'channels'
   | 'tags'
-  | 'status';
+  | 'status'
+  | 'tooltip'
+  | 'boolean'
+  | `editable-${EditableColumnType}`
+  | 'pricelist-quantity-levels';
 
 export type ColumnTypes<T> = Partial<Record<keyof T, ColumnType>>;
 
@@ -32,6 +46,7 @@ export interface ColumnOptions<T> {
   columnOrder?: StringKeyOf<T>[];
   excludeColumns?: StringKeyOf<T>[];
   includeColumns?: StringKeyOf<T>[];
+  columnCellProps?: Partial<Record<StringKeyOf<T>, Record<string, unknown>>>;
   entityLinkUrl?: string;
   maxTextLength?: number;
 }
