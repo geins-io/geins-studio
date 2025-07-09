@@ -159,11 +159,11 @@ const getCellClasses = (
   const noBorderLeftClass = (() => {
     switch (colsPinnedToLeft.length) {
       case 1:
-        return '[&:nth-child(2)]:border-0';
+        return 'nth-2:border-0';
       case 2:
-        return '[&:nth-child(3)]:border-0';
+        return 'nth-3:border-0';
       case 3:
-        return '[&:nth-child(4)]:border-0';
+        return 'nth-4:border-0';
       default:
         return '';
     }
@@ -331,9 +331,9 @@ const searchableColumn = computed(() => {
     :class="
       cn(
         'relative overflow-hidden rounded-lg border pb-14 text-card-foreground transition-[transform]',
-        `${advancedMode ? 'mb-[6.5rem] translate-y-40' : ''}`,
+        `${advancedMode ? 'mb-26 translate-y-40' : ''}`,
         `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
-        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-[4rem] -mt-px mb-0 translate-y-0' : ''}`,
+        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-16 -mt-px mb-0 translate-y-0' : ''}`,
       )
     "
   >

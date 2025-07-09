@@ -119,7 +119,7 @@ onBeforeUnmount(() => {
 const rootItemClasses = computed(() => {
   return props.root
     ? `py-1.5 pl-5 pr-3 text-sm h-12 leading-10 transition-[background-color]`
-    : `py-2 pl-[3.25rem] pr-5 text-xs ${isActive.value ? 'font-semibold border-primary bg-background' : ''}`;
+    : `py-2 pl-13 pr-5 text-xs ${isActive.value ? 'font-semibold border-primary bg-background' : ''}`;
 });
 </script>
 
@@ -132,7 +132,7 @@ const rootItemClasses = computed(() => {
       <div
         :class="cn(`flex w-full items-center justify-between`, rootItemClasses)"
       >
-        <NuxtLink :to="item.href" :class="cn(`flex flex-grow items-center`)">
+        <NuxtLink :to="item.href" :class="cn(`flex grow items-center`)">
           <!--TODO: solve the issue with clientonly for dynamic icons-->
           <ClientOnly :key="item.label">
             <component :is="item.icon" stroke-width="1.5" class="mr-3 size-5" />

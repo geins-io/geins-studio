@@ -28,8 +28,8 @@ const delegatedProps = reactiveOmit(props, 'class');
         cn(
           'absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center bg-card text-xs text-muted-foreground',
           props.orientation === 'vertical'
-            ? 'w-[1px] px-1.5 py-2'
-            : 'h-[1px] px-2 py-1',
+            ? 'w-px px-1.5 py-2'
+            : 'h-px px-2 py-1',
         )
       "
       >{{ props.label }}</span

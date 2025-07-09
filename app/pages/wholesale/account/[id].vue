@@ -1109,7 +1109,7 @@ if (!createMode.value) {
                   :selection="addedPricelistsIds"
                   entity-name="pricelist"
                   :show-image="false"
-                  class="!w-2/5"
+                  class="w-2/5!"
                   @add="addPricelist($event)"
                   @remove="removePricelist($event)"
                 />

@@ -1,7 +1,7 @@
-const animate = require('tailwindcss-animate');
+import type { Config } from 'tailwindcss';
+import animate from 'tailwindcss-animate';
 
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+export default <Partial<Config>>(<unknown>{
   darkMode: ['class'],
   safelist: ['dark'],
   prefix: '',
@@ -123,4 +123,4 @@ module.exports = {
     },
   },
   plugins: [animate],
-};
+});

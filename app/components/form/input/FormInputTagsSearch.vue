@@ -121,7 +121,7 @@ const getName = (id: AcceptableValue): string => {
         </ComboboxInput>
       </TagsInput>
 
-      <ComboboxList class="w-[--reka-popper-anchor-width]">
+      <ComboboxList class="w-(--reka-popper-anchor-width)">
         <ComboboxEmpty v-if="allowCustomTags">
           {{ t('add_entity_by_typing', { entityName }, 2) }}
         </ComboboxEmpty>

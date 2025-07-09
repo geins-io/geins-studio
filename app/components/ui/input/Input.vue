@@ -46,7 +46,7 @@ const inputAttrs = computed(() => {
         props.size === 'sm' ? 'h-7' : '',
         props.size === 'md' ? 'h-9' : '',
         $slots.valueDescriptor ? 'flex items-center' : '',
-        'focus-within:border-primary focus-within:outline-none',
+        'focus-within:border-primary focus-within:outline-hidden',
         props.class,
       )
     "
@@ -76,7 +76,7 @@ const inputAttrs = computed(() => {
       v-model="modelValue"
       :class="
         cn(
-          `flex h-full w-full bg-input ${valid ? '' : 'outline outline-2 outline-offset-2 outline-destructive'} text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-semibold placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50`,
+          `flex h-full w-full bg-input ${valid ? '' : 'outline-solid outline-2 outline-offset-2 outline-destructive'} text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-semibold placeholder:text-muted-foreground focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50`,
           props.size === 'sm' ? 'text-xs' : '',
           $slots.valueDescriptor
             ? props.size === 'sm'

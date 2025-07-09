@@ -23,7 +23,7 @@ const copyValue = () => {
 <template>
   <button
     v-auto-animate
-    class="flex items-center gap-1 rounded-lg border px-1.5 py-0.5 shadow-sm transition-all hover:shadow"
+    class="flex items-center gap-1 rounded-lg border px-1.5 py-0.5 shadow-xs transition-all hover:shadow-sm"
     type="button"
     @click="copyValue"
     @mouseover="hovered = true"
