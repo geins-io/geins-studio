@@ -1,4 +1,4 @@
-import { getAuthBaseUrlVercel } from './shared/utils/deployment';
+import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
 
 const nitroPreset = {
   nitro: {
@@ -49,7 +49,7 @@ export default defineNuxtConfig({
 
   auth: {
     isEnabled: true,
-    baseURL: getAuthBaseUrlVercel(),
+    baseURL: getAuthBaseUrl(),
     provider: {
       type: 'authjs',
     },
@@ -75,7 +75,7 @@ export default defineNuxtConfig({
         channel: '1',
         country: 'SE',
       },
-      baseUrl: getAuthBaseUrlVercel(),
+      baseUrl: getBaseUrl(),
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
       VERCEL: process.env.VERCEL,

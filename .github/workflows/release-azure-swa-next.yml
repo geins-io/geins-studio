@@ -39,7 +39,8 @@ jobs:
         env:
           GEINS_API_URL: ${{ vars.GEINS_API_URL_QA }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          AUTH_ORIGIN: ${{ vars.AZURE_GEINS_AUTH_ORIGIN_QA }}
+          AUTH_ORIGIN: ${{ vars.AZURE_GEINS_AUTH_ORIGIN }}
+          BASE_URL: ${{ vars.AZURE_GEINS_BASE_URL_QA }}
           GEINS_DEBUG: ${{ vars.AZURE_GEINS_DEBUG_QA }}
           NITRO_PRESET: ${{ vars.NITRO_PRESET_AZURE_SWA }}
           APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.AZURE_APP_INSIGHTS_CONNECTION_STRING }}
@@ -49,7 +50,7 @@ jobs:
         id: posttoslack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          URL: ${{ vars.AZURE_GEINS_AUTH_ORIGIN_QA }}
+          URL: ${{ vars.AZURE_GEINS_BASE_URL_QA }}
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{
           "text": "*The QA site has been updated!* :unicorn_face:\n\n:point_right: <'"$URL"'|'"$URL"'> :point_left:"
