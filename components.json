@@ -3,7 +3,7 @@
   "style": "new-york",
   "typescript": true,
   "tailwind": {
-    "config": "tailwind.config.js",
+    "config": "",
     "css": "app/assets/css/tailwind.css",
     "baseColor": "stone",
     "cssVariables": true,
@@ -12,7 +12,7 @@
   "aliases": {
     "components": "@/components",
     "composables": "@/composables",
-    "utils": "@/utils",
+    "utils": "@/lib/utils",
     "ui": "@/components/ui",
     "lib": "@/lib"
   },

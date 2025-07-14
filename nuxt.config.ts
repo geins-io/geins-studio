@@ -1,4 +1,5 @@
 import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
+import tailwindcss from '@tailwindcss/vite';
 
 const nitroPreset = {
   nitro: {
@@ -24,7 +25,6 @@ export default defineNuxtConfig({
   modules: [
     '@sidebase/nuxt-auth',
     '@nuxt/test-utils/module',
-    '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
     '@nuxtjs/i18n',
     '@pinia/nuxt',
@@ -38,6 +38,12 @@ export default defineNuxtConfig({
   shadcn: {
     prefix: '',
     componentDir: './app/components/ui',
+  },
+
+  css: ['~/assets/css/tailwind.css'],
+
+  vite: {
+    plugins: [tailwindcss()],
   },
 
   colorMode: {
@@ -60,8 +66,10 @@ export default defineNuxtConfig({
 
   i18n: {
     defaultLocale: 'en',
-    langDir: 'lang/',
-    locales: [{ code: 'en', language: 'en-US', file: 'en-US.ts' }],
+    locales: [{ code: 'en', name: 'English', file: 'en.json' }],
+    bundle: {
+      optimizeTranslationDirective: false,
+    },
   },
 
   runtimeConfig: {

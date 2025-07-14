@@ -21,5 +21,9 @@ export function getAuthBaseUrl() {
   if (process.env.AUTH_ORIGIN) {
     return `${baseURl}${process.env.AUTH_ORIGIN}`;
   }
+  console.log(
+    '🚀 ~ getAuthBaseUrl ~ `${baseURl}/api/auth`:',
+    `${baseURl}/api/auth`,
+  );
   return `${baseURl}/api/auth`;
 }
