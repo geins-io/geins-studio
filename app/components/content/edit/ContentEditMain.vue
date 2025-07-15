@@ -15,7 +15,10 @@ const hasSidebar = computed(() => props.showSidebar && !!slots.sidebar);
   <div>
     <div
       :class="
-        cn(`grid gap-4`, `${hasSidebar ? 'grid-cols-main' : 'grid-cols-1'}`)
+        cn(
+          `grid gap-4`,
+          `${hasSidebar ? 'grid-cols-(--grid-cols-main)' : 'grid-cols-1'}`,
+        )
       "
     >
       <slot />

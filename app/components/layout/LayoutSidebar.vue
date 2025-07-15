@@ -19,11 +19,11 @@ const sidebarStyle = computed(() => {
 </script>
 <template>
   <aside
-    :class="cn(`layout-sidebar relative border-r bg-card transition-[width]`)"
+    :class="cn(`layout-sidebar bg-card relative border-r transition-[width]`)"
     :style="sidebarStyle"
   >
     <div>
-      <div class="ml-5 flex h-header items-center">
+      <div class="ml-5 flex h-(--h-header) items-center">
         <NuxtLink to="/">
           <LogoLetter v-if="isCollapsed" :font-controlled="false" class="h-9" />
           <Logo v-else :font-controlled="false" class="h-9" />
@@ -33,7 +33,7 @@ const sidebarStyle = computed(() => {
       <Button
         variant="secondary"
         size="icon"
-        class="absolute bottom-4 right-4 z-50 inline-flex size-7 border bg-card"
+        class="bg-card absolute right-4 bottom-4 z-50 inline-flex size-7 border"
         @click="setIsCollapsed(!isCollapsed)"
       >
         <LucideChevronsLeft
