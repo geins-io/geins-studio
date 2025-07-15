@@ -146,6 +146,7 @@ const createDisabled = ref(true);
 // =====================================================================================
 const {
   entityName,
+  entityId,
   createMode,
   loading,
   newEntityUrl,
@@ -654,7 +655,7 @@ const { summaryProps } = useEntityEditSummary({
 // =====================================================================================
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
-    wholesaleApi.account.get(String(route.params.id)),
+    wholesaleApi.account.get(entityId.value, { fields: 'all' }),
   );
   if (error.value) {
     toast({
@@ -805,11 +806,11 @@ if (!createMode.value) {
                                 <TooltipTrigger>
                                   <LucideCircleCheck
                                     v-if="vatValid"
-                                    class="size-5 text-positive"
+                                    class="text-positive size-5"
                                   />
                                   <LucideInfo
                                     v-else
-                                    class="size-5 text-warning"
+                                    class="text-warning size-5"
                                   />
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -1077,7 +1078,7 @@ if (!createMode.value) {
                   <p class="text-xl font-bold">
                     {{ $t('no_entity', { entityName: 'buyer' }, 2) }}
                   </p>
-                  <p class="text-xs text-muted-foreground">
+                  <p class="text-muted-foreground text-xs">
                     {{ $t('wholesale.no_buyers_connected') }}
                   </p>
                 </div>
@@ -1122,7 +1123,7 @@ if (!createMode.value) {
                   <p class="text-xl font-bold">
                     {{ $t('no_entity', { entityName: 'pricelist' }, 2) }}
                   </p>
-                  <p class="text-xs text-muted-foreground">
+                  <p class="text-muted-foreground text-xs">
                     {{ $t('wholesale.no_pricelists_connected') }}
                   </p>
                 </div>
@@ -1174,9 +1175,9 @@ if (!createMode.value) {
             <template v-if="vatNumberValidated" #after-summary>
               <ul v-auto-animate class="-mt-1 space-y-3 text-sm">
                 <li
-                  class="flex items-center justify-between gap-2 text-right text-muted-foreground"
+                  class="text-muted-foreground flex items-center justify-between gap-2 text-right"
                 >
-                  <span class="text-left font-bold text-foreground">
+                  <span class="text-foreground text-left font-bold">
                     {{ t('wholesale.vat_number') }}:
                   </span>
                   <ContentTextTooltip
