@@ -39,7 +39,7 @@ jobs:
         env:
           GEINS_API_URL: ${{ vars.GEINS_API_URL_QA }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          AUTH_ORIGIN: ${{ vars.AZURE_GEINS_AUTH_ORIGIN }}
+          AUTH_PATH: ${{ vars.AZURE_GEINS_AUTH_PATH }}
           BASE_URL: ${{ vars.AZURE_GEINS_BASE_URL_QA }}
           GEINS_DEBUG: ${{ vars.AZURE_GEINS_DEBUG_QA }}
           NITRO_PRESET: ${{ vars.NITRO_PRESET_AZURE_SWA }}

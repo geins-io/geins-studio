@@ -32,8 +32,10 @@ To set up Geins Studio, follow these steps:
    ```ini
    GEINS_API_URL=https://apim-mgmt-api-dev2.azure-api.net/v2
    GEINS_DEBUG=true
+   BASE_URL=http://localhost:3000
    AUTH_SECRET=your_secret_key
-   AUTH_ORIGIN=http://localhost:3000
+   AUTH_PATH=/api/auth
+
    ```
 
 3. **Start the Development Server**
