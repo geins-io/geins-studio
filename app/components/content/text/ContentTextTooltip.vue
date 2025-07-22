@@ -11,11 +11,11 @@ const props = withDefaults(
 <template>
   <TooltipProvider :delay-duration="100">
     <Tooltip>
-      <TooltipTrigger>
+      <TooltipTrigger class="cursor-default">
         <span
           :class="
             cn(
-              'underline decoration-muted-foreground decoration-dashed decoration-1 underline-offset-4',
+              'decoration-muted-foreground underline decoration-dashed decoration-1 underline-offset-4',
               props.triggerClass,
             )
           "

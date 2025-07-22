@@ -196,8 +196,9 @@ const {
   }),
   parseEntityData: async (account: WholesaleAccount) => {
     buyersList.value = account.buyers || [];
-    entityLiveStatus.value = entityDataUpdate.value?.active || false;
+    entityLiveStatus.value = account.active || false;
     accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
+    addedPricelists.value = account.priceLists || [];
 
     billingAddress.value = {
       ...account.addresses?.find(
@@ -260,6 +261,7 @@ const {
     return {
       ...entityData,
       salesReps: entityData.salesReps?.map((salesRep) => salesRep._id),
+      priceLists: entityData.priceLists?.map((priceList) => priceList._id),
     };
   },
   onFormValuesChange: async (values) => {
@@ -424,6 +426,14 @@ const removePricelist = (id: string) => {
     addedPricelists.value = addedPricelists.value.filter((pl) => pl._id !== id);
   }
 };
+
+watch(addedPricelists, (newPricelists) => {
+  if (newPricelists.length > 0) {
+    entityDataUpdate.value.priceLists = newPricelists.map((pl) => pl._id);
+  } else {
+    entityDataUpdate.value.priceLists = [];
+  }
+});
 
 if (!createMode.value) {
   const { data, error } = await useAsyncData<ProductPricelist[]>(() =>

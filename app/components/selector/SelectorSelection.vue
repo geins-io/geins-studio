@@ -28,10 +28,6 @@ const selection = defineModel<SelectorSelectionInternal>('selection', {
   required: true,
 });
 
-//TODO: remove when lowercase condition fixed
-selection.value.condition =
-  selection.value.condition?.toLowerCase() || SelectorCondition.And;
-
 // GLOBALS
 const { t } = useI18n();
 const { getCategoryName, getBrandName } = useProductsStore();
@@ -206,7 +202,7 @@ const noSelectionLabel = computed(() => {
         :options="selectorOptions"
         @save="updateSelection"
       >
-        <Button class="absolute right-3 top-3.5">{{ $t('browse') }}</Button>
+        <Button class="absolute top-3.5 right-3">{{ $t('browse') }}</Button>
       </SelectorPanel>
       <div class="flex w-[calc(100%-5.5rem)] flex-col gap-3">
         <!-- All / No products tag -->
