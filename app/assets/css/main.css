@@ -1,0 +1,264 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-positive: var(--positive);
+  --color-positive-foreground: var(--positive-foreground);
+  --color-negative: var(--negative);
+  --color-negative-foreground: var(--negative-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-icon: var(--info-icon);
+  --color-link: var(--link);
+
+  /* Font Family */
+  --font-sans: 'Suisse Intl';
+
+  /* Letter Spacing */
+  --tracking-normal: 0.01em;
+
+  /* Height */
+  --h-header: 4rem;
+
+  /* Box Shadow */
+  --shadow-only-right: 3px 0 7px -2px var(--shadow);
+  --shadow-only-left: -3px 0 7px -2px var(--shadow);
+
+  /* Font Size */
+  --text-grid: 0.8125rem;
+  --text-xxl: 1.8rem;
+
+  /* Grid Template Columns */
+  --grid-cols-main: minmax(50%, 1fr) minmax(300px, 360px);
+
+  /* Animation */
+  --animate-accordion-down: accordion-down 0.3s ease-out;
+  --animate-accordion-up: accordion-up 0.3s ease-out;
+  --animate-collapsible-down: collapsible-down 0.3s ease-in-out;
+  --animate-collapsible-up: collapsible-up 0.3s ease-in-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--reka-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--reka-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  @keyframes collapsible-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--reka-collapsible-content-height);
+    }
+  }
+
+  @keyframes collapsible-up {
+    from {
+      height: var(--reka-collapsible-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+:root {
+  --background: hsl(0 0% 98%);
+  --foreground: hsl(240 2% 22%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 9%);
+
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 9%);
+
+  --primary: hsl(0 0% 13%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  --secondary: hsl(0 0% 96%);
+  --secondary-foreground: hsl(0 0% 32%);
+
+  --muted: hsl(0 0% 91%);
+  --muted-foreground: hsl(0 0% 45%);
+
+  --accent: hsl(0 0% 98%);
+  --accent-foreground: hsl(0 0% 9%);
+
+  --destructive: hsl(0 80% 58%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --border: hsl(0 0% 90%);
+  --input: hsl(0 0% 100%);
+  --ring: hsl(0 0% 13%);
+  --link: hsl(178 14% 44%);
+  --shadow: rgb(0 0 0 / 10%);
+  --radius: 0.4rem;
+
+  --positive: hsl(151 45% 56%);
+  --positive-foreground: hsl(0 0% 100%);
+
+  --warning: hsl(32 78% 56%);
+  --warning-foreground: hsl(0 0% 100%);
+
+  --negative: hsl(0 59% 60%);
+  --negative-foreground: hsl(0 0% 100%);
+
+  --info: hsl(194 85% 89%);
+  --info-foreground: hsl(0 0% 9%);
+  --info-icon: hsl(194 100% 64%);
+}
+
+.dark {
+  --background: hsl(220 10% 11%);
+  --foreground: hsl(210 15% 92%);
+
+  --card: hsl(215 10% 14%);
+  --card-foreground: hsl(210 15% 92%);
+
+  --popover: hsl(215 12% 12%);
+  --popover-foreground: hsl(210 15% 92%);
+
+  --primary: hsl(0 0% 100%);
+  --primary-foreground: hsl(0 0% 13%);
+
+  --secondary: hsl(215 10% 26%);
+  --secondary-foreground: hsl(210 15% 97%);
+
+  --muted: hsl(215 15% 28%);
+  --muted-foreground: hsl(210 5% 70%);
+
+  --accent: hsl(217 15% 18%);
+  --accent-foreground: hsl(210 15% 90%);
+
+  --destructive: hsl(0 75% 60%);
+  --destructive-foreground: hsl(210 15% 92%);
+
+  --border: hsl(215 10% 27%);
+  --input: hsl(215 10% 14%);
+  --ring: hsl(210 15% 85%);
+  --link: hsl(178 30% 64%);
+  --shadow: rgb(0 0 0 / 50%);
+
+  color-scheme: dark;
+  --positive: hsl(151 45% 46%);
+  --positive-foreground: hsl(0 0% 100%);
+}
+
+@utility container {
+  padding: 2rem;
+  margin: 0 auto;
+  @media (width < 96rem) {
+    max-width: 1400px;
+  }
+}
+
+@utility form-grid-wrap {
+  & + & {
+    @apply mt-8!;
+  }
+}
+
+@utility flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+@layer base {
+  @font-face {
+    font-family: 'Suisse Intl';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src:
+      url('/fonts/SuisseIntl-Regular.woff2') format('woff2'),
+      url('/fonts/SuisseIntl-Regular.woff') format('woff');
+  }
+  @font-face {
+    font-family: 'Suisse Intl';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src:
+      url('/fonts/SuisseIntl-Medium.woff2') format('woff2'),
+      url('/fonts/SuisseIntl-Medium.woff') format('woff');
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans tracking-normal;
+    height: 100%;
+    scroll-behavior: smooth;
+  }
+
+  input:is(:-webkit-autofill, :autofill) {
+    -webkit-box-shadow: 0 0 0 1000px var(--input) inset !important;
+    -webkit-text-fill-color: var(--foreground) !important;
+    box-shadow: 0 0 0 1000px var(--input) inset !important;
+    text-fill-color: var(--foreground) !important;
+    border-radius: inherit !important;
+    border-bottom: 1px solid #c2ebff !important;
+    border-right: 1px solid #c2ebff !important;
+    background-size: 58.6px 22.49px !important;
+    top: 2px !important;
+    bottom: 2px !important;
+    position: relative !important;
+    width: calc(100% - 4px) !important;
+    height: calc(100% - 4px) !important;
+    left: 2px !important;
+    right: 2px !important;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  #__nuxt {
+    height: 100%;
+  }
+}

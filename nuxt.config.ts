@@ -1,4 +1,5 @@
-import { getAuthBaseUrlVercel } from './shared/utils/deployment';
+import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
+import tailwindcss from '@tailwindcss/vite';
 
 const nitroPreset = {
   nitro: {
@@ -24,7 +25,6 @@ export default defineNuxtConfig({
   modules: [
     '@sidebase/nuxt-auth',
     '@nuxt/test-utils/module',
-    '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
     '@nuxtjs/i18n',
     '@pinia/nuxt',
@@ -40,6 +40,12 @@ export default defineNuxtConfig({
     componentDir: './app/components/ui',
   },
 
+  css: ['~/assets/css/main.css'],
+
+  vite: {
+    plugins: [tailwindcss()],
+  },
+
   colorMode: {
     preference: 'system',
     fallback: 'light',
@@ -49,7 +55,7 @@ export default defineNuxtConfig({
 
   auth: {
     isEnabled: true,
-    baseURL: getAuthBaseUrlVercel(),
+    baseURL: getAuthBaseUrl(),
     provider: {
       type: 'authjs',
     },
@@ -60,8 +66,10 @@ export default defineNuxtConfig({
 
   i18n: {
     defaultLocale: 'en',
-    langDir: 'lang/',
-    locales: [{ code: 'en', language: 'en-US', file: 'en-US.ts' }],
+    locales: [{ code: 'en', name: 'English', file: 'en.json' }],
+    bundle: {
+      optimizeTranslationDirective: false,
+    },
   },
 
   runtimeConfig: {
@@ -75,7 +83,7 @@ export default defineNuxtConfig({
         channel: '1',
         country: 'SE',
       },
-      baseUrl: getAuthBaseUrlVercel(),
+      baseUrl: getBaseUrl(),
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
       VERCEL: process.env.VERCEL,

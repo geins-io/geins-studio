@@ -36,7 +36,6 @@ const { geinsLogError } = useGeinsLog('components/AuthForm.vue');
 const { t } = useI18n();
 const { $geinsApi } = useNuxtApp();
 const userApi = repo.user($geinsApi);
-const baseUrl = useRuntimeConfig().public.baseUrl;
 
 // Computed mode helpers
 const loginMode = computed(() => props.mode === 'login');

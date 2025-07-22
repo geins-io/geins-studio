@@ -53,7 +53,7 @@ const handleClick = (id: string) => {
       <Popover :open="focused">
         <PopoverAnchor />
         <PopoverContent
-          class="w-[--reka-popper-anchor-width] rounded-lg p-0"
+          class="w-(--reka-popper-anchor-width) rounded-lg p-0"
           @open-auto-focus.prevent
         >
           <CommandList
@@ -72,7 +72,7 @@ const handleClick = (id: string) => {
                 v-for="entity in entities"
                 :key="entity._id"
                 :value="entity._id + ' ' + entity.name"
-                class="border-0 py-0.5 data-[highlighted]:bg-card"
+                class="border-0 py-0.5 data-highlighted:bg-card"
               >
                 <Button
                   class="flex h-auto w-full items-center gap-3 border-0 p-1 px-1.5 text-xs duration-75"

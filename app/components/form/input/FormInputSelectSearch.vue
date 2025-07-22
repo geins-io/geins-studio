@@ -118,7 +118,7 @@ const handleKeyDown = () => {
         ref="trigger"
         type="button"
         tabindex="0"
-        class="w-full text-left focus:border-primary focus-visible:border-primary focus-visible:outline-none focus-visible:ring-0"
+        class="w-full text-left focus:border-primary focus-visible:border-primary focus-visible:outline-hidden focus-visible:ring-0"
         @focus.prevent="handleFocus"
         @pointerdown.prevent="handlePointerDown"
         @keydown.enter.prevent="handleKeyDown"
@@ -131,14 +131,14 @@ const handleKeyDown = () => {
 
     <ComboboxList
       ref="comboboxList"
-      class="relative w-[--reka-popper-anchor-width]"
+      class="relative w-(--reka-popper-anchor-width)"
     >
       <div
         class="sticky top-0 z-50 w-full items-center rounded-t border-b bg-card"
       >
         <ComboboxInput
           ref="searchInput"
-          class="h-10 rounded-none border-0 border-b pl-9 focus:rounded-lg focus:border focus:border-primary focus-visible:border-primary focus-visible:outline-none focus-visible:ring-0"
+          class="h-10 rounded-none border-0 border-b pl-9 focus:rounded-lg focus:border focus:border-primary focus-visible:border-primary focus-visible:outline-hidden focus-visible:ring-0"
           :placeholder="t('search_entity', { entityName }) + '...'"
           :autocomplete="autocomplete"
           @blur="handleBlur"

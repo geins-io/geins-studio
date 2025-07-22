@@ -7,7 +7,7 @@ const props = defineProps<{
 </script>
 
 <template>
-  <td :class="cn('border-l p-0 [&:first-child]:border-0', props.class)">
+  <td :class="cn('border-l p-0 first:border-0', props.class)">
     <slot />
   </td>
 </template>

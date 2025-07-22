@@ -20,8 +20,9 @@ Create an `.env` file in the root of your project and add the following environm
 | `GEINS_ACCOUNT_KEY` | Your Geins account key                                                                    | `xxxxxxxxxxxxx`                               |
 | `GEINS_API_URL`     | The URL to the Geins API                                                                  | `https://apim-mgmt-api-dev2.azure-api.net/v2` |
 | `GEINS_DEBUG`       | Geins debug flag                                                                          | `true`                                        |
+| `BASE_URL`          | The URL to your application                                                               | `http://localhost:3000`                       |
 | `AUTH_SECRET`       | A secret key used to hash tokens, sign and encrypt cookie and generate cryptographic keys | `a01a01a01a01a01a01`                          |
-| `AUTH_ORIGIN`       | The URL to your application                                                               | `http://localhost:3000`                       |
+| `AUTH_PATH`         | The path to your auth server function                                                     | `/api/auth`                                   |
 
 ## Theming
 

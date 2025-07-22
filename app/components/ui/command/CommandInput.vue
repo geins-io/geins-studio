@@ -43,7 +43,7 @@ const { filterState } = useCommand();
       :auto-focus="autoFocus"
       :class="
         cn(
-          'flex h-9 w-full rounded-lg bg-input py-1 text-sm transition-colors file:border-0 placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+          'flex h-9 w-full rounded-lg bg-input py-1 text-sm transition-colors file:border-0 placeholder:text-muted-foreground focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50',
           props.class,
         )
       "

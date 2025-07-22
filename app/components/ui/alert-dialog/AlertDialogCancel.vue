@@ -17,7 +17,7 @@ const delegatedProps = computed(() => {
   <AlertDialogCancel
     v-bind="delegatedProps"
     :class="cn(
-      buttonVariants({ variant: 'outline' }),
+      buttonVariants({ variant: 'outline-solid' }),
       'mt-2 sm:mt-0',
       props.class,
     )"

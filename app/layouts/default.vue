@@ -34,7 +34,7 @@ const contentClasses = computed(() => {
       class="relative flex grow flex-col transition-[max-width]"
       :style="mainWidthStyle"
     >
-      <LayoutHeader class="sticky top-0 h-header" />
+      <LayoutHeader class="sticky top-0 h-(--h-header)" />
       <div
         :class="cn('flex grow flex-col p-8 pb-14', contentClasses)"
         :style="mainContentStyle"
