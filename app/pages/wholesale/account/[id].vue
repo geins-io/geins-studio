@@ -767,7 +767,7 @@ if (!createMode.value) {
       </ContentHeader>
     </template>
     <form @submit.prevent>
-      <ContentEditMain :show-sidebar="showSidebar">
+      <ContentEditMain :sidebar-hidden="!showSidebar">
         <KeepAlive>
           <ContentEditMainContent
             v-if="currentTab === 0"
