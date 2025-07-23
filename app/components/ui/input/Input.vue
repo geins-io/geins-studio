@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
 import { useVModel } from '@vueuse/core';
+import { cn } from '@/lib/utils';
 
 defineOptions({
   inheritAttrs: false,
@@ -31,6 +32,7 @@ const modelValue = useVModel(props, 'modelValue', emits, {
   passive: true,
   defaultValue: props.defaultValue,
 });
+
 const attributes = useAttrs();
 const inputAttrs = computed(() => {
   const { class: _, ...attrs } = attributes;
@@ -42,7 +44,7 @@ const inputAttrs = computed(() => {
   <div
     :class="
       cn(
-        'relative h-10 w-full rounded-lg border bg-input',
+        'bg-input relative h-10 w-full rounded-lg border',
         props.size === 'sm' ? 'h-7' : '',
         props.size === 'md' ? 'h-9' : '',
         $slots.valueDescriptor ? 'flex items-center' : '',
@@ -53,11 +55,11 @@ const inputAttrs = computed(() => {
   >
     <LucideLoaderCircle
       v-if="loading"
-      class="absolute right-3 top-2 animate-spin"
+      class="absolute top-2 right-3 animate-spin"
     />
     <div
       v-else-if="$slots.icon"
-      class="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center"
+      class="absolute top-1/2 right-3 flex -translate-y-1/2 items-center justify-center"
     >
       <slot name="icon" />
     </div>
@@ -65,8 +67,8 @@ const inputAttrs = computed(() => {
       v-if="$slots.valueDescriptor"
       :class="
         cn(
-          'border-r bg-input text-xs text-muted-foreground',
-          props.size === 'sm' ? 'pl-2 pr-2' : 'pl-3 pr-3',
+          'bg-input text-muted-foreground border-r text-xs',
+          props.size === 'sm' ? 'pr-2 pl-2' : 'pr-3 pl-3',
         )
       "
     >
@@ -76,22 +78,22 @@ const inputAttrs = computed(() => {
       v-model="modelValue"
       :class="
         cn(
-          `flex h-full w-full bg-input ${valid ? '' : 'outline-solid outline-2 outline-offset-2 outline-destructive'} text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-semibold placeholder:text-muted-foreground focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50`,
+          `bg-input flex h-full w-full ${valid ? '' : 'outline-destructive outline-2 outline-offset-2 outline-solid'} placeholder:text-muted-foreground text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-semibold focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50`,
           props.size === 'sm' ? 'text-xs' : '',
           $slots.valueDescriptor
             ? props.size === 'sm'
-              ? 'rounded-r-lg py-1 pl-2 pr-3'
-              : 'rounded-r-lg py-1 pl-3 pr-3'
+              ? 'rounded-r-lg py-1 pr-3 pl-2'
+              : 'rounded-r-lg py-1 pr-3 pl-3'
             : 'rounded-lg px-3 py-1',
         )
       "
       v-bind="inputAttrs"
     />
   </div>
-  <p v-if="!valid && feedback" class="text-sm font-semibold text-destructive">
+  <p v-if="!valid && feedback" class="text-destructive text-sm font-semibold">
     {{ feedback }}
   </p>
-  <p v-else-if="description" class="text-sm text-muted-foreground">
+  <p v-else-if="description" class="text-muted-foreground text-sm">
     {{ description }}
   </p>
 </template>
