@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ListboxItemEmits, ListboxItemProps } from 'reka-ui';
-import { cn } from '@/utils';
-import { useCurrentElement } from '@vueuse/core';
+import { reactiveOmit, useCurrentElement } from '@vueuse/core';
 import { ListboxItem, useForwardPropsEmits, useId } from 'reka-ui';
 import {
   computed,
@@ -10,6 +9,7 @@ import {
   onUnmounted,
   ref,
 } from 'vue';
+import { cn } from '@/lib/utils';
 import { useCommand, useCommandGroup } from '.';
 
 const props = defineProps<
@@ -17,11 +17,7 @@ const props = defineProps<
 >();
 const emits = defineEmits<ListboxItemEmits>();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, 'class');
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 
@@ -53,7 +49,7 @@ onMounted(() => {
   // textValue to perform filter
   allItems.value.set(
     id,
-    currentElement.value.textContent ?? props.value.toString(),
+    currentElement.value.textContent ?? props.value?.toString() ?? '',
   );
 
   const groupId = groupContext?.id;
@@ -76,9 +72,10 @@ onUnmounted(() => {
     v-bind="forwarded"
     :id="id"
     ref="itemRef"
+    data-slot="command-item"
     :class="
       cn(
-        'relative flex cursor-default select-none items-center rounded-sm border-t px-2 py-1.5 text-sm outline-hidden data-disabled:pointer-events-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:opacity-50',
+        `[&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm border-t px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4`,
         props.class,
       )
     "

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { ListboxGroupProps } from 'reka-ui';
-import { cn } from '@/utils';
+import { reactiveOmit } from '@vueuse/core';
 import { ListboxGroup, ListboxGroupLabel, useId } from 'reka-ui';
 import { computed, type HTMLAttributes, onMounted, onUnmounted } from 'vue';
+import { cn } from '@/lib/utils';
 import { provideCommandGroupContext, useCommand } from '.';
 
 const props = defineProps<
@@ -12,11 +13,7 @@ const props = defineProps<
   }
 >();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, 'class');
 
 const { allGroups, filterState } = useCommand();
 const id = useId();
@@ -38,17 +35,13 @@ onUnmounted(() => {
   <ListboxGroup
     v-bind="delegatedProps"
     :id="id"
-    :class="
-      cn(
-        'overflow-hidden py-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground',
-        props.class,
-      )
-    "
+    data-slot="command-group"
+    :class="cn('text-foreground overflow-hidden', props.class)"
     :hidden="isRender ? undefined : true"
   >
     <ListboxGroupLabel
       v-if="heading"
-      class="mb-1 border-b px-3 py-1.5 text-xs font-semibold text-muted-foreground"
+      class="text-muted-foreground mb-1 border-b px-3 py-1.5 text-xs font-semibold"
     >
       {{ heading }}
     </ListboxGroupLabel>
