@@ -16,7 +16,7 @@ const sidebarToggled = ref(false);
 
 watch(sidebarHidden, (newValue) => {
   sidebarVisible.value = !newValue;
-  sidebarToggled.value = !newValue;
+  sidebarToggled.value = false;
 });
 
 const handleToggleSidebar = () => {
@@ -42,8 +42,9 @@ const handleToggleSidebar = () => {
       "
     >
       <slot />
-      <div v-if="hasSidebar" v-auto-animate class="flex flex-col gap-4">
+      <div v-if="hasSidebar" class="flex flex-col gap-4">
         <div
+          v-auto-animate
           v-if="sidebarVisible"
           :class="
             cn(

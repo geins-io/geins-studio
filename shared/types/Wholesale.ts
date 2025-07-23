@@ -93,5 +93,5 @@ export interface WholesalePricelist
     | 'forced'
     | 'dateCreated'
   > {
-  products: number;
+  productCount: number;
 }

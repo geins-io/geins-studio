@@ -378,7 +378,10 @@ const columnOptionsPricelists: ColumnOptions<WholesalePricelist> = {
   columnTypes: {
     name: 'entity-link',
   },
-  includeColumns: ['_id', 'name', 'currency', 'products', 'exVat', 'active'],
+  columnTitles: {
+    productCount: t('entity_caps', { entityName: 'product' }, 2),
+  },
+  includeColumns: ['_id', 'name', 'currency', 'productCount', 'active'],
   sortable: false,
 };
 
@@ -448,7 +451,7 @@ if (!createMode.value) {
   } else {
     allPricelists.value = data.value.map((pricelist) => ({
       ...pricelist,
-      products: pricelist.products.length,
+      productCount: pricelist.products.length,
     }));
   }
 }
