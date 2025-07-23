@@ -16,13 +16,15 @@ const { error, formItemId } = useFormField();
 
 <template>
   <Label
-    :class="cn(error && 'text-destructive', props.class)"
+    data-slot="form-label"
+    :data-error="!!error"
+    :class="cn('data-[error=true]:text-destructive', props.class)"
     :for="formItemId"
   >
     <slot />
     <span
       v-if="optional"
-      class="ml-1 text-xs font-normal text-muted-foreground"
+      class="text-muted-foreground ml-1 text-xs font-normal"
     >
       ({{ t('form.optional') }})
     </span>

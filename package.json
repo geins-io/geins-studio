@@ -43,7 +43,7 @@
     "tailwindcss": "^4.1.11",
     "tailwindcss-animate": "^1.0.7",
     "tw-animate-css": "^1.3.5",
-    "vee-validate": "^4.15.0",
+    "vee-validate": "^4.15.1",
     "vue": "^3.4.29",
     "vue-router": "^4.3.3",
     "vuedraggable": "^4.1.0",
