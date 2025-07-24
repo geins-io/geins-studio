@@ -1,25 +1,23 @@
 <script setup lang="ts">
-import { cn } from '@/utils';
+import type { HTMLAttributes } from 'vue';
+import { reactiveOmit } from '@vueuse/core';
 import { TabsList, type TabsListProps } from 'reka-ui';
-import { computed, type HTMLAttributes } from 'vue';
+import { cn } from '@/lib/utils';
 
 const props = defineProps<
   TabsListProps & { class?: HTMLAttributes['class'] }
 >();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, 'class');
 </script>
 
 <template>
   <TabsList
+    data-slot="tabs-list"
     v-bind="delegatedProps"
     :class="
       cn(
-        'inline-flex w-auto items-center justify-center rounded-lg bg-secondary p-1 text-secondary-foreground',
+        'bg-secondary text-secondary-foreground inline-flex w-auto items-center justify-center rounded-lg p-1',
         props.class,
       )
     "
