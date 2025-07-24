@@ -305,7 +305,7 @@ const searchableColumn = computed(() => {
     v-if="showSearch"
     :class="
       cn(
-        'mb-3 flex origin-top transform items-center transition-[transform]',
+        'mb-3 flex origin-top transform items-center transition-transform',
         `${tableMaximized ? 'scale-y-0' : ''}`,
       )
     "
@@ -321,7 +321,7 @@ const searchableColumn = computed(() => {
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
       >
-        <LucideSearch class="size-4 text-foreground" />
+        <LucideSearch class="text-foreground size-4" />
       </span>
     </div>
 
@@ -330,10 +330,10 @@ const searchableColumn = computed(() => {
   <div
     :class="
       cn(
-        'relative overflow-hidden rounded-lg border pb-14 text-card-foreground transition-[transform]',
+        'text-card-foreground relative overflow-hidden rounded-lg border pb-14 transition-transform',
         `${advancedMode ? 'mb-26 translate-y-40' : ''}`,
         `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
-        `${tableMaximized ? 'absolute bottom-0 left-8 right-8 top-16 -mt-px mb-0 translate-y-0' : ''}`,
+        `${tableMaximized ? 'absolute top-16 right-8 bottom-0 left-8 -mt-px mb-0 translate-y-0' : ''}`,
       )
     "
   >
@@ -349,7 +349,7 @@ const searchableColumn = computed(() => {
             :key="header.id"
             :class="
               cn(
-                `z-30 ${getCellClasses(header.column, true)} sticky top-0 bg-card after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full after:bg-border`,
+                `z-30 ${getCellClasses(header.column, true)} bg-card after:bg-border sticky top-0 after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full`,
                 `${simpleMode ? 'bg-background' : ''}`,
               )
             "
@@ -406,7 +406,7 @@ const searchableColumn = computed(() => {
       v-if="advancedMode"
       variant="ghost"
       size="icon"
-      class="absolute -right-px -top-px z-50 size-6 border-border bg-card"
+      class="border-border bg-card absolute -top-px -right-px z-50 size-6"
       @click="tableMaximized = !tableMaximized"
     >
       <LucideMaximize2 v-if="!tableMaximized" class="size-3" />
