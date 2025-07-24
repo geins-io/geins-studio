@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { cn } from '@/lib/utils';
 
 const props = defineProps<{
   class?: HTMLAttributes['class'];
@@ -8,9 +9,10 @@ const props = defineProps<{
 
 <template>
   <tfoot
+    data-slot="table-footer"
     :class="
       cn(
-        'rounded-b-lg border-t bg-muted/50 font-semibold last:[&>tr]:border-b-0',
+        'bg-muted/50 rounded-b-lg border-t font-semibold [&>tr]:last:border-b-0',
         props.class,
       )
     "
