@@ -18,7 +18,7 @@ const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
 
 <template>
   <div
-    class="absolute bottom-0 left-0 flex h-14 w-full items-center justify-between rounded-b-md border-t bg-card px-4 py-3 text-xs"
+    class="bg-card absolute bottom-0 left-0 flex h-14 w-full items-center justify-between rounded-b-md border-t px-4 py-3 text-xs"
   >
     <div class="flex-1">
       <span v-if="rowsSelectable">
@@ -47,7 +47,7 @@ const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
           :model-value="`${table.getState().pagination.pageSize}`"
           @update:model-value="table.setPageSize"
         >
-          <SelectTrigger class="h-8 w-[70px]">
+          <SelectTrigger size="sm" class="w-[70px]">
             <SelectValue
               :placeholder="`${table.getState().pagination.pageSize}`"
             />
