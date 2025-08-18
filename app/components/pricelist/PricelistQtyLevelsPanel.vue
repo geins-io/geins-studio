@@ -49,7 +49,7 @@ const handleSave = () => {
           Add quantity based price levels for this product.
         </SheetDescription>
       </SheetHeader>
-      <div class="p-6">
+      <SheetBody>
         <ContentCardHeader
           size="sm"
           title="Global quantity levels"
@@ -63,14 +63,14 @@ const handleSave = () => {
           mode="price"
           :currency="currency"
         />
-        <p v-else class="text-sm italic text-muted-foreground">
+        <p v-else class="text-muted-foreground text-sm italic">
           No global quantity levels defined.
         </p>
         <ContentCardHeader
           size="sm"
           title="Product quantity levels"
           description="These price levels are applied only to this product. If you add a level with the same quantity as a global level, the global price level will be overridden."
-          class="mb-4 mt-6"
+          class="mt-6 mb-4"
         />
         <PricelistRules
           :rules="productRules"
@@ -79,7 +79,7 @@ const handleSave = () => {
           :currency="currency"
           @update="editableRules = $event"
         />
-      </div>
+      </SheetBody>
       <SheetFooter>
         <Button variant="outline" @click="handleCancel">
           {{ $t('cancel') }}

@@ -204,7 +204,7 @@ const handleCancel = () => {
           {{ t('selector_panel_description') }}
         </SheetDescription>
       </SheetHeader>
-      <div class="flex h-[calc(100vh-10.1rem)] grid-cols-12">
+      <SheetBody class="flex h-[calc(100vh-10.1rem)] grid-cols-12 p-0">
         <div class="w-[170px] shrink-0 px-4 py-3">
           <ContentHeading>{{ t('select_from') }}</ContentHeading>
           <SidebarNav>
@@ -284,7 +284,7 @@ const handleCancel = () => {
               <Button
                 size="icon"
                 variant="outline"
-                class="ml-auto mr-1 size-5 shrink-0 hover:text-negative"
+                class="hover:text-negative mr-1 ml-auto size-5 shrink-0"
                 @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />
@@ -307,7 +307,7 @@ const handleCancel = () => {
               <Button
                 size="icon"
                 variant="outline"
-                class="ml-auto mr-1 size-5 shrink-0 hover:text-negative"
+                class="hover:text-negative mr-1 ml-auto size-5 shrink-0"
                 @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />
@@ -330,7 +330,7 @@ const handleCancel = () => {
               <Button
                 size="icon"
                 variant="outline"
-                class="ml-auto mr-1 size-5 shrink-0 hover:text-negative"
+                class="hover:text-negative mr-1 ml-auto size-5 shrink-0"
                 @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />
@@ -339,7 +339,7 @@ const handleCancel = () => {
           </ul>
           <!-- END BRANDS -->
         </div>
-      </div>
+      </SheetBody>
       <SheetFooter>
         <SheetClose as-child>
           <Button variant="outline" @click="handleCancel">

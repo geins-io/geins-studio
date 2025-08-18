@@ -241,7 +241,7 @@ const existingCustomerName = computed(() => {
           </SheetDescription>
         </VisuallyHidden>
       </SheetHeader>
-      <div class="p-6">
+      <SheetBody>
         <form @submit.prevent>
           <FormGridWrap>
             <FormGrid design="1+1">
@@ -374,7 +374,7 @@ const existingCustomerName = computed(() => {
             </Feedback>
           </div>
         </div>
-      </div>
+      </SheetBody>
       <SheetFooter>
         <Button variant="outline" @click="handleCancel">
           {{ t('cancel') }}

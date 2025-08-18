@@ -115,7 +115,7 @@ const handleCancel = () => {
           </SheetDescription>
         </VisuallyHidden>
       </SheetHeader>
-      <div class="p-6">
+      <SheetBody>
         <form @submit.prevent>
           <ContentAddressForm />
         </form>
@@ -142,7 +142,7 @@ const handleCancel = () => {
             {{ t('delete') }}
           </Button>
         </div>
-      </div>
+      </SheetBody>
       <SheetFooter>
         <Button variant="outline" @click="handleCancel">
           {{ t('cancel') }}
