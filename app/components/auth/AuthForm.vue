@@ -455,7 +455,7 @@ const backToLogin = () => {
           @complete="handleVerify"
         >
           <PinInputGroup>
-            <PinInputInput v-for="(id, index) in 6" :key="id" :index="index" />
+            <PinInputSlot v-for="(id, index) in 6" :key="id" :index="index" />
           </PinInputGroup>
         </PinInput>
       </div>
