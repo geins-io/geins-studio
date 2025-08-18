@@ -236,7 +236,7 @@
     scroll-behavior: smooth;
   }
 
-  input:is(:-webkit-autofill, :autofill) {
+  input:not([data-hidden]):is(:-webkit-autofill, :autofill) {
     -webkit-box-shadow: 0 0 0 1000px var(--input) inset !important;
     -webkit-text-fill-color: var(--foreground) !important;
     box-shadow: 0 0 0 1000px var(--input) inset !important;
