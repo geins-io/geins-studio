@@ -139,7 +139,7 @@ const resetOrderAndVisibility = () => {
           Choose which columns you want to see in this list view
         </SheetDescription>
       </SheetHeader>
-      <div class="grid p-4 md:grid-cols-2">
+      <SheetBody class="grid p-4 md:grid-cols-2">
         <!-- Available Columns -->
         <div class="mr-8 border-r pr-8">
           <h4 class="mb-4 text-base font-semibold">Availble colums</h4>
@@ -185,10 +185,10 @@ const resetOrderAndVisibility = () => {
           >
             <template #item="{ element }">
               <div
-                class="flex cursor-move items-center justify-between rounded-md bg-background px-4 py-2"
+                class="bg-background flex cursor-move items-center justify-between rounded-md px-4 py-2"
               >
                 <div class="flex items-center space-x-2">
-                  <LucideGripVertical class="size-4 text-muted-foreground" />
+                  <LucideGripVertical class="text-muted-foreground size-4" />
                   <span class="text-sm">{{ element.title }}</span>
                 </div>
                 <Button
@@ -203,7 +203,7 @@ const resetOrderAndVisibility = () => {
             </template>
           </draggable>
         </div>
-      </div>
+      </SheetBody>
       <SheetFooter>
         <SheetClose as-child>
           <Button variant="outline" @click="resetOrderAndVisibility">

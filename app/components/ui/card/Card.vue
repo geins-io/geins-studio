@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { cn } from '@/lib/utils';
 
 const props = defineProps<{
   class?: HTMLAttributes['class'];
@@ -8,7 +9,8 @@ const props = defineProps<{
 
 <template>
   <div
-    :class="cn('rounded-lg border bg-card text-card-foreground', props.class)"
+    data-slot="card"
+    :class="cn('bg-card text-card-foreground rounded-lg border', props.class)"
   >
     <slot />
   </div>

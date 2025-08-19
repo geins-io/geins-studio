@@ -232,6 +232,7 @@ const handleForgotPassword = async () => {
   resetLoading.value = true;
   try {
     const values = form.values as ForgotPasswordFormValues;
+    const baseUrl = getBaseUrl();
     await userApi.password.beginRestore(
       values.email || '',
       `${baseUrl}/auth/reset-password?token={token}`,
@@ -454,7 +455,7 @@ const backToLogin = () => {
           @complete="handleVerify"
         >
           <PinInputGroup>
-            <PinInputInput v-for="(id, index) in 6" :key="id" :index="index" />
+            <PinInputSlot v-for="(id, index) in 6" :key="id" :index="index" />
           </PinInputGroup>
         </PinInput>
       </div>
@@ -474,7 +475,7 @@ const backToLogin = () => {
       </ul>
       <div
         v-else
-        class="relative flex items-center justify-center text-muted-foreground"
+        class="text-muted-foreground relative flex items-center justify-center"
       >
         <LucideLoaderCircle class="size-10 animate-spin" />
       </div>

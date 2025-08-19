@@ -16,7 +16,7 @@ const mode = defineModel<PricelistRuleMode>('mode', { required: true });
       <div class="flex items-center gap-2">
         <Label :for="modeId" class="text-xs"> Calculate by </Label>
         <Select :id="modeId" v-model="mode" class="mb-4 w-48!">
-          <SelectTrigger class="h-7 w-32">
+          <SelectTrigger class="w-32" size="sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

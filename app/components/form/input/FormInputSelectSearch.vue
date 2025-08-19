@@ -19,6 +19,13 @@ const findItem = (value: string | undefined) =>
 
 const choice = ref<PlainDataItem | undefined>(findItem(model.value));
 
+const open = ref(false);
+const trigger = ref<HTMLElement | null>(null);
+const searchInput = ref<HTMLElement | null>(null);
+const comboboxList = ref<HTMLElement | null>(null);
+const isComingFromSearchInput = ref(false);
+const wasOpenBeforeClick = ref(false);
+
 watch(choice, (newChoice) => {
   if (newChoice?.value === model.value) {
     return;
@@ -32,13 +39,6 @@ watch([model, () => props.dataSet], ([newModelValue]) => {
     choice.value = findItem(newModelValue);
   }
 });
-
-const open = ref(false);
-const trigger = ref<HTMLElement | null>(null);
-const searchInput = ref<HTMLElement | null>(null);
-const comboboxList = ref<HTMLElement | null>(null);
-const isComingFromSearchInput = ref(false);
-const wasOpenBeforeClick = ref(false);
 
 const handleFocus = async (event: FocusEvent) => {
   // Skip if coming from search input
@@ -107,18 +107,19 @@ const handleKeyDown = () => {
       v-if="autocomplete"
       v-model="model"
       tabindex="-1"
+      data-hidden
       :autocomplete="autocomplete"
       class="pointer-events-none absolute h-0 opacity-0"
     />
     <ComboboxAnchor
       as-child
-      class="flex h-10 w-full items-center justify-between rounded-lg border bg-input px-3 py-1 text-sm transition-colors data-[state=open]:border-primary"
+      class="bg-input data-[state=open]:border-primary flex h-10 w-full items-center justify-between rounded-lg border px-3 py-1 text-sm transition-colors"
     >
       <button
         ref="trigger"
         type="button"
         tabindex="0"
-        class="w-full text-left focus:border-primary focus-visible:border-primary focus-visible:outline-hidden focus-visible:ring-0"
+        class="focus:border-primary focus-visible:border-primary w-full text-left focus-visible:ring-0 focus-visible:outline-hidden"
         @focus.prevent="handleFocus"
         @pointerdown.prevent="handlePointerDown"
         @keydown.enter.prevent="handleKeyDown"
@@ -128,25 +129,24 @@ const handleKeyDown = () => {
         <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
       </button>
     </ComboboxAnchor>
-
     <ComboboxList
       ref="comboboxList"
       class="relative w-(--reka-popper-anchor-width)"
     >
       <div
-        class="sticky top-0 z-50 w-full items-center rounded-t border-b bg-card"
+        class="bg-card sticky top-0 z-50 w-full items-center rounded-t border-b"
       >
         <ComboboxInput
           ref="searchInput"
-          class="h-10 rounded-none border-0 border-b pl-9 focus:rounded-lg focus:border focus:border-primary focus-visible:border-primary focus-visible:outline-hidden focus-visible:ring-0"
+          class="focus:border-primary focus-visible:border-primary h-10 rounded-none border-0 border-b pl-9 focus:rounded-lg focus:border focus-visible:ring-0 focus-visible:outline-hidden"
           :placeholder="t('search_entity', { entityName }) + '...'"
-          :autocomplete="autocomplete"
+          autocomplete="off"
           @blur="handleBlur"
         />
         <span
           class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
         >
-          <Search class="size-4 text-muted-foreground" />
+          <Search class="text-muted-foreground size-4" />
         </span>
       </div>
 
@@ -154,7 +154,7 @@ const handleKeyDown = () => {
         {{ t('no_entity_found', { entityName }) }}
       </ComboboxEmpty>
 
-      <ComboboxGroup>
+      <ComboboxGroup class="max-h-[300px] overflow-auto">
         <ComboboxItem v-for="item in dataSet" :key="item.value" :value="item">
           {{ item.label }}
 

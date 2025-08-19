@@ -28,7 +28,7 @@ const hasChanges = computed(() => !!slots.changes);
   <div
     :class="
       cn(
-        'origin-top transform transition-[transform]',
+        'origin-top transform transition-transform',
         `${tableMaximized ? 'scale-y-0' : ''}`,
       )
     "
