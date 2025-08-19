@@ -83,6 +83,7 @@ const entityBase: WholesaleAccountCreate = {
   buyers: [],
   exVat: false,
   limitedProductAccess: false,
+  priceLists: [],
 };
 
 const addressBase: AddressBase = {
@@ -770,7 +771,7 @@ if (!createMode.value) {
       </ContentHeader>
     </template>
     <form @submit.prevent>
-      <ContentEditMain :sidebar-hidden="!showSidebar">
+      <ContentEditMain :show-sidebar="showSidebar">
         <KeepAlive>
           <ContentEditMainContent
             v-if="currentTab === 0"

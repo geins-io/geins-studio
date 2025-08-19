@@ -1,33 +1,46 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    sidebarHidden?: boolean;
+    showSidebar?: boolean;
   }>(),
   {
-    sidebarHidden: false,
+    showSidebar: true,
   },
 );
 
-const sidebarHidden = toRef(props, 'sidebarHidden');
+const initialSidebarVisible = toRef(props, 'showSidebar');
 const slots = useSlots();
 const hasSidebar = computed(() => !!slots.sidebar);
-const sidebarVisible = ref(!sidebarHidden.value);
+const sidebarCanBeToggled = ref(
+  hasSidebar.value && !initialSidebarVisible.value,
+);
 const sidebarToggled = ref(false);
+const sidebarVisible = ref(initialSidebarVisible.value);
 
-watch(sidebarHidden, (newValue) => {
-  sidebarVisible.value = !newValue;
+watch(initialSidebarVisible, (newValue) => {
+  console.log('🚀 ~ newValue:', newValue);
   sidebarToggled.value = false;
+  sidebarCanBeToggled.value = hasSidebar.value && !newValue;
 });
 
 const handleToggleSidebar = () => {
-  sidebarVisible.value = !sidebarVisible.value;
-  sidebarToggled.value = !sidebarToggled.value;
+  if (!sidebarToggled.value) {
+    sidebarToggled.value = true;
+    nextTick(() => {
+      sidebarVisible.value = true;
+    });
+  } else {
+    sidebarVisible.value = false;
+    setTimeout(() => {
+      sidebarToggled.value = false;
+    }, 300);
+  }
 };
 </script>
 <template>
   <div class="relative">
     <button
-      v-if="sidebarHidden"
+      v-if="sidebarCanBeToggled"
       class="bg-card flex-center absolute -top-2 -right-2 z-50 size-10 rounded-full border p-2 shadow-lg"
       @click="handleToggleSidebar"
     >
@@ -37,20 +50,23 @@ const handleToggleSidebar = () => {
       :class="
         cn(
           `grid gap-4`,
-          `${sidebarHidden ? 'grid-cols-1' : 'grid-cols-(--grid-cols-main)'}`,
+          `${!hasSidebar || sidebarCanBeToggled ? 'grid-cols-1' : 'grid-cols-(--grid-cols-main)'}`,
         )
       "
     >
       <slot />
       <div v-if="hasSidebar" class="flex flex-col gap-4">
         <div
-          v-auto-animate
-          v-if="sidebarVisible"
+          v-show="(!sidebarCanBeToggled && sidebarVisible) || sidebarToggled"
           :class="
             cn(
-              sidebarVisible && sidebarToggled
-                ? 'absolute top-8 right-8 z-50 w-[360px] shadow-lg'
+              sidebarCanBeToggled
+                ? 'absolute top-8 right-8 z-50 w-[360px] origin-top-right shadow-lg transition-all duration-300 ease-out'
                 : '',
+              sidebarCanBeToggled && sidebarVisible
+                ? 'scale-100 opacity-100'
+                : '',
+              sidebarCanBeToggled && !sidebarVisible ? 'scale-0 opacity-0' : '',
             )
           "
         >
