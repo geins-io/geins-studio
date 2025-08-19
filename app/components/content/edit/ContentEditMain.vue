@@ -26,9 +26,9 @@ watch(initialSidebarVisible, (newValue) => {
 const handleToggleSidebar = () => {
   if (!sidebarToggled.value) {
     sidebarToggled.value = true;
-    nextTick(() => {
+    setTimeout(() => {
       sidebarVisible.value = true;
-    });
+    }, 10);
   } else {
     sidebarVisible.value = false;
     setTimeout(() => {
@@ -57,11 +57,12 @@ const handleToggleSidebar = () => {
       <slot />
       <div v-if="hasSidebar" class="flex flex-col gap-4">
         <div
-          v-show="(!sidebarCanBeToggled && sidebarVisible) || sidebarToggled"
+          v-show="initialSidebarVisible || sidebarToggled"
           :class="
             cn(
+              'rounded-lg',
               sidebarCanBeToggled
-                ? 'absolute top-8 right-8 z-50 w-[360px] origin-top-right shadow-lg transition-all duration-300 ease-out'
+                ? 'absolute top-8 right-8 z-50 w-[360px] origin-top-right shadow-lg transition-all duration-300 ease-[cubic-bezier(.29,.38,.18,1.47)]'
                 : '',
               sidebarCanBeToggled && sidebarVisible
                 ? 'scale-100 opacity-100'
