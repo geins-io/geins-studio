@@ -17,8 +17,8 @@ export const globalRepo = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
       return await fetch<Category>(`${ENDPOINTS.CATEGORY}/${id}`);
     },
     list: {
-      async get(): Promise<QueryResult<Category>> {
-        return await fetch<QueryResult<Category>>(
+      async get(): Promise<BatchQueryResult<Category>> {
+        return await fetch<BatchQueryResult<Category>>(
           `${ENDPOINTS.CATEGORY}/query`,
           {
             method: 'POST',
@@ -28,8 +28,8 @@ export const globalRepo = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
           },
         );
       },
-      async query(ids: number[]): Promise<QueryResult<Category>> {
-        return await fetch<QueryResult<Category>>(
+      async query(ids: number[]): Promise<BatchQueryResult<Category>> {
+        return await fetch<BatchQueryResult<Category>>(
           `${ENDPOINTS.CATEGORY}/query`,
           {
             method: 'POST',
@@ -46,13 +46,16 @@ export const globalRepo = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
       return await fetch<Brand>(`${ENDPOINTS.BRAND}/${id}`);
     },
     list: {
-      async get(): Promise<QueryResult<Brand>> {
-        return await fetch<QueryResult<Brand>>(`${ENDPOINTS.BRAND}/query`, {
-          method: 'POST',
-          body: {
-            all: true,
+      async get(): Promise<BatchQueryResult<Brand>> {
+        return await fetch<BatchQueryResult<Brand>>(
+          `${ENDPOINTS.BRAND}/query`,
+          {
+            method: 'POST',
+            body: {
+              all: true,
+            },
           },
-        });
+        );
       },
       async query(ids: number[]): Promise<Brand[]> {
         return await fetch<Brand[]>(`${ENDPOINTS.BRAND}/query`, {

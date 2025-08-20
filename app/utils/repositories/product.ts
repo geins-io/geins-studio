@@ -8,7 +8,8 @@ import type {
   Product,
   ProductCreate,
   ProductUpdate,
-  QueryResult,
+  BatchQueryResult,
+  BatchQuery,
 } from '#shared/types';
 
 const BASE_ENDPOINT = '/product';
@@ -32,8 +33,10 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   return {
     ...productRepo,
 
-    async list(query?: Record<string, unknown>): Promise<QueryResult<Product>> {
-      return await fetch<QueryResult<Product>>(
+    async list(
+      query?: Record<string, unknown>,
+    ): Promise<BatchQueryResult<Product>> {
+      return await fetch<BatchQueryResult<Product>>(
         `${BASE_ENDPOINT}/query`,
 
         {
@@ -49,8 +52,8 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     async query(
       selection?: SelectorSelectionQueryBase,
       query?: Record<string, string>,
-    ): Promise<QueryResult<Product>> {
-      return await fetch<QueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
+    ): Promise<BatchQueryResult<Product>> {
+      return await fetch<BatchQueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
         method: 'POST',
         body: {
           ...selection,
@@ -64,25 +67,40 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       id: (pricelistId: string) => {
         const pricelistIdEndpoint = `${pricelistEndpoint}/${pricelistId}`;
         return {
-          products: {
-            async patch(
-              productsPatch: PricelistProductPatch,
-            ): Promise<PricelistProduct[]> {
-              return await fetch<PricelistProduct[]>(
-                `${pricelistIdEndpoint}/products`,
-                {
-                  method: 'PATCH',
-                  body: productsPatch,
-                },
-              );
-            },
-          },
+          // products: {
+          //   async patch(
+          //     productsPatch: PricelistProductPatch,
+          //   ): Promise<PricelistProduct[]> {
+          //     return await fetch<PricelistProduct[]>(
+          //       `${pricelistIdEndpoint}/products`,
+          //       {
+          //         method: 'PATCH',
+          //         body: productsPatch,
+          //       },
+          //     );
+          //   },
+          // },
           async copy(query?: Record<string, string>) {
             return await fetch<ProductPricelist>(
               `${pricelistIdEndpoint}/copy`,
               {
                 method: 'POST',
                 query,
+              },
+            );
+          },
+          async preview(
+            priceList: ProductPricelistCreate,
+            batchQuery: BatchQuery,
+          ): Promise<BatchQueryResult<PricelistProduct>> {
+            return await fetch<Promise<BatchQueryResult<PricelistProduct>>>(
+              `${pricelistIdEndpoint}/preview`,
+              {
+                method: 'POST',
+                body: {
+                  priceList,
+                  batchQuery,
+                },
               },
             );
           },

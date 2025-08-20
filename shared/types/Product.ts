@@ -202,8 +202,12 @@ export type ProductPricelist = ResponseEntity<ProductPricelistBase>;
 export interface PricelistProduct {
   _id?: string;
   productId: string;
-  price: number;
+  price?: number;
+  margin?: number;
+  discountPercent?: number;
+  ruleId?: string;
   staggeredCount: number;
+  priceMode?: PricelistPriceMode;
 }
 
 export interface PricelistProductList extends EntityBaseWithName {
@@ -237,3 +241,10 @@ export interface PricelistRule {
 }
 
 export type PricelistRuleMode = 'margin' | 'discount';
+
+export type PricelistPriceMode =
+  | 'fixed'
+  | 'margin'
+  | 'discountPercent'
+  | 'ruleId'
+  | 'auto';
