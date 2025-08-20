@@ -4,14 +4,15 @@ import type { LoginCredentials, AuthResponse, AuthTokens } from '#shared/types';
 
 const geinsAuth = auth();
 const { geinsLog, geinsLogWarn } = log('server/api/auth/[...].ts');
+const config = useRuntimeConfig();
 
 export default NuxtAuthHandler({
-  secret: process.env.AUTH_SECRET,
+  secret: config.private.authSecret,
   pages: {
     signIn: '/auth/login',
     signOut: '/auth/logout',
   },
-  debug: process.env.GEINS_DEBUG === 'true',
+  debug: config.public.debug,
   callbacks: {
     jwt: async ({ token, user, trigger }) => {
       if (trigger === 'signIn' && user) {

@@ -233,10 +233,9 @@ const handleForgotPassword = async () => {
   resetLoading.value = true;
   try {
     const values = form.values as ForgotPasswordFormValues;
-    const baseUrl = getBaseUrl(config.public.baseUrl);
     await userApi.password.beginRestore(
       values.email || '',
-      `${baseUrl}/auth/reset-password?token={token}`,
+      `${config.public.baseUrl}/auth/reset-password?token={token}`,
     );
     resetRequestSuccess.value = true;
   } catch (error) {

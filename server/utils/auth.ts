@@ -9,7 +9,8 @@ import type {
 
 import { jwtDecode } from 'jwt-decode';
 
-const API_URL = process.env.GEINS_API_URL as string;
+const config = useRuntimeConfig();
+const API_URL = config.public.apiUrl;
 const { geinsLog } = log('server/utils/auth.ts');
 
 const ENDPOINTS = {

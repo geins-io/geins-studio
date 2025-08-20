@@ -1,12 +1,6 @@
 import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
 import tailwindcss from '@tailwindcss/vite';
 
-const nitroPreset = {
-  nitro: {
-    preset: process.env.NITRO_PRESET,
-  },
-};
-
 export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
@@ -86,12 +80,10 @@ export default defineNuxtConfig({
       baseUrl: getBaseUrl(),
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
-      VERCEL: process.env.VERCEL,
-      VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
-      VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
-      VERCEL_ENV: process.env.VERCEL_ENV,
     },
-    private: {},
+    private: {
+      authSecret: process.env.AUTH_SECRET,
+    },
   },
 
   sourcemap: {
@@ -99,7 +91,11 @@ export default defineNuxtConfig({
     client: true,
   },
 
-  ...(process.env.NITRO_PRESET ? nitroPreset : {}),
+  ...(process.env.NITRO_PRESET && {
+    nitro: {
+      preset: process.env.NITRO_PRESET,
+    },
+  }),
 
   compatibilityDate: '2024-07-05',
 });
