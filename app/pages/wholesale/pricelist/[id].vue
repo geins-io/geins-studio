@@ -518,8 +518,14 @@ if (!createMode.value) {
 
   watch(
     productSelection,
-    (newSelection) => {
+    async (newSelection) => {
       entityDataUpdate.value.productSelectionQuery = newSelection;
+      const previewProducts = await productApi.pricelist
+        .id(entityId.value)
+        .preview(entityDataUpdate.value);
+
+      selectedProducts.value = previewProducts.items;
+      console.log('🚀 ~ previewProducts.items:', previewProducts.items);
     },
     { deep: true },
   );
