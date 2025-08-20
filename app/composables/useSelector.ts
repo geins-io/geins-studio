@@ -51,9 +51,14 @@ export const useSelector = () => {
   ): SelectorSelectionInternal => {
     let selectorSelection: SelectorSelectionInternal = {};
 
-    selections.forEach((selection) => {
+    selections.forEach((selection, index) => {
       // Merge arrays instead of overwriting them
       selectorSelection = {
+        // Only take condition from the first selection
+        condition:
+          index === 0
+            ? selection.condition || SelectorCondition.And
+            : selectorSelection.condition,
         ...selectorSelection,
         // Merge categoryIds arrays
         categoryIds: [
