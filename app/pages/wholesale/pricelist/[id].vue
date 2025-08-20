@@ -516,16 +516,18 @@ if (!createMode.value) {
 
   productsStore.init();
 
+  const pricelistProducts = ref<PricelistProduct[]>([]);
+
   watch(
     productSelection,
     async (newSelection) => {
       entityDataUpdate.value.productSelectionQuery = newSelection;
-      const previewProducts = await productApi.pricelist
+      const previewProductsQuery = await productApi.pricelist
         .id(entityId.value)
         .preview(entityDataUpdate.value);
 
-      selectedProducts.value = previewProducts.items;
-      console.log('🚀 ~ previewProducts.items:', previewProducts.items);
+      pricelistProducts.value = previewProductsQuery.items;
+      console.log('🚀 ~ pricelistProducts.value:', pricelistProducts.value);
     },
     { deep: true },
   );
