@@ -73,6 +73,8 @@
   "failed_to_fetch_entity": "Failed to fetch @:{entityName}",
   "entity_name": "@.capitalize:{entityName} name",
   "entity_details": "@.capitalize:{entityName} details",
+  "show_entity": "Show @.lower:{entityName}",
+  "hide_entity": "Hide @.lower:{entityName}",
   "copied_to_clipboard": "{label} copied to clipboard!",
   "active": "Active",
   "inactive": "Inactive",

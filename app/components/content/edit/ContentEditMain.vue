@@ -18,13 +18,13 @@ const sidebarToggled = ref(false);
 const sidebarVisible = ref(initialSidebarVisible.value);
 
 watch(initialSidebarVisible, (newValue) => {
-  console.log('🚀 ~ newValue:', newValue);
   sidebarToggled.value = false;
   sidebarCanBeToggled.value = hasSidebar.value && !newValue;
 });
 
 const handleToggleSidebar = () => {
   if (!sidebarToggled.value) {
+    sidebarVisible.value = false;
     sidebarToggled.value = true;
     setTimeout(() => {
       sidebarVisible.value = true;
@@ -41,10 +41,23 @@ const handleToggleSidebar = () => {
   <div class="relative">
     <button
       v-if="sidebarCanBeToggled"
-      class="bg-card flex-center absolute -top-2 -right-2 z-50 size-10 rounded-full border p-2 shadow-lg"
+      class="bg-card flex-center absolute -top-2 -right-2 z-50 size-10 rounded-full border shadow-lg"
       @click="handleToggleSidebar"
     >
-      <LucideSquareEqual class="size-4" />
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger>
+            <LucideSquareEqual class="size-10 p-2.5" />
+          </TooltipTrigger>
+          <TooltipContent>
+            {{
+              sidebarToggled
+                ? $t('hide_entity', { entityName: 'summary' })
+                : $t('show_entity', { entityName: 'summary' })
+            }}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </button>
     <div
       :class="
