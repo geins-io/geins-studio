@@ -11,10 +11,9 @@ export const usePricelistProducts = () => {
 
   const transformProductsForList = (
     products: Product[],
-    entityData: ProductPricelist,
+    entityData: ProductPricelistUpdate,
+    pricelistProducts: PricelistProduct[] = [],
   ): PricelistProductList[] => {
-    const pricelistProducts: PricelistProduct[] = entityData?.products || [];
-
     return products.map((product) => {
       const regularPriceExVat = product.defaultPrice?.regularPriceIncVat
         ? product.defaultPrice.regularPriceIncVat /
@@ -25,8 +24,9 @@ export const usePricelistProducts = () => {
         : product.defaultPrice?.regularPriceIncVat || 0;
 
       const listPrice =
-        entityData?.products?.find(
-          (p: PricelistProduct) => p.productId === product._id,
+        pricelistProducts?.find(
+          (p: PricelistProduct) =>
+            p.productId === product._id && p.staggeredCount === 1,
         )?.price || undefined;
 
       return {
@@ -37,10 +37,10 @@ export const usePricelistProducts = () => {
           product.purchasePrice,
           product.purchasePriceCurrency,
         ),
-        regularPrice: convertToPrice(regularPrice, entityData?.currency),
+        regularPrice: convertToPrice(regularPrice, entityData?.currency || ''),
         listPrice: convertToPrice(
           listPrice,
-          entityData?.currency,
+          entityData?.currency || '',
           listPrice ?? regularPrice,
         ),
         discount: 0,

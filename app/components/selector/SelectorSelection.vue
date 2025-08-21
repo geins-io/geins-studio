@@ -114,7 +114,7 @@ const manuallySelectedText = computed(() =>
   t(
     'manually_selected_entity',
     {
-      entityName,
+      entityName: entityName.value,
       count: selection.value.ids?.length ?? 0,
     },
     selection.value.ids?.length ?? 0,
@@ -208,7 +208,7 @@ const noSelectionLabel = computed(() => {
         <!-- All / No products tag -->
         <SelectorTags
           v-if="
-            showAllProductsTag && selection.condition === SelectorCondition.And
+            showAllProductsTag && selection.condition !== SelectorCondition.Or
           "
         >
           <SelectorTag :label="noSelectionLabel" :removable="false" />

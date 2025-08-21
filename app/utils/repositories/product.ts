@@ -92,8 +92,8 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           async preview(
             priceList: ProductPricelistUpdate,
             batchQuery?: BatchQuery,
-          ): Promise<BatchQueryResult<PricelistProduct>> {
-            return await fetch<Promise<BatchQueryResult<PricelistProduct>>>(
+          ): Promise<ProductPricelist> {
+            return await fetch<ProductPricelist>(
               `${pricelistIdEndpoint}/preview`,
               {
                 method: 'POST',

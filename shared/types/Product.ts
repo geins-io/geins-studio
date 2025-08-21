@@ -190,13 +190,21 @@ export interface ProductPricelistBase {
   exVat: boolean;
   autoAddProducts: boolean;
   forced: boolean;
-  products: PricelistProduct[];
+  products: BatchQueryResult<PricelistProduct>;
   rules: PricelistRule[];
-  productSelectionQuery: SelectorSelectionQueryBase;
+  productSelectionQuery?: SelectorSelectionQueryBase;
 }
 
-export type ProductPricelistCreate = CreateEntity<ProductPricelistBase>;
-export type ProductPricelistUpdate = UpdateEntity<ProductPricelistBase>;
+export type ProductPricelistCreate = CreateEntity<
+  Omit<ProductPricelistBase, 'products'>
+> & {
+  products?: PricelistProduct[];
+};
+export type ProductPricelistUpdate = UpdateEntity<
+  Omit<ProductPricelistBase, 'products'>
+> & {
+  products?: PricelistProduct[];
+};
 export type ProductPricelist = ResponseEntity<ProductPricelistBase>;
 
 export interface PricelistProduct {

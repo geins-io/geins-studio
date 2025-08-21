@@ -71,10 +71,7 @@ const entityBase: ProductPricelistCreate = {
   forced: false,
   products: [],
   rules: [],
-  productSelectionQuery: {
-    include: [],
-    exclude: [],
-  },
+  productSelectionQuery: undefined,
 };
 
 // =====================================================================================
@@ -103,6 +100,7 @@ const { getEmptyQuerySelectionBase } = useSelector();
 const productSelection = ref<SelectorSelectionQueryBase>(
   getEmptyQuerySelectionBase(),
 );
+const pricelistProducts = ref<PricelistProduct[]>([]);
 const productSelector = ref();
 
 // Pricelist rules
@@ -180,6 +178,7 @@ const {
     entityLiveStatus.value = entity.active;
     if (entity.productSelectionQuery) {
       productSelection.value = entity.productSelectionQuery;
+      console.log('productSelection written from entity.productSelectionQuery');
     }
     if (entity.rules && entity.rules.length) {
       const firstRuleMargin = entity.rules[0]?.margin;
@@ -336,30 +335,37 @@ watch(vatDescription, () => {
 
 watch(
   () => productSelector.value?.selectedEntities || [],
-  (newSelection: Product[]) => {
+  async (newSelection: Product[]) => {
     if (newSelection.length) {
+      const previewPricelist = await productApi.pricelist
+        .id(entityId.value)
+        .preview(entityDataUpdate.value);
+
+      pricelistProducts.value = previewPricelist.products.items;
       selectedProducts.value = transformProductsForList(
         newSelection,
         entityData.value,
+        pricelistProducts.value,
       );
       setupColumns();
-      entityData.value.products = getPricelistProducts(
-        selectedProducts.value,
-        entityData.value.products,
-      );
+      entityData.value.products = [];
+      // entityData.value.products = getPricelistProducts(
+      //   selectedProducts.value,
+      //   entityData.value.products,
+      // );
     }
   },
 );
-watch(
-  selectedProducts,
-  (newSelection) => {
-    entityDataUpdate.value.products = getPricelistProducts(
-      newSelection,
-      entityDataUpdate.value.products,
-    );
-  },
-  { deep: true },
-);
+// watch(
+//   selectedProducts,
+//   (newSelection) => {
+//     entityDataUpdate.value.products = getPricelistProducts(
+//       newSelection,
+//       entityDataUpdate.value.products,
+//     );
+//   },
+//   { deep: true },
+// );
 
 // =====================================================================================
 // ENTITY ACTIONS
@@ -496,7 +502,7 @@ const { summaryProps } = useEntityEditSummary({
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<ProductPricelist>(() =>
     productApi.pricelist.get(entityId.value, {
-      fields: 'all',
+      fields: 'rules,selectionquery',
     }),
   );
 
@@ -516,18 +522,10 @@ if (!createMode.value) {
 
   productsStore.init();
 
-  const pricelistProducts = ref<PricelistProduct[]>([]);
-
   watch(
     productSelection,
     async (newSelection) => {
       entityDataUpdate.value.productSelectionQuery = newSelection;
-      const previewProductsQuery = await productApi.pricelist
-        .id(entityId.value)
-        .preview(entityDataUpdate.value);
-
-      pricelistProducts.value = previewProductsQuery.items;
-      console.log('🚀 ~ pricelistProducts.value:', pricelistProducts.value);
     },
     { deep: true },
   );
