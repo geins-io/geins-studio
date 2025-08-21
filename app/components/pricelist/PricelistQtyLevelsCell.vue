@@ -24,7 +24,7 @@ const emit = defineEmits<{
                 <thead>
                   <tr>
                     <th>{{ $t('quantity') }}</th>
-                    <th>{{ $t('entity_caps', { entityName: 'price' }) }}</th>
+                    <th>{{ $t('price') }}</th>
                   </tr>
                 </thead>
                 <tbody>

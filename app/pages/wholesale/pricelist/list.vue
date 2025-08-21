@@ -136,7 +136,7 @@ const confirmDelete = async () => {
     :loading="deleting"
     @confirm="confirmDelete"
   />
-  <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
+  <ContentHeader :title="$t(entityName, 2)">
     <ContentActionBar>
       <ButtonIcon icon="new" :href="newEntityUrl">
         {{ $t('new_entity', { entityName }) }}

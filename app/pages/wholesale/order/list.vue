@@ -47,7 +47,7 @@ const columns = getColumns(dataList.value, columnOptions);
 </script>
 
 <template>
-  <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
+  <ContentHeader :title="$t(entityName, 2)">
     <ContentActionBar>
       <ButtonExport />
       <ButtonIcon icon="new" :href="newEntityUrl">

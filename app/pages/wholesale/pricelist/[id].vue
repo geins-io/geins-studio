@@ -44,13 +44,13 @@ const formSchema = toTypedSchema(
       exVat: z.boolean().optional(),
     }),
     default: z.object({
-      name: z.string().min(1, t('entity_required', { entityName: t('name') })),
+      name: z.string().min(1, t('entity_required', { entityName: 'name' })),
       channel: z
         .string()
-        .min(1, t('entity_required', { entityName: t('channel') })),
+        .min(1, t('entity_required', { entityName: 'channel' })),
       currency: z
         .string()
-        .min(1, t('entity_required', { entityName: t('currency') })),
+        .min(1, t('entity_required', { entityName: 'currency' })),
       forced: z.boolean().optional(),
       autoAddProducts: z.boolean().optional(),
     }),

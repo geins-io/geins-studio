@@ -43,9 +43,7 @@ const hasChanges = computed(() => !!slots.changes);
         <BreadcrumbSeparator />
         <BreadcrumbItem v-if="listPageUrl">
           <BreadcrumbLink as-child>
-            <NuxtLink :to="listPageUrl">{{
-              $t('entity_caps', { entityName }, 2)
-            }}</NuxtLink>
+            <NuxtLink :to="listPageUrl">{{ $t(entityName, 2) }}</NuxtLink>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator v-if="listPageUrl" />

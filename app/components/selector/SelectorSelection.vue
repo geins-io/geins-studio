@@ -43,22 +43,22 @@ const selectorOptions: Ref<SelectorSelectionOption[]> = computed(() => {
     {
       id: 'product',
       group: 'ids',
-      label: t('entity_caps', { entityName: entityName.value }, 2),
+      label: t(entityName.value, 2),
     },
     {
       id: 'entity',
       group: 'ids',
-      label: t('entity_caps', { entityName: entityName.value }, 2),
+      label: t(entityName.value, 2),
     },
     {
       id: 'category',
       group: 'categoryIds',
-      label: t('entity_caps', { entityName: 'category' }, 2),
+      label: t('category', 2),
     },
     {
       id: 'brand',
       group: 'brandIds',
-      label: t('entity_caps', { entityName: 'brand' }, 2),
+      label: t('brand', 2),
     },
     // {
     //   id: 'price',
