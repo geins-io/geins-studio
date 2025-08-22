@@ -67,11 +67,16 @@ export const usePricelistProducts = () => {
         price: p.price,
       }));
 
-    const entityLevels = entityData.rules?.map((rule: PricelistRule) => ({
-      quantity: rule.quantity,
-      price: rule.price,
-      global: true,
-    }));
+    const entityLevels = entityData.rules
+      ?.filter(
+        (rule: PricelistRule) =>
+          rule.quantity !== undefined && rule.quantity !== 1,
+      ) // Filter out quantity 1 and undefined rules
+      ?.map((rule: PricelistRule) => ({
+        quantity: rule.quantity!,
+        price: rule.price,
+        global: true,
+      }));
 
     const mergedLevels: PricelistRule[] = [...productLevels];
     const productQuantities = new Set(
@@ -79,12 +84,15 @@ export const usePricelistProducts = () => {
     );
 
     entityLevels?.forEach((entityLevel: PricelistRule) => {
-      if (!productQuantities.has(entityLevel.quantity)) {
+      if (
+        entityLevel.quantity !== undefined &&
+        !productQuantities.has(entityLevel.quantity)
+      ) {
         mergedLevels.push(entityLevel);
       }
     });
 
-    return mergedLevels.sort((a, b) => a.quantity - b.quantity);
+    return mergedLevels.sort((a, b) => (a.quantity || 0) - (b.quantity || 0));
   };
 
   const getPricelistProducts = (
@@ -102,7 +110,11 @@ export const usePricelistProducts = () => {
     selectedProducts.forEach((product) => {
       if (product.quantityLevels) {
         product.quantityLevels.forEach((level) => {
-          if (!level.global && level.quantity > 1) {
+          if (
+            !level.global &&
+            level.quantity !== undefined &&
+            level.quantity > 1
+          ) {
             products.push({
               productId: product._id,
               price: Number(level.price),

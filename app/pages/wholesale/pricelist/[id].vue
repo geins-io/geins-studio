@@ -13,6 +13,7 @@ import {
   type PricelistProductList,
   type Product,
   type PricelistRule,
+  type PricelistProduct,
 } from '#shared/types';
 
 // =====================================================================================
@@ -186,6 +187,7 @@ const {
         firstRuleMargin !== undefined && firstRuleMargin !== 0
           ? 'margin'
           : 'discount';
+      globalRules.value = entity.rules;
     }
     form.setValues({
       vat: {
@@ -222,19 +224,230 @@ const {
 });
 
 // =====================================================================================
+// PREVIEW PRICELIST
+// =====================================================================================
+
+const previewPricelist = async (
+  products: Product[] = productSelector.value?.selectedEntities || [],
+) => {
+  if (!entityId.value) return;
+  try {
+    const previewPricelist = await productApi.pricelist
+      .id(entityId.value)
+      .preview(entityDataUpdate.value);
+    pricelistProducts.value = previewPricelist.products.items;
+    selectedProducts.value = transformProductsForList(
+      products,
+      entityData.value,
+      pricelistProducts.value,
+    );
+    setupColumns();
+  } catch (error) {
+    geinsLogError('Error fetching preview pricelist:', error);
+    toast({
+      title: t('error_fetching_preview_pricelist'),
+      description: t('feedback_error_description'),
+      variant: 'negative',
+    });
+  }
+};
+
+// =====================================================================================
 // PRICELIST ACTIONS AND RULES
 // =====================================================================================
 
-const applyQuickAction = (overwrite: boolean) => {
-  if (!pricelistQuickActionInput.value) return;
+const globalRules = ref<PricelistRule[]>([]);
 
-  toast({
-    title: `${pricelistQuickActionInput.value}% ${pricelistActionsMode.value} applied to all products.`,
-    variant: 'default',
+const applyQuickAction = async (overwrite: boolean) => {
+  if (!pricelistQuickActionInput.value || !entityId.value) return;
+
+  const percentage = pricelistQuickActionInput.value;
+  const mode = pricelistActionsMode.value;
+
+  // Validate percentage input
+  if (percentage <= 0 || percentage > 100) {
+    toast({
+      title: 'Invalid percentage',
+      description: 'Percentage must be between 1 and 100.',
+      variant: 'negative',
+    });
+    return;
+  }
+
+  try {
+    // Create global rule for quantity 1
+    const globalRule: PricelistRule = {
+      quantity: 1,
+      margin: mode === 'margin' ? percentage : 0,
+      discountPercent: mode === 'discount' ? percentage : 0,
+      applied: true,
+      global: true,
+    };
+
+    globalRules.value = globalRules.value.filter(
+      (rule) => rule.quantity !== 1 || !rule.global,
+    );
+
+    globalRules.value.push(globalRule);
+
+    entityDataUpdate.value.rules = globalRules.value
+      .filter((rule) => rule.applied)
+      .map((rule) => ({
+        quantity: rule.quantity,
+        margin: rule.margin,
+        discountPercent: rule.discountPercent,
+      }));
+
+    // If overwrite is true, remove products that have staggeredCount 1
+    // TODO: prompt before this happens
+    if (overwrite && entityDataUpdate.value.products) {
+      entityDataUpdate.value.products = entityDataUpdate.value.products.filter(
+        (product: PricelistProduct) => product.staggeredCount !== 1,
+      );
+    }
+
+    // Update the preview
+    await previewPricelist();
+
+    toast({
+      title: `${percentage}% ${mode} applied to all products.`,
+      variant: 'positive',
+    });
+
+    pricelistQuickActionInput.value = undefined;
+  } catch (error) {
+    geinsLogError('Error applying quick action:', error);
+    toast({
+      title: t('error_applying_quick_action'),
+      description: t('feedback_error_description'),
+      variant: 'negative',
+    });
+  }
+};
+
+const applyAndOverwrite = (rule: PricelistRule): void => {
+  if (entityDataUpdate.value.products) {
+    entityDataUpdate.value.products = entityDataUpdate.value.products.filter(
+      (product: PricelistProduct) => product.staggeredCount !== rule.quantity,
+    );
+  }
+};
+
+watch(globalRules, (newRules) => {
+  console.log('🚀 ~ newRules:', newRules);
+  // merge entityDataUpdate.value.rules with newRules, if the quantity already exists in entitydata rules, then overwrite percentage and margin for that quantity. otherwise add the rule as is
+  entityDataUpdate.value.rules = [
+    ...(entityDataUpdate.value.rules || []).filter(
+      (rule) => !newRules.some((newRule) => newRule.quantity === rule.quantity),
+    ),
+    ...newRules.map((rule) => ({
+      quantity: rule.quantity,
+      margin: rule.margin,
+      discountPercent: rule.discountPercent,
+    })),
+  ];
+  console.log(
+    '🚀 ~ entityDataUpdate.value.rules:',
+    entityDataUpdate.value.rules,
+  );
+});
+
+// =====================================================================================
+// QUANTITY LEVELS MANAGEMENT
+// =====================================================================================
+const rulesToEdit = ref<PricelistRule[]>([]);
+const rulesPanelOpen = ref(false);
+const rulesId = ref<string>('');
+
+// Validation function for quantity levels
+const validateQuantityLevels = (rules: PricelistRule[]): string[] => {
+  const errors: string[] = [];
+  const quantities = new Set<number>();
+
+  for (const rule of rules) {
+    if (rule.quantity === undefined || rule.quantity === null) {
+      errors.push('All quantity levels must have a quantity value');
+      continue;
+    }
+
+    if (rule.quantity <= 1) {
+      errors.push('Quantity must be greater than 1');
+    }
+
+    if (quantities.has(rule.quantity)) {
+      errors.push(`Duplicate quantity found: ${rule.quantity}`);
+    } else {
+      quantities.add(rule.quantity);
+    }
+  }
+
+  return errors;
+};
+
+// Function to clean and deduplicate rules
+const cleanAndDeduplicateRules = (rules: PricelistRule[]): PricelistRule[] => {
+  // Filter out quantity 1 rules and invalid quantities
+  const filteredRules = rules.filter(
+    (rule) => rule.quantity !== undefined && rule.quantity > 1,
+  );
+
+  // Deduplicate by quantity (keep the last occurrence)
+  const seenQuantities = new Map<number, PricelistRule>();
+  filteredRules.forEach((rule) => {
+    if (rule.quantity !== undefined) {
+      seenQuantities.set(rule.quantity, rule);
+    }
   });
 
-  pricelistQuickActionInput.value = undefined;
+  return Array.from(seenQuantities.values()).sort(
+    (a, b) => (a.quantity || 0) - (b.quantity || 0),
+  );
 };
+
+const handleSaveRules = (rules: PricelistRule[]) => {
+  // Clean and deduplicate rules first
+  const cleanedRules = cleanAndDeduplicateRules(rules);
+
+  // Validate the cleaned rules
+  const validationErrors = validateQuantityLevels(cleanedRules);
+
+  if (validationErrors.length > 0) {
+    toast({
+      title: 'Validation Error',
+      description: validationErrors.join('. '),
+      variant: 'negative',
+    });
+    return;
+  }
+
+  selectedProducts.value = selectedProducts.value.map((p) =>
+    p._id === rulesId.value ? { ...p, quantityLevels: cleanedRules } : p,
+  );
+  rulesId.value = '';
+};
+
+// Watch for mode changes in quantity levels and update existing rules
+watch(pricelistRulesMode, (newMode, oldMode) => {
+  if (newMode !== oldMode && entityDataUpdate.value.rules) {
+    // Update all rules to match the new mode, but filter out quantity 1 rules for display
+    entityDataUpdate.value.rules = entityDataUpdate.value.rules.map((rule) => ({
+      ...rule,
+      margin:
+        newMode === 'margin' ? rule.margin || rule.discountPercent || 0 : 0,
+      discountPercent:
+        newMode === 'discount' ? rule.discountPercent || rule.margin || 0 : 0,
+      price: rule.price, // Keep existing price value
+    }));
+
+    // Show toast notification when mode changes
+    toast({
+      title: `Price mode changed to ${newMode}`,
+      description:
+        'Existing quantity levels have been updated to match the new mode.',
+      variant: 'default',
+    });
+  }
+});
 
 // =====================================================================================
 // PRODUCT TABLE STATE
@@ -257,20 +470,6 @@ let columns: ColumnDef<PricelistProductList>[] = [];
 const pinnedState = ref(getPinnedState());
 
 // =====================================================================================
-// QUANTITY LEVELS MANAGEMENT
-// =====================================================================================
-const rulesToEdit = ref<PricelistRule[]>([]);
-const rulesPanelOpen = ref(false);
-const rulesId = ref<string>('');
-
-const handleSaveRules = (rules: PricelistRule[]) => {
-  selectedProducts.value = selectedProducts.value.map((p) =>
-    p._id === rulesId.value ? { ...p, quantityLevels: rules } : p,
-  );
-  rulesId.value = '';
-};
-
-// =====================================================================================
 // COLUMN SETUP FUNCTIONS
 // =====================================================================================
 const setupColumns = () => {
@@ -281,7 +480,10 @@ const setupColumns = () => {
       const rules = selectedProducts.value.find(
         (p) => p._id === id,
       )?.quantityLevels;
-      rulesToEdit.value = rules ? [...rules] : [];
+      // Filter out quantity 1 rules before editing
+      rulesToEdit.value = rules
+        ? rules.filter((rule) => rule.quantity !== 1)
+        : [];
       rulesId.value = id;
       rulesPanelOpen.value = true;
     },
@@ -337,17 +539,7 @@ watch(
   () => productSelector.value?.selectedEntities || [],
   async (newSelection: Product[]) => {
     if (newSelection.length) {
-      const previewPricelist = await productApi.pricelist
-        .id(entityId.value)
-        .preview(entityDataUpdate.value);
-
-      pricelistProducts.value = previewPricelist.products.items;
-      selectedProducts.value = transformProductsForList(
-        newSelection,
-        entityData.value,
-        pricelistProducts.value,
-      );
-      setupColumns();
+      await previewPricelist(newSelection);
       entityData.value.products = [];
       // entityData.value.products = getPricelistProducts(
       //   selectedProducts.value,
@@ -561,6 +753,7 @@ if (!createMode.value) {
             v-if="!createMode"
             icon="save"
             :loading="loading"
+            :disabled="!hasUnsavedChanges"
             @click="
               updateEntity(undefined, {
                 fields: 'all',
@@ -814,7 +1007,7 @@ if (!createMode.value) {
                       {{ $t('wholesale.pricelist_' + pricelistActionsMode) }}
                     </Label>
                     <Input
-                      v-model="pricelistQuickActionInput"
+                      v-model.number="pricelistQuickActionInput"
                       class="w-48"
                       size="md"
                     >
@@ -837,10 +1030,10 @@ if (!createMode.value) {
                     mode-id="pricelistRulesMode"
                   >
                     <PricelistRules
-                      v-if="entityDataUpdate.rules"
-                      :rules="entityDataUpdate.rules || []"
+                      :rules="globalRules"
                       :mode="pricelistRulesMode"
-                      @update="entityDataUpdate.rules = $event"
+                      @apply="globalRules = $event"
+                      @apply-overwrite="applyAndOverwrite"
                     />
                   </PricelistActionCard>
                 </TabsContent>

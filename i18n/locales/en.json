@@ -252,6 +252,8 @@
     "pricelist_add_level": "Add level",
     "pricelist_qty_levels": "Qty levels",
     "pricelist_pricelist_price": "Pricelist price",
-    "no_pricelists_connected": "No pricelists are connected to this account"
+    "no_pricelists_connected": "No pricelists are connected to this account",
+    "error_applying_quick_action": "Error applying quick action",
+    "error_fetching_preview_pricelist": "Error fetching preview pricelist"
   }
 }
