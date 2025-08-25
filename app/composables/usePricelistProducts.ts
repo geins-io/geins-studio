@@ -23,11 +23,15 @@ export const usePricelistProducts = () => {
         ? Math.round(regularPriceExVat * 100) / 100
         : product.defaultPrice?.regularPriceIncVat || 0;
 
-      const listPrice =
-        pricelistProducts?.find(
-          (p: PricelistProduct) =>
-            p.productId === product._id && p.staggeredCount === 1,
-        )?.price || undefined;
+      const pricelistProduct = pricelistProducts?.find(
+        (p: PricelistProduct) =>
+          p.productId === product._id && p.staggeredCount === 1,
+      );
+      const listPrice = pricelistProduct?.price || undefined;
+
+      const margin = pricelistProduct?.margin || 0;
+
+      const discount = pricelistProduct?.discountPercent || 0;
 
       return {
         _id: product._id,
@@ -43,8 +47,8 @@ export const usePricelistProducts = () => {
           entityData?.currency || '',
           listPrice ?? regularPrice,
         ),
-        discount: 0,
-        margin: 0,
+        discount,
+        margin,
         quantityLevels: getQuantityLevels(
           pricelistProducts,
           product,

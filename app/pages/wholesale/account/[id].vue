@@ -380,7 +380,7 @@ const columnOptionsPricelists: ColumnOptions<WholesalePricelist> = {
     name: 'entity-link',
   },
   columnTitles: {
-    productCount: t('entity_caps', { entityName: 'product' }, 2),
+    productCount: t('product', 2),
   },
   includeColumns: ['_id', 'name', 'currency', 'productCount', 'active'],
   sortable: false,
@@ -948,10 +948,10 @@ if (!createMode.value) {
               <Tabs default-value="billing">
                 <TabsList>
                   <TabsTrigger value="billing">
-                    {{ $t('entity_caps', { entityName: 'billing_address' }) }}
+                    {{ $t('billing_address') }}
                   </TabsTrigger>
                   <TabsTrigger value="shipping">
-                    {{ $t('entity_caps', { entityName: 'shipping_address' }) }}
+                    {{ $t('shipping_address') }}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="billing">
@@ -1021,11 +1021,7 @@ if (!createMode.value) {
                   <ContentCardHeader
                     size="md"
                     heading-level="h3"
-                    :title="
-                      $t('entity_caps', {
-                        entityName: 'shipping_address',
-                      })
-                    "
+                    :title="$t('shipping_address')"
                   />
                   <ContentSwitch
                     v-model:checked="addShippingAddress"

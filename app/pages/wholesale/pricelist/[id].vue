@@ -211,7 +211,7 @@ const {
     ...entity,
     ...formData.vat,
     ...formData.default,
-    products: getPricelistProducts(selectedProducts.value, entity?.products),
+    products: [], //getPricelistProducts(selectedProducts.value, entity?.products),
   }),
   onFormValuesChange: (values) => {
     const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
@@ -280,23 +280,11 @@ const applyQuickAction = async (overwrite: boolean) => {
       quantity: 1,
       margin: mode === 'margin' ? percentage : 0,
       discountPercent: mode === 'discount' ? percentage : 0,
-      applied: true,
-      global: true,
     };
 
-    globalRules.value = globalRules.value.filter(
-      (rule) => rule.quantity !== 1 || !rule.global,
-    );
+    globalRules.value = globalRules.value.filter((rule) => rule.quantity !== 1);
 
     globalRules.value.push(globalRule);
-
-    entityDataUpdate.value.rules = globalRules.value
-      .filter((rule) => rule.applied)
-      .map((rule) => ({
-        quantity: rule.quantity,
-        margin: rule.margin,
-        discountPercent: rule.discountPercent,
-      }));
 
     // If overwrite is true, remove products that have staggeredCount 1
     // TODO: prompt before this happens

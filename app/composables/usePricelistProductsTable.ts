@@ -32,7 +32,7 @@ export const usePricelistProductsTable = () => {
         listPrice: `${t('wholesale.pricelist_pricelist_price')} (${vatDescription})`,
         regularPrice: `${t('wholesale.pricelist_price')} (${vatDescription})`,
       },
-      excludeColumns: ['manual', 'quantityLevels', 'margin', 'discount'],
+      excludeColumns: ['manual', 'quantityLevels'],
       columnCellProps: {
         listPrice: {
           onBlur: onPriceBlur,

@@ -62,7 +62,7 @@
   "entity_is_inactive": "@:{entityName} is inactive",
   "entity_will_activate": "@:{entityName} will be activated when saved",
   "entity_will_deactivate": "@:{entityName} will be deactivated when saved",
-  "rows_per_page": "@.lower:{entityName} per page",
+  "rows_per_page": "@:{entityName} per page",
   "rows_total": "{total} @.lower:{entityName} in total",
   "rows_selected": "{selected} of {total} @.lower:{entityName} selected.",
   "select_entity_that_match": "Select @.lower:{entityName} that match:",
