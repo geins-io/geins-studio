@@ -104,6 +104,9 @@ const productSelection = ref<SelectorSelectionQueryBase>(
 const pricelistProducts = ref<PricelistProduct[]>([]);
 const productSelector = ref();
 
+// Track if this is the initial load to avoid showing toast on page entry
+const isInitialProductLoad = ref(true);
+
 // Pricelist rules
 const pricelistActionsMode = ref<PricelistRuleMode>('discount');
 // Track the actual mode and pending mode separately
@@ -230,7 +233,10 @@ const {
 // PREVIEW PRICELIST
 // =====================================================================================
 
-const previewPricelist = async (successText?: string) => {
+const previewPricelist = async (
+  successText?: string,
+  showToast: boolean = true,
+) => {
   if (!entityId.value || !entityDataUpdate.value.productSelectionQuery) return;
   try {
     const previewPricelist = await productApi.pricelist
@@ -243,10 +249,12 @@ const previewPricelist = async (successText?: string) => {
       pricelistProducts.value,
     );
     setupColumns();
-    toast({
-      title: successText || `Product prices updated`,
-      variant: 'positive',
-    });
+    if (showToast) {
+      toast({
+        title: successText || `Product prices updated.`,
+        variant: 'positive',
+      });
+    }
   } catch (error) {
     geinsLogError('Error fetching preview pricelist:', error);
     toast({
@@ -460,7 +468,8 @@ const confirmModeChange = () => {
     actualPricelistRulesMode.value = pendingModeChange.value;
     pendingModeChange.value = null;
     globalRules.value = [];
-    previewPricelist();
+    entityDataUpdate.value.rules = [];
+    previewPricelist(undefined, true);
   }
 };
 
@@ -559,13 +568,14 @@ watch(
   () => productSelector.value?.selectedEntities || [],
   async (newSelection: Product[]) => {
     if (newSelection.length) {
-      // This will fetch on entry and on selection change
-      await previewPricelist();
-      // entityData.value.products = [];
-      // entityData.value.products = getPricelistProducts(
-      //   selectedProducts.value,
-      //   entityData.value.products,
-      // );
+      // Show toast only if this is not the initial load AND we're not currently saving
+      const showToast = !isInitialProductLoad.value;
+      await previewPricelist(undefined, showToast);
+
+      // After first load, all subsequent changes should show toast
+      if (isInitialProductLoad.value) {
+        isInitialProductLoad.value = false;
+      }
     }
   },
 );
@@ -583,6 +593,13 @@ watch(
 // =====================================================================================
 // ENTITY ACTIONS
 // =====================================================================================
+const handleSave = async () => {
+  isInitialProductLoad.value = true;
+  await updateEntity(undefined, {
+    fields: 'rules,selectionquery',
+  });
+};
+
 const copyEntity = async () => {
   if (!entityId.value) return;
   loading.value = true;
@@ -797,11 +814,7 @@ if (!createMode.value) {
             icon="save"
             :loading="loading"
             :disabled="!hasUnsavedChanges"
-            @click="
-              updateEntity(undefined, {
-                fields: 'rules,selectionquery',
-              })
-            "
+            @click="handleSave"
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
           <DropdownMenu v-if="!createMode">
