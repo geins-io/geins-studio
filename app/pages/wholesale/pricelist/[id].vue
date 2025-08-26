@@ -321,23 +321,34 @@ const applyAndOverwrite = (rule: PricelistRule): void => {
   }
 };
 
-watch(globalRules, (newRules) => {
+watch(globalRules, async (newRules) => {
   console.log('🚀 ~ newRules:', newRules);
-  // merge entityDataUpdate.value.rules with newRules, if the quantity already exists in entitydata rules, then overwrite percentage and margin for that quantity. otherwise add the rule as is
-  entityDataUpdate.value.rules = [
-    ...(entityDataUpdate.value.rules || []).filter(
-      (rule) => !newRules.some((newRule) => newRule.quantity === rule.quantity),
-    ),
-    ...newRules.map((rule) => ({
-      quantity: rule.quantity,
-      margin: rule.margin,
-      discountPercent: rule.discountPercent,
-    })),
-  ];
-  console.log(
-    '🚀 ~ entityDataUpdate.value.rules:',
-    entityDataUpdate.value.rules,
+
+  // Preserve existing quantity 1 rule if it exists and isn't in newRules
+  const existingQuantity1Rule = entityDataUpdate.value.rules?.find(
+    (rule) => rule.quantity === 1,
   );
+  const hasQuantity1InNewRules = newRules.some((rule) => rule.quantity === 1);
+
+  // Start with globalRules
+  entityDataUpdate.value.rules = newRules.map((rule) => ({
+    quantity: rule.quantity,
+    margin: rule.margin,
+    discountPercent: rule.discountPercent,
+  }));
+
+  // Add back the quantity 1 rule if it existed and wasn't replaced
+  if (existingQuantity1Rule && !hasQuantity1InNewRules) {
+    entityDataUpdate.value.rules.push(existingQuantity1Rule);
+  }
+
+  if (globalRules.value !== entityDataUpdate.value.rules) {
+    await previewPricelist();
+    toast({
+      title: `Quantity levels applied to all products.`,
+      variant: 'positive',
+    });
+  }
 });
 
 // =====================================================================================
@@ -416,17 +427,8 @@ const handleSaveRules = (rules: PricelistRule[]) => {
 
 // Watch for mode changes in quantity levels and update existing rules
 watch(pricelistRulesMode, (newMode, oldMode) => {
-  if (newMode !== oldMode && entityDataUpdate.value.rules) {
-    // Update all rules to match the new mode, but filter out quantity 1 rules for display
-    entityDataUpdate.value.rules = entityDataUpdate.value.rules.map((rule) => ({
-      ...rule,
-      margin:
-        newMode === 'margin' ? rule.margin || rule.discountPercent || 0 : 0,
-      discountPercent:
-        newMode === 'discount' ? rule.discountPercent || rule.margin || 0 : 0,
-      price: rule.price, // Keep existing price value
-    }));
-
+  if (newMode !== oldMode && globalRules.value) {
+    globalRules.value = [];
     // Show toast notification when mode changes
     toast({
       title: `Price mode changed to ${newMode}`,
@@ -744,7 +746,7 @@ if (!createMode.value) {
             :disabled="!hasUnsavedChanges"
             @click="
               updateEntity(undefined, {
-                fields: 'all',
+                fields: 'rules,selectionquery',
               })
             "
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
@@ -1026,6 +1028,8 @@ if (!createMode.value) {
                   </PricelistActionCard>
                 </TabsContent>
               </Tabs>
+              <pre>rules:{{ entityDataUpdate.rules }}</pre>
+              <pre>products:{{ entityDataUpdate.products }}</pre>
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>

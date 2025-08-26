@@ -13,8 +13,15 @@ export interface EntityEditOptions<
   newEntityUrlAlias?: string;
   repository: {
     get: (id: string, query?: Record<string, string>) => Promise<TResponse>;
-    create: (data: TCreate) => Promise<TResponse>;
-    update: (id: string, data: TUpdate) => Promise<TResponse>;
+    create: (
+      data: TCreate,
+      query?: Record<string, string>,
+    ) => Promise<TResponse>;
+    update: (
+      id: string,
+      data: TUpdate,
+      query?: Record<string, string>,
+    ) => Promise<TResponse>;
     delete?: (id: string) => Promise<void>;
   };
   validationSchema: ReturnType<typeof toTypedSchema>;
@@ -165,6 +172,7 @@ export function useEntityEdit<
   // Create entity
   const createEntity = async (
     additionalValidation?: () => Promise<boolean>,
+    query?: Record<string, string>,
   ) => {
     loading.value = true;
     try {
@@ -181,7 +189,7 @@ export function useEntityEdit<
         ? options.prepareCreateData(form.values)
         : entityDataCreate.value;
 
-      const result = await options.repository.create(createData);
+      const result = await options.repository.create(createData, query);
 
       if (result?._id) {
         const newUrl = newEntityUrl.replace(
@@ -233,7 +241,7 @@ export function useEntityEdit<
       if (!updateData) {
         return;
       }
-      const result = await options.repository.update(id, updateData);
+      const result = await options.repository.update(id, updateData, query);
       const newData = result ?? (await options.repository.get(id, query));
       await parseAndSaveData(newData);
 

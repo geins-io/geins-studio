@@ -24,14 +24,15 @@ const deduplicateRules = (rules: PricelistRule[]): PricelistRule[] => {
   );
 };
 
-const appliedRules = deduplicateRules(
-  props.rules.map((rule) => ({
-    ...rule,
-    applied: true,
-  })),
+const appliedRules = ref<PricelistRule[]>([]);
+const localRules = ref<PricelistRule[]>(
+  deduplicateRules(
+    props.rules.map((rule) => ({
+      ...rule,
+      applied: true,
+    })),
+  ),
 );
-
-const localRules = ref<PricelistRule[]>(appliedRules);
 
 const emptyRule: PricelistRule = {
   quantity: undefined,
@@ -52,7 +53,7 @@ watch(
     // Deduplicate rules and filter out quantity 1 and undefined
     const deduplicatedRules = deduplicateRules(newRules);
 
-    const appliedRules = deduplicatedRules
+    const rules = deduplicatedRules
       .filter((rule) => props.mode === 'price' || rule.applied)
       .map((rule) => ({
         quantity: rule.quantity,
@@ -60,17 +61,37 @@ watch(
         discountPercent: props.mode === 'discount' ? rule.discountPercent : 0,
         price: props.mode === 'price' ? rule.price : 0,
       }));
-
-    if (appliedRules.length) {
-      emit('apply', appliedRules);
-    }
+    appliedRules.value = rules;
   },
   { deep: true },
 );
 
-const applyAndOverwrite = (rule: PricelistRule): void => {
-  // Emit the rule to be applied and overwritten
-  emit('apply-overwrite', rule);
+const apply = (index: number): void => {
+  const rule = localRules.value[index];
+  if (rule) {
+    rule.applied = true;
+  }
+  nextTick(() => {
+    emit('apply', appliedRules.value);
+  });
+};
+
+const applyAndOverwrite = (index: number): void => {
+  const rule = localRules.value[index];
+  if (rule) {
+    rule.applied = true;
+    nextTick(() => {
+      emit('apply', appliedRules.value);
+      emit('apply-overwrite', rule);
+    });
+  }
+};
+
+const remove = (index: number): void => {
+  localRules.value.splice(index, 1);
+  nextTick(() => {
+    emit('apply', appliedRules.value);
+  });
 };
 
 const thClasses = 'text-xs font-bold text-left py-2';
@@ -108,14 +129,9 @@ const thClasses = 'text-xs font-bold text-left py-2';
           :mode="mode"
           :index="index"
           :currency="currency"
-          @apply="rule.applied = true"
-          @apply-and-overwrite="
-            () => {
-              rule.applied = true;
-              applyAndOverwrite(rule);
-            }
-          "
-          @remove="localRules.splice(index, 1)"
+          @apply="apply(index)"
+          @apply-and-overwrite="applyAndOverwrite(index)"
+          @remove="remove(index)"
         />
       </tbody>
     </table>

@@ -9,7 +9,7 @@ const props = withDefaults(
     mode: 'margin',
   },
 );
-const quantity = defineModel<number | string>('quantity');
+const quantity = defineModel<number>('quantity');
 const margin = defineModel<number | undefined>('margin');
 const discount = defineModel<number | undefined>('discount');
 const price = defineModel<number | undefined>('price');
@@ -58,6 +58,13 @@ watch(price, (newPrice) => {
   }
 });
 
+const validateQuantity = () => {
+  console.log('🚀 ~ validateQuantity ~ quantity.value:', quantity.value);
+  if (quantity.value && quantity.value <= 1) {
+    quantity.value = 2;
+  }
+};
+
 const tdClasses = 'text-xs text-left py-3 pr-5';
 </script>
 <template>
@@ -66,9 +73,9 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
       <Input
         v-model.number="quantity"
         type="number"
-        min="2"
         size="sm"
         :disabled="global"
+        @blur="validateQuantity"
       />
     </td>
     <td v-if="mode === 'margin'" :class="tdClasses">
@@ -103,8 +110,8 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
     </td>
 
     <td v-else :class="cn(tdClasses, 'text-center')">
-      <LucideCircleCheck v-if="applied" class="size-4 text-positive" />
-      <LucideCircleDashed v-else class="size-4 text-foreground/30" />
+      <LucideCircleCheck v-if="applied" class="text-positive size-4" />
+      <LucideCircleDashed v-else class="text-foreground/30 size-4" />
     </td>
     <td class="flex items-center justify-end gap-2 py-3">
       <Button
@@ -127,7 +134,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         :disabled="global"
         size="icon"
         variant="outline"
-        class="size-7 hover:text-destructive"
+        class="hover:text-destructive size-7"
         @click="$emit('remove')"
       >
         <LucideX class="size-3.5" />
