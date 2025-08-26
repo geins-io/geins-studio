@@ -11,6 +11,8 @@ const emit = defineEmits<{
   (e: 'apply-overwrite', rule: PricelistRule): void;
 }>();
 
+const rules = toRef(props, 'rules');
+
 // Function to deduplicate rules by quantity (keep the last occurrence)
 const deduplicateRules = (rules: PricelistRule[]): PricelistRule[] => {
   const seenQuantities = new Map<number, PricelistRule>();
@@ -27,12 +29,20 @@ const deduplicateRules = (rules: PricelistRule[]): PricelistRule[] => {
 const appliedRules = ref<PricelistRule[]>([]);
 const localRules = ref<PricelistRule[]>(
   deduplicateRules(
-    props.rules.map((rule) => ({
+    rules.value.map((rule) => ({
       ...rule,
       applied: true,
     })),
   ),
 );
+
+watch(rules, (newRules) => {
+  if (newRules.length === 0) {
+    localRules.value = [];
+    appliedRules.value = [];
+    return;
+  }
+});
 
 const emptyRule: PricelistRule = {
   quantity: undefined,

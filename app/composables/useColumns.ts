@@ -475,7 +475,7 @@ export const useColumns = <T extends object>() => {
               ...cellProps,
             });
           };
-          columnSize = { size: 134, minSize: 134, maxSize: 134 };
+          columnSize = { size: 180, minSize: 180, maxSize: 180 };
           break;
         case 'editable-string':
         case 'editable-number':

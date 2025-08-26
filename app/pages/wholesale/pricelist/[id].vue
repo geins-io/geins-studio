@@ -106,7 +106,9 @@ const productSelector = ref();
 
 // Pricelist rules
 const pricelistActionsMode = ref<PricelistRuleMode>('discount');
-const pricelistRulesMode = ref<PricelistRuleMode>('discount');
+// Track the actual mode and pending mode separately
+const actualPricelistRulesMode = ref<PricelistRuleMode>('discount');
+const pendingModeChange = ref<PricelistRuleMode | null>(null);
 
 const pricelistQuickActionInput = ref<number>();
 
@@ -201,6 +203,7 @@ const {
         autoAddProducts: entity.autoAddProducts,
       },
     });
+    // Set initialization flag after all data is loaded
   },
   prepareCreateData: (formData) => ({
     ...entityBase,
@@ -211,7 +214,7 @@ const {
     ...entity,
     ...formData.vat,
     ...formData.default,
-    products: [], //getPricelistProducts(selectedProducts.value, entity?.products),
+    //products: [], //getPricelistProducts(selectedProducts.value, entity?.products),
   }),
   onFormValuesChange: (values) => {
     const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
@@ -227,21 +230,23 @@ const {
 // PREVIEW PRICELIST
 // =====================================================================================
 
-const previewPricelist = async (
-  products: Product[] = productSelector.value?.selectedEntities || [],
-) => {
-  if (!entityId.value) return;
+const previewPricelist = async (successText?: string) => {
+  if (!entityId.value || !entityDataUpdate.value.productSelectionQuery) return;
   try {
     const previewPricelist = await productApi.pricelist
       .id(entityId.value)
       .preview(entityDataUpdate.value);
     pricelistProducts.value = previewPricelist.products.items;
     selectedProducts.value = transformProductsForList(
-      products,
+      productSelector.value?.selectedEntities || [],
       entityData.value,
       pricelistProducts.value,
     );
     setupColumns();
+    toast({
+      title: successText || `Product prices updated`,
+      variant: 'positive',
+    });
   } catch (error) {
     geinsLogError('Error fetching preview pricelist:', error);
     toast({
@@ -295,12 +300,7 @@ const applyQuickAction = async (overwrite: boolean) => {
     }
 
     // Update the preview
-    await previewPricelist();
-
-    toast({
-      title: `${percentage}% ${mode} applied to all products.`,
-      variant: 'positive',
-    });
+    await previewPricelist(`${percentage}% ${mode} applied to all products.`);
 
     pricelistQuickActionInput.value = undefined;
   } catch (error) {
@@ -313,6 +313,14 @@ const applyQuickAction = async (overwrite: boolean) => {
   }
 };
 
+const applyRules = async (rules: PricelistRule[]): Promise<void> => {
+  globalRules.value = rules;
+  await updateEntityRules();
+  nextTick(async () => {
+    await previewPricelist('Quantity levels applied successfully!');
+  });
+};
+
 const applyAndOverwrite = (rule: PricelistRule): void => {
   if (entityDataUpdate.value.products) {
     entityDataUpdate.value.products = entityDataUpdate.value.products.filter(
@@ -321,17 +329,17 @@ const applyAndOverwrite = (rule: PricelistRule): void => {
   }
 };
 
-watch(globalRules, async (newRules) => {
-  console.log('🚀 ~ newRules:', newRules);
-
+const updateEntityRules = async (): Promise<void> => {
   // Preserve existing quantity 1 rule if it exists and isn't in newRules
   const existingQuantity1Rule = entityDataUpdate.value.rules?.find(
     (rule) => rule.quantity === 1,
   );
-  const hasQuantity1InNewRules = newRules.some((rule) => rule.quantity === 1);
+  const hasQuantity1InNewRules = globalRules.value.some(
+    (rule) => rule.quantity === 1,
+  );
 
   // Start with globalRules
-  entityDataUpdate.value.rules = newRules.map((rule) => ({
+  const newRules: PricelistRule[] = globalRules.value.map((rule) => ({
     quantity: rule.quantity,
     margin: rule.margin,
     discountPercent: rule.discountPercent,
@@ -339,17 +347,11 @@ watch(globalRules, async (newRules) => {
 
   // Add back the quantity 1 rule if it existed and wasn't replaced
   if (existingQuantity1Rule && !hasQuantity1InNewRules) {
-    entityDataUpdate.value.rules.push(existingQuantity1Rule);
+    newRules.push(existingQuantity1Rule);
   }
 
-  if (globalRules.value !== entityDataUpdate.value.rules) {
-    await previewPricelist();
-    toast({
-      title: `Quantity levels applied to all products.`,
-      variant: 'positive',
-    });
-  }
-});
+  entityDataUpdate.value.rules = newRules;
+};
 
 // =====================================================================================
 // QUANTITY LEVELS MANAGEMENT
@@ -357,6 +359,9 @@ watch(globalRules, async (newRules) => {
 const rulesToEdit = ref<PricelistRule[]>([]);
 const rulesPanelOpen = ref(false);
 const rulesId = ref<string>('');
+
+// Prompt
+const rulesModeChangePrompt = ref(false);
 
 // Validation function for quantity levels
 const validateQuantityLevels = (rules: PricelistRule[]): string[] => {
@@ -425,19 +430,44 @@ const handleSaveRules = (rules: PricelistRule[]) => {
   rulesId.value = '';
 };
 
-// Watch for mode changes in quantity levels and update existing rules
-watch(pricelistRulesMode, (newMode, oldMode) => {
-  if (newMode !== oldMode && globalRules.value) {
-    globalRules.value = [];
-    // Show toast notification when mode changes
-    toast({
-      title: `Price mode changed to ${newMode}`,
-      description:
-        'Existing quantity levels have been updated to match the new mode.',
-      variant: 'default',
-    });
-  }
+// Use a computed for the displayed mode
+const pricelistRulesMode = computed({
+  get: () => actualPricelistRulesMode.value,
+  set: (newMode: PricelistRuleMode) => {
+    if (
+      newMode !== actualPricelistRulesMode.value &&
+      globalRules.value.length
+    ) {
+      if (
+        globalRules.value.length === 1 &&
+        globalRules.value[0]?.quantity === 1
+      ) {
+        actualPricelistRulesMode.value = newMode;
+        return;
+      }
+
+      pendingModeChange.value = newMode;
+      rulesModeChangePrompt.value = true;
+    } else {
+      actualPricelistRulesMode.value = newMode;
+    }
+  },
 });
+
+const confirmModeChange = () => {
+  rulesModeChangePrompt.value = false;
+  if (pendingModeChange.value) {
+    actualPricelistRulesMode.value = pendingModeChange.value;
+    pendingModeChange.value = null;
+    globalRules.value = [];
+    previewPricelist();
+  }
+};
+
+const cancelModeChange = () => {
+  rulesModeChangePrompt.value = false;
+  pendingModeChange.value = null;
+};
 
 // =====================================================================================
 // PRODUCT TABLE STATE
@@ -529,8 +559,9 @@ watch(
   () => productSelector.value?.selectedEntities || [],
   async (newSelection: Product[]) => {
     if (newSelection.length) {
-      await previewPricelist(newSelection);
-      entityData.value.products = [];
+      // This will fetch on entry and on selection change
+      await previewPricelist();
+      // entityData.value.products = [];
       // entityData.value.products = getPricelistProducts(
       //   selectedProducts.value,
       //   entityData.value.products,
@@ -727,6 +758,28 @@ if (!createMode.value) {
     :loading="deleting"
     @confirm="confirmDelete"
   />
+  <AlertDialog v-model:open="rulesModeChangePrompt">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle
+          >Your applied quantity levels will be removed!</AlertDialogTitle
+        >
+        <AlertDialogDescription>
+          If you proceed changing price mode to {{ pendingModeChange }}, your
+          applied quantity levels will be removed.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel @click="cancelModeChange">{{
+          $t('cancel')
+        }}</AlertDialogCancel>
+
+        <Button @click.prevent.stop="confirmModeChange">
+          {{ $t('continue') }}
+        </Button>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
   <PricelistQtyLevelsPanel
     v-model:open="rulesPanelOpen"
     :product-id="rulesId"
@@ -1022,7 +1075,7 @@ if (!createMode.value) {
                     <PricelistRules
                       :rules="globalRules"
                       :mode="pricelistRulesMode"
-                      @apply="globalRules = $event"
+                      @apply="applyRules"
                       @apply-overwrite="applyAndOverwrite"
                     />
                   </PricelistActionCard>

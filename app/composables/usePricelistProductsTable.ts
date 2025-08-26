@@ -61,9 +61,9 @@ export const usePricelistProductsTable = () => {
       id: 'quantityLevels',
       enableHiding: false,
       enableSorting: false,
-      size: 40,
-      maxSize: 40,
-      minSize: 40,
+      size: 82,
+      maxSize: 82,
+      minSize: 82,
       cell: ({ row, table }) => {
         const rowData = row.original;
         return h(PricelistQtyLevelsCell, {
