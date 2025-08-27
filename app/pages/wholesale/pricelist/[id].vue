@@ -469,8 +469,8 @@ const confirmModeChange = () => {
   if (pendingModeChange.value) {
     actualPricelistRulesMode.value = pendingModeChange.value;
     pendingModeChange.value = null;
-    globalRules.value = [];
-    entityDataUpdate.value.rules = [];
+    globalRules.value = globalRules.value.filter((rule) => rule.quantity === 1);
+    entityDataUpdate.value.rules = globalRules.value;
     previewPricelist(undefined, true);
   }
 };
