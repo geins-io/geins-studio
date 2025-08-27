@@ -105,7 +105,7 @@ const pricelistProducts = ref<PricelistProduct[]>([]);
 const productSelector = ref();
 
 // Track if this is the initial load to avoid showing toast on page entry
-const isInitialProductLoad = ref(true);
+const isInitialLoad = ref(true);
 
 // Pricelist rules
 const pricelistActionsMode = ref<PricelistRuleMode>('discount');
@@ -207,7 +207,6 @@ const {
         autoAddProducts: entity.autoAddProducts,
       },
     });
-    // Set initialization flag after all data is loaded
   },
   prepareCreateData: (formData) => ({
     ...entityBase,
@@ -245,9 +244,8 @@ const previewPricelist = async (
       .preview(entityDataUpdate.value);
     pricelistProducts.value = previewPricelist.products?.items || [];
     selectedProducts.value = transformProductsForList(
-      productSelector.value?.selectedEntities || [],
-      entityData.value,
       pricelistProducts.value,
+      entityData.value,
     );
     setupColumns();
     if (showToast) {
@@ -278,16 +276,6 @@ const applyQuickAction = async (overwrite: boolean) => {
   const percentage = pricelistQuickActionInput.value;
   const mode = pricelistActionsMode.value;
 
-  // Validate percentage input
-  if (percentage <= 0 || percentage > 100) {
-    toast({
-      title: 'Invalid percentage',
-      description: 'Percentage must be between 1 and 100.',
-      variant: 'negative',
-    });
-    return;
-  }
-
   try {
     // Create global rule for quantity 1
     const globalRule: PricelistRule = {
@@ -297,9 +285,7 @@ const applyQuickAction = async (overwrite: boolean) => {
     };
 
     globalRules.value = globalRules.value.filter((rule) => rule.quantity !== 1);
-
     globalRules.value.push(globalRule);
-
     entityDataUpdate.value.rules = globalRules.value;
 
     // If overwrite is true, remove products that have staggeredCount 1
@@ -328,14 +314,20 @@ const applyRules = async (rules: PricelistRule[]): Promise<void> => {
   globalRules.value = rules;
   await updateEntityRules();
   nextTick(async () => {
-    await previewPricelist('Quantity levels applied successfully!');
+    await previewPricelist('Quantity levels applied.');
   });
 };
 
-const applyAndOverwrite = (rule: PricelistRule): void => {
+const applyAndOverwrite = (payload: {
+  rule: PricelistRule;
+  rules: PricelistRule[];
+}): void => {
+  applyRules(payload.rules);
+  // TODO: prompt before removing products
   if (entityDataUpdate.value.products) {
     entityDataUpdate.value.products = entityDataUpdate.value.products.filter(
-      (product: PricelistProduct) => product.staggeredCount !== rule.quantity,
+      (product: PricelistProduct) =>
+        product.staggeredCount !== payload.rule.quantity,
     );
   }
 };
@@ -485,14 +477,6 @@ const cancelModeChange = () => {
 // PRODUCT TABLE STATE
 // =====================================================================================
 const selectedProducts = ref<PricelistProductList[]>([]);
-const productQueryParams = ref<ProductQueryParams>({
-  fields: 'localizations,media,defaultprice',
-  defaultChannel: entityData.value?.channel,
-  defaultCurrency: entityData.value?.currency,
-  defaultCountry: accountStore.getDefaultCountryByChannelId(
-    entityData.value?.channel,
-  ),
-});
 
 const vatDescription = computed(() => {
   return entityData.value?.exVat ? t('ex_vat') : t('inc_vat');
@@ -567,21 +551,6 @@ watch(vatDescription, () => {
   setupColumns();
 });
 
-watch(
-  () => productSelector.value?.selectedEntities || [],
-  async (newSelection: Product[]) => {
-    if (newSelection.length) {
-      // Show toast only if this is not the initial load AND we're not currently saving
-      const showToast = !isInitialProductLoad.value;
-      await previewPricelist(undefined, showToast);
-
-      // After first load, all subsequent changes should show toast
-      if (isInitialProductLoad.value) {
-        isInitialProductLoad.value = false;
-      }
-    }
-  },
-);
 // watch(
 //   selectedProducts,
 //   (newSelection) => {
@@ -597,7 +566,7 @@ watch(
 // ENTITY ACTIONS
 // =====================================================================================
 const handleSave = async () => {
-  isInitialProductLoad.value = true;
+  isInitialLoad.value = true;
   await updateEntity(undefined, {
     fields: 'rules,selectionquery',
   });
@@ -751,6 +720,8 @@ if (!createMode.value) {
 
   if (data.value) {
     await parseAndSaveData(data.value);
+    await previewPricelist(undefined, false);
+    isInitialLoad.value = false;
   }
 
   productsStore.init();
@@ -759,6 +730,17 @@ if (!createMode.value) {
     productSelection,
     async (newSelection) => {
       entityDataUpdate.value.productSelectionQuery = newSelection;
+      // Show toast only if this is not the initial load AND we're not currently saving
+
+      await previewPricelist(
+        'Product selection updated.',
+        !isInitialLoad.value,
+      );
+
+      // After first load, all subsequent changes should show toast
+      if (isInitialLoad.value) {
+        isInitialLoad.value = false;
+      }
     },
     { deep: true },
   );
@@ -1115,7 +1097,8 @@ if (!createMode.value) {
               v-model:selection="productSelection"
               :entities="products"
               :selection-strategy="SelectorSelectionStrategy.None"
-              :product-query-params="productQueryParams"
+              :currency="entityData.currency"
+              :fetch-entities-externally="true"
             >
               <template #list="{ selectorEntityName }">
                 <ContentHeading>

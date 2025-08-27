@@ -31,18 +31,6 @@ const _emit = defineEmits<{
 }>();
 
 watch(
-  () => props.mode,
-  (newMode) => {
-    if (newMode === 'margin') {
-      discount.value = initialDiscount;
-    } else {
-      margin.value = initialMargin;
-    }
-    applied.value = false;
-  },
-);
-
-watch(
   () => [quantity.value, margin.value, discount.value],
   ([newQuantity, newMargin, newDiscount]) => {
     applied.value =
@@ -59,7 +47,6 @@ watch(price, (newPrice) => {
 });
 
 const validateQuantity = () => {
-  console.log('🚀 ~ validateQuantity ~ quantity.value:', quantity.value);
   if (quantity.value && quantity.value <= 1) {
     quantity.value = 2;
   }

@@ -10,65 +10,54 @@ export const usePricelistProducts = () => {
   const { convertToPrice } = usePrice();
 
   const transformProductsForList = (
-    products: Product[],
-    entityData: ProductPricelistUpdate,
     pricelistProducts: PricelistProduct[] = [],
+    entityData: ProductPricelist,
   ): PricelistProductList[] => {
-    return products.map((product) => {
-      const regularPriceExVat = product.defaultPrice?.regularPriceIncVat
-        ? product.defaultPrice.regularPriceIncVat /
-          (1 + (product.defaultPrice.vatRate || 0))
-        : 0;
-      const regularPrice = entityData?.exVat
-        ? Math.round(regularPriceExVat * 100) / 100
-        : product.defaultPrice?.regularPriceIncVat || 0;
-
-      const pricelistProduct = pricelistProducts?.find(
-        (p: PricelistProduct) =>
-          p.productId === product._id && p.staggeredCount === 1,
-      );
-      const listPrice = pricelistProduct?.price || undefined;
-
-      const margin = pricelistProduct?.margin || 0;
-
-      const discount = pricelistProduct?.discountPercent || 0;
-
-      return {
-        _id: product._id,
-        name: product.name,
-        thumbnail: product.thumbnail || '',
-        purchasePrice: convertToPrice(
-          product.purchasePrice,
-          product.purchasePriceCurrency,
-        ),
-        regularPrice: convertToPrice(regularPrice, entityData?.currency || ''),
-        listPrice: convertToPrice(
-          listPrice,
-          entityData?.currency || '',
-          listPrice ?? regularPrice,
-        ),
-        discount,
-        margin,
-        quantityLevels: getQuantityLevels(
-          pricelistProducts,
-          product,
-          entityData,
-        ),
-        manual: false,
-      };
-    });
+    return pricelistProducts
+      .filter((p) => p.staggeredCount === 1)
+      .map((product) => {
+        return {
+          _id: product.productId,
+          name: product.name || '',
+          thumbnail: product.thumbnail || '',
+          purchasePrice: convertToPrice(
+            product.purchasePrice,
+            product.purchasePriceCurrency || '',
+          ),
+          regularPrice: convertToPrice(
+            product.regularPrice,
+            entityData?.currency || '',
+          ),
+          listPrice: convertToPrice(
+            product.price,
+            entityData?.currency || '',
+            product.price,
+          ),
+          discount: product.discountPercent || 0,
+          margin: product.margin || 0,
+          quantityLevels: getQuantityLevels(
+            product.productId,
+            pricelistProducts,
+            entityData,
+          ),
+          manual: false,
+        };
+      });
   };
 
   const getQuantityLevels = (
+    productId: string,
     products: PricelistProduct[],
-    product: Product,
     entityData: ProductPricelist,
   ): PricelistRule[] => {
     const productLevels = products
-      .filter((p) => p.productId === product._id && p.staggeredCount > 1)
+      .filter((p) => p.productId === productId && p.staggeredCount > 1)
       .map((p) => ({
         quantity: p.staggeredCount,
         price: p.price,
+        margin: p.margin,
+        discountPercent: p.discountPercent,
+        global: false,
       }));
 
     const entityLevels = entityData.rules
@@ -108,6 +97,8 @@ export const usePricelistProducts = () => {
       price: Number(
         product.listPrice?.price || product.regularPrice?.price || 0,
       ),
+      margin: Number(product.margin || 0),
+      discount: Number(product.discount || 0),
       staggeredCount: 1,
     }));
 
@@ -122,6 +113,8 @@ export const usePricelistProducts = () => {
             products.push({
               productId: product._id,
               price: Number(level.price),
+              margin: Number(level.margin || 0),
+              discount: Number(level.discountPercent || 0),
               staggeredCount: level.quantity,
             });
           }
@@ -142,6 +135,8 @@ export const usePricelistProducts = () => {
           _id: updatedProducts[existingIndex]?._id || undefined,
           productId: product.productId,
           price: product.price,
+          margin: product.margin,
+          discountPercent: product.discount,
           staggeredCount: product.staggeredCount,
         };
       } else {

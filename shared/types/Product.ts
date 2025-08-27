@@ -209,12 +209,17 @@ export interface ProductPricelist extends ResponseEntity<ProductPricelistBase> {
 export interface PricelistProduct {
   _id?: string;
   productId: string;
+  name?: string;
+  thumbnail?: string;
   price?: number;
+  regularPrice?: number;
   margin?: number;
   discountPercent?: number;
   ruleId?: string;
   staggeredCount: number;
   priceMode?: PricelistPriceMode;
+  purchasePrice?: number;
+  purchasePriceCurrency?: string;
 }
 
 export interface PricelistProductList extends EntityBaseWithName {

@@ -16,6 +16,8 @@ const props = withDefaults(
     selectionStrategy?: SelectorSelectionStrategy;
     allowExclusions?: boolean;
     productQueryParams?: Record<string, string>;
+    currency?: string;
+    fetchEntitiesExternally?: boolean;
   }>(),
   {
     entityName: 'product',
@@ -23,6 +25,7 @@ const props = withDefaults(
     selectionStrategy: SelectorSelectionStrategy.All,
     allowExclusions: true,
     productQueryParams: () => ({ fields: 'localizations,media,prices' }),
+    fetchEntitiesExternally: false,
   },
 );
 
@@ -67,6 +70,8 @@ const selectionStrategy = toRef(props, 'selectionStrategy');
 const allowExclusions = toRef(props, 'allowExclusions');
 const accountStore = useAccountStore();
 const { currentCurrency } = storeToRefs(accountStore);
+const selectorCurrency = ref<string>(props.currency || currentCurrency.value);
+
 const { toast } = useToast();
 const { t } = useI18n();
 
@@ -212,18 +217,20 @@ const selectionMade = computed(() => {
     //Object.keys(excludeSelection.value.stock)?.length
   );
 });
-watchEffect(async () => {
-  let products = null;
-  if (selectionMade.value && mode.value === SelectorMode.Advanced) {
-    products = await productApi.query(
-      selection.value,
-      productQueryParams.value,
-    );
-    selectedProducts.value = transformProducts(products?.items);
-  } else if (!selectionMade.value) {
-    selectedProducts.value = [];
-  }
-});
+if (!props.fetchEntitiesExternally) {
+  watchEffect(async () => {
+    let products = null;
+    if (selectionMade.value && mode.value === SelectorMode.Advanced) {
+      products = await productApi.query(
+        selection.value,
+        productQueryParams.value,
+      );
+      selectedProducts.value = transformProducts(products?.items);
+    } else if (!selectionMade.value) {
+      selectedProducts.value = [];
+    }
+  });
+}
 
 const selectedEntities = computed(() => {
   return mode.value === SelectorMode.Simple
@@ -263,7 +270,7 @@ defineExpose({
             v-model:selection="includeSelection"
             :type="SelectorSelectionType.Include"
             :mode="mode"
-            :currency="currentCurrency"
+            :currency="selectorCurrency"
             :entity-name="entityName"
             :entities="entities"
             :selection-strategy="selectionStrategy"
@@ -278,7 +285,7 @@ defineExpose({
               v-model:selection="excludeSelection"
               :type="SelectorSelectionType.Exclude"
               :mode="mode"
-              :currency="currentCurrency"
+              :currency="selectorCurrency"
               :entity-name="entityName"
               :entities="entities"
             />

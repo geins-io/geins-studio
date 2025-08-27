@@ -452,7 +452,7 @@ if (!createMode.value) {
   } else {
     allPricelists.value = data.value.map((pricelist) => ({
       ...pricelist,
-      productCount: pricelist.products.length,
+      productCount: pricelist.products?.totalItemCount || 0,
     }));
   }
 }

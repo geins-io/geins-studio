@@ -412,10 +412,8 @@ export const useColumns = <T extends object>() => {
               'price' in price &&
               'currency' in price
             ) {
-              priceValue =
-                price.price !== undefined ? String(price.price) : '---';
-              priceCurrency =
-                price.currency !== undefined ? String(price.currency) : 'XXX';
+              priceValue = price.price ? String(price.price) : '---';
+              priceCurrency = price.currency ? String(price.currency) : 'XXX';
             }
 
             return h(TableCellCurrency, {
