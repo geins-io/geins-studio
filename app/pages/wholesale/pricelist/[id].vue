@@ -179,6 +179,7 @@ const {
   }),
   reshapeEntityData: (entityData) => ({
     ...entityData,
+    products: entityData.products?.items || [],
   }),
   parseEntityData: (entity) => {
     entityLiveStatus.value = entity.active;
@@ -242,7 +243,7 @@ const previewPricelist = async (
     const previewPricelist = await productApi.pricelist
       .id(entityId.value)
       .preview(entityDataUpdate.value);
-    pricelistProducts.value = previewPricelist.products.items;
+    pricelistProducts.value = previewPricelist.products?.items || [];
     selectedProducts.value = transformProductsForList(
       productSelector.value?.selectedEntities || [],
       entityData.value,

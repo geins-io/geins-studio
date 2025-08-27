@@ -190,22 +190,21 @@ export interface ProductPricelistBase {
   exVat: boolean;
   autoAddProducts: boolean;
   forced: boolean;
-  products: BatchQueryResult<PricelistProduct>;
-  rules: PricelistRule[];
+  rules?: PricelistRule[];
   productSelectionQuery?: SelectorSelectionQueryBase;
 }
 
-export type ProductPricelistCreate = CreateEntity<
-  Omit<ProductPricelistBase, 'products'>
-> & {
+export interface ProductPricelistCreate
+  extends CreateEntity<ProductPricelistBase> {
   products?: PricelistProduct[];
-};
-export type ProductPricelistUpdate = UpdateEntity<
-  Omit<ProductPricelistBase, 'products'>
-> & {
+}
+export interface ProductPricelistUpdate
+  extends UpdateEntity<ProductPricelistBase> {
   products?: PricelistProduct[];
-};
-export type ProductPricelist = ResponseEntity<ProductPricelistBase>;
+}
+export interface ProductPricelist extends ResponseEntity<ProductPricelistBase> {
+  products?: BatchQueryResult<PricelistProduct>;
+}
 
 export interface PricelistProduct {
   _id?: string;
