@@ -1079,8 +1079,8 @@ if (!createMode.value) {
                   </PricelistActionCard>
                 </TabsContent>
               </Tabs>
-              <pre>rules:{{ entityDataUpdate.rules }}</pre>
-              <pre>products:{{ entityDataUpdate.products }}</pre>
+              <!-- <pre>rules:{{ entityDataUpdate.rules }}</pre>
+              <pre>products:{{ entityDataUpdate.products }}</pre> -->
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
