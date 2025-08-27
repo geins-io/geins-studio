@@ -299,6 +299,8 @@ const applyQuickAction = async (overwrite: boolean) => {
 
     globalRules.value.push(globalRule);
 
+    entityDataUpdate.value.rules = globalRules.value;
+
     // If overwrite is true, remove products that have staggeredCount 1
     // TODO: prompt before this happens
     if (overwrite && entityDataUpdate.value.products) {
