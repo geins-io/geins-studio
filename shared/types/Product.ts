@@ -248,5 +248,5 @@ export type PricelistPriceMode =
   | 'fixed'
   | 'margin'
   | 'discountPercent'
-  | 'ruleId'
+  | 'rule'
   | 'auto';

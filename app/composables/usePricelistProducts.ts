@@ -148,14 +148,33 @@ export const usePricelistProducts = () => {
     return updatedProducts;
   };
 
-  const updatePricelistProductsPrice = (
-    selectedProducts: PricelistProductList[],
-    id: string,
-    price: string,
-  ) => {
-    const product = selectedProducts.find((p) => p._id === id);
-    if (product && product.listPrice) {
-      product.listPrice.price = price;
+  const getEditedPricelistProduct = (
+    product: PricelistProductList,
+    value: number,
+    valueType: 'discount' | 'margin' | 'price',
+  ): PricelistProduct => {
+    return {
+      productId: product._id,
+      ...(valueType === 'price' && { price: value }),
+      ...(valueType === 'margin' && { margin: value }),
+      ...(valueType === 'discount' && { discountPercent: value }),
+      staggeredCount: 1,
+    };
+  };
+
+  const addToEditedProducts = (
+    product: PricelistProduct,
+    editedProducts: PricelistProduct[],
+  ): void => {
+    const existingIndex = editedProducts.findIndex(
+      (p) =>
+        p.productId === product.productId &&
+        p.staggeredCount === product.staggeredCount,
+    );
+    if (existingIndex >= 0) {
+      editedProducts[existingIndex] = product;
+    } else {
+      editedProducts.push(product);
     }
   };
 
@@ -163,6 +182,7 @@ export const usePricelistProducts = () => {
     transformProductsForList,
     getQuantityLevels,
     getPricelistProducts,
-    updatePricelistProductsPrice,
+    getEditedPricelistProduct,
+    addToEditedProducts,
   };
 };

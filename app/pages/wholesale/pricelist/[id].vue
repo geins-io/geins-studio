@@ -101,8 +101,11 @@ const { getEmptyQuerySelectionBase } = useSelector();
 const productSelection = ref<SelectorSelectionQueryBase>(
   getEmptyQuerySelectionBase(),
 );
-const pricelistProducts = ref<PricelistProduct[]>([]);
 const productSelector = ref();
+
+// Pricelist products
+const pricelistProducts = ref<PricelistProduct[]>([]);
+const editedProducts = ref<PricelistProduct[]>([]);
 
 // Track if this is the initial load to avoid showing toast on page entry
 const isInitialLoad = ref(true);
@@ -121,7 +124,8 @@ const pricelistQuickActionInput = ref<number>();
 const {
   transformProductsForList,
   getPricelistProducts,
-  updatePricelistProductsPrice,
+  getEditedPricelistProduct,
+  addToEditedProducts,
 } = usePricelistProducts();
 
 const { setupPricelistColumns, getPinnedState } = usePricelistProductsTable();
@@ -185,7 +189,6 @@ const {
     entityLiveStatus.value = entity.active;
     if (entity.productSelectionQuery) {
       productSelection.value = entity.productSelectionQuery;
-      console.log('productSelection written from entity.productSelectionQuery');
     }
     if (entity.rules && entity.rules.length) {
       const firstRuleMargin = entity.rules[0]?.margin;
@@ -217,7 +220,6 @@ const {
     ...entity,
     ...formData.vat,
     ...formData.default,
-    //products: [], //getPricelistProducts(selectedProducts.value, entity?.products),
   }),
   onFormValuesChange: (values) => {
     const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
@@ -233,19 +235,29 @@ const {
 // PREVIEW PRICELIST
 // =====================================================================================
 const { batchQueryAll } = useBatchQuery();
+const updateInProgress = ref(false);
 
 const previewPricelist = async (
   successText?: string,
   showToast: boolean = true,
 ) => {
-  if (!entityId.value || !entityDataUpdate.value.productSelectionQuery) return;
+  if (
+    !entityId.value ||
+    !entityDataUpdate.value.productSelectionQuery ||
+    updateInProgress.value
+  )
+    return;
   try {
+    updateInProgress.value = true;
     const previewPricelist = await productApi.pricelist
       .id(entityId.value)
       .preview(entityDataUpdate.value, batchQueryAll.value, {
         fields: 'products,productinfo',
       });
     pricelistProducts.value = previewPricelist.products?.items || [];
+    // editedProducts.value = pricelistProducts.value.filter(
+    //   (p) => p.priceMode !== 'rule' && p.priceMode !== 'auto',
+    // );
     selectedProducts.value = transformProductsForList(
       pricelistProducts.value,
       entityData.value,
@@ -264,6 +276,8 @@ const previewPricelist = async (
       description: t('feedback_error_description'),
       variant: 'negative',
     });
+  } finally {
+    updateInProgress.value = false;
   }
 };
 
@@ -477,7 +491,7 @@ const cancelModeChange = () => {
 };
 
 // =====================================================================================
-// PRODUCT TABLE STATE
+// PRODUCTS STATE
 // =====================================================================================
 const selectedProducts = ref<PricelistProductList[]>([]);
 
@@ -508,14 +522,45 @@ const setupColumns = () => {
     },
     (id: string) => productSelector.value.removeFromManuallySelected(id),
     (value: string | number, row: Row<PricelistProductList>) => {
-      updatePricelistProductsPrice(
-        selectedProducts.value,
-        row.original._id,
-        String(value),
+      addToEditedProducts(
+        getEditedPricelistProduct(row.original, Number(value), 'price'),
+        editedProducts.value,
+      );
+    },
+    (value: string | number, row: Row<PricelistProductList>) => {
+      addToEditedProducts(
+        getEditedPricelistProduct(row.original, Number(value), 'margin'),
+        editedProducts.value,
+      );
+    },
+    (value: string | number, row: Row<PricelistProductList>) => {
+      addToEditedProducts(
+        getEditedPricelistProduct(row.original, Number(value), 'discount'),
+        editedProducts.value,
       );
     },
   );
 };
+
+// =====================================================================================
+// EDIT PRODUCTS IN GRID
+// =====================================================================================
+
+watch(
+  editedProducts,
+  (newVal) => {
+    entityDataUpdate.value.products = newVal;
+  },
+  { deep: true },
+);
+
+watch(
+  () => entityDataUpdate.value.products,
+  () => {
+    previewPricelist(undefined, !isInitialLoad.value);
+  },
+  { deep: true },
+);
 
 // =====================================================================================
 // FORM VALUE WATCHERS
@@ -553,17 +598,6 @@ watch(entityData, (newEntityData, oldEntityData) => {
 watch(vatDescription, () => {
   setupColumns();
 });
-
-// watch(
-//   selectedProducts,
-//   (newSelection) => {
-//     entityDataUpdate.value.products = getPricelistProducts(
-//       newSelection,
-//       entityDataUpdate.value.products,
-//     );
-//   },
-//   { deep: true },
-// );
 
 // =====================================================================================
 // ENTITY ACTIONS

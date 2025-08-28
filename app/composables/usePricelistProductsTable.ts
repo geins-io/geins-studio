@@ -21,6 +21,14 @@ export const usePricelistProductsTable = () => {
       value: string | number,
       row: Row<PricelistProductList>,
     ) => void,
+    onMarginBlur: (
+      value: string | number,
+      row: Row<PricelistProductList>,
+    ) => void,
+    onDiscountBlur: (
+      value: string | number,
+      row: Row<PricelistProductList>,
+    ) => void,
   ) => {
     const columnOptions: ColumnOptions<PricelistProductList> = {
       columnTypes: {
@@ -36,6 +44,12 @@ export const usePricelistProductsTable = () => {
       columnCellProps: {
         listPrice: {
           onBlur: onPriceBlur,
+        },
+        discount: {
+          onBlur: onDiscountBlur,
+        },
+        margin: {
+          onBlur: onMarginBlur,
         },
       },
     };
