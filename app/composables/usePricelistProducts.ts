@@ -8,6 +8,7 @@ import type {
 
 export const usePricelistProducts = () => {
   const { convertToPrice } = usePrice();
+  const { getProductThumbnail } = useGeinsImage();
 
   const transformProductsForList = (
     pricelistProducts: PricelistProduct[] = [],
@@ -19,7 +20,7 @@ export const usePricelistProducts = () => {
         return {
           _id: product.productId,
           name: product.name || '',
-          thumbnail: product.thumbnail || '',
+          thumbnail: getProductThumbnail(product.thumbnail),
           purchasePrice: convertToPrice(
             product.purchasePrice,
             product.purchasePriceCurrency || '',

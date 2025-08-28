@@ -3,10 +3,10 @@ import type { Product, Category, Brand } from '#shared/types';
 export const useProductsStore = defineStore('products', () => {
   const { geinsLogWarn } = useGeinsLog('store/products.ts');
   const { $geinsApi } = useNuxtApp();
-  const globalApi = repo.global($geinsApi);
   const productApi = repo.product($geinsApi);
   const accountStore = useAccountStore();
-  const { account, currentLanguage } = storeToRefs(accountStore);
+  const { currentLanguage } = storeToRefs(accountStore);
+  const { getProductThumbnail } = useGeinsImage();
 
   // STATE
   const products = ref<Product[]>([]);
@@ -25,13 +25,13 @@ export const useProductsStore = defineStore('products', () => {
   }
 
   async function fetchCategories(): Promise<Category[]> {
-    const data = await globalApi.category.list.get();
+    const data = await productApi.category.list();
     categories.value = transformCategories(data?.items) as Category[];
     return categories.value;
   }
 
   async function fetchBrands(): Promise<Brand[]> {
-    const data = await globalApi.brand.list.get();
+    const data = await productApi.brand.list();
     brands.value = transformBrands(data?.items) as Brand[];
     return brands.value;
   }
@@ -94,7 +94,7 @@ export const useProductsStore = defineStore('products', () => {
     return products.map((product) => ({
       ...product.localizations?.[currentLanguage.value],
       ...product,
-      thumbnail: `https://${account.value?.name}.commerce.services/product/100x100/${product.media?.[0]?._id}`,
+      thumbnail: getProductThumbnail(product.media?.[0]?._id),
     }));
   }
 

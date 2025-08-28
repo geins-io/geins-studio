@@ -2,9 +2,6 @@ import type { NitroFetchRequest, $Fetch } from 'nitropack';
 import type { Account, Channel } from '#shared/types';
 
 const ENDPOINTS = {
-  PRODUCT: '/product',
-  CATEGORY: '/product/category',
-  BRAND: '/product/brand',
   ACCOUNT: '/account',
   CHANNELS: '/account/channel/list',
   CURRENCY: '/account/currency/list',
@@ -12,61 +9,6 @@ const ENDPOINTS = {
 };
 
 export const globalRepo = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
-  category: {
-    async get(id: number): Promise<Category> {
-      return await fetch<Category>(`${ENDPOINTS.CATEGORY}/${id}`);
-    },
-    list: {
-      async get(): Promise<BatchQueryResult<Category>> {
-        return await fetch<BatchQueryResult<Category>>(
-          `${ENDPOINTS.CATEGORY}/query`,
-          {
-            method: 'POST',
-            body: {
-              all: true,
-            },
-          },
-        );
-      },
-      async query(ids: number[]): Promise<BatchQueryResult<Category>> {
-        return await fetch<BatchQueryResult<Category>>(
-          `${ENDPOINTS.CATEGORY}/query`,
-          {
-            method: 'POST',
-            body: {
-              categoryIds: ids,
-            },
-          },
-        );
-      },
-    },
-  },
-  brand: {
-    async get(id: number): Promise<Brand> {
-      return await fetch<Brand>(`${ENDPOINTS.BRAND}/${id}`);
-    },
-    list: {
-      async get(): Promise<BatchQueryResult<Brand>> {
-        return await fetch<BatchQueryResult<Brand>>(
-          `${ENDPOINTS.BRAND}/query`,
-          {
-            method: 'POST',
-            body: {
-              all: true,
-            },
-          },
-        );
-      },
-      async query(ids: number[]): Promise<Brand[]> {
-        return await fetch<Brand[]>(`${ENDPOINTS.BRAND}/query`, {
-          method: 'POST',
-          body: {
-            brandIds: ids,
-          },
-        });
-      },
-    },
-  },
   account: {
     async get(): Promise<Account> {
       return await fetch<Account>(ENDPOINTS.ACCOUNT);

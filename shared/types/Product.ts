@@ -233,16 +233,6 @@ export interface PricelistProductList extends EntityBaseWithName {
   manual: boolean;
 }
 
-export interface PricelistProductReference {
-  productId: string;
-  staggeredCount: number;
-}
-
-export interface PricelistProductPatch {
-  create: PricelistProduct[];
-  delete: PricelistProductReference[];
-}
-
 export interface PricelistRule {
   quantity?: number;
   margin?: number;

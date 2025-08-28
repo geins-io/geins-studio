@@ -232,6 +232,7 @@ const {
 // =====================================================================================
 // PREVIEW PRICELIST
 // =====================================================================================
+const { batchQueryAll } = useBatchQuery();
 
 const previewPricelist = async (
   successText?: string,
@@ -241,7 +242,9 @@ const previewPricelist = async (
   try {
     const previewPricelist = await productApi.pricelist
       .id(entityId.value)
-      .preview(entityDataUpdate.value);
+      .preview(entityDataUpdate.value, batchQueryAll.value, {
+        fields: 'products,productinfo',
+      });
     pricelistProducts.value = previewPricelist.products?.items || [];
     selectedProducts.value = transformProductsForList(
       pricelistProducts.value,
