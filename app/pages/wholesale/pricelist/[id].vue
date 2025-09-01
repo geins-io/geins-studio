@@ -429,8 +429,10 @@ const cleanAndDeduplicateRules = (rules: PricelistRule[]): PricelistRule[] => {
 };
 
 const handleSaveRules = (rules: PricelistRule[]) => {
+  console.log('🚀 ~ handleSaveRules ~ rules:', rules);
   // Clean and deduplicate rules first
   const cleanedRules = cleanAndDeduplicateRules(rules);
+  console.log('🚀 ~ handleSaveRules ~ cleanedRules:', cleanedRules);
 
   // Validate the cleaned rules
   const validationErrors = validateQuantityLevels(cleanedRules);
@@ -1116,8 +1118,8 @@ if (!createMode.value) {
                   </PricelistActionCard>
                 </TabsContent>
               </Tabs>
-              <!-- <pre>rules:{{ entityDataUpdate.rules }}</pre>
-              <pre>products:{{ entityDataUpdate.products }}</pre> -->
+              <pre>rules:{{ entityDataUpdate.rules }}</pre>
+              <pre>products:{{ entityDataUpdate.products }}</pre>
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
