@@ -123,9 +123,8 @@ const pricelistQuickActionInput = ref<number>();
 // =====================================================================================
 const {
   transformProductsForList,
-  getPricelistProducts,
-  getEditedPricelistProduct,
-  addToEditedProducts,
+  getPricelistProduct,
+  addToPricelistProducts,
 } = usePricelistProducts();
 
 const { setupPricelistColumns, getPinnedState } = usePricelistProductsTable();
@@ -255,12 +254,27 @@ const previewPricelist = async (
         fields: 'products,productinfo',
       });
     pricelistProducts.value = previewPricelist.products?.items || [];
-    // editedProducts.value = pricelistProducts.value.filter(
-    //   (p) => p.priceMode !== 'rule' && p.priceMode !== 'auto',
-    // );
+    console.log(
+      '🚀 ~ previewPricelist ~ pricelistProducts.value:',
+      pricelistProducts.value,
+    );
+    pricelistProducts.value
+      .filter((p) => p.priceMode !== 'rule' && p.priceMode !== 'auto')
+      .forEach((p) => {
+        const product: PricelistProduct = {
+          productId: p.productId,
+          price: Number(p.price),
+          staggeredCount: p.staggeredCount,
+        };
+        addToPricelistProducts(product, editedProducts.value);
+      });
     selectedProducts.value = transformProductsForList(
       pricelistProducts.value,
       entityData.value,
+    );
+    console.log(
+      '🚀 ~ previewPricelist ~ selectedProducts.value:',
+      selectedProducts.value,
     );
     setupColumns();
     if (showToast) {
@@ -429,27 +443,7 @@ const cleanAndDeduplicateRules = (rules: PricelistRule[]): PricelistRule[] => {
 };
 
 const handleSaveRules = (rules: PricelistRule[]) => {
-  console.log('🚀 ~ handleSaveRules ~ rules:', rules);
-  // Clean and deduplicate rules first
-  const cleanedRules = cleanAndDeduplicateRules(rules);
-  console.log('🚀 ~ handleSaveRules ~ cleanedRules:', cleanedRules);
-
-  // Validate the cleaned rules
-  const validationErrors = validateQuantityLevels(cleanedRules);
-
-  if (validationErrors.length > 0) {
-    toast({
-      title: 'Validation Error',
-      description: validationErrors.join('. '),
-      variant: 'negative',
-    });
-    return;
-  }
-
-  selectedProducts.value = selectedProducts.value.map((p) =>
-    p._id === rulesId.value ? { ...p, quantityLevels: cleanedRules } : p,
-  );
-  rulesId.value = '';
+  previewPricelist('Quantity levels applied.', false);
 };
 
 // Use a computed for the displayed mode
@@ -512,6 +506,7 @@ const setupColumns = () => {
     selectedProducts.value,
     vatDescription.value,
     (id: string) => {
+      // On edit quantity levels
       const rules = selectedProducts.value.find(
         (p) => p._id === id,
       )?.quantityLevels;
@@ -524,22 +519,25 @@ const setupColumns = () => {
     },
     (id: string) => productSelector.value.removeFromManuallySelected(id),
     (value: string | number, row: Row<PricelistProductList>) => {
-      addToEditedProducts(
-        getEditedPricelistProduct(row.original, Number(value), 'price'),
+      addToPricelistProducts(
+        getPricelistProduct(row.original._id, Number(value), 'price'),
         editedProducts.value,
       );
+      previewPricelist(undefined, !isInitialLoad.value);
     },
     (value: string | number, row: Row<PricelistProductList>) => {
-      addToEditedProducts(
-        getEditedPricelistProduct(row.original, Number(value), 'margin'),
+      addToPricelistProducts(
+        getPricelistProduct(row.original._id, Number(value), 'margin'),
         editedProducts.value,
       );
+      previewPricelist(undefined, !isInitialLoad.value);
     },
     (value: string | number, row: Row<PricelistProductList>) => {
-      addToEditedProducts(
-        getEditedPricelistProduct(row.original, Number(value), 'discount'),
+      addToPricelistProducts(
+        getPricelistProduct(row.original._id, Number(value), 'discountPercent'),
         editedProducts.value,
       );
+      previewPricelist(undefined, !isInitialLoad.value);
     },
   );
 };
@@ -547,19 +545,10 @@ const setupColumns = () => {
 // =====================================================================================
 // EDIT PRODUCTS IN GRID
 // =====================================================================================
-
 watch(
   editedProducts,
   (newVal) => {
     entityDataUpdate.value.products = newVal;
-  },
-  { deep: true },
-);
-
-watch(
-  () => entityDataUpdate.value.products,
-  () => {
-    previewPricelist(undefined, !isInitialLoad.value);
   },
   { deep: true },
 );
@@ -823,6 +812,7 @@ if (!createMode.value) {
   </AlertDialog>
   <PricelistQtyLevelsPanel
     v-model:open="rulesPanelOpen"
+    v-model:pricelist-products="editedProducts"
     :product-id="rulesId"
     :rules="rulesToEdit"
     :currency="entityData.currency"

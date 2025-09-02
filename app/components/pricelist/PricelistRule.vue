@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    mode: 'margin' | 'discount' | 'price';
+    mode: 'margin' | 'discount' | 'all';
     index: number;
     currency?: string;
   }>(),
@@ -9,7 +9,7 @@ const props = withDefaults(
     mode: 'margin',
   },
 );
-const quantity = defineModel<number>('quantity');
+const quantity = defineModel<number | undefined>('quantity');
 const margin = defineModel<number | undefined>('margin');
 const discount = defineModel<number | undefined>('discount');
 const price = defineModel<number | undefined>('price');
@@ -19,7 +19,6 @@ const global = defineModel<boolean>('global');
 const initialQuantity = quantity.value;
 const initialMargin = margin.value;
 const initialDiscount = discount.value;
-const initialPrice = price.value;
 const currency = ref(props.currency ?? 'XXX');
 
 const _emit = defineEmits<{
@@ -40,17 +39,16 @@ watch(
   },
 );
 
-watch(price, (newPrice) => {
-  if (props.mode === 'price' && newPrice !== initialPrice) {
-    global.value = false;
-  }
+// watch(price, (newPrice) => {
+//   if (props.mode === 'all' && newPrice !== initialPrice) {
+//     global.value = false;
+//   }
+// });
+const quantityBlurred = ref(false);
+const quantityValid = computed(() => {
+  if (!quantityBlurred.value) return true;
+  return !!quantity.value && quantity.value > 1;
 });
-
-const validateQuantity = () => {
-  if (quantity.value && quantity.value <= 1) {
-    quantity.value = 2;
-  }
-};
 
 const tdClasses = 'text-xs text-left py-3 pr-5';
 </script>
@@ -62,10 +60,11 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         type="number"
         size="sm"
         :disabled="global"
-        @blur="validateQuantity"
+        :valid="quantityValid"
+        @blur="quantityBlurred = true"
       />
     </td>
-    <td v-if="mode === 'margin'" :class="tdClasses">
+    <td v-if="mode === 'margin' || mode === 'all'" :class="tdClasses">
       <Input
         v-model.number="margin"
         size="sm"
@@ -75,7 +74,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         <template #valueDescriptor>%</template>
       </Input>
     </td>
-    <td v-if="mode === 'discount'" :class="tdClasses">
+    <td v-if="mode === 'discount' || mode === 'all'" :class="tdClasses">
       <Input
         v-model.number="discount"
         size="sm"
@@ -85,7 +84,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         <template #valueDescriptor>%</template>
       </Input>
     </td>
-    <td v-if="mode === 'price'" :class="tdClasses">
+    <td v-if="mode === 'all'" :class="tdClasses">
       <Input
         v-model.number="price"
         size="sm"
@@ -102,16 +101,18 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
     </td>
     <td class="flex items-center justify-end gap-2 py-3">
       <Button
-        v-if="props.mode !== 'price'"
-        :disabled="applied || quantity === undefined || global"
+        v-if="props.mode !== 'all'"
+        :disabled="
+          applied || quantity === undefined || global || !quantityValid
+        "
         size="xs"
         variant="outline"
         @click="$emit('apply')"
         >{{ $t('apply') }}</Button
       >
       <Button
-        v-if="props.mode !== 'price'"
-        :disabled="quantity === undefined"
+        v-if="props.mode !== 'all'"
+        :disabled="quantity === undefined || !quantityValid"
         size="xs"
         variant="outline"
         @click="$emit('applyAndOverwrite')"

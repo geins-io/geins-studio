@@ -240,6 +240,7 @@ export interface PricelistRule {
   price?: number;
   applied?: boolean;
   global?: boolean;
+  lastFieldChanged?: 'margin' | 'discountPercent' | 'price';
 }
 
 export type PricelistRuleMode = 'margin' | 'discount';

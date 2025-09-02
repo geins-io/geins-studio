@@ -60,6 +60,7 @@ export const usePricelistProducts = () => {
         discountPercent: p.discountPercent,
         global: false,
       }));
+    console.log('🚀 ~ getQuantityLevels ~ productLevels:', productLevels);
 
     const entityLevels = entityData.rules
       ?.filter(
@@ -68,23 +69,28 @@ export const usePricelistProducts = () => {
       ) // Filter out quantity 1 and undefined rules
       ?.map((rule: PricelistRule) => ({
         quantity: rule.quantity!,
+        margin: rule.margin,
+        discountPercent: rule.discountPercent,
         price: rule.price,
         global: true,
       }));
 
-    const mergedLevels: PricelistRule[] = [...productLevels];
-    const productQuantities = new Set(
-      productLevels.map((level) => level.quantity),
-    );
+    const mergedLevels: PricelistRule[] = [
+      ...productLevels,
+      ...(entityLevels || []),
+    ];
+    // const productQuantities = new Set(
+    //   productLevels.map((level) => level.quantity),
+    // );
 
-    entityLevels?.forEach((entityLevel: PricelistRule) => {
-      if (
-        entityLevel.quantity !== undefined &&
-        !productQuantities.has(entityLevel.quantity)
-      ) {
-        mergedLevels.push(entityLevel);
-      }
-    });
+    // entityLevels?.forEach((entityLevel: PricelistRule) => {
+    //   if (
+    //     entityLevel.quantity !== undefined &&
+    //     !productQuantities.has(entityLevel.quantity)
+    //   ) {
+    //     mergedLevels.push(entityLevel);
+    //   }
+    // });
 
     return mergedLevels.sort((a, b) => (a.quantity || 0) - (b.quantity || 0));
   };
@@ -103,25 +109,25 @@ export const usePricelistProducts = () => {
       staggeredCount: 1,
     }));
 
-    selectedProducts.forEach((product) => {
-      if (product.quantityLevels) {
-        product.quantityLevels.forEach((level) => {
-          if (
-            !level.global &&
-            level.quantity !== undefined &&
-            level.quantity > 1
-          ) {
-            products.push({
-              productId: product._id,
-              price: Number(level.price),
-              margin: Number(level.margin || 0),
-              discount: Number(level.discountPercent || 0),
-              staggeredCount: level.quantity,
-            });
-          }
-        });
-      }
-    });
+    // selectedProducts.forEach((product) => {
+    //   if (product.quantityLevels) {
+    //     product.quantityLevels.forEach((level) => {
+    //       if (
+    //         !level.global &&
+    //         level.quantity !== undefined &&
+    //         level.quantity > 1
+    //       ) {
+    //         products.push({
+    //           productId: product._id,
+    //           price: Number(level.price),
+    //           margin: Number(level.margin || 0),
+    //           discount: Number(level.discountPercent || 0),
+    //           staggeredCount: level.quantity,
+    //         });
+    //       }
+    //     });
+    //   }
+    // });
 
     const updatedProducts: PricelistProduct[] = [...currentProducts];
 
@@ -148,33 +154,34 @@ export const usePricelistProducts = () => {
     return updatedProducts;
   };
 
-  const getEditedPricelistProduct = (
-    product: PricelistProductList,
+  const getPricelistProduct = (
+    productId: string,
     value: number,
-    valueType: 'discount' | 'margin' | 'price',
+    valueType: 'discountPercent' | 'margin' | 'price',
+    quantity: number = 1,
   ): PricelistProduct => {
     return {
-      productId: product._id,
+      productId,
       ...(valueType === 'price' && { price: value }),
       ...(valueType === 'margin' && { margin: value }),
-      ...(valueType === 'discount' && { discountPercent: value }),
-      staggeredCount: 1,
+      ...(valueType === 'discountPercent' && { discountPercent: value }),
+      staggeredCount: quantity,
     };
   };
 
-  const addToEditedProducts = (
+  const addToPricelistProducts = (
     product: PricelistProduct,
-    editedProducts: PricelistProduct[],
+    pricelistProducts: PricelistProduct[],
   ): void => {
-    const existingIndex = editedProducts.findIndex(
+    const existingIndex = pricelistProducts.findIndex(
       (p) =>
         p.productId === product.productId &&
         p.staggeredCount === product.staggeredCount,
     );
     if (existingIndex >= 0) {
-      editedProducts[existingIndex] = product;
+      pricelistProducts[existingIndex] = product;
     } else {
-      editedProducts.push(product);
+      pricelistProducts.push(product);
     }
   };
 
@@ -182,7 +189,7 @@ export const usePricelistProducts = () => {
     transformProductsForList,
     getQuantityLevels,
     getPricelistProducts,
-    getEditedPricelistProduct,
-    addToEditedProducts,
+    getPricelistProduct,
+    addToPricelistProducts,
   };
 };

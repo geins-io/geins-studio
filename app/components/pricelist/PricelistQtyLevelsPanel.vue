@@ -1,24 +1,33 @@
 <script setup lang="ts">
+import { useDebounceFn } from '@vueuse/core';
+
 const props = withDefaults(
   defineProps<{
     rules: PricelistRule[];
     productId: string;
     currency?: string;
+    exVat?: boolean;
   }>(),
   {},
 );
 
+const { getPricelistProduct, addToPricelistProducts } = usePricelistProducts();
+
 const open = defineModel<boolean>('open');
 const propRules = toRef(props, 'rules');
+const pricelistProducts = defineModel<PricelistProduct[]>('pricelistProducts', {
+  default: () => [],
+});
+const rulesValid = ref(true);
 
 const globalRules = computed(() => {
-  return props.rules.filter((rule: PricelistRule) => rule.global);
+  return propRules.value.filter((rule: PricelistRule) => rule.global);
 });
 const productRules = computed(() => {
-  return props.rules.filter((rule: PricelistRule) => !rule.global);
+  return propRules.value.filter((rule: PricelistRule) => !rule.global) || [];
 });
 
-const editableRules = ref<PricelistRule[]>(productRules.value);
+const editableRules = ref<PricelistRule[]>(structuredClone(productRules.value));
 
 watch(propRules, (newRules) => {
   editableRules.value = newRules.filter((rule: PricelistRule) => !rule.global);
@@ -28,13 +37,38 @@ const emit = defineEmits<{
   (e: 'save', rules: PricelistRule[]): void;
 }>();
 
+const handleUpdate = useDebounceFn((rules: PricelistRule[]) => {
+  editableRules.value = rules;
+}, 700);
+
 const handleCancel = () => {
   open.value = false;
 };
 const handleSave = () => {
+  rulesValid.value = true;
+  editableRules.value.forEach((rule) => {
+    const valueType = rule.lastFieldChanged || 'price';
+    const value = Number(rule[valueType]);
+
+    if (isNaN(value) || rule.quantity === 1) {
+      rulesValid.value = false;
+      return;
+    }
+
+    const product = getPricelistProduct(
+      props.productId,
+      value,
+      valueType,
+      rule.quantity,
+    );
+    addToPricelistProducts(product, pricelistProducts.value);
+    console.log(
+      '🚀 ~ SAVED NEW PRODUCT LEVELS TO PRICELIST',
+      pricelistProducts.value,
+    );
+  });
+  emit('save', editableRules.value);
   open.value = false;
-  const rulesToSave = [...globalRules.value, ...editableRules.value];
-  emit('save', rulesToSave);
 };
 </script>
 <template>
@@ -60,7 +94,7 @@ const handleSave = () => {
           v-if="globalRules.length"
           :rules="globalRules"
           :disabled="true"
-          mode="price"
+          mode="all"
           :currency="currency"
         />
         <p v-else class="text-muted-foreground text-sm italic">
@@ -73,11 +107,12 @@ const handleSave = () => {
           class="mt-6 mb-4"
         />
         <PricelistRules
-          :rules="productRules"
+          mode="all"
+          :rules="editableRules"
           :product-id="props.productId"
-          mode="price"
+          :ex-vat="props.exVat"
           :currency="currency"
-          @update="editableRules = $event"
+          @update="handleUpdate"
         />
       </SheetBody>
       <SheetFooter>
