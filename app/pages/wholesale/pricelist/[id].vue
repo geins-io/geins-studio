@@ -11,7 +11,6 @@ import {
   SelectorSelectionStrategy,
   type PricelistRuleMode,
   type PricelistProductList,
-  type Product,
   type PricelistRule,
   type PricelistProduct,
 } from '#shared/types';
@@ -253,40 +252,40 @@ const previewPricelist = async (
       .preview(entityDataUpdate.value, batchQueryAll.value, {
         fields: 'products,productinfo',
       });
+
     pricelistProducts.value = previewPricelist.products?.items || [];
-    console.log(
-      '🚀 ~ previewPricelist ~ pricelistProducts.value:',
-      pricelistProducts.value,
-    );
     pricelistProducts.value
       .filter((p) => p.priceMode !== 'rule' && p.priceMode !== 'auto')
       .forEach((p) => {
-        const product: PricelistProduct = {
-          productId: p.productId,
-          price: Number(p.price),
-          staggeredCount: p.staggeredCount,
-        };
+        const priceMode =
+          p.priceMode === 'margin' || p.priceMode === 'discount'
+            ? p.priceMode === 'discount'
+              ? 'discountPercent'
+              : 'margin'
+            : 'price';
+        const product = getPricelistProduct(
+          p.productId,
+          Number(p[priceMode]),
+          priceMode,
+          p.staggeredCount,
+        );
         addToPricelistProducts(product, editedProducts.value);
       });
     selectedProducts.value = transformProductsForList(
       pricelistProducts.value,
       entityData.value,
     );
-    console.log(
-      '🚀 ~ previewPricelist ~ selectedProducts.value:',
-      selectedProducts.value,
-    );
     setupColumns();
     if (showToast) {
       toast({
-        title: successText || `Product prices updated.`,
+        title: successText || `Pricelist preview updated.`,
         variant: 'positive',
       });
     }
   } catch (error) {
-    geinsLogError('Error fetching preview pricelist:', error);
+    geinsLogError('error fetching preview pricelist:', error);
     toast({
-      title: t('error_fetching_preview_pricelist'),
+      title: t('feedback_error'),
       description: t('feedback_error_description'),
       variant: 'negative',
     });
@@ -302,7 +301,7 @@ const previewPricelist = async (
 const globalRules = ref<PricelistRule[]>([]);
 
 const applyQuickAction = async (overwrite: boolean) => {
-  if (!pricelistQuickActionInput.value || !entityId.value) return;
+  if (pricelistQuickActionInput.value === undefined || !entityId.value) return;
 
   const percentage = pricelistQuickActionInput.value;
   const mode = pricelistActionsMode.value;
@@ -319,22 +318,26 @@ const applyQuickAction = async (overwrite: boolean) => {
     globalRules.value.push(globalRule);
     entityDataUpdate.value.rules = globalRules.value;
 
-    // If overwrite is true, remove products that have staggeredCount 1
-    // TODO: prompt before this happens
     if (overwrite && entityDataUpdate.value.products) {
-      entityDataUpdate.value.products = entityDataUpdate.value.products.filter(
-        (product: PricelistProduct) => product.staggeredCount !== 1,
-      );
+      overwriteActionPromptVisible.value = true;
+
+      overwriteContinueAction.value = async () => {
+        await overwriteProducts(1);
+        overwriteActionPromptVisible.value = false;
+        await previewPricelist(
+          `${percentage}% ${mode} applied to all products.`,
+        );
+        pricelistQuickActionInput.value = undefined;
+      };
+      return;
     }
 
-    // Update the preview
     await previewPricelist(`${percentage}% ${mode} applied to all products.`);
-
     pricelistQuickActionInput.value = undefined;
   } catch (error) {
-    geinsLogError('Error applying quick action:', error);
+    geinsLogError('error applying quick action:', error);
     toast({
-      title: t('error_applying_quick_action'),
+      title: t('feedback_error'),
       description: t('feedback_error_description'),
       variant: 'negative',
     });
@@ -349,18 +352,21 @@ const applyRules = async (rules: PricelistRule[]): Promise<void> => {
   });
 };
 
-const applyAndOverwrite = (payload: {
+const applyAndOverwrite = async (payload: {
   rule: PricelistRule;
   rules: PricelistRule[];
-}): void => {
-  applyRules(payload.rules);
-  // TODO: prompt before removing products
+}): Promise<void> => {
   if (entityDataUpdate.value.products) {
-    entityDataUpdate.value.products = entityDataUpdate.value.products.filter(
-      (product: PricelistProduct) =>
-        product.staggeredCount !== payload.rule.quantity,
-    );
+    currentOverwriteQuantity.value = Number(payload.rule.quantity);
+    overwriteLevelsPromptVisible.value = true;
+    overwriteContinueAction.value = async () => {
+      await overwriteProducts(currentOverwriteQuantity.value);
+      await applyRules(payload.rules);
+      overwriteLevelsPromptVisible.value = false;
+    };
+    return;
   }
+  await applyRules(payload.rules);
 };
 
 const updateEntityRules = async (): Promise<void> => {
@@ -387,6 +393,21 @@ const updateEntityRules = async (): Promise<void> => {
   entityDataUpdate.value.rules = newRules;
 };
 
+// OVERWRITE
+
+const overwriteActionPromptVisible = ref(false);
+const overwriteLevelsPromptVisible = ref(false);
+const currentOverwriteQuantity = ref<number>(1);
+const overwriteContinueAction = ref(() => {});
+
+const overwriteProducts = async (staggeredCount: number) => {
+  // Remove products with the specified staggeredCount
+  entityDataUpdate.value.products =
+    entityDataUpdate.value.products?.filter(
+      (product: PricelistProduct) => product.staggeredCount !== staggeredCount,
+    ) || [];
+};
+
 // =====================================================================================
 // QUANTITY LEVELS MANAGEMENT
 // =====================================================================================
@@ -397,53 +418,8 @@ const rulesId = ref<string>('');
 // Prompt
 const rulesModeChangePrompt = ref(false);
 
-// Validation function for quantity levels
-const validateQuantityLevels = (rules: PricelistRule[]): string[] => {
-  const errors: string[] = [];
-  const quantities = new Set<number>();
-
-  for (const rule of rules) {
-    if (rule.quantity === undefined || rule.quantity === null) {
-      errors.push('All quantity levels must have a quantity value');
-      continue;
-    }
-
-    if (rule.quantity <= 1) {
-      errors.push('Quantity must be greater than 1');
-    }
-
-    if (quantities.has(rule.quantity)) {
-      errors.push(`Duplicate quantity found: ${rule.quantity}`);
-    } else {
-      quantities.add(rule.quantity);
-    }
-  }
-
-  return errors;
-};
-
-// Function to clean and deduplicate rules
-const cleanAndDeduplicateRules = (rules: PricelistRule[]): PricelistRule[] => {
-  // Filter out quantity 1 rules and invalid quantities
-  const filteredRules = rules.filter(
-    (rule) => rule.quantity !== undefined && rule.quantity > 1,
-  );
-
-  // Deduplicate by quantity (keep the last occurrence)
-  const seenQuantities = new Map<number, PricelistRule>();
-  filteredRules.forEach((rule) => {
-    if (rule.quantity !== undefined) {
-      seenQuantities.set(rule.quantity, rule);
-    }
-  });
-
-  return Array.from(seenQuantities.values()).sort(
-    (a, b) => (a.quantity || 0) - (b.quantity || 0),
-  );
-};
-
 const handleSaveRules = (rules: PricelistRule[]) => {
-  previewPricelist('Quantity levels applied.', false);
+  previewPricelist('Product quantity levels applied.');
 };
 
 // Use a computed for the displayed mode
@@ -795,8 +771,9 @@ if (!createMode.value) {
           >Your applied quantity levels will be removed!</AlertDialogTitle
         >
         <AlertDialogDescription>
-          If you proceed changing price mode to {{ pendingModeChange }}, your
-          applied quantity levels will be removed.
+          If you proceed changing price mode to
+          <strong>{{ pendingModeChange }}</strong
+          >, your applied quantity levels will be removed.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
@@ -810,12 +787,59 @@ if (!createMode.value) {
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
+  <AlertDialog v-model:open="overwriteActionPromptVisible">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>
+          Product prices will be overwritten!
+        </AlertDialogTitle>
+        <AlertDialogDescription>
+          If you proceed to apply and <strong>overwrite</strong>, all your
+          manually added product prices in the table below will be overwritten.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel @click="overwriteActionPromptVisible = false">{{
+          $t('cancel')
+        }}</AlertDialogCancel>
+
+        <Button @click.prevent.stop="overwriteContinueAction()">
+          {{ $t('continue') }}
+        </Button>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+  <AlertDialog v-model:open="overwriteLevelsPromptVisible">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>
+          Product quantity levels will be overwritten!
+        </AlertDialogTitle>
+        <AlertDialogDescription>
+          If you proceed to apply and <strong>overwrite</strong>, your manually
+          added quantity levels for quantity
+          <strong>{{ currentOverwriteQuantity }}</strong> in the table below
+          will be overwritten.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel @click="overwriteLevelsPromptVisible = false">{{
+          $t('cancel')
+        }}</AlertDialogCancel>
+
+        <Button @click.prevent.stop="overwriteContinueAction()">
+          {{ $t('continue') }}
+        </Button>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
   <PricelistQtyLevelsPanel
     v-model:open="rulesPanelOpen"
     v-model:pricelist-products="editedProducts"
     :product-id="rulesId"
     :rules="rulesToEdit"
     :currency="entityData.currency"
+    :vat-description="vatDescription"
     @save="handleSaveRules"
   />
 
@@ -1074,7 +1098,7 @@ if (!createMode.value) {
                     mode-id="pricelistActionsMode"
                   >
                     <Label class="w-full">
-                      {{ $t('wholesale.pricelist_' + pricelistActionsMode) }}
+                      {{ $t(pricelistActionsMode) }}
                     </Label>
                     <Input
                       v-model.number="pricelistQuickActionInput"
@@ -1108,8 +1132,6 @@ if (!createMode.value) {
                   </PricelistActionCard>
                 </TabsContent>
               </Tabs>
-              <pre>rules:{{ entityDataUpdate.rules }}</pre>
-              <pre>products:{{ entityDataUpdate.products }}</pre>
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>

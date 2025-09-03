@@ -3,6 +3,7 @@ const _props = defineProps<{
   id: string;
   quantityLevels: PricelistRule[];
   className?: string;
+  vatDescription: string;
 }>();
 
 const emit = defineEmits<{
@@ -20,17 +21,27 @@ const emit = defineEmits<{
           {{ quantityLevels.length }}
           <template #tooltip>
             <div>
-              <table>
+              <table class="text-xs">
                 <thead>
                   <tr>
-                    <th>{{ $t('quantity') }}</th>
-                    <th>{{ $t('price') }}</th>
+                    <th class="px-1.5 py-1">{{ $t('quantity') }}</th>
+                    <th class="px-1.5 py-1">{{ $t('margin') }}</th>
+                    <th class="px-1.5 py-1">{{ $t('discount') }}</th>
+                    <th class="px-1.5 py-1">
+                      {{ $t('price') }} ({{ vatDescription }})
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(rule, index) in quantityLevels" :key="index">
-                    <td>{{ rule.quantity }}</td>
-                    <td>{{ rule.price }}</td>
+                  <tr
+                    v-for="(rule, index) in quantityLevels"
+                    :key="index"
+                    class="text-muted-foreground"
+                  >
+                    <td class="px-1.5 py-0.5">{{ rule.quantity }}</td>
+                    <td class="px-1.5 py-0.5">{{ rule.margin }}%</td>
+                    <td class="px-1.5 py-0.5">{{ rule.discountPercent }}%</td>
+                    <td class="px-1.5 py-0.5">{{ rule.price }}</td>
                   </tr>
                 </tbody>
               </table>

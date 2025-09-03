@@ -248,6 +248,6 @@ export type PricelistRuleMode = 'margin' | 'discount';
 export type PricelistPriceMode =
   | 'fixed'
   | 'margin'
-  | 'discountPercent'
+  | 'discount'
   | 'rule'
   | 'auto';

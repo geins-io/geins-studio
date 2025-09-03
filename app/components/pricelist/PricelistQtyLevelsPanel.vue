@@ -6,10 +6,14 @@ const props = withDefaults(
     rules: PricelistRule[];
     productId: string;
     currency?: string;
-    exVat?: boolean;
+    vatDescription?: string;
   }>(),
   {},
 );
+
+const emit = defineEmits<{
+  (e: 'save', rules: PricelistRule[]): void;
+}>();
 
 const { getPricelistProduct, addToPricelistProducts } = usePricelistProducts();
 
@@ -27,15 +31,11 @@ const productRules = computed(() => {
   return propRules.value.filter((rule: PricelistRule) => !rule.global) || [];
 });
 
-const editableRules = ref<PricelistRule[]>(structuredClone(productRules.value));
+const editableRules = ref<PricelistRule[]>(productRules.value);
 
 watch(propRules, (newRules) => {
   editableRules.value = newRules.filter((rule: PricelistRule) => !rule.global);
 });
-
-const emit = defineEmits<{
-  (e: 'save', rules: PricelistRule[]): void;
-}>();
 
 const handleUpdate = useDebounceFn((rules: PricelistRule[]) => {
   editableRules.value = rules;
@@ -43,6 +43,7 @@ const handleUpdate = useDebounceFn((rules: PricelistRule[]) => {
 
 const handleCancel = () => {
   open.value = false;
+  rulesValid.value = true;
 };
 const handleSave = () => {
   rulesValid.value = true;
@@ -50,7 +51,7 @@ const handleSave = () => {
     const valueType = rule.lastFieldChanged || 'price';
     const value = Number(rule[valueType]);
 
-    if (isNaN(value) || rule.quantity === 1) {
+    if (isNaN(value) || !rule.quantity || rule.quantity === 1) {
       rulesValid.value = false;
       return;
     }
@@ -62,13 +63,13 @@ const handleSave = () => {
       rule.quantity,
     );
     addToPricelistProducts(product, pricelistProducts.value);
-    console.log(
-      '🚀 ~ SAVED NEW PRODUCT LEVELS TO PRICELIST',
-      pricelistProducts.value,
-    );
   });
+  if (!rulesValid.value) {
+    return;
+  }
   emit('save', editableRules.value);
   open.value = false;
+  rulesValid.value = true;
 };
 </script>
 <template>
@@ -92,9 +93,10 @@ const handleSave = () => {
         />
         <PricelistRules
           v-if="globalRules.length"
+          mode="all"
           :rules="globalRules"
           :disabled="true"
-          mode="all"
+          :vat-description="props.vatDescription"
           :currency="currency"
         />
         <p v-else class="text-muted-foreground text-sm italic">
@@ -110,16 +112,29 @@ const handleSave = () => {
           mode="all"
           :rules="editableRules"
           :product-id="props.productId"
-          :ex-vat="props.exVat"
+          :vat-description="props.vatDescription"
           :currency="currency"
           @update="handleUpdate"
         />
+        <Feedback
+          v-auto-animate
+          v-if="!rulesValid"
+          type="negative"
+          class="mt-10"
+        >
+          <template #title> Check your quantity levels and try again </template>
+          <template #description>
+            Quantity must be more than 1 and at least one value must be present
+          </template>
+        </Feedback>
       </SheetBody>
       <SheetFooter>
         <Button variant="outline" @click="handleCancel">
           {{ $t('cancel') }}
         </Button>
-        <Button @click.stop="handleSave"> {{ $t('apply') }} </Button>
+        <Button @click.stop="handleSave">
+          {{ $t('apply') }}
+        </Button>
       </SheetFooter>
     </SheetContent>
   </Sheet>

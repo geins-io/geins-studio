@@ -17,6 +17,12 @@ export const usePricelistProducts = () => {
     return pricelistProducts
       .filter((p) => p.staggeredCount === 1)
       .map((product) => {
+        const quantityLevels = getQuantityLevels(
+          product.productId,
+          pricelistProducts,
+          entityData,
+        );
+        const hasProductLevels = quantityLevels.some((level) => !level.global);
         return {
           _id: product.productId,
           name: product.name || '',
@@ -36,12 +42,10 @@ export const usePricelistProducts = () => {
           ),
           discount: product.discountPercent || 0,
           margin: product.margin || 0,
-          quantityLevels: getQuantityLevels(
-            product.productId,
-            pricelistProducts,
-            entityData,
-          ),
-          manual: false,
+          quantityLevels,
+          manual:
+            hasProductLevels ||
+            (product.priceMode !== 'auto' && product.priceMode !== 'rule'),
         };
       });
   };
@@ -60,7 +64,6 @@ export const usePricelistProducts = () => {
         discountPercent: p.discountPercent,
         global: false,
       }));
-    console.log('🚀 ~ getQuantityLevels ~ productLevels:', productLevels);
 
     const entityLevels = entityData.rules
       ?.filter(
@@ -79,79 +82,8 @@ export const usePricelistProducts = () => {
       ...productLevels,
       ...(entityLevels || []),
     ];
-    // const productQuantities = new Set(
-    //   productLevels.map((level) => level.quantity),
-    // );
-
-    // entityLevels?.forEach((entityLevel: PricelistRule) => {
-    //   if (
-    //     entityLevel.quantity !== undefined &&
-    //     !productQuantities.has(entityLevel.quantity)
-    //   ) {
-    //     mergedLevels.push(entityLevel);
-    //   }
-    // });
 
     return mergedLevels.sort((a, b) => (a.quantity || 0) - (b.quantity || 0));
-  };
-
-  const getPricelistProducts = (
-    selectedProducts: PricelistProductList[],
-    currentProducts: PricelistProduct[] = [],
-  ): PricelistProduct[] => {
-    const products = selectedProducts.map((product) => ({
-      productId: product._id,
-      price: Number(
-        product.listPrice?.price || product.regularPrice?.price || 0,
-      ),
-      margin: Number(product.margin || 0),
-      discount: Number(product.discount || 0),
-      staggeredCount: 1,
-    }));
-
-    // selectedProducts.forEach((product) => {
-    //   if (product.quantityLevels) {
-    //     product.quantityLevels.forEach((level) => {
-    //       if (
-    //         !level.global &&
-    //         level.quantity !== undefined &&
-    //         level.quantity > 1
-    //       ) {
-    //         products.push({
-    //           productId: product._id,
-    //           price: Number(level.price),
-    //           margin: Number(level.margin || 0),
-    //           discount: Number(level.discountPercent || 0),
-    //           staggeredCount: level.quantity,
-    //         });
-    //       }
-    //     });
-    //   }
-    // });
-
-    const updatedProducts: PricelistProduct[] = [...currentProducts];
-
-    products.forEach((product) => {
-      const existingIndex = updatedProducts.findIndex(
-        (p) =>
-          p.productId === product.productId &&
-          p.staggeredCount === product.staggeredCount,
-      );
-      if (existingIndex >= 0) {
-        updatedProducts[existingIndex] = {
-          _id: updatedProducts[existingIndex]?._id || undefined,
-          productId: product.productId,
-          price: product.price,
-          margin: product.margin,
-          discountPercent: product.discount,
-          staggeredCount: product.staggeredCount,
-        };
-      } else {
-        updatedProducts.push(product);
-      }
-    });
-
-    return updatedProducts;
   };
 
   const getPricelistProduct = (
@@ -188,7 +120,6 @@ export const usePricelistProducts = () => {
   return {
     transformProductsForList,
     getQuantityLevels,
-    getPricelistProducts,
     getPricelistProduct,
     addToPricelistProducts,
   };

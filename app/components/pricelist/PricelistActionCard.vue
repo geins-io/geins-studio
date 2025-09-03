@@ -25,7 +25,7 @@ const mode = defineModel<PricelistRuleMode>('mode', { required: true });
               :key="item"
               :value="item"
             >
-              {{ $t('wholesale.pricelist_' + item) }}
+              {{ $t(item) }}
             </SelectItem>
           </SelectContent>
         </Select>

@@ -4,6 +4,7 @@ const props = defineProps<{
   mode: 'margin' | 'discount' | 'all';
   currency?: string;
   disabled?: boolean;
+  vatDescription?: string;
 }>();
 
 const emit = defineEmits<{
@@ -124,13 +125,13 @@ const thClasses = 'text-xs font-bold text-left py-2';
         <tr>
           <th :class="thClasses">{{ $t('quantity') }}</th>
           <th v-if="mode === 'margin' || mode === 'all'" :class="thClasses">
-            {{ $t('wholesale.pricelist_margin') }}
+            {{ $t('margin') }}
           </th>
           <th v-if="mode === 'discount' || mode === 'all'" :class="thClasses">
-            {{ $t('wholesale.pricelist_discount') }}
+            {{ $t('discount') }}
           </th>
           <th v-if="mode === 'all'" :class="thClasses">
-            {{ $t('wholesale.pricelist_price') }}
+            {{ $t('wholesale.pricelist_price') }} ({{ props.vatDescription }})
           </th>
           <th v-else :class="thClasses">
             {{ $t('wholesale.pricelist_applied') }}

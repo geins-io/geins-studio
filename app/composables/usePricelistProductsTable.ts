@@ -1,6 +1,6 @@
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 import type { PricelistProductList } from '#shared/types';
-import { PricelistQtyLevelsCell } from '#components';
+import { PricelistQtyLevelsCell, PricelistManualCell } from '#components';
 
 export const usePricelistProductsTable = () => {
   const { t } = useI18n();
@@ -37,10 +37,10 @@ export const usePricelistProductsTable = () => {
         margin: 'editable-percentage',
       },
       columnTitles: {
-        listPrice: `${t('wholesale.pricelist_pricelist_price')} (${vatDescription})`,
-        regularPrice: `${t('wholesale.pricelist_price')} (${vatDescription})`,
+        listPrice: `${t('wholesale.pricelist_price')} (${vatDescription})`,
+        regularPrice: `${t('price')} (${vatDescription})`,
       },
-      excludeColumns: ['manual', 'quantityLevels'],
+      excludeColumns: ['quantityLevels', 'manual'],
       columnCellProps: {
         listPrice: {
           onBlur: onPriceBlur,
@@ -55,7 +55,12 @@ export const usePricelistProductsTable = () => {
     };
 
     let columns = getColumns(selectedProducts, columnOptions);
-    columns = addQuantityLevelsColumn(columns, onEditQuantityLevels);
+    columns = addQuantityLevelsColumn(
+      columns,
+      onEditQuantityLevels,
+      vatDescription,
+    );
+    columns = addManualColumn(columns);
     addActionsColumn(
       columns,
       {
@@ -70,6 +75,7 @@ export const usePricelistProductsTable = () => {
   const addQuantityLevelsColumn = (
     columns: ColumnDef<PricelistProductList>[],
     onEdit: (id: string) => void,
+    vatDescription: string,
   ): ColumnDef<PricelistProductList>[] => {
     const quantityLevelsColumn: ColumnDef<PricelistProductList> = {
       id: 'quantityLevels',
@@ -83,6 +89,7 @@ export const usePricelistProductsTable = () => {
         return h(PricelistQtyLevelsCell, {
           quantityLevels: rowData.quantityLevels,
           className: getBasicCellStyle(table),
+          vatDescription,
           id: rowData._id,
           onEdit,
         });
@@ -98,9 +105,38 @@ export const usePricelistProductsTable = () => {
     return extendColumns(columns, quantityLevelsColumn);
   };
 
+  const addManualColumn = (columns: ColumnDef<PricelistProductList>[]) => {
+    const manualColumn: ColumnDef<PricelistProductList> = {
+      id: 'manual',
+      enableHiding: false,
+      enableSorting: false,
+      size: 22,
+      maxSize: 22,
+      minSize: 22,
+      cell: ({ row, table }) => {
+        const rowData = row.original;
+        return h(PricelistManualCell, {
+          manual: rowData.manual,
+          className: getBasicCellStyle(table),
+        });
+      },
+      header: ({ table }) => {
+        return h('div', { class: cn(getBasicHeaderStyle(table), 'px-0') }, ' ');
+      },
+    };
+    return extendColumns(columns, manualColumn);
+  };
+
   const getPinnedState = () => ({
     left: [],
-    right: ['listPrice', 'discount', 'margin', 'quantityLevels', 'actions'],
+    right: [
+      'listPrice',
+      'discount',
+      'margin',
+      'quantityLevels',
+      'manual',
+      'actions',
+    ],
   });
 
   return {

@@ -111,6 +111,7 @@ export const useColumns = <T extends object>() => {
       selectable = false,
       sortable = true,
       columnTypes,
+      columnSortable,
       maxTextLength = 60,
       columnCellProps,
     } = options;
@@ -190,8 +191,11 @@ export const useColumns = <T extends object>() => {
         maxSize: 0,
       };
 
+      const colSortable =
+        columnSortable?.[key] !== undefined ? columnSortable[key] : sortable;
+
       let cellRenderer;
-      let headerRenderer = sortable
+      let headerRenderer = colSortable
         ? ({ table, column }: { table: Table<T>; column: Column<T> }) => {
             return h(
               'div',
