@@ -17,12 +17,6 @@ export const usePricelistProducts = () => {
     return pricelistProducts
       .filter((p) => p.staggeredCount === 1)
       .map((product) => {
-        const quantityLevels = getQuantityLevels(
-          product.productId,
-          pricelistProducts,
-          entityData,
-        );
-        const hasProductLevels = quantityLevels.some((level) => !level.global);
         return {
           _id: product.productId,
           name: product.name || '',
@@ -42,10 +36,12 @@ export const usePricelistProducts = () => {
           ),
           discount: product.discountPercent || 0,
           margin: product.margin || 0,
-          quantityLevels,
-          manual:
-            hasProductLevels ||
-            (product.priceMode !== 'auto' && product.priceMode !== 'rule'),
+          quantityLevels: getQuantityLevels(
+            product.productId,
+            pricelistProducts,
+            entityData,
+          ),
+          priceMode: product.priceMode || 'auto',
         };
       });
   };

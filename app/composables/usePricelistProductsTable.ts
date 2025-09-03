@@ -1,6 +1,6 @@
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 import type { PricelistProductList } from '#shared/types';
-import { PricelistQtyLevelsCell, PricelistManualCell } from '#components';
+import { PricelistQtyLevelsCell, PricelistPriceModeCell } from '#components';
 
 export const usePricelistProductsTable = () => {
   const { t } = useI18n();
@@ -40,7 +40,7 @@ export const usePricelistProductsTable = () => {
         listPrice: `${t('wholesale.pricelist_price')} (${vatDescription})`,
         regularPrice: `${t('price')} (${vatDescription})`,
       },
-      excludeColumns: ['quantityLevels', 'manual'],
+      excludeColumns: ['quantityLevels', 'priceMode'],
       columnCellProps: {
         listPrice: {
           onBlur: onPriceBlur,
@@ -60,7 +60,7 @@ export const usePricelistProductsTable = () => {
       onEditQuantityLevels,
       vatDescription,
     );
-    columns = addManualColumn(columns);
+    columns = addPriceModeColumn(columns);
     addActionsColumn(
       columns,
       {
@@ -105,9 +105,9 @@ export const usePricelistProductsTable = () => {
     return extendColumns(columns, quantityLevelsColumn);
   };
 
-  const addManualColumn = (columns: ColumnDef<PricelistProductList>[]) => {
-    const manualColumn: ColumnDef<PricelistProductList> = {
-      id: 'manual',
+  const addPriceModeColumn = (columns: ColumnDef<PricelistProductList>[]) => {
+    const priceModeColumn: ColumnDef<PricelistProductList> = {
+      id: 'priceMode',
       enableHiding: false,
       enableSorting: false,
       size: 22,
@@ -115,8 +115,8 @@ export const usePricelistProductsTable = () => {
       minSize: 22,
       cell: ({ row, table }) => {
         const rowData = row.original;
-        return h(PricelistManualCell, {
-          manual: rowData.manual,
+        return h(PricelistPriceModeCell, {
+          priceMode: rowData.priceMode,
           className: getBasicCellStyle(table),
         });
       },
@@ -124,7 +124,7 @@ export const usePricelistProductsTable = () => {
         return h('div', { class: cn(getBasicHeaderStyle(table), 'px-0') }, ' ');
       },
     };
-    return extendColumns(columns, manualColumn);
+    return extendColumns(columns, priceModeColumn);
   };
 
   const getPinnedState = () => ({
@@ -134,7 +134,7 @@ export const usePricelistProductsTable = () => {
       'discount',
       'margin',
       'quantityLevels',
-      'manual',
+      'priceMode',
       'actions',
     ],
   });

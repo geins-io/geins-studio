@@ -222,6 +222,13 @@ export interface PricelistProduct {
   purchasePriceCurrency?: string;
 }
 
+export interface PricelistProductPreview {
+  productId: string;
+  price?: number;
+  margin?: number;
+  discountPercent?: number;
+}
+
 export interface PricelistProductList extends EntityBaseWithName {
   thumbnail: string;
   purchasePrice: Price;
@@ -230,7 +237,7 @@ export interface PricelistProductList extends EntityBaseWithName {
   discount: number;
   margin: number;
   quantityLevels: PricelistRule[];
-  manual: boolean;
+  priceMode: string;
 }
 
 export interface PricelistRule {

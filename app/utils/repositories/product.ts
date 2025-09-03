@@ -8,6 +8,7 @@ import type {
   ProductUpdate,
   BatchQueryResult,
   BatchQuery,
+  PricelistProduct,
 } from '#shared/types';
 
 const { batchQueryAll } = useBatchQuery();
@@ -140,7 +141,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             );
           },
           async preview(
-            priceList: ProductPricelistUpdate,
+            pricelist: ProductPricelistUpdate,
             batchQuery?: BatchQuery,
             query?: Record<string, string>,
           ): Promise<ProductPricelist> {
@@ -149,10 +150,23 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
               {
                 method: 'POST',
                 body: {
-                  priceList,
+                  pricelist,
                   batchQuery,
                 },
                 query,
+              },
+            );
+          },
+          async previewPrice(
+            pricelistProduct: PricelistProductPreview,
+          ): Promise<ProductPricelist> {
+            return await fetch<ProductPricelist>(
+              `${pricelistIdEndpoint}/previewprice`,
+              {
+                method: 'POST',
+                body: {
+                  ...pricelistProduct,
+                },
               },
             );
           },

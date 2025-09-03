@@ -15,7 +15,9 @@ const emit = defineEmits<{
   (e: 'save', rules: PricelistRule[]): void;
 }>();
 
+const { $geinsApi } = useNuxtApp();
 const { getPricelistProduct, addToPricelistProducts } = usePricelistProducts();
+const productApi = repo.product($geinsApi);
 
 const open = defineModel<boolean>('open');
 const propRules = toRef(props, 'rules');
