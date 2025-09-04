@@ -5,6 +5,7 @@ const props = defineProps<{
   currency?: string;
   disabled?: boolean;
   vatDescription?: string;
+  showLoading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -14,9 +15,12 @@ const emit = defineEmits<{
     payload: { rule: PricelistRule; rules: PricelistRule[] },
   ): void;
   (e: 'update', rules: PricelistRule[]): void;
+  (e: 'update-rule', payload: { index: number; rule: PricelistRule }): void;
 }>();
 
 const rules = toRef(props, 'rules');
+const loading = defineModel<boolean>('loading');
+const loadingIndex = ref<number | null>(null);
 
 const localRules = ref<PricelistRule[]>(
   rules.value.map((rule) => ({
@@ -101,6 +105,19 @@ const apply = (index: number, overwrite: boolean): void => {
   }
 };
 
+const handleUpdate = (
+  index: number,
+  rule: PricelistRule,
+  field: PricelistRuleField,
+): void => {
+  rule.lastFieldChanged = field;
+  loadingIndex.value = index;
+  if (props.showLoading) {
+    loading.value = true;
+  }
+  emit('update-rule', { index, rule });
+};
+
 const remove = (index: number): void => {
   const rule = visibleRules.value[index];
   if (rule) {
@@ -151,9 +168,11 @@ const thClasses = 'text-xs font-bold text-left py-2';
           :mode="mode"
           :index="index"
           :currency="currency"
-          @update:margin="rule.lastFieldChanged = 'margin'"
-          @update:discount="rule.lastFieldChanged = 'discountPercent'"
-          @update:price="rule.lastFieldChanged = 'price'"
+          :loading="loading && loadingIndex === index"
+          :last-field-changed="rule.lastFieldChanged"
+          @update:margin="handleUpdate(index, rule, 'margin')"
+          @update:discount="handleUpdate(index, rule, 'discountPercent')"
+          @update:price="handleUpdate(index, rule, 'price')"
           @apply="apply(index, false)"
           @apply-and-overwrite="apply(index, true)"
           @remove="remove(index)"

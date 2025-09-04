@@ -583,9 +583,9 @@ export const useColumns = <T extends object>() => {
       id: 'actions',
       enableHiding: false,
       enableSorting: false,
-      size: 48,
-      maxSize: 48,
-      minSize: 48,
+      size: 49,
+      maxSize: 49,
+      minSize: 49,
       header: ({ table }: { table: Table<T> }) =>
         h('div', {
           class: cn(getBasicHeaderStyle(table)),

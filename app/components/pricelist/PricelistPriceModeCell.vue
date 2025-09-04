@@ -9,7 +9,7 @@ const tooltipContent = computed(() => {
     case 'fixed':
     case 'margin':
     case 'discount':
-      return 'Price changed manually';
+      return 'Price set manually';
     case 'rule':
       return 'Price set globally';
     case 'auto':
@@ -40,9 +40,10 @@ const displayLetter = computed(() => {
           <span
             :class="
               cn(
-                'text-muted-foreground w-full text-center text-[10px]',
-                displayLetter === 'M' && 'text-warning',
-                displayLetter === 'G' && 'text-blue-900',
+                'text-muted-foreground decoration-muted-foreground w-full text-center text-[10px] underline decoration-dashed underline-offset-3',
+                displayLetter === 'M' && 'text-warning decoration-warning',
+                displayLetter === 'G' &&
+                  'text-blue-900 decoration-blue-900 dark:text-blue-200 dark:decoration-blue-200',
               )
             "
           >

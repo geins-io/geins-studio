@@ -4,6 +4,7 @@ import type {
   PricelistProductList,
   PricelistRule,
   ProductPricelist,
+  PricelistRuleField,
 } from '#shared/types';
 
 export const usePricelistProducts = () => {
@@ -59,6 +60,7 @@ export const usePricelistProducts = () => {
         margin: p.margin,
         discountPercent: p.discountPercent,
         global: false,
+        lastFieldChanged: convertPriceModeToRuleField(p.priceMode),
       }));
 
     const entityLevels = entityData.rules
@@ -85,7 +87,7 @@ export const usePricelistProducts = () => {
   const getPricelistProduct = (
     productId: string,
     value: number,
-    valueType: 'discountPercent' | 'margin' | 'price',
+    valueType: PricelistRuleField,
     quantity: number = 1,
   ): PricelistProduct => {
     return {
@@ -113,10 +115,21 @@ export const usePricelistProducts = () => {
     }
   };
 
+  const convertPriceModeToRuleField = (
+    priceMode?: PricelistPriceMode,
+  ): PricelistRuleField => {
+    return priceMode === 'margin' || priceMode === 'discount'
+      ? priceMode === 'discount'
+        ? 'discountPercent'
+        : 'margin'
+      : 'price';
+  };
+
   return {
     transformProductsForList,
     getQuantityLevels,
     getPricelistProduct,
     addToPricelistProducts,
+    convertPriceModeToRuleField,
   };
 };

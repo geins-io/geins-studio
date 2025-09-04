@@ -4,6 +4,8 @@ const props = withDefaults(
     mode: 'margin' | 'discount' | 'all';
     index: number;
     currency?: string;
+    loading?: boolean;
+    lastFieldChanged?: PricelistRuleField;
   }>(),
   {
     mode: 'margin',
@@ -69,6 +71,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         v-model.number="margin"
         size="sm"
         placeholder="0"
+        :loading="loading && lastFieldChanged !== 'margin'"
         :disabled="global"
       >
         <template #valueDescriptor>%</template>
@@ -79,6 +82,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         v-model.number="discount"
         size="sm"
         placeholder="0"
+        :loading="loading && lastFieldChanged !== 'discountPercent'"
         :disabled="global"
       >
         <template #valueDescriptor>%</template>
@@ -89,6 +93,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         v-model.number="price"
         size="sm"
         placeholder="0"
+        :loading="loading && lastFieldChanged !== 'price'"
         :disabled="global"
       >
         <template #valueDescriptor>{{ currency }}</template>

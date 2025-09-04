@@ -5,6 +5,7 @@ const props = withDefaults(
   defineProps<{
     rules: PricelistRule[];
     productId: string;
+    pricelistId: string;
     currency?: string;
     vatDescription?: string;
   }>(),
@@ -25,6 +26,7 @@ const pricelistProducts = defineModel<PricelistProduct[]>('pricelistProducts', {
   default: () => [],
 });
 const rulesValid = ref(true);
+const rulesLoading = ref(false);
 
 const globalRules = computed(() => {
   return propRules.value.filter((rule: PricelistRule) => rule.global);
@@ -41,7 +43,36 @@ watch(propRules, (newRules) => {
 
 const handleUpdate = useDebounceFn((rules: PricelistRule[]) => {
   editableRules.value = rules;
-}, 700);
+}, 800);
+const handleUpdateRule = useDebounceFn(
+  async (payload: { index: number; rule: PricelistRule }) => {
+    try {
+      rulesLoading.value = true;
+      const valueType = payload.rule.lastFieldChanged || 'price';
+      const value = payload.rule[valueType];
+      const previewProduct = {
+        productId: props.productId,
+        ...(valueType === 'price' && { price: value }),
+        ...(valueType === 'margin' && { margin: value }),
+        ...(valueType === 'discountPercent' && { discountPercent: value }),
+      };
+      const previewPrice = await productApi.pricelist
+        .id(props.pricelistId)
+        .previewPrice(previewProduct);
+
+      editableRules.value[payload.index] = {
+        ...editableRules.value[payload.index],
+        margin: previewPrice.margin,
+        discountPercent: previewPrice.discountPercent,
+        price: previewPrice.price,
+      };
+    } catch {
+    } finally {
+      rulesLoading.value = false;
+    }
+  },
+  800,
+);
 
 const handleCancel = () => {
   open.value = false;
@@ -111,11 +142,14 @@ const handleSave = () => {
           class="mt-6 mb-4"
         />
         <PricelistRules
+          v-model:loading="rulesLoading"
           mode="all"
+          :show-loading="true"
           :rules="editableRules"
           :product-id="props.productId"
           :vat-description="props.vatDescription"
           :currency="currency"
+          @update-rule="handleUpdateRule"
           @update="handleUpdate"
         />
         <Feedback

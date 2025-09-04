@@ -159,8 +159,8 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           },
           async previewPrice(
             pricelistProduct: PricelistProductPreview,
-          ): Promise<ProductPricelist> {
-            return await fetch<ProductPricelist>(
+          ): Promise<PricelistProductPreviewResponse> {
+            return await fetch<PricelistProductPreviewResponse>(
               `${pricelistIdEndpoint}/previewprice`,
               {
                 method: 'POST',

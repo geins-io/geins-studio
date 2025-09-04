@@ -55,7 +55,14 @@ const inputAttrs = computed(() => {
   >
     <LucideLoaderCircle
       v-if="loading"
-      class="absolute top-2 right-3 animate-spin"
+      :class="
+        cn(
+          'absolute animate-spin',
+          props.size === 'sm' ? 'top-1.5 right-2 size-3.5' : '',
+          props.size === 'md' ? 'top-2 right-3 h-4 w-4' : '',
+          props.size === 'default' ? 'top-2 right-3 h-5 w-5' : '',
+        )
+      "
     />
     <div
       v-else-if="$slots.icon"

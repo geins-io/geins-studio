@@ -229,6 +229,13 @@ export interface PricelistProductPreview {
   discountPercent?: number;
 }
 
+export interface PricelistProductPreviewResponse {
+  productId: string;
+  price: number;
+  margin: number;
+  discountPercent: number;
+}
+
 export interface PricelistProductList extends EntityBaseWithName {
   thumbnail: string;
   purchasePrice: Price;
@@ -247,8 +254,10 @@ export interface PricelistRule {
   price?: number;
   applied?: boolean;
   global?: boolean;
-  lastFieldChanged?: 'margin' | 'discountPercent' | 'price';
+  lastFieldChanged?: PricelistRuleField;
 }
+
+export type PricelistRuleField = 'margin' | 'discountPercent' | 'price';
 
 export type PricelistRuleMode = 'margin' | 'discount';
 

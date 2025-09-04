@@ -67,8 +67,8 @@ const entityBase: ProductPricelistCreate = {
   currency: currentCurrency.value || '',
   dateCreated: '',
   exVat: true,
-  autoAddProducts: false,
-  forced: false,
+  autoAddProducts: true,
+  forced: true,
   products: [],
   rules: [],
   productSelectionQuery: undefined,
@@ -124,6 +124,7 @@ const {
   transformProductsForList,
   getPricelistProduct,
   addToPricelistProducts,
+  convertPriceModeToRuleField,
 } = usePricelistProducts();
 
 const { setupPricelistColumns, getPinnedState } = usePricelistProductsTable();
@@ -257,12 +258,7 @@ const previewPricelist = async (
     pricelistProducts.value
       .filter((p) => p.priceMode !== 'rule' && p.priceMode !== 'auto')
       .forEach((p) => {
-        const priceMode =
-          p.priceMode === 'margin' || p.priceMode === 'discount'
-            ? p.priceMode === 'discount'
-              ? 'discountPercent'
-              : 'margin'
-            : 'price';
+        const priceMode = convertPriceModeToRuleField(p.priceMode);
         const product = getPricelistProduct(
           p.productId,
           Number(p[priceMode]),
@@ -837,6 +833,7 @@ if (!createMode.value) {
     v-model:open="rulesPanelOpen"
     v-model:pricelist-products="editedProducts"
     :product-id="rulesId"
+    :pricelist-id="entityId"
     :rules="rulesToEdit"
     :currency="entityData.currency"
     :vat-description="vatDescription"
@@ -1075,9 +1072,9 @@ if (!createMode.value) {
             :key="`tab-${currentTab}`"
           >
             <ContentEditCard
-              :title="$t('wholesale.pricelist_full_range_adjustments_title')"
+              :title="$t('wholesale.pricelist_global_adjustments_title')"
               :description="
-                $t('wholesale.pricelist_full_range_adjustments_description')
+                $t('wholesale.pricelist_global_adjustments_description')
               "
               :create-mode="createMode"
               :step-valid="true"
