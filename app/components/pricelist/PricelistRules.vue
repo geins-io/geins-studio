@@ -83,6 +83,7 @@ const getAppliedRules = (): PricelistRule[] => {
 };
 
 const apply = (index: number, overwrite: boolean): void => {
+  loadingIndex.value = index;
   const rule = visibleRules.value[index];
   if (rule) {
     // Find the corresponding rule in localRules and update it

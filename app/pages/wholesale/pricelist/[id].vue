@@ -296,6 +296,7 @@ const previewPricelist = async (
 
 const globalRules = ref<PricelistRule[]>([]);
 const quickActionLoading = ref<boolean>(false);
+const quantityLevelsLoading = ref<boolean>(false);
 
 const applyQuickAction = async (overwrite: boolean) => {
   if (pricelistQuickActionInput.value === undefined || !entityId.value) return;
@@ -345,11 +346,21 @@ const applyQuickAction = async (overwrite: boolean) => {
 };
 
 const applyRules = async (rules: PricelistRule[]): Promise<void> => {
-  globalRules.value = rules;
-  await updateEntityRules();
-  nextTick(async () => {
+  quantityLevelsLoading.value = true;
+  try {
+    globalRules.value = rules;
+    await updateEntityRules();
     await previewPricelist('Quantity levels applied.');
-  });
+  } catch (error) {
+    geinsLogError('error applying rules:', error);
+    toast({
+      title: t('feedback_error'),
+      description: t('feedback_error_description'),
+      variant: 'negative',
+    });
+  } finally {
+    quantityLevelsLoading.value = false;
+  }
 };
 
 const applyAndOverwrite = async (payload: {
@@ -360,9 +371,9 @@ const applyAndOverwrite = async (payload: {
     currentOverwriteQuantity.value = Number(payload.rule.quantity);
     overwriteLevelsPromptVisible.value = true;
     overwriteContinueAction.value = async () => {
+      overwriteLevelsPromptVisible.value = false;
       await overwriteProducts(currentOverwriteQuantity.value);
       await applyRules(payload.rules);
-      overwriteLevelsPromptVisible.value = false;
     };
     return;
   }
@@ -1126,6 +1137,7 @@ if (!createMode.value) {
                     mode-id="pricelistRulesMode"
                   >
                     <PricelistRules
+                      v-model:loading="quantityLevelsLoading"
                       :rules="globalRules"
                       :mode="pricelistRulesMode"
                       @apply="applyRules"

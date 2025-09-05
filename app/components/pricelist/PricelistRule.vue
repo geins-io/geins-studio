@@ -18,12 +18,14 @@ const price = defineModel<number | undefined>('price');
 const applied = defineModel<boolean>('applied');
 const global = defineModel<boolean>('global');
 
+const loading = toRef(props, 'loading');
+
 const initialQuantity = quantity.value;
 const initialMargin = margin.value;
 const initialDiscount = discount.value;
 const currency = ref(props.currency ?? 'XXX');
 
-const _emit = defineEmits<{
+const emit = defineEmits<{
   (
     e: 'update:quantity' | 'update:margin' | 'update:discount' | 'update:price',
     payload: number,
@@ -41,11 +43,6 @@ watch(
   },
 );
 
-// watch(price, (newPrice) => {
-//   if (props.mode === 'all' && newPrice !== initialPrice) {
-//     global.value = false;
-//   }
-// });
 const quantityBlurred = ref(false);
 const quantityValid = computed(() => {
   if (!quantityBlurred.value) return true;
@@ -53,6 +50,10 @@ const quantityValid = computed(() => {
 });
 
 const tdClasses = 'text-xs text-left py-3 pr-5';
+
+const handleApply = (overwrite: boolean) => {
+  emit(overwrite ? 'applyAndOverwrite' : 'apply');
+};
 </script>
 <template>
   <tr class="border-b first:border-t">
@@ -101,7 +102,8 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
     </td>
 
     <td v-else :class="cn(tdClasses, 'text-center')">
-      <LucideCircleCheck v-if="applied" class="text-positive size-4" />
+      <LucideLoaderCircle v-if="loading" class="size-4 animate-spin" />
+      <LucideCircleCheck v-else-if="applied" class="text-positive size-4" />
       <LucideCircleDashed v-else class="text-foreground/30 size-4" />
     </td>
     <td class="flex items-center justify-end gap-2 py-3">
@@ -112,7 +114,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         "
         size="xs"
         variant="outline"
-        @click="$emit('apply')"
+        @click="handleApply(false)"
         >{{ $t('apply') }}</Button
       >
       <Button
@@ -120,7 +122,7 @@ const tdClasses = 'text-xs text-left py-3 pr-5';
         :disabled="quantity === undefined || !quantityValid"
         size="xs"
         variant="outline"
-        @click="$emit('applyAndOverwrite')"
+        @click="handleApply(true)"
         >{{ $t('wholesale.pricelist_apply_overwrite') }}</Button
       >
       <Button
