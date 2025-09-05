@@ -295,12 +295,14 @@ const previewPricelist = async (
 // =====================================================================================
 
 const globalRules = ref<PricelistRule[]>([]);
+const quickActionLoading = ref<boolean>(false);
 
 const applyQuickAction = async (overwrite: boolean) => {
   if (pricelistQuickActionInput.value === undefined || !entityId.value) return;
 
   const percentage = pricelistQuickActionInput.value;
   const mode = pricelistActionsMode.value;
+  quickActionLoading.value = true;
 
   try {
     // Create global rule for quantity 1
@@ -337,6 +339,8 @@ const applyQuickAction = async (overwrite: boolean) => {
       description: t('feedback_error_description'),
       variant: 'negative',
     });
+  } finally {
+    quickActionLoading.value = false;
   }
 };
 
@@ -1101,6 +1105,7 @@ if (!createMode.value) {
                       v-model.number="pricelistQuickActionInput"
                       class="w-48"
                       size="md"
+                      :loading="quickActionLoading"
                     >
                       <template #valueDescriptor>%</template>
                     </Input>
