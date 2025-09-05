@@ -14,8 +14,7 @@ const selectedIds = computed(() => props.selection?.ids || []);
 </script>
 <template>
   <div>
-    <h2 class="mb-1.5 text-xl font-semibold">{{ title }}</h2>
-    <p class="text-sm text-muted-foreground">{{ description }}</p>
+    <ContentCardHeader :title="title" :description="description" size="lg" />
   </div>
   <div class="flex w-2/5 gap-6">
     <SelectorQuickAdd

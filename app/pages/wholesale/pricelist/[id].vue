@@ -1156,12 +1156,16 @@ if (!createMode.value) {
             v-if="currentTab === 1 && !createMode"
             :key="`tab-${currentTab}`"
           >
-            <ContentEditCard
-              :title="$t('wholesale.pricelist_global_rules_title')"
-              :description="$t('wholesale.pricelist_global_rules_description')"
-              :create-mode="createMode"
-              :step-valid="true"
-              ><div>
+            <ContentCard>
+              <ContentCardHeader
+                :title="$t('wholesale.pricelist_global_rules_title')"
+                :description="
+                  $t('wholesale.pricelist_global_rules_description')
+                "
+                size="lg"
+                class="mb-6"
+              />
+              <div>
                 <Tabs v-auto-animate default-value="base-rule" class="relative">
                   <TabsList
                     :class="
@@ -1240,7 +1244,7 @@ if (!createMode.value) {
                   selection below.
                 </p>
               </div>
-            </ContentEditCard>
+            </ContentCard>
           </ContentEditMainContent>
         </KeepAlive>
         <template #sidebar>

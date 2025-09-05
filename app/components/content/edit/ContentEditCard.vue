@@ -66,7 +66,8 @@ const hasCreateView = computed(() => !!slots.create);
         :class="
           cn(
             `flex w-full items-center justify-between p-6`,
-            `${futureStep ? 'pointer-events-none opacity-50' : ''}`,
+            `${futureStep && createMode ? 'pointer-events-none opacity-50' : ''}`,
+            (futureStep || !createMode) && 'cursor-default',
           )
         "
         :disabled="futureStep || !createMode"

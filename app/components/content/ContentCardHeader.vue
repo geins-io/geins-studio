@@ -24,6 +24,7 @@ switch (props.size) {
     headerClasses.value = 'text-sm';
     descriptionClasses.value = 'text-xs mt-1';
     break;
+  case 'lg':
   default:
     headerClasses.value = 'text-xl';
     descriptionClasses.value = 'text-sm mt-1';
