@@ -318,7 +318,7 @@ const baseRulePercentage = computed(() => {
 
 const baseRuleText = computed(() => {
   if (!baseRule.value) return '';
-  return `${baseRulePercentage.value}% ${baseRuleMode.value} applied to all products.`;
+  return `${baseRulePercentage.value}% ${baseRuleMode.value} applied globally`;
 });
 
 const handleApplyBaseRule = () => {
@@ -353,7 +353,7 @@ const applyBaseRule = async (
     globalRules.value = newRules;
     entityDataUpdate.value.rules = globalRules.value;
 
-    await previewPricelist(`${percentage}% ${mode} applied to all products.`);
+    await previewPricelist(`${percentage}% ${mode} applied globally`);
     pricelistBaseRuleInput.value = undefined;
   } catch (error) {
     geinsLogError('error applying base rule:', error);
@@ -1117,7 +1117,7 @@ if (!createMode.value) {
                     />
                   </FormField>
                 </FormGrid>
-                <FormGrid design="1">
+                <!-- <FormGrid design="1">
                   <FormField
                     v-slot="{ value, handleChange }"
                     name="default.autoAddProducts"
@@ -1132,7 +1132,7 @@ if (!createMode.value) {
                       @update:model-value="handleChange"
                     />
                   </FormField>
-                </FormGrid>
+                </FormGrid> -->
               </FormGridWrap>
             </ContentEditCard>
             <div v-if="createMode" class="flex flex-row justify-end gap-4">
@@ -1161,66 +1161,85 @@ if (!createMode.value) {
               :description="$t('wholesale.pricelist_global_rules_description')"
               :create-mode="createMode"
               :step-valid="true"
-            >
-              <Tabs default-value="base-rule" class="relative">
-                <TabsList class="mb-3">
-                  <TabsTrigger value="base-rule"> Base rule </TabsTrigger>
-                  <TabsTrigger value="qty-levels">
-                    Quantity levels
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="base-rule">
-                  <PricelistRulesWrapper
-                    v-model:mode="pricelistBaseRuleMode"
-                    title="Base rule"
-                    mode-id="pricelistBaseRuleMode"
+              ><div>
+                <Tabs v-auto-animate default-value="base-rule" class="relative">
+                  <TabsList
+                    :class="
+                      cn(
+                        'mb-3',
+                        !selectedProducts.length &&
+                          'pointer-events-none opacity-60',
+                      )
+                    "
                   >
-                    <Label class="w-full">
-                      {{ $t(pricelistBaseRuleMode) }}
-                    </Label>
-                    <Input
-                      v-model.number="pricelistBaseRuleInput"
-                      class="w-48"
-                      size="md"
-                      :loading="baseRuleLoading"
+                    <TabsTrigger value="base-rule"> Base rule </TabsTrigger>
+                    <TabsTrigger value="qty-levels">
+                      Quantity levels
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent v-if="selectedProducts.length" value="base-rule">
+                    <PricelistRulesWrapper
+                      v-model:mode="pricelistBaseRuleMode"
+                      title="Base rule"
+                      mode-id="pricelistBaseRuleMode"
                     >
-                      <template #valueDescriptor>%</template>
-                    </Input>
-                    <Button variant="outline" @click="handleApplyBaseRule">{{
-                      $t('apply')
-                    }}</Button>
-                    <Button
-                      variant="outline"
-                      @click="handleApplyBaseRuleAndOverwrite"
+                      <Label class="w-full">
+                        {{ $t(pricelistBaseRuleMode) }}
+                      </Label>
+                      <Input
+                        v-model.number="pricelistBaseRuleInput"
+                        class="w-48"
+                        size="md"
+                        :loading="baseRuleLoading"
+                      >
+                        <template #valueDescriptor>%</template>
+                      </Input>
+                      <Button variant="outline" @click="handleApplyBaseRule">{{
+                        $t('apply')
+                      }}</Button>
+                      <Button
+                        variant="outline"
+                        @click="handleApplyBaseRuleAndOverwrite"
+                      >
+                        {{ $t('wholesale.pricelist_apply_overwrite') }}
+                      </Button>
+                      <template #footer>
+                        <SelectorTag
+                          v-if="baseRule && baseRuleText && !baseRuleLoading"
+                          class="mt-2"
+                          :label="baseRuleText"
+                          @remove="removeBaseRulePromptVisible = true"
+                        />
+                      </template>
+                    </PricelistRulesWrapper>
+                  </TabsContent>
+                  <TabsContent
+                    v-if="selectedProducts.length"
+                    value="qty-levels"
+                  >
+                    <PricelistRulesWrapper
+                      v-model:mode="pricelistRulesMode"
+                      title="Quantity levels"
+                      mode-id="pricelistRulesMode"
                     >
-                      {{ $t('wholesale.pricelist_apply_overwrite') }}
-                    </Button>
-                    <template #footer>
-                      <SelectorTag
-                        v-if="baseRule && baseRuleText && !baseRuleLoading"
-                        class="mt-2"
-                        :label="baseRuleText"
-                        @remove="removeBaseRulePromptVisible = true"
+                      <PricelistRules
+                        v-model:loading="quantityLevelsLoading"
+                        :rules="globalRules"
+                        :mode="pricelistRulesMode"
+                        @apply="applyRules"
+                        @apply-overwrite="applyAndOverwrite"
                       />
-                    </template>
-                  </PricelistRulesWrapper>
-                </TabsContent>
-                <TabsContent value="qty-levels">
-                  <PricelistRulesWrapper
-                    v-model:mode="pricelistRulesMode"
-                    title="Quantity levels"
-                    mode-id="pricelistRulesMode"
-                  >
-                    <PricelistRules
-                      v-model:loading="quantityLevelsLoading"
-                      :rules="globalRules"
-                      :mode="pricelistRulesMode"
-                      @apply="applyRules"
-                      @apply-overwrite="applyAndOverwrite"
-                    />
-                  </PricelistRulesWrapper>
-                </TabsContent>
-              </Tabs>
+                    </PricelistRulesWrapper>
+                  </TabsContent>
+                </Tabs>
+                <p
+                  v-if="!selectedProducts.length"
+                  class="text-muted-foreground text-sm italic"
+                >
+                  These settings will be available once you have made a product
+                  selection below.
+                </p>
+              </div>
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>

@@ -1159,6 +1159,16 @@ if (!createMode.value) {
             <ContentEditCard :create-mode="false" :title="t('settings')">
               <div class="space-y-4">
                 <ContentCardHeader
+                  title="Product access"
+                  description="Controls which products this account can view and purchase"
+                  size="md"
+                />
+                <ContentSwitch
+                  v-model:checked="entityDataUpdate.limitedProductAccess"
+                  label="Only access products included in the assigned pricelists"
+                  description="If disabled, this account can access all products"
+                />
+                <ContentCardHeader
                   title="VAT settings"
                   description="Set whether this account should be charged VAT on orders"
                   size="md"
@@ -1167,12 +1177,6 @@ if (!createMode.value) {
                   v-model:checked="entityDataUpdate.exVat"
                   label="VAT included"
                   description="Orders from this account will include VAT"
-                />
-                <ContentCardHeader title="Product access" size="md" />
-                <ContentSwitch
-                  v-model:checked="entityDataUpdate.limitedProductAccess"
-                  label="Only access products included in the assigned pricelists"
-                  description="Controls which products this account can view and purchase"
                 />
               </div>
             </ContentEditCard>
