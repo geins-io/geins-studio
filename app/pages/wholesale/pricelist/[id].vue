@@ -110,12 +110,12 @@ const editedProducts = ref<PricelistProduct[]>([]);
 const isInitialLoad = ref(true);
 
 // Pricelist rules
-const pricelistActionsMode = ref<PricelistRuleMode>('discount');
+const pricelistBaseRuleMode = ref<PricelistRuleMode>('discount');
 // Track the actual mode and pending mode separately
 const actualPricelistRulesMode = ref<PricelistRuleMode>('discount');
 const pendingModeChange = ref<PricelistRuleMode | null>(null);
 
-const pricelistQuickActionInput = ref<number>();
+const pricelistBaseRuleInput = ref<number>();
 
 // =====================================================================================
 // PRODUCT & PRICING COMPOSABLES
@@ -291,20 +291,55 @@ const previewPricelist = async (
 };
 
 // =====================================================================================
-// PRICELIST ACTIONS AND RULES
+// GLOBAL PRICELIST RULES
 // =====================================================================================
 
 const globalRules = ref<PricelistRule[]>([]);
-const quickActionLoading = ref<boolean>(false);
+const baseRuleLoading = ref<boolean>(false);
 const quantityLevelsLoading = ref<boolean>(false);
 
-const applyQuickAction = async (overwrite: boolean) => {
-  if (pricelistQuickActionInput.value === undefined || !entityId.value) return;
+const baseRule = computed(() => {
+  return globalRules.value.find((rule) => rule.quantity === 1);
+});
 
-  const percentage = pricelistQuickActionInput.value;
-  const mode = pricelistActionsMode.value;
-  quickActionLoading.value = true;
+const baseRuleMode = computed(() => {
+  if (!baseRule.value) return null;
+  return baseRule.value.margin !== undefined && baseRule.value.margin !== 0
+    ? 'margin'
+    : 'discount';
+});
 
+const baseRulePercentage = computed(() => {
+  if (!baseRule.value) return null;
+  return baseRuleMode.value === 'margin'
+    ? baseRule.value.margin
+    : baseRule.value.discountPercent;
+});
+
+const baseRuleText = computed(() => {
+  if (!baseRule.value) return '';
+  return `${baseRulePercentage.value}% ${baseRuleMode.value} applied to all products.`;
+});
+
+const handleApplyBaseRule = () => {
+  if (pricelistBaseRuleInput.value === undefined || !entityId.value) return;
+  const percentage = pricelistBaseRuleInput.value;
+  const mode = pricelistBaseRuleMode.value;
+  applyBaseRule(percentage, mode);
+};
+
+const handleApplyBaseRuleAndOverwrite = () => {
+  if (pricelistBaseRuleInput.value === undefined || !entityId.value) return;
+  const percentage = pricelistBaseRuleInput.value;
+  const mode = pricelistBaseRuleMode.value;
+  applyBaseRuleAndOverwrite(percentage, mode);
+};
+
+const applyBaseRule = async (
+  percentage: number,
+  mode: PricelistRuleMode,
+): Promise<void> => {
+  baseRuleLoading.value = true;
   try {
     // Create global rule for quantity 1
     const globalRule: PricelistRule = {
@@ -313,36 +348,48 @@ const applyQuickAction = async (overwrite: boolean) => {
       discountPercent: mode === 'discount' ? percentage : 0,
     };
 
-    globalRules.value = globalRules.value.filter((rule) => rule.quantity !== 1);
-    globalRules.value.push(globalRule);
+    const newRules = globalRules.value.filter((rule) => rule.quantity !== 1);
+    newRules.push(globalRule);
+    globalRules.value = newRules;
     entityDataUpdate.value.rules = globalRules.value;
 
-    if (overwrite && entityDataUpdate.value.products) {
-      overwriteActionPromptVisible.value = true;
-
-      overwriteContinueAction.value = async () => {
-        await overwriteProducts(1);
-        overwriteActionPromptVisible.value = false;
-        await previewPricelist(
-          `${percentage}% ${mode} applied to all products.`,
-        );
-        pricelistQuickActionInput.value = undefined;
-      };
-      return;
-    }
-
     await previewPricelist(`${percentage}% ${mode} applied to all products.`);
-    pricelistQuickActionInput.value = undefined;
+    pricelistBaseRuleInput.value = undefined;
   } catch (error) {
-    geinsLogError('error applying quick action:', error);
+    geinsLogError('error applying base rule:', error);
     toast({
       title: t('feedback_error'),
       description: t('feedback_error_description'),
       variant: 'negative',
     });
   } finally {
-    quickActionLoading.value = false;
+    baseRuleLoading.value = false;
   }
+};
+
+const applyBaseRuleAndOverwrite = async (
+  percentage: number,
+  mode: PricelistRuleMode,
+): Promise<void> => {
+  if (entityDataUpdate.value.products) {
+    overwriteBaseRulePromptVisible.value = true;
+    overwriteContinueAction.value = async () => {
+      overwriteBaseRulePromptVisible.value = false;
+      await overwriteProducts(1);
+      await applyBaseRule(percentage, mode);
+    };
+    return;
+  }
+  await applyBaseRule(percentage, mode);
+};
+
+const removeBaseRule = async () => {
+  if (!baseRule.value) return;
+  const feedback = `${baseRulePercentage.value}% ${baseRuleMode.value} removed`;
+  globalRules.value = globalRules.value.filter((rule) => rule.quantity !== 1);
+  entityDataUpdate.value.rules = globalRules.value;
+  removeBaseRulePromptVisible.value = false;
+  await previewPricelist(feedback);
 };
 
 const applyRules = async (rules: PricelistRule[]): Promise<void> => {
@@ -404,12 +451,13 @@ const updateEntityRules = async (): Promise<void> => {
   entityDataUpdate.value.rules = newRules;
 };
 
-// OVERWRITE
+// RULES PROMPTS
 
-const overwriteActionPromptVisible = ref(false);
+const overwriteBaseRulePromptVisible = ref(false);
 const overwriteLevelsPromptVisible = ref(false);
 const currentOverwriteQuantity = ref<number>(1);
 const overwriteContinueAction = ref(() => {});
+const removeBaseRulePromptVisible = ref(false);
 
 const overwriteProducts = async (staggeredCount: number) => {
   // Remove products with the specified staggeredCount
@@ -420,7 +468,7 @@ const overwriteProducts = async (staggeredCount: number) => {
 };
 
 // =====================================================================================
-// QUANTITY LEVELS MANAGEMENT
+// PRODUCT QUANTITY LEVELS MANAGEMENT
 // =====================================================================================
 const rulesToEdit = ref<PricelistRule[]>([]);
 const rulesPanelOpen = ref(false);
@@ -798,7 +846,7 @@ if (!createMode.value) {
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
-  <AlertDialog v-model:open="overwriteActionPromptVisible">
+  <AlertDialog v-model:open="overwriteBaseRulePromptVisible">
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>
@@ -810,11 +858,11 @@ if (!createMode.value) {
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="overwriteActionPromptVisible = false">{{
+        <AlertDialogCancel @click="overwriteBaseRulePromptVisible = false">{{
           $t('cancel')
         }}</AlertDialogCancel>
 
-        <Button @click.prevent.stop="overwriteContinueAction()">
+        <Button @click.prevent.stop="overwriteContinueAction">
           {{ $t('continue') }}
         </Button>
       </AlertDialogFooter>
@@ -838,7 +886,29 @@ if (!createMode.value) {
           $t('cancel')
         }}</AlertDialogCancel>
 
-        <Button @click.prevent.stop="overwriteContinueAction()">
+        <Button @click.prevent.stop="overwriteContinueAction">
+          {{ $t('continue') }}
+        </Button>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+  <AlertDialog v-model:open="removeBaseRulePromptVisible">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>
+          Global {{ baseRuleMode }} will be removed!
+        </AlertDialogTitle>
+        <AlertDialogDescription>
+          If you continue, your globally applied {{ baseRuleMode }} of
+          <strong>{{ baseRulePercentage }}%</strong> will be removed.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel @click="removeBaseRulePromptVisible = false">{{
+          $t('cancel')
+        }}</AlertDialogCancel>
+
+        <Button @click.prevent.stop="removeBaseRule">
           {{ $t('continue') }}
         </Button>
       </AlertDialogFooter>
@@ -1087,51 +1157,56 @@ if (!createMode.value) {
             :key="`tab-${currentTab}`"
           >
             <ContentEditCard
-              :title="$t('wholesale.pricelist_global_adjustments_title')"
-              :description="
-                $t('wholesale.pricelist_global_adjustments_description')
-              "
+              :title="$t('wholesale.pricelist_global_rules_title')"
+              :description="$t('wholesale.pricelist_global_rules_description')"
               :create-mode="createMode"
               :step-valid="true"
             >
-              <Tabs default-value="quick-actions" class="relative">
+              <Tabs default-value="base-rule" class="relative">
                 <TabsList class="mb-3">
-                  <TabsTrigger value="quick-actions">
-                    Quick actions
-                  </TabsTrigger>
+                  <TabsTrigger value="base-rule"> Base rule </TabsTrigger>
                   <TabsTrigger value="qty-levels">
                     Quantity levels
                   </TabsTrigger>
                 </TabsList>
-                <TabsContent value="quick-actions">
-                  <PricelistActionCard
-                    v-model:mode="pricelistActionsMode"
-                    title="Quick actions"
-                    mode-id="pricelistActionsMode"
+                <TabsContent value="base-rule">
+                  <PricelistRulesWrapper
+                    v-model:mode="pricelistBaseRuleMode"
+                    title="Base rule"
+                    mode-id="pricelistBaseRuleMode"
                   >
                     <Label class="w-full">
-                      {{ $t(pricelistActionsMode) }}
+                      {{ $t(pricelistBaseRuleMode) }}
                     </Label>
                     <Input
-                      v-model.number="pricelistQuickActionInput"
+                      v-model.number="pricelistBaseRuleInput"
                       class="w-48"
                       size="md"
-                      :loading="quickActionLoading"
+                      :loading="baseRuleLoading"
                     >
                       <template #valueDescriptor>%</template>
                     </Input>
+                    <Button variant="outline" @click="handleApplyBaseRule">{{
+                      $t('apply')
+                    }}</Button>
                     <Button
                       variant="outline"
-                      @click="applyQuickAction(false)"
-                      >{{ $t('apply') }}</Button
+                      @click="handleApplyBaseRuleAndOverwrite"
                     >
-                    <Button variant="outline" @click="applyQuickAction(true)">
                       {{ $t('wholesale.pricelist_apply_overwrite') }}
                     </Button>
-                  </PricelistActionCard>
+                    <template #footer>
+                      <SelectorTag
+                        v-if="baseRule && baseRuleText && !baseRuleLoading"
+                        class="mt-2"
+                        :label="baseRuleText"
+                        @remove="removeBaseRulePromptVisible = true"
+                      />
+                    </template>
+                  </PricelistRulesWrapper>
                 </TabsContent>
                 <TabsContent value="qty-levels">
-                  <PricelistActionCard
+                  <PricelistRulesWrapper
                     v-model:mode="pricelistRulesMode"
                     title="Quantity levels"
                     mode-id="pricelistRulesMode"
@@ -1143,7 +1218,7 @@ if (!createMode.value) {
                       @apply="applyRules"
                       @apply-overwrite="applyAndOverwrite"
                     />
-                  </PricelistActionCard>
+                  </PricelistRulesWrapper>
                 </TabsContent>
               </Tabs>
             </ContentEditCard>

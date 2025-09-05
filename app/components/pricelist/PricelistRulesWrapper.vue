@@ -32,8 +32,13 @@ const mode = defineModel<PricelistRuleMode>('mode', { required: true });
       </div>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2 p-4">
-      <slot />
+    <div class="pb-5">
+      <div class="flex flex-wrap items-center gap-2 p-4 pb-0">
+        <slot />
+      </div>
+      <div v-auto-animate class="flex px-4 [&>*]:mt-3.5">
+        <slot name="footer" />
+      </div>
     </div>
   </div>
 </template>
