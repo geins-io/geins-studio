@@ -17,8 +17,9 @@ export interface WholesaleAccountBase {
 export interface WholesaleAccountCreate
   extends CreateEntity<WholesaleAccountBase> {
   buyers: WholesaleBuyerCreate[];
-  salesReps: string[];
   addresses: AddressCreate[];
+  salesReps: string[];
+  priceLists: string[];
 }
 
 export interface WholesaleAccountUpdate
@@ -26,12 +27,14 @@ export interface WholesaleAccountUpdate
   buyers?: WholesaleBuyerUpdate[];
   addresses?: AddressUpdate[];
   salesReps?: string[];
+  priceLists: string[];
 }
 
 export interface WholesaleAccount extends ResponseEntity<WholesaleAccountBase> {
   buyers: WholesaleBuyer[];
   salesReps: WholesaleSalesRep[];
   addresses: Address[];
+  priceLists: WholesalePricelist[];
 }
 
 export interface WholesaleAccountList
@@ -80,6 +83,15 @@ export interface WholesaleVatValidation {
   address: string;
 }
 
-export interface WholesalePricelist extends Omit<ProductPricelist, 'products'> {
-  products: number;
+export interface WholesalePricelist
+  extends Omit<
+    ProductPricelist,
+    | 'products'
+    | 'rules'
+    | 'productSelectionQuery'
+    | 'autoAddProducts'
+    | 'forced'
+    | 'dateCreated'
+  > {
+  productCount: number;
 }

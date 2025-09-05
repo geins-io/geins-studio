@@ -1,3 +1,12 @@
+/**
+ * Gets the base URL for the application based on the current environment.
+ *
+ * In development mode, returns the BASE_URL environment variable or defaults to localhost.
+ * In production on Vercel, returns the appropriate Vercel URL based on the deployment environment.
+ * Otherwise, returns the BASE_URL environment variable, or localhost as a last resort.
+ *
+ * @returns The base URL string for the current environment
+ */
 export function getBaseUrl() {
   if (process.env.NODE_ENV !== 'production') {
     return process.env.BASE_URL ?? 'http://localhost:3000';
@@ -14,10 +23,17 @@ export function getBaseUrl() {
   return process.env.BASE_URL ?? 'http://localhost:3000';
 }
 
+/**
+ * Gets the authentication base URL by combining the base URL with the auth path.
+ *
+ * Uses the AUTH_PATH environment variable if available, otherwise defaults to '/api/auth'.
+ *
+ * @returns The complete authentication URL string
+ */
 export function getAuthBaseUrl() {
-  const baseURl = getBaseUrl();
+  const baseUrl = getBaseUrl();
   if (process.env.AUTH_PATH) {
-    return `${baseURl}${process.env.AUTH_PATH}`;
+    return `${baseUrl}${process.env.AUTH_PATH}`;
   }
-  return `${baseURl}/api/auth`;
+  return `${baseUrl}/api/auth`;
 }

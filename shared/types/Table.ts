@@ -43,6 +43,7 @@ export interface ColumnOptions<T> {
   sortable?: boolean;
   columnTitles?: Partial<Record<StringKeyOf<T>, string>>;
   columnTypes?: ColumnTypes<T>;
+  columnSortable?: Partial<Record<StringKeyOf<T>, boolean>>;
   columnOrder?: StringKeyOf<T>[];
   excludeColumns?: StringKeyOf<T>[];
   includeColumns?: StringKeyOf<T>[];

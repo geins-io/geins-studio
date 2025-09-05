@@ -111,6 +111,7 @@ export const useColumns = <T extends object>() => {
       selectable = false,
       sortable = true,
       columnTypes,
+      columnSortable,
       maxTextLength = 60,
       columnCellProps,
     } = options;
@@ -190,8 +191,11 @@ export const useColumns = <T extends object>() => {
         maxSize: 0,
       };
 
+      const colSortable =
+        columnSortable?.[key] !== undefined ? columnSortable[key] : sortable;
+
       let cellRenderer;
-      let headerRenderer = sortable
+      let headerRenderer = colSortable
         ? ({ table, column }: { table: Table<T>; column: Column<T> }) => {
             return h(
               'div',
@@ -412,10 +416,8 @@ export const useColumns = <T extends object>() => {
               'price' in price &&
               'currency' in price
             ) {
-              priceValue =
-                price.price !== undefined ? String(price.price) : '---';
-              priceCurrency =
-                price.currency !== undefined ? String(price.currency) : 'XXX';
+              priceValue = price.price ? String(price.price) : '---';
+              priceCurrency = price.currency ? String(price.currency) : 'XXX';
             }
 
             return h(TableCellCurrency, {
@@ -475,7 +477,7 @@ export const useColumns = <T extends object>() => {
               ...cellProps,
             });
           };
-          columnSize = { size: 134, minSize: 134, maxSize: 134 };
+          columnSize = { size: 180, minSize: 180, maxSize: 180 };
           break;
         case 'editable-string':
         case 'editable-number':
@@ -581,9 +583,9 @@ export const useColumns = <T extends object>() => {
       id: 'actions',
       enableHiding: false,
       enableSorting: false,
-      size: 48,
-      maxSize: 48,
-      minSize: 48,
+      size: 49,
+      maxSize: 49,
+      minSize: 49,
       header: ({ table }: { table: Table<T> }) =>
         h('div', {
           class: cn(getBasicHeaderStyle(table)),

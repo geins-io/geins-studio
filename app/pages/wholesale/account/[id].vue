@@ -83,6 +83,7 @@ const entityBase: WholesaleAccountCreate = {
   buyers: [],
   exVat: false,
   limitedProductAccess: false,
+  priceLists: [],
 };
 
 const addressBase: AddressBase = {
@@ -196,8 +197,9 @@ const {
   }),
   parseEntityData: async (account: WholesaleAccount) => {
     buyersList.value = account.buyers || [];
-    entityLiveStatus.value = entityDataUpdate.value?.active || false;
+    entityLiveStatus.value = account.active || false;
     accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
+    addedPricelists.value = account.priceLists || [];
 
     billingAddress.value = {
       ...account.addresses?.find(
@@ -260,6 +262,7 @@ const {
     return {
       ...entityData,
       salesReps: entityData.salesReps?.map((salesRep) => salesRep._id),
+      priceLists: entityData.priceLists?.map((priceList) => priceList._id),
     };
   },
   onFormValuesChange: async (values) => {
@@ -376,7 +379,10 @@ const columnOptionsPricelists: ColumnOptions<WholesalePricelist> = {
   columnTypes: {
     name: 'entity-link',
   },
-  includeColumns: ['_id', 'name', 'currency', 'products', 'exVat', 'active'],
+  columnTitles: {
+    productCount: t('product', 2),
+  },
+  includeColumns: ['_id', 'name', 'currency', 'productCount', 'active'],
   sortable: false,
 };
 
@@ -425,6 +431,14 @@ const removePricelist = (id: string) => {
   }
 };
 
+watch(addedPricelists, (newPricelists) => {
+  if (newPricelists.length > 0) {
+    entityDataUpdate.value.priceLists = newPricelists.map((pl) => pl._id);
+  } else {
+    entityDataUpdate.value.priceLists = [];
+  }
+});
+
 if (!createMode.value) {
   const { data, error } = await useAsyncData<ProductPricelist[]>(() =>
     productApi.pricelist.list({ fields: 'products' }),
@@ -438,7 +452,7 @@ if (!createMode.value) {
   } else {
     allPricelists.value = data.value.map((pricelist) => ({
       ...pricelist,
-      products: pricelist.products.length,
+      productCount: pricelist.products?.totalItemCount || 0,
     }));
   }
 }
@@ -724,6 +738,7 @@ if (!createMode.value) {
             v-if="!createMode"
             icon="save"
             :loading="loading"
+            :disabled="!hasUnsavedChanges"
             @click="handleUpdateAccount"
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
@@ -933,10 +948,10 @@ if (!createMode.value) {
               <Tabs default-value="billing">
                 <TabsList>
                   <TabsTrigger value="billing">
-                    {{ $t('entity_caps', { entityName: 'billing_address' }) }}
+                    {{ $t('billing_address') }}
                   </TabsTrigger>
                   <TabsTrigger value="shipping">
-                    {{ $t('entity_caps', { entityName: 'shipping_address' }) }}
+                    {{ $t('shipping_address') }}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="billing">
@@ -1006,11 +1021,7 @@ if (!createMode.value) {
                   <ContentCardHeader
                     size="md"
                     heading-level="h3"
-                    :title="
-                      $t('entity_caps', {
-                        entityName: 'shipping_address',
-                      })
-                    "
+                    :title="$t('shipping_address')"
                   />
                   <ContentSwitch
                     v-model:checked="addShippingAddress"

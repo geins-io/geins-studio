@@ -28,10 +28,6 @@ const selection = defineModel<SelectorSelectionInternal>('selection', {
   required: true,
 });
 
-//TODO: remove when lowercase condition fixed
-selection.value.condition =
-  selection.value.condition?.toLowerCase() || SelectorCondition.And;
-
 // GLOBALS
 const { t } = useI18n();
 const { getCategoryName, getBrandName } = useProductsStore();
@@ -47,37 +43,37 @@ const selectorOptions: Ref<SelectorSelectionOption[]> = computed(() => {
     {
       id: 'product',
       group: 'ids',
-      label: t('entity_caps', { entityName: entityName.value }, 2),
+      label: t(entityName.value, 2),
     },
     {
       id: 'entity',
       group: 'ids',
-      label: t('entity_caps', { entityName: entityName.value }, 2),
+      label: t(entityName.value, 2),
     },
     {
       id: 'category',
       group: 'categoryIds',
-      label: t('entity_caps', { entityName: 'category' }, 2),
+      label: t('category', 2),
     },
     {
       id: 'brand',
       group: 'brandIds',
-      label: t('entity_caps', { entityName: 'brand' }, 2),
+      label: t('brand', 2),
     },
     // {
     //   id: 'price',
     //   group: 'price',
-    //   label: t('entity_caps', { entityName: 'price' }),
+    //   label: t('price'),
     // },
     // {
     //   id: 'stock',
     //   group: 'stock',
-    //   label: t('entity_caps', { entityName: 'stock' }),
+    //   label: t('stock'),
     // },
     // {
     //   id: 'import',
     //   group: 'ids',
-    //   label: t('entity_caps', { entityName: 'import' }),
+    //   label: t('import'),
     // },
   ];
 
@@ -118,7 +114,7 @@ const manuallySelectedText = computed(() =>
   t(
     'manually_selected_entity',
     {
-      entityName,
+      entityName: entityName.value,
       count: selection.value.ids?.length ?? 0,
     },
     selection.value.ids?.length ?? 0,
@@ -206,13 +202,13 @@ const noSelectionLabel = computed(() => {
         :options="selectorOptions"
         @save="updateSelection"
       >
-        <Button class="absolute right-3 top-3.5">{{ $t('browse') }}</Button>
+        <Button class="absolute top-3.5 right-3">{{ $t('browse') }}</Button>
       </SelectorPanel>
       <div class="flex w-[calc(100%-5.5rem)] flex-col gap-3">
         <!-- All / No products tag -->
         <SelectorTags
           v-if="
-            showAllProductsTag && selection.condition === SelectorCondition.And
+            showAllProductsTag && selection.condition !== SelectorCondition.Or
           "
         >
           <SelectorTag :label="noSelectionLabel" :removable="false" />

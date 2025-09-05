@@ -22,7 +22,7 @@ const initValue = ref<string | number>(props.initialValue ?? value);
 const inputValue = ref<string | number>(initValue.value);
 
 const emit = defineEmits<{
-  (e: 'change' | 'blur-sm', newValue: string | number, row: Row<T>): void;
+  (e: 'change' | 'blur', newValue: string | number, row: Row<T>): void;
 }>();
 
 watch(inputValue, (newValue) => {

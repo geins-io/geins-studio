@@ -58,21 +58,18 @@ const handleClick = (id: string) => {
         >
           <CommandList
             :class="
-              cn('quick-search-results overflow-x-hidden rounded-lg bg-card')
+              cn('quick-search-results bg-card overflow-x-hidden rounded-lg')
             "
           >
             <CommandEmpty>{{
               $t('no_entity_found', { entityName }, 2)
             }}</CommandEmpty>
-            <CommandGroup
-              :heading="$t('entity_caps', { entityName }, 2)"
-              class="text-left"
-            >
+            <CommandGroup :heading="$t(entityName, 2)" class="text-left">
               <CommandItem
                 v-for="entity in entities"
                 :key="entity._id"
                 :value="entity._id + ' ' + entity.name"
-                class="border-0 py-0.5 data-highlighted:bg-card"
+                class="data-highlighted:bg-card border-0 py-0.5"
               >
                 <Button
                   class="flex h-auto w-full items-center gap-3 border-0 p-1 px-1.5 text-xs duration-75"
@@ -91,7 +88,7 @@ const handleClick = (id: string) => {
                     v-if="isSelected(entity._id)"
                     class="ml-auto shrink-0 p-1"
                   >
-                    <LucideCircleCheck class="size-4 text-positive" />
+                    <LucideCircleCheck class="text-positive size-4" />
                   </span>
                   <span v-else class="ml-auto shrink-0 p-1">
                     <LucideCirclePlus class="size-4" />

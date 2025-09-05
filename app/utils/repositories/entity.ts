@@ -11,17 +11,26 @@ export function entityRepo<
   return {
     ...entityBase,
 
-    async create(data: TCreate): Promise<TResponse> {
+    async create(
+      data: TCreate,
+      query?: Record<string, unknown>,
+    ): Promise<TResponse> {
       return await fetch<TResponse>(entityEndpoint, {
         method: 'POST',
         body: data,
+        query,
       });
     },
 
-    async update(id: string, data: TUpdate): Promise<TResponse> {
+    async update(
+      id: string,
+      data: TUpdate,
+      query?: Record<string, unknown>,
+    ): Promise<TResponse> {
       return await fetch<TResponse>(`${entityEndpoint}/${id}`, {
         method: 'PATCH',
         body: data,
+        query,
       });
     },
 

@@ -1,21 +1,38 @@
 <script setup lang="ts">
+import { useDebounceFn } from '@vueuse/core';
+
 const props = withDefaults(
   defineProps<{
     rules: PricelistRule[];
     productId: string;
+    pricelistId: string;
     currency?: string;
+    vatDescription?: string;
   }>(),
   {},
 );
 
+const emit = defineEmits<{
+  (e: 'save', rules: PricelistRule[]): void;
+}>();
+
+const { $geinsApi } = useNuxtApp();
+const { getPricelistProduct, addToPricelistProducts } = usePricelistProducts();
+const productApi = repo.product($geinsApi);
+
 const open = defineModel<boolean>('open');
 const propRules = toRef(props, 'rules');
+const pricelistProducts = defineModel<PricelistProduct[]>('pricelistProducts', {
+  default: () => [],
+});
+const rulesValid = ref(true);
+const rulesLoading = ref(false);
 
 const globalRules = computed(() => {
-  return props.rules.filter((rule: PricelistRule) => rule.global);
+  return propRules.value.filter((rule: PricelistRule) => rule.global);
 });
 const productRules = computed(() => {
-  return props.rules.filter((rule: PricelistRule) => !rule.global);
+  return propRules.value.filter((rule: PricelistRule) => !rule.global) || [];
 });
 
 const editableRules = ref<PricelistRule[]>(productRules.value);
@@ -24,17 +41,68 @@ watch(propRules, (newRules) => {
   editableRules.value = newRules.filter((rule: PricelistRule) => !rule.global);
 });
 
-const emit = defineEmits<{
-  (e: 'save', rules: PricelistRule[]): void;
-}>();
+const handleUpdate = useDebounceFn((rules: PricelistRule[]) => {
+  editableRules.value = rules;
+}, 800);
+const handleUpdateRule = useDebounceFn(
+  async (payload: { index: number; rule: PricelistRule }) => {
+    try {
+      rulesLoading.value = true;
+      const valueType = payload.rule.lastFieldChanged || 'price';
+      const value = payload.rule[valueType];
+      const previewProduct = {
+        productId: props.productId,
+        ...(valueType === 'price' && { price: value }),
+        ...(valueType === 'margin' && { margin: value }),
+        ...(valueType === 'discountPercent' && { discountPercent: value }),
+      };
+      const previewPrice = await productApi.pricelist
+        .id(props.pricelistId)
+        .previewPrice(previewProduct);
+
+      editableRules.value[payload.index] = {
+        ...editableRules.value[payload.index],
+        margin: previewPrice.margin,
+        discountPercent: previewPrice.discountPercent,
+        price: previewPrice.price,
+      };
+    } catch {
+    } finally {
+      rulesLoading.value = false;
+    }
+  },
+  800,
+);
 
 const handleCancel = () => {
   open.value = false;
+  rulesValid.value = true;
 };
 const handleSave = () => {
+  rulesValid.value = true;
+  editableRules.value.forEach((rule) => {
+    const valueType = rule.lastFieldChanged || 'price';
+    const value = Number(rule[valueType]);
+
+    if (isNaN(value) || !rule.quantity || rule.quantity === 1) {
+      rulesValid.value = false;
+      return;
+    }
+
+    const product = getPricelistProduct(
+      props.productId,
+      value,
+      valueType,
+      rule.quantity,
+    );
+    addToPricelistProducts(product, pricelistProducts.value);
+  });
+  if (!rulesValid.value) {
+    return;
+  }
+  emit('save', editableRules.value);
   open.value = false;
-  const rulesToSave = [...globalRules.value, ...editableRules.value];
-  emit('save', rulesToSave);
+  rulesValid.value = true;
 };
 </script>
 <template>
@@ -58,9 +126,10 @@ const handleSave = () => {
         />
         <PricelistRules
           v-if="globalRules.length"
+          mode="all"
           :rules="globalRules"
           :disabled="true"
-          mode="price"
+          :vat-description="props.vatDescription"
           :currency="currency"
         />
         <p v-else class="text-muted-foreground text-sm italic">
@@ -73,18 +142,35 @@ const handleSave = () => {
           class="mt-6 mb-4"
         />
         <PricelistRules
-          :rules="productRules"
+          v-model:loading="rulesLoading"
+          mode="all"
+          :show-loading="true"
+          :rules="editableRules"
           :product-id="props.productId"
-          mode="price"
+          :vat-description="props.vatDescription"
           :currency="currency"
-          @update="editableRules = $event"
+          @update-rule="handleUpdateRule"
+          @update="handleUpdate"
         />
+        <Feedback
+          v-auto-animate
+          v-if="!rulesValid"
+          type="negative"
+          class="mt-10"
+        >
+          <template #title> Check your quantity levels and try again </template>
+          <template #description>
+            Quantity must be more than 1 and at least one value must be present
+          </template>
+        </Feedback>
       </SheetBody>
       <SheetFooter>
         <Button variant="outline" @click="handleCancel">
           {{ $t('cancel') }}
         </Button>
-        <Button @click.stop="handleSave"> {{ $t('apply') }} </Button>
+        <Button @click.stop="handleSave">
+          {{ $t('apply') }}
+        </Button>
       </SheetFooter>
     </SheetContent>
   </Sheet>

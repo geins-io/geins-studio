@@ -190,20 +190,50 @@ export interface ProductPricelistBase {
   exVat: boolean;
   autoAddProducts: boolean;
   forced: boolean;
-  products: PricelistProduct[];
-  rules: PricelistRule[];
-  productSelectionQuery: SelectorSelectionQueryBase;
+  rules?: PricelistRule[];
+  productSelectionQuery?: SelectorSelectionQueryBase;
 }
 
-export type ProductPricelistCreate = CreateEntity<ProductPricelistBase>;
-export type ProductPricelistUpdate = UpdateEntity<ProductPricelistBase>;
-export type ProductPricelist = ResponseEntity<ProductPricelistBase>;
+export interface ProductPricelistCreate
+  extends CreateEntity<ProductPricelistBase> {
+  products?: PricelistProduct[];
+}
+export interface ProductPricelistUpdate
+  extends UpdateEntity<ProductPricelistBase> {
+  products?: PricelistProduct[];
+}
+export interface ProductPricelist extends ResponseEntity<ProductPricelistBase> {
+  products?: BatchQueryResult<PricelistProduct>;
+}
 
 export interface PricelistProduct {
   _id?: string;
   productId: string;
-  price: number;
+  name?: string;
+  thumbnail?: string;
+  price?: number;
+  regularPrice?: number;
+  margin?: number;
+  discountPercent?: number;
+  ruleId?: string;
   staggeredCount: number;
+  priceMode?: PricelistPriceMode;
+  purchasePrice?: number;
+  purchasePriceCurrency?: string;
+}
+
+export interface PricelistProductPreview {
+  productId: string;
+  price?: number;
+  margin?: number;
+  discountPercent?: number;
+}
+
+export interface PricelistProductPreviewResponse {
+  productId: string;
+  price: number;
+  margin: number;
+  discountPercent: number;
 }
 
 export interface PricelistProductList extends EntityBaseWithName {
@@ -214,17 +244,7 @@ export interface PricelistProductList extends EntityBaseWithName {
   discount: number;
   margin: number;
   quantityLevels: PricelistRule[];
-  manual: boolean;
-}
-
-export interface PricelistProductReference {
-  productId: string;
-  staggeredCount: number;
-}
-
-export interface PricelistProductPatch {
-  create: PricelistProduct[];
-  delete: PricelistProductReference[];
+  priceMode: string;
 }
 
 export interface PricelistRule {
@@ -234,6 +254,16 @@ export interface PricelistRule {
   price?: number;
   applied?: boolean;
   global?: boolean;
+  lastFieldChanged?: PricelistRuleField;
 }
 
+export type PricelistRuleField = 'margin' | 'discountPercent' | 'price';
+
 export type PricelistRuleMode = 'margin' | 'discount';
+
+export type PricelistPriceMode =
+  | 'fixed'
+  | 'margin'
+  | 'discount'
+  | 'rule'
+  | 'auto';
