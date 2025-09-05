@@ -321,15 +321,25 @@ const baseRuleText = computed(() => {
   return `${baseRulePercentage.value}% ${baseRuleMode.value} applied to all products.`;
 });
 
-const applyBaseRule = async (overwrite: boolean) => {
+const handleApplyBaseRule = () => {
   if (pricelistBaseRuleInput.value === undefined || !entityId.value) return;
-
   const percentage = pricelistBaseRuleInput.value;
   const mode = pricelistBaseRuleMode.value;
-  if (!overwrite) {
-    baseRuleLoading.value = true;
-  }
+  applyBaseRule(percentage, mode);
+};
 
+const handleApplyBaseRuleAndOverwrite = () => {
+  if (pricelistBaseRuleInput.value === undefined || !entityId.value) return;
+  const percentage = pricelistBaseRuleInput.value;
+  const mode = pricelistBaseRuleMode.value;
+  applyBaseRuleAndOverwrite(percentage, mode);
+};
+
+const applyBaseRule = async (
+  percentage: number,
+  mode: PricelistRuleMode,
+): Promise<void> => {
+  baseRuleLoading.value = true;
   try {
     // Create global rule for quantity 1
     const globalRule: PricelistRule = {
@@ -338,37 +348,39 @@ const applyBaseRule = async (overwrite: boolean) => {
       discountPercent: mode === 'discount' ? percentage : 0,
     };
 
-    globalRules.value = globalRules.value.filter((rule) => rule.quantity !== 1);
-    globalRules.value.push(globalRule);
+    const newRules = globalRules.value.filter((rule) => rule.quantity !== 1);
+    newRules.push(globalRule);
+    globalRules.value = newRules;
     entityDataUpdate.value.rules = globalRules.value;
-
-    if (overwrite && entityDataUpdate.value.products) {
-      overwriteBaseRulePromptVisible.value = true;
-
-      overwriteContinueAction.value = async () => {
-        baseRuleLoading.value = true;
-        await overwriteProducts(1);
-        overwriteBaseRulePromptVisible.value = false;
-        await previewPricelist(
-          `${percentage}% ${mode} applied to all products.`,
-        );
-        pricelistBaseRuleInput.value = undefined;
-        baseRuleLoading.value = false;
-      };
-      return;
-    }
 
     await previewPricelist(`${percentage}% ${mode} applied to all products.`);
     pricelistBaseRuleInput.value = undefined;
-    baseRuleLoading.value = false;
   } catch (error) {
-    geinsLogError('error applying quick action:', error);
+    geinsLogError('error applying base rule:', error);
     toast({
       title: t('feedback_error'),
       description: t('feedback_error_description'),
       variant: 'negative',
     });
+  } finally {
+    baseRuleLoading.value = false;
   }
+};
+
+const applyBaseRuleAndOverwrite = async (
+  percentage: number,
+  mode: PricelistRuleMode,
+): Promise<void> => {
+  if (entityDataUpdate.value.products) {
+    overwriteBaseRulePromptVisible.value = true;
+    overwriteContinueAction.value = async () => {
+      overwriteBaseRulePromptVisible.value = false;
+      await overwriteProducts(1);
+      await applyBaseRule(percentage, mode);
+    };
+    return;
+  }
+  await applyBaseRule(percentage, mode);
 };
 
 const removeBaseRule = async () => {
@@ -1174,10 +1186,13 @@ if (!createMode.value) {
                     >
                       <template #valueDescriptor>%</template>
                     </Input>
-                    <Button variant="outline" @click="applyBaseRule(false)">{{
+                    <Button variant="outline" @click="handleApplyBaseRule">{{
                       $t('apply')
                     }}</Button>
-                    <Button variant="outline" @click="applyBaseRule(true)">
+                    <Button
+                      variant="outline"
+                      @click="handleApplyBaseRuleAndOverwrite"
+                    >
                       {{ $t('wholesale.pricelist_apply_overwrite') }}
                     </Button>
                     <template #footer>
