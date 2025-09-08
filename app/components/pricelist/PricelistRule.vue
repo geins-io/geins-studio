@@ -6,6 +6,7 @@ const props = withDefaults(
     currency?: string;
     loading?: boolean;
     lastFieldChanged?: PricelistRuleField;
+    global?: boolean;
   }>(),
   {
     mode: 'margin',
@@ -16,7 +17,6 @@ const margin = defineModel<number | undefined>('margin');
 const discount = defineModel<number | undefined>('discount');
 const price = defineModel<number | undefined>('price');
 const applied = defineModel<boolean>('applied');
-const global = defineModel<boolean>('global');
 
 const loading = toRef(props, 'loading');
 
@@ -30,7 +30,7 @@ const emit = defineEmits<{
     e: 'update:quantity' | 'update:margin' | 'update:discount' | 'update:price',
     payload: number,
   ): void;
-  (e: 'apply' | 'applyAndOverwrite' | 'remove'): void;
+  (e: 'apply' | 'apply-overwrite' | 'remove'): void;
 }>();
 
 watch(
@@ -49,10 +49,20 @@ const quantityValid = computed(() => {
   return !!quantity.value && quantity.value > 1;
 });
 
+const ruleValid = computed(() => {
+  if (props.mode === 'margin') {
+    return margin.value !== undefined && quantityValid.value;
+  }
+  if (props.mode === 'discount') {
+    return discount.value !== undefined && quantityValid.value;
+  }
+  return false;
+});
+
 const tdClasses = 'text-xs text-left py-3 pr-5';
 
 const handleApply = (overwrite: boolean) => {
-  emit(overwrite ? 'applyAndOverwrite' : 'apply');
+  emit(overwrite ? 'apply-overwrite' : 'apply');
 };
 </script>
 <template>
@@ -62,7 +72,7 @@ const handleApply = (overwrite: boolean) => {
         v-model.number="quantity"
         type="number"
         size="sm"
-        :disabled="global"
+        :disabled="global && mode === 'all'"
         :valid="quantityValid"
         @blur="quantityBlurred = true"
       />
@@ -73,7 +83,7 @@ const handleApply = (overwrite: boolean) => {
         size="sm"
         placeholder="0"
         :loading="loading && lastFieldChanged !== 'margin'"
-        :disabled="global"
+        :disabled="global && mode === 'all'"
       >
         <template #valueDescriptor>%</template>
       </Input>
@@ -84,7 +94,7 @@ const handleApply = (overwrite: boolean) => {
         size="sm"
         placeholder="0"
         :loading="loading && lastFieldChanged !== 'discountPercent'"
-        :disabled="global"
+        :disabled="global && mode === 'all'"
       >
         <template #valueDescriptor>%</template>
       </Input>
@@ -95,7 +105,7 @@ const handleApply = (overwrite: boolean) => {
         size="sm"
         placeholder="0"
         :loading="loading && lastFieldChanged !== 'price'"
-        :disabled="global"
+        :disabled="global && mode === 'all'"
       >
         <template #valueDescriptor>{{ currency }}</template>
       </Input>
@@ -109,9 +119,7 @@ const handleApply = (overwrite: boolean) => {
     <td class="flex items-center justify-end gap-2 py-3">
       <Button
         v-if="props.mode !== 'all'"
-        :disabled="
-          applied || quantity === undefined || global || !quantityValid
-        "
+        :disabled="applied || quantity === undefined || !ruleValid"
         size="xs"
         variant="outline"
         @click="handleApply(false)"
@@ -119,14 +127,14 @@ const handleApply = (overwrite: boolean) => {
       >
       <Button
         v-if="props.mode !== 'all'"
-        :disabled="quantity === undefined || !quantityValid"
+        :disabled="quantity === undefined || !ruleValid"
         size="xs"
         variant="outline"
         @click="handleApply(true)"
         >{{ $t('wholesale.pricelist_apply_overwrite') }}</Button
       >
       <Button
-        :disabled="global"
+        :disabled="global && mode === 'all'"
         size="icon"
         variant="outline"
         class="hover:text-destructive size-7"

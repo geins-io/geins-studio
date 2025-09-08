@@ -190,11 +190,11 @@ const {
       productSelection.value = entity.productSelectionQuery;
     }
     if (entity.rules && entity.rules.length) {
-      const firstRuleMargin = entity.rules[0]?.margin;
-      pricelistRulesMode.value =
-        firstRuleMargin !== undefined && firstRuleMargin !== 0
-          ? 'margin'
-          : 'discount';
+      const quantityLevels = entity.rules.filter(
+        (r) => r.quantity && r.quantity > 1,
+      );
+      const firstRuleMargin = quantityLevels[0]?.margin;
+      pricelistRulesMode.value = firstRuleMargin ? 'margin' : 'discount';
       globalRules.value = entity.rules;
     }
     form.setValues({
@@ -392,10 +392,14 @@ const removeBaseRule = async () => {
   await previewPricelist(feedback);
 };
 
-const applyRules = async (rules: PricelistRule[]): Promise<void> => {
+const applyRule = async (rule: PricelistRule): Promise<void> => {
   quantityLevelsLoading.value = true;
+  const globalRulesIndex = globalRules.value.length;
   try {
-    globalRules.value = rules;
+    globalRules.value = globalRules.value.filter(
+      (r) => r.quantity !== rule.quantity,
+    );
+    globalRules.value.push({ ...rule, global: true });
     await updateEntityRules();
     await previewPricelist('Quantity levels applied.');
   } catch (error) {
@@ -407,24 +411,33 @@ const applyRules = async (rules: PricelistRule[]): Promise<void> => {
     });
   } finally {
     quantityLevelsLoading.value = false;
+    const ruleToUpdate = globalRules.value[globalRulesIndex + 1];
+    if (ruleToUpdate) {
+      ruleToUpdate.applied = true;
+    }
   }
 };
 
-const applyAndOverwrite = async (payload: {
-  rule: PricelistRule;
-  rules: PricelistRule[];
-}): Promise<void> => {
+const applyAndOverwriteRule = async (rule: PricelistRule): Promise<void> => {
   if (entityDataUpdate.value.products) {
-    currentOverwriteQuantity.value = Number(payload.rule.quantity);
+    currentOverwriteQuantity.value = Number(rule.quantity);
     overwriteLevelsPromptVisible.value = true;
     overwriteContinueAction.value = async () => {
       overwriteLevelsPromptVisible.value = false;
       await overwriteProducts(currentOverwriteQuantity.value);
-      await applyRules(payload.rules);
+      await applyRule(rule);
     };
     return;
   }
-  await applyRules(payload.rules);
+  await applyRule(rule);
+};
+
+const removeRule = async (rule: PricelistRule): Promise<void> => {
+  globalRules.value = globalRules.value.filter(
+    (r) => r.quantity !== rule.quantity,
+  );
+  await updateEntityRules();
+  await previewPricelist('Quantity level removed.');
 };
 
 const updateEntityRules = async (): Promise<void> => {
@@ -439,8 +452,8 @@ const updateEntityRules = async (): Promise<void> => {
   // Start with globalRules
   const newRules: PricelistRule[] = globalRules.value.map((rule) => ({
     quantity: rule.quantity,
-    margin: rule.margin,
-    discountPercent: rule.discountPercent,
+    ...(rule.margin && { margin: rule.margin }),
+    ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
   }));
 
   // Add back the quantity 1 rule if it existed and wasn't replaced
@@ -1230,8 +1243,9 @@ if (!createMode.value) {
                         v-model:loading="quantityLevelsLoading"
                         :rules="globalRules"
                         :mode="pricelistRulesMode"
-                        @apply="applyRules"
-                        @apply-overwrite="applyAndOverwrite"
+                        @apply="applyRule"
+                        @apply-overwrite="applyAndOverwriteRule"
+                        @remove="removeRule"
                       />
                     </PricelistRulesWrapper>
                   </TabsContent>
