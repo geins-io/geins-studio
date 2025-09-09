@@ -525,13 +525,13 @@ const pricelistRulesMode = computed({
   },
 });
 
-const confirmModeChange = () => {
+const confirmModeChange = async () => {
   rulesModeChangePrompt.value = false;
   if (pendingModeChange.value) {
     actualPricelistRulesMode.value = pendingModeChange.value;
     pendingModeChange.value = null;
     globalRules.value = globalRules.value.filter((rule) => rule.quantity === 1);
-    entityDataUpdate.value.rules = globalRules.value;
+    await updateEntityRules();
     previewPricelist(undefined, true);
   }
 };

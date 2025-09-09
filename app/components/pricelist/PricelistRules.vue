@@ -71,14 +71,6 @@ const apply = (
   overwrite: boolean,
 ): void => {
   loadingIndex.value = index;
-  // Find the corresponding rule in localRules and update it
-  const localRuleIndex = localRules.value.findIndex((r) => r === rule);
-  if (localRuleIndex !== -1) {
-    const localRule = localRules.value[localRuleIndex];
-    if (localRule) {
-      localRule.applied = true;
-    }
-  }
   nextTick(() => {
     if (overwrite) {
       emit('apply-overwrite', rule);
