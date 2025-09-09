@@ -151,6 +151,7 @@ const {
   hasUnsavedChanges,
   unsavedChangesDialogOpen,
   validateOnChange,
+  setOriginalSavedData,
   confirmLeave,
   createEntity,
   updateEntity,
@@ -183,6 +184,12 @@ const {
   reshapeEntityData: (entityData) => ({
     ...entityData,
     products: entityData.products?.items || [],
+    rules: (entityData.rules || []).map((rule) => ({
+      _id: rule._id,
+      quantity: rule.quantity,
+      ...(rule.margin && { margin: rule.margin }),
+      ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
+    })),
   }),
   parseEntityData: (entity) => {
     entityLiveStatus.value = entity.active;
@@ -649,9 +656,16 @@ watch(vatDescription, () => {
 // ENTITY ACTIONS
 // =====================================================================================
 const handleSave = async () => {
-  isInitialLoad.value = true;
-  await updateEntity(undefined, {
-    fields: 'rules,selectionquery',
+  await updateEntity(
+    undefined,
+    {
+      fields: 'rules,selectionquery',
+    },
+    false,
+  );
+  await previewPricelist(undefined, false);
+  nextTick(() => {
+    setOriginalSavedData();
   });
 };
 
@@ -805,6 +819,7 @@ if (!createMode.value) {
     await parseAndSaveData(data.value);
     await previewPricelist(undefined, false);
     isInitialLoad.value = false;
+    setOriginalSavedData();
   }
 
   productsStore.init();

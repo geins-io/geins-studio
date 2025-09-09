@@ -22,11 +22,11 @@ export function useUnsavedChanges<T extends Record<string, unknown>>(
           ([key]) => !excludeFields.includes(key),
         ),
       );
-      // console.log('🚀 ~ hasUnsavedChanges ~ current:', JSON.stringify(current));
-      // console.log(
-      //   '🚀 ~ hasUnsavedChanges ~ original:',
-      //   JSON.stringify(original),
-      // );
+      console.log('🚀 ~ hasUnsavedChanges ~ current:', JSON.stringify(current));
+      console.log(
+        '🚀 ~ hasUnsavedChanges ~ original:',
+        JSON.stringify(original),
+      );
       return JSON.stringify(current) !== JSON.stringify(original);
     }
     // console.log('🚀 ~ hasUnsavedChanges ~ current:', current);
