@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SpeedInsights } from '@vercel/speed-insights/vue';
 const isCollapsed = useCookie<boolean>('geins-sidebar-collapsed', {
   default: () => true,
   maxAge: 60 * 60 * 24 * 365,
@@ -43,4 +44,5 @@ const contentClasses = computed(() => {
       </div>
     </main>
   </div>
+  <SpeedInsights />
 </template>
