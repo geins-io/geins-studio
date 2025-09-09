@@ -196,6 +196,7 @@ const {
       const firstRuleMargin = quantityLevels[0]?.margin;
       pricelistRulesMode.value = firstRuleMargin ? 'margin' : 'discount';
       globalRules.value = entity.rules.map((rule) => ({
+        _id: rule._id,
         quantity: rule.quantity,
         ...(rule.margin && { margin: rule.margin }),
         ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
@@ -354,11 +355,10 @@ const applyBaseRule = async (
       ...(mode === 'discount' && { discountPercent: percentage }),
     };
 
-    const newRules = globalRules.value.filter((rule) => rule.quantity !== 1);
-    newRules.push(globalRule);
-    globalRules.value = newRules;
-    entityDataUpdate.value.rules = globalRules.value;
+    globalRules.value = globalRules.value.filter((rule) => rule.quantity !== 1);
+    globalRules.value.push(globalRule);
 
+    await updateEntityRules();
     await previewPricelist(`${percentage}% ${mode} applied globally`);
     pricelistBaseRuleInput.value = undefined;
   } catch (error) {
@@ -457,6 +457,7 @@ const updateEntityRules = async (): Promise<void> => {
 
   // Start with globalRules
   const newRules: PricelistRule[] = globalRules.value.map((rule) => ({
+    _id: rule._id,
     quantity: rule.quantity,
     ...(rule.margin && { margin: rule.margin }),
     ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
