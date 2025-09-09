@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
+import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = withDefaults(
   defineProps<{
@@ -19,6 +20,9 @@ const emit = defineEmits<{
 const { $geinsApi } = useNuxtApp();
 const { getPricelistProduct, addToPricelistProducts } = usePricelistProducts();
 const productApi = repo.product($geinsApi);
+const { t } = useI18n();
+const { toast } = useToast();
+const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');
 
 const open = defineModel<boolean>('open');
 const propRules = toRef(props, 'rules');
@@ -60,13 +64,22 @@ const handleUpdateRule = useDebounceFn(
         .id(props.pricelistId)
         .previewPrice(previewProduct);
 
-      editableRules.value[payload.index] = {
-        ...editableRules.value[payload.index],
+      // Create a new array to ensure reactivity
+      const updatedRules = [...editableRules.value];
+      updatedRules[payload.index] = {
+        ...updatedRules[payload.index],
         margin: previewPrice.margin,
         discountPercent: previewPrice.discountPercent,
         price: previewPrice.price,
       };
-    } catch {
+      editableRules.value = updatedRules;
+    } catch (error) {
+      geinsLogError('error fetching preview price', error);
+      toast({
+        title: t('feedback_error'),
+        description: t('feedback_error_description'),
+        variant: 'negative',
+      });
     } finally {
       rulesLoading.value = false;
     }

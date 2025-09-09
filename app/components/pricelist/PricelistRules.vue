@@ -18,6 +18,9 @@ const rules = toRef(props, 'rules');
 const loading = defineModel<boolean>('loading');
 const loadingIndex = ref<number | null>(null);
 
+// Flag to prevent emitting updates when syncing from props
+const syncingFromProps = ref(false);
+
 const localRules = ref<PricelistRule[]>(
   rules.value.map((rule) => ({ ...rule, applied: true })),
 );
@@ -33,14 +36,19 @@ watch(
     visibleRules.value = newRules.filter(
       (rule) => !(rule.quantity === 1 && rule.applied),
     );
-    emit('update', newRules);
+    if (!syncingFromProps.value) {
+      emit('update', newRules);
+    }
   },
   { deep: true },
 );
 
-// replace localRules if rules are removed
 watch(rules, (newRules) => {
+  syncingFromProps.value = true;
   localRules.value = newRules.map((rule) => ({ ...rule, applied: true }));
+  nextTick(() => {
+    syncingFromProps.value = false;
+  });
 });
 
 const emptyRule: PricelistRule = {

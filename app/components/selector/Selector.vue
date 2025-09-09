@@ -92,7 +92,6 @@ const resetSelections = () => {
   includeSelection.value = getFallbackSelection();
   excludeSelection.value = getFallbackSelection();
 };
-const showExclude = ref(!!excludeSelection.value.ids?.length);
 
 // WATCH AND UPDATE SELECTION ON INCLUDE/EXCLUDE SELECTION CHANGE
 watch(
@@ -113,7 +112,6 @@ watch(
 watch(
   excludeSelection,
   (value) => {
-    showExclude.value = !!value.ids?.length;
     if (mode.value === SelectorMode.Simple && simpleSelection.value) {
       simpleSelection.value.exclude = convertToSimpleSelection(value);
     } else if (selection.value) {
@@ -204,19 +202,40 @@ const productApi = repo.product(useNuxtApp().$geinsApi);
 const selectedProducts = ref<Product[]>([]);
 const { transformProducts } = useProductsStore();
 const selectionMade = computed(() => {
-  return (
-    includeSelection.value.categoryIds?.length ||
-    includeSelection.value.brandIds?.length ||
-    includeSelection.value.ids?.length ||
-    //Object.keys(includeSelection.value.price)?.length ||
-    //Object.keys(includeSelection.value.stock)?.length ||
-    excludeSelection.value.categoryIds?.length ||
-    excludeSelection.value.brandIds?.length ||
-    excludeSelection.value.ids?.length
+  return !!(
+    (
+      includeSelection.value.categoryIds?.length ||
+      includeSelection.value.brandIds?.length ||
+      includeSelection.value.ids?.length ||
+      //Object.keys(includeSelection.value.price)?.length ||
+      //Object.keys(includeSelection.value.stock)?.length ||
+      excludeSelection.value.categoryIds?.length ||
+      excludeSelection.value.brandIds?.length ||
+      excludeSelection.value.ids?.length
+    )
     //Object.keys(excludeSelection.value.price)?.length ||
     //Object.keys(excludeSelection.value.stock)?.length
   );
 });
+
+const excludeSelectionMade = computed(() => {
+  return !!(
+    (
+      excludeSelection.value.categoryIds?.length ||
+      excludeSelection.value.brandIds?.length ||
+      excludeSelection.value.ids?.length
+    )
+    //Object.keys(excludeSelection.value.price)?.length ||
+    //Object.keys(excludeSelection.value.stock)?.length
+  );
+});
+
+const showExclude = ref(excludeSelectionMade.value);
+
+watch(excludeSelectionMade, (newVal) => {
+  showExclude.value = newVal;
+});
+
 if (!props.fetchEntitiesExternally) {
   watchEffect(async () => {
     let products = null;

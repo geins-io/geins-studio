@@ -195,7 +195,13 @@ const {
       );
       const firstRuleMargin = quantityLevels[0]?.margin;
       pricelistRulesMode.value = firstRuleMargin ? 'margin' : 'discount';
-      globalRules.value = entity.rules;
+      globalRules.value = entity.rules.map((rule) => ({
+        quantity: rule.quantity,
+        ...(rule.margin && { margin: rule.margin }),
+        ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
+        applied: true,
+        global: true,
+      }));
     }
     form.setValues({
       vat: {
@@ -304,7 +310,7 @@ const baseRule = computed(() => {
 
 const baseRuleMode = computed(() => {
   if (!baseRule.value) return null;
-  return baseRule.value.margin !== undefined && baseRule.value.margin !== 0
+  return baseRule.value.margin !== undefined && baseRule.value.margin !== null
     ? 'margin'
     : 'discount';
 });
@@ -344,8 +350,8 @@ const applyBaseRule = async (
     // Create global rule for quantity 1
     const globalRule: PricelistRule = {
       quantity: 1,
-      margin: mode === 'margin' ? percentage : 0,
-      discountPercent: mode === 'discount' ? percentage : 0,
+      ...(mode === 'margin' && { margin: percentage }),
+      ...(mode === 'discount' && { discountPercent: percentage }),
     };
 
     const newRules = globalRules.value.filter((rule) => rule.quantity !== 1);
