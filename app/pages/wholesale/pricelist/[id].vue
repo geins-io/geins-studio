@@ -829,8 +829,9 @@ if (!createMode.value) {
   refreshEntityData.value = refresh;
 
   if (data.value) {
-    await parseAndSaveData(data.value, !hasProductSelection.value);
-    await previewPricelist(undefined, false, hasProductSelection.value);
+    const hasSelection = !!data.value.productSelectionQuery;
+    await parseAndSaveData(data.value, !hasSelection);
+    await previewPricelist(undefined, false, hasSelection);
     isInitialLoad.value = false;
   }
 
