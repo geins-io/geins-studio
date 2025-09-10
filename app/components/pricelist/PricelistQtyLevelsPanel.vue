@@ -18,7 +18,7 @@ const emit = defineEmits<{
 }>();
 
 const { $geinsApi } = useNuxtApp();
-const { getPricelistProduct, addToPricelistProducts } = usePricelistProducts();
+const { getPricelistProduct, getNewPricelistProducts } = usePricelistProducts();
 const productApi = repo.product($geinsApi);
 const { t } = useI18n();
 const { toast } = useToast();
@@ -93,26 +93,38 @@ const handleCancel = () => {
 };
 const handleSave = () => {
   rulesValid.value = true;
-  editableRules.value.forEach((rule) => {
-    const valueType = rule.lastFieldChanged || 'price';
-    const value = Number(rule[valueType]);
+  const newRules: (PricelistProduct | undefined)[] = editableRules.value.map(
+    (rule) => {
+      const valueType = rule.lastFieldChanged || 'price';
+      const value = Number(rule[valueType]);
 
-    if (isNaN(value) || !rule.quantity || rule.quantity === 1) {
-      rulesValid.value = false;
-      return;
-    }
+      if (isNaN(value) || !rule.quantity || rule.quantity === 1) {
+        return undefined;
+      }
 
-    const product = getPricelistProduct(
-      props.productId,
-      value,
-      valueType,
-      rule.quantity,
-    );
-    addToPricelistProducts(product, pricelistProducts.value);
-  });
-  if (!rulesValid.value) {
+      const product = getPricelistProduct(
+        props.productId,
+        value,
+        valueType,
+        rule.quantity,
+      );
+      return product;
+    },
+  );
+
+  if (newRules.includes(undefined)) {
+    rulesValid.value = false;
     return;
   }
+
+  const filteredNewRules: PricelistProduct[] = newRules.filter(
+    (rule) => rule !== undefined,
+  );
+  pricelistProducts.value = getNewPricelistProducts(
+    filteredNewRules,
+    pricelistProducts.value,
+  );
+
   emit('save', editableRules.value);
   open.value = false;
   rulesValid.value = true;

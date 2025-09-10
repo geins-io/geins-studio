@@ -123,6 +123,7 @@ const pricelistBaseRuleInput = ref<number>();
 const {
   transformProductsForList,
   getPricelistProduct,
+  getNewPricelistProducts,
   addToPricelistProducts,
   convertPriceModeToRuleField,
 } = usePricelistProducts();
@@ -269,18 +270,24 @@ const previewPricelist = async (
       });
 
     pricelistProducts.value = previewPricelist.products?.items || [];
-    pricelistProducts.value
+
+    const editedPricelistProducts = pricelistProducts.value
       .filter((p) => p.priceMode !== 'rule' && p.priceMode !== 'auto')
-      .forEach((p) => {
+      .map((p) => {
         const priceMode = convertPriceModeToRuleField(p.priceMode);
+        const value = priceMode ? Number(p[priceMode]) || null : null;
         const product = getPricelistProduct(
           p.productId,
-          Number(p[priceMode]),
+          value,
           priceMode,
           p.staggeredCount,
         );
-        addToPricelistProducts(product, editedProducts.value);
+        return product;
       });
+    editedProducts.value = getNewPricelistProducts(
+      editedPricelistProducts,
+      editedProducts.value,
+    );
     selectedProducts.value = transformProductsForList(
       pricelistProducts.value,
       entityData.value,
@@ -497,9 +504,15 @@ const removeBaseRulePromptVisible = ref(false);
 const overwriteProducts = async (staggeredCount: number) => {
   // Remove products with the specified staggeredCount
   entityDataUpdate.value.products =
-    entityDataUpdate.value.products?.filter(
-      (product: PricelistProduct) => product.staggeredCount !== staggeredCount,
-    ) || [];
+    entityDataUpdate.value.products?.map((product: PricelistProduct) => {
+      if (product.staggeredCount === staggeredCount) {
+        return {
+          productId: product.productId,
+          staggeredCount: product.staggeredCount,
+        };
+      }
+      return product;
+    }) || [];
 };
 
 // =====================================================================================
@@ -597,21 +610,21 @@ const setupColumns = () => {
         getPricelistProduct(row.original._id, Number(value), 'price'),
         editedProducts.value,
       );
-      previewPricelist(undefined, !isInitialLoad.value);
+      previewPricelist();
     },
     (value: string | number, row: Row<PricelistProductList>) => {
       addToPricelistProducts(
         getPricelistProduct(row.original._id, Number(value), 'margin'),
         editedProducts.value,
       );
-      previewPricelist(undefined, !isInitialLoad.value);
+      previewPricelist();
     },
     (value: string | number, row: Row<PricelistProductList>) => {
       addToPricelistProducts(
         getPricelistProduct(row.original._id, Number(value), 'discountPercent'),
         editedProducts.value,
       );
-      previewPricelist(undefined, !isInitialLoad.value);
+      previewPricelist();
     },
   );
 };
