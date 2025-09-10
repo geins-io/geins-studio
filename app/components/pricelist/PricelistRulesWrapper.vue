@@ -12,7 +12,7 @@ const mode = defineModel<PricelistRuleMode>('mode', { required: true });
 <template>
   <div class="rounded-lg border">
     <div class="flex items-center border-b px-4 py-2.5">
-      <ContentCardHeader size="sm" :title="title" class="mr-8 border-r pr-8" />
+      <ContentCardHeader size="sm" :title="title" class="mr-5 border-r pr-5" />
       <div class="flex items-center gap-2">
         <Label :for="modeId" class="text-xs"> Calculate by </Label>
         <Select :id="modeId" v-model="mode" class="mb-4 w-48!">
@@ -36,7 +36,7 @@ const mode = defineModel<PricelistRuleMode>('mode', { required: true });
       <div class="flex flex-wrap items-center gap-2 p-4 pb-0">
         <slot />
       </div>
-      <div v-auto-animate class="flex px-4 [&>*]:mt-3.5">
+      <div v-auto-animate class="flex px-4 [&>*]:mt-5">
         <slot name="footer" />
       </div>
     </div>

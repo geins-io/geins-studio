@@ -2,6 +2,7 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import { useForm, type GenericObject } from 'vee-validate';
 import { useDebounceFn } from '@vueuse/core';
 import type { toTypedSchema } from '@vee-validate/zod';
+import type { set } from 'zod';
 
 export interface EntityEditOptions<
   TBase,
@@ -142,14 +143,23 @@ export function useEntityEdit<
   }
 
   // Parse and save data helper
-  const parseAndSaveData = async (entity: TResponse): Promise<void> => {
+  const parseAndSaveData = async (
+    entity: TResponse,
+    setSavedData: boolean = true,
+  ): Promise<void> => {
     entityDataUpdate.value = options.reshapeEntityData(entity);
 
-    originalEntityData.value = JSON.stringify(entityDataUpdate.value);
+    if (setSavedData) {
+      setOriginalSavedData();
+    }
 
     if (options.parseEntityData) {
       await options.parseEntityData(entity);
     }
+  };
+
+  const setOriginalSavedData = () => {
+    originalEntityData.value = JSON.stringify(entityData.value);
   };
 
   // Step validation
@@ -221,6 +231,7 @@ export function useEntityEdit<
   const updateEntity = async (
     additionalValidation?: () => Promise<boolean>,
     query?: Record<string, string>,
+    setSavedData?: boolean,
   ) => {
     loading.value = true;
     try {
@@ -243,7 +254,7 @@ export function useEntityEdit<
       }
       const result = await options.repository.update(id, updateData, query);
       const newData = result ?? (await options.repository.get(id, query));
-      await parseAndSaveData(newData);
+      await parseAndSaveData(newData, setSavedData);
 
       toast({
         title: t('entity_updated', { entityName }),
@@ -311,6 +322,7 @@ export function useEntityEdit<
     // Unsaved changes
     hasUnsavedChanges,
     unsavedChangesDialogOpen,
+    setOriginalSavedData,
     confirmLeave,
 
     // Methods

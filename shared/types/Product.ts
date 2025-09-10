@@ -248,6 +248,7 @@ export interface PricelistProductList extends EntityBaseWithName {
 }
 
 export interface PricelistRule {
+  _id?: string;
   quantity?: number;
   margin?: number;
   discountPercent?: number;

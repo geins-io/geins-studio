@@ -86,15 +86,16 @@ export const usePricelistProducts = () => {
 
   const getPricelistProduct = (
     productId: string,
-    value: number,
-    valueType: PricelistRuleField,
+    value: number | null,
+    valueType: PricelistRuleField | undefined,
     quantity: number = 1,
   ): PricelistProduct => {
     return {
       productId,
-      ...(valueType === 'price' && { price: value }),
-      ...(valueType === 'margin' && { margin: value }),
-      ...(valueType === 'discountPercent' && { discountPercent: value }),
+      ...(valueType === 'price' && value !== null && { price: value }),
+      ...(valueType === 'margin' && value !== null && { margin: value }),
+      ...(valueType === 'discountPercent' &&
+        value !== null && { discountPercent: value }),
       staggeredCount: quantity,
     };
   };
@@ -115,14 +116,32 @@ export const usePricelistProducts = () => {
     }
   };
 
+  const getNewPricelistProducts = (
+    newProducts: PricelistProduct[],
+    currentProducts: PricelistProduct[],
+  ): PricelistProduct[] => {
+    const updatedProducts = [...currentProducts];
+
+    newProducts.forEach((newProduct) => {
+      addToPricelistProducts(newProduct, updatedProducts);
+    });
+
+    return updatedProducts;
+  };
+
   const convertPriceModeToRuleField = (
     priceMode?: PricelistPriceMode,
-  ): PricelistRuleField => {
-    return priceMode === 'margin' || priceMode === 'discount'
-      ? priceMode === 'discount'
-        ? 'discountPercent'
-        : 'margin'
-      : 'price';
+  ): PricelistRuleField | undefined => {
+    switch (priceMode) {
+      case 'margin':
+        return 'margin';
+      case 'discount':
+        return 'discountPercent';
+      case 'fixed':
+        return 'price';
+      default:
+        return undefined;
+    }
   };
 
   return {
@@ -130,6 +149,7 @@ export const usePricelistProducts = () => {
     getQuantityLevels,
     getPricelistProduct,
     addToPricelistProducts,
+    getNewPricelistProducts,
     convertPriceModeToRuleField,
   };
 };

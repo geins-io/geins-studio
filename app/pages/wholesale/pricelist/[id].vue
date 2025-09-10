@@ -123,6 +123,7 @@ const pricelistBaseRuleInput = ref<number>();
 const {
   transformProductsForList,
   getPricelistProduct,
+  getNewPricelistProducts,
   addToPricelistProducts,
   convertPriceModeToRuleField,
 } = usePricelistProducts();
@@ -151,6 +152,7 @@ const {
   hasUnsavedChanges,
   unsavedChangesDialogOpen,
   validateOnChange,
+  setOriginalSavedData,
   confirmLeave,
   createEntity,
   updateEntity,
@@ -167,7 +169,6 @@ const {
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
   stepValidationMap,
-  excludeSaveFields: ['productSelectionQuery'],
   getInitialFormValues: (entityData) => ({
     vat: {
       exVat: entityData.exVat,
@@ -182,7 +183,13 @@ const {
   }),
   reshapeEntityData: (entityData) => ({
     ...entityData,
-    products: entityData.products?.items || [],
+    products: [],
+    rules: (entityData.rules || []).map((rule) => ({
+      _id: rule._id,
+      quantity: rule.quantity,
+      ...(rule.margin && { margin: rule.margin }),
+      ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
+    })),
   }),
   parseEntityData: (entity) => {
     entityLiveStatus.value = entity.active;
@@ -190,12 +197,19 @@ const {
       productSelection.value = entity.productSelectionQuery;
     }
     if (entity.rules && entity.rules.length) {
-      const firstRuleMargin = entity.rules[0]?.margin;
-      pricelistRulesMode.value =
-        firstRuleMargin !== undefined && firstRuleMargin !== 0
-          ? 'margin'
-          : 'discount';
-      globalRules.value = entity.rules;
+      const quantityLevels = entity.rules.filter(
+        (r) => r.quantity && r.quantity > 1,
+      );
+      const firstRuleMargin = quantityLevels[0]?.margin;
+      pricelistRulesMode.value = firstRuleMargin ? 'margin' : 'discount';
+      globalRules.value = entity.rules.map((rule) => ({
+        _id: rule._id,
+        quantity: rule.quantity,
+        ...(rule.margin && { margin: rule.margin }),
+        ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
+        applied: true,
+        global: true,
+      }));
     }
     form.setValues({
       vat: {
@@ -239,6 +253,7 @@ const updateInProgress = ref(false);
 const previewPricelist = async (
   successText?: string,
   showToast: boolean = true,
+  setSavedData: boolean = false,
 ) => {
   if (
     !entityId.value ||
@@ -255,18 +270,24 @@ const previewPricelist = async (
       });
 
     pricelistProducts.value = previewPricelist.products?.items || [];
-    pricelistProducts.value
+
+    const editedPricelistProducts = pricelistProducts.value
       .filter((p) => p.priceMode !== 'rule' && p.priceMode !== 'auto')
-      .forEach((p) => {
+      .map((p) => {
         const priceMode = convertPriceModeToRuleField(p.priceMode);
+        const value = priceMode ? Number(p[priceMode]) || null : null;
         const product = getPricelistProduct(
           p.productId,
-          Number(p[priceMode]),
+          value,
           priceMode,
           p.staggeredCount,
         );
-        addToPricelistProducts(product, editedProducts.value);
+        return product;
       });
+    editedProducts.value = getNewPricelistProducts(
+      editedPricelistProducts,
+      editedProducts.value,
+    );
     selectedProducts.value = transformProductsForList(
       pricelistProducts.value,
       entityData.value,
@@ -277,6 +298,10 @@ const previewPricelist = async (
         title: successText || `Pricelist preview updated.`,
         variant: 'positive',
       });
+    }
+    if (setSavedData) {
+      await nextTick();
+      setOriginalSavedData();
     }
   } catch (error) {
     geinsLogError('error fetching preview pricelist:', error);
@@ -304,7 +329,7 @@ const baseRule = computed(() => {
 
 const baseRuleMode = computed(() => {
   if (!baseRule.value) return null;
-  return baseRule.value.margin !== undefined && baseRule.value.margin !== 0
+  return baseRule.value.margin !== undefined && baseRule.value.margin !== null
     ? 'margin'
     : 'discount';
 });
@@ -318,7 +343,7 @@ const baseRulePercentage = computed(() => {
 
 const baseRuleText = computed(() => {
   if (!baseRule.value) return '';
-  return `${baseRulePercentage.value}% ${baseRuleMode.value} applied to all products.`;
+  return `${baseRulePercentage.value}% ${baseRuleMode.value} applied globally`;
 });
 
 const handleApplyBaseRule = () => {
@@ -344,16 +369,19 @@ const applyBaseRule = async (
     // Create global rule for quantity 1
     const globalRule: PricelistRule = {
       quantity: 1,
-      margin: mode === 'margin' ? percentage : 0,
-      discountPercent: mode === 'discount' ? percentage : 0,
+      ...(mode === 'margin' && { margin: percentage }),
+      ...(mode === 'discount' && { discountPercent: percentage }),
     };
 
-    const newRules = globalRules.value.filter((rule) => rule.quantity !== 1);
-    newRules.push(globalRule);
-    globalRules.value = newRules;
-    entityDataUpdate.value.rules = globalRules.value;
+    if (!!baseRule.value) {
+      globalRule._id = baseRule.value._id;
+    }
 
-    await previewPricelist(`${percentage}% ${mode} applied to all products.`);
+    globalRules.value = globalRules.value.filter((rule) => rule.quantity !== 1);
+    globalRules.value.push(globalRule);
+
+    await updateEntityRules();
+    await previewPricelist(`${percentage}% ${mode} applied globally`);
     pricelistBaseRuleInput.value = undefined;
   } catch (error) {
     geinsLogError('error applying base rule:', error);
@@ -392,10 +420,14 @@ const removeBaseRule = async () => {
   await previewPricelist(feedback);
 };
 
-const applyRules = async (rules: PricelistRule[]): Promise<void> => {
+const applyRule = async (rule: PricelistRule): Promise<void> => {
   quantityLevelsLoading.value = true;
+  const globalRulesIndex = globalRules.value.length;
   try {
-    globalRules.value = rules;
+    globalRules.value = globalRules.value.filter(
+      (r) => r.quantity !== rule.quantity,
+    );
+    globalRules.value.push({ ...rule, global: true });
     await updateEntityRules();
     await previewPricelist('Quantity levels applied.');
   } catch (error) {
@@ -407,24 +439,33 @@ const applyRules = async (rules: PricelistRule[]): Promise<void> => {
     });
   } finally {
     quantityLevelsLoading.value = false;
+    const ruleToUpdate = globalRules.value[globalRulesIndex + 1];
+    if (ruleToUpdate) {
+      ruleToUpdate.applied = true;
+    }
   }
 };
 
-const applyAndOverwrite = async (payload: {
-  rule: PricelistRule;
-  rules: PricelistRule[];
-}): Promise<void> => {
+const applyAndOverwriteRule = async (rule: PricelistRule): Promise<void> => {
   if (entityDataUpdate.value.products) {
-    currentOverwriteQuantity.value = Number(payload.rule.quantity);
+    currentOverwriteQuantity.value = Number(rule.quantity);
     overwriteLevelsPromptVisible.value = true;
     overwriteContinueAction.value = async () => {
       overwriteLevelsPromptVisible.value = false;
       await overwriteProducts(currentOverwriteQuantity.value);
-      await applyRules(payload.rules);
+      await applyRule(rule);
     };
     return;
   }
-  await applyRules(payload.rules);
+  await applyRule(rule);
+};
+
+const removeRule = async (rule: PricelistRule): Promise<void> => {
+  globalRules.value = globalRules.value.filter(
+    (r) => r.quantity !== rule.quantity,
+  );
+  await updateEntityRules();
+  await previewPricelist('Quantity level removed.');
 };
 
 const updateEntityRules = async (): Promise<void> => {
@@ -438,9 +479,10 @@ const updateEntityRules = async (): Promise<void> => {
 
   // Start with globalRules
   const newRules: PricelistRule[] = globalRules.value.map((rule) => ({
+    _id: rule._id,
     quantity: rule.quantity,
-    margin: rule.margin,
-    discountPercent: rule.discountPercent,
+    ...(rule.margin && { margin: rule.margin }),
+    ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
   }));
 
   // Add back the quantity 1 rule if it existed and wasn't replaced
@@ -462,9 +504,15 @@ const removeBaseRulePromptVisible = ref(false);
 const overwriteProducts = async (staggeredCount: number) => {
   // Remove products with the specified staggeredCount
   entityDataUpdate.value.products =
-    entityDataUpdate.value.products?.filter(
-      (product: PricelistProduct) => product.staggeredCount !== staggeredCount,
-    ) || [];
+    entityDataUpdate.value.products?.map((product: PricelistProduct) => {
+      if (product.staggeredCount === staggeredCount) {
+        return {
+          productId: product.productId,
+          staggeredCount: product.staggeredCount,
+        };
+      }
+      return product;
+    }) || [];
 };
 
 // =====================================================================================
@@ -505,13 +553,13 @@ const pricelistRulesMode = computed({
   },
 });
 
-const confirmModeChange = () => {
+const confirmModeChange = async () => {
   rulesModeChangePrompt.value = false;
   if (pendingModeChange.value) {
     actualPricelistRulesMode.value = pendingModeChange.value;
     pendingModeChange.value = null;
     globalRules.value = globalRules.value.filter((rule) => rule.quantity === 1);
-    entityDataUpdate.value.rules = globalRules.value;
+    await updateEntityRules();
     previewPricelist(undefined, true);
   }
 };
@@ -525,6 +573,10 @@ const cancelModeChange = () => {
 // PRODUCTS STATE
 // =====================================================================================
 const selectedProducts = ref<PricelistProductList[]>([]);
+
+const hasProductSelection = computed(() => {
+  return selectedProducts.value.length > 0;
+});
 
 const vatDescription = computed(() => {
   return entityData.value?.exVat ? t('ex_vat') : t('inc_vat');
@@ -558,21 +610,21 @@ const setupColumns = () => {
         getPricelistProduct(row.original._id, Number(value), 'price'),
         editedProducts.value,
       );
-      previewPricelist(undefined, !isInitialLoad.value);
+      previewPricelist();
     },
     (value: string | number, row: Row<PricelistProductList>) => {
       addToPricelistProducts(
         getPricelistProduct(row.original._id, Number(value), 'margin'),
         editedProducts.value,
       );
-      previewPricelist(undefined, !isInitialLoad.value);
+      previewPricelist();
     },
     (value: string | number, row: Row<PricelistProductList>) => {
       addToPricelistProducts(
         getPricelistProduct(row.original._id, Number(value), 'discountPercent'),
         editedProducts.value,
       );
-      previewPricelist(undefined, !isInitialLoad.value);
+      previewPricelist();
     },
   );
 };
@@ -628,11 +680,19 @@ watch(vatDescription, () => {
 // =====================================================================================
 // ENTITY ACTIONS
 // =====================================================================================
+const saveInProgress = ref(false);
 const handleSave = async () => {
-  isInitialLoad.value = true;
-  await updateEntity(undefined, {
-    fields: 'rules,selectionquery',
-  });
+  isInitialLoad.value = false;
+  saveInProgress.value = true;
+  await updateEntity(
+    undefined,
+    {
+      fields: 'rules,selectionquery',
+    },
+    !hasProductSelection.value,
+  );
+  await previewPricelist(undefined, false, hasProductSelection.value);
+  saveInProgress.value = false;
 };
 
 const copyEntity = async () => {
@@ -644,7 +704,7 @@ const copyEntity = async () => {
     if (result?._id) {
       const currentPath = route.path;
       const newPath = currentPath.replace(entityId.value, result._id);
-      await parseAndSaveData(result);
+      await parseAndSaveData(result, false);
       await useRouter().replace(newPath);
       toast({
         title: t('entity_copied', { entityName }),
@@ -782,8 +842,9 @@ if (!createMode.value) {
   refreshEntityData.value = refresh;
 
   if (data.value) {
-    await parseAndSaveData(data.value);
-    await previewPricelist(undefined, false);
+    const hasSelection = !!data.value.productSelectionQuery;
+    await parseAndSaveData(data.value, !hasSelection);
+    await previewPricelist(undefined, false, hasSelection);
     isInitialLoad.value = false;
   }
 
@@ -792,8 +853,9 @@ if (!createMode.value) {
   watch(
     productSelection,
     async (newSelection) => {
+      if (saveInProgress.value) return;
+
       entityDataUpdate.value.productSelectionQuery = newSelection;
-      // Show toast only if this is not the initial load AND we're not currently saving
 
       await previewPricelist(
         'Product selection updated.',
@@ -933,7 +995,7 @@ if (!createMode.value) {
             v-if="!createMode"
             icon="save"
             :loading="loading"
-            :disabled="!hasUnsavedChanges"
+            :disabled="!hasUnsavedChanges || saveInProgress"
             @click="handleSave"
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
@@ -968,7 +1030,9 @@ if (!createMode.value) {
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
         </template>
         <template v-if="!createMode" #changes>
-          <ContentEditHasChanges :changes="hasUnsavedChanges" />
+          <ContentEditHasChanges
+            :changes="hasUnsavedChanges && !saveInProgress"
+          />
         </template>
       </ContentHeader>
     </template>
@@ -1117,7 +1181,7 @@ if (!createMode.value) {
                     />
                   </FormField>
                 </FormGrid>
-                <FormGrid design="1">
+                <!-- <FormGrid design="1">
                   <FormField
                     v-slot="{ value, handleChange }"
                     name="default.autoAddProducts"
@@ -1132,7 +1196,7 @@ if (!createMode.value) {
                       @update:model-value="handleChange"
                     />
                   </FormField>
-                </FormGrid>
+                </FormGrid> -->
               </FormGridWrap>
             </ContentEditCard>
             <div v-if="createMode" class="flex flex-row justify-end gap-4">
@@ -1156,72 +1220,96 @@ if (!createMode.value) {
             v-if="currentTab === 1 && !createMode"
             :key="`tab-${currentTab}`"
           >
-            <ContentEditCard
-              :title="$t('wholesale.pricelist_global_rules_title')"
-              :description="$t('wholesale.pricelist_global_rules_description')"
-              :create-mode="createMode"
-              :step-valid="true"
-            >
-              <Tabs default-value="base-rule" class="relative">
-                <TabsList class="mb-3">
-                  <TabsTrigger value="base-rule"> Base rule </TabsTrigger>
-                  <TabsTrigger value="qty-levels">
-                    Quantity levels
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="base-rule">
-                  <PricelistRulesWrapper
-                    v-model:mode="pricelistBaseRuleMode"
-                    title="Base rule"
-                    mode-id="pricelistBaseRuleMode"
+            <ContentCard>
+              <ContentCardHeader
+                :title="$t('wholesale.pricelist_global_rules_title')"
+                :description="
+                  $t('wholesale.pricelist_global_rules_description')
+                "
+                size="lg"
+                class="mb-6"
+              />
+              <div>
+                <Tabs v-auto-animate default-value="base-rule" class="relative">
+                  <TabsList
+                    :class="
+                      cn(
+                        'mb-3',
+                        !selectedProducts.length &&
+                          'pointer-events-none opacity-60',
+                      )
+                    "
                   >
-                    <Label class="w-full">
-                      {{ $t(pricelistBaseRuleMode) }}
-                    </Label>
-                    <Input
-                      v-model.number="pricelistBaseRuleInput"
-                      class="w-48"
-                      size="md"
-                      :loading="baseRuleLoading"
+                    <TabsTrigger value="base-rule"> Base rule </TabsTrigger>
+                    <TabsTrigger value="qty-levels">
+                      Quantity levels
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent v-if="selectedProducts.length" value="base-rule">
+                    <PricelistRulesWrapper
+                      v-model:mode="pricelistBaseRuleMode"
+                      title="Base rule"
+                      mode-id="pricelistBaseRuleMode"
                     >
-                      <template #valueDescriptor>%</template>
-                    </Input>
-                    <Button variant="outline" @click="handleApplyBaseRule">{{
-                      $t('apply')
-                    }}</Button>
-                    <Button
-                      variant="outline"
-                      @click="handleApplyBaseRuleAndOverwrite"
+                      <Label class="w-full">
+                        {{ $t(pricelistBaseRuleMode) }}
+                      </Label>
+                      <Input
+                        v-model.number="pricelistBaseRuleInput"
+                        class="w-48"
+                        size="md"
+                        :loading="baseRuleLoading"
+                      >
+                        <template #valueDescriptor>%</template>
+                      </Input>
+                      <Button variant="outline" @click="handleApplyBaseRule">{{
+                        $t('apply')
+                      }}</Button>
+                      <Button
+                        variant="outline"
+                        @click="handleApplyBaseRuleAndOverwrite"
+                      >
+                        {{ $t('wholesale.pricelist_apply_overwrite') }}
+                      </Button>
+                      <template #footer>
+                        <SelectorTag
+                          v-if="baseRule && baseRuleText && !baseRuleLoading"
+                          class="mt-2"
+                          :label="baseRuleText"
+                          @remove="removeBaseRulePromptVisible = true"
+                        />
+                      </template>
+                    </PricelistRulesWrapper>
+                  </TabsContent>
+                  <TabsContent
+                    v-if="selectedProducts.length"
+                    value="qty-levels"
+                  >
+                    <PricelistRulesWrapper
+                      v-model:mode="pricelistRulesMode"
+                      title="Quantity levels"
+                      mode-id="pricelistRulesMode"
                     >
-                      {{ $t('wholesale.pricelist_apply_overwrite') }}
-                    </Button>
-                    <template #footer>
-                      <SelectorTag
-                        v-if="baseRule && baseRuleText && !baseRuleLoading"
-                        class="mt-2"
-                        :label="baseRuleText"
-                        @remove="removeBaseRulePromptVisible = true"
+                      <PricelistRules
+                        v-model:loading="quantityLevelsLoading"
+                        :rules="globalRules"
+                        :mode="pricelistRulesMode"
+                        @apply="applyRule"
+                        @apply-overwrite="applyAndOverwriteRule"
+                        @remove="removeRule"
                       />
-                    </template>
-                  </PricelistRulesWrapper>
-                </TabsContent>
-                <TabsContent value="qty-levels">
-                  <PricelistRulesWrapper
-                    v-model:mode="pricelistRulesMode"
-                    title="Quantity levels"
-                    mode-id="pricelistRulesMode"
-                  >
-                    <PricelistRules
-                      v-model:loading="quantityLevelsLoading"
-                      :rules="globalRules"
-                      :mode="pricelistRulesMode"
-                      @apply="applyRules"
-                      @apply-overwrite="applyAndOverwrite"
-                    />
-                  </PricelistRulesWrapper>
-                </TabsContent>
-              </Tabs>
-            </ContentEditCard>
+                    </PricelistRulesWrapper>
+                  </TabsContent>
+                </Tabs>
+                <p
+                  v-if="!selectedProducts.length"
+                  class="text-muted-foreground text-sm italic"
+                >
+                  These settings will be available once you have made a product
+                  selection below.
+                </p>
+              </div>
+            </ContentCard>
           </ContentEditMainContent>
         </KeepAlive>
         <template #sidebar>

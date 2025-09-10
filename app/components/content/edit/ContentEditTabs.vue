@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { onMounted, watch, nextTick, unref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-
 const _props = defineProps<{
   tabs: string[];
 }>();
@@ -70,7 +67,7 @@ watch(currentTab, async (value) => {
           type="button"
           :class="
             cn(
-              'border-b-4 border-transparent px-3 py-1.5 text-sm font-bold text-muted-foreground transition-colors duration-200 ease-in-out',
+              'text-muted-foreground border-b-4 border-transparent px-3 py-1.5 text-sm font-bold transition-colors duration-200 ease-in-out',
               `${currentTab === index ? 'border-foreground text-foreground' : ''}`,
             )
           "

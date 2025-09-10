@@ -4,6 +4,8 @@ export function useUnsavedChanges<T extends Record<string, unknown>>(
   createMode: Ref<boolean>,
   excludeFields?: string[],
 ) {
+  const { geinsLogInfo } = useGeinsLog('composables/useUnsavedChanges.ts');
+
   const hasUnsavedChanges = computed(() => {
     if (createMode.value) return false;
     const current = JSON.stringify(currentData.value);
@@ -22,18 +24,12 @@ export function useUnsavedChanges<T extends Record<string, unknown>>(
           ([key]) => !excludeFields.includes(key),
         ),
       );
-      // console.log('🚀 ~ hasUnsavedChanges ~ current:', JSON.stringify(current));
-      // console.log(
-      //   '🚀 ~ hasUnsavedChanges ~ original:',
-      //   JSON.stringify(original),
-      // );
+      // geinsLogInfo('current :::', JSON.stringify(current));
+      // geinsLogInfo('original :::', JSON.stringify(original));
       return JSON.stringify(current) !== JSON.stringify(original);
     }
-    // console.log('🚀 ~ hasUnsavedChanges ~ current:', current);
-    // console.log(
-    //   '🚀 ~ hasUnsavedChanges ~ original:',
-    //   originalData.value,
-    // );
+    // geinsLogInfo('current :::', current);
+    // geinsLogInfo('original :::', originalData.value);
     return current !== originalData.value;
   });
 
