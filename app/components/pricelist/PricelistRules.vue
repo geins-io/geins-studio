@@ -43,12 +43,11 @@ watch(
   { deep: true },
 );
 
-watch(rules, (newRules) => {
+watch(rules, async (newRules) => {
   syncingFromProps.value = true;
   localRules.value = newRules.map((rule) => ({ ...rule, applied: true }));
-  nextTick(() => {
-    syncingFromProps.value = false;
-  });
+  await nextTick();
+  syncingFromProps.value = false;
 });
 
 const emptyRule: PricelistRule = {
@@ -65,19 +64,18 @@ const addRule = () => {
   localRules.value.push({ ...emptyRule });
 };
 
-const apply = (
+const apply = async (
   index: number,
   rule: PricelistRule,
   overwrite: boolean,
-): void => {
+): Promise<void> => {
   loadingIndex.value = index;
-  nextTick(() => {
-    if (overwrite) {
-      emit('apply-overwrite', rule);
-    } else {
-      emit('apply', rule);
-    }
-  });
+  await nextTick();
+  if (overwrite) {
+    emit('apply-overwrite', rule);
+  } else {
+    emit('apply', rule);
+  }
 };
 
 const handleUpdate = (

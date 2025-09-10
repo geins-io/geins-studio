@@ -127,14 +127,13 @@ watchEffect(() => {
 });
 
 // Auto-focus email input on mount
-onMounted(() => {
+onMounted(async () => {
   if (loginMode.value) {
-    nextTick(() => {
-      const emailField = document.getElementById('email');
-      if (emailField instanceof HTMLInputElement) {
-        emailField.focus();
-      }
-    });
+    await nextTick();
+    const emailField = document.getElementById('email');
+    if (emailField instanceof HTMLInputElement) {
+      emailField.focus();
+    }
   }
 });
 

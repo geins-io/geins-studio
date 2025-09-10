@@ -168,7 +168,6 @@ const {
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
   stepValidationMap,
-  excludeSaveFields: ['productSelectionQuery'],
   getInitialFormValues: (entityData) => ({
     vat: {
       exVat: entityData.exVat,
@@ -183,7 +182,7 @@ const {
   }),
   reshapeEntityData: (entityData) => ({
     ...entityData,
-    products: entityData.products?.items || [],
+    products: [],
     rules: (entityData.rules || []).map((rule) => ({
       _id: rule._id,
       quantity: rule.quantity,
@@ -253,6 +252,7 @@ const updateInProgress = ref(false);
 const previewPricelist = async (
   successText?: string,
   showToast: boolean = true,
+  setSavedData: boolean = false,
 ) => {
   if (
     !entityId.value ||
@@ -291,6 +291,10 @@ const previewPricelist = async (
         title: successText || `Pricelist preview updated.`,
         variant: 'positive',
       });
+    }
+    if (setSavedData) {
+      await nextTick();
+      setOriginalSavedData();
     }
   } catch (error) {
     geinsLogError('error fetching preview pricelist:', error);
@@ -361,6 +365,10 @@ const applyBaseRule = async (
       ...(mode === 'margin' && { margin: percentage }),
       ...(mode === 'discount' && { discountPercent: percentage }),
     };
+
+    if (!!baseRule.value) {
+      globalRule._id = baseRule.value._id;
+    }
 
     globalRules.value = globalRules.value.filter((rule) => rule.quantity !== 1);
     globalRules.value.push(globalRule);
@@ -553,6 +561,10 @@ const cancelModeChange = () => {
 // =====================================================================================
 const selectedProducts = ref<PricelistProductList[]>([]);
 
+const hasProductSelection = computed(() => {
+  return selectedProducts.value.length > 0;
+});
+
 const vatDescription = computed(() => {
   return entityData.value?.exVat ? t('ex_vat') : t('inc_vat');
 });
@@ -655,18 +667,19 @@ watch(vatDescription, () => {
 // =====================================================================================
 // ENTITY ACTIONS
 // =====================================================================================
+const saveInProgress = ref(false);
 const handleSave = async () => {
+  isInitialLoad.value = false;
+  saveInProgress.value = true;
   await updateEntity(
     undefined,
     {
       fields: 'rules,selectionquery',
     },
-    false,
+    !hasProductSelection.value,
   );
-  await previewPricelist(undefined, false);
-  nextTick(() => {
-    setOriginalSavedData();
-  });
+  await previewPricelist(undefined, false, hasProductSelection.value);
+  saveInProgress.value = false;
 };
 
 const copyEntity = async () => {
@@ -678,7 +691,7 @@ const copyEntity = async () => {
     if (result?._id) {
       const currentPath = route.path;
       const newPath = currentPath.replace(entityId.value, result._id);
-      await parseAndSaveData(result);
+      await parseAndSaveData(result, false);
       await useRouter().replace(newPath);
       toast({
         title: t('entity_copied', { entityName }),
@@ -816,10 +829,9 @@ if (!createMode.value) {
   refreshEntityData.value = refresh;
 
   if (data.value) {
-    await parseAndSaveData(data.value);
-    await previewPricelist(undefined, false);
+    await parseAndSaveData(data.value, !hasProductSelection.value);
+    await previewPricelist(undefined, false, hasProductSelection.value);
     isInitialLoad.value = false;
-    setOriginalSavedData();
   }
 
   productsStore.init();
@@ -827,8 +839,9 @@ if (!createMode.value) {
   watch(
     productSelection,
     async (newSelection) => {
+      if (saveInProgress.value) return;
+
       entityDataUpdate.value.productSelectionQuery = newSelection;
-      // Show toast only if this is not the initial load AND we're not currently saving
 
       await previewPricelist(
         'Product selection updated.',
@@ -968,7 +981,7 @@ if (!createMode.value) {
             v-if="!createMode"
             icon="save"
             :loading="loading"
-            :disabled="!hasUnsavedChanges"
+            :disabled="!hasUnsavedChanges || saveInProgress"
             @click="handleSave"
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
@@ -1003,7 +1016,9 @@ if (!createMode.value) {
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
         </template>
         <template v-if="!createMode" #changes>
-          <ContentEditHasChanges :changes="hasUnsavedChanges" />
+          <ContentEditHasChanges
+            :changes="hasUnsavedChanges && !saveInProgress"
+          />
         </template>
       </ContentHeader>
     </template>

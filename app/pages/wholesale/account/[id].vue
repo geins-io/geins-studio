@@ -738,7 +738,7 @@ if (!createMode.value) {
             v-if="!createMode"
             icon="save"
             :loading="loading"
-            :disabled="!hasUnsavedChanges"
+            :disabled="!hasUnsavedChanges || loading"
             @click="handleUpdateAccount"
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
