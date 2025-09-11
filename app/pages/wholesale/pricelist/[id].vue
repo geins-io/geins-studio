@@ -106,9 +106,6 @@ const productSelector = ref();
 const pricelistProducts = ref<PricelistProduct[]>([]);
 const editedProducts = ref<PricelistProduct[]>([]);
 
-// Track if this is the initial load to avoid showing toast on page entry
-const isInitialLoad = ref(true);
-
 // Pricelist rules
 const pricelistBaseRuleMode = ref<PricelistRuleMode>('discount');
 // Track the actual mode and pending mode separately
@@ -681,7 +678,6 @@ watch(vatDescription, () => {
 // =====================================================================================
 const saveInProgress = ref(false);
 const handleSave = async () => {
-  isInitialLoad.value = false;
   saveInProgress.value = true;
   await updateEntity(
     undefined,
@@ -849,7 +845,6 @@ if (!createMode.value) {
     if (hasSelection) {
       await previewPricelist(undefined, true, false);
     }
-    isInitialLoad.value = false;
   }
 
   productsStore.init();
@@ -861,16 +856,7 @@ if (!createMode.value) {
 
       entityDataUpdate.value.productSelectionQuery = newSelection;
 
-      await previewPricelist(
-        'Product selection updated.',
-        true,
-        !isInitialLoad.value,
-      );
-
-      // After first load, all subsequent changes should show toast
-      if (isInitialLoad.value) {
-        isInitialLoad.value = false;
-      }
+      await previewPricelist('Product selection updated.');
     },
     { deep: true },
   );
