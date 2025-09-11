@@ -106,9 +106,6 @@ const productSelector = ref();
 const pricelistProducts = ref<PricelistProduct[]>([]);
 const editedProducts = ref<PricelistProduct[]>([]);
 
-// Track if this is the initial load to avoid showing toast on page entry
-const isInitialLoad = ref(true);
-
 // Pricelist rules
 const pricelistBaseRuleMode = ref<PricelistRuleMode>('discount');
 // Track the actual mode and pending mode separately
@@ -251,9 +248,9 @@ const { batchQueryAll } = useBatchQuery();
 const updateInProgress = ref(false);
 
 const previewPricelist = async (
-  successText?: string,
-  showToast: boolean = true,
-  setSavedData: boolean = false,
+  feedbackMessage: string = 'Pricelist preview updated.',
+  updateProducts: boolean = false,
+  showFeedback: boolean = true,
 ) => {
   if (
     !entityId.value ||
@@ -271,37 +268,36 @@ const previewPricelist = async (
 
     pricelistProducts.value = previewPricelist.products?.items || [];
 
-    const editedPricelistProducts = pricelistProducts.value
-      .filter((p) => p.priceMode !== 'rule' && p.priceMode !== 'auto')
-      .map((p) => {
-        const priceMode = convertPriceModeToRuleField(p.priceMode);
-        const value = priceMode ? Number(p[priceMode]) || null : null;
-        const product = getPricelistProduct(
-          p.productId,
-          value,
-          priceMode,
-          p.staggeredCount,
-        );
-        return product;
-      });
-    editedProducts.value = getNewPricelistProducts(
-      editedPricelistProducts,
-      editedProducts.value,
-    );
+    if (updateProducts) {
+      editedProducts.value = pricelistProducts.value
+        .filter((p) => p.priceMode !== 'rule' && p.priceMode !== 'auto')
+        .map((p) => {
+          const priceMode = convertPriceModeToRuleField(p.priceMode);
+          const value = priceMode ? Number(p[priceMode]) || null : null;
+          const product = getPricelistProduct(
+            p.productId,
+            value,
+            priceMode,
+            p.staggeredCount,
+          );
+          return {
+            _id: p._id,
+            ...product,
+          };
+        });
+      await nextTick();
+      setOriginalSavedData();
+    }
     selectedProducts.value = transformProductsForList(
       pricelistProducts.value,
       entityData.value,
     );
     setupColumns();
-    if (showToast) {
+    if (showFeedback) {
       toast({
-        title: successText || `Pricelist preview updated.`,
+        title: feedbackMessage,
         variant: 'positive',
       });
-    }
-    if (setSavedData) {
-      await nextTick();
-      setOriginalSavedData();
     }
   } catch (error) {
     geinsLogError('error fetching preview pricelist:', error);
@@ -560,7 +556,7 @@ const confirmModeChange = async () => {
     pendingModeChange.value = null;
     globalRules.value = globalRules.value.filter((rule) => rule.quantity === 1);
     await updateEntityRules();
-    previewPricelist(undefined, true);
+    previewPricelist();
   }
 };
 
@@ -610,21 +606,21 @@ const setupColumns = () => {
         getPricelistProduct(row.original._id, Number(value), 'price'),
         editedProducts.value,
       );
-      previewPricelist();
+      previewPricelist('Product price updated');
     },
     (value: string | number, row: Row<PricelistProductList>) => {
       addToPricelistProducts(
         getPricelistProduct(row.original._id, Number(value), 'margin'),
         editedProducts.value,
       );
-      previewPricelist();
+      previewPricelist('Product price updated');
     },
     (value: string | number, row: Row<PricelistProductList>) => {
       addToPricelistProducts(
         getPricelistProduct(row.original._id, Number(value), 'discountPercent'),
         editedProducts.value,
       );
-      previewPricelist();
+      previewPricelist('Product price updated');
     },
   );
 };
@@ -682,7 +678,6 @@ watch(vatDescription, () => {
 // =====================================================================================
 const saveInProgress = ref(false);
 const handleSave = async () => {
-  isInitialLoad.value = false;
   saveInProgress.value = true;
   await updateEntity(
     undefined,
@@ -691,7 +686,10 @@ const handleSave = async () => {
     },
     !hasProductSelection.value,
   );
-  await previewPricelist(undefined, false, hasProductSelection.value);
+  if (hasProductSelection.value) {
+    await previewPricelist(undefined, true, false);
+  }
+
   saveInProgress.value = false;
 };
 
@@ -844,8 +842,9 @@ if (!createMode.value) {
   if (data.value) {
     const hasSelection = !!data.value.productSelectionQuery;
     await parseAndSaveData(data.value, !hasSelection);
-    await previewPricelist(undefined, false, hasSelection);
-    isInitialLoad.value = false;
+    if (hasSelection) {
+      await previewPricelist(undefined, true, false);
+    }
   }
 
   productsStore.init();
@@ -857,15 +856,7 @@ if (!createMode.value) {
 
       entityDataUpdate.value.productSelectionQuery = newSelection;
 
-      await previewPricelist(
-        'Product selection updated.',
-        !isInitialLoad.value,
-      );
-
-      // After first load, all subsequent changes should show toast
-      if (isInitialLoad.value) {
-        isInitialLoad.value = false;
-      }
+      await previewPricelist('Product selection updated.');
     },
     { deep: true },
   );
