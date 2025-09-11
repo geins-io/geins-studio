@@ -679,18 +679,22 @@ watch(vatDescription, () => {
 const saveInProgress = ref(false);
 const handleSave = async () => {
   saveInProgress.value = true;
-  await updateEntity(
-    undefined,
-    {
-      fields: 'rules,selectionquery',
-    },
-    !hasProductSelection.value,
-  );
-  if (hasProductSelection.value) {
-    await previewPricelist(undefined, true, false);
+  try {
+    await updateEntity(
+      undefined,
+      {
+        fields: 'rules,selectionquery',
+      },
+      !hasProductSelection.value,
+    );
+    if (hasProductSelection.value) {
+      await previewPricelist(undefined, true, false);
+    }
+  } catch (error) {
+    geinsLogError('error saving entity:', error);
+  } finally {
+    saveInProgress.value = false;
   }
-
-  saveInProgress.value = false;
 };
 
 const copyEntity = async () => {
@@ -856,7 +860,7 @@ if (!createMode.value) {
 
       entityDataUpdate.value.productSelectionQuery = newSelection;
 
-      await previewPricelist('Product selection updated.');
+      await previewPricelist('Product selection updated');
     },
     { deep: true },
   );
