@@ -251,9 +251,9 @@ const { batchQueryAll } = useBatchQuery();
 const updateInProgress = ref(false);
 
 const previewPricelist = async (
-  successText?: string,
-  showToast: boolean = true,
-  setSavedData: boolean = false,
+  feedbackMessage: string = 'Pricelist preview updated.',
+  updateProducts: boolean = false,
+  showFeedback: boolean = true,
 ) => {
   if (
     !entityId.value ||
@@ -271,37 +271,36 @@ const previewPricelist = async (
 
     pricelistProducts.value = previewPricelist.products?.items || [];
 
-    const editedPricelistProducts = pricelistProducts.value
-      .filter((p) => p.priceMode !== 'rule' && p.priceMode !== 'auto')
-      .map((p) => {
-        const priceMode = convertPriceModeToRuleField(p.priceMode);
-        const value = priceMode ? Number(p[priceMode]) || null : null;
-        const product = getPricelistProduct(
-          p.productId,
-          value,
-          priceMode,
-          p.staggeredCount,
-        );
-        return product;
-      });
-    editedProducts.value = getNewPricelistProducts(
-      editedPricelistProducts,
-      editedProducts.value,
-    );
+    if (updateProducts) {
+      editedProducts.value = pricelistProducts.value
+        .filter((p) => p.priceMode !== 'rule' && p.priceMode !== 'auto')
+        .map((p) => {
+          const priceMode = convertPriceModeToRuleField(p.priceMode);
+          const value = priceMode ? Number(p[priceMode]) || null : null;
+          const product = getPricelistProduct(
+            p.productId,
+            value,
+            priceMode,
+            p.staggeredCount,
+          );
+          return {
+            _id: p._id,
+            ...product,
+          };
+        });
+      await nextTick();
+      setOriginalSavedData();
+    }
     selectedProducts.value = transformProductsForList(
       pricelistProducts.value,
       entityData.value,
     );
     setupColumns();
-    if (showToast) {
+    if (showFeedback) {
       toast({
-        title: successText || `Pricelist preview updated.`,
+        title: feedbackMessage,
         variant: 'positive',
       });
-    }
-    if (setSavedData) {
-      await nextTick();
-      setOriginalSavedData();
     }
   } catch (error) {
     geinsLogError('error fetching preview pricelist:', error);
@@ -560,7 +559,7 @@ const confirmModeChange = async () => {
     pendingModeChange.value = null;
     globalRules.value = globalRules.value.filter((rule) => rule.quantity === 1);
     await updateEntityRules();
-    previewPricelist(undefined, true);
+    previewPricelist();
   }
 };
 
@@ -610,21 +609,21 @@ const setupColumns = () => {
         getPricelistProduct(row.original._id, Number(value), 'price'),
         editedProducts.value,
       );
-      previewPricelist();
+      previewPricelist('Product price updated');
     },
     (value: string | number, row: Row<PricelistProductList>) => {
       addToPricelistProducts(
         getPricelistProduct(row.original._id, Number(value), 'margin'),
         editedProducts.value,
       );
-      previewPricelist();
+      previewPricelist('Product price updated');
     },
     (value: string | number, row: Row<PricelistProductList>) => {
       addToPricelistProducts(
         getPricelistProduct(row.original._id, Number(value), 'discountPercent'),
         editedProducts.value,
       );
-      previewPricelist();
+      previewPricelist('Product price updated');
     },
   );
 };
@@ -691,7 +690,10 @@ const handleSave = async () => {
     },
     !hasProductSelection.value,
   );
-  await previewPricelist(undefined, false, hasProductSelection.value);
+  if (hasProductSelection.value) {
+    await previewPricelist(undefined, true, false);
+  }
+
   saveInProgress.value = false;
 };
 
@@ -844,7 +846,9 @@ if (!createMode.value) {
   if (data.value) {
     const hasSelection = !!data.value.productSelectionQuery;
     await parseAndSaveData(data.value, !hasSelection);
-    await previewPricelist(undefined, false, hasSelection);
+    if (hasSelection) {
+      await previewPricelist(undefined, true, false);
+    }
     isInitialLoad.value = false;
   }
 
@@ -859,6 +863,7 @@ if (!createMode.value) {
 
       await previewPricelist(
         'Product selection updated.',
+        true,
         !isInitialLoad.value,
       );
 

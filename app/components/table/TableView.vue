@@ -310,10 +310,12 @@ const searchableColumn = computed(() => {
       )
     "
   >
-    <div :class="`relative w-full ${advancedMode ? 'max-w-sm' : ''}`">
+    <div
+      v-if="searchableColumn"
+      :class="`relative w-full ${advancedMode ? 'max-w-sm' : ''}`"
+    >
       <Input
-        v-if="searchableColumn"
-        class="w-full pl-10"
+        class="w-full pl-8"
         placeholder="Filter list..."
         :model-value="searchableColumn.getFilterValue() as string"
         @update:model-value="searchableColumn.setFilterValue($event)"
