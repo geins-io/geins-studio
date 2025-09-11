@@ -319,6 +319,11 @@ const globalRules = ref<PricelistRule[]>([]);
 const baseRuleLoading = ref<boolean>(false);
 const quantityLevelsLoading = ref<boolean>(false);
 
+// Computed property to get only quantity levels (exclude base rule with quantity 1)
+const quantityLevelRules = computed(() => {
+  return globalRules.value.filter((rule) => rule.quantity !== 1);
+});
+
 const baseRule = computed(() => {
   return globalRules.value.find((rule) => rule.quantity === 1);
 });
@@ -1287,7 +1292,7 @@ if (!createMode.value) {
                     >
                       <PricelistRules
                         v-model:loading="quantityLevelsLoading"
-                        :rules="globalRules"
+                        :rules="quantityLevelRules"
                         :mode="pricelistRulesMode"
                         @apply="applyRule"
                         @apply-overwrite="applyAndOverwriteRule"

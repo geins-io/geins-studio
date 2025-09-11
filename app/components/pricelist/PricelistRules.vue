@@ -25,17 +25,9 @@ const localRules = ref<PricelistRule[]>(
   rules.value.map((rule) => ({ ...rule, applied: true })),
 );
 
-// Computed property to filter out rules with quantity 1 for display
-const visibleRules = ref<PricelistRule[]>(
-  localRules.value.filter((rule) => !(rule.quantity === 1 && rule.applied)),
-);
-
 watch(
   localRules,
   (newRules: PricelistRule[]) => {
-    visibleRules.value = newRules.filter(
-      (rule) => !(rule.quantity === 1 && rule.applied),
-    );
     if (!syncingFromProps.value) {
       emit('update', newRules);
     }
@@ -111,7 +103,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
 <template>
   <div class="w-full table-auto">
     <table class="w-full table-auto">
-      <thead v-if="visibleRules.length">
+      <thead v-if="localRules.length">
         <tr>
           <th :class="thClasses">{{ $t('quantity') }}</th>
           <th v-if="mode === 'margin' || mode === 'all'" :class="thClasses">
@@ -130,7 +122,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
       </thead>
       <tbody>
         <PricelistRule
-          v-for="(rule, index) in visibleRules"
+          v-for="(rule, index) in localRules"
           :key="index"
           v-model:quantity="rule.quantity"
           v-model:margin="rule.margin"
@@ -156,7 +148,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
       v-if="!disabled"
       size="sm"
       variant="link"
-      :class="cn('flex', visibleRules.length ? 'mt-2' : '')"
+      :class="cn('flex', localRules.length ? 'mt-2' : '')"
       @click="addRule"
     >
       <LucidePlus class="mr-2 size-3.5" />
