@@ -39,26 +39,26 @@ const handleToggleSidebar = () => {
 </script>
 <template>
   <div class="relative">
-    <button
-      v-if="sidebarCanBeToggled"
-      class="bg-card flex-center absolute -top-2 -right-2 z-50 size-10 rounded-full border shadow-lg"
-      @click="handleToggleSidebar"
-    >
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger>
+    <TooltipProvider v-if="sidebarCanBeToggled">
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <button
+            type="button"
+            class="bg-card flex-center absolute -top-2 -right-2 z-50 size-10 rounded-full border shadow-lg"
+            @click="handleToggleSidebar"
+          >
             <LucideSquareEqual class="size-10 p-2.5" />
-          </TooltipTrigger>
-          <TooltipContent>
-            {{
-              sidebarToggled
-                ? $t('hide_entity', { entityName: 'summary' })
-                : $t('show_entity', { entityName: 'summary' })
-            }}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </button>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {{
+            sidebarToggled
+              ? $t('hide_entity', { entityName: 'summary' })
+              : $t('show_entity', { entityName: 'summary' })
+          }}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
     <div
       :class="
         cn(
