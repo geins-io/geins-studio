@@ -82,7 +82,7 @@ const handleApply = (overwrite: boolean) => {
         v-model.number="margin"
         size="sm"
         placeholder="0"
-        :loading="loading && lastFieldChanged !== 'margin'"
+        :loading="loading && lastFieldChanged !== 'margin' && mode === 'all'"
         :disabled="global && mode === 'all'"
       >
         <template #valueDescriptor>%</template>
@@ -93,7 +93,9 @@ const handleApply = (overwrite: boolean) => {
         v-model.number="discount"
         size="sm"
         placeholder="0"
-        :loading="loading && lastFieldChanged !== 'discountPercent'"
+        :loading="
+          loading && lastFieldChanged !== 'discountPercent' && mode === 'all'
+        "
         :disabled="global && mode === 'all'"
       >
         <template #valueDescriptor>%</template>
@@ -104,7 +106,7 @@ const handleApply = (overwrite: boolean) => {
         v-model.number="price"
         size="sm"
         placeholder="0"
-        :loading="loading && lastFieldChanged !== 'price'"
+        :loading="loading && lastFieldChanged !== 'price' && mode === 'all'"
         :disabled="global && mode === 'all'"
       >
         <template #valueDescriptor>{{ currency }}</template>

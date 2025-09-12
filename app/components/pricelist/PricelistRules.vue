@@ -22,7 +22,11 @@ const loadingIndex = ref<number | null>(null);
 const syncingFromProps = ref(false);
 
 const localRules = ref<PricelistRule[]>(
-  rules.value.map((rule) => ({ ...rule, applied: true })),
+  rules.value.map((rule) => ({
+    ...rule,
+    applied: true,
+    internalId: rule.internalId || generateInternalId(),
+  })),
 );
 
 watch(
@@ -37,12 +41,16 @@ watch(
 
 watch(rules, async (newRules) => {
   syncingFromProps.value = true;
-  localRules.value = newRules.map((rule) => ({ ...rule, applied: true }));
+  localRules.value = newRules.map((rule) => ({
+    ...rule,
+    applied: true,
+    internalId: rule.internalId || generateInternalId(),
+  }));
   await nextTick();
   syncingFromProps.value = false;
 });
 
-const emptyRule: PricelistRule = {
+const getEmptyRule = (): PricelistRule => ({
   quantity: undefined,
   margin: undefined,
   discountPercent: undefined,
@@ -50,10 +58,11 @@ const emptyRule: PricelistRule = {
   applied: false,
   global: false,
   lastFieldChanged: 'price',
-};
+  internalId: generateInternalId(),
+});
 
 const addRule = () => {
-  localRules.value.push({ ...emptyRule });
+  localRules.value.push(getEmptyRule());
 };
 
 const apply = async (
@@ -85,14 +94,13 @@ const handleUpdate = (
 
 const remove = (rule: PricelistRule): void => {
   if (!rule.applied) {
+    // Remove unapplied rule by internal ID
     const ruleIndex = localRules.value.findIndex(
-      (r) =>
-        r.quantity === rule.quantity &&
-        r.discountPercent === rule.discountPercent &&
-        r.margin === rule.margin &&
-        r.price === rule.price,
+      (r) => r.internalId === rule.internalId,
     );
-    localRules.value = localRules.value.filter((_, i) => i !== ruleIndex);
+    if (ruleIndex !== -1) {
+      localRules.value = localRules.value.filter((_, i) => i !== ruleIndex);
+    }
     return;
   }
   emit('remove', rule);
@@ -123,7 +131,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
       <tbody>
         <PricelistRule
           v-for="(rule, index) in localRules"
-          :key="index"
+          :key="rule.internalId"
           v-model:quantity="rule.quantity"
           v-model:margin="rule.margin"
           v-model:discount="rule.discountPercent"

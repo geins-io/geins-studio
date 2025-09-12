@@ -249,6 +249,7 @@ export interface PricelistProductList extends EntityBaseWithName {
 
 export interface PricelistRule {
   _id?: string;
+  internalId?: string; // Internal ID for tracking rules in UI
   quantity?: number;
   margin?: number;
   discountPercent?: number;

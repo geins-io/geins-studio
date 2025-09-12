@@ -199,8 +199,10 @@ const {
       );
       const firstRuleMargin = quantityLevels[0]?.margin;
       pricelistRulesMode.value = firstRuleMargin ? 'margin' : 'discount';
+
       globalRules.value = entity.rules.map((rule) => ({
         _id: rule._id,
+        internalId: generateInternalId(),
         quantity: rule.quantity,
         ...(rule.margin && { margin: rule.margin }),
         ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
@@ -423,12 +425,25 @@ const removeBaseRule = async () => {
 
 const applyRule = async (rule: PricelistRule): Promise<void> => {
   quantityLevelsLoading.value = true;
-  const globalRulesIndex = globalRules.value.length;
+  let ruleIndex = -1;
   try {
-    globalRules.value = globalRules.value.filter(
-      (r) => r.quantity !== rule.quantity,
+    // Find existing rule index by internal ID first, then by _id
+    const existingRuleIndex = globalRules.value.findIndex(
+      (r) =>
+        (rule.internalId && r.internalId === rule.internalId) ||
+        (rule._id && r._id === rule._id),
     );
-    globalRules.value.push({ ...rule, global: true });
+
+    if (existingRuleIndex !== -1) {
+      // Update existing rule in place to preserve order
+      globalRules.value[existingRuleIndex] = { ...rule, global: true };
+      ruleIndex = existingRuleIndex;
+    } else {
+      // Add new rule at the end
+      globalRules.value.push({ ...rule, global: true });
+      ruleIndex = globalRules.value.length - 1;
+    }
+
     await updateEntityRules();
     await previewPricelist('Quantity levels applied.');
   } catch (error) {
@@ -440,7 +455,7 @@ const applyRule = async (rule: PricelistRule): Promise<void> => {
     });
   } finally {
     quantityLevelsLoading.value = false;
-    const ruleToUpdate = globalRules.value[globalRulesIndex + 1];
+    const ruleToUpdate = globalRules.value[ruleIndex];
     if (ruleToUpdate) {
       ruleToUpdate.applied = true;
     }
@@ -463,7 +478,11 @@ const applyAndOverwriteRule = async (rule: PricelistRule): Promise<void> => {
 
 const removeRule = async (rule: PricelistRule): Promise<void> => {
   globalRules.value = globalRules.value.filter(
-    (r) => r.quantity !== rule.quantity,
+    (r) =>
+      !(
+        (rule.internalId && r.internalId === rule.internalId) ||
+        (rule._id && r._id === rule._id)
+      ),
   );
   await updateEntityRules();
   await previewPricelist('Quantity level removed.');
@@ -478,13 +497,18 @@ const updateEntityRules = async (): Promise<void> => {
     (rule) => rule.quantity === 1,
   );
 
-  // Start with globalRules
-  const newRules: PricelistRule[] = globalRules.value.map((rule) => ({
-    _id: rule._id,
-    quantity: rule.quantity,
-    ...(rule.margin && { margin: rule.margin }),
-    ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
-  }));
+  // Start with globalRules and remove internal IDs
+  const newRules: PricelistRule[] = globalRules.value.map((rule) => {
+    const { internalId, ...cleanRule } = rule;
+    return {
+      _id: cleanRule._id,
+      quantity: cleanRule.quantity,
+      ...(cleanRule.margin && { margin: cleanRule.margin }),
+      ...(cleanRule.discountPercent && {
+        discountPercent: cleanRule.discountPercent,
+      }),
+    };
+  });
 
   // Add back the quantity 1 rule if it existed and wasn't replaced
   if (existingQuantity1Rule && !hasQuantity1InNewRules) {

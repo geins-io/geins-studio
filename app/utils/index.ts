@@ -17,3 +17,11 @@ export function valueUpdater<T extends Updater<unknown>>(
       ? updaterOrValue(ref.value)
       : updaterOrValue;
 }
+
+/**
+ * Generates a unique internal ID for tracking UI elements
+ * @returns A unique string identifier
+ */
+export function generateInternalId(): string {
+  return `internal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
