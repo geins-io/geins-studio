@@ -13,6 +13,7 @@ import {
   type PricelistProductList,
   type PricelistRule,
   type PricelistProduct,
+  type PricelistRuleField,
 } from '#shared/types';
 
 // =====================================================================================
@@ -614,6 +615,20 @@ const pinnedState = ref(getPinnedState());
 // =====================================================================================
 // COLUMN SETUP FUNCTIONS
 // =====================================================================================
+const cellEditCallback = (
+  value: string | number,
+  row: Row<PricelistProductList>,
+  field: PricelistRuleField,
+) => {
+  addToPricelistProducts(
+    getPricelistProduct(row.original._id, Number(value), field),
+    editedProducts.value,
+  );
+  previewPricelist(
+    `Price updated for ${row.original.name} (${row.original._id})`,
+  );
+};
+
 const setupColumns = () => {
   columns = setupPricelistColumns(
     selectedProducts.value,
@@ -633,25 +648,13 @@ const setupColumns = () => {
     },
     (id: string) => productSelector.value.removeFromManuallySelected(id),
     (value: string | number, row: Row<PricelistProductList>) => {
-      addToPricelistProducts(
-        getPricelistProduct(row.original._id, Number(value), 'price'),
-        editedProducts.value,
-      );
-      previewPricelist('Product price updated');
+      cellEditCallback(value, row, 'price');
     },
     (value: string | number, row: Row<PricelistProductList>) => {
-      addToPricelistProducts(
-        getPricelistProduct(row.original._id, Number(value), 'margin'),
-        editedProducts.value,
-      );
-      previewPricelist('Product price updated');
+      cellEditCallback(value, row, 'margin');
     },
     (value: string | number, row: Row<PricelistProductList>) => {
-      addToPricelistProducts(
-        getPricelistProduct(row.original._id, Number(value), 'discountPercent'),
-        editedProducts.value,
-      );
-      previewPricelist('Product price updated');
+      cellEditCallback(value, row, 'discountPercent');
     },
   );
 };
