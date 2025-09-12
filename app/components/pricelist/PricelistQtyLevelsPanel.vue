@@ -6,6 +6,7 @@ const props = withDefaults(
   defineProps<{
     rules: PricelistRule[];
     productId: string;
+    productName: string;
     pricelistId: string;
     currency?: string;
     vatDescription?: string;
@@ -139,7 +140,7 @@ const handleSave = () => {
       <SheetHeader>
         <SheetTitle>Quantity levels</SheetTitle>
         <SheetDescription>
-          Add quantity based price levels for this product.
+          Add quantity based price levels for <strong>{{ productName }}</strong>
         </SheetDescription>
       </SheetHeader>
       <SheetBody>

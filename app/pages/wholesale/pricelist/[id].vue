@@ -13,6 +13,7 @@ import {
   type PricelistProductList,
   type PricelistRule,
   type PricelistProduct,
+  type PricelistRuleField,
 } from '#shared/types';
 
 // =====================================================================================
@@ -199,8 +200,10 @@ const {
       );
       const firstRuleMargin = quantityLevels[0]?.margin;
       pricelistRulesMode.value = firstRuleMargin ? 'margin' : 'discount';
+
       globalRules.value = entity.rules.map((rule) => ({
         _id: rule._id,
+        internalId: generateInternalId(),
         quantity: rule.quantity,
         ...(rule.margin && { margin: rule.margin }),
         ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
@@ -319,6 +322,11 @@ const globalRules = ref<PricelistRule[]>([]);
 const baseRuleLoading = ref<boolean>(false);
 const quantityLevelsLoading = ref<boolean>(false);
 
+// Computed property to get only quantity levels (exclude base rule with quantity 1)
+const quantityLevelRules = computed(() => {
+  return globalRules.value.filter((rule) => rule.quantity !== 1);
+});
+
 const baseRule = computed(() => {
   return globalRules.value.find((rule) => rule.quantity === 1);
 });
@@ -418,12 +426,25 @@ const removeBaseRule = async () => {
 
 const applyRule = async (rule: PricelistRule): Promise<void> => {
   quantityLevelsLoading.value = true;
-  const globalRulesIndex = globalRules.value.length;
+  let ruleIndex = -1;
   try {
-    globalRules.value = globalRules.value.filter(
-      (r) => r.quantity !== rule.quantity,
+    // Find existing rule index by internal ID first, then by _id
+    const existingRuleIndex = globalRules.value.findIndex(
+      (r) =>
+        (rule.internalId && r.internalId === rule.internalId) ||
+        (rule._id && r._id === rule._id),
     );
-    globalRules.value.push({ ...rule, global: true });
+
+    if (existingRuleIndex !== -1) {
+      // Update existing rule in place to preserve order
+      globalRules.value[existingRuleIndex] = { ...rule, global: true };
+      ruleIndex = existingRuleIndex;
+    } else {
+      // Add new rule at the end
+      globalRules.value.push({ ...rule, global: true });
+      ruleIndex = globalRules.value.length - 1;
+    }
+
     await updateEntityRules();
     await previewPricelist('Quantity levels applied.');
   } catch (error) {
@@ -435,7 +456,7 @@ const applyRule = async (rule: PricelistRule): Promise<void> => {
     });
   } finally {
     quantityLevelsLoading.value = false;
-    const ruleToUpdate = globalRules.value[globalRulesIndex + 1];
+    const ruleToUpdate = globalRules.value[ruleIndex];
     if (ruleToUpdate) {
       ruleToUpdate.applied = true;
     }
@@ -458,7 +479,11 @@ const applyAndOverwriteRule = async (rule: PricelistRule): Promise<void> => {
 
 const removeRule = async (rule: PricelistRule): Promise<void> => {
   globalRules.value = globalRules.value.filter(
-    (r) => r.quantity !== rule.quantity,
+    (r) =>
+      !(
+        (rule.internalId && r.internalId === rule.internalId) ||
+        (rule._id && r._id === rule._id)
+      ),
   );
   await updateEntityRules();
   await previewPricelist('Quantity level removed.');
@@ -473,13 +498,18 @@ const updateEntityRules = async (): Promise<void> => {
     (rule) => rule.quantity === 1,
   );
 
-  // Start with globalRules
-  const newRules: PricelistRule[] = globalRules.value.map((rule) => ({
-    _id: rule._id,
-    quantity: rule.quantity,
-    ...(rule.margin && { margin: rule.margin }),
-    ...(rule.discountPercent && { discountPercent: rule.discountPercent }),
-  }));
+  // Start with globalRules and remove internal IDs
+  const newRules: PricelistRule[] = globalRules.value.map((rule) => {
+    const { internalId, ...cleanRule } = rule;
+    return {
+      _id: cleanRule._id,
+      quantity: cleanRule.quantity,
+      ...(cleanRule.margin && { margin: cleanRule.margin }),
+      ...(cleanRule.discountPercent && {
+        discountPercent: cleanRule.discountPercent,
+      }),
+    };
+  });
 
   // Add back the quantity 1 rule if it existed and wasn't replaced
   if (existingQuantity1Rule && !hasQuantity1InNewRules) {
@@ -516,12 +546,13 @@ const overwriteProducts = async (staggeredCount: number) => {
 // =====================================================================================
 const rulesToEdit = ref<PricelistRule[]>([]);
 const rulesPanelOpen = ref(false);
-const rulesId = ref<string>('');
+const rulesProductId = ref<string>('');
+const rulesProductName = ref<string>('');
 
 // Prompt
 const rulesModeChangePrompt = ref(false);
 
-const handleSaveRules = (rules: PricelistRule[]) => {
+const handleSaveRules = (_rules: PricelistRule[]) => {
   previewPricelist('Product quantity levels applied.');
 };
 
@@ -584,43 +615,46 @@ const pinnedState = ref(getPinnedState());
 // =====================================================================================
 // COLUMN SETUP FUNCTIONS
 // =====================================================================================
+const cellEditCallback = (
+  value: string | number,
+  row: Row<PricelistProductList>,
+  field: PricelistRuleField,
+) => {
+  addToPricelistProducts(
+    getPricelistProduct(row.original._id, Number(value), field),
+    editedProducts.value,
+  );
+  previewPricelist(
+    `Price updated for ${row.original.name} (${row.original._id})`,
+  );
+};
+
 const setupColumns = () => {
   columns = setupPricelistColumns(
     selectedProducts.value,
     vatDescription.value,
-    (id: string) => {
+    (payload) => {
       // On edit quantity levels
       const rules = selectedProducts.value.find(
-        (p) => p._id === id,
+        (p) => p._id === payload.id,
       )?.quantityLevels;
       // Filter out quantity 1 rules before editing
       rulesToEdit.value = rules
         ? rules.filter((rule) => rule.quantity !== 1)
         : [];
-      rulesId.value = id;
+      rulesProductId.value = payload.id;
+      rulesProductName.value = payload.name;
       rulesPanelOpen.value = true;
     },
     (id: string) => productSelector.value.removeFromManuallySelected(id),
     (value: string | number, row: Row<PricelistProductList>) => {
-      addToPricelistProducts(
-        getPricelistProduct(row.original._id, Number(value), 'price'),
-        editedProducts.value,
-      );
-      previewPricelist('Product price updated');
+      cellEditCallback(value, row, 'price');
     },
     (value: string | number, row: Row<PricelistProductList>) => {
-      addToPricelistProducts(
-        getPricelistProduct(row.original._id, Number(value), 'margin'),
-        editedProducts.value,
-      );
-      previewPricelist('Product price updated');
+      cellEditCallback(value, row, 'margin');
     },
     (value: string | number, row: Row<PricelistProductList>) => {
-      addToPricelistProducts(
-        getPricelistProduct(row.original._id, Number(value), 'discountPercent'),
-        editedProducts.value,
-      );
-      previewPricelist('Product price updated');
+      cellEditCallback(value, row, 'discountPercent');
     },
   );
 };
@@ -974,7 +1008,8 @@ if (!createMode.value) {
   <PricelistQtyLevelsPanel
     v-model:open="rulesPanelOpen"
     v-model:pricelist-products="editedProducts"
-    :product-id="rulesId"
+    :product-id="rulesProductId"
+    :product-name="rulesProductName"
     :pricelist-id="entityId"
     :rules="rulesToEdit"
     :currency="entityData.currency"
@@ -1287,7 +1322,7 @@ if (!createMode.value) {
                     >
                       <PricelistRules
                         v-model:loading="quantityLevelsLoading"
-                        :rules="globalRules"
+                        :rules="quantityLevelRules"
                         :mode="pricelistRulesMode"
                         @apply="applyRule"
                         @apply-overwrite="applyAndOverwriteRule"

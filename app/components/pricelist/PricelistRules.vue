@@ -22,20 +22,16 @@ const loadingIndex = ref<number | null>(null);
 const syncingFromProps = ref(false);
 
 const localRules = ref<PricelistRule[]>(
-  rules.value.map((rule) => ({ ...rule, applied: true })),
-);
-
-// Computed property to filter out rules with quantity 1 for display
-const visibleRules = ref<PricelistRule[]>(
-  localRules.value.filter((rule) => !(rule.quantity === 1 && rule.applied)),
+  rules.value.map((rule) => ({
+    ...rule,
+    applied: true,
+    internalId: rule.internalId || generateInternalId(),
+  })),
 );
 
 watch(
   localRules,
   (newRules: PricelistRule[]) => {
-    visibleRules.value = newRules.filter(
-      (rule) => !(rule.quantity === 1 && rule.applied),
-    );
     if (!syncingFromProps.value) {
       emit('update', newRules);
     }
@@ -45,12 +41,16 @@ watch(
 
 watch(rules, async (newRules) => {
   syncingFromProps.value = true;
-  localRules.value = newRules.map((rule) => ({ ...rule, applied: true }));
+  localRules.value = newRules.map((rule) => ({
+    ...rule,
+    applied: true,
+    internalId: rule.internalId || generateInternalId(),
+  }));
   await nextTick();
   syncingFromProps.value = false;
 });
 
-const emptyRule: PricelistRule = {
+const getEmptyRule = (): PricelistRule => ({
   quantity: undefined,
   margin: undefined,
   discountPercent: undefined,
@@ -58,10 +58,11 @@ const emptyRule: PricelistRule = {
   applied: false,
   global: false,
   lastFieldChanged: 'price',
-};
+  internalId: generateInternalId(),
+});
 
 const addRule = () => {
-  localRules.value.push({ ...emptyRule });
+  localRules.value.push(getEmptyRule());
 };
 
 const apply = async (
@@ -93,14 +94,13 @@ const handleUpdate = (
 
 const remove = (rule: PricelistRule): void => {
   if (!rule.applied) {
+    // Remove unapplied rule by internal ID
     const ruleIndex = localRules.value.findIndex(
-      (r) =>
-        r.quantity === rule.quantity &&
-        r.discountPercent === rule.discountPercent &&
-        r.margin === rule.margin &&
-        r.price === rule.price,
+      (r) => r.internalId === rule.internalId,
     );
-    localRules.value = localRules.value.filter((_, i) => i !== ruleIndex);
+    if (ruleIndex !== -1) {
+      localRules.value = localRules.value.filter((_, i) => i !== ruleIndex);
+    }
     return;
   }
   emit('remove', rule);
@@ -111,7 +111,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
 <template>
   <div class="w-full table-auto">
     <table class="w-full table-auto">
-      <thead v-if="visibleRules.length">
+      <thead v-if="localRules.length">
         <tr>
           <th :class="thClasses">{{ $t('quantity') }}</th>
           <th v-if="mode === 'margin' || mode === 'all'" :class="thClasses">
@@ -130,8 +130,8 @@ const thClasses = 'text-xs font-bold text-left py-2';
       </thead>
       <tbody>
         <PricelistRule
-          v-for="(rule, index) in visibleRules"
-          :key="index"
+          v-for="(rule, index) in localRules"
+          :key="rule.internalId"
           v-model:quantity="rule.quantity"
           v-model:margin="rule.margin"
           v-model:discount="rule.discountPercent"
@@ -156,7 +156,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
       v-if="!disabled"
       size="sm"
       variant="link"
-      :class="cn('flex', visibleRules.length ? 'mt-2' : '')"
+      :class="cn('flex', localRules.length ? 'mt-2' : '')"
       @click="addRule"
     >
       <LucidePlus class="mr-2 size-3.5" />

@@ -244,11 +244,12 @@ export interface PricelistProductList extends EntityBaseWithName {
   discount: number;
   margin: number;
   quantityLevels: PricelistRule[];
-  priceMode: string;
+  priceMode: PricelistPriceMode;
 }
 
 export interface PricelistRule {
   _id?: string;
+  internalId?: string; // Internal ID for tracking rules in UI
   quantity?: number;
   margin?: number;
   discountPercent?: number;
