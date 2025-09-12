@@ -15,7 +15,7 @@ export const usePricelistProductsTable = () => {
   const setupPricelistColumns = (
     selectedProducts: PricelistProductList[],
     vatDescription: string,
-    onEditQuantityLevels: (id: string) => void,
+    onEditQuantityLevels: (payload: { id: string; name: string }) => void,
     onDeleteProduct: (id: string) => void,
     onPriceBlur: (
       value: string | number,
@@ -74,7 +74,7 @@ export const usePricelistProductsTable = () => {
 
   const addQuantityLevelsColumn = (
     columns: ColumnDef<PricelistProductList>[],
-    onEdit: (id: string) => void,
+    onEdit: (payload: { id: string; name: string }) => void,
     vatDescription: string,
   ): ColumnDef<PricelistProductList>[] => {
     const quantityLevelsColumn: ColumnDef<PricelistProductList> = {
@@ -91,6 +91,7 @@ export const usePricelistProductsTable = () => {
           className: getBasicCellStyle(table),
           vatDescription,
           id: rowData._id,
+          name: rowData.name,
           onEdit,
         });
       },

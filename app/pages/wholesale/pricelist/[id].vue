@@ -545,12 +545,13 @@ const overwriteProducts = async (staggeredCount: number) => {
 // =====================================================================================
 const rulesToEdit = ref<PricelistRule[]>([]);
 const rulesPanelOpen = ref(false);
-const rulesId = ref<string>('');
+const rulesProductId = ref<string>('');
+const rulesProductName = ref<string>('');
 
 // Prompt
 const rulesModeChangePrompt = ref(false);
 
-const handleSaveRules = (rules: PricelistRule[]) => {
+const handleSaveRules = (_rules: PricelistRule[]) => {
   previewPricelist('Product quantity levels applied.');
 };
 
@@ -617,16 +618,17 @@ const setupColumns = () => {
   columns = setupPricelistColumns(
     selectedProducts.value,
     vatDescription.value,
-    (id: string) => {
+    (payload) => {
       // On edit quantity levels
       const rules = selectedProducts.value.find(
-        (p) => p._id === id,
+        (p) => p._id === payload.id,
       )?.quantityLevels;
       // Filter out quantity 1 rules before editing
       rulesToEdit.value = rules
         ? rules.filter((rule) => rule.quantity !== 1)
         : [];
-      rulesId.value = id;
+      rulesProductId.value = payload.id;
+      rulesProductName.value = payload.name;
       rulesPanelOpen.value = true;
     },
     (id: string) => productSelector.value.removeFromManuallySelected(id),
@@ -1003,7 +1005,8 @@ if (!createMode.value) {
   <PricelistQtyLevelsPanel
     v-model:open="rulesPanelOpen"
     v-model:pricelist-products="editedProducts"
-    :product-id="rulesId"
+    :product-id="rulesProductId"
+    :product-name="rulesProductName"
     :pricelist-id="entityId"
     :rules="rulesToEdit"
     :currency="entityData.currency"
