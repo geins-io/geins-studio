@@ -37,6 +37,17 @@ export interface WholesaleAccount extends ResponseEntity<WholesaleAccountBase> {
   priceLists: WholesalePricelist[];
 }
 
+export type WholesaleAccountFieldsFilter =
+  | 'all'
+  | 'default'
+  | 'addresses'
+  | 'salesreps'
+  | 'buyers'
+  | 'pricelists';
+
+export type WholesaleAccountApiOptions =
+  ApiOptions<WholesaleAccountFieldsFilter>;
+
 export interface WholesaleAccountList
   extends Omit<WholesaleAccount, 'salesReps' | 'buyers'>,
     EntityBase {

@@ -17,7 +17,7 @@ export const useProductsStore = defineStore('products', () => {
 
   // ACTIONS
   async function fetchProducts(
-    fields: string = 'localizations,media,prices',
+    fields: ProductFieldsFilter[] = ['localizations', 'media', 'prices'],
   ): Promise<Product[]> {
     const data = await productApi.list({ fields });
     products.value = transformProducts(data?.items);

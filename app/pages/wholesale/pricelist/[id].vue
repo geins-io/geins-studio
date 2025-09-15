@@ -266,7 +266,7 @@ const previewPricelist = async (
     const previewPricelist = await productApi.pricelist
       .id(entityId.value)
       .preview(entityDataUpdate.value, batchQueryAll.value, {
-        fields: 'products,productinfo',
+        fields: ['products', 'productinfo'],
       });
 
     pricelistProducts.value = previewPricelist.products?.items || [];
@@ -865,7 +865,7 @@ const { summaryProps } = useEntityEditSummary({
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<ProductPricelist>(() =>
     productApi.pricelist.get(entityId.value, {
-      fields: 'rules,selectionquery',
+      fields: ['rules', 'selectionquery'],
     }),
   );
 

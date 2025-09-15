@@ -109,6 +109,7 @@ const tabs = [
   t('general'),
   t('wholesale.buyers'),
   t('wholesale.pricelists'),
+  t('wholesale.orders'),
   t('settings'),
 ];
 const showSidebar = computed(() => {
@@ -441,7 +442,7 @@ watch(addedPricelists, (newPricelists) => {
 
 if (!createMode.value) {
   const { data, error } = await useAsyncData<ProductPricelist[]>(() =>
-    productApi.pricelist.list({ fields: 'products' }),
+    productApi.pricelist.list({ fields: ['products'] }),
   );
 
   if (!data.value || error.value) {
@@ -456,6 +457,50 @@ if (!createMode.value) {
     }));
   }
 }
+
+// =====================================================================================
+// ORDERS MANAGEMENT
+// =====================================================================================
+
+// Define a basic order type for display purposes
+interface WholesaleOrder {
+  _id: string;
+  orderNumber: string;
+  createdAt: string;
+  total: number;
+  status: string;
+  currency?: string;
+}
+
+const ordersList = ref<WholesaleOrder[]>([]);
+
+const { getColumns: getOrderColumns } = useColumns<WholesaleOrder>();
+
+const columnOptionsOrders: ColumnOptions<WholesaleOrder> = {
+  entityLinkUrl: '/wholesale/order/{_id}',
+  columnTypes: {
+    orderNumber: 'entity-link',
+    createdAt: 'date',
+    total: 'currency',
+  },
+  columnTitles: {
+    orderNumber: t('wholesale.order_number'),
+    createdAt: t('created_at'),
+    total: t('total'),
+    status: t('status'),
+  },
+  includeColumns: ['_id', 'orderNumber', 'createdAt', 'total', 'status'],
+  sortable: false,
+};
+
+// Use computed for reactive columns
+const orderColumns = computed(() => {
+  if (ordersList.value.length === 0) return [];
+
+  const columns = getOrderColumns(ordersList.value, columnOptionsOrders);
+
+  return columns;
+});
 
 // =====================================================================================
 // ADDRESS MANAGEMENT
@@ -669,7 +714,7 @@ const { summaryProps } = useEntityEditSummary({
 // =====================================================================================
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
-    wholesaleApi.account.get(entityId.value, { fields: 'all' }),
+    wholesaleApi.account.get(entityId.value, { fields: ['all'] }),
   );
   if (error.value) {
     toast({
@@ -707,6 +752,14 @@ if (!createMode.value) {
       name: tag,
     }));
   }
+
+  // TODO: Fetch orders for this account when orders API is available
+  // const { data: ordersData, error: ordersError } = await useAsyncData<WholesaleOrder[]>(() =>
+  //   wholesaleApi.order.listByAccount(entityId.value),
+  // );
+  // if (!ordersError.value && ordersData.value) {
+  //   ordersList.value = ordersData.value;
+  // }
 }
 </script>
 
@@ -1154,6 +1207,40 @@ if (!createMode.value) {
         <KeepAlive>
           <ContentEditMainContent
             v-if="currentTab === 3"
+            :key="`tab-${currentTab}`"
+          >
+            <ContentEditCard
+              :create-mode="createMode"
+              :title="t('wholesale.orders')"
+              :description="$t('wholesale.orders_description')"
+            >
+              <div>
+                <div
+                  v-if="ordersList.length === 0"
+                  class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
+                >
+                  <p class="text-xl font-bold">
+                    {{ $t('no_entity', { entityName: 'order' }, 2) }}
+                  </p>
+                  <p class="text-muted-foreground text-xs">
+                    {{ $t('wholesale.no_orders_found') }}
+                  </p>
+                </div>
+                <TableView
+                  v-else
+                  :mode="TableMode.Simple"
+                  entity-name="order"
+                  :columns="orderColumns"
+                  :data="ordersList"
+                  :pinned-state="null"
+                />
+              </div>
+            </ContentEditCard>
+          </ContentEditMainContent>
+        </KeepAlive>
+        <KeepAlive>
+          <ContentEditMainContent
+            v-if="currentTab === 4"
             :key="`tab-${currentTab}`"
           >
             <ContentEditCard :create-mode="false" :title="t('settings')">

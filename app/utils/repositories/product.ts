@@ -9,7 +9,12 @@ import type {
   BatchQueryResult,
   BatchQuery,
   PricelistProduct,
+  ApiOptions,
+  ProductFieldsFilter,
+  ProductApiOptions,
+  ProductPricelistApiOptions,
 } from '#shared/types';
+import { buildQueryObject } from '../api-query';
 
 const { batchQueryAll } = useBatchQuery();
 
@@ -19,10 +24,12 @@ const BASE_ENDPOINT = '/product';
  * Repository for managing wholesale operations with subsections
  */
 export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const productRepo = repo.entity<Product, ProductCreate, ProductUpdate>(
-    BASE_ENDPOINT,
-    fetch,
-  );
+  const productRepo = repo.entity<
+    Product,
+    ProductCreate,
+    ProductUpdate,
+    ProductApiOptions
+  >(BASE_ENDPOINT, fetch);
 
   const categoryEndpoint = `${BASE_ENDPOINT}/category`;
 
@@ -39,22 +46,18 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     ...productRepo,
 
     async list(
-      query?: Record<string, unknown>,
+      options?: ProductApiOptions,
     ): Promise<BatchQueryResult<Product>> {
-      return await fetch<BatchQueryResult<Product>>(
-        `${BASE_ENDPOINT}/query`,
-
-        {
-          method: 'POST',
-          body: batchQueryAll.value,
-          query,
-        },
-      );
+      return await fetch<BatchQueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
+        method: 'POST',
+        body: batchQueryAll.value,
+        query: buildQueryObject(options),
+      });
     },
 
     async query(
       selection?: SelectorSelectionQueryBase,
-      query?: Record<string, string>,
+      options?: ProductApiOptions,
     ): Promise<BatchQueryResult<Product>> {
       return await fetch<BatchQueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
         method: 'POST',
@@ -62,7 +65,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           ...batchQueryAll.value,
           ...selection,
         },
-        query,
+        query: buildQueryObject(options),
       });
     },
 
@@ -131,19 +134,21 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       id: (pricelistId: string) => {
         const pricelistIdEndpoint = `${pricelistEndpoint}/${pricelistId}`;
         return {
-          async copy(query?: Record<string, string>) {
+          async copy(
+            options?: ProductPricelistApiOptions,
+          ): Promise<ProductPricelist> {
             return await fetch<ProductPricelist>(
               `${pricelistIdEndpoint}/copy`,
               {
                 method: 'POST',
-                query,
+                query: buildQueryObject(options),
               },
             );
           },
           async preview(
             pricelist: ProductPricelistUpdate,
             batchQuery?: BatchQuery,
-            query?: Record<string, string>,
+            options?: ProductPricelistApiOptions,
           ): Promise<ProductPricelist> {
             return await fetch<ProductPricelist>(
               `${pricelistIdEndpoint}/preview`,
@@ -153,7 +158,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
                   pricelist,
                   batchQuery,
                 },
-                query,
+                query: buildQueryObject(options),
               },
             );
           },

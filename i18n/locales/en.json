@@ -208,6 +208,8 @@
     "account_groups": "Account groups",
     "pricelists": "Pricelists",
     "pricelists_description": "Pricelists connected to this account.",
+    "orders": "Orders",
+    "orders_description": "Orders placed by buyers connected to this account.",
     "buyers": "Buyers",
     "buyers_description": "Buyers connected to this account",
     "buyers_feedback_existing_title": "Email already in use!",
