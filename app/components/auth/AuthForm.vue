@@ -16,7 +16,7 @@ const props = withDefaults(
     showInvalid: boolean;
     mode: AuthFormMode;
     mfaMethod?: string;
-    accounts?: AuthAccounts;
+    accounts?: AuthAccounts[];
     token?: string;
   }>(),
   {
@@ -188,13 +188,7 @@ const feedbackDescription = computed(() => {
 });
 
 // Account selection
-const accounts = computed(() => {
-  if (!props.accounts) return [];
-  return Object.keys(props.accounts).map((key) => ({
-    key,
-    name: props.accounts?.[key]?.displayName || key,
-  }));
-});
+const accounts = computed(() => props.accounts || []);
 
 // Button text
 const buttonText = computed(() => {
@@ -466,9 +460,16 @@ const backToLogin = () => {
     <!-- Account Selection -->
     <div v-else-if="accountMode">
       <ul v-if="!loading" class="flex flex-col gap-2">
-        <li v-for="account in accounts" :key="account.key" class="w-full">
-          <Button class="w-full" @click="$emit('set-account', account.key)">
-            {{ account.name }}
+        <li
+          v-for="account in accounts"
+          :key="account.accountKey"
+          class="w-full"
+        >
+          <Button
+            class="w-full"
+            @click="$emit('set-account', account.accountKey)"
+          >
+            {{ account.displayName }}
           </Button>
         </li>
       </ul>

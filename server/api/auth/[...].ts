@@ -42,6 +42,9 @@ export default NuxtAuthHandler({
             return token;
           }
         } catch (error) {
+          if (!error || typeof error !== 'object' || !('status' in error)) {
+            throw error;
+          }
           // TODO: type errors
           // If the refresh fails, check the error status and handle accordingly
           if (error.status === 401 || error.status === 403) {
@@ -82,10 +85,7 @@ export default NuxtAuthHandler({
             session.user = user;
           } catch (error) {
             geinsLogWarn('error fetching user:', error);
-            session.user = {
-              error,
-            };
-            // Keep session as is if we can't fetch the user, maybe there is a network error..
+            throw { status: 401, message: 'AUTH_ERROR' };
           }
         }
       } else if (token.mfaActive) {
