@@ -1,10 +1,11 @@
 export const useBatchQuery = () => {
-  const batchQueryAll = ref<BatchQuery>({
+  const batchQueryNoPagination = ref<BatchQuery>({
     page: 1,
     pageSize: 10000000,
-    all: true,
   });
+  const batchQueryMatchAll = ref<BatchQuery>({ all: true });
   return {
-    batchQueryAll,
+    batchQueryMatchAll,
+    batchQueryNoPagination,
   };
 };

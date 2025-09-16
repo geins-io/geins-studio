@@ -8,15 +8,12 @@ import type {
   ProductUpdate,
   BatchQueryResult,
   BatchQuery,
-  PricelistProduct,
-  ApiOptions,
-  ProductFieldsFilter,
   ProductApiOptions,
   ProductPricelistApiOptions,
 } from '#shared/types';
 import { buildQueryObject } from '../api-query';
 
-const { batchQueryAll } = useBatchQuery();
+const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
 
 const BASE_ENDPOINT = '/product';
 
@@ -50,7 +47,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     ): Promise<BatchQueryResult<Product>> {
       return await fetch<BatchQueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
         method: 'POST',
-        body: batchQueryAll.value,
+        body: { ...batchQueryMatchAll.value, ...batchQueryNoPagination.value },
         query: buildQueryObject(options),
       });
     },
@@ -62,7 +59,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       return await fetch<BatchQueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
         method: 'POST',
         body: {
-          ...batchQueryAll.value,
+          ...batchQueryNoPagination.value,
           ...selection,
         },
         query: buildQueryObject(options),
@@ -82,7 +79,10 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
           {
             method: 'POST',
-            body: batchQueryAll.value,
+            body: {
+              ...batchQueryMatchAll.value,
+              ...batchQueryNoPagination.value,
+            },
             query,
           },
         );
@@ -93,7 +93,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           {
             method: 'POST',
             body: {
-              ...batchQueryAll.value,
+              ...batchQueryNoPagination.value,
               categoryIds: ids,
             },
           },
@@ -113,7 +113,10 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
           {
             method: 'POST',
-            body: batchQueryAll.value,
+            body: {
+              ...batchQueryMatchAll.value,
+              ...batchQueryNoPagination.value,
+            },
             query,
           },
         );
@@ -122,7 +125,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return await fetch<BatchQueryResult<Brand>>(`${brandEndpoint}/query`, {
           method: 'POST',
           body: {
-            ...batchQueryAll.value,
+            ...batchQueryNoPagination.value,
             brandIds: ids,
           },
         });

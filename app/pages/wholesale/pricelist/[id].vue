@@ -21,11 +21,9 @@ import {
 // =====================================================================================
 const route = useRoute();
 const { t } = useI18n();
-const { $geinsApi } = useNuxtApp();
-const accountStore = useAccountStore();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');
-
+const accountStore = useAccountStore();
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
 
@@ -247,7 +245,7 @@ const {
 // =====================================================================================
 // PREVIEW PRICELIST
 // =====================================================================================
-const { batchQueryAll } = useBatchQuery();
+const { batchQueryNoPagination } = useBatchQuery();
 const updateInProgress = ref(false);
 
 const previewPricelist = async (
@@ -265,7 +263,7 @@ const previewPricelist = async (
     updateInProgress.value = true;
     const previewPricelist = await productApi.pricelist
       .id(entityId.value)
-      .preview(entityDataUpdate.value, batchQueryAll.value, {
+      .preview(entityDataUpdate.value, batchQueryNoPagination.value, {
         fields: ['products', 'productinfo'],
       });
 

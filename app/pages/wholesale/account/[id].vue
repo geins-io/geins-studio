@@ -5,7 +5,11 @@
 import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useWholesale } from '@/composables/useWholesale';
-import { DataItemDisplayType, TableMode } from '#shared/types';
+import {
+  DataItemDisplayType,
+  TableMode,
+  SelectorCondition,
+} from '#shared/types';
 import * as z from 'zod';
 
 // =====================================================================================
@@ -728,13 +732,28 @@ if (!createMode.value) {
     }));
   }
 
-  // TODO: Fetch orders for this account when orders API is available
-  // const { data: ordersData, error: ordersError } = await useAsyncData<WholesaleOrder[]>(() =>
-  //   wholesaleApi.order.listByAccount(entityId.value),
-  // );
-  // if (!ordersError.value && ordersData.value) {
-  //   ordersList.value = ordersData.value;
-  // }
+  const orderSelectionQuery: OrderBatchQuery = {
+    include: [
+      {
+        selections: [
+          {
+            condition: SelectorCondition.And,
+            wholesaleAccountIds: [entityId.value],
+          },
+        ],
+      },
+    ],
+  };
+  const { batchQueryNoPagination } = useBatchQuery();
+
+  const { data: ordersData, error: ordersError } = await useAsyncData<
+    BatchQueryResult<Order>
+  >(() =>
+    orderApi.query({ ...orderSelectionQuery, ...batchQueryNoPagination.value }),
+  );
+  if (!ordersError.value && ordersData.value) {
+    ordersList.value = ordersData.value.items;
+  }
 }
 </script>
 
