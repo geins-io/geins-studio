@@ -209,10 +209,10 @@ export const auth = () => {
     }
 
     // Handle multiple accounts and no account selected
-    if (response.accounts && Object.keys(response.accounts).length > 0) {
+    if (response.accounts && response.accounts.length > 0) {
       session.accounts = response.accounts;
-      if (Object.keys(response.accounts).length === 1) {
-        session.accountKey = Object.keys(response.accounts)[0];
+      if (response.accounts.length === 1) {
+        session.accountKey = response.accounts[0].accountKey;
       }
       return session;
     } else {

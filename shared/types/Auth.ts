@@ -23,7 +23,7 @@ export interface AuthTokens {
   refreshToken?: string;
   loginToken?: string;
   mfaCode?: string;
-  accounts?: AuthAccounts;
+  accounts?: AuthAccounts[];
   accountKey?: string;
 }
 
@@ -49,9 +49,9 @@ export interface LoginCredentials {
 }
 
 export interface AuthAccounts {
-  [key: string]: {
-    displayName: string;
-  };
+  accountKey: string;
+  displayName: string;
+  roles: string[];
 }
 
 export interface AuthBroadcastData {
