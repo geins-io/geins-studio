@@ -12,7 +12,7 @@ const badgeVariant = computed(() => {
     case false:
       return 'secondary';
     default:
-      return 'default';
+      return 'outline';
   }
 });
 

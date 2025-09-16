@@ -2,6 +2,7 @@ import { SelectorCondition, type BatchQueryFiltered } from '#shared/types';
 
 // Base Order types
 export interface OrderBase {
+  dateCreated: string;
   customerId: string;
   email: string;
   sumExVat: number;

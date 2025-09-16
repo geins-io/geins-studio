@@ -1,5 +1,3 @@
-import type { AddressCreate } from './Global';
-
 // Wholesale Account types
 export interface WholesaleAccountBase {
   name: string;
@@ -105,4 +103,15 @@ export interface WholesalePricelist
     | 'dateCreated'
   > {
   productCount: number;
+}
+
+export interface WholesaleOrder {
+  _id: string;
+  created: string;
+  buyer: string;
+  sumIncVat: Price;
+  sumExVat: Price;
+  pricelists: Tooltip;
+  items: number;
+  status: string;
 }

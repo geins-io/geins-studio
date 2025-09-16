@@ -9,6 +9,7 @@ import {
   DataItemDisplayType,
   TableMode,
   SelectorCondition,
+  type WholesaleOrder,
 } from '#shared/types';
 import * as z from 'zod';
 
@@ -466,11 +467,23 @@ if (!createMode.value) {
 // ORDERS MANAGEMENT
 // =====================================================================================
 
-const ordersList = ref<Order[]>([]);
+const ordersList = ref<WholesaleOrder[]>([]);
 
-const { getColumns: getOrderColumns } = useColumns<Order>();
+const { getColumns: getOrderColumns } = useColumns<WholesaleOrder>();
 
-const columnOptionsOrders: ColumnOptions<Order> = {};
+const columnOptionsOrders: ColumnOptions<WholesaleOrder> = {
+  columnTitles: {
+    sumIncVat: 'Sum (inc vat)',
+    sumExVat: 'Sum (ex vat)',
+    pricelists: t('pricelist', 2),
+  },
+  columnTypes: {
+    sumIncVat: 'currency',
+    sumExVat: 'currency',
+    created: 'date',
+    pricelists: 'tooltip',
+  },
+};
 
 // Use computed for reactive columns
 const orderColumns = computed(() => {
@@ -480,6 +493,30 @@ const orderColumns = computed(() => {
 
   return columns;
 });
+
+const getPricelistNameById = (id: string) => {
+  const pricelist = allPricelists.value.find((pl) => pl._id === id);
+  return pricelist ? pricelist.name : id;
+};
+const { convertToPrice } = usePrice();
+
+const transformOrdersForList = (orders: Order[]): WholesaleOrder[] => {
+  return orders.map((order) => ({
+    _id: order._id,
+    created: order.dateCreated,
+    buyer: order.customerId || order.email || 'N/A',
+    items: order.items?.length || 0,
+    sumIncVat: convertToPrice(order.sumIncVat, order.currency),
+    sumExVat: convertToPrice(order.sumExVat, order.currency),
+    pricelists: createTooltip({
+      items: ['98'],
+      entityName: 'pricelist',
+      formatter: (group) => `${getPricelistNameById(group)}`,
+      t,
+    }),
+    status: 'Placed',
+  }));
+};
 
 // =====================================================================================
 // ADDRESS MANAGEMENT
@@ -749,10 +786,13 @@ if (!createMode.value) {
   const { data: ordersData, error: ordersError } = await useAsyncData<
     BatchQueryResult<Order>
   >(() =>
-    orderApi.query({ ...orderSelectionQuery, ...batchQueryNoPagination.value }),
+    orderApi.query(
+      { ...orderSelectionQuery, ...batchQueryNoPagination.value },
+      { fields: ['items'] },
+    ),
   );
   if (!ordersError.value && ordersData.value) {
-    ordersList.value = ordersData.value.items;
+    ordersList.value = transformOrdersForList(ordersData.value.items);
   }
 }
 </script>
