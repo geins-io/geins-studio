@@ -198,7 +198,7 @@ const selectedEntitiesSimple = computed(() => {
   return selected;
 });
 
-const productApi = repo.product(useNuxtApp().$geinsApi);
+const { productApi } = useGeinsRepository();
 const selectedProducts = ref<Product[]>([]);
 const { transformProducts } = useProductsStore();
 const selectionMade = computed(() => {

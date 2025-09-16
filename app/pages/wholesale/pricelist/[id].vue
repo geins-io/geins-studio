@@ -32,7 +32,7 @@ const { products } = storeToRefs(productsStore);
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
-const productApi = repo.product($geinsApi);
+const { productApi } = useGeinsRepository();
 const { channels, currentCurrencies, currentChannelId, currentCurrency } =
   storeToRefs(accountStore);
 

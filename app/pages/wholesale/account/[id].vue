@@ -23,8 +23,8 @@ const {
   validateVatNumber,
   getAddresses,
 } = useWholesale();
+const { orderApi } = useGeinsRepository();
 const { t } = useI18n();
-const route = useRoute();
 const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
 const accountStore = useAccountStore();
 const { getEntityNameById } = useEntity();
@@ -363,7 +363,7 @@ watch(buyerPanelOpen, async (open) => {
 // PRICELISTS MANAGEMENT
 // =====================================================================================
 
-const productApi = repo.product(useNuxtApp().$geinsApi);
+const { productApi } = useGeinsRepository();
 const addedPricelists = ref<WholesalePricelist[]>([]);
 const addedPricelistsIds = computed(() => {
   return addedPricelists.value.map((pl) => pl._id);
@@ -462,36 +462,11 @@ if (!createMode.value) {
 // ORDERS MANAGEMENT
 // =====================================================================================
 
-// Define a basic order type for display purposes
-interface WholesaleOrder {
-  _id: string;
-  orderNumber: string;
-  createdAt: string;
-  total: number;
-  status: string;
-  currency?: string;
-}
+const ordersList = ref<Order[]>([]);
 
-const ordersList = ref<WholesaleOrder[]>([]);
+const { getColumns: getOrderColumns } = useColumns<Order>();
 
-const { getColumns: getOrderColumns } = useColumns<WholesaleOrder>();
-
-const columnOptionsOrders: ColumnOptions<WholesaleOrder> = {
-  entityLinkUrl: '/wholesale/order/{_id}',
-  columnTypes: {
-    orderNumber: 'entity-link',
-    createdAt: 'date',
-    total: 'currency',
-  },
-  columnTitles: {
-    orderNumber: t('wholesale.order_number'),
-    createdAt: t('created_at'),
-    total: t('total'),
-    status: t('status'),
-  },
-  includeColumns: ['_id', 'orderNumber', 'createdAt', 'total', 'status'],
-  sortable: false,
-};
+const columnOptionsOrders: ColumnOptions<Order> = {};
 
 // Use computed for reactive columns
 const orderColumns = computed(() => {

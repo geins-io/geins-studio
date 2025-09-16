@@ -23,11 +23,9 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { wholesaleApi } = useWholesale();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('components/WholesaleBuyerPanel.vue');
-const { $geinsApi } = useNuxtApp();
-const customerApi = repo.customer($geinsApi);
+const { wholesaleApi, customerApi } = useGeinsRepository();
 
 const entityName = 'buyer';
 

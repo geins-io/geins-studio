@@ -17,8 +17,7 @@ definePageMeta({
 });
 
 // GLOBAL SETUP
-const { $geinsApi } = useNuxtApp();
-const productApi = repo.product($geinsApi);
+const { productApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
 const entityIdentifier = '{_id}';
 const entityName = getEntityName();

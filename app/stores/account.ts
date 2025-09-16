@@ -3,7 +3,7 @@ import type { Account, Channel, Currency } from '#shared/types';
 
 export const useAccountStore = defineStore('account', () => {
   const { geinsLogWarn } = useGeinsLog('store/account.ts');
-  const api = repo.global(useNuxtApp().$geinsApi);
+  const { globalApi } = useGeinsRepository();
   const { fallback } = useRuntimeConfig().public;
 
   // STATE
@@ -24,22 +24,22 @@ export const useAccountStore = defineStore('account', () => {
 
   // ACTIONS
   async function fetchAccount(): Promise<Account> {
-    const data = await api.account.get();
+    const data = await globalApi.account.get();
     account.value = data;
     return data;
   }
   async function fetchChannels(): Promise<Channel[]> {
-    const data = await api.channel.list();
+    const data = await globalApi.channel.list();
     channels.value = data;
     return data;
   }
   async function fetchCurrencies(): Promise<Currency[]> {
-    const data = await api.currency.list();
+    const data = await globalApi.currency.list();
     currencies.value = data;
     return data;
   }
   async function fetchLanguages(): Promise<Language[]> {
-    const data = await api.language.list();
+    const data = await globalApi.language.list();
     languages.value = data;
     return data;
   }

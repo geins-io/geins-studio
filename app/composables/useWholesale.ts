@@ -5,15 +5,13 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import type { WholesaleVatValidation } from '#shared/types';
 
 export const useWholesale = () => {
-  const nuxtApp = useNuxtApp();
-  const geinsApi = nuxtApp.$geinsApi;
   const { toast } = useToast();
   const { t } = useI18n();
   const { geinsLogError, geinsLogInfo } = useGeinsLog(
     'composables/useWholesale.ts',
   );
 
-  const wholesaleApi = repo.wholesale(geinsApi);
+  const { wholesaleApi } = useGeinsRepository();
 
   // =====================================================================================
   // ACCOUNT MANAGEMENT
