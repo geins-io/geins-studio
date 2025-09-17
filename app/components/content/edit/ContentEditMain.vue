@@ -44,10 +44,10 @@ const handleToggleSidebar = () => {
         <TooltipTrigger as-child>
           <button
             type="button"
-            class="bg-card flex-center translate- absolute top-4 right-0 z-50 h-8 w-6 translate-x-full rounded-r-lg border border-l-0"
+            class="bg-card flex-center translate- absolute top-4 right-0 z-50 h-8 w-7 translate-x-full rounded-r-lg border border-l-0"
             @click="handleToggleSidebar"
           >
-            <LucideSquareEqual class="size-10 p-0.75" />
+            <LucideList class="text-muted-foreground size-10 p-1" />
           </button>
         </TooltipTrigger>
         <TooltipContent>
