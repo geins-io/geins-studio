@@ -5,6 +5,7 @@
 import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useWholesale } from '@/composables/useWholesale';
+import { useWholesaleOrders } from '@/composables/useWholesaleOrders';
 import {
   DataItemDisplayType,
   TableMode,
@@ -467,56 +468,7 @@ if (!createMode.value) {
 // ORDERS MANAGEMENT
 // =====================================================================================
 
-const ordersList = ref<WholesaleOrder[]>([]);
-
-const { getColumns: getOrderColumns } = useColumns<WholesaleOrder>();
-
-const columnOptionsOrders: ColumnOptions<WholesaleOrder> = {
-  columnTitles: {
-    sumIncVat: 'Sum (inc vat)',
-    sumExVat: 'Sum (ex vat)',
-    pricelists: t('pricelist', 2),
-  },
-  columnTypes: {
-    sumIncVat: 'currency',
-    sumExVat: 'currency',
-    created: 'date',
-    pricelists: 'tooltip',
-  },
-};
-
-// Use computed for reactive columns
-const orderColumns = computed(() => {
-  if (ordersList.value.length === 0) return [];
-
-  const columns = getOrderColumns(ordersList.value, columnOptionsOrders);
-
-  return columns;
-});
-
-const getPricelistNameById = (id: string) => {
-  const pricelist = allPricelists.value.find((pl) => pl._id === id);
-  return pricelist ? pricelist.name : id;
-};
-const { convertToPrice } = usePrice();
-
-const transformOrdersForList = (orders: Order[]): WholesaleOrder[] => {
-  return orders.map((order) => ({
-    _id: order._id,
-    created: order.dateCreated,
-    buyer: order.customerId || order.email || 'N/A',
-    items: order.items?.length || 0,
-    sumIncVat: convertToPrice(order.sumIncVat, order.currency),
-    sumExVat: convertToPrice(order.sumExVat, order.currency),
-    pricelists: createTooltip({
-      items: ['98'],
-      entityName: 'pricelist',
-      formatter: (group) => `${getPricelistNameById(group)}`,
-      t,
-    }),
-    status: 'Placed',
-  }));
-};
+const { ordersList, orderColumns, fetchOrders } = useWholesaleOrders();
 
 // =====================================================================================
 // ADDRESS MANAGEMENT
@@ -781,19 +733,14 @@ if (!createMode.value) {
       },
     ],
   };
-  const { batchQueryNoPagination } = useBatchQuery();
 
-  const { data: ordersData, error: ordersError } = await useAsyncData<
-    BatchQueryResult<Order>
-  >(() =>
-    orderApi.query(
-      { ...orderSelectionQuery, ...batchQueryNoPagination.value },
-      { fields: ['items'] },
-    ),
+  // Fetch orders using the composable
+  await fetchOrders(
+    orderSelectionQuery,
+    { fields: ['items'] },
+    entityId.value,
+    allPricelists.value,
   );
-  if (!ordersError.value && ordersData.value) {
-    ordersList.value = transformOrdersForList(ordersData.value.items);
-  }
 }
 </script>
 

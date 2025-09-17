@@ -64,8 +64,9 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
 };
 
 // FETCH DATA FOR ENTITY
-const { data, error, refresh } = await useAsyncData<Entity[]>(() =>
-  wholesaleApi.account.list({ fields: ['salesreps', 'buyers'] }),
+const { data, error, refresh } = await useAsyncData<Entity[]>(
+  'wholesale-accounts',
+  () => wholesaleApi.account.list({ fields: ['salesreps', 'buyers'] }),
 );
 
 if (!data.value || error.value) {
