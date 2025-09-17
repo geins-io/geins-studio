@@ -446,7 +446,7 @@ const applyRule = async (rule: PricelistRule): Promise<void> => {
     }
 
     await updateEntityRules();
-    await previewPricelist('Quantity levels applied.');
+    await previewPricelist('Quantity level applied globally');
   } catch (error) {
     geinsLogError('error applying rules:', error);
     toast({
@@ -553,7 +553,9 @@ const rulesProductName = ref<string>('');
 const rulesModeChangePrompt = ref(false);
 
 const handleSaveRules = (_rules: PricelistRule[]) => {
-  previewPricelist('Product quantity levels applied.');
+  previewPricelist(
+    `Quantity levels applied for ${rulesProductName.value} (${rulesProductId.value})`,
+  );
 };
 
 // Use a computed for the displayed mode

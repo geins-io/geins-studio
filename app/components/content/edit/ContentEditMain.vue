@@ -44,10 +44,10 @@ const handleToggleSidebar = () => {
         <TooltipTrigger as-child>
           <button
             type="button"
-            class="bg-card flex-center absolute -top-2 -right-2 z-50 size-10 rounded-full border shadow-lg"
+            class="bg-card flex-center translate- absolute top-4 right-0 z-50 h-8 w-7 translate-x-full rounded-r-lg border border-l-0"
             @click="handleToggleSidebar"
           >
-            <LucideSquareEqual class="size-10 p-2.5" />
+            <LucideList class="text-muted-foreground size-10 p-1" />
           </button>
         </TooltipTrigger>
         <TooltipContent>
@@ -75,7 +75,7 @@ const handleToggleSidebar = () => {
             cn(
               'rounded-lg',
               sidebarCanBeToggled
-                ? 'absolute top-8 right-8 z-50 w-[360px] origin-top-right shadow-lg transition-all duration-300 ease-[cubic-bezier(.29,.38,.18,1.47)]'
+                ? 'absolute top-4 right-4 z-50 w-[360px] origin-top-right shadow-lg transition-all duration-300 ease-[cubic-bezier(.29,.38,.18,1.47)]'
                 : '',
               sidebarCanBeToggled && sidebarVisible
                 ? 'scale-100 opacity-100'
