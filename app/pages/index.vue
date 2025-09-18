@@ -60,17 +60,19 @@ if (allAccounts.value.length === 0) {
     <div class="space-y-8">
       <!-- Wholesale quick access section -->
       <div>
-        <h2 class="mb-2 text-lg font-semibold">Wholesale Quick Access</h2>
-        <p class="text-muted-foreground mb-6 text-sm">
-          Quick access to key wholesale features like account management,
-          pricing, and product permissions.
-        </p>
+        <div class="mb-6">
+          <ContentCardHeader
+            title="Wholesale Quick Access"
+            description="Quick access to key wholesale features like account management, pricing, and product permissions."
+            size="md"
+          />
+        </div>
 
         <!-- Quick access cards grid -->
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <!-- Create a new account card -->
           <Card
-            class="cursor-pointer p-6 transition-shadow hover:shadow-md"
+            class="cursor-pointer p-6 transition-shadow"
             @click="$router.push('/wholesale/account/new')"
           >
             <CardHeader class="p-0">
@@ -90,7 +92,7 @@ if (allAccounts.value.length === 0) {
 
           <!-- Accounts card -->
           <Card
-            class="cursor-pointer p-6 transition-shadow hover:shadow-md"
+            class="cursor-pointer p-6 transition-shadow"
             @click="$router.push('/wholesale/account/list')"
           >
             <CardHeader class="p-0">
@@ -110,7 +112,7 @@ if (allAccounts.value.length === 0) {
 
           <!-- Create a new pricelist card -->
           <Card
-            class="cursor-pointer p-6 transition-shadow hover:shadow-md"
+            class="cursor-pointer p-6 transition-shadow"
             @click="$router.push('/wholesale/pricelist/new')"
           >
             <CardHeader class="p-0">
@@ -132,7 +134,7 @@ if (allAccounts.value.length === 0) {
 
           <!-- Pricelists card -->
           <Card
-            class="cursor-pointer p-6 transition-shadow hover:shadow-md"
+            class="cursor-pointer p-6 transition-shadow"
             @click="$router.push('/wholesale/pricelist/list')"
           >
             <CardHeader class="p-0">
@@ -154,11 +156,13 @@ if (allAccounts.value.length === 0) {
 
       <!-- Latest Wholesale orders section -->
       <div>
-        <h2 class="mb-2 text-lg font-semibold">Latest Wholesale orders</h2>
-        <p class="text-muted-foreground mb-6 text-sm">
-          A summary of the 30 most recent orders placed by buyers linked to a
-          wholesale account.
-        </p>
+        <div class="mb-6">
+          <ContentCardHeader
+            title="Latest Wholesale orders"
+            description="A summary of the 30 most recent orders placed by buyers linked to a wholesale account."
+            size="md"
+          />
+        </div>
 
         <!-- Orders Table -->
         <TableView
