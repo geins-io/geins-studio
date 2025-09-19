@@ -737,7 +737,7 @@ if (!createMode.value) {
   // Fetch orders using the composable
   await fetchOrders(
     orderSelectionQuery,
-    { fields: ['items'] },
+    { fields: ['pricelists', 'itemcount'] },
     entityId.value,
     allPricelists.value,
   );

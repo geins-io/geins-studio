@@ -7,8 +7,6 @@ import type {
   WholesalePricelist,
   WholesaleAccount,
 } from '#shared/types';
-import { SelectorCondition } from '#shared/types';
-import { get } from '@vueuse/core';
 
 export const useWholesaleOrders = () => {
   const { orderApi } = useGeinsRepository();
@@ -64,21 +62,21 @@ export const useWholesaleOrders = () => {
       created: order.dateCreated,
       channel: accountStore.getChannelNameById(order.channel),
       buyer: order.customerId || order.email || 'N/A',
-      ...(order.items && { items: order.items.length }),
+      ...(order.itemCount && { items: order.itemCount }),
       sumIncVat: convertToPrice(order.sumIncVat, order.currency),
       sumExVat: convertToPrice(order.sumExVat, order.currency),
       ...(allPricelists && {
         pricelists: createTooltip({
-          items: ['98'], // This seems to be hardcoded in the original - you may want to make this dynamic
+          items: order.priceLists,
           entityName: 'pricelist',
-          formatter: (group) => `${getNameById(group, allPricelists)}`,
+          formatter: (group) => `${getNameById(group._id, allPricelists)}`,
           t,
         }),
       }),
       ...(allAccounts && {
         wholesaleAccount: getNameById(order.wholesaleAccountId, allAccounts),
       }),
-      status: 'Placed',
+      status: order.status,
     }));
   };
 
