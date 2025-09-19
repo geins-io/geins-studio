@@ -1,4 +1,15 @@
 
+## v0.0.15
+
+
+### 🚀 Enhancements
+
+- Add public logos ([281bbf0](https://github.com/geins-io/geins-studio/commit/281bbf0))
+
+### ❤️ Contributors
+
+- Olivia Axelsson <axelsson@geins.io>
+
 ## v0.0.14
 
 
