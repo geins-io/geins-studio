@@ -45,6 +45,11 @@ if (allAccounts.value.length === 0) {
     undefined,
     allAccounts.value,
   );
+
+  // Order ordersList by dateCreated descending
+  ordersList.value.sort((a, b) => {
+    return new Date(b.created).getTime() - new Date(a.created).getTime();
+  });
 }
 </script>
 
@@ -60,9 +65,9 @@ if (allAccounts.value.length === 0) {
     <div class="space-y-8">
       <!-- Wholesale quick access section -->
       <div>
-        <div class="mb-6">
+        <div class="mt-10 mb-6">
           <ContentCardHeader
-            title="Wholesale Quick Access"
+            title="Wholesale - Quick Access"
             description="Quick access to key wholesale features like account management, pricing, and product permissions."
             size="md"
           />
@@ -70,96 +75,45 @@ if (allAccounts.value.length === 0) {
 
         <!-- Quick access cards grid -->
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <!-- Create a new account card -->
-          <Card
-            class="cursor-pointer p-6 transition-shadow"
-            @click="$router.push('/wholesale/account/new')"
-          >
-            <CardHeader class="p-0">
-              <div class="flex items-center justify-between">
-                <div>
-                  <CardTitle class="text-base">Create a new account</CardTitle>
-                  <CardDescription class="text-sm">
-                    Manage existing wholesale accounts
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="icon">
-                  <LucidePlus class="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-          </Card>
+          <ContentLinkCard
+            title="Create a new account"
+            description="Manage existing wholesale accounts"
+            link="/wholesale/account/new"
+            linkType="create"
+          />
 
           <!-- Accounts card -->
-          <Card
-            class="cursor-pointer p-6 transition-shadow"
-            @click="$router.push('/wholesale/account/list')"
-          >
-            <CardHeader class="p-0">
-              <div class="flex items-center justify-between">
-                <div>
-                  <CardTitle class="text-base">Accounts</CardTitle>
-                  <CardDescription class="text-sm">
-                    Manage existing wholesale accounts
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="icon">
-                  <LucideChevronRight class="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-          </Card>
+          <ContentLinkCard
+            title="Accounts"
+            description="Manage existing wholesale accounts"
+            link="/wholesale/account/list"
+            linkType="list"
+          />
 
           <!-- Create a new pricelist card -->
-          <Card
-            class="cursor-pointer p-6 transition-shadow"
-            @click="$router.push('/wholesale/pricelist/new')"
-          >
-            <CardHeader class="p-0">
-              <div class="flex items-center justify-between">
-                <div>
-                  <CardTitle class="text-base"
-                    >Create a new pricelist</CardTitle
-                  >
-                  <CardDescription class="text-sm">
-                    Manage existing wholesale accounts
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="icon">
-                  <LucidePlus class="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-          </Card>
+          <ContentLinkCard
+            title="Create a new pricelist"
+            description="Manage existing wholesale accounts"
+            link="/wholesale/pricelist/new"
+            linkType="create"
+          />
 
           <!-- Pricelists card -->
-          <Card
-            class="cursor-pointer p-6 transition-shadow"
-            @click="$router.push('/wholesale/pricelist/list')"
-          >
-            <CardHeader class="p-0">
-              <div class="flex items-center justify-between">
-                <div>
-                  <CardTitle class="text-base">Pricelists</CardTitle>
-                  <CardDescription class="text-sm">
-                    Manage existing wholesale accounts
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="icon">
-                  <LucideChevronRight class="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-          </Card>
+          <ContentLinkCard
+            title="Pricelists"
+            description="Manage existing wholesale accounts"
+            link="/wholesale/pricelist/list"
+            linkType="list"
+          />
         </div>
       </div>
 
       <!-- Latest Wholesale orders section -->
       <div>
-        <div class="mb-6">
+        <div class="mt-10 mb-6">
           <ContentCardHeader
-            title="Latest Wholesale orders"
-            description="A summary of the 30 most recent orders placed by buyers linked to a wholesale account."
+            title="Latest wholesale orders"
+            description="The most recent orders placed by buyers linked to a wholesale account."
             size="md"
           />
         </div>
