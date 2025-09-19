@@ -1,4 +1,15 @@
 
+## v0.0.16
+
+
+### 🚀 Enhancements
+
+- Add public png logos ([d8de299](https://github.com/geins-io/geins-studio/commit/d8de299))
+
+### ❤️ Contributors
+
+- Olivia Axelsson <axelsson@geins.io>
+
 ## v0.0.15
 
 
