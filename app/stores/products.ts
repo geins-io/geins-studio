@@ -2,8 +2,7 @@ import { defineStore } from 'pinia';
 import type { Product, Category, Brand } from '#shared/types';
 export const useProductsStore = defineStore('products', () => {
   const { geinsLogWarn } = useGeinsLog('store/products.ts');
-  const { $geinsApi } = useNuxtApp();
-  const productApi = repo.product($geinsApi);
+  const { productApi } = useGeinsRepository();
   const accountStore = useAccountStore();
   const { currentLanguage } = storeToRefs(accountStore);
   const { getProductThumbnail } = useGeinsImage();
@@ -17,7 +16,7 @@ export const useProductsStore = defineStore('products', () => {
 
   // ACTIONS
   async function fetchProducts(
-    fields: string = 'localizations,media,prices',
+    fields: ProductFieldsFilter[] = ['localizations', 'media', 'prices'],
   ): Promise<Product[]> {
     const data = await productApi.list({ fields });
     products.value = transformProducts(data?.items);

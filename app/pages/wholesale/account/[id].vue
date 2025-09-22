@@ -5,7 +5,12 @@
 import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useWholesale } from '@/composables/useWholesale';
-import { DataItemDisplayType, TableMode } from '#shared/types';
+import { useWholesaleOrders } from '@/composables/useWholesaleOrders';
+import {
+  DataItemDisplayType,
+  TableMode,
+  SelectorCondition,
+} from '#shared/types';
 import * as z from 'zod';
 
 // =====================================================================================
@@ -23,8 +28,8 @@ const {
   validateVatNumber,
   getAddresses,
 } = useWholesale();
+const { orderApi } = useGeinsRepository();
 const { t } = useI18n();
-const route = useRoute();
 const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
 const accountStore = useAccountStore();
 const { getEntityNameById } = useEntity();
@@ -109,6 +114,7 @@ const tabs = [
   t('general'),
   t('wholesale.buyers'),
   t('wholesale.pricelists'),
+  t('wholesale.orders'),
   t('settings'),
 ];
 const showSidebar = computed(() => {
@@ -362,7 +368,7 @@ watch(buyerPanelOpen, async (open) => {
 // PRICELISTS MANAGEMENT
 // =====================================================================================
 
-const productApi = repo.product(useNuxtApp().$geinsApi);
+const { productApi } = useGeinsRepository();
 const addedPricelists = ref<WholesalePricelist[]>([]);
 const addedPricelistsIds = computed(() => {
   return addedPricelists.value.map((pl) => pl._id);
@@ -441,7 +447,7 @@ watch(addedPricelists, (newPricelists) => {
 
 if (!createMode.value) {
   const { data, error } = await useAsyncData<ProductPricelist[]>(() =>
-    productApi.pricelist.list({ fields: 'products' }),
+    productApi.pricelist.list({ fields: ['products'] }),
   );
 
   if (!data.value || error.value) {
@@ -456,6 +462,12 @@ if (!createMode.value) {
     }));
   }
 }
+
+// =====================================================================================
+// ORDERS MANAGEMENT
+// =====================================================================================
+
+const { ordersList, orderColumns, fetchOrders } = useWholesaleOrders();
 
 // =====================================================================================
 // ADDRESS MANAGEMENT
@@ -651,7 +663,51 @@ const settingsSummary = computed<DataItem[]>(() => {
       ? t('wholesale.vat_true')
       : t('wholesale.vat_false'),
   });
+  dataList.push({
+    label: 'Product access',
+    value: entityData.value?.limitedProductAccess
+      ? 'Restricted to pricelists'
+      : 'All products',
+  });
 
+  return dataList;
+});
+
+const otherSummary = computed<DataItem[]>(() => {
+  const dataList: DataItem[] = [];
+  if (entityData.value?.buyers?.length) {
+    const displayValue = entityData.value.buyers
+      .map((buyer: WholesaleBuyer) => `${buyer.firstName} ${buyer.lastName}`)
+      .join(', ');
+    dataList.push({
+      label: t('wholesale.buyers'),
+      value: entityData.value.buyers,
+      displayValue,
+      entityName: 'buyer',
+      displayType: DataItemDisplayType.Array,
+    });
+  }
+  if (entityData.value?.priceLists?.length) {
+    const displayValue = entityData.value.priceLists
+      .map((pl: string) => getEntityNameById(pl, allPricelists.value))
+      .join(', ');
+    dataList.push({
+      label: t('wholesale.pricelists'),
+      value: entityData.value.priceLists,
+      displayValue,
+      entityName: 'pricelist',
+      displayType: DataItemDisplayType.Array,
+    });
+  }
+  if (ordersList.value.length) {
+    dataList.push({
+      label: t('wholesale.orders'),
+      value: t('nr_of_entity', {
+        count: ordersList.value.length,
+        entityName: 'order',
+      }),
+    });
+  }
   return dataList;
 });
 
@@ -669,7 +725,7 @@ const { summaryProps } = useEntityEditSummary({
 // =====================================================================================
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
-    wholesaleApi.account.get(entityId.value, { fields: 'all' }),
+    wholesaleApi.account.get(entityId.value, { fields: ['all'] }),
   );
   if (error.value) {
     toast({
@@ -707,6 +763,27 @@ if (!createMode.value) {
       name: tag,
     }));
   }
+
+  const orderSelectionQuery: OrderBatchQuery = {
+    include: [
+      {
+        selections: [
+          {
+            condition: SelectorCondition.And,
+            wholesaleAccountIds: [entityId.value],
+          },
+        ],
+      },
+    ],
+  };
+
+  // Fetch orders using the composable
+  await fetchOrders(
+    orderSelectionQuery,
+    { fields: ['pricelists', 'itemcount'] },
+    entityId.value,
+    allPricelists.value,
+  );
 }
 </script>
 
@@ -1156,6 +1233,41 @@ if (!createMode.value) {
             v-if="currentTab === 3"
             :key="`tab-${currentTab}`"
           >
+            <ContentEditCard
+              :create-mode="createMode"
+              :title="t('wholesale.orders')"
+              :description="$t('wholesale.orders_description')"
+            >
+              <div>
+                <div
+                  v-if="ordersList.length === 0"
+                  class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
+                >
+                  <p class="text-xl font-bold">
+                    {{ $t('no_entity', { entityName: 'order' }, 2) }}
+                  </p>
+                  <p class="text-muted-foreground text-xs">
+                    {{ $t('no_entity_found', { entityName: 'order' }, 2) }}
+                  </p>
+                </div>
+                <TableView
+                  v-else
+                  :mode="TableMode.Simple"
+                  entity-name="order"
+                  :columns="orderColumns"
+                  :data="ordersList"
+                  :page-size="20"
+                  :pinned-state="null"
+                />
+              </div>
+            </ContentEditCard>
+          </ContentEditMainContent>
+        </KeepAlive>
+        <KeepAlive>
+          <ContentEditMainContent
+            v-if="currentTab === 4"
+            :key="`tab-${currentTab}`"
+          >
             <ContentEditCard :create-mode="false" :title="t('settings')">
               <div class="space-y-4">
                 <ContentCardHeader
@@ -1236,6 +1348,10 @@ if (!createMode.value) {
                   </ContentTextTooltip>
                 </li>
               </ul>
+              <ContentDataList
+                v-if="!createMode && otherSummary.length"
+                :data-list="otherSummary"
+              />
             </template>
           </ContentEditSummary>
         </template>

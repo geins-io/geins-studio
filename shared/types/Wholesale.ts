@@ -1,5 +1,3 @@
-import type { AddressCreate } from './Global';
-
 // Wholesale Account types
 export interface WholesaleAccountBase {
   name: string;
@@ -36,6 +34,17 @@ export interface WholesaleAccount extends ResponseEntity<WholesaleAccountBase> {
   addresses: Address[];
   priceLists: WholesalePricelist[];
 }
+
+export type WholesaleAccountFieldsFilter =
+  | 'all'
+  | 'default'
+  | 'addresses'
+  | 'salesreps'
+  | 'buyers'
+  | 'pricelists';
+
+export type WholesaleAccountApiOptions =
+  ApiOptions<WholesaleAccountFieldsFilter>;
 
 export interface WholesaleAccountList
   extends Omit<WholesaleAccount, 'salesReps' | 'buyers'>,
@@ -94,4 +103,17 @@ export interface WholesalePricelist
     | 'dateCreated'
   > {
   productCount: number;
+}
+
+export interface WholesaleOrder {
+  _id: string;
+  created: string;
+  channel: string;
+  buyer: string;
+  sumIncVat: Price;
+  sumExVat: Price;
+  wholesaleAccount?: string;
+  pricelists?: Tooltip;
+  items?: number;
+  status: string;
 }

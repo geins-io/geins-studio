@@ -161,10 +161,42 @@ export type ProductCreate = CreateEntity<ProductBase>;
 export type ProductUpdate = UpdateEntity<ProductBase>;
 export type Product = ResponseEntity<ProductBase>;
 
+export type ProductFieldsFilter =
+  | 'all'
+  | 'localizations'
+  | 'default'
+  | 'skus'
+  | 'sort'
+  | 'prices'
+  | 'defaultprice'
+  | 'categories'
+  | 'channels'
+  | 'media'
+  | 'campaigns'
+  | 'attributes'
+  | 'relatedproducts'
+  | 'variant'
+  | 'brand'
+  | 'supplier'
+  | 'stock';
+
+export interface ProductApiOptions extends ApiOptions<ProductFieldsFilter> {
+  currencies?: string[];
+  localizations?: string[];
+  defaultChannel?: string;
+  defaultCurrency?: string;
+  defaultCountry?: string;
+  defaultLocale?: string;
+}
+
 export interface Brand extends EntityBase {
   active: boolean;
   name: string;
   localizations: Localized<Localizations>;
+}
+
+export interface BrandApiOptions {
+  defaultLocale?: string;
 }
 
 export interface Category extends EntityBase {
@@ -174,6 +206,10 @@ export interface Category extends EntityBase {
   active: boolean;
   order: number;
   localizations: Localized<Localizations>;
+}
+
+export interface CategoryApiOptions {
+  defaultLocale?: string;
 }
 
 export interface CategoryTree extends Category {
@@ -206,6 +242,20 @@ export interface ProductPricelist extends ResponseEntity<ProductPricelistBase> {
   products?: BatchQueryResult<PricelistProduct>;
 }
 
+export type ProductPricelistFieldsFilter =
+  | 'all'
+  | 'default'
+  | 'products'
+  | 'rules'
+  | 'selectionquery'
+  | 'productinfo';
+
+export interface ProductPricelistApiOptions
+  extends ApiOptions<ProductPricelistFieldsFilter> {
+  pageSize?: string;
+  defaultLocale?: string;
+}
+
 export interface PricelistProduct {
   _id?: string;
   productId: string;
@@ -220,6 +270,11 @@ export interface PricelistProduct {
   priceMode?: PricelistPriceMode;
   purchasePrice?: number;
   purchasePriceCurrency?: string;
+}
+
+export interface ProductPricelistProductApiOptions
+  extends ApiOptions<ProductPricelistFieldsFilter> {
+  defaultLocale?: string;
 }
 
 export interface PricelistProductPreview {

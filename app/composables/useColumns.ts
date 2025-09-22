@@ -51,7 +51,7 @@ export const useColumns = <T extends object>() => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
     const baseStyle =
       'align-middle text-grid leading-8 w-full h-10 flex items-center truncate';
-    const simpleStyle = '[&>button]:px-3.5 px-3.5';
+    const simpleStyle = 'px-3.5';
     const advancedStyle = 'px-[1.2rem]';
     const fullStyle =
       mode === TableMode.Simple
@@ -177,7 +177,7 @@ export const useColumns = <T extends object>() => {
         columnType = 'channels';
       } else if (keyLower === 'tags') {
         columnType = 'tags';
-      } else if (keyLower === 'active') {
+      } else if (keyLower === 'active' || keyLower === 'status') {
         columnType = 'status';
       } else {
         columnType = 'default';

@@ -18,9 +18,8 @@ const emit = defineEmits<{
   (e: 'save', rules: PricelistRule[]): void;
 }>();
 
-const { $geinsApi } = useNuxtApp();
 const { getPricelistProduct, getNewPricelistProducts } = usePricelistProducts();
-const productApi = repo.product($geinsApi);
+const { productApi } = useGeinsRepository();
 const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');

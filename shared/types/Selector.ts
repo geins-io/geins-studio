@@ -1,13 +1,21 @@
+import {
+  type BatchQueryFiltered,
+  type BatchQueryFilterGroup,
+} from '#shared/types';
+
 // SELECTOR
+
+export const enum SelectorCondition {
+  And = 'and',
+  Or = 'or',
+}
+
 export const enum CompareCondition {
   LessThan = 'lt',
   GreaterThan = 'gt',
   Equal = 'eq',
 }
-export const enum SelectorCondition {
-  And = 'and',
-  Or = 'or',
-}
+
 export const enum SelectorMode {
   Simple = 'simple',
   Advanced = 'advanced',
@@ -59,15 +67,10 @@ export interface SelectorSelectionInternal
   ids?: string[];
 }
 
-export interface SelectorSelectionGroup {
-  condition?: SelectorCondition;
-  selections: SelectorSelectionQuery[];
-}
-
-export interface SelectorSelectionQueryBase {
-  include: SelectorSelectionGroup[];
-  exclude: SelectorSelectionGroup[];
-}
+export type SelectorSelectionGroup =
+  BatchQueryFilterGroup<SelectorSelectionQuery>;
+export type SelectorSelectionQueryBase =
+  BatchQueryFiltered<SelectorSelectionQuery>;
 
 export interface SelectorSelectionInternalBase {
   include: SelectorSelectionInternal;

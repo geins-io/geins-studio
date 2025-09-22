@@ -5,6 +5,7 @@ import { productRepo } from './repositories/product';
 import { globalRepo } from './repositories/global';
 import { userRepo } from './repositories/user';
 import { customerRepo } from './repositories/customer';
+import { orderRepo } from './repositories/order';
 
 export const repo = {
   global: globalRepo,
@@ -14,4 +15,5 @@ export const repo = {
   product: productRepo,
   user: userRepo,
   customer: customerRepo,
+  order: orderRepo,
 };

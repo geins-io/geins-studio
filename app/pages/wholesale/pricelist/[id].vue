@@ -21,18 +21,16 @@ import {
 // =====================================================================================
 const route = useRoute();
 const { t } = useI18n();
-const { $geinsApi } = useNuxtApp();
-const accountStore = useAccountStore();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');
-
+const accountStore = useAccountStore();
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
 
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
-const productApi = repo.product($geinsApi);
+const { productApi } = useGeinsRepository();
 const { channels, currentCurrencies, currentChannelId, currentCurrency } =
   storeToRefs(accountStore);
 
@@ -121,7 +119,6 @@ const pricelistBaseRuleInput = ref<number>();
 const {
   transformProductsForList,
   getPricelistProduct,
-  getNewPricelistProducts,
   addToPricelistProducts,
   convertPriceModeToRuleField,
 } = usePricelistProducts();
@@ -247,7 +244,7 @@ const {
 // =====================================================================================
 // PREVIEW PRICELIST
 // =====================================================================================
-const { batchQueryAll } = useBatchQuery();
+const { batchQueryNoPagination } = useBatchQuery();
 const updateInProgress = ref(false);
 
 const previewPricelist = async (
@@ -265,8 +262,8 @@ const previewPricelist = async (
     updateInProgress.value = true;
     const previewPricelist = await productApi.pricelist
       .id(entityId.value)
-      .preview(entityDataUpdate.value, batchQueryAll.value, {
-        fields: 'products,productinfo',
+      .preview(entityDataUpdate.value, batchQueryNoPagination.value, {
+        fields: ['products', 'productinfo'],
       });
 
     pricelistProducts.value = previewPricelist.products?.items || [];
@@ -865,7 +862,7 @@ const { summaryProps } = useEntityEditSummary({
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<ProductPricelist>(() =>
     productApi.pricelist.get(entityId.value, {
-      fields: 'rules,selectionquery',
+      fields: ['rules', 'selectionquery'],
     }),
   );
 

@@ -1,36 +1,36 @@
 import type { $Fetch } from 'nitropack';
+import type { ApiOptions } from '#shared/types';
 import { entityBaseRepo } from './entity-base';
+import { buildQueryObject } from '../api-query';
 
 export function entityRepo<
   TResponse extends EntityBase,
   TCreate extends object,
   TUpdate extends object,
+  TOptions extends ApiOptions<string> = ApiOptions<string>,
 >(entityEndpoint: string, fetch: $Fetch) {
-  const entityBase = entityBaseRepo<TResponse>(entityEndpoint, fetch);
+  const entityBase = entityBaseRepo<TResponse, TOptions>(entityEndpoint, fetch);
 
   return {
     ...entityBase,
 
-    async create(
-      data: TCreate,
-      query?: Record<string, unknown>,
-    ): Promise<TResponse> {
+    async create(data: TCreate, options?: TOptions): Promise<TResponse> {
       return await fetch<TResponse>(entityEndpoint, {
         method: 'POST',
         body: data,
-        query,
+        query: buildQueryObject(options),
       });
     },
 
     async update(
       id: string,
       data: TUpdate,
-      query?: Record<string, unknown>,
+      options?: TOptions,
     ): Promise<TResponse> {
       return await fetch<TResponse>(`${entityEndpoint}/${id}`, {
         method: 'PATCH',
         body: data,
-        query,
+        query: buildQueryObject(options),
       });
     },
 

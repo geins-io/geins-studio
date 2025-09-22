@@ -8,6 +8,7 @@ import type {
   WholesaleBuyerUpdate,
   ProductPricelistCreate,
   WholesaleVatValidation,
+  WholesaleAccountApiOptions,
 } from '#shared/types';
 
 const BASE_ENDPOINT = '/wholesale';
@@ -20,7 +21,8 @@ export function wholesaleRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   const accountRepo = repo.entity<
     WholesaleAccount,
     WholesaleAccountCreate,
-    WholesaleAccountUpdate
+    WholesaleAccountUpdate,
+    WholesaleAccountApiOptions
   >(accountEndpoint, fetch);
 
   const buyerEndpoint = `${BASE_ENDPOINT}/buyer`;

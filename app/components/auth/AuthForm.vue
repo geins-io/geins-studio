@@ -34,9 +34,10 @@ const emit = defineEmits<{
 
 const { geinsLogError } = useGeinsLog('components/AuthForm.vue');
 const { t } = useI18n();
-const config = useRuntimeConfig();
-const { $geinsApi } = useNuxtApp();
-const userApi = repo.user($geinsApi);
+const {
+  public: { apiBase },
+} = useRuntimeConfig();
+const { userApi } = useGeinsRepository();
 
 // Computed mode helpers
 const loginMode = computed(() => props.mode === 'login');
@@ -228,7 +229,7 @@ const handleForgotPassword = async () => {
     const values = form.values as ForgotPasswordFormValues;
     await userApi.password.beginRestore(
       values.email || '',
-      `${config.public.baseUrl}/auth/reset-password?token={token}`,
+      `${apiBase}/auth/reset-password?token={token}`,
     );
     resetRequestSuccess.value = true;
   } catch (error) {
