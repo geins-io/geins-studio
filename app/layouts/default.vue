@@ -1,22 +1,16 @@
 <script setup lang="ts">
 import { SpeedInsights } from '@vercel/speed-insights/vue';
-const isCollapsed = useCookie<boolean>('geins-sidebar-collapsed', {
+import AppSidebar from '@/components/AppSidebar.vue';
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
+
+// Use Nuxt's cookie for persistence
+const defaultOpen = useCookie<boolean>('sidebar:state', {
   default: () => true,
-  maxAge: 60 * 60 * 24 * 365,
-});
-
-isCollapsed.value = isCollapsed.value !== undefined ? isCollapsed.value : true;
-
-const currentSidebarWidth = computed(() => {
-  return isCollapsed.value ? '3.75rem' : '15rem';
-});
-
-const mainWidthStyle = computed(() => {
-  return { maxWidth: `calc(100vw - ${currentSidebarWidth.value})` };
-});
-
-const mainContentStyle = computed(() => {
-  return { height: `calc(100vh - 4rem)` };
+  maxAge: 60 * 60 * 24 * 7, // 7 days
 });
 
 const contentClasses = computed(() => {
@@ -29,20 +23,17 @@ const contentClasses = computed(() => {
 });
 </script>
 <template>
-  <div class="flex h-screen overflow-hidden">
-    <LayoutSidebar :sidebar-width="currentSidebarWidth" />
-    <main
-      class="relative flex grow flex-col transition-[max-width]"
-      :style="mainWidthStyle"
-    >
+  <SidebarProvider v-model:open="defaultOpen">
+    <AppSidebar />
+    <SidebarInset>
       <LayoutHeader class="sticky top-0 h-(--h-header)" />
-      <div
+      <main
         :class="cn('flex grow flex-col p-8 pb-14', contentClasses)"
-        :style="mainContentStyle"
+        style="height: calc(100vh - 4rem)"
       >
         <slot />
-      </div>
-    </main>
-  </div>
+      </main>
+    </SidebarInset>
+  </SidebarProvider>
   <SpeedInsights />
 </template>
