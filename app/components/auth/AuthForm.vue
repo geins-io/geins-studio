@@ -328,7 +328,6 @@ const backToLogin = () => {
               tabindex="1"
               placeholder="user@geins.io"
               autocomplete="email"
-              @keydown.enter="handleSubmit"
             />
           </FormControl>
           <FormMessage />
@@ -355,7 +354,6 @@ const backToLogin = () => {
               type="password"
               tabindex="2"
               autocomplete="current-password"
-              @keydown.enter="handleSubmit"
             />
           </FormControl>
           <FormMessage />
@@ -383,7 +381,6 @@ const backToLogin = () => {
               tabindex="1"
               placeholder="user@geins.io"
               autocomplete="email"
-              @keydown.enter="handleSubmit"
             />
           </FormControl>
           <FormMessage />
@@ -410,7 +407,6 @@ const backToLogin = () => {
               type="password"
               tabindex="1"
               autocomplete="new-password"
-              @keydown.enter="handleSubmit"
             />
           </FormControl>
           <FormMessage />
@@ -426,7 +422,6 @@ const backToLogin = () => {
               type="password"
               tabindex="2"
               autocomplete="new-password"
-              @keydown.enter="handleSubmit"
             />
           </FormControl>
           <FormMessage />
