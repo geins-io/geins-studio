@@ -1,5 +1,15 @@
 import { SelectorCondition, type BatchQueryFiltered } from '#shared/types';
 
+export type OrderStatus =
+  | 'pending'
+  | 'cancelled'
+  | 'inactive'
+  | 'on-hold'
+  | 'refunded'
+  | 'partial'
+  | 'backorder'
+  | 'completed';
+
 // Base Order types
 export interface OrderBase {
   dateCreated: string;
@@ -10,6 +20,9 @@ export interface OrderBase {
   wholesaleAccountId: string;
   channel: string;
   currency: string;
+  itemCount: number;
+  status: OrderStatus;
+  priceLists: { _id: string }[];
 }
 
 export interface OrderCreate extends CreateEntity<OrderBase> {
@@ -38,7 +51,12 @@ export type OrderItemCreate = CreateEntity<OrderItemBase>;
 export type OrderItemUpdate = UpdateEntity<OrderItemBase>;
 export type OrderItem = ResponseEntity<OrderItemBase>;
 
-export type OrderFieldsFilter = 'all' | 'default' | 'items';
+export type OrderFieldsFilter =
+  | 'all'
+  | 'default'
+  | 'items'
+  | 'pricelists'
+  | 'itemcount';
 export type OrderApiOptions = ApiOptions<OrderFieldsFilter>;
 
 // Order-specific selection query (follows the pattern from Selector.ts)

@@ -108,10 +108,12 @@ export interface WholesalePricelist
 export interface WholesaleOrder {
   _id: string;
   created: string;
+  channel: string;
   buyer: string;
   sumIncVat: Price;
   sumExVat: Price;
-  pricelists: Tooltip;
-  items: number;
+  wholesaleAccount?: string;
+  pricelists?: Tooltip;
+  items?: number;
   status: string;
 }

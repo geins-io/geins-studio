@@ -5,11 +5,11 @@
 import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useWholesale } from '@/composables/useWholesale';
+import { useWholesaleOrders } from '@/composables/useWholesaleOrders';
 import {
   DataItemDisplayType,
   TableMode,
   SelectorCondition,
-  type WholesaleOrder,
 } from '#shared/types';
 import * as z from 'zod';
 
@@ -467,56 +467,7 @@ if (!createMode.value) {
 // ORDERS MANAGEMENT
 // =====================================================================================
 
-const ordersList = ref<WholesaleOrder[]>([]);
-
-const { getColumns: getOrderColumns } = useColumns<WholesaleOrder>();
-
-const columnOptionsOrders: ColumnOptions<WholesaleOrder> = {
-  columnTitles: {
-    sumIncVat: 'Sum (inc vat)',
-    sumExVat: 'Sum (ex vat)',
-    pricelists: t('pricelist', 2),
-  },
-  columnTypes: {
-    sumIncVat: 'currency',
-    sumExVat: 'currency',
-    created: 'date',
-    pricelists: 'tooltip',
-  },
-};
-
-// Use computed for reactive columns
-const orderColumns = computed(() => {
-  if (ordersList.value.length === 0) return [];
-
-  const columns = getOrderColumns(ordersList.value, columnOptionsOrders);
-
-  return columns;
-});
-
-const getPricelistNameById = (id: string) => {
-  const pricelist = allPricelists.value.find((pl) => pl._id === id);
-  return pricelist ? pricelist.name : id;
-};
-const { convertToPrice } = usePrice();
-
-const transformOrdersForList = (orders: Order[]): WholesaleOrder[] => {
-  return orders.map((order) => ({
-    _id: order._id,
-    created: order.dateCreated,
-    buyer: order.customerId || order.email || 'N/A',
-    items: order.items?.length || 0,
-    sumIncVat: convertToPrice(order.sumIncVat, order.currency),
-    sumExVat: convertToPrice(order.sumExVat, order.currency),
-    pricelists: createTooltip({
-      items: ['98'],
-      entityName: 'pricelist',
-      formatter: (group) => `${getPricelistNameById(group)}`,
-      t,
-    }),
-    status: 'Placed',
-  }));
-};
+const { ordersList, orderColumns, fetchOrders } = useWholesaleOrders();
 
 // =====================================================================================
 // ADDRESS MANAGEMENT
@@ -712,7 +663,51 @@ const settingsSummary = computed<DataItem[]>(() => {
       ? t('wholesale.vat_true')
       : t('wholesale.vat_false'),
   });
+  dataList.push({
+    label: 'Product access',
+    value: entityData.value?.limitedProductAccess
+      ? 'Restricted to pricelists'
+      : 'All products',
+  });
 
+  return dataList;
+});
+
+const otherSummary = computed<DataItem[]>(() => {
+  const dataList: DataItem[] = [];
+  if (entityData.value?.buyers?.length) {
+    const displayValue = entityData.value.buyers
+      .map((buyer: WholesaleBuyer) => `${buyer.firstName} ${buyer.lastName}`)
+      .join(', ');
+    dataList.push({
+      label: t('wholesale.buyers'),
+      value: entityData.value.buyers,
+      displayValue,
+      entityName: 'buyer',
+      displayType: DataItemDisplayType.Array,
+    });
+  }
+  if (entityData.value?.priceLists?.length) {
+    const displayValue = entityData.value.priceLists
+      .map((pl: string) => getEntityNameById(pl, allPricelists.value))
+      .join(', ');
+    dataList.push({
+      label: t('wholesale.pricelists'),
+      value: entityData.value.priceLists,
+      displayValue,
+      entityName: 'pricelist',
+      displayType: DataItemDisplayType.Array,
+    });
+  }
+  if (ordersList.value.length) {
+    dataList.push({
+      label: t('wholesale.orders'),
+      value: t('nr_of_entity', {
+        count: ordersList.value.length,
+        entityName: 'order',
+      }),
+    });
+  }
   return dataList;
 });
 
@@ -781,19 +776,14 @@ if (!createMode.value) {
       },
     ],
   };
-  const { batchQueryNoPagination } = useBatchQuery();
 
-  const { data: ordersData, error: ordersError } = await useAsyncData<
-    BatchQueryResult<Order>
-  >(() =>
-    orderApi.query(
-      { ...orderSelectionQuery, ...batchQueryNoPagination.value },
-      { fields: ['items'] },
-    ),
+  // Fetch orders using the composable
+  await fetchOrders(
+    orderSelectionQuery,
+    { fields: ['pricelists', 'itemcount'] },
+    entityId.value,
+    allPricelists.value,
   );
-  if (!ordersError.value && ordersData.value) {
-    ordersList.value = transformOrdersForList(ordersData.value.items);
-  }
 }
 </script>
 
@@ -1257,7 +1247,7 @@ if (!createMode.value) {
                     {{ $t('no_entity', { entityName: 'order' }, 2) }}
                   </p>
                   <p class="text-muted-foreground text-xs">
-                    {{ $t('wholesale.no_orders_found') }}
+                    {{ $t('no_entity_found', { entityName: 'order' }, 2) }}
                   </p>
                 </div>
                 <TableView
@@ -1266,6 +1256,7 @@ if (!createMode.value) {
                   entity-name="order"
                   :columns="orderColumns"
                   :data="ordersList"
+                  :page-size="20"
                   :pinned-state="null"
                 />
               </div>
@@ -1357,6 +1348,10 @@ if (!createMode.value) {
                   </ContentTextTooltip>
                 </li>
               </ul>
+              <ContentDataList
+                v-if="!createMode && otherSummary.length"
+                :data-list="otherSummary"
+              />
             </template>
           </ContentEditSummary>
         </template>
