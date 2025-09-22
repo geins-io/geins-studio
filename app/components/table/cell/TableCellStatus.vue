@@ -1,12 +1,24 @@
 <script setup lang="ts">
 const props = defineProps<{
-  status: boolean | string;
+  status: boolean | OrderStatus;
 }>();
 
 const { t } = useI18n();
 
 const badgeVariant = computed(() => {
   switch (props.status) {
+    case 'pending':
+      return 'outline';
+    case 'on-hold':
+    case 'backorder':
+    case 'partial':
+      return 'warning';
+    case 'cancelled':
+      return 'negative';
+    case 'refunded':
+    case 'inactive':
+      return 'inactive';
+    case 'completed':
     case true:
       return 'positive';
     case false:
@@ -23,7 +35,10 @@ const badgeText = computed(() => {
     case false:
       return t('inactive');
     default:
-      return String(props.status);
+      return (
+        String(props.status).charAt(0).toUpperCase() +
+        String(props.status).slice(1).replace('-', ' ')
+      );
   }
 });
 </script>

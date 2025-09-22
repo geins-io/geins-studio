@@ -68,7 +68,7 @@ if (allAccounts.value.length === 0) {
         <div class="mt-10 mb-6">
           <ContentCardHeader
             title="Wholesale - Quick Access"
-            description="Quick access to key wholesale features like account management, pricing, and product permissions."
+            description="Quick access to key wholesale features like account management, pricing, and product access."
             size="md"
           />
         </div>

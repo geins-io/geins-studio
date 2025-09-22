@@ -42,15 +42,6 @@ export const useWholesaleOrders = () => {
     return columns;
   });
 
-  // Helper function to get pricelist name by ID
-  const getNameById = (
-    id: string,
-    all: WholesalePricelist[] | WholesaleAccount[],
-  ) => {
-    const entity = all.find((pl) => pl._id === id);
-    return entity ? entity.name : id;
-  };
-
   // Transform orders from API format to display format
   const transformOrdersForList = (
     orders: Order[],
@@ -69,12 +60,16 @@ export const useWholesaleOrders = () => {
         pricelists: createTooltip({
           items: order.priceLists,
           entityName: 'pricelist',
-          formatter: (group) => `${getNameById(group._id, allPricelists)}`,
+          formatter: (group) =>
+            `${getEntityNameById(group._id, allPricelists)}`,
           t,
         }),
       }),
       ...(allAccounts && {
-        wholesaleAccount: getNameById(order.wholesaleAccountId, allAccounts),
+        wholesaleAccount: getEntityNameById(
+          order.wholesaleAccountId,
+          allAccounts,
+        ),
       }),
       status: order.status,
     }));

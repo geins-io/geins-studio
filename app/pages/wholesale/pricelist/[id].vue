@@ -119,7 +119,6 @@ const pricelistBaseRuleInput = ref<number>();
 const {
   transformProductsForList,
   getPricelistProduct,
-  getNewPricelistProducts,
   addToPricelistProducts,
   convertPriceModeToRuleField,
 } = usePricelistProducts();

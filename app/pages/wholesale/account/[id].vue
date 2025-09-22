@@ -10,7 +10,6 @@ import {
   DataItemDisplayType,
   TableMode,
   SelectorCondition,
-  type WholesaleOrder,
 } from '#shared/types';
 import * as z from 'zod';
 
@@ -664,7 +663,51 @@ const settingsSummary = computed<DataItem[]>(() => {
       ? t('wholesale.vat_true')
       : t('wholesale.vat_false'),
   });
+  dataList.push({
+    label: 'Product access',
+    value: entityData.value?.limitedProductAccess
+      ? 'Restricted to pricelists'
+      : 'All products',
+  });
 
+  return dataList;
+});
+
+const otherSummary = computed<DataItem[]>(() => {
+  const dataList: DataItem[] = [];
+  if (entityData.value?.buyers?.length) {
+    const displayValue = entityData.value.buyers
+      .map((buyer: WholesaleBuyer) => `${buyer.firstName} ${buyer.lastName}`)
+      .join(', ');
+    dataList.push({
+      label: t('wholesale.buyers'),
+      value: entityData.value.buyers,
+      displayValue,
+      entityName: 'buyer',
+      displayType: DataItemDisplayType.Array,
+    });
+  }
+  if (entityData.value?.priceLists?.length) {
+    const displayValue = entityData.value.priceLists
+      .map((pl: string) => getEntityNameById(pl, allPricelists.value))
+      .join(', ');
+    dataList.push({
+      label: t('wholesale.pricelists'),
+      value: entityData.value.priceLists,
+      displayValue,
+      entityName: 'pricelist',
+      displayType: DataItemDisplayType.Array,
+    });
+  }
+  if (ordersList.value.length) {
+    dataList.push({
+      label: t('wholesale.orders'),
+      value: t('nr_of_entity', {
+        count: ordersList.value.length,
+        entityName: 'order',
+      }),
+    });
+  }
   return dataList;
 });
 
@@ -1204,7 +1247,7 @@ if (!createMode.value) {
                     {{ $t('no_entity', { entityName: 'order' }, 2) }}
                   </p>
                   <p class="text-muted-foreground text-xs">
-                    {{ $t('wholesale.no_orders_found') }}
+                    {{ $t('no_entity_found', { entityName: 'order' }, 2) }}
                   </p>
                 </div>
                 <TableView
@@ -1213,6 +1256,7 @@ if (!createMode.value) {
                   entity-name="order"
                   :columns="orderColumns"
                   :data="ordersList"
+                  :page-size="20"
                   :pinned-state="null"
                 />
               </div>
@@ -1304,6 +1348,10 @@ if (!createMode.value) {
                   </ContentTextTooltip>
                 </li>
               </ul>
+              <ContentDataList
+                v-if="!createMode && otherSummary.length"
+                :data-list="otherSummary"
+              />
             </template>
           </ContentEditSummary>
         </template>

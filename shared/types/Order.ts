@@ -1,5 +1,15 @@
 import { SelectorCondition, type BatchQueryFiltered } from '#shared/types';
 
+export type OrderStatus =
+  | 'pending'
+  | 'cancelled'
+  | 'inactive'
+  | 'on-hold'
+  | 'refunded'
+  | 'partial'
+  | 'backorder'
+  | 'completed';
+
 // Base Order types
 export interface OrderBase {
   dateCreated: string;
@@ -11,7 +21,7 @@ export interface OrderBase {
   channel: string;
   currency: string;
   itemCount: number;
-  status: string;
+  status: OrderStatus;
   priceLists: { _id: string }[];
 }
 
