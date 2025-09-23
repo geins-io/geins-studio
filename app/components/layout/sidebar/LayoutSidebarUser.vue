@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { useSidebar } from '@/components/ui/sidebar';
 
-const props = defineProps<{
-  user: {
-    name: string;
-    email: string;
-    avatar: string;
-  };
-}>();
+const { logout } = useGeinsAuth();
+const { userName, userInitials, userEmail } = useUserStore();
+
+const colorMode = useColorMode();
+const setColorMode = () => {
+  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark';
+};
 
 const { isMobile } = useSidebar();
 </script>
@@ -21,13 +21,16 @@ const { isMobile } = useSidebar();
             size="lg"
             class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
           >
-            <Avatar class="h-8 w-8 rounded-lg">
-              <AvatarImage :src="user.avatar" :alt="user.name" />
-              <AvatarFallback class="rounded-lg"> N/A </AvatarFallback>
+            <Avatar class="mr-1 size-8 rounded-lg">
+              <AvatarFallback class="rounded-lg">
+                {{ userInitials }}
+              </AvatarFallback>
             </Avatar>
             <div class="grid flex-1 text-left text-sm leading-tight">
-              <span class="truncate font-semibold">{{ user.name }}</span>
-              <span class="truncate text-xs">{{ user.email }}</span>
+              <span v-if="userName" class="truncate font-semibold">{{
+                userName
+              }}</span>
+              <span class="truncate text-xs">{{ userEmail }}</span>
             </div>
             <ChevronsUpDown class="ml-auto size-4" />
           </SidebarMenuButton>
@@ -40,42 +43,32 @@ const { isMobile } = useSidebar();
         >
           <DropdownMenuLabel class="p-0 font-normal">
             <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-              <Avatar class="h-8 w-8 rounded-lg">
-                <AvatarImage :src="user.avatar" :alt="user.name" />
-                <AvatarFallback class="rounded-lg"> CN </AvatarFallback>
+              <Avatar class="mr-1 size-8 rounded-lg">
+                <AvatarFallback class="rounded-lg border">
+                  {{ userInitials }}
+                </AvatarFallback>
               </Avatar>
               <div class="grid flex-1 text-left text-sm leading-tight">
-                <span class="truncate font-semibold">{{ user.name }}</span>
-                <span class="truncate text-xs">{{ user.email }}</span>
+                <span v-if="userName" class="truncate font-semibold">{{
+                  userName
+                }}</span>
+                <span class="truncate text-xs">{{ userEmail }}</span>
               </div>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem>
-              <Sparkles />
-              Upgrade to Pro
+            <DropdownMenuItem @click="setColorMode">
+              <LucideSun class="mr-2 hidden size-4 dark:block" />
+              <LucideMoonStar class="mr-2 size-4 dark:hidden" />
+              <span class="dark:hidden">Dark mode</span>
+              <span class="hidden dark:block">Light mode</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem>
-              <BadgeCheck />
-              Account
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <CreditCard />
-              Billing
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Bell />
-              Notifications
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <LogOut />
-            Log out
+          <DropdownMenuItem @click="logout()">
+            <LucideLogOut class="mr-2 size-4" />
+            <span>Log out</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

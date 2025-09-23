@@ -1,10 +1,29 @@
 <script setup lang="ts">
 import { SpeedInsights } from '@vercel/speed-insights/vue';
 
+import {
+  SIDEBAR_WIDTH_ICON,
+  SIDEBAR_WIDTH,
+  SIDEBAR_COOKIE_NAME,
+  SIDEBAR_COOKIE_MAX_AGE,
+} from '../components/ui/sidebar/utils';
+
+const currentSidebarWidth = computed(() => {
+  return defaultOpen.value ? SIDEBAR_WIDTH : SIDEBAR_WIDTH_ICON;
+});
+
 // Use Nuxt's cookie for persistence
-const defaultOpen = useCookie<boolean>('sidebar:state', {
+const defaultOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
   default: () => true,
-  maxAge: 60 * 60 * 24 * 7, // 7 days
+  maxAge: SIDEBAR_COOKIE_MAX_AGE,
+});
+
+const mainWidthStyle = computed(() => {
+  return { maxWidth: `calc(100vw - ${currentSidebarWidth.value})` };
+});
+
+const mainHeightStyle = computed(() => {
+  return { height: `calc(100vh - var(--h-header))` };
 });
 
 const contentClasses = computed(() => {
@@ -19,14 +38,14 @@ const contentClasses = computed(() => {
 <template>
   <SidebarProvider v-model:open="defaultOpen">
     <LayoutSidebar />
-    <SidebarInset>
+    <SidebarInset :style="mainWidthStyle">
       <LayoutHeader class="sticky top-0 h-(--h-header)" />
-      <main
+      <div
         :class="cn('flex grow flex-col p-8 pb-14', contentClasses)"
-        style="height: calc(100vh - 3rem)"
+        :style="mainHeightStyle"
       >
         <slot />
-      </main>
+      </div>
     </SidebarInset>
   </SidebarProvider>
   <SpeedInsights />

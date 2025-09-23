@@ -19,8 +19,21 @@ export const useUserStore = defineStore('user', () => {
     return `${firstNameInitial}${lastNameInitial}` || 'N/A';
   });
 
+  const userName = computed(() => {
+    if (!user.value) {
+      return 'N/A';
+    }
+    return `${user.value.firstName || ''} ${user.value.lastName || ''}`;
+  });
+
+  const userEmail = computed(() => {
+    return user.value?.email || 'N/A';
+  });
+
   return {
     user,
     userInitials,
+    userName,
+    userEmail,
   };
 });

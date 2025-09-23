@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import { useSidebar } from '@/components/ui/sidebar';
-const { logout } = useGeinsAuth();
-const { userInitials } = useUserStore();
-
-const colorMode = useColorMode();
-const setColorMode = () => {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark';
-};
-
 const { state, toggleSidebar } = useSidebar();
+
+const route = useRoute();
+const { getEntityListUrl } = useEntityUrl(route.fullPath);
+const listPageUrl = getEntityListUrl();
 </script>
 <template>
   <header
@@ -29,6 +25,45 @@ const { state, toggleSidebar } = useSidebar();
       <LucidePanelLeftClose class="text-muted-foreground size-4" v-else />
       <span class="sr-only">Toggle Sidebar</span>
     </Button>
+    <Breadcrumb class="ml-4 border-l pl-4">
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink as-child>
+            <NuxtLink to="/wholesale/account/list">Wholesale</NuxtLink>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem v-if="listPageUrl">
+          <BreadcrumbLink as-child>
+            <NuxtLink :to="listPageUrl">{{ route.meta.title }}</NuxtLink>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator v-if="listPageUrl" />
+        <!--       <BreadcrumbItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger class="flex items-center gap-1">
+            <BreadcrumbEllipsis class="size-4" />
+            <span class="sr-only">Toggle menu</span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem>Documentation</DropdownMenuItem>
+            <DropdownMenuItem>Themes</DropdownMenuItem>
+            <DropdownMenuItem>GitHub</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </BreadcrumbItem>
+      <BreadcrumbSeparator />
+      <BreadcrumbItem>
+        <BreadcrumbLink href="/docs/components/accordion.html">
+          Components
+        </BreadcrumbLink>
+      </BreadcrumbItem>
+      <BreadcrumbSeparator /> -->
+        <BreadcrumbItem>
+          <BreadcrumbPage>{{ route.meta.title }}</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
     <div class="relative ml-5 w-full max-w-96 items-center">
       <!--   <Input
         id="search"
@@ -63,44 +98,5 @@ const { state, toggleSidebar } = useSidebar();
         />
       </Button>
     </div> -->
-    <div class="mr-3 ml-auto">
-      <DropdownMenu>
-        <DropdownMenuTrigger class="size-8">
-          <Avatar class="size-8 border">
-            <AvatarFallback>{{ userInitials }}</AvatarFallback>
-          </Avatar>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent class="w-48">
-          <DropdownMenuLabel class="text-sm">My Account</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <!--           <DropdownMenuItem>
-            <NuxtLink
-              class="flex items-center"
-              :to="`/account/user/${user?.username}`"
-            >
-              <LucideUser class="mr-2 size-4" />
-              <span>Profile</span>
-            </NuxtLink>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <LucideCreditCard class="mr-2 size-4" />
-            <span>Billing</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator /> -->
-          <DropdownMenuItem @click="setColorMode">
-            <LucideSun class="mr-2 hidden size-4 dark:block" />
-            <LucideMoonStar class="mr-2 size-4 dark:hidden" />
-            <span class="dark:hidden">Dark mode</span>
-            <span class="hidden dark:block">Light mode</span>
-            <!-- <DropdownMenuShortcut>⌘C</DropdownMenuShortcut> -->
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem @click="logout()">
-            <LucideLogOut class="mr-2 size-4" />
-            <span>Log out</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
   </header>
 </template>

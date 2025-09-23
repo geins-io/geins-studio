@@ -23,6 +23,7 @@ export { default as SidebarMenu } from './SidebarMenu.vue';
 export { default as SidebarMenuAction } from './SidebarMenuAction.vue';
 export { default as SidebarMenuBadge } from './SidebarMenuBadge.vue';
 export { default as SidebarMenuButton } from './SidebarMenuButton.vue';
+export { default as SidebarMenuButtonChild } from './SidebarMenuButtonChild.vue';
 export { default as SidebarMenuItem } from './SidebarMenuItem.vue';
 export { default as SidebarMenuSkeleton } from './SidebarMenuSkeleton.vue';
 export { default as SidebarMenuSub } from './SidebarMenuSub.vue';
@@ -32,7 +33,6 @@ export { default as SidebarProvider } from './SidebarProvider.vue';
 export { default as SidebarRail } from './SidebarRail.vue';
 export { default as SidebarSeparator } from './SidebarSeparator.vue';
 export { default as SidebarTrigger } from './SidebarTrigger.vue';
-
 export { useSidebar } from './utils';
 
 export const sidebarMenuButtonVariants = cva(

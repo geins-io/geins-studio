@@ -3,6 +3,7 @@ import { TableMode, type WholesaleAccount } from '#shared/types';
 
 definePageMeta({
   layout: 'default',
+  title: 'Welcome to Geins Studio',
 });
 
 // const { wholesaleApi } = useGeinsRepository();

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { SelectorMode, SelectorSelectionStrategy } from '#shared/types';
 
+definePageMeta({
+  title: 'Selector Demo',
+});
+
 const tabs: {
   title: string;
   mode: SelectorMode;

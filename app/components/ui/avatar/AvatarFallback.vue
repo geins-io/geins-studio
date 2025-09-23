@@ -17,7 +17,7 @@ const delegatedProps = reactiveOmit(props, 'class');
     v-bind="delegatedProps"
     :class="
       cn(
-        'bg-secondary flex size-full items-center justify-center rounded-full text-xs',
+        'bg-background flex size-full items-center justify-center border text-xs',
         props.class,
       )
     "

@@ -87,17 +87,14 @@ const isItemOpen = (item: NavigationItem) => {
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in navigationMenu" :key="item.label">
-              <!-- Item with children (collapsible) -->
+              <!-- Item with children (collapsible) :default-open="isItemOpen(item)" -->
               <Collapsible
                 v-if="item.children?.length && state === 'expanded'"
-                :default-open="isItemOpen(item)"
+                :default-open="true"
                 class="group/collapsible"
               >
                 <CollapsibleTrigger as-child>
-                  <SidebarMenuButton
-                    :is-active="isItemActive(item)"
-                    class="w-full"
-                  >
+                  <SidebarMenuButton class="w-full">
                     <component
                       :is="item.iconComponent"
                       v-if="item.iconComponent"
@@ -110,7 +107,7 @@ const isItemOpen = (item: NavigationItem) => {
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <SidebarMenuSub>
+                  <SidebarMenuSub class="pl-3.5">
                     <SidebarMenuSubItem
                       v-for="child in item.children"
                       :key="child.label"
@@ -118,6 +115,7 @@ const isItemOpen = (item: NavigationItem) => {
                       <SidebarMenuSubButton
                         as-child
                         :is-active="route.path === child.href"
+                        size="sm"
                       >
                         <NuxtLink :to="child.href">
                           <span>{{ child.label }}</span>
@@ -156,6 +154,8 @@ const isItemOpen = (item: NavigationItem) => {
     </SidebarContent>
 
     <!-- Footer with collapse button -->
-    <SidebarFooter> </SidebarFooter>
+    <SidebarFooter>
+      <LayoutSidebarUser />
+    </SidebarFooter>
   </Sidebar>
 </template>
