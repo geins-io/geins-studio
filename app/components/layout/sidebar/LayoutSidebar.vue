@@ -1,22 +1,7 @@
 <script setup lang="ts">
 import Logo from '@/assets/logos/geins.svg';
 import LogoLetter from '@/assets/logos/geins-g.svg';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  useSidebar,
-} from '@/components/ui/sidebar';
+import { useSidebar } from '@/components/ui/sidebar';
 import {
   Collapsible,
   CollapsibleContent,
@@ -42,7 +27,7 @@ import {
   LucideWarehouse,
 } from 'lucide-vue-next';
 
-const { state, toggleSidebar } = useSidebar();
+const { state } = useSidebar();
 
 // Icon component mapping
 const iconComponents = {
@@ -85,36 +70,20 @@ const isItemOpen = (item: NavigationItem) => {
   <Sidebar collapsible="icon" class="overflow-hidden border-r">
     <!-- Header with Logo -->
     <SidebarHeader>
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton size="lg" as-child>
-            <NuxtLink to="/">
-              <div
-                class="flex aspect-square size-8 items-center justify-center rounded-lg"
-              >
-                <LogoLetter
-                  v-if="state === 'collapsed'"
-                  :font-controlled="false"
-                  class="size-6"
-                />
-                <LogoLetter v-else :font-controlled="false" class="size-6" />
-              </div>
-              <div
-                v-if="state === 'expanded'"
-                class="grid flex-1 text-left text-sm leading-tight"
-              >
-                <span class="truncate font-semibold">Geins Studio</span>
-              </div>
-            </NuxtLink>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
+      <NuxtLink to="/" class="mt-0.5 ml-2">
+        <LogoLetter
+          v-if="state === 'collapsed'"
+          :font-controlled="false"
+          class="h-8 w-auto"
+        />
+        <Logo v-else :font-controlled="false" class="h-8 w-auto" />
+      </NuxtLink>
     </SidebarHeader>
 
     <!-- Main Navigation Content -->
     <SidebarContent>
       <SidebarGroup>
-        <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+        <SidebarGroupLabel>Administration</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in navigationMenu" :key="item.label">
@@ -187,20 +156,6 @@ const isItemOpen = (item: NavigationItem) => {
     </SidebarContent>
 
     <!-- Footer with collapse button -->
-    <SidebarFooter>
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton @click="toggleSidebar" class="w-full">
-            <LucideChevronsLeft
-              :class="[
-                'transition-transform',
-                state === 'collapsed' ? 'rotate-180' : '',
-              ]"
-            />
-            <span v-if="state === 'expanded'">Collapse Sidebar</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    </SidebarFooter>
+    <SidebarFooter> </SidebarFooter>
   </Sidebar>
 </template>

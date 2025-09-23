@@ -1,11 +1,5 @@
 <script setup lang="ts">
 import { SpeedInsights } from '@vercel/speed-insights/vue';
-import AppSidebar from '@/components/AppSidebar.vue';
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
 
 // Use Nuxt's cookie for persistence
 const defaultOpen = useCookie<boolean>('sidebar:state', {
@@ -24,12 +18,12 @@ const contentClasses = computed(() => {
 </script>
 <template>
   <SidebarProvider v-model:open="defaultOpen">
-    <AppSidebar />
+    <LayoutSidebar />
     <SidebarInset>
       <LayoutHeader class="sticky top-0 h-(--h-header)" />
       <main
         :class="cn('flex grow flex-col p-8 pb-14', contentClasses)"
-        style="height: calc(100vh - 4rem)"
+        style="height: calc(100vh - 3rem)"
       >
         <slot />
       </main>

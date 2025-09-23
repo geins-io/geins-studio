@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useSidebar } from '@/components/ui/sidebar';
 const { logout } = useGeinsAuth();
 const { userInitials } = useUserStore();
 
@@ -6,11 +7,28 @@ const colorMode = useColorMode();
 const setColorMode = () => {
   colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark';
 };
+
+const { state, toggleSidebar } = useSidebar();
 </script>
 <template>
   <header
-    class="text-background-foreground flex flex-none items-center justify-start border-b bg-card"
+    class="text-background-foreground bg-card flex flex-none items-center justify-start border-b"
   >
+    <Button
+      data-sidebar="trigger"
+      data-slot="sidebar-trigger"
+      variant="outline"
+      size="icon"
+      class="ml-3 size-7"
+      @click="toggleSidebar"
+    >
+      <LucidePanelLeftOpen
+        class="text-muted-foreground size-4"
+        v-if="state === 'collapsed'"
+      />
+      <LucidePanelLeftClose class="text-muted-foreground size-4" v-else />
+      <span class="sr-only">Toggle Sidebar</span>
+    </Button>
     <div class="relative ml-5 w-full max-w-96 items-center">
       <!--   <Input
         id="search"
@@ -45,10 +63,10 @@ const setColorMode = () => {
         />
       </Button>
     </div> -->
-    <div class="ml-auto mr-5">
+    <div class="mr-3 ml-auto">
       <DropdownMenu>
-        <DropdownMenuTrigger class="size-10">
-          <Avatar class="size-10 border">
+        <DropdownMenuTrigger class="size-8">
+          <Avatar class="size-8 border">
             <AvatarFallback>{{ userInitials }}</AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
