@@ -62,7 +62,7 @@ export const useProductsStore = defineStore('products', () => {
         }
         geinsLogWarn(
           `failed to fetch ${callName} for the products store:`,
-          result.reason,
+          (result as PromiseRejectedResult).reason,
         );
       }
     });

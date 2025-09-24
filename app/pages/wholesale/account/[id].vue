@@ -29,7 +29,6 @@ const {
   validateVatNumber,
   getAddresses,
 } = useWholesale();
-const { orderApi } = useGeinsRepository();
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
 const accountStore = useAccountStore();
@@ -787,6 +786,16 @@ if (!createMode.value) {
   //   allPricelists.value,
   // );
 }
+
+// =====================================================================================
+// BREADCRUMBS DATA
+// ====================================================================================
+const breadcrumbsStore = useBreadcrumbsStore();
+breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
+breadcrumbsStore.setCurrentParent({
+  title: t(entityName, 2),
+  link: entityListUrl,
+});
 </script>
 
 <template>

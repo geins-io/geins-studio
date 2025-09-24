@@ -98,7 +98,7 @@ const isItemOpen = (item: NavigationItem) => {
                     <component
                       :is="item.iconComponent"
                       v-if="item.iconComponent"
-                      class="!size-5"
+                      class="!size-4.5"
                     />
                     <span>{{ item.label }}</span>
                     <LucideChevronDown
@@ -107,7 +107,7 @@ const isItemOpen = (item: NavigationItem) => {
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <SidebarMenuSub class="pl-3.5">
+                  <SidebarMenuSub class="mt-0.5 pl-3">
                     <SidebarMenuSubItem
                       v-for="child in item.children"
                       :key="child.label"
@@ -130,6 +130,7 @@ const isItemOpen = (item: NavigationItem) => {
               <SidebarMenuButton
                 v-else
                 as-child
+                :tooltip="item.label"
                 :is-active="isItemActive(item)"
               >
                 <NuxtLink
@@ -142,7 +143,7 @@ const isItemOpen = (item: NavigationItem) => {
                   <component
                     :is="item.iconComponent"
                     v-if="item.iconComponent"
-                    class="!size-5"
+                    class="!size-4.5"
                   />
                   <span>{{ item.label }}</span>
                 </NuxtLink>
@@ -154,7 +155,7 @@ const isItemOpen = (item: NavigationItem) => {
     </SidebarContent>
 
     <!-- Footer with collapse button -->
-    <SidebarFooter>
+    <SidebarFooter class="mx-2 border-t px-0">
       <LayoutSidebarUser />
     </SidebarFooter>
   </Sidebar>

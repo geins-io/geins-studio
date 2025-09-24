@@ -32,7 +32,7 @@ const { isMobile } = useSidebar();
               }}</span>
               <span class="truncate text-xs">{{ userEmail }}</span>
             </div>
-            <ChevronsUpDown class="ml-auto size-4" />
+            <LucideChevronsUpDown class="ml-auto size-4" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent

@@ -2,20 +2,21 @@
 import { useSidebar } from '@/components/ui/sidebar';
 const { state, toggleSidebar } = useSidebar();
 
-const route = useRoute();
-const { getEntityListUrl } = useEntityUrl(route.fullPath);
-const listPageUrl = getEntityListUrl();
+const breadcrumbsStore = useBreadcrumbsStore();
+const { showBreadcrumbs, currentTitle, currentParent } =
+  storeToRefs(breadcrumbsStore);
 </script>
 <template>
   <header
+    v-auto-animate
     class="text-background-foreground bg-card flex flex-none items-center justify-start border-b"
   >
     <Button
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
-      variant="outline"
+      variant="ghost"
       size="icon"
-      class="ml-3 size-7"
+      class="ml-3 size-7 flex-shrink-0"
       @click="toggleSidebar"
     >
       <LucidePanelLeftOpen
@@ -25,42 +26,26 @@ const listPageUrl = getEntityListUrl();
       <LucidePanelLeftClose class="text-muted-foreground size-4" v-else />
       <span class="sr-only">Toggle Sidebar</span>
     </Button>
-    <Breadcrumb class="ml-4 border-l pl-4">
+    <Breadcrumb v-if="showBreadcrumbs" class="ml-4 w-full border-l pl-4">
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink as-child>
-            <NuxtLink to="/wholesale/account/list">Wholesale</NuxtLink>
+            <NuxtLink to="/">Wholesale</NuxtLink>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator v-if="currentParent" />
+        <BreadcrumbItem
+          v-if="currentParent && typeof currentParent === 'object'"
+        >
+          <BreadcrumbLink as-child>
+            <NuxtLink :to="currentParent.link">
+              {{ currentParent.title }}
+            </NuxtLink>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
-        <BreadcrumbItem v-if="listPageUrl">
-          <BreadcrumbLink as-child>
-            <NuxtLink :to="listPageUrl">{{ route.meta.title }}</NuxtLink>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator v-if="listPageUrl" />
-        <!--       <BreadcrumbItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger class="flex items-center gap-1">
-            <BreadcrumbEllipsis class="size-4" />
-            <span class="sr-only">Toggle menu</span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem>Documentation</DropdownMenuItem>
-            <DropdownMenuItem>Themes</DropdownMenuItem>
-            <DropdownMenuItem>GitHub</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </BreadcrumbItem>
-      <BreadcrumbSeparator />
-      <BreadcrumbItem>
-        <BreadcrumbLink href="/docs/components/accordion.html">
-          Components
-        </BreadcrumbLink>
-      </BreadcrumbItem>
-      <BreadcrumbSeparator /> -->
         <BreadcrumbItem>
-          <BreadcrumbPage>{{ route.meta.title }}</BreadcrumbPage>
+          <BreadcrumbPage>{{ currentTitle }}</BreadcrumbPage>
         </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>
