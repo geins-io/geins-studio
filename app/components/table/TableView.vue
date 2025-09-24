@@ -335,7 +335,7 @@ const searchableColumn = computed(() => {
         'text-card-foreground relative overflow-hidden rounded-lg border pb-14 transition-transform',
         `${advancedMode ? 'mb-26 translate-y-40' : ''}`,
         `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
-        `${tableMaximized ? 'absolute top-16 right-8 bottom-0 left-8 -mt-px mb-0 translate-y-0' : ''}`,
+        `${tableMaximized ? 'absolute top-12 right-8 bottom-0 left-8 -mt-px mb-0 translate-y-0' : ''}`,
       )
     "
   >

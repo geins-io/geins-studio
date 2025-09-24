@@ -52,6 +52,9 @@ definePageMeta({
 //     return new Date(b.created).getTime() - new Date(a.created).getTime();
 //   });
 // }
+
+const breadcrumbsStore = useBreadcrumbsStore();
+breadcrumbsStore.setShowBreadcrumbs(false);
 </script>
 
 <template>

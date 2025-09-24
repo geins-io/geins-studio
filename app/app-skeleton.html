@@ -47,13 +47,14 @@
     height: 100vh;
   }
   .logo {
-    height: 4rem;
+    height: 3rem;
     display: flex;
-    margin-left: 1.25rem;
+    margin-left: 1rem;
+    margin-top: 0.14rem;
     align-items: center;
   }
   .logo svg {
-    height: 2.25rem;
+    height: 32px;
     fill: currentColor;
   }
   .sidebar {
@@ -73,7 +74,7 @@
     flex-direction: column;
   }
   .header {
-    height: 4rem;
+    height: 3rem;
     background: var(--card);
     border-bottom: var(--border);
     display: flex;
@@ -336,8 +337,8 @@
     document.querySelector('.auth-layout').classList.remove('hidden');
   }
 
-  const sidebarCollapsed = getCookie('geins-sidebar-collapsed') === 'true';
-  const sidebarWidth = sidebarCollapsed ? '3.75rem' : '15rem';
+  const sidebarCollapsed = getCookie('sidebar_state') === 'false';
+  const sidebarWidth = sidebarCollapsed ? '3rem' : '15rem';
   document.documentElement.style.setProperty('--sidebar-width', sidebarWidth);
 
   const idToShow = sidebarCollapsed ? 'logo-small' : 'logo-full';
