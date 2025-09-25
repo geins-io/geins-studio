@@ -5,7 +5,7 @@ import type { ApiOptions } from '#shared/types';
  * @param options - The API options containing fields and other parameters
  * @returns Query string with leading '?' or empty string if no params
  */
-export function buildQuery<TFields = string>(
+export function buildQueryString<TFields = string>(
   options?: ApiOptions<TFields>,
 ): string {
   const params = new URLSearchParams();
@@ -30,7 +30,6 @@ export function buildQueryObject<TFields = string>(
   options?: ApiOptions<TFields>,
 ): Record<string, string> | undefined {
   const queryObj: Record<string, string> = {};
-
   if (options?.fields && options.fields.length > 0) {
     queryObj.fields = options.fields.join(',');
   }

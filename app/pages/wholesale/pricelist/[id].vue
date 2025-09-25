@@ -14,6 +14,7 @@ import {
   type PricelistRule,
   type PricelistProduct,
   type PricelistRuleField,
+  type ProductPricelistApiOptions,
 } from '#shared/types';
 
 // =====================================================================================
@@ -157,7 +158,8 @@ const {
   ProductPricelistBase,
   ProductPricelist,
   ProductPricelistCreate,
-  ProductPricelistUpdate
+  ProductPricelistUpdate,
+  ProductPricelistApiOptions
 >({
   repository: productApi.pricelist,
   validationSchema: formSchema,
@@ -716,7 +718,7 @@ const handleSave = async () => {
     await updateEntity(
       undefined,
       {
-        fields: 'rules,selectionquery',
+        fields: ['rules', 'selectionquery'],
       },
       !hasProductSelection.value,
     );

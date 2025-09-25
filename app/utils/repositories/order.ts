@@ -1,15 +1,6 @@
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
-import type {
-  Order,
-  OrderCreate,
-  OrderUpdate,
-  OrderBatchQuery,
-  OrderFieldsFilter,
-  BatchQueryResult,
-  ApiOptions,
-} from '#shared/types';
+import type { Order, OrderBatchQuery, BatchQueryResult } from '#shared/types';
 import { entityGetRepo } from './entity-base';
-import { buildQuery } from '../api-query';
 
 const BASE_ENDPOINT = '/order';
 
@@ -32,14 +23,11 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       batchQuery: OrderBatchQuery,
       options?: OrderApiOptions,
     ): Promise<BatchQueryResult<Order>> {
-      const query = buildQuery(options);
-      return await fetch<BatchQueryResult<Order>>(
-        `${orderEndpoint}/query${query}`,
-        {
-          method: 'POST',
-          body: batchQuery,
-        },
-      );
+      return await fetch<BatchQueryResult<Order>>(`${orderEndpoint}/query`, {
+        method: 'POST',
+        body: batchQuery,
+        query: buildQueryObject(options),
+      });
     },
 
     /**
