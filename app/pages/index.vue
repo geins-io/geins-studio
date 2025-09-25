@@ -5,52 +5,52 @@ definePageMeta({
   layout: 'default',
 });
 
-const { wholesaleApi } = useGeinsRepository();
-const { ordersList, orderColumns, fetchOrders } = useWholesaleOrders();
+// const { wholesaleApi } = useGeinsRepository();
+// const { ordersList, orderColumns, fetchOrders } = useWholesaleOrders();
 
-const {
-  data: allAccounts,
-  error,
-  refresh,
-} = await useAsyncData<WholesaleAccount[]>('wholesale-accounts', () =>
-  wholesaleApi.account.list({ fields: ['salesreps', 'buyers'] }),
-);
+// const {
+//   data: allAccounts,
+//   error,
+//   refresh,
+// } = await useAsyncData<WholesaleAccount[]>('wholesale-accounts', () =>
+//   wholesaleApi.account.list({ fields: ['salesreps', 'buyers'] }),
+// );
 
-if (!allAccounts.value || error.value) {
-  allAccounts.value = [];
-}
+// if (!allAccounts.value || error.value) {
+//   allAccounts.value = [];
+// }
 
-if (allAccounts.value.length === 0) {
-  ordersList.value = [];
-} else {
-  const orderSelectionQuery: OrderBatchQuery = {
-    include: [
-      {
-        selections: [
-          {
-            condition: SelectorCondition.And,
-            wholesaleAccountIds: allAccounts.value.map(
-              (account) => account._id,
-            ),
-          },
-        ],
-      },
-    ],
-  };
-  // Initial fetch of orders
-  await fetchOrders(
-    orderSelectionQuery,
-    undefined,
-    undefined,
-    undefined,
-    allAccounts.value,
-  );
+// if (allAccounts.value.length === 0) {
+//   ordersList.value = [];
+// } else {
+//   const orderSelectionQuery: OrderBatchQuery = {
+//     include: [
+//       {
+//         selections: [
+//           {
+//             condition: SelectorCondition.And,
+//             wholesaleAccountIds: allAccounts.value.map(
+//               (account) => account._id,
+//             ),
+//           },
+//         ],
+//       },
+//     ],
+//   };
+//   // Initial fetch of orders
+//   await fetchOrders(
+//     orderSelectionQuery,
+//     undefined,
+//     undefined,
+//     undefined,
+//     allAccounts.value,
+//   );
 
-  // Order ordersList by dateCreated descending
-  ordersList.value.sort((a, b) => {
-    return new Date(b.created).getTime() - new Date(a.created).getTime();
-  });
-}
+//   // Order ordersList by dateCreated descending
+//   ordersList.value.sort((a, b) => {
+//     return new Date(b.created).getTime() - new Date(a.created).getTime();
+//   });
+// }
 </script>
 
 <template>
@@ -109,7 +109,7 @@ if (allAccounts.value.length === 0) {
       </div>
 
       <!-- Latest Wholesale orders section -->
-      <div>
+      <!-- <div>
         <div class="mt-10 mb-6">
           <ContentCardHeader
             title="Latest wholesale orders"
@@ -117,8 +117,6 @@ if (allAccounts.value.length === 0) {
             size="md"
           />
         </div>
-
-        <!-- Orders Table -->
         <TableView
           :columns="orderColumns"
           :data="ordersList"
@@ -126,7 +124,7 @@ if (allAccounts.value.length === 0) {
           :page-size="10"
           :mode="TableMode.Simple"
         />
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

@@ -114,7 +114,7 @@ const tabs = [
   t('general'),
   t('wholesale.buyers'),
   t('wholesale.pricelists'),
-  t('wholesale.orders'),
+  // t('wholesale.orders'),
   t('settings'),
 ];
 const showSidebar = computed(() => {
