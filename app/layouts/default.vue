@@ -54,7 +54,9 @@ const contentClasses = computed(() => {
     <SidebarInset :style="mainWidthStyle">
       <LayoutHeader class="sticky top-0 h-(--h-header)" />
       <div
-        :class="cn('flex grow flex-col p-8 pb-14', contentClasses)"
+        :class="
+          cn('flex grow flex-col p-3 pb-12 sm:p-8 sm:pb-14', contentClasses)
+        "
         :style="mainHeightStyle"
       >
         <slot />

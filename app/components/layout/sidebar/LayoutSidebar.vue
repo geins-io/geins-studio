@@ -1,19 +1,13 @@
 <script setup lang="ts">
+import { useSidebar } from '@/components/ui/sidebar';
+import { navigation } from '@/lib/navigation';
+
 import Logo from '@/assets/logos/geins.svg';
 import LogoLetter from '@/assets/logos/geins-g.svg';
-import { useSidebar } from '@/components/ui/sidebar';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Button } from '@/components/ui/button';
-import { LucideChevronDown, LucideChevronsLeft } from 'lucide-vue-next';
-import { navigation } from '@/lib/navigation';
-import type { NavigationItem } from '#shared/types';
 
 // Import icons dynamically
 import {
+  LucideChevronDown,
   LucideBrush,
   LucideBuilding2,
   LucideChartLine,
@@ -27,7 +21,7 @@ import {
   LucideWarehouse,
 } from 'lucide-vue-next';
 
-const { state } = useSidebar();
+const { state, isMobile } = useSidebar();
 
 // Icon component mapping
 const iconComponents = {
@@ -71,12 +65,12 @@ const isItemOpen = (item: NavigationItem) => {
     <!-- Header with Logo -->
     <SidebarHeader>
       <NuxtLink to="/" class="mt-0.5 ml-2">
-        <LogoLetter
-          v-if="state === 'collapsed'"
+        <Logo
+          v-if="state === 'expanded' || isMobile"
           :font-controlled="false"
           class="h-8 w-auto"
         />
-        <Logo v-else :font-controlled="false" class="h-8 w-auto" />
+        <LogoLetter v-else :font-controlled="false" class="h-8 w-auto" />
       </NuxtLink>
     </SidebarHeader>
 
@@ -89,7 +83,7 @@ const isItemOpen = (item: NavigationItem) => {
             <SidebarMenuItem v-for="item in navigationMenu" :key="item.label">
               <!-- Item with children (collapsible) :default-open="isItemOpen(item)" -->
               <Collapsible
-                v-if="item.children?.length && state === 'expanded'"
+                v-if="item.children?.length"
                 :default-open="true"
                 class="group/collapsible"
               >

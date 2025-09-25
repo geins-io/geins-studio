@@ -18,7 +18,7 @@ const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
 
 <template>
   <div
-    class="bg-card absolute bottom-0 left-0 flex h-14 w-full items-center justify-between rounded-b-md border-t px-4 py-3 text-xs"
+    class="bg-card absolute bottom-0 left-0 flex h-12 w-full items-center justify-between rounded-b-md border-t px-4 py-3 text-xs sm:h-14"
   >
     <div class="flex-1">
       <span v-if="rowsSelectable">
@@ -40,7 +40,7 @@ const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
     </div>
     <div class="flex items-center space-x-6 lg:space-x-8">
       <div v-if="advanced" class="flex items-center space-x-2">
-        <p class="font-semibold">
+        <p class="font-semibold max-sm:hidden">
           {{ t('rows_per_page', { entityName }, 2) }}
         </p>
         <Select

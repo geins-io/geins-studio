@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LogoLetter from '@/assets/logos/geins-g.svg';
 import { useSidebar } from '@/components/ui/sidebar';
 const { state, toggleSidebar } = useSidebar();
 
@@ -16,7 +17,7 @@ const { showBreadcrumbs, currentTitle, currentParent } =
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      class="ml-3 size-7 flex-shrink-0"
+      class="ml-2 size-7 flex-shrink-0 sm:ml-3"
       @click="toggleSidebar"
     >
       <LucidePanelLeftOpen
@@ -26,8 +27,19 @@ const { showBreadcrumbs, currentTitle, currentParent } =
       <LucidePanelLeftClose class="text-muted-foreground size-4" v-else />
       <span class="sr-only">Toggle Sidebar</span>
     </Button>
-    <Breadcrumb v-if="showBreadcrumbs" class="ml-4 w-full border-l pl-4">
+    <Breadcrumb
+      v-if="showBreadcrumbs"
+      class="ml-2 w-full border-l pr-2 pl-2 sm:ml-4 sm:pl-4"
+    >
       <BreadcrumbList>
+        <BreadcrumbItem class="md:hidden">
+          <BreadcrumbLink as-child>
+            <NuxtLink to="/">
+              <LogoLetter class="size-4" :font-controlled="false" />
+            </NuxtLink>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator class="md:hidden" />
         <BreadcrumbItem>
           <BreadcrumbLink as-child>
             <NuxtLink to="/">Wholesale</NuxtLink>
@@ -49,8 +61,8 @@ const { showBreadcrumbs, currentTitle, currentParent } =
         </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>
-    <div class="relative ml-5 w-full max-w-96 items-center">
-      <!--   <Input
+    <!--  <div class="relative ml-5 w-full max-w-96 items-center">
+       <Input
         id="search"
         type="text"
         :placeholder="$t('global_search_placeholder')"
@@ -60,15 +72,15 @@ const { showBreadcrumbs, currentTitle, currentParent } =
         class="absolute inset-y-0 start-0 flex items-center justify-center px-2"
       >
         <LucideSearch class="size-5 text-foreground" />
-      </span>-->
+      </span>
     </div>
-    <!--  <div class="ml-auto mr-5">
+   <div class="ml-auto mr-5">
       <NuxtLink to="/" class="flex items-center gap-1.5">
         <LucideCircleHelp class="size-4" />
         <span class="text-sm">Help center</span>
       </NuxtLink>
     </div> -->
-    <!--  <div class="mr-4">
+    <!--  <div class="mr-4">  
       <Button
         variant="secondary"
         size="icon"

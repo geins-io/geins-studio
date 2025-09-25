@@ -58,7 +58,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
 </script>
 
 <template>
-  <div class="max-w-full p-4">
+  <div class="max-w-full sm:p-4">
     <ContentHeader
       title="Welcome to Geins Studio"
       description=""

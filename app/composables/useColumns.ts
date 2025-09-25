@@ -34,10 +34,11 @@ export const useColumns = <T extends object>() => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
 
     const baseStyle =
-      'px-1.5 flex items-center whitespace-nowrap ' + basicHeaderTextStyle;
+      'px-0.5 md:px-1.5 flex items-center whitespace-nowrap ' +
+      basicHeaderTextStyle;
     const simpleStyle =
-      'h-10 normal-case [&>button]:pl-2 [&>button]:pr-1 [&>button]:normal-case';
-    const advancedStyle = 'h-12';
+      'h-8 sm:h-10 normal-case [&>button]:pl-2 [&>button]:pr-1 [&>button]:normal-case';
+    const advancedStyle = 'h-10 sm:h-12';
     const fullStyle =
       mode === TableMode.Simple
         ? `${baseStyle} ${simpleStyle}`
@@ -50,9 +51,9 @@ export const useColumns = <T extends object>() => {
   const getBasicCellStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
     const baseStyle =
-      'align-middle text-grid leading-8 w-full h-10 flex items-center truncate';
+      'align-middle md:text-grid leading-6 text-xs md:leading-8 w-full h-8 md:h-10 flex items-center truncate';
     const simpleStyle = 'px-3.5';
-    const advancedStyle = 'px-[1.2rem]';
+    const advancedStyle = 'px-3.5 md:px-[1.2rem]';
     const fullStyle =
       mode === TableMode.Simple
         ? `${baseStyle} ${simpleStyle}`
