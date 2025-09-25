@@ -701,15 +701,15 @@ const otherSummary = computed<DataItem[]>(() => {
       displayType: DataItemDisplayType.Array,
     });
   }
-  if (ordersList.value.length) {
-    dataList.push({
-      label: t('wholesale.orders'),
-      value: t('nr_of_entity', {
-        count: ordersList.value.length,
-        entityName: 'order',
-      }),
-    });
-  }
+  // if (ordersList.value.length) {
+  //   dataList.push({
+  //     label: t('wholesale.orders'),
+  //     value: t('nr_of_entity', {
+  //       count: ordersList.value.length,
+  //       entityName: 'order',
+  //     }),
+  //   });
+  // }
   return dataList;
 });
 
@@ -780,12 +780,12 @@ if (!createMode.value) {
   };
 
   // Fetch orders using the composable
-  await fetchOrders(
-    orderSelectionQuery,
-    { fields: ['pricelists', 'itemcount'] },
-    entityId.value,
-    allPricelists.value,
-  );
+  // await fetchOrders(
+  //   orderSelectionQuery,
+  //   { fields: ['pricelists', 'itemcount'] },
+  //   entityId.value,
+  //   allPricelists.value,
+  // );
 }
 </script>
 
@@ -1230,7 +1230,7 @@ if (!createMode.value) {
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
-        <KeepAlive>
+        <!-- <KeepAlive>
           <ContentEditMainContent
             v-if="currentTab === 3"
             :key="`tab-${currentTab}`"
@@ -1264,10 +1264,10 @@ if (!createMode.value) {
               </div>
             </ContentEditCard>
           </ContentEditMainContent>
-        </KeepAlive>
+        </KeepAlive> -->
         <KeepAlive>
           <ContentEditMainContent
-            v-if="currentTab === 4"
+            v-if="currentTab === 3"
             :key="`tab-${currentTab}`"
           >
             <ContentEditCard :create-mode="false" :title="t('settings')">
