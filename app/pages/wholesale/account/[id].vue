@@ -10,6 +10,7 @@ import {
   DataItemDisplayType,
   TableMode,
   SelectorCondition,
+  type WholesaleAccountApiOptions,
 } from '#shared/types';
 import * as z from 'zod';
 
@@ -180,7 +181,8 @@ const {
   WholesaleAccountBase,
   WholesaleAccount,
   WholesaleAccountCreate,
-  WholesaleAccountUpdate
+  WholesaleAccountUpdate,
+  WholesaleAccountApiOptions
 >({
   repository: wholesaleApi.account,
   validationSchema: formSchema,

@@ -2,26 +2,23 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import { useForm, type GenericObject } from 'vee-validate';
 import { useDebounceFn } from '@vueuse/core';
 import type { toTypedSchema } from '@vee-validate/zod';
-import type { set } from 'zod';
 
 export interface EntityEditOptions<
   TBase,
   TResponse extends ResponseEntity<TBase>,
   TCreate extends CreateEntity<TBase>,
   TUpdate extends UpdateEntity<TBase>,
+  TOptions extends ApiOptions<string> = ApiOptions<string>,
 > {
   entityName?: string;
   newEntityUrlAlias?: string;
   repository: {
-    get: (id: string, query?: Record<string, string>) => Promise<TResponse>;
-    create: (
-      data: TCreate,
-      query?: Record<string, string>,
-    ) => Promise<TResponse>;
+    get: (id: string, options?: TOptions) => Promise<TResponse>;
+    create: (data: TCreate, options?: TOptions) => Promise<TResponse>;
     update: (
       id: string,
       data: TUpdate,
-      query?: Record<string, string>,
+      options?: TOptions,
     ) => Promise<TResponse>;
     delete?: (id: string) => Promise<void>;
   };
@@ -52,7 +49,8 @@ export function useEntityEdit<
   TResponse extends ResponseEntity<TBase>,
   TCreate extends CreateEntity<TBase>,
   TUpdate extends UpdateEntity<TBase>,
->(options: EntityEditOptions<TBase, TResponse, TCreate, TUpdate>) {
+  TOptions extends ApiOptions<string> = ApiOptions<string>,
+>(options: EntityEditOptions<TBase, TResponse, TCreate, TUpdate, TOptions>) {
   const { t } = useI18n();
   const route = useRoute();
   const { toast } = useToast();
@@ -182,7 +180,7 @@ export function useEntityEdit<
   // Create entity
   const createEntity = async (
     additionalValidation?: () => Promise<boolean>,
-    query?: Record<string, string>,
+    queryOptions?: TOptions,
   ) => {
     loading.value = true;
     try {
@@ -199,7 +197,7 @@ export function useEntityEdit<
         ? options.prepareCreateData(form.values)
         : entityDataCreate.value;
 
-      const result = await options.repository.create(createData, query);
+      const result = await options.repository.create(createData, queryOptions);
 
       if (result?._id) {
         const newUrl = newEntityUrl.replace(
@@ -230,7 +228,7 @@ export function useEntityEdit<
   // Update entity
   const updateEntity = async (
     additionalValidation?: () => Promise<boolean>,
-    query?: Record<string, string>,
+    queryOptions?: TOptions,
     setSavedData?: boolean,
   ) => {
     loading.value = true;
@@ -252,8 +250,13 @@ export function useEntityEdit<
       if (!updateData) {
         return;
       }
-      const result = await options.repository.update(id, updateData, query);
-      const newData = result ?? (await options.repository.get(id, query));
+      const result = await options.repository.update(
+        id,
+        updateData,
+        queryOptions,
+      );
+      const newData =
+        result ?? (await options.repository.get(id, queryOptions));
       await parseAndSaveData(newData, setSavedData);
 
       toast({
