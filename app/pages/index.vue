@@ -78,7 +78,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
         </div>
 
         <!-- Quick access cards grid -->
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+        <div class="grid grid-cols-1 gap-4 @2xl:grid-cols-2 @6xl:grid-cols-4">
           <ContentLinkCard
             title="Create a new account"
             description="Manage existing wholesale accounts"

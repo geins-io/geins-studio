@@ -595,7 +595,7 @@ export const useColumns = <T extends object>() => {
         const rowData = row.original;
         return h(
           'div',
-          { class: cn(getBasicCellStyle(table), 'relative px-2.5') },
+          { class: cn(getBasicCellStyle(table), 'relative px-2.5 md:px-2.5') },
           h(getActionsComponent(type), {
             ...props,
             rowData,

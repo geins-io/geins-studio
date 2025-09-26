@@ -19,11 +19,11 @@ export const buttonVariants = cva(
         link: 'px-0! text-primary underline underline-offset-4 dark:text-foreground',
       },
       size: {
-        default: 'h-9 px-4 py-2',
+        default: 'h-8 px-3 sm:h-9 sm:px-4 py-2',
         xs: 'h-7 rounded px-2',
         sm: 'h-8 rounded-lg px-3 text-xs',
         lg: 'h-10 rounded-lg px-4',
-        icon: 'size-9',
+        icon: 'size-8 sm:size-9',
         'icon-xs': 'size-6 text-xs',
       },
     },

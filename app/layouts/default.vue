@@ -51,11 +51,11 @@ const contentClasses = computed(() => {
 <template>
   <SidebarProvider v-model:open="defaultOpen">
     <LayoutSidebar />
-    <SidebarInset :style="mainWidthStyle">
+    <SidebarInset class="@container" :style="mainWidthStyle">
       <LayoutHeader class="sticky top-0 h-(--h-header)" />
       <div
         :class="
-          cn('flex grow flex-col p-3 pb-12 sm:p-8 sm:pb-14', contentClasses)
+          cn('flex grow flex-col p-3 pb-12 @2xl:p-8 @2xl:pb-14', contentClasses)
         "
         :style="mainHeightStyle"
       >

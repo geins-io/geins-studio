@@ -9,6 +9,7 @@ const props = withDefaults(
 );
 
 const initialSidebarVisible = toRef(props, 'showSidebar');
+
 const slots = useSlots();
 const hasSidebar = computed(() => !!slots.sidebar);
 const sidebarCanBeToggled = ref(
@@ -44,7 +45,7 @@ const handleToggleSidebar = () => {
         <TooltipTrigger as-child>
           <button
             type="button"
-            class="bg-card flex-center translate- absolute top-4 right-0 z-50 h-8 w-7 translate-x-full rounded-r-lg border border-l-0"
+            class="bg-card flex-center fixed top-1/4 right-0 z-50 h-8 w-7 rounded-l-lg border border-r-0 @2xl:absolute @2xl:top-4 @2xl:right-0 @2xl:translate-x-full @2xl:rounded-l-none @2xl:rounded-r-lg @2xl:border-r-1 @2xl:border-l-0"
             @click="handleToggleSidebar"
           >
             <LucideList class="text-muted-foreground size-10 p-1" />
@@ -75,7 +76,7 @@ const handleToggleSidebar = () => {
             cn(
               'rounded-lg',
               sidebarCanBeToggled
-                ? 'absolute top-4 right-4 z-50 w-[360px] origin-top-right shadow-lg transition-all duration-300 ease-[cubic-bezier(.29,.38,.18,1.47)]'
+                ? 'fixed top-[15vh] right-8 z-50 w-[90vw] max-w-[360px] origin-top-right shadow-lg transition-all duration-300 ease-[cubic-bezier(.29,.38,.18,1.47)] @2xl:absolute @2xl:top-4 @2xl:right-4 @2xl:w-[360px]'
                 : '',
               sidebarCanBeToggled && sidebarVisible
                 ? 'scale-100 opacity-100'

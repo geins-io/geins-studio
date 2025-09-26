@@ -60,14 +60,14 @@ watch(currentTab, async (value) => {
 </script>
 
 <template>
-  <nav class="w-full">
+  <nav class="w-full overflow-auto">
     <ul class="flex gap-2">
       <li v-for="(tab, index) in tabs" :key="index">
         <button
           type="button"
           :class="
             cn(
-              'text-muted-foreground border-b-4 border-transparent px-3 py-1.5 text-sm font-bold transition-colors duration-200 ease-in-out',
+              'text-muted-foreground border-b-4 border-transparent px-1.5 py-0.5 text-xs font-bold transition-colors duration-200 ease-in-out sm:px-3 sm:py-1.5 sm:text-sm',
               `${currentTab === index ? 'border-foreground text-foreground' : ''}`,
             )
           "

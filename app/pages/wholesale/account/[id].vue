@@ -34,6 +34,7 @@ const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
 const accountStore = useAccountStore();
 const { getEntityNameById } = useEntity();
 const { toast } = useToast();
+const viewport = useViewport();
 
 // =====================================================================================
 // FORM VALIDATION SCHEMA
@@ -118,7 +119,7 @@ const tabs = [
   t('settings'),
 ];
 const showSidebar = computed(() => {
-  return currentTab.value === 0;
+  return viewport.isGreaterThan('sm') && currentTab.value === 0;
 });
 
 const totalCreateSteps = 2;
@@ -832,7 +833,7 @@ breadcrumbsStore.setCurrentParent({
           >
           <DropdownMenu v-if="!createMode">
             <DropdownMenuTrigger as-child>
-              <Button class="size-9 p-1" size="sm" variant="secondary">
+              <Button size="icon" variant="secondary">
                 <LucideMoreHorizontal class="size-3.5" />
               </Button>
             </DropdownMenuTrigger>

@@ -44,7 +44,7 @@ const hasChanges = computed(() => !!slots.changes);
       <div
         v-if="hasTabs || hasChanges"
         v-auto-animate
-        class="mt-5 flex w-full justify-between"
+        class="mt-2 flex w-full justify-between sm:mt-5"
       >
         <slot name="tabs" />
         <slot name="changes" />

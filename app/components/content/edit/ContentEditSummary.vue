@@ -37,7 +37,7 @@ const activeDescription = computed(() => {
 });
 </script>
 <template>
-  <Card class="space-y-4 p-6">
+  <Card class="max-h-[80vh] space-y-4 overflow-y-auto p-6">
     <div class="flex items-center justify-between">
       <ContentCardHeader :title="t('summary')" :description="description" />
       <Badge

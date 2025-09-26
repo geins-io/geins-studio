@@ -19,9 +19,9 @@ const _props = withDefaults(
       <li
         v-for="(item, index) in dataList"
         :key="index"
-        class="flex items-center justify-between gap-2 text-right text-muted-foreground"
+        class="text-muted-foreground flex items-center justify-between gap-2 text-right text-xs sm:text-sm"
       >
-        <span class="text-left font-bold text-foreground"
+        <span class="text-foreground text-left font-bold"
           >{{ item.label }}:</span
         >
 
