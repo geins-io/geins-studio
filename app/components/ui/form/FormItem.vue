@@ -16,7 +16,7 @@ provide(FORM_ITEM_INJECTION_KEY, id);
   <div
     v-auto-animate
     data-slot="form-item"
-    :class="cn('space-y-1', props.class)"
+    :class="cn('!space-y-1', props.class)"
   >
     <slot />
   </div>

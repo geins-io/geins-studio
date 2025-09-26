@@ -1,4 +1,17 @@
 <script setup lang="ts">
+import {
+  SIDEBAR_COOKIE_NAME,
+  SIDEBAR_COOKIE_MAX_AGE,
+} from '@/components/ui/sidebar/utils';
+
+const viewport = useViewport();
+
+// Use Nuxt's cookie for persistence
+const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
+  default: () => true,
+  maxAge: SIDEBAR_COOKIE_MAX_AGE,
+});
+
 const props = withDefaults(
   defineProps<{
     design:
@@ -17,7 +30,19 @@ const props = withDefaults(
   },
 );
 
+const isNarrow = computed(() => {
+  const lessThanLg = viewport.isLessThan('xl');
+  const lessThanMd = viewport.isLessThan('md');
+  return (
+    (sidebarOpen.value === true && lessThanLg) ||
+    (sidebarOpen.value === false && lessThanMd)
+  );
+});
+
 const gridColsClass = computed(() => {
+  if (isNarrow.value) {
+    return 'grid-cols-1 gap-3 [&>*]:col-span-1';
+  }
   switch (props.design) {
     case '1+1+2':
       return 'grid-cols-12 [&>*:nth-child(1)]:col-span-3 [&>*:nth-child(2)]:col-span-3 [&>*:nth-child(3)]:col-span-6';

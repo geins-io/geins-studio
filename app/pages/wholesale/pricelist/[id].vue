@@ -82,7 +82,7 @@ const entityBase: ProductPricelistCreate = {
 const currentTab = ref(0);
 const tabs = [t('general'), t('wholesale.pricelist_products_pricing')];
 const showSidebar = computed(() => {
-  return viewport.isGreaterThan('sm') && currentTab.value === 0;
+  return viewport.isGreaterThan('md') && currentTab.value === 0;
 });
 
 const totalCreateSteps = 2;
@@ -1044,7 +1044,7 @@ breadcrumbsStore.setCurrentParent({
           >
           <DropdownMenu v-if="!createMode">
             <DropdownMenuTrigger as-child>
-              <Button class="size-9 p-1" size="icon" variant="secondary">
+              <Button class="p-1" size="icon" variant="secondary">
                 <LucideMoreHorizontal class="size-3.5" />
               </Button>
             </DropdownMenuTrigger>

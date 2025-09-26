@@ -119,7 +119,7 @@ const tabs = [
   t('settings'),
 ];
 const showSidebar = computed(() => {
-  return viewport.isGreaterThan('sm') && currentTab.value === 0;
+  return viewport.isGreaterThan('md') && currentTab.value === 0;
 });
 
 const totalCreateSteps = 2;
@@ -1188,7 +1188,9 @@ breadcrumbsStore.setCurrentParent({
                   entity-name="buyer"
                   :columns="buyerColumns"
                   :data="buyersList"
-                  :pinned-state="null"
+                  :pinned-state="
+                    viewport.isGreaterThan('xs') ? null : undefined
+                  "
                 />
               </div>
             </ContentEditCard>
@@ -1210,7 +1212,7 @@ breadcrumbsStore.setCurrentParent({
                   :selection="addedPricelistsIds"
                   entity-name="pricelist"
                   :show-image="false"
-                  class="w-2/5!"
+                  class="sm:w-2/5!"
                   @add="addPricelist($event)"
                   @remove="removePricelist($event)"
                 />
@@ -1234,7 +1236,9 @@ breadcrumbsStore.setCurrentParent({
                   :columns="pricelistColumns"
                   :data="addedPricelists"
                   :init-visibility-state="visibilityState"
-                  :pinned-state="null"
+                  :pinned-state="
+                    viewport.isGreaterThan('xs') ? null : undefined
+                  "
                 />
               </div>
             </ContentEditCard>

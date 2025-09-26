@@ -32,7 +32,7 @@ const hasChanges = computed(() => !!slots.changes);
     <div
       :class="
         cn(
-          'content-header mb-4 flex flex-wrap justify-between border-b',
+          'content-header mb-4 flex flex-wrap justify-between border-b max-sm:gap-2',
           `${hasTabs || hasChanges ? 'pb-0' : 'pb-2'}`,
         )
       "
@@ -44,7 +44,7 @@ const hasChanges = computed(() => !!slots.changes);
       <div
         v-if="hasTabs || hasChanges"
         v-auto-animate
-        class="mt-2 flex w-full justify-between sm:mt-5"
+        class="mt-2 flex w-full justify-between max-sm:flex-col-reverse sm:mt-5"
       >
         <slot name="tabs" />
         <slot name="changes" />

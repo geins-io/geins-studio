@@ -88,16 +88,25 @@ const isItemOpen = (item: NavigationItem) => {
                 class="group/collapsible"
               >
                 <CollapsibleTrigger as-child>
-                  <SidebarMenuButton class="w-full">
-                    <component
-                      :is="item.iconComponent"
-                      v-if="item.iconComponent"
-                      class="!size-4.5"
-                    />
-                    <span>{{ item.label }}</span>
-                    <LucideChevronDown
-                      class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180"
-                    />
+                  <SidebarMenuButton class="w-full" as-child>
+                    <NuxtLink
+                      :to="
+                        state === 'collapsed' && item.children?.length
+                          ? item.children[0]?.href || item.href
+                          : undefined
+                      "
+                    >
+                      <component
+                        :is="item.iconComponent"
+                        v-if="item.iconComponent"
+                        class="!size-4.5"
+                      />
+                      <span>{{ item.label }}</span>
+
+                      <LucideChevronDown
+                        class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180"
+                      />
+                    </NuxtLink>
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>

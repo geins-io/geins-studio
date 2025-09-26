@@ -19,7 +19,7 @@ const emit = defineEmits(['remove']);
       v-if="removable"
       type="ghost"
       class="text-foreground hover:text-negative size-3 bg-transparent p-0 hover:bg-transparent"
-      size="icon"
+      size="xs"
       @click="emit('remove')"
     >
       <LucideX class="size-3" />
