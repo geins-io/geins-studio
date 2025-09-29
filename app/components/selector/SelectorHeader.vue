@@ -16,7 +16,7 @@ const selectedIds = computed(() => props.selection?.ids || []);
   <div>
     <ContentCardHeader :title="title" :description="description" size="lg" />
   </div>
-  <div class="flex w-2/5 gap-6">
+  <div class="mt-3 flex w-full gap-6 @3xl:mt-0 @3xl:w-2/5">
     <SelectorQuickAdd
       v-if="entities.length"
       :entities="entities"

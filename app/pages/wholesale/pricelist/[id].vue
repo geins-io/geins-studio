@@ -612,7 +612,7 @@ const vatDescription = computed(() => {
 });
 
 let columns: ColumnDef<PricelistProductList>[] = [];
-const pinnedState = ref(getPinnedState());
+const pinnedState = computed(() => getPinnedState.value);
 
 // =====================================================================================
 // COLUMN SETUP FUNCTIONS
@@ -1299,7 +1299,7 @@ breadcrumbsStore.setCurrentParent({
                       </Label>
                       <Input
                         v-model.number="pricelistBaseRuleInput"
-                        class="w-48"
+                        class="w-full sm:w-48"
                         size="md"
                         :loading="baseRuleLoading"
                       >

@@ -75,7 +75,7 @@ const inputAttrs = computed(() => {
       :class="
         cn(
           'bg-input text-muted-foreground border-r text-xs',
-          props.size === 'sm' ? 'pr-2 pl-2' : 'pr-3 pl-3',
+          props.size === 'sm' ? 'px-1.5 sm:px-2' : 'px-2 sm:px-3',
         )
       "
     >
@@ -91,7 +91,7 @@ const inputAttrs = computed(() => {
             ? props.size === 'sm'
               ? 'rounded-r-lg py-1 pr-3 pl-2'
               : 'rounded-r-lg py-1 pr-3 pl-3'
-            : 'rounded-lg px-3 py-1',
+            : 'rounded-lg px-2 py-1 sm:px-3',
         )
       "
       v-bind="inputAttrs"

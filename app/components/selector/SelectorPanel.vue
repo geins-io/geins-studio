@@ -191,6 +191,8 @@ const handleSave = () => {
 const handleCancel = () => {
   currentSelection.value = props.selection;
 };
+
+const showSelectedList = ref(true);
 </script>
 <template>
   <Sheet>
@@ -204,8 +206,10 @@ const handleCancel = () => {
           {{ t('selector_panel_description') }}
         </SheetDescription>
       </SheetHeader>
-      <SheetBody class="flex h-[calc(100vh-10.1rem)] grid-cols-12 p-0">
-        <div class="w-[170px] shrink-0 px-4 py-3">
+      <SheetBody
+        class="p-0 max-md:pb-14 md:flex md:h-[calc(100vh-10.1rem)] md:p-0"
+      >
+        <div class="w-full shrink-0 px-4 pt-3 md:w-[170px] md:py-3">
           <ContentHeading>{{ t('select_from') }}</ContentHeading>
           <SidebarNav>
             <SidebarNavItem
@@ -219,7 +223,7 @@ const handleCancel = () => {
             </SidebarNavItem>
           </SidebarNav>
         </div>
-        <div class="w-full border-x px-4 py-3">
+        <div class="@container w-full border-x px-4 py-3">
           <ContentHeading>{{ t('select') }}</ContentHeading>
           <!-- IDS -->
           <div v-if="currentSelectionGroup === 'ids'">
@@ -267,12 +271,32 @@ const handleCancel = () => {
           </div>
           <!-- END BRANDS -->
         </div>
-        <div class="h-full w-80 shrink-0 px-4 py-3">
-          <ContentHeading>{{ t('selected') }}</ContentHeading>
+        <div
+          :class="
+            cn(
+              'max-md:bg-card shrink-0 px-4 py-3 max-md:fixed max-md:bottom-16 max-md:z-50 max-md:w-full max-md:overflow-hidden max-md:border-t max-md:border-b max-md:transition-all md:h-full md:w-[200px] lg:w-80',
+              !showSelectedList && 'max-md:max-h-11',
+              showSelectedList && 'max-md:max-h-[50vh]',
+            )
+          "
+        >
+          <Button
+            size="icon"
+            variant="outline"
+            class="absolute top-1.5 right-3 md:hidden"
+            @click="showSelectedList = !showSelectedList"
+          >
+            <LucideChevronUp
+              :class="cn('size-4', { 'rotate-180': showSelectedList })"
+            />
+          </Button>
+          <ContentHeading
+            >{{ t('selected') }} ({{ selectedEntities.length }})</ContentHeading
+          >
           <!-- IDS -->
           <ul
             v-if="currentSelectionGroup === 'ids'"
-            class="h-[calc(100%-26px)] overflow-auto"
+            class="overflow-auto md:h-[calc(100%-26px)]"
           >
             <li
               v-for="entity in selectedEntities"
@@ -295,7 +319,7 @@ const handleCancel = () => {
           <!-- CATEGORIES -->
           <ul
             v-else-if="currentSelectionGroup === 'categoryIds'"
-            class="h-[calc(100%-26px)] overflow-auto"
+            class="overflow-auto md:h-[calc(100%-26px)]"
           >
             <li
               v-for="entity in selectedEntities"
@@ -318,7 +342,7 @@ const handleCancel = () => {
           <!-- BRANDS -->
           <ul
             v-else-if="currentSelectionGroup === 'brandIds'"
-            class="h-[calc(100%-26px)] overflow-auto"
+            class="overflow-auto md:h-[calc(100%-26px)]"
           >
             <li
               v-for="entity in selectedEntities"

@@ -17,17 +17,17 @@ const descriptionClasses = ref('');
 
 switch (props.size) {
   case 'md':
-    headerClasses.value = 'text-base';
-    descriptionClasses.value = 'text-sm';
+    headerClasses.value = 'text-sm sm:text-base';
+    descriptionClasses.value = 'text-xs sm:text-sm';
     break;
   case 'sm':
-    headerClasses.value = 'text-sm';
-    descriptionClasses.value = 'text-xs mt-1';
+    headerClasses.value = 'text-sm ';
+    descriptionClasses.value = 'text-xs sm:mt-1';
     break;
   case 'lg':
   default:
-    headerClasses.value = 'text-xl';
-    descriptionClasses.value = 'text-sm mt-1';
+    headerClasses.value = 'text-md sm:text-xl';
+    descriptionClasses.value = 'text-xs sm:text-sm sm:mt-1';
 }
 </script>
 <template>

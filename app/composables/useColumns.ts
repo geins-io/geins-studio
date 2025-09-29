@@ -26,6 +26,7 @@ import { TableMode } from '#shared/types';
 
 export const useColumns = <T extends object>() => {
   // BASIC HEADER STYLE
+  const viewport = useViewport();
   const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
   const accountStore = useAccountStore();
   const { currentCurrency } = storeToRefs(accountStore);
@@ -212,7 +213,7 @@ export const useColumns = <T extends object>() => {
             return h(
               'div',
               {
-                class: cn(getBasicHeaderStyle(table), 'px-3'),
+                class: cn(getBasicHeaderStyle(table), 'px-3 sm:px-3'),
               },
               columnTitle,
             );
@@ -584,9 +585,9 @@ export const useColumns = <T extends object>() => {
       id: 'actions',
       enableHiding: false,
       enableSorting: false,
-      size: 49,
-      maxSize: 49,
-      minSize: 49,
+      size: viewport.isGreaterThan('sm') ? 49 : 45,
+      maxSize: viewport.isGreaterThan('sm') ? 49 : 45,
+      minSize: viewport.isGreaterThan('sm') ? 49 : 45,
       header: ({ table }: { table: Table<T> }) =>
         h('div', {
           class: cn(getBasicHeaderStyle(table)),

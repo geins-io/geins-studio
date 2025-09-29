@@ -59,17 +59,13 @@ breadcrumbsStore.setShowBreadcrumbs(false);
 
 <template>
   <div class="max-w-full sm:p-4">
-    <ContentHeader
-      title="Welcome to Geins Studio"
-      description=""
-      :show-breadcrumb="false"
-    />
+    <ContentHeader title="Welcome to Geins Studio" />
 
     <!-- Main content area -->
     <div class="space-y-8">
       <!-- Wholesale quick access section -->
       <div>
-        <div class="mt-10 mb-6">
+        <div class="mt-6 mb-6 sm:mt-10">
           <ContentCardHeader
             title="Wholesale - Quick Access"
             description="Quick access to key wholesale features like account management, pricing, and product access."

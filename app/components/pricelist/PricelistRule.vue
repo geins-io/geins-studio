@@ -72,6 +72,7 @@ const handleApply = (overwrite: boolean) => {
         v-model.number="quantity"
         type="number"
         size="sm"
+        class="min-w-14"
         :disabled="global && mode === 'all'"
         :valid="quantityValid"
         @blur="quantityBlurred = true"
@@ -82,6 +83,7 @@ const handleApply = (overwrite: boolean) => {
         v-model.number="margin"
         size="sm"
         placeholder="0"
+        class="min-w-20"
         :loading="loading && lastFieldChanged !== 'margin' && mode === 'all'"
         :disabled="global && mode === 'all'"
       >
@@ -93,6 +95,7 @@ const handleApply = (overwrite: boolean) => {
         v-model.number="discount"
         size="sm"
         placeholder="0"
+        class="min-w-20"
         :loading="
           loading && lastFieldChanged !== 'discountPercent' && mode === 'all'
         "
@@ -106,6 +109,7 @@ const handleApply = (overwrite: boolean) => {
         v-model.number="price"
         size="sm"
         placeholder="0"
+        class="min-w-20"
         :loading="loading && lastFieldChanged !== 'price' && mode === 'all'"
         :disabled="global && mode === 'all'"
       >
@@ -137,12 +141,12 @@ const handleApply = (overwrite: boolean) => {
       >
       <Button
         :disabled="global && mode === 'all'"
-        size="icon"
+        size="xs"
         variant="outline"
         class="hover:text-destructive size-7"
         @click="$emit('remove')"
       >
-        <LucideX class="size-3.5" />
+        <LucideX class="size-6" />
       </Button>
     </td>
   </tr>

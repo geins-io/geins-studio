@@ -65,7 +65,7 @@ const hasCreateView = computed(() => !!slots.create);
       <CollapsibleTrigger
         :class="
           cn(
-            `flex w-full items-center justify-between p-4 sm:p-6`,
+            `flex w-full items-center justify-between p-4 @2xl:p-6`,
             `${futureStep && createMode ? 'pointer-events-none opacity-50' : ''}`,
             (futureStep || !createMode) && 'cursor-default',
             !createMode && 'gap-2 max-sm:flex-col max-sm:items-start',
@@ -91,8 +91,8 @@ const hasCreateView = computed(() => !!slots.create);
         <div
           :class="
             cn(
-              'space-y-8 p-4 pt-0 sm:p-6',
-              `${createMode ? '' : 'pb-4 sm:pt-0 sm:pb-8'}`,
+              'space-y-8 p-4 pt-0 @2xl:p-6',
+              `${createMode ? '' : 'pb-4 @2xl:pt-0 @2xl:pb-8'}`,
             )
           "
         >

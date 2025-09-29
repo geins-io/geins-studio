@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import {
+  SIDEBAR_COOKIE_NAME,
+  SIDEBAR_COOKIE_MAX_AGE,
+} from '@/components/ui/sidebar/utils';
 import { useSidebar } from '@/components/ui/sidebar';
 import { navigation } from '@/lib/navigation';
 
@@ -21,7 +25,14 @@ import {
   LucideWarehouse,
 } from 'lucide-vue-next';
 
-const { state, isMobile } = useSidebar();
+const { state, isMobile, setOpenMobile } = useSidebar();
+
+// Handle navigation clicks on mobile - close sidebar when navigating
+const handleNavClick = () => {
+  if (isMobile.value) {
+    setOpenMobile(false);
+  }
+};
 
 // Icon component mapping
 const iconComponents = {
@@ -58,13 +69,18 @@ const isItemActive = (item: NavigationItem) => {
 const isItemOpen = (item: NavigationItem) => {
   return item.children?.some((child) => route.path === child.href) ?? false;
 };
+
+const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
+  default: () => true,
+  maxAge: SIDEBAR_COOKIE_MAX_AGE,
+});
 </script>
 
 <template>
   <Sidebar collapsible="icon" class="overflow-hidden border-r">
     <!-- Header with Logo -->
     <SidebarHeader>
-      <NuxtLink to="/" class="mt-0.5 ml-2">
+      <NuxtLink to="/" class="mt-0.5 ml-2" @click="handleNavClick">
         <Logo
           v-if="state === 'expanded' || isMobile"
           :font-controlled="false"
@@ -95,6 +111,7 @@ const isItemOpen = (item: NavigationItem) => {
                           ? item.children[0]?.href || item.href
                           : undefined
                       "
+                      @click="handleNavClick"
                     >
                       <component
                         :is="item.iconComponent"
@@ -120,7 +137,7 @@ const isItemOpen = (item: NavigationItem) => {
                         :is-active="route.path === child.href"
                         size="sm"
                       >
-                        <NuxtLink :to="child.href">
+                        <NuxtLink :to="child.href" @click="handleNavClick">
                           <span>{{ child.label }}</span>
                         </NuxtLink>
                       </SidebarMenuSubButton>
@@ -142,6 +159,7 @@ const isItemOpen = (item: NavigationItem) => {
                       ? item.children[0]?.href || item.href
                       : item.href
                   "
+                  @click="handleNavClick"
                 >
                   <component
                     :is="item.iconComponent"

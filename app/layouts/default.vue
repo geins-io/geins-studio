@@ -6,7 +6,7 @@ import {
   SIDEBAR_WIDTH,
   SIDEBAR_COOKIE_NAME,
   SIDEBAR_COOKIE_MAX_AGE,
-} from '../components/ui/sidebar/utils';
+} from '@/components/ui/sidebar/utils';
 
 const viewport = useViewport();
 

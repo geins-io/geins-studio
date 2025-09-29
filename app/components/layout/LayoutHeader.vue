@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import LogoLetter from '@/assets/logos/geins-g.svg';
 import { useSidebar } from '@/components/ui/sidebar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 const { state, toggleSidebar } = useSidebar();
 
 const breadcrumbsStore = useBreadcrumbsStore();
@@ -12,21 +17,40 @@ const { showBreadcrumbs, currentTitle, currentParent } =
     v-auto-animate
     class="text-background-foreground bg-card flex flex-none items-center justify-start border-b"
   >
-    <Button
-      data-sidebar="trigger"
-      data-slot="sidebar-trigger"
-      variant="ghost"
-      size="icon"
-      class="ml-2 size-7 flex-shrink-0 sm:ml-3"
-      @click="toggleSidebar"
-    >
-      <LucidePanelLeftOpen
-        class="text-muted-foreground size-4"
-        v-if="state === 'collapsed'"
-      />
-      <LucidePanelLeftClose class="text-muted-foreground size-4" v-else />
-      <span class="sr-only">Toggle Sidebar</span>
-    </Button>
+    <Tooltip>
+      <TooltipTrigger as-child>
+        <Button
+          data-sidebar="trigger"
+          data-slot="sidebar-trigger"
+          variant="ghost"
+          size="icon"
+          class="ml-2 size-7 flex-shrink-0 sm:ml-3"
+          @click="toggleSidebar"
+        >
+          <LucidePanelLeftOpen
+            class="text-muted-foreground size-4"
+            v-if="state === 'collapsed'"
+          />
+          <LucidePanelLeftClose class="text-muted-foreground size-4" v-else />
+          <span class="sr-only">Toggle Sidebar</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent class="flex items-center gap-2">
+        <p class="text-xs">Toggle Sidebar</p>
+        <div class="flex gap-0.5">
+          <div
+            class="bg-background flex size-4.5 items-center justify-center rounded-md border text-xs"
+          >
+            ⌘
+          </div>
+          <div
+            class="bg-background flex size-4.5 items-center justify-center rounded-md border text-xs"
+          >
+            G
+          </div>
+        </div>
+      </TooltipContent>
+    </Tooltip>
     <Breadcrumb
       v-if="showBreadcrumbs"
       class="ml-2 w-full border-l pr-2 pl-2 sm:ml-4 sm:pl-4"

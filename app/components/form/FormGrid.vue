@@ -1,17 +1,4 @@
 <script setup lang="ts">
-import {
-  SIDEBAR_COOKIE_NAME,
-  SIDEBAR_COOKIE_MAX_AGE,
-} from '@/components/ui/sidebar/utils';
-
-const viewport = useViewport();
-
-// Use Nuxt's cookie for persistence
-const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
-  default: () => true,
-  maxAge: SIDEBAR_COOKIE_MAX_AGE,
-});
-
 const props = withDefaults(
   defineProps<{
     design:
@@ -30,14 +17,7 @@ const props = withDefaults(
   },
 );
 
-const isNarrow = computed(() => {
-  const lessThanLg = viewport.isLessThan('xl');
-  const lessThanMd = viewport.isLessThan('md');
-  return (
-    (sidebarOpen.value === true && lessThanLg) ||
-    (sidebarOpen.value === false && lessThanMd)
-  );
-});
+const { isNarrow } = useMainArea();
 
 const gridColsClass = computed(() => {
   if (isNarrow.value) {

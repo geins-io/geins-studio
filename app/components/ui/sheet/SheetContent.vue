@@ -22,9 +22,9 @@ interface SheetContentProps extends DialogContentProps {
 const widthClasses = computed(() => {
   switch (props.width) {
     case 'medium':
-      return 'w-[785px] sm:w-[785px] sm:max-w-[785px]';
+      return 'w-[96vw] sm:w-[785px] sm:max-w-[785px]';
     case 'wide':
-      return 'w-[1310px] sm:w-[1310px] sm:max-w-full';
+      return 'w-[100vw] sm:w-[1310px] sm:max-w-full';
     default:
       return '';
   }
