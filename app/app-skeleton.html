@@ -113,11 +113,25 @@
     }
   }
   .auth-layout {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    flex-direction: column-reverse;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
   }
   .auth-layout-left {
     background: var(--card);
+    display: flex;
+    width: 100%;
+    max-width: 470px;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+    border-radius: 0.5rem;
+    border: var(--border);
+    height: 370px;
   }
   .auth-layout-right {
     background: var(--background);
@@ -125,10 +139,63 @@
     justify-content: center;
     align-items: center;
   }
+
+  @media (min-width: 640px) {
+    .auth-layout-left {
+      height: 394px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .auth-layout {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      min-height: 600px;
+      flex-direction: row;
+      align-items: stretch;
+      padding: 0;
+    }
+    .auth-layout-left {
+      max-width: none;
+      border-radius: 0;
+      border: none;
+      height: auto;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .auth-layout {
+      padding: 1rem;
+    }
+  }
   .logo-full {
-    height: 33.333333%;
-    width: 33.333333%;
+    height: auto;
+    width: 128px;
     fill: currentColor;
+    margin-top: -1.75rem;
+    margin-bottom: 1.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .logo-full {
+      width: 128px;
+      height: auto;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .logo-full {
+      margin-top: 0;
+      margin-bottom: 0;
+      width: 33.333333%;
+      height: 33.333333%;
+    }
+  }
+
+  @media (max-width: 639px) {
+    .logo-full {
+      width: 112px;
+    }
   }
 </style>
 <script type="text/javascript">
@@ -340,7 +407,7 @@
   const sidebarCollapsed = getCookie('geins-sidebar-collapsed') === 'false';
   const screenWidth = window.innerWidth;
   const sidebarWidth =
-    screenWidth <= 768 ? '0' : sidebarCollapsed ? '3rem' : '15rem';
+    screenWidth <= 768 ? '0' : sidebarCollapsed ? '3rem' : '16rem';
   document.documentElement.style.setProperty('--sidebar-width', sidebarWidth);
 
   const idToShow = sidebarCollapsed ? 'logo-small' : 'logo-full';
