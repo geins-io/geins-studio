@@ -13,10 +13,12 @@ const props = withDefaults(
     dataSet?: T[];
     entityName?: string;
     placeholder?: string;
-    allowCustomTags?: boolean; // New prop to enable custom tags
+    allowCustomTags?: boolean;
+    disableTeleport?: boolean;
   }>(),
   {
-    allowCustomTags: false, // Default to false
+    allowCustomTags: false,
+    disableTeleport: false,
   },
 );
 const dataSet = toRef(props, 'dataSet');
@@ -122,7 +124,7 @@ const getName = (id: AcceptableValue): string => {
         </ComboboxInput>
       </TagsInput>
     </ComboboxAnchor>
-    <ComboboxPortal to="body">
+    <ComboboxPortal to="body" :disabled="disableTeleport">
       <ComboboxList class="w-(--reka-popper-anchor-width)">
         <ComboboxEmpty v-if="allowCustomTags">
           {{ t('add_entity_by_typing', { entityName }, 2) }}

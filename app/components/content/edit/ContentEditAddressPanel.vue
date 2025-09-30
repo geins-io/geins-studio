@@ -117,7 +117,7 @@ const handleCancel = () => {
       </SheetHeader>
       <SheetBody>
         <form @submit.prevent>
-          <ContentAddressForm />
+          <ContentAddressForm :disable-teleport="true" />
         </form>
         <div
           v-if="autocompleteGroup === 'shipping' && addressHasValues"
