@@ -41,21 +41,22 @@ const icon = computed(() => {
 </script>
 
 <template>
-  <li>
+  <li class="max-md:block max-md:flex-shrink-0">
     <button
       :class="
         cn(
-          '-mx-4 flex w-[calc(100%+2rem)] items-center gap-2.5 px-4 py-3 text-sm transition-colors hover:bg-background',
+          'hover:bg-background flex items-center gap-2.5 px-4 py-3 text-xs transition-colors max-md:rounded-t-lg max-md:px-5 max-md:pr-8 md:-mx-4 md:w-[calc(100%+2rem)] md:text-sm',
           {
-            'bg-background': props.current,
+            'md:bg-background max-md:border max-md:border-b-0': props.current,
+            'max-md:bg-background max-md:border-b': !props.current,
           },
         )
       "
       @click="$emit('click')"
     >
-      <component :is="icon" class="size-4" />
+      <component :is="icon" class="size-3.5 md:size-4" />
       <slot />
-      <LucideChevronRight class="ml-auto size-4" />
+      <LucideChevronRight class="ml-auto size-3.5 max-md:hidden md:size-4" />
     </button>
   </li>
 </template>

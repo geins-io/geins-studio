@@ -42,7 +42,16 @@ const gridColsClass = computed(() => {
 </script>
 
 <template>
-  <div :class="`grid gap-x-6 ${gridColsClass}`">
+  <div
+    :class="
+      cn(
+        'grid',
+        gridColsClass,
+        'gap-x-4 @3xl/form-grid:gap-x-6',
+        '@max-xl/form-grid:grid-cols-1 @max-xl/form-grid:gap-3 @max-xl/form-grid:[&>*]:col-span-1',
+      )
+    "
+  >
     <slot />
   </div>
 </template>

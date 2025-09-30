@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ComboboxPortal } from 'reka-ui';
 import { Check, ChevronsUpDown, Search } from 'lucide-vue-next';
 const { t } = useI18n();
 
@@ -7,8 +8,11 @@ const props = withDefaults(
     dataSet: PlainDataItem[];
     entityName?: string;
     autocomplete?: string;
+    disableTeleport?: boolean;
   }>(),
-  {},
+  {
+    disableTeleport: false,
+  },
 );
 const model = defineModel<string>();
 
@@ -129,40 +133,42 @@ const handleKeyDown = () => {
         <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
       </button>
     </ComboboxAnchor>
-    <ComboboxList
-      ref="comboboxList"
-      class="relative w-(--reka-popper-anchor-width)"
-    >
-      <div
-        class="bg-card sticky top-0 z-50 w-full items-center rounded-t border-b"
+    <ComboboxPortal to="body" :disabled="disableTeleport">
+      <ComboboxList
+        ref="comboboxList"
+        class="relative w-(--reka-popper-anchor-width)"
       >
-        <ComboboxInput
-          ref="searchInput"
-          class="focus:border-primary focus-visible:border-primary h-10 rounded-none border-0 border-b pl-9 focus:rounded-lg focus:border focus-visible:ring-0 focus-visible:outline-hidden"
-          :placeholder="t('search_entity', { entityName }) + '...'"
-          autocomplete="off"
-          @blur="handleBlur"
-        />
-        <span
-          class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
+        <div
+          class="bg-card sticky top-0 z-50 w-full items-center rounded-t border-b"
         >
-          <Search class="text-muted-foreground size-4" />
-        </span>
-      </div>
+          <ComboboxInput
+            ref="searchInput"
+            class="focus:border-primary focus-visible:border-primary h-10 rounded-none border-0 border-b pl-9 focus:rounded-lg focus:border focus-visible:ring-0 focus-visible:outline-hidden"
+            :placeholder="t('search_entity', { entityName }) + '...'"
+            autocomplete="off"
+            @blur="handleBlur"
+          />
+          <span
+            class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
+          >
+            <Search class="text-muted-foreground size-4" />
+          </span>
+        </div>
 
-      <ComboboxEmpty>
-        {{ t('no_entity_found', { entityName }) }}
-      </ComboboxEmpty>
+        <ComboboxEmpty>
+          {{ t('no_entity_found', { entityName }) }}
+        </ComboboxEmpty>
 
-      <ComboboxGroup class="max-h-[300px] overflow-auto">
-        <ComboboxItem v-for="item in dataSet" :key="item.value" :value="item">
-          {{ item.label }}
+        <ComboboxGroup class="max-h-[300px] overflow-auto">
+          <ComboboxItem v-for="item in dataSet" :key="item.value" :value="item">
+            {{ item.label }}
 
-          <ComboboxItemIndicator>
-            <Check :class="cn('ml-auto size-4')" />
-          </ComboboxItemIndicator>
-        </ComboboxItem>
-      </ComboboxGroup>
-    </ComboboxList>
+            <ComboboxItemIndicator>
+              <Check :class="cn('ml-auto size-4')" />
+            </ComboboxItemIndicator>
+          </ComboboxItem>
+        </ComboboxGroup>
+      </ComboboxList>
+    </ComboboxPortal>
   </Combobox>
 </template>

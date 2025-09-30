@@ -26,6 +26,7 @@ import { TableMode } from '#shared/types';
 
 export const useColumns = <T extends object>() => {
   // BASIC HEADER STYLE
+  const viewport = useViewport();
   const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
   const accountStore = useAccountStore();
   const { currentCurrency } = storeToRefs(accountStore);
@@ -34,10 +35,11 @@ export const useColumns = <T extends object>() => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
 
     const baseStyle =
-      'px-1.5 flex items-center whitespace-nowrap ' + basicHeaderTextStyle;
+      'px-0.5 sm:px-1.5 flex items-center whitespace-nowrap ' +
+      basicHeaderTextStyle;
     const simpleStyle =
-      'h-10 normal-case [&>button]:pl-2 [&>button]:pr-1 [&>button]:normal-case';
-    const advancedStyle = 'h-12';
+      'h-8 sm:h-10 normal-case [&>button]:pl-2 [&>button]:pr-1 [&>button]:normal-case';
+    const advancedStyle = 'h-10 sm:h-12';
     const fullStyle =
       mode === TableMode.Simple
         ? `${baseStyle} ${simpleStyle}`
@@ -50,9 +52,9 @@ export const useColumns = <T extends object>() => {
   const getBasicCellStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
     const baseStyle =
-      'align-middle text-grid leading-8 w-full h-10 flex items-center truncate';
+      'align-middle sm:text-grid leading-6 text-xs sm:leading-8 w-full h-8 sm:h-10 flex items-center truncate';
     const simpleStyle = 'px-3.5';
-    const advancedStyle = 'px-[1.2rem]';
+    const advancedStyle = 'px-3.5 sm:px-[1.2rem]';
     const fullStyle =
       mode === TableMode.Simple
         ? `${baseStyle} ${simpleStyle}`
@@ -211,7 +213,7 @@ export const useColumns = <T extends object>() => {
             return h(
               'div',
               {
-                class: cn(getBasicHeaderStyle(table), 'px-3'),
+                class: cn(getBasicHeaderStyle(table), 'px-3 sm:px-3'),
               },
               columnTitle,
             );
@@ -583,9 +585,9 @@ export const useColumns = <T extends object>() => {
       id: 'actions',
       enableHiding: false,
       enableSorting: false,
-      size: 49,
-      maxSize: 49,
-      minSize: 49,
+      size: viewport.isGreaterThan('sm') ? 49 : 45,
+      maxSize: viewport.isGreaterThan('sm') ? 49 : 45,
+      minSize: viewport.isGreaterThan('sm') ? 49 : 45,
       header: ({ table }: { table: Table<T> }) =>
         h('div', {
           class: cn(getBasicHeaderStyle(table)),
@@ -594,7 +596,12 @@ export const useColumns = <T extends object>() => {
         const rowData = row.original;
         return h(
           'div',
-          { class: cn(getBasicCellStyle(table), 'relative px-2.5') },
+          {
+            class: cn(
+              getBasicCellStyle(table),
+              'relative px-2.5 sm:px-2.5 justify-center',
+            ),
+          },
           h(getActionsComponent(type), {
             ...props,
             rowData,

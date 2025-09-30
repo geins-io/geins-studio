@@ -27,6 +27,7 @@ const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');
 const accountStore = useAccountStore();
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
+const { hasReducedSpace } = useLayout();
 
 // =====================================================================================
 // API & REPOSITORY SETUP
@@ -78,11 +79,7 @@ const entityBase: ProductPricelistCreate = {
 // UI STATE MANAGEMENT
 // =====================================================================================
 // Tabs & Steps
-const currentTab = ref(0);
 const tabs = [t('general'), t('wholesale.pricelist_products_pricing')];
-const showSidebar = computed(() => {
-  return currentTab.value === 0;
-});
 
 const totalCreateSteps = 2;
 const { currentStep, nextStep, previousStep } =
@@ -136,6 +133,8 @@ const {
   loading,
   newEntityUrl,
   entityListUrl,
+  showSidebar,
+  currentTab,
   entityDataCreate,
   entityDataUpdate,
   entityData,
@@ -611,7 +610,7 @@ const vatDescription = computed(() => {
 });
 
 let columns: ColumnDef<PricelistProductList>[] = [];
-const pinnedState = ref(getPinnedState());
+const pinnedState = computed(() => getPinnedState.value);
 
 // =====================================================================================
 // COLUMN SETUP FUNCTIONS
@@ -900,6 +899,17 @@ if (!createMode.value) {
     { deep: true },
   );
 }
+
+// =====================================================================================
+// BREADCRUMBS DATA
+// ====================================================================================
+
+const breadcrumbsStore = useBreadcrumbsStore();
+breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
+breadcrumbsStore.setCurrentParent({
+  title: t(entityName, 2),
+  link: entityListUrl,
+});
 </script>
 
 <template>
@@ -1032,7 +1042,7 @@ if (!createMode.value) {
           >
           <DropdownMenu v-if="!createMode">
             <DropdownMenuTrigger as-child>
-              <Button class="size-9 p-1" size="sm" variant="secondary">
+              <Button class="p-1" size="icon" variant="secondary">
                 <LucideMoreHorizontal class="size-3.5" />
               </Button>
             </DropdownMenuTrigger>
@@ -1287,7 +1297,7 @@ if (!createMode.value) {
                       </Label>
                       <Input
                         v-model.number="pricelistBaseRuleInput"
-                        class="w-48"
+                        class="w-full sm:w-48"
                         size="md"
                         :loading="baseRuleLoading"
                       >

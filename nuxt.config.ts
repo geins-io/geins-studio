@@ -26,7 +26,9 @@ export default defineNuxtConfig({
     'shadcn-nuxt',
     'nuxt-svgo',
     'nuxt-lucide-icons',
-    'nuxt-applicationinsights', // Add Application Insights module
+    // Add Application Insights module
+    'nuxt-applicationinsights',
+    'nuxt-viewport',
   ],
 
   shadcn: {
@@ -38,6 +40,25 @@ export default defineNuxtConfig({
 
   vite: {
     plugins: [tailwindcss()],
+  },
+
+  viewport: {
+    breakpoints: {
+      xs: 320,
+      sm: 640,
+      md: 768,
+      lg: 1024,
+      xl: 1280,
+      '2xl': 1536,
+    },
+
+    defaultBreakpoints: {
+      desktop: 'lg',
+      mobile: 'xs',
+      tablet: 'md',
+    },
+
+    fallbackBreakpoint: 'lg',
   },
 
   colorMode: {

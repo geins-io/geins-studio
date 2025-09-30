@@ -299,15 +299,15 @@ const noSelectionLabel = computed(() => {
       <!-- Footer -->
       <div
         v-if="activeConditionTypes > 1"
-        class="mt-4 flex items-center gap-5 border-t pt-4 text-sm"
+        class="mt-4 items-center gap-5 border-t pt-4 text-sm @2xl:flex"
       >
-        <div>
+        <div class="mb-2 @2xl:mb-0">
           {{ $t('select_entity_that_match', { entityName }, 2) }}
         </div>
         <RadioGroup
           v-model="selection.condition"
           default-value="and"
-          class="flex items-center gap-4"
+          class="items-center gap-2 @2xl:flex @2xl:gap-4"
         >
           <div class="flex items-center space-x-2">
             <RadioGroupItem id="and" value="and" />

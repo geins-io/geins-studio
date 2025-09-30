@@ -4,6 +4,7 @@ import { PricelistQtyLevelsCell, PricelistPriceModeCell } from '#components';
 
 export const usePricelistProductsTable = () => {
   const { t } = useI18n();
+  const { hasReducedSpace } = useLayout();
   const {
     getBasicCellStyle,
     getBasicHeaderStyle,
@@ -98,7 +99,7 @@ export const usePricelistProductsTable = () => {
       header: ({ table }) => {
         return h(
           'div',
-          { class: cn(getBasicHeaderStyle(table), 'px-3') },
+          { class: cn(getBasicHeaderStyle(table), 'px-3 sm:px-3') },
           t('wholesale.pricelist_qty_levels'),
         );
       },
@@ -128,17 +129,19 @@ export const usePricelistProductsTable = () => {
     return extendColumns(columns, priceModeColumn);
   };
 
-  const getPinnedState = () => ({
+  const getPinnedState = computed(() => ({
     left: [],
-    right: [
-      'listPrice',
-      'discount',
-      'margin',
-      'quantityLevels',
-      'priceMode',
-      'actions',
-    ],
-  });
+    right: hasReducedSpace.value
+      ? ['priceMode', 'actions']
+      : [
+          'listPrice',
+          'discount',
+          'margin',
+          'quantityLevels',
+          'priceMode',
+          'actions',
+        ],
+  }));
 
   return {
     setupPricelistColumns,

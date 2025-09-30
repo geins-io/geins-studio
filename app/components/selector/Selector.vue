@@ -269,7 +269,7 @@ defineExpose({
 </script>
 <template>
   <div>
-    <div class="mb-6 flex items-start justify-between">
+    <div class="mb-4 items-start justify-between @2xl:mb-6 @3xl:flex">
       <slot name="header">
         <SelectorHeader
           :entities="entities"

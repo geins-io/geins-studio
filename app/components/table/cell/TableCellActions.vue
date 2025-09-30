@@ -19,7 +19,7 @@ const emit = defineEmits({
   <div class="flex justify-center gap-2">
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
-        <Button class="size-7 p-1" size="xs" variant="outline">
+        <Button class="size-6 p-1 sm:size-7" size="xs" variant="outline">
           <LucideMoreHorizontal class="size-3.5" />
         </Button>
       </DropdownMenuTrigger>

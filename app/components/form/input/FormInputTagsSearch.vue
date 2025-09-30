@@ -3,6 +3,7 @@ import {
   useFilter,
   type AcceptableValue,
   type ListboxItemSelectEvent,
+  ComboboxPortal,
 } from 'reka-ui';
 
 const { t } = useI18n();
@@ -12,10 +13,12 @@ const props = withDefaults(
     dataSet?: T[];
     entityName?: string;
     placeholder?: string;
-    allowCustomTags?: boolean; // New prop to enable custom tags
+    allowCustomTags?: boolean;
+    disableTeleport?: boolean;
   }>(),
   {
-    allowCustomTags: false, // Default to false
+    allowCustomTags: false,
+    disableTeleport: false,
   },
 );
 const dataSet = toRef(props, 'dataSet');
@@ -98,7 +101,7 @@ const getName = (id: AcceptableValue): string => {
         v-model="model"
         :class="
           cn('w-full gap-2 px-2', {
-            'border border-primary': open,
+            'border-primary border': open,
           })
         "
         :display-value="getName"
@@ -120,7 +123,8 @@ const getName = (id: AcceptableValue): string => {
           />
         </ComboboxInput>
       </TagsInput>
-
+    </ComboboxAnchor>
+    <ComboboxPortal to="body" :disabled="disableTeleport">
       <ComboboxList class="w-(--reka-popper-anchor-width)">
         <ComboboxEmpty v-if="allowCustomTags">
           {{ t('add_entity_by_typing', { entityName }, 2) }}
@@ -144,12 +148,12 @@ const getName = (id: AcceptableValue): string => {
           class="flex items-center justify-start"
           @select.prevent="handleAddNewOption"
         >
-          <span class="text-xs text-muted-foreground">
+          <span class="text-muted-foreground text-xs">
             {{ $t('add_entity', { entityName }) }}:
           </span>
           {{ searchTerm }}
         </ComboboxItem>
       </ComboboxList>
-    </ComboboxAnchor>
+    </ComboboxPortal>
   </Combobox>
 </template>

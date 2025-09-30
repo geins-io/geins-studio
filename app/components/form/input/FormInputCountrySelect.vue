@@ -1,6 +1,15 @@
 <script setup lang="ts">
 const model = defineModel<string>();
 
+const props = withDefaults(
+  defineProps<{
+    disableTeleport?: boolean;
+  }>(),
+  {
+    disableTeleport: false,
+  },
+);
+
 const countryCode = ref<string>(model.value || '');
 watch(countryCode, (val) => {
   if (val === model.value) {
@@ -31,6 +40,7 @@ const countries = computed<PlainDataItem[]>(() => {
   <FormInputSelectSearch
     v-model="countryCode"
     :data-set="countries"
+    :disable-teleport="disableTeleport"
     entity-name="country"
     autocomplete="country"
   />

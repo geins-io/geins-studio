@@ -287,12 +287,12 @@ const backToLogin = () => {
 <template>
   <div class="grid gap-4">
     <div class="grid gap-2 text-center">
-      <h1 class="mb-2 text-3xl font-bold">
+      <h1 class="mb-2 text-2xl font-bold sm:text-3xl">
         {{ verifyMode ? $t('auth.verify_title') : $t('auth.login_title') }}
       </h1>
       <p
         v-if="verifyMode && mfaMethod.length > 0"
-        class="text-muted-foreground"
+        class="text-muted-foreground text-sm sm:text-sm"
       >
         {{ $t('auth.verify_description') }} <strong>{{ mfaMethod }}</strong>
       </p>
@@ -444,7 +444,12 @@ const backToLogin = () => {
           @complete="handleVerify"
         >
           <PinInputGroup>
-            <PinInputSlot v-for="(id, index) in 6" :key="id" :index="index" />
+            <PinInputSlot
+              v-for="(id, index) in 6"
+              :key="id"
+              :index="index"
+              class="w-1/6"
+            />
           </PinInputGroup>
         </PinInput>
       </div>

@@ -3,10 +3,12 @@ const props = withDefaults(
   defineProps<{
     addressType?: AddressType;
     formInputPrefix?: string;
+    disableTeleport?: boolean;
   }>(),
   {
     addressType: undefined,
     formInputPrefix: undefined,
+    disableTeleport: false,
   },
 );
 
@@ -102,6 +104,7 @@ const formPrefix = computed(
           <FormControl>
             <FormInputCountrySelect
               :model-value="componentField.modelValue"
+              :disable-teleport="disableTeleport"
               @update:model-value="componentField['onUpdate:modelValue']"
             />
           </FormControl>

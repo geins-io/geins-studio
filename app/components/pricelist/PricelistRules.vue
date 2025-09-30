@@ -110,48 +110,50 @@ const thClasses = 'text-xs font-bold text-left py-2';
 </script>
 <template>
   <div class="w-full table-auto">
-    <table class="w-full table-auto">
-      <thead v-if="localRules.length">
-        <tr>
-          <th :class="thClasses">{{ $t('quantity') }}</th>
-          <th v-if="mode === 'margin' || mode === 'all'" :class="thClasses">
-            {{ $t('margin') }}
-          </th>
-          <th v-if="mode === 'discount' || mode === 'all'" :class="thClasses">
-            {{ $t('discount') }}
-          </th>
-          <th v-if="mode === 'all'" :class="thClasses">
-            {{ $t('wholesale.pricelist_price') }} ({{ props.vatDescription }})
-          </th>
-          <th v-else :class="thClasses">
-            {{ $t('wholesale.pricelist_applied') }}
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <PricelistRule
-          v-for="(rule, index) in localRules"
-          :key="rule.internalId"
-          v-model:quantity="rule.quantity"
-          v-model:margin="rule.margin"
-          v-model:discount="rule.discountPercent"
-          v-model:applied="rule.applied"
-          v-model:price="rule.price"
-          :mode="mode"
-          :index="index"
-          :global="rule.global"
-          :currency="currency"
-          :loading="loading && loadingIndex === index"
-          :last-field-changed="rule.lastFieldChanged"
-          @update:margin="handleUpdate(index, rule, 'margin')"
-          @update:discount="handleUpdate(index, rule, 'discountPercent')"
-          @update:price="handleUpdate(index, rule, 'price')"
-          @apply="apply(index, rule, false)"
-          @apply-overwrite="apply(index, rule, true)"
-          @remove="remove(rule)"
-        />
-      </tbody>
-    </table>
+    <div class="w-full overflow-x-auto">
+      <table class="w-full table-auto">
+        <thead v-if="localRules.length">
+          <tr>
+            <th :class="thClasses">{{ $t('quantity') }}</th>
+            <th v-if="mode === 'margin' || mode === 'all'" :class="thClasses">
+              {{ $t('margin') }}
+            </th>
+            <th v-if="mode === 'discount' || mode === 'all'" :class="thClasses">
+              {{ $t('discount') }}
+            </th>
+            <th v-if="mode === 'all'" :class="thClasses">
+              {{ $t('wholesale.pricelist_price') }} ({{ props.vatDescription }})
+            </th>
+            <th v-else :class="thClasses">
+              {{ $t('wholesale.pricelist_applied') }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <PricelistRule
+            v-for="(rule, index) in localRules"
+            :key="rule.internalId"
+            v-model:quantity="rule.quantity"
+            v-model:margin="rule.margin"
+            v-model:discount="rule.discountPercent"
+            v-model:applied="rule.applied"
+            v-model:price="rule.price"
+            :mode="mode"
+            :index="index"
+            :global="rule.global"
+            :currency="currency"
+            :loading="loading && loadingIndex === index"
+            :last-field-changed="rule.lastFieldChanged"
+            @update:margin="handleUpdate(index, rule, 'margin')"
+            @update:discount="handleUpdate(index, rule, 'discountPercent')"
+            @update:price="handleUpdate(index, rule, 'price')"
+            @apply="apply(index, rule, false)"
+            @apply-overwrite="apply(index, rule, true)"
+            @remove="remove(rule)"
+          />
+        </tbody>
+      </table>
+    </div>
     <Button
       v-if="!disabled"
       size="sm"

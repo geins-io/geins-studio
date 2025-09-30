@@ -1,18 +1,92 @@
 <script setup lang="ts">
-const { logout } = useGeinsAuth();
-const { userInitials } = useUserStore();
+import LogoLetter from '@/assets/logos/geins-g.svg';
+import { useSidebar } from '@/components/ui/sidebar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+const { state, toggleSidebar } = useSidebar();
 
-const colorMode = useColorMode();
-const setColorMode = () => {
-  colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark';
-};
+const breadcrumbsStore = useBreadcrumbsStore();
+const { showBreadcrumbs, currentTitle, currentParent } =
+  storeToRefs(breadcrumbsStore);
 </script>
 <template>
   <header
-    class="text-background-foreground flex flex-none items-center justify-start border-b bg-card"
+    v-auto-animate
+    class="text-background-foreground bg-card flex flex-none items-center justify-start border-b"
   >
-    <div class="relative ml-5 w-full max-w-96 items-center">
-      <!--   <Input
+    <Tooltip>
+      <TooltipTrigger as-child>
+        <Button
+          data-sidebar="trigger"
+          data-slot="sidebar-trigger"
+          variant="ghost"
+          size="icon"
+          class="ml-2 size-7 flex-shrink-0 sm:ml-3"
+          @click="toggleSidebar"
+        >
+          <LucidePanelLeftOpen
+            class="text-muted-foreground size-4"
+            v-if="state === 'collapsed'"
+          />
+          <LucidePanelLeftClose class="text-muted-foreground size-4" v-else />
+          <span class="sr-only">Toggle Sidebar</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent class="flex items-center gap-2">
+        <p class="text-xs">Toggle Sidebar</p>
+        <div class="flex gap-0.5">
+          <div
+            class="bg-background flex size-4.5 items-center justify-center rounded-md border text-xs"
+          >
+            ⌘
+          </div>
+          <div
+            class="bg-background flex size-4.5 items-center justify-center rounded-md border text-xs"
+          >
+            G
+          </div>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+    <Breadcrumb
+      v-if="showBreadcrumbs"
+      class="ml-2 w-full border-l pr-2 pl-2 sm:ml-4 sm:pl-4"
+    >
+      <BreadcrumbList>
+        <BreadcrumbItem class="md:hidden">
+          <BreadcrumbLink as-child>
+            <NuxtLink to="/">
+              <LogoLetter class="size-4" :font-controlled="false" />
+            </NuxtLink>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator class="md:hidden" />
+        <BreadcrumbItem>
+          <BreadcrumbLink as-child>
+            <NuxtLink to="/">Wholesale</NuxtLink>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator v-if="currentParent" />
+        <BreadcrumbItem
+          v-if="currentParent && typeof currentParent === 'object'"
+        >
+          <BreadcrumbLink as-child>
+            <NuxtLink :to="currentParent.link">
+              {{ currentParent.title }}
+            </NuxtLink>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>{{ currentTitle }}</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+    <!--  <div class="relative ml-5 w-full max-w-96 items-center">
+       <Input
         id="search"
         type="text"
         :placeholder="$t('global_search_placeholder')"
@@ -22,15 +96,15 @@ const setColorMode = () => {
         class="absolute inset-y-0 start-0 flex items-center justify-center px-2"
       >
         <LucideSearch class="size-5 text-foreground" />
-      </span>-->
+      </span>
     </div>
-    <!--  <div class="ml-auto mr-5">
+   <div class="ml-auto mr-5">
       <NuxtLink to="/" class="flex items-center gap-1.5">
         <LucideCircleHelp class="size-4" />
         <span class="text-sm">Help center</span>
       </NuxtLink>
     </div> -->
-    <!--  <div class="mr-4">
+    <!--  <div class="mr-4">  
       <Button
         variant="secondary"
         size="icon"
@@ -45,44 +119,5 @@ const setColorMode = () => {
         />
       </Button>
     </div> -->
-    <div class="ml-auto mr-5">
-      <DropdownMenu>
-        <DropdownMenuTrigger class="size-10">
-          <Avatar class="size-10 border">
-            <AvatarFallback>{{ userInitials }}</AvatarFallback>
-          </Avatar>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent class="w-48">
-          <DropdownMenuLabel class="text-sm">My Account</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <!--           <DropdownMenuItem>
-            <NuxtLink
-              class="flex items-center"
-              :to="`/account/user/${user?.username}`"
-            >
-              <LucideUser class="mr-2 size-4" />
-              <span>Profile</span>
-            </NuxtLink>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <LucideCreditCard class="mr-2 size-4" />
-            <span>Billing</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator /> -->
-          <DropdownMenuItem @click="setColorMode">
-            <LucideSun class="mr-2 hidden size-4 dark:block" />
-            <LucideMoonStar class="mr-2 size-4 dark:hidden" />
-            <span class="dark:hidden">Dark mode</span>
-            <span class="hidden dark:block">Light mode</span>
-            <!-- <DropdownMenuShortcut>⌘C</DropdownMenuShortcut> -->
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem @click="logout()">
-            <LucideLogOut class="mr-2 size-4" />
-            <span>Log out</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
   </header>
 </template>

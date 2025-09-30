@@ -312,7 +312,7 @@ const searchableColumn = computed(() => {
   >
     <div
       v-if="searchableColumn"
-      :class="`relative w-full ${advancedMode ? 'max-w-sm' : ''}`"
+      :class="`relative w-full ${advancedMode ? '@2xl:max-w-sm' : ''}`"
     >
       <Input
         class="w-full pl-8"
@@ -332,10 +332,10 @@ const searchableColumn = computed(() => {
   <div
     :class="
       cn(
-        'text-card-foreground relative overflow-hidden rounded-lg border pb-14 transition-transform',
-        `${advancedMode ? 'mb-26 translate-y-40' : ''}`,
+        'text-card-foreground relative overflow-hidden rounded-lg border pb-12 transition-transform @2xl:pb-14',
+        `${advancedMode ? 'mb-28 translate-y-40 @2xl:mb-26' : ''}`,
         `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
-        `${tableMaximized ? 'absolute top-16 right-8 bottom-0 left-8 -mt-px mb-0 translate-y-0' : ''}`,
+        `${tableMaximized ? 'absolute top-12 right-2 bottom-0 left-2 -mt-px mb-0 translate-y-0 @2xl:right-8 @2xl:left-8 @2xl:mb-0' : ''}`,
       )
     "
   >

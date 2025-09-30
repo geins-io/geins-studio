@@ -1,22 +1,20 @@
 <script setup lang="ts">
 import { SpeedInsights } from '@vercel/speed-insights/vue';
-const isCollapsed = useCookie<boolean>('geins-sidebar-collapsed', {
-  default: () => true,
-  maxAge: 60 * 60 * 24 * 365,
-});
 
-isCollapsed.value = isCollapsed.value !== undefined ? isCollapsed.value : true;
-
-const currentSidebarWidth = computed(() => {
-  return isCollapsed.value ? '3.75rem' : '15rem';
-});
+const { currentSidebarWidth, sidebarOpen } = useLayout();
 
 const mainWidthStyle = computed(() => {
-  return { maxWidth: `calc(100vw - ${currentSidebarWidth.value})` };
+  const sidebarWidth = currentSidebarWidth.value;
+
+  if (sidebarWidth === 0) {
+    return { maxWidth: '100vw' };
+  }
+
+  return { maxWidth: `calc(100vw - ${sidebarWidth})` };
 });
 
-const mainContentStyle = computed(() => {
-  return { height: `calc(100vh - 4rem)` };
+const mainHeightStyle = computed(() => {
+  return { height: `calc(100vh - var(--h-header))` };
 });
 
 const contentClasses = computed(() => {
@@ -29,20 +27,19 @@ const contentClasses = computed(() => {
 });
 </script>
 <template>
-  <div class="flex h-screen overflow-hidden">
-    <LayoutSidebar :sidebar-width="currentSidebarWidth" />
-    <main
-      class="relative flex grow flex-col transition-[max-width]"
-      :style="mainWidthStyle"
-    >
+  <SidebarProvider v-model:open="sidebarOpen">
+    <LayoutSidebar />
+    <SidebarInset class="@container" :style="mainWidthStyle">
       <LayoutHeader class="sticky top-0 h-(--h-header)" />
       <div
-        :class="cn('flex grow flex-col p-8 pb-14', contentClasses)"
-        :style="mainContentStyle"
+        :class="
+          cn('flex grow flex-col p-3 pb-12 @2xl:p-8 @2xl:pb-14', contentClasses)
+        "
+        :style="mainHeightStyle"
       >
         <slot />
       </div>
-    </main>
-  </div>
+    </SidebarInset>
+  </SidebarProvider>
   <SpeedInsights />
 </template>

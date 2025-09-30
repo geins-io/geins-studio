@@ -3,6 +3,7 @@ import { TableMode, type WholesaleAccount } from '#shared/types';
 
 definePageMeta({
   layout: 'default',
+  title: 'Welcome to Geins Studio',
 });
 
 // const { wholesaleApi } = useGeinsRepository();
@@ -51,21 +52,20 @@ definePageMeta({
 //     return new Date(b.created).getTime() - new Date(a.created).getTime();
 //   });
 // }
+
+const breadcrumbsStore = useBreadcrumbsStore();
+breadcrumbsStore.setShowBreadcrumbs(false);
 </script>
 
 <template>
-  <div class="max-w-full px-8 py-6">
-    <ContentHeader
-      title="Welcome to Geins Studio"
-      description=""
-      :show-breadcrumb="false"
-    />
+  <div class="max-w-full sm:p-4">
+    <ContentHeader title="Welcome to Geins Studio" />
 
     <!-- Main content area -->
     <div class="space-y-8">
       <!-- Wholesale quick access section -->
       <div>
-        <div class="mt-10 mb-6">
+        <div class="mt-6 mb-6 sm:mt-10">
           <ContentCardHeader
             title="Wholesale - Quick Access"
             description="Quick access to key wholesale features like account management, pricing, and product access."
@@ -74,7 +74,7 @@ definePageMeta({
         </div>
 
         <!-- Quick access cards grid -->
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div class="grid grid-cols-1 gap-4 @2xl:grid-cols-2 @6xl:grid-cols-4">
           <ContentLinkCard
             title="Create a new account"
             description="Manage existing wholesale accounts"

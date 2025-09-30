@@ -65,9 +65,10 @@ const hasCreateView = computed(() => !!slots.create);
       <CollapsibleTrigger
         :class="
           cn(
-            `flex w-full items-center justify-between p-6`,
+            `flex w-full items-center justify-between p-4 @2xl:p-6`,
             `${futureStep && createMode ? 'pointer-events-none opacity-50' : ''}`,
             (futureStep || !createMode) && 'cursor-default',
+            !createMode && 'gap-2 max-sm:flex-col max-sm:items-start',
           )
         "
         :disabled="futureStep || !createMode"
@@ -87,7 +88,14 @@ const hasCreateView = computed(() => !!slots.create);
         <slot name="header-action" />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div :class="cn('space-y-8 p-6 pt-0', `${createMode ? '' : 'pb-8'}`)">
+        <div
+          :class="
+            cn(
+              'space-y-8 p-4 pt-0 @2xl:p-6',
+              `${createMode ? '' : 'pb-4 @2xl:pt-0 @2xl:pb-8'}`,
+            )
+          "
+        >
           <slot v-if="hasCreateView && createMode" name="create" />
           <slot v-else />
           <div

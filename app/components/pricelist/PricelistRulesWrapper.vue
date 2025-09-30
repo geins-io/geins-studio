@@ -11,12 +11,18 @@ const mode = defineModel<PricelistRuleMode>('mode', { required: true });
 
 <template>
   <div class="rounded-lg border">
-    <div class="flex items-center border-b px-4 py-2.5">
-      <ContentCardHeader size="sm" :title="title" class="mr-5 border-r pr-5" />
-      <div class="flex items-center gap-2">
+    <div
+      class="flex items-center border-b px-2 py-1.5 whitespace-nowrap sm:px-4 sm:py-2.5"
+    >
+      <ContentCardHeader
+        size="sm"
+        :title="title"
+        class="mr-2 border-r pr-2 sm:mr-5 sm:pr-5"
+      />
+      <div class="flex items-center gap-1 sm:gap-2">
         <Label :for="modeId" class="text-xs"> Calculate by </Label>
-        <Select :id="modeId" v-model="mode" class="mb-4 w-48!">
-          <SelectTrigger class="w-32" size="sm">
+        <Select :id="modeId" v-model="mode" class="mb-4 w-28 sm:w-48!">
+          <SelectTrigger class="w-28 sm:w-32" size="sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

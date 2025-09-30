@@ -16,11 +16,25 @@ export const useUserStore = defineStore('user', () => {
       ? user.value.lastName[0]
       : '';
 
-    return `${firstNameInitial}${lastNameInitial}` || 'N/A';
+    const fallbackFromEmail = user.value.email?.substring(0, 2).toUpperCase();
+
+    return (
+      `${firstNameInitial}${lastNameInitial}` || fallbackFromEmail || 'N/A'
+    );
+  });
+
+  const userName = computed(() => {
+    return `${user.value?.firstName || ''} ${user.value?.lastName || ''}`;
+  });
+
+  const userEmail = computed(() => {
+    return user.value?.email || 'N/A';
   });
 
   return {
     user,
     userInitials,
+    userName,
+    userEmail,
   };
 });

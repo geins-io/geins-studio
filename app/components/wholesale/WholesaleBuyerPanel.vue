@@ -317,7 +317,7 @@ const existingCustomerName = computed(() => {
             </FormGrid>
           </FormGridWrap>
         </form>
-        <div class="mt-8 border-t pt-8">
+        <div class="mt-4 border-t pt-4 sm:mt-8 sm:pt-8">
           <div
             v-if="mode === 'edit'"
             class="mb-8 flex items-center justify-between"
