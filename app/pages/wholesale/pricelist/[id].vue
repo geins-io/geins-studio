@@ -271,7 +271,12 @@ const previewPricelist = async (
 
     if (updateProducts) {
       editedProducts.value = pricelistProducts.value
-        .filter((p) => p.priceMode !== 'rule' && p.priceMode !== 'auto')
+        .filter(
+          (p) =>
+            p.priceMode !== 'rule' &&
+            p.priceMode !== 'auto' &&
+            p.priceMode !== 'autoRule',
+        )
         .map((p) => {
           const priceMode = convertPriceModeToRuleField(p.priceMode);
           const value = priceMode ? Number(p[priceMode]) || null : null;

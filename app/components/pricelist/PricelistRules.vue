@@ -94,7 +94,6 @@ const handleUpdate = (
 
 const remove = (rule: PricelistRule): void => {
   if (!rule.applied) {
-    // Remove unapplied rule by internal ID
     const ruleIndex = localRules.value.findIndex(
       (r) => r.internalId === rule.internalId,
     );

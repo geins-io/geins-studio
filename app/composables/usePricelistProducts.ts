@@ -59,29 +59,11 @@ export const usePricelistProducts = () => {
         price: p.price,
         margin: p.margin,
         discountPercent: p.discountPercent,
-        global: false,
+        global: p.priceMode === 'autoRule',
         lastFieldChanged: convertPriceModeToRuleField(p.priceMode),
       }));
 
-    const entityLevels = entityData.rules
-      ?.filter(
-        (rule: PricelistRule) =>
-          rule.quantity !== undefined && rule.quantity !== 1,
-      ) // Filter out quantity 1 and undefined rules
-      ?.map((rule: PricelistRule) => ({
-        quantity: rule.quantity!,
-        margin: rule.margin,
-        discountPercent: rule.discountPercent,
-        price: rule.price,
-        global: true,
-      }));
-
-    const mergedLevels: PricelistRule[] = [
-      ...productLevels,
-      ...(entityLevels || []),
-    ];
-
-    return mergedLevels.sort((a, b) => (a.quantity || 0) - (b.quantity || 0));
+    return productLevels.sort((a, b) => (a.quantity || 0) - (b.quantity || 0));
   };
 
   const getPricelistProduct = (
@@ -119,8 +101,16 @@ export const usePricelistProducts = () => {
   const getNewPricelistProducts = (
     newProducts: PricelistProduct[],
     currentProducts: PricelistProduct[],
+    productId?: string,
   ): PricelistProduct[] => {
-    const updatedProducts = [...currentProducts];
+    let filteredProducts = currentProducts;
+    if (productId) {
+      filteredProducts = currentProducts.filter(
+        (product) => product.productId !== productId,
+      );
+    }
+
+    const updatedProducts = [...filteredProducts];
 
     newProducts.forEach((newProduct) => {
       addToPricelistProducts(newProduct, updatedProducts);

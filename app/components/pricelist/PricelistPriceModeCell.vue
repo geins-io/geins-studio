@@ -11,6 +11,7 @@ const tooltipContent = computed(() => {
     case 'discount':
       return 'Price set manually';
     case 'rule':
+    case 'autoRule':
       return 'Price set globally';
     case 'auto':
       return 'Default price';
@@ -26,6 +27,7 @@ const displayLetter = computed(() => {
     case 'discount':
       return 'M';
     case 'rule':
+    case 'autoRule':
       return 'G';
     default:
       return 'D';

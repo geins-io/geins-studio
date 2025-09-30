@@ -323,4 +323,6 @@ export type PricelistPriceMode =
   | 'margin'
   | 'discount'
   | 'rule'
-  | 'auto';
+  | 'auto'
+  | 'autoRule'
+  | 'autoFixed';
