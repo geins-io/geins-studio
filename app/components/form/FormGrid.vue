@@ -17,12 +17,7 @@ const props = withDefaults(
   },
 );
 
-const { isNarrow } = useMainArea();
-
 const gridColsClass = computed(() => {
-  if (isNarrow.value) {
-    return 'grid-cols-1 gap-3 [&>*]:col-span-1';
-  }
   switch (props.design) {
     case '1+1+2':
       return 'grid-cols-12 [&>*:nth-child(1)]:col-span-3 [&>*:nth-child(2)]:col-span-3 [&>*:nth-child(3)]:col-span-6';
@@ -47,7 +42,16 @@ const gridColsClass = computed(() => {
 </script>
 
 <template>
-  <div :class="`grid gap-x-6 ${gridColsClass}`">
+  <div
+    :class="
+      cn(
+        'grid',
+        gridColsClass,
+        'gap-x-4 @3xl/form-grid:gap-x-6',
+        '@max-xl/form-grid:grid-cols-1 @max-xl/form-grid:gap-3 @max-xl/form-grid:[&>*]:col-span-1',
+      )
+    "
+  >
     <slot />
   </div>
 </template>

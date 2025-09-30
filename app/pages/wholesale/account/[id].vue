@@ -110,7 +110,6 @@ const addressBase: AddressBase = {
 // UI STATE MANAGEMENT
 // =====================================================================================
 // Tabs & Steps
-const currentTab = ref(0);
 const tabs = [
   t('general'),
   t('wholesale.buyers'),
@@ -118,9 +117,6 @@ const tabs = [
   // t('wholesale.orders'),
   t('settings'),
 ];
-const showSidebar = computed(() => {
-  return viewport.isGreaterThan('md') && currentTab.value === 0;
-});
 
 const totalCreateSteps = 2;
 const { currentStep, nextStep, previousStep } =
@@ -159,6 +155,8 @@ const {
   loading,
   newEntityUrl,
   entityListUrl,
+  showSidebar,
+  currentTab,
   entityDataCreate,
   entityDataUpdate,
   entityData,

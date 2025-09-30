@@ -27,7 +27,7 @@ const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');
 const accountStore = useAccountStore();
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
-const viewport = useViewport();
+const { hasReducedSpace } = useLayout();
 
 // =====================================================================================
 // API & REPOSITORY SETUP
@@ -79,11 +79,7 @@ const entityBase: ProductPricelistCreate = {
 // UI STATE MANAGEMENT
 // =====================================================================================
 // Tabs & Steps
-const currentTab = ref(0);
 const tabs = [t('general'), t('wholesale.pricelist_products_pricing')];
-const showSidebar = computed(() => {
-  return viewport.isGreaterThan('md') && currentTab.value === 0;
-});
 
 const totalCreateSteps = 2;
 const { currentStep, nextStep, previousStep } =
@@ -137,6 +133,8 @@ const {
   loading,
   newEntityUrl,
   entityListUrl,
+  showSidebar,
+  currentTab,
   entityDataCreate,
   entityDataUpdate,
   entityData,

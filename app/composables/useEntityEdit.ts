@@ -60,6 +60,7 @@ export function useEntityEdit<
     getNewEntityUrl,
     getEntityListUrl,
   } = useEntityUrl(route.fullPath);
+  const { hasReducedSpace } = useLayout();
 
   // Core state
   const entityName = options.entityName || getEntityName();
@@ -89,6 +90,12 @@ export function useEntityEdit<
         (entityData.value?.name ? ': ' + entityData.value.name : '')
       : entityData.value?.name || t('edit_entity', { entityName }),
   );
+
+  // Sidebar + tabs
+  const currentTab = ref(0);
+  const showSidebar = computed(() => {
+    return !hasReducedSpace.value && currentTab.value === 0;
+  });
 
   // Original data tracking for unsaved changes
   const originalEntityData = ref<string>('');
@@ -306,6 +313,8 @@ export function useEntityEdit<
     loading,
     newEntityUrl,
     entityListUrl,
+    currentTab,
+    showSidebar,
 
     // Entity data
     refreshEntityData,

@@ -4,7 +4,7 @@ import { PricelistQtyLevelsCell, PricelistPriceModeCell } from '#components';
 
 export const usePricelistProductsTable = () => {
   const { t } = useI18n();
-  const { isMedium } = useMainArea();
+  const { hasReducedSpace } = useLayout();
   const {
     getBasicCellStyle,
     getBasicHeaderStyle,
@@ -131,7 +131,7 @@ export const usePricelistProductsTable = () => {
 
   const getPinnedState = computed(() => ({
     left: [],
-    right: isMedium.value
+    right: hasReducedSpace.value
       ? ['priceMode', 'actions']
       : [
           'listPrice',

@@ -337,8 +337,10 @@
     document.querySelector('.auth-layout').classList.remove('hidden');
   }
 
-  const sidebarCollapsed = getCookie('sidebar_state') === 'false';
-  const sidebarWidth = sidebarCollapsed ? '3rem' : '15rem';
+  const sidebarCollapsed = getCookie('geins-sidebar-collapsed') === 'false';
+  const screenWidth = window.innerWidth;
+  const sidebarWidth =
+    screenWidth <= 768 ? '0' : sidebarCollapsed ? '3rem' : '15rem';
   document.documentElement.style.setProperty('--sidebar-width', sidebarWidth);
 
   const idToShow = sidebarCollapsed ? 'logo-small' : 'logo-full';

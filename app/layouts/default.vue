@@ -1,29 +1,7 @@
 <script setup lang="ts">
 import { SpeedInsights } from '@vercel/speed-insights/vue';
 
-import {
-  SIDEBAR_WIDTH_ICON,
-  SIDEBAR_WIDTH,
-  SIDEBAR_COOKIE_NAME,
-  SIDEBAR_COOKIE_MAX_AGE,
-} from '@/components/ui/sidebar/utils';
-
-const viewport = useViewport();
-
-const currentSidebarWidth = computed(() => {
-  const isLessThanMd = viewport.isLessThan('md');
-
-  if (isLessThanMd) {
-    return 0;
-  }
-  return defaultOpen.value ? SIDEBAR_WIDTH : SIDEBAR_WIDTH_ICON;
-});
-
-// Use Nuxt's cookie for persistence
-const defaultOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
-  default: () => true,
-  maxAge: SIDEBAR_COOKIE_MAX_AGE,
-});
+const { currentSidebarWidth, sidebarOpen } = useLayout();
 
 const mainWidthStyle = computed(() => {
   const sidebarWidth = currentSidebarWidth.value;
@@ -49,7 +27,7 @@ const contentClasses = computed(() => {
 });
 </script>
 <template>
-  <SidebarProvider v-model:open="defaultOpen">
+  <SidebarProvider v-model:open="sidebarOpen">
     <LayoutSidebar />
     <SidebarInset class="@container" :style="mainWidthStyle">
       <LayoutHeader class="sticky top-0 h-(--h-header)" />

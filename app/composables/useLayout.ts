@@ -1,9 +1,11 @@
 import {
+  SIDEBAR_WIDTH_ICON,
+  SIDEBAR_WIDTH,
   SIDEBAR_COOKIE_NAME,
   SIDEBAR_COOKIE_MAX_AGE,
 } from '@/components/ui/sidebar/utils';
 
-export const useMainArea = () => {
+export const useLayout = () => {
   const viewport = useViewport();
 
   const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
@@ -11,7 +13,16 @@ export const useMainArea = () => {
     maxAge: SIDEBAR_COOKIE_MAX_AGE,
   });
 
-  const isNarrow = computed(() => {
+  const currentSidebarWidth = computed(() => {
+    const isLessThanMd = viewport.isLessOrEquals('md');
+
+    if (isLessThanMd) {
+      return 0;
+    }
+    return sidebarOpen.value ? SIDEBAR_WIDTH : SIDEBAR_WIDTH_ICON;
+  });
+
+  const hasLimitedSpace = computed(() => {
     const lessThanLg = viewport.isLessThan('xl');
     const lessThanMd = viewport.isLessThan('md');
     return (
@@ -20,7 +31,7 @@ export const useMainArea = () => {
     );
   });
 
-  const isMedium = computed(() => {
+  const hasReducedSpace = computed(() => {
     const lessThanLg = viewport.isLessThan('lg');
     const lessThanXl = viewport.isLessThan('xl');
     return (
@@ -31,7 +42,8 @@ export const useMainArea = () => {
 
   return {
     sidebarOpen,
-    isNarrow,
-    isMedium,
+    currentSidebarWidth,
+    hasLimitedSpace,
+    hasReducedSpace,
   };
 };
