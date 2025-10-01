@@ -1,13 +1,21 @@
-export interface User {
-  id: number | string;
-  firstName: string;
-  lastName: string;
+export type ApiUserType = 'api' | 'personal';
+
+export interface UserBase {
+  name: string;
+  firstName?: string;
+  lastName?: string;
   email?: string | null;
-  phone?: string;
+  phoneNumber?: string;
   company?: string;
   roles?: string[];
-  apiUserType?: string;
-  username?: string;
+  apiUserType?: ApiUserType;
+  error?: unknown;
+}
+
+export type UserCreate = CreateEntity<UserBase>;
+export type UserUpdate = UpdateEntity<UserBase>;
+export interface User extends ResponseEntity<UserBase> {
+  password?: string;
 }
 
 export interface AuthTokens {
@@ -15,7 +23,7 @@ export interface AuthTokens {
   refreshToken?: string;
   loginToken?: string;
   mfaCode?: string;
-  accounts?: AuthAccounts;
+  accounts?: AuthAccounts[];
   accountKey?: string;
 }
 
@@ -31,6 +39,7 @@ export interface Session extends AuthTokens {
   user?: User;
   mfaActive?: boolean;
   mfaMethod?: string;
+  expires?: string;
 }
 
 export interface LoginCredentials {
@@ -40,9 +49,34 @@ export interface LoginCredentials {
 }
 
 export interface AuthAccounts {
-  [key: string]: {
-    displayName: string;
-  };
+  accountKey: string;
+  displayName: string;
+  roles: string[];
 }
 
-export type AuthFormMode = 'login' | 'verify' | 'account';
+export interface AuthBroadcastData {
+  session?: Session | null;
+  isRefreshing?: boolean;
+}
+
+export type AuthFormMode =
+  | 'login'
+  | 'verify'
+  | 'account'
+  | 'forgot-password'
+  | 'reset-password';
+
+export interface LoginFormValues {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+export interface ForgotPasswordFormValues {
+  email: string;
+}
+
+export interface ResetPasswordFormValues {
+  newPassword: string;
+  passwordRepeat: string;
+}

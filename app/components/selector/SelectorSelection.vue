@@ -1,4 +1,15 @@
 <script setup lang="ts">
+import type {
+  CompareCondition,
+  SelectorSelectionInternal,
+} from '#shared/types';
+import {
+  SelectorMode,
+  SelectorCondition,
+  SelectorSelectionType,
+  SelectorSelectionStrategy,
+} from '#shared/types';
+
 // PROPS
 const props = withDefaults(
   defineProps<{
@@ -6,26 +17,85 @@ const props = withDefaults(
     type: SelectorSelectionType;
     entityName: string;
     mode: SelectorMode;
-    entities: Entity[];
+    entities: SelectorEntity[];
+    selectionStrategy?: SelectorSelectionStrategy;
   }>(),
   {},
 );
 
 // TWO-WAY BINDING FOR SELECTION VIA V-MODEL
-const selection = defineModel<SelectorSelection>('selection', {
+const selection = defineModel<SelectorSelectionInternal>('selection', {
   required: true,
 });
 
 // GLOBALS
 const { t } = useI18n();
-const currentCurrency = ref(props.currency);
+const { getCategoryName, getBrandName } = useProductsStore();
+const currentCurrency = toRef(props, 'currency');
+const entityName = toRef(props, 'entityName');
+const entities = toRef(props, 'entities');
+const mode = toRef(props, 'mode');
+const selectionStrategy = toRef(props, 'selectionStrategy');
+const type = toRef(props, 'type');
+const entityIsProduct = computed(() => entityName.value === 'product');
+const selectorOptions: Ref<SelectorSelectionOption[]> = computed(() => {
+  const options = [
+    {
+      id: 'product',
+      group: 'ids',
+      label: t(entityName.value, 2),
+    },
+    {
+      id: 'entity',
+      group: 'ids',
+      label: t(entityName.value, 2),
+    },
+    {
+      id: 'category',
+      group: 'categoryIds',
+      label: t('category', 2),
+    },
+    {
+      id: 'brand',
+      group: 'brandIds',
+      label: t('brand', 2),
+    },
+    // {
+    //   id: 'price',
+    //   group: 'price',
+    //   label: t('price'),
+    // },
+    // {
+    //   id: 'stock',
+    //   group: 'stock',
+    //   label: t('stock'),
+    // },
+    // {
+    //   id: 'import',
+    //   group: 'ids',
+    //   label: t('import'),
+    // },
+  ];
+
+  const filteredOptions =
+    mode.value === SelectorMode.Simple
+      ? options.filter(
+          (o) => o.id === (entityIsProduct.value ? 'product' : 'entity'),
+        )
+      : options.filter(
+          (o) => o.id !== (entityIsProduct.value ? 'entity' : 'product'),
+        );
+
+  return filteredOptions as SelectorSelectionOption[];
+});
+
 const activeConditionTypes = computed(() => {
   let active = 0;
   Object.keys(selection.value).forEach((key) => {
     if (
       key !== 'condition' &&
       key !== 'ids' &&
-      selection.value[key as keyof SelectorSelection]?.length
+      selection.value[key as keyof SelectorSelectionInternal]?.length
     ) {
       active++;
     }
@@ -36,21 +106,15 @@ const activeConditionTypes = computed(() => {
 // WATCHERS TO KEEP GLOBALS IN SYNC
 watch(activeConditionTypes, (newVal) => {
   if (newVal <= 1) {
-    selection.value.condition = 'and';
+    selection.value.condition = SelectorCondition.And;
   }
 });
-watch(
-  () => props.currency,
-  (newVal) => {
-    currentCurrency.value = newVal;
-  },
-);
 
 const manuallySelectedText = computed(() =>
   t(
-    'manually_selected_entitites',
+    'manually_selected_entity',
     {
-      entityName: props.entityName,
+      entityName: entityName.value,
       count: selection.value.ids?.length ?? 0,
     },
     selection.value.ids?.length ?? 0,
@@ -58,8 +122,8 @@ const manuallySelectedText = computed(() =>
 );
 const showAllProductsTag = computed(
   () =>
-    (selection.value.categories?.length === 0 &&
-      (selection.value.brands?.length ||
+    (!selection.value.categoryIds?.length &&
+      (selection.value.brandIds?.length ||
         selection.value.price?.length ||
         selection.value.stock?.length)) ||
     allEmpty.value,
@@ -88,7 +152,8 @@ function formatCurrencyNumber(value: number | string) {
     Number(value),
   );
 }
-const userUnderstandableOperators = {
+
+const userUnderstandableOperators: { [key in CompareCondition]: string } = {
   lt: t('less_than'),
   gt: t('more_than'),
   eq: t('exactly'),
@@ -107,15 +172,25 @@ const getLinkingWord = (option: 'brand' | 'price' | 'stock') => {
   return t(`selector_${option}_linking_word_${condition}`);
 };
 
-const updateSelection = (updatedSelection: SelectorSelection) => {
+const updateSelection = (updatedSelection: SelectorSelectionInternal) => {
   selection.value = updatedSelection;
 };
+
+const noSelectionLabel = computed(() => {
+  return (type.value === SelectorSelectionType.Include &&
+    selectionStrategy.value === SelectorSelectionStrategy.All) ||
+    activeConditionTypes.value > 0
+    ? t('all_entity', { entityName: entityName.value }, 2)
+    : t('no_entity', { entityName: entityName.value }, 2);
+});
 </script>
 
 <template>
   <div>
     <ContentHeading>
-      {{ type === 'include' ? $t('select') : $t('exclude') }}
+      {{
+        type === SelectorSelectionType.Include ? $t('select') : $t('exclude')
+      }}
     </ContentHeading>
     <div class="relative rounded-lg border px-3 py-4">
       <SelectorPanel
@@ -124,50 +199,50 @@ const updateSelection = (updatedSelection: SelectorSelection) => {
         :mode="mode"
         :entity-name="entityName"
         :entities="entities"
+        :options="selectorOptions"
         @save="updateSelection"
       >
-        <Button class="absolute right-3 top-3.5">{{ $t('browse') }}</Button>
+        <Button class="absolute top-3.5 right-3">{{ $t('browse') }}</Button>
       </SelectorPanel>
       <div class="flex w-[calc(100%-5.5rem)] flex-col gap-3">
         <!-- All / No products tag -->
         <SelectorTags
-          v-if="showAllProductsTag && selection.condition === 'and'"
+          v-if="
+            showAllProductsTag && selection.condition !== SelectorCondition.Or
+          "
         >
-          <SelectorTag
-            :label="`${type === 'include' ? $t('all_entities', { entityName }, 2) : $t('no_entities', { entityName }, 2)}`"
-            :removable="false"
-          />
+          <SelectorTag :label="noSelectionLabel" :removable="false" />
         </SelectorTags>
 
         <!-- Categories -->
-        <SelectorTags v-if="selection.categories?.length">
+        <SelectorTags v-if="selection.categoryIds?.length">
           <SelectorTagLink
-            v-for="(item, index) in selection.categories"
+            v-for="(id, index) in selection.categoryIds"
             :key="index"
             :linking-word="$t('or')"
-            :is-last="index === selection.categories.length - 1"
+            :is-last="index === selection.categoryIds.length - 1"
           >
             <SelectorTag
-              :label="item.name"
-              @remove="selection.categories?.splice(index, 1)"
+              :label="getCategoryName(id)"
+              @remove="selection.categoryIds?.splice(index, 1)"
             />
           </SelectorTagLink>
         </SelectorTags>
 
         <!-- Brands -->
-        <SelectorLinkingWord v-if="selection.brands?.length">
+        <SelectorLinkingWord v-if="selection.brandIds?.length">
           {{ getLinkingWord('brand') }}
         </SelectorLinkingWord>
-        <SelectorTags v-if="selection.brands?.length">
+        <SelectorTags v-if="selection.brandIds?.length">
           <SelectorTagLink
-            v-for="(item, index) in selection.brands"
+            v-for="(id, index) in selection.brandIds"
             :key="index"
             :linking-word="$t('or')"
-            :is-last="index === selection.brands.length - 1"
+            :is-last="index === selection.brandIds.length - 1"
           >
             <SelectorTag
-              :label="item.name"
-              @remove="selection.brands?.splice(index, 1)"
+              :label="getBrandName(id)"
+              @remove="selection.brandIds?.splice(index, 1)"
             />
           </SelectorTagLink>
         </SelectorTags>
@@ -224,15 +299,15 @@ const updateSelection = (updatedSelection: SelectorSelection) => {
       <!-- Footer -->
       <div
         v-if="activeConditionTypes > 1"
-        class="mt-4 flex items-center gap-5 border-t pt-4 text-sm"
+        class="mt-4 items-center gap-5 border-t pt-4 text-sm @2xl:flex"
       >
-        <div>
-          {{ $t('select_entities_that_match', { entityName }, 2) }}
+        <div class="mb-2 @2xl:mb-0">
+          {{ $t('select_entity_that_match', { entityName }, 2) }}
         </div>
         <RadioGroup
           v-model="selection.condition"
           default-value="and"
-          class="flex items-center gap-4"
+          class="items-center gap-2 @2xl:flex @2xl:gap-4"
         >
           <div class="flex items-center space-x-2">
             <RadioGroupItem id="and" value="and" />

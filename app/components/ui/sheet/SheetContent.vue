@@ -1,30 +1,30 @@
 <script setup lang="ts">
-import { cn } from '@/utils';
-import { Cross2Icon } from '@radix-icons/vue';
+import type { HTMLAttributes } from 'vue';
+import { reactiveOmit } from '@vueuse/core';
+import { X } from 'lucide-vue-next';
 import {
   DialogClose,
   DialogContent,
   type DialogContentEmits,
   type DialogContentProps,
-  DialogOverlay,
   DialogPortal,
   useForwardPropsEmits,
-} from 'radix-vue';
-import { computed, type HTMLAttributes } from 'vue';
-import { type SheetVariants, sheetVariants } from '.';
+} from 'reka-ui';
+import { cn } from '@/lib/utils';
+import SheetOverlay from './SheetOverlay.vue';
 
 interface SheetContentProps extends DialogContentProps {
   class?: HTMLAttributes['class'];
-  side?: SheetVariants['side'];
+  side?: 'top' | 'right' | 'bottom' | 'left';
   width?: 'narrow' | 'medium' | 'wide';
 }
 
 const widthClasses = computed(() => {
   switch (props.width) {
     case 'medium':
-      return 'w-[785px] sm:w-[785px] sm:max-w-[785px]';
+      return 'w-[96vw] max-w-[785px]';
     case 'wide':
-      return 'w-[1310px] sm:w-[1310px] sm:max-w-full';
+      return 'w-[100vw] max-w-[1310px]';
     default:
       return '';
   }
@@ -34,34 +34,45 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = defineProps<SheetContentProps>();
-
+const props = withDefaults(defineProps<SheetContentProps>(), {
+  side: 'right',
+});
 const emits = defineEmits<DialogContentEmits>();
 
-const delegatedProps = computed(() => {
-  const { class: _, side, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, 'class', 'side');
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
 
 <template>
   <DialogPortal>
-    <DialogOverlay
-      class="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
-    />
+    <SheetOverlay />
     <DialogContent
-      :class="cn(sheetVariants({ side }), widthClasses, props.class, 'h-full')"
+      data-slot="sheet-content"
+      :class="
+        cn(
+          'bg-card data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-300',
+          side === 'right' &&
+            'data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full max-h-screen',
+          side === 'left' &&
+            'data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full max-h-screen',
+          side === 'top' &&
+            'data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto w-full max-w-screen',
+          side === 'bottom' &&
+            'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto w-full max-w-screen',
+          widthClasses,
+          props.class,
+        )
+      "
       v-bind="{ ...forwarded, ...$attrs }"
     >
       <slot />
 
       <DialogClose
-        class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary"
+        class="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-sm rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
       >
-        <Cross2Icon class="size-4" />
+        <X class="size-4" />
+        <span class="sr-only">Close</span>
       </DialogClose>
     </DialogContent>
   </DialogPortal>

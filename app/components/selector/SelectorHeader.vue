@@ -1,27 +1,29 @@
-<script setup lang="ts">
-const _props = withDefaults(
+<script setup lang="ts" generic="T extends SelectorEntity">
+const props = withDefaults(
   defineProps<{
     title: string;
     description: string;
-    selection: SelectorSelection;
-    entities: Entity[];
+    selection: SelectorSelectionInternal;
+    entities: T[];
     entityName: string;
   }>(),
   {},
 );
 const _emits = defineEmits(['add', 'remove']);
+const selectedIds = computed(() => props.selection?.ids || []);
 </script>
 <template>
   <div>
-    <h2 class="mb-1.5 text-xl font-semibold">{{ title }}</h2>
-    <p class="text-sm text-muted-foreground">{{ description }}</p>
+    <ContentCardHeader :title="title" :description="description" size="lg" />
   </div>
-  <div class="flex w-2/5 gap-6">
+  <div class="mt-3 flex w-full gap-6 @3xl:mt-0 @3xl:w-2/5">
     <SelectorQuickAdd
       v-if="entities.length"
       :entities="entities"
-      :selection="selection"
+      :selection="selectedIds"
       :entity-name="entityName"
+      :show-id="true"
+      :show-image="true"
       @add="$emit('add', $event)"
       @remove="$emit('remove', $event)"
     />

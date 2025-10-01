@@ -2,34 +2,44 @@ import { defineStore } from 'pinia';
 import type { Account, Channel, Currency } from '#shared/types';
 
 export const useAccountStore = defineStore('account', () => {
-  const { geinsLogError } = useGeinsLog('store/account.ts');
-  const api = repository(useNuxtApp().$geinsApi);
+  const { geinsLogWarn } = useGeinsLog('store/account.ts');
+  const { globalApi } = useGeinsRepository();
+  const { fallback } = useRuntimeConfig().public;
 
   // STATE
   const account = ref<Account>();
-  const channels = ref<Channel[]>();
-  const currencies = ref<Currency[]>();
-  const languages = ref<Language[]>();
+  const channels = ref<Channel[]>([]);
+  const currencies = ref<Currency[]>([]);
+  const languages = ref<Language[]>([]);
   const ready = ref(false);
+  const currentChannelId = useCookie<string>('geins-channel', {
+    default: () => fallback.channel.toString(),
+  });
+  const currentLanguage = useCookie('geins-language', {
+    default: () => fallback.language,
+  });
+  const currentCurrency = useCookie('geins-currency', {
+    default: () => fallback.currency,
+  });
 
   // ACTIONS
   async function fetchAccount(): Promise<Account> {
-    const data = await api.account.get();
+    const data = await globalApi.account.get();
     account.value = data;
     return data;
   }
   async function fetchChannels(): Promise<Channel[]> {
-    const data = await api.channel.list();
+    const data = await globalApi.channel.list();
     channels.value = data;
     return data;
   }
   async function fetchCurrencies(): Promise<Currency[]> {
-    const data = await api.currency.list();
+    const data = await globalApi.currency.list();
     currencies.value = data;
     return data;
   }
   async function fetchLanguages(): Promise<Language[]> {
-    const data = await api.language.list();
+    const data = await globalApi.language.list();
     languages.value = data;
     return data;
   }
@@ -62,9 +72,14 @@ export const useAccountStore = defineStore('account', () => {
             callName = 'languages';
             break;
         }
-        geinsLogError(`error fetching ${callName}:`, result);
+        geinsLogWarn(`error fetching ${callName}:`, result);
       }
     });
+
+    // Set default currency from account
+    if (account.value) {
+      currentCurrency.value = account.value.defaultCurrency;
+    }
   }
 
   function reset(): void {
@@ -75,10 +90,80 @@ export const useAccountStore = defineStore('account', () => {
     ready.value = false;
   }
 
+  function getChannelNameById(id: string): string {
+    const channel = channels.value.find((channel) => channel._id === id);
+    return channel ? channel.name : '';
+  }
+
+  function getCountryNameById(id: string): string {
+    const country = currentCountries.value.find(
+      (country) => country?._id === id,
+    );
+    return country ? country.name : '';
+  }
+
+  function getDefaultCountryByChannelId(channelId: string): string {
+    const channel = channels.value.find((c) => c._id === String(channelId));
+
+    if (!channel) return fallback.country;
+    const defaultMarket = channel.markets.find(
+      (market) => market._id === String(channel.defaultMarket),
+    );
+    return defaultMarket ? defaultMarket.country._id : '';
+  }
+
+  function getCurrenciesByChannelId(channelId: string): string[] {
+    if (!channels.value || channels.value.length === 0) {
+      return currentCurrencies.value.length > 0
+        ? currentCurrencies.value.map((currency) => currency._id)
+        : [];
+    }
+    const channel = channels.value.find((c) => c._id === String(channelId));
+
+    if (!channel) return [];
+
+    return channel.markets
+      .filter((market) => !market.virtual)
+      .map((market) => market.currency._id)
+      .filter(
+        (currency, index, self) =>
+          index === self.findIndex((c) => c === currency),
+      );
+  }
+
   // GETTERS
-  const defaultCurrency = computed(
-    () => account.value?.defaultCurrency || 'SEK',
-  );
+  const currentChannel = computed(() => {
+    return channels.value.find(
+      (channel) => channel._id === String(currentChannelId.value),
+    );
+  });
+
+  const currentCountries = computed(() => {
+    return (
+      currentChannel.value?.markets
+        .filter((market) => !market.virtual)
+        .map((market) => {
+          return market.country;
+        }) || []
+    );
+  });
+
+  const currentCurrencies = computed(() => {
+    if (!currentChannel.value) return [];
+
+    const currencies = currentChannel.value.markets
+      .filter((market) => !market.virtual)
+      .map((market) => {
+        return market.currency;
+      });
+
+    return currencies.filter(
+      (currency, index, self) =>
+        index === self.findIndex((c) => c?._id === currency?._id),
+    );
+  });
+
+  // ACTIONS
 
   return {
     account,
@@ -86,12 +171,21 @@ export const useAccountStore = defineStore('account', () => {
     currencies,
     languages,
     ready,
+    currentChannelId,
+    currentLanguage,
+    currentCurrency,
     fetchAccount,
     fetchChannels,
     fetchCurrencies,
     fetchLanguages,
     init,
     reset,
-    defaultCurrency,
+    getChannelNameById,
+    getCountryNameById,
+    getDefaultCountryByChannelId,
+    getCurrenciesByChannelId,
+    currentChannel,
+    currentCountries,
+    currentCurrencies,
   };
 });

@@ -1,42 +1,38 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from 'vue';
-import type { CheckboxRootEmits, CheckboxRootProps } from 'radix-vue';
-import {
-  CheckboxIndicator,
-  CheckboxRoot,
-  useForwardPropsEmits,
-} from 'radix-vue';
-import { CheckIcon } from '@radix-icons/vue';
+import type { CheckboxRootEmits, CheckboxRootProps } from 'reka-ui';
+import type { HTMLAttributes } from 'vue';
+import { reactiveOmit } from '@vueuse/core';
+import { Check } from 'lucide-vue-next';
+import { CheckboxIndicator, CheckboxRoot, useForwardPropsEmits } from 'reka-ui';
+import { cn } from '@/lib/utils';
 
 const props = defineProps<
   CheckboxRootProps & { class?: HTMLAttributes['class'] }
 >();
 const emits = defineEmits<CheckboxRootEmits>();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, 'class');
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
 
 <template>
   <CheckboxRoot
+    data-slot="checkbox"
     v-bind="forwarded"
     :class="
       cn(
-        'peer size-4 shrink-0 rounded-md border border-primary/50 bg-background !p-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:border-primary-foreground/60 dark:data-[state=checked]:bg-primary-foreground dark:data-[state=checked]:text-background',
+        'peer bg-background data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-5 shrink-0 rounded-md border p-0! shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
         props.class,
       )
     "
   >
     <CheckboxIndicator
-      class="flex size-full items-center justify-center text-current"
+      data-slot="checkbox-indicator"
+      class="flex size-full items-center justify-center text-current transition-none"
     >
       <slot>
-        <CheckIcon class="size-4" />
+        <Check class="size-3.5 text-current transition-colors" />
       </slot>
     </CheckboxIndicator>
   </CheckboxRoot>

@@ -1,45 +1,47 @@
 <script setup lang="ts">
-import { cn } from '@/utils';
-import { MagnifyingGlassIcon } from '@radix-icons/vue';
+import type { HTMLAttributes } from 'vue';
+import { reactiveOmit } from '@vueuse/core';
+import { Search } from 'lucide-vue-next';
 import {
-  ComboboxInput,
-  type ComboboxInputProps,
+  ListboxFilter,
+  type ListboxFilterProps,
   useForwardProps,
-} from 'radix-vue';
-import { computed, type HTMLAttributes } from 'vue';
+} from 'reka-ui';
+import { cn } from '@/lib/utils';
+import { useCommand } from '.';
 
 defineOptions({
   inheritAttrs: false,
 });
 
 const props = defineProps<
-  ComboboxInputProps & {
+  ListboxFilterProps & {
     class?: HTMLAttributes['class'];
     autoFocus?: boolean;
   }
 >();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, 'class');
 
 const forwardedProps = useForwardProps(delegatedProps);
+
+const { filterState } = useCommand();
 </script>
 
 <template>
   <div
-    class="flex items-center rounded-lg border bg-input px-3"
-    cmdk-input-wrapper
+    data-slot="command-input-wrapper"
+    class="bg-input focus-within:border-primary flex items-center gap-2 rounded-lg border border-b px-3"
   >
-    <MagnifyingGlassIcon class="mr-2 size-4 shrink-0" />
-    <ComboboxInput
+    <Search class="mr-2 size-4 shrink-0" />
+    <ListboxFilter
       v-bind="{ ...forwardedProps, ...$attrs }"
+      v-model="filterState.search"
+      data-slot="command-input"
       :auto-focus="autoFocus"
       :class="
         cn(
-          'flex h-9 w-full rounded-lg bg-input py-1 text-sm transition-colors file:border-0 placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+          'placeholder:text-muted-foreground bg-input flex h-9 w-full rounded-lg py-1 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50',
           props.class,
         )
       "

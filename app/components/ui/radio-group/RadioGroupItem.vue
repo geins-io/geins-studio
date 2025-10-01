@@ -1,38 +1,38 @@
 <script setup lang="ts">
-import { cn } from '@/utils';
-import {
-  RadioGroupIndicator,
-  RadioGroupItem,
-  type RadioGroupItemProps,
-  useForwardProps,
-} from 'radix-vue';
-import { computed, type HTMLAttributes } from 'vue';
+import type { RadioGroupItemProps } from 'reka-ui';
+import type { HTMLAttributes } from 'vue';
+import { reactiveOmit } from '@vueuse/core';
+import { CircleIcon } from 'lucide-vue-next';
+import { RadioGroupIndicator, RadioGroupItem, useForwardProps } from 'reka-ui';
+import { cn } from '@/lib/utils';
 
 const props = defineProps<
   RadioGroupItemProps & { class?: HTMLAttributes['class'] }
 >();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, 'class');
 
 const forwardedProps = useForwardProps(delegatedProps);
 </script>
 
 <template>
   <RadioGroupItem
+    data-slot="radio-group-item"
     v-bind="forwardedProps"
     :class="
       cn(
-        'aspect-square size-5 rounded-full border border-border bg-card text-primary focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-foreground data-[state=checked]:dark:border-foreground',
+        'border-border text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:data-[state=checked]:border-foreground aspect-square size-5 shrink-0 rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-gray-400',
         props.class,
       )
     "
   >
-    <RadioGroupIndicator class="flex items-center justify-center">
-      <div class="size-3 rounded-full bg-primary dark:bg-foreground" />
+    <RadioGroupIndicator
+      data-slot="radio-group-indicator"
+      class="relative flex items-center justify-center"
+    >
+      <CircleIcon
+        class="fill-primary absolute top-1/2 left-1/2 size-3 -translate-x-1/2 -translate-y-1/2"
+      />
     </RadioGroupIndicator>
   </RadioGroupItem>
 </template>

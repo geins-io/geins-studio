@@ -1,58 +1,190 @@
-export function useSelector() {
-  const getFallbackSelection = (): SelectorSelection => {
+import {
+  SelectorCondition,
+  CompareCondition,
+  type SelectorSelectionInternalBase,
+} from '#shared/types';
+
+export const useSelector = () => {
+  const getFallbackSelection = (): SelectorSelectionInternal => {
     return structuredClone({
-      condition: 'and',
-      categories: [],
-      brands: [],
-      price: [],
-      stock: [],
+      condition: SelectorCondition.And,
+      categoryIds: [],
+      brandIds: [],
+      // price: [],
+      // stock: [],
       ids: [],
     });
   };
 
-  const getEmptySelectionBase = (): SelectorSelectionBase => {
+  const getEmptyInternalSelectionBase = (): SelectorSelectionInternalBase => {
+    return structuredClone({
+      include: getFallbackSelection(),
+      exclude: getFallbackSelection(),
+    });
+  };
+
+  const getEmptyQuerySelectionBase = (): SelectorSelectionQueryBase => {
     return structuredClone({
       include: [
         {
-          condition: 'and',
           selections: [getFallbackSelection()],
         },
       ],
+
       exclude: [
         {
-          condition: 'and',
           selections: [getFallbackSelection()],
         },
       ],
     });
   };
 
-  const dummyData: SelectorSelectionBase = {
+  const getEmptySimpleSelectionBase = (): SelectorSelectionSimpleBase => {
+    return structuredClone({
+      include: [],
+      exclude: [],
+    });
+  };
+
+  const convertToInternalSelection = (
+    selections: SelectorSelectionQuery[],
+  ): SelectorSelectionInternal => {
+    let selectorSelection: SelectorSelectionInternal = {};
+
+    selections.forEach((selection, index) => {
+      // Merge arrays instead of overwriting them
+      selectorSelection = {
+        // Only take condition from the first selection
+        condition:
+          index === 0
+            ? selection.condition || SelectorCondition.And
+            : selectorSelection.condition,
+        ...selectorSelection,
+        // Merge categoryIds arrays
+        categoryIds: [
+          ...(selectorSelection.categoryIds || []),
+          ...(selection.categoryIds || []),
+        ],
+        // Merge brandIds arrays
+        brandIds: [
+          ...(selectorSelection.brandIds || []),
+          ...(selection.brandIds || []),
+        ],
+        // Handle productIds -> ids conversion and merging
+        ids: [
+          ...(selectorSelection.ids || []),
+          ...(selection.productIds || []),
+        ],
+      };
+    });
+    return selectorSelection;
+  };
+
+  const convertToInternalSelectionBase = (
+    selection: SelectorSelectionQueryBase,
+  ): SelectorSelectionInternalBase => {
+    const createSelectionFromQuery = (
+      querySelections: SelectorSelectionGroup[],
+    ) => {
+      const result = convertToInternalSelection(
+        querySelections[0]?.selections || [],
+      );
+      return result;
+    };
+
+    const include = createSelectionFromQuery(selection.include);
+    const exclude = createSelectionFromQuery(selection.exclude);
+
+    return {
+      include,
+      exclude,
+    };
+  };
+
+  const convertToQuerySelection = (
+    selection: SelectorSelectionInternal,
+  ): SelectorSelectionQuery[] => {
+    return [
+      {
+        condition: selection.condition,
+        categoryIds: selection.categoryIds,
+        brandIds: selection.brandIds,
+        // price: selection.price,
+        // stock: selection.stock,
+      },
+      {
+        productIds: selection.ids || [],
+      },
+    ];
+  };
+
+  const convertToQuerySelectionBase = (
+    selection: SelectorSelectionInternalBase,
+  ): SelectorSelectionQueryBase => {
+    return {
+      include: [
+        {
+          selections: convertToQuerySelection(selection.include),
+        },
+      ],
+      exclude: [
+        {
+          selections: convertToQuerySelection(selection.exclude),
+        },
+      ],
+    };
+  };
+
+  const convertSimpleToInternalSelectionBase = (
+    selection: SelectorSelectionSimpleBase,
+  ): SelectorSelectionInternalBase => {
+    return {
+      include: {
+        condition: SelectorCondition.And,
+        ids: selection.include,
+      },
+      exclude: {
+        condition: SelectorCondition.And,
+        ids: selection.exclude,
+      },
+    };
+  };
+
+  const convertToSimpleSelectionBase = (
+    selection: SelectorSelectionQueryBase,
+  ): SelectorSelectionSimpleBase => {
+    const internalSelection = convertToInternalSelectionBase(selection);
+
+    return {
+      include: convertToSimpleSelection(internalSelection.include),
+      exclude: convertToSimpleSelection(internalSelection.exclude),
+    };
+  };
+
+  const convertToSimpleSelection = (
+    selection: SelectorSelectionInternal,
+  ): SelectorSelectionSimple => {
+    return selection.ids || [];
+  };
+
+  const dummyData: SelectorSelectionQueryBase = {
     include: [
       {
-        condition: 'and',
         selections: [
           {
-            condition: 'and',
-            categories: [
-              { id: 1, name: 'Electronics' },
-              { id: 2, name: 'Clothing' },
-              { id: 3, name: 'Shoes' },
-            ],
-            brands: [
-              { id: 1, name: 'BrandA' },
-              { id: 2, name: 'BrandB' },
-            ],
+            condition: SelectorCondition.And,
+            categoryIds: ['1', '2'],
+            brandIds: ['1', '2'],
             price: [
               {
-                condition: 'lt',
+                condition: CompareCondition.LessThan,
                 values: {
                   EUR: 90,
                   SEK: 850,
                 },
               },
               {
-                condition: 'gt',
+                condition: CompareCondition.GreaterThan,
                 values: {
                   EUR: 10,
                   SEK: 100,
@@ -61,22 +193,22 @@ export function useSelector() {
             ],
             stock: [
               {
-                condition: 'gt',
+                condition: CompareCondition.GreaterThan,
                 quantity: 10,
               },
               {
-                condition: 'lt',
+                condition: CompareCondition.LessThan,
                 quantity: 1000,
               },
             ],
-            ids: [1, 2, 3],
+            productIds: ['1', '2', '3'],
           },
         ],
       },
     ],
     exclude: [
       {
-        condition: 'or',
+        condition: SelectorCondition.Or,
         selections: [getFallbackSelection()],
       },
     ],
@@ -85,6 +217,15 @@ export function useSelector() {
   return {
     dummyData,
     getFallbackSelection,
-    getEmptySelectionBase,
+    getEmptyInternalSelectionBase,
+    getEmptyQuerySelectionBase,
+    getEmptySimpleSelectionBase,
+    convertToInternalSelection,
+    convertToInternalSelectionBase,
+    convertToQuerySelection,
+    convertToQuerySelectionBase,
+    convertSimpleToInternalSelectionBase,
+    convertToSimpleSelection,
+    convertToSimpleSelectionBase,
   };
-}
+};

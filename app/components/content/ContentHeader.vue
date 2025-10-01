@@ -3,68 +3,52 @@ const _props = withDefaults(
   defineProps<{
     title?: string;
     description?: string;
-    showBreadcrumb?: boolean;
+    entityName?: string;
   }>(),
   {
     title: '',
     description: '',
-    showBreadcrumb: true,
+    entityName: '',
   },
 );
+
 const tableMaximized = useState<boolean>('table-maximized');
 // TODO: Dynamic breadcrumbs
+
+const slots = useSlots();
+const hasTabs = computed(() => !!slots.tabs);
+const hasChanges = computed(() => !!slots.changes);
 </script>
 
 <template>
   <div
     :class="
       cn(
-        'origin-top transform transition-[transform]',
+        'origin-top transform transition-transform',
         `${tableMaximized ? 'scale-y-0' : ''}`,
       )
     "
   >
-    <Breadcrumb v-if="showBreadcrumb" class="mb-3">
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink as-child>
-            <NuxtLink to="/">Home</NuxtLink>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <!--       <BreadcrumbItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger class="flex items-center gap-1">
-            <BreadcrumbEllipsis class="size-4" />
-            <span class="sr-only">Toggle menu</span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem>Documentation</DropdownMenuItem>
-            <DropdownMenuItem>Themes</DropdownMenuItem>
-            <DropdownMenuItem>GitHub</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </BreadcrumbItem>
-      <BreadcrumbSeparator />
-      <BreadcrumbItem>
-        <BreadcrumbLink href="/docs/components/accordion.html">
-          Components
-        </BreadcrumbLink>
-      </BreadcrumbItem>
-      <BreadcrumbSeparator /> -->
-        <BreadcrumbItem>
-          <BreadcrumbPage>{{ title }}</BreadcrumbPage>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
     <div
-      class="content-header mb-4 flex flex-wrap justify-between border-b pb-2"
+      :class="
+        cn(
+          'content-header mb-4 flex flex-wrap justify-between border-b max-sm:gap-2',
+          `${hasTabs || hasChanges ? 'pb-0' : 'pb-2'}`,
+        )
+      "
     >
       <slot name="title">
         <ContentTitleBlock :title="title" :description="description" />
       </slot>
       <slot />
-      <slot name="tabs" />
+      <div
+        v-if="hasTabs || hasChanges"
+        v-auto-animate
+        class="mt-2 flex w-full justify-between max-sm:flex-col-reverse sm:mt-5"
+      >
+        <slot name="tabs" />
+        <slot name="changes" />
+      </div>
     </div>
   </div>
 </template>

@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, getHeaders } from 'h3';
+import { defineEventHandler, readBody, getHeaders, getQuery } from 'h3';
 import { useRuntimeConfig } from '#imports';
 /**
  * Event handler for processing API requests.
@@ -11,7 +11,7 @@ import { useRuntimeConfig } from '#imports';
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
-  const { geinsLog, geinsLogWarn } = log('server/api/[...].ts');
+  const { geinsLog, geinsLogError } = log('server/api/[...].ts');
 
   let body;
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
@@ -20,9 +20,6 @@ export default defineEventHandler(async (event) => {
 
   const headers = getHeaders(event);
   const token = headers['x-access-token'];
-  if (!token) {
-    return { success: false, error: 'Access token is required' };
-  }
 
   const targetUrl = event.context.params?._;
   if (!targetUrl) {
@@ -31,25 +28,44 @@ export default defineEventHandler(async (event) => {
 
   const fullUrl = `${config.public.apiUrl}/${targetUrl}`;
 
-  geinsLog(fullUrl);
+  const query = getQuery(event);
+  const queryStr = Object.keys(query)
+    .map((key) => {
+      const value = query[key];
+      if (Array.isArray(value)) {
+        return value
+          .map((v) => `${key}=${encodeURIComponent(String(v))}`)
+          .join('&');
+      }
+      return value !== undefined
+        ? `${key}=${encodeURIComponent(String(value))}`
+        : '';
+    })
+    .filter(Boolean)
+    .join('&');
+  const fetchUrl = queryStr ? `${fullUrl}?${queryStr}` : fullUrl;
+
+  geinsLog(fetchUrl);
 
   const apiHeaders = {
     ...headers,
     authorization: `Bearer ${token}`,
   };
+
+  if (event.method === 'DELETE' && apiHeaders['content-length'] === '0') {
+    delete apiHeaders['content-length'];
+  }
+
   try {
-    const response = await $fetch(fullUrl, {
+    const response = await $fetch(fetchUrl, {
       method: event.method,
       body,
       headers: apiHeaders,
     });
+
     return response;
   } catch (error) {
-    // TODO: Evaluate if we should throw an error here
-    geinsLogWarn('error connecting to the API:', error);
-    return {
-      success: false,
-      error: 'Error connecting to the API',
-    };
+    geinsLogError('error connecting to the api:', error);
+    return error;
   }
 });

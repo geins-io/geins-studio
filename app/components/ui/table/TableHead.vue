@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { cn } from '@/lib/utils';
 
 const props = defineProps<{
   class?: HTMLAttributes['class'];
@@ -8,9 +9,10 @@ const props = defineProps<{
 
 <template>
   <th
+    data-slot="table-head"
     :class="
       cn(
-        'border-l p-0 font-medium [&:first-child]:rounded-tl-lg [&:first-child]:border-0 [&:last-child]:rounded-tr-lg',
+        'border-l p-0 text-left align-middle font-semibold whitespace-nowrap first:rounded-tl-lg first:border-0 last:rounded-tr-lg [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         props.class,
       )
     "

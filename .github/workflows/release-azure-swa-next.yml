@@ -7,12 +7,6 @@ jobs:
   build_and_deploy_job:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
-    env:
-      GEINS_API_URL: ${{ vars.GEINS_API_URL_QA }}
-      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-      AUTH_ORIGIN: ${{ vars.AZURE_GEINS_AUTH_ORIGIN_QA }}
-      GEINS_DEBUG: ${{ vars.AZURE_GEINS_DEBUG_QA }}
-      NITRO_PRESET: ${{ vars.NITRO_PRESET_AZURE_SWA }}
     steps:
       # Step 1: Checkout the repository
       - uses: actions/checkout@v3
@@ -35,14 +29,21 @@ jobs:
           output_location: ".output/public" # Built app content directory - optional
           api_location: ".output/server" # Api source code path - optional
           ###### End of Repository/Build Configurations ######
-
+        env:
+          GEINS_API_URL: ${{ vars.GEINS_API_URL_QA }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          AUTH_PATH: ${{ vars.AZURE_GEINS_AUTH_PATH }}
+          BASE_URL: ${{ vars.AZURE_GEINS_BASE_URL_QA }}
+          GEINS_DEBUG: ${{ vars.AZURE_GEINS_DEBUG_QA }}
+          NITRO_PRESET: ${{ vars.NITRO_PRESET_AZURE_SWA }}
+          APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.AZURE_APP_INSIGHTS_CONNECTION_STRING }}
       # Step 3: Post to Slack
       - name: Post to Slack
         if: github.event_name == 'push'
         id: posttoslack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          URL: ${{ vars.AZURE_GEINS_AUTH_ORIGIN_QA }}
+          URL: ${{ vars.AZURE_GEINS_BASE_URL_QA }}
         run: |
           curl -X POST -H 'Content-type: application/json' --data '{
           "text": "*The QA site has been updated!* :unicorn_face:\n\n:point_right: <'"$URL"'|'"$URL"'> :point_left:"

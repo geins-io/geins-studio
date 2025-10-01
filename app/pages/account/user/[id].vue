@@ -7,7 +7,7 @@ const tabs = ['Main'];
 // GLOBALS
 const { t } = useI18n();
 const route = useRoute();
-const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntity(
+const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntityUrl(
   route.fullPath,
 );
 const entityName = getEntityName();
@@ -46,7 +46,7 @@ const currentStep = ref(1);
           }}</ButtonIcon>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
-          <ContentTabs
+          <ContentEditTabs
             v-model:current-tab="currentTab"
             :tabs="tabs"
             class="mt-5"

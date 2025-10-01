@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
+import { cn } from '@/lib/utils';
 
 const props = defineProps<{
   class?: HTMLAttributes['class'];
@@ -7,7 +8,10 @@ const props = defineProps<{
 </script>
 
 <template>
-  <thead :class="cn('[&_tr]:border-none', props.class)">
+  <thead
+    data-slot="table-header"
+    :class="cn('[&_tr]:border-none', props.class)"
+  >
     <slot />
   </thead>
 </template>

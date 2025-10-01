@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
-import { SelectLabel, type SelectLabelProps } from 'radix-vue';
+import { SelectLabel, type SelectLabelProps } from 'reka-ui';
+import { cn } from '@/lib/utils';
 
 const props = defineProps<
   SelectLabelProps & { class?: HTMLAttributes['class'] }
@@ -8,7 +9,10 @@ const props = defineProps<
 </script>
 
 <template>
-  <SelectLabel :class="cn('px-2 py-1.5 text-sm font-semibold', props.class)">
+  <SelectLabel
+    data-slot="select-label"
+    :class="cn('px-2 py-1.5 text-sm font-semibold', props.class)"
+  >
     <slot />
   </SelectLabel>
 </template>

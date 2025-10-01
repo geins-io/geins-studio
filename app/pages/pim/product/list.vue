@@ -1,8 +1,9 @@
 <script setup lang="ts">
 type Entity = Product;
 
+const { t } = useI18n();
 const route = useRoute();
-const { getEntityName, getNewEntityUrl, getEditEntityUrl } = useEntity(
+const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
   route.fullPath,
 );
 
@@ -14,28 +15,28 @@ definePageMeta({
 const apiEndpoint = '/products';
 const totalListItems = ref(3000);
 const dataList = ref<Entity[]>([]);
-const entityIdentifier = '{id}';
+const entityIdentifier = '{_id}';
 const entityName = getEntityName();
 const newEntityUrl = getNewEntityUrl();
-const editEntityUrl = getEditEntityUrl(entityIdentifier);
+const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 
 // SET UP COLUMNS FOR ENTITY
 const columnOptions: ColumnOptions<Entity> = {
   selectable: true,
-  editUrl: editEntityUrl,
+  entityLinkUrl: entityUrl,
   columnTitles: { price: 'Default price' },
-  columnTypes: { name: 'link' },
+  columnTypes: { name: 'entity-link' },
 };
 
 // FETCH DATA FOR ENTITY
-const { data, error } = await useAPI<Entity[]>(apiEndpoint, {
-  query: { total: totalListItems.value },
-});
+const { useGeinsFetch } = useGeinsApi();
+const { data, error } = await useGeinsFetch<Entity[]>(apiEndpoint);
+
 if (!data?.value || error.value) {
   throw createError({
     ...error.value,
-    statusMessage: 'Failed to fetch products',
+    statusMessage: t('failed_to_fetch_entity', { entityName }, 2),
   });
 } else {
   dataList.value = data.value as Entity[];
@@ -49,17 +50,15 @@ const columns = getColumns(dataList.value, columnOptions);
 // ADD AND ORDER COLUMNS
 addActionsColumn(columns, {
   onEdit: (product: Entity) =>
-    navigateTo(
-      `${editEntityUrl.replace(entityIdentifier, String(product.id))}`,
-    ),
-  onCopy: (product: Entity) => console.log('Copy', product.id),
-  onDelete: (product: Entity) => console.log('Delete', product.id),
-  onUnpublish: (product: Entity) => console.log('Unpublish', product.id),
+    navigateTo(`${entityUrl.replace(entityIdentifier, String(product._id))}`),
+  onCopy: (product: Entity) => console.log('Copy', product._id),
+  onDelete: (product: Entity) => console.log('Delete', product._id),
+  onUnpublish: (product: Entity) => console.log('Unpublish', product._id),
 });
 </script>
 
 <template>
-  <ContentHeader :title="$t('entity_caps', { entityName }, 2)">
+  <ContentHeader :title="$t(entityName, 2)">
     <ContentActionBar>
       <ButtonExport />
       <ButtonIcon icon="new" :href="newEntityUrl">

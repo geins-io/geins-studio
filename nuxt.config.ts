@@ -1,10 +1,5 @@
-import { getAuthBaseUrlVercel } from './app/lib/deployment';
-
-const nitroPreset = {
-  nitro: {
-    preset: process.env.NITRO_PRESET,
-  },
-};
+import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineNuxtConfig({
   future: {
@@ -24,18 +19,44 @@ export default defineNuxtConfig({
   modules: [
     '@sidebase/nuxt-auth',
     '@nuxt/test-utils/module',
-    '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
     '@nuxtjs/i18n',
     '@pinia/nuxt',
+    '@formkit/auto-animate/nuxt',
     'shadcn-nuxt',
     'nuxt-svgo',
     'nuxt-lucide-icons',
+    'nuxt-viewport',
   ],
 
   shadcn: {
     prefix: '',
     componentDir: './app/components/ui',
+  },
+
+  css: ['~/assets/css/main.css'],
+
+  vite: {
+    plugins: [tailwindcss()],
+  },
+
+  viewport: {
+    breakpoints: {
+      xs: 320,
+      sm: 640,
+      md: 768,
+      lg: 1024,
+      xl: 1280,
+      '2xl': 1536,
+    },
+
+    defaultBreakpoints: {
+      desktop: 'lg',
+      mobile: 'xs',
+      tablet: 'md',
+    },
+
+    fallbackBreakpoint: 'lg',
   },
 
   colorMode: {
@@ -47,7 +68,7 @@ export default defineNuxtConfig({
 
   auth: {
     isEnabled: true,
-    baseURL: getAuthBaseUrlVercel(),
+    baseURL: getAuthBaseUrl(),
     provider: {
       type: 'authjs',
     },
@@ -58,20 +79,27 @@ export default defineNuxtConfig({
 
   i18n: {
     defaultLocale: 'en',
-    langDir: 'lang/',
-    locales: [{ code: 'en', language: 'en-US', file: 'en-US.ts' }],
+    locales: [{ code: 'en', name: 'English', file: 'en.json' }],
+    bundle: {
+      optimizeTranslationDirective: false,
+    },
   },
 
   runtimeConfig: {
     public: {
+      fallback: {
+        language: 'en',
+        currency: 'SEK',
+        channel: '1',
+        country: 'SE',
+      },
+      baseUrl: getBaseUrl(),
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
-      VERCEL: process.env.VERCEL,
-      VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
-      VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
-      VERCEL_ENV: process.env.VERCEL_ENV,
     },
-    private: {},
+    private: {
+      authSecret: process.env.AUTH_SECRET,
+    },
   },
 
   sourcemap: {
@@ -79,7 +107,11 @@ export default defineNuxtConfig({
     client: true,
   },
 
-  ...(process.env.NITRO_PRESET ? nitroPreset : {}),
+  ...(process.env.NITRO_PRESET && {
+    nitro: {
+      preset: process.env.NITRO_PRESET,
+    },
+  }),
 
   compatibilityDate: '2024-07-05',
 });

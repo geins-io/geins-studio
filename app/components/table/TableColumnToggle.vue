@@ -139,12 +139,11 @@ const resetOrderAndVisibility = () => {
           Choose which columns you want to see in this list view
         </SheetDescription>
       </SheetHeader>
-      <SheetBody>
-        <div class="grid md:grid-cols-2">
-          <!-- Available Columns -->
-          <div class="mr-8 border-r pr-8">
-            <h4 class="text-md mb-4 font-medium">Availble colums</h4>
-            <!--      <div class="relative mb-4">
+      <SheetBody class="grid p-4 md:grid-cols-2">
+        <!-- Available Columns -->
+        <div class="mr-8 border-r pr-8">
+          <h4 class="mb-4 text-base font-semibold">Availble colums</h4>
+          <!--      <div class="relative mb-4">
                 <SearchIcon
                   class="absolute left-2 top-2.5 size-4 text-muted-foreground"
                 />
@@ -154,68 +153,67 @@ const resetOrderAndVisibility = () => {
                   class="pl-8"
                 />
               </div> -->
-            <div class="space-y-4">
-              <div
-                v-for="column in selectableColumns"
-                :key="column.id"
-                class="flex items-center space-x-3"
+          <div class="space-y-4">
+            <div
+              v-for="column in selectableColumns"
+              :key="column.id"
+              class="flex items-center space-x-3"
+            >
+              <Checkbox
+                :id="column.id"
+                :model-value="column.isVisible"
+                @update:model-value="setIsVisible(column.id, !!$event)"
+              />
+              <label
+                :for="column.id"
+                class="text-sm peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                <Checkbox
-                  :id="column.id"
-                  :checked="column.isVisible"
-                  @update:checked="setIsVisible(column.id, $event)"
-                />
-                <label
-                  :for="column.id"
-                  class="text-sm peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {{ column.columnDef.meta?.title }}
-                </label>
-              </div>
+                {{ column.columnDef.meta?.title }}
+              </label>
             </div>
           </div>
-
-          <!-- Chosen Columns -->
-          <div>
-            <h4 class="text-md mb-4 font-medium">Chosen columns</h4>
-            <draggable
-              v-model="currentOrder"
-              item-key="id"
-              class="space-y-2"
-              ghost-class="opacity-50"
-            >
-              <template #item="{ element }">
-                <div
-                  class="flex cursor-move items-center justify-between rounded-md bg-background px-4 py-2"
-                >
-                  <div class="flex items-center space-x-2">
-                    <LucideGripVertical class="size-4 text-muted-foreground" />
-                    <span class="text-sm">{{ element.title }}</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="size-8"
-                    @click="hideProductColumn(element.id)"
-                  >
-                    <LucideX class="size-4" />
-                  </Button>
-                </div>
-              </template>
-            </draggable>
-          </div>
         </div>
-        <SheetFooter>
-          <SheetClose as-child>
-            <Button variant="outline" @click="resetOrderAndVisibility">
-              Cancel
-            </Button>
-          </SheetClose>
-          <SheetClose as-child>
-            <Button @click="saveOrderAndVisibility">Save options</Button>
-          </SheetClose>
-        </SheetFooter>
+
+        <!-- Chosen Columns -->
+        <div>
+          <h4 class="mb-4 text-base font-semibold">Chosen columns</h4>
+          <draggable
+            v-model="currentOrder"
+            item-key="id"
+            class="space-y-2"
+            ghost-class="opacity-50"
+          >
+            <template #item="{ element }">
+              <div
+                class="bg-background flex cursor-move items-center justify-between rounded-md px-4 py-2"
+              >
+                <div class="flex items-center space-x-2">
+                  <LucideGripVertical class="text-muted-foreground size-4" />
+                  <span class="text-sm">{{ element.title }}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  class="size-8"
+                  @click="hideProductColumn(element.id)"
+                >
+                  <LucideX class="size-4" />
+                </Button>
+              </div>
+            </template>
+          </draggable>
+        </div>
       </SheetBody>
+      <SheetFooter>
+        <SheetClose as-child>
+          <Button variant="outline" @click="resetOrderAndVisibility">
+            Cancel
+          </Button>
+        </SheetClose>
+        <SheetClose as-child>
+          <Button @click="saveOrderAndVisibility">Save options</Button>
+        </SheetClose>
+      </SheetFooter>
     </SheetContent>
   </Sheet>
 </template>

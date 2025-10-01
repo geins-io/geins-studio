@@ -1,7 +1,20 @@
+import { useBroadcastChannel } from '@vueuse/core';
+
 export default defineNuxtRouteMiddleware(async (to) => {
   const { isAuthenticated } = useGeinsAuth();
+  const { post: broadcastPost } = useBroadcastChannel<
+    AuthBroadcastData,
+    AuthBroadcastData
+  >({
+    name: 'geins-auth',
+  });
 
   if (to.path.startsWith('/auth')) {
+    if (to.path.includes('logout')) {
+      broadcastPost({
+        session: null,
+      });
+    }
     return isAuthenticated.value ? navigateTo('/') : true;
   }
 

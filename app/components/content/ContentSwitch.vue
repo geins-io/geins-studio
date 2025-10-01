@@ -4,7 +4,7 @@ const _props = defineProps<{
   description?: string;
 }>();
 
-const checked = defineModel<boolean>();
+const checked = defineModel<boolean>('checked');
 
 const beforeEnter = (el: Element) => {
   (el as HTMLElement).style.height = '0';
@@ -12,6 +12,9 @@ const beforeEnter = (el: Element) => {
 
 const enter = (el: Element) => {
   (el as HTMLElement).style.height = (el as HTMLElement).scrollHeight + 'px';
+  setTimeout(() => {
+    (el as HTMLElement).style.height = 'auto';
+  }, 300);
 };
 
 const beforeLeave = (el: Element) => {
@@ -21,19 +24,27 @@ const beforeLeave = (el: Element) => {
 const leave = (el: Element) => {
   (el as HTMLElement).style.height = '0';
 };
+
+const slots = useSlots();
+const hasSlotContent = computed(() => !!slots.default);
 </script>
 <template>
   <div class="rounded-lg border p-4 text-sm">
-    <div class="flex flex-row items-center justify-between">
-      <div class="space-y-0.5">
-        <p class="font-semibold">{{ label }}</p>
-        <p v-if="description">{{ description }}</p>
-      </div>
+    <div class="flex flex-row items-center justify-between gap-4">
+      <ContentCardHeader
+        v-auto-animate
+        :title="label"
+        :description="description"
+        size="sm"
+        heading-level="h4"
+        class="p-px"
+      />
       <div>
-        <Switch v-model:checked="checked" />
+        <Switch v-model="checked" />
       </div>
     </div>
     <transition
+      v-if="hasSlotContent"
       @before-enter="beforeEnter"
       @enter="enter"
       @before-leave="beforeLeave"
@@ -42,7 +53,7 @@ const leave = (el: Element) => {
       <div
         v-show="checked"
         :data-state="checked ? 'open' : 'closed'"
-        class="overflow-hidden pt-4 transition-all"
+        class="overflow-hidden p-px pt-4 transition-all duration-300"
       >
         <slot />
       </div>

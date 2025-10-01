@@ -1,5 +1,4 @@
-import type { Session } from '#shared/types';
-
+import type { GeinsApiError, Session } from '#shared/types';
 /**
  * Nuxt plugin for handling Geins API requests.
  *
@@ -16,7 +15,7 @@ import type { Session } from '#shared/types';
  */
 
 export default defineNuxtPlugin(() => {
-  const { geinsLog, geinsLogError } = useGeinsLog('app/plugins/geins-api.ts');
+  const { geinsLog, geinsLogError } = useGeinsLog('plugins/geins-api.ts');
   const {
     isAuthenticated,
     accessToken,
@@ -74,7 +73,7 @@ export default defineNuxtPlugin(() => {
    * */
   const geinsApi = $fetch.create({
     baseURL: '/api',
-    retryStatusCodes: [401, 408, 409, 425, 429, 500, 502, 503, 504],
+    retryStatusCodes: [401, 500, 502, 503, 504],
     retry: 1,
     retryDelay: 1000,
     async onRequest({ options }) {
@@ -88,7 +87,12 @@ export default defineNuxtPlugin(() => {
           }
         }
         // Set the content type header
-        options.headers.set('content-type', 'application/json');
+        if (
+          !options.headers.get('content-type') &&
+          !(options.body instanceof FormData)
+        ) {
+          options.headers.set('content-type', 'application/json');
+        }
         // Add the token to the request
         if (isAuthenticated.value && accessToken.value) {
           options.headers.set('x-access-token', `${accessToken.value}`);
@@ -98,25 +102,71 @@ export default defineNuxtPlugin(() => {
           options.headers.set('x-account-key', accountKey.value);
         }
       } catch (error) {
-        geinsLogError('error during request setup', error);
+        const errorMessage = getErrorMessage(error);
+        geinsLogError('error during request setup', errorMessage);
       }
     },
-    async onRequestError({ error }) {
-      geinsLogError('request error', error);
-      throw error;
-    },
-    async onResponse({ response }) {
-      geinsLog(response.url, 'response data:', response?._data);
-    },
-    async onResponseError({ response }) {
-      geinsLogError('response error', response);
-      if (response.status === 401) {
-        throw { status: response.status, message: 'Unauthorized' };
-      } else if (response.status === 403) {
-        throw { status: response.status, message: 'Insufficient permissions' };
-      } else if (response.status === 404) {
-        throw { status: response.status, message: 'Resource not found' };
+    async onRequestError({ error, options, request }) {
+      const timestamp = new Date().toISOString();
+
+      // Determine error type based on error properties
+      let errorType: GeinsErrorType = 'NETWORK_ERROR';
+
+      if (error.name === 'AbortError') {
+        errorType = 'CANCELLED_ERROR';
+      } else if (error.name === 'TimeoutError') {
+        errorType = 'TIMEOUT_ERROR';
       }
+
+      const method = options.method || 'GET';
+      const url = String(request);
+
+      const geinsApiError: GeinsApiError = {
+        status: 0,
+        method,
+        url,
+        message: error.message,
+        timestamp,
+        type: errorType,
+        originalError: error,
+      };
+
+      geinsLogError(`[${method}] ${url} ::: request error ::: `, geinsApiError);
+      throw geinsApiError;
+    },
+    async onResponse({ response, options }) {
+      const method = options.method || 'GET';
+
+      if (response.status >= 200 && response.status < 300) {
+        const logMessage = `[${method}] ${response.url} ::: success`;
+        const logData =
+          response._data !== undefined
+            ? [logMessage, '::: data:', response._data]
+            : [logMessage];
+        geinsLog(...logData);
+      }
+    },
+    async onResponseError({ response, options }) {
+      const errorData = response?._data || {};
+      const url = response.url;
+      const method = options.method || 'GET';
+
+      const geinsApiError: GeinsApiError = {
+        status: response.status,
+        method,
+        url,
+        message: getFallbackErrorMessage(response.status, errorData),
+        timestamp: new Date().toISOString(),
+        type: getErrorType(response.status),
+        originalError: errorData,
+      };
+
+      geinsLogError(
+        `[${method}] ${url} ::: response error ::: `,
+        geinsApiError,
+      );
+
+      throw geinsApiError;
     },
   });
 

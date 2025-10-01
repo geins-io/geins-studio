@@ -1,39 +1,50 @@
 <script setup lang="ts">
-import type { ComboboxGroupProps } from 'radix-vue';
-import { cn } from '@/utils';
-import { ComboboxGroup, ComboboxLabel } from 'radix-vue';
-import { computed, type HTMLAttributes } from 'vue';
+import type { ListboxGroupProps } from 'reka-ui';
+import { reactiveOmit } from '@vueuse/core';
+import { ListboxGroup, ListboxGroupLabel, useId } from 'reka-ui';
+import { computed, type HTMLAttributes, onMounted, onUnmounted } from 'vue';
+import { cn } from '@/lib/utils';
+import { provideCommandGroupContext, useCommand } from '.';
 
 const props = defineProps<
-  ComboboxGroupProps & {
+  ListboxGroupProps & {
     class?: HTMLAttributes['class'];
     heading?: string;
   }
 >();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
+const delegatedProps = reactiveOmit(props, 'class');
 
-  return delegated;
+const { allGroups, filterState } = useCommand();
+const id = useId();
+
+const isRender = computed(() =>
+  !filterState.search ? true : filterState.filtered.groups.has(id),
+);
+
+provideCommandGroupContext({ id });
+onMounted(() => {
+  if (!allGroups.value.has(id)) allGroups.value.set(id, new Set());
+});
+onUnmounted(() => {
+  allGroups.value.delete(id);
 });
 </script>
 
 <template>
-  <ComboboxGroup
+  <ListboxGroup
     v-bind="delegatedProps"
-    :class="
-      cn(
-        'overflow-hidden py-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground',
-        props.class,
-      )
-    "
+    :id="id"
+    data-slot="command-group"
+    :class="cn('text-foreground overflow-hidden', props.class)"
+    :hidden="isRender ? undefined : true"
   >
-    <ComboboxLabel
+    <ListboxGroupLabel
       v-if="heading"
-      class="px-2 py-1.5 text-xs font-medium text-muted-foreground"
+      class="text-muted-foreground mb-1 border-b px-3 py-1.5 text-xs font-semibold"
     >
       {{ heading }}
-    </ComboboxLabel>
+    </ListboxGroupLabel>
     <slot />
-  </ComboboxGroup>
+  </ListboxGroup>
 </template>

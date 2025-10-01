@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from 'vue';
-import { ToastClose, type ToastCloseProps } from 'radix-vue';
-import { Cross2Icon } from '@radix-icons/vue';
+import { cn } from '@/utils';
+import { X } from 'lucide-vue-next';
+import { ToastClose, type ToastCloseProps } from 'reka-ui';
+import { computed, type HTMLAttributes } from 'vue';
 
 const props = defineProps<
   ToastCloseProps & {
@@ -21,11 +22,11 @@ const delegatedProps = computed(() => {
     v-bind="delegatedProps"
     :class="
       cn(
-        'absolute right-1 top-1 rounded-lg p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-1 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600',
+        'absolute right-1 top-1 rounded-lg p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-hidden focus:ring-1 group-hover:opacity-100 group-[.destructive]:text-red-300 hover:group-[.destructive]:text-red-50 focus:group-[.destructive]:ring-red-400 focus:group-[.destructive]:ring-offset-red-600',
         props.class,
       )
     "
   >
-    <Cross2Icon class="size-4" />
+    <X class="size-4" />
   </ToastClose>
 </template>

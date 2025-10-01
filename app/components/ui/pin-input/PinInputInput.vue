@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { type HTMLAttributes, computed } from 'vue';
+import { cn } from '@/utils';
 import {
   PinInputInput,
   type PinInputInputProps,
   useForwardProps,
-} from 'radix-vue';
+} from 'reka-ui';
+import { computed, type HTMLAttributes } from 'vue';
 
 const props = defineProps<
   PinInputInputProps & { class?: HTMLAttributes['class'] }
@@ -31,11 +32,6 @@ onMounted(() => {
   <PinInputInput
     ref="pinInput"
     v-bind="forwardedProps"
-    :class="
-      cn(
-        'relative flex size-16 items-center justify-center border-y border-r border-border bg-transparent text-center text-lg transition-all first:rounded-l-lg first:border-l last:rounded-r-lg focus:relative focus:z-10 focus:outline-none focus:ring-1 focus:ring-ring',
-        props.class,
-      )
-    "
+    :class="cn(props.class)"
   />
 </template>

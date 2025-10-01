@@ -1,70 +1,138 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends SelectorEntity">
 import { useToast } from '@/components/ui/toast/use-toast';
+import type { ColumnDef } from '@tanstack/vue-table';
+import {
+  SelectorMode,
+  SelectorSelectionStrategy,
+  SelectorSelectionType,
+} from '#shared/types';
 
 // PROPS
 const props = withDefaults(
   defineProps<{
-    entities: Entity[];
+    entities: T[];
     entityName?: string;
     mode?: SelectorMode;
+    selectionStrategy?: SelectorSelectionStrategy;
+    allowExclusions?: boolean;
+    productQueryParams?: Record<string, string>;
+    currency?: string;
+    fetchEntitiesExternally?: boolean;
   }>(),
   {
     entityName: 'product',
-    mode: 'advanced',
+    mode: SelectorMode.Advanced,
+    selectionStrategy: SelectorSelectionStrategy.All,
+    allowExclusions: true,
+    productQueryParams: () => ({ fields: 'localizations,media,prices' }),
+    fetchEntitiesExternally: false,
   },
 );
 
-// TWO-WAY BINDING FOR SELECTION VIA V-MODEL
-const selection = defineModel<SelectorSelectionBase>('selection', {
-  required: true,
-});
+const productQueryParams = toRef(props, 'productQueryParams');
+
+const {
+  getFallbackSelection,
+  getEmptyInternalSelectionBase,
+  convertToQuerySelection,
+  convertToInternalSelectionBase,
+  convertToSimpleSelection,
+  convertSimpleToInternalSelectionBase,
+} = useSelector();
+
+const selection = defineModel<SelectorSelectionQueryBase>('selection');
+const simpleSelection =
+  defineModel<SelectorSelectionSimpleBase>('simple-selection');
+
+const internalSelection = ref<SelectorSelectionInternalBase>(
+  getEmptyInternalSelectionBase(),
+);
+
+watch(
+  [selection, simpleSelection],
+  ([sel, simpleSel]) => {
+    if (props.mode === SelectorMode.Simple && simpleSel) {
+      internalSelection.value = convertSimpleToInternalSelectionBase(simpleSel);
+    } else if (sel) {
+      internalSelection.value = convertToInternalSelectionBase(sel);
+    } else {
+      internalSelection.value = getEmptyInternalSelectionBase();
+    }
+  },
+  { immediate: true, deep: true },
+);
 
 // GLOBALS
-const entities = ref(props.entities);
-const { defaultCurrency } = useAccountStore();
+const entities = toRef(props, 'entities');
+const mode: Ref<SelectorMode> = toRef(props, 'mode');
+const entityName = toRef(props, 'entityName');
+const selectionStrategy = toRef(props, 'selectionStrategy');
+const allowExclusions = toRef(props, 'allowExclusions');
+const accountStore = useAccountStore();
+const { currentCurrency } = storeToRefs(accountStore);
+const selectorCurrency = ref<string>(props.currency || currentCurrency.value);
+
 const { toast } = useToast();
 const { t } = useI18n();
-const { getFallbackSelection } = useSelector();
+
+const productsStore = useProductsStore();
+
+if (props.mode == SelectorMode.Advanced) {
+  productsStore.init();
+}
 
 // SETUP REFS FOR INCLUDE/EXCLUDE SELECTION
-const includeSelection = ref<SelectorSelection>(
-  selection.value.include?.[0]?.selections?.[0] || getFallbackSelection(),
+const includeSelection = ref<SelectorSelectionInternal>(
+  internalSelection.value.include || getFallbackSelection(),
 );
-const excludeSelection = ref<SelectorSelection>(
-  selection.value.exclude?.[0]?.selections?.[0] || getFallbackSelection(),
+const excludeSelection = ref<SelectorSelectionInternal>(
+  internalSelection.value.exclude || getFallbackSelection(),
 );
-const showExclude = ref(!!excludeSelection.value.ids?.length);
+const resetSelections = () => {
+  includeSelection.value = getFallbackSelection();
+  excludeSelection.value = getFallbackSelection();
+};
 
 // WATCH AND UPDATE SELECTION ON INCLUDE/EXCLUDE SELECTION CHANGE
 watch(
-  () => includeSelection.value,
+  includeSelection,
   (value) => {
-    selection.value.include = [{ selections: [value] }];
+    if (mode.value === SelectorMode.Simple && simpleSelection.value) {
+      simpleSelection.value.include = convertToSimpleSelection(value);
+    } else if (selection.value) {
+      selection.value.include = [
+        {
+          selections: convertToQuerySelection(value),
+        },
+      ];
+    }
   },
   { deep: true },
 );
 watch(
-  () => excludeSelection.value,
+  excludeSelection,
   (value) => {
-    showExclude.value = !!value.ids?.length;
-    selection.value.exclude = [{ selections: [value] }];
+    if (mode.value === SelectorMode.Simple && simpleSelection.value) {
+      simpleSelection.value.exclude = convertToSimpleSelection(value);
+    } else if (selection.value) {
+      selection.value.exclude = [
+        {
+          selections: convertToQuerySelection(value),
+        },
+      ];
+    }
   },
   { deep: true },
-);
-watch(
-  () => showExclude.value,
-  (value) => {
-    if (!value) {
-      excludeSelection.value = getFallbackSelection();
-    }
-    if (!value && selection.value.exclude?.length) {
-      showExclude.value = true;
-    }
-  },
 );
 
+watch(mode, (newValue, oldValue) => {
+  if (newValue !== oldValue) {
+    resetSelections();
+  }
+});
+
 // HANDLERS FOR MANUALLY SELECTED ENTITIES
-const addToManuallySelected = (id: number) => {
+const addToManuallySelected = (id: string) => {
   includeSelection.value?.ids?.push(id);
   toast({
     title: t('entity_with_id_added_to_selection', {
@@ -74,7 +142,7 @@ const addToManuallySelected = (id: number) => {
     variant: 'positive',
   });
 };
-const removeFromManuallySelected = (id: number) => {
+const removeFromManuallySelected = (id: string) => {
   const index = includeSelection.value?.ids?.indexOf(id);
   if (index !== -1 && index !== undefined) {
     includeSelection.value?.ids?.splice(index, 1);
@@ -85,39 +153,123 @@ const removeFromManuallySelected = (id: number) => {
 
 // SETUP TABLE FOR SELECTED ENTITIES
 const { getColumns, orderAndFilterColumns, addActionsColumn } = useColumns();
-let columns = getColumns(entities.value);
-columns = orderAndFilterColumns(columns, ['id', 'image', 'name', 'price']);
-addActionsColumn(
-  columns,
-  {
-    onDelete: (entity: Entity) => removeFromManuallySelected(entity.id),
+let columns: ColumnDef<object>[] = [];
+
+const setupColumns = () => {
+  columns = getColumns(entities.value);
+  columns = orderAndFilterColumns(columns, ['_id', 'name', 'slug', 'price']);
+  addActionsColumn(
+    columns,
+    {
+      onDelete: (entity: SelectorEntity) =>
+        removeFromManuallySelected(entity._id),
+    },
+    'delete',
+  );
+};
+
+watch(
+  entities,
+  (oldVal, newVal) => {
+    setupColumns();
+    if (oldVal && oldVal.length && oldVal.length !== newVal?.length) {
+      // If entities changed, reset selections
+      //resetSelections();
+    }
   },
-  'delete',
+  { immediate: true },
 );
 
-const _selectionMade = computed(() => {
+// SELECTED ENTITIES
+const selectedEntitiesSimple = computed(() => {
+  const noSelectionMadeSelection =
+    selectionStrategy.value === SelectorSelectionStrategy.All
+      ? entities.value
+      : [];
+  const included = includeSelection.value.ids?.length
+    ? entities.value.filter((entity) =>
+        includeSelection.value?.ids?.includes(entity._id),
+      )
+    : noSelectionMadeSelection;
+  const excludedIds = excludeSelection.value?.ids || [];
+  const selected = included.filter(
+    (entity) => !excludedIds.includes(entity._id),
+  );
+  return selected;
+});
+
+const { productApi } = useGeinsRepository();
+const selectedProducts = ref<Product[]>([]);
+const { transformProducts } = useProductsStore();
+const selectionMade = computed(() => {
   return !!(
-    includeSelection.value.ids?.length || excludeSelection.value.ids?.length
+    (
+      includeSelection.value.categoryIds?.length ||
+      includeSelection.value.brandIds?.length ||
+      includeSelection.value.ids?.length ||
+      //Object.keys(includeSelection.value.price)?.length ||
+      //Object.keys(includeSelection.value.stock)?.length ||
+      excludeSelection.value.categoryIds?.length ||
+      excludeSelection.value.brandIds?.length ||
+      excludeSelection.value.ids?.length
+    )
+    //Object.keys(excludeSelection.value.price)?.length ||
+    //Object.keys(excludeSelection.value.stock)?.length
   );
 });
 
-// SELECTED ENTITIES
-const selectedEntities = computed(() => {
-  const included = includeSelection.value.ids?.length
-    ? entities.value.filter((entity) =>
-        includeSelection.value?.ids?.includes(entity.id),
-      )
-    : entities.value;
-  const excludedIds = excludeSelection.value?.ids || [];
-  const selected = included.filter(
-    (entity) => !excludedIds.includes(entity.id),
+const excludeSelectionMade = computed(() => {
+  return !!(
+    (
+      excludeSelection.value.categoryIds?.length ||
+      excludeSelection.value.brandIds?.length ||
+      excludeSelection.value.ids?.length
+    )
+    //Object.keys(excludeSelection.value.price)?.length ||
+    //Object.keys(excludeSelection.value.stock)?.length
   );
-  return selected;
+});
+
+const showExclude = ref(excludeSelectionMade.value);
+
+watch(excludeSelectionMade, (newVal) => {
+  showExclude.value = newVal;
+});
+
+if (!props.fetchEntitiesExternally) {
+  watchEffect(async () => {
+    let products = null;
+    if (selectionMade.value && mode.value === SelectorMode.Advanced) {
+      products = await productApi.query(
+        selection.value,
+        productQueryParams.value,
+      );
+      selectedProducts.value = transformProducts(products?.items);
+    } else if (!selectionMade.value) {
+      selectedProducts.value = [];
+    }
+  });
+}
+
+const selectedEntities = computed(() => {
+  return mode.value === SelectorMode.Simple
+    ? selectedEntitiesSimple.value
+    : selectedProducts.value;
+});
+
+defineExpose({
+  resetSelections,
+  includeSelection,
+  excludeSelection,
+  selectedEntities,
+  selectionMade,
+  addToManuallySelected,
+  removeFromManuallySelected,
 });
 </script>
 <template>
   <div>
-    <div class="mb-6 flex items-start justify-between">
+    <div class="mb-4 items-start justify-between @2xl:mb-6 @3xl:flex">
       <slot name="header">
         <SelectorHeader
           :entities="entities"
@@ -135,22 +287,24 @@ const selectedEntities = computed(() => {
         <slot name="selection">
           <SelectorSelection
             v-model:selection="includeSelection"
-            type="include"
+            :type="SelectorSelectionType.Include"
             :mode="mode"
-            :currency="defaultCurrency"
+            :currency="selectorCurrency"
             :entity-name="entityName"
             :entities="entities"
+            :selection-strategy="selectionStrategy"
           />
           <ContentSwitch
-            v-model="showExclude"
-            :label="$t('exclude_entities_from_selection', { entityName }, 2)"
+            v-if="allowExclusions"
+            v-model:checked="showExclude"
+            :label="$t('exclude_entity_from_selection', { entityName }, 2)"
             :description="$t('selector_exclude_description')"
           >
             <SelectorSelection
               v-model:selection="excludeSelection"
-              type="exclude"
+              :type="SelectorSelectionType.Exclude"
               :mode="mode"
-              :currency="defaultCurrency"
+              :currency="selectorCurrency"
               :entity-name="entityName"
               :entities="entities"
             />
@@ -158,15 +312,16 @@ const selectedEntities = computed(() => {
         </slot>
       </div>
       <slot />
-      <slot name="list">
+      <slot name="list" :selector-entity-name="entityName">
         <ContentHeading>
-          {{ $t('selected_entities', { entityName }, 2) }}
+          {{ $t('selected_entity', { entityName }, 2) }}
         </ContentHeading>
         <TableView
           :columns="columns"
           :data="selectedEntities"
           :entity-name="entityName"
-          mode="simple"
+          :empty-text="$t('no_entity_selected', { entityName }, 2)"
+          :mode="TableMode.Simple"
           :page-size="15"
         />
       </slot>

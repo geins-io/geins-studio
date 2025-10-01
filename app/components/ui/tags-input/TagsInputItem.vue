@@ -1,22 +1,19 @@
 <script setup lang="ts">
-import { cn } from '@/utils';
+import type { HTMLAttributes } from 'vue';
+import { reactiveOmit } from '@vueuse/core';
+
 import {
   TagsInputItem,
   type TagsInputItemProps,
   useForwardProps,
-} from 'radix-vue';
-
-import { computed, type HTMLAttributes } from 'vue';
+} from 'reka-ui';
+import { cn } from '@/lib/utils';
 
 const props = defineProps<
   TagsInputItemProps & { class?: HTMLAttributes['class'] }
 >();
 
-const delegatedProps = computed(() => {
-  const { class: _, ...delegated } = props;
-
-  return delegated;
-});
+const delegatedProps = reactiveOmit(props, 'class');
 
 const forwardedProps = useForwardProps(delegatedProps);
 </script>
@@ -26,7 +23,7 @@ const forwardedProps = useForwardProps(delegatedProps);
     v-bind="forwardedProps"
     :class="
       cn(
-        'flex h-6 items-center rounded-md bg-secondary ring-offset-background data-[state=active]:ring-2 data-[state=active]:ring-ring data-[state=active]:ring-offset-2',
+        'bg-secondary data-[state=active]:ring-ring ring-offset-background flex h-6 items-center rounded-md border data-[state=active]:ring-2 data-[state=active]:ring-offset-2',
         props.class,
       )
     "

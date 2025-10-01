@@ -10,15 +10,15 @@ const props = withDefaults(
   },
 );
 
-const title = ref(props.title);
-const description = ref(props.description);
-const unsavedChanges = ref(props.unsavedChanges);
+const title = toRef(props, 'title');
+const description = toRef(props, 'description');
+const unsavedChanges = toRef(props, 'unsavedChanges');
 </script>
 
 <template>
   <div class="content-title-block">
     <div class="flex items-center">
-      <h1 class="mb-1 text-3xl font-bold">
+      <h1 class="text-2xl font-bold md:mb-1 md:text-3xl">
         {{ title }}
       </h1>
       <span v-show="unsavedChanges">Unsaved changes</span>

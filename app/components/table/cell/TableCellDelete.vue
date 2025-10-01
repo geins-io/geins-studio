@@ -10,7 +10,7 @@ const _emit = defineEmits({
 <template>
   <div class="flex items-center justify-center">
     <Button
-      class="size-7 p-1 hover:text-negative"
+      class="hover:text-negative size-6 p-1 sm:size-7"
       size="xs"
       variant="outline"
       @click="$emit('delete', rowData)"

@@ -9,8 +9,9 @@ import type {
 
 import { jwtDecode } from 'jwt-decode';
 
-const API_URL = process.env.GEINS_API_URL as string;
-const { geinsLogInfo } = log('server/utils/auth.ts');
+const config = useRuntimeConfig();
+const API_URL = config.public.apiUrl;
+const { geinsLog } = log('server/utils/auth.ts');
 
 const ENDPOINTS = {
   LOGIN: 'auth',
@@ -116,8 +117,7 @@ export const auth = () => {
   const refresh = async (
     refreshToken?: string,
   ): Promise<AuthResponse | undefined> => {
-    const date = new Date();
-    geinsLogInfo(date.toLocaleString(), '::: refreshing token:', refreshToken);
+    geinsLog('refreshing token:', refreshToken);
     if (!refreshToken) {
       return undefined;
     }
@@ -184,7 +184,7 @@ export const auth = () => {
    * @param {AuthResponse} response - The auth response.
    * @returns {Session} The token data including authorization status and expiration times.
    */
-  const getSession = (response: AuthResponse): Session => {
+  const getSessionFromResponse = (response: AuthResponse): Session => {
     // User is not authenticated because MFA is required
     if (response.mfaRequired && response.loginToken) {
       return {
@@ -201,16 +201,7 @@ export const auth = () => {
     }
 
     // User is authenticated, set up session
-    const parsedToken = parseToken(response.accessToken);
-    const session: Session = {
-      isAuthenticated: true,
-      accessToken: response.accessToken,
-      refreshToken: response.refreshToken,
-      accountKey: response.accountKey,
-      tokenExpires: Number(parsedToken?.exp),
-      refreshedAt: Number(parsedToken?.iat),
-      mfaActive: false,
-    };
+    const session: Session = getAuthenticatedSession(response);
 
     // If account is already selected or set, return session
     if (session.accountKey) {
@@ -218,15 +209,55 @@ export const auth = () => {
     }
 
     // Handle multiple accounts and no account selected
-    if (response.accounts && Object.keys(response.accounts).length > 0) {
+    if (response.accounts && response.accounts.length > 0) {
       session.accounts = response.accounts;
-      if (Object.keys(response.accounts).length === 1) {
-        session.accountKey = Object.keys(response.accounts)[0];
+      if (response.accounts.length === 1) {
+        session.accountKey = response.accounts[0].accountKey;
       }
       return session;
     } else {
       throw new Error('No account key found for user');
     }
+  };
+
+  /**
+   * Creates a session object that is authenticated.
+   *
+   * @param {Session} session - The session object to authenticate.
+   * @returns {Session} The authenticated session object.
+   */
+  const getAuthenticatedSession = (session: Session): Session => {
+    const parsedToken = parseToken(session.accessToken);
+    const authenticatedSession: Session = {
+      isAuthenticated: true,
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      accountKey: session.accountKey,
+      tokenExpires: Number(parsedToken?.exp),
+      refreshedAt: Number(parsedToken?.iat),
+      mfaActive: false,
+      user: session.user,
+    };
+
+    return authenticatedSession;
+  };
+
+  /**
+   * Parses a session object that contains JSON strings as values.
+   *
+   * @param {Session} payload - The session object to parse.
+   * @returns {Session} The parsed session object.
+   */
+  const parseSessionObjectStrings = (payload: Session): Session => {
+    const session: Session = {};
+    Object.entries(payload).forEach(([key, value]) => {
+      try {
+        session[key as keyof Session] = JSON.parse(value as string);
+      } catch {
+        session[key as keyof Session] = value;
+      }
+    });
+    return session;
   };
 
   /**
@@ -250,7 +281,9 @@ export const auth = () => {
     parseToken,
     isExpired,
     expiresSoon,
-    getSession,
+    getSessionFromResponse,
+    getAuthenticatedSession,
+    parseSessionObjectStrings,
     shouldRefresh,
   };
 };
