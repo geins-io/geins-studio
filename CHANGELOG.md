@@ -1,4 +1,16 @@
 
+## v0.0.18
+
+[compare changes](https://github.com/geins-io/geins-studio/compare/v0.0.17...v0.0.18)
+
+### 🤖 CI
+
+- Change to vercel workflow ([ead96ed](https://github.com/geins-io/geins-studio/commit/ead96ed))
+
+### ❤️ Contributors
+
+- Olivia Axelsson <axelsson@geins.io>
+
 ## v0.0.17
 
 [compare changes](https://github.com/geins-io/geins-studio/compare/v0.0.16...v0.0.17)
