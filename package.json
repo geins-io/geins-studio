@@ -16,7 +16,8 @@
     "lint": "eslint . --fix",
     "docs": "vitepress dev docs --port 3010",
     "test": "vitest",
-    "changelog:release": "changelogen --bump --release --push"
+    "changelog:release": "changelogen --bump --release --push",
+    "changelog:update": "changelogen --output CHANGELOG.md"
   },
   "dependencies": {
     "@nuxtjs/color-mode": "3.5.2",

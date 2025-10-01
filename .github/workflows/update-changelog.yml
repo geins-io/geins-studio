@@ -1,0 +1,41 @@
+name: Update Changelog
+
+on:
+    push:
+        branches:
+            - next
+
+permissions:
+    contents: write
+
+jobs:
+    update_changelog:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  submodules: true
+                  lfs: true
+
+            - name: Identify for Git
+              run: |
+                  git config --global user.name "github-actions[bot]"
+                  git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+            - name: Install dependencies
+              run: yarn install
+
+            - name: Update Changelog (No Version Bump)
+              run: yarn changelog:update
+
+            - name: Commit and Push Changelog
+              run: |
+                  if git diff --quiet HEAD -- CHANGELOG.md; then
+                    echo "No changelog changes to commit"
+                  else
+                    git add CHANGELOG.md
+                    git commit -m "docs: update changelog [skip ci]"
+                    git push
+                  fi
