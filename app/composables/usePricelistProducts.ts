@@ -53,7 +53,12 @@ export const usePricelistProducts = () => {
     entityData: ProductPricelist,
   ): PricelistRule[] => {
     const productLevels = products
-      .filter((p) => p.productId === productId && p.staggeredCount > 1)
+      .filter(
+        (p) =>
+          p.productId === productId &&
+          p.staggeredCount > 1 &&
+          p.priceMode !== 'auto',
+      )
       .map((p) => ({
         quantity: p.staggeredCount,
         price: p.price,
@@ -101,22 +106,54 @@ export const usePricelistProducts = () => {
   const getNewPricelistProducts = (
     newProducts: PricelistProduct[],
     currentProducts: PricelistProduct[],
-    productId?: string,
+    productId: string,
   ): PricelistProduct[] => {
-    let filteredProducts = currentProducts;
-    if (productId) {
-      filteredProducts = currentProducts.filter(
-        (product) => product.productId !== productId,
-      );
-    }
-
-    const updatedProducts = [...filteredProducts];
-
-    newProducts.forEach((newProduct) => {
-      addToPricelistProducts(newProduct, updatedProducts);
+    // Create a map of newProducts for quick lookup by staggeredCount
+    const newProductsMap = new Map<number, PricelistProduct>();
+    newProducts.forEach((product) => {
+      newProductsMap.set(product.staggeredCount, product);
     });
 
-    return updatedProducts;
+    // Filter currentProducts to only the target productId
+    const matchingProducts = currentProducts.filter(
+      (product) =>
+        product.productId === productId && product.staggeredCount > 1,
+    );
+
+    // Process matching products: update if exists in newProducts, strip if not
+    const processedProducts = matchingProducts.map((currentProduct) => {
+      const newProduct = newProductsMap.get(currentProduct.staggeredCount);
+
+      if (newProduct) {
+        return newProduct;
+      } else {
+        return {
+          productId: currentProduct.productId,
+          staggeredCount: currentProduct.staggeredCount,
+          delete: true,
+        };
+      }
+    });
+
+    // Add any newProducts that weren't in currentProducts
+    newProducts.forEach((newProduct) => {
+      const existsInCurrent = matchingProducts.some(
+        (current) => current.staggeredCount === newProduct.staggeredCount,
+      );
+
+      if (!existsInCurrent) {
+        processedProducts.push(newProduct);
+      }
+    });
+
+    // Return all untouched products plus processed ones
+    return [
+      ...currentProducts.filter(
+        (product) =>
+          product.productId !== productId || product.staggeredCount === 1,
+      ),
+      ...processedProducts,
+    ];
   };
 
   const convertPriceModeToRuleField = (

@@ -132,7 +132,7 @@ const handleSave = () => {
     props.productId,
   );
 
-  emit('save', editableRules.value);
+  emit('save', pricelistProducts.value);
   open.value = false;
   rulesValid.value = true;
 };

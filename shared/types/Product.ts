@@ -270,6 +270,7 @@ export interface PricelistProduct {
   priceMode?: PricelistPriceMode;
   purchasePrice?: number;
   purchasePriceCurrency?: string;
+  delete?: boolean;
 }
 
 export interface ProductPricelistProductApiOptions

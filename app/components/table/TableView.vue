@@ -408,7 +408,7 @@ const searchableColumn = computed(() => {
       v-if="advancedMode"
       variant="ghost"
       size="icon"
-      class="border-border bg-card absolute -top-px -right-px z-50 size-6"
+      class="border-border bg-card absolute -top-px -right-px z-50 !size-6"
       @click="tableMaximized = !tableMaximized"
     >
       <LucideMaximize2 v-if="!tableMaximized" class="size-3" />
