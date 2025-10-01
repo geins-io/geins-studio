@@ -26,8 +26,6 @@ export default defineNuxtConfig({
     'shadcn-nuxt',
     'nuxt-svgo',
     'nuxt-lucide-icons',
-    // Add Application Insights module
-    'nuxt-applicationinsights',
     'nuxt-viewport',
   ],
 
@@ -88,9 +86,6 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    applicationinsights: {
-      connectionString: process.env.APPLICATIONINSIGHTS_CONNECTION_STRING,
-    },
     public: {
       fallback: {
         language: 'en',
