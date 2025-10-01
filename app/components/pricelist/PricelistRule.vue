@@ -59,7 +59,7 @@ const ruleValid = computed(() => {
   return false;
 });
 
-const tdClasses = 'text-xs text-left py-3 pr-5';
+const tdClasses = 'text-xs text-left py-3 pr-2 @2xl:pr-5';
 
 const handleApply = (overwrite: boolean) => {
   emit(overwrite ? 'apply-overwrite' : 'apply');
@@ -109,7 +109,7 @@ const handleApply = (overwrite: boolean) => {
         v-model.number="price"
         size="sm"
         placeholder="0"
-        class="min-w-20"
+        class="min-w-28"
         :loading="loading && lastFieldChanged !== 'price' && mode === 'all'"
         :disabled="global && mode === 'all'"
       >

@@ -46,8 +46,14 @@ watch(propRules, (newRules) => {
 });
 
 const handleUpdate = useDebounceFn((rules: PricelistRule[]) => {
+  // If the rules array is shorter, it's likely a removal - handle immediately
+  if (rules.length < editableRules.value.length) {
+    editableRules.value = rules;
+    return;
+  }
   editableRules.value = rules;
 }, 800);
+
 const handleUpdateRule = useDebounceFn(
   async (payload: { index: number; rule: PricelistRule }) => {
     try {
@@ -123,11 +129,28 @@ const handleSave = () => {
   pricelistProducts.value = getNewPricelistProducts(
     filteredNewRules,
     pricelistProducts.value,
+    props.productId,
   );
 
-  emit('save', editableRules.value);
+  emit('save', pricelistProducts.value);
   open.value = false;
   rulesValid.value = true;
+};
+
+const handleRemove = async (rule: PricelistRule) => {
+  const index = editableRules.value.findIndex(
+    (r) =>
+      r.quantity === rule.quantity &&
+      r[rule.lastFieldChanged || 'price'] ===
+        rule[rule.lastFieldChanged || 'price'],
+  );
+  if (index === -1) return;
+
+  // Create a new array to ensure reactivity
+  editableRules.value = [
+    ...editableRules.value.slice(0, index),
+    ...editableRules.value.slice(index + 1),
+  ];
 };
 </script>
 <template>
@@ -154,7 +177,7 @@ const handleSave = () => {
           mode="all"
           :rules="globalRules"
           :disabled="true"
-          :vat-description="props.vatDescription"
+          :vat-description="vatDescription"
           :currency="currency"
         />
         <p v-else class="text-muted-foreground text-sm italic">
@@ -171,11 +194,12 @@ const handleSave = () => {
           mode="all"
           :show-loading="true"
           :rules="editableRules"
-          :product-id="props.productId"
-          :vat-description="props.vatDescription"
+          :product-id="productId"
+          :vat-description="vatDescription"
           :currency="currency"
           @update-rule="handleUpdateRule"
           @update="handleUpdate"
+          @remove="handleRemove"
         />
         <Feedback
           v-auto-animate
