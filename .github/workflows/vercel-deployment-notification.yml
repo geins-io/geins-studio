@@ -16,7 +16,7 @@ jobs:
                   echo "Ref: ${{ github.event.deployment.ref }}"
 
             - name: Post to Slack - Production
-              if: github.event.deployment.ref == 'refs/heads/main'
+              if: github.event.deployment.environment == 'Production'
               env:
                   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
                   PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
@@ -26,7 +26,7 @@ jobs:
                   }' $SLACK_WEBHOOK_URL
 
             - name: Post to Slack - QA/Next
-              if: github.event.deployment.ref == 'refs/heads/next'
+              if: github.event.deployment.environment == 'qa'
               env:
                   SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
                   QA_URL: ${{ vars.QA_URL }}
