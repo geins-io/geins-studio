@@ -1,4 +1,24 @@
 
+## v0.0.19
+
+[compare changes](https://github.com/geins-io/geins-studio/compare/v0.0.18...v0.0.19)
+
+### 🚀 Enhancements
+
+- ⚠️  Wholesale accounts + pricelists ([#95](https://github.com/geins-io/geins-studio/pull/95))
+
+### 🤖 CI
+
+- Non automatic version bump ([c7e65df](https://github.com/geins-io/geins-studio/commit/c7e65df))
+
+#### ⚠️ Breaking Changes
+
+- ⚠️  Wholesale accounts + pricelists ([#95](https://github.com/geins-io/geins-studio/pull/95))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.0.18
 
 [compare changes](https://github.com/geins-io/geins-studio/compare/v0.0.17...v0.0.18)
