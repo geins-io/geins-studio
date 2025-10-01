@@ -1,4 +1,8 @@
 
+## v0.1.0
+
+[compare changes](https://github.com/geins-io/geins-studio/compare/v0.0.19...v0.1.0)
+
 ## v0.0.19
 
 [compare changes](https://github.com/geins-io/geins-studio/compare/v0.0.18...v0.0.19)
