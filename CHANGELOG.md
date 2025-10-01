@@ -1,4 +1,16 @@
 
+## v0.0.17
+
+[compare changes](https://github.com/geins-io/geins-studio/compare/v0.0.16...v0.0.17)
+
+### 🤖 CI
+
+- Changelog workflows ([c47acfb](https://github.com/geins-io/geins-studio/commit/c47acfb))
+
+### ❤️ Contributors
+
+- Olivia Axelsson <axelsson@geins.io>
+
 ## v0.0.16
 
 
