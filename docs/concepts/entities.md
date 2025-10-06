@@ -11,9 +11,13 @@ The default setup for an entity is that it has it's own folder in the `pages` di
 
 The `[id].vue` file is used to dynamically display a single entity item in create or edit mode, while the `list.vue` file is used to display a list of all entities of that type in a data table.
 
+## Entity URL Pattern
+
+The URL pattern for an entity always follows the structure `/[parent]/[entity]/[id]` for individual items, `/[parent]/[entity]/list` for the list view and `/[parent]/[entity]/new` for the create view. The `[parent]` is the parent folder of the entity folder in the `pages` directory. The `[entity]` is the name of the entity itself. The `[id]` is a dynamic parameter that represents the unique identifier of the entity item. `list` and `new` are localized aliases that can be changed in the language files.
+
 ## Retrieving the Entity Name
 
-The entity name is typically retrieved using the `useEntity` composable. This composable extracts the entity name from the current route path.
+The entity name is typically retrieved using the `useEntityUrl` composable. This composable extracts the entity name from the current route path.
 For example, if the current route path is `/pim/product/list`, the entity name would be `product`.
 
 ```javascript
@@ -23,7 +27,7 @@ const entityName = getEntityName();
 ```
 
 ::: tip
-You can read the full specification of the `useEntity` composable here: [useEntity](/composables/useEntity.md)
+You can read the full specification of the `useEntityUrl` composable here: [useEntityUrl](/composables/useEntityUrl.md)
 :::
 
 ## Using the Entity Name
@@ -32,9 +36,9 @@ The entity name is mainly used as param to a set of language keys to retrieve th
 
 ```vue
 <script setup>
-const { getEntityName, getNewEntityUrl } = useEntityUrl(route.fullPath);
+const { getEntityName, getEntityNewUrl } = useEntityUrl(route.fullPath);
 const entityName = getEntityName();
-const newEntityUrl = getNewEntityUrl();
+const newEntityUrl = getEntityNewUrl();
 </script>
 <template>
   <ButtonIcon icon="new" :href="newEntityUrl">
@@ -42,19 +46,3 @@ const newEntityUrl = getNewEntityUrl();
   </ButtonIcon>
 </template>
 ```
-
-## Creating a new entity
-
-Say you wanna create a new page where you list all books. You can easily do so by running our built-in CLI command:
-
-```bash
-npx create-entity
-```
-
-This will prompt you about the name of the entity you want to create, and then create the necessary basic `[id].vue` and `list.vue` files for you. It will also ask you to provide the singular and plural english translations for the entity name, which will be added to the language file.
-
-That's it, now you just have to connect your files to the API and you're good to go!
-
-::: warning
-This feature is not yet fully implemented
-:::

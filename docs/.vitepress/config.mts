@@ -2,17 +2,17 @@ import { defineConfig } from 'vitepress';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: 'Geins Merchant Center Developer Docs',
-  description: 'Geins Merchant Center Developer Docs',
+  title: 'Geins Studio - Developer Docs',
+  description: 'Geins Studio - Developer Docs',
   lastUpdated: true,
   head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
-    siteTitle: 'Merchant Center',
+    siteTitle: 'Geins Studio',
     logo: {
       light: '/geins-g.svg',
       dark: '/geins-g-white.svg',
-      alt: 'Geins Merchant Center Developer Docs',
+      alt: 'Geins Studio - Developer Docs',
     },
     search: {
       provider: 'local',
@@ -20,12 +20,12 @@ export default defineConfig({
     outline: 'deep',
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Docs', link: '/introduction/what-is-geins-mc' },
+      { text: 'Docs', link: '/introduction/what-is-geins-studio' },
     ],
     socialLinks: [
       {
         icon: 'github',
-        link: 'https://github.com/geins-io/geins-merchant-center',
+        link: 'https://github.com/geins-io/geins-studio',
       },
     ],
     sidebar: [
@@ -33,11 +33,11 @@ export default defineConfig({
         text: 'Introduction',
         items: [
           {
-            text: 'What is Geins MC?',
-            link: '/introduction/what-is-geins-mc',
+            text: 'What is Geins Studio?',
+            link: '/introduction/what-is-geins-studio',
           },
           { text: 'Getting Started', link: '/introduction/getting-started' },
-          { text: 'Deploy', link: '/introduction/deploy' },
+          { text: 'Features', link: '/introduction/features' },
         ],
       },
       {
@@ -52,7 +52,7 @@ export default defineConfig({
         items: [
           { text: 'useAPI', link: '/composables/useAPI.md' },
           { text: 'useColumns', link: '/composables/useColumns.md' },
-          { text: 'useEntity', link: '/composables/useEntity.md' },
+          { text: 'useEntityUrl', link: '/composables/useEntityUrl.md' },
           { text: 'useGeinsAuth', link: '/composables/useGeinsAuth.md' },
           { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
           { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
@@ -77,14 +77,6 @@ export default defineConfig({
             ],
           },
           { text: 'Working with the API', link: '/guides/api' },
-        ],
-      },
-      {
-        text: 'Examples',
-        items: [
-          { text: 'Login using the API', link: '/login-api-example' },
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' },
         ],
       },
     ],

@@ -1,6 +1,6 @@
 # `useEntityUrl`
 
-The `useEntityUrl` composable provides utility functions for manipulating entity-related URLs and extracting entity names based on a given `fullPath`. It integrates localization through `useI18n`.
+The `useEntityUrl` composable provides utility functions for manipulating entity-related URLs and extracting entity names from the current route. It integrates localization through `useI18n` and supports both context-aware and entity-specific URL generation.
 
 ::: tip
 Read more about the concept of entities in Geins MC here: [Entities](/concepts/entities)
@@ -8,71 +8,144 @@ Read more about the concept of entities in Geins MC here: [Entities](/concepts/e
 
 ## Features
 
-- Extracts an entity's name from a full path.
-- Constructs URLs for creating a new entity.
-- Constructs URLs for editing an entity.
-- Supports localization for dynamic URL aliases.
+- Extracts an entity's name from the current route path
+- Constructs URLs for creating a new entity (current context)
+- Constructs URLs for editing an entity (current context)
+- Constructs URLs for entity list pages (current context)
+- Generates URLs for any entity from anywhere in the application
+- Supports localization for dynamic URL aliases
 
 ## Usage
 
-Here is how you can use the `useEntityUrl` composable in your project:
+Here are the different ways you can use the `useEntityUrl` composable:
+
+### Context-Aware Usage (Current Route)
 
 ```ts
-const route = useRoute();
-const { newEntityUrlAlias, getEntityName, getNewEntityUrl, getEntityUrl } =
-  useEntityUrl(route.fullPath);
+// Automatically uses the current route
+const {
+  newEntityUrlAlias,
+  getEntityName,
+  getEntityNewUrl,
+  getEntityUrl,
+  getEntityListUrl,
+} = useEntityUrl();
 
-const entityName = getEntityName();
-const newEntityUrl = getNewEntityUrl();
-const entityUrl = getEntityUrl();
+const entityName = getEntityName(); // "product" from "/pim/product/list"
+const newEntityUrl = getEntityNewUrl(); // "/pim/product/new"
+const editUrl = getEntityUrl('123'); // "/pim/product/123"
+const listUrl = getEntityListUrl(); // "/pim/product/list"
 ```
 
-## Parameters
+### Entity-Specific Usage (Any Entity)
 
-### `fullPath: string`
+```ts
+// Generate URLs for any entity from anywhere
+const { getEntityNewUrlFor, getEntityListUrlFor } = useEntityUrl();
 
-The full url path of the entity.
+// Generate URLs for different entities
+const productListUrl = getEntityListUrlFor('product', 'pim'); // "/pim/product/list"
+const userNewUrl = getEntityNewUrlFor('user', 'account'); // "/account/user/new"
+```
 
-For example:  
-`/parent/entity/list` or `/parent/entity/1` or `/parent/entity/new`
+### Navigation Component Usage
+
+```ts
+const { getEntityListUrlFor } = useEntityUrl();
+
+const navigationItems = [
+  { name: 'Products', url: getEntityListUrlFor('product', 'pim') },
+  { name: 'Users', url: getEntityListUrlFor('user', 'account') },
+  { name: 'Orders', url: getEntityListUrlFor('order', 'wholesale') },
+];
+```
 
 ## Returned Properties and Methods
 
-### `newEntityUrlAlias: string`
+### `newEntityUrlAlias: ComputedRef<string>`
 
-A localized string representing the alias for creating a new entity. It is fetched using `useI18n` and the key `new_entity_url_alias`. By default this is set to `new`.
+A localized computed reference representing the alias for creating a new entity. It is fetched using `useI18n` and the key `new_entity_url_alias`. By default this is set to `"new"`.
+
+### `listEntityUrlAlias: ComputedRef<string>`
+
+A localized computed reference representing the alias for entity list pages. It is fetched using `useI18n` and the key `list_entity_url_alias`. By default this is set to `"list"`.
 
 ### `getEntityName(): string`
 
-Extracts the entity name from the `fullPath`.
+Extracts the entity name from the current route path.
 
 - **Returns**: A string representing the entity name.
 - **Example**:  
-  For a `fullPath` of `/parent/entity/list`, the result is `entity`.
+  For a current route of `/pim/product/list`, the result is `"product"`.
 
-### `getNewEntityUrl(): string`
+### `getEntityNewUrl(): string`
 
-Constructs a URL for creating a new entity.
+Constructs a URL for creating a new entity based on the current route.
 
 - **Returns**: A string representing the new entity URL.
 - **Example**:  
-  For a `fullPath` of `/parent/entity/list` and a `newEntityUrlAlias` of `new`, the result is `/parent/entity/new`.
+  For a current route of `/pim/product/list`, the result is `/pim/product/new`.
 
-### `getEntityUrl(dataProp: string): string`
+### `getEntityUrl(id: string): string`
 
-Constructs a URL for editing an entity using the provided `dataProp`.
+Constructs a URL for editing a specific entity based on the current route.
 
 - **Parameters**:
-
-  - `dataProp`: A string representing the identifier or data property of the entity.
+  - `id`: A string representing the identifier of the entity.
 
 - **Returns**: A string representing the edit entity URL.
 - **Example**:  
-  For a `fullPath` of `/parent/entity/list` and a `dataProp` of `{id}`, the result is `/parent/entity/{id}`. This can then be used to replace `{id}` with the actual identifier of the entity dynamically.
+  For a current route of `/pim/product/list` and an `id` of `"123"`, the result is `/pim/product/123`.
+
+### `getEntityListUrl(): string`
+
+Constructs a URL for the entity list page based on the current route.
+
+- **Returns**: A string representing the entity list URL.
+- **Example**:  
+  For a current route of `/pim/product/new`, the result is `/pim/product/list`.
+
+### `getEntityNewUrlFor(targetEntityName: string, targetParent: string): string`
+
+Constructs a URL for creating a new entity for any entity type.
+
+- **Parameters**:
+  - `targetEntityName`: The name of the entity (e.g., "product", "user")
+  - `targetParent`: The parent path segment (e.g., "pim", "account")
+
+- **Returns**: A string representing the new entity URL.
+- **Example**:  
+  `getEntityNewUrlFor("product", "pim")` returns `/pim/product/new`.
+
+### `getEntityListUrlFor(targetEntityName: string, targetParent: string): string`
+
+Constructs a URL for the entity list page for any entity type.
+
+- **Parameters**:
+  - `targetEntityName`: The name of the entity (e.g., "product", "user")
+  - `targetParent`: The parent path segment (e.g., "pim", "account")
+
+- **Returns**: A string representing the entity list URL.
+- **Example**:  
+  `getEntityListUrlFor("user", "account")` returns `/account/user/list`.
 
 ## Dependencies
 
 This composable depends on:
 
-1. **`useI18n`**: Ensures localization support for dynamic URL aliases.
-2. **`fullPath`**: A string that must be a valid path, as it is split to extract names and construct URLs.
+1. **`useRoute`**: Uses the current route to extract entity information and construct context-aware URLs.
+2. **`useI18n`**: Ensures localization support for dynamic URL aliases like "new" and "list".
+
+## URL Pattern
+
+The composable follows this URL pattern:
+
+- **List**: `/{parent}/{entity}/list`
+- **New**: `/{parent}/{entity}/new`
+- **Edit**: `/{parent}/{entity}/{id}`
+
+Where:
+
+- `parent` is the parent route segment (e.g., "pim", "account", "wholesale")
+- `entity` is the entity name (e.g., "product", "user", "order")
+- `id` is the specific entity identifier

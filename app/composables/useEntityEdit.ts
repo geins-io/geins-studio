@@ -11,7 +11,6 @@ export interface EntityEditOptions<
   TOptions extends ApiOptions<string> = ApiOptions<string>,
 > {
   entityName?: string;
-  newEntityUrlAlias?: string;
   repository: {
     get: (id: string, options?: TOptions) => Promise<TResponse>;
     create: (data: TCreate, options?: TOptions) => Promise<TResponse>;
@@ -57,18 +56,16 @@ export function useEntityEdit<
   const {
     newEntityUrlAlias,
     getEntityName,
-    getNewEntityUrl,
+    getEntityNewUrl,
     getEntityListUrl,
-  } = useEntityUrl(route.fullPath);
+  } = useEntityUrl();
   const { hasReducedSpace } = useLayout();
 
   // Core state
   const entityName = options.entityName || getEntityName();
-  const newEntityUrl = getNewEntityUrl();
+  const newEntityUrl = getEntityNewUrl();
   const entityListUrl = getEntityListUrl();
-  const createMode = ref(
-    route.params.id === (options.newEntityUrlAlias || newEntityUrlAlias),
-  );
+  const createMode = ref(route.params.id === newEntityUrlAlias.value);
   const loading = ref(false);
   const refreshEntityData = ref<() => Promise<void>>(() => Promise.resolve());
   const entityLiveStatus = ref<boolean>(false);
@@ -208,7 +205,7 @@ export function useEntityEdit<
 
       if (result?._id) {
         const newUrl = newEntityUrl.replace(
-          options.newEntityUrlAlias || newEntityUrlAlias,
+          newEntityUrlAlias.value,
           result._id,
         );
         await useRouter().replace(newUrl);

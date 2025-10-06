@@ -8,11 +8,8 @@ type Entity = WholesaleAccount;
 type EntityList = WholesaleAccountList;
 
 const { t } = useI18n();
-const route = useRoute();
 const { geinsLogError } = useGeinsLog('pages/wholesale/account/list.vue');
-const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
-  route.fullPath,
-);
+const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
 definePageMeta({
   pageType: 'list',
@@ -24,7 +21,7 @@ const { wholesaleApi, deleteAccount, extractAccountGroupsfromTags } =
 const dataList = ref<EntityList[]>([]);
 const entityIdentifier = '{_id}';
 const entityName = getEntityName();
-const newEntityUrl = getNewEntityUrl();
+const newEntityUrl = getEntityNewUrl();
 const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 

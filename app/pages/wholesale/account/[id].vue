@@ -32,7 +32,6 @@ const {
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
 const accountStore = useAccountStore();
-const { getEntityNameById } = useEntity();
 const { toast } = useToast();
 const viewport = useViewport();
 

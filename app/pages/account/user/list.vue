@@ -3,10 +3,7 @@ import type { ColumnDef } from '@tanstack/vue-table';
 import type { ColumnOptions, User } from '#shared/types';
 type Entity = User;
 
-const route = useRoute();
-const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
-  route.fullPath,
-);
+const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
 definePageMeta({
   pageType: 'list',
@@ -17,7 +14,7 @@ definePageMeta({
 const dataList = ref<Entity[]>([]);
 const entityIdentifier = '{_id}';
 const entityName = getEntityName();
-const newEntityUrl = getNewEntityUrl();
+const newEntityUrl = getEntityNewUrl();
 const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 const columns: Ref<ColumnDef<Entity>[]> = ref([]);

@@ -6,11 +6,8 @@ type Entity = ProductPricelist;
 type EntityList = ProductPricelist;
 
 const { t } = useI18n();
-const route = useRoute();
 const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/list.vue');
-const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
-  route.fullPath,
-);
+const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
 definePageMeta({
   pageType: 'list',
@@ -21,7 +18,7 @@ const { productApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
 const entityIdentifier = '{_id}';
 const entityName = getEntityName();
-const newEntityUrl = getNewEntityUrl();
+const newEntityUrl = getEntityNewUrl();
 const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 

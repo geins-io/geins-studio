@@ -8,6 +8,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ *
+ * @param updaterOrValue
+ * @param ref
+ */
 export function valueUpdater<T extends Updater<unknown>>(
   updaterOrValue: T,
   ref: Ref,
@@ -23,9 +28,13 @@ export function valueUpdater<T extends Updater<unknown>>(
  * @returns A unique string identifier
  */
 export function generateInternalId(): string {
-  return `internal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `internal_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 }
 
+/**
+ * Returns the name of an entity given its ID from a list of entities.
+ * @returns {string}
+ */
 export function getEntityNameById(
   id: string,
   all: EntityBaseWithName[],
