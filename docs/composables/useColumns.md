@@ -181,51 +181,6 @@ linkColumns: {
 }
 ```
 
-### Type Definitions
-
-```ts
-interface ColumnOptions<T> {
-  selectable?: boolean;
-  sortable?: boolean;
-  maxTextLength?: number;
-  columnTitles?: Partial<Record<StringKeyOf<T>, string>>;
-  columnTypes?: ColumnTypes<T>;
-  sortableColumns?: Partial<Record<StringKeyOf<T>, boolean>>;
-  excludeColumns?: StringKeyOf<T>[];
-  includeColumns?: StringKeyOf<T>[];
-  columnCellProps?: Partial<Record<StringKeyOf<T>, Record<string, unknown>>>;
-  linkColumns?: Partial<Record<StringKeyOf<T>, LinkColumnConfig<T>>>;
-}
-
-type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
-
-interface LinkColumnConfig<T> {
-  url: string;
-  idField?: StringKeyOf<T>;
-}
-
-type StringKeyOf<T> = Extract<keyof T, string>;
-
-type EditableColumnType = 'string' | 'number' | 'currency' | 'percentage';
-
-export type ColumnType =
-  | 'default'
-  | 'currency'
-  | 'price'
-  | 'date'
-  | 'number'
-  | 'image'
-  | 'link'
-  | 'select'
-  | 'actions'
-  | 'channels'
-  | 'tags'
-  | 'status'
-  | 'tooltip'
-  | 'boolean'
-  | `editable-${EditableColumnType}`;
-```
-
 ## Properties and Methods
 
 ### `getBasicHeaderStyle`
@@ -432,4 +387,81 @@ const columns = getColumns(products.value, {
     },
   },
 });
+```
+
+## Type Definitions
+
+### Column Options
+
+```ts
+interface ColumnOptions<T> {
+  selectable?: boolean;
+  sortable?: boolean;
+  maxTextLength?: number;
+  columnTitles?: Partial<Record<StringKeyOf<T>, string>>;
+  columnTypes?: ColumnTypes<T>;
+  sortableColumns?: Partial<Record<StringKeyOf<T>, boolean>>;
+  excludeColumns?: StringKeyOf<T>[];
+  includeColumns?: StringKeyOf<T>[];
+  columnCellProps?: Partial<Record<StringKeyOf<T>, Record<string, unknown>>>;
+  linkColumns?: Partial<Record<StringKeyOf<T>, LinkColumnConfig<T>>>;
+}
+
+type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
+
+interface LinkColumnConfig<T> {
+  url: string;
+  idField?: StringKeyOf<T>;
+}
+
+type StringKeyOf<T> = Extract<keyof T, string>;
+
+type EditableColumnType = 'string' | 'number' | 'currency' | 'percentage';
+
+export type ColumnType =
+  | 'default'
+  | 'currency'
+  | 'price'
+  | 'date'
+  | 'number'
+  | 'image'
+  | 'link'
+  | 'select'
+  | 'actions'
+  | 'channels'
+  | 'tags'
+  | 'status'
+  | 'tooltip'
+  | 'boolean'
+  | `editable-${EditableColumnType}`;
+```
+
+### Return Type
+
+```ts
+interface UseColumnsReturnType<T> {
+  getBasicHeaderStyle: (table: Table<T>) => string;
+  getBasicCellStyle: (table: Table<T>) => string;
+  getColumns: (
+    data: T[],
+    options?: Partial<ColumnOptions<T>>,
+  ) => ColumnDef<T>[];
+  extendColumns: (
+    columns: ColumnDef<T>[],
+    column: ColumnDef<T>,
+  ) => ColumnDef<T>[];
+  addActionsColumn: (
+    columns: ColumnDef<T>[],
+    props: object,
+    type?: 'actions' | 'delete' | 'edit',
+    availableActions?: TableRowAction[],
+  ) => ColumnDef<T>[];
+  orderAndFilterColumns: (
+    columns: ColumnDef<T>[],
+    keys: string[],
+  ) => ColumnDef<T>[];
+  orderColumnLast: (columns: ColumnDef<T>[], key: string) => ColumnDef<T>[];
+}
+
+type TableRowAction = 'edit' | 'copy' | 'delete';
 ```

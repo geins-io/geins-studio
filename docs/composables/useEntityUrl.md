@@ -151,3 +151,19 @@ Where:
 - `parent` is the parent route segment (e.g., "pim", "account", "wholesale")
 - `entity` is the entity name (e.g., "product", "user", "pricelist")
 - `id` is the specific entity identifier
+
+## Type Definitions
+
+```ts
+interface UseEntityUrlReturnType {
+  newEntityUrlAlias: ComputedRef<string>;
+  listEntityUrlAlias: ComputedRef<string>;
+  getEntityName: () => string;
+  getEntityBasePath: () => string;
+  getEntityNewUrl: () => string;
+  getEntityUrl: (id: string) => string;
+  getEntityListUrl: () => string;
+  getEntityNewUrlFor: (entityName: string, targetParent: string) => string;
+  getEntityListUrlFor: (entityName: string, targetParent: string) => string;
+}
+```

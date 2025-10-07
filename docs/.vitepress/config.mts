@@ -50,6 +50,7 @@ export default defineConfig({
       {
         text: 'Composables',
         items: [
+          { text: 'useBatchQuery', link: '/composables/useBatchQuery.md' },
           { text: 'useColumns', link: '/composables/useColumns.md' },
           { text: 'useEntityUrl', link: '/composables/useEntityUrl.md' },
           { text: 'useGeinsApi', link: '/composables/useGeinsApi.md' },
