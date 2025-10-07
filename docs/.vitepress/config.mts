@@ -50,9 +50,9 @@ export default defineConfig({
       {
         text: 'Composables',
         items: [
-          { text: 'useAPI', link: '/composables/useAPI.md' },
           { text: 'useColumns', link: '/composables/useColumns.md' },
           { text: 'useEntityUrl', link: '/composables/useEntityUrl.md' },
+          { text: 'useGeinsApi', link: '/composables/useGeinsApi.md' },
           { text: 'useGeinsAuth', link: '/composables/useGeinsAuth.md' },
           { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
           { text: 'useSkeleton', link: '/composables/useSkeleton.md' },

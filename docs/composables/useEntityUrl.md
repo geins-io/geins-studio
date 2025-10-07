@@ -26,12 +26,14 @@ Here are the different ways you can use the `useEntityUrl` composable:
 const {
   newEntityUrlAlias,
   getEntityName,
+  getEntityBasePath,
   getEntityNewUrl,
   getEntityUrl,
   getEntityListUrl,
 } = useEntityUrl();
 
 const entityName = getEntityName(); // "product" from "/pim/product/list"
+const entityBasePath = getEntityBasePath(); // "/pim/product"
 const newEntityUrl = getEntityNewUrl(); // "/pim/product/new"
 const editUrl = getEntityUrl('123'); // "/pim/product/123"
 const listUrl = getEntityListUrl(); // "/pim/product/list"
@@ -60,17 +62,17 @@ const navigationItems = [
 ];
 ```
 
-## Returned Properties and Methods
+## Properties and Methods
 
-### `newEntityUrlAlias: ComputedRef<string>`
+### `newEntityUrlAlias`
 
 A localized computed reference representing the alias for creating a new entity. It is fetched using `useI18n` and the key `new_entity_url_alias`. By default this is set to `"new"`.
 
-### `listEntityUrlAlias: ComputedRef<string>`
+### `listEntityUrlAlias`
 
 A localized computed reference representing the alias for entity list pages. It is fetched using `useI18n` and the key `list_entity_url_alias`. By default this is set to `"list"`.
 
-### `getEntityName(): string`
+### `getEntityName`
 
 Extracts the entity name from the current route path.
 
@@ -78,7 +80,7 @@ Extracts the entity name from the current route path.
 - **Example**:  
   For a current route of `/pim/product/list`, the result is `"product"`.
 
-### `getEntityNewUrl(): string`
+### `getEntityNewUrl`
 
 Constructs a URL for creating a new entity based on the current route.
 
@@ -86,7 +88,7 @@ Constructs a URL for creating a new entity based on the current route.
 - **Example**:  
   For a current route of `/pim/product/list`, the result is `/pim/product/new`.
 
-### `getEntityUrl(id: string): string`
+### `getEntityUrl`
 
 Constructs a URL for editing a specific entity based on the current route.
 
@@ -97,7 +99,7 @@ Constructs a URL for editing a specific entity based on the current route.
 - **Example**:  
   For a current route of `/pim/product/list` and an `id` of `"123"`, the result is `/pim/product/123`.
 
-### `getEntityListUrl(): string`
+### `getEntityListUrl`
 
 Constructs a URL for the entity list page based on the current route.
 
@@ -105,7 +107,7 @@ Constructs a URL for the entity list page based on the current route.
 - **Example**:  
   For a current route of `/pim/product/new`, the result is `/pim/product/list`.
 
-### `getEntityNewUrlFor(targetEntityName: string, targetParent: string): string`
+### `getEntityNewUrlFor`
 
 Constructs a URL for creating a new entity for any entity type.
 
@@ -117,7 +119,7 @@ Constructs a URL for creating a new entity for any entity type.
 - **Example**:  
   `getEntityNewUrlFor("product", "pim")` returns `/pim/product/new`.
 
-### `getEntityListUrlFor(targetEntityName: string, targetParent: string): string`
+### `getEntityListUrlFor`
 
 Constructs a URL for the entity list page for any entity type.
 
@@ -147,5 +149,5 @@ The composable follows this URL pattern:
 Where:
 
 - `parent` is the parent route segment (e.g., "pim", "account", "wholesale")
-- `entity` is the entity name (e.g., "product", "user", "order")
+- `entity` is the entity name (e.g., "product", "user", "pricelist")
 - `id` is the specific entity identifier

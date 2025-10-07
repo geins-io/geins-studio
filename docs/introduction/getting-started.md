@@ -7,7 +7,7 @@
 
 ## Installation
 
-Fork or clone the repository:
+Clone the repository to create your own project:
 
 ```bash
 git clone https://github.com/geins-io/geins-studio.git

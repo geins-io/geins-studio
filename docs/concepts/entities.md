@@ -13,17 +13,24 @@ The `[id].vue` file is used to dynamically display a single entity item in creat
 
 ## Entity URL Pattern
 
-The URL pattern for an entity always follows the structure `/[parent]/[entity]/[id]` for individual items, `/[parent]/[entity]/list` for the list view and `/[parent]/[entity]/new` for the create view. The `[parent]` is the parent folder of the entity folder in the `pages` directory. The `[entity]` is the name of the entity itself. The `[id]` is a dynamic parameter that represents the unique identifier of the entity item. `list` and `new` are localized aliases that can be changed in the language files.
+The URL pattern for an entity always follows the structure `/{parent}/{entity}/{id}` for individual items, `/{parent}/{entity}/list` for the list view and `/{parent}/{entity}/new` for the create view.
+
+Where:
+
+- `{parent}` is the parent folder of the entity folders in the `pages` directory
+- `{entity}` is the name of the entity itself
+- `{id}` is a dynamic parameter that represents the unique identifier of the entity item
+- `list` and `new` are localized aliases that can be changed in the language files
 
 ## Retrieving the Entity Name
 
-The entity name is typically retrieved using the `useEntityUrl` composable. This composable extracts the entity name from the current route path.
+The entity name is typically retrieved using the `useEntityUrl` composable. This composable automatically extracts the entity name from the current route path without requiring any parameters.
+
 For example, if the current route path is `/pim/product/list`, the entity name would be `product`.
 
 ```javascript
-const route = useRoute();
-const { getEntityName } = useEntityUrl(route.fullPath);
-const entityName = getEntityName();
+const { getEntityName } = useEntityUrl();
+const entityName = getEntityName(); // "product"
 ```
 
 ::: tip
@@ -32,11 +39,13 @@ You can read the full specification of the `useEntityUrl` composable here: [useE
 
 ## Using the Entity Name
 
-The entity name is mainly used as param to a set of language keys to retrieve the correct plural or singular translations for the entity name.
+The entity name is mainly used as a parameter to a set of language keys to retrieve the correct plural or singular translations for the entity name.
+
+### Context-Aware Usage (Current Entity Page)
 
 ```vue
 <script setup>
-const { getEntityName, getEntityNewUrl } = useEntityUrl(route.fullPath);
+const { getEntityName, getEntityNewUrl } = useEntityUrl();
 const entityName = getEntityName();
 const newEntityUrl = getEntityNewUrl();
 </script>
@@ -44,5 +53,39 @@ const newEntityUrl = getEntityNewUrl();
   <ButtonIcon icon="new" :href="newEntityUrl">
     {{ $t('new_entity', { entityName }) }}
   </ButtonIcon>
+</template>
+```
+
+### Cross-Entity Navigation
+
+The composable also supports generating URLs for any entity from anywhere in the application:
+
+```vue
+<script setup>
+const { getEntityListUrlFor, getEntityNewUrlFor } = useEntityUrl();
+
+// Generate navigation links for different entities
+const navigationItems = [
+  {
+    name: 'Products',
+    listUrl: getEntityListUrlFor('product', 'pim'),
+    newUrl: getEntityNewUrlFor('product', 'pim'),
+  },
+  {
+    name: 'Users',
+    listUrl: getEntityListUrlFor('user', 'account'),
+    newUrl: getEntityNewUrlFor('user', 'account'),
+  },
+];
+</script>
+<template>
+  <nav>
+    <div v-for="item in navigationItems" :key="item.name">
+      <NuxtLink :to="item.listUrl">{{ item.name }}</NuxtLink>
+      <ButtonIcon icon="new" :href="item.newUrl">
+        {{ $t('new_entity', { entityName: item.name.toLowerCase() }) }}
+      </ButtonIcon>
+    </div>
+  </nav>
 </template>
 ```
