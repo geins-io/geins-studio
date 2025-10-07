@@ -12,17 +12,21 @@ definePageMeta({
 // GLOBAL SETUP
 // const apiEndpoint = '/users';
 const dataList = ref<Entity[]>([]);
-const entityIdentifier = '{_id}';
 const entityName = getEntityName();
 const newEntityUrl = getEntityNewUrl();
-const entityUrl = getEntityUrl(entityIdentifier);
+const entityUrl = getEntityUrl('{id}');
 const loading = ref(true);
 const columns: Ref<ColumnDef<Entity>[]> = ref([]);
 
 // SET UP COLUMNS FOR ENTITY
 const columnOptions: ColumnOptions<Entity> = {
-  entityLinkUrl: entityUrl,
-  columnTypes: { username: 'entity-link' },
+  columnTypes: { email: 'link' },
+  linkColumns: {
+    email: {
+      url: entityUrl,
+      idField: '_id',
+    },
+  },
 };
 
 // FETCH DATA FOR ENTITY

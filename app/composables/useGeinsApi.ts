@@ -23,8 +23,7 @@ interface UseGeinsApiReturnType {
  * @property {function} geinsFetch - Wrapper around $fetch to directly fetch data from the Geins API using.
  */
 export const useGeinsApi = (): UseGeinsApiReturnType => {
-  const nuxtApp = useNuxtApp();
-  const geinsApi = nuxtApp.$geinsApi;
+  const geinsApi = useNuxtApp().$geinsApi;
 
   const useGeinsFetch = <T>(
     url: string | (() => string),

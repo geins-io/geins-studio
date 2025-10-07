@@ -12,43 +12,42 @@ export const enum TableMode {
 export type EditableColumnType =
   | 'string'
   | 'number'
-  | 'select'
   | 'currency'
-  | 'boolean'
   | 'percentage';
 
 export type ColumnType =
   | 'default'
-  | 'string'
   | 'currency'
   | 'price'
   | 'date'
   | 'number'
   | 'image'
-  | 'entity-link'
+  | 'link'
   | 'select'
   | 'actions'
   | 'channels'
   | 'tags'
   | 'status'
   | 'tooltip'
-  | 'boolean'
-  | `editable-${EditableColumnType}`
-  | 'pricelist-quantity-levels';
+  | `editable-${EditableColumnType}`;
 
-export type ColumnTypes<T> = Partial<Record<keyof T, ColumnType>>;
+export type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
+
+export interface LinkColumnConfig<T> {
+  url: string;
+  idField?: StringKeyOf<T>;
+}
 
 export interface ColumnOptions<T> {
   selectable?: boolean;
   sortable?: boolean;
   columnTitles?: Partial<Record<StringKeyOf<T>, string>>;
   columnTypes?: ColumnTypes<T>;
-  columnSortable?: Partial<Record<StringKeyOf<T>, boolean>>;
-  columnOrder?: StringKeyOf<T>[];
+  sortableColumns?: Partial<Record<StringKeyOf<T>, boolean>>;
   excludeColumns?: StringKeyOf<T>[];
   includeColumns?: StringKeyOf<T>[];
   columnCellProps?: Partial<Record<StringKeyOf<T>, Record<string, unknown>>>;
-  entityLinkUrl?: string;
+  linkColumns?: Partial<Record<StringKeyOf<T>, LinkColumnConfig<T>>>;
   maxTextLength?: number;
 }
 

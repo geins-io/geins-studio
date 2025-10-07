@@ -380,9 +380,14 @@ const {
 } = useColumns<WholesalePricelist>();
 
 const columnOptionsPricelists: ColumnOptions<WholesalePricelist> = {
-  entityLinkUrl: '/wholesale/pricelist/{_id}',
   columnTypes: {
-    name: 'entity-link',
+    name: 'link',
+  },
+  linkColumns: {
+    name: {
+      url: '/wholesale/pricelist/{id}',
+      idField: '_id',
+    },
   },
   columnTitles: {
     productCount: t('product', 2),

@@ -82,12 +82,14 @@ watch(
 
 // SET UP COLUMN OPTIONS FOR ENTITY
 const columnOptions: ColumnOptions<EntityList> = {
-  entityLinkUrl: entityUrl,
   columnTypes: {
-    name: 'entity-link',
+    name: 'link',
     buyers: 'tooltip',
     salesReps: 'tooltip',
     accountGroups: 'tooltip',
+  },
+  linkColumns: {
+    name: { url: entityUrl, idField: '_id' },
   },
   columnTitles: { active: t('status') },
   excludeColumns: ['meta', 'addresses', 'tags'],

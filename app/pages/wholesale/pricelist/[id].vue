@@ -27,7 +27,6 @@ const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');
 const accountStore = useAccountStore();
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
-const { hasReducedSpace } = useLayout();
 
 // =====================================================================================
 // API & REPOSITORY SETUP

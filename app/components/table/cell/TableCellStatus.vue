@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
-  status: boolean | OrderStatus;
+  status: boolean | string;
 }>();
 
 const { t } = useI18n();

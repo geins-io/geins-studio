@@ -16,24 +16,60 @@ import {
   TableCellEditable,
   TableCellCurrency,
 } from '#components';
-import type {
-  ColumnOptions,
-  ColumnType,
-  StringKeyOf,
-  TableRowAction,
-} from '#shared/types';
-import { TableMode } from '#shared/types';
 
-export const useColumns = <T extends object>() => {
-  // BASIC HEADER STYLE
+interface UseColumnsReturnType<T> {
+  getBasicHeaderStyle: (table: Table<T>) => string;
+  getBasicCellStyle: (table: Table<T>) => string;
+  getColumns: (
+    data: T[],
+    options?: Partial<ColumnOptions<T>>,
+  ) => ColumnDef<T>[];
+  extendColumns: (
+    columns: ColumnDef<T>[],
+    column: ColumnDef<T>,
+  ) => ColumnDef<T>[];
+  addActionsColumn: (
+    columns: ColumnDef<T>[],
+    props: object,
+    type?: 'actions' | 'delete' | 'edit',
+    availableActions?: TableRowAction[],
+  ) => ColumnDef<T>[];
+  orderAndFilterColumns: (
+    columns: ColumnDef<T>[],
+    keys: string[],
+  ) => ColumnDef<T>[];
+  orderColumnLast: (columns: ColumnDef<T>[], key: string) => ColumnDef<T>[];
+}
+
+/**
+ * Composable for generating and managing data table columns with automatic type inference,
+ * styling, and advanced features. Provides comprehensive utilities for creating columns
+ * with multiple types, editable cells, actions, and responsive design patterns.
+ *
+ * Designed to work seamlessly with `@tanstack/vue-table` and supports automatic column
+ * generation from data with intelligent type inference, custom styling, and localization.
+ *
+ * @template T - The type of data objects that will be displayed in the table
+ * @returns {UseColumnsReturnType<T>} - An object containing column generation and management utilities
+ * @property {function} getBasicHeaderStyle - Generate responsive header styling classes for table mode
+ * @property {function} getBasicCellStyle - Generate responsive cell styling classes for table mode
+ * @property {function} getColumns - Generate column definitions from data with automatic type inference
+ * @property {function} extendColumns - Add a custom column to existing column definitions
+ * @property {function} addActionsColumn - Add action column with edit, delete, or custom actions
+ * @property {function} orderAndFilterColumns - Reorder and filter columns by specified keys
+ * @property {function} orderColumnLast - Move a specific column to the end of the columns array
+ *
+ */
+export const useColumns = <T>(): UseColumnsReturnType<T> => {
   const viewport = useViewport();
-  const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
   const accountStore = useAccountStore();
   const { currentCurrency } = storeToRefs(accountStore);
+  const locale = useCookieLocale();
 
+  // BASIC HEADER STYLE
+  const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
   const getBasicHeaderStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
-
     const baseStyle =
       'px-0.5 sm:px-1.5 flex items-center whitespace-nowrap ' +
       basicHeaderTextStyle;
@@ -113,7 +149,7 @@ export const useColumns = <T extends object>() => {
       selectable = false,
       sortable = true,
       columnTypes,
-      columnSortable,
+      sortableColumns,
       maxTextLength = 60,
       columnCellProps,
     } = options;
@@ -127,6 +163,7 @@ export const useColumns = <T extends object>() => {
       return columns;
     }
 
+    // If selectable, push the selectable column first
     if (selectable) {
       columns.push(selectableColumn);
     }
@@ -194,7 +231,7 @@ export const useColumns = <T extends object>() => {
       };
 
       const colSortable =
-        columnSortable?.[key] !== undefined ? columnSortable[key] : sortable;
+        sortableColumns?.[key] !== undefined ? sortableColumns[key] : sortable;
 
       let cellRenderer;
       let headerRenderer = colSortable
@@ -245,7 +282,7 @@ export const useColumns = <T extends object>() => {
         case 'price':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
-            const formatted = new Intl.NumberFormat('sv-SE', {
+            const formatted = new Intl.NumberFormat(locale.value, {
               style: 'currency',
               currency: currentCurrency.value,
               minimumFractionDigits: 0,
@@ -276,16 +313,31 @@ export const useColumns = <T extends object>() => {
             });
           columnSize = { size: 40, minSize: 40, maxSize: 40 };
           break;
-        case 'entity-link':
+        case 'link':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const match = options.entityLinkUrl?.match(/{([^}]+)}/);
-            const pathKey = match ? match[1] : null;
-            const editKey = row.getValue(pathKey || '_id') as string;
-            const fullEditUrl = options.entityLinkUrl?.replace(
-              `{${pathKey}}`,
-              editKey,
-            );
+            const linkConfig = options.linkColumns?.[key];
+            let fullEditUrl: string | undefined;
+
+            if (linkConfig) {
+              if (linkConfig.idField) {
+                // Internal link with ID replacement
+                const idValue = String(row.getValue(linkConfig.idField));
+                if (idValue) {
+                  fullEditUrl = linkConfig.url.replace('{id}', idValue);
+                }
+              } else {
+                // External link
+                fullEditUrl = linkConfig.url;
+              }
+            }
+
             const text = String(row.getValue(key));
+
+            if (!fullEditUrl) {
+              // Fallback to plain text if no URL configuration
+              return h('div', { class: getBasicCellStyle(table) }, text);
+            }
+
             const link = h(
               NuxtLink,
               {
@@ -301,6 +353,7 @@ export const useColumns = <T extends object>() => {
                     : text,
               },
             );
+
             if (text.length > maxTextLength) {
               return h(
                 TableCellLongText,
@@ -320,7 +373,7 @@ export const useColumns = <T extends object>() => {
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
             const date = new Date(value as string | number | Date);
-            const formatted = date.toLocaleDateString('sv-SE');
+            const formatted = date.toLocaleDateString(locale.value);
             return h('div', { class: getBasicCellStyle(table) }, formatted);
           };
           break;
@@ -379,31 +432,6 @@ export const useColumns = <T extends object>() => {
               ...value,
               ...cellProps,
             });
-          };
-          break;
-        case 'boolean':
-          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const value = row.getValue(key);
-            return h(TableCellBoolean, {
-              className: getBasicCellStyle(table),
-              isTrue: Boolean(value),
-              ...cellProps,
-            });
-          };
-          break;
-        case 'string':
-          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const text = String(row.getValue(key));
-            if (text.length > maxTextLength) {
-              return h(TableCellLongText, {
-                text,
-                className: getBasicCellStyle(table),
-                maxTextLength,
-                ...cellProps,
-                default: () => text,
-              });
-            }
-            return h('div', { class: getBasicCellStyle(table) }, text);
           };
           break;
         case 'currency':
@@ -483,9 +511,7 @@ export const useColumns = <T extends object>() => {
           break;
         case 'editable-string':
         case 'editable-number':
-        case 'editable-select':
-        case 'editable-percentage':
-        case 'editable-boolean': {
+        case 'editable-percentage': {
           const editableType = columnType.replace(
             'editable-',
             '',
