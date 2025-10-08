@@ -11,22 +11,21 @@ The `useGeinsLog` composable provides utility functions for logging messages wit
 
 ## Usage
 
-Here is how you can use the `useGeinsLog` composable in your project:
-
-```ts
+```vue
+<script setup lang="ts">
 import { useGeinsLog } from '@/composables/useGeinsLog';
 
 const { geinsLog, geinsLogError, geinsLogInfo, geinsLogWarn } =
   useGeinsLog('pages/index.vue');
+
 const someVariable = ['some value'];
 
-geinsLog('My value', someValue); // Will not log anything if env GEINS_DEBUG is false
+geinsLog('My value', someVariable); // Will not log anything if env GEINS_DEBUG is false
 geinsLogError('This is an error message'); // Will always log
 geinsLogInfo('This is an info message'); // Will always log
 geinsLogWarn('This is a warning message'); // Will always log
+</script>
 ```
-
-## Output
 
 The `geinsLog` from the example above will log the following message:
 
@@ -34,46 +33,97 @@ The `geinsLog` from the example above will log the following message:
 [geins] pages/index.vue ::: My value ['some value']
 ```
 
-## Parameters
+## Properties and Methods
 
-### `scope: string`
+### `geinsLog`
 
-The scope of the log messages, normally used to enter the file path of where the message is sent from. This is an optional parameter that defaults to an empty string.
+```ts
+geinsLog(...args: any[]): void
+```
 
-## Returned Methods
-
-### `geinsLog(message: any, ...args: any[]): void`
-
-Logs a general message with a Geins tag.
+Logs a general message with a Geins tag (only when debug is enabled).
 
 - **Parameters:**
-  - `message`: The message to log.
-  - `...args`: Additional arguments to log.
+  - `...args`: Messages and additional arguments to log
 
-### `geinsLogError(message: any, ...args: any[]): void`
+### `geinsLogError`
+
+```ts
+geinsLogError(...args: any[]): void
+```
 
 Logs an error message with a Geins tag.
 
 - **Parameters:**
-  - `message`: The error message to log.
-  - `...args`: Additional arguments to log.
+  - `...args`: Error messages and additional arguments to log
 
-### `geinsLogInfo(message: any, ...args: any[]): void`
+### `geinsLogInfo`
+
+```ts
+geinsLogInfo(...args: any[]): void
+```
 
 Logs an info message with a Geins tag.
 
 - **Parameters:**
-  - `message`: The info message to log.
-  - `...args`: Additional arguments to log.
+  - `...args`: Info messages and additional arguments to log
 
-### `geinsLogWarn(message: any, ...args: any[]): void`
+### `geinsLogWarn`
+
+```ts
+geinsLogWarn(...args: any[]): void
+```
 
 Logs a warning message with a Geins tag.
 
 - **Parameters:**
-  - `message`: The warning message to log.
-  - `...args`: Additional arguments to log.
+  - `...args`: Warning messages and additional arguments to log
 
+## Example
+
+Here's a comprehensive example showing how to use the `useGeinsLog` composable:
+
+```vue
+<script setup lang="ts">
+const { geinsLog, geinsLogError, geinsLogInfo, geinsLogWarn } = useGeinsLog(
+  'components/ProductCard.vue',
+);
+
+// Debug logging (only shows when debug is enabled)
+const productData = { id: 1, name: 'Test Product' };
+geinsLog('Loading product data:', productData);
+
+// Error logging (always shows)
+const handleError = (error: Error) => {
+  geinsLogError('Failed to load product:', error.message);
+};
+
+// Info logging (always shows)
+const handleSuccess = () => {
+  geinsLogInfo('Product loaded successfully');
+};
+
+// Warning logging (always shows)
+const handleWarning = () => {
+  geinsLogWarn('Product price not available, using default');
+};
+</script>
 ```
 
+## Dependencies
+
+This composable depends on:
+
+1. **`log` utility**: Core logging functionality with scoped logging
+2. **`useRuntimeConfig`**: Runtime configuration for debug settings
+
+## Type Definitions
+
+```ts
+interface GeinsLogger {
+  geinsLog: (...args: any[]) => void;
+  geinsLogError: (...args: any[]) => void;
+  geinsLogInfo: (...args: any[]) => void;
+  geinsLogWarn: (...args: any[]) => void;
+}
 ```

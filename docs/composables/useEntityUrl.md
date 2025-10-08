@@ -66,13 +66,17 @@ const navigationItems = [
 
 ### `newEntityUrlAlias`
 
-A localized computed reference representing the alias for creating a new entity. It is fetched using `useI18n` and the key `new_entity_url_alias`. By default this is set to `"new"`.
+A localized `computed` reference representing the alias for creating a new entity. It is fetched using `useI18n` and the key `new_entity_url_alias`. By default this is set to `"new"`.
 
 ### `listEntityUrlAlias`
 
-A localized computed reference representing the alias for entity list pages. It is fetched using `useI18n` and the key `list_entity_url_alias`. By default this is set to `"list"`.
+A localized `computed` reference representing the alias for entity list pages. It is fetched using `useI18n` and the key `list_entity_url_alias`. By default this is set to `"list"`.
 
 ### `getEntityName`
+
+```ts
+getEntityName(): string
+```
 
 Extracts the entity name from the current route path.
 
@@ -82,6 +86,10 @@ Extracts the entity name from the current route path.
 
 ### `getEntityNewUrl`
 
+```ts
+getEntityNewUrl(): string
+```
+
 Constructs a URL for creating a new entity based on the current route.
 
 - **Returns**: A string representing the new entity URL.
@@ -89,6 +97,10 @@ Constructs a URL for creating a new entity based on the current route.
   For a current route of `/pim/product/list`, the result is `/pim/product/new`.
 
 ### `getEntityUrl`
+
+```ts
+getEntityUrl(id: string): string
+```
 
 Constructs a URL for editing a specific entity based on the current route.
 
@@ -101,6 +113,10 @@ Constructs a URL for editing a specific entity based on the current route.
 
 ### `getEntityListUrl`
 
+```ts
+getEntityListUrl(): string
+```
+
 Constructs a URL for the entity list page based on the current route.
 
 - **Returns**: A string representing the entity list URL.
@@ -108,6 +124,10 @@ Constructs a URL for the entity list page based on the current route.
   For a current route of `/pim/product/new`, the result is `/pim/product/list`.
 
 ### `getEntityNewUrlFor`
+
+```ts
+getEntityNewUrlFor(targetEntityName: string, targetParent: string): string
+```
 
 Constructs a URL for creating a new entity for any entity type.
 
@@ -120,6 +140,10 @@ Constructs a URL for creating a new entity for any entity type.
   `getEntityNewUrlFor("product", "pim")` returns `/pim/product/new`.
 
 ### `getEntityListUrlFor`
+
+```ts
+getEntityListUrlFor(targetEntityName: string, targetParent: string): string
+```
 
 Constructs a URL for the entity list page for any entity type.
 

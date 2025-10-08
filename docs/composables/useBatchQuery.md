@@ -31,12 +31,7 @@ const allOrdersNoPagination = await orderRepo.list(
 
 ### `batchQueryMatchAll`
 
-A reactive reference containing a `BatchQuery` object configured to match all items.
-
-- **Type**: `Ref<BatchQuery>`
-- **Configuration**: `{ all: true }`
-- **Use Case**: When you need to fetch all available items without pagination
-- **Example**: Fetching complete product catalogs, user lists, or configuration data
+A `ref` containing a `BatchQuery` object configured to match all items.
 
 ```ts
 const { batchQueryMatchAll } = useBatchQuery();
@@ -45,12 +40,7 @@ console.log(batchQueryMatchAll.value); // { all: true }
 
 ### `batchQueryNoPagination`
 
-A reactive reference containing a `BatchQuery` object configured with a very large page size to effectively disable pagination.
-
-- **Type**: `Ref<BatchQuery>`
-- **Configuration**: `{ page: 1, pageSize: 10000000 }`
-- **Use Case**: When you need all items but still want to receive pagination metadata
-- **Example**: Loading complete datasets for local processing or caching
+A `ref` containing a `BatchQuery` object configured with a very large page size to effectively disable pagination.
 
 ```ts
 const { batchQueryNoPagination } = useBatchQuery();

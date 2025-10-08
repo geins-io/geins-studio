@@ -1,4 +1,4 @@
-import type { JWT } from 'next-auth/jwt';
+import { type JWT } from 'next-auth/jwt';
 import type {
   AuthTokens,
   LoginCredentials,
@@ -6,6 +6,8 @@ import type {
   User,
   Session,
 } from '#shared/types';
+
+import { jwtDecode } from 'jwt-decode';
 
 const config = useRuntimeConfig();
 const API_URL = config.public.apiUrl;
@@ -144,16 +146,7 @@ export const auth = () => {
    * @returns {JWT | null} - The parsed token data.
    */
   const parseToken = (token?: string | null): JWT | null => {
-    return token ? decodeJwt(token) : null;
-  };
-
-  /**
-   *
-   * @param token - JWT token string
-   * @returns {JWT | null} - Decoded JWT object or null if invalid
-   */
-  const decodeJwt = (token: string): JWT | null => {
-    return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    return token ? jwtDecode<JWT>(token) : null;
   };
 
   /**
