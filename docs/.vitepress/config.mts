@@ -50,13 +50,77 @@ export default defineConfig({
       {
         text: 'Composables',
         items: [
-          { text: 'useBatchQuery', link: '/composables/useBatchQuery.md' },
-          { text: 'useColumns', link: '/composables/useColumns.md' },
-          { text: 'useEntityUrl', link: '/composables/useEntityUrl.md' },
-          { text: 'useGeinsApi', link: '/composables/useGeinsApi.md' },
-          { text: 'useGeinsAuth', link: '/composables/useGeinsAuth.md' },
-          { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
-          { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
+          {
+            text: 'API ',
+            items: [
+              { text: 'useBatchQuery', link: '/composables/useBatchQuery.md' },
+              { text: 'useGeinsApi', link: '/composables/useGeinsApi.md' },
+              {
+                text: 'useGeinsRepository',
+                link: '/composables/useGeinsRepository.md',
+              },
+            ],
+          },
+          {
+            text: 'Entity Management',
+            items: [
+              { text: 'useSelector', link: '/composables/useSelector.md' },
+              {
+                text: 'useDeleteDialog',
+                link: '/composables/useDeleteDialog.md',
+              },
+              { text: 'useEntityEdit', link: '/composables/useEntityEdit.md' },
+              {
+                text: 'useEntityEditSummary',
+                link: '/composables/useEntityEditSummary.md',
+              },
+              { text: 'useEntityUrl', link: '/composables/useEntityUrl.md' },
+              {
+                text: 'useStepManagement',
+                link: '/composables/useStepManagement.md',
+              },
+              {
+                text: 'useUnsavedChanges',
+                link: '/composables/useUnsavedChanges.md',
+              },
+            ],
+          },
+          {
+            text: 'Data Tables',
+            items: [
+              { text: 'useColumns', link: '/composables/useColumns.md' },
+              { text: 'useTable', link: '/composables/useTable.md' },
+            ],
+          },
+          {
+            text: 'Global',
+            items: [
+              { text: 'useGeinsAuth', link: '/composables/useGeinsAuth.md' },
+              { text: 'useGeinsImage', link: '/composables/useGeinsImage.md' },
+              { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
+              { text: 'useLayout', link: '/composables/useLayout.md' },
+              { text: 'usePrice', link: '/composables/usePrice.md' },
+              { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
+            ],
+          },
+          {
+            text: 'Wholesale',
+            items: [
+              { text: 'useWholesale', link: '/composables/useWholesale.md' },
+              {
+                text: 'useWholesaleOrders',
+                link: '/composables/useWholesaleOrders.md',
+              },
+              {
+                text: 'usePricelistProducts',
+                link: '/composables/usePricelistProducts.md',
+              },
+              {
+                text: 'usePricelistProductsTable',
+                link: '/composables/usePricelistProductsTable.md',
+              },
+            ],
+          },
         ],
       },
       {

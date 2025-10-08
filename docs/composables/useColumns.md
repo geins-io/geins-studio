@@ -394,6 +394,8 @@ const columns = getColumns(products.value, {
 ### Column Options
 
 ```ts
+function useColumns<T>(): UseColumnsReturnType<T>;
+
 interface ColumnOptions<T> {
   selectable?: boolean;
   sortable?: boolean;
