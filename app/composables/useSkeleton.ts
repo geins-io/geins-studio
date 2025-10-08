@@ -2,7 +2,22 @@ import { h } from 'vue';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 import { Skeleton } from '#components';
 
-export const useSkeleton = () => {
+interface UseSkeletonReturnType {
+  getSkeletonData: <T>(pageSize?: number) => T[];
+  getSkeletonColumns: <T extends object>(data?: T[]) => ColumnDef<T>[];
+}
+
+/**
+ * Composable for generating skeleton loading states for tables and data displays.
+ *
+ * Provides utilities for creating skeleton data and columns that can be used
+ * as placeholders while loading actual content, with consistent styling.
+ *
+ * @returns {UseSkeletonReturnType} - An object containing skeleton generation utilities
+ * @property {function} getSkeletonData - Generates array of skeleton data objects
+ * @property {function} getSkeletonColumns - Creates skeleton column definitions for tables
+ */
+export const useSkeleton = (): UseSkeletonReturnType => {
   const getSkeletonData = <T>(pageSize = 30) => {
     const data: T[] = [];
     for (let i = 0; i < pageSize; i++) {
@@ -20,7 +35,16 @@ export const useSkeleton = () => {
   const getSkeletonColumns = <T extends object>(
     data: T[] = getSkeletonData(),
   ) => {
-    const keys = Object.keys(data[0]);
+    if (data.length === 0) {
+      return [];
+    }
+
+    const firstItem = data[0];
+    if (!firstItem) {
+      return [];
+    }
+
+    const keys = Object.keys(firstItem);
     if (keys.length === 0) {
       return [];
     }

@@ -7,7 +7,51 @@ import type {
   PricelistRuleField,
 } from '#shared/types';
 
-export const usePricelistProducts = () => {
+interface UsePricelistProductsReturnType {
+  transformProductsForList: (
+    pricelistProducts: PricelistProduct[],
+    entityData: ProductPricelist,
+  ) => PricelistProductList[];
+  getQuantityLevels: (
+    productId: string,
+    products: PricelistProduct[],
+    entityData: ProductPricelist,
+  ) => PricelistRule[];
+  getPricelistProduct: (
+    productId: string,
+    value: number | null,
+    valueType: PricelistRuleField | undefined,
+    quantity?: number,
+  ) => PricelistProduct;
+  addToPricelistProducts: (
+    product: PricelistProduct,
+    pricelistProducts: PricelistProduct[],
+  ) => void;
+  getNewPricelistProducts: (
+    newProducts: PricelistProduct[],
+    currentProducts: PricelistProduct[],
+    productId: string,
+  ) => PricelistProduct[];
+  convertPriceModeToRuleField: (
+    priceMode?: PricelistPriceMode,
+  ) => PricelistRuleField | undefined;
+}
+
+/**
+ * Composable for managing pricelist products and transformations.
+ *
+ * Provides utilities for transforming pricelist products between different formats,
+ * managing quantity levels, and handling product pricing rules and modes.
+ *
+ * @returns {UsePricelistProductsReturnType} - An object containing pricelist product utilities
+ * @property {function} transformProductsForList - Transforms pricelist products to list format
+ * @property {function} getQuantityLevels - Extracts quantity levels for a specific product
+ * @property {function} getPricelistProduct - Creates a pricelist product object
+ * @property {function} addToPricelistProducts - Adds or updates a product in the pricelist
+ * @property {function} getNewPricelistProducts - Merges new products with existing ones
+ * @property {function} convertPriceModeToRuleField - Converts price mode to rule field type
+ */
+export const usePricelistProducts = (): UsePricelistProductsReturnType => {
   const { convertToPrice } = usePrice();
   const { getProductThumbnail } = useGeinsImage();
 

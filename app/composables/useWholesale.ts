@@ -4,7 +4,45 @@
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { WholesaleVatValidation } from '#shared/types';
 
-export const useWholesale = () => {
+interface UseWholesaleReturnType {
+  wholesaleApi: ReturnType<typeof useGeinsRepository>['wholesaleApi'];
+  deleteAccount: (id?: string, entityName?: string) => Promise<boolean>;
+  extractAccountGroupsfromTags: (tags: string[]) => string[];
+  convertAccountGroupsToTags: (accountGroups: string[]) => string[];
+  hasValidatedVat: Readonly<Ref<boolean>>;
+  vatValid: Readonly<Ref<boolean>>;
+  vatValidating: Readonly<Ref<boolean>>;
+  vatNumberValidated: Readonly<Ref<string>>;
+  vatValidation: Readonly<Ref<WholesaleVatValidation | undefined>>;
+  vatValidationSummary: Ref<DataItem[]>;
+  validateVatNumber: (vatNumber: string) => Promise<void>;
+  getAddresses: (
+    billing: AddressUpdate,
+    shipping?: AddressUpdate,
+  ) => AddressUpdate[];
+}
+
+/**
+ * Composable for wholesale API operations, supporting both reactive and imperative usage.
+ *
+ * Provides comprehensive utilities for wholesale operations including account management,
+ * VAT validation, address handling, and tag/group conversions.
+ *
+ * @returns {UseWholesaleReturnType} - An object containing wholesale utilities and state
+ * @property {object} wholesaleApi - Wholesale API repository instance
+ * @property {function} deleteAccount - Deletes a wholesale account with confirmation
+ * @property {function} extractAccountGroupsfromTags - Extracts account groups from tag array
+ * @property {function} convertAccountGroupsToTags - Converts account groups to tag format
+ * @property {Readonly<Ref<boolean>>} hasValidatedVat - Whether VAT validation has been performed
+ * @property {Readonly<Ref<boolean>>} vatValid - Whether the VAT number is valid
+ * @property {Readonly<Ref<boolean>>} vatValidating - Whether VAT validation is in progress
+ * @property {Readonly<Ref<string>>} vatNumberValidated - The last validated VAT number
+ * @property {Readonly<Ref>} vatValidation - VAT validation result data
+ * @property {Ref<DataItem[]>} vatValidationSummary - Summary of VAT validation data
+ * @property {function} validateVatNumber - Validates a VAT number against VEIS
+ * @property {function} getAddresses - Formats billing and shipping addresses for API
+ */
+export const useWholesale = (): UseWholesaleReturnType => {
   const { toast } = useToast();
   const { t } = useI18n();
   const { geinsLogError, geinsLogInfo } = useGeinsLog(

@@ -4,7 +4,57 @@ import {
   type SelectorSelectionInternalBase,
 } from '#shared/types';
 
-export const useSelector = () => {
+interface UseSelectorReturnType {
+  dummyData: SelectorSelectionQueryBase;
+  getFallbackSelection: () => SelectorSelectionInternal;
+  getEmptyInternalSelectionBase: () => SelectorSelectionInternalBase;
+  getEmptyQuerySelectionBase: () => SelectorSelectionQueryBase;
+  getEmptySimpleSelectionBase: () => SelectorSelectionSimpleBase;
+  convertToInternalSelection: (
+    selections: SelectorSelectionQuery[],
+  ) => SelectorSelectionInternal;
+  convertToInternalSelectionBase: (
+    selection: SelectorSelectionQueryBase,
+  ) => SelectorSelectionInternalBase;
+  convertToQuerySelection: (
+    selection: SelectorSelectionInternal,
+  ) => SelectorSelectionQuery[];
+  convertToQuerySelectionBase: (
+    selection: SelectorSelectionInternalBase,
+  ) => SelectorSelectionQueryBase;
+  convertSimpleToInternalSelectionBase: (
+    selection: SelectorSelectionSimpleBase,
+  ) => SelectorSelectionInternalBase;
+  convertToSimpleSelection: (
+    selection: SelectorSelectionInternal,
+  ) => SelectorSelectionSimple;
+  convertToSimpleSelectionBase: (
+    selection: SelectorSelectionQueryBase,
+  ) => SelectorSelectionSimpleBase;
+}
+
+/**
+ * Composable for managing product selector state and transformations.
+ *
+ * Provides utilities for converting between different selector formats,
+ * creating empty selections, and handling complex product selection logic
+ * with include/exclude conditions and various criteria.
+ *
+ * @returns {UseSelectorReturnType} - An object containing selector utilities and transformations
+ * @property {object} dummyData - Sample selector data for testing and development
+ * @property {function} getFallbackSelection - Creates a fallback selection with default values
+ * @property {function} getEmptyInternalSelectionBase - Creates empty internal selection base
+ * @property {function} getEmptyQuerySelectionBase - Creates empty query selection base
+ * @property {function} getEmptySimpleSelectionBase - Creates empty simple selection base
+ * @property {function} convertToInternalSelection - Converts query selections to internal format
+ * @property {function} convertToInternalSelectionBase - Converts query base to internal base
+ * @property {function} convertToQuerySelection - Converts internal selection to query format
+ * @property {function} convertToQuerySelectionBase - Converts internal base to query base
+ * @property {function} convertSimpleToInternalSelectionBase - Converts simple to internal base
+ * @property {function} convertToSimpleSelection - Converts internal to simple selection
+ * @property {function} convertToSimpleSelectionBase - Converts query base to simple base
+ */
+export const useSelector = (): UseSelectorReturnType => {
   const getFallbackSelection = (): SelectorSelectionInternal => {
     return structuredClone({
       condition: SelectorCondition.And,
@@ -92,8 +142,8 @@ export const useSelector = () => {
       return result;
     };
 
-    const include = createSelectionFromQuery(selection.include);
-    const exclude = createSelectionFromQuery(selection.exclude);
+    const include = createSelectionFromQuery(selection.include || []);
+    const exclude = createSelectionFromQuery(selection.exclude || []);
 
     return {
       include,

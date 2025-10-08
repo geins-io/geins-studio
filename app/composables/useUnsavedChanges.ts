@@ -1,9 +1,31 @@
+interface UseUnsavedChangesReturnType {
+  hasUnsavedChanges: ComputedRef<boolean>;
+  unsavedChangesDialogOpen: Ref<boolean>;
+  confirmLeave: () => void;
+}
+
+/**
+ * Composable for tracking and managing unsaved changes in forms.
+ *
+ * Provides detection of unsaved changes, navigation guards, and user
+ * confirmation dialogs when attempting to leave with unsaved data.
+ *
+ * @template T - The type of data being tracked for changes
+ * @param currentData - Current form/entity data
+ * @param originalData - Original data as JSON string for comparison
+ * @param createMode - Whether in create mode (no unsaved changes tracking)
+ * @param excludeFields - Fields to exclude from change detection
+ * @returns {UseUnsavedChangesReturnType} - An object containing unsaved changes state and actions
+ * @property {ComputedRef<boolean>} hasUnsavedChanges - Whether there are unsaved changes
+ * @property {Ref<boolean>} unsavedChangesDialogOpen - Whether the confirmation dialog is open
+ * @property {function} confirmLeave - Confirms leaving the page with unsaved changes
+ */
 export function useUnsavedChanges<T extends Record<string, unknown>>(
   currentData: Ref<T>,
   originalData: Ref<string>,
   createMode: Ref<boolean>,
   excludeFields?: string[],
-) {
+): UseUnsavedChangesReturnType {
   const { geinsLogInfo } = useGeinsLog('composables/useUnsavedChanges.ts');
 
   const hasUnsavedChanges = computed(() => {

@@ -8,8 +8,42 @@ import type {
   WholesaleAccount,
   WholesaleBuyer,
 } from '#shared/types';
+import type { ColumnDef } from '@tanstack/vue-table';
 
-export const useWholesaleOrders = () => {
+interface UseWholesaleOrdersReturnType {
+  ordersList: Ref<WholesaleOrder[]>;
+  orderColumns: ComputedRef<ColumnDef<WholesaleOrder>[]>;
+  columnOptionsOrders: ColumnOptions<WholesaleOrder>;
+  fetchOrders: (
+    orderSelectionQuery?: OrderBatchQuery,
+    orderApiOptions?: OrderApiOptions,
+    accountId?: string,
+    allPricelists?: WholesalePricelist[],
+    allAccounts?: WholesaleAccount[],
+  ) => Promise<void>;
+  transformOrdersForList: (
+    orders: Order[],
+    allPricelists?: WholesalePricelist[],
+    allAccounts?: WholesaleAccount[],
+  ) => WholesaleOrder[];
+  clearOrders: () => void;
+}
+
+/**
+ * Composable for managing wholesale orders data and table display.
+ *
+ * Provides utilities for fetching, transforming, and displaying wholesale orders
+ * with proper formatting, column configuration, and reactive state management.
+ *
+ * @returns {UseWholesaleOrdersReturnType} - An object containing wholesale orders state and utilities
+ * @property {Ref<WholesaleOrder[]>} ordersList - Reactive list of wholesale orders
+ * @property {ComputedRef} orderColumns - Computed column definitions for orders table
+ * @property {object} columnOptionsOrders - Column configuration options for orders
+ * @property {function} fetchOrders - Fetches orders from API with filtering and transformation
+ * @property {function} transformOrdersForList - Transforms API orders to display format
+ * @property {function} clearOrders - Clears the orders list
+ */
+export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
   const { orderApi } = useGeinsRepository();
   const { t } = useI18n();
   const accountStore = useAccountStore();
