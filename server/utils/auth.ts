@@ -7,8 +7,6 @@ import type {
   Session,
 } from '#shared/types';
 
-import { jwtDecode } from 'jwt-decode';
-
 const config = useRuntimeConfig();
 const API_URL = config.public.apiUrl;
 const { geinsLog } = log('server/utils/auth.ts');
@@ -143,10 +141,19 @@ export const auth = () => {
    * Parses the provided token.
    *
    * @param {string | null} [token] - The token to parse.
-   * @returns {JWT | null} The parsed token data.
+   * @returns {JWT | null} - The parsed token data.
    */
   const parseToken = (token?: string | null): JWT | null => {
-    return token ? jwtDecode(token) : null;
+    return token ? decodeJwt(token) : null;
+  };
+
+  /**
+   *
+   * @param token - JWT token string
+   * @returns {JWT | null} - Decoded JWT object or null if invalid
+   */
+  const decodeJwt = (token: string): JWT | null => {
+    return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
   };
 
   /**
@@ -228,6 +235,7 @@ export const auth = () => {
    */
   const getAuthenticatedSession = (session: Session): Session => {
     const parsedToken = parseToken(session.accessToken);
+
     const authenticatedSession: Session = {
       isAuthenticated: true,
       accessToken: session.accessToken,

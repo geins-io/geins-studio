@@ -7,7 +7,7 @@ import {
   type ListboxFilterProps,
   useForwardProps,
 } from 'reka-ui';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/index';
 import { useCommand } from '.';
 
 defineOptions({
