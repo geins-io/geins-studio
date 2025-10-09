@@ -23,10 +23,11 @@ Here are the different ways you can use the `useGeinsApi` composable:
 const { useGeinsFetch, geinsFetch } = useGeinsApi();
 
 // Reactive fetch example
-const { data, status, error } = await useGeinsFetch<Product[]>('/product/list');
+const { data, status, error } =
+  await useGeinsFetch<Product[]>('/api/product/list');
 
 // Direct fetch example
-const product = await geinsFetch<Product>('/product/123');
+const product = await geinsFetch<Product>('/api/product/123');
 ```
 
 ## Properties and Methods
@@ -109,6 +110,8 @@ This composable depends on:
 ## Type Definitions
 
 ```ts
+function useGeinsApi(): UseGeinsApiReturnType;
+
 interface UseGeinsApiReturnType {
   useGeinsFetch: <T>(
     url: string | (() => string),

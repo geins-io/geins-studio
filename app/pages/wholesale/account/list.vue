@@ -16,8 +16,8 @@ definePageMeta({
 });
 
 // GLOBAL SETUP
-const { wholesaleApi, deleteAccount, extractAccountGroupsfromTags } =
-  useWholesale();
+const { wholesaleApi } = useGeinsRepository();
+const { deleteAccount, extractAccountGroupsfromTags } = useWholesale();
 const dataList = ref<EntityList[]>([]);
 const entityIdentifier = '{_id}';
 const entityName = getEntityName();

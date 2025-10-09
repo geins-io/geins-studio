@@ -33,6 +33,14 @@ The `geinsLog` from the example above will log the following message:
 [geins] pages/index.vue ::: My value ['some value']
 ```
 
+## Parameters
+
+### `scope`
+
+- **Type:** `string`
+- **Description:** A string representing the scope or context of the log messages (e.g., component or file name).
+- **Example:** `'components/ProductCard.vue'`
+
 ## Properties and Methods
 
 ### `geinsLog`
@@ -120,6 +128,8 @@ This composable depends on:
 ## Type Definitions
 
 ```ts
+function useGeinsLog(scope: string): GeinsLogger;
+
 interface GeinsLogger {
   geinsLog: (...args: any[]) => void;
   geinsLogError: (...args: any[]) => void;

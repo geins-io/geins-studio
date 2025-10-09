@@ -230,7 +230,7 @@ Generates column definitions from data with intelligent type inference and custo
 
 - **Returns**: Array of TanStack table column definitions
 
-:::warning Note!
+:::warning NOTE
 The `_type` field is most commonly not meant for display. Therefore, it is automatically excluded from column generation.
 :::
 

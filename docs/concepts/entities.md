@@ -41,51 +41,63 @@ You can read the full specification of the `useEntityUrl` composable here: [useE
 
 The entity name is mainly used as a parameter to a set of language keys to retrieve the correct plural or singular translations for the entity name.
 
-### Context-Aware Usage (Current Entity Page)
-
-```vue
-<script setup>
+```ts
 const { getEntityName, getEntityNewUrl } = useEntityUrl();
-const entityName = getEntityName();
-const newEntityUrl = getEntityNewUrl();
-</script>
-<template>
-  <ButtonIcon icon="new" :href="newEntityUrl">
-    {{ $t('new_entity', { entityName }) }}
-  </ButtonIcon>
-</template>
+const { t } = useI18n();
+
+const entityName = getEntityName(); // "product"
+
+const singular = t(entityName); // "Product"
+const plural = t(entityName, 2); // "Products"
+const asParamSingular = t('new_entity', { entityName }); // "New Product"
+const asParamPlural = t('new_entity', { entityName }, 2); // "New Products"
 ```
 
-### Cross-Entity Navigation
+## Type Definitions
 
-The composable also supports generating URLs for any entity from anywhere in the application:
+The entities has some generic type definitions that can be used throughout the application to ensure type safety and consistency when working with entity data.
 
-```vue
-<script setup>
-const { getEntityListUrlFor, getEntityNewUrlFor } = useEntityUrl();
+```ts
+export interface EntityBase {
+  _id: string;
+  _type: string;
+}
 
-// Generate navigation links for different entities
-const navigationItems = [
-  {
-    name: 'Products',
-    listUrl: getEntityListUrlFor('product', 'pim'),
-    newUrl: getEntityNewUrlFor('product', 'pim'),
-  },
-  {
-    name: 'Users',
-    listUrl: getEntityListUrlFor('user', 'account'),
-    newUrl: getEntityNewUrlFor('user', 'account'),
-  },
-];
-</script>
-<template>
-  <nav>
-    <div v-for="item in navigationItems" :key="item.name">
-      <NuxtLink :to="item.listUrl">{{ item.name }}</NuxtLink>
-      <ButtonIcon icon="new" :href="item.newUrl">
-        {{ $t('new_entity', { entityName: item.name.toLowerCase() }) }}
-      </ButtonIcon>
-    </div>
-  </nav>
-</template>
+type CreateEntity<T> = Omit<T, keyof EntityBase>;
+type UpdateEntity<T> = Partial<CreateEntity<T>> & Partial<EntityBase>;
+type ResponseEntity<T> = T & EntityBase;
+```
+
+### Creating Entity Types
+
+When creating a new entity type, you should extend these generic types. First, create a base interface for your type.
+
+```ts
+interface ProductBase {
+  name: string;
+  price: number;
+  description?: string;
+}
+```
+
+Then, create specific types for creating, updating, and receiving the entity.
+
+```ts
+type ProductCreate = CreateEntity<ProductBase>;
+type ProductUpdate = UpdateEntity<ProductBase>;
+type Product = ResponseEntity<ProductBase>;
+```
+
+When needed, you should add/remove fields if a type changes in the response versus create/update. For example:
+
+```ts
+interface ProductCreate extends CreateEntity<ProductBase> {
+  parameters?: string[];
+}
+interface ProductUpdate extends UpdateEntity<ProductBase> {
+  parameters: string[];
+}
+interface Product extends ResponseEntity<ProductBase> {
+  parameters: Parameters[];
+}
 ```

@@ -17,8 +17,8 @@ import * as z from 'zod';
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
+const { wholesaleApi } = useGeinsRepository();
 const {
-  wholesaleApi,
   hasValidatedVat,
   vatValid,
   vatValidating,

@@ -179,6 +179,8 @@ Where:
 ## Type Definitions
 
 ```ts
+function useEntityUrl(): UseEntityUrlReturnType;
+
 interface UseEntityUrlReturnType {
   newEntityUrlAlias: ComputedRef<string>;
   listEntityUrlAlias: ComputedRef<string>;

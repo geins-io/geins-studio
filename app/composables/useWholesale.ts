@@ -5,7 +5,6 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import type { WholesaleVatValidation } from '#shared/types';
 
 interface UseWholesaleReturnType {
-  wholesaleApi: ReturnType<typeof useGeinsRepository>['wholesaleApi'];
   deleteAccount: (id?: string, entityName?: string) => Promise<boolean>;
   extractAccountGroupsfromTags: (tags: string[]) => string[];
   convertAccountGroupsToTags: (accountGroups: string[]) => string[];
@@ -173,8 +172,6 @@ export const useWholesale = (): UseWholesaleReturnType => {
   };
 
   return {
-    // API
-    wholesaleApi,
     // Account management
     deleteAccount,
     // Tags & Groups

@@ -45,6 +45,7 @@ export default defineConfig({
         items: [
           { text: 'Entities', link: '/concepts/entities' },
           { text: 'Authentication', link: '/concepts/authentication' },
+          { text: 'API Repositories', link: '/concepts/api-repositories' },
         ],
       },
       {

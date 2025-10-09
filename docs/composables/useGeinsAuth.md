@@ -256,24 +256,7 @@ const handleRefresh = async () => {
 ## Type Definitions
 
 ```ts
-interface LoginCredentials {
-  username: string;
-  password: string;
-}
-
-interface AuthTokens {
-  loginToken: string;
-  mfaCode: string;
-}
-
-interface Session {
-  isAuthenticated?: boolean;
-  accessToken?: string;
-  accountKey?: string;
-  expires?: string;
-  accounts?: any[];
-  [key: string]: any;
-}
+function useGeinsAuth(): UseGeinsAuthReturnType;
 
 interface UseGeinsAuthReturnType {
   session: ComputedRef<Session | null>;
@@ -294,6 +277,25 @@ interface UseGeinsAuthReturnType {
   parseToken: (token?: string | null) => any | null;
   isExpired: (token?: string | null) => boolean;
   expiresSoon: (token?: string | null, threshold?: number) => boolean;
+}
+
+interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+interface AuthTokens {
+  loginToken: string;
+  mfaCode: string;
+}
+
+interface Session {
+  isAuthenticated?: boolean;
+  accessToken?: string;
+  accountKey?: string;
+  expires?: string;
+  accounts?: any[];
+  [key: string]: any;
 }
 ```
 
