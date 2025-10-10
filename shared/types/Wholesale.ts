@@ -109,7 +109,7 @@ export interface WholesaleOrder {
   _id: string;
   created: string;
   channel: string;
-  buyer: string;
+  buyer?: Tooltip;
   sumIncVat: Price;
   sumExVat: Price;
   wholesaleAccount?: string;

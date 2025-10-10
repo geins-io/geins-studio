@@ -105,7 +105,7 @@ export type Customer = ResponseEntity<CustomerBase>;
 export interface Tooltip {
   displayValue: string;
   contentValue: string;
-  disabled: boolean;
+  disabled?: boolean;
 }
 
 export interface Price {
