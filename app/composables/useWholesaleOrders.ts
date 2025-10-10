@@ -20,13 +20,15 @@ interface UseWholesaleOrdersReturnType {
     accountId?: string,
     allPricelists?: WholesalePricelist[],
     allAccounts?: WholesaleAccount[],
+    allBuyers?: WholesaleBuyer[],
   ) => Promise<void>;
   transformOrdersForList: (
     orders: Order[],
     allPricelists?: WholesalePricelist[],
     allAccounts?: WholesaleAccount[],
+    allBuyers?: WholesaleBuyer[],
   ) => WholesaleOrder[];
-  clearOrders: () => void;
+  getBuyerNameByEmail: (email: string, allBuyers: WholesaleBuyer[]) => string;
 }
 
 /**
@@ -41,7 +43,7 @@ interface UseWholesaleOrdersReturnType {
  * @property {object} columnOptionsOrders - Column configuration options for orders
  * @property {function} fetchOrders - Fetches orders from API with filtering and transformation
  * @property {function} transformOrdersForList - Transforms API orders to display format
- * @property {function} clearOrders - Clears the orders list
+ * @property {function} getBuyerNameByEmail - Gets buyer display name by email or returns email if not found
  */
 export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
   const { orderApi } = useGeinsRepository();
@@ -165,11 +167,6 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
     }
   };
 
-  // Clear orders list
-  const clearOrders = () => {
-    ordersList.value = [];
-  };
-
   return {
     // State
     ordersList,
@@ -177,8 +174,8 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
     columnOptionsOrders,
 
     // Methods
+    getBuyerNameByEmail,
     fetchOrders,
     transformOrdersForList,
-    clearOrders,
   };
 };
