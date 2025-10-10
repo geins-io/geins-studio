@@ -1,5 +1,14 @@
 import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
 import tailwindcss from '@tailwindcss/vite';
+import { log } from './shared/utils/log';
+
+const logger = log('✨ nuxt.config.ts', true);
+
+logger.geinsLogInfo('getBaseUrl()', getBaseUrl());
+logger.geinsLogInfo('getAuthBaseUrl()', getAuthBaseUrl());
+logger.geinsLogInfo('BASE_URL', process.env.BASE_URL);
+logger.geinsLogInfo('GEINS_API_URL', process.env.GEINS_API_URL);
+logger.geinsLogInfo('AUTH_SECRET', process.env.AUTH_SECRET);
 
 export default defineNuxtConfig({
   future: {
