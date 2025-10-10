@@ -114,7 +114,7 @@ const tabs = [
   t('general'),
   t('wholesale.buyers'),
   t('wholesale.pricelists'),
-  // t('wholesale.orders'),
+  t('wholesale.orders'),
   t('settings'),
 ];
 
@@ -777,13 +777,14 @@ if (!createMode.value) {
     ],
   };
 
-  // Fetch orders using the composable
-  // await fetchOrders(
-  //   orderSelectionQuery,
-  //   { fields: ['pricelists', 'itemcount'] },
-  //   entityId.value,
-  //   allPricelists.value,
-  // );
+  await fetchOrders(
+    orderSelectionQuery,
+    { fields: ['pricelists', 'itemcount'] },
+    entityId.value,
+    allPricelists.value,
+    undefined,
+    buyersList.value,
+  );
 }
 
 // =====================================================================================
@@ -1242,7 +1243,7 @@ breadcrumbsStore.setCurrentParent({
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
-        <!-- <KeepAlive>
+        <KeepAlive>
           <ContentEditMainContent
             v-if="currentTab === 3"
             :key="`tab-${currentTab}`"
@@ -1276,10 +1277,10 @@ breadcrumbsStore.setCurrentParent({
               </div>
             </ContentEditCard>
           </ContentEditMainContent>
-        </KeepAlive> -->
+        </KeepAlive>
         <KeepAlive>
           <ContentEditMainContent
-            v-if="currentTab === 3"
+            v-if="currentTab === 4"
             :key="`tab-${currentTab}`"
           >
             <ContentEditCard :create-mode="false" :title="t('settings')">

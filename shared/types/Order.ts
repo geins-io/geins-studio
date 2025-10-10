@@ -59,6 +59,8 @@ export type OrderFieldsFilter =
   | 'itemcount';
 export type OrderApiOptions = ApiOptions<OrderFieldsFilter>;
 
+export type OrderType = 'wholesale' | 'retail' | 'business';
+
 // Order-specific selection query (follows the pattern from Selector.ts)
 export interface OrderSelectionQuery {
   condition?: SelectorCondition;
@@ -66,6 +68,7 @@ export interface OrderSelectionQuery {
   wholesaleAccountIds?: string[];
   customerIds?: string[];
   channels?: string[];
+  orderTypes?: OrderType[];
 }
 
 // Follow the SelectorSelectionQueryBase pattern

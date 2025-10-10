@@ -6,6 +6,7 @@ import type {
   BatchQueryResult,
   WholesalePricelist,
   WholesaleAccount,
+  WholesaleBuyer,
 } from '#shared/types';
 
 export const useWholesaleOrders = () => {
@@ -32,6 +33,7 @@ export const useWholesaleOrders = () => {
       sumExVat: 'currency',
       created: 'date',
       pricelists: 'tooltip',
+      buyer: 'tooltip',
     },
   };
 
@@ -42,17 +44,35 @@ export const useWholesaleOrders = () => {
     return columns;
   });
 
+  const getBuyerNameByEmail = (
+    email: string,
+    allBuyers: WholesaleBuyer[],
+  ): string => {
+    const buyer = allBuyers.find((b) => b._id === email);
+    if (buyer) {
+      return `${buyer.firstName || ''} ${buyer.lastName || ''}`.trim();
+    }
+    return email;
+  };
+
   // Transform orders from API format to display format
   const transformOrdersForList = (
     orders: Order[],
     allPricelists?: WholesalePricelist[],
     allAccounts?: WholesaleAccount[],
+    allBuyers?: WholesaleBuyer[],
   ): WholesaleOrder[] => {
     return orders.map((order) => ({
       _id: order._id,
       created: order.dateCreated,
       channel: accountStore.getChannelNameById(order.channel),
-      buyer: order.customerId || order.email || 'N/A',
+      ...(allBuyers && {
+        buyer: {
+          displayValue: getBuyerNameByEmail(order.email, allBuyers),
+          contentValue: order.email,
+          disabled: getBuyerNameByEmail(order.email, allBuyers) === order.email,
+        },
+      }),
       ...(order.itemCount && { items: order.itemCount }),
       sumIncVat: convertToPrice(order.sumIncVat, order.currency),
       sumExVat: convertToPrice(order.sumExVat, order.currency),
@@ -82,6 +102,7 @@ export const useWholesaleOrders = () => {
     accountId: string = '0',
     allPricelists?: WholesalePricelist[],
     allAccounts?: WholesaleAccount[],
+    allBuyers?: WholesaleBuyer[],
   ): Promise<void> => {
     try {
       const { data: ordersData, error: ordersError } = await useAsyncData<
@@ -98,6 +119,7 @@ export const useWholesaleOrders = () => {
           ordersData.value.items,
           allPricelists,
           allAccounts,
+          allBuyers,
         );
       } else if (ordersError.value) {
         geinsLogError('error fetching orders', ordersError.value);
