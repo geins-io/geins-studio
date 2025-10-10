@@ -6,9 +6,15 @@ const logger = log('✨ nuxt.config.ts', true);
 
 logger.geinsLogInfo('getBaseUrl()', getBaseUrl());
 logger.geinsLogInfo('getAuthBaseUrl()', getAuthBaseUrl());
-logger.geinsLogInfo('BASE_URL', process.env.BASE_URL);
-logger.geinsLogInfo('GEINS_API_URL', process.env.GEINS_API_URL);
-logger.geinsLogInfo('AUTH_SECRET', process.env.AUTH_SECRET);
+logger.geinsLogInfo('VERCEL', process.env.VERCEL);
+logger.geinsLogInfo('VERCEL_ENV', process.env.VERCEL_ENV);
+logger.geinsLogInfo('VERCEL_TARGET_ENV', process.env.VERCEL_TARGET_ENV);
+logger.geinsLogInfo('VERCEL_URL', process.env.VERCEL_URL);
+logger.geinsLogInfo('VERCEL_BRANCH_URL', process.env.VERCEL_BRANCH_URL);
+logger.geinsLogInfo(
+  'VERCEL_PROJECT_PRODUCTION_URL',
+  process.env.VERCEL_PROJECT_PRODUCTION_URL,
+);
 
 export default defineNuxtConfig({
   future: {
