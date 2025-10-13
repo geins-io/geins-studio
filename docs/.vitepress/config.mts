@@ -63,9 +63,15 @@ export default defineConfig({
             ],
           },
           {
+            text: 'Data Tables',
+            items: [
+              { text: 'useColumns', link: '/composables/useColumns.md' },
+              { text: 'useTable', link: '/composables/useTable.md' },
+            ],
+          },
+          {
             text: 'Entity Management',
             items: [
-              { text: 'useSelector', link: '/composables/useSelector.md' },
               {
                 text: 'useDeleteDialog',
                 link: '/composables/useDeleteDialog.md',
@@ -76,6 +82,7 @@ export default defineConfig({
                 link: '/composables/useEntityEditSummary.md',
               },
               { text: 'useEntityUrl', link: '/composables/useEntityUrl.md' },
+              { text: 'useSelector', link: '/composables/useSelector.md' },
               {
                 text: 'useStepManagement',
                 link: '/composables/useStepManagement.md',
@@ -86,13 +93,7 @@ export default defineConfig({
               },
             ],
           },
-          {
-            text: 'Data Tables',
-            items: [
-              { text: 'useColumns', link: '/composables/useColumns.md' },
-              { text: 'useTable', link: '/composables/useTable.md' },
-            ],
-          },
+
           {
             text: 'Global',
             items: [
@@ -107,11 +108,6 @@ export default defineConfig({
           {
             text: 'Wholesale',
             items: [
-              { text: 'useWholesale', link: '/composables/useWholesale.md' },
-              {
-                text: 'useWholesaleOrders',
-                link: '/composables/useWholesaleOrders.md',
-              },
               {
                 text: 'usePricelistProducts',
                 link: '/composables/usePricelistProducts.md',
@@ -120,8 +116,22 @@ export default defineConfig({
                 text: 'usePricelistProductsTable',
                 link: '/composables/usePricelistProductsTable.md',
               },
+              { text: 'useWholesale', link: '/composables/useWholesale.md' },
+              {
+                text: 'useWholesaleOrders',
+                link: '/composables/useWholesaleOrders.md',
+              },
             ],
           },
+        ],
+      },
+      {
+        text: 'Stores',
+        items: [
+          { text: 'useAccountStore', link: '/stores/account.md' },
+          { text: 'useBreadcrumbsStore', link: '/stores/breadcrumbs.md' },
+          { text: 'useProductsStore', link: '/stores/products.md' },
+          { text: 'useUserStore', link: '/stores/user.md' },
         ],
       },
       {

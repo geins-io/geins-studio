@@ -17,7 +17,7 @@ The repository files are organized in the `app/utils/repositories/` directory an
 
 ## Using Repositories
 
-Repositories are accessed through the `useGeinsRepository` composable, which provides pre-configured instances with the Geins API client automatically injected.
+The easiest way to access repositories is through the [`useGeinsRepository`](../composables/useGeinsRepository.md) composable, which provides pre-configured instances with the Geins API client automatically injected.
 
 ```ts
 const { productApi, globalApi, userApi } = useGeinsRepository();
@@ -33,6 +33,25 @@ const newProduct = await productApi.create({
   name: 'New Product',
   price: 99.99,
 });
+```
+
+## Without the composable
+
+You can manually create repository instances by importing the factory functions and passing in your desired API client (e.g., `$geinsApi`).
+
+```ts
+import { repo } from '@/utils/repos';
+const { $geinsApi } = useNuxtApp();
+const productApi = repo.product($geinsApi);
+```
+
+With custom client:
+
+```ts
+import { repo } from '@/utils/repos';
+import { customAPIClient } from 'path-to-client';
+
+const customProductApi = repo.product(customAPIClient);
 ```
 
 ## Repository Types
@@ -88,28 +107,21 @@ await fullRepo.update(id, data, options);
 await fullRepo.delete(id);
 ```
 
-### Specialized Repositories
-
-Domain-specific repositories like `productRepo` extend the base functionality with specialized operations:
-
-```ts
-const { productApi } = useGeinsRepository();
-
-// Standard CRUD operations
-await productApi.get(id);
-await productApi.create(productData);
-
-// Specialized operations
-await productApi.query(selectionQuery);
-await productApi.category.list();
-await productApi.pricelist.id(pricelistId).copy();
-```
-
 ## Type Definitions
 
 Repositories use generic types to ensure type safety across all operations:
 
 ```ts
+function entityRepo<
+  TResponse,
+  TCreate,
+  TUpdate,
+  TOptions = Record<string, any>,
+>(
+  endpoint: string,
+  fetch: $Fetch,
+): EntityRepository<TResponse, TCreate, TUpdate, TOptions>;
+
 // Generic repository types
 type EntityRepository<TResponse, TCreate, TUpdate, TOptions> = {
   get(id: string, options?: TOptions): Promise<TResponse>;
@@ -118,17 +130,6 @@ type EntityRepository<TResponse, TCreate, TUpdate, TOptions> = {
   update(id: string, data: TUpdate, options?: TOptions): Promise<TResponse>;
   delete(id: string): Promise<void>;
 };
-
-// Example entity types
-interface ProductBase {
-  name: string;
-  price: number;
-  description?: string;
-}
-
-type ProductCreate = CreateEntity<ProductBase>;
-type ProductUpdate = UpdateEntity<ProductBase>;
-type Product = ResponseEntity<ProductBase>;
 ```
 
 ## Adding a New Entity Repository
@@ -150,15 +151,23 @@ type ArticleUpdate = UpdateEntity<ArticleBase>;
 type Article = ResponseEntity<ArticleBase>;
 ```
 
+:::tip TIP
+Read more about entity types in the [Entitites](./entities.md) docs.
+:::
+
 2. **Create the repository file**:
 
 ```ts
 // In app/utils/repositories/article.ts
-import type { $Fetch } from 'nitropack';
 import { entityRepo } from './entity';
 
+const BASE_ENDPOINT = '/article';
+
 export function articleRepo(fetch: $Fetch) {
-  return entityRepo<Article, ArticleCreate, ArticleUpdate>('/article', fetch);
+  return entityRepo<Article, ArticleCreate, ArticleUpdate>(
+    BASE_ENDPOINT,
+    fetch,
+  );
 }
 ```
 
