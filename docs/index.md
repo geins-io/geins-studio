@@ -15,8 +15,8 @@ hero:
       text: Getting started
       link: /introduction/getting-started
     - theme: alt
-      text: API Examples
-      link: /api-examples
+      text: What is Geins Studio?
+      link: /introduction/what-is-geins-studio
 
 features:
   - icon:
