@@ -18,7 +18,8 @@ const { productApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
 const entityName = getEntityName();
 const newEntityUrl = getEntityNewUrl();
-const entityUrl = getEntityUrl('{id}');
+const entityIdentifier = '{id}';
+const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 
 // Add the mapping function
