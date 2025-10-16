@@ -116,6 +116,18 @@ export default defineConfig({
                 text: 'usePricelistProductsTable',
                 link: '/composables/usePricelistProductsTable.md',
               },
+              {
+                text: 'usePricelistPreview',
+                link: '/composables/usePricelistPreview.md',
+              },
+              {
+                text: 'usePricelistQuantityLevels',
+                link: '/composables/usePricelistQuantityLevels.md',
+              },
+              {
+                text: 'usePricelistRules',
+                link: '/composables/usePricelistRules.md',
+              },
               { text: 'useWholesale', link: '/composables/useWholesale.md' },
               {
                 text: 'useWholesaleOrders',
