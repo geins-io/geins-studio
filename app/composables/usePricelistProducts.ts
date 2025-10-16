@@ -10,7 +10,7 @@ import type {
 interface UsePricelistProductsReturnType {
   transformProductsForList: (
     pricelistProducts: PricelistProduct[],
-    entityData: ProductPricelist,
+    entityData: ProductPricelistUpdate,
   ) => PricelistProductList[];
   getQuantityLevels: (
     productId: string,
@@ -57,7 +57,7 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
 
   const transformProductsForList = (
     pricelistProducts: PricelistProduct[] = [],
-    entityData: ProductPricelist,
+    entityData: ProductPricelistUpdate,
   ): PricelistProductList[] => {
     return pricelistProducts
       .filter((p) => p.staggeredCount === 1)
@@ -84,7 +84,6 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
           quantityLevels: getQuantityLevels(
             product.productId,
             pricelistProducts,
-            entityData,
           ),
           priceMode: product.priceMode || 'auto',
         };
@@ -94,7 +93,6 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
   const getQuantityLevels = (
     productId: string,
     products: PricelistProduct[],
-    entityData: ProductPricelist,
   ): PricelistRule[] => {
     const productLevels = products
       .filter(

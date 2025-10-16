@@ -19,10 +19,9 @@ definePageMeta({
 const { wholesaleApi } = useGeinsRepository();
 const { deleteAccount, extractAccountGroupsfromTags } = useWholesale();
 const dataList = ref<EntityList[]>([]);
-const entityIdentifier = '{_id}';
 const entityName = getEntityName();
 const newEntityUrl = getEntityNewUrl();
-const entityUrl = getEntityUrl(entityIdentifier);
+const entityUrl = getEntityUrl('{id}');
 const loading = ref(true);
 
 // Add the mapping function
