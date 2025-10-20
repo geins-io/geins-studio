@@ -27,7 +27,9 @@ export default defineNuxtPlugin(() => {
     expiresSoon,
   } = useGeinsAuth();
 
-  let refreshPromise: Promise<Session> | null = null;
+  // Create a WeakMap to store refresh promises per user session
+  // This prevents shared state between different users
+  const refreshPromises = new WeakMap<object, Promise<Session>>();
 
   /**
    * Refreshes the authentication token.
@@ -40,19 +42,24 @@ export default defineNuxtPlugin(() => {
    * @throws Will throw an error if the token refresh fails.
    */
   const refreshAuthToken = async (): Promise<Session> => {
-    if (!refreshPromise) {
-      refreshPromise = (async () => {
+    // Use the session object as a key to ensure per-user refresh promises
+    const sessionKey = { id: accessToken.value || 'anonymous' };
+
+    let currentRefreshPromise = refreshPromises.get(sessionKey);
+    if (!currentRefreshPromise) {
+      currentRefreshPromise = (async () => {
         setIsRefreshing(true);
         try {
           const newSession = await refresh();
           return newSession;
         } finally {
           setIsRefreshing(false);
-          refreshPromise = null; // Clear the refresh promise after completion
+          refreshPromises.delete(sessionKey); // Clear the refresh promise after completion
         }
       })();
+      refreshPromises.set(sessionKey, currentRefreshPromise);
     }
-    return refreshPromise;
+    return currentRefreshPromise;
   };
 
   /**
@@ -83,7 +90,12 @@ export default defineNuxtPlugin(() => {
           if (!isRefreshing.value) {
             await refreshAuthToken();
           } else {
-            await refreshPromise; // Wait for the ongoing refresh to complete
+            // Wait for the ongoing refresh to complete
+            const sessionKey = { id: accessToken.value || 'anonymous' };
+            const currentRefreshPromise = refreshPromises.get(sessionKey);
+            if (currentRefreshPromise) {
+              await currentRefreshPromise;
+            }
           }
         }
         // Set the content type header

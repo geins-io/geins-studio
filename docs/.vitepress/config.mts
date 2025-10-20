@@ -2,17 +2,17 @@ import { defineConfig } from 'vitepress';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: 'Geins Merchant Center Developer Docs',
-  description: 'Geins Merchant Center Developer Docs',
+  title: 'Geins Studio - Developer Docs',
+  description: 'Geins Studio - Developer Docs',
   lastUpdated: true,
   head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
-    siteTitle: 'Merchant Center',
+    siteTitle: 'Geins Studio',
     logo: {
       light: '/geins-g.svg',
       dark: '/geins-g-white.svg',
-      alt: 'Geins Merchant Center Developer Docs',
+      alt: 'Geins Studio - Developer Docs',
     },
     search: {
       provider: 'local',
@@ -20,12 +20,12 @@ export default defineConfig({
     outline: 'deep',
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Docs', link: '/introduction/what-is-geins-mc' },
+      { text: 'Docs', link: '/introduction/what-is-geins-studio' },
     ],
     socialLinks: [
       {
         icon: 'github',
-        link: 'https://github.com/geins-io/geins-merchant-center',
+        link: 'https://github.com/geins-io/geins-studio',
       },
     ],
     sidebar: [
@@ -33,11 +33,11 @@ export default defineConfig({
         text: 'Introduction',
         items: [
           {
-            text: 'What is Geins MC?',
-            link: '/introduction/what-is-geins-mc',
+            text: 'What is Geins Studio?',
+            link: '/introduction/what-is-geins-studio',
           },
           { text: 'Getting Started', link: '/introduction/getting-started' },
-          { text: 'Deploy', link: '/introduction/deploy' },
+          { text: 'Features', link: '/introduction/features' },
         ],
       },
       {
@@ -45,46 +45,128 @@ export default defineConfig({
         items: [
           { text: 'Entities', link: '/concepts/entities' },
           { text: 'Authentication', link: '/concepts/authentication' },
+          { text: 'API Repositories', link: '/concepts/api-repositories' },
         ],
       },
       {
         text: 'Composables',
         items: [
-          { text: 'useAPI', link: '/composables/useAPI.md' },
-          { text: 'useColumns', link: '/composables/useColumns.md' },
-          { text: 'useEntity', link: '/composables/useEntity.md' },
-          { text: 'useGeinsAuth', link: '/composables/useGeinsAuth.md' },
-          { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
-          { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
+          {
+            text: 'API ',
+            items: [
+              { text: 'useBatchQuery', link: '/composables/useBatchQuery.md' },
+              { text: 'useGeinsApi', link: '/composables/useGeinsApi.md' },
+              {
+                text: 'useGeinsRepository',
+                link: '/composables/useGeinsRepository.md',
+              },
+            ],
+          },
+          {
+            text: 'Data Tables',
+            items: [
+              { text: 'useColumns', link: '/composables/useColumns.md' },
+              { text: 'useTable', link: '/composables/useTable.md' },
+            ],
+          },
+          {
+            text: 'Entity Management',
+            items: [
+              {
+                text: 'useDeleteDialog',
+                link: '/composables/useDeleteDialog.md',
+              },
+              { text: 'useEntityEdit', link: '/composables/useEntityEdit.md' },
+              {
+                text: 'useEntityEditSummary',
+                link: '/composables/useEntityEditSummary.md',
+              },
+              { text: 'useEntityUrl', link: '/composables/useEntityUrl.md' },
+              { text: 'useSelector', link: '/composables/useSelector.md' },
+              {
+                text: 'useStepManagement',
+                link: '/composables/useStepManagement.md',
+              },
+              {
+                text: 'useUnsavedChanges',
+                link: '/composables/useUnsavedChanges.md',
+              },
+            ],
+          },
+
+          {
+            text: 'Global',
+            items: [
+              { text: 'useGeinsAuth', link: '/composables/useGeinsAuth.md' },
+              { text: 'useGeinsImage', link: '/composables/useGeinsImage.md' },
+              { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
+              { text: 'useLayout', link: '/composables/useLayout.md' },
+              { text: 'usePrice', link: '/composables/usePrice.md' },
+              { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
+            ],
+          },
+          {
+            text: 'Wholesale',
+            items: [
+              {
+                text: 'usePricelistProducts',
+                link: '/composables/usePricelistProducts.md',
+              },
+              {
+                text: 'usePricelistProductsTable',
+                link: '/composables/usePricelistProductsTable.md',
+              },
+              {
+                text: 'usePricelistPreview',
+                link: '/composables/usePricelistPreview.md',
+              },
+              {
+                text: 'usePricelistQuantityLevels',
+                link: '/composables/usePricelistQuantityLevels.md',
+              },
+              {
+                text: 'usePricelistRules',
+                link: '/composables/usePricelistRules.md',
+              },
+              { text: 'useWholesale', link: '/composables/useWholesale.md' },
+              {
+                text: 'useWholesaleOrders',
+                link: '/composables/useWholesaleOrders.md',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Stores',
+        items: [
+          { text: 'useAccountStore', link: '/stores/account.md' },
+          { text: 'useBreadcrumbsStore', link: '/stores/breadcrumbs.md' },
+          { text: 'useProductsStore', link: '/stores/products.md' },
+          { text: 'useUserStore', link: '/stores/user.md' },
         ],
       },
       {
         text: 'Guides',
         items: [
-          {
-            text: 'Working with Data Tables',
-            link: '/guides/data-tables/',
-            items: [
-              { text: 'Composables', link: '/guides/data-tables/composables' },
-              { text: 'Components', link: '/guides/data-tables/components' },
-            ],
-          },
-          {
-            text: 'Working with the UI',
-            link: '/guides/ui/',
-            items: [
-              { text: 'Feedback system', link: '/guides/ui/feedback-system' },
-            ],
-          },
-          { text: 'Working with the API', link: '/guides/api' },
-        ],
-      },
-      {
-        text: 'Examples',
-        items: [
-          { text: 'Login using the API', link: '/login-api-example' },
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' },
+          { text: 'Feedback system', link: '/guides/ui/feedback-system' },
+          // {
+          //   text: 'Working with Data Tables',
+          //   link: '/guides/data-tables/',
+          //   items: [
+          //     { text: 'Composables', link: '/guides/data-tables/composables' },
+          //     { text: 'Components', link: '/guides/data-tables/components' },
+          //   ],
+          // },
+
+          // {
+          //   text: 'Working with the UI',
+          //   link: '/guides/ui/',
+          //   items: [
+          //     { text: 'Feedback system', link: '/guides/ui/feedback-system' },
+          //   ],
+          // },
+          //{ text: 'Working with the API', link: '/guides/api' },
         ],
       },
     ],

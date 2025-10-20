@@ -91,15 +91,11 @@ export const useAccountStore = defineStore('account', () => {
   }
 
   function getChannelNameById(id: string): string {
-    const channel = channels.value.find((channel) => channel._id === id);
-    return channel ? channel.name : '';
+    return getEntityNameById(id, channels.value);
   }
 
   function getCountryNameById(id: string): string {
-    const country = currentCountries.value.find(
-      (country) => country?._id === id,
-    );
-    return country ? country.name : '';
+    return getEntityNameById(id, currentCountries.value);
   }
 
   function getDefaultCountryByChannelId(channelId: string): string {

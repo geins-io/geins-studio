@@ -9,7 +9,7 @@ import {
   onUnmounted,
   ref,
 } from 'vue';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/index';
 import { useCommand, useCommandGroup } from '.';
 
 const props = defineProps<

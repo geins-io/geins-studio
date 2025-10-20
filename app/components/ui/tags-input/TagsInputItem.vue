@@ -7,7 +7,7 @@ import {
   type TagsInputItemProps,
   useForwardProps,
 } from 'reka-ui';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/index';
 
 const props = defineProps<
   TagsInputItemProps & { class?: HTMLAttributes['class'] }

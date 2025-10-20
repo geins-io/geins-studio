@@ -7,15 +7,13 @@ const tabs = ['Main'];
 // GLOBALS
 const { t } = useI18n();
 const route = useRoute();
-const { newEntityUrlAlias, getEntityName, getNewEntityUrl } = useEntityUrl(
-  route.fullPath,
-);
+const { newEntityUrlAlias, getEntityName, getEntityNewUrl } = useEntityUrl();
 const entityName = getEntityName();
-const newEntityUrl = getNewEntityUrl();
+const newEntityUrl = getEntityNewUrl();
 const currentTab = ref(0);
 
 // COMPUTED GLOBALS
-const createMode = ref(route.params.id === newEntityUrlAlias);
+const createMode = ref(route.params.id === newEntityUrlAlias.value);
 const title = computed(() =>
   createMode.value
     ? t('new_entity', { entityName })

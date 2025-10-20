@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { cn } from '@/utils';
+import { cn } from '@/utils/index';
 import { ToastAction, type ToastActionProps } from 'reka-ui';
 import { computed, type HTMLAttributes } from 'vue';
 
@@ -19,7 +19,7 @@ const delegatedProps = computed(() => {
     v-bind="delegatedProps"
     :class="
       cn(
-        'inline-flex h-8 shrink-0 items-center justify-center rounded-lg border bg-transparent px-3 text-sm font-semibold transition-colors hover:bg-secondary focus:outline-hidden focus:ring-1 focus:ring-ring disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 hover:group-[.destructive]:border-destructive/30 hover:group-[.destructive]:bg-destructive hover:group-[.destructive]:text-destructive-foreground focus:group-[.destructive]:ring-destructive',
+        'hover:bg-secondary focus:ring-ring group-[.destructive]:border-muted/40 hover:group-[.destructive]:border-destructive/30 hover:group-[.destructive]:bg-destructive hover:group-[.destructive]:text-destructive-foreground focus:group-[.destructive]:ring-destructive inline-flex h-8 shrink-0 items-center justify-center rounded-lg border bg-transparent px-3 text-sm font-semibold transition-colors focus:ring-1 focus:outline-hidden disabled:pointer-events-none disabled:opacity-50',
         props.class,
       )
     "

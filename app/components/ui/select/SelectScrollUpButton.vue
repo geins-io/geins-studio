@@ -7,7 +7,7 @@ import {
   type SelectScrollUpButtonProps,
   useForwardProps,
 } from 'reka-ui';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/index';
 
 const props = defineProps<
   SelectScrollUpButtonProps & { class?: HTMLAttributes['class'] }

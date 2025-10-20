@@ -8,23 +8,20 @@ type Entity = WholesaleAccount;
 type EntityList = WholesaleAccountList;
 
 const { t } = useI18n();
-const route = useRoute();
 const { geinsLogError } = useGeinsLog('pages/wholesale/account/list.vue');
-const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
-  route.fullPath,
-);
+const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
 definePageMeta({
   pageType: 'list',
 });
 
 // GLOBAL SETUP
-const { wholesaleApi, deleteAccount, extractAccountGroupsfromTags } =
-  useWholesale();
+const { wholesaleApi } = useGeinsRepository();
+const { deleteAccount, extractAccountGroupsfromTags } = useWholesale();
 const dataList = ref<EntityList[]>([]);
-const entityIdentifier = '{_id}';
 const entityName = getEntityName();
-const newEntityUrl = getNewEntityUrl();
+const newEntityUrl = getEntityNewUrl();
+const entityIdentifier = '{id}';
 const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 
@@ -85,12 +82,14 @@ watch(
 
 // SET UP COLUMN OPTIONS FOR ENTITY
 const columnOptions: ColumnOptions<EntityList> = {
-  entityLinkUrl: entityUrl,
   columnTypes: {
-    name: 'entity-link',
+    name: 'link',
     buyers: 'tooltip',
     salesReps: 'tooltip',
     accountGroups: 'tooltip',
+  },
+  linkColumns: {
+    name: { url: entityUrl, idField: '_id' },
   },
   columnTitles: { active: t('status') },
   excludeColumns: ['meta', 'addresses', 'tags'],
