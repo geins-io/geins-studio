@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.1.1
+
+[compare changes](https://github.com/geins-io/geins-studio/compare/v0.1.0...v0.1.1)
+
+### 🚀 Enhancements
+
+- Developer docs + wholesale orders ([#98](https://github.com/geins-io/geins-studio/pull/98))
+
+### 🏡 Chore
+
+- Update CHANGELOG ([da81f2e](https://github.com/geins-io/geins-studio/commit/da81f2e))
+
+### 🤖 CI
+
+- Fix for slack integration ([71440c0](https://github.com/geins-io/geins-studio/commit/71440c0))
+- Remove workflow for next ([5461e08](https://github.com/geins-io/geins-studio/commit/5461e08))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.1.0 - 2025-10-01
 
 This release introduces wholesale accounts and pricelists ([#95](https://github.com/geins-io/geins-studio/pull/95)).
