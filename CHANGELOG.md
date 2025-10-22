@@ -1,18 +1,4 @@
-## v0.1.0...next
-
-[compare changes](https://github.com/geins-io/geins-studio/compare/v0.1.0...next)
-
-### 🏡 Chore
-
-- Update CHANGELOG ([da81f2e](https://github.com/geins-io/geins-studio/commit/da81f2e))
-
-### 🤖 CI
-
-- Fix for slack integration ([71440c0](https://github.com/geins-io/geins-studio/commit/71440c0))
-
-### ❤️ Contributors
-
-- Olivia Axelsson <axelsson@geins.io>
+# Changelog
 
 ## v0.1.0 - 2025-10-01
 
