@@ -1,6 +1,25 @@
 /* .vitepress/theme/custom.css */
-:root {
-  --vp-c-brand-1: #ec4619;
-  --vp-c-brand-2: #c1411e;
-  --vp-button-brand-bg: #ec4619;
+html:not(.dark) {
+  --vp-c-brand-1: oklch(76% 0.238 128.85);
+  --vp-c-brand-2: oklch(82% 0.238 128.85);
+  --vp-sidebar-bg-color: oklch(96% 0.004 49.25);
+  --vp-button-brand-bg: oklch(80% 0.238 128.85);
+  --vp-home-hero-name-color: oklch(82% 0.238 128.85);
+  --vp-code-bg: oklch(96% 0.004 49.25);
+  --vp-code-block-bg: oklch(96% 0.004 49.25);
+  --vp-code-link-color: oklch(69% 0.238 128.85);
+  --vp-code-color: oklch(69% 0.238 128.85);
+  --vp-c-tip-soft: rgba(100, 108, 255, 0.07);
+}
+
+.dark {
+  --vp-c-bg: oklch(14.7% 0.004 49.25);
+  --vp-sidebar-bg-color: oklch(14.7% 0.004 49.25);
+  --vp-c-brand-1: oklch(84.1% 0.238 128.85);
+  --vp-c-brand-2: oklch(84.1% 0.238 128.85);
+  --vp-button-brand-bg: oklch(84.1% 0.238 128.85);
+  --vp-button-brand-text: oklch(14.7% 0.004 49.25);
+  --vp-button-brand-hover-text: oklch(14.7% 0.004 49.25);
+  --vp-button-brand-active-text: oklch(14.7% 0.004 49.25);
+  --vp-button-brand-hover-bg: oklch(76% 0.238 128.85);
 }

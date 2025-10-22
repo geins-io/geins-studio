@@ -1,21 +1,20 @@
 # Changelog
 
-## v0.1.1
-
-[compare changes](https://github.com/geins-io/geins-studio/compare/v0.1.0...v0.1.1)
+## v0.1.1 - 2025-10-22
 
 ### 🚀 Enhancements
 
-- Developer docs + wholesale orders ([#98](https://github.com/geins-io/geins-studio/pull/98))
+- Orders grid for start page and Wholesale Accounts ([#96](https://github.com/geins-io/geins-studio/pull/96))
 
-### 🏡 Chore
+### 📚 Docs
 
-- Update CHANGELOG ([da81f2e](https://github.com/geins-io/geins-studio/commit/da81f2e))
+- Updated Developer Docs with all missing features ([#97](https://github.com/geins-io/geins-studio/pull/97))
+- Added missing JSDoc comments to composables ([#97](https://github.com/geins-io/geins-studio/pull/97))
 
-### 🤖 CI
+### 🔄 Refactor
 
-- Fix for slack integration ([71440c0](https://github.com/geins-io/geins-studio/commit/71440c0))
-- Remove workflow for next ([5461e08](https://github.com/geins-io/geins-studio/commit/5461e08))
+- Split pricelist edit to composables
+- `useColumns` - options and types naming
 
 ### ❤️ Contributors
 
@@ -48,4 +47,4 @@ This release introduces wholesale accounts and pricelists ([#95](https://github.
 
 ### ❤️ Contributors
 
-- Olivia Axelsson
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
