@@ -7,13 +7,57 @@ import type {
   PricelistRuleField,
 } from '#shared/types';
 
-export const usePricelistProducts = () => {
+interface UsePricelistProductsReturnType {
+  transformProductsForList: (
+    pricelistProducts: PricelistProduct[],
+    entityData: ProductPricelistUpdate,
+  ) => PricelistProductList[];
+  getQuantityLevels: (
+    productId: string,
+    products: PricelistProduct[],
+    entityData: ProductPricelist,
+  ) => PricelistRule[];
+  getPricelistProduct: (
+    productId: string,
+    value: number | null,
+    valueType: PricelistRuleField | undefined,
+    quantity?: number,
+  ) => PricelistProduct;
+  addToPricelistProducts: (
+    product: PricelistProduct,
+    pricelistProducts: PricelistProduct[],
+  ) => void;
+  getNewPricelistProducts: (
+    newProducts: PricelistProduct[],
+    currentProducts: PricelistProduct[],
+    productId: string,
+  ) => PricelistProduct[];
+  convertPriceModeToRuleField: (
+    priceMode?: PricelistPriceMode,
+  ) => PricelistRuleField | undefined;
+}
+
+/**
+ * Composable for managing pricelist products and transformations.
+ *
+ * Provides utilities for transforming pricelist products between different formats,
+ * managing quantity levels, and handling product pricing rules and modes.
+ *
+ * @returns {UsePricelistProductsReturnType} - An object containing pricelist product utilities
+ * @property {function} transformProductsForList - Transforms pricelist products to list format
+ * @property {function} getQuantityLevels - Extracts quantity levels for a specific product
+ * @property {function} getPricelistProduct - Creates a pricelist product object
+ * @property {function} addToPricelistProducts - Adds or updates a product in the pricelist
+ * @property {function} getNewPricelistProducts - Merges new products with existing ones
+ * @property {function} convertPriceModeToRuleField - Converts price mode to rule field type
+ */
+export const usePricelistProducts = (): UsePricelistProductsReturnType => {
   const { convertToPrice } = usePrice();
   const { getProductThumbnail } = useGeinsImage();
 
   const transformProductsForList = (
     pricelistProducts: PricelistProduct[] = [],
-    entityData: ProductPricelist,
+    entityData: ProductPricelistUpdate,
   ): PricelistProductList[] => {
     return pricelistProducts
       .filter((p) => p.staggeredCount === 1)
@@ -40,7 +84,6 @@ export const usePricelistProducts = () => {
           quantityLevels: getQuantityLevels(
             product.productId,
             pricelistProducts,
-            entityData,
           ),
           priceMode: product.priceMode || 'auto',
         };
@@ -50,7 +93,6 @@ export const usePricelistProducts = () => {
   const getQuantityLevels = (
     productId: string,
     products: PricelistProduct[],
-    entityData: ProductPricelist,
   ): PricelistRule[] => {
     const productLevels = products
       .filter(

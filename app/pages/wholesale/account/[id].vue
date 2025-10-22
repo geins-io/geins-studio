@@ -17,8 +17,8 @@ import * as z from 'zod';
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
+const { wholesaleApi } = useGeinsRepository();
 const {
-  wholesaleApi,
   hasValidatedVat,
   vatValid,
   vatValidating,
@@ -32,7 +32,6 @@ const {
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
 const accountStore = useAccountStore();
-const { getEntityNameById } = useEntity();
 const { toast } = useToast();
 const viewport = useViewport();
 
@@ -114,7 +113,7 @@ const tabs = [
   t('general'),
   t('wholesale.buyers'),
   t('wholesale.pricelists'),
-  // t('wholesale.orders'),
+  t('wholesale.orders'),
   t('settings'),
 ];
 
@@ -381,9 +380,14 @@ const {
 } = useColumns<WholesalePricelist>();
 
 const columnOptionsPricelists: ColumnOptions<WholesalePricelist> = {
-  entityLinkUrl: '/wholesale/pricelist/{_id}',
   columnTypes: {
-    name: 'entity-link',
+    name: 'link',
+  },
+  linkColumns: {
+    name: {
+      url: '/wholesale/pricelist/{id}',
+      idField: '_id',
+    },
   },
   columnTitles: {
     productCount: t('product', 2),
@@ -777,13 +781,14 @@ if (!createMode.value) {
     ],
   };
 
-  // Fetch orders using the composable
-  // await fetchOrders(
-  //   orderSelectionQuery,
-  //   { fields: ['pricelists', 'itemcount'] },
-  //   entityId.value,
-  //   allPricelists.value,
-  // );
+  await fetchOrders(
+    orderSelectionQuery,
+    { fields: ['pricelists', 'itemcount'] },
+    entityId.value,
+    allPricelists.value,
+    undefined,
+    buyersList.value,
+  );
 }
 
 // =====================================================================================
@@ -1242,7 +1247,7 @@ breadcrumbsStore.setCurrentParent({
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
-        <!-- <KeepAlive>
+        <KeepAlive>
           <ContentEditMainContent
             v-if="currentTab === 3"
             :key="`tab-${currentTab}`"
@@ -1276,10 +1281,10 @@ breadcrumbsStore.setCurrentParent({
               </div>
             </ContentEditCard>
           </ContentEditMainContent>
-        </KeepAlive> -->
+        </KeepAlive>
         <KeepAlive>
           <ContentEditMainContent
-            v-if="currentTab === 3"
+            v-if="currentTab === 4"
             :key="`tab-${currentTab}`"
           >
             <ContentEditCard :create-mode="false" :title="t('settings')">

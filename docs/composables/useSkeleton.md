@@ -23,7 +23,11 @@ const columns = getSkeletonColumns(data);
 
 ## Returned Methods
 
-### `getSkeletonData<T>(pageSize: number = 30): T[]`
+### `getSkeletonData`
+
+```ts
+getSkeletonData<T>(pageSize: number = 30): T[]
+```
 
 Generates an array of mock skeleton data.
 
@@ -38,7 +42,11 @@ Generates an array of mock skeleton data.
   // Output: [{ index: 0, id: 'id', name: 'name', data: 'data', data1: 'data1' }, ...]
   ```
 
-### `getSkeletonColumns<T>(data: T[]): ColumnDef<T>[]`
+### `getSkeletonColumns`
+
+```ts
+getSkeletonColumns<T>(data: T[]): ColumnDef<T>[]
+```
 
 Generates an array of skeleton column definitions.
 
@@ -52,3 +60,14 @@ Generates an array of skeleton column definitions.
   console.log(columns);
   // Output: [{ key: 'index', label: 'Index', sortable: true }, ...]
   ```
+
+## Type Definitions
+
+```ts
+function useSkeleton(): UseSkeletonReturnType;
+
+interface UseSkeletonReturnType {
+  getSkeletonData: <T>(pageSize?: number) => T[];
+  getSkeletonColumns: <T>(data: T[]) => ColumnDef<T>[];
+}
+```

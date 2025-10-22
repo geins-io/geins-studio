@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useId } from 'reka-ui';
 import { type HTMLAttributes, provide } from 'vue';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/index';
 import { FORM_ITEM_INJECTION_KEY } from './injectionKeys';
 
 const props = defineProps<{

@@ -34,9 +34,11 @@ Read the full documentation of the `useGeinsAuth` composable here: [useGeinsAuth
 5. Upon successfully receiving a login token, the user is redirected to the MFA page, where they enter their MFA code.
 6. On submitting, the login token and MFA code is sent with the `verify` method in `useGeinsAuth.ts`, which calls the `signIn` method from NuxtAuth again but this time with the code and the login token.
 7. In the `authorize` method of the `NuxtAuthHandler` The `verify` method from server utility `auth.ts` validates the MFA code and login token, and returns an authentication response containing access and refresh tokens.
-8. In the NuxtAuth `jwt` callback, the access and refresh tokens are stored in the NuxtAuth JWT together with expiration time, which is shorter than the NuxtAuth expiration time.
-9. In the NuxtAuth `session` callback, the user data is fetched from the Geins API and stored to the session togehter with the access token.
-10. The user is now authenticated and can access the application.
+8. If the authentication response contains multiple accounts and no account is pre-selected, the user is presented with an account selection interface where they must choose which account to use.
+9. The selected account key is set using the `setAccount` method in `useGeinsAuth.ts`, which updates the session with the chosen account key.
+10. In the NuxtAuth `jwt` callback, the access and refresh tokens are stored in the NuxtAuth JWT together with expiration time, which is shorter than the NuxtAuth expiration time.
+11. In the NuxtAuth `session` callback, the user data is fetched from the Geins API and stored to the session together with the access token.
+12. The user is now authenticated and can access the application.
 
 ## Refresh Flow
 

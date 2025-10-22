@@ -6,11 +6,8 @@ type Entity = ProductPricelist;
 type EntityList = ProductPricelist;
 
 const { t } = useI18n();
-const route = useRoute();
 const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/list.vue');
-const { getEntityName, getNewEntityUrl, getEntityUrl } = useEntityUrl(
-  route.fullPath,
-);
+const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
 definePageMeta({
   pageType: 'list',
@@ -19,9 +16,9 @@ definePageMeta({
 // GLOBAL SETUP
 const { productApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
-const entityIdentifier = '{_id}';
 const entityName = getEntityName();
-const newEntityUrl = getNewEntityUrl();
+const newEntityUrl = getEntityNewUrl();
+const entityIdentifier = '{id}';
 const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 
@@ -58,8 +55,10 @@ watch(
 
 // SET UP COLUMN OPTIONS FOR ENTITY
 const columnOptions: ColumnOptions<EntityList> = {
-  entityLinkUrl: entityUrl,
-  columnTypes: { name: 'entity-link', channel: 'channels' },
+  columnTypes: { name: 'link', channel: 'channels' },
+  linkColumns: {
+    name: { url: entityUrl, idField: '_id' },
+  },
   columnTitles: { active: t('status') },
   excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
 };

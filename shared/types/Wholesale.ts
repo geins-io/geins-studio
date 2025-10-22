@@ -8,8 +8,7 @@ export interface WholesaleAccountBase {
   tags: string[];
   exVat: boolean;
   limitedProductAccess: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  meta?: Record<string, any>;
+  meta?: Record<string, unknown>;
 }
 
 export interface WholesaleAccountCreate
@@ -109,7 +108,7 @@ export interface WholesaleOrder {
   _id: string;
   created: string;
   channel: string;
-  buyer: string;
+  buyer?: Tooltip;
   sumIncVat: Price;
   sumExVat: Price;
   wholesaleAccount?: string;

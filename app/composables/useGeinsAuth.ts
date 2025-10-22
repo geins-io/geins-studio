@@ -1,7 +1,54 @@
 import type { AuthTokens, LoginCredentials, Session } from '#shared/types';
 import { jwtDecode } from 'jwt-decode';
 
-export const useGeinsAuth = () => {
+interface UseGeinsAuthReturnType {
+  session: Ref<Session | null | undefined>;
+  accessToken: ComputedRef<string | undefined>;
+  isAuthenticated: ComputedRef<boolean>;
+  isRefreshing: Ref<boolean>;
+  authStateDiffers: ComputedRef<boolean>;
+  accountKey: ComputedRef<string | undefined>;
+  preLogin: () => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<any>;
+  verify: (tokens: AuthTokens) => Promise<any>;
+  setAccount: (accountKey: string) => Promise<any>;
+  setSession: (session: Session) => Promise<any>;
+  sessionsAreEqual: (session1: Session, session2: Session) => boolean;
+  logout: () => Promise<void>;
+  refresh: () => Promise<Session>;
+  setIsRefreshing: (value: boolean) => void;
+  parseToken: (token?: string | null) => any;
+  isExpired: (token?: string | null) => boolean;
+  expiresSoon: (token?: string | null, threshold?: number) => boolean;
+}
+
+/**
+ * Composable for Geins authentication state and operations.
+ *
+ * Provides comprehensive authentication utilities including session management,
+ * token handling, login/logout operations, and token validation with expiration checks.
+ *
+ * @returns {UseGeinsAuthReturnType} - An object containing authentication state and operations
+ * @property {Ref} session - Current authentication session data
+ * @property {ComputedRef<string>} accessToken - Current access token
+ * @property {ComputedRef<boolean>} isAuthenticated - Whether user is authenticated
+ * @property {Ref<boolean>} isRefreshing - Whether token refresh is in progress
+ * @property {ComputedRef<boolean>} authStateDiffers - Whether auth state has inconsistencies
+ * @property {ComputedRef<string>} accountKey - Current account key
+ * @property {function} preLogin - Performs pre-login API pings
+ * @property {function} login - Authenticates user with credentials
+ * @property {function} verify - Verifies authentication tokens
+ * @property {function} setAccount - Sets the active account
+ * @property {function} setSession - Updates the session data
+ * @property {function} sessionsAreEqual - Compares two session objects
+ * @property {function} logout - Logs out the user
+ * @property {function} refresh - Refreshes the authentication session
+ * @property {function} setIsRefreshing - Sets the refreshing state
+ * @property {function} parseToken - Parses JWT token payload
+ * @property {function} isExpired - Checks if token is expired
+ * @property {function} expiresSoon - Checks if token expires soon
+ */
+export const useGeinsAuth = (): UseGeinsAuthReturnType => {
   const auth = useAuth();
   // TODO: remove isrefreshing flow and replace with auth state loading
   const isRefreshing = ref(false);

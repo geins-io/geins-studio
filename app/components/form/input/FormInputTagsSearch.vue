@@ -90,8 +90,9 @@ const handleBlur = async () => {
 };
 
 const getName = (id: AcceptableValue): string => {
-  const item = dataSet.value?.find((i) => i._id === id);
-  return item?.name || String(id) || '';
+  return dataSet.value
+    ? getEntityNameById(String(id), dataSet.value) || ''
+    : '';
 };
 </script>
 <template>

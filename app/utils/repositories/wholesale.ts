@@ -6,7 +6,6 @@ import type {
   WholesaleBuyer,
   WholesaleBuyerCreate,
   WholesaleBuyerUpdate,
-  ProductPricelistCreate,
   WholesaleVatValidation,
   WholesaleAccountApiOptions,
 } from '#shared/types';

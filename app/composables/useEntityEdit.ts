@@ -3,7 +3,7 @@ import { useForm, type GenericObject } from 'vee-validate';
 import { useDebounceFn } from '@vueuse/core';
 import type { toTypedSchema } from '@vee-validate/zod';
 
-export interface EntityEditOptions<
+interface EntityEditOptions<
   TBase,
   TResponse extends ResponseEntity<TBase>,
   TCreate extends CreateEntity<TBase>,
@@ -11,7 +11,6 @@ export interface EntityEditOptions<
   TOptions extends ApiOptions<string> = ApiOptions<string>,
 > {
   entityName?: string;
-  newEntityUrlAlias?: string;
   repository: {
     get: (id: string, options?: TOptions) => Promise<TResponse>;
     create: (data: TCreate, options?: TOptions) => Promise<TResponse>;
@@ -44,6 +43,81 @@ export interface EntityEditOptions<
   debounceMs?: number;
 }
 
+interface UseEntityEditReturnType<
+  TBase,
+  TResponse extends ResponseEntity<TBase>,
+  TCreate extends CreateEntity<TBase>,
+  TUpdate extends UpdateEntity<TBase>,
+> {
+  // State
+  entityName: string;
+  entityId: ComputedRef<string>;
+  createMode: Ref<boolean>;
+  loading: Ref<boolean>;
+  newEntityUrl: string;
+  entityListUrl: string;
+  currentTab: Ref<number>;
+  showSidebar: ComputedRef<boolean>;
+
+  // Entity data
+  refreshEntityData: Ref<() => Promise<void>>;
+  entityLiveStatus: Ref<boolean>;
+  entityDataCreate: Ref<TCreate>;
+  entityDataUpdate: Ref<TUpdate>;
+  entityData: ComputedRef<TCreate | TUpdate>;
+  entityPageTitle: ComputedRef<string>;
+
+  // Form
+  form: ReturnType<typeof useForm>;
+  validateOnChange: Ref<boolean>;
+  formValidation: Ref<any>;
+  formValid: ComputedRef<boolean>;
+  formTouched: ComputedRef<boolean>;
+
+  // Unsaved changes
+  hasUnsavedChanges: ComputedRef<boolean>;
+  unsavedChangesDialogOpen: Ref<boolean>;
+  setOriginalSavedData: () => void;
+  confirmLeave: () => Promise<boolean>;
+
+  // Methods
+  parseAndSaveData: (
+    entity: TResponse,
+    setSavedData?: boolean,
+  ) => Promise<void>;
+  validateSteps: (
+    steps: number[],
+    stepValidationMap?: Record<number, string>,
+  ) => Promise<boolean>;
+  createEntity: (
+    additionalValidation?: () => Promise<boolean>,
+    queryOptions?: any,
+  ) => Promise<TResponse | undefined>;
+  updateEntity: (
+    additionalValidation?: () => Promise<boolean>,
+    queryOptions?: any,
+    setSavedData?: boolean,
+  ) => Promise<TResponse | undefined>;
+  deleteEntity: () => Promise<boolean>;
+}
+
+/**
+ * Composable for managing entity edit operations with comprehensive form handling,
+ * validation, and CRUD operations. Provides a complete solution for creating and
+ * editing entities with built-in state management, form validation, and user feedback.
+ *
+ * Features include create/update/delete operations, form validation with VeeValidate,
+ * unsaved changes tracking, step-based validation, debounced form updates, and
+ * automatic URL management for entity navigation.
+ *
+ * @template TBase - Base entity type
+ * @template TResponse - Response entity type extending ResponseEntity<TBase>
+ * @template TCreate - Create entity type extending CreateEntity<TBase>
+ * @template TUpdate - Update entity type extending UpdateEntity<TBase>
+ * @template TOptions - API options type extending ApiOptions<string>
+ * @param {EntityEditOptions} options - Configuration options for entity editing
+ * @returns {UseEntityEditReturnType} - Object containing entity edit state, methods, and form management
+ */
 export function useEntityEdit<
   TBase,
   TResponse extends ResponseEntity<TBase>,
@@ -57,18 +131,16 @@ export function useEntityEdit<
   const {
     newEntityUrlAlias,
     getEntityName,
-    getNewEntityUrl,
+    getEntityNewUrl,
     getEntityListUrl,
-  } = useEntityUrl(route.fullPath);
+  } = useEntityUrl();
   const { hasReducedSpace } = useLayout();
 
   // Core state
   const entityName = options.entityName || getEntityName();
-  const newEntityUrl = getNewEntityUrl();
+  const newEntityUrl = getEntityNewUrl();
   const entityListUrl = getEntityListUrl();
-  const createMode = ref(
-    route.params.id === (options.newEntityUrlAlias || newEntityUrlAlias),
-  );
+  const createMode = ref(route.params.id === newEntityUrlAlias.value);
   const loading = ref(false);
   const refreshEntityData = ref<() => Promise<void>>(() => Promise.resolve());
   const entityLiveStatus = ref<boolean>(false);
@@ -208,7 +280,7 @@ export function useEntityEdit<
 
       if (result?._id) {
         const newUrl = newEntityUrl.replace(
-          options.newEntityUrlAlias || newEntityUrlAlias,
+          newEntityUrlAlias.value,
           result._id,
         );
         await useRouter().replace(newUrl);

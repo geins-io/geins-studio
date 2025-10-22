@@ -11,50 +11,93 @@ The default setup for an entity is that it has it's own folder in the `pages` di
 
 The `[id].vue` file is used to dynamically display a single entity item in create or edit mode, while the `list.vue` file is used to display a list of all entities of that type in a data table.
 
+## Entity URL Pattern
+
+The URL pattern for an entity always follows the structure `/{parent}/{entity}/{id}` for individual items, `/{parent}/{entity}/list` for the list view and `/{parent}/{entity}/new` for the create view.
+
+Where:
+
+- `{parent}` is the parent folder of the entity folders in the `pages` directory
+- `{entity}` is the name of the entity itself
+- `{id}` is a dynamic parameter that represents the unique identifier of the entity item
+- `list` and `new` are localized aliases that can be changed in the language files
+
 ## Retrieving the Entity Name
 
-The entity name is typically retrieved using the `useEntity` composable. This composable extracts the entity name from the current route path.
+The entity name is typically retrieved using the `useEntityUrl` composable. This composable automatically extracts the entity name from the current route path without requiring any parameters.
+
 For example, if the current route path is `/pim/product/list`, the entity name would be `product`.
 
 ```javascript
-const route = useRoute();
-const { getEntityName } = useEntityUrl(route.fullPath);
-const entityName = getEntityName();
+const { getEntityName } = useEntityUrl();
+const entityName = getEntityName(); // "product"
 ```
 
 ::: tip
-You can read the full specification of the `useEntity` composable here: [useEntity](/composables/useEntity.md)
+You can read the full specification of the `useEntityUrl` composable here: [useEntityUrl](/composables/useEntityUrl.md)
 :::
 
 ## Using the Entity Name
 
-The entity name is mainly used as param to a set of language keys to retrieve the correct plural or singular translations for the entity name.
+The entity name is mainly used as a parameter to a set of language keys to retrieve the correct plural or singular translations for the entity name.
 
-```vue
-<script setup>
-const { getEntityName, getNewEntityUrl } = useEntityUrl(route.fullPath);
-const entityName = getEntityName();
-const newEntityUrl = getNewEntityUrl();
-</script>
-<template>
-  <ButtonIcon icon="new" :href="newEntityUrl">
-    {{ $t('new_entity', { entityName }) }}
-  </ButtonIcon>
-</template>
+```ts
+const { getEntityName, getEntityNewUrl } = useEntityUrl();
+const { t } = useI18n();
+
+const entityName = getEntityName(); // "product"
+
+const singular = t(entityName); // "Product"
+const plural = t(entityName, 2); // "Products"
+const asParamSingular = t('new_entity', { entityName }); // "New Product"
+const asParamPlural = t('new_entity', { entityName }, 2); // "New Products"
 ```
 
-## Creating a new entity
+## Type Definitions
 
-Say you wanna create a new page where you list all books. You can easily do so by running our built-in CLI command:
+The entities has some generic type definitions that can be used throughout the application to ensure type safety and consistency when working with entity data.
 
-```bash
-npx create-entity
+```ts
+export interface EntityBase {
+  _id: string;
+  _type: string;
+}
+
+type CreateEntity<T> = Omit<T, keyof EntityBase>;
+type UpdateEntity<T> = Partial<CreateEntity<T>> & Partial<EntityBase>;
+type ResponseEntity<T> = T & EntityBase;
 ```
 
-This will prompt you about the name of the entity you want to create, and then create the necessary basic `[id].vue` and `list.vue` files for you. It will also ask you to provide the singular and plural english translations for the entity name, which will be added to the language file.
+### Creating Entity Types
 
-That's it, now you just have to connect your files to the API and you're good to go!
+When creating a new entity type, you should extend these generic types. First, create a base interface for your type.
 
-::: warning
-This feature is not yet fully implemented
-:::
+```ts
+interface ProductBase {
+  name: string;
+  price: number;
+  description?: string;
+}
+```
+
+Then, create specific types for creating, updating, and receiving the entity.
+
+```ts
+type ProductCreate = CreateEntity<ProductBase>;
+type ProductUpdate = UpdateEntity<ProductBase>;
+type Product = ResponseEntity<ProductBase>;
+```
+
+When needed, you should add/remove fields if a type changes in the response versus create/update. For example:
+
+```ts
+interface ProductCreate extends CreateEntity<ProductBase> {
+  parameters?: string[];
+}
+interface ProductUpdate extends UpdateEntity<ProductBase> {
+  parameters: string[];
+}
+interface Product extends ResponseEntity<ProductBase> {
+  parameters: Parameters[];
+}
+```

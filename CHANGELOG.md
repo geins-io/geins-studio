@@ -1,3 +1,5 @@
+# Changelog
+
 ## v0.1.0 - 2025-10-01
 
 This release introduces wholesale accounts and pricelists ([#95](https://github.com/geins-io/geins-studio/pull/95)).

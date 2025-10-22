@@ -8,7 +8,7 @@ import {
   type ComboboxInputProps,
   useForwardPropsEmits,
 } from 'reka-ui';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/index';
 
 defineOptions({
   inheritAttrs: false,

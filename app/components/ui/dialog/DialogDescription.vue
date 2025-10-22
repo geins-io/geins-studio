@@ -6,7 +6,7 @@ import {
   type DialogDescriptionProps,
   useForwardProps,
 } from 'reka-ui';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/index';
 
 const props = defineProps<
   DialogDescriptionProps & { class?: HTMLAttributes['class'] }

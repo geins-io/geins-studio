@@ -77,15 +77,11 @@ export const useProductsStore = defineStore('products', () => {
   }
 
   function getCategoryName(id: string): string {
-    const category: Category | undefined = categories.value.find(
-      (c) => c._id === id,
-    );
-    return category?.name || '';
+    return getEntityNameById(id, categories.value);
   }
 
   function getBrandName(id: string): string {
-    const brand: Brand | undefined = brands.value.find((b) => b._id === id);
-    return brand?.name || '';
+    return getEntityNameById(id, brands.value);
   }
 
   function transformProducts(products: Product[]): Product[] {

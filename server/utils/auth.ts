@@ -1,4 +1,4 @@
-import type { JWT } from 'next-auth/jwt';
+import { type JWT } from 'next-auth/jwt';
 import type {
   AuthTokens,
   LoginCredentials,
@@ -143,10 +143,10 @@ export const auth = () => {
    * Parses the provided token.
    *
    * @param {string | null} [token] - The token to parse.
-   * @returns {JWT | null} The parsed token data.
+   * @returns {JWT | null} - The parsed token data.
    */
   const parseToken = (token?: string | null): JWT | null => {
-    return token ? jwtDecode(token) : null;
+    return token ? jwtDecode<JWT>(token) : null;
   };
 
   /**
@@ -228,6 +228,7 @@ export const auth = () => {
    */
   const getAuthenticatedSession = (session: Session): Session => {
     const parsedToken = parseToken(session.accessToken);
+
     const authenticatedSession: Session = {
       isAuthenticated: true,
       accessToken: session.accessToken,
