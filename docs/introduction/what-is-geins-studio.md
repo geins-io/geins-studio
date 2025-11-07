@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Geins Studio is a comprehensive administrative interface crafted for e-commerce solutions. This standalone application effortlessly merges your Geins PIM, CRM, WMS, CMS, and more into a unified, user-friendly platform.
+Geins Studio is a comprehensive administrative interface designed for [Geins](https://www.geins.io) commerce backend. This standalone application is built to seamlessly integrate Geins full suite into a unified, user-friendly interface. It serves as a robust foundation, and is built to be easily extendable as new features and integrations are developed.
 
 :::warning NOTE
 Geins Studio is in an early stage. More features and integrations are continuously being added. To see what's available, check out the [features](features.md) page.

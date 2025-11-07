@@ -21,6 +21,11 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Docs', link: '/introduction/what-is-geins-studio' },
+      {
+        text: 'Geins Studio',
+        link: 'https://geins.studio',
+        target: '_blank',
+      },
     ],
     socialLinks: [
       {

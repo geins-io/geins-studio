@@ -1,5 +1,11 @@
 # Getting Started
 
+This guide covers the steps required to set up and run Geins Studio locally. Follow the instructions below to get started with your own instance of Geins Studio.
+
+:::tip TIP
+You can use Geins Studio managed at: [https://geins.studio](https://geins.studio)
+:::
+
 ## Pre-requisites
 
 - [Node.js](https://nodejs.org) (v20.0.0 or higher)
