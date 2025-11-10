@@ -251,7 +251,7 @@
     "pricelist_inc_vat": "Inc VAT",
     "pricelist_apply_overwrite": "Apply and overwrite",
     "pricelist_add_level": "Add level",
-    "pricelist_qty_levels": "Qty levels",
+    "pricelist_vol_pricing": "Vol. pricing",
     "pricelist_price": "Pricelist price",
     "no_pricelists_connected": "No pricelists are connected to this account",
     "error_applying_quick_action": "Error applying quick action",

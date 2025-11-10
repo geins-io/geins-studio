@@ -41,11 +41,11 @@ interface UsePricelistProductsReturnType {
  * Composable for managing pricelist products and transformations.
  *
  * Provides utilities for transforming pricelist products between different formats,
- * managing quantity levels, and handling product pricing rules and modes.
+ * managing volume pricing, and handling product pricing rules and modes.
  *
  * @returns {UsePricelistProductsReturnType} - An object containing pricelist product utilities
  * @property {function} transformProductsForList - Transforms pricelist products to list format
- * @property {function} getQuantityLevels - Extracts quantity levels for a specific product
+ * @property {function} getQuantityLevels - Extracts volume pricing for a specific product
  * @property {function} getPricelistProduct - Creates a pricelist product object
  * @property {function} addToPricelistProducts - Adds or updates a product in the pricelist
  * @property {function} getNewPricelistProducts - Merges new products with existing ones
@@ -81,7 +81,7 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
           ),
           discount: product.discountPercent || 0,
           margin: product.margin || 0,
-          quantityLevels: getQuantityLevels(
+          volumePricing: getQuantityLevels(
             product.productId,
             pricelistProducts,
           ),

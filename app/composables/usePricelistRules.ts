@@ -14,7 +14,7 @@ export interface UsePricelistRulesReturnType {
   // State
   globalRules: Ref<PricelistRule[]>;
   baseRuleLoading: Ref<boolean>;
-  quantityLevelsLoading: Ref<boolean>;
+  volumePricingLoading: Ref<boolean>;
 
   // Computed
   quantityLevelRules: ComputedRef<PricelistRule[]>;
@@ -58,7 +58,7 @@ export function usePricelistRules({
   // =====================================================================================
   const globalRules = ref<PricelistRule[]>([]);
   const baseRuleLoading = ref<boolean>(false);
-  const quantityLevelsLoading = ref<boolean>(false);
+  const volumePricingLoading = ref<boolean>(false);
 
   // Prompt state
   const overwriteBaseRulePromptVisible = ref(false);
@@ -71,7 +71,7 @@ export function usePricelistRules({
   // COMPUTED PROPERTIES
   // =====================================================================================
 
-  // Computed property to get only quantity levels (exclude base rule with quantity 1)
+  // Computed property to get only volume pricing (exclude base rule with quantity 1)
   const quantityLevelRules = computed(() => {
     return globalRules.value.filter((rule) => rule.quantity !== 1);
   });
@@ -167,7 +167,7 @@ export function usePricelistRules({
   };
 
   const applyRule = async (rule: PricelistRule): Promise<void> => {
-    quantityLevelsLoading.value = true;
+    volumePricingLoading.value = true;
     let ruleIndex = -1;
     try {
       // Find existing rule index by internal ID first, then by _id
@@ -198,7 +198,7 @@ export function usePricelistRules({
         variant: 'negative',
       });
     } finally {
-      quantityLevelsLoading.value = false;
+      volumePricingLoading.value = false;
       const ruleToUpdate = globalRules.value[ruleIndex];
       if (ruleToUpdate) {
         ruleToUpdate.applied = true;
@@ -293,7 +293,7 @@ export function usePricelistRules({
     // State
     globalRules,
     baseRuleLoading,
-    quantityLevelsLoading,
+    volumePricingLoading,
 
     // Computed
     quantityLevelRules,

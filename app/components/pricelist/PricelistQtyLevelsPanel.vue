@@ -160,7 +160,7 @@ const handleRemove = async (rule: PricelistRule) => {
     </SheetTrigger>
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>Quantity levels</SheetTitle>
+        <SheetTitle>Volume pricing</SheetTitle>
         <SheetDescription>
           Add quantity based price levels for <strong>{{ productName }}</strong>
         </SheetDescription>
@@ -168,7 +168,7 @@ const handleRemove = async (rule: PricelistRule) => {
       <SheetBody>
         <ContentCardHeader
           size="sm"
-          title="Global quantity levels"
+          title="Global volume pricing"
           description="These price levels are applied globally to all products"
           class="mb-4"
         />
@@ -181,13 +181,13 @@ const handleRemove = async (rule: PricelistRule) => {
           :currency="currency"
         />
         <p v-else class="text-muted-foreground text-sm italic">
-          No global quantity levels defined.
+          No global volume pricing defined.
         </p>
         <ContentCardHeader
           size="sm"
-          title="Product quantity levels"
+          title="Product volume pricing"
           description="These price levels are applied only to this product. If you add a level with the same quantity as a global level, the global price level will be overridden."
-          class="mt-6 mb-4"
+          class="mb-4 mt-6"
         />
         <PricelistRules
           v-model:loading="rulesLoading"
@@ -207,7 +207,7 @@ const handleRemove = async (rule: PricelistRule) => {
           type="negative"
           class="mt-10"
         >
-          <template #title> Check your quantity levels and try again </template>
+          <template #title> Check your volume pricing and try again </template>
           <template #description>
             Quantity must be more than 1 and at least one value must be present
           </template>

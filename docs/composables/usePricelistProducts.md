@@ -206,7 +206,7 @@ interface PricelistProductList {
   listPrice: string;
   discount: number;
   margin: number;
-  quantityLevels: PricelistRule[];
+  volumePricing: PricelistRule[];
   priceMode: string;
 }
 ```

@@ -1,6 +1,6 @@
 # `usePricelistProductsTable`
 
-The `usePricelistProductsTable` composable provides specialized table column configuration and management for pricelist products. It creates editable columns for pricing data, quantity levels, and price modes with responsive behavior and interactive features.
+The `usePricelistProductsTable` composable provides specialized table column configuration and management for pricelist products. It creates editable columns for pricing data, volume pricing, and price modes with responsive behavior and interactive features.
 
 :::warning NOTE
 This composable is specifically designed for pricelist product tables and will not be useful for any general purpose tables.
@@ -9,7 +9,7 @@ This composable is specifically designed for pricelist product tables and will n
 ## Features
 
 - **Editable pricing columns** with blur event handling
-- **Quantity levels management** with expandable interface
+- **Volume pricing management** with expandable interface
 - **Price mode indicators** for different pricing strategies
 - **Responsive column pinning** based on layout space
 - **Integrated actions** for product management
@@ -71,14 +71,14 @@ Creates a complete column configuration for pricelist products with all necessar
 - **Parameters**:
   - `selectedProducts`: Array of products to display
   - `vatDescription`: VAT status description for labels
-  - `onEditQuantityLevels`: Handler for quantity levels editing
+  - `onEditQuantityLevels`: Handler for volume pricing editing
   - `onDeleteProduct`: Handler for product deletion
   - `onPriceBlur`: Handler for price field blur events
   - `onMarginBlur`: Handler for margin field blur events
   - `onDiscountBlur`: Handler for discount field blur events
 
 - **Returns**: Complete array of column definitions
-- **Features**: Editable columns, actions, quantity levels, price modes
+- **Features**: Editable columns, actions, volume pricing, price modes
 
 ### `addQuantityLevelsColumn`
 
@@ -90,14 +90,14 @@ addQuantityLevelsColumn(
 ): ColumnDef<PricelistProductList>[]
 ```
 
-Adds a quantity levels column to an existing column configuration.
+Adds a volume pricing column to an existing column configuration.
 
 - **Parameters**:
   - `columns`: Existing column definitions
-  - `onEdit`: Handler for editing quantity levels
+  - `onEdit`: Handler for editing volume pricing
   - `vatDescription`: VAT status for proper labeling
 
-- **Returns**: Updated column array with quantity levels column
+- **Returns**: Updated column array with volume pricing column
 - **Features**: Custom cell component, fixed sizing, interactive editing
 
 ### `getPinnedState`

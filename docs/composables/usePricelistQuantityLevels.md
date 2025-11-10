@@ -1,6 +1,6 @@
 # `usePricelistQuantityLevels`
 
-The `usePricelistQuantityLevels` composable manages product-specific quantity level pricing rules and handles pricing mode changes with proper user confirmation prompts. It provides state management for the quantity levels editing panel and ensures safe mode transitions.
+The `usePricelistQuantityLevels` composable manages product-specific quantity level pricing rules and handles pricing mode changes with proper user confirmation prompts. It provides state management for the volume pricing editing panel and ensures safe mode transitions.
 
 :::warning NOTE
 This composable is specifically designed to work alongside other pricelist management composables, like [`usePricelistRules`](usePricelistRules.md) and [`usePricelistPreview`](usePricelistPreview.md).
@@ -30,7 +30,7 @@ const {
   previewPricelist,
 });
 
-// Open quantity levels panel for a product
+// Open volume pricing panel for a product
 rulesProductId.value = 'product-123';
 rulesProductName.value = 'Sample Product';
 rulesToEdit.value = productQuantityRules;
@@ -64,7 +64,7 @@ interface UsePricelistQuantityLevelsOptions {
 const rulesToEdit: Ref<PricelistRule[]>;
 ```
 
-Array of rules currently being edited in the quantity levels panel.
+Array of rules currently being edited in the volume pricing panel.
 
 ### `rulesPanelOpen`
 
@@ -72,7 +72,7 @@ Array of rules currently being edited in the quantity levels panel.
 const rulesPanelOpen: Ref<boolean>;
 ```
 
-Controls the visibility of the quantity levels editing panel.
+Controls the visibility of the volume pricing editing panel.
 
 ### `rulesProductId`
 
@@ -80,7 +80,7 @@ Controls the visibility of the quantity levels editing panel.
 const rulesProductId: Ref<string>;
 ```
 
-ID of the product whose quantity levels are being edited.
+ID of the product whose volume pricing are being edited.
 
 ### `rulesProductName`
 
@@ -88,7 +88,7 @@ ID of the product whose quantity levels are being edited.
 const rulesProductName: Ref<string>;
 ```
 
-Name of the product whose quantity levels are being edited.
+Name of the product whose volume pricing are being edited.
 
 ### `actualPricelistRulesMode`
 

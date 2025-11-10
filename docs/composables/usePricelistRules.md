@@ -8,7 +8,7 @@ This composable is specifically designed to work alongside other pricelist manag
 
 ## Features
 
-- **Global rule management** with base pricing and quantity levels
+- **Global rule management** with base pricing and volume pricing
 - **Rule application and overwriting** with user confirmation prompts
 - **Computed state tracking** for rule modes and percentages
 - **Asynchronous rule updates** with error handling and user feedback
@@ -74,10 +74,10 @@ const baseRuleLoading: Ref<boolean>;
 
 Loading state for base rule operations.
 
-### `quantityLevelsLoading`
+### `volumePricingLoading`
 
 ```ts
-const quantityLevelsLoading: Ref<boolean>;
+const volumePricingLoading: Ref<boolean>;
 ```
 
 Loading state for quantity level rule operations.

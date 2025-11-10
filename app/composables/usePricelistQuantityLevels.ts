@@ -83,7 +83,7 @@ export function usePricelistQuantityLevels({
 
     // Provide feedback with product context
     previewPricelist(
-      `Quantity levels applied for ${rulesProductName.value} (${rulesProductId.value})`,
+      `Volume pricing applied for ${rulesProductName.value} (${rulesProductId.value})`,
     );
   };
 

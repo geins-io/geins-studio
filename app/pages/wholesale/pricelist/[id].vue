@@ -144,10 +144,10 @@ const setupColumns = () => {
     selectedProducts.value,
     vatDescription.value,
     (payload) => {
-      // On edit quantity levels
+      // On edit volume pricing
       const rules = selectedProducts.value.find(
         (p) => p._id === payload.id,
-      )?.quantityLevels;
+      )?.volumePricing;
       // Filter out quantity 1 rules before editing
       rulesToEdit.value = rules
         ? rules.filter((rule) => rule.quantity !== 1)
@@ -247,11 +247,11 @@ const {
       productSelection.value = entity.productSelectionQuery;
     }
     if (entity.rules && entity.rules.length) {
-      const quantityLevels = entity.rules.filter(
+      const volumePricing = entity.rules.filter(
         (r) => r.quantity && r.quantity > 1,
       );
       const baseRule = entity.rules.find((r) => r.quantity === 1);
-      const firstRuleMargin = quantityLevels[0]?.margin;
+      const firstRuleMargin = volumePricing[0]?.margin;
       const baseRuleMargin = baseRule?.margin;
       actualPricelistRulesMode.value = firstRuleMargin ? 'margin' : 'discount';
       pricelistBaseRuleMode.value = baseRuleMargin ? 'margin' : 'discount';
@@ -326,7 +326,7 @@ const { selectedProducts, hasProductSelection, previewPricelist } =
 const {
   globalRules,
   baseRuleLoading,
-  quantityLevelsLoading,
+  volumePricingLoading,
   quantityLevelRules,
   baseRule,
   baseRuleMode,
@@ -349,7 +349,7 @@ const {
   previewPricelist,
 });
 
-// Quantity levels management
+// Volume pricing management
 const {
   rulesToEdit,
   rulesPanelOpen,
@@ -646,12 +646,12 @@ breadcrumbsStore.setCurrentParent({
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle
-          >Your applied quantity levels will be removed!</AlertDialogTitle
+          >Your applied volume pricing will be removed!</AlertDialogTitle
         >
         <AlertDialogDescription>
           If you proceed changing price mode to
           <strong>{{ pendingModeChange }}</strong
-          >, your applied quantity levels will be removed.
+          >, your applied volume pricing will be removed.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
@@ -691,11 +691,11 @@ breadcrumbsStore.setCurrentParent({
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>
-          Product quantity levels will be overwritten!
+          Product volume pricing will be overwritten!
         </AlertDialogTitle>
         <AlertDialogDescription>
           If you proceed to apply and <strong>overwrite</strong>, your manually
-          added quantity levels for quantity
+          added volume pricing for quantity
           <strong>{{ currentOverwriteQuantity }}</strong> in the table below
           will be overwritten.
         </AlertDialogDescription>
@@ -733,7 +733,7 @@ breadcrumbsStore.setCurrentParent({
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
-  <PricelistQtyLevelsPanel
+  <PricelistVolumePricingPanel
     v-model:open="rulesPanelOpen"
     v-model:pricelist-products="editedProducts"
     :product-id="rulesProductId"
@@ -1000,7 +1000,7 @@ breadcrumbsStore.setCurrentParent({
                   >
                     <TabsTrigger value="base-rule"> Base rule </TabsTrigger>
                     <TabsTrigger value="qty-levels">
-                      Quantity levels
+                      Volume pricing
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent v-if="hasProductSelection" value="base-rule">
@@ -1042,11 +1042,11 @@ breadcrumbsStore.setCurrentParent({
                   <TabsContent v-if="hasProductSelection" value="qty-levels">
                     <PricelistRulesWrapper
                       v-model:mode="pricelistRulesMode"
-                      title="Quantity levels"
+                      title="Volume pricing"
                       mode-id="pricelistRulesMode"
                     >
                       <PricelistRules
-                        v-model:loading="quantityLevelsLoading"
+                        v-model:loading="volumePricingLoading"
                         :rules="quantityLevelRules"
                         :mode="pricelistRulesMode"
                         @apply="applyRule"

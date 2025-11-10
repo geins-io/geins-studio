@@ -299,7 +299,7 @@ export interface PricelistProductList extends EntityBaseWithName {
   listPrice?: Price;
   discount: number;
   margin: number;
-  quantityLevels: PricelistRule[];
+  volumePricing: PricelistRule[];
   priceMode: PricelistPriceMode;
 }
 
