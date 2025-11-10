@@ -1,6 +1,6 @@
-# `usePricelistQuantityLevels`
+# `usePricelistVolumePricing`
 
-The `usePricelistQuantityLevels` composable manages product-specific quantity level pricing rules and handles pricing mode changes with proper user confirmation prompts. It provides state management for the volume pricing editing panel and ensures safe mode transitions.
+The `usePricelistVolumePricing` composable manages product-specific quantity level pricing rules and handles pricing mode changes with proper user confirmation prompts. It provides state management for the volume pricing editing panel and ensures safe mode transitions.
 
 :::warning NOTE
 This composable is specifically designed to work alongside other pricelist management composables, like [`usePricelistRules`](usePricelistRules.md) and [`usePricelistPreview`](usePricelistPreview.md).
@@ -24,7 +24,7 @@ const {
   pricelistRulesMode,
   handleSaveRules,
   confirmModeChange,
-} = usePricelistQuantityLevels({
+} = usePricelistVolumePricing({
   globalRules,
   updateEntityRules,
   previewPricelist,
@@ -42,10 +42,10 @@ handleSaveRules(updatedRules);
 
 ## Options
 
-### `UsePricelistQuantityLevelsOptions`
+### `UsePricelistVolumePricingOptions`
 
 ```ts
-interface UsePricelistQuantityLevelsOptions {
+interface UsePricelistVolumePricingOptions {
   globalRules: Ref<PricelistRule[]>;
   updateEntityRules: () => Promise<void>;
   previewPricelist: (message?: string) => Promise<void>;

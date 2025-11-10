@@ -12,7 +12,7 @@ interface UsePricelistProductsReturnType {
     pricelistProducts: PricelistProduct[],
     entityData: ProductPricelistUpdate,
   ) => PricelistProductList[];
-  getQuantityLevels: (
+  getVolumePricing: (
     productId: string,
     products: PricelistProduct[],
     entityData: ProductPricelist,
@@ -45,7 +45,7 @@ interface UsePricelistProductsReturnType {
  *
  * @returns {UsePricelistProductsReturnType} - An object containing pricelist product utilities
  * @property {function} transformProductsForList - Transforms pricelist products to list format
- * @property {function} getQuantityLevels - Extracts volume pricing for a specific product
+ * @property {function} getVolumePricing - Extracts volume pricing for a specific product
  * @property {function} getPricelistProduct - Creates a pricelist product object
  * @property {function} addToPricelistProducts - Adds or updates a product in the pricelist
  * @property {function} getNewPricelistProducts - Merges new products with existing ones
@@ -81,16 +81,13 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
           ),
           discount: product.discountPercent || 0,
           margin: product.margin || 0,
-          volumePricing: getQuantityLevels(
-            product.productId,
-            pricelistProducts,
-          ),
+          volumePricing: getVolumePricing(product.productId, pricelistProducts),
           priceMode: product.priceMode || 'auto',
         };
       });
   };
 
-  const getQuantityLevels = (
+  const getVolumePricing = (
     productId: string,
     products: PricelistProduct[],
   ): PricelistRule[] => {
@@ -215,7 +212,7 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
 
   return {
     transformProductsForList,
-    getQuantityLevels,
+    getVolumePricing,
     getPricelistProduct,
     addToPricelistProducts,
     getNewPricelistProducts,

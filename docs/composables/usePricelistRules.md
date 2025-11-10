@@ -3,7 +3,7 @@
 The `usePricelistRules` composable provides comprehensive management for global pricelist rules, including base pricing rules and quantity-level pricing. It handles rule application, updates, and removal with proper state management and user prompts for overwrite scenarios.
 
 :::warning NOTE
-This composable is specifically designed to work alongside other pricelist management composables, like [`usePricelistPreview`](usePricelistPreview.md) and [`usePricelistQuantityLevels`](usePricelistQuantityLevels.md).
+This composable is specifically designed to work alongside other pricelist management composables, like [`usePricelistPreview`](usePricelistPreview.md) and [`usePricelistVolumePricing`](usePricelistVolumePricing.md).
 :::
 
 ## Features

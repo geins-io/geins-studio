@@ -29,7 +29,7 @@ const vatDescription = computed(() => {
 const columns: ColumnDef<Product>[] = setupPricelistColumns(
   selectedProducts.value,
   vatDescription.value,
-  handleEditQuantityLevels,
+  handleEditVolumePricing,
   handleDeleteProduct,
   handlePriceBlur,
   handleMarginBlur,
@@ -58,7 +58,7 @@ const pinnedState = computed(() => getPinnedState.value);
 setupPricelistColumns(
   selectedProducts: PricelistProductList[],
   vatDescription: string,
-  onEditQuantityLevels: (payload: { id: string; name: string }) => void,
+  onEditVolumePricing: (payload: { id: string; name: string }) => void,
   onDeleteProduct: (id: string) => void,
   onPriceBlur: (value: string | number, row: Row<PricelistProductList>) => void,
   onMarginBlur: (value: string | number, row: Row<PricelistProductList>) => void,
@@ -71,7 +71,7 @@ Creates a complete column configuration for pricelist products with all necessar
 - **Parameters**:
   - `selectedProducts`: Array of products to display
   - `vatDescription`: VAT status description for labels
-  - `onEditQuantityLevels`: Handler for volume pricing editing
+  - `onEditVolumePricing`: Handler for volume pricing editing
   - `onDeleteProduct`: Handler for product deletion
   - `onPriceBlur`: Handler for price field blur events
   - `onMarginBlur`: Handler for margin field blur events
@@ -80,10 +80,10 @@ Creates a complete column configuration for pricelist products with all necessar
 - **Returns**: Complete array of column definitions
 - **Features**: Editable columns, actions, volume pricing, price modes
 
-### `addQuantityLevelsColumn`
+### `addVolumePricingColumn`
 
 ```ts
-addQuantityLevelsColumn(
+addVolumePricingColumn(
   columns: ColumnDef<PricelistProductList>[],
   onEdit: (payload: { id: string; name: string }) => void,
   vatDescription: string,
@@ -126,7 +126,7 @@ interface UsePricelistProductsTableReturnType {
   setupPricelistColumns: (
     selectedProducts: PricelistProductList[],
     vatDescription: string,
-    onEditQuantityLevels: (payload: { id: string; name: string }) => void,
+    onEditVolumePricing: (payload: { id: string; name: string }) => void,
     onDeleteProduct: (id: string) => void,
     onPriceBlur: (
       value: string | number,
@@ -141,7 +141,7 @@ interface UsePricelistProductsTableReturnType {
       row: Row<PricelistProductList>,
     ) => void,
   ) => ColumnDef<PricelistProductList>[];
-  addQuantityLevelsColumn: (
+  addVolumePricingColumn: (
     columns: ColumnDef<PricelistProductList>[],
     onEdit: (payload: { id: string; name: string }) => void,
     vatDescription: string,

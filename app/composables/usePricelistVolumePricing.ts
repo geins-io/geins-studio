@@ -1,6 +1,6 @@
 import type { PricelistRule, PricelistRuleMode } from '#shared/types';
 
-export interface UsePricelistQuantityLevelsReturnType {
+export interface UsePricelistVolumePricingReturnType {
   // State
   rulesToEdit: Ref<PricelistRule[]>;
   rulesPanelOpen: Ref<boolean>;
@@ -19,7 +19,7 @@ export interface UsePricelistQuantityLevelsReturnType {
   cancelModeChange: () => void;
 }
 
-export interface UsePricelistQuantityLevelsOptions {
+export interface UsePricelistVolumePricingOptions {
   globalRules: Ref<PricelistRule[]>;
   updateEntityRules: () => Promise<void>;
   previewPricelist: (message?: string) => Promise<void>;
@@ -28,11 +28,11 @@ export interface UsePricelistQuantityLevelsOptions {
 /**
  * Composable for managing product-specific quantity level pricing rules
  */
-export function usePricelistQuantityLevels({
+export function usePricelistVolumePricing({
   globalRules,
   updateEntityRules,
   previewPricelist,
-}: UsePricelistQuantityLevelsOptions): UsePricelistQuantityLevelsReturnType {
+}: UsePricelistVolumePricingOptions): UsePricelistVolumePricingReturnType {
   // =====================================================================================
   // STATE
   // =====================================================================================

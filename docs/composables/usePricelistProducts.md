@@ -19,7 +19,7 @@ These features are specifically made for pricelists and wholesale pricing manage
 ```ts
 const {
   transformProductsForList,
-  getQuantityLevels,
+  getVolumePricing,
   getPricelistProduct,
   addToPricelistProducts,
   getNewPricelistProducts,
@@ -53,10 +53,10 @@ Transforms raw pricelist products into a format suitable for display in lists or
 - **Returns**: Array of transformed products with display-ready properties
 - **Features**: Filters base quantities, converts prices, adds thumbnails
 
-### `getQuantityLevels`
+### `getVolumePricing`
 
 ```ts
-getQuantityLevels(
+getVolumePricing(
   productId: string,
   products: PricelistProduct[],
   entityData: ProductPricelist
@@ -163,7 +163,7 @@ interface UsePricelistProductsReturnType {
     pricelistProducts: PricelistProduct[],
     entityData: ProductPricelist,
   ) => PricelistProductList[];
-  getQuantityLevels: (
+  getVolumePricing: (
     productId: string,
     products: PricelistProduct[],
     entityData: ProductPricelist,

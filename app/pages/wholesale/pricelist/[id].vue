@@ -362,7 +362,7 @@ const {
   handleSaveRules,
   confirmModeChange,
   cancelModeChange,
-} = usePricelistQuantityLevels({
+} = usePricelistVolumePricing({
   globalRules,
   updateEntityRules,
   previewPricelist,

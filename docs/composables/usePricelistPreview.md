@@ -3,7 +3,7 @@
 The `usePricelistPreview` composable manages pricelist preview functionality, handling product fetching, transformation, and state management for pricelist preview operations. It provides a clean interface for updating and displaying pricelist products with proper error handling and user feedback.
 
 :::warning NOTE
-This composable is specifically designed to work alongside other pricelist management composables, like [`usePricelistRules`](usePricelistRules.md) and [`usePricelistQuantityLevels`](usePricelistQuantityLevels.md).
+This composable is specifically designed to work alongside other pricelist management composables, like [`usePricelistRules`](usePricelistRules.md) and [`usePricelistVolumePricing`](usePricelistVolumePricing.md).
 :::
 
 ## Features

@@ -9,7 +9,7 @@ interface UsePricelistProductsTableReturnType {
   setupPricelistColumns: (
     selectedProducts: PricelistProductList[],
     vatDescription: string,
-    onEditQuantityLevels: (payload: { id: string; name: string }) => void,
+    onEditVolumePricing: (payload: { id: string; name: string }) => void,
     onDeleteProduct: (id: string) => void,
     onPriceBlur: (
       value: string | number,
@@ -24,7 +24,7 @@ interface UsePricelistProductsTableReturnType {
       row: Row<PricelistProductList>,
     ) => void,
   ) => ColumnDef<PricelistProductList>[];
-  addQuantityLevelsColumn: (
+  addVolumePricingColumn: (
     columns: ColumnDef<PricelistProductList>[],
     onEdit: (payload: { id: string; name: string }) => void,
     vatDescription: string,
@@ -43,7 +43,7 @@ interface UsePricelistProductsTableReturnType {
  *
  * @returns {UsePricelistProductsTableReturnType} - An object containing table setup utilities
  * @property {function} setupPricelistColumns - Creates complete column configuration for pricelist products
- * @property {function} addQuantityLevelsColumn - Adds volume pricing column to existing columns
+ * @property {function} addVolumePricingColumn - Adds volume pricing column to existing columns
  * @property {ComputedRef} getPinnedState - Computed pinned state based on layout space
  */
 export const usePricelistProductsTable =
@@ -61,7 +61,7 @@ export const usePricelistProductsTable =
     const setupPricelistColumns = (
       selectedProducts: PricelistProductList[],
       vatDescription: string,
-      onEditQuantityLevels: (payload: { id: string; name: string }) => void,
+      onEditVolumePricing: (payload: { id: string; name: string }) => void,
       onDeleteProduct: (id: string) => void,
       onPriceBlur: (
         value: string | number,
@@ -101,9 +101,9 @@ export const usePricelistProductsTable =
       };
 
       let columns = getColumns(selectedProducts, columnOptions);
-      columns = addQuantityLevelsColumn(
+      columns = addVolumePricingColumn(
         columns,
-        onEditQuantityLevels,
+        onEditVolumePricing,
         vatDescription,
       );
       columns = addPriceModeColumn(columns);
@@ -118,7 +118,7 @@ export const usePricelistProductsTable =
       return columns;
     };
 
-    const addQuantityLevelsColumn = (
+    const addVolumePricingColumn = (
       columns: ColumnDef<PricelistProductList>[],
       onEdit: (payload: { id: string; name: string }) => void,
       vatDescription: string,
@@ -194,7 +194,7 @@ export const usePricelistProductsTable =
 
     return {
       setupPricelistColumns,
-      addQuantityLevelsColumn,
+      addVolumePricingColumn,
       getPinnedState,
     };
   };
