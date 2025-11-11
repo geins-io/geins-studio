@@ -1,34 +1,34 @@
 import type { ColumnDef, Row } from '@tanstack/vue-table';
-import type { PricelistProductList } from '#shared/types';
+import type { PriceListProductList } from '#shared/types';
 import {
-  PricelistVolumePricingCell,
-  PricelistPriceModeCell,
+  PriceListVolumePricingCell,
+  PriceListPriceModeCell,
 } from '#components';
 
-interface UsePricelistProductsTableReturnType {
-  setupPricelistColumns: (
-    selectedProducts: PricelistProductList[],
+interface UsePriceListProductsTableReturnType {
+  setupPriceListColumns: (
+    selectedProducts: PriceListProductList[],
     vatDescription: string,
     onEditVolumePricing: (payload: { id: string; name: string }) => void,
     onDeleteProduct: (id: string) => void,
     onPriceBlur: (
       value: string | number,
-      row: Row<PricelistProductList>,
+      row: Row<PriceListProductList>,
     ) => void,
     onMarginBlur: (
       value: string | number,
-      row: Row<PricelistProductList>,
+      row: Row<PriceListProductList>,
     ) => void,
     onDiscountBlur: (
       value: string | number,
-      row: Row<PricelistProductList>,
+      row: Row<PriceListProductList>,
     ) => void,
-  ) => ColumnDef<PricelistProductList>[];
+  ) => ColumnDef<PriceListProductList>[];
   addVolumePricingColumn: (
-    columns: ColumnDef<PricelistProductList>[],
+    columns: ColumnDef<PriceListProductList>[],
     onEdit: (payload: { id: string; name: string }) => void,
     vatDescription: string,
-  ) => ColumnDef<PricelistProductList>[];
+  ) => ColumnDef<PriceListProductList>[];
   getPinnedState: ComputedRef<{
     left: never[];
     right: string[];
@@ -36,18 +36,18 @@ interface UsePricelistProductsTableReturnType {
 }
 
 /**
- * Composable for managing pricelist products table columns and interactions.
+ * Composable for managing price list products table columns and interactions.
  *
  * Provides utilities for setting up table columns with specific behaviors for
- * pricelist products, including editable pricing fields, volume pricing, and actions.
+ * price list products, including editable pricing fields, volume pricing, and actions.
  *
- * @returns {UsePricelistProductsTableReturnType} - An object containing table setup utilities
- * @property {function} setupPricelistColumns - Creates complete column configuration for pricelist products
+ * @returns {UsePriceListProductsTableReturnType} - An object containing table setup utilities
+ * @property {function} setupPriceListColumns - Creates complete column configuration for price list products
  * @property {function} addVolumePricingColumn - Adds volume pricing column to existing columns
  * @property {ComputedRef} getPinnedState - Computed pinned state based on layout space
  */
-export const usePricelistProductsTable =
-  (): UsePricelistProductsTableReturnType => {
+export const usePriceListProductsTable =
+  (): UsePriceListProductsTableReturnType => {
     const { t } = useI18n();
     const { hasReducedSpace } = useLayout();
     const {
@@ -56,34 +56,34 @@ export const usePricelistProductsTable =
       getColumns,
       addActionsColumn,
       extendColumns,
-    } = useColumns<PricelistProductList>();
+    } = useColumns<PriceListProductList>();
 
-    const setupPricelistColumns = (
-      selectedProducts: PricelistProductList[],
+    const setupPriceListColumns = (
+      selectedProducts: PriceListProductList[],
       vatDescription: string,
       onEditVolumePricing: (payload: { id: string; name: string }) => void,
       onDeleteProduct: (id: string) => void,
       onPriceBlur: (
         value: string | number,
-        row: Row<PricelistProductList>,
+        row: Row<PriceListProductList>,
       ) => void,
       onMarginBlur: (
         value: string | number,
-        row: Row<PricelistProductList>,
+        row: Row<PriceListProductList>,
       ) => void,
       onDiscountBlur: (
         value: string | number,
-        row: Row<PricelistProductList>,
+        row: Row<PriceListProductList>,
       ) => void,
     ) => {
-      const columnOptions: ColumnOptions<PricelistProductList> = {
+      const columnOptions: ColumnOptions<PriceListProductList> = {
         columnTypes: {
           listPrice: 'editable-currency',
           discount: 'editable-percentage',
           margin: 'editable-percentage',
         },
         columnTitles: {
-          listPrice: `${t('wholesale.pricelist_price')} (${vatDescription})`,
+          listPrice: `${t('wholesale.price_list_price')} (${vatDescription})`,
           regularPrice: `${t('price')} (${vatDescription})`,
         },
         excludeColumns: ['volumePricing', 'priceMode'],
@@ -119,11 +119,11 @@ export const usePricelistProductsTable =
     };
 
     const addVolumePricingColumn = (
-      columns: ColumnDef<PricelistProductList>[],
+      columns: ColumnDef<PriceListProductList>[],
       onEdit: (payload: { id: string; name: string }) => void,
       vatDescription: string,
-    ): ColumnDef<PricelistProductList>[] => {
-      const volumePricingColumn: ColumnDef<PricelistProductList> = {
+    ): ColumnDef<PriceListProductList>[] => {
+      const volumePricingColumn: ColumnDef<PriceListProductList> = {
         id: 'volumePricing',
         enableHiding: false,
         enableSorting: false,
@@ -132,7 +132,7 @@ export const usePricelistProductsTable =
         minSize: 82,
         cell: ({ row, table }) => {
           const rowData = row.original;
-          return h(PricelistVolumePricingCell, {
+          return h(PriceListVolumePricingCell, {
             volumePricing: rowData.volumePricing,
             className: getBasicCellStyle(table),
             vatDescription,
@@ -145,15 +145,15 @@ export const usePricelistProductsTable =
           return h(
             'div',
             { class: cn(getBasicHeaderStyle(table), 'px-3 sm:px-3') },
-            t('wholesale.pricelist_vol_pricing'),
+            t('wholesale.price_list_vol_pricing'),
           );
         },
       };
       return extendColumns(columns, volumePricingColumn);
     };
 
-    const addPriceModeColumn = (columns: ColumnDef<PricelistProductList>[]) => {
-      const priceModeColumn: ColumnDef<PricelistProductList> = {
+    const addPriceModeColumn = (columns: ColumnDef<PriceListProductList>[]) => {
+      const priceModeColumn: ColumnDef<PriceListProductList> = {
         id: 'priceMode',
         enableHiding: false,
         enableSorting: false,
@@ -162,7 +162,7 @@ export const usePricelistProductsTable =
         minSize: 22,
         cell: ({ row, table }) => {
           const rowData = row.original;
-          return h(PricelistPriceModeCell, {
+          return h(PriceListPriceModeCell, {
             priceMode: rowData.priceMode,
             className: getBasicCellStyle(table),
           });
@@ -193,7 +193,7 @@ export const usePricelistProductsTable =
     }));
 
     return {
-      setupPricelistColumns,
+      setupPriceListColumns,
       addVolumePricingColumn,
       getPinnedState,
     };

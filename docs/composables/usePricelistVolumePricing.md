@@ -1,14 +1,14 @@
-# `usePricelistVolumePricing`
+# `usePriceListVolumePricing`
 
-The `usePricelistVolumePricing` composable manages product-specific quantity level pricing rules and handles pricing mode changes with proper user confirmation prompts. It provides state management for the volume pricing editing panel and ensures safe mode transitions.
+The `usePriceListVolumePricing` composable manages product-specific quantity level pricing rules and handles pricing mode changes with proper user confirmation prompts. It provides state management for the volume pricing editing panel and ensures safe mode transitions.
 
 :::warning NOTE
-This composable is specifically designed to work alongside other pricelist management composables, like [`usePricelistRules`](usePricelistRules.md) and [`usePricelistPreview`](usePricelistPreview.md).
+This composable is specifically designed to work alongside other price list management composables, like [`usePriceListRules`](usePriceListRules.md) and [`usePriceListPreview`](usePriceListPreview.md).
 :::
 
 ## Features
 
-- **Quantity level rules editing** with panel state management
+- **Price break editing** with panel state management
 - **Pricing mode change detection** with user confirmation prompts
 - **Product-specific rule management** with context tracking
 - **Safe mode transitions** with base rule cleanup
@@ -21,13 +21,13 @@ This composable is specifically designed to work alongside other pricelist manag
 const {
   rulesToEdit,
   rulesPanelOpen,
-  pricelistRulesMode,
+  price listRulesMode,
   handleSaveRules,
   confirmModeChange,
-} = usePricelistVolumePricing({
+} = usePriceListVolumePricing({
   globalRules,
   updateEntityRules,
-  previewPricelist,
+  previewPriceList,
 });
 
 // Open volume pricing panel for a product
@@ -42,26 +42,26 @@ handleSaveRules(updatedRules);
 
 ## Options
 
-### `UsePricelistVolumePricingOptions`
+### `UsePriceListVolumePricingOptions`
 
 ```ts
-interface UsePricelistVolumePricingOptions {
-  globalRules: Ref<PricelistRule[]>;
+interface UsePriceListVolumePricingOptions {
+  globalRules: Ref<PriceListRule[]>;
   updateEntityRules: () => Promise<void>;
-  previewPricelist: (message?: string) => Promise<void>;
+  previewPriceList: (message?: string) => Promise<void>;
 }
 ```
 
-- **`globalRules`**: Reactive reference to all global pricelist rules
+- **`globalRules`**: Reactive reference to all global price list rules
 - **`updateEntityRules`**: Function to synchronize rules with entity data
-- **`previewPricelist`**: Function to refresh the pricelist preview
+- **`previewPriceList`**: Function to refresh the price list preview
 
 ## Properties and Methods
 
 ### `rulesToEdit`
 
 ```ts
-const rulesToEdit: Ref<PricelistRule[]>;
+const rulesToEdit: Ref<PriceListRule[]>;
 ```
 
 Array of rules currently being edited in the volume pricing panel.
@@ -90,10 +90,10 @@ const rulesProductName: Ref<string>;
 
 Name of the product whose volume pricing are being edited.
 
-### `actualPricelistRulesMode`
+### `actualPriceListRulesMode`
 
 ```ts
-const actualPricelistRulesMode: Ref<PricelistRuleMode>;
+const actualPriceListRulesMode: Ref<PriceListRuleMode>;
 ```
 
 The current pricing mode ('margin', 'discount', 'fixed', 'auto').
@@ -101,7 +101,7 @@ The current pricing mode ('margin', 'discount', 'fixed', 'auto').
 ### `pendingModeChange`
 
 ```ts
-const pendingModeChange: Ref<PricelistRuleMode | null>;
+const pendingModeChange: Ref<PriceListRuleMode | null>;
 ```
 
 Tracks a pending mode change that requires user confirmation.
@@ -114,22 +114,22 @@ const rulesModeChangePrompt: Ref<boolean>;
 
 Controls the visibility of the mode change confirmation dialog.
 
-### `pricelistRulesMode`
+### `priceListRulesMode`
 
 ```ts
-const pricelistRulesMode: ComputedRef<PricelistRuleMode>;
+const price listRulesMode: ComputedRef<PriceListRuleMode>;
 ```
 
 Computed property that handles pricing mode changes with confirmation prompts.
 
-- **Get**: Returns the current `actualPricelistRulesMode`
+- **Get**: Returns the current `actualPriceListRulesMode`
 - **Set**: Triggers confirmation prompt if base rules exist, otherwise changes immediately
 - **Behavior**: Protects against accidentally removing base rules during mode changes
 
 ### `handleSaveRules`
 
 ```ts
-handleSaveRules(rules: PricelistRule[]): void
+handleSaveRules(rules: PriceListRule[]): void
 ```
 
 Processes saved quantity level rules and triggers preview update.
@@ -138,7 +138,7 @@ Processes saved quantity level rules and triggers preview update.
   - `rules`: Array of updated quantity level rules
 - **Behavior**:
   - Updates `rulesToEdit` with the new rules
-  - Triggers pricelist preview with descriptive feedback message
+  - Triggers price list preview with descriptive feedback message
   - Includes product context in the feedback
 
 ### `confirmModeChange`
@@ -170,16 +170,16 @@ Cancels a pending mode change and resets state.
 ## Type Definitions
 
 ```ts
-interface PricelistRule {
+interface PriceListRule {
   quantity: number;
   price?: number;
   margin?: number;
   discountPercent?: number;
   global: boolean;
-  lastFieldChanged?: PricelistRuleField;
+  lastFieldChanged?: PriceListRuleField;
   _id?: string;
   internalId?: string;
 }
 
-type PricelistRuleMode = 'margin' | 'discount' | 'fixed' | 'auto';
+type PriceListRuleMode = 'margin' | 'discount' | 'fixed' | 'auto';
 ```

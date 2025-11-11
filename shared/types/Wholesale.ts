@@ -31,7 +31,7 @@ export interface WholesaleAccount extends ResponseEntity<WholesaleAccountBase> {
   buyers: WholesaleBuyer[];
   salesReps: WholesaleSalesRep[];
   addresses: Address[];
-  priceLists: WholesalePricelist[];
+  priceLists: WholesalePriceList[];
 }
 
 export type WholesaleAccountFieldsFilter =
@@ -40,7 +40,7 @@ export type WholesaleAccountFieldsFilter =
   | 'addresses'
   | 'salesreps'
   | 'buyers'
-  | 'pricelists';
+  | 'priceLists';
 
 export type WholesaleAccountApiOptions =
   ApiOptions<WholesaleAccountFieldsFilter>;
@@ -91,9 +91,9 @@ export interface WholesaleVatValidation {
   address: string;
 }
 
-export interface WholesalePricelist
+export interface WholesalePriceList
   extends Omit<
-    ProductPricelist,
+    ProductPriceList,
     | 'products'
     | 'rules'
     | 'productSelectionQuery'
@@ -112,7 +112,7 @@ export interface WholesaleOrder {
   sumIncVat: Price;
   sumExVat: Price;
   wholesaleAccount?: string;
-  pricelists?: Tooltip;
+  priceLists?: Tooltip;
   items?: number;
   status: string;
 }

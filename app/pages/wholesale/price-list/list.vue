@@ -2,11 +2,11 @@
 import type { ColumnOptions } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 
-type Entity = ProductPricelist;
-type EntityList = ProductPricelist;
+type Entity = ProductPriceList;
+type EntityList = ProductPriceList;
 
 const { t } = useI18n();
-const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/list.vue');
+const { geinsLogError } = useGeinsLog('pages/wholesale/price-list/list.vue');
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
 definePageMeta({
@@ -33,7 +33,7 @@ const mapToListData = (list: Entity[]): EntityList[] => {
 
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(() =>
-  productApi.pricelist.list(),
+  productApi.priceList.list(),
 );
 
 if (!data.value || error.value) {
@@ -82,7 +82,7 @@ addActionsColumn(
 // const hiddenColumns: StringKeyOf<EntityList>[] = [];
 // const visibilityState = getVisibilityState(hiddenColumns);
 const { toast } = useToast();
-const deletePricelist = async (
+const deletePriceList = async (
   id?: string,
   entityName?: string,
 ): Promise<boolean> => {
@@ -90,14 +90,14 @@ const deletePricelist = async (
     if (!id) {
       throw new Error('ID is required for deletion');
     }
-    await productApi.pricelist.delete(id);
+    await productApi.priceList.delete(id);
     toast({
       title: t('entity_deleted', { entityName }),
       variant: 'positive',
     });
     return true;
   } catch (error) {
-    geinsLogError('deletePricelist :::', getErrorMessage(error));
+    geinsLogError('deletePriceList :::', getErrorMessage(error));
     toast({
       title: t('entity_delete_failed', { entityName }),
       variant: 'negative',
@@ -118,7 +118,7 @@ const openDeleteDialog = async (id?: string) => {
 };
 const confirmDelete = async () => {
   deleting.value = true;
-  const success = await deletePricelist(deleteId.value, entityName);
+  const success = await deletePriceList(deleteId.value, entityName);
   if (success) {
     refresh();
   }

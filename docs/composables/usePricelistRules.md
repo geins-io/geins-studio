@@ -1,9 +1,9 @@
-# `usePricelistRules`
+# `usePriceListRules`
 
-The `usePricelistRules` composable provides comprehensive management for global pricelist rules, including base pricing rules and quantity-level pricing. It handles rule application, updates, and removal with proper state management and user prompts for overwrite scenarios.
+The `usePriceListRules` composable provides comprehensive management for global price list rules, including base pricing rules and quantity-level pricing. It handles rule application, updates, and removal with proper state management and user prompts for overwrite scenarios.
 
 :::warning NOTE
-This composable is specifically designed to work alongside other pricelist management composables, like [`usePricelistPreview`](usePricelistPreview.md) and [`usePricelistVolumePricing`](usePricelistVolumePricing.md).
+This composable is specifically designed to work alongside other price list management composables, like [`usePriceListPreview`](usePriceListPreview.md) and [`usePriceListVolumePricing`](usePriceListVolumePricing.md).
 :::
 
 ## Features
@@ -26,15 +26,15 @@ const {
   removeBaseRule,
   applyRule,
   removeRule,
-} = usePricelistRules({
+} = usePriceListRules({
   entityDataUpdate,
-  previewPricelist,
+  previewPriceList,
 });
 
 // Apply a global margin rule
 await applyBaseRule(25, 'margin');
 
-// Apply a quantity level rule
+// Apply a price break rule
 await applyRule({
   quantity: 10,
   discountPercent: 15,
@@ -44,27 +44,27 @@ await applyRule({
 
 ## Options
 
-### `UsePricelistRulesOptions`
+### `UsePriceListRulesOptions`
 
 ```ts
-interface UsePricelistRulesOptions {
-  entityDataUpdate: Ref<ProductPricelistUpdate>;
-  previewPricelist: (message?: string) => Promise<void>;
+interface UsePriceListRulesOptions {
+  entityDataUpdate: Ref<ProductPriceListUpdate>;
+  previewPriceList: (message?: string) => Promise<void>;
 }
 ```
 
-- **`entityDataUpdate`**: Reactive reference to the pricelist entity being updated
-- **`previewPricelist`**: Function to refresh the pricelist preview with optional feedback message
+- **`entityDataUpdate`**: Reactive reference to the price list entity being updated
+- **`previewPriceList`**: Function to refresh the price list preview with optional feedback message
 
 ## Properties and Methods
 
 ### `globalRules`
 
 ```ts
-const globalRules: Ref<PricelistRule[]>;
+const globalRules: Ref<PriceListRule[]>;
 ```
 
-Reactive array containing all global pricelist rules.
+Reactive array containing all global price list rules.
 
 ### `baseRuleLoading`
 
@@ -85,7 +85,7 @@ Loading state for quantity level rule operations.
 ### `quantityLevelRules`
 
 ```ts
-const quantityLevelRules: ComputedRef<PricelistRule[]>;
+const quantityLevelRules: ComputedRef<PriceListRule[]>;
 ```
 
 Filtered array of rules excluding the base rule (quantity !== 1).
@@ -93,7 +93,7 @@ Filtered array of rules excluding the base rule (quantity !== 1).
 ### `baseRule`
 
 ```ts
-const baseRule: ComputedRef<PricelistRule | undefined>;
+const baseRule: ComputedRef<PriceListRule | undefined>;
 ```
 
 The base pricing rule with quantity = 1, if it exists.
@@ -125,7 +125,7 @@ Human-readable description of the current base rule.
 ### `applyBaseRule`
 
 ```ts
-applyBaseRule(percentage: number, mode: PricelistRuleMode): Promise<void>
+applyBaseRule(percentage: number, mode: PriceListRuleMode): Promise<void>
 ```
 
 Applies a global base pricing rule.
@@ -139,7 +139,7 @@ Applies a global base pricing rule.
 ### `applyBaseRuleAndOverwrite`
 
 ```ts
-applyBaseRuleAndOverwrite(percentage: number, mode: PricelistRuleMode): Promise<void>
+applyBaseRuleAndOverwrite(percentage: number, mode: PriceListRuleMode): Promise<void>
 ```
 
 Applies a base rule with option to overwrite existing product-specific pricing.
@@ -162,7 +162,7 @@ Removes the current base pricing rule.
 ### `applyRule`
 
 ```ts
-applyRule(rule: PricelistRule): Promise<void>
+applyRule(rule: PriceListRule): Promise<void>
 ```
 
 Applies or updates a quantity-level pricing rule.
@@ -175,7 +175,7 @@ Applies or updates a quantity-level pricing rule.
 ### `applyAndOverwriteRule`
 
 ```ts
-applyAndOverwriteRule(rule: PricelistRule): Promise<void>
+applyAndOverwriteRule(rule: PriceListRule): Promise<void>
 ```
 
 Applies a quantity rule with option to overwrite existing product-specific pricing.
@@ -186,7 +186,7 @@ Applies a quantity rule with option to overwrite existing product-specific prici
 ### `removeRule`
 
 ```ts
-removeRule(rule: PricelistRule): Promise<void>
+removeRule(rule: PriceListRule): Promise<void>
 ```
 
 Removes a specific quantity-level rule.
@@ -211,7 +211,7 @@ Synchronizes global rules with the entity data structure.
 ### `cleanRulesForEntityData`
 
 ```ts
-cleanRulesForEntityData(rules: PricelistRule[]): PricelistRule[]
+cleanRulesForEntityData(rules: PriceListRule[]): PriceListRule[]
 ```
 
 Helper method that cleans rules for entity data storage.
@@ -275,16 +275,16 @@ Stores the continuation function for confirmed overwrite operations.
 ## Type Definitions
 
 ```ts
-interface PricelistRule {
+interface PriceListRule {
   quantity: number;
   price?: number;
   margin?: number;
   discountPercent?: number;
   global: boolean;
-  lastFieldChanged?: PricelistRuleField;
+  lastFieldChanged?: PriceListRuleField;
   _id?: string;
   internalId?: string;
 }
 
-type PricelistRuleMode = 'margin' | 'discount' | 'fixed' | 'auto';
+type PriceListRuleMode = 'margin' | 'discount' | 'fixed' | 'auto';
 ```

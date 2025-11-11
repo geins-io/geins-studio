@@ -112,7 +112,7 @@ const addressBase: AddressBase = {
 const tabs = [
   t('general'),
   t('wholesale.buyers'),
-  t('wholesale.pricelists'),
+  t('wholesale.price_lists'),
   t('wholesale.orders'),
   t('settings'),
 ];
@@ -204,7 +204,7 @@ const {
     buyersList.value = account.buyers || [];
     entityLiveStatus.value = account.active || false;
     accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
-    addedPricelists.value = account.priceLists || [];
+    addedPriceLists.value = account.priceLists || [];
 
     billingAddress.value = {
       ...account.addresses?.find(
@@ -368,24 +368,24 @@ watch(buyerPanelOpen, async (open) => {
 // =====================================================================================
 
 const { productApi } = useGeinsRepository();
-const addedPricelists = ref<WholesalePricelist[]>([]);
-const addedPricelistsIds = computed(() => {
-  return addedPricelists.value.map((pl) => pl._id);
+const addedPriceLists = ref<WholesalePriceList[]>([]);
+const addedPriceListsIds = computed(() => {
+  return addedPriceLists.value.map((pl) => pl._id);
 });
-const allPricelists = ref<WholesalePricelist[]>([]);
+const allPriceLists = ref<WholesalePriceList[]>([]);
 
 const {
-  getColumns: getPricelistColumns,
-  addActionsColumn: addPricelistActionsColumn,
-} = useColumns<WholesalePricelist>();
+  getColumns: getPriceListColumns,
+  addActionsColumn: addPriceListActionsColumn,
+} = useColumns<WholesalePriceList>();
 
-const columnOptionsPricelists: ColumnOptions<WholesalePricelist> = {
+const columnOptionsPriceLists: ColumnOptions<WholesalePriceList> = {
   columnTypes: {
     name: 'link',
   },
   linkColumns: {
     name: {
-      url: '/wholesale/pricelist/{id}',
+      url: '/wholesale/price-list/{id}',
       idField: '_id',
     },
   },
@@ -397,19 +397,19 @@ const columnOptionsPricelists: ColumnOptions<WholesalePricelist> = {
 };
 
 // Use computed for reactive columns
-const pricelistColumns = computed(() => {
-  if (addedPricelists.value.length === 0) return [];
+const priceListColumns = computed(() => {
+  if (addedPriceLists.value.length === 0) return [];
 
-  const columns = getPricelistColumns(
-    addedPricelists.value,
-    columnOptionsPricelists,
+  const columns = getPriceListColumns(
+    addedPriceLists.value,
+    columnOptionsPriceLists,
   );
 
-  addPricelistActionsColumn(
+  addPriceListActionsColumn(
     columns,
     {
-      onDelete: (entity: WholesalePricelist) => {
-        removePricelist(entity._id);
+      onDelete: (entity: WholesalePriceList) => {
+        removePriceList(entity._id);
       },
     },
     'delete',
@@ -418,51 +418,51 @@ const pricelistColumns = computed(() => {
 });
 
 // SET COLUMN VISIBILITY STATE
-const { getVisibilityState } = useTable<WholesalePricelist>();
-const hiddenColumns: StringKeyOf<WholesalePricelist>[] = ['_id'];
+const { getVisibilityState } = useTable<WholesalePriceList>();
+const hiddenColumns: StringKeyOf<WholesalePriceList>[] = ['_id'];
 const visibilityState = getVisibilityState(hiddenColumns);
 
-const addPricelist = async (id: string) => {
-  const pricelist = allPricelists.value.find((pl) => pl._id === id);
-  if (pricelist && !addedPricelistsIds.value.includes(pricelist._id)) {
-    addedPricelists.value = [
-      ...addedPricelists.value,
+const addPriceList = async (id: string) => {
+  const priceList = allPriceLists.value.find((pl) => pl._id === id);
+  if (priceList && !addedPriceListsIds.value.includes(priceList._id)) {
+    addedPriceLists.value = [
+      ...addedPriceLists.value,
       {
-        ...pricelist,
+        ...priceList,
       },
     ];
   }
 };
 
-const removePricelist = (id: string) => {
-  const index = addedPricelistsIds.value.indexOf(id);
+const removePriceList = (id: string) => {
+  const index = addedPriceListsIds.value.indexOf(id);
   if (index !== -1) {
-    addedPricelists.value = addedPricelists.value.filter((pl) => pl._id !== id);
+    addedPriceLists.value = addedPriceLists.value.filter((pl) => pl._id !== id);
   }
 };
 
-watch(addedPricelists, (newPricelists) => {
-  if (newPricelists.length > 0) {
-    entityDataUpdate.value.priceLists = newPricelists.map((pl) => pl._id);
+watch(addedPriceLists, (newPriceLists) => {
+  if (newPriceLists.length > 0) {
+    entityDataUpdate.value.priceLists = newPriceLists.map((pl) => pl._id);
   } else {
     entityDataUpdate.value.priceLists = [];
   }
 });
 
 if (!createMode.value) {
-  const { data, error } = await useAsyncData<ProductPricelist[]>(() =>
-    productApi.pricelist.list({ fields: ['products'] }),
+  const { data, error } = await useAsyncData<ProductPriceList[]>(() =>
+    productApi.priceList.list({ fields: ['products'] }),
   );
 
   if (!data.value || error.value) {
     geinsLogError(
-      `${t('failed_to_fetch_entity', { entityName: 'pricelist' }, 2)}`,
+      `${t('failed_to_fetch_entity', { entityName: 'price_list' }, 2)}`,
       error.value,
     );
   } else {
-    allPricelists.value = data.value.map((pricelist) => ({
-      ...pricelist,
-      productCount: pricelist.products?.totalItemCount || 0,
+    allPriceLists.value = data.value.map((priceList) => ({
+      ...priceList,
+      productCount: priceList.products?.totalItemCount || 0,
     }));
   }
 }
@@ -670,7 +670,7 @@ const settingsSummary = computed<DataItem[]>(() => {
   dataList.push({
     label: 'Product access',
     value: entityData.value?.limitedProductAccess
-      ? 'Restricted to pricelists'
+      ? 'Restricted to price lists'
       : 'All products',
   });
 
@@ -693,13 +693,13 @@ const otherSummary = computed<DataItem[]>(() => {
   }
   if (entityData.value?.priceLists?.length) {
     const displayValue = entityData.value.priceLists
-      .map((pl: string) => getEntityNameById(pl, allPricelists.value))
+      .map((pl: string) => getEntityNameById(pl, allPriceLists.value))
       .join(', ');
     dataList.push({
-      label: t('wholesale.pricelists'),
+      label: t('wholesale.price_lists'),
       value: entityData.value.priceLists,
       displayValue,
-      entityName: 'pricelist',
+      entityName: 'price_list',
       displayType: DataItemDisplayType.Array,
     });
   }
@@ -785,7 +785,7 @@ if (!createMode.value) {
     orderSelectionQuery,
     { fields: ['pricelists', 'itemcount'] },
     entityId.value,
-    allPricelists.value,
+    allPriceLists.value,
     undefined,
     buyersList.value,
   );
@@ -1206,38 +1206,38 @@ breadcrumbsStore.setCurrentParent({
           >
             <ContentEditCard
               :create-mode="createMode"
-              :title="t('wholesale.pricelists')"
-              description="Pricelists connected to this account"
+              :title="t('wholesale.price_lists')"
+              description="Price lists connected to this account"
             >
               <template #header-action>
                 <SelectorQuickAdd
-                  :entities="allPricelists"
-                  :selection="addedPricelistsIds"
-                  entity-name="pricelist"
+                  :entities="allPriceLists"
+                  :selection="addedPriceListsIds"
+                  entity-name="price_list"
                   :show-image="false"
                   class="sm:w-2/5!"
-                  @add="addPricelist($event)"
-                  @remove="removePricelist($event)"
+                  @add="addPriceList($event)"
+                  @remove="removePriceList($event)"
                 />
               </template>
               <div>
                 <div
-                  v-if="addedPricelists.length === 0"
+                  v-if="addedPriceLists.length === 0"
                   class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
                 >
                   <p class="text-xl font-bold">
-                    {{ $t('no_entity', { entityName: 'pricelist' }, 2) }}
+                    {{ $t('no_entity', { entityName: 'price_list' }, 2) }}
                   </p>
                   <p class="text-muted-foreground text-xs">
-                    {{ $t('wholesale.no_pricelists_connected') }}
+                    {{ $t('wholesale.no_price_lists_connected') }}
                   </p>
                 </div>
                 <TableView
                   v-else
                   :mode="TableMode.Simple"
-                  entity-name="pricelist"
-                  :columns="pricelistColumns"
-                  :data="addedPricelists"
+                  entity-name="price_list"
+                  :columns="priceListColumns"
+                  :data="addedPriceLists"
                   :init-visibility-state="visibilityState"
                   :pinned-state="
                     viewport.isGreaterThan('xs') ? null : undefined
@@ -1296,7 +1296,7 @@ breadcrumbsStore.setCurrentParent({
                 />
                 <ContentSwitch
                   v-model:checked="entityDataUpdate.limitedProductAccess"
-                  label="Only access products included in the assigned pricelists"
+                  label="Only access products included in the assigned price lists"
                   description="If disabled, this account can access all products"
                 />
                 <ContentCardHeader

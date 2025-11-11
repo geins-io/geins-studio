@@ -1,49 +1,49 @@
-import type { PricelistRule, PricelistRuleMode } from '#shared/types';
+import type { PriceListRule, PriceListRuleMode } from '#shared/types';
 
-export interface UsePricelistVolumePricingReturnType {
+export interface UsePriceListVolumePricingReturnType {
   // State
-  rulesToEdit: Ref<PricelistRule[]>;
+  rulesToEdit: Ref<PriceListRule[]>;
   rulesPanelOpen: Ref<boolean>;
   rulesProductId: Ref<string>;
   rulesProductName: Ref<string>;
-  actualPricelistRulesMode: Ref<PricelistRuleMode>;
-  pendingModeChange: Ref<PricelistRuleMode | null>;
+  actualPriceListRulesMode: Ref<PriceListRuleMode>;
+  pendingModeChange: Ref<PriceListRuleMode | null>;
   rulesModeChangePrompt: Ref<boolean>;
 
   // Computed
-  pricelistRulesMode: ComputedRef<PricelistRuleMode>;
+  priceListRulesMode: ComputedRef<PriceListRuleMode>;
 
   // Methods
-  handleSaveRules: (rules: PricelistRule[]) => void;
+  handleSaveRules: (rules: PriceListRule[]) => void;
   confirmModeChange: () => Promise<void>;
   cancelModeChange: () => void;
 }
 
-export interface UsePricelistVolumePricingOptions {
-  globalRules: Ref<PricelistRule[]>;
+export interface UsePriceListVolumePricingOptions {
+  globalRules: Ref<PriceListRule[]>;
   updateEntityRules: () => Promise<void>;
-  previewPricelist: (message?: string) => Promise<void>;
+  previewPriceList: (message?: string) => Promise<void>;
 }
 
 /**
- * Composable for managing product-specific quantity level pricing rules
+ * Composable for managing product-specific price breaks
  */
-export function usePricelistVolumePricing({
+export function usePriceListVolumePricing({
   globalRules,
   updateEntityRules,
-  previewPricelist,
-}: UsePricelistVolumePricingOptions): UsePricelistVolumePricingReturnType {
+  previewPriceList,
+}: UsePriceListVolumePricingOptions): UsePriceListVolumePricingReturnType {
   // =====================================================================================
   // STATE
   // =====================================================================================
-  const rulesToEdit = ref<PricelistRule[]>([]);
+  const rulesToEdit = ref<PriceListRule[]>([]);
   const rulesPanelOpen = ref(false);
   const rulesProductId = ref<string>('');
   const rulesProductName = ref<string>('');
 
   // Track the actual mode and pending mode separately
-  const actualPricelistRulesMode = ref<PricelistRuleMode>('discount');
-  const pendingModeChange = ref<PricelistRuleMode | null>(null);
+  const actualPriceListRulesMode = ref<PriceListRuleMode>('discount');
+  const pendingModeChange = ref<PriceListRuleMode | null>(null);
   const rulesModeChangePrompt = ref(false);
 
   // =====================================================================================
@@ -51,11 +51,11 @@ export function usePricelistVolumePricing({
   // =====================================================================================
 
   // Use a computed for the displayed mode with change detection
-  const pricelistRulesMode = computed({
-    get: () => actualPricelistRulesMode.value,
-    set: (newMode: PricelistRuleMode) => {
+  const priceListRulesMode = computed({
+    get: () => actualPriceListRulesMode.value,
+    set: (newMode: PriceListRuleMode) => {
       if (
-        newMode !== actualPricelistRulesMode.value &&
+        newMode !== actualPriceListRulesMode.value &&
         globalRules.value.length
       ) {
         // Check if there's a base rule that would be affected
@@ -65,10 +65,10 @@ export function usePricelistVolumePricing({
           rulesModeChangePrompt.value = true;
         } else {
           // Safe to change mode immediately
-          actualPricelistRulesMode.value = newMode;
+          actualPriceListRulesMode.value = newMode;
         }
       } else {
-        actualPricelistRulesMode.value = newMode;
+        actualPriceListRulesMode.value = newMode;
       }
     },
   });
@@ -77,12 +77,12 @@ export function usePricelistVolumePricing({
   // METHODS
   // =====================================================================================
 
-  const handleSaveRules = (rules: PricelistRule[]) => {
+  const handleSaveRules = (rules: PriceListRule[]) => {
     // Update the rules in the system
     rulesToEdit.value = rules;
 
     // Provide feedback with product context
-    previewPricelist(
+    previewPriceList(
       `Volume pricing applied for ${rulesProductName.value} (${rulesProductId.value})`,
     );
   };
@@ -90,14 +90,14 @@ export function usePricelistVolumePricing({
   const confirmModeChange = async () => {
     rulesModeChangePrompt.value = false;
     if (pendingModeChange.value) {
-      actualPricelistRulesMode.value = pendingModeChange.value;
+      actualPriceListRulesMode.value = pendingModeChange.value;
       pendingModeChange.value = null;
 
       globalRules.value = globalRules.value.filter(
         (rule) => rule.quantity === 1,
       );
       await updateEntityRules();
-      await previewPricelist();
+      await previewPriceList();
     }
   };
 
@@ -112,12 +112,12 @@ export function usePricelistVolumePricing({
     rulesPanelOpen,
     rulesProductId,
     rulesProductName,
-    actualPricelistRulesMode,
+    actualPriceListRulesMode,
     pendingModeChange,
     rulesModeChangePrompt,
 
     // Computed
-    pricelistRulesMode,
+    priceListRulesMode,
 
     // Methods
     handleSaveRules,

@@ -1,38 +1,38 @@
 import type {
-  PricelistRule,
-  PricelistRuleMode,
-  ProductPricelistUpdate,
+  PriceListRule,
+  PriceListRuleMode,
+  ProductPriceListUpdate,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 
-export interface UsePricelistRulesOptions {
-  entityDataUpdate: Ref<ProductPricelistUpdate>;
-  previewPricelist: (message?: string) => Promise<void>;
+export interface UsePriceListRulesOptions {
+  entityDataUpdate: Ref<ProductPriceListUpdate>;
+  previewPriceList: (message?: string) => Promise<void>;
 }
 
-export interface UsePricelistRulesReturnType {
+export interface UsePriceListRulesReturnType {
   // State
-  globalRules: Ref<PricelistRule[]>;
+  globalRules: Ref<PriceListRule[]>;
   baseRuleLoading: Ref<boolean>;
   volumePricingLoading: Ref<boolean>;
 
   // Computed
-  quantityLevelRules: ComputedRef<PricelistRule[]>;
-  baseRule: ComputedRef<PricelistRule | undefined>;
+  quantityLevelRules: ComputedRef<PriceListRule[]>;
+  baseRule: ComputedRef<PriceListRule | undefined>;
   baseRuleMode: ComputedRef<'margin' | 'discount' | null>;
   baseRulePercentage: ComputedRef<number | null>;
   baseRuleText: ComputedRef<string>;
 
   // Methods
-  applyBaseRule: (percentage: number, mode: PricelistRuleMode) => Promise<void>;
+  applyBaseRule: (percentage: number, mode: PriceListRuleMode) => Promise<void>;
   applyBaseRuleAndOverwrite: (
     percentage: number,
-    mode: PricelistRuleMode,
+    mode: PriceListRuleMode,
   ) => Promise<void>;
   removeBaseRule: () => Promise<void>;
-  applyRule: (rule: PricelistRule) => Promise<void>;
-  applyAndOverwriteRule: (rule: PricelistRule) => Promise<void>;
-  removeRule: (rule: PricelistRule) => Promise<void>;
+  applyRule: (rule: PriceListRule) => Promise<void>;
+  applyAndOverwriteRule: (rule: PriceListRule) => Promise<void>;
+  removeRule: (rule: PriceListRule) => Promise<void>;
   updateEntityRules: () => Promise<void>;
 
   // Prompt state
@@ -44,19 +44,19 @@ export interface UsePricelistRulesReturnType {
 }
 
 /**
- * Composable for managing global pricelist rules and base pricing logic
+ * Composable for managing global price list rules and base pricing logic
  */
-export function usePricelistRules({
+export function usePriceListRules({
   entityDataUpdate,
-  previewPricelist,
-}: UsePricelistRulesOptions): UsePricelistRulesReturnType {
+  previewPriceList,
+}: UsePriceListRulesOptions): UsePriceListRulesReturnType {
   const { toast } = useToast();
-  const { geinsLogError } = useGeinsLog('composables/usePricelistRules');
+  const { geinsLogError } = useGeinsLog('composables/usePriceListRules');
 
   // =====================================================================================
   // STATE
   // =====================================================================================
-  const globalRules = ref<PricelistRule[]>([]);
+  const globalRules = ref<PriceListRule[]>([]);
   const baseRuleLoading = ref<boolean>(false);
   const volumePricingLoading = ref<boolean>(false);
 
@@ -105,12 +105,12 @@ export function usePricelistRules({
 
   const applyBaseRule = async (
     percentage: number,
-    mode: PricelistRuleMode,
+    mode: PriceListRuleMode,
   ): Promise<void> => {
     baseRuleLoading.value = true;
     try {
       // Create global rule for quantity 1
-      const globalRule: PricelistRule = {
+      const globalRule: PriceListRule = {
         quantity: 1,
         global: true,
         ...(mode === 'margin'
@@ -128,7 +128,7 @@ export function usePricelistRules({
       globalRules.value.push(globalRule);
 
       await updateEntityRules();
-      await previewPricelist(`${percentage}% ${mode} applied globally`);
+      await previewPriceList(`${percentage}% ${mode} applied globally`);
     } catch (error) {
       geinsLogError('error applying base rule:', error);
       toast({
@@ -143,7 +143,7 @@ export function usePricelistRules({
 
   const applyBaseRuleAndOverwrite = async (
     percentage: number,
-    mode: PricelistRuleMode,
+    mode: PriceListRuleMode,
   ): Promise<void> => {
     if (entityDataUpdate.value.products) {
       overwriteBaseRulePromptVisible.value = true;
@@ -163,10 +163,10 @@ export function usePricelistRules({
     globalRules.value = globalRules.value.filter((rule) => rule.quantity !== 1);
     entityDataUpdate.value.rules = cleanRulesForEntityData(globalRules.value);
     removeBaseRulePromptVisible.value = false;
-    await previewPricelist(feedback);
+    await previewPriceList(feedback);
   };
 
-  const applyRule = async (rule: PricelistRule): Promise<void> => {
+  const applyRule = async (rule: PriceListRule): Promise<void> => {
     volumePricingLoading.value = true;
     let ruleIndex = -1;
     try {
@@ -189,11 +189,11 @@ export function usePricelistRules({
       }
 
       await updateEntityRules();
-      await previewPricelist('Quantity level applied globally');
+      await previewPriceList('Volume pricing applied globally');
     } catch (error) {
       geinsLogError('error applying rules:', error);
       toast({
-        title: 'Error applying quantity level',
+        title: 'Error applying volume pricing',
         description: 'Please try again.',
         variant: 'negative',
       });
@@ -206,7 +206,7 @@ export function usePricelistRules({
     }
   };
 
-  const applyAndOverwriteRule = async (rule: PricelistRule): Promise<void> => {
+  const applyAndOverwriteRule = async (rule: PriceListRule): Promise<void> => {
     if (entityDataUpdate.value.products) {
       currentOverwriteQuantity.value = Number(rule.quantity);
       overwriteLevelsPromptVisible.value = true;
@@ -220,7 +220,7 @@ export function usePricelistRules({
     await applyRule(rule);
   };
 
-  const removeRule = async (rule: PricelistRule): Promise<void> => {
+  const removeRule = async (rule: PriceListRule): Promise<void> => {
     globalRules.value = globalRules.value.filter(
       (r) =>
         !(
@@ -230,7 +230,7 @@ export function usePricelistRules({
         ),
     );
     await updateEntityRules();
-    await previewPricelist('Quantity level removed.');
+    await previewPriceList('Price break removed.');
   };
 
   const updateEntityRules = async (): Promise<void> => {
@@ -243,7 +243,7 @@ export function usePricelistRules({
     );
 
     // Start with globalRules and remove internal IDs
-    const newRules: PricelistRule[] = globalRules.value.map((rule) => {
+    const newRules: PriceListRule[] = globalRules.value.map((rule) => {
       const { internalId, ...cleanRule } = rule;
       return {
         ...cleanRule,
@@ -262,7 +262,7 @@ export function usePricelistRules({
     entityDataUpdate.value.rules = cleanRulesForEntityData(newRules);
   };
 
-  const cleanRulesForEntityData = (rules: PricelistRule[]): PricelistRule[] => {
+  const cleanRulesForEntityData = (rules: PriceListRule[]): PriceListRule[] => {
     return rules.map((rule) => {
       const { _id, quantity, margin, discountPercent, price } = rule;
       return {

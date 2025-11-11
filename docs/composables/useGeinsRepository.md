@@ -108,28 +108,28 @@ function list(
 function query(ids: number[]): Promise<BatchQueryResult<Brand>>;
 ```
 
-#### `pricelist`
+#### `priceList`
 
 ```ts
-function get(id: string, options?: ProductPricelistApiOptions): Promise<ProductPricelist>;
-function list(options?: ProductPricelistApiOptions): Promise<ProductPricelist[]>;
-function create(data: ProductPricelistCreate, options?: ProductPricelistApiOptions): Promise<ProductPricelist>;
-function update(id: string, data: ProductPricelistUpdate, options?: ProductPricelistApiOptions): Promise<ProductPricelist>;
+function get(id: string, options?: ProductPriceListApiOptions): Promise<ProductPriceList>;
+function list(options?: ProductPriceListApiOptions): Promise<ProductPriceList[]>;
+function create(data: ProductPriceListCreate, options?: ProductPriceListApiOptions): Promise<ProductPriceList>;
+function update(id: string, data: ProductPriceListUpdate, options?: ProductPriceListApiOptions): Promise<ProductPriceList>;
 function delete(id: string): Promise<void>;
 ```
 
-##### `id(pricelistId: string)`
+##### `id(priceListId: string)`
 
 ```ts
-function copy(options?: ProductPricelistApiOptions): Promise<ProductPricelist>;
+function copy(options?: ProductPriceListApiOptions): Promise<ProductPriceList>;
 function preview(
-  pricelist: ProductPricelistUpdate,
+  price list: ProductPriceListUpdate,
   batchQuery?: BatchQuery,
-  options?: ProductPricelistApiOptions,
-): Promise<ProductPricelist>;
+  options?: ProductPriceListApiOptions,
+): Promise<ProductPriceList>;
 function previewPrice(
-  pricelistProduct: PricelistProductPreview,
-): Promise<PricelistProductPreviewResponse>;
+  price listProduct: PriceListProductPreview,
+): Promise<PriceListProductPreviewResponse>;
 ```
 
 ### `wholesaleApi`

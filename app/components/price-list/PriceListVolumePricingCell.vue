@@ -2,7 +2,7 @@
 const _props = defineProps<{
   id: string;
   name: string;
-  volumePricing: PricelistRule[];
+  volumePricing: PriceListRule[];
   className?: string;
   vatDescription: string;
 }>();

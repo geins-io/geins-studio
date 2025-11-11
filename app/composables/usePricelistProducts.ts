@@ -1,65 +1,65 @@
 import type {
   Product,
-  PricelistProduct,
-  PricelistProductList,
-  PricelistRule,
-  ProductPricelist,
-  PricelistRuleField,
+  PriceListProduct,
+  PriceListProductList,
+  PriceListRule,
+  ProductPriceList,
+  PriceListRuleField,
 } from '#shared/types';
 
-interface UsePricelistProductsReturnType {
+interface UsePriceListProductsReturnType {
   transformProductsForList: (
-    pricelistProducts: PricelistProduct[],
-    entityData: ProductPricelistUpdate,
-  ) => PricelistProductList[];
+    priceListProducts: PriceListProduct[],
+    entityData: ProductPriceListUpdate,
+  ) => PriceListProductList[];
   getVolumePricing: (
     productId: string,
-    products: PricelistProduct[],
-    entityData: ProductPricelist,
-  ) => PricelistRule[];
-  getPricelistProduct: (
+    products: PriceListProduct[],
+    entityData: ProductPriceList,
+  ) => PriceListRule[];
+  getPriceListProduct: (
     productId: string,
     value: number | null,
-    valueType: PricelistRuleField | undefined,
+    valueType: PriceListRuleField | undefined,
     quantity?: number,
-  ) => PricelistProduct;
-  addToPricelistProducts: (
-    product: PricelistProduct,
-    pricelistProducts: PricelistProduct[],
+  ) => PriceListProduct;
+  addToPriceListProducts: (
+    product: PriceListProduct,
+    priceListProducts: PriceListProduct[],
   ) => void;
-  getNewPricelistProducts: (
-    newProducts: PricelistProduct[],
-    currentProducts: PricelistProduct[],
+  getNewPriceListProducts: (
+    newProducts: PriceListProduct[],
+    currentProducts: PriceListProduct[],
     productId: string,
-  ) => PricelistProduct[];
+  ) => PriceListProduct[];
   convertPriceModeToRuleField: (
-    priceMode?: PricelistPriceMode,
-  ) => PricelistRuleField | undefined;
+    priceMode?: PriceListPriceMode,
+  ) => PriceListRuleField | undefined;
 }
 
 /**
- * Composable for managing pricelist products and transformations.
+ * Composable for managing price list products and transformations.
  *
- * Provides utilities for transforming pricelist products between different formats,
+ * Provides utilities for transforming price list products between different formats,
  * managing volume pricing, and handling product pricing rules and modes.
  *
- * @returns {UsePricelistProductsReturnType} - An object containing pricelist product utilities
- * @property {function} transformProductsForList - Transforms pricelist products to list format
+ * @returns {UsePriceListProductsReturnType} - An object containing price list product utilities
+ * @property {function} transformProductsForList - Transforms price list products to list format
  * @property {function} getVolumePricing - Extracts volume pricing for a specific product
- * @property {function} getPricelistProduct - Creates a pricelist product object
- * @property {function} addToPricelistProducts - Adds or updates a product in the pricelist
- * @property {function} getNewPricelistProducts - Merges new products with existing ones
+ * @property {function} getPriceListProduct - Creates a price list product object
+ * @property {function} addToPriceListProducts - Adds or updates a product in the price list
+ * @property {function} getNewPriceListProducts - Merges new products with existing ones
  * @property {function} convertPriceModeToRuleField - Converts price mode to rule field type
  */
-export const usePricelistProducts = (): UsePricelistProductsReturnType => {
+export const usePriceListProducts = (): UsePriceListProductsReturnType => {
   const { convertToPrice } = usePrice();
   const { getProductThumbnail } = useGeinsImage();
 
   const transformProductsForList = (
-    pricelistProducts: PricelistProduct[] = [],
-    entityData: ProductPricelistUpdate,
-  ): PricelistProductList[] => {
-    return pricelistProducts
+    priceListProducts: PriceListProduct[] = [],
+    entityData: ProductPriceListUpdate,
+  ): PriceListProductList[] => {
+    return priceListProducts
       .filter((p) => p.staggeredCount === 1)
       .map((product) => {
         return {
@@ -81,7 +81,7 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
           ),
           discount: product.discountPercent || 0,
           margin: product.margin || 0,
-          volumePricing: getVolumePricing(product.productId, pricelistProducts),
+          volumePricing: getVolumePricing(product.productId, priceListProducts),
           priceMode: product.priceMode || 'auto',
         };
       });
@@ -89,8 +89,8 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
 
   const getVolumePricing = (
     productId: string,
-    products: PricelistProduct[],
-  ): PricelistRule[] => {
+    products: PriceListProduct[],
+  ): PriceListRule[] => {
     const productLevels = products
       .filter(
         (p) =>
@@ -110,12 +110,12 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
     return productLevels.sort((a, b) => (a.quantity || 0) - (b.quantity || 0));
   };
 
-  const getPricelistProduct = (
+  const getPriceListProduct = (
     productId: string,
     value: number | null,
-    valueType: PricelistRuleField | undefined,
+    valueType: PriceListRuleField | undefined,
     quantity: number = 1,
-  ): PricelistProduct => {
+  ): PriceListProduct => {
     return {
       productId,
       ...(valueType === 'price' && value !== null && { price: value }),
@@ -126,29 +126,29 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
     };
   };
 
-  const addToPricelistProducts = (
-    product: PricelistProduct,
-    pricelistProducts: PricelistProduct[],
+  const addToPriceListProducts = (
+    product: PriceListProduct,
+    priceListProducts: PriceListProduct[],
   ): void => {
-    const existingIndex = pricelistProducts.findIndex(
+    const existingIndex = priceListProducts.findIndex(
       (p) =>
         p.productId === product.productId &&
         p.staggeredCount === product.staggeredCount,
     );
     if (existingIndex >= 0) {
-      pricelistProducts[existingIndex] = product;
+      priceListProducts[existingIndex] = product;
     } else {
-      pricelistProducts.push(product);
+      priceListProducts.push(product);
     }
   };
 
-  const getNewPricelistProducts = (
-    newProducts: PricelistProduct[],
-    currentProducts: PricelistProduct[],
+  const getNewPriceListProducts = (
+    newProducts: PriceListProduct[],
+    currentProducts: PriceListProduct[],
     productId: string,
-  ): PricelistProduct[] => {
+  ): PriceListProduct[] => {
     // Create a map of newProducts for quick lookup by staggeredCount
-    const newProductsMap = new Map<number, PricelistProduct>();
+    const newProductsMap = new Map<number, PriceListProduct>();
     newProducts.forEach((product) => {
       newProductsMap.set(product.staggeredCount, product);
     });
@@ -196,8 +196,8 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
   };
 
   const convertPriceModeToRuleField = (
-    priceMode?: PricelistPriceMode,
-  ): PricelistRuleField | undefined => {
+    priceMode?: PriceListPriceMode,
+  ): PriceListRuleField | undefined => {
     switch (priceMode) {
       case 'margin':
         return 'margin';
@@ -213,9 +213,9 @@ export const usePricelistProducts = (): UsePricelistProductsReturnType => {
   return {
     transformProductsForList,
     getVolumePricing,
-    getPricelistProduct,
-    addToPricelistProducts,
-    getNewPricelistProducts,
+    getPriceListProduct,
+    addToPriceListProducts,
+    getNewPriceListProducts,
     convertPriceModeToRuleField,
   };
 };

@@ -1,39 +1,39 @@
 import type {
-  PricelistProduct,
-  PricelistProductList,
-  ProductPricelistUpdate,
+  PriceListProduct,
+  PriceListProductList,
+  ProductPriceListUpdate,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 
-export interface UsePricelistPreviewOptions {
+export interface UsePriceListPreviewOptions {
   entityId: Ref<string | null>;
-  entityDataUpdate: Ref<ProductPricelistUpdate>;
+  entityDataUpdate: Ref<ProductPriceListUpdate>;
   transformProductsForList: (
-    pricelistProducts: PricelistProduct[],
-    entityData: ProductPricelistUpdate,
-  ) => PricelistProductList[];
+    priceListProducts: PriceListProduct[],
+    entityData: ProductPriceListUpdate,
+  ) => PriceListProductList[];
   setupColumns: () => void;
-  onUpdateProducts: (editedProducts: PricelistProduct[]) => Promise<void>;
+  onUpdateProducts: (editedProducts: PriceListProduct[]) => Promise<void>;
   convertPriceModeToRuleField: (
-    priceMode?: PricelistPriceMode,
-  ) => PricelistRuleField | undefined;
-  getPricelistProduct: (
+    priceMode?: PriceListPriceMode,
+  ) => PriceListRuleField | undefined;
+  getPriceListProduct: (
     productId: string,
     value: number | null,
-    priceMode: PricelistRuleField | undefined,
+    priceMode: PriceListRuleField | undefined,
     staggeredCount: number,
-  ) => PricelistProduct;
+  ) => PriceListProduct;
 }
 
-export interface UsePricelistPreviewReturnType {
+export interface UsePriceListPreviewReturnType {
   // State
-  pricelistProducts: Ref<PricelistProduct[]>;
-  selectedProducts: Ref<PricelistProductList[]>;
+  priceListProducts: Ref<PriceListProduct[]>;
+  selectedProducts: Ref<PriceListProductList[]>;
   updateInProgress: Ref<boolean>;
   hasProductSelection: ComputedRef<boolean>;
 
   // Methods
-  previewPricelist: (
+  previewPriceList: (
     feedbackMessage?: string,
     updateProducts?: boolean,
     showFeedback?: boolean,
@@ -41,27 +41,27 @@ export interface UsePricelistPreviewReturnType {
 }
 
 /**
- * Composable for managing pricelist preview functionality and product state
+ * Composable for managing priceList preview functionality and product state
  */
-export function usePricelistPreview({
+export function usePriceListPreview({
   entityId,
   entityDataUpdate,
   transformProductsForList,
   setupColumns,
   onUpdateProducts,
   convertPriceModeToRuleField,
-  getPricelistProduct,
-}: UsePricelistPreviewOptions): UsePricelistPreviewReturnType {
+  getPriceListProduct,
+}: UsePriceListPreviewOptions): UsePriceListPreviewReturnType {
   const { toast } = useToast();
-  const { geinsLogError } = useGeinsLog('composables/usePricelistPreview');
+  const { geinsLogError } = useGeinsLog('composables/usePriceListPreview');
   const { batchQueryNoPagination } = useBatchQuery();
   const { productApi } = useGeinsRepository();
 
   // =====================================================================================
   // STATE
   // =====================================================================================
-  const pricelistProducts = ref<PricelistProduct[]>([]);
-  const selectedProducts = ref<PricelistProductList[]>([]);
+  const priceListProducts = ref<PriceListProduct[]>([]);
+  const selectedProducts = ref<PriceListProductList[]>([]);
   const updateInProgress = ref(false);
 
   // =====================================================================================
@@ -75,8 +75,8 @@ export function usePricelistPreview({
   // METHODS
   // =====================================================================================
 
-  const previewPricelist = async (
-    feedbackMessage: string = 'Pricelist preview updated.',
+  const previewPriceList = async (
+    feedbackMessage: string = 'Price list preview updated.',
     updateProducts: boolean = false,
     showFeedback: boolean = true,
   ) => {
@@ -90,16 +90,16 @@ export function usePricelistPreview({
     try {
       updateInProgress.value = true;
 
-      const previewPricelist = await productApi.pricelist
+      const previewPriceList = await productApi.priceList
         .id(entityId.value)
         .preview(entityDataUpdate.value, batchQueryNoPagination.value, {
           fields: ['products', 'productinfo'],
         });
 
-      pricelistProducts.value = previewPricelist.products?.items || [];
+      priceListProducts.value = previewPriceList.products?.items || [];
 
       if (updateProducts) {
-        const editedProducts: PricelistProduct[] = pricelistProducts.value
+        const editedProducts: PriceListProduct[] = priceListProducts.value
           .filter(
             (p: any) =>
               p.priceMode !== 'rule' &&
@@ -109,7 +109,7 @@ export function usePricelistPreview({
           .map((p: any) => {
             const priceMode = convertPriceModeToRuleField(p.priceMode);
             const value = priceMode ? Number(p[priceMode]) || null : null;
-            const product = getPricelistProduct(
+            const product = getPriceListProduct(
               p.productId,
               value,
               priceMode,
@@ -125,7 +125,7 @@ export function usePricelistPreview({
       }
 
       selectedProducts.value = transformProductsForList(
-        pricelistProducts.value,
+        priceListProducts.value,
         entityDataUpdate.value,
       );
 
@@ -138,9 +138,9 @@ export function usePricelistPreview({
         });
       }
     } catch (error) {
-      geinsLogError('error fetching preview pricelist:', error);
+      geinsLogError('error fetching preview price list:', error);
       toast({
-        title: 'Error updating pricelist preview',
+        title: 'Error updating price list preview',
         description: 'Please try again.',
         variant: 'negative',
       });
@@ -151,12 +151,12 @@ export function usePricelistPreview({
 
   return {
     // State
-    pricelistProducts,
+    priceListProducts,
     selectedProducts,
     updateInProgress,
     hasProductSelection,
 
     // Methods
-    previewPricelist,
+    previewPriceList,
   };
 }
