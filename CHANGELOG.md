@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.1.2 - 2025-11-11
+
+### 🔄 Refactor
+
+- Standardized naming conventions for price lists and volume pricing ([#100](https://github.com/geins-io/geins-studio/pull/100))
+
+### 🐛 Bug Fixes
+
+- Price mode change confirmation shown when it should
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.1.1 - 2025-10-22
 
 ### 🚀 Enhancements
