@@ -85,19 +85,19 @@ breadcrumbsStore.setShowBreadcrumbs(false);
             linkType="list"
           />
 
-          <!-- Create a new pricelist card -->
+          <!-- Create a new price list card -->
           <ContentLinkCard
-            title="Create a new pricelist"
+            title="Create a new price list"
             description="Manage existing wholesale accounts"
-            link="/wholesale/pricelist/new"
+            link="/wholesale/price-list/new"
             linkType="create"
           />
 
-          <!-- Pricelists card -->
+          <!-- Price lists card -->
           <ContentLinkCard
-            title="Pricelists"
+            title="Price lists"
             description="Manage existing wholesale accounts"
-            link="/wholesale/pricelist/list"
+            link="/wholesale/price-list/list"
             linkType="list"
           />
         </div>

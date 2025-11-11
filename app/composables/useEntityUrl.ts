@@ -49,7 +49,7 @@ export const useEntityUrl = (): UseEntityUrlReturnType => {
   const listEntityUrlAlias = computed(() => t('list_entity_url_alias'));
 
   const getEntityName = () => {
-    return pathParts.value.at(-2) || '';
+    return pathParts.value.at(-2)?.replace(/-/g, '_') || '';
   };
 
   const getEntityBasePath = () => {

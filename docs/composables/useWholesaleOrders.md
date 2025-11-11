@@ -21,9 +21,9 @@ const { ordersList, orderColumns, fetchOrders } = useWholesaleOrders();
 
 await fetchOrders(
   orderSelectionQuery,
-  { fields: ['pricelists', 'itemcount'] },
+  { fields: ['priceLists', 'itemcount'] },
   entityId.value,
-  allPricelists.value,
+  allPriceLists.value,
   allaAccounts.value,
   buyersList.value,
 );
@@ -54,7 +54,7 @@ fetchOrders(
   orderSelectionQuery?: OrderBatchQuery,
   orderApiOptions?: OrderApiOptions,
   accountId?: string,
-  allPricelists?: WholesalePricelist[],
+  allPriceLists?: WholesalePriceList[],
   allAccounts?: WholesaleAccount[]
   allBuyers?: WholesaleBuyer[],
 ): Promise<void>
@@ -66,7 +66,7 @@ Fetches orders from the API with filtering and transformation.
   - `orderSelectionQuery`: Query filters for orders
   - `orderApiOptions`: API options (e.g. fields to include)
   - `accountId`: Specific wholesale account ID to fetch orders for
-  - `allPricelists`: Pricelist entities for name resolution, will add pricelists column if provided
+  - `allPriceLists`: Price list entities for name resolution, will add price lists column if provided
   - `allAccounts`: Account entities for name resolution, will add account column if provided
   - `allBuyers`: Buyer entities for name resolution, will add buyer column if provided
 
@@ -77,7 +77,7 @@ Fetches orders from the API with filtering and transformation.
 ```ts
 transformOrdersForList(
   orders: Order[],
-  allPricelists?: WholesalePricelist[],
+  allPriceLists?: WholesalePriceList[],
   allAccounts?: WholesaleAccount[]
   allBuyers?: WholesaleBuyer[],
 ): WholesaleOrder[]
@@ -87,7 +87,7 @@ Transforms raw API orders to display-ready format. Used internally by `fetchOrde
 
 - **Parameters**:
   - `orders`: Raw orders from API
-  - `allPricelists`: Optional pricelist entities for resolution
+  - `allPriceLists`: Optional price list entities for resolution
   - `allAccounts`: Optional account entities for resolution
   - `allBuyers`: Optional buyer entities for resolution
 
@@ -107,12 +107,12 @@ interface UseWholesaleOrdersReturnType {
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
     accountId?: string,
-    allPricelists?: WholesalePricelist[],
+    allPriceLists?: WholesalePriceList[],
     allAccounts?: WholesaleAccount[],
   ) => Promise<void>;
   transformOrdersForList: (
     orders: Order[],
-    allPricelists?: WholesalePricelist[],
+    allPriceLists?: WholesalePriceList[],
     allAccounts?: WholesaleAccount[],
   ) => WholesaleOrder[];
 }

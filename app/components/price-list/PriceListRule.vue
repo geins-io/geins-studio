@@ -5,7 +5,7 @@ const props = withDefaults(
     index: number;
     currency?: string;
     loading?: boolean;
-    lastFieldChanged?: PricelistRuleField;
+    lastFieldChanged?: PriceListRuleField;
     global?: boolean;
   }>(),
   {
@@ -137,7 +137,7 @@ const handleApply = (overwrite: boolean) => {
         size="xs"
         variant="outline"
         @click="handleApply(true)"
-        >{{ $t('wholesale.pricelist_apply_overwrite') }}</Button
+        >{{ $t('wholesale.price_list_apply_overwrite') }}</Button
       >
       <Button
         :disabled="global && mode === 'all'"

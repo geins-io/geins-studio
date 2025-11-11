@@ -4,7 +4,7 @@ import type {
   ColumnOptions,
   OrderBatchQuery,
   BatchQueryResult,
-  WholesalePricelist,
+  WholesalePriceList,
   WholesaleAccount,
   WholesaleBuyer,
 } from '#shared/types';
@@ -18,13 +18,13 @@ interface UseWholesaleOrdersReturnType {
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
     accountId?: string,
-    allPricelists?: WholesalePricelist[],
+    allPriceLists?: WholesalePriceList[],
     allAccounts?: WholesaleAccount[],
     allBuyers?: WholesaleBuyer[],
   ) => Promise<void>;
   transformOrdersForList: (
     orders: Order[],
-    allPricelists?: WholesalePricelist[],
+    allPriceLists?: WholesalePriceList[],
     allAccounts?: WholesaleAccount[],
     allBuyers?: WholesaleBuyer[],
   ) => WholesaleOrder[];
@@ -62,13 +62,13 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
     columnTitles: {
       sumIncVat: 'Sum (inc vat)',
       sumExVat: 'Sum (ex vat)',
-      pricelists: t('pricelist', 2),
+      priceLists: t('price_list', 2),
     },
     columnTypes: {
       sumIncVat: 'currency',
       sumExVat: 'currency',
       created: 'date',
-      pricelists: 'tooltip',
+      priceLists: 'tooltip',
       buyer: 'tooltip',
     },
   };
@@ -94,7 +94,7 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
   // Transform orders from API format to display format
   const transformOrdersForList = (
     orders: Order[],
-    allPricelists?: WholesalePricelist[],
+    allPriceLists?: WholesalePriceList[],
     allAccounts?: WholesaleAccount[],
     allBuyers?: WholesaleBuyer[],
   ): WholesaleOrder[] => {
@@ -112,12 +112,12 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
       ...(order.itemCount && { items: order.itemCount }),
       sumIncVat: convertToPrice(order.sumIncVat, order.currency),
       sumExVat: convertToPrice(order.sumExVat, order.currency),
-      ...(allPricelists && {
-        pricelists: createTooltip({
+      ...(allPriceLists && {
+        priceLists: createTooltip({
           items: order.priceLists,
-          entityName: 'pricelist',
+          entityName: 'price_list',
           formatter: (group) =>
-            `${getEntityNameById(group._id, allPricelists)}`,
+            `${getEntityNameById(group._id, allPriceLists)}`,
           t,
         }),
       }),
@@ -136,7 +136,7 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
     accountId: string = '0',
-    allPricelists?: WholesalePricelist[],
+    allPriceLists?: WholesalePriceList[],
     allAccounts?: WholesaleAccount[],
     allBuyers?: WholesaleBuyer[],
   ): Promise<void> => {
@@ -153,7 +153,7 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
       if (!ordersError.value && ordersData.value) {
         ordersList.value = transformOrdersForList(
           ordersData.value.items,
-          allPricelists,
+          allPriceLists,
           allAccounts,
           allBuyers,
         );

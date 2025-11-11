@@ -1,15 +1,15 @@
-# `usePricelistProductsTable`
+# `usePriceListProductsTable`
 
-The `usePricelistProductsTable` composable provides specialized table column configuration and management for pricelist products. It creates editable columns for pricing data, quantity levels, and price modes with responsive behavior and interactive features.
+The `usePriceListProductsTable` composable provides specialized table column configuration and management for price list products. It creates editable columns for pricing data, volume pricing, and price modes with responsive behavior and interactive features.
 
 :::warning NOTE
-This composable is specifically designed for pricelist product tables and will not be useful for any general purpose tables.
+This composable is specifically designed for price list product tables and will not be useful for any general purpose tables.
 :::
 
 ## Features
 
 - **Editable pricing columns** with blur event handling
-- **Quantity levels management** with expandable interface
+- **Volume pricing management** with expandable interface
 - **Price mode indicators** for different pricing strategies
 - **Responsive column pinning** based on layout space
 - **Integrated actions** for product management
@@ -20,16 +20,16 @@ This composable is specifically designed for pricelist product tables and will n
 ### Basic Usage
 
 ```ts
-const { setupPricelistColumns, getPinnedState } = usePricelistProductsTable();
+const { setupPriceListColumns, getPinnedState } = usePriceListProductsTable();
 
 const vatDescription = computed(() => {
   return entityData.value?.exVat ? t('ex_vat') : t('inc_vat');
 });
 
-const columns: ColumnDef<Product>[] = setupPricelistColumns(
+const columns: ColumnDef<Product>[] = setupPriceListColumns(
   selectedProducts.value,
   vatDescription.value,
-  handleEditQuantityLevels,
+  handleEditVolumePricing,
   handleDeleteProduct,
   handlePriceBlur,
   handleMarginBlur,
@@ -52,52 +52,52 @@ const pinnedState = computed(() => getPinnedState.value);
 
 ## Properties and Methods
 
-### `setupPricelistColumns`
+### `setupPriceListColumns`
 
 ```ts
-setupPricelistColumns(
-  selectedProducts: PricelistProductList[],
+setupPriceListColumns(
+  selectedProducts: PriceListProductList[],
   vatDescription: string,
-  onEditQuantityLevels: (payload: { id: string; name: string }) => void,
+  onEditVolumePricing: (payload: { id: string; name: string }) => void,
   onDeleteProduct: (id: string) => void,
-  onPriceBlur: (value: string | number, row: Row<PricelistProductList>) => void,
-  onMarginBlur: (value: string | number, row: Row<PricelistProductList>) => void,
-  onDiscountBlur: (value: string | number, row: Row<PricelistProductList>) => void,
-): ColumnDef<PricelistProductList>[]
+  onPriceBlur: (value: string | number, row: Row<PriceListProductList>) => void,
+  onMarginBlur: (value: string | number, row: Row<PriceListProductList>) => void,
+  onDiscountBlur: (value: string | number, row: Row<PriceListProductList>) => void,
+): ColumnDef<PriceListProductList>[]
 ```
 
-Creates a complete column configuration for pricelist products with all necessary interactions.
+Creates a complete column configuration for price list products with all necessary interactions.
 
 - **Parameters**:
   - `selectedProducts`: Array of products to display
   - `vatDescription`: VAT status description for labels
-  - `onEditQuantityLevels`: Handler for quantity levels editing
+  - `onEditVolumePricing`: Handler for volume pricing editing
   - `onDeleteProduct`: Handler for product deletion
   - `onPriceBlur`: Handler for price field blur events
   - `onMarginBlur`: Handler for margin field blur events
   - `onDiscountBlur`: Handler for discount field blur events
 
 - **Returns**: Complete array of column definitions
-- **Features**: Editable columns, actions, quantity levels, price modes
+- **Features**: Editable columns, actions, volume pricing, price modes
 
-### `addQuantityLevelsColumn`
+### `addVolumePricingColumn`
 
 ```ts
-addQuantityLevelsColumn(
-  columns: ColumnDef<PricelistProductList>[],
+addVolumePricingColumn(
+  columns: ColumnDef<PriceListProductList>[],
   onEdit: (payload: { id: string; name: string }) => void,
   vatDescription: string,
-): ColumnDef<PricelistProductList>[]
+): ColumnDef<PriceListProductList>[]
 ```
 
-Adds a quantity levels column to an existing column configuration.
+Adds a volume pricing column to an existing column configuration.
 
 - **Parameters**:
   - `columns`: Existing column definitions
-  - `onEdit`: Handler for editing quantity levels
+  - `onEdit`: Handler for editing volume pricing
   - `vatDescription`: VAT status for proper labeling
 
-- **Returns**: Updated column array with quantity levels column
+- **Returns**: Updated column array with volume pricing column
 - **Features**: Custom cell component, fixed sizing, interactive editing
 
 ### `getPinnedState`
@@ -120,32 +120,32 @@ Computed property that returns appropriate column pinning configuration based on
 ## Type Definitions
 
 ```ts
-function usePricelistProductsTable(): UsePricelistProductsTableReturnType;
+function usePriceListProductsTable(): UsePriceListProductsTableReturnType;
 
-interface UsePricelistProductsTableReturnType {
-  setupPricelistColumns: (
-    selectedProducts: PricelistProductList[],
+interface UsePriceListProductsTableReturnType {
+  setupPriceListColumns: (
+    selectedProducts: PriceListProductList[],
     vatDescription: string,
-    onEditQuantityLevels: (payload: { id: string; name: string }) => void,
+    onEditVolumePricing: (payload: { id: string; name: string }) => void,
     onDeleteProduct: (id: string) => void,
     onPriceBlur: (
       value: string | number,
-      row: Row<PricelistProductList>,
+      row: Row<PriceListProductList>,
     ) => void,
     onMarginBlur: (
       value: string | number,
-      row: Row<PricelistProductList>,
+      row: Row<PriceListProductList>,
     ) => void,
     onDiscountBlur: (
       value: string | number,
-      row: Row<PricelistProductList>,
+      row: Row<PriceListProductList>,
     ) => void,
-  ) => ColumnDef<PricelistProductList>[];
-  addQuantityLevelsColumn: (
-    columns: ColumnDef<PricelistProductList>[],
+  ) => ColumnDef<PriceListProductList>[];
+  addVolumePricingColumn: (
+    columns: ColumnDef<PriceListProductList>[],
     onEdit: (payload: { id: string; name: string }) => void,
     vatDescription: string,
-  ) => ColumnDef<PricelistProductList>[];
+  ) => ColumnDef<PriceListProductList>[];
   getPinnedState: ComputedRef<{
     left: never[];
     right: string[];

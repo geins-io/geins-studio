@@ -9,12 +9,12 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 import {
   SelectorSelectionStrategy,
-  type PricelistRuleMode,
-  type PricelistProductList,
-  type PricelistRule,
-  type PricelistProduct,
-  type PricelistRuleField,
-  type ProductPricelistApiOptions,
+  type PriceListRuleMode,
+  type PriceListProductList,
+  type PriceListRule,
+  type PriceListProduct,
+  type PriceListRuleField,
+  type ProductPriceListApiOptions,
 } from '#shared/types';
 
 // =====================================================================================
@@ -23,7 +23,7 @@ import {
 const route = useRoute();
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');
+const { geinsLogError } = useGeinsLog('pages/wholesale/price-list/[id].vue');
 const accountStore = useAccountStore();
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
@@ -60,7 +60,7 @@ const formSchema = toTypedSchema(
 // =====================================================================================
 // ENTITY DATA SETUP
 // =====================================================================================
-const entityBase: ProductPricelistCreate = {
+const entityBase: ProductPriceListCreate = {
   name: '',
   active: false,
   channel: currentChannelId.value || '',
@@ -78,7 +78,7 @@ const entityBase: ProductPricelistCreate = {
 // UI STATE MANAGEMENT
 // =====================================================================================
 // Tabs & Steps
-const tabs = [t('general'), t('wholesale.pricelist_products_pricing')];
+const tabs = [t('general'), t('wholesale.price_list_products_pricing')];
 
 const totalCreateSteps = 2;
 const { currentStep, nextStep, previousStep } =
@@ -98,12 +98,12 @@ const productSelection = ref<SelectorSelectionQueryBase>(
 );
 const productSelector = ref();
 
-// Pricelist base rule input
-const pricelistBaseRuleMode = ref<PricelistRuleMode>('discount');
-const pricelistBaseRuleInput = ref<number>();
+// Price list base rule input
+const priceListBaseRuleMode = ref<PriceListRuleMode>('discount');
+const priceListBaseRuleInput = ref<number>();
 
 // Edited products for form tracking
-const editedProducts = ref<PricelistProduct[]>([]);
+const editedProducts = ref<PriceListProduct[]>([]);
 
 // =====================================================================================
 // PRICELIST PRODUCTS MANAGEMENT
@@ -111,43 +111,43 @@ const editedProducts = ref<PricelistProduct[]>([]);
 
 const {
   transformProductsForList,
-  getPricelistProduct,
-  addToPricelistProducts,
+  getPriceListProduct,
+  addToPriceListProducts,
   convertPriceModeToRuleField,
-} = usePricelistProducts();
+} = usePriceListProducts();
 
-const { setupPricelistColumns, getPinnedState } = usePricelistProductsTable();
+const { setupPriceListColumns, getPinnedState } = usePriceListProductsTable();
 
 const vatDescription = computed(() => {
   return entityData.value?.exVat ? t('ex_vat') : t('inc_vat');
 });
 
-let columns: ColumnDef<PricelistProductList>[] = [];
+let columns: ColumnDef<PriceListProductList>[] = [];
 const pinnedState = computed(() => getPinnedState.value);
 
 const cellEditCallback = (
   value: string | number,
-  row: Row<PricelistProductList>,
-  field: PricelistRuleField,
+  row: Row<PriceListProductList>,
+  field: PriceListRuleField,
 ) => {
-  addToPricelistProducts(
-    getPricelistProduct(row.original._id, Number(value), field),
+  addToPriceListProducts(
+    getPriceListProduct(row.original._id, Number(value), field),
     editedProducts.value,
   );
-  previewPricelist(
+  previewPriceList(
     `Price updated for ${row.original.name} (${row.original._id})`,
   );
 };
 
 const setupColumns = () => {
-  columns = setupPricelistColumns(
+  columns = setupPriceListColumns(
     selectedProducts.value,
     vatDescription.value,
     (payload) => {
-      // On edit quantity levels
+      // On edit volume pricing
       const rules = selectedProducts.value.find(
         (p) => p._id === payload.id,
-      )?.quantityLevels;
+      )?.volumePricing;
       // Filter out quantity 1 rules before editing
       rulesToEdit.value = rules
         ? rules.filter((rule) => rule.quantity !== 1)
@@ -157,13 +157,13 @@ const setupColumns = () => {
       rulesPanelOpen.value = true;
     },
     (id: string) => productSelector.value.removeFromManuallySelected(id),
-    (value: string | number, row: Row<PricelistProductList>) => {
+    (value: string | number, row: Row<PriceListProductList>) => {
       cellEditCallback(value, row, 'price');
     },
-    (value: string | number, row: Row<PricelistProductList>) => {
+    (value: string | number, row: Row<PriceListProductList>) => {
       cellEditCallback(value, row, 'margin');
     },
-    (value: string | number, row: Row<PricelistProductList>) => {
+    (value: string | number, row: Row<PriceListProductList>) => {
       cellEditCallback(value, row, 'discountPercent');
     },
   );
@@ -208,13 +208,13 @@ const {
   deleteEntity,
   parseAndSaveData,
 } = useEntityEdit<
-  ProductPricelistBase,
-  ProductPricelist,
-  ProductPricelistCreate,
-  ProductPricelistUpdate,
-  ProductPricelistApiOptions
+  ProductPriceListBase,
+  ProductPriceList,
+  ProductPriceListCreate,
+  ProductPriceListUpdate,
+  ProductPriceListApiOptions
 >({
-  repository: productApi.pricelist,
+  repository: productApi.priceList,
   validationSchema: formSchema,
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
@@ -247,14 +247,14 @@ const {
       productSelection.value = entity.productSelectionQuery;
     }
     if (entity.rules && entity.rules.length) {
-      const quantityLevels = entity.rules.filter(
+      const volumePricing = entity.rules.filter(
         (r) => r.quantity && r.quantity > 1,
       );
       const baseRule = entity.rules.find((r) => r.quantity === 1);
-      const firstRuleMargin = quantityLevels[0]?.margin;
+      const firstRuleMargin = volumePricing[0]?.margin;
       const baseRuleMargin = baseRule?.margin;
-      actualPricelistRulesMode.value = firstRuleMargin ? 'margin' : 'discount';
-      pricelistBaseRuleMode.value = baseRuleMargin ? 'margin' : 'discount';
+      actualPriceListRulesMode.value = firstRuleMargin ? 'margin' : 'discount';
+      priceListBaseRuleMode.value = baseRuleMargin ? 'margin' : 'discount';
 
       globalRules.value = entity.rules.map((rule) => ({
         _id: rule._id,
@@ -303,8 +303,8 @@ const {
 // PREVIEW PRICELIST
 // =====================================================================================
 
-const { selectedProducts, hasProductSelection, previewPricelist } =
-  usePricelistPreview({
+const { selectedProducts, hasProductSelection, previewPriceList } =
+  usePriceListPreview({
     entityId,
     entityDataUpdate,
     transformProductsForList,
@@ -315,18 +315,18 @@ const { selectedProducts, hasProductSelection, previewPricelist } =
       setOriginalSavedData();
     },
     convertPriceModeToRuleField,
-    getPricelistProduct,
+    getPriceListProduct,
   });
 
 // =====================================================================================
-// RULES & QUANTITY LEVELS MANAGEMENT
+// RULES & VOLUME PRICING MANAGEMENT
 // =====================================================================================
 
 // Rules management
 const {
   globalRules,
   baseRuleLoading,
-  quantityLevelsLoading,
+  volumePricingLoading,
   quantityLevelRules,
   baseRule,
   baseRuleMode,
@@ -344,47 +344,47 @@ const {
   currentOverwriteQuantity,
   overwriteContinueAction,
   removeBaseRulePromptVisible,
-} = usePricelistRules({
+} = usePriceListRules({
   entityDataUpdate,
-  previewPricelist,
+  previewPriceList,
 });
 
-// Quantity levels management
+// Volume pricing management
 const {
   rulesToEdit,
   rulesPanelOpen,
   rulesProductId,
   rulesProductName,
-  actualPricelistRulesMode,
+  actualPriceListRulesMode,
   pendingModeChange,
   rulesModeChangePrompt,
-  pricelistRulesMode,
+  priceListRulesMode,
   handleSaveRules,
   confirmModeChange,
   cancelModeChange,
-} = usePricelistQuantityLevels({
+} = usePriceListVolumePricing({
   globalRules,
   updateEntityRules,
-  previewPricelist,
+  previewPriceList,
 });
 
 // =====================================================================================
 // BASE RULES MANAGEMENT
 // =====================================================================================
 const handleApplyBaseRule = () => {
-  if (pricelistBaseRuleInput.value === undefined || !entityId.value) return;
-  const percentage = pricelistBaseRuleInput.value;
-  const mode = pricelistBaseRuleMode.value;
+  if (priceListBaseRuleInput.value === undefined || !entityId.value) return;
+  const percentage = priceListBaseRuleInput.value;
+  const mode = priceListBaseRuleMode.value;
   applyBaseRule(percentage, mode);
-  pricelistBaseRuleInput.value = undefined;
+  priceListBaseRuleInput.value = undefined;
 };
 
 const handleApplyBaseRuleAndOverwrite = () => {
-  if (pricelistBaseRuleInput.value === undefined || !entityId.value) return;
-  const percentage = pricelistBaseRuleInput.value;
-  const mode = pricelistBaseRuleMode.value;
+  if (priceListBaseRuleInput.value === undefined || !entityId.value) return;
+  const percentage = priceListBaseRuleInput.value;
+  const mode = priceListBaseRuleMode.value;
   applyBaseRuleAndOverwrite(percentage, mode);
-  pricelistBaseRuleInput.value = undefined;
+  priceListBaseRuleInput.value = undefined;
 };
 
 // =====================================================================================
@@ -439,7 +439,7 @@ const handleSave = async () => {
       !hasProductSelection.value,
     );
     if (hasProductSelection.value) {
-      await previewPricelist(undefined, true, false);
+      await previewPriceList(undefined, true, false);
     }
   } catch (error) {
     geinsLogError('error saving entity:', error);
@@ -453,7 +453,7 @@ const copyEntity = async () => {
   loading.value = true;
 
   try {
-    const result = await productApi.pricelist.id(entityId.value).copy();
+    const result = await productApi.priceList.id(entityId.value).copy();
     if (result?._id) {
       const currentPath = route.path;
       const newPath = currentPath.replace(entityId.value, result._id);
@@ -497,7 +497,7 @@ const handleChannelChange = async (value: AcceptableValue) => {
 // DELETE FUNCTIONALITY
 // =====================================================================================
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteEntity, '/wholesale/pricelist/list');
+  useDeleteDialog(deleteEntity, '/wholesale/price-list/list');
 
 // =====================================================================================
 // SUMMARY DATA
@@ -527,28 +527,28 @@ const summary = computed<DataItem[]>(() => {
       entityData.value.channel,
     );
     dataList.push({
-      label: t('wholesale.pricelist_channel'),
+      label: t('wholesale.price_list_channel'),
       value: displayValue,
     });
   }
 
   if (entityData.value?.currency) {
     dataList.push({
-      label: t('wholesale.pricelist_currency'),
+      label: t('wholesale.price_list_currency'),
       value: entityData.value.currency,
     });
   }
 
   dataList.push({
-    label: t('wholesale.pricelist_forced'),
+    label: t('wholesale.price_list_forced'),
     value: entityData.value?.forced ? t('yes') : t('no'),
   });
 
   dataList.push({
-    label: t('wholesale.pricelist_vat_config_label'),
+    label: t('wholesale.price_list_vat_config_label'),
     value: entityData.value?.exVat
-      ? t('wholesale.pricelist_ex_vat')
-      : t('wholesale.pricelist_inc_vat'),
+      ? t('wholesale.price_list_ex_vat')
+      : t('wholesale.price_list_inc_vat'),
   });
 
   if (!createMode.value) {
@@ -578,8 +578,8 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
-  const { data, error, refresh } = await useAsyncData<ProductPricelist>(() =>
-    productApi.pricelist.get(entityId.value, {
+  const { data, error, refresh } = await useAsyncData<ProductPriceList>(() =>
+    productApi.priceList.get(entityId.value, {
       fields: ['rules', 'selectionquery'],
     }),
   );
@@ -598,7 +598,7 @@ if (!createMode.value) {
     const hasSelection = !!data.value.productSelectionQuery;
     await parseAndSaveData(data.value, !hasSelection);
     if (hasSelection) {
-      await previewPricelist(undefined, true, false);
+      await previewPriceList(undefined, true, false);
     }
   }
 
@@ -611,7 +611,7 @@ if (!createMode.value) {
 
       entityDataUpdate.value.productSelectionQuery = newSelection;
 
-      await previewPricelist('Product selection updated');
+      await previewPriceList('Product selection updated');
     },
     { deep: true },
   );
@@ -645,13 +645,13 @@ breadcrumbsStore.setCurrentParent({
   <AlertDialog v-model:open="rulesModeChangePrompt">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle
-          >Your applied quantity levels will be removed!</AlertDialogTitle
-        >
+        <AlertDialogTitle>
+          Your applied price breaks will be removed!
+        </AlertDialogTitle>
         <AlertDialogDescription>
           If you proceed changing price mode to
           <strong>{{ pendingModeChange }}</strong
-          >, your applied quantity levels will be removed.
+          >, your globally applied price breaks will be removed.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
@@ -691,11 +691,11 @@ breadcrumbsStore.setCurrentParent({
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>
-          Product quantity levels will be overwritten!
+          Product volume pricing will be overwritten!
         </AlertDialogTitle>
         <AlertDialogDescription>
           If you proceed to apply and <strong>overwrite</strong>, your manually
-          added quantity levels for quantity
+          added volume pricing for quantity
           <strong>{{ currentOverwriteQuantity }}</strong> in the table below
           will be overwritten.
         </AlertDialogDescription>
@@ -733,12 +733,12 @@ breadcrumbsStore.setCurrentParent({
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
-  <PricelistQtyLevelsPanel
+  <PriceListVolumePricingPanel
     v-model:open="rulesPanelOpen"
-    v-model:pricelist-products="editedProducts"
+    v-model:price-list-products="editedProducts"
     :product-id="rulesProductId"
     :product-name="rulesProductName"
-    :pricelist-id="entityId"
+    :price-list-id="entityId"
     :rules="rulesToEdit"
     :currency="entityData.currency"
     :vat-description="vatDescription"
@@ -804,8 +804,8 @@ breadcrumbsStore.setCurrentParent({
           >
             <ContentEditCard
               v-if="createMode"
-              :title="$t('wholesale.pricelist_vat_config_title')"
-              :description="$t('wholesale.pricelist_vat_config_description')"
+              :title="$t('wholesale.price_list_vat_config_title')"
+              :description="$t('wholesale.price_list_vat_config_description')"
               :step="1"
               :total-steps="totalCreateSteps"
               :create-mode="createMode"
@@ -817,10 +817,10 @@ breadcrumbsStore.setCurrentParent({
                 <FormGrid design="1">
                   <FormField v-slot="{ value, handleChange }" name="vat.exVat">
                     <FormItemSwitch
-                      :label="$t('wholesale.pricelist_enter_prices_ex_vat')"
+                      :label="$t('wholesale.price_list_enter_prices_ex_vat')"
                       :description="
                         $t(
-                          'wholesale.pricelist_enter_prices_ex_vat_description',
+                          'wholesale.price_list_enter_prices_ex_vat_description',
                         )
                       "
                       :model-value="value"
@@ -831,7 +831,7 @@ breadcrumbsStore.setCurrentParent({
               </FormGridWrap>
             </ContentEditCard>
             <ContentEditCard
-              :title="$t('wholesale.pricelist_details_title')"
+              :title="$t('wholesale.price_list_details_title')"
               :step="2"
               :total-steps="totalCreateSteps"
               :create-mode="createMode"
@@ -855,7 +855,7 @@ breadcrumbsStore.setCurrentParent({
                   <FormField v-slot="{ componentField }" name="default.channel">
                     <FormItem>
                       <FormLabel>
-                        {{ $t('wholesale.pricelist_channel') }}
+                        {{ $t('wholesale.price_list_channel') }}
                       </FormLabel>
                       <FormControl>
                         <Select
@@ -889,7 +889,7 @@ breadcrumbsStore.setCurrentParent({
                   >
                     <FormItem>
                       <FormLabel>
-                        {{ $t('wholesale.pricelist_currency') }}
+                        {{ $t('wholesale.price_list_currency') }}
                       </FormLabel>
                       <FormControl>
                         <Select v-bind="componentField" :disabled="!createMode">
@@ -919,7 +919,7 @@ breadcrumbsStore.setCurrentParent({
               <FormGridWrap class="border-t pt-6">
                 <ContentCardHeader
                   :title="
-                    $t('wholesale.pricelist_product_prices_options_title')
+                    $t('wholesale.price_list_product_prices_options_title')
                   "
                   size="md"
                   heading-level="h3"
@@ -930,9 +930,9 @@ breadcrumbsStore.setCurrentParent({
                     name="default.forced"
                   >
                     <FormItemSwitch
-                      :label="$t('wholesale.pricelist_forced')"
+                      :label="$t('wholesale.price_list_forced')"
                       :description="
-                        $t('wholesale.pricelist_override_prices_description')
+                        $t('wholesale.price_list_override_prices_description')
                       "
                       :model-value="value"
                       @update:model-value="handleChange"
@@ -945,9 +945,9 @@ breadcrumbsStore.setCurrentParent({
                     name="default.autoAddProducts"
                   >
                     <FormItemSwitch
-                      :label="$t('wholesale.pricelist_auto_add_products')"
+                      :label="$t('wholesale.price_list_auto_add_products')"
                       :description="
-                        $t('wholesale.pricelist_auto_add_products_description')
+                        $t('wholesale.price_list_auto_add_products_description')
                       "
                       :disabled="true"
                       :model-value="value"
@@ -980,9 +980,9 @@ breadcrumbsStore.setCurrentParent({
           >
             <ContentCard>
               <ContentCardHeader
-                :title="$t('wholesale.pricelist_global_rules_title')"
+                :title="$t('wholesale.price_list_global_rules_title')"
                 :description="
-                  $t('wholesale.pricelist_global_rules_description')
+                  $t('wholesale.price_list_global_rules_description')
                 "
                 size="lg"
                 class="mb-6"
@@ -1000,20 +1000,20 @@ breadcrumbsStore.setCurrentParent({
                   >
                     <TabsTrigger value="base-rule"> Base rule </TabsTrigger>
                     <TabsTrigger value="qty-levels">
-                      Quantity levels
+                      Volume pricing
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent v-if="hasProductSelection" value="base-rule">
-                    <PricelistRulesWrapper
-                      v-model:mode="pricelistBaseRuleMode"
+                    <PriceListRulesWrapper
+                      v-model:mode="priceListBaseRuleMode"
                       title="Base rule"
-                      mode-id="pricelistBaseRuleMode"
+                      mode-id="priceListBaseRuleMode"
                     >
                       <Label class="w-full">
-                        {{ $t(pricelistBaseRuleMode) }}
+                        {{ $t(priceListBaseRuleMode) }}
                       </Label>
                       <Input
-                        v-model.number="pricelistBaseRuleInput"
+                        v-model.number="priceListBaseRuleInput"
                         class="w-full sm:w-48"
                         size="md"
                         :loading="baseRuleLoading"
@@ -1027,7 +1027,7 @@ breadcrumbsStore.setCurrentParent({
                         variant="outline"
                         @click="handleApplyBaseRuleAndOverwrite"
                       >
-                        {{ $t('wholesale.pricelist_apply_overwrite') }}
+                        {{ $t('wholesale.price_list_apply_overwrite') }}
                       </Button>
                       <template #footer>
                         <SelectorTag
@@ -1037,23 +1037,23 @@ breadcrumbsStore.setCurrentParent({
                           @remove="removeBaseRulePromptVisible = true"
                         />
                       </template>
-                    </PricelistRulesWrapper>
+                    </PriceListRulesWrapper>
                   </TabsContent>
                   <TabsContent v-if="hasProductSelection" value="qty-levels">
-                    <PricelistRulesWrapper
-                      v-model:mode="pricelistRulesMode"
-                      title="Quantity levels"
-                      mode-id="pricelistRulesMode"
+                    <PriceListRulesWrapper
+                      v-model:mode="priceListRulesMode"
+                      title="Volume pricing"
+                      mode-id="priceListRulesMode"
                     >
-                      <PricelistRules
-                        v-model:loading="quantityLevelsLoading"
+                      <PriceListRules
+                        v-model:loading="volumePricingLoading"
                         :rules="quantityLevelRules"
-                        :mode="pricelistRulesMode"
+                        :mode="priceListRulesMode"
                         @apply="applyRule"
                         @apply-overwrite="applyAndOverwriteRule"
                         @remove="removeRule"
                       />
-                    </PricelistRulesWrapper>
+                    </PriceListRulesWrapper>
                   </TabsContent>
                 </Tabs>
                 <p

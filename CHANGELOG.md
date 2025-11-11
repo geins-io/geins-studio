@@ -13,7 +13,7 @@
 
 ### 🔄 Refactor
 
-- Split pricelist edit to composables
+- Split price list edit to composables
 - `useColumns` - options and types naming
 
 ### ❤️ Contributors
@@ -22,16 +22,16 @@
 
 ## v0.1.0 - 2025-10-01
 
-This release introduces wholesale accounts and pricelists ([#95](https://github.com/geins-io/geins-studio/pull/95)).
+This release introduces wholesale accounts and price lists ([#95](https://github.com/geins-io/geins-studio/pull/95)).
 
 ### 🚀 Enhancements
 
 - Syncing auth state across tabs ([#51](https://github.com/geins-io/geins-studio/pull/51))
 - Product selector with advanced filtering ([#52](https://github.com/geins-io/geins-studio/pull/52))
-- Wholesale Accounts ([#53](https://github.com/geins-io/geins-studio/pull/53))
+- Wholesale accounts ([#53](https://github.com/geins-io/geins-studio/pull/53))
 - Repository pattern for entities with CRUD operations
-- Wholesale Pricelists ([#54](https://github.com/geins-io/geins-studio/pull/54))
-- Global pricelist rules ([#70](https://github.com/geins-io/geins-studio/pull/70))
+- Wholesale price lists ([#54](https://github.com/geins-io/geins-studio/pull/54))
+- Global price list rules ([#70](https://github.com/geins-io/geins-studio/pull/70))
 - Vercel analytics + insights ([#72](https://github.com/geins-io/geins-studio/pull/72))
 - Account orders tab + start page ([#84](https://github.com/geins-io/geins-studio/pull/84))
 - UI responsive design ([#93](https://github.com/geins-io/geins-studio/pull/93))

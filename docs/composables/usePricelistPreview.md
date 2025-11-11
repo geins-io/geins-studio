@@ -1,14 +1,14 @@
-# `usePricelistPreview`
+# `usePriceListPreview`
 
-The `usePricelistPreview` composable manages pricelist preview functionality, handling product fetching, transformation, and state management for pricelist preview operations. It provides a clean interface for updating and displaying pricelist products with proper error handling and user feedback.
+The `usePriceListPreview` composable manages price list preview functionality, handling product fetching, transformation, and state management for price list preview operations. It provides a clean interface for updating and displaying price list products with proper error handling and user feedback.
 
 :::warning NOTE
-This composable is specifically designed to work alongside other pricelist management composables, like [`usePricelistRules`](usePricelistRules.md) and [`usePricelistQuantityLevels`](usePricelistQuantityLevels.md).
+This composable is specifically designed to work alongside other price list management composables, like [`usePriceListRules`](usePriceListRules.md) and [`usePriceListVolumePricing`](usePriceListVolumePricing.md).
 :::
 
 ## Features
 
-- **Pricelist preview generation** with product fetching and transformation
+- **Price list preview generation** with product fetching and transformation
 - **Product state management** with reactive updates
 - **Custom pricing preservation** during product updates
 - **Loading states and error handling** with user-friendly feedback
@@ -22,70 +22,70 @@ This composable is specifically designed to work alongside other pricelist manag
 const {
   selectedProducts,
   hasProductSelection,
-  previewPricelist,
+  previewPriceList,
   updateInProgress,
-} = usePricelistPreview({
+} = usePriceListPreview({
   entityId,
   entityDataUpdate,
   transformProductsForList,
   setupColumns,
   onUpdateProducts,
   convertPriceModeToRuleField,
-  getPricelistProduct,
+  getPriceListProduct,
 });
 
 // Generate a preview
-await previewPricelist('Products updated successfully');
+await previewPriceList('Products updated successfully');
 ```
 
 ## Options
 
-### `UsePricelistPreviewOptions`
+### `UsePriceListPreviewOptions`
 
 ```ts
-interface UsePricelistPreviewOptions {
+interface UsePriceListPreviewOptions {
   entityId: Ref<string | null>;
-  entityDataUpdate: Ref<ProductPricelistUpdate>;
+  entityDataUpdate: Ref<ProductPriceListUpdate>;
   transformProductsForList: (
-    pricelistProducts: PricelistProduct[],
-    entityData: ProductPricelist,
-  ) => PricelistProductList[];
+    priceListProducts: PriceListProduct[],
+    entityData: ProductPriceList,
+  ) => PriceListProductList[];
   setupColumns?: () => void; // Optional callback for setting up columns
-  onUpdateProducts?: (filteredProducts: PricelistProduct[]) => Promise<void>; // Handle product updates
+  onUpdateProducts?: (filteredProducts: PriceListProduct[]) => Promise<void>; // Handle product updates
   convertPriceModeToRuleField?: (
-    priceMode: PricelistPriceMode | undefined,
-  ) => PricelistRuleField | undefined; // Price mode conversion
-  getPricelistProduct?: (
+    priceMode: PriceListPriceMode | undefined,
+  ) => PriceListRuleField | undefined; // Price mode conversion
+  getPriceListProduct?: (
     productId: string,
     value: number | null,
-    priceMode: PricelistRuleField | undefined,
+    priceMode: PriceListRuleField | undefined,
     staggeredCount: number,
-  ) => PricelistProduct;
+  ) => PriceListProduct;
 }
 ```
 
-- **`entityId`**: Reactive reference to the current pricelist entity ID
-- **`entityDataUpdate`**: Reactive reference to the pricelist entity being updated
+- **`entityId`**: Reactive reference to the current price list entity ID
+- **`entityDataUpdate`**: Reactive reference to the price list entity being updated
 - **`transformProductsForList`**: Function to transform raw products into display format
 - **`setupColumns`**: Callback function for setting up table columns
 - **`onUpdateProducts`**: Handler for updating products during preview
 - **`convertPriceModeToRuleField`**: Function to convert price mode to rule field
-- **`getPricelistProduct`**: Function to create pricelist product objects
+- **`getPriceListProduct`**: Function to create price list product objects
 
 ## Properties and Methods
 
-### `pricelistProducts`
+### `priceListProducts`
 
 ```ts
-const pricelistProducts: Ref<PricelistProduct[]>;
+const priceListProducts: Ref<PriceListProduct[]>;
 ```
 
-Raw pricelist products fetched from the API.
+Raw price list products fetched from the API.
 
 ### `selectedProducts`
 
 ```ts
-const selectedProducts: Ref<PricelistProductList[]>;
+const selectedProducts: Ref<PriceListProductList[]>;
 ```
 
 Transformed products ready for display in tables or lists.
@@ -106,19 +106,19 @@ const hasProductSelection: ComputedRef<boolean>;
 
 Indicates whether any products are currently selected/available in the preview.
 
-### `previewPricelist`
+### `previewPriceList`
 
 ```ts
-previewPricelist(
+previewPriceList(
   feedbackMessage?: string,
   updateProducts?: boolean,
   showFeedback?: boolean,
 ): Promise<void>
 ```
 
-Generates a pricelist preview by fetching products based on the current selection query and rules.
+Generates a price list preview by fetching products based on the current selection query and rules.
 
 - **Parameters**:
-  - `feedbackMessage`: Custom message to show on successful update (default: "Pricelist preview updated.")
+  - `feedbackMessage`: Custom message to show on successful update (default: "Price list preview updated.")
   - `updateProducts`: Whether to update the entity's product list (default: false)
   - `showFeedback`: Whether to show toast notifications (default: true)
