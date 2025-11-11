@@ -127,9 +127,9 @@ export const usePriceListProductsTable =
         id: 'volumePricing',
         enableHiding: false,
         enableSorting: false,
-        size: 82,
-        maxSize: 82,
-        minSize: 82,
+        size: 89,
+        maxSize: 89,
+        minSize: 89,
         cell: ({ row, table }) => {
           const rowData = row.original;
           return h(PriceListVolumePricingCell, {
