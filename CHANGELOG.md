@@ -28,9 +28,9 @@ This release introduces wholesale accounts and price lists ([#95](https://github
 
 - Syncing auth state across tabs ([#51](https://github.com/geins-io/geins-studio/pull/51))
 - Product selector with advanced filtering ([#52](https://github.com/geins-io/geins-studio/pull/52))
-- Wholesale accounts ([#53](https://github.com/geins-io/geins-studio/pull/53))
+- Wholesale Accounts ([#53](https://github.com/geins-io/geins-studio/pull/53))
 - Repository pattern for entities with CRUD operations
-- Wholesale price lists ([#54](https://github.com/geins-io/geins-studio/pull/54))
+- Wholesale Price Lists ([#54](https://github.com/geins-io/geins-studio/pull/54))
 - Global price list rules ([#70](https://github.com/geins-io/geins-studio/pull/70))
 - Vercel analytics + insights ([#72](https://github.com/geins-io/geins-studio/pull/72))
 - Account orders tab + start page ([#84](https://github.com/geins-io/geins-studio/pull/84))
