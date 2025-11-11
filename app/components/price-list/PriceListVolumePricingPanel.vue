@@ -4,10 +4,10 @@ import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = withDefaults(
   defineProps<{
-    rules: PricelistRule[];
+    rules: PriceListRule[];
     productId: string;
     productName: string;
-    pricelistId: string;
+    priceListId: string;
     currency?: string;
     vatDescription?: string;
   }>(),
@@ -15,37 +15,37 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'save', rules: PricelistRule[]): void;
+  (e: 'save', rules: PriceListRule[]): void;
 }>();
 
-const { getPricelistProduct, getNewPricelistProducts } = usePricelistProducts();
+const { getPriceListProduct, getNewPriceListProducts } = usePriceListProducts();
 const { productApi } = useGeinsRepository();
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogError } = useGeinsLog('pages/wholesale/pricelist/[id].vue');
+const { geinsLogError } = useGeinsLog('pages/wholesale/price-list/[id].vue');
 
 const open = defineModel<boolean>('open');
 const propRules = toRef(props, 'rules');
-const pricelistProducts = defineModel<PricelistProduct[]>('pricelistProducts', {
+const priceListProducts = defineModel<PriceListProduct[]>('priceListProducts', {
   default: () => [],
 });
 const rulesValid = ref(true);
 const rulesLoading = ref(false);
 
 const globalRules = computed(() => {
-  return propRules.value.filter((rule: PricelistRule) => rule.global);
+  return propRules.value.filter((rule: PriceListRule) => rule.global);
 });
 const productRules = computed(() => {
-  return propRules.value.filter((rule: PricelistRule) => !rule.global) || [];
+  return propRules.value.filter((rule: PriceListRule) => !rule.global) || [];
 });
 
-const editableRules = ref<PricelistRule[]>(productRules.value);
+const editableRules = ref<PriceListRule[]>(productRules.value);
 
 watch(propRules, (newRules) => {
-  editableRules.value = newRules.filter((rule: PricelistRule) => !rule.global);
+  editableRules.value = newRules.filter((rule: PriceListRule) => !rule.global);
 });
 
-const handleUpdate = useDebounceFn((rules: PricelistRule[]) => {
+const handleUpdate = useDebounceFn((rules: PriceListRule[]) => {
   // If the rules array is shorter, it's likely a removal - handle immediately
   if (rules.length < editableRules.value.length) {
     editableRules.value = rules;
@@ -55,7 +55,7 @@ const handleUpdate = useDebounceFn((rules: PricelistRule[]) => {
 }, 800);
 
 const handleUpdateRule = useDebounceFn(
-  async (payload: { index: number; rule: PricelistRule }) => {
+  async (payload: { index: number; rule: PriceListRule }) => {
     try {
       rulesLoading.value = true;
       const valueType = payload.rule.lastFieldChanged || 'price';
@@ -66,8 +66,8 @@ const handleUpdateRule = useDebounceFn(
         ...(valueType === 'margin' && { margin: value }),
         ...(valueType === 'discountPercent' && { discountPercent: value }),
       };
-      const previewPrice = await productApi.pricelist
-        .id(props.pricelistId)
+      const previewPrice = await productApi.priceList
+        .id(props.priceListId)
         .previewPrice(previewProduct);
 
       // Create a new array to ensure reactivity
@@ -99,7 +99,7 @@ const handleCancel = () => {
 };
 const handleSave = () => {
   rulesValid.value = true;
-  const newRules: (PricelistProduct | undefined)[] = editableRules.value.map(
+  const newRules: (PriceListProduct | undefined)[] = editableRules.value.map(
     (rule) => {
       const valueType = rule.lastFieldChanged || 'price';
       const value = Number(rule[valueType]);
@@ -108,7 +108,7 @@ const handleSave = () => {
         return undefined;
       }
 
-      const product = getPricelistProduct(
+      const product = getPriceListProduct(
         props.productId,
         value,
         valueType,
@@ -123,21 +123,21 @@ const handleSave = () => {
     return;
   }
 
-  const filteredNewRules: PricelistProduct[] = newRules.filter(
+  const filteredNewRules: PriceListProduct[] = newRules.filter(
     (rule) => rule !== undefined,
   );
-  pricelistProducts.value = getNewPricelistProducts(
+  priceListProducts.value = getNewPriceListProducts(
     filteredNewRules,
-    pricelistProducts.value,
+    priceListProducts.value,
     props.productId,
   );
 
-  emit('save', pricelistProducts.value);
+  emit('save', priceListProducts.value);
   open.value = false;
   rulesValid.value = true;
 };
 
-const handleRemove = async (rule: PricelistRule) => {
+const handleRemove = async (rule: PriceListRule) => {
   const index = editableRules.value.findIndex(
     (r) =>
       r.quantity === rule.quantity &&
@@ -160,19 +160,19 @@ const handleRemove = async (rule: PricelistRule) => {
     </SheetTrigger>
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>Quantity levels</SheetTitle>
+        <SheetTitle>Volume pricing</SheetTitle>
         <SheetDescription>
-          Add quantity based price levels for <strong>{{ productName }}</strong>
+          Add quantity-based price breaks for <strong>{{ productName }}</strong>
         </SheetDescription>
       </SheetHeader>
       <SheetBody>
         <ContentCardHeader
           size="sm"
-          title="Global quantity levels"
-          description="These price levels are applied globally to all products"
+          title="Global volume pricing"
+          description="These price breaks apply to all products in this price list."
           class="mb-4"
         />
-        <PricelistRules
+        <PriceListRules
           v-if="globalRules.length"
           mode="all"
           :rules="globalRules"
@@ -181,15 +181,15 @@ const handleRemove = async (rule: PricelistRule) => {
           :currency="currency"
         />
         <p v-else class="text-muted-foreground text-sm italic">
-          No global quantity levels defined.
+          No global price breaks defined.
         </p>
         <ContentCardHeader
           size="sm"
-          title="Product quantity levels"
-          description="These price levels are applied only to this product. If you add a level with the same quantity as a global level, the global price level will be overridden."
+          title="Product volume pricing"
+          description="These price breaks apply only to this product. If you add a price break with the same quantity as a global break, it will override the global one."
           class="mt-6 mb-4"
         />
-        <PricelistRules
+        <PriceListRules
           v-model:loading="rulesLoading"
           mode="all"
           :show-loading="true"
@@ -207,7 +207,7 @@ const handleRemove = async (rule: PricelistRule) => {
           type="negative"
           class="mt-10"
         >
-          <template #title> Check your quantity levels and try again </template>
+          <template #title> Check your price breaks and try again </template>
           <template #description>
             Quantity must be more than 1 and at least one value must be present
           </template>

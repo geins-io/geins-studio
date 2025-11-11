@@ -216,7 +216,7 @@ export interface CategoryTree extends Category {
   children: CategoryTree[];
 }
 
-export interface ProductPricelistBase {
+export interface ProductPriceListBase {
   channel: string;
   currency: string;
   identifier?: string;
@@ -226,23 +226,23 @@ export interface ProductPricelistBase {
   exVat: boolean;
   autoAddProducts: boolean;
   forced: boolean;
-  rules?: PricelistRule[];
+  rules?: PriceListRule[];
   productSelectionQuery?: SelectorSelectionQueryBase;
 }
 
-export interface ProductPricelistCreate
-  extends CreateEntity<ProductPricelistBase> {
-  products?: PricelistProduct[];
+export interface ProductPriceListCreate
+  extends CreateEntity<ProductPriceListBase> {
+  products?: PriceListProduct[];
 }
-export interface ProductPricelistUpdate
-  extends UpdateEntity<ProductPricelistBase> {
-  products?: PricelistProduct[];
+export interface ProductPriceListUpdate
+  extends UpdateEntity<ProductPriceListBase> {
+  products?: PriceListProduct[];
 }
-export interface ProductPricelist extends ResponseEntity<ProductPricelistBase> {
-  products?: BatchQueryResult<PricelistProduct>;
+export interface ProductPriceList extends ResponseEntity<ProductPriceListBase> {
+  products?: BatchQueryResult<PriceListProduct>;
 }
 
-export type ProductPricelistFieldsFilter =
+export type ProductPriceListFieldsFilter =
   | 'all'
   | 'default'
   | 'products'
@@ -250,13 +250,13 @@ export type ProductPricelistFieldsFilter =
   | 'selectionquery'
   | 'productinfo';
 
-export interface ProductPricelistApiOptions
-  extends ApiOptions<ProductPricelistFieldsFilter> {
+export interface ProductPriceListApiOptions
+  extends ApiOptions<ProductPriceListFieldsFilter> {
   pageSize?: string;
   defaultLocale?: string;
 }
 
-export interface PricelistProduct {
+export interface PriceListProduct {
   _id?: string;
   productId: string;
   name?: string;
@@ -267,43 +267,43 @@ export interface PricelistProduct {
   discountPercent?: number;
   ruleId?: string;
   staggeredCount: number;
-  priceMode?: PricelistPriceMode;
+  priceMode?: PriceListPriceMode;
   purchasePrice?: number;
   purchasePriceCurrency?: string;
   delete?: boolean;
 }
 
-export interface ProductPricelistProductApiOptions
-  extends ApiOptions<ProductPricelistFieldsFilter> {
+export interface ProductPriceListProductApiOptions
+  extends ApiOptions<ProductPriceListFieldsFilter> {
   defaultLocale?: string;
 }
 
-export interface PricelistProductPreview {
+export interface PriceListProductPreview {
   productId: string;
   price?: number;
   margin?: number;
   discountPercent?: number;
 }
 
-export interface PricelistProductPreviewResponse {
+export interface PriceListProductPreviewResponse {
   productId: string;
   price: number;
   margin: number;
   discountPercent: number;
 }
 
-export interface PricelistProductList extends EntityBaseWithName {
+export interface PriceListProductList extends EntityBaseWithName {
   thumbnail: string;
   purchasePrice: Price;
   regularPrice: Price;
   listPrice?: Price;
   discount: number;
   margin: number;
-  quantityLevels: PricelistRule[];
-  priceMode: PricelistPriceMode;
+  volumePricing: PriceListRule[];
+  priceMode: PriceListPriceMode;
 }
 
-export interface PricelistRule {
+export interface PriceListRule {
   _id?: string;
   internalId?: string; // Internal ID for tracking rules in UI
   quantity?: number;
@@ -312,14 +312,14 @@ export interface PricelistRule {
   price?: number;
   applied?: boolean;
   global?: boolean;
-  lastFieldChanged?: PricelistRuleField;
+  lastFieldChanged?: PriceListRuleField;
 }
 
-export type PricelistRuleField = 'margin' | 'discountPercent' | 'price';
+export type PriceListRuleField = 'margin' | 'discountPercent' | 'price';
 
-export type PricelistRuleMode = 'margin' | 'discount';
+export type PriceListRuleMode = 'margin' | 'discount';
 
-export type PricelistPriceMode =
+export type PriceListPriceMode =
   | 'fixed'
   | 'margin'
   | 'discount'

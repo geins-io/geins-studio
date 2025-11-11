@@ -2,7 +2,7 @@
 const _props = defineProps<{
   id: string;
   name: string;
-  quantityLevels: PricelistRule[];
+  volumePricing: PriceListRule[];
   className?: string;
   vatDescription: string;
 }>();
@@ -15,11 +15,11 @@ const emit = defineEmits<{
   <div :class="cn(className, 'pl-5')">
     <div class="flex w-full items-center justify-center">
       <div
-        v-if="quantityLevels.length > 0"
+        v-if="volumePricing.length > 0"
         class="flex w-full items-center justify-between gap-2"
       >
         <ContentTextTooltip>
-          {{ quantityLevels.length }}
+          {{ volumePricing.length }}
           <template #tooltip>
             <div>
               <table class="text-xs">
@@ -35,7 +35,7 @@ const emit = defineEmits<{
                 </thead>
                 <tbody>
                   <tr
-                    v-for="(rule, index) in quantityLevels"
+                    v-for="(rule, index) in volumePricing"
                     :key="index"
                     class="text-muted-foreground"
                   >

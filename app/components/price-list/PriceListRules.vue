@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
-  rules: PricelistRule[];
+  rules: PriceListRule[];
   mode: 'margin' | 'discount' | 'all';
   currency?: string;
   disabled?: boolean;
@@ -9,9 +9,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'apply' | 'apply-overwrite' | 'remove', rule: PricelistRule): void;
-  (e: 'update', rules: PricelistRule[]): void;
-  (e: 'update-rule', payload: { index: number; rule: PricelistRule }): void;
+  (e: 'apply' | 'apply-overwrite' | 'remove', rule: PriceListRule): void;
+  (e: 'update', rules: PriceListRule[]): void;
+  (e: 'update-rule', payload: { index: number; rule: PriceListRule }): void;
 }>();
 
 const rules = toRef(props, 'rules');
@@ -21,7 +21,7 @@ const loadingIndex = ref<number | null>(null);
 // Flag to prevent emitting updates when syncing from props
 const syncingFromProps = ref(false);
 
-const localRules = ref<PricelistRule[]>(
+const localRules = ref<PriceListRule[]>(
   rules.value.map((rule) => ({
     ...rule,
     applied: true,
@@ -31,7 +31,7 @@ const localRules = ref<PricelistRule[]>(
 
 watch(
   localRules,
-  (newRules: PricelistRule[]) => {
+  (newRules: PriceListRule[]) => {
     if (!syncingFromProps.value) {
       emit('update', newRules);
     }
@@ -50,7 +50,7 @@ watch(rules, async (newRules) => {
   syncingFromProps.value = false;
 });
 
-const getEmptyRule = (): PricelistRule => ({
+const getEmptyRule = (): PriceListRule => ({
   quantity: undefined,
   margin: undefined,
   discountPercent: undefined,
@@ -67,7 +67,7 @@ const addRule = () => {
 
 const apply = async (
   index: number,
-  rule: PricelistRule,
+  rule: PriceListRule,
   overwrite: boolean,
 ): Promise<void> => {
   loadingIndex.value = index;
@@ -81,8 +81,8 @@ const apply = async (
 
 const handleUpdate = (
   index: number,
-  rule: PricelistRule,
-  field: PricelistRuleField,
+  rule: PriceListRule,
+  field: PriceListRuleField,
 ): void => {
   rule.lastFieldChanged = field;
   loadingIndex.value = index;
@@ -92,7 +92,7 @@ const handleUpdate = (
   emit('update-rule', { index, rule });
 };
 
-const remove = (rule: PricelistRule): void => {
+const remove = (rule: PriceListRule): void => {
   if (!rule.applied) {
     const ruleIndex = localRules.value.findIndex(
       (r) => r.internalId === rule.internalId,
@@ -121,15 +121,17 @@ const thClasses = 'text-xs font-bold text-left py-2';
               {{ $t('discount') }}
             </th>
             <th v-if="mode === 'all'" :class="thClasses">
-              {{ $t('wholesale.pricelist_price') }} ({{ props.vatDescription }})
+              {{ $t('wholesale.price_list_price') }} ({{
+                props.vatDescription
+              }})
             </th>
             <th v-else :class="thClasses">
-              {{ $t('wholesale.pricelist_applied') }}
+              {{ $t('wholesale.price_list_applied') }}
             </th>
           </tr>
         </thead>
         <tbody>
-          <PricelistRule
+          <PriceListRule
             v-for="(rule, index) in localRules"
             :key="rule.internalId"
             v-model:quantity="rule.quantity"
@@ -161,7 +163,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
       @click="addRule"
     >
       <LucidePlus class="mr-2 size-3.5" />
-      {{ $t('wholesale.pricelist_add_level') }}
+      {{ $t('wholesale.price_list_add_break') }}
     </Button>
   </div>
 </template>

@@ -10,8 +10,8 @@ export const navigation: NavigationItem[] = [
         href: '/wholesale/account/list',
       },
       {
-        label: 'Pricelists',
-        href: '/wholesale/pricelist/list',
+        label: 'Price lists',
+        href: '/wholesale/price-list/list',
       },
     ],
   },
@@ -184,8 +184,8 @@ export const navigationDummy: NavigationItem[] = [
         href: '/wholesale/order/list',
       },
       {
-        label: 'Pricelists',
-        href: '/wholesale/pricelist/list',
+        label: 'Price lists',
+        href: '/wholesale/price-list/list',
       },
     ],
   },

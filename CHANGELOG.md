@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.1.2 - 2025-11-11
+
+### 🔄 Refactor
+
+- Standardized naming conventions for price lists and volume pricing ([#100](https://github.com/geins-io/geins-studio/pull/100))
+
+### 🐛 Bug Fixes
+
+- Price mode change confirmation shown when it should
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.1.1 - 2025-10-22
 
 ### 🚀 Enhancements
@@ -13,7 +27,7 @@
 
 ### 🔄 Refactor
 
-- Split pricelist edit to composables
+- Split price list edit to composables
 - `useColumns` - options and types naming
 
 ### ❤️ Contributors
@@ -22,7 +36,7 @@
 
 ## v0.1.0 - 2025-10-01
 
-This release introduces wholesale accounts and pricelists ([#95](https://github.com/geins-io/geins-studio/pull/95)).
+This release introduces wholesale accounts and price lists ([#95](https://github.com/geins-io/geins-studio/pull/95)).
 
 ### 🚀 Enhancements
 
@@ -30,8 +44,8 @@ This release introduces wholesale accounts and pricelists ([#95](https://github.
 - Product selector with advanced filtering ([#52](https://github.com/geins-io/geins-studio/pull/52))
 - Wholesale Accounts ([#53](https://github.com/geins-io/geins-studio/pull/53))
 - Repository pattern for entities with CRUD operations
-- Wholesale Pricelists ([#54](https://github.com/geins-io/geins-studio/pull/54))
-- Global pricelist rules ([#70](https://github.com/geins-io/geins-studio/pull/70))
+- Wholesale Price Lists ([#54](https://github.com/geins-io/geins-studio/pull/54))
+- Global price list rules ([#70](https://github.com/geins-io/geins-studio/pull/70))
 - Vercel analytics + insights ([#72](https://github.com/geins-io/geins-studio/pull/72))
 - Account orders tab + start page ([#84](https://github.com/geins-io/geins-studio/pull/84))
 - UI responsive design ([#93](https://github.com/geins-io/geins-studio/pull/93))

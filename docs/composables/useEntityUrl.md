@@ -173,7 +173,7 @@ The composable follows this URL pattern:
 Where:
 
 - `parent` is the parent route segment (e.g., "pim", "account", "wholesale")
-- `entity` is the entity name (e.g., "product", "user", "pricelist")
+- `entity` is the entity name (e.g., "product", "user", "price_list")
 - `id` is the specific entity identifier
 
 ## Type Definitions

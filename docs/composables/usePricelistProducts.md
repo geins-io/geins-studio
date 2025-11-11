@@ -1,15 +1,15 @@
-# `usePricelistProducts`
+# `usePriceListProducts`
 
-The `usePricelistProducts` composable provides utilities for managing pricelist products and transformations. It handles converting between different product formats, managing quantity-based pricing rules, and facilitating product pricing workflows.
+The `usePriceListProducts` composable provides utilities for managing price list products and transformations. It handles converting between different product formats, managing quantity-based pricing rules, and facilitating product pricing workflows.
 
 :::warning NOTE
-These features are specifically made for pricelists and wholesale pricing management. They are not general purpose product management tools.
+These features are specifically made for price lists and wholesale pricing management. They are not general purpose product management tools.
 :::
 
 ## Features
 
 - **Product transformation** for different display formats
-- **Quantity level management** with pricing rules
+- **Price break management** for volume pricing
 - **Flexible pricing structures** with margin, discount, and fixed pricing
 
 ## Usage
@@ -19,17 +19,17 @@ These features are specifically made for pricelists and wholesale pricing manage
 ```ts
 const {
   transformProductsForList,
-  getQuantityLevels,
-  getPricelistProduct,
-  addToPricelistProducts,
-  getNewPricelistProducts,
+  getVolumePricing,
+  getPriceListProduct,
+  addToPriceListProducts,
+  getNewPriceListProducts,
   convertPriceModeToRuleField,
-} = usePricelistProducts();
+} = usePriceListProducts();
 
 // Transform products for display
 const displayProducts = transformProductsForList(
-  pricelistProducts,
-  pricelistEntity,
+  priceListProducts,
+  priceListEntity,
 );
 ```
 
@@ -39,52 +39,52 @@ const displayProducts = transformProductsForList(
 
 ```ts
 transformProductsForList(
-  pricelistProducts: PricelistProduct[],
-  entityData: ProductPricelist
-): PricelistProductList[]
+  priceListProducts: PriceListProduct[],
+  entityData: ProductPriceList
+): PriceListProductList[]
 ```
 
-Transforms raw pricelist products into a format suitable for display in lists or tables.
+Transforms raw price list products into a format suitable for display in lists or tables.
 
 - **Parameters**:
-  - `pricelistProducts`: Array of raw pricelist products
-  - `entityData`: Pricelist entity containing currency and settings
+  - `priceListProducts`: Array of raw price list products
+  - `entityData`: Price list entity containing currency and settings
 
 - **Returns**: Array of transformed products with display-ready properties
 - **Features**: Filters base quantities, converts prices, adds thumbnails
 
-### `getQuantityLevels`
+### `getVolumePricing`
 
 ```ts
-getQuantityLevels(
+getVolumePricing(
   productId: string,
-  products: PricelistProduct[],
-  entityData: ProductPricelist
-): PricelistRule[]
+  products: PriceListProduct[],
+  entityData: ProductPriceList
+): PriceListRule[]
 ```
 
 Extracts and formats quantity-based pricing levels for a specific product.
 
 - **Parameters**:
   - `productId`: Target product identifier
-  - `products`: Array of all pricelist products
-  - `entityData`: Pricelist entity data
+  - `products`: Array of all price list products
+  - `entityData`: Price list entity data
 
 - **Returns**: Sorted array of quantity-based pricing rules
 - **Features**: Filters by product ID, excludes base quantities, sorts by quantity
 
-### `getPricelistProduct`
+### `getPriceListProduct`
 
 ```ts
-getPricelistProduct(
+getPriceListProduct(
   productId: string,
   value: number | null,
-  valueType: PricelistRuleField | undefined,
+  valueType: PriceListRuleField | undefined,
   quantity?: number
-): PricelistProduct
+): PriceListProduct
 ```
 
-Creates a pricelist product object with the specified pricing rule.
+Creates a price list product object with the specified pricing rule.
 
 - **Parameters**:
   - `productId`: Product identifier
@@ -92,35 +92,35 @@ Creates a pricelist product object with the specified pricing rule.
   - `valueType`: Type of pricing rule ('price', 'margin', 'discountPercent')
   - `quantity`: Quantity threshold (default: 1)
 
-- **Returns**: Formatted pricelist product object
+- **Returns**: Formatted price list product object
 - **Features**: Conditional property setting, flexible pricing types
 
-### `addToPricelistProducts`
+### `addToPriceListProducts`
 
 ```ts
-addToPricelistProducts(
-  product: PricelistProduct,
-  pricelistProducts: PricelistProduct[]
+addToPriceListProducts(
+  product: PriceListProduct,
+  priceListProducts: PriceListProduct[]
 ): void
 ```
 
-Adds or updates a product in the pricelist products array.
+Adds or updates a product in the price list products array.
 
 - **Parameters**:
   - `product`: Product to add or update
-  - `pricelistProducts`: Target array (modified in place)
+  - `priceListProducts`: Target array (modified in place)
 
 - **Behavior**: Updates existing entries or adds new ones
 - **Matching**: Based on product ID and staggered count
 
-### `getNewPricelistProducts`
+### `getNewPriceListProducts`
 
 ```ts
-getNewPricelistProducts(
-  newProducts: PricelistProduct[],
-  currentProducts: PricelistProduct[],
+getNewPriceListProducts(
+  newProducts: PriceListProduct[],
+  currentProducts: PriceListProduct[],
   productId: string
-): PricelistProduct[]
+): PriceListProduct[]
 ```
 
 Merges new products with existing ones for a specific product ID.
@@ -137,8 +137,8 @@ Merges new products with existing ones for a specific product ID.
 
 ```ts
 convertPriceModeToRuleField(
-  priceMode?: PricelistPriceMode
-): PricelistRuleField | undefined
+  priceMode?: PriceListPriceMode
+): PriceListRuleField | undefined
 ```
 
 Converts a price mode enumeration to the corresponding rule field type.
@@ -156,57 +156,69 @@ Converts a price mode enumeration to the corresponding rule field type.
 ## Type Definitions
 
 ```ts
-function usePricelistProducts(): UsePricelistProductsReturnType;
+function usePriceListProducts(): UsePriceListProductsReturnType;
 
-interface UsePricelistProductsReturnType {
+interface UsePriceListProductsReturnType {
   transformProductsForList: (
-    pricelistProducts: PricelistProduct[],
-    entityData: ProductPricelist,
-  ) => PricelistProductList[];
-  getQuantityLevels: (
+    priceListProducts: PriceListProduct[],
+    entityData: ProductPriceList,
+  ) => PriceListProductList[];
+  getVolumePricing: (
     productId: string,
-    products: PricelistProduct[],
-    entityData: ProductPricelist,
-  ) => PricelistRule[];
-  getPricelistProduct: (
+    products: PriceListProduct[],
+    entityData: ProductPriceList,
+  ) => PriceListRule[];
+  getPriceListProduct: (
     productId: string,
     value: number | null,
-    valueType: PricelistRuleField | undefined,
+    valueType: PriceListRuleField | undefined,
     quantity?: number,
-  ) => PricelistProduct;
-  addToPricelistProducts: (
-    product: PricelistProduct,
-    pricelistProducts: PricelistProduct[],
+  ) => PriceListProduct;
+  addToPriceListProducts: (
+    product: PriceListProduct,
+    priceListProducts: PriceListProduct[],
   ) => void;
-  getNewPricelistProducts: (
-    newProducts: PricelistProduct[],
-    currentProducts: PricelistProduct[],
+  getNewPriceListProducts: (
+    newProducts: PriceListProduct[],
+    currentProducts: PriceListProduct[],
     productId: string,
-  ) => PricelistProduct[];
+  ) => PriceListProduct[];
   convertPriceModeToRuleField: (
-    priceMode?: PricelistPriceMode,
-  ) => PricelistRuleField | undefined;
+    priceMode?: PriceListPriceMode,
+  ) => PriceListRuleField | undefined;
 }
 
-interface PricelistRule {
-  quantity: number;
-  price?: number;
+interface PriceListRule {
+  _id?: string;
+  internalId?: string;
+  quantity?: number;
   margin?: number;
   discountPercent?: number;
-  global: boolean;
-  lastFieldChanged?: PricelistRuleField;
+  price?: number;
+  applied?: boolean;
+  global?: boolean;
+  lastFieldChanged?: PriceListRuleField;
 }
 
-interface PricelistProductList {
+interface PriceListProductList {
   _id: string;
   name: string;
   thumbnail: string;
-  purchasePrice: string;
-  regularPrice: string;
-  listPrice: string;
+  purchasePrice: Price;
+  regularPrice: Price;
+  listPrice?: Price;
   discount: number;
   margin: number;
-  quantityLevels: PricelistRule[];
-  priceMode: string;
+  volumePricing: PriceListRule[];
+  priceMode: PriceListPriceMode;
 }
+
+type PriceListPriceMode =
+  | 'fixed'
+  | 'margin'
+  | 'discount'
+  | 'rule'
+  | 'auto'
+  | 'autoRule'
+  | 'autoFixed';
 ```

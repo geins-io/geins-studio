@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { PricelistRuleMode } from '#shared/types';
+import type { PriceListRuleMode } from '#shared/types';
 
 const _props = defineProps<{
   title: string;
   modeId: string;
 }>();
 
-const mode = defineModel<PricelistRuleMode>('mode', { required: true });
+const mode = defineModel<PriceListRuleMode>('mode', { required: true });
 </script>
 
 <template>

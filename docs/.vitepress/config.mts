@@ -114,24 +114,24 @@ export default defineConfig({
             text: 'Wholesale',
             items: [
               {
-                text: 'usePricelistProducts',
-                link: '/composables/usePricelistProducts.md',
+                text: 'usePriceListProducts',
+                link: '/composables/usePriceListProducts.md',
               },
               {
-                text: 'usePricelistProductsTable',
-                link: '/composables/usePricelistProductsTable.md',
+                text: 'usePriceListProductsTable',
+                link: '/composables/usePriceListProductsTable.md',
               },
               {
-                text: 'usePricelistPreview',
-                link: '/composables/usePricelistPreview.md',
+                text: 'usePriceListPreview',
+                link: '/composables/usePriceListPreview.md',
               },
               {
-                text: 'usePricelistQuantityLevels',
-                link: '/composables/usePricelistQuantityLevels.md',
+                text: 'usePriceListQuantityLevels',
+                link: '/composables/usePriceListQuantityLevels.md',
               },
               {
-                text: 'usePricelistRules',
-                link: '/composables/usePricelistRules.md',
+                text: 'usePriceListRules',
+                link: '/composables/usePriceListRules.md',
               },
               { text: 'useWholesale', link: '/composables/useWholesale.md' },
               {
