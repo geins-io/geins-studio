@@ -47,7 +47,7 @@ interface UsePriceListPreviewOptions {
   entityId: Ref<string | null>;
   entityDataUpdate: Ref<ProductPriceListUpdate>;
   transformProductsForList: (
-    price listProducts: PriceListProduct[],
+    priceListProducts: PriceListProduct[],
     entityData: ProductPriceList,
   ) => PriceListProductList[];
   setupColumns?: () => void; // Optional callback for setting up columns
@@ -77,7 +77,7 @@ interface UsePriceListPreviewOptions {
 ### `priceListProducts`
 
 ```ts
-const price listProducts: Ref<PriceListProduct[]>;
+const priceListProducts: Ref<PriceListProduct[]>;
 ```
 
 Raw price list products fetched from the API.

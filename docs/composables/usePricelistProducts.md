@@ -28,8 +28,8 @@ const {
 
 // Transform products for display
 const displayProducts = transformProductsForList(
-  price listProducts,
-  price listEntity,
+  priceListProducts,
+  priceListEntity,
 );
 ```
 
@@ -39,7 +39,7 @@ const displayProducts = transformProductsForList(
 
 ```ts
 transformProductsForList(
-  price listProducts: PriceListProduct[],
+  priceListProducts: PriceListProduct[],
   entityData: ProductPriceList
 ): PriceListProductList[]
 ```
@@ -100,7 +100,7 @@ Creates a price list product object with the specified pricing rule.
 ```ts
 addToPriceListProducts(
   product: PriceListProduct,
-  price listProducts: PriceListProduct[]
+  priceListProducts: PriceListProduct[]
 ): void
 ```
 
@@ -160,7 +160,7 @@ function usePriceListProducts(): UsePriceListProductsReturnType;
 
 interface UsePriceListProductsReturnType {
   transformProductsForList: (
-    price listProducts: PriceListProduct[],
+    priceListProducts: PriceListProduct[],
     entityData: ProductPriceList,
   ) => PriceListProductList[];
   getVolumePricing: (
@@ -176,7 +176,7 @@ interface UsePriceListProductsReturnType {
   ) => PriceListProduct;
   addToPriceListProducts: (
     product: PriceListProduct,
-    price listProducts: PriceListProduct[],
+    priceListProducts: PriceListProduct[],
   ) => void;
   getNewPriceListProducts: (
     newProducts: PriceListProduct[],
@@ -189,11 +189,14 @@ interface UsePriceListProductsReturnType {
 }
 
 interface PriceListRule {
-  quantity: number;
-  price?: number;
+  _id?: string;
+  internalId?: string;
+  quantity?: number;
   margin?: number;
   discountPercent?: number;
-  global: boolean;
+  price?: number;
+  applied?: boolean;
+  global?: boolean;
   lastFieldChanged?: PriceListRuleField;
 }
 
@@ -201,12 +204,21 @@ interface PriceListProductList {
   _id: string;
   name: string;
   thumbnail: string;
-  purchasePrice: string;
-  regularPrice: string;
-  listPrice: string;
+  purchasePrice: Price;
+  regularPrice: Price;
+  listPrice?: Price;
   discount: number;
   margin: number;
   volumePricing: PriceListRule[];
-  priceMode: string;
+  priceMode: PriceListPriceMode;
 }
+
+type PriceListPriceMode =
+  | 'fixed'
+  | 'margin'
+  | 'discount'
+  | 'rule'
+  | 'auto'
+  | 'autoRule'
+  | 'autoFixed';
 ```

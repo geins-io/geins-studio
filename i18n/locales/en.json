@@ -250,7 +250,7 @@
     "price_list_ex_vat": "Ex VAT",
     "price_list_inc_vat": "Inc VAT",
     "price_list_apply_overwrite": "Apply and overwrite",
-    "price_list_add_break": "Add break",
+    "price_list_add_break": "Add price break",
     "price_list_vol_pricing": "Vol. pricing",
     "price_list_price": "Price list price",
     "no_price_lists_connected": "No price lists are connected to this account",

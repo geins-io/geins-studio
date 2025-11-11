@@ -319,7 +319,7 @@ const { selectedProducts, hasProductSelection, previewPriceList } =
   });
 
 // =====================================================================================
-// RULES & QUANTITY LEVELS MANAGEMENT
+// RULES & VOLUME PRICING MANAGEMENT
 // =====================================================================================
 
 // Rules management
@@ -645,13 +645,13 @@ breadcrumbsStore.setCurrentParent({
   <AlertDialog v-model:open="rulesModeChangePrompt">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle
-          >Your applied volume pricing will be removed!</AlertDialogTitle
-        >
+        <AlertDialogTitle>
+          Your applied price breaks will be removed!
+        </AlertDialogTitle>
         <AlertDialogDescription>
           If you proceed changing price mode to
           <strong>{{ pendingModeChange }}</strong
-          >, your applied volume pricing will be removed.
+          >, your globally applied price breaks will be removed.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>

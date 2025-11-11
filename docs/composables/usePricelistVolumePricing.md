@@ -1,6 +1,6 @@
 # `usePriceListVolumePricing`
 
-The `usePriceListVolumePricing` composable manages product-specific quantity level pricing rules and handles pricing mode changes with proper user confirmation prompts. It provides state management for the volume pricing editing panel and ensures safe mode transitions.
+The `usePriceListVolumePricing` composable manages product-specific price break pricing rules and handles pricing mode changes with proper user confirmation prompts. It provides state management for the volume pricing editing panel and ensures safe mode transitions.
 
 :::warning NOTE
 This composable is specifically designed to work alongside other price list management composables, like [`usePriceListRules`](usePriceListRules.md) and [`usePriceListPreview`](usePriceListPreview.md).
@@ -132,10 +132,10 @@ Computed property that handles pricing mode changes with confirmation prompts.
 handleSaveRules(rules: PriceListRule[]): void
 ```
 
-Processes saved quantity level rules and triggers preview update.
+Processes saved price break rules and triggers preview update.
 
 - **Parameters**:
-  - `rules`: Array of updated quantity level rules
+  - `rules`: Array of updated price break rules
 - **Behavior**:
   - Updates `rulesToEdit` with the new rules
   - Triggers price list preview with descriptive feedback message
@@ -171,14 +171,15 @@ Cancels a pending mode change and resets state.
 
 ```ts
 interface PriceListRule {
-  quantity: number;
-  price?: number;
-  margin?: number;
-  discountPercent?: number;
-  global: boolean;
-  lastFieldChanged?: PriceListRuleField;
   _id?: string;
   internalId?: string;
+  quantity?: number;
+  margin?: number;
+  discountPercent?: number;
+  price?: number;
+  applied?: boolean;
+  global?: boolean;
+  lastFieldChanged?: PriceListRuleField;
 }
 
 type PriceListRuleMode = 'margin' | 'discount' | 'fixed' | 'auto';

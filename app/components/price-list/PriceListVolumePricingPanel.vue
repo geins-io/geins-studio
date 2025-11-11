@@ -162,14 +162,14 @@ const handleRemove = async (rule: PriceListRule) => {
       <SheetHeader>
         <SheetTitle>Volume pricing</SheetTitle>
         <SheetDescription>
-          Add volume based price breaks for <strong>{{ productName }}</strong>
+          Add quantity-based price breaks for <strong>{{ productName }}</strong>
         </SheetDescription>
       </SheetHeader>
       <SheetBody>
         <ContentCardHeader
           size="sm"
           title="Global volume pricing"
-          description="These price breaks are applied globally to all products in this price list."
+          description="These price breaks apply to all products in this price list."
           class="mb-4"
         />
         <PriceListRules
@@ -181,12 +181,12 @@ const handleRemove = async (rule: PriceListRule) => {
           :currency="currency"
         />
         <p v-else class="text-muted-foreground text-sm italic">
-          No global volume pricing defined.
+          No global price breaks defined.
         </p>
         <ContentCardHeader
           size="sm"
           title="Product volume pricing"
-          description="These price breaks are applied only to this product. If you add a break with the same volume as a global break, the global price break will be overridden."
+          description="These price breaks apply only to this product. If you add a price break with the same quantity as a global break, it will override the global one."
           class="mt-6 mb-4"
         />
         <PriceListRules
@@ -207,7 +207,7 @@ const handleRemove = async (rule: PriceListRule) => {
           type="negative"
           class="mt-10"
         >
-          <template #title> Check your volume pricing and try again </template>
+          <template #title> Check your price breaks and try again </template>
           <template #description>
             Quantity must be more than 1 and at least one value must be present
           </template>

@@ -80,7 +80,7 @@ Loading state for base rule operations.
 const volumePricingLoading: Ref<boolean>;
 ```
 
-Loading state for quantity level rule operations.
+Loading state for price break rule operations.
 
 ### `quantityLevelRules`
 
@@ -226,11 +226,11 @@ Helper method that cleans rules for entity data storage.
 overwriteProducts(staggeredCount: number): Promise<void>
 ```
 
-Removes product-specific pricing for a given quantity level.
+Removes product-specific pricing for a given price break.
 
 - **Parameters**:
-  - `staggeredCount`: The quantity level to clear pricing for
-- **Behavior**: Sets price, margin, and discountPercent to undefined for products at the specified quantity level
+  - `staggeredCount`: The price break to clear pricing for
+- **Behavior**: Sets price, margin, and discountPercent to undefined for products at the specified price break
 
 ### `overwriteBaseRulePromptVisible`
 
@@ -246,7 +246,7 @@ Controls visibility of base rule overwrite confirmation dialog.
 const overwriteLevelsPromptVisible: Ref<boolean>;
 ```
 
-Controls visibility of quantity level overwrite confirmation dialog.
+Controls visibility of price break overwrite confirmation dialog.
 
 ### `removeBaseRulePromptVisible`
 
@@ -262,7 +262,7 @@ Controls visibility of base rule removal confirmation dialog.
 const currentOverwriteQuantity: Ref<number>;
 ```
 
-Tracks the quantity level being overwritten for prompt context.
+Tracks the price break being overwritten for prompt context.
 
 ### `overwriteContinueAction`
 
@@ -276,14 +276,15 @@ Stores the continuation function for confirmed overwrite operations.
 
 ```ts
 interface PriceListRule {
-  quantity: number;
-  price?: number;
-  margin?: number;
-  discountPercent?: number;
-  global: boolean;
-  lastFieldChanged?: PriceListRuleField;
   _id?: string;
   internalId?: string;
+  quantity?: number;
+  margin?: number;
+  discountPercent?: number;
+  price?: number;
+  applied?: boolean;
+  global?: boolean;
+  lastFieldChanged?: PriceListRuleField;
 }
 
 type PriceListRuleMode = 'margin' | 'discount' | 'fixed' | 'auto';

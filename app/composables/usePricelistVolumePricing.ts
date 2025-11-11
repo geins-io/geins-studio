@@ -26,7 +26,7 @@ export interface UsePriceListVolumePricingOptions {
 }
 
 /**
- * Composable for managing product-specific price breaks
+ * Composable for managing product-specific price break
  */
 export function usePriceListVolumePricing({
   globalRules,
@@ -59,7 +59,9 @@ export function usePriceListVolumePricing({
         globalRules.value.length
       ) {
         // Check if there's a base rule that would be affected
-        if (globalRules.value.some((rule) => rule.quantity === 1)) {
+        if (
+          globalRules.value.some((rule) => rule.quantity && rule.quantity > 1)
+        ) {
           // Show confirmation prompt for mode change
           pendingModeChange.value = newMode;
           rulesModeChangePrompt.value = true;
