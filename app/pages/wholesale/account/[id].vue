@@ -111,9 +111,9 @@ const addressBase: AddressBase = {
 // Tabs & Steps
 const tabs = [
   t('general'),
-  t('wholesale.buyers'),
-  t('wholesale.price_lists'),
-  t('wholesale.orders'),
+  t('buyer', 2),
+  t('price_list', 2),
+  t('order', 2),
   t('settings'),
 ];
 
@@ -627,7 +627,7 @@ const summary = computed<DataItem[]>(() => {
       .map((id: string) => getEntityNameById(id, users.value))
       .join(', ');
     dataList.push({
-      label: t('wholesale.sales_reps'),
+      label: t('sales_rep', 2),
       value: entityData.value.salesReps,
       displayValue,
       displayType: DataItemDisplayType.Array,
@@ -639,7 +639,7 @@ const summary = computed<DataItem[]>(() => {
       .map((id: string) => accountStore.getChannelNameById(id))
       .join(', ');
     dataList.push({
-      label: t('wholesale.channels'),
+      label: t('channel', 2),
       value: entityData.value.channels,
       displayValue,
       displayType: DataItemDisplayType.Array,
@@ -684,7 +684,7 @@ const otherSummary = computed<DataItem[]>(() => {
       .map((buyer: WholesaleBuyer) => `${buyer.firstName} ${buyer.lastName}`)
       .join(', ');
     dataList.push({
-      label: t('wholesale.buyers'),
+      label: t('buyer', 2),
       value: entityData.value.buyers,
       displayValue,
       entityName: 'buyer',
@@ -696,22 +696,22 @@ const otherSummary = computed<DataItem[]>(() => {
       .map((pl: string) => getEntityNameById(pl, allPriceLists.value))
       .join(', ');
     dataList.push({
-      label: t('wholesale.price_lists'),
+      label: t('price_list', 2),
       value: entityData.value.priceLists,
       displayValue,
       entityName: 'price_list',
       displayType: DataItemDisplayType.Array,
     });
   }
-  // if (ordersList.value.length) {
-  //   dataList.push({
-  //     label: t('wholesale.orders'),
-  //     value: t('nr_of_entity', {
-  //       count: ordersList.value.length,
-  //       entityName: 'order',
-  //     }),
-  //   });
-  // }
+  if (ordersList.value.length) {
+    dataList.push({
+      label: t('order', 2),
+      value: t('nr_of_entity', {
+        count: ordersList.value.length,
+        entityName: 'order',
+      }),
+    });
+  }
   return dataList;
 });
 
@@ -971,7 +971,7 @@ breadcrumbsStore.setCurrentParent({
                   >
                     <FormItem>
                       <FormLabel :optional="true">{{
-                        $t('wholesale.sales_reps')
+                        $t('sales_rep', 2)
                       }}</FormLabel>
                       <FormControl>
                         <FormInputTagsSearch
@@ -993,7 +993,7 @@ breadcrumbsStore.setCurrentParent({
                     name="details.channels"
                   >
                     <FormItem>
-                      <FormLabel>{{ $t('wholesale.channels') }}</FormLabel>
+                      <FormLabel>{{ $t('channel', 2) }}</FormLabel>
                       <FormControl>
                         <FormInputChannels
                           :model-value="componentField.modelValue"
@@ -1152,7 +1152,7 @@ breadcrumbsStore.setCurrentParent({
             <ContentEditCard
               v-if="currentTab === 1"
               :create-mode="createMode"
-              :title="t('wholesale.buyers')"
+              :title="t('buyer', 2)"
               :description="$t('wholesale.buyers_description')"
             >
               <template #header-action>
@@ -1206,7 +1206,7 @@ breadcrumbsStore.setCurrentParent({
           >
             <ContentEditCard
               :create-mode="createMode"
-              :title="t('wholesale.price_lists')"
+              :title="t('price_list', 2)"
               description="Price lists connected to this account"
             >
               <template #header-action>
@@ -1254,7 +1254,7 @@ breadcrumbsStore.setCurrentParent({
           >
             <ContentEditCard
               :create-mode="createMode"
-              :title="t('wholesale.orders')"
+              :title="t('order', 2)"
               :description="$t('wholesale.orders_description')"
             >
               <div>
