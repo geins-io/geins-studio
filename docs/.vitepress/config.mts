@@ -126,8 +126,8 @@ export default defineConfig({
                 link: '/composables/usePriceListPreview.md',
               },
               {
-                text: 'usePriceListQuantityLevels',
-                link: '/composables/usePriceListQuantityLevels.md',
+                text: 'usePriceListVolumePricing',
+                link: '/composables/usePriceListVolumePricing.md',
               },
               {
                 text: 'usePriceListRules',
