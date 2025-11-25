@@ -40,7 +40,7 @@ export type WholesaleAccountFieldsFilter =
   | 'addresses'
   | 'salesreps'
   | 'buyers'
-  | 'priceLists';
+  | 'pricelists';
 
 export type WholesaleAccountApiOptions =
   ApiOptions<WholesaleAccountFieldsFilter>;
@@ -71,6 +71,8 @@ export interface WholesaleBuyerBase {
   email?: string;
   phone?: string;
   accountId?: string;
+  priceLists?: string[];
+  restrictToDedicatedPriceLists?: boolean;
 }
 
 export interface WholesaleBuyerCreate extends CreateEntity<WholesaleBuyerBase> {
