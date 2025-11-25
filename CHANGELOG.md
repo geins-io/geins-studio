@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.1.3 - 2025-11-25
+
+### 🐛 Bug Fixes
+
+- Fixed error when saving account because of API update
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.1.2 - 2025-11-11
 
 ### 🔄 Refactor
