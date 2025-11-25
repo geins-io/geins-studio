@@ -58,17 +58,23 @@ const { isMobile } = useSidebar();
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem @click="setColorMode">
-              <LucideSun class="mr-2 hidden size-4 dark:block" />
-              <LucideMoonStar class="mr-2 size-4 dark:hidden" />
-              <span class="dark:hidden">Dark mode</span>
-              <span class="hidden dark:block">Light mode</span>
+            <DropdownMenuItem as-child>
+              <NuxtLink :to="`/account/user/${userEmail}`">
+                <LucideUser class="mr-2 size-4" />
+                <span>Account</span>
+              </NuxtLink>
+            </DropdownMenuItem>
+            <DropdownMenuItem @click="logout()">
+              <LucideLogOut class="mr-2 size-4" />
+              <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem @click="logout()">
-            <LucideLogOut class="mr-2 size-4" />
-            <span>Log out</span>
+          <DropdownMenuItem @click="setColorMode">
+            <LucideSun class="mr-2 hidden size-4 dark:block" />
+            <LucideMoonStar class="mr-2 size-4 dark:hidden" />
+            <span class="dark:hidden">Dark mode</span>
+            <span class="hidden dark:block">Light mode</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
