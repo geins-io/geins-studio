@@ -61,7 +61,7 @@ watch(open, (value) => {
 const formSchema = toTypedSchema(
   z.object({
     active: z.boolean().optional(),
-    email: z.string().email({ message: t('form.invalid_email') }),
+    email: z.email({ message: t('form.invalid_email') }),
     phone: z.string().optional(),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
@@ -151,6 +151,7 @@ const handleSave = async () => {
       ...form.values,
       _id: form.values.email || '',
       accountId: props.accountId,
+      priceLists: [],
     });
 
     const id = props.buyer?._id || newBuyer.value._id;

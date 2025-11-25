@@ -21,7 +21,7 @@ This composable is specifically designed to work alongside other price list mana
 const {
   rulesToEdit,
   rulesPanelOpen,
-  price listRulesMode,
+  pricelistRulesMode,
   handleSaveRules,
   confirmModeChange,
 } = usePriceListVolumePricing({
@@ -117,7 +117,7 @@ Controls the visibility of the mode change confirmation dialog.
 ### `priceListRulesMode`
 
 ```ts
-const price listRulesMode: ComputedRef<PriceListRuleMode>;
+const pricelistRulesMode: ComputedRef<PriceListRuleMode>;
 ```
 
 Computed property that handles pricing mode changes with confirmation prompts.

@@ -331,7 +331,7 @@ const buyerToEdit = ref<WholesaleBuyer | undefined>();
 const buyerPanelMode = ref<'edit' | 'add'>('add');
 const columnOptions: ColumnOptions<WholesaleBuyer> = {
   columnTitles: { _id: t('person.email'), active: t('status') },
-  excludeColumns: ['accountId'],
+  excludeColumns: ['accountId', 'restrictToDedicatedPriceLists', 'priceLists'],
   sortable: false,
 };
 const { getColumns, addActionsColumn } = useColumns<WholesaleBuyer>();
@@ -575,27 +575,33 @@ const saveAccountDetails = async () => {
 };
 
 const handleCreateAccount = async () => {
-  await createEntity(async () => {
-    const stepsValid = await validateSteps([1, 2]);
-    if (!stepsValid) {
-      validateOnChange.value = true;
-      return false;
-    }
-    validateOnChange.value = false;
-    return true;
-  });
+  await createEntity(
+    async () => {
+      const stepsValid = await validateSteps([1, 2]);
+      if (!stepsValid) {
+        validateOnChange.value = true;
+        return false;
+      }
+      validateOnChange.value = false;
+      return true;
+    },
+    { fields: ['all'] },
+  );
 };
 
 const handleUpdateAccount = async () => {
-  await updateEntity(async () => {
-    const stepsValid = await validateSteps([1]);
-    if (!stepsValid) {
-      validateOnChange.value = true;
-      return false;
-    }
-    validateOnChange.value = false;
-    return true;
-  });
+  await updateEntity(
+    async () => {
+      const stepsValid = await validateSteps([1]);
+      if (!stepsValid) {
+        validateOnChange.value = true;
+        return false;
+      }
+      validateOnChange.value = false;
+      return true;
+    },
+    { fields: ['all'] },
+  );
 };
 
 // =====================================================================================
