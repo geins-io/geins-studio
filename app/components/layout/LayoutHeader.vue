@@ -8,6 +8,8 @@ import {
 } from '@/components/ui/tooltip';
 const { state, toggleSidebar } = useSidebar();
 
+useNavigation();
+
 const breadcrumbsStore = useBreadcrumbsStore();
 const { showBreadcrumbs, breadcrumbTrail } = storeToRefs(breadcrumbsStore);
 

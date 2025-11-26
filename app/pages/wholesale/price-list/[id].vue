@@ -623,10 +623,6 @@ if (!createMode.value) {
 
 const breadcrumbsStore = useBreadcrumbsStore();
 breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
-breadcrumbsStore.setCurrentParent({
-  title: t(entityName, 2),
-  link: entityListUrl,
-});
 </script>
 
 <template>

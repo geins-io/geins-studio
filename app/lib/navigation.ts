@@ -33,11 +33,6 @@ export const navigation: NavigationItem[] = [
         href: '/wholesale/account/list',
         // permissions: ['wholesale.accounts.read'],
       },
-      // {
-      //   label: 'Orders',
-      //   href: '/wholesale/order/list',
-      //   // permissions: ['wholesale.orders.read'],
-      // },
       {
         label: 'Price lists',
         href: '/wholesale/price-list/list',

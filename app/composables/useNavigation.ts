@@ -91,30 +91,53 @@ export const useNavigation = () => {
   /**
    * Find breadcrumb trail in navigation structure
    * Returns array of NavigationItems from root to current page
+   *
+   * Matches both exact paths and partial paths (for detail pages)
+   * For example: /wholesale/account/123 matches /wholesale/account/list
    */
   const findBreadcrumbTrail = (
     items: NavigationItem[],
     targetPath: string,
     ancestors: NavigationItem[] = [],
   ): NavigationItem[] | null => {
+    let bestMatch: NavigationItem[] | null = null;
+    let bestMatchLength = 0;
+
     for (const item of items) {
-      // Exact match found
+      // Check children recursively FIRST (prefer deeper exact matches)
+      // This ensures /wholesale/account/list matches the child "Accounts" 
+      // instead of the parent "Wholesale" even if parent has same href
+      if (item.children) {
+        const childTrail = findBreadcrumbTrail(item.children, targetPath, [
+          ...ancestors,
+          item,
+        ]);
+        if (childTrail) {
+          return childTrail;
+        }
+      }
+
+      // Exact match found on this item
       if (item.href === targetPath) {
         return [...ancestors, item];
       }
 
-      // Check children recursively
-      if (item.children) {
-        const trail = findBreadcrumbTrail(item.children, targetPath, [
-          ...ancestors,
-          item,
-        ]);
-        if (trail) {
-          return trail;
-        }
+      // Partial/prefix match for detail pages
+      // Example: /wholesale/account/123 should match /wholesale/account/list
+      // Remove /list suffix and check if target path starts with the base
+      const baseHref = item.href.replace(/\/list$/, '');
+
+      if (
+        baseHref !== '/' && // Don't match root
+        baseHref.length > bestMatchLength && // Prefer longer matches
+        targetPath.startsWith(baseHref + '/')
+      ) {
+        bestMatch = [...ancestors, item];
+        bestMatchLength = baseHref.length;
       }
     }
-    return null;
+
+    return bestMatch;
   };
 
   /**
