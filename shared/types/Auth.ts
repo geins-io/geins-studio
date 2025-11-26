@@ -1,7 +1,7 @@
 export type ApiUserType = 'api' | 'personal';
 
 export interface UserBase {
-  name: string;
+  name?: string;
   firstName?: string;
   lastName?: string;
   email?: string | null;

@@ -40,10 +40,34 @@ export const useUserStore = defineStore('user', () => {
     return user.value?.email || 'N/A';
   });
 
+  /**
+   * Check if user has any of the specified roles
+   * TODO: Implement role checking once user roles are available in the session
+   * For now, returns true (all users have access)
+   */
+  const hasAnyRole = (roles: string[]): boolean => {
+    // TODO: Implement actual role checking
+    // Example: return roles.some(role => user.value?.roles?.includes(role))
+    return true;
+  };
+
+  /**
+   * Check if user has any of the specified permissions
+   * TODO: Implement permission checking once user permissions are available
+   * For now, returns true (all users have access)
+   */
+  const hasAnyPermission = (permissions: string[]): boolean => {
+    // TODO: Implement actual permission checking
+    // Example: return permissions.some(perm => user.value?.permissions?.includes(perm))
+    return true;
+  };
+
   return {
     user,
     userInitials,
     userName,
     userEmail,
+    hasAnyRole,
+    hasAnyPermission,
   };
 });

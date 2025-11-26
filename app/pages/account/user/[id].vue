@@ -28,9 +28,8 @@ const formSchema = toTypedSchema(
       firstName: z.string().min(1, { message: t('form.field_required') }),
       lastName: z.string().min(1, { message: t('form.field_required') }),
       email: z
-        .string()
-        .min(1, { message: t('form.field_required') })
-        .email({ message: t('form.invalid_email') }),
+        .email({ message: t('form.invalid_email') })
+        .min(1, { message: t('form.field_required') }),
       phoneNumber: z.string().optional(),
     }),
   }),
@@ -40,7 +39,6 @@ const formSchema = toTypedSchema(
 // ENTITY DATA SETUP
 // =====================================================================================
 const entityBase: UserCreate = {
-  name: '',
   firstName: '',
   lastName: '',
   email: '',

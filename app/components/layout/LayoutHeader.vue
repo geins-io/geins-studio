@@ -9,8 +9,7 @@ import {
 const { state, toggleSidebar } = useSidebar();
 
 const breadcrumbsStore = useBreadcrumbsStore();
-const { showBreadcrumbs, currentTitle, currentParent } =
-  storeToRefs(breadcrumbsStore);
+const { showBreadcrumbs, breadcrumbTrail } = storeToRefs(breadcrumbsStore);
 
 const supportsHover = ref(true);
 onMounted(() => {
@@ -72,26 +71,27 @@ onMounted(() => {
             </NuxtLink>
           </BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbSeparator class="md:hidden" />
-        <BreadcrumbItem>
-          <BreadcrumbLink as-child>
-            <NuxtLink to="/">Wholesale</NuxtLink>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator v-if="currentParent" />
-        <BreadcrumbItem
-          v-if="currentParent && typeof currentParent === 'object'"
-        >
-          <BreadcrumbLink as-child>
-            <NuxtLink :to="currentParent.link">
-              {{ currentParent.title }}
-            </NuxtLink>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage>{{ currentTitle }}</BreadcrumbPage>
-        </BreadcrumbItem>
+        <BreadcrumbSeparator
+          v-if="breadcrumbTrail.length > 0"
+          class="md:hidden"
+        />
+
+        <!-- Render breadcrumb trail from navigation -->
+        <template v-for="(item, index) in breadcrumbTrail" :key="item.href">
+          <BreadcrumbSeparator v-if="index > 0" />
+          <BreadcrumbItem>
+            <!-- Last item is not a link -->
+            <BreadcrumbPage v-if="index === breadcrumbTrail.length - 1">
+              {{ item.label }}
+            </BreadcrumbPage>
+            <!-- Other items are links -->
+            <BreadcrumbLink v-else as-child>
+              <NuxtLink :to="item.href">
+                {{ item.label }}
+              </NuxtLink>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        </template>
       </BreadcrumbList>
     </Breadcrumb>
     <!--  <div class="relative ml-5 w-full max-w-96 items-center">

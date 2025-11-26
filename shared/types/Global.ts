@@ -44,6 +44,12 @@ export interface NavigationItem {
   active?: boolean;
   icon?: unknown;
   children?: NavigationItem[];
+
+  // Role-based access control
+  roles?: string[]; // e.g., ['admin', 'editor', 'viewer']
+  permissions?: string[]; // e.g., ['wholesale.read', 'products.write']
+
+  group?: string; // Group items together (e.g., 'sales', 'content')
 }
 
 export interface GeinsApiError {

@@ -1,298 +1,70 @@
 import type { NavigationItem } from '#shared/types';
+
+/**
+ * Main navigation configuration for the admin system
+ *
+ * Features:
+ * - Role-based access control via `roles` and `permissions` fields
+ * - Hierarchical structure with children
+ * - Icons from lucide-vue-next
+ * - Grouping and visual dividers
+ * - Badge support for notifications
+ *
+ * Note: Items without roles/permissions are visible to all users
+ */
 export const navigation: NavigationItem[] = [
+  // {
+  //   label: 'Dashboard',
+  //   href: '/',
+  //   icon: 'LayoutDashboard',
+  //   // Visible to all authenticated users
+  // },
   {
     label: 'Wholesale',
     href: '/wholesale/account/list',
     icon: 'Building2',
+    group: 'sales',
+    // TODO: Add roles when auth system is ready
+    // roles: ['admin', 'wholesale_manager'],
+    // permissions: ['wholesale.read'],
     children: [
       {
         label: 'Accounts',
         href: '/wholesale/account/list',
+        // permissions: ['wholesale.accounts.read'],
       },
+      // {
+      //   label: 'Orders',
+      //   href: '/wholesale/order/list',
+      //   // permissions: ['wholesale.orders.read'],
+      // },
       {
         label: 'Price lists',
         href: '/wholesale/price-list/list',
+        // permissions: ['wholesale.pricelists.read'],
       },
     ],
   },
-  /*{
-    label: 'Selector Demo',
-    href: '/selector-demo',
-    icon: 'Tag',
-  }, */
-];
-export const navigationDummy: NavigationItem[] = [
-  {
-    label: 'Dashboard',
-    href: '/',
-    icon: 'ChartLine',
-  },
-  {
-    label: 'Products',
-    href: '/pim/product/list',
-    icon: 'Tag',
-    children: [
-      {
-        label: 'Products',
-        href: '/pim/product/list',
-      },
-      /*       {
-        label: 'Brands',
-        href: '',
-      }, */
-      {
-        label: 'Categories',
-        href: '/pim/category/list',
-      },
-      /*  {
-        label: 'Campaigns',
-        href: '',
-      },
-      {
-        label: 'Parameters / Filters',
-        href: '',
-      },
-      {
-        label: 'Product reviews',
-        href: '',
-      }, */
-    ],
-  },
-  /*   {
-    label: 'Content',
-    href: '',
-    icon: 'Brush',
-    children: [
-      {
-        label: 'Start Page',
-        href: '',
-      },
-      {
-        label: 'Content Areas',
-        href: '',
-      },
-      {
-        label: 'Pages',
-        href: '',
-      },
-      {
-        label: 'Menus',
-        href: '',
-      },
-    ],
-  },
-  {
-    label: 'Customers',
-    href: '',
-    icon: 'User',
-    children: [
-      {
-        label: 'Customers',
-        href: '',
-      },
-      {
-        label: 'Groups',
-        href: '',
-      },
-      {
-        label: 'Subscribers',
-        href: '',
-      },
-    ],
-  },
-  {
-    label: 'Warehouse',
-    href: '',
-    icon: 'Warehouse',
-    children: [
-      {
-        label: 'Fulfill orders',
-        href: '',
-      },
-      {
-        label: 'Pending - Unstocked',
-        href: '',
-      },
-      {
-        label: 'Pending - Locked',
-        href: '',
-      },
-      {
-        label: 'Pending - Filter',
-        href: '',
-      },
-      {
-        label: 'Handle returns',
-        href: '',
-      },
-      {
-        label: 'Refunds',
-        href: '',
-      },
-      {
-        label: 'Refunds - Approval',
-        href: '',
-      },
-      {
-        label: 'Orders',
-        href: '',
-      },
-      {
-        label: 'Order filter',
-        href: '',
-      },
-      {
-        label: 'Fulfillment history',
-        href: '',
-      },
-      {
-        label: 'Inventory',
-        href: '',
-      },
-    ],
-  },
-  {
-    label: 'Accounting',
-    href: '',
-    icon: 'Wallet',
-    children: [
-      {
-        label: 'Revenue',
-        href: '',
-      },
-      {
-        label: 'Revenue / Market',
-        href: '',
-      },
-      {
-        label: 'Inventory value',
-        href: '',
-      },
-    ],
-  }, */
-  {
-    label: 'Wholesale',
-    href: '/wholesale/account/list',
-    icon: 'Building2',
-    children: [
-      {
-        label: 'Accounts',
-        href: '/wholesale/account/list',
-      },
-      {
-        label: 'Orders',
-        href: '/wholesale/order/list',
-      },
-      {
-        label: 'Price lists',
-        href: '/wholesale/price-list/list',
-      },
-    ],
-  },
-  /*   {
-    label: 'Import Tool',
-    href: '',
-    icon: 'Import',
-  },
-  */
-  {
-    label: 'For dev',
-    href: '/account/market/list',
-    icon: 'Settings',
-    children: [
-      {
-        label: 'Markets',
-        href: '/account/market/list',
-      },
-      {
-        label: 'Languages',
-        href: '/account/language/list',
-      },
-      {
-        label: 'Users',
-        href: '/account/user/list',
-      },
-      /*
-      {
-        label: 'API Users',
-        href: '',
-      },
-      {
-        label: 'Administrators',
-        href: '/user/list',
-      },
-      {
-        label: 'Markets',
-        href: '',
-      },
-      {
-        label: 'Currencies',
-        href: '',
-      },
-      {
-        label: 'Metadata',
-        href: '',
-      },
-      {
-        label: '404 Pages',
-        href: '',
-      },
-      */
-    ],
-  } /*
-  {
-    label: 'Super Admin',
-    href: '',
-    icon: 'ShieldCheck',
-    children: [
-      {
-        label: 'Sites',
-        href: '',
-      },
-      {
-        label: 'Settings',
-        href: '',
-      },
-      {
-        label: 'Translate / Texts',
-        href: '',
-      },
-      {
-        label: 'Language',
-        href: '',
-      },
-      {
-        label: 'Legal pages',
-        href: '',
-      },
-      {
-        label: 'Countries',
-        href: '',
-      },
-      {
-        label: 'Counties',
-        href: '',
-      },
-      {
-        label: 'Admin Menu',
-        href: '',
-      },
-      {
-        label: 'Pending changes',
-        href: '',
-      },
-      {
-        label: 'System information',
-        href: '',
-      },
-      {
-        label: 'Cache',
-        href: '',
-      },
-      {
-        label: 'Order return codes',
-        href: '',
-      },
-    ],
-  }, */,
+  // {
+  //   label: 'Settings',
+  //   href: '/account/market/list',
+  //   icon: 'Settings',
+  //   divider: true, // Add visual separator above this item
+  //   // roles: ['admin'],
+  //   children: [
+  //     {
+  //       label: 'Markets',
+  //       href: '/account/market/list',
+  //     },
+  //     {
+  //       label: 'Languages',
+  //       href: '/account/language/list',
+  //     },
+  //     {
+  //       label: 'Users',
+  //       href: '/account/user/list',
+  //       // permissions: ['users.manage'],
+  //     },
+  //   ],
+  // },
 ];
