@@ -105,8 +105,6 @@ export const useNavigation = () => {
 
     for (const item of items) {
       // Check children recursively FIRST (prefer deeper exact matches)
-      // This ensures /wholesale/account/list matches the child "Accounts" 
-      // instead of the parent "Wholesale" even if parent has same href
       if (item.children) {
         const childTrail = findBreadcrumbTrail(item.children, targetPath, [
           ...ancestors,
