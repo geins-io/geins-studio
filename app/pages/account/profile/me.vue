@@ -150,17 +150,18 @@ const entityPageTitle = computed(() =>
     : userFullName.value || t('edit_entity', { entityName }),
 );
 
+// =====================================================================================
+// PASSWORDS HANDLING
+// =====================================================================================
+
 const passwords = reactive({
-  currentPassword: '',
-  newPassword: '',
-  confirmNewPassword: '',
+  currentPassword: undefined,
+  newPassword: undefined,
+  confirmNewPassword: undefined,
 });
 
-const passwordsMatch = computed(() => {
-  return (
-    passwords.newPassword === passwords.confirmNewPassword ||
-    passwords.confirmNewPassword === ''
-  );
+const passwordsHasChanges = computed(() => {
+  return !!passwords.newPassword || !!passwords.confirmNewPassword;
 });
 
 // =====================================================================================
@@ -206,6 +207,7 @@ const {
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
   stepValidationMap,
+  externalChanges: passwordsHasChanges,
   getInitialFormValues: (entityData) => ({
     details: {
       firstName: entityData.firstName || '',
@@ -272,12 +274,49 @@ const {
 // ENTITY ACTIONS
 // =====================================================================================
 const handleSave = async () => {
-  if (createMode.value) {
-    await createEntity(undefined, undefined);
-  } else {
-    await updateEntity(undefined, undefined, true);
-    updateUser(entityData.value);
+  if (passwordsHasChanges.value) {
+    const stepValid = await validateSteps([2]);
+    if (!stepValid) {
+      validateOnChange.value = true;
+      return;
+    }
+    validateOnChange.value = false;
+    try {
+      await userApi.me.password.update(
+        passwords.currentPassword || '',
+        passwords.newPassword || '',
+      );
+      if (!hasUnsavedChanges.value) {
+        toast({
+          title: t('entity_updated', { entityName }),
+          variant: 'positive',
+        });
+        return;
+      }
+    } catch (error) {
+      geinsLogError('error updating password:', error);
+      toast({
+        title: t('error_updating_entity', { entityName }),
+        description: t('feedback_error_description'),
+        variant: 'negative',
+      });
+      return;
+    }
   }
+  await updateEntity(
+    async () => {
+      const stepsValid = await validateSteps([1]);
+      if (!stepsValid) {
+        validateOnChange.value = true;
+        return false;
+      }
+      validateOnChange.value = false;
+      return true;
+    },
+    undefined,
+    true,
+  );
+  updateUser(entityData.value);
 };
 
 // =====================================================================================

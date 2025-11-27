@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
 
   const apiHeaders = {
     ...headers,
-    authorization: `Bearer ${token}`,
+    ...(token ? { authorization: `Bearer ${token}` } : {}),
   };
 
   if (event.method === 'DELETE' && apiHeaders['content-length'] === '0') {
