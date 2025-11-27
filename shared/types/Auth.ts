@@ -22,6 +22,7 @@ export interface User extends ResponseEntity<UserBase> {
 }
 
 export interface UserProfileBase {
+  name: string;
   firstName?: string;
   lastName?: string;
   email?: string | null;

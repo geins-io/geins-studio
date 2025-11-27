@@ -25,9 +25,10 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
 
   watch(
     route,
-    () => {
+    async () => {
       showBreadcrumbs.value = route.path !== '/';
       // Clear overrides on route change so pages can set fresh values
+      await nextTick();
       clearOverrides();
     },
     { deep: true },

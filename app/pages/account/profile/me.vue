@@ -14,6 +14,7 @@ const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('pages/account/user/[id].vue');
 const { updateUser } = useUserStore();
+const breadcrumbsStore = useBreadcrumbsStore();
 
 // =====================================================================================
 // API & REPOSITORY SETUP
@@ -130,7 +131,8 @@ const formSchema = toTypedSchema(
 // =====================================================================================
 // ENTITY DATA SETUP
 // =====================================================================================
-const entityBase: UserCreate = {
+const entityBase: UserProfileCreate = {
+  name: '',
   firstName: '',
   lastName: '',
   email: '',
@@ -229,8 +231,12 @@ const {
         phoneNumber: entity.phoneNumber || '',
       },
     });
+    breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
   },
   prepareCreateData: (formData) => ({
+    name: `${formData.details.firstName || ''} ${
+      formData.details.lastName || ''
+    }`.trim(),
     firstName: formData.details.firstName,
     lastName: formData.details.lastName,
     email: formData.details.email,
@@ -356,12 +362,6 @@ if (!createMode.value) {
     { deep: true },
   );
 }
-
-// =====================================================================================
-// BREADCRUMBS DATA
-// =====================================================================================
-const breadcrumbsStore = useBreadcrumbsStore();
-breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
 </script>
 
 <template>
