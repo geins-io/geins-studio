@@ -171,6 +171,8 @@
     "password_reset_requested_description": "Check your email for instructions to reset your password.",
     "password_reset_success_title": "Password successfully reset",
     "password_reset_success_description": "You can now log in with your new password.",
+    "password_reset_error_title": "Password reset request failed",
+    "password_reset_error_description": "Something went wrong while requesting reset link. Please try again.",
     "password_min_length": "Password must be at least 6 characters",
     "passwords_not_matching": "Passwords do not match",
     "go_to_login": "Go to login"
