@@ -44,6 +44,7 @@ export interface NavigationItem {
   active?: boolean;
   icon?: unknown;
   children?: NavigationItem[];
+  hideFromMenu?: boolean;
 
   // Role-based access control
   roles?: string[]; // e.g., ['admin', 'editor', 'viewer']

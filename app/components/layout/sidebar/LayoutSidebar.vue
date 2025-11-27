@@ -58,12 +58,14 @@ const iconComponents = {
 
 // Process navigation items to include icon components
 const navigationMenu = computed(() => {
-  return navigationItems.value.map((item) => ({
-    ...item,
-    iconComponent: item.icon
-      ? iconComponents[item.icon as keyof typeof iconComponents]
-      : undefined,
-  }));
+  return navigationItems.value
+    .filter((item) => !item.hideFromMenu)
+    .map((item) => ({
+      ...item,
+      iconComponent: item.icon
+        ? iconComponents[item.icon as keyof typeof iconComponents]
+        : undefined,
+    }));
 });
 
 const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {

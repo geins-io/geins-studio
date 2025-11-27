@@ -14,6 +14,7 @@
   "import": "Import | Imports",
   "price": "Price | Prices",
   "item": "Item | Items",
+  "profile": "Profile | Profiles",
   "currency": "Currency | Currencies",
   "account_group": "Account group | Account groups",
   "buyer": "Buyer | Buyers",
@@ -178,7 +179,18 @@
     "field_required": "This field is required",
     "invalid_email": "Invalid email address",
     "optional": "optional",
-    "cannot_be_changed": "Cannot be changed upon creation"
+    "cannot_be_changed": "Cannot be changed upon creation",
+    "password_uppercase_required": "Password must contain at least one uppercase letter",
+    "password_number_required": "Password must contain at least one number",
+    "passwords_must_match": "Passwords must match",
+    "password_min_length": "Password must be at least 8 characters long"
+  },
+  "account_profile": {
+    "login_credentials": "Login credentials",
+    "current_password": "Current password",
+    "new_password": "New password",
+    "confirm_new_password": "Confirm new password",
+    "username": "Username"
   },
   "address": {
     "title": "Address",
@@ -197,6 +209,7 @@
     "last_name": "Last name",
     "phone": "Phone"
   },
+
   "contact_person": "Contact person",
   "contact_person_description": "Contact person related to the address",
   "wholesale": {

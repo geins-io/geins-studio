@@ -12,6 +12,7 @@ useNavigation();
 
 const breadcrumbsStore = useBreadcrumbsStore();
 const { showBreadcrumbs, breadcrumbTrail } = storeToRefs(breadcrumbsStore);
+console.log('🚀 ~ breadcrumbTrail:', breadcrumbTrail.value);
 
 const supportsHover = ref(true);
 onMounted(() => {
@@ -79,7 +80,7 @@ onMounted(() => {
         />
 
         <!-- Render breadcrumb trail from navigation -->
-        <template v-for="(item, index) in breadcrumbTrail" :key="item.href">
+        <template v-for="(item, index) in breadcrumbTrail" :key="index">
           <BreadcrumbSeparator v-if="index > 0" />
           <BreadcrumbItem>
             <!-- Last item is not a link -->

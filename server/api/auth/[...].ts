@@ -33,6 +33,8 @@ export default NuxtAuthHandler({
             // If refresh is successful, update the token with the new session data
             const tokenData = geinsAuth.getSessionFromResponse(newTokens);
             // Set the new token data but keep accountKey and user as is
+            console.log('🚀 ~ token.user:', token.user);
+
             token = {
               ...tokenData,
               accountKey: token.accountKey,

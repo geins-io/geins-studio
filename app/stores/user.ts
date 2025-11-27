@@ -40,6 +40,10 @@ export const useUserStore = defineStore('user', () => {
     return user.value?.email || 'N/A';
   });
 
+  const updateUser = (newUser: User) => {
+    user.value = newUser;
+  };
+
   /**
    * Check if user has any of the specified roles
    * TODO: Implement role checking once user roles are available in the session
@@ -67,6 +71,7 @@ export const useUserStore = defineStore('user', () => {
     userInitials,
     userName,
     userEmail,
+    updateUser,
     hasAnyRole,
     hasAnyPermission,
   };

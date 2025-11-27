@@ -44,17 +44,8 @@ export const navigation: NavigationItem[] = [
   //   label: 'Settings',
   //   href: '/account/market/list',
   //   icon: 'Settings',
-  //   divider: true, // Add visual separator above this item
   //   // roles: ['admin'],
-  //   children: [
-  //     {
-  //       label: 'Markets',
-  //       href: '/account/market/list',
-  //     },
-  //     {
-  //       label: 'Languages',
-  //       href: '/account/language/list',
-  //     },
+  //    children: [
   //     {
   //       label: 'Users',
   //       href: '/account/user/list',
@@ -62,4 +53,18 @@ export const navigation: NavigationItem[] = [
   //     },
   //   ],
   // },
+  {
+    label: 'Account',
+    href: '',
+    icon: 'User',
+    hideFromMenu: true,
+    // roles: ['admin'],
+    children: [
+      {
+        label: 'Profile',
+        href: '/account/profile/me',
+        // permissions: ['users.manage'],
+      },
+    ],
+  },
 ];

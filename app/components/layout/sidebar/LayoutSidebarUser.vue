@@ -2,7 +2,8 @@
 import { useSidebar } from '@/components/ui/sidebar';
 
 const { logout } = useGeinsAuth();
-const { userName, userInitials, userEmail } = useUserStore();
+const userStore = useUserStore();
+const { userName, userInitials, userEmail } = storeToRefs(userStore);
 
 const colorMode = useColorMode();
 const setColorMode = () => {
@@ -59,7 +60,7 @@ const { isMobile } = useSidebar();
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem as-child>
-              <NuxtLink :to="`/account/user/${userEmail}`">
+              <NuxtLink :to="`/account/profile/me`">
                 <LucideUser class="mr-2 size-4" />
                 <span>Account</span>
               </NuxtLink>

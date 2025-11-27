@@ -13,26 +13,118 @@ import { DataItemDisplayType } from '#shared/types';
 const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('pages/account/user/[id].vue');
+const { updateUser } = useUserStore();
 
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
 const { userApi } = useGeinsRepository();
 
+const userProfileApi = {
+  ...userApi,
+  update: userApi.me.update,
+};
+
 // =====================================================================================
 // FORM VALIDATION SCHEMA
 // =====================================================================================
 const formSchema = toTypedSchema(
-  z.object({
-    details: z.object({
-      firstName: z.string().min(1, { message: t('form.field_required') }),
-      lastName: z.string().min(1, { message: t('form.field_required') }),
-      email: z
-        .email({ message: t('form.invalid_email') })
-        .min(1, { message: t('form.field_required') }),
-      phoneNumber: z.string().optional(),
-    }),
-  }),
+  z
+    .object({
+      details: z.object({
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+        email: z
+          .email({ message: t('form.invalid_email') })
+          .min(1, { message: t('form.field_required') }),
+        phoneNumber: z.string().optional(),
+      }),
+      password: z.object({
+        currentPassword: z.string().optional(),
+        newPassword: z.string().optional(),
+        confirmNewPassword: z.string().optional(),
+      }),
+    })
+    .check(
+      z.superRefine((data, ctx) => {
+        const { currentPassword, newPassword, confirmNewPassword } =
+          data.password;
+
+        // If newPassword or confirmNewPassword is filled, validate all password fields
+        if (newPassword || confirmNewPassword) {
+          // Validate currentPassword is required
+          if (!currentPassword) {
+            ctx.addIssue({
+              code: 'custom',
+              message: t('form.field_required'),
+              path: ['password', 'currentPassword'],
+            });
+          }
+
+          // Validate newPassword requirements
+          if (!newPassword) {
+            ctx.addIssue({
+              code: 'custom',
+              message: t('form.field_required'),
+              path: ['password', 'newPassword'],
+            });
+          } else {
+            // Check minimum length
+            if (newPassword.length < 8) {
+              ctx.addIssue({
+                code: 'custom',
+                message: t('form.password_min_length', { length: 8 }),
+                path: ['password', 'newPassword'],
+              });
+            }
+
+            // Check for at least one uppercase letter
+            if (!/[A-Z]/.test(newPassword)) {
+              ctx.addIssue({
+                code: 'custom',
+                message:
+                  t('form.password_uppercase_required') ||
+                  'Password must contain at least one uppercase letter',
+                path: ['password', 'newPassword'],
+              });
+            }
+
+            // Check for at least one number
+            if (!/[0-9]/.test(newPassword)) {
+              ctx.addIssue({
+                code: 'custom',
+                message:
+                  t('form.password_number_required') ||
+                  'Password must contain at least one number',
+                path: ['password', 'newPassword'],
+              });
+            }
+          }
+
+          // Validate confirmNewPassword is required
+          if (!confirmNewPassword) {
+            ctx.addIssue({
+              code: 'custom',
+              message: t('form.field_required'),
+              path: ['password', 'confirmNewPassword'],
+            });
+          }
+
+          // Validate passwords match (only if both are provided)
+          if (
+            newPassword &&
+            confirmNewPassword &&
+            newPassword !== confirmNewPassword
+          ) {
+            ctx.addIssue({
+              code: 'custom',
+              message: t('form.passwords_must_match') || 'Passwords must match',
+              path: ['password', 'confirmNewPassword'],
+            });
+          }
+        }
+      }),
+    ),
 );
 
 // =====================================================================================
@@ -45,28 +137,53 @@ const entityBase: UserCreate = {
   phoneNumber: '',
 };
 
+const userFullName = computed(() =>
+  `${entityData.value.firstName || ''} ${entityData.value.lastName || ''}`.trim(),
+);
+
+const entityPageTitle = computed(() =>
+  createMode.value
+    ? t('new_entity', { entityName }) +
+      (userFullName.value ? ': ' + userFullName.value : '')
+    : userFullName.value || t('edit_entity', { entityName }),
+);
+
+const passwords = reactive({
+  currentPassword: '',
+  newPassword: '',
+  confirmNewPassword: '',
+});
+
+const passwordsMatch = computed(() => {
+  return (
+    passwords.newPassword === passwords.confirmNewPassword ||
+    passwords.confirmNewPassword === ''
+  );
+});
+
 // =====================================================================================
 // UI STATE MANAGEMENT
 // =====================================================================================
 // Tabs
 const tabs = [t('general')];
 
+const stepValidationMap: Record<number, string> = {
+  1: 'details',
+  2: 'password',
+};
+
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
 // =====================================================================================
 const {
   entityName,
-  entityId,
   createMode,
   loading,
-  newEntityUrl,
-  entityListUrl,
   showSidebar,
   currentTab,
   entityDataCreate,
   entityDataUpdate,
   entityData,
-  entityPageTitle,
   entityLiveStatus,
   refreshEntityData,
   form,
@@ -80,11 +197,13 @@ const {
   updateEntity,
   deleteEntity,
   parseAndSaveData,
-} = useEntityEdit<UserBase, User, UserCreate, UserUpdate>({
-  repository: userApi,
+  validateSteps,
+} = useEntityEdit<UserBase, User, UserProfileCreate, UserProfileUpdate>({
+  repository: userProfileApi,
   validationSchema: formSchema,
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
+  stepValidationMap,
   getInitialFormValues: (entityData) => ({
     details: {
       firstName: entityData.firstName || '',
@@ -94,6 +213,7 @@ const {
     },
   }),
   reshapeEntityData: (entity) => ({
+    ...entity,
     name: entity.name,
     firstName: entity.firstName,
     lastName: entity.lastName,
@@ -111,7 +231,6 @@ const {
     });
   },
   prepareCreateData: (formData) => ({
-    name: `${formData.details.firstName} ${formData.details.lastName}`,
     firstName: formData.details.firstName,
     lastName: formData.details.lastName,
     email: formData.details.email,
@@ -119,22 +238,27 @@ const {
   }),
   prepareUpdateData: (formData, entity) => ({
     ...entity,
-    name: `${formData.details.firstName} ${formData.details.lastName}`,
+    name: undefined,
     firstName: formData.details.firstName,
     lastName: formData.details.lastName,
     email: formData.details.email,
     phoneNumber: formData.details.phoneNumber,
   }),
-  onFormValuesChange: (values) => {
+  onFormValuesChange: async (values) => {
     const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
     targetEntity.value = {
       ...targetEntity.value,
-      name: `${values.details.firstName} ${values.details.lastName}`,
       firstName: values.details.firstName,
       lastName: values.details.lastName,
       email: values.details.email,
       phoneNumber: values.details.phoneNumber,
     };
+    passwords.currentPassword = values.password.currentPassword;
+    passwords.newPassword = values.password.newPassword;
+    passwords.confirmNewPassword = values.password.confirmNewPassword;
+    if (validateOnChange.value) {
+      await validateSteps([1, 2]);
+    }
   },
 });
 
@@ -146,14 +270,9 @@ const handleSave = async () => {
     await createEntity(undefined, undefined);
   } else {
     await updateEntity(undefined, undefined, true);
+    updateUser(entityData.value);
   }
 };
-
-// =====================================================================================
-// DELETE FUNCTIONALITY
-// =====================================================================================
-const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteEntity, entityListUrl);
 
 // =====================================================================================
 // SUMMARY DATA
@@ -163,7 +282,7 @@ const summary = computed<DataItem[]>(() => {
 
   if (!createMode.value) {
     dataList.push({
-      label: t('entity_id', { entityName: t(entityName) }),
+      label: t('account_profile.username'),
       value: String(entityData.value?._id),
       displayType: DataItemDisplayType.Copy,
     });
@@ -172,21 +291,20 @@ const summary = computed<DataItem[]>(() => {
   if (entityData.value?.firstName || entityData.value?.lastName) {
     dataList.push({
       label: t('name'),
-      value:
-        `${entityData.value.firstName || ''} ${entityData.value.lastName || ''}`.trim(),
+      value: userFullName.value,
     });
   }
 
   if (entityData.value?.email) {
     dataList.push({
-      label: t('email'),
+      label: t('person.email'),
       value: entityData.value.email,
     });
   }
 
   if (entityData.value?.phoneNumber) {
     dataList.push({
-      label: t('phone'),
+      label: t('person.phone'),
       value: entityData.value.phoneNumber,
     });
   }
@@ -210,7 +328,7 @@ const { summaryProps } = useEntityEditSummary({
 // =====================================================================================
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<User>(() =>
-    userApi.get(String(entityId.value)),
+    userApi.me.get(),
   );
 
   if (error.value) {
@@ -253,12 +371,6 @@ breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     :loading="loading"
     @confirm="confirmLeave"
   />
-  <DialogDelete
-    v-model:open="deleteDialogOpen"
-    :entity-name="entityName"
-    :loading="deleting"
-    @confirm="confirmDelete"
-  />
 
   <ContentEditWrap>
     <template #header>
@@ -272,26 +384,6 @@ breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
             @click="handleSave"
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
-          <DropdownMenu v-if="!createMode">
-            <DropdownMenuTrigger as-child>
-              <Button size="icon" variant="secondary">
-                <LucideMoreHorizontal class="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem as-child>
-                <NuxtLink :to="newEntityUrl">
-                  <LucidePlus class="mr-2 size-4" />
-                  <span>{{ $t('new_entity', { entityName }) }}</span>
-                </NuxtLink>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem @click="openDeleteDialog">
-                <LucideTrash class="mr-2 size-4" />
-                <span>{{ $t('delete_entity', { entityName }) }}</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
@@ -305,20 +397,16 @@ breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
       <ContentEditMain :show-sidebar="showSidebar">
         <ContentEditMainContent>
           <ContentEditCard
-            :title="$t('user_details')"
-            :description="$t('user_details_description')"
+            :title="$t('entity_details', { entityName })"
+            description="Contact information and personal details"
           >
             <FormGridWrap>
               <FormGrid design="1+1">
                 <FormField v-slot="{ componentField }" name="details.firstName">
                   <FormItem>
-                    <FormLabel>{{ $t('first_name') }}</FormLabel>
+                    <FormLabel>{{ $t('person.first_name') }}</FormLabel>
                     <FormControl>
-                      <Input
-                        type="text"
-                        :placeholder="$t('first_name')"
-                        v-bind="componentField"
-                      />
+                      <Input type="text" v-bind="componentField" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -326,13 +414,9 @@ breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
 
                 <FormField v-slot="{ componentField }" name="details.lastName">
                   <FormItem>
-                    <FormLabel>{{ $t('last_name') }}</FormLabel>
+                    <FormLabel>{{ $t('person.last_name') }}</FormLabel>
                     <FormControl>
-                      <Input
-                        type="text"
-                        :placeholder="$t('last_name')"
-                        v-bind="componentField"
-                      />
+                      <Input type="text" v-bind="componentField" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -342,13 +426,9 @@ breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
               <FormGrid design="1+1">
                 <FormField v-slot="{ componentField }" name="details.email">
                   <FormItem>
-                    <FormLabel>{{ $t('email') }}</FormLabel>
+                    <FormLabel>{{ $t('person.email') }}</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        :placeholder="$t('email')"
-                        v-bind="componentField"
-                      />
+                      <Input type="email" v-bind="componentField" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -359,13 +439,80 @@ breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
                   name="details.phoneNumber"
                 >
                   <FormItem>
-                    <FormLabel>{{ $t('phone') }}</FormLabel>
+                    <FormLabel>{{ $t('person.phone') }}</FormLabel>
                     <FormControl>
-                      <Input
-                        type="tel"
-                        :placeholder="$t('phone')"
-                        v-bind="componentField"
-                      />
+                      <Input type="tel" v-bind="componentField" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </FormGrid>
+            </FormGridWrap>
+          </ContentEditCard>
+          <ContentEditCard title="Login credentials">
+            <FormGridWrap>
+              <FormGrid design="2+1">
+                <FormField v-slot="{ componentField }" name="username">
+                  <FormItem>
+                    <FormLabel>{{ $t('account_profile.username') }}</FormLabel>
+                    <FormControl>
+                      <Input v-model="entityData._id" disabled />
+                    </FormControl>
+                    <FormDescription>
+                      Contact your administrator to change your username
+                    </FormDescription>
+                  </FormItem>
+                </FormField>
+              </FormGrid>
+              <!-- <ContentCardHeader
+                title="Update your password"
+                size="md"
+                class="mt-6 mb-4"
+              /> -->
+              <FormGrid design="1+1+1">
+                <FormField
+                  v-slot="{ componentField }"
+                  name="password.currentPassword"
+                  :validate-on-blur="true"
+                >
+                  <FormItem>
+                    <FormLabel>{{
+                      $t('account_profile.current_password')
+                    }}</FormLabel>
+                    <FormControl>
+                      <Input type="password" v-bind="componentField" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+
+                <FormField
+                  v-slot="{ componentField }"
+                  name="password.newPassword"
+                  :validate-on-blur="true"
+                >
+                  <FormItem>
+                    <FormLabel>{{
+                      $t('account_profile.new_password')
+                    }}</FormLabel>
+                    <FormControl>
+                      <Input type="password" v-bind="componentField" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+
+                <FormField
+                  v-slot="{ componentField }"
+                  name="password.confirmNewPassword"
+                  :validate-on-blur="true"
+                >
+                  <FormItem>
+                    <FormLabel>{{
+                      $t('account_profile.confirm_new_password')
+                    }}</FormLabel>
+                    <FormControl>
+                      <Input type="password" v-bind="componentField" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -376,7 +523,10 @@ breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
         </ContentEditMainContent>
 
         <template #sidebar>
-          <ContentEditSummary v-bind="summaryProps" />
+          <ContentEditSummary
+            v-bind="summaryProps"
+            :show-active-status="false"
+          />
         </template>
       </ContentEditMain>
     </form>
