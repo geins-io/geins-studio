@@ -16,6 +16,7 @@ const { geinsLogError } = useGeinsLog('pages/account/user/[id].vue');
 const userStore = useUserStore();
 const { userInitials } = storeToRefs(userStore);
 const breadcrumbsStore = useBreadcrumbsStore();
+const { session, setSession } = useGeinsAuth();
 
 // =====================================================================================
 // API & REPOSITORY SETUP
@@ -328,6 +329,11 @@ const handleSave = async () => {
     true,
   );
   emptyPasswords();
+  const newSession = {
+    ...session.value,
+    user: entityData.value,
+  };
+  setSession(newSession);
   userStore.updateUser(entityData.value);
 };
 
