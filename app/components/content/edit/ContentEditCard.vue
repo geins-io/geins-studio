@@ -92,7 +92,7 @@ const hasCreateView = computed(() => !!slots.create);
           :class="
             cn(
               'space-y-8 p-4 pt-0 @2xl:p-6',
-              `${createMode ? '' : 'pb-4 @2xl:pt-0 @2xl:pb-8'}`,
+              `${createMode ? '' : 'pb-4 @2xl:pt-0 @2xl:pb-9'}`,
             )
           "
         >

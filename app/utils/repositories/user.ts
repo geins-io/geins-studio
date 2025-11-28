@@ -1,5 +1,5 @@
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
-import type { User, UserCreate, UserUpdate } from '#shared/types';
+import type { User, UserProfileUpdate } from '#shared/types';
 
 const BASE_ENDPOINT = '/user';
 
@@ -11,6 +11,32 @@ export function userRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
   return {
     ...userRepo,
+    me: {
+      async get(): Promise<User> {
+        return await fetch<User>(`${BASE_ENDPOINT}/me`);
+      },
+      async update(
+        id: string,
+        data: UserProfileUpdate,
+        options?: ApiOptions<string>,
+      ): Promise<User> {
+        return await fetch<User>(`${BASE_ENDPOINT}/me`, {
+          method: 'PUT',
+          body: data,
+        });
+      },
+      password: {
+        async update(
+          currentPassword: string,
+          newPassword: string,
+        ): Promise<void> {
+          await fetch<void>(`${BASE_ENDPOINT}/me/password`, {
+            method: 'POST',
+            body: { currentPassword, newPassword },
+          });
+        },
+      },
+    },
     password: {
       beginRestore: async (
         email: string,

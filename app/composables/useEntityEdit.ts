@@ -25,6 +25,7 @@ interface EntityEditOptions<
   initialEntityData: TCreate;
   initialUpdateData: TUpdate;
   excludeSaveFields?: StringKeyOf<TBase>[];
+  externalChanges?: Ref<boolean>;
   parseEntityData?: (entity: TResponse) => Promise<void> | void;
   prepareCreateData?: (formData: GenericObject) => TCreate;
   prepareUpdateData?: (formData: GenericObject, entity?: TUpdate) => TUpdate;
@@ -179,6 +180,7 @@ export function useEntityEdit<
       originalEntityData,
       createMode,
       options.excludeSaveFields,
+      options.externalChanges,
     );
 
   // Form management

@@ -1,52 +1,53 @@
 <script setup lang="ts">
-import type { ColumnDef } from '@tanstack/vue-table';
-import type { ColumnOptions, User } from '#shared/types';
-type Entity = User;
+navigateTo('/account/profile');
+// import type { ColumnDef } from '@tanstack/vue-table';
+// import type { ColumnOptions, User } from '#shared/types';
+// type Entity = User;
 
-const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
+// const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
-definePageMeta({
-  pageType: 'list',
-});
+// definePageMeta({
+//   pageType: 'list',
+// });
 
-// GLOBAL SETUP
-// const apiEndpoint = '/users';
-const dataList = ref<Entity[]>([]);
-const entityName = getEntityName();
-const newEntityUrl = getEntityNewUrl();
-const entityUrl = getEntityUrl('{id}');
-const loading = ref(true);
-const columns: Ref<ColumnDef<Entity>[]> = ref([]);
+// // GLOBAL SETUP
+// // const apiEndpoint = '/users';
+// const dataList = ref<Entity[]>([]);
+// const entityName = getEntityName();
+// const newEntityUrl = getEntityNewUrl();
+// const entityUrl = getEntityUrl('{id}');
+// const loading = ref(true);
+// const columns: Ref<ColumnDef<Entity>[]> = ref([]);
 
-// SET UP COLUMNS FOR ENTITY
-const columnOptions: ColumnOptions<Entity> = {
-  columnTypes: { email: 'link' },
-  linkColumns: {
-    email: {
-      url: entityUrl,
-      idField: '_id',
-    },
-  },
-};
+// // SET UP COLUMNS FOR ENTITY
+// const columnOptions: ColumnOptions<Entity> = {
+//   columnTypes: { email: 'link' },
+//   linkColumns: {
+//     email: {
+//       url: entityUrl,
+//       idField: '_id',
+//     },
+//   },
+// };
 
-// FETCH DATA FOR ENTITY
-const { user } = useUserStore();
+// // FETCH DATA FOR ENTITY
+// const { user } = useUserStore();
 
-if (user) {
-  dataList.value = [user];
-} else {
-  dataList.value = [];
-}
+// if (user) {
+//   dataList.value = [user];
+// } else {
+//   dataList.value = [];
+// }
 
-loading.value = false;
+// loading.value = false;
 
-// GET AND SET COLUMNS
-const { getColumns } = useColumns<Entity>();
-columns.value = getColumns(dataList.value, columnOptions);
+// // GET AND SET COLUMNS
+// const { getColumns } = useColumns<Entity>();
+// columns.value = getColumns(dataList.value, columnOptions);
 </script>
 
 <template>
-  <ContentHeader :title="$t(entityName, 2)">
+  <!-- <ContentHeader :title="$t(entityName, 2)">
     <ContentActionBar>
       <ButtonExport />
       <ButtonIcon icon="new" :href="newEntityUrl">
@@ -68,5 +69,5 @@ columns.value = getColumns(dataList.value, columnOptions);
       </h2>
       <p>{{ errorCatched }}</p>
     </template>
-  </NuxtErrorBoundary>
+  </NuxtErrorBoundary> -->
 </template>

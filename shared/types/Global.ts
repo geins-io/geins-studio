@@ -44,6 +44,18 @@ export interface NavigationItem {
   active?: boolean;
   icon?: unknown;
   children?: NavigationItem[];
+  hideFromMenu?: boolean;
+
+  // Role-based access control
+  roles?: string[]; // e.g., ['admin', 'editor', 'viewer']
+  permissions?: string[]; // e.g., ['wholesale.read', 'products.write']
+
+  group?: string; // Group items together (e.g., 'sales', 'content')
+
+  // Child page pattern - defines dynamic child routes
+  // Example: '/wholesale/account/:id' matches /wholesale/account/123
+  // Used for auto-clearing breadcrumb overrides on navigation
+  childPattern?: string;
 }
 
 export interface GeinsApiError {

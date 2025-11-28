@@ -89,8 +89,10 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
   };
 
   const setAccount = async (accountKey: string) => {
+    // Exclude user and accounts from the session to prevent them from being stored in JWT
+    const { user, accounts, ...currentSession } = auth.data.value || {};
     const session: Session = {
-      ...auth.data.value,
+      ...currentSession,
       accountKey,
     };
 
@@ -101,11 +103,15 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
   };
 
   const setSession = async (session: Session) => {
-    const sessionObjectsStringified = stringifySessionObjects(session);
+    // Exclude user and accounts from the session to prevent them from being stored in JWT
+    const { user, accounts, ...sessionWithoutUserAndAccounts } = session;
+    const sessionObjectsStringified = stringifySessionObjects(
+      sessionWithoutUserAndAccounts,
+    );
 
     return await auth.signIn('credentials', {
       redirect: false,
-      ...session,
+      ...sessionWithoutUserAndAccounts,
       ...sessionObjectsStringified,
     });
   };
