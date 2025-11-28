@@ -13,7 +13,8 @@ import { DataItemDisplayType } from '#shared/types';
 const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('pages/account/user/[id].vue');
-const { updateUser } = useUserStore();
+const userStore = useUserStore();
+const { userInitials } = storeToRefs(userStore);
 const breadcrumbsStore = useBreadcrumbsStore();
 
 // =====================================================================================
@@ -164,6 +165,15 @@ const passwordsHasChanges = computed(() => {
   return !!passwords.newPassword || !!passwords.confirmNewPassword;
 });
 
+const emptyPasswords = () => {
+  passwords.currentPassword = undefined;
+  passwords.newPassword = undefined;
+  passwords.confirmNewPassword = undefined;
+  form.setFieldValue('password.currentPassword', undefined);
+  form.setFieldValue('password.newPassword', undefined);
+  form.setFieldValue('password.confirmNewPassword', undefined);
+};
+
 // =====================================================================================
 // UI STATE MANAGEMENT
 // =====================================================================================
@@ -291,6 +301,7 @@ const handleSave = async () => {
           title: t('entity_updated', { entityName }),
           variant: 'positive',
         });
+        emptyPasswords();
         return;
       }
     } catch (error) {
@@ -316,7 +327,8 @@ const handleSave = async () => {
     undefined,
     true,
   );
-  updateUser(entityData.value);
+  emptyPasswords();
+  userStore.updateUser(entityData.value);
 };
 
 // =====================================================================================
@@ -562,10 +574,25 @@ if (!createMode.value) {
         </ContentEditMainContent>
 
         <template #sidebar>
-          <ContentEditSummary
-            v-bind="summaryProps"
-            :show-active-status="false"
-          />
+          <ContentEditSummary v-bind="summaryProps" :show-active-status="false">
+            <template #before-active-switch>
+              <div
+                class="flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm"
+              >
+                <Avatar class="mr-1 size-10 rounded-lg">
+                  <AvatarFallback class="rounded-lg text-sm">
+                    {{ userInitials }}
+                  </AvatarFallback>
+                </Avatar>
+                <div class="grid flex-1 text-left text-sm leading-tight">
+                  <span v-if="entityPageTitle" class="truncate font-semibold">
+                    {{ entityPageTitle }}
+                  </span>
+                  <span class="truncate text-xs">{{ entityData._id }}</span>
+                </div>
+              </div>
+            </template>
+          </ContentEditSummary>
         </template>
       </ContentEditMain>
     </form>

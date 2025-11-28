@@ -289,6 +289,7 @@ const handleSubmit = () => {
 const backToLogin = () => {
   verificationCode.value = [];
   resetRequestSuccess.value = false;
+  resetRequestError.value = false;
   resetSuccess.value = false;
   emit('set-mode', 'login');
 };
