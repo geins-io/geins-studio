@@ -31,11 +31,13 @@ export const navigation: NavigationItem[] = [
       {
         label: 'Accounts',
         href: '/wholesale/account/list',
+        childPattern: '/wholesale/account/:id', // Matches detail pages like /wholesale/account/123
         // permissions: ['wholesale.accounts.read'],
       },
       {
         label: 'Price lists',
         href: '/wholesale/price-list/list',
+        childPattern: '/wholesale/price-list/:id', // Matches detail pages like /wholesale/price-list/456
         // permissions: ['wholesale.pricelists.read'],
       },
     ],
@@ -62,7 +64,7 @@ export const navigation: NavigationItem[] = [
     children: [
       {
         label: 'Profile',
-        href: '/account/profile/me',
+        href: '/account/profile',
         // permissions: ['users.manage'],
       },
     ],

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-navigateTo('/account/profile/me');
+navigateTo('/account/profile');
 // import type { ColumnDef } from '@tanstack/vue-table';
 // import type { ColumnOptions, User } from '#shared/types';
 // type Entity = User;

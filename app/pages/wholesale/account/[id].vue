@@ -34,6 +34,7 @@ const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
 const accountStore = useAccountStore();
 const { toast } = useToast();
 const viewport = useViewport();
+const breadcrumbsStore = useBreadcrumbsStore();
 
 // =====================================================================================
 // FORM VALIDATION SCHEMA
@@ -201,6 +202,8 @@ const {
     },
   }),
   parseEntityData: async (account: WholesaleAccount) => {
+    breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
+
     buyersList.value = account.buyers || [];
     entityLiveStatus.value = account.active || false;
     accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
@@ -796,12 +799,6 @@ if (!createMode.value) {
     buyersList.value,
   );
 }
-
-// =====================================================================================
-// BREADCRUMBS DATA
-// ====================================================================================
-const breadcrumbsStore = useBreadcrumbsStore();
-breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
 </script>
 
 <template>

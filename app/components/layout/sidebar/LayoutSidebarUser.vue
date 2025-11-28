@@ -60,7 +60,7 @@ const { isMobile } = useSidebar();
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem as-child>
-              <NuxtLink :to="`/account/profile/me`">
+              <NuxtLink :to="`/account/profile`">
                 <LucideUser class="mr-2 size-4" />
                 <span>Account</span>
               </NuxtLink>

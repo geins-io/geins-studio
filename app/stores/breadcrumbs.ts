@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import type { NavigationItem } from '#shared/types';
+import { navigation as navigationConfig } from '@/lib/navigation';
 
 /**
  * Breadcrumbs store with hybrid approach:
@@ -16,39 +17,124 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
   // Auto-derived from navigation (set by useNavigation composable)
   const navigationBreadcrumbs = ref<NavigationItem[]>([]);
 
-  // Override options - when set, these take precedence
+  // Override options - when set, these APPEND to the navigation breadcrumbs
   const titleOverride = ref<string | null>(null);
+  const replaceLast = ref(false); // If true, replaces last breadcrumb instead of appending
   const parentOverride = ref<{ title: string; link: string } | null>(null);
   const grandparentOverride = ref<{ title: string; link: string } | null>(null);
 
   const route = useRoute();
 
+  /**
+   * Check if a path matches a childPattern
+   * Example: '/wholesale/account/:id' matches '/wholesale/account/123'
+   */
+  const matchesChildPattern = (path: string, pattern: string): boolean => {
+    const patternSegments = pattern.split('/');
+    const pathSegments = path.split('/');
+
+    if (patternSegments.length !== pathSegments.length) return false;
+
+    return patternSegments.every((segment, index) => {
+      return segment.startsWith(':') || segment === pathSegments[index];
+    });
+  };
+
+  /**
+   * Find all navigation items (recursively) that have childPatterns
+   */
+  const getAllItemsWithChildPatterns = (
+    items: NavigationItem[],
+  ): NavigationItem[] => {
+    const result: NavigationItem[] = [];
+    for (const item of items) {
+      if (item.childPattern) {
+        result.push(item);
+      }
+      if (item.children) {
+        result.push(...getAllItemsWithChildPatterns(item.children));
+      }
+    }
+    return result;
+  };
+
+  /**
+   * Check if current route is a child page (matches a childPattern)
+   * Excludes exact navigation item hrefs (e.g., list pages)
+   */
+  const isOnChildPage = (
+    currentPath: string,
+    navItems: NavigationItem[],
+  ): boolean => {
+    const itemsWithPatterns = getAllItemsWithChildPatterns(navItems);
+
+    // Check if path matches any childPattern
+    const matchesPattern = itemsWithPatterns.some((item) => {
+      // Don't match if the path is the exact href of the navigation item
+      // (e.g., /wholesale/account/list should NOT match the childPattern)
+      if (currentPath === item.href) {
+        return false;
+      }
+
+      return matchesChildPattern(currentPath, item.childPattern!);
+    });
+
+    return matchesPattern;
+  };
+
   watch(
-    route,
-    async () => {
-      showBreadcrumbs.value = route.path !== '/';
-      // Clear overrides on route change so pages can set fresh values
-      await nextTick();
-      clearOverrides();
+    () => route.path,
+    (newPath, oldPath) => {
+      showBreadcrumbs.value = newPath !== '/';
+
+      // Auto-clear override when navigating AWAY from a child page
+      if (oldPath && newPath !== oldPath && titleOverride.value) {
+        // Use navigationConfig directly instead of navigationBreadcrumbs
+        const wasOnChildPage = isOnChildPage(oldPath, navigationConfig);
+        const isNowOnChildPage = isOnChildPage(newPath, navigationConfig);
+
+        console.log('🔍 Breadcrumb auto-clear check:', {
+          oldPath,
+          newPath,
+          wasOnChildPage,
+          isNowOnChildPage,
+          hasOverride: !!titleOverride.value,
+        });
+
+        // If we were on a child page (with override) and now we're NOT, clear it
+        if (wasOnChildPage && !isNowOnChildPage) {
+          console.log('✅ Auto-clearing breadcrumb override');
+          clearOverrides();
+        }
+      }
     },
     { deep: true },
   );
 
   /**
    * Full breadcrumb trail combining navigation + overrides
-   * Returns the navigation breadcrumbs with any manual overrides applied
+   * Returns the navigation breadcrumbs with title override either:
+   * - APPENDED as a new item (replace=false, default) - for entity detail pages
+   * - REPLACING the last item (replace=true) - for pages that want to override the final breadcrumb
    */
   const breadcrumbTrail = computed(() => {
     const trail = [...navigationBreadcrumbs.value];
 
-    // Apply title override to the last item if set
-    if (titleOverride.value && trail.length > 0) {
-      const lastItem = trail[trail.length - 1];
-      if (lastItem) {
-        trail[trail.length - 1] = {
-          ...lastItem,
+    if (titleOverride.value) {
+      if (replaceLast.value) {
+        // Replace the last breadcrumb item with the override
+        if (trail.length > 0) {
+          trail[trail.length - 1] = {
+            label: titleOverride.value,
+            href: route.path,
+          };
+        }
+      } else {
+        // Append title override as a NEW breadcrumb item (default behavior)
+        trail.push({
           label: titleOverride.value,
-        };
+          href: route.path,
+        });
       }
     }
 
@@ -103,11 +189,18 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
   };
 
   /**
-   * Override the current page title
-   * Useful for dynamic entity pages (e.g., "Acme Corporation" instead of "Accounts")
+   * Set a dynamic title for the current page
+   *
+   * @param title - The title to display (e.g., "John Doe", "Acme Corporation")
+   * @param replace - If true, replaces the last breadcrumb; if false (default), appends as new item
+   *
+   * Examples:
+   * - replace=false: "Wholesale > Accounts" + "Acme Corp" = "Wholesale > Accounts > Acme Corp"
+   * - replace=true: "Account > Profile" + "John Doe" = "Account > John Doe"
    */
-  const setCurrentTitle = (title: string) => {
+  const setCurrentTitle = (title: string, replace = false) => {
     titleOverride.value = title;
+    replaceLast.value = replace;
   };
 
   /**
@@ -131,10 +224,11 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
 
   /**
    * Clear all manual overrides
-   * Called automatically on route change
+   * Call this manually when leaving a page if needed
    */
   const clearOverrides = () => {
     titleOverride.value = null;
+    replaceLast.value = false; // Reset to default
     parentOverride.value = null;
     grandparentOverride.value = null;
   };

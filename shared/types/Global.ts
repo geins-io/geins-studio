@@ -51,6 +51,11 @@ export interface NavigationItem {
   permissions?: string[]; // e.g., ['wholesale.read', 'products.write']
 
   group?: string; // Group items together (e.g., 'sales', 'content')
+
+  // Child page pattern - defines dynamic child routes
+  // Example: '/wholesale/account/:id' matches /wholesale/account/123
+  // Used for auto-clearing breadcrumb overrides on navigation
+  childPattern?: string;
 }
 
 export interface GeinsApiError {
