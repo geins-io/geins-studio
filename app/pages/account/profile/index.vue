@@ -15,7 +15,6 @@ const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('pages/account/user/[id].vue');
 const userStore = useUserStore();
 const { userInitials } = storeToRefs(userStore);
-const breadcrumbsStore = useBreadcrumbsStore();
 const { session, setSession } = useGeinsAuth();
 
 // =====================================================================================
@@ -245,7 +244,6 @@ const {
         phoneNumber: entity.phoneNumber || '',
       },
     });
-    breadcrumbsStore.setCurrentTitle(entityPageTitle.value, true);
   },
   prepareCreateData: (formData) => ({
     name: `${formData.details.firstName || ''} ${

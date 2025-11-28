@@ -13,14 +13,6 @@ useNavigation();
 const breadcrumbsStore = useBreadcrumbsStore();
 const { showBreadcrumbs, breadcrumbTrail } = storeToRefs(breadcrumbsStore);
 
-watch(
-  breadcrumbTrail,
-  (newTrail) => {
-    console.log('Breadcrumb trail updated:', newTrail);
-  },
-  { deep: true },
-);
-
 const supportsHover = ref(true);
 onMounted(() => {
   supportsHover.value = window.matchMedia(

@@ -93,17 +93,8 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
         const wasOnChildPage = isOnChildPage(oldPath, navigationConfig);
         const isNowOnChildPage = isOnChildPage(newPath, navigationConfig);
 
-        console.log('🔍 Breadcrumb auto-clear check:', {
-          oldPath,
-          newPath,
-          wasOnChildPage,
-          isNowOnChildPage,
-          hasOverride: !!titleOverride.value,
-        });
-
         // If we were on a child page (with override) and now we're NOT, clear it
         if (wasOnChildPage && !isNowOnChildPage) {
-          console.log('✅ Auto-clearing breadcrumb override');
           clearOverrides();
         }
       }
