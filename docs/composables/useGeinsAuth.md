@@ -121,6 +121,10 @@ setSession(session: Session): Promise<any>
 
 Updates the current session with new session data.
 
+::: info Note
+This method automatically excludes `user` from the session before updating to not store it in the JWT token.
+:::
+
 - **Parameters:**
   - `session`: The complete session object to set
 - **Returns:** A promise that resolves to the updated session

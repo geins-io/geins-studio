@@ -6,17 +6,26 @@ export interface UserBase {
   lastName?: string;
   email?: string | null;
   phoneNumber?: string;
-  company?: string;
   roles?: string[];
   apiUserType?: ApiUserType;
   error?: unknown;
 }
 
-export type UserCreate = CreateEntity<UserBase>;
-export type UserUpdate = UpdateEntity<UserBase>;
+export interface UserCreate extends Omit<CreateEntity<UserBase>, 'name'> {
+  name?: string;
+}
+export interface UserUpdate extends Omit<UpdateEntity<UserBase>, 'name'> {
+  name?: string;
+}
 export interface User extends ResponseEntity<UserBase> {
   password?: string;
 }
+
+export type UserProfileBase = Omit<UserBase, 'roles' | 'apiUserType' | 'error'>;
+
+export type UserProfileCreate = CreateEntity<UserProfileBase>;
+export type UserProfileUpdate = UpdateEntity<UserProfileBase>;
+export type UserProfile = ResponseEntity<UserProfileBase>;
 
 export interface AuthTokens {
   accessToken?: string;

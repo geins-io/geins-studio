@@ -125,14 +125,6 @@ const confirmDelete = async () => {
   deleting.value = false;
   deleteDialogOpen.value = false;
 };
-
-// =====================================================================================
-// BREADCRUMBS DATA
-// ====================================================================================
-
-const breadcrumbsStore = useBreadcrumbsStore();
-breadcrumbsStore.setCurrentTitle(t(entityName, 2));
-breadcrumbsStore.setCurrentParent(undefined);
 </script>
 
 <template>

@@ -2,6 +2,7 @@
 import * as z from 'zod';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
+import { createPasswordResetSchema } from '@/utils/password-validation';
 import type {
   LoginCredentials,
   AuthFormMode,
@@ -48,6 +49,7 @@ const resetPasswordMode = computed(() => props.mode === 'reset-password');
 
 // State management
 const resetRequestSuccess = ref(false);
+const resetRequestError = ref(false);
 const resetSuccess = ref(false);
 const resetLoading = ref(false);
 const verificationCode = ref<string[]>([]);
@@ -73,21 +75,7 @@ const formSchema = computed(() => {
   }
 
   if (resetPasswordMode.value) {
-    return toTypedSchema(
-      z
-        .object({
-          newPassword: z
-            .string()
-            .min(6, { message: t('auth.password_min_length') }),
-          passwordRepeat: z
-            .string()
-            .min(6, { message: t('auth.password_min_length') }),
-        })
-        .refine((data) => data.newPassword === data.passwordRepeat, {
-          message: t('auth.passwords_not_matching'),
-          path: ['passwordRepeat'],
-        }),
-    );
+    return toTypedSchema(createPasswordResetSchema(t));
   }
 
   // Default empty schema
@@ -140,13 +128,18 @@ onMounted(async () => {
 
 // Feedback messages
 const feedbackVisible = computed(() => {
-  return props.showInvalid || resetRequestSuccess.value || resetSuccess.value;
+  return (
+    props.showInvalid ||
+    resetRequestSuccess.value ||
+    resetSuccess.value ||
+    resetRequestError.value
+  );
 });
 
 const feedbackType = computed(() => {
   if (resetSuccess.value) return 'positive';
   if (resetRequestSuccess.value) return 'info';
-  if (props.showInvalid) return 'negative';
+  if (props.showInvalid || resetRequestError.value) return 'negative';
   return 'info';
 });
 
@@ -154,6 +147,7 @@ const feedbackTitle = computed(() => {
   if (resetSuccess.value) return t('auth.password_reset_success_title');
   if (resetRequestSuccess.value)
     return t('auth.password_reset_requested_title');
+  if (resetRequestError.value) return t('auth.password_reset_error_title');
   if (props.showInvalid) {
     switch (props.mode) {
       case 'login':
@@ -173,6 +167,8 @@ const feedbackDescription = computed(() => {
   if (resetSuccess.value) return t('auth.password_reset_success_description');
   if (resetRequestSuccess.value)
     return t('auth.password_reset_requested_description');
+  if (resetRequestError.value)
+    return t('auth.password_reset_error_description');
   if (props.showInvalid) {
     switch (props.mode) {
       case 'login':
@@ -235,6 +231,7 @@ const handleForgotPassword = async () => {
   } catch (error) {
     const message = getErrorMessage(error);
     geinsLogError('error requesting password reset:', message);
+    resetRequestError.value = true;
     // Re-emit to parent for error handling
     emit('set-mode', 'forgot-password');
   } finally {
@@ -279,6 +276,7 @@ const handleSubmit = () => {
 const backToLogin = () => {
   verificationCode.value = [];
   resetRequestSuccess.value = false;
+  resetRequestError.value = false;
   resetSuccess.value = false;
   emit('set-mode', 'login');
 };

@@ -32,11 +32,10 @@ export default NuxtAuthHandler({
           if (newTokens) {
             // If refresh is successful, update the token with the new session data
             const tokenData = geinsAuth.getSessionFromResponse(newTokens);
-            // Set the new token data but keep accountKey and user as is
+            // Set the new token data but keep accountKey as is
             token = {
               ...tokenData,
               accountKey: token.accountKey,
-              user: token.user,
             };
             geinsLog('jwt returned ::: refresh:', token);
             return token;
@@ -128,13 +127,6 @@ export default NuxtAuthHandler({
           payload.mfaCode
         ) {
           authResponse = await geinsAuth.verify(payload);
-        } else if (
-          'user' in payload &&
-          payload.user &&
-          Object.keys(payload.user).length
-        ) {
-          const session: Session = geinsAuth.parseSessionObjectStrings(payload);
-          return geinsAuth.getAuthenticatedSession(session);
         } else if ('accountKey' in payload && payload.accountKey) {
           authResponse = payload as AuthResponse;
         }

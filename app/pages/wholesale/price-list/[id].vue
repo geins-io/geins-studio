@@ -27,6 +27,7 @@ const { geinsLogError } = useGeinsLog('pages/wholesale/price-list/[id].vue');
 const accountStore = useAccountStore();
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
+const breadcrumbsStore = useBreadcrumbsStore();
 
 // =====================================================================================
 // API & REPOSITORY SETUP
@@ -243,6 +244,7 @@ const {
   }),
   parseEntityData: (entity) => {
     entityLiveStatus.value = entity.active;
+    breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     if (entity.productSelectionQuery) {
       productSelection.value = entity.productSelectionQuery;
     }
@@ -616,17 +618,6 @@ if (!createMode.value) {
     { deep: true },
   );
 }
-
-// =====================================================================================
-// BREADCRUMBS DATA
-// ====================================================================================
-
-const breadcrumbsStore = useBreadcrumbsStore();
-breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
-breadcrumbsStore.setCurrentParent({
-  title: t(entityName, 2),
-  link: entityListUrl,
-});
 </script>
 
 <template>
