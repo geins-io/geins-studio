@@ -108,6 +108,10 @@ An object representing the initial data structure for updating an existing entit
 
 An array of field names (keys of `TBase`) to exclude from unsaved changes tracking. These fields will not be considered when determining if there are unsaved changes.
 
+### `externalChanges`
+
+An optional `ref<boolean>` that allows external tracking of changes beyond the entity data comparison. When set to `true`, it will mark the form as having unsaved changes regardless of data comparison. This is useful for tracking changes to related data or complex state that isn't directly reflected in the entity data.
+
 ### `stepValidationMap`
 
 An object mapping step indices to form field names. This is used for validating specific steps in multi-step forms. For example, `{ 0: 'details', 1: 'settings' }` means step 0 validates the `details` field and step 1 validates the `settings` field.
@@ -406,7 +410,8 @@ const { hasUnsavedChanges, unsavedChangesDialogOpen, confirmLeave } =
     entityDataUpdate,
     originalEntityData,
     createMode,
-    excludeFields,
+    options.excludeSaveFields,
+    options.externalChanges,
   );
 ```
 
@@ -455,6 +460,7 @@ interface EntityEditOptions<TBase, TResponse, TCreate, TUpdate, TOptions> {
   initialEntityData: TCreate;
   initialUpdateData: TUpdate;
   excludeSaveFields?: StringKeyOf<TBase>[];
+  externalChanges?: Ref<boolean>;
   parseEntityData?: (entity: TResponse) => Promise<void> | void;
   prepareCreateData?: (formData: GenericObject) => TCreate;
   prepareUpdateData?: (formData: GenericObject, entity?: TUpdate) => TUpdate;

@@ -41,11 +41,15 @@ The composable exposes the following repository instances, each with their own s
 
 #### `account`
 
+`globalApi.account`
+
 ```ts
 function get(): Promise<Account>;
 ```
 
 #### `channel`
+
+`globalApi.channel`
 
 ```ts
 function list(): Promise<Channel[]>;
@@ -53,11 +57,15 @@ function list(): Promise<Channel[]>;
 
 #### `currency`
 
+`globalApi.currency`
+
 ```ts
 function list(): Promise<Currency[]>;
 ```
 
 #### `language`
+
+`globalApi.language`
 
 ```ts
 function list(): Promise<Language[]>;
@@ -90,6 +98,8 @@ function query(
 
 #### `category`
 
+`productApi.category`
+
 ```ts
 function get(id: number): Promise<Category>;
 function list(
@@ -99,6 +109,8 @@ function query(ids: number[]): Promise<BatchQueryResult<Category>>;
 ```
 
 #### `brand`
+
+`productApi.brand`
 
 ```ts
 function get(id: number): Promise<Brand>;
@@ -110,6 +122,8 @@ function query(ids: number[]): Promise<BatchQueryResult<Brand>>;
 
 #### `priceList`
 
+`productApi.priceList`
+
 ```ts
 function get(id: string, options?: ProductPriceListApiOptions): Promise<ProductPriceList>;
 function list(options?: ProductPriceListApiOptions): Promise<ProductPriceList[]>;
@@ -119,6 +133,8 @@ function delete(id: string): Promise<void>;
 ```
 
 ##### `id(priceListId: string)`
+
+`productApi.priceList.id(priceListId)`
 
 ```ts
 function copy(options?: ProductPriceListApiOptions): Promise<ProductPriceList>;
@@ -136,6 +152,8 @@ function previewPrice(
 
 #### `account`
 
+`wholesaleApi.account`
+
 ```ts
 function get(id: string, options?: WholesaleAccountApiOptions): Promise<WholesaleAccount>;
 function list(options?: WholesaleAccountApiOptions): Promise<WholesaleAccount[]>;
@@ -145,6 +163,8 @@ function delete(id: string): Promise<void>;
 ```
 
 ##### `tags`
+
+`wholesaleApi.account.tags`
 
 ```ts
 function get(): Promise<string[]>;
@@ -178,6 +198,8 @@ function list(): Promise<WholesaleBuyer[]>;
 
 #### `validateVatNumber`
 
+`wholesaleApi.validateVatNumber`
+
 ```ts
 function validateVatNumber(vatNumber: string): Promise<WholesaleVatValidation>;
 ```
@@ -192,7 +214,26 @@ function update(id: string, data: UserUpdate): Promise<User>;
 function delete(id: string): Promise<void>;
 ```
 
+#### `me`
+
+`userApi.me`
+
+```ts
+function get(): Promise<User>;
+function update(id: string, data: UserProfileUpdate): Promise<User>;
+```
+
+##### `password`
+
+`userApi.me.password`
+
+```ts
+function update(currentPassword: string, newPassword: string): Promise<void>;
+```
+
 #### `password`
+
+`userApi.password`
 
 ```ts
 function beginRestore(email: string, callbackUrl: string): Promise<void>;
