@@ -1,5 +1,9 @@
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
-import type { User, UserProfileUpdate } from '#shared/types';
+import type {
+  User,
+  UserProfileUpdate,
+  UserProfileApiOptions,
+} from '#shared/types';
 
 const BASE_ENDPOINT = '/user';
 
@@ -12,17 +16,21 @@ export function userRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   return {
     ...userRepo,
     me: {
-      async get(): Promise<User> {
-        return await fetch<User>(`${BASE_ENDPOINT}/me`);
+      async get(options?: UserProfileApiOptions): Promise<User> {
+        return await fetch<User>(`${BASE_ENDPOINT}/me`, {
+          method: 'GET',
+          query: buildQueryObject(options),
+        });
       },
       async update(
         id: string,
         data: UserProfileUpdate,
-        options?: ApiOptions<string>,
+        options?: UserProfileApiOptions,
       ): Promise<User> {
         return await fetch<User>(`${BASE_ENDPOINT}/me`, {
           method: 'PUT',
           body: data,
+          query: buildQueryObject(options),
         });
       },
       password: {

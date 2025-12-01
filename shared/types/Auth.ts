@@ -9,6 +9,8 @@ export interface UserBase {
   roles?: string[];
   apiUserType?: ApiUserType;
   error?: unknown;
+  accountCount?: number;
+  basicAccounts?: AuthAccounts[];
 }
 
 export interface UserCreate extends Omit<CreateEntity<UserBase>, 'name'> {
@@ -27,18 +29,21 @@ export type UserProfileCreate = CreateEntity<UserProfileBase>;
 export type UserProfileUpdate = UpdateEntity<UserProfileBase>;
 export type UserProfile = ResponseEntity<UserProfileBase>;
 
+export type UserProfileFieldsFilter = 'accounts';
+export type UserProfileApiOptions = ApiOptions<UserProfileFieldsFilter>;
+
 export interface AuthTokens {
   accessToken?: string;
   refreshToken?: string;
   loginToken?: string;
   mfaCode?: string;
-  accounts?: AuthAccounts[];
   accountKey?: string;
 }
 
 export interface AuthResponse extends AuthTokens {
   mfaRequired?: boolean;
   mfaMethod?: string;
+  accounts?: AuthAccounts[];
 }
 
 export interface Session extends AuthTokens {

@@ -89,8 +89,8 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
   };
 
   const setAccount = async (accountKey: string) => {
-    // Exclude user and accounts from the session to prevent them from being stored in JWT
-    const { user, accounts, ...currentSession } = auth.data.value || {};
+    // Exclude user from the session to prevent it from being stored in JWT
+    const { user, ...currentSession } = auth.data.value || {};
     const session: Session = {
       ...currentSession,
       accountKey,
@@ -103,15 +103,14 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
   };
 
   const setSession = async (session: Session) => {
-    // Exclude user and accounts from the session to prevent them from being stored in JWT
-    const { user, accounts, ...sessionWithoutUserAndAccounts } = session;
-    const sessionObjectsStringified = stringifySessionObjects(
-      sessionWithoutUserAndAccounts,
-    );
+    // Exclude user from the session to prevent it from being stored in JWT
+    const { user, ...sessionWithoutUser } = session;
+    const sessionObjectsStringified =
+      stringifySessionObjects(sessionWithoutUser);
 
     return await auth.signIn('credentials', {
       redirect: false,
-      ...sessionWithoutUserAndAccounts,
+      ...sessionWithoutUser,
       ...sessionObjectsStringified,
     });
   };
@@ -133,9 +132,7 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     const copy1 = { ...session1 };
     const copy2 = { ...session2 };
     delete copy1.expires;
-    delete copy1.accounts;
     delete copy2.expires;
-    delete copy2.accounts;
     return JSON.stringify(copy1) === JSON.stringify(copy2);
   };
 

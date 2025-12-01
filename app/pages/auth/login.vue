@@ -38,7 +38,7 @@ const handleInitialState = async () => {
     return;
   }
 
-  if (session.value?.accounts && !session.value?.accountKey) {
+  if (session.value?.user?.basicAccounts && !session.value?.accountKey) {
     step.value = 'account';
     return;
   }
@@ -72,6 +72,7 @@ const redirectToHome = async () => {
 
 // Handle post-authentication flow
 const handlePostAuth = async () => {
+  console.log('🚀 ~ handlePostAuth ~ session.value:', session.value);
   if (session.value?.mfaActive && session.value?.loginToken) {
     loginToken.value = session.value.loginToken;
     mfaMethod.value = session.value.mfaMethod || '';
@@ -80,7 +81,7 @@ const handlePostAuth = async () => {
     return;
   }
 
-  if (session.value?.accounts && !session.value?.accountKey) {
+  if (!session.value?.accountKey) {
     step.value = 'account';
     loading.value = false;
     return;
@@ -179,7 +180,7 @@ const handleSetMode = (mode: AuthFormMode) => {
     :loading="loading"
     :show-invalid="showInvalid"
     :mfa-method="mfaMethod"
-    :accounts="session?.accounts"
+    :accounts="session?.user?.basicAccounts"
     @login="handleLogin"
     @verify="handleVerify"
     @set-account="handleSetAccount"
