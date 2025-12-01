@@ -2,6 +2,7 @@
 import * as z from 'zod';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
+import { createPasswordResetSchema } from '@/utils/password-validation';
 import type {
   LoginCredentials,
   AuthFormMode,
@@ -74,21 +75,7 @@ const formSchema = computed(() => {
   }
 
   if (resetPasswordMode.value) {
-    return toTypedSchema(
-      z
-        .object({
-          newPassword: z
-            .string()
-            .min(6, { message: t('auth.password_min_length') }),
-          passwordRepeat: z
-            .string()
-            .min(6, { message: t('auth.password_min_length') }),
-        })
-        .refine((data) => data.newPassword === data.passwordRepeat, {
-          message: t('auth.passwords_not_matching'),
-          path: ['passwordRepeat'],
-        }),
-    );
+    return toTypedSchema(createPasswordResetSchema(t));
   }
 
   // Default empty schema

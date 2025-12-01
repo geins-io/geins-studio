@@ -1,24 +1,25 @@
 <script setup lang="ts">
-interface EntityEditSummary {
-  createMode?: boolean;
-  description?: string;
-  formTouched?: boolean;
-  summary?: DataItem[];
-  settingsSummary?: DataItem[];
-  entityName?: string;
-  entityLiveStatus?: boolean;
-  showActiveStatus?: boolean;
-}
-
-const props = withDefaults(defineProps<EntityEditSummary>(), {
-  createMode: false,
-  description: '',
-  formTouched: false,
-  summary: () => [],
-  settingsSummary: () => [],
-  entityLiveStatus: false,
-  showActiveStatus: true,
-});
+const props = withDefaults(
+  defineProps<{
+    createMode?: boolean;
+    description?: string;
+    formTouched?: boolean;
+    summary?: DataItem[];
+    settingsSummary?: DataItem[];
+    entityName?: string;
+    entityLiveStatus?: boolean;
+    showActiveStatus?: boolean;
+  }>(),
+  {
+    createMode: false,
+    description: '',
+    formTouched: false,
+    summary: () => [],
+    settingsSummary: () => [],
+    entityLiveStatus: false,
+    showActiveStatus: true,
+  },
+);
 
 const { t } = useI18n();
 

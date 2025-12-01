@@ -6,13 +6,16 @@ import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { DataItemDisplayType } from '#shared/types';
+import { createPasswordChangeSchema } from '@/utils/password-validation';
 
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogError } = useGeinsLog('pages/account/user/[id].vue');
+const { geinsLogWarn, geinsLogError } = useGeinsLog(
+  'pages/account/user/[id].vue',
+);
 const userStore = useUserStore();
 const { userInitials } = storeToRefs(userStore);
 const { session, setSession } = useGeinsAuth();
@@ -31,102 +34,18 @@ const userProfileApi = {
 // FORM VALIDATION SCHEMA
 // =====================================================================================
 const formSchema = toTypedSchema(
-  z
-    .object({
-      details: z.object({
-        firstName: z.string().optional(),
-        lastName: z.string().optional(),
-        email: z
-          .email({ message: t('form.invalid_email') })
-          .min(1, { message: t('form.field_required') }),
-        phoneNumber: z.string().optional(),
-      }),
-      password: z.object({
-        currentPassword: z.string().optional(),
-        newPassword: z.string().optional(),
-        confirmNewPassword: z.string().optional(),
-      }),
-    })
-    .check(
-      z.superRefine((data, ctx) => {
-        const { currentPassword, newPassword, confirmNewPassword } =
-          data.password;
-
-        // If newPassword or confirmNewPassword is filled, validate all password fields
-        if (newPassword || confirmNewPassword) {
-          // Validate currentPassword is required
-          if (!currentPassword) {
-            ctx.addIssue({
-              code: 'custom',
-              message: t('form.field_required'),
-              path: ['password', 'currentPassword'],
-            });
-          }
-
-          // Validate newPassword requirements
-          if (!newPassword) {
-            ctx.addIssue({
-              code: 'custom',
-              message: t('form.field_required'),
-              path: ['password', 'newPassword'],
-            });
-          } else {
-            // Check minimum length
-            if (newPassword.length < 8) {
-              ctx.addIssue({
-                code: 'custom',
-                message: t('form.password_min_length', { length: 8 }),
-                path: ['password', 'newPassword'],
-              });
-            }
-
-            // Check for at least one uppercase letter
-            if (!/[A-Z]/.test(newPassword)) {
-              ctx.addIssue({
-                code: 'custom',
-                message:
-                  t('form.password_uppercase_required') ||
-                  'Password must contain at least one uppercase letter',
-                path: ['password', 'newPassword'],
-              });
-            }
-
-            // Check for at least one number
-            if (!/[0-9]/.test(newPassword)) {
-              ctx.addIssue({
-                code: 'custom',
-                message:
-                  t('form.password_number_required') ||
-                  'Password must contain at least one number',
-                path: ['password', 'newPassword'],
-              });
-            }
-          }
-
-          // Validate confirmNewPassword is required
-          if (!confirmNewPassword) {
-            ctx.addIssue({
-              code: 'custom',
-              message: t('form.field_required'),
-              path: ['password', 'confirmNewPassword'],
-            });
-          }
-
-          // Validate passwords match (only if both are provided)
-          if (
-            newPassword &&
-            confirmNewPassword &&
-            newPassword !== confirmNewPassword
-          ) {
-            ctx.addIssue({
-              code: 'custom',
-              message: t('form.passwords_must_match') || 'Passwords must match',
-              path: ['password', 'confirmNewPassword'],
-            });
-          }
-        }
-      }),
-    ),
+  z.object({
+    details: z.object({
+      firstName: z.string().optional(),
+      lastName: z.string().optional(),
+      email: z
+        .email({ message: t('form.invalid_email') })
+        .min(1, { message: t('form.field_required') }),
+      phoneNumber: z.string().optional(),
+    }),
+    username: z.string().optional(),
+    password: createPasswordChangeSchema(t),
+  }),
 );
 
 // =====================================================================================
@@ -332,8 +251,12 @@ const handleSave = async () => {
     ...session.value,
     user: entityData.value,
   };
-  setSession(newSession);
-  userStore.updateUser(entityData.value);
+  try {
+    await setSession(newSession);
+    userStore.updateUser(entityData.value);
+  } catch (error) {
+    geinsLogWarn('error updating session:', error);
+  }
 };
 
 // =====================================================================================

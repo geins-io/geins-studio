@@ -173,19 +173,18 @@
     "password_reset_success_description": "You can now log in with your new password.",
     "password_reset_error_title": "Password reset request failed",
     "password_reset_error_description": "Something went wrong while requesting reset link. Please try again.",
-    "password_min_length": "Password must be at least 6 characters",
     "passwords_not_matching": "Passwords do not match",
+    "password_uppercase_required": "Password must contain at least one uppercase letter",
+    "password_number_required": "Password must contain at least one number",
+    "passwords_must_match": "Passwords must match",
+    "password_min_length": "Password must be at least 8 characters long",
     "go_to_login": "Go to login"
   },
   "form": {
     "field_required": "This field is required",
     "invalid_email": "Invalid email address",
     "optional": "optional",
-    "cannot_be_changed": "Cannot be changed upon creation",
-    "password_uppercase_required": "Password must contain at least one uppercase letter",
-    "password_number_required": "Password must contain at least one number",
-    "passwords_must_match": "Passwords must match",
-    "password_min_length": "Password must be at least 8 characters long"
+    "cannot_be_changed": "Cannot be changed upon creation"
   },
   "account_profile": {
     "login_credentials": "Login credentials",

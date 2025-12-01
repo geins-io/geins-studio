@@ -21,13 +21,7 @@ export interface User extends ResponseEntity<UserBase> {
   password?: string;
 }
 
-export interface UserProfileBase {
-  name: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string | null;
-  phoneNumber?: string;
-}
+export type UserProfileBase = Omit<UserBase, 'roles' | 'apiUserType' | 'error'>;
 
 export type UserProfileCreate = CreateEntity<UserProfileBase>;
 export type UserProfileUpdate = UpdateEntity<UserProfileBase>;
