@@ -37,7 +37,7 @@ export const useUserStore = defineStore('user', () => {
   });
 
   const userEmail = computed(() => {
-    return user.value?.email || 'N/A';
+    return user.value?._id || 'N/A';
   });
 
   const updateUser = (newUser: User) => {

@@ -236,6 +236,12 @@ const handleSave = async () => {
       return;
     }
   }
+  const stepValid = await validateSteps([1]);
+  if (!stepValid) {
+    validateOnChange.value = true;
+    return;
+  }
+  validateOnChange.value = false;
   await updateEntity(
     async () => {
       const stepsValid = await validateSteps([1]);
@@ -480,6 +486,9 @@ if (!createMode.value) {
                     <FormControl>
                       <Input type="password" v-bind="componentField" />
                     </FormControl>
+                    <FormDescription>
+                      {{ $t('auth.password_requirements') }}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 </FormField>
