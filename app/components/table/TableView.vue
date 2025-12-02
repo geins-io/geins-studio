@@ -1,6 +1,5 @@
 <script setup lang="ts" generic="TData extends Record<string, any>, TValue">
 import { TableMode } from '#shared/types';
-
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -19,6 +18,9 @@ import {
   useVueTable,
 } from '@tanstack/vue-table';
 
+import { LucideSearchX, LucideCircleSlash } from 'lucide-vue-next';
+import type { Component } from 'vue';
+
 const props = withDefaults(
   defineProps<{
     columns: ColumnDef<TData, TValue>[];
@@ -34,6 +36,11 @@ const props = withDefaults(
     pinnedState?: ColumnPinningState | null;
     selectedIds?: string[];
     emptyText?: string;
+    emptyDescription?: string;
+    emptyFilteredText?: string;
+    emptyFilteredDescription?: string;
+    emptyIcon?: Component;
+    showEmptyActions?: boolean;
     initVisibilityState?: VisibilityState;
   }>(),
   {
@@ -43,6 +50,7 @@ const props = withDefaults(
     loading: false,
     searchableFields: () => ['_id', 'name'],
     showSearch: false,
+    showEmptyActions: true,
     mode: TableMode.Advanced,
     pinnedState: () => ({
       left: ['select'],
@@ -294,14 +302,28 @@ const table = useVueTable({
   },
 });
 
-const emptyText = computed(() => {
-  const defaultEmpty =
-    props.emptyText || t('no_entity', { entityName: props.entityName }, 2);
-  const hasActiveFilter = globalFilter.value?.trim() !== '';
-  return hasActiveFilter
-    ? t('no_entity_found', { entityName: props.entityName }, 2)
-    : defaultEmpty;
+const emptyState = computed(() => {
+  const hasActiveFilter =
+    globalFilter.value?.trim() !== '' || columnFilters.value.length > 0;
+
+  return {
+    isFiltered: hasActiveFilter,
+    title: hasActiveFilter
+      ? props.emptyFilteredText ||
+        t('no_entity_found', { entityName: props.entityName }, 2)
+      : props.emptyText || t('no_entity', { entityName: props.entityName }, 2),
+    description: hasActiveFilter
+      ? props.emptyFilteredDescription ||
+        t('empty_filtered_description', { entityName: props.entityName }, 2)
+      : props.emptyDescription ||
+        t('empty_description', { entityName: props.entityName }, 2),
+  };
 });
+
+const clearFilters = () => {
+  globalFilter.value = '';
+  columnFilters.value = [];
+};
 
 const hasSearchableColumns = computed(() => {
   return props.searchableFields && props.searchableFields.length > 0;
@@ -399,9 +421,45 @@ const hasSearchableColumns = computed(() => {
           </TableRow>
         </template>
         <template v-else>
-          <TableRow>
-            <TableCell :colspan="columns.length" class="h-24 text-center">
-              {{ emptyText }}
+          <TableRow class="hover:bg-transparent">
+            <TableCell :colspan="columns.length" class="p-0">
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <component
+                      :is="
+                        emptyState.isFiltered
+                          ? LucideSearchX
+                          : (emptyIcon ?? LucideCircleSlash)
+                      "
+                    />
+                  </EmptyMedia>
+                  <EmptyTitle>{{ emptyState.title }}</EmptyTitle>
+                  <EmptyDescription v-if="emptyState.description">
+                    {{ emptyState.description }}
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent
+                  v-if="
+                    showEmptyActions &&
+                    (emptyState.isFiltered || $slots['empty-actions'])
+                  "
+                >
+                  <div class="gap-2 sm:flex">
+                    <slot
+                      v-if="$slots['empty-actions'] && !emptyState.isFiltered"
+                      name="empty-actions"
+                    />
+                    <Button
+                      v-else-if="emptyState.isFiltered"
+                      variant="secondary"
+                      @click="clearFilters"
+                    >
+                      {{ t('clear_search') }}
+                    </Button>
+                  </div>
+                </EmptyContent>
+              </Empty>
             </TableCell>
           </TableRow>
         </template>

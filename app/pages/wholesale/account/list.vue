@@ -160,10 +160,20 @@ const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
       :loading="loading"
       :entity-name="entityName"
       :columns="columns"
-      :data="dataList"
+      :data="[]"
       :init-visibility-state="visibilityState"
       :searchable-fields="searchableFields"
-    />
+    >
+      <template #empty-actions>
+        <ButtonIcon
+          icon="new"
+          variant="secondary"
+          @click="navigateTo(newEntityUrl)"
+        >
+          {{ $t('create_new_entity', { entityName }) }}
+        </ButtonIcon>
+      </template>
+    </TableView>
     <template #error="{ error: errorCatched }">
       <h2 class="text-xl font-bold">
         {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
