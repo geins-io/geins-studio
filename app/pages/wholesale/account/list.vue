@@ -160,7 +160,7 @@ const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
       :loading="loading"
       :entity-name="entityName"
       :columns="columns"
-      :data="[]"
+      :data="dataList"
       :init-visibility-state="visibilityState"
       :searchable-fields="searchableFields"
     >
