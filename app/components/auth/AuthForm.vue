@@ -471,6 +471,12 @@ const backToLogin = () => {
             {{ account.displayName }}
           </Button>
         </li>
+        <li
+          v-if="accounts?.length === 0 && !loading"
+          class="text-muted-foreground text-center text-xs"
+        >
+          {{ $t('no_entity_found', { entityName: 'account' }, 2) }}
+        </li>
       </ul>
       <div
         v-else

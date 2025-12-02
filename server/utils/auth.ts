@@ -5,9 +5,11 @@ import type {
   AuthResponse,
   User,
   Session,
+  ApiOptions,
 } from '#shared/types';
 
 import { jwtDecode } from 'jwt-decode';
+import { buildQueryString } from '#shared/utils/api-query';
 
 const config = useRuntimeConfig();
 const API_URL = config.public.apiUrl;
@@ -41,16 +43,17 @@ export const auth = () => {
     method: string,
     data?: object,
     token?: string,
-    accountKey?: string,
+    options?: ApiOptions<string>,
   ): Promise<T> => {
     const headers: HeadersInit = {
       'content-type': 'application/json',
     };
-    if (accountKey) {
-      headers['x-account-key'] = accountKey;
-    }
     if (token) {
       headers['authorization'] = `Bearer ${token}`;
+    }
+    if (options) {
+      const queryString = buildQueryString(options);
+      url += `${queryString}`;
     }
     const response = await fetch(`${API_URL}/${url}`, {
       method,
@@ -95,17 +98,10 @@ export const auth = () => {
    * @param {string} accessToken - The access token.
    * @returns {Promise<User | undefined>} The user data or undefined if not found.
    */
-  const getUser = async (
-    accessToken: string,
-    accountKey: string,
-  ): Promise<User | undefined> => {
-    return callAPI<User>(
-      ENDPOINTS.USER,
-      'GET',
-      undefined,
-      accessToken,
-      accountKey,
-    );
+  const getUser = async (accessToken: string): Promise<User | undefined> => {
+    return callAPI<User>(ENDPOINTS.USER, 'GET', undefined, accessToken, {
+      fields: ['accounts'],
+    });
   };
 
   /**
@@ -208,12 +204,12 @@ export const auth = () => {
       return session;
     }
 
-    // Handle multiple accounts and no account selected
-    if (response.accounts && response.accounts.length > 0) {
-      session.accounts = response.accounts;
-      if (response.accounts.length === 1) {
-        session.accountKey = response.accounts[0].accountKey;
-      }
+    // Handle auto-selecting account if only one is available
+    if (response.accounts) {
+      session.accountKey =
+        response.accounts.length === 1
+          ? response.accounts[0].accountKey
+          : undefined;
       return session;
     } else {
       throw new Error('No account key found for user');

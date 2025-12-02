@@ -120,18 +120,21 @@ const {
   entityLiveStatus,
   refreshEntityData,
   form,
-  formValid,
   formTouched,
   validateOnChange,
   hasUnsavedChanges,
   unsavedChangesDialogOpen,
   confirmLeave,
-  createEntity,
   updateEntity,
-  deleteEntity,
   parseAndSaveData,
   validateSteps,
-} = useEntityEdit<UserBase, User, UserProfileCreate, UserProfileUpdate>({
+} = useEntityEdit<
+  UserBase,
+  User,
+  UserProfileCreate,
+  UserProfileUpdate,
+  UserProfileApiOptions
+>({
   repository: userProfileApi,
   validationSchema: formSchema,
   initialEntityData: entityBase,

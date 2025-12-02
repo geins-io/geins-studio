@@ -121,8 +121,8 @@ setSession(session: Session): Promise<any>
 
 Updates the current session with new session data.
 
-::: info Note
-This method automatically excludes `user` from the session before updating to not store it in the JWT token.
+::: info NOTE
+This method automatically excludes `user` before updating to not store it in the JWT token.
 :::
 
 - **Parameters:**
@@ -283,23 +283,40 @@ interface UseGeinsAuthReturnType {
   expiresSoon: (token?: string | null, threshold?: number) => boolean;
 }
 
+interface AuthTokens {
+  accessToken?: string;
+  refreshToken?: string;
+  loginToken?: string;
+  mfaCode?: string;
+  accountKey?: string;
+}
+
+interface AuthResponse extends AuthTokens {
+  mfaRequired?: boolean;
+  mfaMethod?: string;
+  accounts?: AuthAccounts[];
+}
+
+interface Session extends AuthTokens {
+  isAuthenticated?: boolean;
+  tokenExpires?: number;
+  refreshedAt?: number;
+  user?: User;
+  mfaActive?: boolean;
+  mfaMethod?: string;
+  expires?: string;
+}
+
 interface LoginCredentials {
   username: string;
-  password: string;
+  password?: string;
+  rememberMe?: boolean;
 }
 
-interface AuthTokens {
-  loginToken: string;
-  mfaCode: string;
-}
-
-interface Session {
-  isAuthenticated?: boolean;
-  accessToken?: string;
-  accountKey?: string;
-  expires?: string;
-  accounts?: any[];
-  [key: string]: any;
+interface AuthAccounts {
+  accountKey: string;
+  displayName: string;
+  roles: string[];
 }
 ```
 

@@ -38,7 +38,7 @@ const handleInitialState = async () => {
     return;
   }
 
-  if (session.value?.accounts && !session.value?.accountKey) {
+  if (session.value?.user?.basicAccounts && !session.value?.accountKey) {
     step.value = 'account';
     return;
   }
@@ -80,7 +80,7 @@ const handlePostAuth = async () => {
     return;
   }
 
-  if (session.value?.accounts && !session.value?.accountKey) {
+  if (!session.value?.accountKey) {
     step.value = 'account';
     loading.value = false;
     return;
@@ -179,7 +179,7 @@ const handleSetMode = (mode: AuthFormMode) => {
     :loading="loading"
     :show-invalid="showInvalid"
     :mfa-method="mfaMethod"
-    :accounts="session?.accounts"
+    :accounts="session?.user?.basicAccounts"
     @login="handleLogin"
     @verify="handleVerify"
     @set-account="handleSetAccount"
