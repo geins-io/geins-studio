@@ -137,6 +137,8 @@ const confirmDelete = async () => {
   deleting.value = false;
   deleteDialogOpen.value = false;
 };
+// SET UP SEARCHABLE FIELDS
+const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
 </script>
 
 <template>
@@ -160,6 +162,7 @@ const confirmDelete = async () => {
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
+      :searchable-fields="searchableFields"
     />
     <template #error="{ error: errorCatched }">
       <h2 class="text-xl font-bold">

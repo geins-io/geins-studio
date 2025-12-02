@@ -61,7 +61,7 @@ navigateTo('/account/profile');
       :entity-name="entityName"
       :columns="columns"
       :data="dataList"
-      searchable-field="firstName"
+      :searchable-fields="['id', 'firstName', 'lastName', 'email']"
     />
     <template #error="{ errorCatched }">
       <h2 class="text-xl font-bold">

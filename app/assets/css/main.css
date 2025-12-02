@@ -216,9 +216,7 @@
 @utility container {
   padding: 2rem;
   margin: 0 auto;
-  @media (width < 96rem) {
-    max-width: 1400px;
-  }
+  max-width: 80rem;
 }
 
 @utility form-grid-wrap {
@@ -290,4 +288,20 @@
   #__nuxt {
     height: 100%;
   }
+}
+
+.table-view {
+  @apply text-card-foreground relative overflow-hidden rounded-lg border pb-12 transition-transform @2xl:pb-14;
+}
+
+.table-view--advanced {
+  @apply mb-28 translate-y-40 @2xl:mb-26;
+}
+
+.table-view--maximized {
+  @apply absolute top-12 right-2 bottom-0 left-2 -mt-px mb-0 translate-y-0 @2xl:right-8 @2xl:left-8 @2xl:mb-0;
+}
+
+.table-view__header {
+  @apply bg-card after:bg-border sticky top-0 after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full;
 }

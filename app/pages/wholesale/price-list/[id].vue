@@ -1094,6 +1094,7 @@ if (!createMode.value) {
                   :mode="TableMode.Simple"
                   :page-size="15"
                   :pinned-state="pinnedState"
+                  :show-search="true"
                 />
               </template>
             </Selector>

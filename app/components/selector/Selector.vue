@@ -152,8 +152,8 @@ const removeFromManuallySelected = (id: string) => {
 };
 
 // SETUP TABLE FOR SELECTED ENTITIES
-const { getColumns, orderAndFilterColumns, addActionsColumn } = useColumns();
-let columns: ColumnDef<object>[] = [];
+const { getColumns, orderAndFilterColumns, addActionsColumn } = useColumns<T>();
+let columns: ColumnDef<T>[] = [];
 
 const setupColumns = () => {
   columns = getColumns(entities.value);
@@ -318,11 +318,12 @@ defineExpose({
         </ContentHeading>
         <TableView
           :columns="columns"
-          :data="selectedEntities"
+          :data="selectedEntities as T[]"
           :entity-name="entityName"
           :empty-text="$t('no_entity_selected', { entityName }, 2)"
           :mode="TableMode.Simple"
           :page-size="15"
+          :show-search="true"
         />
       </slot>
     </div>

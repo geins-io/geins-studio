@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T extends SelectorEntity">
+import type { ColumnDef } from '@tanstack/vue-table';
 import {
   type SelectorEntity,
   type SelectorMode,
@@ -114,8 +115,8 @@ watchEffect(() => {
     ]);
   }
 });
-let categoriesColumns: Column<T>[] = [];
-let brandsColumns: Column<T>[] = [];
+let categoriesColumns: ColumnDef<Category>[] = [];
+let brandsColumns: ColumnDef<Brand>[] = [];
 // Columns for categories
 const setupCategoryColumns = () => {
   const {

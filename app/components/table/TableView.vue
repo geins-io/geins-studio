@@ -27,7 +27,7 @@ const props = withDefaults(
     idColumn?: string;
     pageSize?: number;
     loading?: boolean;
-    searchableField?: string;
+    searchableFields?: string[];
     mode?: TableMode;
     maxHeight?: string;
     showSearch?: boolean;
@@ -41,7 +41,7 @@ const props = withDefaults(
     idColumn: '_id',
     pageSize: 30,
     loading: false,
-    searchableField: 'name',
+    searchableFields: () => ['_id', 'name'],
     showSearch: false,
     mode: TableMode.Advanced,
     pinnedState: () => ({
@@ -67,6 +67,7 @@ const showSearch =
  */
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
+const globalFilter = ref('');
 
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
@@ -238,6 +239,12 @@ const table = useVueTable({
   onColumnFiltersChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnFilters),
   getFilteredRowModel: getFilteredRowModel(),
+  onGlobalFilterChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, globalFilter),
+  getColumnCanGlobalFilter: (column) => {
+    // Only allow global filtering on columns specified in searchableFields
+    return props.searchableFields?.includes(column.id) ?? false;
+  },
   onColumnVisibilityChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, columnVisibility);
   },
@@ -258,6 +265,9 @@ const table = useVueTable({
     },
     get columnFilters() {
       return columnFilters.value;
+    },
+    get globalFilter() {
+      return globalFilter.value;
     },
     get columnVisibility() {
       return columnVisibility.value;
@@ -285,18 +295,16 @@ const table = useVueTable({
 });
 
 const emptyText = computed(() => {
-  const emptyText =
+  const defaultEmpty =
     props.emptyText || t('no_entity', { entityName: props.entityName }, 2);
-  const column = searchableColumn.value;
-  return column && column.getFilterValue()
+  const hasActiveFilter = globalFilter.value?.trim() !== '';
+  return hasActiveFilter
     ? t('no_entity_found', { entityName: props.entityName }, 2)
-    : emptyText;
+    : defaultEmpty;
 });
 
-const searchableColumn = computed(() => {
-  return props.columns.length
-    ? table.getColumn(props.searchableField)
-    : undefined;
+const hasSearchableColumns = computed(() => {
+  return props.searchableFields && props.searchableFields.length > 0;
 });
 </script>
 
@@ -311,14 +319,15 @@ const searchableColumn = computed(() => {
     "
   >
     <div
-      v-if="searchableColumn"
+      v-if="hasSearchableColumns"
       :class="`relative w-full ${advancedMode ? '@2xl:max-w-sm' : ''}`"
+      data-test="table-search"
     >
       <Input
         class="w-full pl-8"
-        placeholder="Filter list..."
-        :model-value="searchableColumn.getFilterValue() as string"
-        @update:model-value="searchableColumn.setFilterValue($event)"
+        :placeholder="t('filter_entity', { entityName }, 2)"
+        :model-value="globalFilter"
+        @update:model-value="globalFilter = String($event)"
       />
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
@@ -332,10 +341,10 @@ const searchableColumn = computed(() => {
   <div
     :class="
       cn(
-        'text-card-foreground relative overflow-hidden rounded-lg border pb-12 transition-transform @2xl:pb-14',
-        `${advancedMode ? 'mb-28 translate-y-40 @2xl:mb-26' : ''}`,
+        'table-view',
+        `${advancedMode ? 'table-view--advanced' : ''}`,
+        `${tableMaximized ? 'table-view--maximized' : ''}`,
         `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
-        `${tableMaximized ? 'absolute top-12 right-2 bottom-0 left-2 -mt-px mb-0 translate-y-0 @2xl:right-8 @2xl:left-8 @2xl:mb-0' : ''}`,
       )
     "
   >
@@ -351,7 +360,7 @@ const searchableColumn = computed(() => {
             :key="header.id"
             :class="
               cn(
-                `z-30 ${getCellClasses(header.column, true)} bg-card after:bg-border sticky top-0 after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full`,
+                `z-30 ${getCellClasses(header.column, true)} table-view__header`,
                 `${simpleMode ? 'bg-background' : ''}`,
               )
             "
