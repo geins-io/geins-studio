@@ -72,7 +72,6 @@ const redirectToHome = async () => {
 
 // Handle post-authentication flow
 const handlePostAuth = async () => {
-  console.log('🚀 ~ handlePostAuth ~ session.value:', session.value);
   if (session.value?.mfaActive && session.value?.loginToken) {
     loginToken.value = session.value.loginToken;
     mfaMethod.value = session.value.mfaMethod || '';

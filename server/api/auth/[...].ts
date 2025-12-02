@@ -44,7 +44,6 @@ export default NuxtAuthHandler({
           if (!error || typeof error !== 'object' || !('status' in error)) {
             throw error;
           }
-          // TODO: type errors
           // If the refresh fails, check the error status and handle accordingly
           if (error.status === 401 || error.status === 403) {
             // This will force logout in session callback
@@ -64,7 +63,7 @@ export default NuxtAuthHandler({
 
     session: async ({ session, token }) => {
       if (token.accessToken) {
-        // If we are authorized and have an access token, update the session
+        // If we have an access token, update the session
         session = {
           ...session,
           ...geinsAuth.getAuthenticatedSession(token),

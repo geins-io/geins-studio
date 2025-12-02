@@ -29,7 +29,7 @@ export type UserProfileCreate = CreateEntity<UserProfileBase>;
 export type UserProfileUpdate = UpdateEntity<UserProfileBase>;
 export type UserProfile = ResponseEntity<UserProfileBase>;
 
-export type UserProfileFieldsFilter = 'accounts';
+export type UserProfileFieldsFilter = 'accounts' | 'none' | 'all';
 export type UserProfileApiOptions = ApiOptions<UserProfileFieldsFilter>;
 
 export interface AuthTokens {

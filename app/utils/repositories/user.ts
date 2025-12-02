@@ -23,7 +23,7 @@ export function userRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         });
       },
       async update(
-        id: string,
+        _id: string,
         data: UserProfileUpdate,
         options?: UserProfileApiOptions,
       ): Promise<User> {
