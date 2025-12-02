@@ -3,7 +3,10 @@ import type {
   User,
   UserProfileUpdate,
   UserProfileApiOptions,
+  UserCreate,
+  UserUpdate,
 } from '#shared/types';
+import { buildQueryObject } from '#shared/utils/api-query';
 
 const BASE_ENDPOINT = '/user';
 

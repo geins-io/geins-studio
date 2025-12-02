@@ -80,7 +80,7 @@ const handlePostAuth = async () => {
     return;
   }
 
-  if (!session.value?.accountKey) {
+  if (session.value?.user?.basicAccounts && !session.value?.accountKey) {
     step.value = 'account';
     loading.value = false;
     return;
