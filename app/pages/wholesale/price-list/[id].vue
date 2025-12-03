@@ -1091,9 +1091,11 @@ if (!createMode.value) {
                       2,
                     )
                   "
+                  empty-description='Quick add, or click "Browse" to make a selection'
                   :mode="TableMode.Simple"
                   :page-size="15"
                   :pinned-state="pinnedState"
+                  :show-search="true"
                 />
               </template>
             </Selector>

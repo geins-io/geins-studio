@@ -68,6 +68,7 @@ const viewport = useViewport();
         </Select>
       </div>
       <div
+        v-if="totalRows > 0"
         class="sm:text-md flex items-center justify-center text-xs font-semibold sm:w-[100px]"
       >
         {{

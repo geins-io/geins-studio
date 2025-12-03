@@ -137,6 +137,8 @@ const confirmDelete = async () => {
   deleting.value = false;
   deleteDialogOpen.value = false;
 };
+// SET UP SEARCHABLE FIELDS
+const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
 </script>
 
 <template>
@@ -160,7 +162,18 @@ const confirmDelete = async () => {
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
-    />
+      :searchable-fields="searchableFields"
+    >
+      <template #empty-actions>
+        <ButtonIcon
+          icon="new"
+          variant="secondary"
+          @click="navigateTo(newEntityUrl)"
+        >
+          {{ $t('create_new_entity', { entityName }) }}
+        </ButtonIcon>
+      </template>
+    </TableView>
     <template #error="{ error: errorCatched }">
       <h2 class="text-xl font-bold">
         {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
