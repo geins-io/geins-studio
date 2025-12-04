@@ -1162,6 +1162,7 @@ if (!createMode.value) {
                   :buyer="buyerToEdit"
                   :account-id="entityDataUpdate?._id || ''"
                   :account-name="entityDataUpdate.name || ''"
+                  :price-lists="allPriceLists"
                 >
                   <ButtonIcon
                     v-if="!createMode"

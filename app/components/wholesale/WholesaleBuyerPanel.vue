@@ -12,6 +12,7 @@ const props = withDefaults(
     accountId: string;
     accountName: string;
     mode: 'edit' | 'add';
+    priceLists: WholesalePriceList[];
   }>(),
   {
     mode: 'add',
@@ -38,7 +39,9 @@ const newBuyer = ref<WholesaleBuyerCreate>();
 const isChecking = ref(false);
 const isDeleting = ref(false);
 const formValid = ref(false);
+const assignPricelist = ref(false);
 const buyer = toRef(props, 'buyer');
+const priceLists = toRef(props, 'priceLists');
 const buyerActive = computed(() =>
   props.mode === 'edit' ? props.buyer?.active : true,
 );
@@ -65,6 +68,8 @@ const formSchema = toTypedSchema(
     phone: z.string().optional(),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
+    restrictToDedicatedPriceLists: z.boolean().optional(),
+    priceLists: z.array(z.string()).optional(),
   }),
 );
 
@@ -318,6 +323,56 @@ const existingCustomerName = computed(() => {
             </FormGrid>
           </FormGridWrap>
         </form>
+        <div class="my-8">
+          <ContentCardHeader
+            size="md"
+            heading-level="h3"
+            :title="$t('price_list')"
+            class="mb-4"
+            description="A pricelist assigned to a buyer will get the highest priority, meaning that enforced pricelists on the account level will be overridden."
+          />
+          <ContentSwitch
+            v-model:checked="assignPricelist"
+            label="Assign pricelist to buyer"
+            description="Chosen pricelist will be applied when this buyer logs in"
+          >
+            <FormGridWrap>
+              <FormGrid design="1">
+                <FormField
+                  v-slot="{ componentField }"
+                  name="priceLists"
+                  class="mb-4"
+                >
+                  <FormItem>
+                    <FormLabel>{{ $t('price_list', 2) }}</FormLabel>
+                    <FormControl>
+                      <FormInputTagsSearch
+                        :model-value="componentField.modelValue"
+                        entity-name="price_list"
+                        :data-set="priceLists"
+                        @update:model-value="
+                          componentField['onUpdate:modelValue']
+                        "
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+                <FormField
+                  v-slot="{ value, handleChange }"
+                  name="restrictToDedicatedPriceLists"
+                >
+                  <FormItemSwitch
+                    label="Restrict to dedicated price lists"
+                    description="If enabled, the buyer will only have access to the selected price lists."
+                    :model-value="value"
+                    @update:model-value="handleChange"
+                  />
+                </FormField>
+              </FormGrid>
+            </FormGridWrap>
+          </ContentSwitch>
+        </div>
         <div class="mt-4 border-t pt-4 sm:mt-8 sm:pt-8">
           <div
             v-if="mode === 'edit'"
