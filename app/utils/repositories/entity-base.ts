@@ -1,7 +1,7 @@
 // entity-base.ts
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 import type { ApiOptions } from '#shared/types';
-import { buildQueryObject } from '../api-query';
+import { buildQueryObject } from '#shared/utils/api-query';
 
 /**
  * Creates a repository with single entity retrieval operations

@@ -1,7 +1,7 @@
 import type { $Fetch } from 'nitropack';
 import type { ApiOptions } from '#shared/types';
 import { entityBaseRepo } from './entity-base';
-import { buildQueryObject } from '../api-query';
+import { buildQueryObject } from '#shared/utils/api-query';
 
 export function entityRepo<
   TResponse extends EntityBase,

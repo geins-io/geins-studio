@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TableMode, type WholesaleAccount } from '#shared/types';
+import { LucidePackage } from 'lucide-vue-next';
 
 definePageMeta({
   layout: 'default',
@@ -118,6 +119,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           entity-name="order"
           :page-size="10"
           :mode="TableMode.Simple"
+          :empty-icon="LucidePackage"
         />
       </div>
     </div>

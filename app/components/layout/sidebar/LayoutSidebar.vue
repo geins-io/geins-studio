@@ -4,7 +4,6 @@ import {
   SIDEBAR_COOKIE_MAX_AGE,
 } from '@/components/ui/sidebar/utils';
 import { useSidebar } from '@/components/ui/sidebar';
-import { navigation } from '@/lib/navigation';
 
 import Logo from '@/assets/logos/geins.svg';
 import LogoLetter from '@/assets/logos/geins-g.svg';
@@ -17,6 +16,7 @@ import {
   LucideChartLine,
   LucideImport,
   LucideLayers,
+  LucideLayoutDashboard,
   LucideSettings,
   LucideShieldCheck,
   LucideTag,
@@ -27,6 +27,12 @@ import {
 
 const { state, isMobile, setOpenMobile } = useSidebar();
 
+// Use the navigation composable for filtered, role-based navigation
+const { navigationItems, isItemActive, isItemOpen } = useNavigation();
+
+// Get route for checking active children
+const route = useRoute();
+
 // Handle navigation clicks on mobile - close sidebar when navigating
 const handleNavClick = () => {
   if (isMobile.value) {
@@ -36,6 +42,7 @@ const handleNavClick = () => {
 
 // Icon component mapping
 const iconComponents = {
+  LayoutDashboard: LucideLayoutDashboard,
   ChartLine: LucideChartLine,
   Tag: LucideTag,
   Brush: LucideBrush,
@@ -51,24 +58,15 @@ const iconComponents = {
 
 // Process navigation items to include icon components
 const navigationMenu = computed(() => {
-  return navigation.map((item) => ({
-    ...item,
-    iconComponent: iconComponents[item.icon as keyof typeof iconComponents],
-  }));
+  return navigationItems.value
+    .filter((item) => !item.hideFromMenu)
+    .map((item) => ({
+      ...item,
+      iconComponent: item.icon
+        ? iconComponents[item.icon as keyof typeof iconComponents]
+        : undefined,
+    }));
 });
-
-const route = useRoute();
-
-// Check if item or its children are active
-const isItemActive = (item: NavigationItem) => {
-  if (route.path === item.href) return true;
-  return item.children?.some((child) => route.path === child.href) ?? false;
-};
-
-// Check if item should be open (has active children)
-const isItemOpen = (item: NavigationItem) => {
-  return item.children?.some((child) => route.path === child.href) ?? false;
-};
 
 const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
   default: () => true,
@@ -101,6 +99,7 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
               <Collapsible
                 v-if="item.children?.length"
                 :default-open="true"
+                :disabled="!sidebarOpen"
                 class="group/collapsible"
               >
                 <CollapsibleTrigger as-child>
@@ -120,8 +119,8 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
                       />
                       <span>{{ item.label }}</span>
 
-                      <LucideChevronDown
-                        class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180"
+                      <LucideChevronRight
+                        class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90"
                       />
                     </NuxtLink>
                   </SidebarMenuButton>

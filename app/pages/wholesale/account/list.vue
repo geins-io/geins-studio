@@ -137,14 +137,8 @@ const confirmDelete = async () => {
   deleting.value = false;
   deleteDialogOpen.value = false;
 };
-
-// =====================================================================================
-// BREADCRUMBS DATA
-// ====================================================================================
-
-const breadcrumbsStore = useBreadcrumbsStore();
-breadcrumbsStore.setCurrentTitle(t(entityName, 2));
-breadcrumbsStore.setCurrentParent(undefined);
+// SET UP SEARCHABLE FIELDS
+const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
 </script>
 
 <template>
@@ -168,7 +162,18 @@ breadcrumbsStore.setCurrentParent(undefined);
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
-    />
+      :searchable-fields="searchableFields"
+    >
+      <template #empty-actions>
+        <ButtonIcon
+          icon="new"
+          variant="secondary"
+          @click="navigateTo(newEntityUrl)"
+        >
+          {{ $t('create_new_entity', { entityName }) }}
+        </ButtonIcon>
+      </template>
+    </TableView>
     <template #error="{ error: errorCatched }">
       <h2 class="text-xl font-bold">
         {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}

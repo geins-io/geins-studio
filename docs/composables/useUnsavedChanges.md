@@ -33,7 +33,13 @@ const originalData = ref('');
 const isCreateMode = ref(false);
 
 const { hasUnsavedChanges, unsavedChangesDialogOpen, confirmLeave } =
-  useUnsavedChanges(productData, originalData, isCreateMode);
+  useUnsavedChanges(
+    productData,
+    originalData,
+    isCreateMode,
+    excludeFields,
+    externalChanges,
+  );
 
 // Load existing product data
 const loadProduct = async (productId: string) => {
@@ -73,6 +79,10 @@ confirmLeave(): void
 
 Used to confirm navigation away from the page when there are unsaved changes. Closes the dialog and allows navigation to proceed.
 
+### `externalChanges`
+
+An optional `ref` that allows external tracking of changes beyond the data comparison. When set to `true`, it will mark the form as having unsaved changes regardless of data comparison. This is useful for tracking changes to related data or complex state that isn't directly reflected in the entity data.
+
 ## Type Definitions
 
 ```ts
@@ -81,6 +91,7 @@ function useUnsavedChanges(
   originalData: Ref<string>,
   isCreateMode: Ref<boolean>,
   excludeFields?: string[],
+  externalChanges?: Ref<boolean>,
 ): UseUnsavedChangesReturnType;
 
 interface UseUnsavedChangesReturnType {

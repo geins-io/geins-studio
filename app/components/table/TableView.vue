@@ -1,6 +1,5 @@
 <script setup lang="ts" generic="TData extends Record<string, any>, TValue">
 import { TableMode } from '#shared/types';
-
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -19,6 +18,9 @@ import {
   useVueTable,
 } from '@tanstack/vue-table';
 
+import { LucideSearchX, LucideCircleSlash } from 'lucide-vue-next';
+import type { Component } from 'vue';
+
 const props = withDefaults(
   defineProps<{
     columns: ColumnDef<TData, TValue>[];
@@ -27,13 +29,18 @@ const props = withDefaults(
     idColumn?: string;
     pageSize?: number;
     loading?: boolean;
-    searchableField?: string;
+    searchableFields?: string[];
     mode?: TableMode;
     maxHeight?: string;
     showSearch?: boolean;
     pinnedState?: ColumnPinningState | null;
     selectedIds?: string[];
     emptyText?: string;
+    emptyDescription?: string;
+    emptyFilteredText?: string;
+    emptyFilteredDescription?: string;
+    emptyIcon?: Component;
+    showEmptyActions?: boolean;
     initVisibilityState?: VisibilityState;
   }>(),
   {
@@ -41,8 +48,9 @@ const props = withDefaults(
     idColumn: '_id',
     pageSize: 30,
     loading: false,
-    searchableField: 'name',
+    searchableFields: () => ['_id', 'name'],
     showSearch: false,
+    showEmptyActions: true,
     mode: TableMode.Advanced,
     pinnedState: () => ({
       left: ['select'],
@@ -67,6 +75,7 @@ const showSearch =
  */
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
+const globalFilter = ref('');
 
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
@@ -238,6 +247,12 @@ const table = useVueTable({
   onColumnFiltersChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnFilters),
   getFilteredRowModel: getFilteredRowModel(),
+  onGlobalFilterChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, globalFilter),
+  getColumnCanGlobalFilter: (column) => {
+    // Only allow global filtering on columns specified in searchableFields
+    return props.searchableFields?.includes(column.id) ?? false;
+  },
   onColumnVisibilityChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, columnVisibility);
   },
@@ -258,6 +273,9 @@ const table = useVueTable({
     },
     get columnFilters() {
       return columnFilters.value;
+    },
+    get globalFilter() {
+      return globalFilter.value;
     },
     get columnVisibility() {
       return columnVisibility.value;
@@ -284,19 +302,31 @@ const table = useVueTable({
   },
 });
 
-const emptyText = computed(() => {
-  const emptyText =
-    props.emptyText || t('no_entity', { entityName: props.entityName }, 2);
-  const column = searchableColumn.value;
-  return column && column.getFilterValue()
-    ? t('no_entity_found', { entityName: props.entityName }, 2)
-    : emptyText;
+const emptyState = computed(() => {
+  const hasActiveFilter =
+    globalFilter.value?.trim() !== '' || columnFilters.value.length > 0;
+
+  return {
+    isFiltered: hasActiveFilter,
+    title: hasActiveFilter
+      ? props.emptyFilteredText ||
+        t('no_entity_found', { entityName: props.entityName }, 2)
+      : props.emptyText || t('no_entity', { entityName: props.entityName }, 2),
+    description: hasActiveFilter
+      ? props.emptyFilteredDescription ||
+        t('empty_filtered_description', { entityName: props.entityName }, 2)
+      : props.emptyDescription ||
+        t('empty_description', { entityName: props.entityName }, 2),
+  };
 });
 
-const searchableColumn = computed(() => {
-  return props.columns.length
-    ? table.getColumn(props.searchableField)
-    : undefined;
+const clearFilters = () => {
+  globalFilter.value = '';
+  columnFilters.value = [];
+};
+
+const hasSearchableColumns = computed(() => {
+  return props.searchableFields && props.searchableFields.length > 0;
 });
 </script>
 
@@ -311,14 +341,15 @@ const searchableColumn = computed(() => {
     "
   >
     <div
-      v-if="searchableColumn"
+      v-if="hasSearchableColumns"
       :class="`relative w-full ${advancedMode ? '@2xl:max-w-sm' : ''}`"
+      data-test="table-search"
     >
       <Input
         class="w-full pl-8"
-        placeholder="Filter list..."
-        :model-value="searchableColumn.getFilterValue() as string"
-        @update:model-value="searchableColumn.setFilterValue($event)"
+        :placeholder="t('filter_entity', { entityName }, 2)"
+        :model-value="globalFilter"
+        @update:model-value="globalFilter = String($event)"
       />
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
@@ -332,10 +363,10 @@ const searchableColumn = computed(() => {
   <div
     :class="
       cn(
-        'text-card-foreground relative overflow-hidden rounded-lg border pb-12 transition-transform @2xl:pb-14',
-        `${advancedMode ? 'mb-28 translate-y-40 @2xl:mb-26' : ''}`,
+        'table-view',
+        `${advancedMode ? 'table-view--advanced' : ''}`,
+        `${tableMaximized ? 'table-view--maximized' : ''}`,
         `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
-        `${tableMaximized ? 'absolute top-12 right-2 bottom-0 left-2 -mt-px mb-0 translate-y-0 @2xl:right-8 @2xl:left-8 @2xl:mb-0' : ''}`,
       )
     "
   >
@@ -351,7 +382,7 @@ const searchableColumn = computed(() => {
             :key="header.id"
             :class="
               cn(
-                `z-30 ${getCellClasses(header.column, true)} bg-card after:bg-border sticky top-0 after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full`,
+                `z-30 ${getCellClasses(header.column, true)} table-view__header`,
                 `${simpleMode ? 'bg-background' : ''}`,
               )
             "
@@ -390,9 +421,45 @@ const searchableColumn = computed(() => {
           </TableRow>
         </template>
         <template v-else>
-          <TableRow>
-            <TableCell :colspan="columns.length" class="h-24 text-center">
-              {{ emptyText }}
+          <TableRow class="hover:bg-transparent">
+            <TableCell :colspan="columns.length" class="p-0">
+              <Empty>
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <component
+                      :is="
+                        emptyState.isFiltered
+                          ? LucideSearchX
+                          : (emptyIcon ?? LucideCircleSlash)
+                      "
+                    />
+                  </EmptyMedia>
+                  <EmptyTitle>{{ emptyState.title }}</EmptyTitle>
+                  <EmptyDescription v-if="emptyState.description">
+                    {{ emptyState.description }}
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent
+                  v-if="
+                    showEmptyActions &&
+                    (emptyState.isFiltered || $slots['empty-actions'])
+                  "
+                >
+                  <div class="gap-2 sm:flex">
+                    <slot
+                      v-if="$slots['empty-actions'] && !emptyState.isFiltered"
+                      name="empty-actions"
+                    />
+                    <Button
+                      v-else-if="emptyState.isFiltered"
+                      variant="secondary"
+                      @click="clearFilters"
+                    >
+                      {{ t('clear_search') }}
+                    </Button>
+                  </div>
+                </EmptyContent>
+              </Empty>
             </TableCell>
           </TableRow>
         </template>

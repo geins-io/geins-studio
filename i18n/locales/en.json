@@ -14,6 +14,7 @@
   "import": "Import | Imports",
   "price": "Price | Prices",
   "item": "Item | Items",
+  "profile": "Profile | Profiles",
   "currency": "Currency | Currencies",
   "account_group": "Account group | Account groups",
   "buyer": "Buyer | Buyers",
@@ -32,6 +33,7 @@
   "edit_entity": "Edit @.lower:{entityName}",
   "save_entity": "Save @.lower:{entityName}",
   "create_entity": "Create @.lower:{entityName}",
+  "create_new_entity": "Create new @.lower:{entityName}",
   "add_entity": "Add @.lower:{entityName}",
   "copy_entity": "Copy @.lower:{entityName}",
   "select_entity": "Select @.lower:{entityName}",
@@ -56,9 +58,12 @@
   "error_loading_entity": "Something went wrong while loading @.lower:{entityName}",
   "error_fetching_entity": "Something went wrong while fetching @.lower:{entityName}",
   "quick_add_entity": "Quick add @.lower:{entityName}..",
-  "no_entity_found": "No @.lower:{entityName} found.",
+  "no_entity_found": "No @.lower:{entityName} found",
   "no_entity": "No @.lower:{entityName}",
   "no_entity_selected": "No @.lower:{entityName} selected",
+  "empty_description": "There are no @.lower:{entityName} to display yet",
+  "empty_filtered_description": "Try adjusting your search or filters to find what you're looking for.",
+  "clear_search": "Clear search",
   "all_entity": "All @.lower:{entityName}",
   "entity_is_active": "@:{entityName} is active",
   "entity_is_inactive": "@:{entityName} is inactive",
@@ -78,6 +83,7 @@
   "entity_details": "@:{entityName} details",
   "show_entity": "Show @.lower:{entityName}",
   "hide_entity": "Hide @.lower:{entityName}",
+  "filter_entity": "Filter @.lower:{entityName}...",
   "copied_to_clipboard": "{label} copied to clipboard!",
   "active": "Active",
   "inactive": "Inactive",
@@ -170,8 +176,14 @@
     "password_reset_requested_description": "Check your email for instructions to reset your password.",
     "password_reset_success_title": "Password successfully reset",
     "password_reset_success_description": "You can now log in with your new password.",
-    "password_min_length": "Password must be at least 6 characters",
+    "password_reset_error_title": "Password reset request failed",
+    "password_reset_error_description": "Something went wrong while requesting reset link. Please try again.",
     "passwords_not_matching": "Passwords do not match",
+    "password_uppercase_required": "Password must contain at least one uppercase letter",
+    "password_number_required": "Password must contain at least one number",
+    "passwords_must_match": "Passwords must match",
+    "password_min_length": "Password must be at least 8 characters long",
+    "password_requirements": "Min. 8 characters, one uppercase, one digit",
     "go_to_login": "Go to login"
   },
   "form": {
@@ -179,6 +191,13 @@
     "invalid_email": "Invalid email address",
     "optional": "optional",
     "cannot_be_changed": "Cannot be changed upon creation"
+  },
+  "account_profile": {
+    "login_credentials": "Login credentials",
+    "current_password": "Current password",
+    "new_password": "New password",
+    "confirm_new_password": "Confirm new password",
+    "username": "Username"
   },
   "address": {
     "title": "Address",
@@ -197,6 +216,7 @@
     "last_name": "Last name",
     "phone": "Phone"
   },
+
   "contact_person": "Contact person",
   "contact_person_description": "Contact person related to the address",
   "wholesale": {

@@ -11,7 +11,7 @@ import type {
   ProductApiOptions,
   ProductPriceListApiOptions,
 } from '#shared/types';
-import { buildQueryObject } from '../api-query';
+import { buildQueryObject } from '#shared/utils/api-query';
 
 const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
 

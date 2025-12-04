@@ -1,14 +1,25 @@
 <script setup lang="ts">
-import type { EntityEditSummary } from '#shared/types';
-
-const props = withDefaults(defineProps<EntityEditSummary>(), {
-  createMode: false,
-  description: '',
-  formTouched: false,
-  summary: () => [],
-  settingsSummary: () => [],
-  entityLiveStatus: false,
-});
+const props = withDefaults(
+  defineProps<{
+    createMode?: boolean;
+    description?: string;
+    formTouched?: boolean;
+    summary?: DataItem[];
+    settingsSummary?: DataItem[];
+    entityName?: string;
+    entityLiveStatus?: boolean;
+    showActiveStatus?: boolean;
+  }>(),
+  {
+    createMode: false,
+    description: '',
+    formTouched: false,
+    summary: () => [],
+    settingsSummary: () => [],
+    entityLiveStatus: false,
+    showActiveStatus: true,
+  },
+);
 
 const { t } = useI18n();
 
@@ -41,7 +52,7 @@ const activeDescription = computed(() => {
     <div class="flex items-center justify-between">
       <ContentCardHeader :title="t('summary')" :description="description" />
       <Badge
-        v-if="!createMode"
+        v-if="!createMode && showActiveStatus"
         :variant="entityLiveStatus ? 'positive' : 'secondary'"
       >
         {{ entityLiveStatus ? t('active') : t('inactive') }}
@@ -49,7 +60,7 @@ const activeDescription = computed(() => {
     </div>
     <slot name="before-active-switch" />
     <ContentSwitch
-      v-if="!props.createMode"
+      v-if="!createMode && showActiveStatus"
       v-model:checked="active"
       :label="active ? t('active') : t('inactive')"
       :description="activeDescription"
@@ -58,7 +69,7 @@ const activeDescription = computed(() => {
     <ContentDataList v-if="summary.length" :data-list="summary" />
     <slot name="after-summary" />
     <ContentDataList
-      v-if="!props.createMode && settingsSummary.length"
+      v-if="!createMode && settingsSummary.length"
       :data-list="settingsSummary"
       :label="t('settings')"
     />

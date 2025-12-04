@@ -13,6 +13,7 @@ import {
   type WholesaleAccountApiOptions,
 } from '#shared/types';
 import * as z from 'zod';
+import { LucidePackage, LucideUser } from 'lucide-vue-next';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -34,6 +35,7 @@ const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
 const accountStore = useAccountStore();
 const { toast } = useToast();
 const viewport = useViewport();
+const breadcrumbsStore = useBreadcrumbsStore();
 
 // =====================================================================================
 // FORM VALIDATION SCHEMA
@@ -201,6 +203,8 @@ const {
     },
   }),
   parseEntityData: async (account: WholesaleAccount) => {
+    breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
+
     buyersList.value = account.buyers || [];
     entityLiveStatus.value = account.active || false;
     accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
@@ -796,16 +800,6 @@ if (!createMode.value) {
     buyersList.value,
   );
 }
-
-// =====================================================================================
-// BREADCRUMBS DATA
-// ====================================================================================
-const breadcrumbsStore = useBreadcrumbsStore();
-breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
-breadcrumbsStore.setCurrentParent({
-  title: t(entityName, 2),
-  link: entityListUrl,
-});
 </script>
 
 <template>
@@ -1180,23 +1174,12 @@ breadcrumbsStore.setCurrentParent({
                 </WholesaleBuyerPanel>
               </template>
               <div>
-                <div
-                  v-if="buyersList.length === 0"
-                  class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
-                >
-                  <p class="text-xl font-bold">
-                    {{ $t('no_entity', { entityName: 'buyer' }, 2) }}
-                  </p>
-                  <p class="text-muted-foreground text-xs">
-                    {{ $t('wholesale.no_buyers_connected') }}
-                  </p>
-                </div>
                 <TableView
-                  v-else
                   :mode="TableMode.Simple"
                   entity-name="buyer"
                   :columns="buyerColumns"
                   :data="buyersList"
+                  :empty-icon="LucideUser"
                   :pinned-state="
                     viewport.isGreaterThan('xs') ? null : undefined
                   "
@@ -1227,19 +1210,7 @@ breadcrumbsStore.setCurrentParent({
                 />
               </template>
               <div>
-                <div
-                  v-if="addedPriceLists.length === 0"
-                  class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
-                >
-                  <p class="text-xl font-bold">
-                    {{ $t('no_entity', { entityName: 'price_list' }, 2) }}
-                  </p>
-                  <p class="text-muted-foreground text-xs">
-                    {{ $t('wholesale.no_price_lists_connected') }}
-                  </p>
-                </div>
                 <TableView
-                  v-else
                   :mode="TableMode.Simple"
                   entity-name="price_list"
                   :columns="priceListColumns"
@@ -1264,25 +1235,14 @@ breadcrumbsStore.setCurrentParent({
               :description="$t('wholesale.orders_description')"
             >
               <div>
-                <div
-                  v-if="ordersList.length === 0"
-                  class="flex flex-col items-center justify-center gap-2 rounded-lg border p-8 text-center"
-                >
-                  <p class="text-xl font-bold">
-                    {{ $t('no_entity', { entityName: 'order' }, 2) }}
-                  </p>
-                  <p class="text-muted-foreground text-xs">
-                    {{ $t('no_entity_found', { entityName: 'order' }, 2) }}
-                  </p>
-                </div>
                 <TableView
-                  v-else
                   :mode="TableMode.Simple"
                   entity-name="order"
                   :columns="orderColumns"
                   :data="ordersList"
                   :page-size="20"
                   :pinned-state="null"
+                  :empty-icon="LucidePackage"
                 />
               </div>
             </ContentEditCard>
