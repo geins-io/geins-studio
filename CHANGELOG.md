@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.1.4 - 2025-12-04
+
+### 🚀 Enhancements
+
+- User profile management ([#104](https://github.com/geins-io/geins-studio/pull/104))
+- Updated navigation structure with improved breadcrumbs ([#104](https://github.com/geins-io/geins-studio/pull/104))
+- Authentication accounts from user endpoint ([#105](https://github.com/geins-io/geins-studio/pull/105))
+- Search functionality in all grids ([#106](https://github.com/geins-io/geins-studio/pull/106))
+- Empty states for grids ([#106](https://github.com/geins-io/geins-studio/pull/106))
+- Password requirements validation
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.1.3 - 2025-11-25
 
 ### 🐛 Bug Fixes
