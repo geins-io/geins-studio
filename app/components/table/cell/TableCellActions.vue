@@ -13,6 +13,9 @@ const emit = defineEmits({
   edit: (rowData): T => rowData,
   copy: (rowData): T => rowData,
   delete: (rowData): T => rowData,
+  replay: (rowData): T => rowData,
+  logs: (rowData): T => rowData,
+  pause: (rowData): T => rowData,
 });
 </script>
 <template>
@@ -24,6 +27,27 @@ const emit = defineEmits({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
+        <DropdownMenuItem
+          v-if="availableActions.includes('replay')"
+          @click="emit('replay', rowData)"
+        >
+          <LucideRotateCcw class="mr-2 size-4" />
+          <span>Replay</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          v-if="availableActions.includes('logs')"
+          @click="emit('logs', rowData)"
+        >
+          <LucideFileText class="mr-2 size-4" />
+          <span>Logs</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          v-if="availableActions.includes('pause')"
+          @click="emit('pause', rowData)"
+        >
+          <LucidePauseCircle class="mr-2 size-4" />
+          <span>Pause</span>
+        </DropdownMenuItem>
         <DropdownMenuItem
           v-if="availableActions.includes('edit')"
           @click="emit('edit', rowData)"

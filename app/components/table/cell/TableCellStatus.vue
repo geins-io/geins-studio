@@ -7,6 +7,8 @@ const { t } = useI18n();
 
 const badgeVariant = computed(() => {
   switch (props.status) {
+    case 'active':
+      return 'positive';
     case 'pending':
       return 'outline';
     case 'on-hold':

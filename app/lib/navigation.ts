@@ -42,6 +42,21 @@ export const navigation: NavigationItem[] = [
       },
     ],
   },
+  {
+    label: 'Integrations',
+    href: '/integrations/list',
+    icon: 'Layers',
+    group: 'sales',
+    children: [
+      {
+        label: 'Workflows',
+        href: '/integrations/workflows/list',
+        childPattern: '/integrations/workflows/:id', // Matches detail pages like /wholesale/price-list/456
+        // permissions: ['wholesale.pricelists.read'],
+      },
+    ],
+  },
+
   // {
   //   label: 'Settings',
   //   href: '/account/market/list',
