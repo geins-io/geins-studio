@@ -39,7 +39,6 @@ const newBuyer = ref<WholesaleBuyerCreate>();
 const isChecking = ref(false);
 const isDeleting = ref(false);
 const formValid = ref(false);
-const assignPricelist = ref(false);
 const buyer = toRef(props, 'buyer');
 const priceLists = toRef(props, 'priceLists');
 const buyerActive = computed(() =>
@@ -144,6 +143,25 @@ const buyerId = computed(() => {
   return newBuyer.value?._id || props.buyer?._id || '';
 });
 
+const hasPricelistsAssigned = computed(() => {
+  return (
+    form.values.priceLists !== undefined && form.values.priceLists.length > 0
+  );
+});
+const assignPriceLists = ref(false);
+
+watch(
+  hasPricelistsAssigned,
+  (newValue) => {
+    if (newValue) {
+      assignPriceLists.value = true;
+    } else {
+      form.setFieldValue('restrictToDedicatedPriceLists', false);
+    }
+  },
+  { immediate: true },
+);
+
 const handleSave = async () => {
   const validation = await form.validate();
   if (!validation.valid) {
@@ -156,7 +174,7 @@ const handleSave = async () => {
       ...form.values,
       _id: form.values.email || '',
       accountId: props.accountId,
-      priceLists: [],
+      priceLists: form.values.priceLists || [],
     });
 
     const id = props.buyer?._id || newBuyer.value._id;
@@ -327,14 +345,14 @@ const existingCustomerName = computed(() => {
           <ContentCardHeader
             size="md"
             heading-level="h3"
-            :title="$t('price_list')"
+            :title="$t('price_list', 2)"
             class="mb-4"
-            description="A pricelist assigned to a buyer will get the highest priority, meaning that enforced pricelists on the account level will be overridden."
+            description="A price list assigned to a buyer will get the highest priority, meaning that enforced price lists on the account level will be overridden."
           />
           <ContentSwitch
-            v-model:checked="assignPricelist"
-            label="Assign pricelist to buyer"
-            description="Chosen pricelist will be applied when this buyer logs in"
+            v-model:checked="assignPriceLists"
+            label="Assign price lists to buyer"
+            description="Chosen price lists will be applied when this buyer logs in"
           >
             <FormGridWrap>
               <FormGrid design="1">
@@ -362,12 +380,18 @@ const existingCustomerName = computed(() => {
                   v-slot="{ value, handleChange }"
                   name="restrictToDedicatedPriceLists"
                 >
-                  <FormItemSwitch
-                    label="Restrict to dedicated price lists"
-                    description="If enabled, the buyer will only have access to the selected price lists."
-                    :model-value="value"
-                    @update:model-value="handleChange"
-                  />
+                  <FormItem>
+                    <FormLabel>Product access</FormLabel>
+                    <FormControl>
+                      <FormItemSwitch
+                        label="Restrict to assigned price lists"
+                        description="If disabled, this buyer can access all products available to the account"
+                        :disabled="!hasPricelistsAssigned"
+                        :model-value="value"
+                        @update:model-value="handleChange"
+                      />
+                    </FormControl>
+                  </FormItem>
                 </FormField>
               </FormGrid>
             </FormGridWrap>
