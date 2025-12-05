@@ -1,10 +1,8 @@
 <script setup lang="ts">
+import VueFlowBuildCanvas from '@/components/vueflow/BuildCanvas.vue';
 
 </script>
 
 <template>
-  <div class="border-1 border-gray-200 rounded-md p-4">
-    hello world
-  </div>
-
+  <VueFlowBuildCanvas />
 </template>
