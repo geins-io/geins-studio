@@ -174,7 +174,10 @@ const handleSave = async () => {
       ...form.values,
       _id: form.values.email || '',
       accountId: props.accountId,
-      priceLists: form.values.priceLists || [],
+      priceLists: assignPriceLists.value ? form.values.priceLists : [],
+      restrictToDedicatedPriceLists: assignPriceLists.value
+        ? form.values.restrictToDedicatedPriceLists
+        : false,
     });
 
     const id = props.buyer?._id || newBuyer.value._id;
@@ -238,6 +241,9 @@ const removeBuyer = async (id: string = buyerId.value) => {
 
 const handleCancel = () => {
   open.value = false;
+  if (!hasPricelistsAssigned.value) {
+    assignPriceLists.value = false;
+  }
 };
 
 const existingCustomerName = computed(() => {
