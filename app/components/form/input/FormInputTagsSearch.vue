@@ -64,14 +64,14 @@ const showAddNewOption = computed(() => {
 const handleSelect = (event: ListboxItemSelectEvent<AcceptableValue>) => {
   if (typeof event.detail.value === 'string') {
     searchTerm.value = '';
-    model.value.push(event.detail.value);
+    model.value = [...model.value, event.detail.value];
     open.value = false;
   }
 };
 
 const handleAddNewOption = () => {
   if (searchTerm.value) {
-    model.value.push(searchTerm.value);
+    model.value = [...model.value, searchTerm.value];
     searchTerm.value = '';
     open.value = false;
   }

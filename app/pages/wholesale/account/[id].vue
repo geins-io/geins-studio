@@ -11,6 +11,7 @@ import {
   TableMode,
   SelectorCondition,
   type WholesaleAccountApiOptions,
+  type WholesaleBuyerList,
 } from '#shared/types';
 import * as z from 'zod';
 import { LucidePackage, LucideUser } from 'lucide-vue-next';
@@ -204,8 +205,18 @@ const {
   }),
   parseEntityData: async (account: WholesaleAccount) => {
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
-
-    buyersList.value = account.buyers || [];
+    buyers.value = account.buyers || [];
+    buyersList.value = account.buyers.map((buyer) => {
+      return {
+        ...buyer,
+        priceLists: createTooltip({
+          items: buyer.priceLists || [],
+          entityName: 'price_list',
+          formatter: (priceList) => `${priceList?.name}`,
+          t,
+        }),
+      };
+    });
     entityLiveStatus.value = account.active || false;
     accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
     addedPriceLists.value = account.priceLists || [];
@@ -272,6 +283,7 @@ const {
       ...entityData,
       salesReps: entityData.salesReps?.map((salesRep) => salesRep._id),
       priceLists: entityData.priceLists?.map((priceList) => priceList._id),
+      buyers: undefined,
     };
   },
   onFormValuesChange: async (values) => {
@@ -329,27 +341,53 @@ fetchUsers();
 // =====================================================================================
 // BUYERS MANAGEMENT
 // =====================================================================================
-const buyersList = ref<WholesaleBuyer[]>([]);
+const buyers = ref<WholesaleBuyer[]>([]);
+const buyersList = ref<WholesaleBuyerList[]>([]);
 const buyerPanelOpen = ref(false);
-const buyerToEdit = ref<WholesaleBuyer | undefined>();
+const buyerToEdit = ref<WholesaleBuyerUpdate | undefined>();
 const buyerPanelMode = ref<'edit' | 'add'>('add');
-const columnOptions: ColumnOptions<WholesaleBuyer> = {
-  columnTitles: { _id: t('person.email'), active: t('status') },
-  excludeColumns: ['accountId', 'restrictToDedicatedPriceLists', 'priceLists'],
+const columnOptions: ColumnOptions<WholesaleBuyerList> = {
+  columnTypes: {
+    restrictToDedicatedPriceLists: 'default',
+    priceLists: 'tooltip',
+  },
+  columnTitles: {
+    _id: t('person.email'),
+    active: t('status'),
+    restrictToDedicatedPriceLists: 'Restricted product access',
+  },
+  excludeColumns: ['accountId'],
   sortable: false,
 };
-const { getColumns, addActionsColumn } = useColumns<WholesaleBuyer>();
+const { getColumns, addActionsColumn, orderAndFilterColumns } =
+  useColumns<WholesaleBuyerList>();
 
 // Use computed for reactive columns
 const buyerColumns = computed(() => {
   if (buyersList.value.length === 0) return [];
 
-  const columns = getColumns(buyersList.value, columnOptions);
+  let columns = getColumns(buyersList.value, columnOptions);
+
+  columns = orderAndFilterColumns(columns, [
+    'firstName',
+    'lastName',
+    '_id',
+    'phone',
+    'priceLists',
+    'restrictToDedicatedPriceLists',
+    'active',
+  ]);
+
   addActionsColumn(
     columns,
     {
-      onEdit: (entity: WholesaleBuyer) => {
-        buyerToEdit.value = entity;
+      onEdit: (entity: WholesaleBuyerList) => {
+        buyerToEdit.value = buyers.value
+          .map((buyer) => ({
+            ...buyer,
+            priceLists: buyer.priceLists?.map((pl) => pl._id) || [],
+          }))
+          .find((buyer) => buyer._id === entity._id);
         buyerPanelOpen.value = true;
         buyerPanelMode.value = 'edit';
       },
@@ -797,7 +835,7 @@ if (!createMode.value) {
     entityId.value,
     allPriceLists.value,
     undefined,
-    buyersList.value,
+    buyers.value,
   );
 }
 </script>
@@ -1162,6 +1200,7 @@ if (!createMode.value) {
                   :buyer="buyerToEdit"
                   :account-id="entityDataUpdate?._id || ''"
                   :account-name="entityDataUpdate.name || ''"
+                  :price-lists="allPriceLists"
                 >
                   <ButtonIcon
                     v-if="!createMode"
@@ -1262,7 +1301,7 @@ if (!createMode.value) {
                 />
                 <ContentSwitch
                   v-model:checked="entityDataUpdate.limitedProductAccess"
-                  label="Only access products included in the assigned price lists"
+                  label="Restrict to assigned price lists"
                   description="If disabled, this account can access all products"
                 />
                 <ContentCardHeader

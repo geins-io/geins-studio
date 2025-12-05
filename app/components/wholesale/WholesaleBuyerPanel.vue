@@ -12,6 +12,7 @@ const props = withDefaults(
     accountId: string;
     accountName: string;
     mode: 'edit' | 'add';
+    priceLists: WholesalePriceList[];
   }>(),
   {
     mode: 'add',
@@ -39,6 +40,7 @@ const isChecking = ref(false);
 const isDeleting = ref(false);
 const formValid = ref(false);
 const buyer = toRef(props, 'buyer');
+const priceLists = toRef(props, 'priceLists');
 const buyerActive = computed(() =>
   props.mode === 'edit' ? props.buyer?.active : true,
 );
@@ -65,6 +67,8 @@ const formSchema = toTypedSchema(
     phone: z.string().optional(),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
+    restrictToDedicatedPriceLists: z.boolean().optional(),
+    priceLists: z.array(z.string()).optional(),
   }),
 );
 
@@ -139,6 +143,25 @@ const buyerId = computed(() => {
   return newBuyer.value?._id || props.buyer?._id || '';
 });
 
+const hasPricelistsAssigned = computed(() => {
+  return (
+    form.values.priceLists !== undefined && form.values.priceLists.length > 0
+  );
+});
+const assignPriceLists = ref(false);
+
+watch(
+  hasPricelistsAssigned,
+  (newValue) => {
+    if (newValue) {
+      assignPriceLists.value = true;
+    } else {
+      form.setFieldValue('restrictToDedicatedPriceLists', false);
+    }
+  },
+  { immediate: true },
+);
+
 const handleSave = async () => {
   const validation = await form.validate();
   if (!validation.valid) {
@@ -151,7 +174,10 @@ const handleSave = async () => {
       ...form.values,
       _id: form.values.email || '',
       accountId: props.accountId,
-      priceLists: [],
+      priceLists: assignPriceLists.value ? form.values.priceLists : [],
+      restrictToDedicatedPriceLists: assignPriceLists.value
+        ? form.values.restrictToDedicatedPriceLists
+        : false,
     });
 
     const id = props.buyer?._id || newBuyer.value._id;
@@ -215,6 +241,9 @@ const removeBuyer = async (id: string = buyerId.value) => {
 
 const handleCancel = () => {
   open.value = false;
+  if (!hasPricelistsAssigned.value) {
+    assignPriceLists.value = false;
+  }
 };
 
 const existingCustomerName = computed(() => {
@@ -318,6 +347,62 @@ const existingCustomerName = computed(() => {
             </FormGrid>
           </FormGridWrap>
         </form>
+        <div class="my-8">
+          <ContentCardHeader
+            size="md"
+            heading-level="h3"
+            :title="$t('price_list', 2)"
+            class="mb-4"
+            description="A price list assigned to a buyer will get the highest priority, meaning that enforced price lists on the account level will be overridden."
+          />
+          <ContentSwitch
+            v-model:checked="assignPriceLists"
+            label="Assign price lists to buyer"
+            description="Chosen price lists will be applied when this buyer logs in"
+          >
+            <FormGridWrap>
+              <FormGrid design="1">
+                <FormField
+                  v-slot="{ componentField }"
+                  name="priceLists"
+                  class="mb-4"
+                >
+                  <FormItem>
+                    <FormLabel>{{ $t('price_list', 2) }}</FormLabel>
+                    <FormControl>
+                      <FormInputTagsSearch
+                        :model-value="componentField.modelValue"
+                        entity-name="price_list"
+                        :data-set="priceLists"
+                        @update:model-value="
+                          componentField['onUpdate:modelValue']
+                        "
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+                <FormField
+                  v-slot="{ value, handleChange }"
+                  name="restrictToDedicatedPriceLists"
+                >
+                  <FormItem>
+                    <FormLabel>Product access</FormLabel>
+                    <FormControl>
+                      <FormItemSwitch
+                        label="Restrict to assigned price lists"
+                        description="If disabled, this buyer can access all products available to the account"
+                        :disabled="!hasPricelistsAssigned"
+                        :model-value="value"
+                        @update:model-value="handleChange"
+                      />
+                    </FormControl>
+                  </FormItem>
+                </FormField>
+              </FormGrid>
+            </FormGridWrap>
+          </ContentSwitch>
+        </div>
         <div class="mt-4 border-t pt-4 sm:mt-8 sm:pt-8">
           <div
             v-if="mode === 'edit'"

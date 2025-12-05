@@ -51,11 +51,20 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
       formatter: (salesRep) => `${salesRep?.firstName} ${salesRep?.lastName}`,
       t,
     });
+
+    const priceLists = createTooltip({
+      items: account.priceLists,
+      entityName: 'price_list',
+      formatter: (priceList) => `${priceList?.name}`,
+      t,
+    });
+
     return {
       ...account,
       accountGroups,
       salesReps,
       buyers,
+      priceLists,
     };
   });
 };
@@ -63,7 +72,10 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(
   'wholesale-accounts',
-  () => wholesaleApi.account.list({ fields: ['salesreps', 'buyers'] }),
+  () =>
+    wholesaleApi.account.list({
+      fields: ['salesreps', 'buyers', 'pricelists'],
+    }),
 );
 
 if (!data.value || error.value) {
@@ -87,11 +99,15 @@ const columnOptions: ColumnOptions<EntityList> = {
     buyers: 'tooltip',
     salesReps: 'tooltip',
     accountGroups: 'tooltip',
+    priceLists: 'tooltip',
   },
   linkColumns: {
     name: { url: entityUrl, idField: '_id' },
   },
-  columnTitles: { active: t('status') },
+  columnTitles: {
+    active: t('status'),
+    limitedProductAccess: 'Restricted product access',
+  },
   excludeColumns: ['meta', 'addresses', 'tags'],
 };
 // GET AND SET COLUMNS
