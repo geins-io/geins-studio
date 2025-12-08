@@ -1,9 +1,20 @@
 <script setup lang="ts">
 import { useSidebar } from '@/components/ui/sidebar';
+import { useToast } from '@/components/ui/toast/use-toast';
 
-const { logout } = useGeinsAuth();
+const { geinsLogError } = useGeinsLog('components/../LayoutSidebarUser.vue');
+const { toast } = useToast();
+const { t } = useI18n();
+const { session, setAccount, logout } = useGeinsAuth();
 const userStore = useUserStore();
-const { userName, userInitials, userEmail } = storeToRefs(userStore);
+const {
+  userName,
+  userInitials,
+  userEmail,
+  userAccounts,
+  currentAccountName,
+  hasMultipleAccounts,
+} = storeToRefs(userStore);
 
 const colorMode = useColorMode();
 const setColorMode = () => {
@@ -12,15 +23,20 @@ const setColorMode = () => {
 
 const { isMobile } = useSidebar();
 
-const auth = useGeinsAuth();
-const setAccount = async (accountKey: string) => {
-  await auth.setAccount(accountKey);
-  window.location.href = '/';
+const setNewAccount = async (accountKey: string) => {
+  try {
+    await setAccount(accountKey);
+    window.location.href = '/';
+  } catch (error) {
+    toast({
+      title: t('feedback_error'),
+      description: t('feedback_error_description'),
+      variant: 'negative',
+    });
+    geinsLogError('error switching account:', error);
+    return;
+  }
 };
-
-const user = useUserStore();
-const { userAccounts, currentAccountName, hasMultipleAccounts } =
-  storeToRefs(user);
 </script>
 
 <template>
@@ -76,14 +92,15 @@ const { userAccounts, currentAccountName, hasMultipleAccounts } =
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
                 <DropdownMenuItem
-                  v-for="acc in userAccounts"
-                  @click="setAccount(acc.accountKey)"
+                  v-for="account in userAccounts"
+                  :key="account.accountKey"
+                  @click="setNewAccount(account.accountKey)"
                 >
                   <span class="pr-2">
-                    {{ acc.displayName }}
+                    {{ account.displayName }}
                   </span>
                   <LucideCheck
-                    v-if="acc.accountKey === auth.session.value?.accountKey"
+                    v-if="account.accountKey === session?.accountKey"
                     class="ml-auto"
                   />
                 </DropdownMenuItem>
@@ -96,20 +113,20 @@ const { userAccounts, currentAccountName, hasMultipleAccounts } =
             <DropdownMenuItem as-child>
               <NuxtLink :to="`/account/profile`">
                 <LucideUser class="mr-2 size-4" />
-                <span>Account</span>
+                <span>{{ $t('account') }}</span>
               </NuxtLink>
             </DropdownMenuItem>
             <DropdownMenuItem @click="logout()">
               <LucideLogOut class="mr-2 size-4" />
-              <span>Log out</span>
+              <span>{{ $t('log_out') }}</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="setColorMode">
             <LucideSun class="mr-2 hidden size-4 dark:block" />
             <LucideMoonStar class="mr-2 size-4 dark:hidden" />
-            <span class="dark:hidden">Dark mode</span>
-            <span class="hidden dark:block">Light mode</span>
+            <span class="dark:hidden">{{ $t('dark_mode') }}</span>
+            <span class="hidden dark:block">{{ $t('light_mode') }}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
