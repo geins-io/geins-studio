@@ -23,7 +23,7 @@ const props = withDefaults(
           <slot />
         </span>
       </TooltipTrigger>
-      <TooltipContent>
+      <TooltipContent class="max-w-96">
         <slot name="tooltip" />
       </TooltipContent>
     </Tooltip>

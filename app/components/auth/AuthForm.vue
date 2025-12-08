@@ -458,7 +458,10 @@ const backToLogin = () => {
 
     <!-- Account Selection -->
     <div v-else-if="accountMode">
-      <ul v-if="!loading" class="flex flex-col gap-2">
+      <ul
+        v-if="!loading"
+        class="flex max-h-[30vh] flex-col gap-2 overflow-auto"
+      >
         <li
           v-for="account in accounts"
           :key="account.accountKey"

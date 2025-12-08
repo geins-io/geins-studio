@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSidebar } from '@/components/ui/sidebar';
 import { useToast } from '@/components/ui/toast/use-toast';
+import LogoLetter from '@/assets/logos/geins-g.svg';
 
 const { geinsLogError } = useGeinsLog('components/../LayoutSidebarUser.vue');
 const { toast } = useToast();
@@ -86,11 +87,11 @@ const setNewAccount = async (accountKey: string) => {
           <DropdownMenuSeparator v-if="hasMultipleAccounts" />
           <DropdownMenuSub v-if="hasMultipleAccounts">
             <DropdownMenuSubTrigger>
-              <LucideEarth class="mr-2 size-4" />
+              <LogoLetter class="mr-2 size-4" :font-controlled="false" />
               {{ currentAccountName }}
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
-              <DropdownMenuSubContent>
+              <DropdownMenuSubContent class="max-h-[50vh] overflow-auto">
                 <DropdownMenuItem
                   v-for="account in userAccounts"
                   :key="account.accountKey"
