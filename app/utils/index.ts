@@ -40,5 +40,5 @@ export function getEntityNameById(
   all: EntityBaseWithName[],
 ): string {
   const entity = all.find((pl) => pl._id === id);
-  return entity ? entity.name : id;
+  return entity?.displayName || entity?.name || id;
 }

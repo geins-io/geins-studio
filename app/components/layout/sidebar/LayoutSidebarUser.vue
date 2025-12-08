@@ -11,6 +11,16 @@ const setColorMode = () => {
 };
 
 const { isMobile } = useSidebar();
+
+const auth = useGeinsAuth();
+const setAccount = async (accountKey: string) => {
+  await auth.setAccount(accountKey);
+  window.location.href = '/';
+};
+
+const user = useUserStore();
+const { userAccounts, currentAccountName, hasMultipleAccounts } =
+  storeToRefs(user);
 </script>
 
 <template>
@@ -33,7 +43,7 @@ const { isMobile } = useSidebar();
               }}</span>
               <span class="truncate text-xs">{{ userEmail }}</span>
             </div>
-            <LucideChevronsUpDown class="ml-auto size-4" />
+            <LucideEllipsisVertical class="ml-auto size-4" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -57,6 +67,30 @@ const { isMobile } = useSidebar();
               </div>
             </div>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator v-if="hasMultipleAccounts" />
+          <DropdownMenuSub v-if="hasMultipleAccounts">
+            <DropdownMenuSubTrigger>
+              <LucideEarth class="mr-2 size-4" />
+              {{ currentAccountName }}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem
+                  v-for="acc in userAccounts"
+                  @click="setAccount(acc.accountKey)"
+                >
+                  <span class="pr-2">
+                    {{ acc.displayName }}
+                  </span>
+                  <LucideCheck
+                    v-if="acc.accountKey === auth.session.value?.accountKey"
+                    class="ml-auto"
+                  />
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem as-child>

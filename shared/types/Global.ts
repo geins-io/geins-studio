@@ -12,6 +12,7 @@ export interface EntityBase {
 
 export interface EntityBaseWithName extends Omit<EntityBase, '_type'> {
   name: string;
+  displayName?: string;
 }
 
 // Utility types for consistent CRUD operations
