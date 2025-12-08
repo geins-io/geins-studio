@@ -863,7 +863,7 @@ if (!createMode.value) {
                               :key="channel._id"
                               :value="channel._id"
                             >
-                              {{ channel.name }}
+                              {{ channel.displayName || channel.name }}
                             </SelectItem>
                           </SelectContent>
                         </Select>

@@ -44,6 +44,21 @@ export const useUserStore = defineStore('user', () => {
     user.value = newUser;
   };
 
+  const userAccounts = computed(() => {
+    return user.value?.basicAccounts || [];
+  });
+
+  const currentAccountName = computed(() => {
+    const account = userAccounts.value.find(
+      (acc) => acc.accountKey === session.value?.accountKey,
+    );
+    return account ? account.displayName : '';
+  });
+
+  const hasMultipleAccounts = computed(() => {
+    return userAccounts.value.length > 1;
+  });
+
   /**
    * Check if user has any of the specified roles
    * TODO: Implement role checking once user roles are available in the session
@@ -71,6 +86,9 @@ export const useUserStore = defineStore('user', () => {
     userInitials,
     userName,
     userEmail,
+    userAccounts,
+    currentAccountName,
+    hasMultipleAccounts,
     updateUser,
     hasAnyRole,
     hasAnyPermission,
