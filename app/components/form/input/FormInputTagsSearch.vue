@@ -50,7 +50,9 @@ const { contains } = useFilter({ sensitivity: 'base' });
 const filteredData = computed(() => {
   const options = dataSet.value?.filter((i) => !model.value.includes(i._id));
   const returnVal = searchTerm.value
-    ? options?.filter((option) => contains(option.name || '', searchTerm.value))
+    ? options?.filter((option) =>
+        contains(option.displayName || option.name || '', searchTerm.value),
+      )
     : options;
   return returnVal;
 });
@@ -140,7 +142,7 @@ const getName = (id: AcceptableValue): string => {
             :value="item._id"
             @select.prevent="handleSelect"
           >
-            {{ item.name }}
+            {{ item.displayName || item.name }}
           </ComboboxItem>
         </ComboboxGroup>
         <ComboboxItem
