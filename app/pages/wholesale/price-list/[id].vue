@@ -580,28 +580,29 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
+  // Initialize error handling
+  const { handleFetchError, validateEntityData } = useEntityError(entityName);
+
   const { data, error, refresh } = await useAsyncData<ProductPriceList>(() =>
     productApi.priceList.get(entityId.value, {
       fields: ['rules', 'selectionquery'],
     }),
   );
 
+  // Handle fetch errors (404, 500, etc.)
   if (error.value) {
-    toast({
-      title: t(`error_fetching_entity`, { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
+    handleFetchError(error.value, entityId.value);
   }
+
+  // Validate data exists and assign
+  const priceList = validateEntityData(data.value, entityId.value);
 
   refreshEntityData.value = refresh;
 
-  if (data.value) {
-    const hasSelection = !!data.value.productSelectionQuery;
-    await parseAndSaveData(data.value, !hasSelection);
-    if (hasSelection) {
-      await previewPriceList(undefined, true, false);
-    }
+  const hasSelection = !!priceList.productSelectionQuery;
+  await parseAndSaveData(priceList, !hasSelection);
+  if (hasSelection) {
+    await previewPriceList(undefined, true, false);
   }
 
   productsStore.init();

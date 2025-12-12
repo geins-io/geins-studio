@@ -776,30 +776,35 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
+  // Initialize error handling
+  const { handleFetchError, validateEntityData } = useEntityError(entityName);
+
   const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
     wholesaleApi.account.get(entityId.value, { fields: ['all'] }),
   );
+
+  // Handle fetch errors (404, 500, etc.)
   if (error.value) {
-    toast({
-      title: t(`error_fetching_entity`, { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
+    handleFetchError(error.value, entityId.value);
   }
+
+  // Validate data exists
+  const account = validateEntityData(data.value, entityId.value);
 
   refreshEntityData.value = refresh;
 
-  watch(
-    data,
-    async (newData) => {
-      if (newData) {
-        await parseAndSaveData(newData);
-        await nextTick();
-        // Columns are now computed and will update automatically
-      }
-    },
-    { immediate: true },
-  );
+  // Parse and save initial data
+  await parseAndSaveData(account);
+  await nextTick();
+
+  // Watch for data updates
+  watch(data, async (newData) => {
+    if (newData) {
+      await parseAndSaveData(newData);
+      await nextTick();
+      // Columns are now computed and will update automatically
+    }
+  });
 
   const { data: tagsData, error: tagsError } = await useAsyncData<string[]>(
     () => wholesaleApi.account.tags.get(),
