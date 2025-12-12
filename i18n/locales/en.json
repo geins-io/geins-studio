@@ -169,7 +169,7 @@
     "500_title": "Internal server error",
     "500_description": "Something went wrong on our end. Please try again later.",
     "go_back": "Go back",
-    "go_home": "Go to dashboard",
+    "go_home": "Go home",
     "refresh_page": "Refresh page"
   },
   "auth": {
