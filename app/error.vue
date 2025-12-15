@@ -17,21 +17,25 @@ const clearAndRedirect = async () => {
 </script>
 
 <template>
-  <div class="flex h-[calc(100vh-64px)] w-full items-center justify-center">
-    <!-- 404 Error -->
-    <Error404
-      v-if="is404"
-      :message="error?.message"
-      @clear="clearAndRedirect"
-    />
+  <div>
+    <NuxtLayout name="default">
+      <div class="flex h-[calc(100vh-64px)] w-full items-center justify-center">
+        <!-- 404 Error -->
+        <Error404
+          v-if="is404"
+          :message="error?.message"
+          @clear="clearAndRedirect"
+        />
 
-    <!-- Generic Error (fallback) -->
-    <Error500
-      v-else
-      :message="error?.message"
-      :error-details="isDevelopment ? error?.stack : undefined"
-      :show-error-details="isDevelopment"
-      @clear="clearAndRedirect"
-    />
+        <!-- Generic Error (fallback) -->
+        <Error500
+          v-else
+          :message="error?.message"
+          :error-details="isDevelopment ? error?.stack : undefined"
+          :show-error-details="isDevelopment"
+          @clear="clearAndRedirect"
+        />
+      </div>
+    </NuxtLayout>
   </div>
 </template>
