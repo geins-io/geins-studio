@@ -8,13 +8,9 @@ import {
 const props = withDefaults(
   defineProps<{
     message?: string;
-    showBackButton?: boolean;
-    showHomeButton?: boolean;
   }>(),
   {
-    message: 'The page you are looking for does not exist',
-    showBackButton: true,
-    showHomeButton: true,
+    message: '',
   },
 );
 
@@ -46,16 +42,16 @@ const handleHome = () => {
       <EmptyHeader>
         <EmptyTitle>{{ t('error.404_title') }}</EmptyTitle>
         <EmptyDescription>
-          {{ message }}
+          {{ message || t('error.404_description') }}
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <div class="flex flex-col gap-2 sm:flex-row">
-          <Button v-if="showBackButton" variant="secondary" @click="handleBack">
+          <Button variant="secondary" @click="handleBack">
             <LucideArrowLeft class="mr-2 size-4" />
             {{ t('error.go_back') }}
           </Button>
-          <Button v-if="showHomeButton" @click="handleHome">
+          <Button @click="handleHome">
             <LucideHome class="mr-2 size-4" />
             {{ t('error.home') }}
           </Button>

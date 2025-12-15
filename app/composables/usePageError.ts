@@ -9,10 +9,6 @@ export interface PageErrorOptions {
    * The ID of the entity (for more specific error messages)
    */
   entityId?: string;
-  /**
-   * The page or resource name (for generic page errors)
-   */
-  resourceName?: string;
 }
 
 /**
@@ -32,8 +28,8 @@ export function usePageError(options: PageErrorOptions = {}) {
     contextOptions: PageErrorOptions = {},
   ): string => {
     const effectiveOptions = { ...options, ...contextOptions };
-    const { entityName, entityId, resourceName } = effectiveOptions;
-    const name = entityName || resourceName || 'resource';
+    const { entityName, entityId } = effectiveOptions;
+    const name = entityName || 'entity';
 
     if (statusCode === 404) {
       if (entityName && entityId) {
@@ -43,22 +39,22 @@ export function usePageError(options: PageErrorOptions = {}) {
         });
       }
       if (entityName) {
-        return t('entity_not_found', { entityName });
+        return t('no_entity_found', { entityName });
       }
-      return t('page_not_found');
+      return t('error.404_description');
     }
 
     if (statusCode >= 500) {
       if (entityName) {
-        return t('server_error_loading_entity', { entityName });
+        return t('error_loading_entity', { entityName: name });
       }
-      return t('server_error');
+      return t('error.500_description');
     }
 
     if (entityName) {
       return t('error_loading_entity', { entityName: name });
     }
-    return t('error_loading_page');
+    return t('error.500_description');
   };
 
   /**
@@ -104,8 +100,8 @@ export function usePageError(options: PageErrorOptions = {}) {
     const { useToast } = await import('@/components/ui/toast/use-toast');
     const { toast } = useToast();
 
-    const { entityName, resourceName } = options;
-    const name = entityName || resourceName || 'page';
+    const { entityName } = options;
+    const name = entityName || 'page';
 
     const title =
       customMessage ||

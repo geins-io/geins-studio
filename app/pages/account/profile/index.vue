@@ -118,6 +118,7 @@ const {
   entityDataUpdate,
   entityData,
   entityLiveStatus,
+  entityFetchKey,
   refreshEntityData,
   form,
   formTouched,
@@ -321,34 +322,32 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
-  const { data, error, refresh } = await useAsyncData<User>(() =>
-    userApi.me.get(),
-  );
+  // Initialize error handling
+  const { handleFetchResult } = usePageError({
+    entityName,
+  });
 
-  if (error.value) {
-    geinsLogError('error fetching user:', error.value);
-    toast({
-      title: t('error'),
-      description: t('error_fetching_entity', { entityName: t(entityName) }),
-      variant: 'negative',
-    });
-  }
+  const { data, error, refresh } = await useAsyncData<User>(
+    entityFetchKey,
+    () => userApi.me.get(),
+  );
 
   refreshEntityData.value = refresh;
 
-  if (data.value) {
-    await parseAndSaveData(data.value);
-  }
+  onMounted(async () => {
+    const user = handleFetchResult(error.value, data.value);
+    await parseAndSaveData(user);
 
-  watch(
-    () => data.value,
-    async (newData) => {
-      if (newData) {
-        await parseAndSaveData(newData);
-      }
-    },
-    { deep: true },
-  );
+    watch(
+      () => data.value,
+      async (newData) => {
+        if (newData) {
+          await parseAndSaveData(newData);
+        }
+      },
+      { deep: true },
+    );
+  });
 }
 </script>
 

@@ -26,6 +26,7 @@
   "number": "Number | Numbers",
   "margin": "Margin | Margins",
   "discount": "Discount | Discounts",
+  "entity": "Entity | Entities",
   "new_entity_url_alias": "new",
   "list_entity_url_alias": "list",
   "entity_id": "@:{entityName} ID",
@@ -166,7 +167,7 @@
   "error": {
     "404_title": "Page not found",
     "404_description": "The page you are looking for does not exist or has been moved.",
-    "500_title": "Internal server error",
+    "500_title": "Oops..",
     "500_description": "Something went wrong on our end. Please try again later.",
     "go_back": "Go back",
     "home": "Home",

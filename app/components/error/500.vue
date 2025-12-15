@@ -9,26 +9,26 @@ const props = withDefaults(
   defineProps<{
     message?: string;
     errorDetails?: string;
-    showRefreshButton?: boolean;
-    showHomeButton?: boolean;
     showErrorDetails?: boolean;
   }>(),
   {
-    message: 'An unexpected error occurred. Please try again later.',
-    showRefreshButton: true,
-    showHomeButton: true,
+    message: '',
     showErrorDetails: false,
   },
 );
 
 const { t } = useI18n();
 
+const emit = defineEmits<{
+  (e: 'clear'): void;
+}>();
+
 const handleRefresh = () => {
   window.location.reload();
 };
 
 const handleHome = () => {
-  clearError({ redirect: '/' });
+  emit('clear');
 };
 </script>
 
@@ -50,22 +50,19 @@ const handleHome = () => {
             </summary>
             <pre
               class="text-muted-foreground bg-secondary mt-2 max-h-40 overflow-auto rounded p-2 text-xs"
-              >{{ errorDetails }}</pre
             >
+              {{ errorDetails }}
+            </pre>
           </details>
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <div class="flex flex-col gap-2 sm:flex-row">
-          <Button
-            v-if="showRefreshButton"
-            variant="secondary"
-            @click="handleRefresh"
-          >
+          <Button variant="secondary" @click="handleRefresh">
             <LucideRefreshCw class="mr-2 size-4" />
             {{ t('error.refresh_page') }}
           </Button>
-          <Button v-if="showHomeButton" @click="handleHome">
+          <Button @click="handleHome">
             <LucideHome class="mr-2 size-4" />
             {{ t('error.home') }}
           </Button>
