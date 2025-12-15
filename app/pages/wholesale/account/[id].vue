@@ -165,6 +165,7 @@ const {
   entityPageTitle,
   entityLiveStatus,
   refreshEntityData,
+  entityFetchKey,
   form,
   formValid,
   formTouched,
@@ -777,71 +778,74 @@ const { summaryProps } = useEntityEditSummary({
 // =====================================================================================
 if (!createMode.value) {
   // Initialize error handling
-  const { handleFetchError, validateEntityData } = useEntityError(entityName);
+  const { handleFetchResult } = usePageError({
+    entityName,
+    entityId: entityId.value,
+  });
 
-  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
-    wholesaleApi.account.get(entityId.value, { fields: ['all'] }),
+  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(
+    entityFetchKey.value,
+    () => wholesaleApi.account.get(entityId.value, { fields: ['all'] }),
   );
-
-  // Handle fetch errors (404, 500, etc.)
-  if (error.value) {
-    handleFetchError(error.value, entityId.value);
-  }
-
-  // Validate data exists
-  const account = validateEntityData(data.value, entityId.value);
 
   refreshEntityData.value = refresh;
 
-  // Parse and save initial data
-  await parseAndSaveData(account);
-  await nextTick();
+  onMounted(async () => {
+    const account = handleFetchResult<WholesaleAccount>(
+      error.value,
+      data.value,
+    );
 
-  // Watch for data updates
-  watch(data, async (newData) => {
-    if (newData) {
-      await parseAndSaveData(newData);
-      await nextTick();
-      // Columns are now computed and will update automatically
+    // Parse and save initial data
+    await parseAndSaveData(account);
+    await nextTick();
+
+    // Watch for data updates
+    watch(data, async (newData) => {
+      if (newData) {
+        await parseAndSaveData(newData);
+        await nextTick();
+        // Columns are now computed and will update automatically
+      }
+    });
+
+    const tagsData = ref<string[] | null>(null);
+
+    try {
+      tagsData.value = await wholesaleApi.account.tags.get();
+    } catch (e) {
+      geinsLogError('error fetching tags:', e);
     }
+
+    if (tagsData.value) {
+      const extractedTags = extractAccountGroupsfromTags(tagsData.value);
+      accountTags.value = extractedTags.map((tag) => ({
+        _id: tag,
+        name: tag,
+      }));
+    }
+
+    const orderSelectionQuery: OrderBatchQuery = {
+      include: [
+        {
+          selections: [
+            {
+              condition: SelectorCondition.And,
+              wholesaleAccountIds: [entityId.value],
+            },
+          ],
+        },
+      ],
+    };
+
+    await fetchOrders(
+      orderSelectionQuery,
+      { fields: ['pricelists', 'itemcount'] },
+      allPriceLists.value,
+      undefined,
+      buyers.value,
+    );
   });
-
-  const { data: tagsData, error: tagsError } = await useAsyncData<string[]>(
-    () => wholesaleApi.account.tags.get(),
-  );
-  if (tagsError.value) {
-    geinsLogError('error fetching tags:', tagsError.value);
-  }
-
-  if (tagsData.value) {
-    const extractedTags = extractAccountGroupsfromTags(tagsData.value);
-    accountTags.value = extractedTags.map((tag) => ({
-      _id: tag,
-      name: tag,
-    }));
-  }
-
-  const orderSelectionQuery: OrderBatchQuery = {
-    include: [
-      {
-        selections: [
-          {
-            condition: SelectorCondition.And,
-            wholesaleAccountIds: [entityId.value],
-          },
-        ],
-      },
-    ],
-  };
-
-  await fetchOrders(
-    orderSelectionQuery,
-    { fields: ['pricelists', 'itemcount'] },
-    entityId.value,
-    allPriceLists.value,
-    undefined,
-    buyers.value,
-  );
 }
 </script>
 

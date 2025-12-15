@@ -29,13 +29,10 @@ export function usePageError(options: PageErrorOptions = {}) {
    */
   const getErrorMessage = (
     statusCode: number,
-    customMessage?: string,
+    contextOptions: PageErrorOptions = {},
   ): string => {
-    if (customMessage) {
-      return customMessage;
-    }
-
-    const { entityName, entityId, resourceName } = options;
+    const effectiveOptions = { ...options, ...contextOptions };
+    const { entityName, entityId, resourceName } = effectiveOptions;
     const name = entityName || resourceName || 'resource';
 
     if (statusCode === 404) {
@@ -52,6 +49,9 @@ export function usePageError(options: PageErrorOptions = {}) {
     }
 
     if (statusCode >= 500) {
+      if (entityName) {
+        return t('server_error_loading_entity', { entityName });
+      }
       return t('server_error');
     }
 
@@ -63,19 +63,30 @@ export function usePageError(options: PageErrorOptions = {}) {
 
   /**
    * Throws a page error with appropriate messaging
+   * Can accept either a status code or an error object
    *
-   * @param statusCode - HTTP status code (defaults to 404)
+   * @param statusCodeOrError - HTTP status code or error object
    * @param customMessage - Optional custom error message
+   * @param contextOptions - Optional override for error context
    */
   const throwPageError = (
-    statusCode: number = 404,
-    customMessage?: string,
+    statusCodeOrError: number | NuxtError = 404,
+    contextOptions?: PageErrorOptions,
   ): never => {
-    const message = getErrorMessage(statusCode, customMessage);
+    let statusCode: number;
 
-    throw showError({
+    // Handle error object
+    if (typeof statusCodeOrError === 'object' && statusCodeOrError !== null) {
+      statusCode = statusCodeOrError.statusCode || 500;
+    } else {
+      statusCode = statusCodeOrError;
+    }
+
+    const finalMessage = getErrorMessage(statusCode, contextOptions);
+
+    throw createError({
       statusCode,
-      statusMessage: message,
+      statusMessage: finalMessage,
       fatal: true,
     });
   };
@@ -87,7 +98,7 @@ export function usePageError(options: PageErrorOptions = {}) {
    * @param customMessage - Optional custom error message
    */
   const showErrorToast = async (
-    error: NuxtError,
+    error: any,
     customMessage?: string,
   ): Promise<void> => {
     const { useToast } = await import('@/components/ui/toast/use-toast');
@@ -109,8 +120,45 @@ export function usePageError(options: PageErrorOptions = {}) {
     });
   };
 
+  /**
+   * Checks if data is valid (not null/undefined) and throws error if invalid
+   *
+   * @param data - The data to validate
+   * @param customOptions - Optional override for error context
+   */
+  const validateData = <T>(
+    data: T | null | undefined,
+    customOptions?: PageErrorOptions,
+  ): NonNullable<T> => {
+    if (!data) {
+      throwPageError(404, customOptions);
+    }
+    return data as NonNullable<T>;
+  };
+
+  const handleFetchResult = <T>(
+    error: NuxtError | undefined,
+    data: T | null | undefined,
+    customOptions?: PageErrorOptions,
+  ): NonNullable<T> => {
+    if (error) {
+      throwPageError(error, customOptions);
+    }
+    return validateData(data, customOptions);
+  };
+
   return {
     throwPageError,
     showErrorToast,
+    validateData,
+    handleFetchResult,
   };
+}
+
+/**
+ * Legacy alias for backwards compatibility
+ * @deprecated Use usePageError instead
+ */
+export function useEntityError(entityName?: string) {
+  return usePageError({ entityName });
 }

@@ -20,16 +20,20 @@ const props = withDefaults(
 
 const { t } = useI18n();
 
+const emit = defineEmits<{
+  (e: 'clear'): void;
+}>();
+
 const handleBack = () => {
   if (window.history.length > 1) {
     window.history.back();
   } else {
-    navigateTo('/');
+    emit('clear');
   }
 };
 
 const handleHome = () => {
-  navigateTo('/');
+  emit('clear');
 };
 </script>
 
@@ -53,7 +57,7 @@ const handleHome = () => {
           </Button>
           <Button v-if="showHomeButton" @click="handleHome">
             <LucideHome class="mr-2 size-4" />
-            {{ t('error.go_home') }}
+            {{ t('error.home') }}
           </Button>
         </div>
       </EmptyContent>

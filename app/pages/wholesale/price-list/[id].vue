@@ -195,6 +195,7 @@ const {
   entityData,
   entityPageTitle,
   entityLiveStatus,
+  entityFetchKey,
   refreshEntityData,
   form,
   formValid,
@@ -581,43 +582,48 @@ const { summaryProps } = useEntityEditSummary({
 // =====================================================================================
 if (!createMode.value) {
   // Initialize error handling
-  const { handleFetchError, validateEntityData } = useEntityError(entityName);
+  const { handleFetchResult } = usePageError({
+    entityName,
+    entityId: entityId.value,
+  });
 
-  const { data, error, refresh } = await useAsyncData<ProductPriceList>(() =>
-    productApi.priceList.get(entityId.value, {
-      fields: ['rules', 'selectionquery'],
-    }),
+  const { data, error, refresh } = await useAsyncData<ProductPriceList>(
+    entityFetchKey.value,
+    () =>
+      productApi.priceList.get(entityId.value, {
+        fields: ['rules', 'selectionquery'],
+      }),
   );
-
-  // Handle fetch errors (404, 500, etc.)
-  if (error.value) {
-    handleFetchError(error.value, entityId.value);
-  }
-
-  // Validate data exists and assign
-  const priceList = validateEntityData(data.value, entityId.value);
 
   refreshEntityData.value = refresh;
 
-  const hasSelection = !!priceList.productSelectionQuery;
-  await parseAndSaveData(priceList, !hasSelection);
-  if (hasSelection) {
-    await previewPriceList(undefined, true, false);
-  }
+  onMounted(async () => {
+    // Validate data exists and assign
+    const priceList = handleFetchResult<ProductPriceList>(
+      error.value,
+      data.value,
+    );
 
-  productsStore.init();
+    const hasSelection = !!priceList.productSelectionQuery;
+    await parseAndSaveData(priceList, !hasSelection);
+    if (hasSelection) {
+      await previewPriceList(undefined, true, false);
+    }
 
-  watch(
-    productSelection,
-    async (newSelection) => {
-      if (saveInProgress.value) return;
+    productsStore.init();
 
-      entityDataUpdate.value.productSelectionQuery = newSelection;
+    watch(
+      productSelection,
+      async (newSelection) => {
+        if (saveInProgress.value) return;
 
-      await previewPriceList('Product selection updated');
-    },
-    { deep: true },
-  );
+        entityDataUpdate.value.productSelectionQuery = newSelection;
+
+        await previewPriceList('Product selection updated');
+      },
+      { deep: true },
+    );
+  });
 }
 </script>
 

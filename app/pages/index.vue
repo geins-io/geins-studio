@@ -39,7 +39,6 @@ if (allAccounts.value.length === 0) {
     orderSelectionQuery,
     undefined,
     undefined,
-    undefined,
     allAccounts.value,
   );
 

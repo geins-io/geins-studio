@@ -59,6 +59,7 @@ interface UseEntityEditReturnType<
   entityListUrl: string;
   currentTab: Ref<number>;
   showSidebar: ComputedRef<boolean>;
+  entityFetchKey: ComputedRef<string>;
 
   // Entity data
   refreshEntityData: Ref<() => Promise<void>>;
@@ -156,6 +157,8 @@ export function useEntityEdit<
   const entityId = computed<string>(
     () => entityData.value?._id || String(route.params.id),
   );
+
+  const entityFetchKey = computed(() => `${entityName}-${entityId.value}`);
 
   const entityPageTitle = computed(() =>
     createMode.value
@@ -397,6 +400,7 @@ export function useEntityEdit<
     entityDataUpdate,
     entityData,
     entityPageTitle,
+    entityFetchKey,
 
     // Form
     form,

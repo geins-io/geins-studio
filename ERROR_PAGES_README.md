@@ -175,7 +175,7 @@ Add these keys to your locale files (`i18n/locales/`):
   "error_500_title": "Something Went Wrong",
   "error_details": "Error Details",
   "go_back": "Go Back",
-  "go_home": "Go to Home",
+  "go_home": "Home",
   "refresh_page": "Refresh Page",
   "entity_not_found": "{entityName} not found",
   "entity_with_id_not_found": "{entityName} with ID {id} not found",

@@ -28,38 +28,35 @@ const errorMessage = computed(() => {
   }
   return 'An unexpected error occurred';
 });
+
+const clearAndRedirect = async () => {
+  clearError({ redirect: '/' });
+};
 </script>
 
 <template>
-  <NuxtLayout name="default">
-    <div class="flex h-[calc(100vh-64px)] w-full items-center justify-center">
-      <!-- 404 Error -->
-      <Error404
-        v-if="is404"
-        :message="errorMessage"
-        :show-back-button="true"
-        :show-home-button="true"
-      />
+  <div class="flex h-[calc(100vh-64px)] w-full items-center justify-center">
+    <!-- 404 Error -->
+    <Error404 v-if="is404" :message="errorMessage" @clear="clearAndRedirect" />
 
-      <!-- 500+ Server Errors -->
-      <Error500
-        v-else-if="is500"
-        :message="errorMessage"
-        :error-details="isDevelopment ? error?.stack : undefined"
-        :show-error-details="isDevelopment"
-        :show-refresh-button="true"
-        :show-home-button="true"
-      />
+    <!-- 500+ Server Errors -->
+    <Error500
+      v-else-if="is500"
+      :message="errorMessage"
+      :error-details="isDevelopment ? error?.stack : undefined"
+      :show-error-details="isDevelopment"
+      :show-refresh-button="true"
+      :show-home-button="true"
+    />
 
-      <!-- Generic Error (fallback) -->
-      <Error500
-        v-else
-        :message="errorMessage"
-        :error-details="isDevelopment ? error?.stack : undefined"
-        :show-error-details="isDevelopment"
-        :show-refresh-button="true"
-        :show-home-button="true"
-      />
-    </div>
-  </NuxtLayout>
+    <!-- Generic Error (fallback) -->
+    <Error500
+      v-else
+      :message="errorMessage"
+      :error-details="isDevelopment ? error?.stack : undefined"
+      :show-error-details="isDevelopment"
+      :show-refresh-button="true"
+      :show-home-button="true"
+    />
+  </div>
 </template>

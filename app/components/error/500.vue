@@ -67,7 +67,7 @@ const handleHome = () => {
           </Button>
           <Button v-if="showHomeButton" @click="handleHome">
             <LucideHome class="mr-2 size-4" />
-            {{ t('error.go_home') }}
+            {{ t('error.home') }}
           </Button>
         </div>
       </EmptyContent>
