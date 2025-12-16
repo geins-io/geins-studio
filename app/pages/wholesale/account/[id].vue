@@ -19,6 +19,7 @@ import { LucidePackage, LucideUser } from 'lucide-vue-next';
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
+const scope = 'pages/wholesale/account/[id].vue';
 const { wholesaleApi } = useGeinsRepository();
 const {
   hasValidatedVat,
@@ -32,7 +33,7 @@ const {
   getAddresses,
 } = useWholesale();
 const { t } = useI18n();
-const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
+const { geinsLogError } = useGeinsLog(scope);
 const accountStore = useAccountStore();
 const { toast } = useToast();
 const viewport = useViewport();
@@ -165,6 +166,7 @@ const {
   entityPageTitle,
   entityLiveStatus,
   refreshEntityData,
+  entityFetchKey,
   form,
   formValid,
   formTouched,
@@ -317,6 +319,16 @@ const {
       await validateVatNumber(entityData.value.vatNumber);
     }
   },
+});
+
+// =====================================================================================
+// ERROR HANDLING SETUP
+// =====================================================================================
+
+const { handleFetchResult } = usePageError({
+  entityName,
+  entityId: entityId.value,
+  scope,
 });
 
 // =====================================================================================
@@ -776,67 +788,68 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
-  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
-    wholesaleApi.account.get(entityId.value, { fields: ['all'] }),
+  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(
+    entityFetchKey.value,
+    () => wholesaleApi.account.get(entityId.value, { fields: ['all'] }),
   );
-  if (error.value) {
-    toast({
-      title: t(`error_fetching_entity`, { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
-  }
 
   refreshEntityData.value = refresh;
 
-  watch(
-    data,
-    async (newData) => {
+  onMounted(async () => {
+    const account = handleFetchResult<WholesaleAccount>(
+      error.value,
+      data.value,
+    );
+
+    // Parse and save initial data
+    await parseAndSaveData(account);
+    await nextTick();
+
+    // Watch for data updates
+    watch(data, async (newData) => {
       if (newData) {
         await parseAndSaveData(newData);
         await nextTick();
-        // Columns are now computed and will update automatically
       }
-    },
-    { immediate: true },
-  );
+    });
 
-  const { data: tagsData, error: tagsError } = await useAsyncData<string[]>(
-    () => wholesaleApi.account.tags.get(),
-  );
-  if (tagsError.value) {
-    geinsLogError('error fetching tags:', tagsError.value);
-  }
+    const tagsData = ref<string[] | null>(null);
 
-  if (tagsData.value) {
-    const extractedTags = extractAccountGroupsfromTags(tagsData.value);
-    accountTags.value = extractedTags.map((tag) => ({
-      _id: tag,
-      name: tag,
-    }));
-  }
+    try {
+      tagsData.value = await wholesaleApi.account.tags.get();
+    } catch (e) {
+      geinsLogError('error fetching tags:', e);
+    }
 
-  const orderSelectionQuery: OrderBatchQuery = {
-    include: [
-      {
-        selections: [
-          {
-            condition: SelectorCondition.And,
-            wholesaleAccountIds: [entityId.value],
-          },
-        ],
-      },
-    ],
-  };
+    if (tagsData.value) {
+      const extractedTags = extractAccountGroupsfromTags(tagsData.value);
+      accountTags.value = extractedTags.map((tag) => ({
+        _id: tag,
+        name: tag,
+      }));
+    }
 
-  await fetchOrders(
-    orderSelectionQuery,
-    { fields: ['pricelists', 'itemcount'] },
-    entityId.value,
-    allPriceLists.value,
-    undefined,
-    buyers.value,
-  );
+    const orderSelectionQuery: OrderBatchQuery = {
+      include: [
+        {
+          selections: [
+            {
+              condition: SelectorCondition.And,
+              wholesaleAccountIds: [entityId.value],
+            },
+          ],
+        },
+      ],
+    };
+
+    await fetchOrders(
+      orderSelectionQuery,
+      { fields: ['pricelists', 'itemcount'] },
+      allPriceLists.value,
+      undefined,
+      buyers.value,
+    );
+  });
 }
 </script>
 

@@ -4,11 +4,12 @@ import type {
   StringKeyOf,
   WholesaleAccountList,
 } from '#shared/types';
+import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 type Entity = WholesaleAccount;
 type EntityList = WholesaleAccountList;
 
+const scope = 'pages/wholesale/account/list.vue';
 const { t } = useI18n();
-const { geinsLogError } = useGeinsLog('pages/wholesale/account/list.vue');
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
 definePageMeta({
@@ -24,6 +25,14 @@ const newEntityUrl = getEntityNewUrl();
 const entityIdentifier = '{id}';
 const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
+const columns = ref<ColumnDef<EntityList>[]>([]);
+const visibilityState = ref<VisibilityState>({});
+
+const { handleFetchResult } = usePageError({
+  entityName,
+  entityList: true,
+  scope,
+});
 
 // Add the mapping function
 const mapToListData = (accounts: Entity[]): EntityList[] => {
@@ -71,70 +80,69 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
 
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(
-  'wholesale-accounts',
+  'wholesale-accounts-list',
   () =>
     wholesaleApi.account.list({
       fields: ['salesreps', 'buyers', 'pricelists'],
     }),
 );
 
-if (!data.value || error.value) {
-  geinsLogError(t('failed_to_fetch_entity', { entityName }, 2), error.value);
-}
+onMounted(() => {
+  watch(
+    data,
+    (newData) => {
+      if (newData) {
+        const validData = handleFetchResult(error.value, newData);
+        dataList.value = mapToListData(validData);
+      }
+    },
+    { immediate: true },
+  );
 
-watch(
-  data,
-  (newData) => {
-    if (newData) {
-      dataList.value = mapToListData(newData);
-    }
-  },
-  { immediate: true },
-);
+  // SET UP COLUMN OPTIONS FOR ENTITY
+  const columnOptions: ColumnOptions<EntityList> = {
+    columnTypes: {
+      name: 'link',
+      buyers: 'tooltip',
+      salesReps: 'tooltip',
+      accountGroups: 'tooltip',
+      priceLists: 'tooltip',
+    },
+    linkColumns: {
+      name: { url: entityUrl, idField: '_id' },
+    },
+    columnTitles: {
+      active: t('status'),
+      limitedProductAccess: 'Restricted product access',
+    },
+    excludeColumns: ['meta', 'addresses', 'tags'],
+  };
+  // GET AND SET COLUMNS
+  const { getColumns, addActionsColumn } = useColumns<EntityList>();
+  columns.value = getColumns(dataList.value, columnOptions);
 
-// SET UP COLUMN OPTIONS FOR ENTITY
-const columnOptions: ColumnOptions<EntityList> = {
-  columnTypes: {
-    name: 'link',
-    buyers: 'tooltip',
-    salesReps: 'tooltip',
-    accountGroups: 'tooltip',
-    priceLists: 'tooltip',
-  },
-  linkColumns: {
-    name: { url: entityUrl, idField: '_id' },
-  },
-  columnTitles: {
-    active: t('status'),
-    limitedProductAccess: 'Restricted product access',
-  },
-  excludeColumns: ['meta', 'addresses', 'tags'],
-};
-// GET AND SET COLUMNS
-const { getColumns, addActionsColumn } = useColumns<EntityList>();
-const columns = getColumns(dataList.value, columnOptions);
+  addActionsColumn(
+    columns.value,
+    {
+      onEdit: (item: Entity) =>
+        navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+      onDelete: async (item: Entity) => await openDeleteDialog(item._id),
+    },
+    'actions',
+    ['edit', 'delete'],
+  );
 
-addActionsColumn(
-  columns,
-  {
-    onEdit: (item: Entity) =>
-      navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
-    onDelete: async (item: Entity) => await openDeleteDialog(item._id),
-  },
-  'actions',
-  ['edit', 'delete'],
-);
+  // SET COLUMN VISIBILITY STATE
+  const { getVisibilityState } = useTable<EntityList>();
+  const hiddenColumns: StringKeyOf<EntityList>[] = [
+    'externalId',
+    'exVat',
+    'limitedProductAccess',
+  ];
+  visibilityState.value = getVisibilityState(hiddenColumns);
 
-// SET COLUMN VISIBILITY STATE
-const { getVisibilityState } = useTable<EntityList>();
-const hiddenColumns: StringKeyOf<EntityList>[] = [
-  'externalId',
-  'exVat',
-  'limitedProductAccess',
-];
-const visibilityState = getVisibilityState(hiddenColumns);
-
-loading.value = false;
+  loading.value = false;
+});
 
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);

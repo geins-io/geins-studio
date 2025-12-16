@@ -4,10 +4,9 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import LogoLetter from '@/assets/logos/geins-g.svg';
 
 const { geinsLogError } = useGeinsLog('components/../LayoutSidebarUser.vue');
-const { toast } = useToast();
-const { t } = useI18n();
 const { session, setAccount, logout } = useGeinsAuth();
 const userStore = useUserStore();
+const { showErrorToast } = usePageError();
 const {
   userName,
   userInitials,
@@ -29,11 +28,7 @@ const setNewAccount = async (accountKey: string) => {
     await setAccount(accountKey);
     window.location.href = '/';
   } catch (error) {
-    toast({
-      title: t('feedback_error'),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
+    showErrorToast();
     geinsLogError('error switching account:', error);
     return;
   }
