@@ -142,7 +142,7 @@
   --ring: hsl(0 0% 13%);
   --link: hsl(178 14% 44%);
   --shadow: rgb(0 0 0 / 10%);
-  --radius: 0.4rem;
+  --radius: 0.3rem;
 
   --positive: hsl(151 45% 56%);
   --positive-foreground: hsl(0 0% 100%);
@@ -170,44 +170,44 @@
 .dark {
   color-scheme: dark;
 
-  --background: hsl(220 10% 11%);
-  --foreground: hsl(210 15% 92%);
+  --background: hsl(0 0% 0%);
+  --foreground: hsl(0 0% 100%);
 
-  --card: hsl(215 10% 14%);
-  --card-foreground: hsl(210 15% 92%);
+  --card: hsl(0 0% 4%);
+  --card-foreground: hsl(0 0% 100%);
 
-  --popover: hsl(215 12% 12%);
-  --popover-foreground: hsl(210 15% 92%);
+  --popover: var(--card);
+  --popover-foreground: var(--card-foreground);
 
   --primary: hsl(0 0% 100%);
-  --primary-foreground: hsl(0 0% 13%);
+  --primary-foreground: hsl(0 0% 5%);
 
-  --secondary: hsl(215 10% 26%);
-  --secondary-foreground: hsl(210 15% 97%);
+  --secondary: hsl(0 0% 15%);
+  --secondary-foreground: hsl(0 0% 100%);
 
-  --muted: hsl(215 15% 28%);
-  --muted-foreground: hsl(210 5% 70%);
+  --muted: hsl(0 0% 10%);
+  --muted-foreground: hsl(0 0% 63%);
 
-  --accent: hsl(217 15% 18%);
+  --accent: hsl(0 0% 10%);
   --accent-foreground: hsl(210 15% 90%);
 
   --destructive: hsl(0 75% 60%);
   --destructive-foreground: hsl(210 15% 92%);
 
-  --border: hsl(215 10% 24%);
-  --input: hsl(215 10% 14%);
+  --border: hsl(0 0% 20%);
+  --input: hsl(0 0% 9%);
   --ring: hsl(210 15% 85%);
-  --link: hsl(178 30% 64%);
-  --shadow: rgb(0 0 0 / 50%);
+  --link: hsl(177 35% 71%);
+  --shadow: rgb(0 0 0 / 100%);
 
-  --positive: hsl(151 45% 46%);
+  --positive: hsl(151 83% 35%);
   --positive-foreground: hsl(0 0% 100%);
 
-  --sidebar: hsl(215 10% 14%);
+  --sidebar: var(--card);
   --sidebar-foreground: hsl(240 4.8% 95.9%);
   --sidebar-primary: hsl(224.3 76.3% 48%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(220 10% 17%);
+  --sidebar-accent: hsl(0 0% 10%);
   --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
   --sidebar-border: hsl(215 10% 24%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
@@ -258,7 +258,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans tracking-normal;
+    @apply bg-background text-foreground font-sans tracking-wide;
     height: 100%;
     scroll-behavior: smooth;
   }
