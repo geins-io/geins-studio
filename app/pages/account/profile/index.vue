@@ -204,6 +204,14 @@ const {
 });
 
 // =====================================================================================
+// ERROR HANDLING SETUP
+// =====================================================================================
+
+const { handleFetchResult, showErrorToast } = usePageError({
+  entityName,
+});
+
+// =====================================================================================
 // ENTITY ACTIONS
 // =====================================================================================
 const handleSave = async () => {
@@ -229,11 +237,7 @@ const handleSave = async () => {
       }
     } catch (error) {
       geinsLogError('error updating password:', error);
-      toast({
-        title: t('error_updating_entity', { entityName }),
-        description: t('feedback_error_description'),
-        variant: 'negative',
-      });
+      showErrorToast(t('error_updating_entity', { entityName }));
       return;
     }
   }
@@ -322,11 +326,6 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
-  // Initialize error handling
-  const { handleFetchResult } = usePageError({
-    entityName,
-  });
-
   const { data, error, refresh } = await useAsyncData<User>(
     entityFetchKey,
     () => userApi.me.get(),

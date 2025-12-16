@@ -46,12 +46,12 @@ onMounted(() => {
 ### For non-fatal errors
 
 ```ts
-const { showErrorToast } = usePageError({ entityName: 'product' });
+const { showErrorToast } = usePageError();
 try {
   await productApi.update(id, data);
 } catch (error) {
   // Show toast instead of navigating away
-  await showErrorToast(error);
+  await showErrorToast('Failed to update product', 'Please try again later.');
 }
 ```
 
@@ -77,14 +77,14 @@ throwPageError(
 ### `showErrorToast`
 
 ```ts
-showErrorToast(error: NuxtError, customMessage?: string): Promise<void>
+showErrorToast(customTitle?: string, customDescription?: string): Promise<void>
 ```
 
 Shows a non-fatal error toast notification instead of navigating to an error page.
 
 - **Parameters**:
-  - `error`: The error object
-  - `customMessage`: Optional custom error message (overrides default)
+  - `customTitle`: Optional custom error message (overrides default)
+  - `customDescription`: Optional custom description message (overrides default)
 
 - **Returns**: Promise that resolves when toast is shown
 
@@ -146,15 +146,25 @@ const product = handleFetchResult(productError.value, productData.value, {
 });
 ```
 
-## Configuration options
+## Architecture overview
 
-### `PageErrorOptions`
-
-```ts
-interface PageErrorOptions {
-  entityName?: string;
-  entityId?: string;
-}
+```
+User request → Entity or list page
+                     ↓
+                useAsyncData()
+                     ↓
+        Error occurs or data missing?
+                     ↓
+          ┌──────────┴──────────┐
+          ↓                     ↓
+      Fatal error         Non-fatal error
+      (404, 500)        (update/create failure)
+          ↓                     ↓
+    handleFetchError()    showEntityErrorToast()
+          ↓                     ↓
+      error.vue            Toast notification
+          ↓                     ↓
+    Error404/Error500     User stays on page
 ```
 
 ## Error message priority
@@ -179,6 +189,7 @@ function usePageError(options?: PageErrorOptions): UsePageErrorReturnType;
 interface PageErrorOptions {
   entityName?: string;
   entityId?: string;
+  entityList?: boolean;
 }
 
 interface UsePageErrorReturnType {
@@ -186,7 +197,10 @@ interface UsePageErrorReturnType {
     statusCodeOrError?: number | NuxtError,
     contextOptions?: PageErrorOptions,
   ) => never;
-  showErrorToast: (error: any, customMessage?: string) => Promise<void>;
+  showErrorToast: (
+    customTitle?: string,
+    customDescription?: string,
+  ) => Promise<void>;
   validateData: <T>(
     data: T | null | undefined,
     customOptions?: PageErrorOptions,

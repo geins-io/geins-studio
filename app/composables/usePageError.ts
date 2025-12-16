@@ -20,7 +20,10 @@ interface UsePageErrorReturnType {
     statusCodeOrError: number | NuxtError,
     contextOptions?: PageErrorOptions,
   ) => never;
-  showErrorToast: (error: any, customMessage?: string) => Promise<void>;
+  showErrorToast: (
+    customTitle?: string,
+    customDescription?: string,
+  ) => Promise<void>;
   validateData: <T>(
     data: T | null | undefined,
     customOptions?: PageErrorOptions,
@@ -90,7 +93,7 @@ export function usePageError(
    * Can accept either a status code or an error object
    *
    * @param statusCodeOrError - HTTP status code or error object
-   * @param customMessage - Optional custom error message
+   * @param customTitle - Optional custom error message
    * @param contextOptions - Optional override for error context
    */
   const throwPageError = (
@@ -119,26 +122,21 @@ export function usePageError(
    * Shows a toast notification for non-fatal errors
    *
    * @param error - The error object
-   * @param customMessage - Optional custom error message
+   * @param customTitle - Optional custom error message
    */
   const showErrorToast = async (
-    error: NuxtError,
-    customMessage?: string,
+    customTitle?: string,
+    customDescription?: string,
   ): Promise<void> => {
     const { useToast } = await import('@/components/ui/toast/use-toast');
     const { toast } = useToast();
 
-    const { entityName } = options;
-
-    const title =
-      customMessage ||
-      (entityName
-        ? t('error_loading_entity', { entityName })
-        : t('error_loading_page'));
+    const title = customTitle || t('feedback_error');
+    const description = customDescription || t('feedback_error_description');
 
     toast({
       title,
-      description: error?.message || t('feedback_error_description'),
+      description,
       variant: 'negative',
     });
   };

@@ -321,6 +321,15 @@ const {
 });
 
 // =====================================================================================
+// ERROR HANDLING SETUP
+// =====================================================================================
+
+const { handleFetchResult } = usePageError({
+  entityName,
+  entityId: entityId.value,
+});
+
+// =====================================================================================
 // SALES REPS MANAGEMENT
 // =====================================================================================
 const users = ref<User[]>([]);
@@ -777,12 +786,6 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
-  // Initialize error handling
-  const { handleFetchResult } = usePageError({
-    entityName,
-    entityId: entityId.value,
-  });
-
   const { data, error, refresh } = await useAsyncData<WholesaleAccount>(
     entityFetchKey.value,
     () => wholesaleApi.account.get(entityId.value, { fields: ['all'] }),

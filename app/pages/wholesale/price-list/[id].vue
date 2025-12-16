@@ -303,6 +303,15 @@ const {
 });
 
 // =====================================================================================
+// ERROR HANDLING SETUP
+// =====================================================================================
+
+const { handleFetchResult, showErrorToast } = usePageError({
+  entityName,
+  entityId: entityId.value,
+});
+
+// =====================================================================================
 // PREVIEW PRICELIST
 // =====================================================================================
 
@@ -469,11 +478,7 @@ const copyEntity = async () => {
     }
   } catch (error) {
     geinsLogError('error copying entity:', error);
-    toast({
-      title: t('error_copying_entity', { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
+    showErrorToast(t('error_copying_entity', { entityName }));
   } finally {
     loading.value = false;
   }
@@ -581,12 +586,6 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
-  // Initialize error handling
-  const { handleFetchResult } = usePageError({
-    entityName,
-    entityId: entityId.value,
-  });
-
   const { data, error, refresh } = await useAsyncData<ProductPriceList>(
     entityFetchKey.value,
     () =>

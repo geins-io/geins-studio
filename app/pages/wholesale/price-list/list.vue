@@ -34,7 +34,10 @@ const mapToListData = (list: Entity[]): EntityList[] => {
   });
 };
 
-const { handleFetchResult } = usePageError({ entityName, entityList: true });
+const { handleFetchResult, showErrorToast } = usePageError({
+  entityName,
+  entityList: true,
+});
 
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(
@@ -109,10 +112,7 @@ const deletePriceList = async (
     return true;
   } catch (error) {
     geinsLogError('deletePriceList :::', getErrorMessage(error));
-    toast({
-      title: t('entity_delete_failed', { entityName }),
-      variant: 'negative',
-    });
+    showErrorToast(t('entity_delete_failed', { entityName }));
     return false;
   }
 };
