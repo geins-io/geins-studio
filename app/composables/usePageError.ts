@@ -1,6 +1,6 @@
 import type { NuxtError } from '#app';
 
-export interface PageErrorOptions {
+interface PageErrorOptions {
   /**
    * The name of the entity being edited/viewed (for entity-specific errors)
    */
@@ -11,13 +11,32 @@ export interface PageErrorOptions {
   entityId?: string;
 }
 
+interface UsePageErrorReturnType {
+  throwPageError: (
+    statusCodeOrError: number | NuxtError,
+    contextOptions?: PageErrorOptions,
+  ) => never;
+  showErrorToast: (error: any, customMessage?: string) => Promise<void>;
+  validateData: <T>(
+    data: T | null | undefined,
+    customOptions?: PageErrorOptions,
+  ) => NonNullable<T>;
+  handleFetchResult: <T>(
+    error: NuxtError | undefined,
+    data: T | null | undefined,
+    customOptions?: PageErrorOptions,
+  ) => NonNullable<T>;
+}
+
 /**
  * Composable for handling errors in any page, with optional support for entity-specific errors
  *
- * @param options - Configuration options for error handling
- * @returns Object with error handling utilities
+ * @param options - Default options for error context
+ * @returns {UsePageErrorReturnType} - An object containing error handling utilities
  */
-export function usePageError(options: PageErrorOptions = {}) {
+export function usePageError(
+  options: PageErrorOptions = {},
+): UsePageErrorReturnType {
   const { t } = useI18n();
 
   /**
@@ -149,12 +168,4 @@ export function usePageError(options: PageErrorOptions = {}) {
     validateData,
     handleFetchResult,
   };
-}
-
-/**
- * Legacy alias for backwards compatibility
- * @deprecated Use usePageError instead
- */
-export function useEntityError(entityName?: string) {
-  return usePageError({ entityName });
 }
