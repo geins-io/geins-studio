@@ -97,7 +97,6 @@ export function usePageError(
    * Can accept either a status code or an error object
    *
    * @param statusCodeOrError - HTTP status code or error object
-   * @param customTitle - Optional custom error message
    * @param contextOptions - Optional override for error context
    */
   const throwPageError = (
@@ -127,8 +126,8 @@ export function usePageError(
   /**
    * Shows a toast notification for non-fatal errors
    *
-   * @param error - The error object
    * @param customTitle - Optional custom error message
+   * @param customDescription - Optional custom error description
    */
   const showErrorToast = async (
     customTitle?: string,
