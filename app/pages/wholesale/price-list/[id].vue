@@ -20,10 +20,11 @@ import {
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
+const scope = 'pages/wholesale/price-list/[id].vue';
 const route = useRoute();
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogError } = useGeinsLog('pages/wholesale/price-list/[id].vue');
+const { geinsLogError } = useGeinsLog(scope);
 const accountStore = useAccountStore();
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
@@ -309,6 +310,7 @@ const {
 const { handleFetchResult, showErrorToast } = usePageError({
   entityName,
   entityId: entityId.value,
+  scope,
 });
 
 // =====================================================================================

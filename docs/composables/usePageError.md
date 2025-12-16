@@ -28,7 +28,7 @@ onMounted(() => {
 
 ```ts
 // For entity edit pages
-// Will show contextual 404 error like "Couldn't not find product with ID 123"
+// Will show contextual 404 error like "Could not find product with ID 123"
 const { handleFetchResult } = usePageError({
   entityName: 'product',
   entityId: '123',
@@ -124,28 +124,6 @@ Combines error handling and data validation in one call. Throws error if present
 
 - **Returns**: The validated data with non-nullable type
 
-- **Examples**:
-
-```ts
-const { handleFetchResult } = usePageError({
-  entityName: 'price_list',
-  entityId: id,
-});
-
-// One-liner error handling + validation
-const { data, error } = await useAsyncData(() => productApi.priceList.get(id));
-const priceList = handleFetchResult(error.value, data.value);
-
-// With context override
-const { data: productData, error: productError } = await useAsyncData(() =>
-  productApi.product.get(productId),
-);
-const product = handleFetchResult(productError.value, productData.value, {
-  entityName: 'product',
-  entityId: productId,
-});
-```
-
 ## Architecture overview
 
 ```
@@ -160,7 +138,7 @@ User request → Entity or list page
       Fatal error         Non-fatal error
       (404, 500)        (update/create failure)
           ↓                     ↓
-    handleFetchError()    showEntityErrorToast()
+    handleFetchResult()    showErrorToast()
           ↓                     ↓
       error.vue            Toast notification
           ↓                     ↓
@@ -190,6 +168,7 @@ interface PageErrorOptions {
   entityName?: string;
   entityId?: string;
   entityList?: boolean;
+  scope?: string;
 }
 
 interface UsePageErrorReturnType {

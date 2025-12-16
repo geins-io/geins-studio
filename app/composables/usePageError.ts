@@ -13,6 +13,10 @@ interface PageErrorOptions {
    * Whether the error is related to a list of entities (affects messaging)
    */
   entityList?: boolean;
+  /**
+   * Optional scope for more specific error context
+   */
+  scope?: string;
 }
 
 interface UsePageErrorReturnType {
@@ -46,6 +50,10 @@ export function usePageError(
 ): UsePageErrorReturnType {
   const { t } = useI18n();
 
+  const { geinsLogError } = useGeinsLog(
+    options?.scope || 'composables/usePageError.ts',
+  );
+
   /**
    * Gets the appropriate error message based on context and status code
    */
@@ -60,14 +68,10 @@ export function usePageError(
 
     if (statusCode === 404) {
       if (entityName && entityId) {
-        return t(
-          'entity_with_id_not_found',
-          {
-            entityName,
-            id: entityId,
-          },
-          pluralizerNr,
-        );
+        return t('entity_with_id_not_found', {
+          entityName,
+          id: entityId,
+        });
       }
       if (entityName) {
         return t('no_entity_found', { entityName }, pluralizerNr);
@@ -110,6 +114,8 @@ export function usePageError(
     }
 
     const finalMessage = getErrorMessage(statusCode, contextOptions);
+
+    geinsLogError(`error ${statusCode} ::: ${finalMessage}`);
 
     throw createError({
       statusCode,

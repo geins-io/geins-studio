@@ -11,11 +11,10 @@ import { createPasswordChangeSchema } from '@/utils/password-validation';
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
+const scope = 'pages/account/profile/index.vue';
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogWarn, geinsLogError } = useGeinsLog(
-  'pages/account/user/[id].vue',
-);
+const { geinsLogWarn, geinsLogError } = useGeinsLog(scope);
 const userStore = useUserStore();
 const { userInitials } = storeToRefs(userStore);
 const { session, setSession } = useGeinsAuth();
@@ -209,6 +208,7 @@ const {
 
 const { handleFetchResult, showErrorToast } = usePageError({
   entityName,
+  scope,
 });
 
 // =====================================================================================
@@ -327,7 +327,7 @@ const { summaryProps } = useEntityEditSummary({
 // =====================================================================================
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<User>(
-    entityFetchKey,
+    entityFetchKey.value,
     () => userApi.me.get(),
   );
 

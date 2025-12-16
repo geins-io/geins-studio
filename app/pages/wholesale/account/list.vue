@@ -8,8 +8,8 @@ import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 type Entity = WholesaleAccount;
 type EntityList = WholesaleAccountList;
 
+const scope = 'pages/wholesale/account/list.vue';
 const { t } = useI18n();
-const { geinsLogError } = useGeinsLog('pages/wholesale/account/list.vue');
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
 definePageMeta({
@@ -27,6 +27,12 @@ const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
+
+const { handleFetchResult } = usePageError({
+  entityName,
+  entityList: true,
+  scope,
+});
 
 // Add the mapping function
 const mapToListData = (accounts: Entity[]): EntityList[] => {
@@ -72,8 +78,6 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
   });
 };
 
-const { handleFetchResult } = usePageError({ entityName, entityList: true });
-
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(
   'wholesale-accounts-list',
@@ -82,10 +86,6 @@ const { data, error, refresh } = await useAsyncData<Entity[]>(
       fields: ['salesreps', 'buyers', 'pricelists'],
     }),
 );
-
-if (error.value) {
-  geinsLogError(t('failed_to_fetch_entity', { entityName }, 2), error.value);
-}
 
 onMounted(() => {
   watch(

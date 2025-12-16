@@ -171,7 +171,8 @@
     "500_description": "Something went wrong on our end. Please try again later.",
     "go_back": "Go back",
     "home": "Home",
-    "refresh_page": "Refresh page"
+    "refresh_page": "Refresh page",
+    "error_details": "Error details"
   },
   "auth": {
     "login_title": "Geins Studio",

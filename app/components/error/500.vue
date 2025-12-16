@@ -41,7 +41,7 @@ const handleHome = () => {
       <EmptyHeader>
         <EmptyTitle>{{ t('error.500_title') }}</EmptyTitle>
         <EmptyDescription>
-          {{ message }}
+          {{ message || t('error.500_description') }}
         </EmptyDescription>
         <EmptyDescription v-if="showErrorDetails && errorDetails" class="mt-2">
           <details class="text-left">

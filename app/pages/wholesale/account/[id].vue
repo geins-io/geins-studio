@@ -19,6 +19,7 @@ import { LucidePackage, LucideUser } from 'lucide-vue-next';
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
+const scope = 'pages/wholesale/account/[id].vue';
 const { wholesaleApi } = useGeinsRepository();
 const {
   hasValidatedVat,
@@ -32,7 +33,7 @@ const {
   getAddresses,
 } = useWholesale();
 const { t } = useI18n();
-const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
+const { geinsLogError } = useGeinsLog(scope);
 const accountStore = useAccountStore();
 const { toast } = useToast();
 const viewport = useViewport();
@@ -327,6 +328,7 @@ const {
 const { handleFetchResult } = usePageError({
   entityName,
   entityId: entityId.value,
+  scope,
 });
 
 // =====================================================================================
