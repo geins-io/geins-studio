@@ -805,7 +805,6 @@ if (!createMode.value) {
       if (newData) {
         await parseAndSaveData(newData);
         await nextTick();
-        // Columns are now computed and will update automatically
       }
     });
 

@@ -335,7 +335,7 @@ if (!createMode.value) {
   refreshEntityData.value = refresh;
 
   onMounted(async () => {
-    const user = handleFetchResult(error.value, data.value);
+    const user = handleFetchResult<User>(error.value, data.value);
     await parseAndSaveData(user);
 
     watch(

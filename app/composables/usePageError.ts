@@ -9,6 +9,10 @@ interface PageErrorOptions {
    * The ID of the entity (for more specific error messages)
    */
   entityId?: string;
+  /**
+   * Whether the error is related to a list of entities (affects messaging)
+   */
+  entityList?: boolean;
 }
 
 interface UsePageErrorReturnType {
@@ -49,29 +53,34 @@ export function usePageError(
     const effectiveOptions = { ...options, ...contextOptions };
     const { entityName, entityId } = effectiveOptions;
     const name = entityName || 'entity';
+    const pluralizerNr = effectiveOptions?.entityList ? 2 : 1;
 
     if (statusCode === 404) {
       if (entityName && entityId) {
-        return t('entity_with_id_not_found', {
-          entityName,
-          id: entityId,
-        });
+        return t(
+          'entity_with_id_not_found',
+          {
+            entityName,
+            id: entityId,
+          },
+          pluralizerNr,
+        );
       }
       if (entityName) {
-        return t('no_entity_found', { entityName });
+        return t('no_entity_found', { entityName }, pluralizerNr);
       }
       return t('error.404_description');
     }
 
     if (statusCode >= 500) {
       if (entityName) {
-        return t('error_loading_entity', { entityName: name });
+        return t('error_loading_entity', { entityName: name }, pluralizerNr);
       }
       return t('error.500_description');
     }
 
     if (entityName) {
-      return t('error_loading_entity', { entityName: name });
+      return t('error_loading_entity', { entityName: name }, pluralizerNr);
     }
     return t('error.500_description');
   };
@@ -113,19 +122,18 @@ export function usePageError(
    * @param customMessage - Optional custom error message
    */
   const showErrorToast = async (
-    error: any,
+    error: NuxtError,
     customMessage?: string,
   ): Promise<void> => {
     const { useToast } = await import('@/components/ui/toast/use-toast');
     const { toast } = useToast();
 
     const { entityName } = options;
-    const name = entityName || 'page';
 
     const title =
       customMessage ||
       (entityName
-        ? t('error_loading_entity', { entityName: name })
+        ? t('error_loading_entity', { entityName })
         : t('error_loading_page'));
 
     toast({

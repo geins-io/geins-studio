@@ -360,7 +360,7 @@ const hasSearchableColumns = computed(() => {
       </span>
     </div>
 
-    <TableColumnToggle v-if="advancedMode" :table="table" />
+    <TableColumnToggle v-if="advancedMode && columns?.length" :table="table" />
   </div>
   <div
     :class="
