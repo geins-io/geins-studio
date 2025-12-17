@@ -175,8 +175,9 @@
     "error_details": "Error details"
   },
   "auth": {
-    "login_title": "Geins Studio",
-    "verify_title": "Verify Account",
+    "login_title": "Welcome back",
+    "login_description": "Use your credentials to log in.",
+    "verify_title": "Verify account",
     "verify_description": "Enter the 6-digit code from your",
     "select_account": "Select the account you want to access",
     "invalid_credentials_title": "Invalid credentials",
