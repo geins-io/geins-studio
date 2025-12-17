@@ -29,7 +29,7 @@ const props = withDefaults(
     idColumn?: string;
     pageSize?: number;
     loading?: boolean;
-    searchableFields?: string[];
+    searchableFields?: Array<keyof TData>;
     mode?: TableMode;
     maxHeight?: string;
     showSearch?: boolean;
@@ -116,36 +116,38 @@ const { path } = useRoute();
 const { user } = useUserStore();
 const userId = user?._id || 'default';
 const cookieKey = `${userId + path}`;
-const columnVisibilityCookie = useCookie<VisibilityState>(
-  `geins-cols-${cookieKey}`,
-  {
-    default: () => props.initVisibilityState || {},
-    maxAge: 60 * 60 * 24 * 365,
-  },
-);
+const columnVisibilityCookie = advancedMode.value
+  ? useCookie<VisibilityState>(`geins-cols-${cookieKey}`, {
+      default: () => props.initVisibilityState || {},
+      maxAge: 60 * 60 * 24 * 365,
+    })
+  : ref(props.initVisibilityState || {});
 const columnVisibility = ref(
-  Object.keys(columnVisibilityCookie.value).length
+  advancedMode.value && Object.keys(columnVisibilityCookie.value).length
     ? columnVisibilityCookie.value
     : props.initVisibilityState || {},
 );
 const updateVisibilityCookie = () => {
-  columnVisibilityCookie.value = columnVisibility.value;
+  if (advancedMode.value) {
+    columnVisibilityCookie.value = columnVisibility.value;
+  }
 };
 watch(columnVisibility, updateVisibilityCookie, { deep: true });
 
 /**
  * Setup column order
  **/
-const columnOrderCookie = useCookie<ColumnOrderState>(
-  `geins-order-${cookieKey}`,
-  {
-    default: () => [],
-    maxAge: 60 * 60 * 24 * 365,
-  },
-);
-const columnOrder = ref(columnOrderCookie.value);
+const columnOrderCookie = advancedMode.value
+  ? useCookie<ColumnOrderState>(`geins-order-${cookieKey}`, {
+      default: () => [],
+      maxAge: 60 * 60 * 24 * 365,
+    })
+  : ref([]);
+const columnOrder = ref(advancedMode.value ? columnOrderCookie.value : []);
 const updateSortingCookie = () => {
-  columnOrderCookie.value = columnOrder.value;
+  if (advancedMode.value) {
+    columnOrderCookie.value = columnOrder.value;
+  }
 };
 watch(columnOrder, updateSortingCookie, { deep: true });
 
@@ -358,7 +360,7 @@ const hasSearchableColumns = computed(() => {
       </span>
     </div>
 
-    <TableColumnToggle v-if="advancedMode" :table="table" />
+    <TableColumnToggle v-if="advancedMode && columns?.length" :table="table" />
   </div>
   <div
     :class="

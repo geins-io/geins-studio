@@ -46,11 +46,12 @@ export type WholesaleAccountApiOptions =
   ApiOptions<WholesaleAccountFieldsFilter>;
 
 export interface WholesaleAccountList
-  extends Omit<WholesaleAccount, 'salesReps' | 'buyers'>,
+  extends Omit<WholesaleAccount, 'salesReps' | 'buyers' | 'priceLists'>,
     EntityBase {
   accountGroups: Tooltip;
   salesReps: Tooltip;
   buyers: Tooltip;
+  priceLists: Tooltip;
 }
 
 export interface WholesaleSalesRepBase {
@@ -71,19 +72,29 @@ export interface WholesaleBuyerBase {
   email?: string;
   phone?: string;
   accountId?: string;
-  priceLists?: string[];
+  priceLists?: ProductPriceList[];
   restrictToDedicatedPriceLists?: boolean;
 }
 
-export interface WholesaleBuyerCreate extends CreateEntity<WholesaleBuyerBase> {
+export interface WholesaleBuyerCreate
+  extends Omit<CreateEntity<WholesaleBuyerBase>, 'priceLists'> {
   _id: string; // TODO: Remove when fixed
+  priceLists?: string[];
 }
 
-export interface WholesaleBuyerUpdate extends UpdateEntity<WholesaleBuyerBase> {
+export interface WholesaleBuyerUpdate
+  extends Omit<UpdateEntity<WholesaleBuyerBase>, 'priceLists'> {
   _id?: string; // TODO: Remove when fixed
+  priceLists?: string[];
 }
 
 export type WholesaleBuyer = ResponseEntity<WholesaleBuyerBase> & {};
+
+export interface WholesaleBuyerList
+  extends Omit<WholesaleBuyer, 'priceLists'>,
+    EntityBase {
+  priceLists: Tooltip;
+}
 
 export interface WholesaleVatValidation {
   vatNumber: string;

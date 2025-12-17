@@ -59,6 +59,7 @@ interface UseEntityEditReturnType<
   entityListUrl: string;
   currentTab: Ref<number>;
   showSidebar: ComputedRef<boolean>;
+  entityFetchKey: ComputedRef<string>;
 
   // Entity data
   refreshEntityData: Ref<() => Promise<void>>;
@@ -145,6 +146,7 @@ export function useEntityEdit<
   const loading = ref(false);
   const refreshEntityData = ref<() => Promise<void>>(() => Promise.resolve());
   const entityLiveStatus = ref<boolean>(false);
+  const { showErrorToast } = usePageError({ entityName });
 
   // Entity data
   const entityDataCreate = ref<TCreate>(options.initialEntityData);
@@ -156,6 +158,8 @@ export function useEntityEdit<
   const entityId = computed<string>(
     () => entityData.value?._id || String(route.params.id),
   );
+
+  const entityFetchKey = computed(() => `${entityName}-${entityId.value}`);
 
   const entityPageTitle = computed(() =>
     createMode.value
@@ -295,11 +299,7 @@ export function useEntityEdit<
 
       return result;
     } catch (error) {
-      toast({
-        title: t('error_creating_entity', { entityName }),
-        description: t('feedback_error_description'),
-        variant: 'negative',
-      });
+      showErrorToast(t('error_creating_entity', { entityName }));
       throw error;
     } finally {
       loading.value = false;
@@ -347,11 +347,7 @@ export function useEntityEdit<
 
       return result;
     } catch (error) {
-      toast({
-        title: t('error_updating_entity', { entityName }),
-        description: t('feedback_error_description'),
-        variant: 'negative',
-      });
+      showErrorToast(t('error_updating_entity', { entityName }));
       throw error;
     } finally {
       loading.value = false;
@@ -371,10 +367,7 @@ export function useEntityEdit<
       return true;
     } catch (error) {
       const _message = getErrorMessage(error);
-      toast({
-        title: t('entity_delete_failed', { entityName }),
-        variant: 'negative',
-      });
+      showErrorToast(t('entity_delete_failed', { entityName }));
       return false;
     }
   };
@@ -397,6 +390,7 @@ export function useEntityEdit<
     entityDataUpdate,
     entityData,
     entityPageTitle,
+    entityFetchKey,
 
     // Form
     form,

@@ -53,7 +53,6 @@ An object defining column configuration options for wholesale orders, including:
 fetchOrders(
   orderSelectionQuery?: OrderBatchQuery,
   orderApiOptions?: OrderApiOptions,
-  accountId?: string,
   allPriceLists?: WholesalePriceList[],
   allAccounts?: WholesaleAccount[]
   allBuyers?: WholesaleBuyer[],
@@ -65,7 +64,6 @@ Fetches orders from the API with filtering and transformation.
 - **Parameters**:
   - `orderSelectionQuery`: Query filters for orders
   - `orderApiOptions`: API options (e.g. fields to include)
-  - `accountId`: Specific wholesale account ID to fetch orders for
   - `allPriceLists`: Price list entities for name resolution, will add price lists column if provided
   - `allAccounts`: Account entities for name resolution, will add account column if provided
   - `allBuyers`: Buyer entities for name resolution, will add buyer column if provided
@@ -106,7 +104,6 @@ interface UseWholesaleOrdersReturnType {
   fetchOrders: (
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
-    accountId?: string,
     allPriceLists?: WholesalePriceList[],
     allAccounts?: WholesaleAccount[],
   ) => Promise<void>;

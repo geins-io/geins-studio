@@ -11,11 +11,10 @@ import { createPasswordChangeSchema } from '@/utils/password-validation';
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
+const scope = 'pages/account/profile/index.vue';
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogWarn, geinsLogError } = useGeinsLog(
-  'pages/account/user/[id].vue',
-);
+const { geinsLogWarn, geinsLogError } = useGeinsLog(scope);
 const userStore = useUserStore();
 const { userInitials } = storeToRefs(userStore);
 const { session, setSession } = useGeinsAuth();
@@ -118,6 +117,7 @@ const {
   entityDataUpdate,
   entityData,
   entityLiveStatus,
+  entityFetchKey,
   refreshEntityData,
   form,
   formTouched,
@@ -203,6 +203,15 @@ const {
 });
 
 // =====================================================================================
+// ERROR HANDLING SETUP
+// =====================================================================================
+
+const { handleFetchResult, showErrorToast } = usePageError({
+  entityName,
+  scope,
+});
+
+// =====================================================================================
 // ENTITY ACTIONS
 // =====================================================================================
 const handleSave = async () => {
@@ -228,11 +237,7 @@ const handleSave = async () => {
       }
     } catch (error) {
       geinsLogError('error updating password:', error);
-      toast({
-        title: t('error_updating_entity', { entityName }),
-        description: t('feedback_error_description'),
-        variant: 'negative',
-      });
+      showErrorToast(t('error_updating_entity', { entityName }));
       return;
     }
   }
@@ -321,34 +326,27 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
-  const { data, error, refresh } = await useAsyncData<User>(() =>
-    userApi.me.get(),
+  const { data, error, refresh } = await useAsyncData<User>(
+    entityFetchKey.value,
+    () => userApi.me.get(),
   );
-
-  if (error.value) {
-    geinsLogError('error fetching user:', error.value);
-    toast({
-      title: t('error'),
-      description: t('error_fetching_entity', { entityName: t(entityName) }),
-      variant: 'negative',
-    });
-  }
 
   refreshEntityData.value = refresh;
 
-  if (data.value) {
-    await parseAndSaveData(data.value);
-  }
+  onMounted(async () => {
+    const user = handleFetchResult<User>(error.value, data.value);
+    await parseAndSaveData(user);
 
-  watch(
-    () => data.value,
-    async (newData) => {
-      if (newData) {
-        await parseAndSaveData(newData);
-      }
-    },
-    { deep: true },
-  );
+    watch(
+      () => data.value,
+      async (newData) => {
+        if (newData) {
+          await parseAndSaveData(newData);
+        }
+      },
+      { deep: true },
+    );
+  });
 }
 </script>
 

@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import type { ColumnOptions } from '#shared/types';
+import type { ColumnOptions, StringKeyOf } from '#shared/types';
+import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 type Entity = ProductPriceList;
 type EntityList = ProductPriceList;
 
+const scope = 'pages/wholesale/price-list/list.vue';
 const { t } = useI18n();
-const { geinsLogError } = useGeinsLog('pages/wholesale/price-list/list.vue');
+const { geinsLogError } = useGeinsLog(scope);
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
 definePageMeta({
@@ -21,6 +23,14 @@ const newEntityUrl = getEntityNewUrl();
 const entityIdentifier = '{id}';
 const entityUrl = getEntityUrl(entityIdentifier);
 const loading = ref(true);
+const columns = ref<ColumnDef<EntityList>[]>([]);
+const visibilityState = ref<VisibilityState>({});
+
+const { handleFetchResult, showErrorToast } = usePageError({
+  entityName,
+  entityList: true,
+  scope,
+});
 
 // Add the mapping function
 const mapToListData = (list: Entity[]): EntityList[] => {
@@ -32,55 +42,54 @@ const mapToListData = (list: Entity[]): EntityList[] => {
 };
 
 // FETCH DATA FOR ENTITY
-const { data, error, refresh } = await useAsyncData<Entity[]>(() =>
-  productApi.priceList.list(),
+const { data, error, refresh } = await useAsyncData<Entity[]>(
+  'wholesale-price-lists-list',
+  () => productApi.priceList.list(),
 );
 
-if (!data.value || error.value) {
-  geinsLogError(
-    `${t('failed_to_fetch_entity', { entityName }, 2)}`,
-    error.value,
+onMounted(() => {
+  watch(
+    data,
+    (newData) => {
+      if (newData) {
+        const validData = handleFetchResult(error.value, newData);
+        dataList.value = mapToListData(validData);
+      }
+    },
+    { immediate: true },
   );
-}
 
-watch(
-  data,
-  (newData) => {
-    if (newData) {
-      dataList.value = mapToListData(newData);
-    }
-  },
-  { immediate: true },
-);
+  // SET UP COLUMN OPTIONS FOR ENTITY
+  const columnOptions: ColumnOptions<EntityList> = {
+    columnTypes: { name: 'link', channel: 'channels' },
+    linkColumns: {
+      name: { url: entityUrl, idField: '_id' },
+    },
+    columnTitles: { active: t('status') },
+    excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
+  };
+  // GET AND SET COLUMNS
+  const { getColumns, addActionsColumn } = useColumns<EntityList>();
+  columns.value = getColumns(dataList.value, columnOptions);
 
-// SET UP COLUMN OPTIONS FOR ENTITY
-const columnOptions: ColumnOptions<EntityList> = {
-  columnTypes: { name: 'link', channel: 'channels' },
-  linkColumns: {
-    name: { url: entityUrl, idField: '_id' },
-  },
-  columnTitles: { active: t('status') },
-  excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
-};
-// GET AND SET COLUMNS
-const { getColumns, addActionsColumn } = useColumns<EntityList>();
-const columns = getColumns(dataList.value, columnOptions);
-
-addActionsColumn(
-  columns,
-  {
-    onEdit: (item: Entity) =>
-      navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
-    onDelete: async (item: Entity) => await openDeleteDialog(item._id),
-  },
-  'actions',
-  ['edit', 'delete'],
-);
+  addActionsColumn(
+    columns.value,
+    {
+      onEdit: (item: Entity) =>
+        navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+      onDelete: async (item: Entity) => await openDeleteDialog(item._id),
+    },
+    'actions',
+    ['edit', 'delete'],
+  );
+  loading.value = false;
+});
 
 // SET COLUMN VISIBILITY STATE
-// const { getVisibilityState } = useTable<EntityList>();
-// const hiddenColumns: StringKeyOf<EntityList>[] = [];
-// const visibilityState = getVisibilityState(hiddenColumns);
+const { getVisibilityState } = useTable<EntityList>();
+const hiddenColumns: StringKeyOf<EntityList>[] = [];
+visibilityState.value = getVisibilityState(hiddenColumns);
+
 const { toast } = useToast();
 const deletePriceList = async (
   id?: string,
@@ -98,15 +107,10 @@ const deletePriceList = async (
     return true;
   } catch (error) {
     geinsLogError('deletePriceList :::', getErrorMessage(error));
-    toast({
-      title: t('entity_delete_failed', { entityName }),
-      variant: 'negative',
-    });
+    showErrorToast(t('entity_delete_failed', { entityName }));
     return false;
   }
 };
-
-loading.value = false;
 
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);
@@ -147,6 +151,7 @@ const confirmDelete = async () => {
       :entity-name="entityName"
       :columns="columns"
       :data="dataList"
+      :init-visibility-state="visibilityState"
     >
       <template #empty-actions>
         <ButtonIcon

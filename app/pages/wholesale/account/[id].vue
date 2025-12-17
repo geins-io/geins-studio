@@ -11,6 +11,7 @@ import {
   TableMode,
   SelectorCondition,
   type WholesaleAccountApiOptions,
+  type WholesaleBuyerList,
 } from '#shared/types';
 import * as z from 'zod';
 import { LucidePackage, LucideUser } from 'lucide-vue-next';
@@ -18,6 +19,7 @@ import { LucidePackage, LucideUser } from 'lucide-vue-next';
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
+const scope = 'pages/wholesale/account/[id].vue';
 const { wholesaleApi } = useGeinsRepository();
 const {
   hasValidatedVat,
@@ -31,7 +33,7 @@ const {
   getAddresses,
 } = useWholesale();
 const { t } = useI18n();
-const { geinsLogError } = useGeinsLog('pages/wholesale/account/[id].vue');
+const { geinsLogError } = useGeinsLog(scope);
 const accountStore = useAccountStore();
 const { toast } = useToast();
 const viewport = useViewport();
@@ -164,6 +166,7 @@ const {
   entityPageTitle,
   entityLiveStatus,
   refreshEntityData,
+  entityFetchKey,
   form,
   formValid,
   formTouched,
@@ -204,8 +207,18 @@ const {
   }),
   parseEntityData: async (account: WholesaleAccount) => {
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
-
-    buyersList.value = account.buyers || [];
+    buyers.value = account.buyers || [];
+    buyersList.value = account.buyers.map((buyer) => {
+      return {
+        ...buyer,
+        priceLists: createTooltip({
+          items: buyer.priceLists || [],
+          entityName: 'price_list',
+          formatter: (priceList) => `${priceList?.name}`,
+          t,
+        }),
+      };
+    });
     entityLiveStatus.value = account.active || false;
     accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
     addedPriceLists.value = account.priceLists || [];
@@ -272,6 +285,7 @@ const {
       ...entityData,
       salesReps: entityData.salesReps?.map((salesRep) => salesRep._id),
       priceLists: entityData.priceLists?.map((priceList) => priceList._id),
+      buyers: undefined,
     };
   },
   onFormValuesChange: async (values) => {
@@ -308,6 +322,16 @@ const {
 });
 
 // =====================================================================================
+// ERROR HANDLING SETUP
+// =====================================================================================
+
+const { handleFetchResult } = usePageError({
+  entityName,
+  entityId: entityId.value,
+  scope,
+});
+
+// =====================================================================================
 // SALES REPS MANAGEMENT
 // =====================================================================================
 const users = ref<User[]>([]);
@@ -329,27 +353,53 @@ fetchUsers();
 // =====================================================================================
 // BUYERS MANAGEMENT
 // =====================================================================================
-const buyersList = ref<WholesaleBuyer[]>([]);
+const buyers = ref<WholesaleBuyer[]>([]);
+const buyersList = ref<WholesaleBuyerList[]>([]);
 const buyerPanelOpen = ref(false);
-const buyerToEdit = ref<WholesaleBuyer | undefined>();
+const buyerToEdit = ref<WholesaleBuyerUpdate | undefined>();
 const buyerPanelMode = ref<'edit' | 'add'>('add');
-const columnOptions: ColumnOptions<WholesaleBuyer> = {
-  columnTitles: { _id: t('person.email'), active: t('status') },
-  excludeColumns: ['accountId', 'restrictToDedicatedPriceLists', 'priceLists'],
+const columnOptions: ColumnOptions<WholesaleBuyerList> = {
+  columnTypes: {
+    restrictToDedicatedPriceLists: 'default',
+    priceLists: 'tooltip',
+  },
+  columnTitles: {
+    _id: t('person.email'),
+    active: t('status'),
+    restrictToDedicatedPriceLists: 'Restricted product access',
+  },
+  excludeColumns: ['accountId'],
   sortable: false,
 };
-const { getColumns, addActionsColumn } = useColumns<WholesaleBuyer>();
+const { getColumns, addActionsColumn, orderAndFilterColumns } =
+  useColumns<WholesaleBuyerList>();
 
 // Use computed for reactive columns
 const buyerColumns = computed(() => {
   if (buyersList.value.length === 0) return [];
 
-  const columns = getColumns(buyersList.value, columnOptions);
+  let columns = getColumns(buyersList.value, columnOptions);
+
+  columns = orderAndFilterColumns(columns, [
+    'firstName',
+    'lastName',
+    '_id',
+    'phone',
+    'priceLists',
+    'restrictToDedicatedPriceLists',
+    'active',
+  ]);
+
   addActionsColumn(
     columns,
     {
-      onEdit: (entity: WholesaleBuyer) => {
-        buyerToEdit.value = entity;
+      onEdit: (entity: WholesaleBuyerList) => {
+        buyerToEdit.value = buyers.value
+          .map((buyer) => ({
+            ...buyer,
+            priceLists: buyer.priceLists?.map((pl) => pl._id) || [],
+          }))
+          .find((buyer) => buyer._id === entity._id);
         buyerPanelOpen.value = true;
         buyerPanelMode.value = 'edit';
       },
@@ -738,67 +788,68 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
-  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(() =>
-    wholesaleApi.account.get(entityId.value, { fields: ['all'] }),
+  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(
+    entityFetchKey.value,
+    () => wholesaleApi.account.get(entityId.value, { fields: ['all'] }),
   );
-  if (error.value) {
-    toast({
-      title: t(`error_fetching_entity`, { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
-  }
 
   refreshEntityData.value = refresh;
 
-  watch(
-    data,
-    async (newData) => {
+  onMounted(async () => {
+    const account = handleFetchResult<WholesaleAccount>(
+      error.value,
+      data.value,
+    );
+
+    // Parse and save initial data
+    await parseAndSaveData(account);
+    await nextTick();
+
+    // Watch for data updates
+    watch(data, async (newData) => {
       if (newData) {
         await parseAndSaveData(newData);
         await nextTick();
-        // Columns are now computed and will update automatically
       }
-    },
-    { immediate: true },
-  );
+    });
 
-  const { data: tagsData, error: tagsError } = await useAsyncData<string[]>(
-    () => wholesaleApi.account.tags.get(),
-  );
-  if (tagsError.value) {
-    geinsLogError('error fetching tags:', tagsError.value);
-  }
+    const tagsData = ref<string[] | null>(null);
 
-  if (tagsData.value) {
-    const extractedTags = extractAccountGroupsfromTags(tagsData.value);
-    accountTags.value = extractedTags.map((tag) => ({
-      _id: tag,
-      name: tag,
-    }));
-  }
+    try {
+      tagsData.value = await wholesaleApi.account.tags.get();
+    } catch (e) {
+      geinsLogError('error fetching tags:', e);
+    }
 
-  const orderSelectionQuery: OrderBatchQuery = {
-    include: [
-      {
-        selections: [
-          {
-            condition: SelectorCondition.And,
-            wholesaleAccountIds: [entityId.value],
-          },
-        ],
-      },
-    ],
-  };
+    if (tagsData.value) {
+      const extractedTags = extractAccountGroupsfromTags(tagsData.value);
+      accountTags.value = extractedTags.map((tag) => ({
+        _id: tag,
+        name: tag,
+      }));
+    }
 
-  await fetchOrders(
-    orderSelectionQuery,
-    { fields: ['pricelists', 'itemcount'] },
-    entityId.value,
-    allPriceLists.value,
-    undefined,
-    buyersList.value,
-  );
+    const orderSelectionQuery: OrderBatchQuery = {
+      include: [
+        {
+          selections: [
+            {
+              condition: SelectorCondition.And,
+              wholesaleAccountIds: [entityId.value],
+            },
+          ],
+        },
+      ],
+    };
+
+    await fetchOrders(
+      orderSelectionQuery,
+      { fields: ['pricelists', 'itemcount'] },
+      allPriceLists.value,
+      undefined,
+      buyers.value,
+    );
+  });
 }
 </script>
 
@@ -1162,6 +1213,7 @@ if (!createMode.value) {
                   :buyer="buyerToEdit"
                   :account-id="entityDataUpdate?._id || ''"
                   :account-name="entityDataUpdate.name || ''"
+                  :price-lists="allPriceLists"
                 >
                   <ButtonIcon
                     v-if="!createMode"
@@ -1262,7 +1314,7 @@ if (!createMode.value) {
                 />
                 <ContentSwitch
                   v-model:checked="entityDataUpdate.limitedProductAccess"
-                  label="Only access products included in the assigned price lists"
+                  label="Restrict to assigned price lists"
                   description="If disabled, this account can access all products"
                 />
                 <ContentCardHeader

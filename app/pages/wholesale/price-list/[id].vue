@@ -20,10 +20,11 @@ import {
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
+const scope = 'pages/wholesale/price-list/[id].vue';
 const route = useRoute();
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogError } = useGeinsLog('pages/wholesale/price-list/[id].vue');
+const { geinsLogError } = useGeinsLog(scope);
 const accountStore = useAccountStore();
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
@@ -195,6 +196,7 @@ const {
   entityData,
   entityPageTitle,
   entityLiveStatus,
+  entityFetchKey,
   refreshEntityData,
   form,
   formValid,
@@ -299,6 +301,16 @@ const {
       ...values.default,
     };
   },
+});
+
+// =====================================================================================
+// ERROR HANDLING SETUP
+// =====================================================================================
+
+const { handleFetchResult, showErrorToast } = usePageError({
+  entityName,
+  entityId: entityId.value,
+  scope,
 });
 
 // =====================================================================================
@@ -468,11 +480,7 @@ const copyEntity = async () => {
     }
   } catch (error) {
     geinsLogError('error copying entity:', error);
-    toast({
-      title: t('error_copying_entity', { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
+    showErrorToast(t('error_copying_entity', { entityName }));
   } finally {
     loading.value = false;
   }
@@ -580,43 +588,43 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
-  const { data, error, refresh } = await useAsyncData<ProductPriceList>(() =>
-    productApi.priceList.get(entityId.value, {
-      fields: ['rules', 'selectionquery'],
-    }),
+  const { data, error, refresh } = await useAsyncData<ProductPriceList>(
+    entityFetchKey.value,
+    () =>
+      productApi.priceList.get(entityId.value, {
+        fields: ['rules', 'selectionquery'],
+      }),
   );
-
-  if (error.value) {
-    toast({
-      title: t(`error_fetching_entity`, { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
-  }
 
   refreshEntityData.value = refresh;
 
-  if (data.value) {
-    const hasSelection = !!data.value.productSelectionQuery;
-    await parseAndSaveData(data.value, !hasSelection);
+  onMounted(async () => {
+    // Validate data exists and assign
+    const priceList = handleFetchResult<ProductPriceList>(
+      error.value,
+      data.value,
+    );
+
+    const hasSelection = !!priceList.productSelectionQuery;
+    await parseAndSaveData(priceList, !hasSelection);
     if (hasSelection) {
       await previewPriceList(undefined, true, false);
     }
-  }
 
-  productsStore.init();
+    productsStore.init();
 
-  watch(
-    productSelection,
-    async (newSelection) => {
-      if (saveInProgress.value) return;
+    watch(
+      productSelection,
+      async (newSelection) => {
+        if (saveInProgress.value) return;
 
-      entityDataUpdate.value.productSelectionQuery = newSelection;
+        entityDataUpdate.value.productSelectionQuery = newSelection;
 
-      await previewPriceList('Product selection updated');
-    },
-    { deep: true },
-  );
+        await previewPriceList('Product selection updated');
+      },
+      { deep: true },
+    );
+  });
 }
 </script>
 
@@ -863,7 +871,7 @@ if (!createMode.value) {
                               :key="channel._id"
                               :value="channel._id"
                             >
-                              {{ channel.name }}
+                              {{ channel.displayName || channel.name }}
                             </SelectItem>
                           </SelectContent>
                         </Select>

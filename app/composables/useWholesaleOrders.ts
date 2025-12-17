@@ -17,7 +17,6 @@ interface UseWholesaleOrdersReturnType {
   fetchOrders: (
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
-    accountId?: string,
     allPriceLists?: WholesalePriceList[],
     allAccounts?: WholesaleAccount[],
     allBuyers?: WholesaleBuyer[],
@@ -135,31 +134,25 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
   const fetchOrders = async (
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
-    accountId: string = '0',
     allPriceLists?: WholesalePriceList[],
     allAccounts?: WholesaleAccount[],
     allBuyers?: WholesaleBuyer[],
   ): Promise<void> => {
     try {
-      const { data: ordersData, error: ordersError } = await useAsyncData<
-        BatchQueryResult<Order>
-      >(`orders-${accountId}`, () =>
-        orderApi.query(
-          { ...orderSelectionQuery, ...batchQueryNoPagination.value },
-          orderApiOptions,
-        ),
+      const ordersData = ref<BatchQueryResult<Order> | null>(null);
+
+      ordersData.value = await orderApi.query(
+        { ...orderSelectionQuery, ...batchQueryNoPagination.value },
+        orderApiOptions,
       );
 
-      if (!ordersError.value && ordersData.value) {
+      if (ordersData.value) {
         ordersList.value = transformOrdersForList(
           ordersData.value.items,
           allPriceLists,
           allAccounts,
           allBuyers,
         );
-      } else if (ordersError.value) {
-        geinsLogError('error fetching orders', ordersError.value);
-        ordersList.value = [];
       }
     } catch (error) {
       geinsLogError('failed to fetch orders', error);

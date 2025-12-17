@@ -277,7 +277,7 @@ Adds an actions column for row-specific operations.
 ```ts
 orderAndFilterColumns(
   columns: ColumnDef<T>[],
-  keys: string[]
+  keys: (keyof T)[]
 ): ColumnDef<T>[]
 ```
 
@@ -293,7 +293,7 @@ Reorders and filters columns based on provided keys. Only provided keys will be 
 ```ts
 orderColumnLast(
   columns: ColumnDef<T>[],
-  key: string
+  key: keyof T
 ): ColumnDef<T>[]
 ```
 
@@ -460,9 +460,9 @@ interface UseColumnsReturnType<T> {
   ) => ColumnDef<T>[];
   orderAndFilterColumns: (
     columns: ColumnDef<T>[],
-    keys: string[],
+    keys: (keyof T)[],
   ) => ColumnDef<T>[];
-  orderColumnLast: (columns: ColumnDef<T>[], key: string) => ColumnDef<T>[];
+  orderColumnLast: (columns: ColumnDef<T>[], key: keyof T) => ColumnDef<T>[];
 }
 
 type TableRowAction = 'edit' | 'copy' | 'delete';

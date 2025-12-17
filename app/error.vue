@@ -1,21 +1,41 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app';
 
-const _props = defineProps({
+const props = defineProps({
   error: Object as () => NuxtError,
 });
 
-const handleError = () => clearError({ redirect: '/' });
-// TODO: Remove message and callstack before launch
+const config = useRuntimeConfig();
+const isDevelopment = config.public.NODE_ENV === 'development';
+
+// Determine which error component to show based on status code
+const is404 = computed(() => props.error?.statusCode === 404);
+
+const clearAndRedirect = async () => {
+  clearError({ redirect: '/' });
+};
 </script>
 
 <template>
-  <div class="flex h-screen flex-col items-center justify-center">
-    <h1 class="mb-2 text-xl font-bold">Error {{ error?.statusCode }}</h1>
-    <p v-if="error?.message" class="mb-5">{{ error?.message }}</p>
-    <p v-else>No message</p>
-    <!-- eslint-disable-next-line vue/no-v-html -->
-    <div class="mb-5 max-w-xl text-xs" v-html="error?.stack" />
-    <Button @click="handleError">Clear errors</Button>
+  <div>
+    <NuxtLayout name="default">
+      <div class="flex h-[calc(100vh-64px)] w-full items-center justify-center">
+        <!-- 404 Error -->
+        <Error404
+          v-if="is404"
+          :message="error?.message"
+          @clear="clearAndRedirect"
+        />
+
+        <!-- Generic Error (fallback) -->
+        <Error500
+          v-else
+          :message="error?.message"
+          :error-details="isDevelopment ? error?.stack : undefined"
+          :show-error-details="isDevelopment"
+          @clear="clearAndRedirect"
+        />
+      </div>
+    </NuxtLayout>
   </div>
 </template>

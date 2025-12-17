@@ -1,9 +1,20 @@
 <script setup lang="ts">
 import { useSidebar } from '@/components/ui/sidebar';
+import { useToast } from '@/components/ui/toast/use-toast';
+import LogoLetter from '@/assets/logos/geins-g.svg';
 
-const { logout } = useGeinsAuth();
+const { geinsLogError } = useGeinsLog('components/../LayoutSidebarUser.vue');
+const { session, setAccount, logout } = useGeinsAuth();
 const userStore = useUserStore();
-const { userName, userInitials, userEmail } = storeToRefs(userStore);
+const { showErrorToast } = usePageError();
+const {
+  userName,
+  userInitials,
+  userEmail,
+  userAccounts,
+  currentAccountName,
+  hasMultipleAccounts,
+} = storeToRefs(userStore);
 
 const colorMode = useColorMode();
 const setColorMode = () => {
@@ -11,6 +22,17 @@ const setColorMode = () => {
 };
 
 const { isMobile } = useSidebar();
+
+const setNewAccount = async (accountKey: string) => {
+  try {
+    await setAccount(accountKey);
+    window.location.href = '/';
+  } catch (error) {
+    showErrorToast();
+    geinsLogError('error switching account:', error);
+    return;
+  }
+};
 </script>
 
 <template>
@@ -33,7 +55,7 @@ const { isMobile } = useSidebar();
               }}</span>
               <span class="truncate text-xs">{{ userEmail }}</span>
             </div>
-            <LucideChevronsUpDown class="ml-auto size-4" />
+            <LucideEllipsisVertical class="ml-auto size-4" />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -57,25 +79,50 @@ const { isMobile } = useSidebar();
               </div>
             </div>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator v-if="hasMultipleAccounts" />
+          <DropdownMenuSub v-if="hasMultipleAccounts">
+            <DropdownMenuSubTrigger>
+              <LogoLetter class="mr-2 size-4" :font-controlled="false" />
+              {{ currentAccountName }}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent class="max-h-[50vh] overflow-auto">
+                <DropdownMenuItem
+                  v-for="account in userAccounts"
+                  :key="account.accountKey"
+                  @click="setNewAccount(account.accountKey)"
+                >
+                  <span class="pr-2">
+                    {{ account.displayName }}
+                  </span>
+                  <LucideCheck
+                    v-if="account.accountKey === session?.accountKey"
+                    class="ml-auto"
+                  />
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem as-child>
               <NuxtLink :to="`/account/profile`">
                 <LucideUser class="mr-2 size-4" />
-                <span>Account</span>
+                <span>{{ $t('account') }}</span>
               </NuxtLink>
             </DropdownMenuItem>
             <DropdownMenuItem @click="logout()">
               <LucideLogOut class="mr-2 size-4" />
-              <span>Log out</span>
+              <span>{{ $t('log_out') }}</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem @click="setColorMode">
             <LucideSun class="mr-2 hidden size-4 dark:block" />
             <LucideMoonStar class="mr-2 size-4 dark:hidden" />
-            <span class="dark:hidden">Dark mode</span>
-            <span class="hidden dark:block">Light mode</span>
+            <span class="dark:hidden">{{ $t('dark_mode') }}</span>
+            <span class="hidden dark:block">{{ $t('light_mode') }}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
