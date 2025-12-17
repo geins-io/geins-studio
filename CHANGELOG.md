@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.1.5 - 2025-12-17
+
+### 🚀 Enhancements
+
+- Ability to assign price list to buyer ([#108](https://github.com/geins-io/geins-studio/pull/108))
+- Account picker + always using channel display name ([#109](https://github.com/geins-io/geins-studio/pull/109))
+- Improved error pages ([#110](https://github.com/geins-io/geins-studio/pull/110))
+- Adjusted dark mode colors ([#111](https://github.com/geins-io/geins-studio/pull/111))
+
+### 🐛 Bug Fixes
+
+- Fixed maximum height for auth account list
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.1.4 - 2025-12-04
 
 ### 🚀 Enhancements
