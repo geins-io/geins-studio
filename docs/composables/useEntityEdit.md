@@ -51,6 +51,7 @@ const {
   newEntityUrl,
   entityId,
   entityLiveStatus,
+  entityFetchKey,
   parseAndSaveData,
   validateSteps,
   createEntity,
@@ -231,6 +232,10 @@ A `ref` representing the name of the entity being edited (e.g., "product").
 #### `entityId`
 
 A `computed` reference representing the current entity ID extracted from the route parameters. It will be an empty string in create mode.
+
+#### `entityFetchKey`
+
+A `computed` reference representing a unique key for fetching the entity data. It combines the entity name and ID to ensure proper reactivity when the entity changes.
 
 #### `entityData`
 
