@@ -10,13 +10,7 @@ import type {
   ForgotPasswordFormValues,
   ResetPasswordFormValues,
 } from '#shared/types';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import LogoLetter from '@/assets/logos/geins-g.svg';
 
 const props = withDefaults(
   defineProps<{
@@ -191,14 +185,34 @@ const feedbackDescription = computed(() => {
   return '';
 });
 
+// Card title and description
+const cardTitle = computed(() => {
+  if (verifyMode.value) return t('auth.verify_title');
+  if (accountMode.value) return t('auth.select_account');
+  if (forgotPasswordMode.value) return t('auth.forgot_password');
+  if (resetPasswordMode.value) return t('auth.reset_password');
+  return t('auth.login_title');
+});
+
+const cardDescription = computed(() => {
+  if (verifyMode.value && props.mfaMethod.length > 0) {
+    return `${t('auth.verify_description')} ${props.mfaMethod}`;
+  }
+  if (accountMode.value) return t('auth.select_account_description');
+  if (forgotPasswordMode.value) return t('auth.forgot_password_description');
+  if (resetPasswordMode.value) return t('auth.reset_password_description');
+  if (!accountMode.value) return t('auth.login_description');
+  return '';
+});
+
 // Account selection
 const accounts = computed(() => props.accounts || []);
 
 // Button text
 const buttonText = computed(() => {
   if (verifyMode.value) return t('verify');
-  if (forgotPasswordMode.value) return t('send_reset_link');
-  if (resetPasswordMode.value) return t('reset_password');
+  if (forgotPasswordMode.value) return t('auth.send_reset_link');
+  if (resetPasswordMode.value) return t('auth.reset_password');
   return t('log_in');
 });
 
@@ -293,32 +307,18 @@ const backToLogin = () => {
   <Card class="py-6 shadow-sm">
     <CardHeader class="text-center">
       <CardTitle class="text-xl">
-        {{
-          verifyMode
-            ? $t('auth.verify_title')
-            : accountMode
-              ? $t('auth.select_account')
-              : forgotPasswordMode
-                ? $t('forgot_password')
-                : resetPasswordMode
-                  ? $t('reset_password')
-                  : $t('auth.login_title')
-        }}
+        {{ cardTitle }}
       </CardTitle>
-      <CardDescription v-if="verifyMode && mfaMethod.length > 0">
-        {{ $t('auth.verify_description') }} <strong>{{ mfaMethod }}</strong>
-      </CardDescription>
-      <CardDescription v-else-if="forgotPasswordMode">
-        {{ $t('auth.forgot_password_description') }}
-      </CardDescription>
-      <CardDescription v-else-if="resetPasswordMode">
-        {{ $t('auth.reset_password_description') }}
-      </CardDescription>
-      <CardDescription v-else-if="!accountMode">
-        {{ $t('auth.login_description') }}
+      <CardDescription v-if="cardDescription">
+        <template v-if="verifyMode && mfaMethod.length > 0">
+          {{ $t('auth.verify_description') }} <strong>{{ mfaMethod }}</strong>
+        </template>
+        <template v-else>
+          {{ cardDescription }}
+        </template>
       </CardDescription>
     </CardHeader>
-    <CardContent class="mt-4">
+    <CardContent class="mt-4 flex flex-col justify-center pb-3">
       <Feedback v-if="feedbackVisible" :type="feedbackType" class="mb-4">
         <template #title>
           {{ feedbackTitle }}
@@ -363,7 +363,7 @@ const backToLogin = () => {
                 class="ml-auto h-auto p-0 pb-1 text-xs underline-offset-4 hover:underline sm:h-auto"
                 @click="$emit('set-mode', 'forgot-password')"
               >
-                {{ $t('forgot_password') }}
+                {{ $t('auth.forgot_password') }}
               </Button>
             </div>
             <FormControl>
@@ -480,7 +480,7 @@ const backToLogin = () => {
       <div v-else-if="accountMode" class="grid gap-4">
         <ul
           v-if="!loading"
-          class="flex max-h-[30vh] flex-col gap-2 overflow-auto"
+          class="flex max-h-[14.5rem] flex-col gap-2 overflow-auto px-2"
         >
           <li
             v-for="account in accounts"
@@ -488,10 +488,13 @@ const backToLogin = () => {
             class="w-full"
           >
             <Button
-              class="w-full"
+              variant="secondary"
+              class="flex w-full"
+              size="lg"
               @click="$emit('set-account', account.accountKey)"
             >
-              {{ account.displayName }}
+              <LogoLetter class="mr-auto size-4" :font-controlled="false" />
+              <span class="mr-auto">{{ account.displayName }}</span>
             </Button>
           </li>
           <li
@@ -503,7 +506,7 @@ const backToLogin = () => {
         </ul>
         <div
           v-else
-          class="text-muted-foreground relative flex items-center justify-center py-8"
+          class="text-primary relative flex items-center justify-center py-8"
         >
           <LucideLoaderCircle class="size-10 animate-spin" />
         </div>
@@ -514,11 +517,20 @@ const backToLogin = () => {
           verifyMode || accountMode || forgotPasswordMode || resetPasswordMode
         "
         variant="link"
-        class="mt-2"
+        class="mx-auto mt-2 -mb-2"
         @click="backToLogin"
       >
         {{ $t('back_to_login') }}
       </Button>
     </CardContent>
   </Card>
+  <FieldDescription v-if="!resetPasswordMode" class="px-11 text-center text-sm">
+    <i18n-t keypath="auth.new_to_geins" scope="global">
+      <template #link>
+        <a href="https://www.geins.io" target="_blank" rel="noopener noreferrer"
+          >geins.io</a
+        >
+      </template>
+    </i18n-t>
+  </FieldDescription>
 </template>

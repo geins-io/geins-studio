@@ -81,7 +81,7 @@ const setNewAccount = async (accountKey: string) => {
           </DropdownMenuLabel>
           <DropdownMenuSeparator v-if="hasMultipleAccounts" />
           <DropdownMenuSub v-if="hasMultipleAccounts">
-            <DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger class="text-xs">
               <LogoLetter class="mr-2 size-4" :font-controlled="false" />
               {{ currentAccountName }}
             </DropdownMenuSubTrigger>

@@ -175,7 +175,7 @@
   --background: hsl(0 0% 0%);
   --foreground: hsl(0 0% 100%);
 
-  --card: hsl(0 0% 4%);
+  --card: hsl(0 0% 5%);
   --card-foreground: hsl(0 0% 100%);
 
   --popover: var(--card);
@@ -196,7 +196,7 @@
   --destructive: hsl(0 75% 60%);
   --destructive-foreground: hsl(210 15% 92%);
 
-  --border: hsl(0 0% 20%);
+  --border: hsl(0 0% 18%);
   --input: hsl(0 0% 9%);
   --ring: hsl(210 15% 85%);
   --link: hsl(177 35% 71%);
@@ -283,6 +283,7 @@
     height: calc(100% - 4px) !important;
     left: 2px !important;
     right: 2px !important;
+    @apply text-sm;
   }
 
   button {
