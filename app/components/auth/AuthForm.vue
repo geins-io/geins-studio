@@ -201,8 +201,7 @@ const cardDescription = computed(() => {
   if (accountMode.value) return t('auth.select_account_description');
   if (forgotPasswordMode.value) return t('auth.forgot_password_description');
   if (resetPasswordMode.value) return t('auth.reset_password_description');
-  if (!accountMode.value) return t('auth.login_description');
-  return '';
+  return t('auth.login_description');
 });
 
 // Account selection
