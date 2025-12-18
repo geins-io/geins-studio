@@ -378,7 +378,7 @@ const backToLogin = () => {
           </FormItem>
         </FormField>
 
-        <Button class="w-full" :loading="loading">
+        <Button class="h-9 w-full" :loading="loading">
           {{ buttonText }}
         </Button>
       </form>
@@ -405,7 +405,7 @@ const backToLogin = () => {
           </FormItem>
         </FormField>
 
-        <Button class="w-full" :loading="resetLoading">
+        <Button class="h-9 w-full" :loading="resetLoading">
           {{ buttonText }}
         </Button>
       </form>
@@ -446,7 +446,7 @@ const backToLogin = () => {
           </FormItem>
         </FormField>
 
-        <Button class="w-full" :loading="resetLoading">
+        <Button class="h-9 w-full" :loading="resetLoading">
           {{ buttonText }}
         </Button>
       </form>
@@ -471,7 +471,7 @@ const backToLogin = () => {
             </PinInputGroup>
           </PinInput>
         </div>
-        <Button class="w-full" :loading="loading">
+        <Button class="h-9 w-full" :loading="loading">
           {{ buttonText }}
         </Button>
       </div>
