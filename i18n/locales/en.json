@@ -203,7 +203,7 @@
     "reset_password_description": "Enter your new password below.",
     "send_reset_link": "Send reset link",
     "forgot_password": "Forgot your password?",
-    "forgot_password_description": "Use your email to recieve a reset link.",
+    "forgot_password_description": "Use your email to receive a reset link.",
     "new_to_geins": "New to Geins Studio? Visit {link} to learn more and to get started."
   },
   "form": {
