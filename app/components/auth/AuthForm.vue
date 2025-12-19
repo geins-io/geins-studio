@@ -47,6 +47,7 @@ const verifyMode = computed(() => props.mode === 'verify');
 const accountMode = computed(() => props.mode === 'account');
 const forgotPasswordMode = computed(() => props.mode === 'forgot-password');
 const resetPasswordMode = computed(() => props.mode === 'reset-password');
+const logoutMode = computed(() => props.mode === 'logout');
 
 // State management
 const resetRequestSuccess = ref(false);
@@ -191,6 +192,7 @@ const cardTitle = computed(() => {
   if (accountMode.value) return t('auth.select_account');
   if (forgotPasswordMode.value) return t('auth.forgot_password');
   if (resetPasswordMode.value) return t('auth.reset_password');
+  if (logoutMode.value) return t('auth.logging_out');
   return t('auth.login_title');
 });
 
@@ -201,7 +203,8 @@ const cardDescription = computed(() => {
   if (accountMode.value) return t('auth.select_account_description');
   if (forgotPasswordMode.value) return t('auth.forgot_password_description');
   if (resetPasswordMode.value) return t('auth.reset_password_description');
-  return t('auth.login_description');
+  if (!logoutMode.value) return t('auth.login_description');
+  return '';
 });
 
 // Account selection
@@ -481,7 +484,7 @@ const backToLogin = () => {
         </div>
 
         <!-- Account Selection -->
-        <div v-else-if="accountMode" class="grid gap-4">
+        <div v-else-if="accountMode || logoutMode" class="grid gap-4">
           <ul
             v-if="!loading"
             class="flex max-h-[14.5rem] flex-col gap-2 overflow-auto px-2"

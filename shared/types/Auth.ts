@@ -78,7 +78,8 @@ export type AuthFormMode =
   | 'verify'
   | 'account'
   | 'forgot-password'
-  | 'reset-password';
+  | 'reset-password'
+  | 'logout';
 
 export interface LoginFormValues {
   email: string;

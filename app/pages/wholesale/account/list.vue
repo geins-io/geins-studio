@@ -113,7 +113,7 @@ onMounted(() => {
     },
     columnTitles: {
       active: t('status'),
-      limitedProductAccess: 'Restricted product access',
+      limitedProductAccess: t('wholesale.product_access_restricted_label'),
     },
     excludeColumns: ['meta', 'addresses', 'tags'],
   };

@@ -52,6 +52,7 @@ export function usePriceListPreview({
   convertPriceModeToRuleField,
   getPriceListProduct,
 }: UsePriceListPreviewOptions): UsePriceListPreviewReturnType {
+  const { t } = useI18n();
   const { toast } = useToast();
   const { geinsLogError } = useGeinsLog('composables/usePriceListPreview');
   const { batchQueryNoPagination } = useBatchQuery();
@@ -140,8 +141,8 @@ export function usePriceListPreview({
     } catch (error) {
       geinsLogError('error fetching preview price list:', error);
       toast({
-        title: 'Error updating price list preview',
-        description: 'Please try again.',
+        title: t('error_updating_preview'),
+        description: t('error_try_again'),
         variant: 'negative',
       });
     } finally {

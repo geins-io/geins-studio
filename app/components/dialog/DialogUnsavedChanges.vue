@@ -14,10 +14,11 @@ const _emit = defineEmits(['confirm', 'cancel']);
   <AlertDialog v-model:open="open">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>You have unsaved changes!</AlertDialogTitle>
+        <AlertDialogTitle>{{
+          $t('dialog.unsaved_changes_title')
+        }}</AlertDialogTitle>
         <AlertDialogDescription>
-          All changes will be lost if you leave this page. Are you sure you want
-          to leave?
+          {{ $t('dialog.unsaved_changes_description') }}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>

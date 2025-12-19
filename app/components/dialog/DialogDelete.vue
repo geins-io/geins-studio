@@ -14,10 +14,15 @@ const _emit = defineEmits(['confirm', 'cancel']);
   <AlertDialog v-model:open="open">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+        <AlertDialogTitle>{{
+          $t('dialog.delete_confirm_title')
+        }}</AlertDialogTitle>
         <AlertDialogDescription>
-          This will permanently delete this
-          {{ $t(props.entityName) }}. This action cannot be undone.
+          {{
+            $t('dialog.delete_confirm_description', {
+              entityName: $t(props.entityName),
+            })
+          }}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>

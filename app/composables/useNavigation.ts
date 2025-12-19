@@ -1,5 +1,5 @@
 import type { NavigationItem } from '#shared/types';
-import { navigation as navigationConfig } from '@/lib/navigation';
+import { getNavigation } from '@/lib/navigation';
 
 /**
  * Navigation composable for handling menu items, breadcrumbs, and permissions
@@ -9,6 +9,7 @@ import { navigation as navigationConfig } from '@/lib/navigation';
  * - Active state detection
  * - Automatic breadcrumb generation from navigation structure
  * - Auto-sync with breadcrumbs store
+ * - Localization support via i18n
  *
  * @example
  * const { navigationItems, isItemActive, breadcrumbTrail } = useNavigation();
@@ -17,6 +18,7 @@ export const useNavigation = () => {
   const userStore = useUserStore();
   const breadcrumbsStore = useBreadcrumbsStore();
   const route = useRoute();
+  const navigationConfig = getNavigation();
 
   /**
    * Filter navigation items based on user roles and permissions
