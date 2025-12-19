@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import type { NavigationItem } from '#shared/types';
-import { navigation as navigationConfig } from '@/lib/navigation';
+import { getNavigation } from '@/lib/navigation';
 
 /**
  * Breadcrumbs store with hybrid approach:
@@ -89,7 +89,8 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
 
       // Auto-clear override when navigating AWAY from a child page
       if (oldPath && newPath !== oldPath && titleOverride.value) {
-        // Use navigationConfig directly instead of navigationBreadcrumbs
+        // Get current navigation config with localization
+        const navigationConfig = getNavigation();
         const wasOnChildPage = isOnChildPage(oldPath, navigationConfig);
         const isNowOnChildPage = isOnChildPage(newPath, navigationConfig);
 

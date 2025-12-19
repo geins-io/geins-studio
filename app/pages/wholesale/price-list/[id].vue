@@ -137,7 +137,7 @@ const cellEditCallback = (
     editedProducts.value,
   );
   previewPriceList(
-    `Price updated for ${row.original.name} (${row.original._id})`,
+    t('price_updated_for', { name: row.original.name, id: row.original._id }),
   );
 };
 
@@ -620,7 +620,7 @@ if (!createMode.value) {
 
         entityDataUpdate.value.productSelectionQuery = newSelection;
 
-        await previewPriceList('Product selection updated');
+        await previewPriceList(t('product_selection_updated'));
       },
       { deep: true },
     );
@@ -645,12 +645,14 @@ if (!createMode.value) {
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>
-          Your applied price breaks will be removed!
+          {{ $t('dialog.price_breaks_removed_title') }}
         </AlertDialogTitle>
         <AlertDialogDescription>
-          If you proceed changing price mode to
-          <strong>{{ pendingModeChange }}</strong
-          >, your globally applied price breaks will be removed.
+          {{
+            $t('dialog.price_breaks_removed_description', {
+              mode: pendingModeChange,
+            })
+          }}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
@@ -668,11 +670,10 @@ if (!createMode.value) {
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>
-          Product prices will be overwritten!
+          {{ $t('dialog.product_prices_overwrite_title') }}
         </AlertDialogTitle>
         <AlertDialogDescription>
-          If you proceed to apply and <strong>overwrite</strong>, all your
-          manually added product prices in the table below will be overwritten.
+          {{ $t('dialog.product_prices_overwrite_description') }}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
@@ -690,13 +691,14 @@ if (!createMode.value) {
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>
-          Product volume pricing will be overwritten!
+          {{ $t('dialog.volume_pricing_overwrite_title') }}
         </AlertDialogTitle>
         <AlertDialogDescription>
-          If you proceed to apply and <strong>overwrite</strong>, your manually
-          added volume pricing for quantity
-          <strong>{{ currentOverwriteQuantity }}</strong> in the table below
-          will be overwritten.
+          {{
+            $t('dialog.volume_pricing_overwrite_description', {
+              quantity: currentOverwriteQuantity,
+            })
+          }}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
@@ -714,11 +716,17 @@ if (!createMode.value) {
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>
-          Global {{ baseRuleMode }} will be removed!
+          {{
+            $t('dialog.global_rule_remove_title', { ruleMode: baseRuleMode })
+          }}
         </AlertDialogTitle>
         <AlertDialogDescription>
-          If you continue, your globally applied {{ baseRuleMode }} of
-          <strong>{{ baseRulePercentage }}%</strong> will be removed.
+          {{
+            $t('dialog.global_rule_remove_description', {
+              ruleMode: baseRuleMode,
+              percentage: baseRulePercentage,
+            })
+          }}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
@@ -997,15 +1005,17 @@ if (!createMode.value) {
                       )
                     "
                   >
-                    <TabsTrigger value="base-rule"> Base rule </TabsTrigger>
+                    <TabsTrigger value="base-rule">
+                      {{ $t('wholesale.price_list_base_rule') }}
+                    </TabsTrigger>
                     <TabsTrigger value="qty-levels">
-                      Volume pricing
+                      {{ $t('wholesale.price_list_volume_pricing') }}
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent v-if="hasProductSelection" value="base-rule">
                     <PriceListRulesWrapper
                       v-model:mode="priceListBaseRuleMode"
-                      title="Base rule"
+                      :title="$t('wholesale.price_list_base_rule')"
                       mode-id="priceListBaseRuleMode"
                     >
                       <Label class="w-full">
@@ -1041,7 +1051,7 @@ if (!createMode.value) {
                   <TabsContent v-if="hasProductSelection" value="qty-levels">
                     <PriceListRulesWrapper
                       v-model:mode="priceListRulesMode"
-                      title="Volume pricing"
+                      :title="$t('wholesale.price_list_volume_pricing')"
                       mode-id="priceListRulesMode"
                     >
                       <PriceListRules
@@ -1059,8 +1069,9 @@ if (!createMode.value) {
                   v-if="!hasProductSelection"
                   class="text-muted-foreground text-sm italic"
                 >
-                  These settings will be available once you have made a product
-                  selection below.
+                  {{
+                    $t('wholesale.price_list_rules_available_after_selection')
+                  }}
                 </p>
               </div>
             </ContentCard>
@@ -1099,7 +1110,7 @@ if (!createMode.value) {
                       2,
                     )
                   "
-                  empty-description='Quick add, or click "Browse" to make a selection'
+                  :empty-description="$t('selector_browse_description')"
                   :mode="TableMode.Simple"
                   :page-size="15"
                   :pinned-state="pinnedState"

@@ -129,27 +129,29 @@ const resetOrderAndVisibility = () => {
         variant="secondary"
         class="ml-auto hidden lg:flex"
       >
-        Column options
+        {{ $t('table.column_options') }}
       </ButtonIcon>
     </SheetTrigger>
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>Colums option</SheetTitle>
+        <SheetTitle>{{ $t('table.column_options') }}</SheetTitle>
         <SheetDescription>
-          Choose which columns you want to see in this list view
+          {{ $t('table.column_options_description') }}
         </SheetDescription>
       </SheetHeader>
       <SheetBody class="grid p-4 md:grid-cols-2">
         <!-- Available Columns -->
         <div class="mr-8 border-r pr-8">
-          <h4 class="mb-4 text-base font-semibold">Availble colums</h4>
+          <h4 class="mb-4 text-base font-semibold">
+            {{ $t('table.available_columns') }}
+          </h4>
           <!--      <div class="relative mb-4">
                 <SearchIcon
                   class="absolute left-2 top-2.5 size-4 text-muted-foreground"
                 />
                 <Input
                   v-model="search"
-                  placeholder="Search colums"
+                  :placeholder="$t('table.search_columns')"
                   class="pl-8"
                 />
               </div> -->
@@ -176,7 +178,9 @@ const resetOrderAndVisibility = () => {
 
         <!-- Chosen Columns -->
         <div>
-          <h4 class="mb-4 text-base font-semibold">Chosen columns</h4>
+          <h4 class="mb-4 text-base font-semibold">
+            {{ $t('table.chosen_columns') }}
+          </h4>
           <draggable
             v-model="currentOrder"
             item-key="id"
@@ -207,11 +211,13 @@ const resetOrderAndVisibility = () => {
       <SheetFooter>
         <SheetClose as-child>
           <Button variant="outline" @click="resetOrderAndVisibility">
-            Cancel
+            {{ $t('cancel') }}
           </Button>
         </SheetClose>
         <SheetClose as-child>
-          <Button @click="saveOrderAndVisibility">Save options</Button>
+          <Button @click="saveOrderAndVisibility">{{
+            $t('table.save_options')
+          }}</Button>
         </SheetClose>
       </SheetFooter>
     </SheetContent>

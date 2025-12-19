@@ -366,7 +366,9 @@ const columnOptions: ColumnOptions<WholesaleBuyerList> = {
   columnTitles: {
     _id: t('person.email'),
     active: t('status'),
-    restrictToDedicatedPriceLists: 'Restricted product access',
+    restrictToDedicatedPriceLists: t(
+      'wholesale.product_access_restricted_label',
+    ),
   },
   excludeColumns: ['accountId'],
   sortable: false,
@@ -728,10 +730,10 @@ const settingsSummary = computed<DataItem[]>(() => {
       : t('wholesale.vat_false'),
   });
   dataList.push({
-    label: 'Product access',
+    label: t('wholesale.product_access'),
     value: entityData.value?.limitedProductAccess
-      ? 'Restricted to price lists'
-      : 'All products',
+      ? t('wholesale.product_access_restricted')
+      : t('wholesale.product_access_all'),
   });
 
   return dataList;
@@ -1248,7 +1250,7 @@ if (!createMode.value) {
             <ContentEditCard
               :create-mode="createMode"
               :title="t('price_list', 2)"
-              description="Price lists connected to this account"
+              :description="t('wholesale.price_lists_description')"
             >
               <template #header-action>
                 <SelectorQuickAdd
@@ -1308,24 +1310,26 @@ if (!createMode.value) {
             <ContentEditCard :create-mode="false" :title="t('settings')">
               <div class="space-y-4">
                 <ContentCardHeader
-                  title="Product access"
-                  description="Controls which products this account can view and purchase"
+                  :title="t('wholesale.product_access')"
+                  :description="t('wholesale.product_access_description')"
                   size="md"
                 />
                 <ContentSwitch
                   v-model:checked="entityDataUpdate.limitedProductAccess"
-                  label="Restrict to assigned price lists"
-                  description="If disabled, this account can access all products"
+                  :label="t('wholesale.product_access_restrict_label')"
+                  :description="
+                    t('wholesale.product_access_restrict_description')
+                  "
                 />
                 <ContentCardHeader
-                  title="VAT settings"
-                  description="Set whether this account should be charged VAT on orders"
+                  :title="t('wholesale.vat_settings')"
+                  :description="t('wholesale.vat_settings_description')"
                   size="md"
                 />
                 <ContentSwitch
                   v-model:checked="entityDataUpdate.exVat"
-                  label="VAT included"
-                  description="Orders from this account will include VAT"
+                  :label="t('wholesale.vat_included_label')"
+                  :description="t('wholesale.vat_included_description')"
                 />
               </div>
             </ContentEditCard>

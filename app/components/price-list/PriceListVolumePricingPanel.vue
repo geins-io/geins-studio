@@ -160,16 +160,19 @@ const handleRemove = async (rule: PriceListRule) => {
     </SheetTrigger>
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>Volume pricing</SheetTitle>
+        <SheetTitle>{{ $t('wholesale.price_list_volume_pricing') }}</SheetTitle>
         <SheetDescription>
-          Add quantity-based price breaks for <strong>{{ productName }}</strong>
+          {{ $t('wholesale.price_list_volume_pricing_sheet_description') }}
+          <strong>{{ productName }}</strong>
         </SheetDescription>
       </SheetHeader>
       <SheetBody>
         <ContentCardHeader
           size="sm"
-          title="Global volume pricing"
-          description="These price breaks apply to all products in this price list."
+          :title="$t('wholesale.price_list_global_volume_pricing')"
+          :description="
+            $t('wholesale.price_list_global_volume_pricing_description')
+          "
           class="mb-4"
         />
         <PriceListRules
@@ -181,12 +184,14 @@ const handleRemove = async (rule: PriceListRule) => {
           :currency="currency"
         />
         <p v-else class="text-muted-foreground text-sm italic">
-          No global price breaks defined.
+          {{ $t('wholesale.price_list_no_global_breaks') }}
         </p>
         <ContentCardHeader
           size="sm"
-          title="Product volume pricing"
-          description="These price breaks apply only to this product. If you add a price break with the same quantity as a global break, it will override the global one."
+          :title="$t('wholesale.price_list_product_volume_pricing')"
+          :description="
+            $t('wholesale.price_list_product_volume_pricing_description')
+          "
           class="mt-6 mb-4"
         />
         <PriceListRules

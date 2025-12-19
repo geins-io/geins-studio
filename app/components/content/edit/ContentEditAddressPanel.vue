@@ -131,7 +131,7 @@ const handleCancel = () => {
                 entityName,
               })
             "
-            description="Delete this shipping address from your account"
+            :description="t('dialog.delete_shipping_address_description')"
           />
           <Button
             size="sm"

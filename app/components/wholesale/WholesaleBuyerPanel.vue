@@ -353,12 +353,14 @@ const existingCustomerName = computed(() => {
             heading-level="h3"
             :title="$t('price_list', 2)"
             class="mb-4"
-            description="A price list assigned to a buyer will get the highest priority, meaning that enforced price lists on the account level will be overridden."
+            :description="
+              $t('wholesale.buyers_price_list_priority_description')
+            "
           />
           <ContentSwitch
             v-model:checked="assignPriceLists"
-            label="Assign price lists to buyer"
-            description="Chosen price lists will be applied when this buyer logs in"
+            :label="$t('wholesale.buyers_assign_price_lists_label')"
+            :description="$t('wholesale.buyers_assign_price_lists_description')"
           >
             <FormGridWrap>
               <FormGrid design="1">
@@ -387,11 +389,17 @@ const existingCustomerName = computed(() => {
                   name="restrictToDedicatedPriceLists"
                 >
                   <FormItem>
-                    <FormLabel>Product access</FormLabel>
+                    <FormLabel>{{ $t('wholesale.product_access') }}</FormLabel>
                     <FormControl>
                       <FormItemSwitch
-                        label="Restrict to assigned price lists"
-                        description="If disabled, this buyer can access all products available to the account"
+                        :label="
+                          $t('wholesale.buyers_restrict_to_price_lists_label')
+                        "
+                        :description="
+                          $t(
+                            'wholesale.buyers_restrict_to_price_lists_description',
+                          )
+                        "
                         :disabled="!hasPricelistsAssigned"
                         :model-value="value"
                         @update:model-value="handleChange"

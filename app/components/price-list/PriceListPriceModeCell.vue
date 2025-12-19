@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { t } = useI18n();
+
 const props = defineProps<{
   className?: string;
   priceMode: PriceListPriceMode;
@@ -9,14 +11,14 @@ const tooltipContent = computed(() => {
     case 'fixed':
     case 'margin':
     case 'discount':
-      return 'Price set manually';
+      return t('wholesale.price_set_manually');
     case 'rule':
     case 'autoRule':
-      return 'Price set globally';
+      return t('wholesale.price_set_globally');
     case 'auto':
-      return 'Default price';
+      return t('wholesale.default_price');
     default:
-      return 'Default price';
+      return t('wholesale.default_price');
   }
 });
 
@@ -38,11 +40,11 @@ const displayLetter = computed(() => {
   <div :class="cn(className, 'px-1.5')">
     <TooltipProvider :delay-duration="100">
       <Tooltip>
-        <TooltipTrigger class="p-0! w-full cursor-default text-center">
+        <TooltipTrigger class="w-full cursor-default p-0! text-center">
           <span
             :class="
               cn(
-                'text-muted-foreground decoration-muted-foreground underline-offset-3 w-full text-center text-[10px] underline decoration-dashed',
+                'text-muted-foreground decoration-muted-foreground w-full text-center text-[10px] underline decoration-dashed underline-offset-3',
                 displayLetter === 'M' && 'text-warning decoration-warning',
                 displayLetter === 'G' &&
                   'text-blue-900 decoration-blue-900 dark:text-blue-200 dark:decoration-blue-200',
