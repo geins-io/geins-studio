@@ -5,6 +5,8 @@ interface UseGeinsRepositoryReturnType {
   orderApi: ReturnType<typeof repo.order>;
   productApi: ReturnType<typeof repo.product>;
   wholesaleApi: ReturnType<typeof repo.wholesale>;
+  customersApi: ReturnType<typeof repo.customers>;
+  pricingApi: ReturnType<typeof repo.pricing>;
   userApi: ReturnType<typeof repo.user>;
   customerApi: ReturnType<typeof repo.customer>;
 }
@@ -20,7 +22,9 @@ interface UseGeinsRepositoryReturnType {
  * @property {object} globalApi - Global API repository for system-wide operations
  * @property {object} orderApi - Order API repository for order management
  * @property {object} productApi - Product API repository for product operations
- * @property {object} wholesaleApi - Wholesale API repository for wholesale operations
+ * @property {object} wholesaleApi - Wholesale API repository for wholesale operations (deprecated, use customersApi/pricingApi)
+ * @property {object} customersApi - Customers API repository for customer account operations
+ * @property {object} pricingApi - Pricing API repository for price list operations
  * @property {object} userApi - User API repository for user management
  * @property {object} customerApi - Customer API repository for customer operations
  */
@@ -32,6 +36,8 @@ export function useGeinsRepository(): UseGeinsRepositoryReturnType {
     orderApi: repo.order($geinsApi),
     productApi: repo.product($geinsApi),
     wholesaleApi: repo.wholesale($geinsApi),
+    customersApi: repo.customers($geinsApi),
+    pricingApi: repo.pricing($geinsApi),
     userApi: repo.user($geinsApi),
     customerApi: repo.customer($geinsApi),
   };

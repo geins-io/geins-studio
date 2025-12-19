@@ -148,7 +148,73 @@ function previewPrice(
 ): Promise<PriceListProductPreviewResponse>;
 ```
 
-### `wholesaleApi`
+### `customersApi`
+
+Customer account management API for creating, updating, and managing customer accounts and buyers.
+
+#### `account`
+
+`customersApi.account`
+
+```ts
+function get(id: string, options?: CustomerAccountApiOptions): Promise<CustomerAccount>;
+function list(options?: CustomerAccountApiOptions): Promise<CustomerAccount[]>;
+function create(data: CustomerAccountCreate, options?: CustomerAccountApiOptions): Promise<CustomerAccount>;
+function update(id: string, data: CustomerAccountUpdate, options?: CustomerAccountApiOptions): Promise<CustomerAccount>;
+function delete(id: string): Promise<void>;
+```
+
+##### `tags`
+
+`customersApi.account.tags`
+
+```ts
+function get(): Promise<string[]>;
+```
+
+##### `id(accountId: string)`
+
+Has no methods itself but provides access to the following sub-repositories:
+
+###### `buyer`
+
+`customersApi.account.id(accountId).buyer`
+
+```ts
+function get(id: string): Promise<CustomerBuyer>;
+function list(): Promise<CustomerBuyer[]>;
+function create(data: CustomerBuyerCreate): Promise<CustomerBuyer>;
+function update(id: string, data: CustomerBuyerUpdate): Promise<CustomerBuyer>;
+function delete(id: string): Promise<void>;
+function assign(id: string): Promise<void>;
+```
+
+#### `validateVatNumber`
+
+`customersApi.validateVatNumber`
+
+```ts
+function validateVatNumber(vatNumber: string): Promise<CustomerVatValidation>;
+```
+
+### `pricingApi`
+
+Price list management API for creating and managing customer price lists.
+
+#### `priceList`
+
+`pricingApi.priceList`
+
+```ts
+function get(id: string): Promise<CustomerPriceList>;
+function list(): Promise<CustomerPriceList[]>;
+```
+
+### `wholesaleApi` (Deprecated)
+
+::: warning Deprecated
+Use `customersApi` for account management and `pricingApi` for price list operations instead.
+:::
 
 #### `account`
 
@@ -274,8 +340,10 @@ interface UseGeinsRepositoryReturnType {
   globalApi: ReturnType<typeof repo.global>;
   orderApi: ReturnType<typeof repo.order>;
   productApi: ReturnType<typeof repo.product>;
-  wholesaleApi: ReturnType<typeof repo.wholesale>;
+  customersApi: ReturnType<typeof repo.customers>;
+  pricingApi: ReturnType<typeof repo.pricing>;
   userApi: ReturnType<typeof repo.user>;
-  customerApi: ReturnType<typeof repo.customer>;
+  wholesaleApi: ReturnType<typeof repo.wholesale>; // Deprecated
+  customerApi: ReturnType<typeof repo.customer>; // Deprecated
 }
 ```

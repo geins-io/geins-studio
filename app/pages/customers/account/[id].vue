@@ -4,14 +4,14 @@
 // =====================================================================================
 import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
-import { useWholesale } from '@/composables/useWholesale';
-import { useWholesaleOrders } from '@/composables/useWholesaleOrders';
+import { useCustomers } from '@/composables/useCustomers';
+import { useCustomerOrders } from '@/composables/useCustomerOrders';
 import {
   DataItemDisplayType,
   TableMode,
   SelectorCondition,
-  type WholesaleAccountApiOptions,
-  type WholesaleBuyerList,
+  type CustomerAccountApiOptions,
+  type CustomerBuyerList,
 } from '#shared/types';
 import * as z from 'zod';
 import { LucidePackage, LucideUser } from 'lucide-vue-next';
@@ -19,8 +19,8 @@ import { LucidePackage, LucideUser } from 'lucide-vue-next';
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
-const scope = 'pages/wholesale/account/[id].vue';
-const { wholesaleApi } = useGeinsRepository();
+const scope = 'pages/customers/account/[id].vue';
+const { customersApi } = useGeinsRepository();
 const {
   hasValidatedVat,
   vatValid,
@@ -31,7 +31,7 @@ const {
   convertAccountGroupsToTags,
   validateVatNumber,
   getAddresses,
-} = useWholesale();
+} = useCustomers();
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog(scope);
 const accountStore = useAccountStore();
@@ -80,7 +80,7 @@ const formSchema = toTypedSchema(
 // =====================================================================================
 // ENTITY DATA SETUP
 // =====================================================================================
-const entityBase: WholesaleAccountCreate = {
+const entityBase: CustomerAccountCreate = {
   name: '',
   active: true,
   vatNumber: '',
@@ -180,13 +180,13 @@ const {
   parseAndSaveData,
   validateSteps,
 } = useEntityEdit<
-  WholesaleAccountBase,
-  WholesaleAccount,
-  WholesaleAccountCreate,
-  WholesaleAccountUpdate,
-  WholesaleAccountApiOptions
+  CustomerAccountBase,
+  CustomerAccount,
+  CustomerAccountCreate,
+  CustomerAccountUpdate,
+  CustomerAccountApiOptions
 >({
-  repository: wholesaleApi.account,
+  repository: customersApi.account,
   validationSchema: formSchema,
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
@@ -205,7 +205,7 @@ const {
       shipping: shippingAddress.value,
     },
   }),
-  parseEntityData: async (account: WholesaleAccount) => {
+  parseEntityData: async (account: CustomerAccount) => {
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     buyers.value = account.buyers || [];
     buyersList.value = account.buyers.map((buyer) => {
@@ -353,12 +353,12 @@ fetchUsers();
 // =====================================================================================
 // BUYERS MANAGEMENT
 // =====================================================================================
-const buyers = ref<WholesaleBuyer[]>([]);
-const buyersList = ref<WholesaleBuyerList[]>([]);
+const buyers = ref<CustomerBuyer[]>([]);
+const buyersList = ref<CustomerBuyerList[]>([]);
 const buyerPanelOpen = ref(false);
-const buyerToEdit = ref<WholesaleBuyerUpdate | undefined>();
+const buyerToEdit = ref<CustomerBuyerUpdate | undefined>();
 const buyerPanelMode = ref<'edit' | 'add'>('add');
-const columnOptions: ColumnOptions<WholesaleBuyerList> = {
+const columnOptions: ColumnOptions<CustomerBuyerList> = {
   columnTypes: {
     restrictToDedicatedPriceLists: 'default',
     priceLists: 'tooltip',
@@ -367,14 +367,14 @@ const columnOptions: ColumnOptions<WholesaleBuyerList> = {
     _id: t('person.email'),
     active: t('status'),
     restrictToDedicatedPriceLists: t(
-      'wholesale.product_access_restricted_label',
+      'customers.product_access_restricted_label',
     ),
   },
   excludeColumns: ['accountId'],
   sortable: false,
 };
 const { getColumns, addActionsColumn, orderAndFilterColumns } =
-  useColumns<WholesaleBuyerList>();
+  useColumns<CustomerBuyerList>();
 
 // Use computed for reactive columns
 const buyerColumns = computed(() => {
@@ -395,7 +395,7 @@ const buyerColumns = computed(() => {
   addActionsColumn(
     columns,
     {
-      onEdit: (entity: WholesaleBuyerList) => {
+      onEdit: (entity: CustomerBuyerList) => {
         buyerToEdit.value = buyers.value
           .map((buyer) => ({
             ...buyer,
@@ -424,24 +424,24 @@ watch(buyerPanelOpen, async (open) => {
 // =====================================================================================
 
 const { productApi } = useGeinsRepository();
-const addedPriceLists = ref<WholesalePriceList[]>([]);
+const addedPriceLists = ref<CustomerPriceList[]>([]);
 const addedPriceListsIds = computed(() => {
   return addedPriceLists.value.map((pl) => pl._id);
 });
-const allPriceLists = ref<WholesalePriceList[]>([]);
+const allPriceLists = ref<CustomerPriceList[]>([]);
 
 const {
   getColumns: getPriceListColumns,
   addActionsColumn: addPriceListActionsColumn,
-} = useColumns<WholesalePriceList>();
+} = useColumns<CustomerPriceList>();
 
-const columnOptionsPriceLists: ColumnOptions<WholesalePriceList> = {
+const columnOptionsPriceLists: ColumnOptions<CustomerPriceList> = {
   columnTypes: {
     name: 'link',
   },
   linkColumns: {
     name: {
-      url: '/wholesale/price-list/{id}',
+      url: '/pricing/price-list/{id}',
       idField: '_id',
     },
   },
@@ -464,7 +464,7 @@ const priceListColumns = computed(() => {
   addPriceListActionsColumn(
     columns,
     {
-      onDelete: (entity: WholesalePriceList) => {
+      onDelete: (entity: CustomerPriceList) => {
         removePriceList(entity._id);
       },
     },
@@ -474,8 +474,8 @@ const priceListColumns = computed(() => {
 });
 
 // SET COLUMN VISIBILITY STATE
-const { getVisibilityState } = useTable<WholesalePriceList>();
-const hiddenColumns: StringKeyOf<WholesalePriceList>[] = ['_id'];
+const { getVisibilityState } = useTable<CustomerPriceList>();
+const hiddenColumns: StringKeyOf<CustomerPriceList>[] = ['_id'];
 const visibilityState = getVisibilityState(hiddenColumns);
 
 const addPriceList = async (id: string) => {
@@ -527,7 +527,7 @@ if (!createMode.value) {
 // ORDERS MANAGEMENT
 // =====================================================================================
 
-const { ordersList, orderColumns, fetchOrders } = useWholesaleOrders();
+const { ordersList, orderColumns, fetchOrders } = useCustomerOrders();
 
 // =====================================================================================
 // ADDRESS MANAGEMENT
@@ -711,7 +711,7 @@ const summary = computed<DataItem[]>(() => {
   if (accountGroups.value.length) {
     const displayValue = accountGroups.value.join(', ');
     dataList.push({
-      label: t('wholesale.account_groups'),
+      label: t('customers.account_groups'),
       value: accountGroups.value,
       displayValue,
       displayType: DataItemDisplayType.Array,
@@ -724,16 +724,16 @@ const summary = computed<DataItem[]>(() => {
 const settingsSummary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   dataList.push({
-    label: t('wholesale.vat'),
+    label: t('customers.vat'),
     value: entityData.value?.exVat
-      ? t('wholesale.vat_true')
-      : t('wholesale.vat_false'),
+      ? t('customers.vat_true')
+      : t('customers.vat_false'),
   });
   dataList.push({
-    label: t('wholesale.product_access'),
+    label: t('customers.product_access'),
     value: entityData.value?.limitedProductAccess
-      ? t('wholesale.product_access_restricted')
-      : t('wholesale.product_access_all'),
+      ? t('customers.product_access_restricted')
+      : t('customers.product_access_all'),
   });
 
   return dataList;
@@ -743,7 +743,7 @@ const otherSummary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   if (entityData.value?.buyers?.length) {
     const displayValue = entityData.value.buyers
-      .map((buyer: WholesaleBuyer) => `${buyer.firstName} ${buyer.lastName}`)
+      .map((buyer: CustomerBuyer) => `${buyer.firstName} ${buyer.lastName}`)
       .join(', ');
     dataList.push({
       label: t('buyer', 2),
@@ -790,18 +790,15 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
-  const { data, error, refresh } = await useAsyncData<WholesaleAccount>(
+  const { data, error, refresh } = await useAsyncData<CustomerAccount>(
     entityFetchKey.value,
-    () => wholesaleApi.account.get(entityId.value, { fields: ['all'] }),
+    () => customersApi.account.get(entityId.value, { fields: ['all'] }),
   );
 
   refreshEntityData.value = refresh;
 
   onMounted(async () => {
-    const account = handleFetchResult<WholesaleAccount>(
-      error.value,
-      data.value,
-    );
+    const account = handleFetchResult<CustomerAccount>(error.value, data.value);
 
     // Parse and save initial data
     await parseAndSaveData(account);
@@ -818,7 +815,7 @@ if (!createMode.value) {
     const tagsData = ref<string[] | null>(null);
 
     try {
-      tagsData.value = await wholesaleApi.account.tags.get();
+      tagsData.value = await customersApi.account.tags.get();
     } catch (e) {
       geinsLogError('error fetching tags:', e);
     }
@@ -929,7 +926,7 @@ if (!createMode.value) {
               :total-steps="totalCreateSteps"
               :current-step="currentStep"
               :step-valid="formValid"
-              :title="$t('wholesale.account_details')"
+              :title="$t('customers.account_details')"
               @next="saveAccountDetails"
             >
               <FormGridWrap>
@@ -950,7 +947,7 @@ if (!createMode.value) {
                     name="details.vatNumber"
                   >
                     <FormItem>
-                      <FormLabel>{{ $t('wholesale.vat_number') }}</FormLabel>
+                      <FormLabel>{{ $t('customers.vat_number') }}</FormLabel>
                       <FormControl>
                         <Input
                           v-bind="componentField"
@@ -978,8 +975,8 @@ if (!createMode.value) {
                                     class="block max-w-[300px]"
                                     :keypath="
                                       vatValid
-                                        ? 'wholesale.vat_veis_valid'
-                                        : 'wholesale.vat_veis_invalid'
+                                        ? 'customers.vat_veis_valid'
+                                        : 'customers.vat_veis_invalid'
                                     "
                                     tag="span"
                                     scope="global"
@@ -989,7 +986,7 @@ if (!createMode.value) {
                                         class="underline underline-offset-2"
                                         href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
                                         target="_blank"
-                                        >{{ $t('wholesale.veis') }}</a
+                                        >{{ $t('customers.veis') }}</a
                                       >
                                     </template>
                                   </i18n-t>
@@ -1008,7 +1005,7 @@ if (!createMode.value) {
                   >
                     <FormItem>
                       <FormLabel :optional="true">{{
-                        $t('wholesale.external_id')
+                        $t('customers.external_id')
                       }}</FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="text" />
@@ -1063,7 +1060,7 @@ if (!createMode.value) {
                   <FormField v-slot="{ componentField }" name="details.tags">
                     <FormItem>
                       <FormLabel :optional="true">{{
-                        $t('wholesale.account_groups')
+                        $t('customers.account_groups')
                       }}</FormLabel>
                       <FormControl>
                         <FormInputTagsSearch
@@ -1087,7 +1084,7 @@ if (!createMode.value) {
               :step="2"
               :total-steps="totalCreateSteps"
               :current-step="currentStep"
-              :title="$t('wholesale.billing_shipping_addresses')"
+              :title="$t('customers.billing_shipping_addresses')"
               @previous="previousStep"
             >
               <Tabs default-value="billing">
@@ -1122,8 +1119,8 @@ if (!createMode.value) {
                   >
                     <ContentSwitch
                       :checked="!addShippingAddress"
-                      :label="$t('wholesale.same_as_billing')"
-                      :description="$t('wholesale.use_billing_as_shipping')"
+                      :label="$t('customers.same_as_billing')"
+                      :description="$t('customers.use_billing_as_shipping')"
                       @update:checked="addShippingAddress = !$event"
                     />
                     <ContentEditAddressPanel
@@ -1170,8 +1167,8 @@ if (!createMode.value) {
                   />
                   <ContentSwitch
                     v-model:checked="addShippingAddress"
-                    :label="$t('wholesale.add_different_shipping')"
-                    :description="$t('wholesale.activate_different_shipping')"
+                    :label="$t('customers.add_different_shipping')"
+                    :description="$t('customers.activate_different_shipping')"
                   >
                     <ContentAddressForm
                       form-input-prefix="addresses"
@@ -1206,10 +1203,10 @@ if (!createMode.value) {
               v-if="currentTab === 1"
               :create-mode="createMode"
               :title="t('buyer', 2)"
-              :description="$t('wholesale.buyers_description')"
+              :description="$t('customers.buyers_description')"
             >
               <template #header-action>
-                <WholesaleBuyerPanel
+                <CustomerBuyerPanel
                   v-model:open="buyerPanelOpen"
                   :mode="buyerPanelMode"
                   :buyer="buyerToEdit"
@@ -1225,7 +1222,7 @@ if (!createMode.value) {
                   >
                     {{ $t('add_entity', { entityName: 'buyer' }) }}
                   </ButtonIcon>
-                </WholesaleBuyerPanel>
+                </CustomerBuyerPanel>
               </template>
               <div>
                 <TableView
@@ -1250,7 +1247,7 @@ if (!createMode.value) {
             <ContentEditCard
               :create-mode="createMode"
               :title="t('price_list', 2)"
-              :description="t('wholesale.price_lists_description')"
+              :description="t('customers.price_lists_description')"
             >
               <template #header-action>
                 <SelectorQuickAdd
@@ -1286,7 +1283,7 @@ if (!createMode.value) {
             <ContentEditCard
               :create-mode="createMode"
               :title="t('order', 2)"
-              :description="$t('wholesale.orders_description')"
+              :description="$t('customers.orders_description')"
             >
               <div>
                 <TableView
@@ -1310,26 +1307,26 @@ if (!createMode.value) {
             <ContentEditCard :create-mode="false" :title="t('settings')">
               <div class="space-y-4">
                 <ContentCardHeader
-                  :title="t('wholesale.product_access')"
-                  :description="t('wholesale.product_access_description')"
+                  :title="t('customers.product_access')"
+                  :description="t('customers.product_access_description')"
                   size="md"
                 />
                 <ContentSwitch
                   v-model:checked="entityDataUpdate.limitedProductAccess"
-                  :label="t('wholesale.product_access_restrict_label')"
+                  :label="t('customers.product_access_restrict_label')"
                   :description="
-                    t('wholesale.product_access_restrict_description')
+                    t('customers.product_access_restrict_description')
                   "
                 />
                 <ContentCardHeader
-                  :title="t('wholesale.vat_settings')"
-                  :description="t('wholesale.vat_settings_description')"
+                  :title="t('customers.vat_settings')"
+                  :description="t('customers.vat_settings_description')"
                   size="md"
                 />
                 <ContentSwitch
                   v-model:checked="entityDataUpdate.exVat"
-                  :label="t('wholesale.vat_included_label')"
-                  :description="t('wholesale.vat_included_description')"
+                  :label="t('customers.vat_included_label')"
+                  :description="t('customers.vat_included_description')"
                 />
               </div>
             </ContentEditCard>
@@ -1346,7 +1343,7 @@ if (!createMode.value) {
                   class="text-muted-foreground flex items-center justify-between gap-2 text-right"
                 >
                   <span class="text-foreground text-left font-bold">
-                    {{ t('wholesale.vat_number') }}:
+                    {{ t('customers.vat_number') }}:
                   </span>
                   <ContentTextTooltip
                     :trigger-class="
@@ -1363,8 +1360,8 @@ if (!createMode.value) {
                           class="block max-w-[300px]"
                           :keypath="
                             vatValid
-                              ? 'wholesale.vat_veis_valid'
-                              : 'wholesale.vat_veis_invalid'
+                              ? 'customers.vat_veis_valid'
+                              : 'customers.vat_veis_invalid'
                           "
                           tag="span"
                           scope="global"
@@ -1374,7 +1371,7 @@ if (!createMode.value) {
                               class="underline underline-offset-2"
                               href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
                               target="_blank"
-                              >{{ $t('wholesale.veis') }}</a
+                              >{{ $t('customers.veis') }}</a
                             >
                           </template>
                         </i18n-t>
@@ -1382,7 +1379,7 @@ if (!createMode.value) {
                       <ContentDataList
                         v-if="vatValid"
                         class="block max-w-[300px] pb-2"
-                        :label="t('wholesale.vat_validation_summary_label')"
+                        :label="t('customers.vat_validation_summary_label')"
                         :data-list="vatValidationSummary"
                       />
                     </template>

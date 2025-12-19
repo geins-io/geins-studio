@@ -20,9 +20,11 @@ import {
   LucideSettings,
   LucideShieldCheck,
   LucideTag,
-  LucideUser,
+  LucideUsers,
   LucideWallet,
   LucideWarehouse,
+  LucidePackage,
+  Package,
 } from 'lucide-vue-next';
 
 const { state, isMobile, setOpenMobile } = useSidebar();
@@ -46,7 +48,7 @@ const iconComponents = {
   ChartLine: LucideChartLine,
   Tag: LucideTag,
   Brush: LucideBrush,
-  User: LucideUser,
+  Users: LucideUsers,
   Warehouse: LucideWarehouse,
   Layers: LucideLayers,
   Wallet: LucideWallet,
@@ -54,6 +56,7 @@ const iconComponents = {
   Import: LucideImport,
   Settings: LucideSettings,
   ShieldCheck: LucideShieldCheck,
+  Package: LucidePackage,
 };
 
 // Process navigation items to include icon components
@@ -91,7 +94,7 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
     <!-- Main Navigation Content -->
     <SidebarContent>
       <SidebarGroup>
-        <SidebarGroupLabel>Administration</SidebarGroupLabel>
+        <SidebarGroupLabel>Workspace</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in navigationMenu" :key="item.label">

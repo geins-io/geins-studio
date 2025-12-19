@@ -22,7 +22,7 @@ const { getPriceListProduct, getNewPriceListProducts } = usePriceListProducts();
 const { productApi } = useGeinsRepository();
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogError } = useGeinsLog('pages/wholesale/price-list/[id].vue');
+const { geinsLogError } = useGeinsLog('pages/pricing/price-list/[id].vue');
 
 const open = defineModel<boolean>('open');
 const propRules = toRef(props, 'rules');
@@ -160,18 +160,18 @@ const handleRemove = async (rule: PriceListRule) => {
     </SheetTrigger>
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>{{ $t('wholesale.price_list_volume_pricing') }}</SheetTitle>
+        <SheetTitle>{{ $t('pricing.price_list_volume_pricing') }}</SheetTitle>
         <SheetDescription>
-          {{ $t('wholesale.price_list_volume_pricing_sheet_description') }}
+          {{ $t('pricing.price_list_volume_pricing_sheet_description') }}
           <strong>{{ productName }}</strong>
         </SheetDescription>
       </SheetHeader>
       <SheetBody>
         <ContentCardHeader
           size="sm"
-          :title="$t('wholesale.price_list_global_volume_pricing')"
+          :title="$t('pricing.price_list_global_volume_pricing')"
           :description="
-            $t('wholesale.price_list_global_volume_pricing_description')
+            $t('pricing.price_list_global_volume_pricing_description')
           "
           class="mb-4"
         />
@@ -184,13 +184,13 @@ const handleRemove = async (rule: PriceListRule) => {
           :currency="currency"
         />
         <p v-else class="text-muted-foreground text-sm italic">
-          {{ $t('wholesale.price_list_no_global_breaks') }}
+          {{ $t('pricing.price_list_no_global_breaks') }}
         </p>
         <ContentCardHeader
           size="sm"
-          :title="$t('wholesale.price_list_product_volume_pricing')"
+          :title="$t('pricing.price_list_product_volume_pricing')"
           :description="
-            $t('wholesale.price_list_product_volume_pricing_description')
+            $t('pricing.price_list_product_volume_pricing_description')
           "
           class="mt-6 mb-4"
         />

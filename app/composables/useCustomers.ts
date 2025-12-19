@@ -1,10 +1,10 @@
 /**
- * Composable for wholesale API operations, supporting both reactive and imperative usage
+ * Composable for customer API operations, supporting both reactive and imperative usage
  */
 import { useToast } from '@/components/ui/toast/use-toast';
-import type { WholesaleVatValidation } from '#shared/types';
+import type { CustomerVatValidation } from '#shared/types';
 
-interface UseWholesaleReturnType {
+interface UseCustomersReturnType {
   deleteAccount: (id?: string, entityName?: string) => Promise<boolean>;
   extractAccountGroupsfromTags: (tags: string[]) => string[];
   convertAccountGroupsToTags: (accountGroups: string[]) => string[];
@@ -12,7 +12,7 @@ interface UseWholesaleReturnType {
   vatValid: Readonly<Ref<boolean>>;
   vatValidating: Readonly<Ref<boolean>>;
   vatNumberValidated: Readonly<Ref<string>>;
-  vatValidation: Readonly<Ref<WholesaleVatValidation | undefined>>;
+  vatValidation: Readonly<Ref<CustomerVatValidation | undefined>>;
   vatValidationSummary: Ref<DataItem[]>;
   validateVatNumber: (vatNumber: string) => Promise<void>;
   getAddresses: (
@@ -22,14 +22,14 @@ interface UseWholesaleReturnType {
 }
 
 /**
- * Composable for wholesale API operations, supporting both reactive and imperative usage.
+ * Composable for customer API operations, supporting both reactive and imperative usage.
  *
- * Provides comprehensive utilities for wholesale operations including account management,
+ * Provides comprehensive utilities for customer operations including account management,
  * VAT validation, address handling, and tag/group conversions.
  *
- * @returns {UseWholesaleReturnType} - An object containing wholesale utilities and state
- * @property {object} wholesaleApi - Wholesale API repository instance
- * @property {function} deleteAccount - Deletes a wholesale account with confirmation
+ * @returns {UseCustomersReturnType} - An object containing customer utilities and state
+ * @property {object} customersApi - Customers API repository instance
+ * @property {function} deleteAccount - Deletes a customer account with confirmation
  * @property {function} extractAccountGroupsfromTags - Extracts account groups from tag array
  * @property {function} convertAccountGroupsToTags - Converts account groups to tag format
  * @property {Readonly<Ref<boolean>>} hasValidatedVat - Whether VAT validation has been performed
@@ -41,14 +41,14 @@ interface UseWholesaleReturnType {
  * @property {function} validateVatNumber - Validates a VAT number against VEIS
  * @property {function} getAddresses - Formats billing and shipping addresses for API
  */
-export const useWholesale = (): UseWholesaleReturnType => {
+export const useCustomers = (): UseCustomersReturnType => {
   const { toast } = useToast();
   const { t } = useI18n();
   const { geinsLogError, geinsLogInfo } = useGeinsLog(
-    'composables/useWholesale.ts',
+    'composables/useCustomers.ts',
   );
 
-  const { wholesaleApi } = useGeinsRepository();
+  const { customersApi } = useGeinsRepository();
 
   // =====================================================================================
   // ACCOUNT MANAGEMENT
@@ -61,7 +61,7 @@ export const useWholesale = (): UseWholesaleReturnType => {
       if (!id) {
         throw new Error('ID is required for deletion');
       }
-      await wholesaleApi.account.delete(id);
+      await customersApi.account.delete(id);
       toast({
         title: t('entity_deleted', { entityName }),
         variant: 'positive',
@@ -113,7 +113,7 @@ export const useWholesale = (): UseWholesaleReturnType => {
   const vatValid = ref(false);
   const vatValidating = ref(false);
   const vatNumberValidated = ref('');
-  const vatValidation = ref<WholesaleVatValidation>();
+  const vatValidation = ref<CustomerVatValidation>();
   const vatValidationSummary = ref<DataItem[]>([]);
 
   const validateVatNumber = async (vatNumber: string) => {
@@ -122,7 +122,7 @@ export const useWholesale = (): UseWholesaleReturnType => {
     }
     vatValidating.value = true;
     try {
-      vatValidation.value = await wholesaleApi.validateVatNumber(vatNumber);
+      vatValidation.value = await customersApi.validateVatNumber(vatNumber);
       if (vatValidation.value) {
         vatValidationSummary.value = Object.keys(vatValidation.value)
           .filter((key) => {
@@ -131,7 +131,7 @@ export const useWholesale = (): UseWholesaleReturnType => {
           .map((key) => ({
             label: key === 'address' ? t(`${key}.title`) : t(key),
             value:
-              vatValidation.value?.[key as keyof WholesaleVatValidation] ?? '',
+              vatValidation.value?.[key as keyof CustomerVatValidation] ?? '',
           }));
       }
       vatValid.value = vatValidation.value.valid;

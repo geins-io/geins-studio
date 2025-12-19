@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TableMode, type WholesaleAccount } from '#shared/types';
+import { TableMode, type CustomerAccount } from '#shared/types';
 import { LucidePackage } from 'lucide-vue-next';
 
 definePageMeta({
@@ -7,12 +7,12 @@ definePageMeta({
   title: 'Welcome to Geins Studio',
 });
 
-const { wholesaleApi } = useGeinsRepository();
-const { ordersList, orderColumns, fetchOrders } = useWholesaleOrders();
+const { customersApi } = useGeinsRepository();
+const { ordersList, orderColumns, fetchOrders } = useCustomerOrders();
 
-const { data: allAccounts, error } = await useAsyncData<WholesaleAccount[]>(
-  'wholesale-accounts',
-  () => wholesaleApi.account.list({ fields: ['salesreps', 'buyers'] }),
+const { data: allAccounts, error } = await useAsyncData<CustomerAccount[]>(
+  'customer-accounts',
+  () => customersApi.account.list({ fields: ['salesreps', 'buyers'] }),
 );
 
 if (!allAccounts.value || error.value) {
@@ -62,8 +62,8 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       <div>
         <div class="mt-6 mb-6 sm:mt-10">
           <ContentCardHeader
-            title="Wholesale - Quick Access"
-            description="Quick access to key wholesale features like account management, pricing, and product access."
+            title="Quick Access"
+            description="Quick access to key features like customer account management, pricing, and product access."
             size="md"
           />
         </div>
@@ -72,32 +72,32 @@ breadcrumbsStore.setShowBreadcrumbs(false);
         <div class="grid grid-cols-1 gap-4 @2xl:grid-cols-2 @6xl:grid-cols-4">
           <ContentLinkCard
             title="Create a new account"
-            description="Manage existing wholesale accounts"
-            link="/wholesale/account/new"
+            description="Create a new customer account"
+            link="/customers/account/new"
             linkType="create"
           />
 
           <!-- Accounts card -->
           <ContentLinkCard
             title="Accounts"
-            description="Manage existing wholesale accounts"
-            link="/wholesale/account/list"
+            description="Manage existing customer accounts"
+            link="/customers/account/list"
             linkType="list"
           />
 
           <!-- Create a new price list card -->
           <ContentLinkCard
             title="Create a new price list"
-            description="Manage existing wholesale accounts"
-            link="/wholesale/price-list/new"
+            description="Create a new price list"
+            link="/pricing/price-list/new"
             linkType="create"
           />
 
           <!-- Price lists card -->
           <ContentLinkCard
             title="Price lists"
-            description="Manage existing wholesale accounts"
-            link="/wholesale/price-list/list"
+            description="Manage existing price lists"
+            link="/pricing/price-list/list"
             linkType="list"
           />
         </div>
@@ -107,8 +107,8 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       <div>
         <div class="mt-10 mb-6">
           <ContentCardHeader
-            title="Latest wholesale orders"
-            description="The most recent orders placed by buyers linked to a wholesale account."
+            title="Latest customer orders"
+            description="The most recent orders placed by buyers linked to a customer account."
             size="md"
           />
         </div>

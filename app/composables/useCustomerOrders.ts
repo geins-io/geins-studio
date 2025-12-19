@@ -1,63 +1,63 @@
 import type {
-  WholesaleOrder,
+  CustomerOrder,
   Order,
   ColumnOptions,
   OrderBatchQuery,
   BatchQueryResult,
-  WholesalePriceList,
-  WholesaleAccount,
-  WholesaleBuyer,
+  CustomerPriceList,
+  CustomerAccount,
+  CustomerBuyer,
 } from '#shared/types';
 import type { ColumnDef } from '@tanstack/vue-table';
 
-interface UseWholesaleOrdersReturnType {
-  ordersList: Ref<WholesaleOrder[]>;
-  orderColumns: ComputedRef<ColumnDef<WholesaleOrder>[]>;
-  columnOptionsOrders: ColumnOptions<WholesaleOrder>;
+interface UseCustomerOrdersReturnType {
+  ordersList: Ref<CustomerOrder[]>;
+  orderColumns: ComputedRef<ColumnDef<CustomerOrder>[]>;
+  columnOptionsOrders: ColumnOptions<CustomerOrder>;
   fetchOrders: (
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
-    allPriceLists?: WholesalePriceList[],
-    allAccounts?: WholesaleAccount[],
-    allBuyers?: WholesaleBuyer[],
+    allPriceLists?: CustomerPriceList[],
+    allAccounts?: CustomerAccount[],
+    allBuyers?: CustomerBuyer[],
   ) => Promise<void>;
   transformOrdersForList: (
     orders: Order[],
-    allPriceLists?: WholesalePriceList[],
-    allAccounts?: WholesaleAccount[],
-    allBuyers?: WholesaleBuyer[],
-  ) => WholesaleOrder[];
-  getBuyerNameByEmail: (email: string, allBuyers: WholesaleBuyer[]) => string;
+    allPriceLists?: CustomerPriceList[],
+    allAccounts?: CustomerAccount[],
+    allBuyers?: CustomerBuyer[],
+  ) => CustomerOrder[];
+  getBuyerNameByEmail: (email: string, allBuyers: CustomerBuyer[]) => string;
 }
 
 /**
- * Composable for managing wholesale orders data and table display.
+ * Composable for managing customer orders data and table display.
  *
- * Provides utilities for fetching, transforming, and displaying wholesale orders
+ * Provides utilities for fetching, transforming, and displaying customer orders
  * with proper formatting, column configuration, and reactive state management.
  *
- * @returns {UseWholesaleOrdersReturnType} - An object containing wholesale orders state and utilities
- * @property {Ref<WholesaleOrder[]>} ordersList - Reactive list of wholesale orders
+ * @returns {UseCustomerOrdersReturnType} - An object containing customer orders state and utilities
+ * @property {Ref<CustomerOrder[]>} ordersList - Reactive list of customer orders
  * @property {ComputedRef} orderColumns - Computed column definitions for orders table
  * @property {object} columnOptionsOrders - Column configuration options for orders
  * @property {function} fetchOrders - Fetches orders from API with filtering and transformation
  * @property {function} transformOrdersForList - Transforms API orders to display format
  * @property {function} getBuyerNameByEmail - Gets buyer display name by email or returns email if not found
  */
-export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
+export const useCustomerOrders = (): UseCustomerOrdersReturnType => {
   const { orderApi } = useGeinsRepository();
   const { t } = useI18n();
   const accountStore = useAccountStore();
   const { convertToPrice } = usePrice();
-  const { getColumns: getOrderColumns } = useColumns<WholesaleOrder>();
+  const { getColumns: getOrderColumns } = useColumns<CustomerOrder>();
   const { batchQueryNoPagination } = useBatchQuery();
-  const { geinsLogError } = useGeinsLog('composables/useWholesaleOrders.ts');
+  const { geinsLogError } = useGeinsLog('composables/useCustomerOrders.ts');
 
   // Reactive state
-  const ordersList = ref<WholesaleOrder[]>([]);
+  const ordersList = ref<CustomerOrder[]>([]);
 
   // Column configuration for orders table
-  const columnOptionsOrders: ColumnOptions<WholesaleOrder> = {
+  const columnOptionsOrders: ColumnOptions<CustomerOrder> = {
     columnTitles: {
       sumIncVat: 'Sum (inc vat)',
       sumExVat: 'Sum (ex vat)',
@@ -81,7 +81,7 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
 
   const getBuyerNameByEmail = (
     email: string,
-    allBuyers: WholesaleBuyer[],
+    allBuyers: CustomerBuyer[],
   ): string => {
     const buyer = allBuyers.find((b) => b._id === email);
     if (buyer) {
@@ -93,10 +93,10 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
   // Transform orders from API format to display format
   const transformOrdersForList = (
     orders: Order[],
-    allPriceLists?: WholesalePriceList[],
-    allAccounts?: WholesaleAccount[],
-    allBuyers?: WholesaleBuyer[],
-  ): WholesaleOrder[] => {
+    allPriceLists?: CustomerPriceList[],
+    allAccounts?: CustomerAccount[],
+    allBuyers?: CustomerBuyer[],
+  ): CustomerOrder[] => {
     return orders.map((order) => ({
       _id: order._id,
       created: order.dateCreated,
@@ -121,7 +121,7 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
         }),
       }),
       ...(allAccounts && {
-        wholesaleAccount: getEntityNameById(
+        customerAccount: getEntityNameById(
           order.wholesaleAccountId,
           allAccounts,
         ),
@@ -130,13 +130,13 @@ export const useWholesaleOrders = (): UseWholesaleOrdersReturnType => {
     }));
   };
 
-  // Fetch orders for a specific wholesale account
+  // Fetch orders for a specific customer account
   const fetchOrders = async (
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
-    allPriceLists?: WholesalePriceList[],
-    allAccounts?: WholesaleAccount[],
-    allBuyers?: WholesaleBuyer[],
+    allPriceLists?: CustomerPriceList[],
+    allAccounts?: CustomerAccount[],
+    allBuyers?: CustomerBuyer[],
   ): Promise<void> => {
     try {
       const ordersData = ref<BatchQueryResult<Order> | null>(null);

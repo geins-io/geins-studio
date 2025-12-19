@@ -29,25 +29,53 @@ export const getNavigation = (): NavigationItem[] => {
     //   // Visible to all authenticated users
     // },
     {
-      label: t('navigation.wholesale'),
-      href: '/wholesale/account/list',
-      icon: 'Building2',
+      label: t('navigation.pricing'),
+      href: '/pricing/price-list/list',
+      icon: 'Tag',
       group: 'sales',
       // TODO: Add roles when auth system is ready
-      // roles: ['admin', 'wholesale_manager'],
-      // permissions: ['wholesale.read'],
+      // roles: ['admin', 'pricing_manager'],
+      // permissions: ['pricing.read'],
+      children: [
+        {
+          label: t('navigation.price_lists'),
+          href: '/pricing/price-list/list',
+          childPattern: '/pricing/price-list/:id',
+          // permissions: ['pricing.pricelists.read'],
+        },
+      ],
+    },
+    {
+      label: t('navigation.customers'),
+      href: '/customers/account/list',
+      icon: 'Users',
+      group: 'sales',
+      // TODO: Add roles when auth system is ready
+      // roles: ['admin', 'customer_manager'],
+      // permissions: ['customers.read'],
       children: [
         {
           label: t('navigation.accounts'),
-          href: '/wholesale/account/list',
-          childPattern: '/wholesale/account/:id', // Matches detail pages like /wholesale/account/123
-          // permissions: ['wholesale.accounts.read'],
+          href: '/customers/account/list',
+          childPattern: '/customers/account/:id',
+          // permissions: ['customers.accounts.read'],
         },
+      ],
+    },
+    {
+      label: t('navigation.orders'),
+      href: '/orders/quotations/list',
+      icon: 'Package',
+      group: 'sales',
+      // TODO: Add roles when auth system is ready
+      // roles: ['admin', 'order_manager'],
+      // permissions: ['orders.read'],
+      children: [
         {
-          label: t('navigation.price_lists'),
-          href: '/wholesale/price-list/list',
-          childPattern: '/wholesale/price-list/:id', // Matches detail pages like /wholesale/price-list/456
-          // permissions: ['wholesale.pricelists.read'],
+          label: t('navigation.quotations'),
+          href: '/orders/quotations/list',
+          childPattern: '/orders/quotations/:id',
+          // permissions: ['orders.quotations.read'],
         },
       ],
     },

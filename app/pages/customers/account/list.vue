@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import type { ColumnOptions, StringKeyOf } from '#shared/types';
+import type {
+  ColumnOptions,
+  StringKeyOf,
+  CustomerAccountList,
+} from '#shared/types';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
-import { useToast } from '@/components/ui/toast/use-toast';
+type Entity = CustomerAccount;
+type EntityList = CustomerAccountList;
 
-type Entity = ProductPriceList;
-type EntityList = ProductPriceList;
-
-const scope = 'pages/wholesale/price-list/list.vue';
+const scope = 'pages/customers/account/list.vue';
 const { t } = useI18n();
-const { geinsLogError } = useGeinsLog(scope);
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
 definePageMeta({
@@ -16,7 +17,8 @@ definePageMeta({
 });
 
 // GLOBAL SETUP
-const { productApi } = useGeinsRepository();
+const { customersApi } = useGeinsRepository();
+const { deleteAccount, extractAccountGroupsfromTags } = useCustomers();
 const dataList = ref<EntityList[]>([]);
 const entityName = getEntityName();
 const newEntityUrl = getEntityNewUrl();
@@ -26,25 +28,63 @@ const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
 
-const { handleFetchResult, showErrorToast } = usePageError({
+const { handleFetchResult } = usePageError({
   entityName,
   entityList: true,
   scope,
 });
 
 // Add the mapping function
-const mapToListData = (list: Entity[]): EntityList[] => {
-  return list.map((item) => {
+const mapToListData = (accounts: Entity[]): EntityList[] => {
+  return accounts.map((account) => {
+    const groups = extractAccountGroupsfromTags(account.tags);
+
+    const accountGroups = createTooltip({
+      items: groups,
+      entityName: 'account_group',
+      formatter: (group) => `${group}`,
+      t,
+    });
+
+    const buyers = createTooltip({
+      items: account.buyers,
+      entityName: 'buyer',
+      formatter: (buyer) =>
+        `${buyer.firstName} ${buyer.lastName} (${buyer._id})`,
+      t,
+    });
+
+    const salesReps = createTooltip({
+      items: account.salesReps,
+      entityName: 'sales_rep',
+      formatter: (salesRep) => `${salesRep?.firstName} ${salesRep?.lastName}`,
+      t,
+    });
+
+    const priceLists = createTooltip({
+      items: account.priceLists,
+      entityName: 'price_list',
+      formatter: (priceList) => `${priceList?.name}`,
+      t,
+    });
+
     return {
-      ...item,
+      ...account,
+      accountGroups,
+      salesReps,
+      buyers,
+      priceLists,
     };
   });
 };
 
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(
-  'wholesale-price-lists-list',
-  () => productApi.priceList.list(),
+  'customer-accounts-list',
+  () =>
+    customersApi.account.list({
+      fields: ['salesreps', 'buyers', 'pricelists'],
+    }),
 );
 
 onMounted(() => {
@@ -61,12 +101,21 @@ onMounted(() => {
 
   // SET UP COLUMN OPTIONS FOR ENTITY
   const columnOptions: ColumnOptions<EntityList> = {
-    columnTypes: { name: 'link', channel: 'channels' },
+    columnTypes: {
+      name: 'link',
+      buyers: 'tooltip',
+      salesReps: 'tooltip',
+      accountGroups: 'tooltip',
+      priceLists: 'tooltip',
+    },
     linkColumns: {
       name: { url: entityUrl, idField: '_id' },
     },
-    columnTitles: { active: t('status') },
-    excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
+    columnTitles: {
+      active: t('status'),
+      limitedProductAccess: t('customers.product_access_restricted_label'),
+    },
+    excludeColumns: ['meta', 'addresses', 'tags'],
   };
   // GET AND SET COLUMNS
   const { getColumns, addActionsColumn } = useColumns<EntityList>();
@@ -82,35 +131,18 @@ onMounted(() => {
     'actions',
     ['edit', 'delete'],
   );
+
+  // SET COLUMN VISIBILITY STATE
+  const { getVisibilityState } = useTable<EntityList>();
+  const hiddenColumns: StringKeyOf<EntityList>[] = [
+    'externalId',
+    'exVat',
+    'limitedProductAccess',
+  ];
+  visibilityState.value = getVisibilityState(hiddenColumns);
+
   loading.value = false;
 });
-
-// SET COLUMN VISIBILITY STATE
-const { getVisibilityState } = useTable<EntityList>();
-const hiddenColumns: StringKeyOf<EntityList>[] = [];
-visibilityState.value = getVisibilityState(hiddenColumns);
-
-const { toast } = useToast();
-const deletePriceList = async (
-  id?: string,
-  entityName?: string,
-): Promise<boolean> => {
-  try {
-    if (!id) {
-      throw new Error('ID is required for deletion');
-    }
-    await productApi.priceList.delete(id);
-    toast({
-      title: t('entity_deleted', { entityName }),
-      variant: 'positive',
-    });
-    return true;
-  } catch (error) {
-    geinsLogError('deletePriceList :::', getErrorMessage(error));
-    showErrorToast(t('entity_delete_failed', { entityName }));
-    return false;
-  }
-};
 
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);
@@ -122,13 +154,15 @@ const openDeleteDialog = async (id?: string) => {
 };
 const confirmDelete = async () => {
   deleting.value = true;
-  const success = await deletePriceList(deleteId.value, entityName);
+  const success = await deleteAccount(deleteId.value, entityName);
   if (success) {
     refresh();
   }
   deleting.value = false;
   deleteDialogOpen.value = false;
 };
+// SET UP SEARCHABLE FIELDS
+const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
 </script>
 
 <template>
@@ -152,6 +186,7 @@ const confirmDelete = async () => {
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
+      :searchable-fields="searchableFields"
     >
       <template #empty-actions>
         <ButtonIcon

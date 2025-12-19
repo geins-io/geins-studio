@@ -27,7 +27,7 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
 
   /**
    * Check if a path matches a childPattern
-   * Example: '/wholesale/account/:id' matches '/wholesale/account/123'
+   * Example: '/customers/account/:id' matches '/customers/account/123'
    */
   const matchesChildPattern = (path: string, pattern: string): boolean => {
     const patternSegments = pattern.split('/');
@@ -71,7 +71,7 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
     // Check if path matches any childPattern
     const matchesPattern = itemsWithPatterns.some((item) => {
       // Don't match if the path is the exact href of the navigation item
-      // (e.g., /wholesale/account/list should NOT match the childPattern)
+      // (e.g., /customers/account/list should NOT match the childPattern)
       if (currentPath === item.href) {
         return false;
       }
