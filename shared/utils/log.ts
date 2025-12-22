@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import chalk from 'chalk';
+import { toRaw, isRef, isReactive } from 'vue';
 import type { LogMethod, GeinsLogger } from '#shared/types';
 
 /**
@@ -17,9 +18,23 @@ export function log(scope?: string, debug: boolean = false): GeinsLogger {
 
   const createLogger = (method: LogMethod, alwaysLog: boolean = false) => {
     return (message: any, ...args: any[]) => {
-      args.map((arg) => {
+      // Unwrap reactive Vue objects before stringifying to avoid reactivity warnings
+      const processedArgs = args.map((arg) => {
         if (typeof arg === 'object' && arg !== null) {
-          return JSON.parse(JSON.stringify(arg));
+          // Handle Vue refs and reactive objects
+          let rawArg = arg;
+          if (isRef(arg)) {
+            rawArg = arg.value;
+          }
+          if (isReactive(arg) || isReactive(rawArg)) {
+            rawArg = toRaw(rawArg);
+          }
+          try {
+            return JSON.parse(JSON.stringify(rawArg));
+          } catch {
+            // If stringify fails (circular reference, etc.), return the raw value
+            return rawArg;
+          }
         }
         return arg;
       });
@@ -36,10 +51,10 @@ export function log(scope?: string, debug: boolean = false): GeinsLogger {
           : message;
         console[method](
           `${chalk.bgWhite.bold.red(' geins ')} ${formattedMessage}`,
-          ...args,
+          ...processedArgs,
         );
       } else {
-        console[method](logTag, logStyle, formattedMessage, ...args);
+        console[method](logTag, logStyle, formattedMessage, ...processedArgs);
       }
     };
   };

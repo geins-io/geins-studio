@@ -22,6 +22,7 @@ import {
 // =====================================================================================
 const scope = 'pages/pricing/price-list/[id].vue';
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog(scope);
@@ -472,7 +473,7 @@ const copyEntity = async () => {
       const currentPath = route.path;
       const newPath = currentPath.replace(entityId.value, result._id);
       await parseAndSaveData(result, false);
-      await useRouter().replace(newPath);
+      await router.replace(newPath);
       toast({
         title: t('entity_copied', { entityName }),
         variant: 'positive',
