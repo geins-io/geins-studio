@@ -26,7 +26,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('components/CustomerBuyerPanel.vue');
-const { customersApi, customerApi } = useGeinsRepository();
+const { customerApi } = useGeinsRepository();
 
 const entityName = 'buyer';
 
@@ -88,7 +88,7 @@ const checkCustomerExists = async (email: string) => {
 
   isChecking.value = true;
   try {
-    existingCustomer.value = await customerApi.get(email);
+    existingCustomer.value = await customerApi.customer.get(email);
     buyerExistsAsCustomer.value = true;
   } catch (error) {
     const status = getErrorStatus(error);
@@ -184,20 +184,20 @@ const handleSave = async () => {
 
     if (props.mode === 'edit') {
       // Just updating an existing buyer
-      await customersApi.account
+      await customerApi.account
         .id(props.accountId)
         .buyer.update(id, newBuyer.value);
     } else if (buyerExistsAsCustomer.value) {
       // Customer exists, so assign and update
-      await customersApi.account
+      await customerApi.account
         .id(props.accountId)
         .buyer.assign(newBuyer.value._id);
-      await customersApi.account
+      await customerApi.account
         .id(props.accountId)
         .buyer.update(id, newBuyer.value);
     } else {
       // Create a new buyer
-      await customersApi.account
+      await customerApi.account
         .id(props.accountId)
         .buyer.create(newBuyer.value);
     }
@@ -230,7 +230,7 @@ const handleRemoveClick = async () => {
 const removeBuyer = async (id: string = buyerId.value) => {
   isDeleting.value = true;
   try {
-    await customersApi.account.id(props.accountId).buyer.delete(id);
+    await customerApi.account.id(props.accountId).buyer.delete(id);
   } catch (error) {
     const message = getErrorMessage(error);
     geinsLogError('error removing buyer:', message);

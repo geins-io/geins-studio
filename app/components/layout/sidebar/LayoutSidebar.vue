@@ -24,7 +24,6 @@ import {
   LucideWallet,
   LucideWarehouse,
   LucidePackage,
-  Package,
 } from 'lucide-vue-next';
 
 const { state, isMobile, setOpenMobile } = useSidebar();

@@ -19,7 +19,7 @@ const quotation = ref(null);
   <div>
     <ContentHeader :title="t('quotation') + ' ' + quotationId" />
     <ContentCard>
-      <p class="text-muted-foreground">{{ t('coming_soon') }}</p>
+      <p class="text-muted-foreground">Coming soon..</p>
     </ContentCard>
   </div>
 </template>

@@ -17,8 +17,8 @@ definePageMeta({
 });
 
 // GLOBAL SETUP
-const { customersApi } = useGeinsRepository();
-const { deleteAccount, extractAccountGroupsfromTags } = useCustomers();
+const { customerApi } = useGeinsRepository();
+const { deleteAccount, extractAccountGroupsfromTags } = useCustomerAccounts();
 const dataList = ref<EntityList[]>([]);
 const entityName = getEntityName();
 const newEntityUrl = getEntityNewUrl();
@@ -82,7 +82,7 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
 const { data, error, refresh } = await useAsyncData<Entity[]>(
   'customer-accounts-list',
   () =>
-    customersApi.account.list({
+    customerApi.account.list({
       fields: ['salesreps', 'buyers', 'pricelists'],
     }),
 );

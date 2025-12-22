@@ -101,7 +101,7 @@ export interface CustomerBuyerUpdate
   priceLists?: string[];
 }
 
-export type CustomerBuyer = ResponseEntity<CustomerBuyerBase> & {};
+export type CustomerBuyer = ResponseEntity<CustomerBuyerBase>;
 
 export interface CustomerBuyerList
   extends Omit<CustomerBuyer, 'priceLists'>,
@@ -128,4 +128,17 @@ export interface CustomerOrder {
   priceLists?: Tooltip;
   items?: number;
   status: string;
+}
+
+export interface CustomerPriceList
+  extends Omit<
+    ProductPriceList,
+    | 'products'
+    | 'rules'
+    | 'productSelectionQuery'
+    | 'autoAddProducts'
+    | 'forced'
+    | 'dateCreated'
+  > {
+  productCount: number;
 }

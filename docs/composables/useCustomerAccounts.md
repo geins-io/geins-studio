@@ -1,6 +1,6 @@
-# `useCustomers`
+# `useCustomerAccounts`
 
-The `useCustomers` composable provides comprehensive utilities for customer operations including account management, VAT validation, address handling, and more.
+The `useCustomerAccounts` composable provides comprehensive utilities for customer account operations including account management, VAT validation, address handling, and more.
 
 :::warning NOTE
 This composable is designed specifically for customer-related functionalities and may not be suitable for general use cases.
@@ -24,7 +24,7 @@ const {
   vatValidating,
   vatValidation,
   vatValidationSummary,
-} = useCustomers();
+} = useCustomerAccounts();
 
 // VAT number input
 const vatNumber = ref('');
@@ -181,10 +181,9 @@ Formats billing and shipping addresses for API submission.
 ## Type Definitions
 
 ```ts
-function useCustomers(): UseCustomerReturnType
+function useCustomerAccounts(): UseCustomerAccountsReturnType;
 
-interface UseCustomerReturnType {
-  customerApi: ReturnType<typeof useGeinsRepository>['customerApi'];
+interface UseCustomerAccountsReturnType {
   deleteAccount: (id?: string, entityName?: string) => Promise<boolean>;
   extractAccountGroupsfromTags: (tags: string[]) => string[];
   convertAccountGroupsToTags: (accountGroups: string[]) => string[];
@@ -194,8 +193,11 @@ interface UseCustomerReturnType {
   vatNumberValidated: Readonly<Ref<string>>;
   vatValidation: Readonly<Ref<CustomerVatValidation | undefined>>;
   vatValidationSummary: Ref<DataItem[]>;
-  validateVatNumber: (vatNumber: string): Promise<void>;
-  getAddresses: (billing: AddressUpdate, shipping?: AddressUpdate) => AddressUpdate[];
+  validateVatNumber: (vatNumber: string) => Promise<void>;
+  getAddresses: (
+    billing: AddressUpdate,
+    shipping?: AddressUpdate,
+  ) => AddressUpdate[];
 }
 
 interface CustomerVatValidation {

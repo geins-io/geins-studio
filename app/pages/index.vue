@@ -7,12 +7,12 @@ definePageMeta({
   title: 'Welcome to Geins Studio',
 });
 
-const { customersApi } = useGeinsRepository();
+const { customerApi } = useGeinsRepository();
 const { ordersList, orderColumns, fetchOrders } = useCustomerOrders();
 
 const { data: allAccounts, error } = await useAsyncData<CustomerAccount[]>(
   'customer-accounts',
-  () => customersApi.account.list({ fields: ['salesreps', 'buyers'] }),
+  () => customerApi.account.list({ fields: ['salesreps', 'buyers'] }),
 );
 
 if (!allAccounts.value || error.value) {

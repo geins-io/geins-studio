@@ -4,7 +4,7 @@
 // =====================================================================================
 import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
-import { useCustomers } from '@/composables/useCustomers';
+import { useCustomerAccounts } from '@/composables/useCustomerAccounts';
 import { useCustomerOrders } from '@/composables/useCustomerOrders';
 import {
   DataItemDisplayType,
@@ -20,7 +20,7 @@ import { LucidePackage, LucideUser } from 'lucide-vue-next';
 // COMPOSABLES & STORES
 // =====================================================================================
 const scope = 'pages/customers/account/[id].vue';
-const { customersApi } = useGeinsRepository();
+const { customerApi } = useGeinsRepository();
 const {
   hasValidatedVat,
   vatValid,
@@ -31,7 +31,7 @@ const {
   convertAccountGroupsToTags,
   validateVatNumber,
   getAddresses,
-} = useCustomers();
+} = useCustomerAccounts();
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog(scope);
 const accountStore = useAccountStore();
@@ -186,7 +186,7 @@ const {
   CustomerAccountUpdate,
   CustomerAccountApiOptions
 >({
-  repository: customersApi.account,
+  repository: customerApi.account,
   validationSchema: formSchema,
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
@@ -792,7 +792,7 @@ const { summaryProps } = useEntityEditSummary({
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<CustomerAccount>(
     entityFetchKey.value,
-    () => customersApi.account.get(entityId.value, { fields: ['all'] }),
+    () => customerApi.account.get(entityId.value, { fields: ['all'] }),
   );
 
   refreshEntityData.value = refresh;
@@ -815,7 +815,7 @@ if (!createMode.value) {
     const tagsData = ref<string[] | null>(null);
 
     try {
-      tagsData.value = await customersApi.account.tags.get();
+      tagsData.value = await customerApi.account.tags.get();
     } catch (e) {
       geinsLogError('error fetching tags:', e);
     }

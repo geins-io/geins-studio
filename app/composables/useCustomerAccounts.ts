@@ -4,7 +4,7 @@
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { CustomerVatValidation } from '#shared/types';
 
-interface UseCustomersReturnType {
+interface UseCustomerAccountsReturnType {
   deleteAccount: (id?: string, entityName?: string) => Promise<boolean>;
   extractAccountGroupsfromTags: (tags: string[]) => string[];
   convertAccountGroupsToTags: (accountGroups: string[]) => string[];
@@ -28,7 +28,6 @@ interface UseCustomersReturnType {
  * VAT validation, address handling, and tag/group conversions.
  *
  * @returns {UseCustomersReturnType} - An object containing customer utilities and state
- * @property {object} customersApi - Customers API repository instance
  * @property {function} deleteAccount - Deletes a customer account with confirmation
  * @property {function} extractAccountGroupsfromTags - Extracts account groups from tag array
  * @property {function} convertAccountGroupsToTags - Converts account groups to tag format
@@ -41,14 +40,14 @@ interface UseCustomersReturnType {
  * @property {function} validateVatNumber - Validates a VAT number against VEIS
  * @property {function} getAddresses - Formats billing and shipping addresses for API
  */
-export const useCustomers = (): UseCustomersReturnType => {
+export const useCustomerAccounts = (): UseCustomerAccountsReturnType => {
   const { toast } = useToast();
   const { t } = useI18n();
   const { geinsLogError, geinsLogInfo } = useGeinsLog(
-    'composables/useCustomers.ts',
+    'composables/useCustomerAccounts.ts',
   );
 
-  const { customersApi } = useGeinsRepository();
+  const { customerApi } = useGeinsRepository();
 
   // =====================================================================================
   // ACCOUNT MANAGEMENT
@@ -61,7 +60,7 @@ export const useCustomers = (): UseCustomersReturnType => {
       if (!id) {
         throw new Error('ID is required for deletion');
       }
-      await customersApi.account.delete(id);
+      await customerApi.account.delete(id);
       toast({
         title: t('entity_deleted', { entityName }),
         variant: 'positive',
@@ -122,7 +121,7 @@ export const useCustomers = (): UseCustomersReturnType => {
     }
     vatValidating.value = true;
     try {
-      vatValidation.value = await customersApi.validateVatNumber(vatNumber);
+      vatValidation.value = await customerApi.validateVatNumber(vatNumber);
       if (vatValidation.value) {
         vatValidationSummary.value = Object.keys(vatValidation.value)
           .filter((key) => {

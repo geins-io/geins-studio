@@ -8,6 +8,4 @@ export * from './Table';
 export * from './Selector';
 export * from './Product';
 export * from './Utils';
-export * from './Wholesale';
 export * from './Customer';
-export * from './Pricing';
