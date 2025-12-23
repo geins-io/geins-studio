@@ -188,7 +188,7 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
    * @param replace - If true, replaces the last breadcrumb; if false (default), appends as new item
    *
    * Examples:
-   * - replace=false: "Wholesale > Accounts" + "Acme Corp" = "Wholesale > Accounts > Acme Corp"
+   * - replace=false: "Customer > Accounts" + "Acme Corp" = "Customer > Accounts > Acme Corp"
    * - replace=true: "Account > Profile" + "John Doe" = "Account > John Doe"
    */
   const setCurrentTitle = (title: string, replace = false) => {

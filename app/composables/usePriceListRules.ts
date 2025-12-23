@@ -97,7 +97,7 @@ export function usePriceListRules({
 
   const baseRuleText = computed(() => {
     if (!baseRule.value) return '';
-    return t('wholesale.rule_applied_globally', {
+    return t('pricing.rule_applied_globally', {
       percentage: baseRulePercentage.value,
       mode: baseRuleMode.value,
     });
@@ -133,12 +133,12 @@ export function usePriceListRules({
 
       await updateEntityRules();
       await previewPriceList(
-        t('wholesale.rule_applied_globally', { percentage, mode }),
+        t('pricing.rule_applied_globally', { percentage, mode }),
       );
     } catch (error) {
       geinsLogError('error applying base rule:', error);
       toast({
-        title: t('wholesale.error_applying_base_rule'),
+        title: t('pricing.error_applying_base_rule'),
         description: t('error_try_again'),
         variant: 'negative',
       });
@@ -165,7 +165,7 @@ export function usePriceListRules({
 
   const removeBaseRule = async () => {
     if (!baseRule.value) return;
-    const feedback = t('wholesale.rule_removed', {
+    const feedback = t('pricing.rule_removed', {
       percentage: baseRulePercentage.value,
       mode: baseRuleMode.value,
     });
@@ -198,11 +198,11 @@ export function usePriceListRules({
       }
 
       await updateEntityRules();
-      await previewPriceList(t('wholesale.volume_pricing_applied_globally'));
+      await previewPriceList(t('pricing.volume_pricing_applied_globally'));
     } catch (error) {
       geinsLogError('error applying rules:', error);
       toast({
-        title: t('wholesale.error_applying_volume_pricing'),
+        title: t('pricing.error_applying_volume_pricing'),
         description: t('error_try_again'),
         variant: 'negative',
       });
@@ -239,7 +239,7 @@ export function usePriceListRules({
         ),
     );
     await updateEntityRules();
-    await previewPriceList(t('wholesale.price_break_removed'));
+    await previewPriceList(t('pricing.price_break_removed'));
   };
 
   const updateEntityRules = async (): Promise<void> => {

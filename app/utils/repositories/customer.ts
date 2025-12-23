@@ -13,7 +13,6 @@ import type {
   CustomerUpdate,
 } from '#shared/types';
 
-// Keep backend endpoint as /wholesale for now
 const BASE_ENDPOINT = '/wholesale';
 
 /**
