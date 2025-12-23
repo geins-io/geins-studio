@@ -1,6 +1,5 @@
 <script setup lang="ts" generic="TData">
 import type { Table } from '@tanstack/vue-table';
-import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 

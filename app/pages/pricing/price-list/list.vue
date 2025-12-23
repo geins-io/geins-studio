@@ -47,6 +47,8 @@ const { data, error, refresh } = await useAsyncData<Entity[]>(
   () => productApi.priceList.list(),
 );
 
+const { getColumns, addActionsColumn } = useColumns<EntityList>();
+
 onMounted(() => {
   watch(
     data,
@@ -69,7 +71,6 @@ onMounted(() => {
     excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
   };
   // GET AND SET COLUMNS
-  const { getColumns, addActionsColumn } = useColumns<EntityList>();
   columns.value = getColumns(dataList.value, columnOptions);
 
   addActionsColumn(

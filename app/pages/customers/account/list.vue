@@ -87,6 +87,8 @@ const { data, error, refresh } = await useAsyncData<Entity[]>(
     }),
 );
 
+const { getColumns, addActionsColumn } = useColumns<EntityList>();
+
 onMounted(() => {
   watch(
     data,
@@ -118,7 +120,7 @@ onMounted(() => {
     excludeColumns: ['meta', 'addresses', 'tags'],
   };
   // GET AND SET COLUMNS
-  const { getColumns, addActionsColumn } = useColumns<EntityList>();
+
   columns.value = getColumns(dataList.value, columnOptions);
 
   addActionsColumn(
@@ -133,16 +135,16 @@ onMounted(() => {
   );
 
   // SET COLUMN VISIBILITY STATE
-  const { getVisibilityState } = useTable<EntityList>();
-  const hiddenColumns: StringKeyOf<EntityList>[] = [
-    'externalId',
-    'exVat',
-    'limitedProductAccess',
-  ];
-  visibilityState.value = getVisibilityState(hiddenColumns);
-
   loading.value = false;
 });
+
+const { getVisibilityState } = useTable<EntityList>();
+const hiddenColumns: StringKeyOf<EntityList>[] = [
+  'externalId',
+  'exVat',
+  'limitedProductAccess',
+];
+visibilityState.value = getVisibilityState(hiddenColumns);
 
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);
