@@ -127,11 +127,11 @@ const handleCancel = () => {
             size="md"
             heading-level="h3"
             :title="
-              t('delete_entity', {
+              $t('delete_entity', {
                 entityName,
               })
             "
-            :description="t('dialog.delete_shipping_address_description')"
+            :description="$t('dialog.delete_shipping_address_description')"
           />
           <Button
             size="sm"
@@ -139,16 +139,16 @@ const handleCancel = () => {
             :loading="loading"
             @click.stop="handleDelete"
           >
-            {{ t('delete') }}
+            {{ $t('delete') }}
           </Button>
         </div>
       </SheetBody>
       <SheetFooter>
         <Button variant="outline" @click="handleCancel">
-          {{ t('cancel') }}
+          {{ $t('cancel') }}
         </Button>
         <Button @click.stop="handleSave">
-          {{ t('update_entity', { entityName }) }}
+          {{ $t('update_entity', { entityName }) }}
         </Button>
       </SheetFooter>
     </SheetContent>

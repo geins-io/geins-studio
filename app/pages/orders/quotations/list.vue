@@ -14,7 +14,7 @@ const quotations = ref([]);
 
 <template>
   <div>
-    <ContentHeader :title="t('quotation', 2)" />
+    <ContentHeader :title="$t('quotation', 2)" />
     <ContentCard>
       <p class="text-muted-foreground">Coming soon..</p>
     </ContentCard>

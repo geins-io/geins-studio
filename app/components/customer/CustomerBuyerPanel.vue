@@ -307,7 +307,7 @@ const existingCustomerName = computed(() => {
             <FormGrid design="1+1">
               <FormField v-slot="{ componentField }" name="email">
                 <FormItem>
-                  <FormLabel>{{ t('person.email') }}</FormLabel>
+                  <FormLabel>{{ $t('person.email') }}</FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -322,7 +322,7 @@ const existingCustomerName = computed(() => {
               <FormField v-slot="{ componentField }" name="phone">
                 <FormItem>
                   <FormLabel :optional="true">{{
-                    t('person.phone')
+                    $t('person.phone')
                   }}</FormLabel>
                   <FormControl>
                     <Input
@@ -338,8 +338,8 @@ const existingCustomerName = computed(() => {
             <FormGrid design="1">
               <FormField v-slot="{ value, handleChange }" name="active">
                 <FormItemSwitch
-                  :label="t('active')"
-                  :description="t('toggle_active_state')"
+                  :label="$t('active')"
+                  :description="$t('toggle_active_state')"
                   :model-value="value"
                   @update:model-value="handleChange"
                 />
@@ -420,11 +420,11 @@ const existingCustomerName = computed(() => {
               size="md"
               heading-level="h3"
               :title="
-                t('remove_entity', {
+                $t('remove_entity', {
                   entityName,
                 })
               "
-              :description="t('customers.buyers_remove_description')"
+              :description="$t('customers.buyers_remove_description')"
             />
             <Button
               size="sm"
@@ -432,13 +432,13 @@ const existingCustomerName = computed(() => {
               :loading="isDeleting"
               @click.stop="handleRemoveClick"
             >
-              {{ t('remove') }}
+              {{ $t('remove') }}
             </Button>
           </div>
           <div v-if="buyerExistsAsCustomer" class="w-full space-y-6">
             <Feedback type="info">
               <template #title>
-                {{ t('customers.buyers_feedback_existing_title') }}
+                {{ $t('customers.buyers_feedback_existing_title') }}
               </template>
               <template #description>
                 <i18n-t
@@ -455,12 +455,12 @@ const existingCustomerName = computed(() => {
                 <ContentSwitch
                   v-model:checked="updateCustomer"
                   :label="
-                    t('customers.buyers_assign_existing', {
+                    $t('customers.buyers_assign_existing', {
                       customerName: existingCustomerName,
                       accountName: accountName,
                     })
                   "
-                  :description="t('customers.buyers_assign_description')"
+                  :description="$t('customers.buyers_assign_description')"
                 />
               </template>
             </Feedback>
@@ -469,14 +469,14 @@ const existingCustomerName = computed(() => {
       </SheetBody>
       <SheetFooter>
         <Button variant="outline" @click="handleCancel">
-          {{ t('cancel') }}
+          {{ $t('cancel') }}
         </Button>
         <Button
           :loading="loading"
           :disabled="saveDisabled"
           @click.stop="handleSave"
         >
-          {{ t(`${mode === 'add' ? mode : 'update'}_entity`, { entityName }) }}
+          {{ $t(`${mode === 'add' ? mode : 'update'}_entity`, { entityName }) }}
         </Button>
       </SheetFooter>
     </SheetContent>

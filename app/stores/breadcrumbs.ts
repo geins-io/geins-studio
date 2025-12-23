@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import type { NavigationItem } from '#shared/types';
-import { getNavigation } from '@/lib/navigation';
 
 /**
  * Breadcrumbs store with hybrid approach:
@@ -16,6 +15,9 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
 
   // Auto-derived from navigation (set by useNavigation composable)
   const navigationBreadcrumbs = ref<NavigationItem[]>([]);
+
+  // Store the full navigation config (set by useNavigation composable)
+  const navigationConfig = ref<NavigationItem[]>([]);
 
   // Override options - when set, these APPEND to the navigation breadcrumbs
   const titleOverride = ref<string | null>(null);
@@ -89,10 +91,9 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
 
       // Auto-clear override when navigating AWAY from a child page
       if (oldPath && newPath !== oldPath && titleOverride.value) {
-        // Get current navigation config with localization
-        const navigationConfig = getNavigation();
-        const wasOnChildPage = isOnChildPage(oldPath, navigationConfig);
-        const isNowOnChildPage = isOnChildPage(newPath, navigationConfig);
+        // Use stored navigation config
+        const wasOnChildPage = isOnChildPage(oldPath, navigationConfig.value);
+        const isNowOnChildPage = isOnChildPage(newPath, navigationConfig.value);
 
         // If we were on a child page (with override) and now we're NOT, clear it
         if (wasOnChildPage && !isNowOnChildPage) {
@@ -232,6 +233,13 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
     showBreadcrumbs.value = show;
   };
 
+  /**
+   * Set the navigation config (called by useNavigation)
+   */
+  const setNavigationConfig = (config: NavigationItem[]) => {
+    navigationConfig.value = config;
+  };
+
   return {
     // State
     showBreadcrumbs,
@@ -242,6 +250,7 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
 
     // Methods
     setNavigationBreadcrumbs,
+    setNavigationConfig,
     setCurrentTitle,
     setCurrentParent,
     setCurrentGrandparent,

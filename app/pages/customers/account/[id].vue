@@ -1202,7 +1202,7 @@ if (!createMode.value) {
             <ContentEditCard
               v-if="currentTab === 1"
               :create-mode="createMode"
-              :title="t('buyer', 2)"
+              :title="$t('buyer', 2)"
               :description="$t('customers.buyers_description')"
             >
               <template #header-action>
@@ -1246,8 +1246,8 @@ if (!createMode.value) {
           >
             <ContentEditCard
               :create-mode="createMode"
-              :title="t('price_list', 2)"
-              :description="t('customers.price_lists_description')"
+              :title="$t('price_list', 2)"
+              :description="$t('customers.price_lists_description')"
             >
               <template #header-action>
                 <SelectorQuickAdd
@@ -1282,7 +1282,7 @@ if (!createMode.value) {
           >
             <ContentEditCard
               :create-mode="createMode"
-              :title="t('order', 2)"
+              :title="$t('order', 2)"
               :description="$t('customers.orders_description')"
             >
               <div>
@@ -1304,29 +1304,29 @@ if (!createMode.value) {
             v-if="currentTab === 4"
             :key="`tab-${currentTab}`"
           >
-            <ContentEditCard :create-mode="false" :title="t('settings')">
+            <ContentEditCard :create-mode="false" :title="$t('settings')">
               <div class="space-y-4">
                 <ContentCardHeader
-                  :title="t('customers.product_access')"
-                  :description="t('customers.product_access_description')"
+                  :title="$t('customers.product_access')"
+                  :description="$t('customers.product_access_description')"
                   size="md"
                 />
                 <ContentSwitch
                   v-model:checked="entityDataUpdate.limitedProductAccess"
-                  :label="t('customers.product_access_restrict_label')"
+                  :label="$t('customers.product_access_restrict_label')"
                   :description="
-                    t('customers.product_access_restrict_description')
+                    $t('customers.product_access_restrict_description')
                   "
                 />
                 <ContentCardHeader
-                  :title="t('customers.vat_settings')"
-                  :description="t('customers.vat_settings_description')"
+                  :title="$t('customers.vat_settings')"
+                  :description="$t('customers.vat_settings_description')"
                   size="md"
                 />
                 <ContentSwitch
                   v-model:checked="entityDataUpdate.exVat"
-                  :label="t('customers.vat_included_label')"
-                  :description="t('customers.vat_included_description')"
+                  :label="$t('customers.vat_included_label')"
+                  :description="$t('customers.vat_included_description')"
                 />
               </div>
             </ContentEditCard>
@@ -1343,7 +1343,7 @@ if (!createMode.value) {
                   class="text-muted-foreground flex items-center justify-between gap-2 text-right"
                 >
                   <span class="text-foreground text-left font-bold">
-                    {{ t('customers.vat_number') }}:
+                    {{ $t('customers.vat_number') }}:
                   </span>
                   <ContentTextTooltip
                     :trigger-class="
@@ -1379,7 +1379,7 @@ if (!createMode.value) {
                       <ContentDataList
                         v-if="vatValid"
                         class="block max-w-[300px] pb-2"
-                        :label="t('customers.vat_validation_summary_label')"
+                        :label="$t('customers.vat_validation_summary_label')"
                         :data-list="vatValidationSummary"
                       />
                     </template>

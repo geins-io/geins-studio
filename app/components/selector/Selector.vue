@@ -275,8 +275,8 @@ defineExpose({
           :entities="entities"
           :entity-name="entityName"
           :selection="includeSelection"
-          :title="t('entity_selection', { entityName })"
-          :description="t('selector_include_description')"
+          :title="$t('entity_selection', { entityName })"
+          :description="$t('selector_include_description')"
           @add="addToManuallySelected($event)"
           @remove="removeFromManuallySelected($event)"
         />

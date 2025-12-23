@@ -15,10 +15,14 @@ import { getNavigation } from '@/lib/navigation';
  * const { navigationItems, isItemActive, breadcrumbTrail } = useNavigation();
  */
 export const useNavigation = () => {
+  const { t } = useI18n();
   const userStore = useUserStore();
   const breadcrumbsStore = useBreadcrumbsStore();
   const route = useRoute();
-  const navigationConfig = getNavigation();
+  const navigationConfig = getNavigation(t);
+
+  // Store the navigation config in breadcrumbs store for use in watchers
+  breadcrumbsStore.setNavigationConfig(navigationConfig);
 
   /**
    * Filter navigation items based on user roles and permissions

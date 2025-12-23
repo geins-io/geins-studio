@@ -35,7 +35,7 @@ const viewport = useViewport();
         }}
       </span>
       <span v-else-if="viewport.isGreaterThan('sm')">
-        {{ t('rows_total', { total: totalRows, entityName }, totalRows) }}
+        {{ $t('rows_total', { total: totalRows, entityName }, totalRows) }}
       </span>
       <span v-else>{{
         `${totalRows} ${t(entityName, totalRows).toLowerCase()}`
@@ -44,7 +44,7 @@ const viewport = useViewport();
     <div class="flex items-center space-x-6 lg:space-x-8">
       <div v-if="advanced" class="flex items-center space-x-2 max-sm:hidden">
         <p class="font-semibold">
-          {{ t('rows_per_page', { entityName }, 2) }}
+          {{ $t('rows_per_page', { entityName }, 2) }}
         </p>
         <Select
           :model-value="`${table.getState().pagination.pageSize}`"

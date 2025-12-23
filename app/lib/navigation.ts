@@ -9,18 +9,16 @@ import type { NavigationItem } from '#shared/types';
  * - Icons from lucide-vue-next
  * - Grouping and visual dividers
  * - Badge support for notifications
- * - Localization support via i18n keys (use `getNavigation()` function)
+ * - Localization support via i18n keys
  *
  * Note: Items without roles/permissions are visible to all users
  */
 
 /**
  * Returns localized navigation items
- * Call this function within a component that has access to useI18n()
+ * @param t - Translation function from useI18n()
  */
-export const getNavigation = (): NavigationItem[] => {
-  const { t } = useI18n();
-
+export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
   return [
     // {
     //   label: t('navigation.dashboard'),

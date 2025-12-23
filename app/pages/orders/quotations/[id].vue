@@ -17,7 +17,7 @@ const quotation = ref(null);
 
 <template>
   <div>
-    <ContentHeader :title="t('quotation') + ' ' + quotationId" />
+    <ContentHeader :title="$t('quotation') + ' ' + quotationId" />
     <ContentCard>
       <p class="text-muted-foreground">Coming soon..</p>
     </ContentCard>
