@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="TData">
 import type { Table } from '@tanstack/vue-table';
+import type { AcceptableValue } from 'reka-ui';
 
 const { t } = useI18n();
 
@@ -14,6 +15,14 @@ const props = defineProps<DataTablePaginationProps>();
 
 const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
 const viewport = useViewport();
+
+const setPageSize = (value: AcceptableValue) => {
+  if (!value) {
+    return;
+  }
+  const pageSize = parseInt(String(value));
+  props.table.setPageSize(pageSize);
+};
 </script>
 
 <template>
@@ -48,7 +57,7 @@ const viewport = useViewport();
         </p>
         <Select
           :model-value="`${table.getState().pagination.pageSize}`"
-          @update:model-value="table.setPageSize"
+          @update:model-value="setPageSize"
         >
           <SelectTrigger size="sm" class="w-[70px]">
             <SelectValue

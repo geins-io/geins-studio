@@ -36,9 +36,12 @@ interface UseColumnsReturnType<T> {
   ) => ColumnDef<T>[];
   orderAndFilterColumns: (
     columns: ColumnDef<T>[],
-    keys: (keyof T)[],
+    keys: (keyof T | 'select' | 'actions')[],
   ) => ColumnDef<T>[];
-  orderColumnLast: (columns: ColumnDef<T>[], key: keyof T) => ColumnDef<T>[];
+  orderColumnLast: (
+    columns: ColumnDef<T>[],
+    key: keyof T | 'select' | 'actions',
+  ) => ColumnDef<T>[];
 }
 
 /**
@@ -655,7 +658,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
 
   const orderAndFilterColumns = (
     columns: ColumnDef<T>[],
-    keys: (keyof T)[],
+    keys: (keyof T | 'select' | 'actions')[],
   ): ColumnDef<T>[] => {
     const newColumns = keys
       .map((key) => columns.find((column) => column.id === key))
@@ -665,7 +668,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
 
   const orderColumnLast = (
     columns: ColumnDef<T>[],
-    key: keyof T,
+    key: keyof T | 'select' | 'actions',
   ): ColumnDef<T>[] => {
     const column = columns.find((column) => column.id === key);
     if (!column) {

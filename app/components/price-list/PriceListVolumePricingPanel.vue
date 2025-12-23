@@ -22,7 +22,9 @@ const { getPriceListProduct, getNewPriceListProducts } = usePriceListProducts();
 const { productApi } = useGeinsRepository();
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogError } = useGeinsLog('pages/pricing/price-list/[id].vue');
+const { geinsLogError } = useGeinsLog(
+  'components/price-list/PriceListVolumePricingPanel.vue',
+);
 
 const open = defineModel<boolean>('open');
 const propRules = toRef(props, 'rules');

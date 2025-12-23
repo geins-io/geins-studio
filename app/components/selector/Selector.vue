@@ -18,6 +18,7 @@ const props = withDefaults(
     productQueryParams?: Record<string, string>;
     currency?: string;
     fetchEntitiesExternally?: boolean;
+    columnsOrder?: (keyof T)[];
   }>(),
   {
     entityName: 'product',
@@ -26,6 +27,7 @@ const props = withDefaults(
     allowExclusions: true,
     productQueryParams: () => ({ fields: 'localizations,media,prices' }),
     fetchEntitiesExternally: false,
+    columnsOrder: () => ['_id', 'name', 'price'] as (keyof T)[],
   },
 );
 
@@ -157,7 +159,7 @@ let columns: ColumnDef<T>[] = [];
 
 const setupColumns = () => {
   columns = getColumns(entities.value);
-  columns = orderAndFilterColumns(columns, ['_id', 'name', 'slug', 'price']);
+  columns = orderAndFilterColumns(columns, props.columnsOrder);
   addActionsColumn(
     columns,
     {
