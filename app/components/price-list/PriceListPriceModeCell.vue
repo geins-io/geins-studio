@@ -11,14 +11,14 @@ const tooltipContent = computed(() => {
     case 'fixed':
     case 'margin':
     case 'discount':
-      return t('wholesale.price_set_manually');
+      return t('pricing.price_set_manually');
     case 'rule':
     case 'autoRule':
-      return t('wholesale.price_set_globally');
+      return t('pricing.price_set_globally');
     case 'auto':
-      return t('wholesale.default_price');
+      return t('pricing.default_price');
     default:
-      return t('wholesale.default_price');
+      return t('pricing.default_price');
   }
 });
 

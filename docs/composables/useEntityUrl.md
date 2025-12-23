@@ -58,7 +58,7 @@ const { getEntityListUrlFor } = useEntityUrl();
 const navigationItems = [
   { name: 'Products', url: getEntityListUrlFor('product', 'pim') },
   { name: 'Users', url: getEntityListUrlFor('user', 'account') },
-  { name: 'Orders', url: getEntityListUrlFor('order', 'wholesale') },
+  { name: 'Orders', url: getEntityListUrlFor('order', 'customer') },
 ];
 ```
 
@@ -172,7 +172,7 @@ The composable follows this URL pattern:
 
 Where:
 
-- `parent` is the parent route segment (e.g., "pim", "account", "wholesale")
+- `parent` is the parent route segment (e.g., "pim", "account", "customer")
 - `entity` is the entity name (e.g., "product", "user", "price_list")
 - `id` is the specific entity identifier
 

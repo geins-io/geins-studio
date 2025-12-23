@@ -2,13 +2,13 @@
 import type {
   ColumnOptions,
   StringKeyOf,
-  WholesaleAccountList,
+  CustomerAccountList,
 } from '#shared/types';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
-type Entity = WholesaleAccount;
-type EntityList = WholesaleAccountList;
+type Entity = CustomerAccount;
+type EntityList = CustomerAccountList;
 
-const scope = 'pages/wholesale/account/list.vue';
+const scope = 'pages/customers/account/list.vue';
 const { t } = useI18n();
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
@@ -17,8 +17,8 @@ definePageMeta({
 });
 
 // GLOBAL SETUP
-const { wholesaleApi } = useGeinsRepository();
-const { deleteAccount, extractAccountGroupsfromTags } = useWholesale();
+const { customerApi } = useGeinsRepository();
+const { deleteAccount, extractAccountGroupsfromTags } = useCustomerAccounts();
 const dataList = ref<EntityList[]>([]);
 const entityName = getEntityName();
 const newEntityUrl = getEntityNewUrl();
@@ -80,12 +80,14 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
 
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(
-  'wholesale-accounts-list',
+  'customer-accounts-list',
   () =>
-    wholesaleApi.account.list({
+    customerApi.account.list({
       fields: ['salesreps', 'buyers', 'pricelists'],
     }),
 );
+
+const { getColumns, addActionsColumn } = useColumns<EntityList>();
 
 onMounted(() => {
   watch(
@@ -113,12 +115,12 @@ onMounted(() => {
     },
     columnTitles: {
       active: t('status'),
-      limitedProductAccess: t('wholesale.product_access_restricted_label'),
+      limitedProductAccess: t('customers.product_access_restricted_label'),
     },
     excludeColumns: ['meta', 'addresses', 'tags'],
   };
   // GET AND SET COLUMNS
-  const { getColumns, addActionsColumn } = useColumns<EntityList>();
+
   columns.value = getColumns(dataList.value, columnOptions);
 
   addActionsColumn(
@@ -133,16 +135,16 @@ onMounted(() => {
   );
 
   // SET COLUMN VISIBILITY STATE
-  const { getVisibilityState } = useTable<EntityList>();
-  const hiddenColumns: StringKeyOf<EntityList>[] = [
-    'externalId',
-    'exVat',
-    'limitedProductAccess',
-  ];
-  visibilityState.value = getVisibilityState(hiddenColumns);
-
   loading.value = false;
 });
+
+const { getVisibilityState } = useTable<EntityList>();
+const hiddenColumns: StringKeyOf<EntityList>[] = [
+  'externalId',
+  'exVat',
+  'limitedProductAccess',
+];
+visibilityState.value = getVisibilityState(hiddenColumns);
 
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);

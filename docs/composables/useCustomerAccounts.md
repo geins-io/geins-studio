@@ -1,9 +1,9 @@
-# `useWholesale`
+# `useCustomerAccounts`
 
-The `useWholesale` composable provides comprehensive utilities for wholesale operations including account management, VAT validation, address handling, and more.
+The `useCustomerAccounts` composable provides comprehensive utilities for customer account operations including account management, VAT validation, address handling, and more.
 
 :::warning NOTE
-This composable is designed specifically for wholesale-related functionalities and may not be suitable for general use cases.
+This composable is designed specifically for customer-related functionalities and may not be suitable for general use cases.
 :::
 
 ## Features
@@ -24,7 +24,7 @@ const {
   vatValidating,
   vatValidation,
   vatValidationSummary,
-} = useWholesale();
+} = useCustomerAccounts();
 
 // VAT number input
 const vatNumber = ref('');
@@ -63,7 +63,7 @@ watch(vatNumber, async (newVat) => {
 deleteAccount(id?: string, entityName?: string): Promise<boolean>
 ```
 
-Deletes a wholesale account with error handling and user feedback.
+Deletes a customer account with error handling and user feedback.
 
 - **Parameters**:
   - `id`: Account ID to delete
@@ -134,7 +134,7 @@ The VAT number that was last validated.
 #### `vatValidation`
 
 ```ts
-vatValidation: Readonly<Ref<WholesaleVatValidation | undefined>>;
+vatValidation: Readonly<Ref<CustomerVatValidation | undefined>>;
 ```
 
 Complete VAT validation result from VEIS.
@@ -181,10 +181,9 @@ Formats billing and shipping addresses for API submission.
 ## Type Definitions
 
 ```ts
-function useWholesale(): UseWholesaleReturnType
+function useCustomerAccounts(): UseCustomerAccountsReturnType;
 
-interface UseWholesaleReturnType {
-  wholesaleApi: ReturnType<typeof useGeinsRepository>['wholesaleApi'];
+interface UseCustomerAccountsReturnType {
   deleteAccount: (id?: string, entityName?: string) => Promise<boolean>;
   extractAccountGroupsfromTags: (tags: string[]) => string[];
   convertAccountGroupsToTags: (accountGroups: string[]) => string[];
@@ -192,13 +191,16 @@ interface UseWholesaleReturnType {
   vatValid: Readonly<Ref<boolean>>;
   vatValidating: Readonly<Ref<boolean>>;
   vatNumberValidated: Readonly<Ref<string>>;
-  vatValidation: Readonly<Ref<WholesaleVatValidation | undefined>>;
+  vatValidation: Readonly<Ref<CustomerVatValidation | undefined>>;
   vatValidationSummary: Ref<DataItem[]>;
-  validateVatNumber: (vatNumber: string): Promise<void>;
-  getAddresses: (billing: AddressUpdate, shipping?: AddressUpdate) => AddressUpdate[];
+  validateVatNumber: (vatNumber: string) => Promise<void>;
+  getAddresses: (
+    billing: AddressUpdate,
+    shipping?: AddressUpdate,
+  ) => AddressUpdate[];
 }
 
-interface WholesaleVatValidation {
+interface CustomerVatValidation {
   valid: boolean;
   vatNumber: string;
   name?: string;

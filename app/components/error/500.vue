@@ -39,14 +39,14 @@ const handleHome = () => {
         <LucideServerCrash class="size-6" />
       </EmptyMedia>
       <EmptyHeader>
-        <EmptyTitle>{{ t('error.500_title') }}</EmptyTitle>
+        <EmptyTitle>{{ $t('error.500_title') }}</EmptyTitle>
         <EmptyDescription>
-          {{ message || t('error.500_description') }}
+          {{ message || $t('error.500_description') }}
         </EmptyDescription>
         <EmptyDescription v-if="showErrorDetails && errorDetails" class="mt-2">
           <details class="text-left">
             <summary class="cursor-pointer text-xs font-medium">
-              {{ t('error.error_details') }}
+              {{ $t('error.error_details') }}
             </summary>
             <pre
               class="text-muted-foreground bg-secondary mt-2 max-h-40 overflow-auto rounded p-2 text-xs"
@@ -60,11 +60,11 @@ const handleHome = () => {
         <div class="flex flex-col gap-2 sm:flex-row">
           <Button variant="secondary" @click="handleRefresh">
             <LucideRefreshCw class="mr-2 size-4" />
-            {{ t('error.refresh_page') }}
+            {{ $t('error.refresh_page') }}
           </Button>
           <Button @click="handleHome">
             <LucideHome class="mr-2 size-4" />
-            {{ t('error.home') }}
+            {{ $t('error.home') }}
           </Button>
         </div>
       </EmptyContent>

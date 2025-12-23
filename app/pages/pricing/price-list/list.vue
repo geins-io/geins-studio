@@ -6,7 +6,7 @@ import { useToast } from '@/components/ui/toast/use-toast';
 type Entity = ProductPriceList;
 type EntityList = ProductPriceList;
 
-const scope = 'pages/wholesale/price-list/list.vue';
+const scope = 'pages/pricing/price-list/list.vue';
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog(scope);
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
@@ -43,9 +43,11 @@ const mapToListData = (list: Entity[]): EntityList[] => {
 
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(
-  'wholesale-price-lists-list',
+  'pricing-price-lists-list',
   () => productApi.priceList.list(),
 );
+
+const { getColumns, addActionsColumn } = useColumns<EntityList>();
 
 onMounted(() => {
   watch(
@@ -69,7 +71,6 @@ onMounted(() => {
     excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
   };
   // GET AND SET COLUMNS
-  const { getColumns, addActionsColumn } = useColumns<EntityList>();
   columns.value = getColumns(dataList.value, columnOptions);
 
   addActionsColumn(

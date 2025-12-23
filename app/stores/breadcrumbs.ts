@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import type { NavigationItem } from '#shared/types';
-import { getNavigation } from '@/lib/navigation';
 
 /**
  * Breadcrumbs store with hybrid approach:
@@ -17,6 +16,9 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
   // Auto-derived from navigation (set by useNavigation composable)
   const navigationBreadcrumbs = ref<NavigationItem[]>([]);
 
+  // Store the full navigation config (set by useNavigation composable)
+  const navigationConfig = ref<NavigationItem[]>([]);
+
   // Override options - when set, these APPEND to the navigation breadcrumbs
   const titleOverride = ref<string | null>(null);
   const replaceLast = ref(false); // If true, replaces last breadcrumb instead of appending
@@ -27,7 +29,7 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
 
   /**
    * Check if a path matches a childPattern
-   * Example: '/wholesale/account/:id' matches '/wholesale/account/123'
+   * Example: '/customers/account/:id' matches '/customers/account/123'
    */
   const matchesChildPattern = (path: string, pattern: string): boolean => {
     const patternSegments = pattern.split('/');
@@ -71,7 +73,7 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
     // Check if path matches any childPattern
     const matchesPattern = itemsWithPatterns.some((item) => {
       // Don't match if the path is the exact href of the navigation item
-      // (e.g., /wholesale/account/list should NOT match the childPattern)
+      // (e.g., /customers/account/list should NOT match the childPattern)
       if (currentPath === item.href) {
         return false;
       }
@@ -89,10 +91,9 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
 
       // Auto-clear override when navigating AWAY from a child page
       if (oldPath && newPath !== oldPath && titleOverride.value) {
-        // Get current navigation config with localization
-        const navigationConfig = getNavigation();
-        const wasOnChildPage = isOnChildPage(oldPath, navigationConfig);
-        const isNowOnChildPage = isOnChildPage(newPath, navigationConfig);
+        // Use stored navigation config
+        const wasOnChildPage = isOnChildPage(oldPath, navigationConfig.value);
+        const isNowOnChildPage = isOnChildPage(newPath, navigationConfig.value);
 
         // If we were on a child page (with override) and now we're NOT, clear it
         if (wasOnChildPage && !isNowOnChildPage) {
@@ -187,7 +188,7 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
    * @param replace - If true, replaces the last breadcrumb; if false (default), appends as new item
    *
    * Examples:
-   * - replace=false: "Wholesale > Accounts" + "Acme Corp" = "Wholesale > Accounts > Acme Corp"
+   * - replace=false: "Customer > Accounts" + "Acme Corp" = "Customer > Accounts > Acme Corp"
    * - replace=true: "Account > Profile" + "John Doe" = "Account > John Doe"
    */
   const setCurrentTitle = (title: string, replace = false) => {
@@ -232,6 +233,13 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
     showBreadcrumbs.value = show;
   };
 
+  /**
+   * Set the navigation config (called by useNavigation)
+   */
+  const setNavigationConfig = (config: NavigationItem[]) => {
+    navigationConfig.value = config;
+  };
+
   return {
     // State
     showBreadcrumbs,
@@ -242,6 +250,7 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
 
     // Methods
     setNavigationBreadcrumbs,
+    setNavigationConfig,
     setCurrentTitle,
     setCurrentParent,
     setCurrentGrandparent,

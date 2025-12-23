@@ -1,9 +1,9 @@
-# `useWholesaleOrders`
+# `useCustomerOrders`
 
-The `useWholesaleOrders` composable provides utilities for managing wholesale orders data and table display. It handles fetching, transforming, and displaying wholesale orders with proper formatting, column configuration, and reactive state management.
+The `useCustomerOrders` composable provides utilities for managing customer orders data and table display. It handles fetching, transforming, and displaying customer orders with proper formatting, column configuration, and reactive state management.
 
 :::warning NOTE
-This composable is designed specifically for wholesale orders-related functionalities and may not be suitable for general use cases.
+This composable is designed specifically for customer orders-related functionalities and may not be suitable for general use cases.
 :::
 
 ## Features
@@ -17,7 +17,7 @@ This composable is designed specifically for wholesale orders-related functional
 ### Basic Usage
 
 ```ts
-const { ordersList, orderColumns, fetchOrders } = useWholesaleOrders();
+const { ordersList, orderColumns, fetchOrders } = useCustomerOrders();
 
 await fetchOrders(
   orderSelectionQuery,
@@ -37,7 +37,7 @@ await fetchOrders(
 
 ### `ordersList`
 
-A `ref` containing the list of transformed wholesale orders.
+A `ref` containing the list of transformed customer orders.
 
 ### `orderColumns`
 
@@ -45,7 +45,7 @@ A `computed` property that generates table columns based on `ordersList` and `co
 
 ### `columnOptionsOrders`
 
-An object defining column configuration options for wholesale orders, including:
+An object defining column configuration options for customer orders, including:
 
 ### `fetchOrders`
 
@@ -53,9 +53,9 @@ An object defining column configuration options for wholesale orders, including:
 fetchOrders(
   orderSelectionQuery?: OrderBatchQuery,
   orderApiOptions?: OrderApiOptions,
-  allPriceLists?: WholesalePriceList[],
-  allAccounts?: WholesaleAccount[]
-  allBuyers?: WholesaleBuyer[],
+  allPriceLists?: CustomerPriceList[],
+  allAccounts?: CustomerAccount[]
+  allBuyers?: CustomerBuyer[],
 ): Promise<void>
 ```
 
@@ -75,10 +75,10 @@ Fetches orders from the API with filtering and transformation.
 ```ts
 transformOrdersForList(
   orders: Order[],
-  allPriceLists?: WholesalePriceList[],
-  allAccounts?: WholesaleAccount[]
-  allBuyers?: WholesaleBuyer[],
-): WholesaleOrder[]
+  allPriceLists?: CustomerPriceList[],
+  allAccounts?: CustomerAccount[]
+  allBuyers?: CustomerBuyer[],
+): CustomerOrder[]
 ```
 
 Transforms raw API orders to display-ready format. Used internally by `fetchOrders`.
@@ -89,29 +89,29 @@ Transforms raw API orders to display-ready format. Used internally by `fetchOrde
   - `allAccounts`: Optional account entities for resolution
   - `allBuyers`: Optional buyer entities for resolution
 
-- **Returns**: Array of transformed wholesale orders
+- **Returns**: Array of transformed customer orders
 - **Features**: Price formatting, entity name resolution, tooltip creation
 
 ## Type Definitions
 
 ```ts
-function useWholesaleOrders(): UseWholesaleOrdersReturnType;
+function useCustomerOrders(): UseCustomerOrdersReturnType;
 
-interface UseWholesaleOrdersReturnType {
-  ordersList: Ref<WholesaleOrder[]>;
-  orderColumns: ComputedRef<ColumnDef<WholesaleOrder>[]>;
-  columnOptionsOrders: ColumnOptions<WholesaleOrder>;
+interface UseCustomerOrdersReturnType {
+  ordersList: Ref<CustomerOrder[]>;
+  orderColumns: ComputedRef<ColumnDef<CustomerOrder>[]>;
+  columnOptionsOrders: ColumnOptions<CustomerOrder>;
   fetchOrders: (
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
-    allPriceLists?: WholesalePriceList[],
-    allAccounts?: WholesaleAccount[],
+    allPriceLists?: CustomerPriceList[],
+    allAccounts?: CustomerAccount[],
   ) => Promise<void>;
   transformOrdersForList: (
     orders: Order[],
-    allPriceLists?: WholesalePriceList[],
-    allAccounts?: WholesaleAccount[],
-  ) => WholesaleOrder[];
+    allPriceLists?: CustomerPriceList[],
+    allAccounts?: CustomerAccount[],
+  ) => CustomerOrder[];
 }
 ```
 

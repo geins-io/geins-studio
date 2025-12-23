@@ -3,7 +3,7 @@
 The `usePriceListProducts` composable provides utilities for managing price list products and transformations. It handles converting between different product formats, managing quantity-based pricing rules, and facilitating product pricing workflows.
 
 :::warning NOTE
-These features are specifically made for price lists and wholesale pricing management. They are not general purpose product management tools.
+These features are specifically made for price lists and pricing management. They are not general purpose product management tools.
 :::
 
 ## Features

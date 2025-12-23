@@ -26,7 +26,7 @@ const { error, formItemId } = useFormField();
       v-if="optional"
       class="text-muted-foreground ml-1 text-xs font-normal"
     >
-      ({{ t('form.optional') }})
+      ({{ $t('form.optional') }})
     </span>
   </Label>
 </template>

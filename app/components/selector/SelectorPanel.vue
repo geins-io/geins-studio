@@ -202,16 +202,16 @@ const showSelectedList = ref(true);
     </SheetTrigger>
     <SheetContent width="wide">
       <SheetHeader>
-        <SheetTitle>{{ t('entity_selection', { entityName }) }}</SheetTitle>
+        <SheetTitle>{{ $t('entity_selection', { entityName }) }}</SheetTitle>
         <SheetDescription>
-          {{ t('selector_panel_description') }}
+          {{ $t('selector_panel_description') }}
         </SheetDescription>
       </SheetHeader>
       <SheetBody
         class="p-0 max-md:pb-14 md:flex md:h-[calc(100vh-10.1rem)] md:p-0"
       >
         <div class="w-full shrink-0 px-4 pt-3 md:w-[170px] md:py-3">
-          <ContentHeading>{{ t('select_from') }}</ContentHeading>
+          <ContentHeading>{{ $t('select_from') }}</ContentHeading>
           <SidebarNav>
             <SidebarNavItem
               v-for="option in options"
@@ -225,7 +225,7 @@ const showSelectedList = ref(true);
           </SidebarNav>
         </div>
         <div class="@container w-full border-x px-4 py-3">
-          <ContentHeading>{{ t('select') }}</ContentHeading>
+          <ContentHeading>{{ $t('select') }}</ContentHeading>
           <!-- IDS -->
           <div v-if="currentSelectionGroup === 'ids'">
             <TableView
@@ -292,7 +292,9 @@ const showSelectedList = ref(true);
             />
           </Button>
           <ContentHeading
-            >{{ t('selected') }} ({{ selectedEntities.length }})</ContentHeading
+            >{{ $t('selected') }} ({{
+              selectedEntities.length
+            }})</ContentHeading
           >
           <!-- IDS -->
           <ul
@@ -368,12 +370,12 @@ const showSelectedList = ref(true);
       <SheetFooter>
         <SheetClose as-child>
           <Button variant="outline" @click="handleCancel">
-            {{ t('cancel') }}
+            {{ $t('cancel') }}
           </Button>
         </SheetClose>
         <SheetClose as-child>
           <Button @click="handleSave">
-            {{ t('add_selected') }}
+            {{ $t('add_selected') }}
           </Button>
         </SheetClose>
       </SheetFooter>

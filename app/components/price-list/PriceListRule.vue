@@ -137,7 +137,7 @@ const handleApply = (overwrite: boolean) => {
         size="xs"
         variant="outline"
         @click="handleApply(true)"
-        >{{ $t('wholesale.price_list_apply_overwrite') }}</Button
+        >{{ $t('pricing.price_list_apply_overwrite') }}</Button
       >
       <Button
         :disabled="global && mode === 'all'"

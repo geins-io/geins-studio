@@ -15,6 +15,7 @@ const { t } = useI18n();
 const { login, verify, setAccount, preLogin, session, isAuthenticated } =
   useGeinsAuth();
 const router = useRouter();
+const route = useRoute();
 
 // State
 const loginToken = ref('');
@@ -56,7 +57,6 @@ const redirectToHome = async () => {
     return;
   }
 
-  const route = useRoute();
   const redirect = route.query.redirect as string;
   await router.push(redirect || '/');
 

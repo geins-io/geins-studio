@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="TData">
 import type { Table } from '@tanstack/vue-table';
-import { useI18n } from 'vue-i18n';
+import type { AcceptableValue } from 'reka-ui';
 
 const { t } = useI18n();
 
@@ -15,6 +15,14 @@ const props = defineProps<DataTablePaginationProps>();
 
 const totalRows = computed(() => props.table.getFilteredRowModel().rows.length);
 const viewport = useViewport();
+
+const setPageSize = (value: AcceptableValue) => {
+  if (!value) {
+    return;
+  }
+  const pageSize = parseInt(String(value));
+  props.table.setPageSize(pageSize);
+};
 </script>
 
 <template>
@@ -36,7 +44,7 @@ const viewport = useViewport();
         }}
       </span>
       <span v-else-if="viewport.isGreaterThan('sm')">
-        {{ t('rows_total', { total: totalRows, entityName }, totalRows) }}
+        {{ $t('rows_total', { total: totalRows, entityName }, totalRows) }}
       </span>
       <span v-else>{{
         `${totalRows} ${t(entityName, totalRows).toLowerCase()}`
@@ -45,11 +53,11 @@ const viewport = useViewport();
     <div class="flex items-center space-x-6 lg:space-x-8">
       <div v-if="advanced" class="flex items-center space-x-2 max-sm:hidden">
         <p class="font-semibold">
-          {{ t('rows_per_page', { entityName }, 2) }}
+          {{ $t('rows_per_page', { entityName }, 2) }}
         </p>
         <Select
           :model-value="`${table.getState().pagination.pageSize}`"
-          @update:model-value="table.setPageSize"
+          @update:model-value="setPageSize"
         >
           <SelectTrigger size="sm" class="w-[70px]">
             <SelectValue

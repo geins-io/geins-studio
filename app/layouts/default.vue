@@ -2,6 +2,7 @@
 import { SpeedInsights } from '@vercel/speed-insights/vue';
 
 const { currentSidebarWidth, sidebarOpen } = useLayout();
+const route = useRoute();
 
 const mainWidthStyle = computed(() => {
   const sidebarWidth = currentSidebarWidth.value;
@@ -18,7 +19,6 @@ const mainHeightStyle = computed(() => {
 });
 
 const contentClasses = computed(() => {
-  const route = useRoute();
   const pageType = route.meta.pageType;
   return {
     'overflow-hidden': pageType === 'list',

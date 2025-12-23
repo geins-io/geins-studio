@@ -20,8 +20,9 @@ import {
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
-const scope = 'pages/wholesale/price-list/[id].vue';
+const scope = 'pages/pricing/price-list/[id].vue';
 const route = useRoute();
+const router = useRouter();
 const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog(scope);
@@ -80,7 +81,7 @@ const entityBase: ProductPriceListCreate = {
 // UI STATE MANAGEMENT
 // =====================================================================================
 // Tabs & Steps
-const tabs = [t('general'), t('wholesale.price_list_products_pricing')];
+const tabs = [t('general'), t('pricing.price_list_products_pricing')];
 
 const totalCreateSteps = 2;
 const { currentStep, nextStep, previousStep } =
@@ -472,7 +473,7 @@ const copyEntity = async () => {
       const currentPath = route.path;
       const newPath = currentPath.replace(entityId.value, result._id);
       await parseAndSaveData(result, false);
-      await useRouter().replace(newPath);
+      await router.replace(newPath);
       toast({
         title: t('entity_copied', { entityName }),
         variant: 'positive',
@@ -507,7 +508,7 @@ const handleChannelChange = async (value: AcceptableValue) => {
 // DELETE FUNCTIONALITY
 // =====================================================================================
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteEntity, '/wholesale/price-list/list');
+  useDeleteDialog(deleteEntity, '/pricing/price-list/list');
 
 // =====================================================================================
 // SUMMARY DATA
@@ -537,28 +538,28 @@ const summary = computed<DataItem[]>(() => {
       entityData.value.channel,
     );
     dataList.push({
-      label: t('wholesale.price_list_channel'),
+      label: t('pricing.price_list_channel'),
       value: displayValue,
     });
   }
 
   if (entityData.value?.currency) {
     dataList.push({
-      label: t('wholesale.price_list_currency'),
+      label: t('pricing.price_list_currency'),
       value: entityData.value.currency,
     });
   }
 
   dataList.push({
-    label: t('wholesale.price_list_forced'),
+    label: t('pricing.price_list_forced'),
     value: entityData.value?.forced ? t('yes') : t('no'),
   });
 
   dataList.push({
-    label: t('wholesale.price_list_vat_config_label'),
+    label: t('pricing.price_list_vat_config_label'),
     value: entityData.value?.exVat
-      ? t('wholesale.price_list_ex_vat')
-      : t('wholesale.price_list_inc_vat'),
+      ? t('pricing.price_list_ex_vat')
+      : t('pricing.price_list_inc_vat'),
   });
 
   if (!createMode.value) {
@@ -811,8 +812,8 @@ if (!createMode.value) {
           >
             <ContentEditCard
               v-if="createMode"
-              :title="$t('wholesale.price_list_vat_config_title')"
-              :description="$t('wholesale.price_list_vat_config_description')"
+              :title="$t('pricing.price_list_vat_config_title')"
+              :description="$t('pricing.price_list_vat_config_description')"
               :step="1"
               :total-steps="totalCreateSteps"
               :create-mode="createMode"
@@ -824,11 +825,9 @@ if (!createMode.value) {
                 <FormGrid design="1">
                   <FormField v-slot="{ value, handleChange }" name="vat.exVat">
                     <FormItemSwitch
-                      :label="$t('wholesale.price_list_enter_prices_ex_vat')"
+                      :label="$t('pricing.price_list_enter_prices_ex_vat')"
                       :description="
-                        $t(
-                          'wholesale.price_list_enter_prices_ex_vat_description',
-                        )
+                        $t('pricing.price_list_enter_prices_ex_vat_description')
                       "
                       :model-value="value"
                       @update:model-value="handleChange"
@@ -838,7 +837,7 @@ if (!createMode.value) {
               </FormGridWrap>
             </ContentEditCard>
             <ContentEditCard
-              :title="$t('wholesale.price_list_details_title')"
+              :title="$t('pricing.price_list_details_title')"
               :step="2"
               :total-steps="totalCreateSteps"
               :create-mode="createMode"
@@ -862,7 +861,7 @@ if (!createMode.value) {
                   <FormField v-slot="{ componentField }" name="default.channel">
                     <FormItem>
                       <FormLabel>
-                        {{ $t('wholesale.price_list_channel') }}
+                        {{ $t('pricing.price_list_channel') }}
                       </FormLabel>
                       <FormControl>
                         <Select
@@ -896,7 +895,7 @@ if (!createMode.value) {
                   >
                     <FormItem>
                       <FormLabel>
-                        {{ $t('wholesale.price_list_currency') }}
+                        {{ $t('pricing.price_list_currency') }}
                       </FormLabel>
                       <FormControl>
                         <Select v-bind="componentField" :disabled="!createMode">
@@ -925,9 +924,7 @@ if (!createMode.value) {
 
               <FormGridWrap class="border-t pt-6">
                 <ContentCardHeader
-                  :title="
-                    $t('wholesale.price_list_product_prices_options_title')
-                  "
+                  :title="$t('pricing.price_list_product_prices_options_title')"
                   size="md"
                   heading-level="h3"
                 />
@@ -937,9 +934,9 @@ if (!createMode.value) {
                     name="default.forced"
                   >
                     <FormItemSwitch
-                      :label="$t('wholesale.price_list_forced')"
+                      :label="$t('pricing.price_list_forced')"
                       :description="
-                        $t('wholesale.price_list_override_prices_description')
+                        $t('pricing.price_list_override_prices_description')
                       "
                       :model-value="value"
                       @update:model-value="handleChange"
@@ -952,9 +949,9 @@ if (!createMode.value) {
                     name="default.autoAddProducts"
                   >
                     <FormItemSwitch
-                      :label="$t('wholesale.price_list_auto_add_products')"
+                      :label="$t('pricing.price_list_auto_add_products')"
                       :description="
-                        $t('wholesale.price_list_auto_add_products_description')
+                        $t('pricing.price_list_auto_add_products_description')
                       "
                       :disabled="true"
                       :model-value="value"
@@ -987,10 +984,8 @@ if (!createMode.value) {
           >
             <ContentCard>
               <ContentCardHeader
-                :title="$t('wholesale.price_list_global_rules_title')"
-                :description="
-                  $t('wholesale.price_list_global_rules_description')
-                "
+                :title="$t('pricing.price_list_global_rules_title')"
+                :description="$t('pricing.price_list_global_rules_description')"
                 size="lg"
                 class="mb-6"
               />
@@ -1006,16 +1001,16 @@ if (!createMode.value) {
                     "
                   >
                     <TabsTrigger value="base-rule">
-                      {{ $t('wholesale.price_list_base_rule') }}
+                      {{ $t('pricing.price_list_base_rule') }}
                     </TabsTrigger>
                     <TabsTrigger value="qty-levels">
-                      {{ $t('wholesale.price_list_volume_pricing') }}
+                      {{ $t('pricing.price_list_volume_pricing') }}
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent v-if="hasProductSelection" value="base-rule">
                     <PriceListRulesWrapper
                       v-model:mode="priceListBaseRuleMode"
-                      :title="$t('wholesale.price_list_base_rule')"
+                      :title="$t('pricing.price_list_base_rule')"
                       mode-id="priceListBaseRuleMode"
                     >
                       <Label class="w-full">
@@ -1036,7 +1031,7 @@ if (!createMode.value) {
                         variant="outline"
                         @click="handleApplyBaseRuleAndOverwrite"
                       >
-                        {{ $t('wholesale.price_list_apply_overwrite') }}
+                        {{ $t('pricing.price_list_apply_overwrite') }}
                       </Button>
                       <template #footer>
                         <SelectorTag
@@ -1051,7 +1046,7 @@ if (!createMode.value) {
                   <TabsContent v-if="hasProductSelection" value="qty-levels">
                     <PriceListRulesWrapper
                       v-model:mode="priceListRulesMode"
-                      :title="$t('wholesale.price_list_volume_pricing')"
+                      :title="$t('pricing.price_list_volume_pricing')"
                       mode-id="priceListRulesMode"
                     >
                       <PriceListRules
@@ -1069,9 +1064,7 @@ if (!createMode.value) {
                   v-if="!hasProductSelection"
                   class="text-muted-foreground text-sm italic"
                 >
-                  {{
-                    $t('wholesale.price_list_rules_available_after_selection')
-                  }}
+                  {{ $t('pricing.price_list_rules_available_after_selection') }}
                 </p>
               </div>
             </ContentCard>

@@ -8,11 +8,11 @@ import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = withDefaults(
   defineProps<{
-    buyer?: WholesaleBuyerUpdate;
+    buyer?: CustomerBuyerUpdate;
     accountId: string;
     accountName: string;
     mode: 'edit' | 'add';
-    priceLists: WholesalePriceList[];
+    priceLists: CustomerPriceList[];
   }>(),
   {
     mode: 'add',
@@ -25,8 +25,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogError } = useGeinsLog('components/WholesaleBuyerPanel.vue');
-const { wholesaleApi, customerApi } = useGeinsRepository();
+const { geinsLogError } = useGeinsLog('components/CustomerBuyerPanel.vue');
+const { customerApi } = useGeinsRepository();
 
 const entityName = 'buyer';
 
@@ -35,7 +35,7 @@ const loading = ref(false);
 const buyerExistsAsCustomer = ref(false);
 const existingCustomer = ref<Customer>();
 const updateCustomer = ref(false);
-const newBuyer = ref<WholesaleBuyerCreate>();
+const newBuyer = ref<CustomerBuyerCreate>();
 const isChecking = ref(false);
 const isDeleting = ref(false);
 const formValid = ref(false);
@@ -88,7 +88,7 @@ const checkCustomerExists = async (email: string) => {
 
   isChecking.value = true;
   try {
-    existingCustomer.value = await customerApi.get(email);
+    existingCustomer.value = await customerApi.customer.get(email);
     buyerExistsAsCustomer.value = true;
   } catch (error) {
     const status = getErrorStatus(error);
@@ -184,20 +184,20 @@ const handleSave = async () => {
 
     if (props.mode === 'edit') {
       // Just updating an existing buyer
-      await wholesaleApi.account
+      await customerApi.account
         .id(props.accountId)
         .buyer.update(id, newBuyer.value);
     } else if (buyerExistsAsCustomer.value) {
       // Customer exists, so assign and update
-      await wholesaleApi.account
+      await customerApi.account
         .id(props.accountId)
         .buyer.assign(newBuyer.value._id);
-      await wholesaleApi.account
+      await customerApi.account
         .id(props.accountId)
         .buyer.update(id, newBuyer.value);
     } else {
       // Create a new buyer
-      await wholesaleApi.account
+      await customerApi.account
         .id(props.accountId)
         .buyer.create(newBuyer.value);
     }
@@ -230,7 +230,7 @@ const handleRemoveClick = async () => {
 const removeBuyer = async (id: string = buyerId.value) => {
   isDeleting.value = true;
   try {
-    await wholesaleApi.account.id(props.accountId).buyer.delete(id);
+    await customerApi.account.id(props.accountId).buyer.delete(id);
   } catch (error) {
     const message = getErrorMessage(error);
     geinsLogError('error removing buyer:', message);
@@ -307,7 +307,7 @@ const existingCustomerName = computed(() => {
             <FormGrid design="1+1">
               <FormField v-slot="{ componentField }" name="email">
                 <FormItem>
-                  <FormLabel>{{ t('person.email') }}</FormLabel>
+                  <FormLabel>{{ $t('person.email') }}</FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -322,7 +322,7 @@ const existingCustomerName = computed(() => {
               <FormField v-slot="{ componentField }" name="phone">
                 <FormItem>
                   <FormLabel :optional="true">{{
-                    t('person.phone')
+                    $t('person.phone')
                   }}</FormLabel>
                   <FormControl>
                     <Input
@@ -338,8 +338,8 @@ const existingCustomerName = computed(() => {
             <FormGrid design="1">
               <FormField v-slot="{ value, handleChange }" name="active">
                 <FormItemSwitch
-                  :label="t('active')"
-                  :description="t('toggle_active_state')"
+                  :label="$t('active')"
+                  :description="$t('toggle_active_state')"
                   :model-value="value"
                   @update:model-value="handleChange"
                 />
@@ -354,13 +354,13 @@ const existingCustomerName = computed(() => {
             :title="$t('price_list', 2)"
             class="mb-4"
             :description="
-              $t('wholesale.buyers_price_list_priority_description')
+              $t('customers.buyers_price_list_priority_description')
             "
           />
           <ContentSwitch
             v-model:checked="assignPriceLists"
-            :label="$t('wholesale.buyers_assign_price_lists_label')"
-            :description="$t('wholesale.buyers_assign_price_lists_description')"
+            :label="$t('customers.buyers_assign_price_lists_label')"
+            :description="$t('customers.buyers_assign_price_lists_description')"
           >
             <FormGridWrap>
               <FormGrid design="1">
@@ -389,15 +389,15 @@ const existingCustomerName = computed(() => {
                   name="restrictToDedicatedPriceLists"
                 >
                   <FormItem>
-                    <FormLabel>{{ $t('wholesale.product_access') }}</FormLabel>
+                    <FormLabel>{{ $t('customers.product_access') }}</FormLabel>
                     <FormControl>
                       <FormItemSwitch
                         :label="
-                          $t('wholesale.buyers_restrict_to_price_lists_label')
+                          $t('customers.buyers_restrict_to_price_lists_label')
                         "
                         :description="
                           $t(
-                            'wholesale.buyers_restrict_to_price_lists_description',
+                            'customers.buyers_restrict_to_price_lists_description',
                           )
                         "
                         :disabled="!hasPricelistsAssigned"
@@ -420,11 +420,11 @@ const existingCustomerName = computed(() => {
               size="md"
               heading-level="h3"
               :title="
-                t('remove_entity', {
+                $t('remove_entity', {
                   entityName,
                 })
               "
-              :description="t('wholesale.buyers_remove_description')"
+              :description="$t('customers.buyers_remove_description')"
             />
             <Button
               size="sm"
@@ -432,17 +432,17 @@ const existingCustomerName = computed(() => {
               :loading="isDeleting"
               @click.stop="handleRemoveClick"
             >
-              {{ t('remove') }}
+              {{ $t('remove') }}
             </Button>
           </div>
           <div v-if="buyerExistsAsCustomer" class="w-full space-y-6">
             <Feedback type="info">
               <template #title>
-                {{ t('wholesale.buyers_feedback_existing_title') }}
+                {{ $t('customers.buyers_feedback_existing_title') }}
               </template>
               <template #description>
                 <i18n-t
-                  keypath="wholesale.buyers_feedback_existing_description"
+                  keypath="customers.buyers_feedback_existing_description"
                   scope="global"
                   tag="span"
                 >
@@ -455,12 +455,12 @@ const existingCustomerName = computed(() => {
                 <ContentSwitch
                   v-model:checked="updateCustomer"
                   :label="
-                    t('wholesale.buyers_assign_existing', {
+                    $t('customers.buyers_assign_existing', {
                       customerName: existingCustomerName,
                       accountName: accountName,
                     })
                   "
-                  :description="t('wholesale.buyers_assign_description')"
+                  :description="$t('customers.buyers_assign_description')"
                 />
               </template>
             </Feedback>
@@ -469,14 +469,14 @@ const existingCustomerName = computed(() => {
       </SheetBody>
       <SheetFooter>
         <Button variant="outline" @click="handleCancel">
-          {{ t('cancel') }}
+          {{ $t('cancel') }}
         </Button>
         <Button
           :loading="loading"
           :disabled="saveDisabled"
           @click.stop="handleSave"
         >
-          {{ t(`${mode === 'add' ? mode : 'update'}_entity`, { entityName }) }}
+          {{ $t(`${mode === 'add' ? mode : 'update'}_entity`, { entityName }) }}
         </Button>
       </SheetFooter>
     </SheetContent>

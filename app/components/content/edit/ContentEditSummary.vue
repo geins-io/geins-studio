@@ -50,19 +50,19 @@ const activeDescription = computed(() => {
 <template>
   <Card class="max-h-[80vh] space-y-4 overflow-y-auto p-6">
     <div class="flex items-center justify-between">
-      <ContentCardHeader :title="t('summary')" :description="description" />
+      <ContentCardHeader :title="$t('summary')" :description="description" />
       <Badge
         v-if="!createMode && showActiveStatus"
         :variant="entityLiveStatus ? 'positive' : 'secondary'"
       >
-        {{ entityLiveStatus ? t('active') : t('inactive') }}
+        {{ entityLiveStatus ? $t('active') : $t('inactive') }}
       </Badge>
     </div>
     <slot name="before-active-switch" />
     <ContentSwitch
       v-if="!createMode && showActiveStatus"
       v-model:checked="active"
-      :label="active ? t('active') : t('inactive')"
+      :label="active ? $t('active') : $t('inactive')"
       :description="activeDescription"
     />
     <slot name="before-summary" />
@@ -71,7 +71,7 @@ const activeDescription = computed(() => {
     <ContentDataList
       v-if="!createMode && settingsSummary.length"
       :data-list="settingsSummary"
-      :label="t('settings')"
+      :label="$t('settings')"
     />
     <slot name="after-settings" />
   </Card>

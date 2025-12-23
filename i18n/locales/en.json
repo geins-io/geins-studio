@@ -27,6 +27,7 @@
   "number": "Number | Numbers",
   "margin": "Margin | Margins",
   "discount": "Discount | Discounts",
+  "quotation": "Quotation | Quotations",
   "entity": "Entity | Entities",
   "new_entity_url_alias": "new",
   "list_entity_url_alias": "list",
@@ -248,7 +249,10 @@
   },
   "navigation": {
     "dashboard": "Dashboard",
-    "wholesale": "Wholesale",
+    "pricing": "Pricing",
+    "customers": "Customers",
+    "orders": "Orders",
+    "quotations": "Quotations",
     "accounts": "Accounts",
     "price_lists": "Price lists",
     "settings": "Settings",
@@ -286,7 +290,7 @@
 
   "contact_person": "Contact person",
   "contact_person_description": "Contact person related to the address",
-  "wholesale": {
+  "customers": {
     "account_details": "Account details",
     "vat_number": "VAT / Company reg. nr.",
     "external_id": "External ID",
@@ -328,6 +332,9 @@
     "vat_settings_description": "Set whether this account should be charged VAT on orders",
     "vat_included_label": "VAT included",
     "vat_included_description": "Orders from this account will include VAT",
+    "no_price_lists_connected": "No price lists are connected to this account"
+  },
+  "pricing": {
     "price_list_channel": "Channel",
     "price_list_currency": "Currency",
     "price_list_forced": "Enforce price list prices",
@@ -360,7 +367,6 @@
     "price_list_product_volume_pricing_description": "These price breaks apply only to this product. If you add a price break with the same quantity as a global break, it will override the global one.",
     "price_list_no_global_breaks": "No global price breaks defined.",
     "price_list_volume_pricing_sheet_description": "Add quantity-based price breaks for",
-    "no_price_lists_connected": "No price lists are connected to this account",
     "error_applying_quick_action": "Error applying quick action",
     "error_fetching_preview_price_list": "Error fetching preview price list",
     "calculate_by": "Calculate by",

@@ -27,6 +27,7 @@
   "number": "Nummer | Nummer",
   "margin": "Marginal | Marginaler",
   "discount": "Rabatt | Rabatter",
+  "quotation": "Offert | Offerter",
   "entity": "Entitet | Entiteter",
   "new_entity_url_alias": "ny",
   "list_entity_url_alias": "lista",
@@ -248,7 +249,10 @@
   },
   "navigation": {
     "dashboard": "Dashboard",
-    "wholesale": "Grossist",
+    "pricing": "Prissättning",
+    "customers": "Kunder",
+    "orders": "Beställningar",
+    "quotations": "Offerter",
     "accounts": "Företagskonton",
     "price_lists": "Prislistor",
     "settings": "Inställningar",
@@ -286,7 +290,7 @@
 
   "contact_person": "Kontaktperson",
   "contact_person_description": "Kontaktperson relaterad till adressen",
-  "wholesale": {
+  "customers": {
     "account_details": "Kontodetaljer",
     "vat_number": "Momsreg.nr / Org.nr",
     "external_id": "Externt ID",
@@ -328,6 +332,9 @@
     "vat_settings_description": "Ange om detta konto ska debiteras moms på ordrar",
     "vat_included_label": "Moms ingår",
     "vat_included_description": "Ordrar från detta konto kommer inkludera moms",
+    "no_price_lists_connected": "Inga prislistor är kopplade till detta konto"
+  },
+  "pricing": {
     "price_list_channel": "Kanal",
     "price_list_currency": "Valuta",
     "price_list_forced": "Tvinga prislistepriser",
@@ -360,7 +367,6 @@
     "price_list_product_volume_pricing_description": "Dessa prisavbrott gäller endast för denna produkt. Om du lägger till ett prisavbrott med samma antal som ett globalt avbrott kommer det att åsidosätta det globala.",
     "price_list_no_global_breaks": "Inga globala prisavbrott definierade.",
     "price_list_volume_pricing_sheet_description": "Lägg till antal-baserade prisavbrott för",
-    "no_price_lists_connected": "Inga prislistor är kopplade till detta konto",
     "error_applying_quick_action": "Fel vid tillämpning av snabbåtgärd",
     "error_fetching_preview_price_list": "Fel vid hämtning av förhandsgranskning av prislista",
     "calculate_by": "Beräkna med",

@@ -349,7 +349,7 @@ const hasSearchableColumns = computed(() => {
     >
       <Input
         class="w-full pl-8"
-        :placeholder="t('filter_entity', { entityName }, 2)"
+        :placeholder="$t('filter_entity', { entityName }, 2)"
         :model-value="globalFilter"
         @update:model-value="globalFilter = String($event)"
       />
@@ -457,7 +457,7 @@ const hasSearchableColumns = computed(() => {
                       variant="secondary"
                       @click="clearFilters"
                     >
-                      {{ t('clear_search') }}
+                      {{ $t('clear_search') }}
                     </Button>
                   </div>
                 </EmptyContent>

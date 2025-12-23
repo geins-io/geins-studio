@@ -148,23 +148,25 @@ function previewPrice(
 ): Promise<PriceListProductPreviewResponse>;
 ```
 
-### `wholesaleApi`
+### `customerApi`
+
+Customer and account management API for creating, updating, and managing customer accounts, buyers, and individual customers.
 
 #### `account`
 
-`wholesaleApi.account`
+`customerApi.account`
 
 ```ts
-function get(id: string, options?: WholesaleAccountApiOptions): Promise<WholesaleAccount>;
-function list(options?: WholesaleAccountApiOptions): Promise<WholesaleAccount[]>;
-function create(data: WholesaleAccountCreate, options?: WholesaleAccountApiOptions): Promise<WholesaleAccount>;
-function update(id: string, data: WholesaleAccountUpdate, options?: WholesaleAccountApiOptions): Promise<WholesaleAccount>;
+function get(id: string, options?: CustomerAccountApiOptions): Promise<CustomerAccount>;
+function list(options?: CustomerAccountApiOptions): Promise<CustomerAccount[]>;
+function create(data: CustomerAccountCreate, options?: CustomerAccountApiOptions): Promise<CustomerAccount>;
+function update(id: string, data: CustomerAccountUpdate, options?: CustomerAccountApiOptions): Promise<CustomerAccount>;
 function delete(id: string): Promise<void>;
 ```
 
 ##### `tags`
 
-`wholesaleApi.account.tags`
+`customerApi.account.tags`
 
 ```ts
 function get(): Promise<string[]>;
@@ -176,32 +178,35 @@ Has no methods itself but provides access to the following sub-repositories:
 
 ###### `buyer`
 
-`wholesaleApi.id(accountId).buyer`
+`customerApi.account.id(accountId).buyer`
 
 ```ts
-function get(id: string): Promise<WholesaleBuyer>;
-function list(): Promise<WholesaleBuyer[]>;
-function create(data: WholesaleBuyerCreate): Promise<WholesaleBuyer>;
-function update(id: string, data: WholesaleBuyerUpdate): Promise<WholesaleBuyer>;
+function get(id: string): Promise<CustomerBuyer>;
+function list(): Promise<CustomerBuyer[]>;
+function create(data: CustomerBuyerCreate): Promise<CustomerBuyer>;
+function update(id: string, data: CustomerBuyerUpdate): Promise<CustomerBuyer>;
 function delete(id: string): Promise<void>;
 function assign(id: string): Promise<void>;
 ```
 
-#### `buyer`
-
-`wholesaleApi.buyer`
-
-```ts
-function get(id: string): Promise<WholesaleBuyer>;
-function list(): Promise<WholesaleBuyer[]>;
-```
-
 #### `validateVatNumber`
 
-`wholesaleApi.validateVatNumber`
+`customerApi.validateVatNumber`
 
 ```ts
-function validateVatNumber(vatNumber: string): Promise<WholesaleVatValidation>;
+function validateVatNumber(vatNumber: string): Promise<CustomerVatValidation>;
+```
+
+#### `customer`
+
+`customerApi.customer`
+
+```ts
+function get(id: string): Promise<Customer>;
+function list(): Promise<Customer[]>;
+function create(data: CustomerCreate): Promise<Customer>;
+function update(id: string, data: CustomerUpdate): Promise<Customer>;
+function delete(id: string): Promise<void>;
 ```
 
 ### `userApi`
@@ -240,16 +245,6 @@ function beginRestore(email: string, callbackUrl: string): Promise<void>;
 function restore(token: string, password: string): Promise<void>;
 ```
 
-### `customerApi`
-
-```ts
-function get(id: string): Promise<Customer>;
-function list(): Promise<Customer[]>;
-function create(data: CustomerCreate): Promise<Customer>;
-function update(id: string, data: CustomerUpdate): Promise<Customer>;
-function delete(id: string): Promise<void>;
-```
-
 ## Dependencies
 
 This composable depends on:
@@ -274,7 +269,6 @@ interface UseGeinsRepositoryReturnType {
   globalApi: ReturnType<typeof repo.global>;
   orderApi: ReturnType<typeof repo.order>;
   productApi: ReturnType<typeof repo.product>;
-  wholesaleApi: ReturnType<typeof repo.wholesale>;
   userApi: ReturnType<typeof repo.user>;
   customerApi: ReturnType<typeof repo.customer>;
 }

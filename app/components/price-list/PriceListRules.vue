@@ -121,12 +121,12 @@ const thClasses = 'text-xs font-bold text-left py-2';
               {{ $t('discount') }}
             </th>
             <th v-if="mode === 'all'" :class="thClasses">
-              {{ $t('wholesale.price_list_price') }} ({{
+              {{ $t('pricing.price_list_price') }} ({{
                 props.vatDescription
               }})
             </th>
             <th v-else :class="thClasses">
-              {{ $t('wholesale.price_list_applied') }}
+              {{ $t('pricing.price_list_applied') }}
             </th>
           </tr>
         </thead>
@@ -163,7 +163,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
       @click="addRule"
     >
       <LucidePlus class="mr-2 size-3.5" />
-      {{ $t('wholesale.price_list_add_break') }}
+      {{ $t('pricing.price_list_add_break') }}
     </Button>
   </div>
 </template>
