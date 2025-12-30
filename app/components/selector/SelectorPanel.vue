@@ -89,30 +89,41 @@ const selectOption = (id: SelectorSelectionOptionsId) => {
 };
 
 // Columns for Entity
-const { getColumns, orderAndFilterColumns } = useColumns<T>();
+const { getColumns, orderAndFilterColumns, addExpandingColumn } =
+  useColumns<T>();
 const columnOptions: ColumnOptions<T> = {
   selectable: true,
 };
 let columns = getColumns(entities.value, columnOptions);
+// Check if entities have children to enable expanding
+const hasChildren = computed(() =>
+  entities.value.some((e) => e.children && e.children.length > 0),
+);
+if (hasChildren.value) {
+  columns = addExpandingColumn(columns);
+}
 if (entityIsProduct.value) {
-  columns = orderAndFilterColumns(columns, [
-    'select',
-    'thumbnail',
-    '_id',
-    'name',
-  ]);
+  const keysToOrder: Array<
+    'expander' | 'select' | 'thumbnail' | '_id' | 'name'
+  > = hasChildren.value
+    ? ['expander', 'select', 'thumbnail', '_id', 'name']
+    : ['select', 'thumbnail', '_id', 'name'];
+  columns = orderAndFilterColumns(columns, keysToOrder as any);
 }
 
 // watch entitites, if they change, update columns
 watchEffect(() => {
   columns = getColumns(entities.value, columnOptions);
+  if (hasChildren.value) {
+    columns = addExpandingColumn(columns);
+  }
   if (entityIsProduct.value) {
-    columns = orderAndFilterColumns(columns, [
-      'select',
-      'thumbnail',
-      '_id',
-      'name',
-    ]);
+    const keysToOrder: Array<
+      'expander' | 'select' | 'thumbnail' | '_id' | 'name'
+    > = hasChildren.value
+      ? ['expander', 'select', 'thumbnail', '_id', 'name']
+      : ['select', 'thumbnail', '_id', 'name'];
+    columns = orderAndFilterColumns(columns, keysToOrder as any);
   }
 });
 let categoriesColumns: ColumnDef<Category>[] = [];
@@ -237,6 +248,8 @@ const showSelectedList = ref(true);
               :selected-ids="selectedIds"
               max-height="calc(100vh - 20rem)"
               :mode="TableMode.Simple"
+              :enable-expanding="true"
+              :get-sub-rows="(row: any) => row.children as T[]"
               @selection="onSelection"
             />
           </div>

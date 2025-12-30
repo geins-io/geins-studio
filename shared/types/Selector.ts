@@ -91,4 +91,5 @@ export interface SelectorSelectionOption {
 export interface SelectorEntity extends EntityBaseWithName {
   image?: string;
   thumbnail?: string;
+  children?: SelectorEntity[];
 }

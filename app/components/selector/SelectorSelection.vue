@@ -193,17 +193,30 @@ const noSelectionLabel = computed(() => {
       }}
     </ContentHeading>
     <div class="relative rounded-lg border px-3 py-4">
-      <SelectorPanel
+      <slot
+        name="panel"
         :selection="selection"
         :type="type"
         :mode="mode"
+        :currency="currentCurrency"
         :entity-name="entityName"
         :entities="entities"
         :options="selectorOptions"
-        @save="updateSelection"
+        :update-selection="updateSelection"
       >
-        <Button class="absolute top-3.5 right-3">{{ $t('browse') }}</Button>
-      </SelectorPanel>
+        <SelectorPanel
+          :selection="selection"
+          :type="type"
+          :mode="mode"
+          :currency="currentCurrency"
+          :entity-name="entityName"
+          :entities="entities"
+          :options="selectorOptions"
+          @save="updateSelection"
+        >
+          <Button class="absolute top-3.5 right-3">{{ $t('browse') }}</Button>
+        </SelectorPanel>
+      </slot>
       <div class="flex w-[calc(100%-5.5rem)] flex-col gap-3">
         <!-- All / No products tag -->
         <SelectorTags

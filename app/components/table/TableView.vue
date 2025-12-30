@@ -8,6 +8,7 @@ import type {
   ColumnOrderState,
   ColumnPinningState,
   Column,
+  ExpandedState,
 } from '@tanstack/vue-table';
 import {
   FlexRender,
@@ -15,6 +16,7 @@ import {
   getPaginationRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getExpandedRowModel,
   useVueTable,
 } from '@tanstack/vue-table';
 
@@ -42,6 +44,8 @@ const props = withDefaults(
     emptyIcon?: Component;
     showEmptyActions?: boolean;
     initVisibilityState?: VisibilityState;
+    enableExpanding?: boolean;
+    getSubRows?: (row: TData) => TData[] | undefined;
   }>(),
   {
     entityName: 'row',
@@ -52,6 +56,7 @@ const props = withDefaults(
     showSearch: false,
     showEmptyActions: true,
     mode: TableMode.Advanced,
+    enableExpanding: false,
     pinnedState: () => ({
       left: ['select'],
       right: ['actions'],
@@ -76,6 +81,7 @@ const showSearch =
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const globalFilter = ref('');
+const expanded = ref<ExpandedState>({});
 
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
@@ -245,6 +251,10 @@ const table = useVueTable({
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
   getSortedRowModel: getSortedRowModel(),
+  getExpandedRowModel: props.enableExpanding
+    ? getExpandedRowModel()
+    : undefined,
+  getSubRows: props.enableExpanding ? props.getSubRows : undefined,
   onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
   onColumnFiltersChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnFilters),
@@ -269,6 +279,9 @@ const table = useVueTable({
   },
   onColumnOrderChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnOrder),
+  onExpandedChange: props.enableExpanding
+    ? (updaterOrValue) => valueUpdater(updaterOrValue, expanded)
+    : undefined,
   state: {
     get sorting() {
       return sorting.value;
@@ -290,6 +303,9 @@ const table = useVueTable({
     },
     get columnPinning() {
       return columnPinningState.value;
+    },
+    get expanded() {
+      return props.enableExpanding ? expanded.value : {};
     },
   },
   initialState: {
