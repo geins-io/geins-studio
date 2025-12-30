@@ -2,6 +2,7 @@
 import type {
   CompareCondition,
   SelectorSelectionInternal,
+  TableGroupingConfig,
 } from '#shared/types';
 import {
   SelectorMode,
@@ -19,6 +20,7 @@ const props = withDefaults(
     mode: SelectorMode;
     entities: SelectorEntity[];
     selectionStrategy?: SelectorSelectionStrategy;
+    grouping?: TableGroupingConfig;
   }>(),
   {},
 );
@@ -200,6 +202,7 @@ const noSelectionLabel = computed(() => {
         :entity-name="entityName"
         :entities="entities"
         :options="selectorOptions"
+        :grouping="grouping"
         @save="updateSelection"
       >
         <Button class="absolute top-3.5 right-3">{{ $t('browse') }}</Button>

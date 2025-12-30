@@ -38,6 +38,12 @@ export interface LinkColumnConfig<T> {
   idField?: StringKeyOf<T>;
 }
 
+export interface TableGroupingConfig {
+  groupBy: string[];
+  enableExpanding?: boolean;
+  defaultExpanded?: boolean | Record<string, boolean>;
+}
+
 export interface ColumnOptions<T> {
   selectable?: boolean;
   sortable?: boolean;

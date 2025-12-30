@@ -4,6 +4,7 @@ import {
   type SelectorEntity,
   type SelectorMode,
   type SelectorSelectionInternal,
+  type TableGroupingConfig,
   SelectorSelectionType,
   TableMode,
 } from '#shared/types';
@@ -18,6 +19,7 @@ const props = withDefaults(
     options: SelectorSelectionOption[];
     entityName: string;
     entities: T[];
+    grouping?: TableGroupingConfig;
   }>(),
   {
     type: SelectorSelectionType.Include,
@@ -237,6 +239,7 @@ const showSelectedList = ref(true);
               :selected-ids="selectedIds"
               max-height="calc(100vh - 20rem)"
               :mode="TableMode.Simple"
+              :grouping="grouping"
               @selection="onSelection"
             />
           </div>

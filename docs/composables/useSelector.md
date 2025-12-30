@@ -74,6 +74,27 @@ const excludeProducts = (productIds: string[]) => {
 };
 ```
 
+### SKU Selection with Grouping
+
+```ts
+const { getEmptySimpleSelectionBase } = useSelector();
+const { flattenChildren } = useEntityFlattener();
+
+// Flatten products to SKUs
+const skuEntities = computed(() =>
+  flattenChildren(products.value, 'skus', ['productId', 'name', 'thumbnail']),
+);
+
+// Simple selection for SKU IDs
+const skuSelection = ref(getEmptySimpleSelectionBase());
+
+// Use with Selector component
+const handleSkuSelection = (selection: SelectorSelectionSimpleBase) => {
+  console.log('Selected SKU IDs:', selection.include);
+  console.log('Excluded SKU IDs:', selection.exclude);
+};
+```
+
 ## Properties and Methods
 
 ### Creation Methods

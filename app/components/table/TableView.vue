@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TData extends Record<string, any>, TValue">
-import { TableMode } from '#shared/types';
+import { TableMode, type TableGroupingConfig } from '#shared/types';
 import type {
   ColumnDef,
   ColumnFiltersState,
@@ -8,6 +8,8 @@ import type {
   ColumnOrderState,
   ColumnPinningState,
   Column,
+  GroupingState,
+  ExpandedState,
 } from '@tanstack/vue-table';
 import {
   FlexRender,
@@ -15,6 +17,8 @@ import {
   getPaginationRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getExpandedRowModel,
+  getGroupedRowModel,
   useVueTable,
 } from '@tanstack/vue-table';
 
@@ -42,6 +46,7 @@ const props = withDefaults(
     emptyIcon?: Component;
     showEmptyActions?: boolean;
     initVisibilityState?: VisibilityState;
+    grouping?: TableGroupingConfig;
   }>(),
   {
     entityName: 'row',
@@ -76,6 +81,12 @@ const showSearch =
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const globalFilter = ref('');
+const groupingState = ref<GroupingState>(props.grouping?.groupBy || []);
+const expanded = ref<ExpandedState>(
+  props.grouping?.defaultExpanded === true
+    ? true
+    : props.grouping?.defaultExpanded || {},
+);
 
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
@@ -245,6 +256,8 @@ const table = useVueTable({
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
   getSortedRowModel: getSortedRowModel(),
+  getGroupedRowModel: getGroupedRowModel(),
+  getExpandedRowModel: getExpandedRowModel(),
   onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
   onColumnFiltersChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnFilters),
@@ -269,6 +282,9 @@ const table = useVueTable({
   },
   onColumnOrderChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnOrder),
+  onGroupingChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, groupingState),
+  onExpandedChange: (updaterOrValue) => valueUpdater(updaterOrValue, expanded),
   state: {
     get sorting() {
       return sorting.value;
@@ -291,12 +307,19 @@ const table = useVueTable({
     get columnPinning() {
       return columnPinningState.value;
     },
+    get grouping() {
+      return groupingState.value;
+    },
+    get expanded() {
+      return expanded.value;
+    },
   },
   initialState: {
     pagination: {
       pageSize: props.pageSize,
     },
     columnPinning: columnPinningState.value,
+    grouping: groupingState.value,
   },
   meta: {
     mode: props.mode,
@@ -404,6 +427,13 @@ const hasSearchableColumns = computed(() => {
             v-for="row in table.getRowModel().rows"
             :key="row.id"
             :data-state="row.getIsSelected() ? 'selected' : undefined"
+            :class="
+              cn(
+                row.getIsGrouped()
+                  ? 'bg-muted/50 hover:bg-muted/70 font-medium'
+                  : '',
+              )
+            "
           >
             <TableCell
               v-for="cell in row.getVisibleCells()"
@@ -415,10 +445,46 @@ const hasSearchableColumns = computed(() => {
               "
               :style="pinnedStyles(cell.column)"
             >
+              <!-- Grouped cell with expand/collapse -->
+              <div v-if="cell.getIsGrouped()" class="flex items-center gap-2">
+                <Button
+                  v-if="grouping?.enableExpanding !== false"
+                  variant="ghost"
+                  size="icon"
+                  class="size-6 shrink-0"
+                  @click="row.toggleExpanded()"
+                >
+                  <LucideChevronRight
+                    class="size-4 transition-transform duration-200"
+                    :class="row.getIsExpanded() ? 'rotate-90' : ''"
+                  />
+                </Button>
+                <FlexRender
+                  :render="cell.column.columnDef.cell"
+                  :props="cell.getContext()"
+                />
+                <Badge variant="secondary" class="ml-2">
+                  {{ row.subRows.length }}
+                </Badge>
+              </div>
+
+              <!-- Aggregated cell -->
               <FlexRender
-                :render="cell.column.columnDef.cell"
+                v-else-if="cell.getIsAggregated()"
+                :render="
+                  cell.column.columnDef.aggregatedCell ??
+                  cell.column.columnDef.cell
+                "
                 :props="cell.getContext()"
               />
+
+              <!-- Regular cell (hidden in grouped parent rows) -->
+              <template v-else-if="!cell.getIsPlaceholder()">
+                <FlexRender
+                  :render="cell.column.columnDef.cell"
+                  :props="cell.getContext()"
+                />
+              </template>
             </TableCell>
           </TableRow>
         </template>

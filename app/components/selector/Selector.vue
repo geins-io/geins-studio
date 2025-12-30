@@ -5,6 +5,7 @@ import {
   SelectorMode,
   SelectorSelectionStrategy,
   SelectorSelectionType,
+  type TableGroupingConfig,
 } from '#shared/types';
 
 // PROPS
@@ -19,6 +20,7 @@ const props = withDefaults(
     currency?: string;
     fetchEntitiesExternally?: boolean;
     columnsOrder?: (keyof T)[];
+    tableGrouping?: TableGroupingConfig;
   }>(),
   {
     entityName: 'product',
@@ -295,6 +297,7 @@ defineExpose({
             :entity-name="entityName"
             :entities="entities"
             :selection-strategy="selectionStrategy"
+            :grouping="tableGrouping"
           />
           <ContentSwitch
             v-if="allowExclusions"
@@ -309,6 +312,7 @@ defineExpose({
               :currency="selectorCurrency"
               :entity-name="entityName"
               :entities="entities"
+              :grouping="tableGrouping"
             />
           </ContentSwitch>
         </slot>
@@ -326,6 +330,7 @@ defineExpose({
           :mode="TableMode.Simple"
           :page-size="15"
           :show-search="true"
+          :grouping="tableGrouping"
         />
       </slot>
     </div>
