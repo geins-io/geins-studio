@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends SelectorEntity">
-import type { ColumnDef } from '@tanstack/vue-table';
+import type { ColumnDef, Row, Table } from '@tanstack/vue-table';
 import {
   type SelectorEntity,
   type SelectorMode,
@@ -40,6 +40,7 @@ const entities = toRef(props, 'entities');
 const currency = toRef(props, 'currency');
 const mode = toRef(props, 'mode'); */
 const entityIsProduct = computed(() => entityName.value === 'product');
+const entityIsSku = computed(() => entityName.value === 'sku');
 const currentSelection = ref<SelectorSelectionInternal>(
   toRef(props, 'selection').value,
 );
@@ -89,43 +90,67 @@ const selectOption = (id: SelectorSelectionOptionsId) => {
 };
 
 // Columns for Entity
-const { getColumns, orderAndFilterColumns, addExpandingColumn } =
-  useColumns<T>();
+const {
+  getColumns,
+  orderAndFilterColumns,
+  addExpandingColumn,
+  getBasicCellStyle,
+} = useColumns<T>();
 const columnOptions: ColumnOptions<T> = {
   selectable: true,
 };
 let columns = getColumns(entities.value, columnOptions);
-// Check if entities have children to enable expanding
-const hasChildren = computed(() =>
-  entities.value.some((e) => e.children && e.children.length > 0),
-);
-if (hasChildren.value) {
+
+if (entityIsSku.value) {
   columns = addExpandingColumn(columns);
-}
-if (entityIsProduct.value) {
-  const keysToOrder: Array<
-    'expander' | 'select' | 'thumbnail' | '_id' | 'name'
-  > = hasChildren.value
-    ? ['expander', 'select', 'thumbnail', '_id', 'name']
-    : ['select', 'thumbnail', '_id', 'name'];
-  columns = orderAndFilterColumns(columns, keysToOrder as any);
+  columns = columns.map((col) => {
+    if (col.id === 'select') {
+      const originalCell = col.cell;
+      return {
+        ...col,
+        id: 'select' as string,
+        header: () => null,
+        cell: (props: { table: Table<T>; row: Row<T> }) => {
+          const { table, row } = props;
+          // Hide checkbox for parent rows (rows that CAN expand)
+          if (row.getCanExpand()) {
+            return h('div', {
+              class: cn(
+                getBasicCellStyle(table),
+                'px-3 flex items-center justify-center',
+              ),
+            });
+          }
+          // Show checkbox for child rows
+          if (typeof originalCell === 'function') {
+            const selectCell = row
+              .getAllCells()
+              .find((c) => c.column.id === 'select');
+            if (!selectCell) return null;
+            return originalCell(selectCell.getContext());
+          }
+          return null;
+        },
+      } as ColumnDef<T>;
+    }
+
+    return col;
+  }) as ColumnDef<T>[];
 }
 
-// watch entitites, if they change, update columns
-watchEffect(() => {
-  columns = getColumns(entities.value, columnOptions);
-  if (hasChildren.value) {
-    columns = addExpandingColumn(columns);
-  }
-  if (entityIsProduct.value) {
-    const keysToOrder: Array<
-      'expander' | 'select' | 'thumbnail' | '_id' | 'name'
-    > = hasChildren.value
-      ? ['expander', 'select', 'thumbnail', '_id', 'name']
-      : ['select', 'thumbnail', '_id', 'name'];
-    columns = orderAndFilterColumns(columns, keysToOrder as any);
-  }
-});
+let columnKeys: ColumnKey<T>[] = [
+  'select',
+  'thumbnail',
+  '_id',
+  'name',
+  'articleNumber',
+];
+
+if (entityIsSku.value) {
+  columnKeys = ['expander', 'select', 'productId', ...columnKeys.slice(1)];
+}
+columns = orderAndFilterColumns(columns, columnKeys);
+
 let categoriesColumns: ColumnDef<Category>[] = [];
 let brandsColumns: ColumnDef<Brand>[] = [];
 // Columns for categories
@@ -249,7 +274,7 @@ const showSelectedList = ref(true);
               max-height="calc(100vh - 20rem)"
               :mode="TableMode.Simple"
               :enable-expanding="true"
-              :get-sub-rows="(row: any) => row.children as T[]"
+              :get-sub-rows="(row: T) => row.skus as T[] | undefined"
               @selection="onSelection"
             />
           </div>

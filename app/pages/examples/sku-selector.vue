@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { SelectorMode } from '#shared/types';
 import type { SelectorEntity, Product } from '#shared/types';
+const { getProductThumbnail } = useGeinsImage();
 
 definePageMeta({
   layout: 'default',
@@ -21,10 +22,13 @@ onMounted(async () => {
       response?.items?.map((product: Product) => ({
         _id: product._id,
         name: product.name,
-        thumbnail: product.thumbnail,
-        children: product.skus?.map((sku) => ({
+        thumbnail: getProductThumbnail(product.media?.[0]?._id),
+        productId: product._id,
+        skus: product.skus?.map((sku) => ({
           _id: sku._id,
-          name: sku.name || sku.articleNumber,
+          name: sku.name,
+          articleNumber: sku.articleNumber,
+          thumbnail: getProductThumbnail(product.media?.[0]?._id),
         })),
       })) || [];
   } catch (error) {
@@ -88,7 +92,7 @@ watch(
       <Selector
         v-model:simple-selection="simpleSelection"
         :entities="productsWithSkus"
-        entity-name="product"
+        entity-name="sku"
         :mode="SelectorMode.Simple"
       />
     </template>

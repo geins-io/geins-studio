@@ -1,6 +1,7 @@
 import {
   type BatchQueryFiltered,
   type BatchQueryFilterGroup,
+  type Sku,
 } from '#shared/types';
 
 // SELECTOR
@@ -35,7 +36,8 @@ export type SelectorSelectionOptionsId =
   | 'brand'
   | 'price'
   | 'stock'
-  | 'import';
+  | 'import'
+  | 'skus';
 
 export interface CurrencyField {
   [currency: string]: number;
@@ -91,5 +93,7 @@ export interface SelectorSelectionOption {
 export interface SelectorEntity extends EntityBaseWithName {
   image?: string;
   thumbnail?: string;
-  children?: SelectorEntity[];
+  articleNumber?: string;
+  skus?: SelectorEntity[];
+  productId?: string;
 }

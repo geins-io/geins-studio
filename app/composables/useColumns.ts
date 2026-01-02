@@ -39,11 +39,11 @@ interface UseColumnsReturnType<T> {
   addExpandingColumn: (columns: ColumnDef<T>[]) => ColumnDef<T>[];
   orderAndFilterColumns: (
     columns: ColumnDef<T>[],
-    keys: (keyof T | 'select' | 'actions')[],
+    keys: ColumnKey<T>[],
   ) => ColumnDef<T>[];
   orderColumnLast: (
     columns: ColumnDef<T>[],
-    key: keyof T | 'select' | 'actions',
+    key: ColumnKey<T>,
   ) => ColumnDef<T>[];
 }
 
@@ -573,7 +573,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
-            let text = String(row.getValue(key));
+            let text = String(row.getValue(key) ?? '');
 
             if (typeof value === 'boolean') {
               return h(TableCellBoolean, {
@@ -705,7 +705,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
 
   const orderAndFilterColumns = (
     columns: ColumnDef<T>[],
-    keys: (keyof T | 'select' | 'actions')[],
+    keys: ColumnKey<T>[],
   ): ColumnDef<T>[] => {
     const newColumns = keys
       .map((key) => columns.find((column) => column.id === key))
@@ -715,7 +715,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
 
   const orderColumnLast = (
     columns: ColumnDef<T>[],
-    key: keyof T | 'select' | 'actions',
+    key: ColumnKey<T>,
   ): ColumnDef<T>[] => {
     const column = columns.find((column) => column.id === key);
     if (!column) {
