@@ -272,10 +272,41 @@ const table = useVueTable({
     valueUpdater(updaterOrValue, columnPinningState),
   onRowSelectionChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, rowSelection);
-    emit(
-      'selection',
-      table.getSelectedRowModel().rows.map((row) => row.original),
-    );
+
+    if (props.enableExpanding && props.getSubRows) {
+      // For expanding tables, getSelectedRowModel() doesn't include child rows properly
+      // We need to manually collect all selected rows from the full hierarchy
+      const collectSelectedRows = (rows: any[]): any[] => {
+        const selected: any[] = [];
+        for (const row of rows) {
+          if (row.getIsSelected()) {
+            selected.push(row);
+          }
+          // Recursively check subRows
+          if (row.subRows && row.subRows.length > 0) {
+            selected.push(...collectSelectedRows(row.subRows));
+          }
+        }
+        return selected;
+      };
+
+      const allRows = table.getCoreRowModel().rows;
+      const selectedRows = collectSelectedRows(allRows);
+
+      // Only emit leaf rows (children that cannot expand)
+      const leafRows = selectedRows.filter((row) => !row.getCanExpand());
+
+      emit(
+        'selection',
+        leafRows.map((row) => row.original),
+      );
+    } else {
+      // Flat table: use standard selection model
+      emit(
+        'selection',
+        table.getSelectedRowModel().rows.map((row) => row.original),
+      );
+    }
   },
   onColumnOrderChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnOrder),

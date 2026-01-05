@@ -20,7 +20,7 @@ onMounted(async () => {
     // Transform products to SelectorEntity format with SKUs as children
     productsWithSkus.value =
       response?.items?.map((product: Product) => ({
-        _id: product._id,
+        _id: `p-${product._id}`,
         name: product.name,
         thumbnail: getProductThumbnail(product.media?.[0]?._id),
         productId: product._id,
@@ -40,7 +40,7 @@ onMounted(async () => {
 
 // Simple mode selection (outputs SKU IDs in the 'ids' array)
 const simpleSelection = ref({
-  include: [],
+  include: ['1050'],
   exclude: [],
 });
 

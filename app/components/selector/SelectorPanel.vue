@@ -96,60 +96,73 @@ const {
   addExpandingColumn,
   getBasicCellStyle,
 } = useColumns<T>();
-const columnOptions: ColumnOptions<T> = {
-  selectable: true,
+
+let columns: ColumnDef<T>[] = [];
+
+const setupEntityColumns = () => {
+  const columnOptions: ColumnOptions<T> = {
+    selectable: true,
+  };
+  columns = getColumns(entities.value, columnOptions);
+
+  if (entityIsSku.value) {
+    columns = addExpandingColumn(columns);
+    columns = columns.map((col) => {
+      if (col.id === 'select') {
+        const originalCell = col.cell;
+        return {
+          ...col,
+          id: 'select' as string,
+          header: () => null,
+          cell: (props: { table: Table<T>; row: Row<T> }) => {
+            const { table, row } = props;
+            // Hide checkbox for parent rows (rows that CAN expand)
+            if (row.getCanExpand()) {
+              return h('div', {
+                class: cn(
+                  getBasicCellStyle(table),
+                  'px-3 flex items-center justify-center',
+                ),
+              });
+            }
+            // Show checkbox for child rows
+            if (typeof originalCell === 'function') {
+              const selectCell = row
+                .getAllCells()
+                .find((c) => c.column.id === 'select');
+              if (!selectCell) return null;
+              return originalCell(selectCell.getContext());
+            }
+            return null;
+          },
+        } as ColumnDef<T>;
+      }
+
+      return col;
+    }) as ColumnDef<T>[];
+  }
+
+  let columnKeys: ColumnKey<T>[] = [
+    'select',
+    'thumbnail',
+    '_id',
+    'name',
+    'articleNumber',
+  ];
+
+  if (entityIsSku.value) {
+    columnKeys = ['expander', 'select', 'productId', ...columnKeys.slice(1)];
+  }
+  columns = orderAndFilterColumns(columns, columnKeys);
 };
-let columns = getColumns(entities.value, columnOptions);
 
-if (entityIsSku.value) {
-  columns = addExpandingColumn(columns);
-  columns = columns.map((col) => {
-    if (col.id === 'select') {
-      const originalCell = col.cell;
-      return {
-        ...col,
-        id: 'select' as string,
-        header: () => null,
-        cell: (props: { table: Table<T>; row: Row<T> }) => {
-          const { table, row } = props;
-          // Hide checkbox for parent rows (rows that CAN expand)
-          if (row.getCanExpand()) {
-            return h('div', {
-              class: cn(
-                getBasicCellStyle(table),
-                'px-3 flex items-center justify-center',
-              ),
-            });
-          }
-          // Show checkbox for child rows
-          if (typeof originalCell === 'function') {
-            const selectCell = row
-              .getAllCells()
-              .find((c) => c.column.id === 'select');
-            if (!selectCell) return null;
-            return originalCell(selectCell.getContext());
-          }
-          return null;
-        },
-      } as ColumnDef<T>;
-    }
-
-    return col;
-  }) as ColumnDef<T>[];
-}
-
-let columnKeys: ColumnKey<T>[] = [
-  'select',
-  'thumbnail',
-  '_id',
-  'name',
-  'articleNumber',
-];
-
-if (entityIsSku.value) {
-  columnKeys = ['expander', 'select', 'productId', ...columnKeys.slice(1)];
-}
-columns = orderAndFilterColumns(columns, columnKeys);
+watch(
+  entities,
+  () => {
+    setupEntityColumns();
+  },
+  { immediate: true },
+);
 
 let categoriesColumns: ColumnDef<Category>[] = [];
 let brandsColumns: ColumnDef<Brand>[] = [];
@@ -230,6 +243,10 @@ const handleCancel = () => {
 };
 
 const showSelectedList = ref(true);
+
+const getSkuSubRows = (row: T) => {
+  return entityIsSku.value ? (row.skus as T[]) || [] : undefined;
+};
 </script>
 <template>
   <Sheet>
@@ -273,8 +290,8 @@ const showSelectedList = ref(true);
               :selected-ids="selectedIds"
               max-height="calc(100vh - 20rem)"
               :mode="TableMode.Simple"
-              :enable-expanding="true"
-              :get-sub-rows="(row: T) => row.skus as T[] | undefined"
+              :enable-expanding="entityIsSku"
+              :get-sub-rows="getSkuSubRows"
               @selection="onSelection"
             />
           </div>
