@@ -56,7 +56,7 @@ watch(
 
 const options = toRef(props, 'options');
 const currentOption = ref(options.value?.[0]?.id ?? '');
-//watch options and set new current option to the first if changed
+
 watch(
   options,
   (value) => {
@@ -89,6 +89,13 @@ const selectOption = (id: SelectorSelectionOptionsId) => {
   currentOption.value = id;
 };
 
+const searchableFields: Array<keyof T> = [
+  '_id',
+  'name',
+  'articleNumber',
+  'productId',
+];
+
 // Columns for Entity
 const {
   getColumns,
@@ -98,11 +105,14 @@ const {
 } = useColumns<T>();
 
 let columns: ColumnDef<T>[] = [];
+const columnOptions: ColumnOptions<T> = {
+  selectable: true,
+  columnTitles: {
+    _id: ' Sku id',
+  } as Partial<Record<Extract<keyof T, string>, string>>,
+};
 
 const setupEntityColumns = () => {
-  const columnOptions: ColumnOptions<T> = {
-    selectable: true,
-  };
   columns = getColumns(entities.value, columnOptions);
 
   if (entityIsSku.value) {
@@ -118,12 +128,16 @@ const setupEntityColumns = () => {
             const { table, row } = props;
             // Hide checkbox for parent rows (rows that CAN expand)
             if (row.getCanExpand()) {
-              return h('div', {
-                class: cn(
-                  getBasicCellStyle(table),
-                  'px-3 flex items-center justify-center',
-                ),
-              });
+              return h(
+                'div',
+                {
+                  class: cn(
+                    getBasicCellStyle(table),
+                    'px-3 flex items-center justify-center text-2xl!',
+                  ),
+                },
+                row.getIsSomeSelected() ? '▣' : '',
+              );
             }
             // Show checkbox for child rows
             if (typeof originalCell === 'function') {
@@ -136,6 +150,26 @@ const setupEntityColumns = () => {
             return null;
           },
         } as ColumnDef<T>;
+      }
+
+      if (col.id === '_id') {
+        // it is a parent (canexpand) row, show show no value, otherwise, show the id
+        return {
+          ...col,
+          cell: (props: { row: Row<T>; table: Table<T> }) => {
+            const { row, table } = props;
+            if (row.getCanExpand()) {
+              return h('div', {});
+            }
+            return h(
+              'div',
+              {
+                class: cn(getBasicCellStyle(table)),
+              },
+              row.getValue('_id'),
+            );
+          },
+        };
       }
 
       return col;
@@ -151,7 +185,7 @@ const setupEntityColumns = () => {
   ];
 
   if (entityIsSku.value) {
-    columnKeys = ['expander', 'select', 'productId', ...columnKeys.slice(1)];
+    columnKeys = ['expander', 'productId', ...columnKeys];
   }
   columns = orderAndFilterColumns(columns, columnKeys);
 };
@@ -219,6 +253,12 @@ if (entityIsProduct.value) {
   );
 }
 
+const showSelectedList = ref(true);
+
+const getSkuSubRows = (row: T) => {
+  return entityIsSku.value ? (row.skus as T[]) || [] : undefined;
+};
+
 const onSelection = (selection: { _id?: string }[]) => {
   const ids = selection.map((s) => s._id);
   currentSelection.value = {
@@ -240,12 +280,6 @@ const handleSave = () => {
 };
 const handleCancel = () => {
   currentSelection.value = props.selection;
-};
-
-const showSelectedList = ref(true);
-
-const getSkuSubRows = (row: T) => {
-  return entityIsSku.value ? (row.skus as T[]) || [] : undefined;
 };
 </script>
 <template>
@@ -290,6 +324,7 @@ const getSkuSubRows = (row: T) => {
               :selected-ids="selectedIds"
               max-height="calc(100vh - 20rem)"
               :mode="TableMode.Simple"
+              :searchable-fields="searchableFields"
               :enable-expanding="entityIsSku"
               :get-sub-rows="getSkuSubRows"
               @selection="onSelection"

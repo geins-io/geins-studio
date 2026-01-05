@@ -451,6 +451,7 @@ const hasSearchableColumns = computed(() => {
             v-for="row in table.getRowModel().rows"
             :key="row.id"
             :data-state="row.getIsSelected() ? 'selected' : undefined"
+            :data-is-child="row.depth > 0 ? 'true' : undefined"
           >
             <TableCell
               v-for="cell in row.getVisibleCells()"

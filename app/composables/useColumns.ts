@@ -15,6 +15,7 @@ import {
   TableCellBoolean,
   TableCellEditable,
   TableCellCurrency,
+  Button,
 } from '#components';
 
 import { ChevronDown, ChevronRight } from 'lucide-vue-next';
@@ -157,28 +158,24 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
       return h(
         'div',
         {
-          class: cn(getBasicCellStyle(table), 'cursor-pointer select-none'),
-          style: {
-            paddingLeft: `${row.depth * 2}rem`,
-          },
+          class: cn(getBasicCellStyle(table), ''),
         },
         row.getCanExpand()
           ? [
               h(
-                'button',
+                Button,
                 {
                   onClick: row.getToggleExpandedHandler(),
                   class: 'inline-flex items-center justify-center',
+                  variant: 'outline',
+                  size: 'icon-xs',
                 },
-                [
-                  row.getIsExpanded()
-                    ? h(ChevronDown, {
-                        class: 'size-4',
-                      })
-                    : h(ChevronRight, {
-                        class: 'size-4',
-                      }),
-                ],
+                () =>
+                  h(ChevronRight, {
+                    class:
+                      'size-4 transition-transform' +
+                      (row.getIsExpanded() ? ' rotate-90' : ''),
+                  }),
               ),
             ]
           : [],

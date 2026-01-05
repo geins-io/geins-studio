@@ -29,6 +29,7 @@
   "discount": "Discount | Discounts",
   "quotation": "Quotation | Quotations",
   "entity": "Entity | Entities",
+  "sku": "SKU | SKUs",
   "new_entity_url_alias": "new",
   "list_entity_url_alias": "list",
   "entity_id": "@:{entityName} ID",

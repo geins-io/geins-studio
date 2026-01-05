@@ -24,6 +24,7 @@ onMounted(async () => {
         name: product.name,
         thumbnail: getProductThumbnail(product.media?.[0]?._id),
         productId: product._id,
+        articleNumber: product.articleNumber,
         skus: product.skus?.map((sku) => ({
           _id: sku._id,
           name: sku.name,
