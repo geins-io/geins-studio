@@ -29,6 +29,13 @@ export const enum SelectorSelectionStrategy {
   All = 'all',
   None = 'none',
 }
+
+export const enum SelectorEntityType {
+  Product = 'product',
+  Sku = 'sku',
+  Default = 'default',
+}
+
 export type SelectorSelectionOptionsId =
   | 'entity'
   | 'product'
@@ -36,8 +43,7 @@ export type SelectorSelectionOptionsId =
   | 'brand'
   | 'price'
   | 'stock'
-  | 'import'
-  | 'skus';
+  | 'import';
 
 export interface CurrencyField {
   [currency: string]: number;

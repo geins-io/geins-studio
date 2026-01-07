@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SelectorMode } from '#shared/types';
+import { SelectorMode, SelectorEntityType } from '#shared/types';
 import type { SelectorEntity, Product } from '#shared/types';
 const { getProductThumbnail } = useGeinsImage();
 
@@ -8,6 +8,7 @@ definePageMeta({
 });
 
 const { productApi } = useGeinsRepository();
+const { convertToSimpleSelection, getFallbackSelection } = useSelector();
 
 // Fetch real product data with SKUs
 const productsWithSkus = ref<SelectorEntity[]>([]);
@@ -30,6 +31,7 @@ onMounted(async () => {
           name: sku.name,
           articleNumber: sku.articleNumber,
           thumbnail: getProductThumbnail(product.media?.[0]?._id),
+          productId: product._id,
         })),
       })) || [];
   } catch (error) {
@@ -39,26 +41,38 @@ onMounted(async () => {
   }
 });
 
-// Simple mode selection (outputs SKU IDs in the 'ids' array)
-const simpleSelection = ref({
-  include: ['1050'],
-  exclude: [],
-});
+const selection = ref<SelectorSelectionInternal>(getFallbackSelection());
 
-// Watch selection changes to see SKU IDs
-watch(
-  simpleSelection,
-  (newVal) => {
-    console.log('Selected SKU IDs:', newVal.include);
-  },
-  { deep: true },
+const updateSelection = (updatedSelection: SelectorSelectionInternal) => {
+  selection.value = updatedSelection;
+};
+
+const simpleSelection = computed(() =>
+  convertToSimpleSelection(selection.value),
 );
+const selectedSkus = computed(() => {
+  const selectedSkus: SelectorEntity[] = [];
+  productsWithSkus.value.forEach((product) => {
+    product.skus?.forEach((sku) => {
+      if (simpleSelection.value.includes(sku._id)) {
+        selectedSkus.push(sku);
+      }
+    });
+  });
+  return selectedSkus;
+});
+const { getColumns } = useColumns<SelectorEntity>();
+
+const selectedSkuColumns = computed(() => {
+  const columns = getColumns(selectedSkus.value);
+  return columns;
+});
 </script>
 
 <template>
   <div class="container mx-auto py-8">
     <div class="mb-8">
-      <h1 class="text-3xl font-bold">SKU Selector Example</h1>
+      <h1 class="text-3xl font-bold">SKU selector example</h1>
       <p class="text-muted-foreground mt-2">
         This example demonstrates how to use the selector component with nested
         entities (Products with SKUs). The selector supports expanding rows to
@@ -68,68 +82,45 @@ watch(
 
     <template v-if="!loading">
       <div class="bg-card mb-6 rounded-lg border p-4">
-        <h2 class="mb-2 text-lg font-semibold">Current Selection</h2>
+        <h2 class="mb-2 text-lg font-semibold">Current selection</h2>
         <div class="text-muted-foreground text-sm">
           <p>
-            <strong>Included IDs:</strong>
+            <strong>Included SKU id:s:</strong>
             {{
-              simpleSelection.include.length > 0
-                ? simpleSelection.include.join(', ')
-                : 'None'
-            }}
-          </p>
-          <p class="mt-1">
-            <strong>Excluded IDs:</strong>
-            {{
-              simpleSelection.exclude.length > 0
-                ? simpleSelection.exclude.join(', ')
-                : 'None'
+              simpleSelection.length > 0 ? simpleSelection.join(', ') : 'None'
             }}
           </p>
         </div>
       </div>
 
-      <!-- Default selector - automatically shows SelectorSelection with expanding rows -->
-      <Selector
-        v-model:simple-selection="simpleSelection"
-        :entities="productsWithSkus"
-        entity-name="sku"
+      <SelectorPanel
+        :selection="selection"
         :mode="SelectorMode.Simple"
+        entity-name="sku"
+        :entities="productsWithSkus"
+        :entity-type="SelectorEntityType.Sku"
+        :options="[
+          {
+            id: 'product',
+            group: 'ids',
+            label: $t('sku', 2),
+          },
+        ]"
+        @save="updateSelection"
+      >
+        <ButtonIcon icon="new" size="sm" class="mb-6">
+          {{ $t('add_entity', { entityName: 'sku' }) }}
+        </ButtonIcon>
+      </SelectorPanel>
+
+      <TableView
+        :columns="selectedSkuColumns"
+        :data="selectedSkus"
+        entity-name="sku"
+        :mode="TableMode.Simple"
+        :page-size="10"
+        :show-search="true"
       />
     </template>
-
-    <div class="bg-muted/50 mt-8 rounded-lg border p-6">
-      <h3 class="mb-4 text-lg font-semibold">Key Features:</h3>
-      <ul class="text-muted-foreground space-y-2 text-sm">
-        <li class="flex items-start">
-          <LucideCheck class="mt-0.5 mr-2 size-4 text-green-500" />
-          <span
-            ><strong>Expanding Rows:</strong> Click the chevron icon to expand
-            products and view their SKUs</span
-          >
-        </li>
-        <li class="flex items-start">
-          <LucideCheck class="mt-0.5 mr-2 size-4 text-green-500" />
-          <span
-            ><strong>Nested Selection:</strong> Select individual SKUs instead
-            of entire products</span
-          >
-        </li>
-        <li class="flex items-start">
-          <LucideCheck class="mt-0.5 mr-2 size-4 text-green-500" />
-          <span
-            ><strong>Simple Mode Output:</strong> Selected SKU IDs are output in
-            the existing 'ids' array</span
-          >
-        </li>
-        <li class="flex items-start">
-          <LucideCheck class="mt-0.5 mr-2 size-4 text-green-500" />
-          <span
-            ><strong>Custom Panel Slot:</strong> The selector header provides a
-            'panel' slot for custom implementations</span
-          >
-        </li>
-      </ul>
-    </div>
   </div>
 </template>

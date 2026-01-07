@@ -4,7 +4,7 @@ import {
   type SelectorEntity,
   type SelectorMode,
   type SelectorSelectionInternal,
-  SelectorSelectionType,
+  SelectorEntityType,
   TableMode,
 } from '#shared/types';
 
@@ -14,13 +14,13 @@ const props = withDefaults(
     selection: SelectorSelectionInternal;
     mode: SelectorMode;
     currency?: string;
-    type?: SelectorSelectionType;
     options: SelectorSelectionOption[];
     entityName: string;
     entities: T[];
+    entityType?: SelectorEntityType;
   }>(),
   {
-    type: SelectorSelectionType.Include,
+    entityType: SelectorEntityType.Product,
   },
 );
 
@@ -36,11 +36,15 @@ const { categories, brands } = storeToRefs(productsStore);
 
 const entityName = toRef(props, 'entityName');
 const entities = toRef(props, 'entities');
+const entityType = toRef(props, 'entityType');
 /* const type = toRef(props, 'type');
 const currency = toRef(props, 'currency');
 const mode = toRef(props, 'mode'); */
-const entityIsProduct = computed(() => entityName.value === 'product');
-const entityIsSku = computed(() => entityName.value === 'sku');
+const entityIsProduct = computed(
+  () => entityType.value === SelectorEntityType.Product,
+);
+const entityIsSku = computed(() => entityType.value === SelectorEntityType.Sku);
+
 const currentSelection = ref<SelectorSelectionInternal>(
   toRef(props, 'selection').value,
 );
@@ -67,7 +71,9 @@ watch(
 const currentSelectionGroup = computed(
   () => options.value.find((o) => o.id === currentOption.value)?.group || 'ids',
 );
-const selectedEntities = computed(() => {
+const selectedEntities: ComputedRef<
+  { _id: string; name: string; productId?: string }[]
+> = computed(() => {
   switch (currentSelectionGroup.value) {
     case 'categoryIds':
       return categories.value.filter((e) =>
@@ -78,6 +84,17 @@ const selectedEntities = computed(() => {
         currentSelection.value.brandIds?.includes(e._id),
       );
     default:
+      if (entityIsSku.value) {
+        const selectedSkus: T[] = [];
+        entities.value.forEach((product) => {
+          ((product.skus as T[]) || []).forEach((sku) => {
+            if (currentSelection.value.ids?.includes(sku._id)) {
+              selectedSkus.push(sku);
+            }
+          });
+        });
+        return selectedSkus;
+      }
       return entities.value.filter((e) =>
         currentSelection.value.ids?.includes(e._id),
       );
@@ -108,7 +125,7 @@ let columns: ColumnDef<T>[] = [];
 const columnOptions: ColumnOptions<T> = {
   selectable: true,
   columnTitles: {
-    _id: ' Sku id',
+    _id: 'Sku id',
   } as Partial<Record<Extract<keyof T, string>, string>>,
 };
 
@@ -171,6 +188,25 @@ const setupEntityColumns = () => {
           },
         };
       }
+      if (col.id === 'productId') {
+        // it is a parent (canexpand) row, show show no value, otherwise, show the id
+        return {
+          ...col,
+          cell: (props: { row: Row<T>; table: Table<T> }) => {
+            const { row, table } = props;
+            if (!row.getCanExpand()) {
+              return h('div', {});
+            }
+            return h(
+              'div',
+              {
+                class: cn(getBasicCellStyle(table)),
+              },
+              row.getValue('productId'),
+            );
+          },
+        };
+      }
 
       return col;
     }) as ColumnDef<T>[];
@@ -192,7 +228,9 @@ const setupEntityColumns = () => {
 
 watch(
   entities,
+
   () => {
+    console.log('🚀 ~ entities:', entities.value);
     setupEntityColumns();
   },
   { immediate: true },
@@ -397,11 +435,16 @@ const handleCancel = () => {
               class="flex items-center gap-2.5 py-1.5 text-xs"
             >
               <span class="font-semibold">{{ entity._id }}</span>
-              <span class="truncate">{{ entity.name }}</span>
+              <span v-if="entityIsSku" class="truncate"
+                >{{ entity.name }} ({{
+                  getEntityNameById(String('p-' + entity.productId), entities)
+                }})</span
+              >
+              <span v-else class="truncate">{{ entity.name }}</span>
               <Button
                 size="icon"
                 variant="outline"
-                class="hover:text-negative mr-1 ml-auto size-5 shrink-0"
+                class="hover:text-negative mr-1 ml-auto shrink-0 sm:size-6"
                 @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />
@@ -424,7 +467,7 @@ const handleCancel = () => {
               <Button
                 size="icon"
                 variant="outline"
-                class="hover:text-negative mr-1 ml-auto size-5 shrink-0"
+                class="hover:text-negative mr-1 ml-auto shrink-0 sm:size-6"
                 @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />
@@ -447,7 +490,7 @@ const handleCancel = () => {
               <Button
                 size="icon"
                 variant="outline"
-                class="hover:text-negative mr-1 ml-auto size-5 shrink-0"
+                class="hover:text-negative mr-1 ml-auto shrink-0 sm:size-6"
                 @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />
