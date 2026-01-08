@@ -20,24 +20,31 @@ onMounted(async () => {
 
     // Transform products to SelectorEntity format with SKUs as children
     productsWithSkus.value =
-      response?.items?.map((product: Product) => ({
-        _id:
-          Number(product.skus?.length) > 1 ? `p-${product._id}` : product._id,
-        name: product.name,
-        thumbnail: getProductThumbnail(product.media?.[0]?._id),
-        productId: product._id,
-        articleNumber: product.articleNumber,
-        skus:
-          Number(product.skus?.length) > 1
-            ? product.skus?.map((sku) => ({
-                _id: sku._id,
-                name: sku.name,
-                articleNumber: sku.articleNumber,
-                thumbnail: getProductThumbnail(product.media?.[0]?._id),
-                productId: product._id,
-              }))
-            : undefined,
-      })) || [];
+      response?.items?.map((product: Product) =>
+        (() => {
+          const hasMultipleSkus = Number(product.skus?.length) > 1;
+          const firstSkuId = product.skus?.[0]?._id || '';
+
+          return {
+            _id: hasMultipleSkus
+              ? `p-${product._id}`
+              : firstSkuId || product._id,
+            name: product.name,
+            thumbnail: getProductThumbnail(product.media?.[0]?._id),
+            productId: product._id,
+            articleNumber: product.articleNumber,
+            skus: hasMultipleSkus
+              ? product.skus?.map((sku) => ({
+                  _id: sku._id,
+                  name: sku.name,
+                  articleNumber: sku.articleNumber,
+                  thumbnail: getProductThumbnail(product.media?.[0]?._id),
+                  productId: product._id,
+                }))
+              : undefined,
+          };
+        })(),
+      ) || [];
   } catch (error) {
     console.error('Failed to fetch products:', error);
   } finally {
@@ -57,11 +64,17 @@ const simpleSelection = computed(() =>
 const selectedSkus = computed(() => {
   const selectedSkus: SelectorEntity[] = [];
   productsWithSkus.value.forEach((product) => {
-    product.skus?.forEach((sku) => {
-      if (simpleSelection.value.includes(sku._id)) {
-        selectedSkus.push(sku);
+    if (Number(product.skus?.length) > 1) {
+      product.skus?.forEach((sku) => {
+        if (simpleSelection.value.includes(sku._id)) {
+          selectedSkus.push(sku);
+        }
+      });
+    } else {
+      if (simpleSelection.value.includes(product._id)) {
+        selectedSkus.push(product);
       }
-    });
+    }
   });
   return selectedSkus;
 });

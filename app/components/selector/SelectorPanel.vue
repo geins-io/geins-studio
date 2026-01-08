@@ -45,7 +45,6 @@ const entityIsProduct = computed(
 );
 const entityIsSku = computed(() => entityType.value === SelectorEntityType.Sku);
 
-// Check if any product has multiple skus (to determine if expander is needed)
 const hasMultipleSkus = computed(() => {
   if (!entityIsSku.value) return false;
   return entities.value.some(
@@ -95,11 +94,17 @@ const selectedEntities: ComputedRef<
       if (entityIsSku.value) {
         const selectedSkus: T[] = [];
         entities.value.forEach((product) => {
-          ((product.skus as T[]) || []).forEach((sku) => {
-            if (currentSelection.value.ids?.includes(sku._id)) {
-              selectedSkus.push(sku);
+          if (product.skus === undefined) {
+            if (currentSelection.value.ids?.includes(product._id)) {
+              selectedSkus.push(product);
             }
-          });
+          } else {
+            ((product.skus as T[]) || []).forEach((sku) => {
+              if (currentSelection.value.ids?.includes(sku._id)) {
+                selectedSkus.push(sku);
+              }
+            });
+          }
         });
         return selectedSkus;
       }
@@ -457,9 +462,10 @@ const handleCancel = () => {
             >
               <span class="font-semibold">{{ entity._id }}</span>
               <span v-if="entityIsSku" class="truncate"
-                >{{ entity.name }} ({{
+                >{{
                   getEntityNameById(String('p-' + entity.productId), entities)
-                }})</span
+                }}
+                ({{ entity.name }})</span
               >
               <span v-else class="truncate">{{ entity.name }}</span>
               <Button
