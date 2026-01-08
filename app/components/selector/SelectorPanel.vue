@@ -462,10 +462,9 @@ const handleCancel = () => {
             >
               <span class="font-semibold">{{ entity._id }}</span>
               <span v-if="entityIsSku" class="truncate"
-                >{{
-                  getEntityNameById(String('p-' + entity.productId), entities)
-                }}
-                ({{ entity.name }})</span
+                >{{ getEntityNameById(String(entity.productId), entities) }} ({{
+                  entity.name
+                }})</span
               >
               <span v-else class="truncate">{{ entity.name }}</span>
               <Button

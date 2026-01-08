@@ -26,9 +26,7 @@ onMounted(async () => {
           const firstSkuId = product.skus?.[0]?._id || '';
 
           return {
-            _id: hasMultipleSkus
-              ? `p-${product._id}`
-              : firstSkuId || product._id,
+            _id: hasMultipleSkus ? product._id : firstSkuId || product._id,
             name: product.name,
             thumbnail: getProductThumbnail(product.media?.[0]?._id),
             productId: product._id,
@@ -67,7 +65,7 @@ const selectedSkus = computed(() => {
     if (Number(product.skus?.length) > 1) {
       product.skus?.forEach((sku) => {
         if (simpleSelection.value.includes(sku._id)) {
-          selectedSkus.push(sku);
+          selectedSkus.push({ ...sku, name: `${product.name} (${sku.name})` });
         }
       });
     } else {
