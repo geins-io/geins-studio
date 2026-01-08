@@ -21,18 +21,22 @@ onMounted(async () => {
     // Transform products to SelectorEntity format with SKUs as children
     productsWithSkus.value =
       response?.items?.map((product: Product) => ({
-        _id: `p-${product._id}`,
+        _id:
+          Number(product.skus?.length) > 1 ? `p-${product._id}` : product._id,
         name: product.name,
         thumbnail: getProductThumbnail(product.media?.[0]?._id),
         productId: product._id,
         articleNumber: product.articleNumber,
-        skus: product.skus?.map((sku) => ({
-          _id: sku._id,
-          name: sku.name,
-          articleNumber: sku.articleNumber,
-          thumbnail: getProductThumbnail(product.media?.[0]?._id),
-          productId: product._id,
-        })),
+        skus:
+          Number(product.skus?.length) > 1
+            ? product.skus?.map((sku) => ({
+                _id: sku._id,
+                name: sku.name,
+                articleNumber: sku.articleNumber,
+                thumbnail: getProductThumbnail(product.media?.[0]?._id),
+                productId: product._id,
+              }))
+            : undefined,
       })) || [];
   } catch (error) {
     console.error('Failed to fetch products:', error);

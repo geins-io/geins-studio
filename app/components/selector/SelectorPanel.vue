@@ -45,6 +45,14 @@ const entityIsProduct = computed(
 );
 const entityIsSku = computed(() => entityType.value === SelectorEntityType.Sku);
 
+// Check if any product has multiple skus (to determine if expander is needed)
+const hasMultipleSkus = computed(() => {
+  if (!entityIsSku.value) return false;
+  return entities.value.some(
+    (product) => ((product.skus as T[]) || []).length > 1,
+  );
+});
+
 const currentSelection = ref<SelectorSelectionInternal>(
   toRef(props, 'selection').value,
 );
@@ -133,7 +141,10 @@ const setupEntityColumns = () => {
   columns = getColumns(entities.value, columnOptions);
 
   if (entityIsSku.value) {
-    columns = addExpandingColumn(columns);
+    // Only add expander column if at least one product has multiple skus
+    if (hasMultipleSkus.value) {
+      columns = addExpandingColumn(columns);
+    }
     columns = columns.map((col) => {
       if (col.id === 'select') {
         const originalCell = col.cell;
@@ -189,12 +200,11 @@ const setupEntityColumns = () => {
         };
       }
       if (col.id === 'productId') {
-        // it is a parent (canexpand) row, show show no value, otherwise, show the id
         return {
           ...col,
           cell: (props: { row: Row<T>; table: Table<T> }) => {
             const { row, table } = props;
-            if (!row.getCanExpand()) {
+            if (row.depth > 0) {
               return h('div', {});
             }
             return h(
@@ -221,7 +231,18 @@ const setupEntityColumns = () => {
   ];
 
   if (entityIsSku.value) {
-    columnKeys = ['expander', 'productId', ...columnKeys];
+    columnKeys = [
+      'select',
+      'thumbnail',
+      'productId',
+      '_id',
+      'name',
+      'articleNumber',
+    ];
+    // Only include expander if at least one product has multiple skus
+    if (hasMultipleSkus.value) {
+      columnKeys.unshift('expander');
+    }
   }
   columns = orderAndFilterColumns(columns, columnKeys);
 };
@@ -363,7 +384,7 @@ const handleCancel = () => {
               max-height="calc(100vh - 20rem)"
               :mode="TableMode.Simple"
               :searchable-fields="searchableFields"
-              :enable-expanding="entityIsSku"
+              :enable-expanding="entityIsSku && hasMultipleSkus"
               :get-sub-rows="getSkuSubRows"
               @selection="onSelection"
             />
