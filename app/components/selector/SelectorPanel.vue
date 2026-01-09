@@ -256,7 +256,6 @@ watch(
   entities,
 
   () => {
-    console.log('🚀 ~ entities:', entities.value);
     setupEntityColumns();
   },
   { immediate: true },

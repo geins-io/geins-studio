@@ -386,7 +386,7 @@ const table = useVueTable({
 // Auto-expand all rows when searching in expandable tables
 watch(
   [globalFilter, () => props.data],
-  ([newFilter], [oldFilter]) => {
+  ([newFilter, newData], [oldFilter, oldData]) => {
     if (props.enableExpanding && table) {
       if (newFilter?.trim()) {
         // When search is active, expand all parent rows by building an object with all row IDs set to true
