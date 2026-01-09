@@ -18,7 +18,7 @@ import {
   Button,
 } from '#components';
 
-import { ChevronDown, ChevronRight } from 'lucide-vue-next';
+import { ChevronRight } from 'lucide-vue-next';
 
 interface UseColumnsReturnType<T> {
   getBasicHeaderStyle: (table: Table<T>) => string;

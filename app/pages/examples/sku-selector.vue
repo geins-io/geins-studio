@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SelectorMode, SelectorEntityType } from '#shared/types';
+import { SelectorMode, SelectorEntityType, TableMode } from '#shared/types';
 import type { SelectorEntity, Product } from '#shared/types';
 const { getProductThumbnail } = useGeinsImage();
 
@@ -63,21 +63,21 @@ const simpleSelection = computed(() =>
   convertToSimpleSelection(selection.value),
 );
 const selectedSkus = computed(() => {
-  const selectedSkus: SelectorEntity[] = [];
+  const skus: SelectorEntity[] = [];
   productsWithSkus.value.forEach((product) => {
     if (Number(product.skus?.length) > 1) {
       product.skus?.forEach((sku) => {
         if (simpleSelection.value.includes(sku._id)) {
-          selectedSkus.push({ ...sku, name: `${product.name} (${sku.name})` });
+          skus.push({ ...sku, name: `${product.name} (${sku.name})` });
         }
       });
     } else {
       if (simpleSelection.value.includes(product._id)) {
-        selectedSkus.push(product);
+        skus.push(product);
       }
     }
   });
-  return selectedSkus;
+  return skus;
 });
 const { getColumns } = useColumns<SelectorEntity>();
 
