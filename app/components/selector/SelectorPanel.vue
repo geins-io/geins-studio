@@ -339,6 +339,11 @@ const removeSelected = (id: string) => {
   };
 };
 
+const getProductNameByProductId = (productId: string) => {
+  const product = entities.value.find((e) => e.productId === productId);
+  return product ? product.name : '';
+};
+
 const handleSave = () => {
   emit('save', currentSelection.value);
 };
@@ -462,7 +467,7 @@ const handleCancel = () => {
             >
               <span class="font-semibold">{{ entity._id }}</span>
               <span v-if="entityIsSku && !entity.isCollapsed" class="truncate"
-                >{{ getEntityNameById(String(entity.productId), entities) }} ({{
+                >{{ getProductNameByProductId(String(entity.productId)) }} ({{
                   entity.name
                 }})</span
               >

@@ -13,6 +13,7 @@ const { convertToSimpleSelection, getFallbackSelection } = useSelector();
 // Fetch real product data with SKUs
 const productsWithSkus = ref<SelectorEntity[]>([]);
 const loading = ref(true);
+const idPrefix = 'p-';
 
 onMounted(async () => {
   try {
@@ -23,10 +24,10 @@ onMounted(async () => {
       response?.items?.map((product: Product) =>
         (() => {
           const hasMultipleSkus = Number(product.skus?.length) > 1;
-          const firstSkuId = product.skus?.[0]?._id || '';
+          const firstSkuId = product.skus?.[0]?._id || product._id;
 
           return {
-            _id: hasMultipleSkus ? product._id : firstSkuId || product._id,
+            _id: hasMultipleSkus ? `${idPrefix}${product._id}` : firstSkuId,
             name: product.name,
             thumbnail: getProductThumbnail(product.media?.[0]?._id),
             productId: product._id,

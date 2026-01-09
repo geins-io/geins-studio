@@ -255,6 +255,38 @@ const table = useVueTable({
     ? getExpandedRowModel()
     : undefined,
   getSubRows: props.enableExpanding ? props.getSubRows : undefined,
+  globalFilterFn: props.enableExpanding
+    ? (row, columnId, filterValue) => {
+        // Custom global filter for hierarchical data
+        const search = String(filterValue).toLowerCase();
+
+        // Check if any searchable field in the current row matches
+        const rowMatches =
+          props.searchableFields?.some((field) => {
+            const value = row.original[field];
+            return (
+              value != null && String(value).toLowerCase().includes(search)
+            );
+          }) ?? false;
+
+        if (rowMatches) return true;
+
+        // If this is a parent row, check if any of its children match
+        // This ensures parent rows are kept when children match
+        if (row.subRows && row.subRows.length > 0) {
+          return row.subRows.some((subRow) => {
+            return props.searchableFields?.some((field) => {
+              const value = subRow.original[field];
+              return (
+                value != null && String(value).toLowerCase().includes(search)
+              );
+            });
+          });
+        }
+
+        return false;
+      }
+    : undefined,
   onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
   onColumnFiltersChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnFilters),
@@ -350,6 +382,32 @@ const table = useVueTable({
     entityName: props.entityName,
   },
 });
+
+// Auto-expand all rows when searching in expandable tables
+watch(
+  [globalFilter, () => props.data],
+  ([newFilter], [oldFilter]) => {
+    if (props.enableExpanding && table) {
+      if (newFilter?.trim()) {
+        // When search is active, expand all parent rows by building an object with all row IDs set to true
+        const allRows = table.getCoreRowModel().rows;
+        const expandedState: ExpandedState = {};
+
+        allRows.forEach((row) => {
+          if (row.getCanExpand()) {
+            expandedState[row.id] = true;
+          }
+        });
+
+        expanded.value = expandedState;
+      } else if (oldFilter?.trim()) {
+        // When search is cleared, collapse all rows
+        expanded.value = {};
+      }
+    }
+  },
+  { immediate: false },
+);
 
 const emptyState = computed(() => {
   const hasActiveFilter =
