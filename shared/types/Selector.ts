@@ -102,4 +102,5 @@ export interface SelectorEntity extends EntityBaseWithName {
   articleNumber?: string;
   skus?: SelectorEntity[];
   productId?: string;
+  isCollapsed?: boolean;
 }

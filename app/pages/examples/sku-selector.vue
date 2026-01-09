@@ -31,6 +31,7 @@ onMounted(async () => {
             thumbnail: getProductThumbnail(product.media?.[0]?._id),
             productId: product._id,
             articleNumber: product.articleNumber,
+            isCollapsed: !hasMultipleSkus,
             skus: hasMultipleSkus
               ? product.skus?.map((sku) => ({
                   _id: sku._id,
@@ -38,6 +39,7 @@ onMounted(async () => {
                   articleNumber: sku.articleNumber,
                   thumbnail: getProductThumbnail(product.media?.[0]?._id),
                   productId: product._id,
+                  isCollapsed: false,
                 }))
               : undefined,
           };

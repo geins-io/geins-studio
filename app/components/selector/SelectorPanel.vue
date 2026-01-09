@@ -79,7 +79,7 @@ const currentSelectionGroup = computed(
   () => options.value.find((o) => o.id === currentOption.value)?.group || 'ids',
 );
 const selectedEntities: ComputedRef<
-  { _id: string; name: string; productId?: string }[]
+  { _id: string; name: string; productId?: string; isCollapsed?: boolean }[]
 > = computed(() => {
   switch (currentSelectionGroup.value) {
     case 'categoryIds':
@@ -461,7 +461,7 @@ const handleCancel = () => {
               class="flex items-center gap-2.5 py-1.5 text-xs"
             >
               <span class="font-semibold">{{ entity._id }}</span>
-              <span v-if="entityIsSku" class="truncate"
+              <span v-if="entityIsSku && !entity.isCollapsed" class="truncate"
                 >{{ getEntityNameById(String(entity.productId), entities) }} ({{
                   entity.name
                 }})</span
