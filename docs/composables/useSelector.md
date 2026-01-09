@@ -14,6 +14,8 @@ This composable is designed specifically for the Selector component and related 
 - **Default data generation** for empty states and fallbacks
 - **Complex criteria support** (categories, brands, prices, stock, product IDs)
 - **Condition management** (AND/OR logic)
+- **Entity type support** (Product, SKU, or Default) for different selection contexts
+- **Hierarchical entity selection** with parent-child relationships (products with SKUs)
 
 ## Usage
 
@@ -73,6 +75,58 @@ const excludeProducts = (productIds: string[]) => {
   ];
 };
 ```
+
+### SKU selection with hierarchical data
+
+The selector now supports SKU-level selection with hierarchical product-SKU relationships. When using `SelectorEntityType.Sku`, products with multiple SKUs are shown as expandable rows, while products with a single SKU collapse to a single selectable row.
+
+Use `transformProductsToSelectorEntities` to easily convert products with SKUs into the correct format:
+
+```vue
+<script setup lang="ts">
+import {
+  SelectorMode,
+  SelectorEntityType,
+  type SelectorEntity,
+} from '#shared/types';
+
+const {
+  transformProductsToSelectorEntities,
+  getFallbackSelection,
+  convertToSimpleSelection,
+} = useSelector();
+
+const { productApi } = useGeinsRepository();
+
+// Fetch and transform products to include SKUs as children
+const productsWithSkus = ref<SelectorEntity[]>([]);
+const selection = ref(getFallbackSelection());
+
+onMounted(async () => {
+  const response = await productApi.list({ fields: ['media', 'skus'] });
+  productsWithSkus.value = transformProductsToSelectorEntities(response.items);
+});
+</script>
+
+<template>
+  <SelectorPanel
+    :selection="selection"
+    :mode="SelectorMode.Simple"
+    entity-name="sku"
+    :entities="productsWithSkus"
+    :entity-type="SelectorEntityType.Sku"
+    @save="updateSelection"
+  />
+</template>
+```
+
+:::tip SKU selection behavior
+
+- **Products with multiple SKUs**: Display as expandable rows with a chevron button. Only child SKUs can be selected.
+- **Products with single SKU**: Collapse to a single row with the checkbox on the parent. Selecting the parent selects the SKU.
+- **Search functionality**: Searches across both product IDs and SKU IDs, automatically expanding parents when SKU matches are found.
+
+:::
 
 ## Properties and Methods
 
@@ -194,6 +248,31 @@ convertToSimpleSelectionBase(
 ): SelectorSelectionSimpleBase
 ```
 
+Converts query base format to simple base format with just include/exclude ID arrays.
+
+### Transformation Methods
+
+#### `transformProductsToSelectorEntities`
+
+```ts
+transformProductsToSelectorEntities(
+  products: Product[],
+  idPrefix?: string
+): SelectorEntity[]
+```
+
+Transforms products with SKUs into SelectorEntity format for hierarchical selection in the selector panel. Automatically handles thumbnail generation using `useGeinsImage`.
+
+- **Parameters**:
+  - `products`: Array of Product objects with SKUs
+  - `idPrefix`: Prefix for parent product IDs when expanded (default: 'p-')
+- **Returns**: Array of SelectorEntity objects with nested SKU structure
+
+- **Behavior**:
+  - Products with **single SKU** are collapsed (`isCollapsed: true`) - the parent row shows the SKU ID and is directly selectable
+  - Products with **multiple SKUs** are expandable - parent shows product ID with prefix, children show individual SKU IDs
+  - Thumbnails are automatically generated from product media using `useGeinsImage`
+
 ## Type Definitions
 
 ```ts
@@ -226,6 +305,10 @@ interface UseSelectorReturnType {
   convertToSimpleSelectionBase: (
     selection: SelectorSelectionQueryBase,
   ) => SelectorSelectionSimpleBase;
+  transformProductsToSelectorEntities: (
+    products: Product[],
+    idPrefix?: string,
+  ) => SelectorEntity[];
 }
 
 // Supporting enums
@@ -238,6 +321,12 @@ enum CompareCondition {
   LessThan = 'lt',
   GreaterThan = 'gt',
   Equal = 'eq',
+}
+
+enum SelectorEntityType {
+  Product = 'product',
+  Sku = 'sku',
+  Default = 'default',
 }
 
 type SelectorSelectionSimple = string[];
@@ -267,5 +356,14 @@ interface SelectorSelectionInternalBase {
 interface SelectorSelectionSimpleBase {
   include: SelectorSelectionSimple;
   exclude: SelectorSelectionSimple;
+}
+
+interface SelectorEntity extends EntityBaseWithName {
+  image?: string;
+  thumbnail?: string;
+  articleNumber?: string;
+  skus?: SelectorEntity[]; // Nested entities for hierarchical selection
+  productId?: string; // Reference to parent product when entity is a SKU
+  isCollapsed?: boolean; // True for products with single SKU
 }
 ```

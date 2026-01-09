@@ -1,51 +1,30 @@
 <script setup lang="ts">
 import { SelectorMode, SelectorEntityType, TableMode } from '#shared/types';
-import type { SelectorEntity, Product } from '#shared/types';
-const { getProductThumbnail } = useGeinsImage();
+import type { SelectorEntity } from '#shared/types';
 
 definePageMeta({
   layout: 'default',
 });
 
 const { productApi } = useGeinsRepository();
-const { convertToSimpleSelection, getFallbackSelection } = useSelector();
+const {
+  convertToSimpleSelection,
+  getFallbackSelection,
+  transformProductsToSelectorEntities,
+} = useSelector();
 
 // Fetch real product data with SKUs
 const productsWithSkus = ref<SelectorEntity[]>([]);
 const loading = ref(true);
-const idPrefix = 'p-';
 
 onMounted(async () => {
   try {
     const response = await productApi.list({ fields: ['media', 'skus'] });
 
     // Transform products to SelectorEntity format with SKUs as children
-    productsWithSkus.value =
-      response?.items?.map((product: Product) =>
-        (() => {
-          const hasMultipleSkus = Number(product.skus?.length) > 1;
-          const firstSkuId = product.skus?.[0]?._id || product._id;
-
-          return {
-            _id: hasMultipleSkus ? `${idPrefix}${product._id}` : firstSkuId,
-            name: product.name,
-            thumbnail: getProductThumbnail(product.media?.[0]?._id),
-            productId: product._id,
-            articleNumber: product.articleNumber,
-            isCollapsed: !hasMultipleSkus,
-            skus: hasMultipleSkus
-              ? product.skus?.map((sku) => ({
-                  _id: sku._id,
-                  name: sku.name,
-                  articleNumber: sku.articleNumber,
-                  thumbnail: getProductThumbnail(product.media?.[0]?._id),
-                  productId: product._id,
-                  isCollapsed: false,
-                }))
-              : undefined,
-          };
-        })(),
-      ) || [];
+    productsWithSkus.value = transformProductsToSelectorEntities(
+      response?.items || [],
+    );
   } catch (error) {
     console.error('Failed to fetch products:', error);
   } finally {

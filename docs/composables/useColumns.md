@@ -16,6 +16,7 @@ This composable is designed to work seamlessly with `@tanstack/vue-table` and th
 - **Action columns** for row-specific operations (edit, delete, custom actions)
 - **Editable cells** with inline editing capabilities
 - **Link columns** for both internal entity navigation and external URLs
+- **Expandable rows** for hierarchical data display with parent-child relationships
 - **Localization support** for column titles and formatting
 - **Customizable styling** and cell renderers
 
@@ -272,12 +273,27 @@ Adds an actions column for row-specific operations.
   - `availableActions`: Available actions for the row
 - **Returns**: Updated columns with actions column added to the end
 
+### `addExpandingColumn`
+
+```ts
+addExpandingColumn(
+  columns: ColumnDef<T>[]
+): ColumnDef<T>[]
+```
+
+Adds an expander column at the beginning of the columns array for hierarchical data display. This column provides expand/collapse functionality for rows with sub-rows.
+
+- **Parameters**:
+  - `columns`: Existing column definitions
+- **Returns**: Updated columns with expander column added at the beginning
+- **Usage**: Used with `TableView` when `enableExpanding` is true to show/hide child rows
+
 ### `orderAndFilterColumns`
 
 ```ts
 orderAndFilterColumns(
   columns: ColumnDef<T>[],
-  keys: (keyof T | 'select' | 'actions')[]
+  keys: ColumnKey<T>[]
 ): ColumnDef<T>[]
 ```
 
@@ -293,7 +309,7 @@ Reorders and filters columns based on provided keys. Only provided keys will be 
 ```ts
 orderColumnLast(
   columns: ColumnDef<T>[],
-  key: keyof T | 'select' | 'actions'
+  key: ColumnKey<T>
 ): ColumnDef<T>[]
 ```
 
@@ -328,6 +344,7 @@ When no specific `columnTypes` are provided, the system automatically infers typ
 | `date`                | Formats to date using current locale                                                  |
 | `image`               | Displays images as small thumbnails with alt text                                     |
 | `link`                | Creates clickable links using NuxtLink with internal/external URL support             |
+| `expander`            | Expander button for hierarchical rows, shows chevron icon for expand/collapse         |
 | `channels`            | Displays channel IDs as badge components with channel names using `TableCellChannels` |
 | `tags`                | Displays string arrays as tag badge components using `TableCellTags`                  |
 | `status`              | Shows status indicators for string or boolean values using `TableCellStatus`          |
@@ -360,6 +377,49 @@ const editableOptions: ColumnOptions<Product> = {
   },
 };
 ```
+
+### Hierarchical data (expanding rows)
+
+Use `addExpandingColumn` to add support for expandable parent-child rows. This is useful for displaying nested data like products with SKUs.
+
+```vue
+<script setup lang="ts">
+const { getColumns, addExpandingColumn } = useColumns<DataItem>();
+
+// Data with nested children
+const hierarchicalData = ref<DataItem[]>([
+  {
+    _id: '1',
+    name: 'Parent Item 1',
+    children: [
+      { _id: '1-1', name: 'Child Item 1.1' },
+      { _id: '1-2', name: 'Child Item 1.2' },
+    ],
+  },
+  {
+    _id: '2',
+    name: 'Parent Item 2',
+    children: [{ _id: '2-1', name: 'Child Item 2.1' }],
+  },
+]);
+
+let columns = getColumns(hierarchicalData.value);
+columns = addExpandingColumn(columns);
+</script>
+
+<template>
+  <TableView
+    :columns="columns"
+    :data="hierarchicalData"
+    :enable-expanding="true"
+    :get-sub-rows="(row) => row.children"
+  />
+</template>
+```
+
+:::tip
+When using hierarchical data, the `TableView` component automatically filters and searches through both parent and child rows, expanding parents when children match the search criteria.
+:::
 
 ## Dependencies
 
@@ -411,6 +471,8 @@ interface ColumnOptions<T> {
 
 type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
 
+type ColumnKey<T> = keyof T | ColumnType;
+
 interface LinkColumnConfig<T> {
   url: string;
   idField?: StringKeyOf<T>;
@@ -430,6 +492,7 @@ export type ColumnType =
   | 'link'
   | 'select'
   | 'actions'
+  | 'expander'
   | 'channels'
   | 'tags'
   | 'status'
@@ -458,13 +521,14 @@ interface UseColumnsReturnType<T> {
     type?: 'actions' | 'delete' | 'edit',
     availableActions?: TableRowAction[],
   ) => ColumnDef<T>[];
+  addExpandingColumn: (columns: ColumnDef<T>[]) => ColumnDef<T>[];
   orderAndFilterColumns: (
     columns: ColumnDef<T>[],
-    keys: (keyof T | 'select' | 'actions')[],
+    keys: ColumnKey<T>[],
   ) => ColumnDef<T>[];
   orderColumnLast: (
     columns: ColumnDef<T>[],
-    key: keyof T | 'select' | 'actions',
+    key: ColumnKey<T>,
   ) => ColumnDef<T>[];
 }
 
