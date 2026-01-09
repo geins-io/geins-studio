@@ -19,6 +19,7 @@ import {
   getExpandedRowModel,
   useVueTable,
 } from '@tanstack/vue-table';
+import { useDebounceFn } from '@vueuse/core';
 
 import { LucideSearchX, LucideCircleSlash } from 'lucide-vue-next';
 import type { Component } from 'vue';
@@ -81,6 +82,7 @@ const showSearch =
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const globalFilter = ref('');
+const searchInput = ref(''); // Local search input for debouncing
 const expanded = ref<ExpandedState>({});
 
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
@@ -88,6 +90,16 @@ const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 const tableMaximized = useState<boolean>('table-maximized', () => false);
 const advancedMode = computed(() => props.mode === TableMode.Advanced);
 const simpleMode = computed(() => props.mode === TableMode.Simple);
+
+// Debounced search - wait 300ms after user stops typing
+const debouncedSearch = useDebounceFn((value: string) => {
+  globalFilter.value = value;
+}, 300);
+
+// Watch search input and apply debounce
+watch(searchInput, (newValue) => {
+  debouncedSearch(newValue);
+});
 
 onUnmounted(() => {
   tableMaximized.value = false;
@@ -455,8 +467,8 @@ const hasSearchableColumns = computed(() => {
       <Input
         class="w-full pl-8"
         :placeholder="$t('filter_entity', { entityName }, 2)"
-        :model-value="globalFilter"
-        @update:model-value="globalFilter = String($event)"
+        :model-value="searchInput"
+        @update:model-value="searchInput = String($event)"
       />
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-3"

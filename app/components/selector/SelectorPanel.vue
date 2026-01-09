@@ -82,25 +82,26 @@ const selectedEntities: ComputedRef<
   { _id: string; name: string; productId?: string; isCollapsed?: boolean }[]
 > = computed(() => {
   switch (currentSelectionGroup.value) {
-    case 'categoryIds':
-      return categories.value.filter((e) =>
-        currentSelection.value.categoryIds?.includes(e._id),
-      );
-    case 'brandIds':
-      return brands.value.filter((e) =>
-        currentSelection.value.brandIds?.includes(e._id),
-      );
-    default:
+    case 'categoryIds': {
+      const categorySet = new Set(currentSelection.value.categoryIds);
+      return categories.value.filter((e) => categorySet.has(e._id));
+    }
+    case 'brandIds': {
+      const brandSet = new Set(currentSelection.value.brandIds);
+      return brands.value.filter((e) => brandSet.has(e._id));
+    }
+    default: {
+      const selectionSet = new Set(currentSelection.value.ids);
       if (entityIsSku.value) {
         const selectedSkus: T[] = [];
         entities.value.forEach((product) => {
           if (product.skus === undefined) {
-            if (currentSelection.value.ids?.includes(product._id)) {
+            if (selectionSet.has(product._id)) {
               selectedSkus.push(product);
             }
           } else {
             ((product.skus as T[]) || []).forEach((sku) => {
-              if (currentSelection.value.ids?.includes(sku._id)) {
+              if (selectionSet.has(sku._id)) {
                 selectedSkus.push(sku);
               }
             });
@@ -108,9 +109,8 @@ const selectedEntities: ComputedRef<
         });
         return selectedSkus;
       }
-      return entities.value.filter((e) =>
-        currentSelection.value.ids?.includes(e._id),
-      );
+      return entities.value.filter((e) => selectionSet.has(e._id));
+    }
   }
 });
 const selectedIds = computed(() => currentSelection.value.ids);
@@ -138,7 +138,7 @@ let columns: ColumnDef<T>[] = [];
 const columnOptions: ColumnOptions<T> = {
   selectable: true,
   columnTitles: {
-    _id: 'Sku id',
+    _id: entityIsSku.value ? 'Sku id' : 'Id',
   } as Partial<Record<Extract<keyof T, string>, string>>,
 };
 

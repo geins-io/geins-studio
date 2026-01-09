@@ -271,9 +271,17 @@ export const useSelector = (): UseSelectorReturnType => {
   };
 
   /**
+   * Memoization cache for transformed products
+   * Using WeakMap to allow garbage collection when product arrays are no longer referenced
+   */
+  const transformCache = new WeakMap<Product[], SelectorEntity[]>();
+
+  /**
    * Transforms products with SKUs into SelectorEntity format for hierarchical selection.
    * Products with a single SKU are collapsed into one selectable row,
    * while products with multiple SKUs can be expanded.
+   *
+   * Results are memoized to avoid repeated transformations of the same product array.
    *
    * @param products - Array of Product objects with SKUs
    * @param idPrefix - Prefix for parent product IDs (default: 'p-')
@@ -283,7 +291,14 @@ export const useSelector = (): UseSelectorReturnType => {
     products: Product[],
     idPrefix: string = 'p-',
   ): SelectorEntity[] => {
-    return products.map((product) => {
+    // Check cache first
+    const cached = transformCache.get(products);
+    if (cached) {
+      return cached;
+    }
+
+    // Transform products
+    const result = products.map((product) => {
       const hasMultipleSkus = Number(product.skus?.length) > 1;
       const firstSkuId = product.skus?.[0]?._id || product._id;
 
@@ -306,6 +321,10 @@ export const useSelector = (): UseSelectorReturnType => {
           : undefined,
       };
     });
+
+    // Cache the result
+    transformCache.set(products, result);
+    return result;
   };
 
   return {
