@@ -104,9 +104,5 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
         },
       ],
     },
-    {
-      label: 'Sku selector example',
-      href: '/examples/sku-selector',
-    },
   ];
 };
