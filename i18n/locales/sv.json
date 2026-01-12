@@ -29,6 +29,7 @@
   "discount": "Rabatt | Rabatter",
   "quotation": "Offert | Offerter",
   "entity": "Entitet | Entiteter",
+  "sku": "SKU | SKUs",
   "new_entity_url_alias": "ny",
   "list_entity_url_alias": "lista",
   "entity_id": "@:{entityName}-ID",

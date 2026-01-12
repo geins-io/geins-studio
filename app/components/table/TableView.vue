@@ -8,6 +8,7 @@ import type {
   ColumnOrderState,
   ColumnPinningState,
   Column,
+  ExpandedState,
 } from '@tanstack/vue-table';
 import {
   FlexRender,
@@ -15,8 +16,10 @@ import {
   getPaginationRowModel,
   getFilteredRowModel,
   getSortedRowModel,
+  getExpandedRowModel,
   useVueTable,
 } from '@tanstack/vue-table';
+import { useDebounceFn } from '@vueuse/core';
 
 import { LucideSearchX, LucideCircleSlash } from 'lucide-vue-next';
 import type { Component } from 'vue';
@@ -42,6 +45,8 @@ const props = withDefaults(
     emptyIcon?: Component;
     showEmptyActions?: boolean;
     initVisibilityState?: VisibilityState;
+    enableExpanding?: boolean;
+    getSubRows?: (row: TData) => TData[] | undefined;
   }>(),
   {
     entityName: 'row',
@@ -52,6 +57,7 @@ const props = withDefaults(
     showSearch: false,
     showEmptyActions: true,
     mode: TableMode.Advanced,
+    enableExpanding: false,
     pinnedState: () => ({
       left: ['select'],
       right: ['actions'],
@@ -76,12 +82,24 @@ const showSearch =
 const sorting = ref<SortingState>([]);
 const columnFilters = ref<ColumnFiltersState>([]);
 const globalFilter = ref('');
+const searchInput = ref(''); // Local search input for debouncing
+const expanded = ref<ExpandedState>({});
 
 const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 
 const tableMaximized = useState<boolean>('table-maximized', () => false);
 const advancedMode = computed(() => props.mode === TableMode.Advanced);
 const simpleMode = computed(() => props.mode === TableMode.Simple);
+
+// Debounced search - wait 300ms after user stops typing
+const debouncedSearch = useDebounceFn((value: string) => {
+  globalFilter.value = value;
+}, 300);
+
+// Watch search input and apply debounce
+watch(searchInput, (newValue) => {
+  debouncedSearch(newValue);
+});
 
 onUnmounted(() => {
   tableMaximized.value = false;
@@ -245,6 +263,42 @@ const table = useVueTable({
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
   getSortedRowModel: getSortedRowModel(),
+  getExpandedRowModel: props.enableExpanding
+    ? getExpandedRowModel()
+    : undefined,
+  getSubRows: props.enableExpanding ? props.getSubRows : undefined,
+  globalFilterFn: props.enableExpanding
+    ? (row, columnId, filterValue) => {
+        // Custom global filter for hierarchical data
+        const search = String(filterValue).toLowerCase();
+
+        // Check if any searchable field in the current row matches
+        const rowMatches =
+          props.searchableFields?.some((field) => {
+            const value = row.original[field];
+            return (
+              value != null && String(value).toLowerCase().includes(search)
+            );
+          }) ?? false;
+
+        if (rowMatches) return true;
+
+        // If this is a parent row, check if any of its children match
+        // This ensures parent rows are kept when children match
+        if (row.subRows && row.subRows.length > 0) {
+          return row.subRows.some((subRow) => {
+            return props.searchableFields?.some((field) => {
+              const value = subRow.original[field];
+              return (
+                value != null && String(value).toLowerCase().includes(search)
+              );
+            });
+          });
+        }
+
+        return false;
+      }
+    : undefined,
   onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
   onColumnFiltersChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnFilters),
@@ -262,13 +316,47 @@ const table = useVueTable({
     valueUpdater(updaterOrValue, columnPinningState),
   onRowSelectionChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, rowSelection);
-    emit(
-      'selection',
-      table.getSelectedRowModel().rows.map((row) => row.original),
-    );
+
+    if (props.enableExpanding && props.getSubRows) {
+      // For expanding tables, getSelectedRowModel() doesn't include child rows properly
+      // We need to manually collect all selected rows from the full hierarchy
+      const collectSelectedRows = (rows: any[]): any[] => {
+        const selected: any[] = [];
+        for (const row of rows) {
+          if (row.getIsSelected()) {
+            selected.push(row);
+          }
+          // Recursively check subRows
+          if (row.subRows && row.subRows.length > 0) {
+            selected.push(...collectSelectedRows(row.subRows));
+          }
+        }
+        return selected;
+      };
+
+      const allRows = table.getCoreRowModel().rows;
+      const selectedRows = collectSelectedRows(allRows);
+
+      // Only emit leaf rows (children that cannot expand)
+      const leafRows = selectedRows.filter((row) => !row.getCanExpand());
+
+      emit(
+        'selection',
+        leafRows.map((row) => row.original),
+      );
+    } else {
+      // Flat table: use standard selection model
+      emit(
+        'selection',
+        table.getSelectedRowModel().rows.map((row) => row.original),
+      );
+    }
   },
   onColumnOrderChange: (updaterOrValue) =>
     valueUpdater(updaterOrValue, columnOrder),
+  onExpandedChange: props.enableExpanding
+    ? (updaterOrValue) => valueUpdater(updaterOrValue, expanded)
+    : undefined,
   state: {
     get sorting() {
       return sorting.value;
@@ -291,6 +379,9 @@ const table = useVueTable({
     get columnPinning() {
       return columnPinningState.value;
     },
+    get expanded() {
+      return props.enableExpanding ? expanded.value : {};
+    },
   },
   initialState: {
     pagination: {
@@ -303,6 +394,32 @@ const table = useVueTable({
     entityName: props.entityName,
   },
 });
+
+// Auto-expand all rows when searching in expandable tables
+watch(
+  [globalFilter, () => props.data],
+  ([newFilter, newData], [oldFilter, oldData]) => {
+    if (props.enableExpanding && table) {
+      if (newFilter?.trim()) {
+        // When search is active, expand all parent rows by building an object with all row IDs set to true
+        const allRows = table.getCoreRowModel().rows;
+        const expandedState: ExpandedState = {};
+
+        allRows.forEach((row) => {
+          if (row.getCanExpand()) {
+            expandedState[row.id] = true;
+          }
+        });
+
+        expanded.value = expandedState;
+      } else if (oldFilter?.trim()) {
+        // When search is cleared, collapse all rows
+        expanded.value = {};
+      }
+    }
+  },
+  { immediate: false },
+);
 
 const emptyState = computed(() => {
   const hasActiveFilter =
@@ -350,8 +467,8 @@ const hasSearchableColumns = computed(() => {
       <Input
         class="w-full pl-8"
         :placeholder="$t('filter_entity', { entityName }, 2)"
-        :model-value="globalFilter"
-        @update:model-value="globalFilter = String($event)"
+        :model-value="searchInput"
+        @update:model-value="searchInput = String($event)"
       />
       <span
         class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
@@ -404,6 +521,7 @@ const hasSearchableColumns = computed(() => {
             v-for="row in table.getRowModel().rows"
             :key="row.id"
             :data-state="row.getIsSelected() ? 'selected' : undefined"
+            :data-is-child="row.depth > 0 ? 'true' : undefined"
           >
             <TableCell
               v-for="cell in row.getVisibleCells()"

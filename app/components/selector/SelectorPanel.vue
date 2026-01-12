@@ -1,10 +1,10 @@
 <script setup lang="ts" generic="T extends SelectorEntity">
-import type { ColumnDef } from '@tanstack/vue-table';
+import type { ColumnDef, Row, Table } from '@tanstack/vue-table';
 import {
   type SelectorEntity,
   type SelectorMode,
   type SelectorSelectionInternal,
-  SelectorSelectionType,
+  SelectorEntityType,
   TableMode,
 } from '#shared/types';
 
@@ -14,13 +14,13 @@ const props = withDefaults(
     selection: SelectorSelectionInternal;
     mode: SelectorMode;
     currency?: string;
-    type?: SelectorSelectionType;
     options: SelectorSelectionOption[];
     entityName: string;
     entities: T[];
+    entityType?: SelectorEntityType;
   }>(),
   {
-    type: SelectorSelectionType.Include,
+    entityType: SelectorEntityType.Product,
   },
 );
 
@@ -36,10 +36,22 @@ const { categories, brands } = storeToRefs(productsStore);
 
 const entityName = toRef(props, 'entityName');
 const entities = toRef(props, 'entities');
+const entityType = toRef(props, 'entityType');
 /* const type = toRef(props, 'type');
 const currency = toRef(props, 'currency');
 const mode = toRef(props, 'mode'); */
-const entityIsProduct = computed(() => entityName.value === 'product');
+const entityIsProduct = computed(
+  () => entityType.value === SelectorEntityType.Product,
+);
+const entityIsSku = computed(() => entityType.value === SelectorEntityType.Sku);
+
+const hasMultipleSkus = computed(() => {
+  if (!entityIsSku.value) return false;
+  return entities.value.some(
+    (product) => ((product.skus as T[]) || []).length > 1,
+  );
+});
+
 const currentSelection = ref<SelectorSelectionInternal>(
   toRef(props, 'selection').value,
 );
@@ -55,7 +67,7 @@ watch(
 
 const options = toRef(props, 'options');
 const currentOption = ref(options.value?.[0]?.id ?? '');
-//watch options and set new current option to the first if changed
+
 watch(
   options,
   (value) => {
@@ -66,20 +78,39 @@ watch(
 const currentSelectionGroup = computed(
   () => options.value.find((o) => o.id === currentOption.value)?.group || 'ids',
 );
-const selectedEntities = computed(() => {
+const selectedEntities: ComputedRef<
+  { _id: string; name: string; productId?: string; isCollapsed?: boolean }[]
+> = computed(() => {
   switch (currentSelectionGroup.value) {
-    case 'categoryIds':
-      return categories.value.filter((e) =>
-        currentSelection.value.categoryIds?.includes(e._id),
-      );
-    case 'brandIds':
-      return brands.value.filter((e) =>
-        currentSelection.value.brandIds?.includes(e._id),
-      );
-    default:
-      return entities.value.filter((e) =>
-        currentSelection.value.ids?.includes(e._id),
-      );
+    case 'categoryIds': {
+      const categorySet = new Set(currentSelection.value.categoryIds);
+      return categories.value.filter((e) => categorySet.has(e._id));
+    }
+    case 'brandIds': {
+      const brandSet = new Set(currentSelection.value.brandIds);
+      return brands.value.filter((e) => brandSet.has(e._id));
+    }
+    default: {
+      const selectionSet = new Set(currentSelection.value.ids);
+      if (entityIsSku.value) {
+        const selectedSkus: T[] = [];
+        entities.value.forEach((product) => {
+          if (product.skus === undefined) {
+            if (selectionSet.has(product._id)) {
+              selectedSkus.push(product);
+            }
+          } else {
+            ((product.skus as T[]) || []).forEach((sku) => {
+              if (selectionSet.has(sku._id)) {
+                selectedSkus.push(sku);
+              }
+            });
+          }
+        });
+        return selectedSkus;
+      }
+      return entities.value.filter((e) => selectionSet.has(e._id));
+    }
   }
 });
 const selectedIds = computed(() => currentSelection.value.ids);
@@ -88,33 +119,148 @@ const selectOption = (id: SelectorSelectionOptionsId) => {
   currentOption.value = id;
 };
 
+const searchableFields: Array<keyof T> = [
+  '_id',
+  'name',
+  'articleNumber',
+  'productId',
+];
+
 // Columns for Entity
-const { getColumns, orderAndFilterColumns } = useColumns<T>();
+const {
+  getColumns,
+  orderAndFilterColumns,
+  addExpandingColumn,
+  getBasicCellStyle,
+} = useColumns<T>();
+
+let columns: ColumnDef<T>[] = [];
 const columnOptions: ColumnOptions<T> = {
   selectable: true,
+  columnTitles: {
+    _id: entityIsSku.value ? 'Sku id' : 'Id',
+  } as Partial<Record<Extract<keyof T, string>, string>>,
 };
-let columns = getColumns(entities.value, columnOptions);
-if (entityIsProduct.value) {
-  columns = orderAndFilterColumns(columns, [
+
+const setupEntityColumns = () => {
+  columns = getColumns(entities.value, columnOptions);
+
+  if (entityIsSku.value) {
+    // Only add expander column if at least one product has multiple skus
+    if (hasMultipleSkus.value) {
+      columns = addExpandingColumn(columns);
+    }
+    columns = columns.map((col) => {
+      if (col.id === 'select') {
+        const originalCell = col.cell;
+        return {
+          ...col,
+          id: 'select' as string,
+          header: () => null,
+          cell: (props: { table: Table<T>; row: Row<T> }) => {
+            const { table, row } = props;
+            // Hide checkbox for parent rows (rows that CAN expand)
+            if (row.getCanExpand()) {
+              return h(
+                'div',
+                {
+                  class: cn(
+                    getBasicCellStyle(table),
+                    'px-3 flex items-center justify-center text-2xl!',
+                  ),
+                },
+                row.getIsSomeSelected() ? '▣' : '',
+              );
+            }
+            // Show checkbox for child rows
+            if (typeof originalCell === 'function') {
+              const selectCell = row
+                .getAllCells()
+                .find((c) => c.column.id === 'select');
+              if (!selectCell) return null;
+              return originalCell(selectCell.getContext());
+            }
+            return null;
+          },
+        } as ColumnDef<T>;
+      }
+
+      if (col.id === '_id') {
+        // it is a parent (canexpand) row, show show no value, otherwise, show the id
+        return {
+          ...col,
+          cell: (props: { row: Row<T>; table: Table<T> }) => {
+            const { row, table } = props;
+            if (row.getCanExpand()) {
+              return h('div', {});
+            }
+            return h(
+              'div',
+              {
+                class: cn(getBasicCellStyle(table)),
+              },
+              row.getValue('_id'),
+            );
+          },
+        };
+      }
+      if (col.id === 'productId') {
+        return {
+          ...col,
+          cell: (props: { row: Row<T>; table: Table<T> }) => {
+            const { row, table } = props;
+            if (row.depth > 0) {
+              return h('div', {});
+            }
+            return h(
+              'div',
+              {
+                class: cn(getBasicCellStyle(table)),
+              },
+              row.getValue('productId'),
+            );
+          },
+        };
+      }
+
+      return col;
+    }) as ColumnDef<T>[];
+  }
+
+  let columnKeys: ColumnKey<T>[] = [
     'select',
     'thumbnail',
     '_id',
     'name',
-  ]);
-}
+    'articleNumber',
+  ];
 
-// watch entitites, if they change, update columns
-watchEffect(() => {
-  columns = getColumns(entities.value, columnOptions);
-  if (entityIsProduct.value) {
-    columns = orderAndFilterColumns(columns, [
+  if (entityIsSku.value) {
+    columnKeys = [
       'select',
       'thumbnail',
+      'productId',
       '_id',
       'name',
-    ]);
+      'articleNumber',
+    ];
+    // Only include expander if at least one product has multiple skus
+    if (hasMultipleSkus.value) {
+      columnKeys.unshift('expander');
+    }
   }
-});
+  columns = orderAndFilterColumns(columns, columnKeys);
+};
+
+watch(
+  entities,
+
+  () => {
+    setupEntityColumns();
+  },
+  { immediate: true },
+);
+
 let categoriesColumns: ColumnDef<Category>[] = [];
 let brandsColumns: ColumnDef<Brand>[] = [];
 // Columns for categories
@@ -170,6 +316,12 @@ if (entityIsProduct.value) {
   );
 }
 
+const showSelectedList = ref(true);
+
+const getSkuSubRows = (row: T) => {
+  return entityIsSku.value ? (row.skus as T[]) || [] : undefined;
+};
+
 const onSelection = (selection: { _id?: string }[]) => {
   const ids = selection.map((s) => s._id);
   currentSelection.value = {
@@ -186,14 +338,17 @@ const removeSelected = (id: string) => {
   };
 };
 
+const getProductNameByProductId = (productId: string) => {
+  const product = entities.value.find((e) => e.productId === productId);
+  return product ? product.name : '';
+};
+
 const handleSave = () => {
   emit('save', currentSelection.value);
 };
 const handleCancel = () => {
   currentSelection.value = props.selection;
 };
-
-const showSelectedList = ref(true);
 </script>
 <template>
   <Sheet>
@@ -237,6 +392,9 @@ const showSelectedList = ref(true);
               :selected-ids="selectedIds"
               max-height="calc(100vh - 20rem)"
               :mode="TableMode.Simple"
+              :searchable-fields="searchableFields"
+              :enable-expanding="entityIsSku && hasMultipleSkus"
+              :get-sub-rows="getSkuSubRows"
               @selection="onSelection"
             />
           </div>
@@ -307,11 +465,16 @@ const showSelectedList = ref(true);
               class="flex items-center gap-2.5 py-1.5 text-xs"
             >
               <span class="font-semibold">{{ entity._id }}</span>
-              <span class="truncate">{{ entity.name }}</span>
+              <span v-if="entityIsSku && !entity.isCollapsed" class="truncate"
+                >{{ getProductNameByProductId(String(entity.productId)) }} ({{
+                  entity.name
+                }})</span
+              >
+              <span v-else class="truncate">{{ entity.name }}</span>
               <Button
                 size="icon"
                 variant="outline"
-                class="hover:text-negative mr-1 ml-auto size-5 shrink-0"
+                class="hover:text-negative mr-1 ml-auto shrink-0 sm:size-6"
                 @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />
@@ -334,7 +497,7 @@ const showSelectedList = ref(true);
               <Button
                 size="icon"
                 variant="outline"
-                class="hover:text-negative mr-1 ml-auto size-5 shrink-0"
+                class="hover:text-negative mr-1 ml-auto shrink-0 sm:size-6"
                 @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />
@@ -357,7 +520,7 @@ const showSelectedList = ref(true);
               <Button
                 size="icon"
                 variant="outline"
-                class="hover:text-negative mr-1 ml-auto size-5 shrink-0"
+                class="hover:text-negative mr-1 ml-auto shrink-0 sm:size-6"
                 @click="removeSelected(entity._id)"
               >
                 <LucideX class="size-3" />

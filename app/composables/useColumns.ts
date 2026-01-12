@@ -15,7 +15,10 @@ import {
   TableCellBoolean,
   TableCellEditable,
   TableCellCurrency,
+  Button,
 } from '#components';
+
+import { ChevronRight } from 'lucide-vue-next';
 
 interface UseColumnsReturnType<T> {
   getBasicHeaderStyle: (table: Table<T>) => string;
@@ -34,13 +37,14 @@ interface UseColumnsReturnType<T> {
     type?: 'actions' | 'delete' | 'edit',
     availableActions?: TableRowAction[],
   ) => ColumnDef<T>[];
+  addExpandingColumn: (columns: ColumnDef<T>[]) => ColumnDef<T>[];
   orderAndFilterColumns: (
     columns: ColumnDef<T>[],
-    keys: (keyof T | 'select' | 'actions')[],
+    keys: ColumnKey<T>[],
   ) => ColumnDef<T>[];
   orderColumnLast: (
     columns: ColumnDef<T>[],
-    key: keyof T | 'select' | 'actions',
+    key: ColumnKey<T>,
   ) => ColumnDef<T>[];
 }
 
@@ -142,6 +146,46 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
     size: 40,
     maxSize: 40,
     meta: { type: 'select' },
+  };
+
+  const expandingColumn: ColumnDef<T> = {
+    id: 'expander',
+    header: ({ table }: { table: Table<T> }) =>
+      h('div', {
+        class: cn(getBasicHeaderStyle(table)),
+      }),
+    cell: ({ row, table }) => {
+      return h(
+        'div',
+        {
+          class: cn(getBasicCellStyle(table), ''),
+        },
+        row.getCanExpand()
+          ? [
+              h(
+                Button,
+                {
+                  onClick: row.getToggleExpandedHandler(),
+                  class: 'inline-flex items-center justify-center',
+                  variant: 'outline',
+                  size: 'icon-xs',
+                },
+                () =>
+                  h(ChevronRight, {
+                    class:
+                      'size-4 transition-transform' +
+                      (row.getIsExpanded() ? ' rotate-90' : ''),
+                  }),
+              ),
+            ]
+          : [],
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+    size: 48,
+    maxSize: 48,
+    meta: { type: 'default' },
   };
 
   const getColumns = (
@@ -526,7 +570,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
-            let text = String(row.getValue(key));
+            let text = String(row.getValue(key) ?? '');
 
             if (typeof value === 'boolean') {
               return h(TableCellBoolean, {
@@ -658,7 +702,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
 
   const orderAndFilterColumns = (
     columns: ColumnDef<T>[],
-    keys: (keyof T | 'select' | 'actions')[],
+    keys: ColumnKey<T>[],
   ): ColumnDef<T>[] => {
     const newColumns = keys
       .map((key) => columns.find((column) => column.id === key))
@@ -668,7 +712,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
 
   const orderColumnLast = (
     columns: ColumnDef<T>[],
-    key: keyof T | 'select' | 'actions',
+    key: ColumnKey<T>,
   ): ColumnDef<T>[] => {
     const column = columns.find((column) => column.id === key);
     if (!column) {
@@ -679,12 +723,19 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
     return newColumns;
   };
 
+  const addExpandingColumn = (columns: ColumnDef<T>[]): ColumnDef<T>[] => {
+    // Add expander column at the beginning
+    columns.unshift(expandingColumn);
+    return columns;
+  };
+
   return {
     getBasicHeaderStyle,
     getBasicCellStyle,
     getColumns,
     extendColumns,
     addActionsColumn,
+    addExpandingColumn,
     orderAndFilterColumns,
     orderColumnLast,
   };

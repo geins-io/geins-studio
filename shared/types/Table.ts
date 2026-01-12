@@ -1,5 +1,5 @@
 import '@tanstack/vue-table';
-import type { RowData } from '@tanstack/vue-table';
+import type { Column, RowData } from '@tanstack/vue-table';
 
 export type TableRowAction = 'edit' | 'copy' | 'delete';
 
@@ -25,6 +25,7 @@ export type ColumnType =
   | 'link'
   | 'select'
   | 'actions'
+  | 'expander'
   | 'channels'
   | 'tags'
   | 'status'
@@ -32,6 +33,8 @@ export type ColumnType =
   | `editable-${EditableColumnType}`;
 
 export type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
+
+export type ColumnKey<T> = keyof T | ColumnType;
 
 export interface LinkColumnConfig<T> {
   url: string;

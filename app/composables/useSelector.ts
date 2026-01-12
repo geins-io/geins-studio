@@ -31,6 +31,10 @@ interface UseSelectorReturnType {
   convertToSimpleSelectionBase: (
     selection: SelectorSelectionQueryBase,
   ) => SelectorSelectionSimpleBase;
+  transformProductsToSelectorEntities: (
+    products: Product[],
+    idPrefix?: string,
+  ) => SelectorEntity[];
 }
 
 /**
@@ -55,6 +59,8 @@ interface UseSelectorReturnType {
  * @property {function} convertToSimpleSelectionBase - Converts query base to simple base
  */
 export const useSelector = (): UseSelectorReturnType => {
+  const { getProductThumbnail } = useGeinsImage();
+
   const getFallbackSelection = (): SelectorSelectionInternal => {
     return structuredClone({
       condition: SelectorCondition.And,
@@ -264,6 +270,63 @@ export const useSelector = (): UseSelectorReturnType => {
     ],
   };
 
+  /**
+   * Memoization cache for transformed products
+   * Using WeakMap to allow garbage collection when product arrays are no longer referenced
+   */
+  const transformCache = new WeakMap<Product[], SelectorEntity[]>();
+
+  /**
+   * Transforms products with SKUs into SelectorEntity format for hierarchical selection.
+   * Products with a single SKU are collapsed into one selectable row,
+   * while products with multiple SKUs can be expanded.
+   *
+   * Results are memoized to avoid repeated transformations of the same product array.
+   *
+   * @param products - Array of Product objects with SKUs
+   * @param idPrefix - Prefix for parent product IDs (default: 'p-')
+   * @returns Array of SelectorEntity objects with nested SKU structure
+   */
+  const transformProductsToSelectorEntities = (
+    products: Product[],
+    idPrefix: string = 'p-',
+  ): SelectorEntity[] => {
+    // Check cache first
+    const cached = transformCache.get(products);
+    if (cached) {
+      return cached;
+    }
+
+    // Transform products
+    const result = products.map((product) => {
+      const hasMultipleSkus = Number(product.skus?.length) > 1;
+      const firstSkuId = product.skus?.[0]?._id || product._id;
+
+      return {
+        _id: hasMultipleSkus ? `${idPrefix}${product._id}` : firstSkuId,
+        name: product.name,
+        thumbnail: getProductThumbnail(product.media?.[0]?._id),
+        productId: product._id,
+        articleNumber: product.articleNumber,
+        isCollapsed: !hasMultipleSkus,
+        skus: hasMultipleSkus
+          ? product.skus?.map((sku) => ({
+              _id: sku._id,
+              name: sku.name,
+              articleNumber: sku.articleNumber,
+              thumbnail: getProductThumbnail(product.media?.[0]?._id),
+              productId: product._id,
+              isCollapsed: false,
+            }))
+          : undefined,
+      };
+    });
+
+    // Cache the result
+    transformCache.set(products, result);
+    return result;
+  };
+
   return {
     dummyData,
     getFallbackSelection,
@@ -277,5 +340,6 @@ export const useSelector = (): UseSelectorReturnType => {
     convertSimpleToInternalSelectionBase,
     convertToSimpleSelection,
     convertToSimpleSelectionBase,
+    transformProductsToSelectorEntities,
   };
 };
