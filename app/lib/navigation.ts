@@ -45,7 +45,7 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
     },
     {
       label: t('navigation.customers'),
-      href: '/customers/account/list',
+      href: '/customers/company/list',
       icon: 'Users',
       group: 'sales',
       // TODO: Add roles when auth system is ready
@@ -53,10 +53,10 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
       // permissions: ['customers.read'],
       children: [
         {
-          label: t('navigation.accounts'),
-          href: '/customers/account/list',
-          childPattern: '/customers/account/:id',
-          // permissions: ['customers.accounts.read'],
+          label: t('navigation.companies'),
+          href: '/customers/company/list',
+          childPattern: '/customers/company/:id',
+          // permissions: ['customers.companies.read'],
         },
       ],
     },

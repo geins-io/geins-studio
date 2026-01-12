@@ -4,13 +4,13 @@
 // =====================================================================================
 import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
-import { useCustomerAccounts } from '@/composables/useCustomerAccounts';
-import { useCustomerOrders } from '@/composables/useCustomerOrders';
+import { useCustomerCompanies } from '@/composables/useCustomerCompanies';
+import { useCompanyOrders } from '@/composables/useCompanyOrders';
 import {
   DataItemDisplayType,
   TableMode,
   SelectorCondition,
-  type CustomerAccountApiOptions,
+  type CustomerCompanyApiOptions,
   type CustomerBuyerList,
 } from '#shared/types';
 import * as z from 'zod';
@@ -19,7 +19,7 @@ import { LucidePackage, LucideUser } from 'lucide-vue-next';
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
-const scope = 'pages/customers/account/[id].vue';
+const scope = 'pages/customers/company/[id].vue';
 const { customerApi } = useGeinsRepository();
 const {
   hasValidatedVat,
@@ -27,11 +27,11 @@ const {
   vatValidating,
   vatNumberValidated,
   vatValidationSummary,
-  extractAccountGroupsfromTags,
-  convertAccountGroupsToTags,
+  extractCompanyGroupsFromTags,
+  convertCompanyGroupsToTags,
   validateVatNumber,
   getAddresses,
-} = useCustomerAccounts();
+} = useCustomerCompanies();
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog(scope);
 const accountStore = useAccountStore();
@@ -80,7 +80,7 @@ const formSchema = toTypedSchema(
 // =====================================================================================
 // ENTITY DATA SETUP
 // =====================================================================================
-const entityBase: CustomerAccountCreate = {
+const entityBase: CustomerCompanyCreate = {
   name: '',
   active: true,
   vatNumber: '',
@@ -141,9 +141,9 @@ const stepValidationMap: Record<number, string> = {
   2: addShippingAddress.value ? 'addresses' : 'billing',
 };
 
-// Account data
-const accountGroups = ref<string[]>([]);
-const accountTags = ref<EntityBaseWithName[]>([]);
+// Company data
+const companyGroups = ref<string[]>([]);
+const companyTags = ref<EntityBaseWithName[]>([]);
 
 // Form validation
 const createDisabled = ref(true);
@@ -180,13 +180,13 @@ const {
   parseAndSaveData,
   validateSteps,
 } = useEntityEdit<
-  CustomerAccountBase,
-  CustomerAccount,
-  CustomerAccountCreate,
-  CustomerAccountUpdate,
-  CustomerAccountApiOptions
+  CustomerCompanyBase,
+  CustomerCompany,
+  CustomerCompanyCreate,
+  CustomerCompanyUpdate,
+  CustomerCompanyApiOptions
 >({
-  repository: customerApi.account,
+  repository: customerApi.company,
   validationSchema: formSchema,
   initialEntityData: entityBase,
   initialUpdateData: entityBase,
@@ -198,17 +198,17 @@ const {
       externalId: entityData.externalId || '',
       channels: entityData.channels || [],
       salesReps: entityData.salesReps || [],
-      tags: accountGroups.value,
+      tags: companyGroups.value,
     },
     addresses: {
       billing: billingAddress.value,
       shipping: shippingAddress.value,
     },
   }),
-  parseEntityData: async (account: CustomerAccount) => {
+  parseEntityData: async (company: CustomerCompany) => {
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
-    buyers.value = account.buyers || [];
-    buyersList.value = account.buyers.map((buyer) => {
+    buyers.value = company.buyers || [];
+    buyersList.value = company.buyers.map((buyer) => {
       return {
         ...buyer,
         priceLists: createTooltip({
@@ -219,18 +219,18 @@ const {
         }),
       };
     });
-    entityLiveStatus.value = account.active || false;
-    accountGroups.value = extractAccountGroupsfromTags(account.tags || []);
-    addedPriceLists.value = account.priceLists || [];
+    entityLiveStatus.value = company.active || false;
+    companyGroups.value = extractCompanyGroupsFromTags(company.tags || []);
+    addedPriceLists.value = company.priceLists || [];
 
     billingAddress.value = {
-      ...account.addresses?.find(
+      ...company.addresses?.find(
         (address) =>
           address.addressType === 'billing' ||
           address.addressType === 'billingandshipping',
       ),
     };
-    const shipping = account.addresses?.find(
+    const shipping = company.addresses?.find(
       (address) => address.addressType === 'shipping',
     );
     if (shipping) {
@@ -238,16 +238,16 @@ const {
       addShippingAddress.value = true;
     }
 
-    await validateVatNumber(account.vatNumber);
+    await validateVatNumber(company.vatNumber);
 
     form.setValues({
       details: {
-        name: account.name || '',
-        vatNumber: account.vatNumber || '',
-        externalId: account.externalId || '',
-        channels: account.channels || [],
-        salesReps: account.salesReps?.map((rep) => rep._id || rep) || [],
-        tags: accountGroups.value,
+        name: company.name || '',
+        vatNumber: company.vatNumber || '',
+        externalId: company.externalId || '',
+        channels: company.channels || [],
+        salesReps: company.salesReps?.map((rep) => rep._id || rep) || [],
+        tags: companyGroups.value,
       },
       addresses: {
         billing: billingAddress.value,
@@ -262,7 +262,7 @@ const {
         ? { ...shippingAddress.value, ...formData.addresses?.shipping }
         : undefined,
     );
-    const tags = convertAccountGroupsToTags(accountGroups.value);
+    const tags = convertCompanyGroupsToTags(companyGroups.value);
 
     return {
       ...entityBase,
@@ -272,7 +272,7 @@ const {
     };
   },
   prepareUpdateData: (formData, entity) => {
-    const tags = convertAccountGroupsToTags(accountGroups.value);
+    const tags = convertCompanyGroupsToTags(companyGroups.value);
 
     return {
       ...entity,
@@ -301,8 +301,8 @@ const {
           }
         : undefined,
     );
-    accountGroups.value = values.details.tags || [];
-    const tags = convertAccountGroupsToTags(accountGroups.value);
+    companyGroups.value = values.details.tags || [];
+    const tags = convertCompanyGroupsToTags(companyGroups.value);
     const newValues = {
       ...entityData.value,
       ...values.details,
@@ -527,7 +527,7 @@ if (!createMode.value) {
 // ORDERS MANAGEMENT
 // =====================================================================================
 
-const { ordersList, orderColumns, fetchOrders } = useCustomerOrders();
+const { ordersList, orderColumns, fetchOrders } = useCompanyOrders();
 
 // =====================================================================================
 // ADDRESS MANAGEMENT
@@ -605,7 +605,7 @@ const saveAddress = async (address: AddressUpdate) => {
 // =====================================================================================
 // STEP ACTIONS & CUSTOM HANDLERS
 // =====================================================================================
-const saveAccountDetails = async () => {
+const saveCompanyDetails = async () => {
   const stepValid = await validateSteps([1]);
 
   if (stepValid) {
@@ -614,7 +614,7 @@ const saveAccountDetails = async () => {
     form?.setValues({
       details: {
         ...entityDataCreate.value,
-        tags: accountGroups.value,
+        tags: companyGroups.value,
       },
       addresses: {
         billing: {
@@ -630,7 +630,7 @@ const saveAccountDetails = async () => {
   }
 };
 
-const handleCreateAccount = async () => {
+const handleCreateCompany = async () => {
   await createEntity(
     async () => {
       const stepsValid = await validateSteps([1, 2]);
@@ -645,7 +645,7 @@ const handleCreateAccount = async () => {
   );
 };
 
-const handleUpdateAccount = async () => {
+const handleUpdateCompany = async () => {
   await updateEntity(
     async () => {
       const stepsValid = await validateSteps([1]);
@@ -708,14 +708,14 @@ const summary = computed<DataItem[]>(() => {
       entityName: 'channel',
     });
   }
-  if (accountGroups.value.length) {
-    const displayValue = accountGroups.value.join(', ');
+  if (companyGroups.value.length) {
+    const displayValue = companyGroups.value.join(', ');
     dataList.push({
-      label: t('customers.account_groups'),
-      value: accountGroups.value,
+      label: t('customers.company_groups'),
+      value: companyGroups.value,
       displayValue,
       displayType: DataItemDisplayType.Array,
-      entityName: 'account_group',
+      entityName: 'company_group',
     });
   }
   return dataList;
@@ -790,18 +790,18 @@ const { summaryProps } = useEntityEditSummary({
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 if (!createMode.value) {
-  const { data, error, refresh } = await useAsyncData<CustomerAccount>(
+  const { data, error, refresh } = await useAsyncData<CustomerCompany>(
     entityFetchKey.value,
-    () => customerApi.account.get(entityId.value, { fields: ['all'] }),
+    () => customerApi.company.get(entityId.value, { fields: ['all'] }),
   );
 
   refreshEntityData.value = refresh;
 
   onMounted(async () => {
-    const account = handleFetchResult<CustomerAccount>(error.value, data.value);
+    const company = handleFetchResult<CustomerCompany>(error.value, data.value);
 
     // Parse and save initial data
-    await parseAndSaveData(account);
+    await parseAndSaveData(company);
     await nextTick();
 
     // Watch for data updates
@@ -815,14 +815,14 @@ if (!createMode.value) {
     const tagsData = ref<string[] | null>(null);
 
     try {
-      tagsData.value = await customerApi.account.tags.get();
+      tagsData.value = await customerApi.company.tags.get();
     } catch (e) {
       geinsLogError('error fetching tags:', e);
     }
 
     if (tagsData.value) {
-      const extractedTags = extractAccountGroupsfromTags(tagsData.value);
-      accountTags.value = extractedTags.map((tag) => ({
+      const extractedTags = extractCompanyGroupsFromTags(tagsData.value);
+      companyTags.value = extractedTags.map((tag) => ({
         _id: tag,
         name: tag,
       }));
@@ -881,7 +881,7 @@ if (!createMode.value) {
             icon="save"
             :loading="loading"
             :disabled="!hasUnsavedChanges || loading"
-            @click="handleUpdateAccount"
+            @click="handleUpdateCompany"
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
           <DropdownMenu v-if="!createMode">
@@ -926,8 +926,8 @@ if (!createMode.value) {
               :total-steps="totalCreateSteps"
               :current-step="currentStep"
               :step-valid="formValid"
-              :title="$t('customers.account_details')"
-              @next="saveAccountDetails"
+              :title="$t('customers.company_details')"
+              @next="saveCompanyDetails"
             >
               <FormGridWrap>
                 <FormGrid design="1+1+1">
@@ -1060,13 +1060,13 @@ if (!createMode.value) {
                   <FormField v-slot="{ componentField }" name="details.tags">
                     <FormItem>
                       <FormLabel :optional="true">{{
-                        $t('customers.account_groups')
+                        $t('customers.company_groups')
                       }}</FormLabel>
                       <FormControl>
                         <FormInputTagsSearch
                           :model-value="componentField.modelValue"
-                          entity-name="account_group"
-                          :data-set="accountTags"
+                          entity-name="company_group"
+                          :data-set="companyTags"
                           :allow-custom-tags="true"
                           @update:model-value="
                             componentField['onUpdate:modelValue']
@@ -1187,7 +1187,7 @@ if (!createMode.value) {
               <Button
                 :loading="loading"
                 :disabled="createDisabled"
-                @click="handleCreateAccount"
+                @click="handleCreateCompany"
               >
                 {{ $t('create_entity', { entityName }) }}
               </Button>
@@ -1210,8 +1210,8 @@ if (!createMode.value) {
                   v-model:open="buyerPanelOpen"
                   :mode="buyerPanelMode"
                   :buyer="buyerToEdit"
-                  :account-id="entityDataUpdate?._id || ''"
-                  :account-name="entityDataUpdate.name || ''"
+                  :company-id="entityDataUpdate?._id || ''"
+                  :company-name="entityDataUpdate.name || ''"
                   :price-lists="allPriceLists"
                 >
                   <ButtonIcon

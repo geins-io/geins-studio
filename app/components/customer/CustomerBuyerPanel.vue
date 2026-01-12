@@ -9,8 +9,8 @@ import { useToast } from '@/components/ui/toast/use-toast';
 const props = withDefaults(
   defineProps<{
     buyer?: CustomerBuyerUpdate;
-    accountId: string;
-    accountName: string;
+    companyId: string;
+    companyName: string;
     mode: 'edit' | 'add';
     priceLists: CustomerPriceList[];
   }>(),
@@ -173,7 +173,7 @@ const handleSave = async () => {
     newBuyer.value = markRaw({
       ...form.values,
       _id: form.values.email || '',
-      accountId: props.accountId,
+      accountId: props.companyId,
       priceLists: assignPriceLists.value ? form.values.priceLists : [],
       restrictToDedicatedPriceLists: assignPriceLists.value
         ? form.values.restrictToDedicatedPriceLists
@@ -184,21 +184,21 @@ const handleSave = async () => {
 
     if (props.mode === 'edit') {
       // Just updating an existing buyer
-      await customerApi.account
-        .id(props.accountId)
+      await customerApi.company
+        .id(props.companyId)
         .buyer.update(id, newBuyer.value);
     } else if (buyerExistsAsCustomer.value) {
       // Customer exists, so assign and update
-      await customerApi.account
-        .id(props.accountId)
+      await customerApi.company
+        .id(props.companyId)
         .buyer.assign(newBuyer.value._id);
-      await customerApi.account
-        .id(props.accountId)
+      await customerApi.company
+        .id(props.companyId)
         .buyer.update(id, newBuyer.value);
     } else {
       // Create a new buyer
-      await customerApi.account
-        .id(props.accountId)
+      await customerApi.company
+        .id(props.companyId)
         .buyer.create(newBuyer.value);
     }
 
@@ -230,7 +230,7 @@ const handleRemoveClick = async () => {
 const removeBuyer = async (id: string = buyerId.value) => {
   isDeleting.value = true;
   try {
-    await customerApi.account.id(props.accountId).buyer.delete(id);
+    await customerApi.company.id(props.companyId).buyer.delete(id);
   } catch (error) {
     const message = getErrorMessage(error);
     geinsLogError('error removing buyer:', message);
@@ -457,7 +457,7 @@ const existingCustomerName = computed(() => {
                   :label="
                     $t('customers.buyers_assign_existing', {
                       customerName: existingCustomerName,
-                      accountName: accountName,
+                      companyName: companyName,
                     })
                   "
                   :description="$t('customers.buyers_assign_description')"

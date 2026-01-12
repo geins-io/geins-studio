@@ -1,13 +1,13 @@
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 import type {
-  CustomerAccount,
-  CustomerAccountCreate,
-  CustomerAccountUpdate,
+  CustomerCompany,
+  CustomerCompanyCreate,
+  CustomerCompanyUpdate,
   CustomerBuyer,
   CustomerBuyerCreate,
   CustomerBuyerUpdate,
   CustomerVatValidation,
-  CustomerAccountApiOptions,
+  CustomerCompanyApiOptions,
   Customer,
   CustomerCreate,
   CustomerUpdate,
@@ -16,16 +16,16 @@ import type {
 const BASE_ENDPOINT = '/wholesale';
 
 /**
- * Repository for managing customer account operations
+ * Repository for managing customer company operations
  */
 export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const accountEndpoint = `${BASE_ENDPOINT}/account`;
-  const accountRepo = repo.entity<
-    CustomerAccount,
-    CustomerAccountCreate,
-    CustomerAccountUpdate,
-    CustomerAccountApiOptions
-  >(accountEndpoint, fetch);
+  const companyEndpoint = `${BASE_ENDPOINT}/account`;
+  const companyRepo = repo.entity<
+    CustomerCompany,
+    CustomerCompanyCreate,
+    CustomerCompanyUpdate,
+    CustomerCompanyApiOptions
+  >(companyEndpoint, fetch);
 
   const buyerEndpoint = `${BASE_ENDPOINT}/buyer`;
   const buyerRepo = repo.entityBase<CustomerBuyer>(buyerEndpoint, fetch);
@@ -37,27 +37,27 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   );
 
   return {
-    account: {
-      ...accountRepo,
+    company: {
+      ...companyRepo,
       tags: {
         async get(): Promise<string[]> {
-          return await fetch<string[]>(`${accountEndpoint}/tag/list`);
+          return await fetch<string[]>(`${companyEndpoint}/tag/list`);
         },
       },
-      id: (accountId: string) => {
-        const accountIdEndpoint = `${accountEndpoint}/${accountId}`;
+      id: (companyId: string) => {
+        const companyIdEndpoint = `${companyEndpoint}/${companyId}`;
 
-        const accountBuyerEndpoint = `${accountIdEndpoint}/buyer`;
+        const companyBuyerEndpoint = `${companyIdEndpoint}/buyer`;
         const buyerEntityRepo = repo.entity<
           CustomerBuyer,
           CustomerBuyerCreate,
           CustomerBuyerUpdate
-        >(accountBuyerEndpoint, fetch);
+        >(companyBuyerEndpoint, fetch);
         return {
           buyer: {
             ...buyerEntityRepo,
             async assign(id: string): Promise<void> {
-              await fetch<null>(`${accountBuyerEndpoint}/${id}`, {
+              await fetch<null>(`${companyBuyerEndpoint}/${id}`, {
                 method: 'POST',
               });
             },

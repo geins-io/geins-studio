@@ -12,8 +12,8 @@ import type {
   Price,
 } from './index';
 
-// Customer Account types
-export interface CustomerAccountBase {
+// Customer Company types
+export interface CustomerCompanyBase {
   name: string;
   active: boolean;
   vatNumber: string;
@@ -25,30 +25,30 @@ export interface CustomerAccountBase {
   meta?: Record<string, unknown>;
 }
 
-export interface CustomerAccountCreate
-  extends CreateEntity<CustomerAccountBase> {
+export interface CustomerCompanyCreate
+  extends CreateEntity<CustomerCompanyBase> {
   buyers: CustomerBuyerCreate[];
   addresses: AddressCreate[];
   salesReps: string[];
   priceLists: string[];
 }
 
-export interface CustomerAccountUpdate
-  extends UpdateEntity<CustomerAccountBase> {
+export interface CustomerCompanyUpdate
+  extends UpdateEntity<CustomerCompanyBase> {
   buyers?: CustomerBuyerUpdate[];
   addresses?: AddressUpdate[];
   salesReps?: string[];
   priceLists: string[];
 }
 
-export interface CustomerAccount extends ResponseEntity<CustomerAccountBase> {
+export interface CustomerCompany extends ResponseEntity<CustomerCompanyBase> {
   buyers: CustomerBuyer[];
   salesReps: CustomerSalesRep[];
   addresses: Address[];
   priceLists: CustomerPriceList[];
 }
 
-export type CustomerAccountFieldsFilter =
+export type CustomerCompanyFieldsFilter =
   | 'all'
   | 'default'
   | 'addresses'
@@ -56,12 +56,12 @@ export type CustomerAccountFieldsFilter =
   | 'buyers'
   | 'pricelists';
 
-export type CustomerAccountApiOptions = ApiOptions<CustomerAccountFieldsFilter>;
+export type CustomerCompanyApiOptions = ApiOptions<CustomerCompanyFieldsFilter>;
 
-export interface CustomerAccountList
-  extends Omit<CustomerAccount, 'salesReps' | 'buyers' | 'priceLists'>,
+export interface CustomerCompanyList
+  extends Omit<CustomerCompany, 'salesReps' | 'buyers' | 'priceLists'>,
     EntityBase {
-  accountGroups: Tooltip;
+  companyGroups: Tooltip;
   salesReps: Tooltip;
   buyers: Tooltip;
   priceLists: Tooltip;
@@ -124,7 +124,7 @@ export interface CustomerOrder {
   buyer?: Tooltip;
   sumIncVat: Price;
   sumExVat: Price;
-  customerAccount?: string;
+  customerCompany?: string;
   priceLists?: Tooltip;
   items?: number;
   status: string;

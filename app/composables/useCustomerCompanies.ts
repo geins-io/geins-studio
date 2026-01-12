@@ -4,10 +4,10 @@
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { CustomerVatValidation } from '#shared/types';
 
-interface UseCustomerAccountsReturnType {
-  deleteAccount: (id?: string, entityName?: string) => Promise<boolean>;
-  extractAccountGroupsfromTags: (tags: string[]) => string[];
-  convertAccountGroupsToTags: (accountGroups: string[]) => string[];
+interface UseCustomerCompaniesReturnType {
+  deleteCompany: (id?: string, entityName?: string) => Promise<boolean>;
+  extractCompanyGroupsFromTags: (tags: string[]) => string[];
+  convertCompanyGroupsToTags: (companyGroups: string[]) => string[];
   hasValidatedVat: Readonly<Ref<boolean>>;
   vatValid: Readonly<Ref<boolean>>;
   vatValidating: Readonly<Ref<boolean>>;
@@ -24,13 +24,13 @@ interface UseCustomerAccountsReturnType {
 /**
  * Composable for customer API operations, supporting both reactive and imperative usage.
  *
- * Provides comprehensive utilities for customer operations including account management,
+ * Provides comprehensive utilities for customer operations including company management,
  * VAT validation, address handling, and tag/group conversions.
  *
- * @returns {UseCustomersReturnType} - An object containing customer utilities and state
- * @property {function} deleteAccount - Deletes a customer account with confirmation
- * @property {function} extractAccountGroupsfromTags - Extracts account groups from tag array
- * @property {function} convertAccountGroupsToTags - Converts account groups to tag format
+ * @returns {UseCustomerCompaniesReturnType} - An object containing customer utilities and state
+ * @property {function} deleteCompany - Deletes a customer company with confirmation
+ * @property {function} extractCompanyGroupsFromTags - Extracts company groups from tag array
+ * @property {function} convertCompanyGroupsToTags - Converts company groups to tag format
  * @property {Readonly<Ref<boolean>>} hasValidatedVat - Whether VAT validation has been performed
  * @property {Readonly<Ref<boolean>>} vatValid - Whether the VAT number is valid
  * @property {Readonly<Ref<boolean>>} vatValidating - Whether VAT validation is in progress
@@ -40,19 +40,19 @@ interface UseCustomerAccountsReturnType {
  * @property {function} validateVatNumber - Validates a VAT number against VEIS
  * @property {function} getAddresses - Formats billing and shipping addresses for API
  */
-export const useCustomerAccounts = (): UseCustomerAccountsReturnType => {
+export const useCustomerCompanies = (): UseCustomerCompaniesReturnType => {
   const { toast } = useToast();
   const { t } = useI18n();
   const { geinsLogError, geinsLogInfo } = useGeinsLog(
-    'composables/useCustomerAccounts.ts',
+    'composables/useCustomerCompanies.ts',
   );
 
   const { customerApi } = useGeinsRepository();
 
   // =====================================================================================
-  // ACCOUNT MANAGEMENT
+  // COMPANY MANAGEMENT
   // =====================================================================================
-  const deleteAccount = async (
+  const deleteCompany = async (
     id?: string,
     entityName?: string,
   ): Promise<boolean> => {
@@ -60,14 +60,14 @@ export const useCustomerAccounts = (): UseCustomerAccountsReturnType => {
       if (!id) {
         throw new Error('ID is required for deletion');
       }
-      await customerApi.account.delete(id);
+      await customerApi.company.delete(id);
       toast({
         title: t('entity_deleted', { entityName }),
         variant: 'positive',
       });
       return true;
     } catch (error) {
-      geinsLogError('deleteAccount :::', getErrorMessage(error));
+      geinsLogError('deleteCompany :::', getErrorMessage(error));
       toast({
         title: t('entity_delete_failed', { entityName }),
         variant: 'negative',
@@ -77,27 +77,27 @@ export const useCustomerAccounts = (): UseCustomerAccountsReturnType => {
   };
 
   // =====================================================================================
-  // ACCOUNT GROUPS & TAGS
+  // COMPANY GROUPS & TAGS
   // =====================================================================================
-  const extractAccountGroupsfromTags = (tags: string[]): string[] => {
+  const extractCompanyGroupsFromTags = (tags: string[]): string[] => {
     if (!tags?.length) {
       return [];
     }
-    const accountGroups: string[] = [];
+    const companyGroups: string[] = [];
     tags.forEach((tag) => {
       if (tag?.includes('group:')) {
-        accountGroups.push(tag.replace('group:', ''));
+        companyGroups.push(tag.replace('group:', ''));
       }
     });
-    return accountGroups;
+    return companyGroups;
   };
 
-  const convertAccountGroupsToTags = (accountGroups: string[]): string[] => {
-    if (!accountGroups?.length) {
+  const convertCompanyGroupsToTags = (companyGroups: string[]): string[] => {
+    if (!companyGroups?.length) {
       return [];
     }
     const tags: string[] = [];
-    accountGroups.forEach((group) => {
+    companyGroups.forEach((group) => {
       if (group) {
         tags.push(`group:${group}`);
       }
@@ -171,11 +171,11 @@ export const useCustomerAccounts = (): UseCustomerAccountsReturnType => {
   };
 
   return {
-    // Account management
-    deleteAccount,
+    // Company management
+    deleteCompany,
     // Tags & Groups
-    extractAccountGroupsfromTags,
-    convertAccountGroupsToTags,
+    extractCompanyGroupsFromTags,
+    convertCompanyGroupsToTags,
     // VAT validation
     hasValidatedVat: readonly(hasValidatedVat),
     vatValid: readonly(vatValid),

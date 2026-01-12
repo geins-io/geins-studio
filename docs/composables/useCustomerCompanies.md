@@ -1,6 +1,6 @@
-# `useCustomerAccounts`
+# `useCustomerCompanies`
 
-The `useCustomerAccounts` composable provides comprehensive utilities for customer account operations including account management, VAT validation, address handling, and more.
+The `useCustomerCompanies` composable provides comprehensive utilities for customer company operations including company management, VAT validation, address handling, and more.
 
 :::warning NOTE
 This composable is designed specifically for customer-related functionalities and may not be suitable for general use cases.
@@ -8,7 +8,7 @@ This composable is designed specifically for customer-related functionalities an
 
 ## Features
 
-- **Account management** with deletion operations and error handling
+- **Company management** with deletion operations and error handling
 - **VAT validation** using VEIS (VAT Information Exchange System)
 - **Address formatting** for billing and shipping
 
@@ -24,7 +24,7 @@ const {
   vatValidating,
   vatValidation,
   vatValidationSummary,
-} = useCustomerAccounts();
+} = useCustomerCompanies();
 
 // VAT number input
 const vatNumber = ref('');
@@ -55,18 +55,18 @@ watch(vatNumber, async (newVat) => {
 
 ## Properties and Methods
 
-### Account Management
+### Company Management
 
-#### `deleteAccount`
+#### `deleteCompany`
 
 ```ts
-deleteAccount(id?: string, entityName?: string): Promise<boolean>
+deleteCompany(id?: string, entityName?: string): Promise<boolean>
 ```
 
-Deletes a customer account with error handling and user feedback.
+Deletes a customer company with error handling and user feedback.
 
 - **Parameters**:
-  - `id`: Account ID to delete
+  - `id`: Company ID to delete
   - `entityName`: Display name for toast messages
 
 - **Returns**: Promise resolving to `true` on success, `false` on failure
@@ -74,25 +74,25 @@ Deletes a customer account with error handling and user feedback.
 
 ### Tag and Group Utilities
 
-#### `extractAccountGroupsfromTags`
+#### `extractCompanyGroupsFromTags`
 
 ```ts
-extractAccountGroupsfromTags(tags: string[]): string[]
+extractCompanyGroupsFromTags(tags: string[]): string[]
 ```
 
-Extracts account group names from a tags array.
+Extracts company group names from a tags array.
 
 - **Parameters**: Array of tags (e.g., `['group:premium', 'status:active']`)
 - **Returns**: Array of group names (e.g., `['premium']`)
 - **Logic**: Filters tags starting with `'group:'` and removes the prefix
 
-#### `convertAccountGroupsToTags`
+#### `convertCompanyGroupsToTags`
 
 ```ts
-convertAccountGroupsToTags(accountGroups: string[]): string[]
+convertCompanyGroupsToTags(companyGroups: string[]): string[]
 ```
 
-Converts account group names to tag format.
+Converts company group names to tag format.
 
 - **Parameters**: Array of group names (e.g., `['premium', 'europe']`)
 - **Returns**: Array of formatted tags (e.g., `['group:premium', 'group:europe']`)
@@ -181,12 +181,12 @@ Formats billing and shipping addresses for API submission.
 ## Type Definitions
 
 ```ts
-function useCustomerAccounts(): UseCustomerAccountsReturnType;
+function useCustomerCompanies(): UseCustomerCompaniesReturnType;
 
-interface UseCustomerAccountsReturnType {
-  deleteAccount: (id?: string, entityName?: string) => Promise<boolean>;
-  extractAccountGroupsfromTags: (tags: string[]) => string[];
-  convertAccountGroupsToTags: (accountGroups: string[]) => string[];
+interface UseCustomerCompaniesReturnType {
+  deleteCompany: (id?: string, entityName?: string) => Promise<boolean>;
+  extractCompanyGroupsFromTags: (tags: string[]) => string[];
+  convertCompanyGroupsToTags: (companyGroups: string[]) => string[];
   hasValidatedVat: Readonly<Ref<boolean>>;
   vatValid: Readonly<Ref<boolean>>;
   vatValidating: Readonly<Ref<boolean>>;

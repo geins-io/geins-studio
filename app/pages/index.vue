@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TableMode, type CustomerAccount } from '#shared/types';
+import { TableMode, type CustomerCompany } from '#shared/types';
 import { LucidePackage } from 'lucide-vue-next';
 
 definePageMeta({
@@ -8,18 +8,18 @@ definePageMeta({
 });
 
 const { customerApi } = useGeinsRepository();
-const { ordersList, orderColumns, fetchOrders } = useCustomerOrders();
+const { ordersList, orderColumns, fetchOrders } = useCompanyOrders();
 
-const { data: allAccounts, error } = await useAsyncData<CustomerAccount[]>(
-  'customer-accounts',
-  () => customerApi.account.list({ fields: ['salesreps', 'buyers'] }),
+const { data: allCompanies, error } = await useAsyncData<CustomerCompany[]>(
+  'customer-companies',
+  () => customerApi.company.list({ fields: ['salesreps', 'buyers'] }),
 );
 
-if (!allAccounts.value || error.value) {
-  allAccounts.value = [];
+if (!allCompanies.value || error.value) {
+  allCompanies.value = [];
 }
 
-if (allAccounts.value.length === 0) {
+if (allCompanies.value.length === 0) {
   ordersList.value = [];
 } else {
   const orderSelectionQuery: OrderBatchQuery = {
@@ -39,7 +39,7 @@ if (allAccounts.value.length === 0) {
     orderSelectionQuery,
     undefined,
     undefined,
-    allAccounts.value,
+    allCompanies.value,
   );
 
   // Order ordersList by dateCreated descending
@@ -71,17 +71,17 @@ breadcrumbsStore.setShowBreadcrumbs(false);
         <!-- Quick access cards grid -->
         <div class="grid grid-cols-1 gap-4 @2xl:grid-cols-2 @6xl:grid-cols-4">
           <ContentLinkCard
-            title="Create a new account"
-            description="Create a new customer account"
-            link="/customers/account/new"
+            title="Create a new company"
+            description="Create a new customer company"
+            link="/customers/company/new"
             linkType="create"
           />
 
-          <!-- Accounts card -->
+          <!-- Companies card -->
           <ContentLinkCard
-            title="Accounts"
-            description="Manage existing customer accounts"
-            link="/customers/account/list"
+            title="Companies"
+            description="Manage existing customer companies"
+            link="/customers/company/list"
             linkType="list"
           />
 
