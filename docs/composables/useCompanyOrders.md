@@ -1,9 +1,9 @@
-# `useCustomerOrders`
+# `useCompanyOrders`
 
-The `useCustomerOrders` composable provides utilities for managing customer orders data and table display. It handles fetching, transforming, and displaying customer orders with proper formatting, column configuration, and reactive state management.
+The `useCompanyOrders` composable provides utilities for managing company orders data and table display. It handles fetching, transforming, and displaying company orders with proper formatting, column configuration, and reactive state management.
 
 :::warning NOTE
-This composable is designed specifically for customer orders-related functionalities and may not be suitable for general use cases.
+This composable is designed specifically for company orders-related functionalities and may not be suitable for general use cases.
 :::
 
 ## Features
@@ -17,14 +17,14 @@ This composable is designed specifically for customer orders-related functionali
 ### Basic Usage
 
 ```ts
-const { ordersList, orderColumns, fetchOrders } = useCustomerOrders();
+const { ordersList, orderColumns, fetchOrders } = useCompanyOrders();
 
 await fetchOrders(
   orderSelectionQuery,
   { fields: ['priceLists', 'itemcount'] },
   entityId.value,
   allPriceLists.value,
-  allaAccounts.value,
+  allCompanies.value,
   buyersList.value,
 );
 ```
@@ -54,8 +54,8 @@ fetchOrders(
   orderSelectionQuery?: OrderBatchQuery,
   orderApiOptions?: OrderApiOptions,
   allPriceLists?: CustomerPriceList[],
-  allAccounts?: CustomerAccount[]
-  allBuyers?: CustomerBuyer[],
+  allCompanies?: CustomerCompany[]
+  allBuyers?: CompanyBuyer[],
 ): Promise<void>
 ```
 
@@ -65,7 +65,7 @@ Fetches orders from the API with filtering and transformation.
   - `orderSelectionQuery`: Query filters for orders
   - `orderApiOptions`: API options (e.g. fields to include)
   - `allPriceLists`: Price list entities for name resolution, will add price lists column if provided
-  - `allAccounts`: Account entities for name resolution, will add account column if provided
+  - `allCompanies`: Company entities for name resolution, will add company column if provided
   - `allBuyers`: Buyer entities for name resolution, will add buyer column if provided
 
 - **Features**: Error handling, data caching, automatic transformation
@@ -76,8 +76,8 @@ Fetches orders from the API with filtering and transformation.
 transformOrdersForList(
   orders: Order[],
   allPriceLists?: CustomerPriceList[],
-  allAccounts?: CustomerAccount[]
-  allBuyers?: CustomerBuyer[],
+  allCompanies?: CustomerCompany[]
+  allBuyers?: CompanyBuyer[],
 ): CustomerOrder[]
 ```
 
@@ -86,7 +86,7 @@ Transforms raw API orders to display-ready format. Used internally by `fetchOrde
 - **Parameters**:
   - `orders`: Raw orders from API
   - `allPriceLists`: Optional price list entities for resolution
-  - `allAccounts`: Optional account entities for resolution
+  - `allCompanies`: Optional company entities for resolution
   - `allBuyers`: Optional buyer entities for resolution
 
 - **Returns**: Array of transformed customer orders
@@ -95,9 +95,9 @@ Transforms raw API orders to display-ready format. Used internally by `fetchOrde
 ## Type Definitions
 
 ```ts
-function useCustomerOrders(): UseCustomerOrdersReturnType;
+function useCompanyOrders(): UseCompanyOrdersReturnType;
 
-interface UseCustomerOrdersReturnType {
+interface UseCompanyOrdersReturnType {
   ordersList: Ref<CustomerOrder[]>;
   orderColumns: ComputedRef<ColumnDef<CustomerOrder>[]>;
   columnOptionsOrders: ColumnOptions<CustomerOrder>;
@@ -105,12 +105,12 @@ interface UseCustomerOrdersReturnType {
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
     allPriceLists?: CustomerPriceList[],
-    allAccounts?: CustomerAccount[],
+    allCompanies?: CustomerCompany[],
   ) => Promise<void>;
   transformOrdersForList: (
     orders: Order[],
     allPriceLists?: CustomerPriceList[],
-    allAccounts?: CustomerAccount[],
+    allCompanies?: CustomerCompany[],
   ) => CustomerOrder[];
 }
 ```

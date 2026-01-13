@@ -5,12 +5,12 @@ import type {
   OrderBatchQuery,
   BatchQueryResult,
   CustomerPriceList,
-  CustomerAccount,
-  CustomerBuyer,
+  CustomerCompany,
+  CompanyBuyer,
 } from '#shared/types';
 import type { ColumnDef } from '@tanstack/vue-table';
 
-interface UseCustomerOrdersReturnType {
+interface UseCompanyOrdersReturnType {
   ordersList: Ref<CustomerOrder[]>;
   orderColumns: ComputedRef<ColumnDef<CustomerOrder>[]>;
   columnOptionsOrders: ColumnOptions<CustomerOrder>;
@@ -18,25 +18,25 @@ interface UseCustomerOrdersReturnType {
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
     allPriceLists?: CustomerPriceList[],
-    allAccounts?: CustomerAccount[],
-    allBuyers?: CustomerBuyer[],
+    allCompanies?: CustomerCompany[],
+    allBuyers?: CompanyBuyer[],
   ) => Promise<void>;
   transformOrdersForList: (
     orders: Order[],
     allPriceLists?: CustomerPriceList[],
-    allAccounts?: CustomerAccount[],
-    allBuyers?: CustomerBuyer[],
+    allCompanies?: CustomerCompany[],
+    allBuyers?: CompanyBuyer[],
   ) => CustomerOrder[];
-  getBuyerNameByEmail: (email: string, allBuyers: CustomerBuyer[]) => string;
+  getBuyerNameByEmail: (email: string, allBuyers: CompanyBuyer[]) => string;
 }
 
 /**
- * Composable for managing customer orders data and table display.
+ * Composable for managing company orders data and table display.
  *
- * Provides utilities for fetching, transforming, and displaying customer orders
+ * Provides utilities for fetching, transforming, and displaying company orders
  * with proper formatting, column configuration, and reactive state management.
  *
- * @returns {UseCustomerOrdersReturnType} - An object containing customer orders state and utilities
+ * @returns {UseCompanyOrdersReturnType} - An object containing company orders state and utilities
  * @property {Ref<CustomerOrder[]>} ordersList - Reactive list of customer orders
  * @property {ComputedRef} orderColumns - Computed column definitions for orders table
  * @property {object} columnOptionsOrders - Column configuration options for orders
@@ -44,14 +44,14 @@ interface UseCustomerOrdersReturnType {
  * @property {function} transformOrdersForList - Transforms API orders to display format
  * @property {function} getBuyerNameByEmail - Gets buyer display name by email or returns email if not found
  */
-export const useCustomerOrders = (): UseCustomerOrdersReturnType => {
+export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
   const { orderApi } = useGeinsRepository();
   const { t } = useI18n();
   const accountStore = useAccountStore();
   const { convertToPrice } = usePrice();
   const { getColumns: getOrderColumns } = useColumns<CustomerOrder>();
   const { batchQueryNoPagination } = useBatchQuery();
-  const { geinsLogError } = useGeinsLog('composables/useCustomerOrders.ts');
+  const { geinsLogError } = useGeinsLog('composables/useCompanyOrders.ts');
 
   // Reactive state
   const ordersList = ref<CustomerOrder[]>([]);
@@ -81,7 +81,7 @@ export const useCustomerOrders = (): UseCustomerOrdersReturnType => {
 
   const getBuyerNameByEmail = (
     email: string,
-    allBuyers: CustomerBuyer[],
+    allBuyers: CompanyBuyer[],
   ): string => {
     const buyer = allBuyers.find((b) => b._id === email);
     if (buyer) {
@@ -94,8 +94,8 @@ export const useCustomerOrders = (): UseCustomerOrdersReturnType => {
   const transformOrdersForList = (
     orders: Order[],
     allPriceLists?: CustomerPriceList[],
-    allAccounts?: CustomerAccount[],
-    allBuyers?: CustomerBuyer[],
+    allCompanies?: CustomerCompany[],
+    allBuyers?: CompanyBuyer[],
   ): CustomerOrder[] => {
     return orders.map((order) => ({
       _id: order._id,
@@ -120,23 +120,23 @@ export const useCustomerOrders = (): UseCustomerOrdersReturnType => {
           t,
         }),
       }),
-      ...(allAccounts && {
-        customerAccount: getEntityNameById(
+      ...(allCompanies && {
+        customerCompany: getEntityNameById(
           order.wholesaleAccountId,
-          allAccounts,
+          allCompanies,
         ),
       }),
       status: order.status,
     }));
   };
 
-  // Fetch orders for a specific customer account
+  // Fetch orders for a specific customer company
   const fetchOrders = async (
     orderSelectionQuery?: OrderBatchQuery,
     orderApiOptions?: OrderApiOptions,
     allPriceLists?: CustomerPriceList[],
-    allAccounts?: CustomerAccount[],
-    allBuyers?: CustomerBuyer[],
+    allCompanies?: CustomerCompany[],
+    allBuyers?: CompanyBuyer[],
   ): Promise<void> => {
     try {
       const ordersData = ref<BatchQueryResult<Order> | null>(null);
@@ -150,7 +150,7 @@ export const useCustomerOrders = (): UseCustomerOrdersReturnType => {
         ordersList.value = transformOrdersForList(
           ordersData.value.items,
           allPriceLists,
-          allAccounts,
+          allCompanies,
           allBuyers,
         );
       }

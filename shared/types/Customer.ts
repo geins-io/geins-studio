@@ -12,8 +12,8 @@ import type {
   Price,
 } from './index';
 
-// Customer Account types
-export interface CustomerAccountBase {
+// Customer Company types
+export interface CustomerCompanyBase {
   name: string;
   active: boolean;
   vatNumber: string;
@@ -25,30 +25,30 @@ export interface CustomerAccountBase {
   meta?: Record<string, unknown>;
 }
 
-export interface CustomerAccountCreate
-  extends CreateEntity<CustomerAccountBase> {
-  buyers: CustomerBuyerCreate[];
+export interface CustomerCompanyCreate
+  extends CreateEntity<CustomerCompanyBase> {
+  buyers: CompanyBuyerCreate[];
   addresses: AddressCreate[];
   salesReps: string[];
   priceLists: string[];
 }
 
-export interface CustomerAccountUpdate
-  extends UpdateEntity<CustomerAccountBase> {
-  buyers?: CustomerBuyerUpdate[];
+export interface CustomerCompanyUpdate
+  extends UpdateEntity<CustomerCompanyBase> {
+  buyers?: CompanyBuyerUpdate[];
   addresses?: AddressUpdate[];
   salesReps?: string[];
   priceLists: string[];
 }
 
-export interface CustomerAccount extends ResponseEntity<CustomerAccountBase> {
-  buyers: CustomerBuyer[];
+export interface CustomerCompany extends ResponseEntity<CustomerCompanyBase> {
+  buyers: CompanyBuyer[];
   salesReps: CustomerSalesRep[];
   addresses: Address[];
   priceLists: CustomerPriceList[];
 }
 
-export type CustomerAccountFieldsFilter =
+export type CustomerCompanyFieldsFilter =
   | 'all'
   | 'default'
   | 'addresses'
@@ -56,12 +56,12 @@ export type CustomerAccountFieldsFilter =
   | 'buyers'
   | 'pricelists';
 
-export type CustomerAccountApiOptions = ApiOptions<CustomerAccountFieldsFilter>;
+export type CustomerCompanyApiOptions = ApiOptions<CustomerCompanyFieldsFilter>;
 
-export interface CustomerAccountList
-  extends Omit<CustomerAccount, 'salesReps' | 'buyers' | 'priceLists'>,
+export interface CustomerCompanyList
+  extends Omit<CustomerCompany, 'salesReps' | 'buyers' | 'priceLists'>,
     EntityBase {
-  accountGroups: Tooltip;
+  companyGroups: Tooltip;
   salesReps: Tooltip;
   buyers: Tooltip;
   priceLists: Tooltip;
@@ -78,7 +78,7 @@ export type CustomerSalesRepCreate = CreateEntity<CustomerSalesRepBase>;
 export type CustomerSalesRepUpdate = UpdateEntity<CustomerSalesRepBase>;
 export type CustomerSalesRep = ResponseEntity<CustomerSalesRepBase>;
 
-export interface CustomerBuyerBase {
+export interface CompanyBuyerBase {
   active?: boolean;
   firstName?: string;
   lastName?: string;
@@ -89,22 +89,22 @@ export interface CustomerBuyerBase {
   restrictToDedicatedPriceLists?: boolean;
 }
 
-export interface CustomerBuyerCreate
-  extends Omit<CreateEntity<CustomerBuyerBase>, 'priceLists'> {
+export interface CompanyBuyerCreate
+  extends Omit<CreateEntity<CompanyBuyerBase>, 'priceLists'> {
   _id: string; // TODO: Remove when fixed
   priceLists?: string[];
 }
 
-export interface CustomerBuyerUpdate
-  extends Omit<UpdateEntity<CustomerBuyerBase>, 'priceLists'> {
+export interface CompanyBuyerUpdate
+  extends Omit<UpdateEntity<CompanyBuyerBase>, 'priceLists'> {
   _id?: string; // TODO: Remove when fixed
   priceLists?: string[];
 }
 
-export type CustomerBuyer = ResponseEntity<CustomerBuyerBase>;
+export type CompanyBuyer = ResponseEntity<CompanyBuyerBase>;
 
-export interface CustomerBuyerList
-  extends Omit<CustomerBuyer, 'priceLists'>,
+export interface CompanyBuyerList
+  extends Omit<CompanyBuyer, 'priceLists'>,
     EntityBase {
   priceLists: Tooltip;
 }
@@ -124,7 +124,7 @@ export interface CustomerOrder {
   buyer?: Tooltip;
   sumIncVat: Price;
   sumExVat: Price;
-  customerAccount?: string;
+  customerCompany?: string;
   priceLists?: Tooltip;
   items?: number;
   status: string;

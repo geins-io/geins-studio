@@ -2,13 +2,13 @@
 import type {
   ColumnOptions,
   StringKeyOf,
-  CustomerAccountList,
+  CustomerCompanyList,
 } from '#shared/types';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
-type Entity = CustomerAccount;
-type EntityList = CustomerAccountList;
+type Entity = CustomerCompany;
+type EntityList = CustomerCompanyList;
 
-const scope = 'pages/customers/account/list.vue';
+const scope = 'pages/customers/company/list.vue';
 const { t } = useI18n();
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
@@ -18,7 +18,7 @@ definePageMeta({
 
 // GLOBAL SETUP
 const { customerApi } = useGeinsRepository();
-const { deleteAccount, extractAccountGroupsfromTags } = useCustomerAccounts();
+const { deleteCompany, extractCompanyGroupsFromTags } = useCustomerCompanies();
 const dataList = ref<EntityList[]>([]);
 const entityName = getEntityName();
 const newEntityUrl = getEntityNewUrl();
@@ -35,19 +35,19 @@ const { handleFetchResult } = usePageError({
 });
 
 // Add the mapping function
-const mapToListData = (accounts: Entity[]): EntityList[] => {
-  return accounts.map((account) => {
-    const groups = extractAccountGroupsfromTags(account.tags);
+const mapToListData = (companies: Entity[]): EntityList[] => {
+  return companies.map((company) => {
+    const groups = extractCompanyGroupsFromTags(company.tags);
 
-    const accountGroups = createTooltip({
+    const companyGroups = createTooltip({
       items: groups,
-      entityName: 'account_group',
+      entityName: 'company_group',
       formatter: (group) => `${group}`,
       t,
     });
 
     const buyers = createTooltip({
-      items: account.buyers,
+      items: company.buyers,
       entityName: 'buyer',
       formatter: (buyer) =>
         `${buyer.firstName} ${buyer.lastName} (${buyer._id})`,
@@ -55,22 +55,22 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
     });
 
     const salesReps = createTooltip({
-      items: account.salesReps,
+      items: company.salesReps,
       entityName: 'sales_rep',
       formatter: (salesRep) => `${salesRep?.firstName} ${salesRep?.lastName}`,
       t,
     });
 
     const priceLists = createTooltip({
-      items: account.priceLists,
+      items: company.priceLists,
       entityName: 'price_list',
       formatter: (priceList) => `${priceList?.name}`,
       t,
     });
 
     return {
-      ...account,
-      accountGroups,
+      ...company,
+      companyGroups,
       salesReps,
       buyers,
       priceLists,
@@ -80,9 +80,9 @@ const mapToListData = (accounts: Entity[]): EntityList[] => {
 
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(
-  'customer-accounts-list',
+  'customer-companies-list',
   () =>
-    customerApi.account.list({
+    customerApi.company.list({
       fields: ['salesreps', 'buyers', 'pricelists'],
     }),
 );
@@ -107,7 +107,7 @@ onMounted(() => {
       name: 'link',
       buyers: 'tooltip',
       salesReps: 'tooltip',
-      accountGroups: 'tooltip',
+      companyGroups: 'tooltip',
       priceLists: 'tooltip',
     },
     linkColumns: {
@@ -156,7 +156,7 @@ const openDeleteDialog = async (id?: string) => {
 };
 const confirmDelete = async () => {
   deleting.value = true;
-  const success = await deleteAccount(deleteId.value, entityName);
+  const success = await deleteCompany(deleteId.value, entityName);
   if (success) {
     refresh();
   }

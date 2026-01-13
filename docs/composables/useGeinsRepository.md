@@ -150,41 +150,41 @@ function previewPrice(
 
 ### `customerApi`
 
-Customer and account management API for creating, updating, and managing customer accounts, buyers, and individual customers.
+Customer and company management API for creating, updating, and managing customer companies, buyers, and individual customers.
 
-#### `account`
+#### `company`
 
-`customerApi.account`
+`customerApi.company`
 
 ```ts
-function get(id: string, options?: CustomerAccountApiOptions): Promise<CustomerAccount>;
-function list(options?: CustomerAccountApiOptions): Promise<CustomerAccount[]>;
-function create(data: CustomerAccountCreate, options?: CustomerAccountApiOptions): Promise<CustomerAccount>;
-function update(id: string, data: CustomerAccountUpdate, options?: CustomerAccountApiOptions): Promise<CustomerAccount>;
+function get(id: string, options?: CustomerCompanyApiOptions): Promise<CustomerCompany>;
+function list(options?: CustomerCompanyApiOptions): Promise<CustomerCompany[]>;
+function create(data: CustomerCompanyCreate, options?: CustomerCompanyApiOptions): Promise<CustomerCompany>;
+function update(id: string, data: CustomerCompanyUpdate, options?: CustomerCompanyApiOptions): Promise<CustomerCompany>;
 function delete(id: string): Promise<void>;
 ```
 
 ##### `tags`
 
-`customerApi.account.tags`
+`customerApi.company.tags`
 
 ```ts
 function get(): Promise<string[]>;
 ```
 
-##### `id(accountId: string)`
+##### `id(companyId: string)`
 
 Has no methods itself but provides access to the following sub-repositories:
 
 ###### `buyer`
 
-`customerApi.account.id(accountId).buyer`
+`customerApi.company.id(companyId).buyer`
 
 ```ts
-function get(id: string): Promise<CustomerBuyer>;
-function list(): Promise<CustomerBuyer[]>;
-function create(data: CustomerBuyerCreate): Promise<CustomerBuyer>;
-function update(id: string, data: CustomerBuyerUpdate): Promise<CustomerBuyer>;
+function get(id: string): Promise<CompanyBuyer>;
+function list(): Promise<CompanyBuyer[]>;
+function create(data: CompanyBuyerCreate): Promise<CompanyBuyer>;
+function update(id: string, data: CompanyBuyerUpdate): Promise<CompanyBuyer>;
 function delete(id: string): Promise<void>;
 function assign(id: string): Promise<void>;
 ```
