@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = withDefaults(
   defineProps<{
-    buyer?: CustomerBuyerUpdate;
+    buyer?: CompanyBuyerUpdate;
     companyId: string;
     companyName: string;
     mode: 'edit' | 'add';
@@ -25,7 +25,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLogError } = useGeinsLog('components/CustomerBuyerPanel.vue');
+const { geinsLogError } = useGeinsLog('components/CompanyBuyerPanel.vue');
 const { customerApi } = useGeinsRepository();
 
 const entityName = 'buyer';
@@ -35,7 +35,7 @@ const loading = ref(false);
 const buyerExistsAsCustomer = ref(false);
 const existingCustomer = ref<Customer>();
 const updateCustomer = ref(false);
-const newBuyer = ref<CustomerBuyerCreate>();
+const newBuyer = ref<CompanyBuyerCreate>();
 const isChecking = ref(false);
 const isDeleting = ref(false);
 const formValid = ref(false);

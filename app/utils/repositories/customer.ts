@@ -3,9 +3,9 @@ import type {
   CustomerCompany,
   CustomerCompanyCreate,
   CustomerCompanyUpdate,
-  CustomerBuyer,
-  CustomerBuyerCreate,
-  CustomerBuyerUpdate,
+  CompanyBuyer,
+  CompanyBuyerCreate,
+  CompanyBuyerUpdate,
   CustomerVatValidation,
   CustomerCompanyApiOptions,
   Customer,
@@ -28,7 +28,7 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   >(companyEndpoint, fetch);
 
   const buyerEndpoint = `${BASE_ENDPOINT}/buyer`;
-  const buyerRepo = repo.entityBase<CustomerBuyer>(buyerEndpoint, fetch);
+  const buyerRepo = repo.entityBase<CompanyBuyer>(buyerEndpoint, fetch);
 
   const customerEndpoint = `${BASE_ENDPOINT}/customer`;
   const subCustomerRepo = repo.entity<Customer, CustomerCreate, CustomerUpdate>(
@@ -49,9 +49,9 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
         const companyBuyerEndpoint = `${companyIdEndpoint}/buyer`;
         const buyerEntityRepo = repo.entity<
-          CustomerBuyer,
-          CustomerBuyerCreate,
-          CustomerBuyerUpdate
+          CompanyBuyer,
+          CompanyBuyerCreate,
+          CompanyBuyerUpdate
         >(companyBuyerEndpoint, fetch);
         return {
           buyer: {

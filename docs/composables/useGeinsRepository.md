@@ -181,10 +181,10 @@ Has no methods itself but provides access to the following sub-repositories:
 `customerApi.company.id(companyId).buyer`
 
 ```ts
-function get(id: string): Promise<CustomerBuyer>;
-function list(): Promise<CustomerBuyer[]>;
-function create(data: CustomerBuyerCreate): Promise<CustomerBuyer>;
-function update(id: string, data: CustomerBuyerUpdate): Promise<CustomerBuyer>;
+function get(id: string): Promise<CompanyBuyer>;
+function list(): Promise<CompanyBuyer[]>;
+function create(data: CompanyBuyerCreate): Promise<CompanyBuyer>;
+function update(id: string, data: CompanyBuyerUpdate): Promise<CompanyBuyer>;
 function delete(id: string): Promise<void>;
 function assign(id: string): Promise<void>;
 ```

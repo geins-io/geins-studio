@@ -6,7 +6,7 @@ import type {
   BatchQueryResult,
   CustomerPriceList,
   CustomerCompany,
-  CustomerBuyer,
+  CompanyBuyer,
 } from '#shared/types';
 import type { ColumnDef } from '@tanstack/vue-table';
 
@@ -19,15 +19,15 @@ interface UseCompanyOrdersReturnType {
     orderApiOptions?: OrderApiOptions,
     allPriceLists?: CustomerPriceList[],
     allCompanies?: CustomerCompany[],
-    allBuyers?: CustomerBuyer[],
+    allBuyers?: CompanyBuyer[],
   ) => Promise<void>;
   transformOrdersForList: (
     orders: Order[],
     allPriceLists?: CustomerPriceList[],
     allCompanies?: CustomerCompany[],
-    allBuyers?: CustomerBuyer[],
+    allBuyers?: CompanyBuyer[],
   ) => CustomerOrder[];
-  getBuyerNameByEmail: (email: string, allBuyers: CustomerBuyer[]) => string;
+  getBuyerNameByEmail: (email: string, allBuyers: CompanyBuyer[]) => string;
 }
 
 /**
@@ -81,7 +81,7 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
 
   const getBuyerNameByEmail = (
     email: string,
-    allBuyers: CustomerBuyer[],
+    allBuyers: CompanyBuyer[],
   ): string => {
     const buyer = allBuyers.find((b) => b._id === email);
     if (buyer) {
@@ -95,7 +95,7 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
     orders: Order[],
     allPriceLists?: CustomerPriceList[],
     allCompanies?: CustomerCompany[],
-    allBuyers?: CustomerBuyer[],
+    allBuyers?: CompanyBuyer[],
   ): CustomerOrder[] => {
     return orders.map((order) => ({
       _id: order._id,
@@ -136,7 +136,7 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
     orderApiOptions?: OrderApiOptions,
     allPriceLists?: CustomerPriceList[],
     allCompanies?: CustomerCompany[],
-    allBuyers?: CustomerBuyer[],
+    allBuyers?: CompanyBuyer[],
   ): Promise<void> => {
     try {
       const ordersData = ref<BatchQueryResult<Order> | null>(null);

@@ -27,7 +27,7 @@ export interface CustomerCompanyBase {
 
 export interface CustomerCompanyCreate
   extends CreateEntity<CustomerCompanyBase> {
-  buyers: CustomerBuyerCreate[];
+  buyers: CompanyBuyerCreate[];
   addresses: AddressCreate[];
   salesReps: string[];
   priceLists: string[];
@@ -35,14 +35,14 @@ export interface CustomerCompanyCreate
 
 export interface CustomerCompanyUpdate
   extends UpdateEntity<CustomerCompanyBase> {
-  buyers?: CustomerBuyerUpdate[];
+  buyers?: CompanyBuyerUpdate[];
   addresses?: AddressUpdate[];
   salesReps?: string[];
   priceLists: string[];
 }
 
 export interface CustomerCompany extends ResponseEntity<CustomerCompanyBase> {
-  buyers: CustomerBuyer[];
+  buyers: CompanyBuyer[];
   salesReps: CustomerSalesRep[];
   addresses: Address[];
   priceLists: CustomerPriceList[];
@@ -78,7 +78,7 @@ export type CustomerSalesRepCreate = CreateEntity<CustomerSalesRepBase>;
 export type CustomerSalesRepUpdate = UpdateEntity<CustomerSalesRepBase>;
 export type CustomerSalesRep = ResponseEntity<CustomerSalesRepBase>;
 
-export interface CustomerBuyerBase {
+export interface CompanyBuyerBase {
   active?: boolean;
   firstName?: string;
   lastName?: string;
@@ -89,22 +89,22 @@ export interface CustomerBuyerBase {
   restrictToDedicatedPriceLists?: boolean;
 }
 
-export interface CustomerBuyerCreate
-  extends Omit<CreateEntity<CustomerBuyerBase>, 'priceLists'> {
+export interface CompanyBuyerCreate
+  extends Omit<CreateEntity<CompanyBuyerBase>, 'priceLists'> {
   _id: string; // TODO: Remove when fixed
   priceLists?: string[];
 }
 
-export interface CustomerBuyerUpdate
-  extends Omit<UpdateEntity<CustomerBuyerBase>, 'priceLists'> {
+export interface CompanyBuyerUpdate
+  extends Omit<UpdateEntity<CompanyBuyerBase>, 'priceLists'> {
   _id?: string; // TODO: Remove when fixed
   priceLists?: string[];
 }
 
-export type CustomerBuyer = ResponseEntity<CustomerBuyerBase>;
+export type CompanyBuyer = ResponseEntity<CompanyBuyerBase>;
 
-export interface CustomerBuyerList
-  extends Omit<CustomerBuyer, 'priceLists'>,
+export interface CompanyBuyerList
+  extends Omit<CompanyBuyer, 'priceLists'>,
     EntityBase {
   priceLists: Tooltip;
 }

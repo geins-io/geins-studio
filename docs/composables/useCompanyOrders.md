@@ -55,7 +55,7 @@ fetchOrders(
   orderApiOptions?: OrderApiOptions,
   allPriceLists?: CustomerPriceList[],
   allCompanies?: CustomerCompany[]
-  allBuyers?: CustomerBuyer[],
+  allBuyers?: CompanyBuyer[],
 ): Promise<void>
 ```
 
@@ -77,7 +77,7 @@ transformOrdersForList(
   orders: Order[],
   allPriceLists?: CustomerPriceList[],
   allCompanies?: CustomerCompany[]
-  allBuyers?: CustomerBuyer[],
+  allBuyers?: CompanyBuyer[],
 ): CustomerOrder[]
 ```
 

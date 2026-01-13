@@ -11,7 +11,7 @@ import {
   TableMode,
   SelectorCondition,
   type CustomerCompanyApiOptions,
-  type CustomerBuyerList,
+  type CompanyBuyerList,
 } from '#shared/types';
 import * as z from 'zod';
 import { LucidePackage, LucideUser } from 'lucide-vue-next';
@@ -353,12 +353,12 @@ fetchUsers();
 // =====================================================================================
 // BUYERS MANAGEMENT
 // =====================================================================================
-const buyers = ref<CustomerBuyer[]>([]);
-const buyersList = ref<CustomerBuyerList[]>([]);
+const buyers = ref<CompanyBuyer[]>([]);
+const buyersList = ref<CompanyBuyerList[]>([]);
 const buyerPanelOpen = ref(false);
-const buyerToEdit = ref<CustomerBuyerUpdate | undefined>();
+const buyerToEdit = ref<CompanyBuyerUpdate | undefined>();
 const buyerPanelMode = ref<'edit' | 'add'>('add');
-const columnOptions: ColumnOptions<CustomerBuyerList> = {
+const columnOptions: ColumnOptions<CompanyBuyerList> = {
   columnTypes: {
     restrictToDedicatedPriceLists: 'default',
     priceLists: 'tooltip',
@@ -374,7 +374,7 @@ const columnOptions: ColumnOptions<CustomerBuyerList> = {
   sortable: false,
 };
 const { getColumns, addActionsColumn, orderAndFilterColumns } =
-  useColumns<CustomerBuyerList>();
+  useColumns<CompanyBuyerList>();
 
 // Use computed for reactive columns
 const buyerColumns = computed(() => {
@@ -395,7 +395,7 @@ const buyerColumns = computed(() => {
   addActionsColumn(
     columns,
     {
-      onEdit: (entity: CustomerBuyerList) => {
+      onEdit: (entity: CompanyBuyerList) => {
         buyerToEdit.value = buyers.value
           .map((buyer) => ({
             ...buyer,
@@ -743,7 +743,7 @@ const otherSummary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   if (entityData.value?.buyers?.length) {
     const displayValue = entityData.value.buyers
-      .map((buyer: CustomerBuyer) => `${buyer.firstName} ${buyer.lastName}`)
+      .map((buyer: CompanyBuyer) => `${buyer.firstName} ${buyer.lastName}`)
       .join(', ');
     dataList.push({
       label: t('buyer', 2),
@@ -1206,7 +1206,7 @@ if (!createMode.value) {
               :description="$t('customers.buyers_description')"
             >
               <template #header-action>
-                <CustomerBuyerPanel
+                <CompanyBuyerPanel
                   v-model:open="buyerPanelOpen"
                   :mode="buyerPanelMode"
                   :buyer="buyerToEdit"
@@ -1222,7 +1222,7 @@ if (!createMode.value) {
                   >
                     {{ $t('add_entity', { entityName: 'buyer' }) }}
                   </ButtonIcon>
-                </CustomerBuyerPanel>
+                </CompanyBuyerPanel>
               </template>
               <div>
                 <TableView
