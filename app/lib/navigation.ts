@@ -62,7 +62,7 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
     },
     {
       label: t('navigation.orders'),
-      href: '/orders/quotations/list',
+      href: '/orders/quotation/list',
       icon: 'Package',
       group: 'sales',
       // TODO: Add roles when auth system is ready
@@ -71,8 +71,8 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
       children: [
         {
           label: t('navigation.quotations'),
-          href: '/orders/quotations/list',
-          childPattern: '/orders/quotations/:id',
+          href: '/orders/quotation/list',
+          childPattern: '/orders/quotation/:id',
           // permissions: ['orders.quotations.read'],
         },
       ],
