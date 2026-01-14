@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.2.0 - 2026-01-14
+
+This is a major release with significant refactoring and new features ([#120](https://github.com/geins-io/geins-studio/pull/120)).
+
+### 🚀 Enhancements
+
+- Expanding grids + SKU in selector panel ([#117](https://github.com/geins-io/geins-studio/pull/117))
+- Added missing language keys ([#114](https://github.com/geins-io/geins-studio/pull/114))
+- New login design ([#113](https://github.com/geins-io/geins-studio/pull/113))
+
+### 🔄 Refactor
+
+- Renamed "Account" to "Company" throughout the application ([#118](https://github.com/geins-io/geins-studio/pull/118))
+- Removed and renamed wholesale scope ([#115](https://github.com/geins-io/geins-studio/pull/115))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.1.5 - 2025-12-17
 
 ### 🚀 Enhancements
