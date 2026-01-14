@@ -62,8 +62,8 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       <div>
         <div class="mt-6 mb-6 sm:mt-10">
           <ContentCardHeader
-            title="Quick Access"
-            description="Quick access to key features like customer account management, pricing, and product access."
+            title="Quick access"
+            description="Quick access company management, pricing, and product access."
             size="md"
           />
         </div>
@@ -72,7 +72,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
         <div class="grid grid-cols-1 gap-4 @2xl:grid-cols-2 @6xl:grid-cols-4">
           <ContentLinkCard
             title="Create a new company"
-            description="Create a new customer company"
+            description="Create a new company"
             link="/customers/company/new"
             linkType="create"
           />
@@ -80,7 +80,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           <!-- Companies card -->
           <ContentLinkCard
             title="Companies"
-            description="Manage existing customer companies"
+            description="Manage existing companies"
             link="/customers/company/list"
             linkType="list"
           />
@@ -107,8 +107,8 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       <div>
         <div class="mt-10 mb-6">
           <ContentCardHeader
-            title="Latest customer orders"
-            description="The most recent orders placed by buyers linked to a customer account."
+            title="Latest company orders"
+            description="The most recent orders placed by buyers linked to a company."
             size="md"
           />
         </div>

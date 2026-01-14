@@ -60,23 +60,23 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
         },
       ],
     },
-    {
-      label: t('navigation.orders'),
-      href: '/orders/quotation/list',
-      icon: 'Package',
-      group: 'sales',
-      // TODO: Add roles when auth system is ready
-      // roles: ['admin', 'order_manager'],
-      // permissions: ['orders.read'],
-      children: [
-        {
-          label: t('navigation.quotations'),
-          href: '/orders/quotation/list',
-          childPattern: '/orders/quotation/:id',
-          // permissions: ['orders.quotations.read'],
-        },
-      ],
-    },
+    // {
+    //   label: t('navigation.orders'),
+    //   href: '/orders/quotation/list',
+    //   icon: 'Package',
+    //   group: 'sales',
+    //   // TODO: Add roles when auth system is ready
+    //   // roles: ['admin', 'order_manager'],
+    //   // permissions: ['orders.read'],
+    //   children: [
+    //     {
+    //       label: t('navigation.quotations'),
+    //       href: '/orders/quotation/list',
+    //       childPattern: '/orders/quotation/:id',
+    //       // permissions: ['orders.quotations.read'],
+    //     },
+    //   ],
+    // },
     // {
     //   label: t('navigation.settings'),
     //   href: '/account/market/list',
