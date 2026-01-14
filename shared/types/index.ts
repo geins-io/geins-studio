@@ -4,6 +4,7 @@ export * from './Auth';
 export * from './Entity';
 export * from './Global';
 export * from './Order';
+export * from './Quotation';
 export * from './Table';
 export * from './Selector';
 export * from './Product';
