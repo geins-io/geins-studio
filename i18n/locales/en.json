@@ -384,5 +384,18 @@
     "default_price": "Default price",
     "error_applying_base_rule": "Error applying base rule",
     "error_applying_volume_pricing": "Error applying volume pricing"
+  },
+  "orders": {
+    "quotation_create_description": "Create a new quotation by providing the basic information",
+    "quotation_edit_description": "Edit quotation details and manage items",
+    "quotation_basic_info": "Basic information",
+    "quotation_additional_info": "Additional information",
+    "quotation_items_description": "Manage items included in this quotation",
+    "quotation_items_coming_soon": "Item management coming soon. You'll be able to add products, set quantities, and adjust pricing.",
+    "quotation_summary_description": "Summary of quotation details and totals",
+    "buyer_optional_description": "Optional - select a specific buyer for this quotation",
+    "expiration_date_optional": "Optional - defaults to 30 days from creation",
+    "notes": "Notes",
+    "notes_placeholder": "Add any notes or special instructions for this quotation..."
   }
 }

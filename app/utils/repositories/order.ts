@@ -4,6 +4,8 @@ import type {
   OrderBatchQuery,
   BatchQueryResult,
   Quotation,
+  QuotationCreate,
+  QuotationUpdate,
   QuotationApiOptions,
   QuotationStatus,
 } from '#shared/types';
@@ -137,6 +139,96 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           throw new Error(`Quotation with ID ${id} not found`);
         }
         return quotation;
+      },
+
+      /**
+       * Create new quotation
+       * Returns dummy data until real endpoint is available
+       */
+      async create(
+        data: QuotationCreate,
+        options?: QuotationApiOptions,
+      ): Promise<Quotation> {
+        // Simulate API delay
+        await new Promise((resolve) => setTimeout(resolve, 400));
+
+        // Generate new quotation ID
+        const quotations = generateDummyQuotations();
+        const newId = `quote-${String(quotations.length + 1).padStart(3, '0')}`;
+
+        // Create new quotation from provided data
+        const now = new Date().toISOString();
+        const expirationDate = new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000,
+        ).toISOString();
+
+        const newQuotation: Quotation = {
+          _id: newId,
+          _type: 'quotation',
+          name: data.name,
+          status: data.status || 'draft',
+          accountId: data.accountId,
+          accountName: data.accountName,
+          dateCreated: now,
+          dateModified: now,
+          sum: data.sum || {
+            price: '0',
+            currency: data.currency || 'SEK',
+          },
+          expirationDate: data.expirationDate || expirationDate,
+          itemCount: 0,
+          createdBy: data.createdBy,
+          channel: data.channel,
+          currency: data.currency,
+          notes: data.notes,
+        };
+
+        return newQuotation;
+      },
+
+      /**
+       * Update existing quotation
+       * Returns dummy data until real endpoint is available
+       */
+      async update(
+        id: string,
+        data: QuotationUpdate,
+        options?: QuotationApiOptions,
+      ): Promise<Quotation> {
+        // Simulate API delay
+        await new Promise((resolve) => setTimeout(resolve, 400));
+
+        // Get existing quotation
+        const quotations = generateDummyQuotations();
+        const existing = quotations.find((q) => q._id === id);
+        if (!existing) {
+          throw new Error(`Quotation with ID ${id} not found`);
+        }
+
+        // Update quotation (exclude items from update)
+        const { items, ...updateData } = data;
+        const updated: Quotation = {
+          ...existing,
+          ...updateData,
+          dateModified: new Date().toISOString(),
+        };
+
+        return updated;
+      },
+
+      /**
+       * Delete quotation
+       * Simulates deletion until real endpoint is available
+       */
+      async delete(id: string): Promise<void> {
+        // Simulate API delay
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        const quotations = generateDummyQuotations();
+        const quotation = quotations.find((q) => q._id === id);
+        if (!quotation) {
+          throw new Error(`Quotation with ID ${id} not found`);
+        }
       },
     },
   };
