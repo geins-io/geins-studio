@@ -9,6 +9,7 @@ This is a major release with significant refactoring and new features ([#120](ht
 - Expanding grids + SKU in selector panel ([#117](https://github.com/geins-io/geins-studio/pull/117))
 - Added missing language keys ([#114](https://github.com/geins-io/geins-studio/pull/114))
 - New login design ([#113](https://github.com/geins-io/geins-studio/pull/113))
+- Added Swedish (sv) locale with complete translations
 
 ### 🔄 Refactor
 
