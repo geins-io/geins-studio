@@ -12,15 +12,20 @@ const badgeVariant = computed(() => {
     case 'on-hold':
     case 'backorder':
     case 'partial':
+    case 'sent':
       return 'warning';
     case 'cancelled':
+    case 'rejected':
       return 'negative';
     case 'refunded':
     case 'inactive':
       return 'inactive';
+    case 'accepted':
     case 'completed':
     case true:
       return 'positive';
+    case 'draft':
+    case 'expired':
     case false:
       return 'secondary';
     default:

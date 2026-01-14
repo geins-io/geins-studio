@@ -9,6 +9,10 @@ definePageMeta({
     navigateAuthenticatedTo: '/',
   },
 });
+
+const handleSetMode = async (mode: AuthFormMode) => {
+  await navigateTo('/auth/login');
+};
 </script>
 <template>
   <div>
@@ -17,6 +21,7 @@ definePageMeta({
       :show-invalid="false"
       mode="reset-password"
       :token="token"
+      @set-mode="handleSetMode"
     />
   </div>
 </template>

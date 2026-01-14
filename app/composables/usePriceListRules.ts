@@ -50,6 +50,7 @@ export function usePriceListRules({
   entityDataUpdate,
   previewPriceList,
 }: UsePriceListRulesOptions): UsePriceListRulesReturnType {
+  const { t } = useI18n();
   const { toast } = useToast();
   const { geinsLogError } = useGeinsLog('composables/usePriceListRules');
 
@@ -96,7 +97,10 @@ export function usePriceListRules({
 
   const baseRuleText = computed(() => {
     if (!baseRule.value) return '';
-    return `${baseRulePercentage.value}% ${baseRuleMode.value} applied globally`;
+    return t('pricing.rule_applied_globally', {
+      percentage: baseRulePercentage.value,
+      mode: baseRuleMode.value,
+    });
   });
 
   // =====================================================================================
@@ -128,12 +132,14 @@ export function usePriceListRules({
       globalRules.value.push(globalRule);
 
       await updateEntityRules();
-      await previewPriceList(`${percentage}% ${mode} applied globally`);
+      await previewPriceList(
+        t('pricing.rule_applied_globally', { percentage, mode }),
+      );
     } catch (error) {
       geinsLogError('error applying base rule:', error);
       toast({
-        title: 'Error applying base rule',
-        description: 'Please try again.',
+        title: t('pricing.error_applying_base_rule'),
+        description: t('error_try_again'),
         variant: 'negative',
       });
     } finally {
@@ -159,7 +165,10 @@ export function usePriceListRules({
 
   const removeBaseRule = async () => {
     if (!baseRule.value) return;
-    const feedback = `${baseRulePercentage.value}% ${baseRuleMode.value} removed`;
+    const feedback = t('pricing.rule_removed', {
+      percentage: baseRulePercentage.value,
+      mode: baseRuleMode.value,
+    });
     globalRules.value = globalRules.value.filter((rule) => rule.quantity !== 1);
     entityDataUpdate.value.rules = cleanRulesForEntityData(globalRules.value);
     removeBaseRulePromptVisible.value = false;
@@ -189,12 +198,12 @@ export function usePriceListRules({
       }
 
       await updateEntityRules();
-      await previewPriceList('Volume pricing applied globally');
+      await previewPriceList(t('pricing.volume_pricing_applied_globally'));
     } catch (error) {
       geinsLogError('error applying rules:', error);
       toast({
-        title: 'Error applying volume pricing',
-        description: 'Please try again.',
+        title: t('pricing.error_applying_volume_pricing'),
+        description: t('error_try_again'),
         variant: 'negative',
       });
     } finally {
@@ -230,7 +239,7 @@ export function usePriceListRules({
         ),
     );
     await updateEntityRules();
-    await previewPriceList('Price break removed.');
+    await previewPriceList(t('pricing.price_break_removed'));
   };
 
   const updateEntityRules = async (): Promise<void> => {

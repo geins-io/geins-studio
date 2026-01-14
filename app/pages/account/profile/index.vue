@@ -384,7 +384,7 @@ if (!createMode.value) {
         <ContentEditMainContent>
           <ContentEditCard
             :title="$t('entity_details', { entityName })"
-            description="Contact information and personal details"
+            :description="$t('account_profile.contact_information')"
           >
             <FormGridWrap>
               <FormGrid design="1+1">
@@ -435,7 +435,7 @@ if (!createMode.value) {
               </FormGrid>
             </FormGridWrap>
           </ContentEditCard>
-          <ContentEditCard title="Login credentials">
+          <ContentEditCard :title="$t('account_profile.login_credentials')">
             <FormGridWrap>
               <FormGrid design="2+1">
                 <FormField v-slot="{ componentField }" name="username">
@@ -445,7 +445,7 @@ if (!createMode.value) {
                       <Input v-model="entityData._id" disabled />
                     </FormControl>
                     <FormDescription>
-                      Contact your administrator to change your username
+                      {{ $t('account_profile.username_change_note') }}
                     </FormDescription>
                   </FormItem>
                 </FormField>

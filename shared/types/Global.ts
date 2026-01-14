@@ -49,12 +49,12 @@ export interface NavigationItem {
 
   // Role-based access control
   roles?: string[]; // e.g., ['admin', 'editor', 'viewer']
-  permissions?: string[]; // e.g., ['wholesale.read', 'products.write']
+  permissions?: string[]; // e.g., ['customer.read', 'products.write']
 
   group?: string; // Group items together (e.g., 'sales', 'content')
 
   // Child page pattern - defines dynamic child routes
-  // Example: '/wholesale/account/:id' matches /wholesale/account/123
+  // Example: '/customer/account/:id' matches /customer/account/123
   // Used for auto-clearing breadcrumb overrides on navigation
   childPattern?: string;
 }

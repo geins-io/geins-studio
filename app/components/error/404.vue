@@ -40,20 +40,20 @@ const handleHome = () => {
         <LucideFileQuestion class="size-6" />
       </EmptyMedia>
       <EmptyHeader>
-        <EmptyTitle>{{ t('error.404_title') }}</EmptyTitle>
+        <EmptyTitle>{{ $t('error.404_title') }}</EmptyTitle>
         <EmptyDescription>
-          {{ message || t('error.404_description') }}
+          {{ message || $t('error.404_description') }}
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <div class="flex flex-col gap-2 sm:flex-row">
           <Button variant="secondary" @click="handleBack">
             <LucideArrowLeft class="mr-2 size-4" />
-            {{ t('error.go_back') }}
+            {{ $t('error.go_back') }}
           </Button>
           <Button @click="handleHome">
             <LucideHome class="mr-2 size-4" />
-            {{ t('error.home') }}
+            {{ $t('error.home') }}
           </Button>
         </div>
       </EmptyContent>

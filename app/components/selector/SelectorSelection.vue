@@ -195,8 +195,8 @@ const noSelectionLabel = computed(() => {
     <div class="relative rounded-lg border px-3 py-4">
       <SelectorPanel
         :selection="selection"
-        :type="type"
         :mode="mode"
+        :currency="currentCurrency"
         :entity-name="entityName"
         :entities="entities"
         :options="selectorOptions"

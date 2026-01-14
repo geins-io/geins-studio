@@ -18,7 +18,7 @@ const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
 const BASE_ENDPOINT = '/product';
 
 /**
- * Repository for managing wholesale operations with subsections
+ * Repository for managing product operations
  */
 export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   const productRepo = repo.entity<

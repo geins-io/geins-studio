@@ -15,13 +15,14 @@ const { t } = useI18n();
 const { login, verify, setAccount, preLogin, session, isAuthenticated } =
   useGeinsAuth();
 const router = useRouter();
+const route = useRoute();
 
 // State
 const loginToken = ref('');
 const mfaMethod = ref('');
 const loading = ref(false);
 const showInvalid = ref(false);
-const step = ref<AuthFormMode>('login');
+const mode = ref<AuthFormMode>('login');
 
 // Initialize auth state
 onMounted(async () => {
@@ -29,17 +30,17 @@ onMounted(async () => {
   await handleInitialState();
 });
 
-// Handle authentication state and determine appropriate step
+// Handle authentication state and determine appropriate mode
 const handleInitialState = async () => {
   if (session.value?.mfaActive && session.value?.loginToken) {
     loginToken.value = session.value.loginToken;
     mfaMethod.value = session.value.mfaMethod || '';
-    step.value = 'verify';
+    mode.value = 'verify';
     return;
   }
 
   if (session.value?.user?.basicAccounts && !session.value?.accountKey) {
-    step.value = 'account';
+    mode.value = 'account';
     return;
   }
 
@@ -56,7 +57,6 @@ const redirectToHome = async () => {
     return;
   }
 
-  const route = useRoute();
   const redirect = route.query.redirect as string;
   await router.push(redirect || '/');
 
@@ -75,13 +75,13 @@ const handlePostAuth = async () => {
   if (session.value?.mfaActive && session.value?.loginToken) {
     loginToken.value = session.value.loginToken;
     mfaMethod.value = session.value.mfaMethod || '';
-    step.value = 'verify';
+    mode.value = 'verify';
     loading.value = false;
     return;
   }
 
   if (!session.value?.accountKey) {
-    step.value = 'account';
+    mode.value = 'account';
     loading.value = false;
     return;
   }
@@ -166,8 +166,8 @@ const handleSetAccount = async (accountKey: string) => {
   await redirectToHome();
 };
 
-const handleSetMode = (mode: AuthFormMode) => {
-  step.value = mode;
+const handleSetMode = (formMode: AuthFormMode) => {
+  mode.value = formMode;
   showInvalid.value = false;
   loading.value = false;
 };
@@ -175,7 +175,7 @@ const handleSetMode = (mode: AuthFormMode) => {
 
 <template>
   <AuthForm
-    :mode="step"
+    :mode="mode"
     :loading="loading"
     :show-invalid="showInvalid"
     :mfa-method="mfaMethod"

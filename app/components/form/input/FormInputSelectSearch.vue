@@ -144,7 +144,7 @@ const handleKeyDown = () => {
           <ComboboxInput
             ref="searchInput"
             class="focus:border-primary focus-visible:border-primary h-10 rounded-none border-0 border-b pl-9 focus:rounded-lg focus:border focus-visible:ring-0 focus-visible:outline-hidden"
-            :placeholder="t('search_entity', { entityName }) + '...'"
+            :placeholder="$t('search_entity', { entityName }) + '...'"
             autocomplete="off"
             @blur="handleBlur"
           />
@@ -156,7 +156,7 @@ const handleKeyDown = () => {
         </div>
 
         <ComboboxEmpty>
-          {{ t('no_entity_found', { entityName }) }}
+          {{ $t('no_entity_found', { entityName }) }}
         </ComboboxEmpty>
 
         <ComboboxGroup class="max-h-[300px] overflow-auto">

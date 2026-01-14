@@ -10,6 +10,7 @@ import type {
   ForgotPasswordFormValues,
   ResetPasswordFormValues,
 } from '#shared/types';
+import LogoLetter from '@/assets/logos/geins-g.svg';
 
 const props = withDefaults(
   defineProps<{
@@ -46,6 +47,7 @@ const verifyMode = computed(() => props.mode === 'verify');
 const accountMode = computed(() => props.mode === 'account');
 const forgotPasswordMode = computed(() => props.mode === 'forgot-password');
 const resetPasswordMode = computed(() => props.mode === 'reset-password');
+const logoutMode = computed(() => props.mode === 'logout');
 
 // State management
 const resetRequestSuccess = ref(false);
@@ -184,14 +186,35 @@ const feedbackDescription = computed(() => {
   return '';
 });
 
+// Card title and description
+const cardTitle = computed(() => {
+  if (verifyMode.value) return t('auth.verify_title');
+  if (accountMode.value) return t('auth.select_account');
+  if (forgotPasswordMode.value) return t('auth.forgot_password');
+  if (resetPasswordMode.value) return t('auth.reset_password');
+  if (logoutMode.value) return t('auth.logging_out');
+  return t('auth.login_title');
+});
+
+const cardDescription = computed(() => {
+  if (verifyMode.value && props.mfaMethod.length > 0) {
+    return `${t('auth.verify_description')} ${props.mfaMethod}`;
+  }
+  if (accountMode.value) return t('auth.select_account_description');
+  if (forgotPasswordMode.value) return t('auth.forgot_password_description');
+  if (resetPasswordMode.value) return t('auth.reset_password_description');
+  if (!logoutMode.value) return t('auth.login_description');
+  return '';
+});
+
 // Account selection
 const accounts = computed(() => props.accounts || []);
 
 // Button text
 const buttonText = computed(() => {
   if (verifyMode.value) return t('verify');
-  if (forgotPasswordMode.value) return t('send_reset_link');
-  if (resetPasswordMode.value) return t('reset_password');
+  if (forgotPasswordMode.value) return t('auth.send_reset_link');
+  if (resetPasswordMode.value) return t('auth.reset_password');
   return t('log_in');
 });
 
@@ -283,218 +306,245 @@ const backToLogin = () => {
 </script>
 
 <template>
-  <div class="grid gap-4">
-    <div class="grid gap-2 text-center">
-      <h1 class="mb-2 text-2xl font-bold sm:text-3xl">
-        {{ verifyMode ? $t('auth.verify_title') : $t('auth.login_title') }}
-      </h1>
-      <p
-        v-if="verifyMode && mfaMethod.length > 0"
-        class="text-muted-foreground text-sm sm:text-sm"
-      >
-        {{ $t('auth.verify_description') }} <strong>{{ mfaMethod }}</strong>
-      </p>
-      <p v-if="accountMode" class="text-muted-foreground">
-        {{ $t('auth.select_account') }}
-      </p>
-    </div>
-
-    <Feedback v-if="feedbackVisible" :type="feedbackType">
-      <template #title>
-        {{ feedbackTitle }}
-      </template>
-      <template #description>
-        {{ feedbackDescription }}
-      </template>
-      <template v-if="resetSuccess" #actions>
-        <Button variant="secondary" size="sm" as-child>
-          <NuxtLink to="/auth/login">{{ $t('auth.go_to_login') }}</NuxtLink>
-        </Button>
-      </template>
-    </Feedback>
-
-    <!-- Login Form -->
-    <form v-if="loginMode" class="grid gap-4" @submit.prevent="handleSubmit">
-      <FormField v-slot="{ componentField }" name="email">
-        <FormItem>
-          <FormLabel>{{ $t('email') }}</FormLabel>
-          <FormControl>
-            <Input
-              id="email"
-              v-bind="componentField"
-              type="email"
-              tabindex="1"
-              placeholder="user@geins.io"
-              autocomplete="email"
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <FormField v-slot="{ componentField }" name="password">
-        <FormItem>
-          <div class="flex items-center">
-            <FormLabel>{{ $t('password') }}</FormLabel>
-            <Button
-              variant="link"
-              tabindex="3"
-              type="button"
-              class="ml-auto h-auto p-0 pb-1 text-xs"
-              @click="$emit('set-mode', 'forgot-password')"
-            >
-              {{ $t('forgot_password') }}
+  <div class="flex w-full max-w-sm flex-col gap-6">
+    <Card class="py-6 shadow-sm">
+      <CardHeader class="text-center">
+        <CardTitle class="text-xl">
+          {{ cardTitle }}
+        </CardTitle>
+        <CardDescription v-if="cardDescription">
+          <template v-if="verifyMode && mfaMethod.length > 0">
+            {{ $t('auth.verify_description') }} <strong>{{ mfaMethod }}</strong>
+          </template>
+          <template v-else>
+            {{ cardDescription }}
+          </template>
+        </CardDescription>
+      </CardHeader>
+      <CardContent class="mt-4 flex flex-col justify-center pb-3">
+        <Feedback v-if="feedbackVisible" :type="feedbackType" class="mb-4">
+          <template #title>
+            {{ feedbackTitle }}
+          </template>
+          <template #description>
+            {{ feedbackDescription }}
+          </template>
+          <template v-if="resetSuccess" #actions>
+            <Button variant="secondary" size="sm" as-child>
+              <NuxtLink to="/auth/login">{{ $t('auth.go_to_login') }}</NuxtLink>
             </Button>
-          </div>
-          <FormControl>
-            <Input
-              v-bind="componentField"
-              type="password"
-              tabindex="2"
-              autocomplete="current-password"
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
+          </template>
+        </Feedback>
 
-      <Button class="w-full" :loading="loading">
-        {{ buttonText }}
-      </Button>
-    </form>
-
-    <!-- Forgot Password Form -->
-    <form
-      v-else-if="forgotPasswordMode"
-      class="grid gap-4"
-      @submit.prevent="handleSubmit"
-    >
-      <FormField v-slot="{ componentField }" name="email">
-        <FormItem>
-          <FormLabel>{{ $t('email') }}</FormLabel>
-          <FormControl>
-            <Input
-              v-bind="componentField"
-              type="email"
-              tabindex="1"
-              placeholder="user@geins.io"
-              autocomplete="email"
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <Button class="w-full" :loading="resetLoading">
-        {{ buttonText }}
-      </Button>
-    </form>
-
-    <!-- Reset Password Form -->
-    <form
-      v-else-if="resetPasswordMode"
-      class="grid gap-4"
-      @submit.prevent="handleSubmit"
-    >
-      <FormField v-slot="{ componentField }" name="newPassword">
-        <FormItem>
-          <FormLabel>{{ $t('new_password') }}</FormLabel>
-          <FormControl>
-            <Input
-              v-bind="componentField"
-              type="password"
-              tabindex="1"
-              autocomplete="new-password"
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <FormField v-slot="{ componentField }" name="passwordRepeat">
-        <FormItem>
-          <FormLabel>{{ $t('repeat_password') }}</FormLabel>
-          <FormControl>
-            <Input
-              v-bind="componentField"
-              type="password"
-              tabindex="2"
-              autocomplete="new-password"
-            />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-
-      <Button class="w-full" :loading="resetLoading">
-        {{ buttonText }}
-      </Button>
-    </form>
-
-    <!-- Verification Form -->
-    <div v-else-if="verifyMode" class="grid gap-3">
-      <div class="flex justify-center">
-        <PinInput
-          id="pin-input"
-          v-model="verificationCode"
-          placeholder="○"
-          :otp="true"
-          @complete="handleVerify"
+        <!-- Login Form -->
+        <form
+          v-if="loginMode"
+          class="grid gap-4"
+          @submit.prevent="handleSubmit"
         >
-          <PinInputGroup>
-            <PinInputSlot
-              v-for="(id, index) in 6"
-              :key="id"
-              :index="index"
-              class="w-1/6"
-            />
-          </PinInputGroup>
-        </PinInput>
-      </div>
-      <Button class="w-full" :loading="loading">
-        {{ buttonText }}
-      </Button>
-    </div>
+          <FormField v-slot="{ componentField }" name="email">
+            <FormItem>
+              <FormLabel>{{ $t('email') }}</FormLabel>
+              <FormControl>
+                <Input
+                  id="email"
+                  v-bind="componentField"
+                  type="email"
+                  tabindex="1"
+                  placeholder="user@geins.io"
+                  autocomplete="email"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
 
-    <!-- Account Selection -->
-    <div v-else-if="accountMode">
-      <ul
-        v-if="!loading"
-        class="flex max-h-[30vh] flex-col gap-2 overflow-auto"
-      >
-        <li
-          v-for="account in accounts"
-          :key="account.accountKey"
-          class="w-full"
-        >
-          <Button
-            class="w-full"
-            @click="$emit('set-account', account.accountKey)"
-          >
-            {{ account.displayName }}
+          <FormField v-slot="{ componentField }" name="password">
+            <FormItem>
+              <div class="flex items-center">
+                <FormLabel>{{ $t('password') }}</FormLabel>
+                <Button
+                  variant="link"
+                  tabindex="3"
+                  type="button"
+                  class="ml-auto h-auto p-0 pb-1 text-xs underline-offset-4 hover:underline sm:h-auto"
+                  @click="$emit('set-mode', 'forgot-password')"
+                >
+                  {{ $t('auth.forgot_password') }}
+                </Button>
+              </div>
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  type="password"
+                  tabindex="2"
+                  autocomplete="current-password"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+
+          <Button class="h-9 w-full" :loading="loading">
+            {{ buttonText }}
           </Button>
-        </li>
-        <li
-          v-if="accounts?.length === 0 && !loading"
-          class="text-muted-foreground text-center text-xs"
-        >
-          {{ $t('no_entity_found', { entityName: 'account' }, 2) }}
-        </li>
-      </ul>
-      <div
-        v-else
-        class="text-muted-foreground relative flex items-center justify-center"
-      >
-        <LucideLoaderCircle class="size-10 animate-spin" />
-      </div>
-    </div>
+        </form>
 
-    <Button
-      v-if="verifyMode || accountMode || forgotPasswordMode"
-      variant="link"
-      @click="backToLogin"
+        <!-- Forgot Password Form -->
+        <form
+          v-else-if="forgotPasswordMode"
+          class="grid gap-4"
+          @submit.prevent="handleSubmit"
+        >
+          <FormField v-slot="{ componentField }" name="email">
+            <FormItem>
+              <FormLabel>{{ $t('email') }}</FormLabel>
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  type="email"
+                  tabindex="1"
+                  placeholder="user@geins.io"
+                  autocomplete="email"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+
+          <Button class="h-9 w-full" :loading="resetLoading">
+            {{ buttonText }}
+          </Button>
+        </form>
+
+        <!-- Reset Password Form -->
+        <form
+          v-else-if="resetPasswordMode"
+          class="grid gap-4"
+          @submit.prevent="handleSubmit"
+        >
+          <FormField v-slot="{ componentField }" name="newPassword">
+            <FormItem>
+              <FormLabel>{{ $t('new_password') }}</FormLabel>
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  type="password"
+                  tabindex="1"
+                  autocomplete="new-password"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+
+          <FormField v-slot="{ componentField }" name="passwordRepeat">
+            <FormItem>
+              <FormLabel>{{ $t('repeat_password') }}</FormLabel>
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  type="password"
+                  tabindex="2"
+                  autocomplete="new-password"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+
+          <Button class="h-9 w-full" :loading="resetLoading">
+            {{ buttonText }}
+          </Button>
+        </form>
+
+        <!-- Verification Form -->
+        <div v-else-if="verifyMode" class="grid gap-4">
+          <div class="flex justify-center">
+            <PinInput
+              id="pin-input"
+              v-model="verificationCode"
+              placeholder="○"
+              :otp="true"
+              @complete="handleVerify"
+            >
+              <PinInputGroup>
+                <PinInputSlot
+                  v-for="(id, index) in 6"
+                  :key="id"
+                  :index="index"
+                  class="w-1/6"
+                />
+              </PinInputGroup>
+            </PinInput>
+          </div>
+          <Button class="h-9 w-full" :loading="loading">
+            {{ buttonText }}
+          </Button>
+        </div>
+
+        <!-- Account Selection -->
+        <div v-else-if="accountMode || logoutMode" class="grid gap-4">
+          <ul
+            v-if="!loading"
+            class="flex max-h-[14.5rem] flex-col gap-2 overflow-auto px-2"
+          >
+            <li
+              v-for="account in accounts"
+              :key="account.accountKey"
+              class="w-full"
+            >
+              <Button
+                variant="secondary"
+                class="flex w-full"
+                size="lg"
+                @click="$emit('set-account', account.accountKey)"
+              >
+                <LogoLetter class="mr-auto size-4" :font-controlled="false" />
+                <span class="mr-auto">{{ account.displayName }}</span>
+              </Button>
+            </li>
+            <li
+              v-if="accounts?.length === 0 && !loading"
+              class="text-muted-foreground text-center text-xs"
+            >
+              {{ $t('no_entity_found', { entityName: 'account' }, 2) }}
+            </li>
+          </ul>
+          <div
+            v-else
+            class="text-primary relative flex items-center justify-center py-8"
+          >
+            <LucideLoaderCircle class="size-10 animate-spin" />
+          </div>
+        </div>
+
+        <Button
+          v-if="
+            verifyMode || accountMode || forgotPasswordMode || resetPasswordMode
+          "
+          variant="link"
+          class="mx-auto mt-2 -mb-2"
+          @click="backToLogin"
+        >
+          {{ $t('back_to_login') }}
+        </Button>
+      </CardContent>
+    </Card>
+    <FieldDescription
+      v-if="!resetPasswordMode"
+      class="px-11 text-center text-sm"
     >
-      {{ $t('back_to_login') }}
-    </Button>
+      <i18n-t keypath="auth.new_to_geins" scope="global">
+        <template #link>
+          <a
+            href="https://www.geins.io"
+            target="_blank"
+            rel="noopener noreferrer"
+            >geins.io</a
+          >
+        </template>
+      </i18n-t>
+    </FieldDescription>
   </div>
 </template>

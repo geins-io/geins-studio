@@ -64,3 +64,31 @@ const columns = getColumns(products.value, {
 ### `extendColumns`
 
 The `extendColumns` function is used to add a new column to the existing columns. It takes the existing columns and the new column as arguments.
+
+### `addExpandingColumn`
+
+The `addExpandingColumn` function adds an expander column for hierarchical data display. This allows rows to be expanded to show child rows (e.g., products with SKUs).
+
+```vue
+<script setup>
+const { data: products } = await useFetch<Product[]>('/api/products');
+
+const { getColumns, addExpandingColumn } = useColumns<Product>();
+
+let columns = getColumns(products.value);
+columns = addExpandingColumn(columns);
+</script>
+
+<template>
+  <TableView
+    :columns="columns"
+    :data="products"
+    :enable-expanding="true"
+    :get-sub-rows="(row) => row.skus"
+  />
+</template>
+```
+
+:::info
+For more detailed documentation on `useColumns`, see the [full composable reference](/composables/useColumns).
+:::

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useSidebar } from '@/components/ui/sidebar';
-import { useToast } from '@/components/ui/toast/use-toast';
 import LogoLetter from '@/assets/logos/geins-g.svg';
 
 const { geinsLogError } = useGeinsLog('components/../LayoutSidebarUser.vue');
@@ -81,7 +80,7 @@ const setNewAccount = async (accountKey: string) => {
           </DropdownMenuLabel>
           <DropdownMenuSeparator v-if="hasMultipleAccounts" />
           <DropdownMenuSub v-if="hasMultipleAccounts">
-            <DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger class="text-xs">
               <LogoLetter class="mr-2 size-4" :font-controlled="false" />
               {{ currentAccountName }}
             </DropdownMenuSubTrigger>
@@ -109,7 +108,7 @@ const setNewAccount = async (accountKey: string) => {
             <DropdownMenuItem as-child>
               <NuxtLink :to="`/account/profile`">
                 <LucideUser class="mr-2 size-4" />
-                <span>{{ $t('account') }}</span>
+                <span>{{ $t('user_account') }}</span>
               </NuxtLink>
             </DropdownMenuItem>
             <DropdownMenuItem @click="logout()">

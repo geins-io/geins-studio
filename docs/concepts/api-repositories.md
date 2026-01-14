@@ -10,7 +10,6 @@ The repository files are organized in the `app/utils/repositories/` directory an
 - `entity.ts` - Full CRUD repository with create, update, and delete operations
 - `global.ts` - Repository for system-wide operations (accounts, channels, currencies)
 - `product.ts` - Specialized repository for product-related operations
-- `wholesale.ts` - Repository for wholesale operations
 - `customer.ts` - Repository for customer management
 - `order.ts` - Repository for order management
 - `user.ts` - Repository for user operations

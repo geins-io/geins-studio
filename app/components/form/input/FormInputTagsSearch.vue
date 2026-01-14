@@ -130,10 +130,10 @@ const getName = (id: AcceptableValue): string => {
     <ComboboxPortal to="body" :disabled="disableTeleport">
       <ComboboxList class="w-(--reka-popper-anchor-width)">
         <ComboboxEmpty v-if="allowCustomTags">
-          {{ t('add_entity_by_typing', { entityName }, 2) }}
+          {{ $t('add_entity_by_typing', { entityName }, 2) }}
         </ComboboxEmpty>
         <ComboboxEmpty v-else>
-          {{ t('no_entity', { entityName }, 2) }}
+          {{ $t('no_entity', { entityName }, 2) }}
         </ComboboxEmpty>
         <ComboboxGroup>
           <ComboboxItem

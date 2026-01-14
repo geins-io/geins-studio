@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TableMode, type WholesaleAccount } from '#shared/types';
+import { TableMode, type CustomerCompany } from '#shared/types';
 import { LucidePackage } from 'lucide-vue-next';
 
 definePageMeta({
@@ -7,19 +7,19 @@ definePageMeta({
   title: 'Welcome to Geins Studio',
 });
 
-const { wholesaleApi } = useGeinsRepository();
-const { ordersList, orderColumns, fetchOrders } = useWholesaleOrders();
+const { customerApi } = useGeinsRepository();
+const { ordersList, orderColumns, fetchOrders } = useCompanyOrders();
 
-const { data: allAccounts, error } = await useAsyncData<WholesaleAccount[]>(
-  'wholesale-accounts',
-  () => wholesaleApi.account.list({ fields: ['salesreps', 'buyers'] }),
+const { data: allCompanies, error } = await useAsyncData<CustomerCompany[]>(
+  'customer-companies',
+  () => customerApi.company.list({ fields: ['salesreps', 'buyers'] }),
 );
 
-if (!allAccounts.value || error.value) {
-  allAccounts.value = [];
+if (!allCompanies.value || error.value) {
+  allCompanies.value = [];
 }
 
-if (allAccounts.value.length === 0) {
+if (allCompanies.value.length === 0) {
   ordersList.value = [];
 } else {
   const orderSelectionQuery: OrderBatchQuery = {
@@ -39,7 +39,7 @@ if (allAccounts.value.length === 0) {
     orderSelectionQuery,
     undefined,
     undefined,
-    allAccounts.value,
+    allCompanies.value,
   );
 
   // Order ordersList by dateCreated descending
@@ -62,8 +62,8 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       <div>
         <div class="mt-6 mb-6 sm:mt-10">
           <ContentCardHeader
-            title="Wholesale - Quick Access"
-            description="Quick access to key wholesale features like account management, pricing, and product access."
+            title="Quick access"
+            description="Quick access company management, pricing, and product access."
             size="md"
           />
         </div>
@@ -71,33 +71,33 @@ breadcrumbsStore.setShowBreadcrumbs(false);
         <!-- Quick access cards grid -->
         <div class="grid grid-cols-1 gap-4 @2xl:grid-cols-2 @6xl:grid-cols-4">
           <ContentLinkCard
-            title="Create a new account"
-            description="Manage existing wholesale accounts"
-            link="/wholesale/account/new"
+            title="Create a new company"
+            description="Create a new company"
+            link="/customers/company/new"
             linkType="create"
           />
 
-          <!-- Accounts card -->
+          <!-- Companies card -->
           <ContentLinkCard
-            title="Accounts"
-            description="Manage existing wholesale accounts"
-            link="/wholesale/account/list"
+            title="Companies"
+            description="Manage existing companies"
+            link="/customers/company/list"
             linkType="list"
           />
 
           <!-- Create a new price list card -->
           <ContentLinkCard
             title="Create a new price list"
-            description="Manage existing wholesale accounts"
-            link="/wholesale/price-list/new"
+            description="Create a new price list"
+            link="/pricing/price-list/new"
             linkType="create"
           />
 
           <!-- Price lists card -->
           <ContentLinkCard
             title="Price lists"
-            description="Manage existing wholesale accounts"
-            link="/wholesale/price-list/list"
+            description="Manage existing price lists"
+            link="/pricing/price-list/list"
             linkType="list"
           />
         </div>
@@ -107,8 +107,8 @@ breadcrumbsStore.setShowBreadcrumbs(false);
       <div>
         <div class="mt-10 mb-6">
           <ContentCardHeader
-            title="Latest wholesale orders"
-            description="The most recent orders placed by buyers linked to a wholesale account."
+            title="Latest company orders"
+            description="The most recent orders placed by buyers linked to a company."
             size="md"
           />
         </div>

@@ -106,6 +106,7 @@ export default defineConfig({
               { text: 'useGeinsImage', link: '/composables/useGeinsImage.md' },
               { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
               { text: 'useLayout', link: '/composables/useLayout.md' },
+              { text: 'useNavigation', link: '/composables/useNavigation.md' },
               { text: 'usePageError', link: '/composables/usePageError.md' },
               { text: 'usePrice', link: '/composables/usePrice.md' },
               { text: 'useSkeleton', link: '/composables/useSkeleton.md' },

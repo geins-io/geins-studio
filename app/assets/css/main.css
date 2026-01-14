@@ -142,7 +142,9 @@
   --ring: hsl(0 0% 13%);
   --link: hsl(178 14% 44%);
   --shadow: rgb(0 0 0 / 10%);
-  --radius: 0.3rem;
+  --radius: 0.4rem;
+
+  --autofill-marker: #c9e4f0;
 
   --positive: hsl(151 45% 56%);
   --positive-foreground: hsl(0 0% 100%);
@@ -173,7 +175,7 @@
   --background: hsl(0 0% 0%);
   --foreground: hsl(0 0% 100%);
 
-  --card: hsl(0 0% 4%);
+  --card: hsl(0 0% 5%);
   --card-foreground: hsl(0 0% 100%);
 
   --popover: var(--card);
@@ -194,11 +196,13 @@
   --destructive: hsl(0 75% 60%);
   --destructive-foreground: hsl(210 15% 92%);
 
-  --border: hsl(0 0% 20%);
+  --border: hsl(0 0% 18%);
   --input: hsl(0 0% 9%);
   --ring: hsl(210 15% 85%);
   --link: hsl(177 35% 71%);
   --shadow: rgb(0 0 0 / 100%);
+
+  --autofill-marker: #203540;
 
   --positive: hsl(151 83% 35%);
   --positive-foreground: hsl(0 0% 100%);
@@ -269,8 +273,8 @@
     box-shadow: 0 0 0 1000px var(--input) inset !important;
     text-fill-color: var(--foreground) !important;
     border-radius: inherit !important;
-    border-bottom: 1px solid #c2ebff !important;
-    border-right: 1px solid #c2ebff !important;
+    border-bottom: 1px solid var(--autofill-marker) !important;
+    border-right: 1px solid var(--autofill-marker) !important;
     background-size: 58.6px 22.49px !important;
     top: 2px !important;
     bottom: 2px !important;
@@ -279,6 +283,7 @@
     height: calc(100% - 4px) !important;
     left: 2px !important;
     right: 2px !important;
+    @apply text-sm;
   }
 
   button {

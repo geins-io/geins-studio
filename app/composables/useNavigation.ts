@@ -1,5 +1,5 @@
 import type { NavigationItem } from '#shared/types';
-import { navigation as navigationConfig } from '@/lib/navigation';
+import { getNavigation } from '@/lib/navigation';
 
 /**
  * Navigation composable for handling menu items, breadcrumbs, and permissions
@@ -9,14 +9,20 @@ import { navigation as navigationConfig } from '@/lib/navigation';
  * - Active state detection
  * - Automatic breadcrumb generation from navigation structure
  * - Auto-sync with breadcrumbs store
+ * - Localization support via i18n
  *
  * @example
  * const { navigationItems, isItemActive, breadcrumbTrail } = useNavigation();
  */
 export const useNavigation = () => {
+  const { t } = useI18n();
   const userStore = useUserStore();
   const breadcrumbsStore = useBreadcrumbsStore();
   const route = useRoute();
+  const navigationConfig = getNavigation(t);
+
+  // Store the navigation config in breadcrumbs store for use in watchers
+  breadcrumbsStore.setNavigationConfig(navigationConfig);
 
   /**
    * Filter navigation items based on user roles and permissions
@@ -93,7 +99,7 @@ export const useNavigation = () => {
    * Returns array of NavigationItems from root to current page
    *
    * Matches both exact paths and partial paths (for detail pages)
-   * For example: /wholesale/account/123 matches /wholesale/account/list
+   * For example: /customers/account/123 matches /customers/account/list
    */
   const findBreadcrumbTrail = (
     items: NavigationItem[],
@@ -121,7 +127,7 @@ export const useNavigation = () => {
       }
 
       // Partial/prefix match for detail pages
-      // Example: /wholesale/account/123 should match /wholesale/account/list
+      // Example: /customers/account/123 should match /customers/account/list
       // Remove /list suffix and check if target path starts with the base
       const baseHref = item.href.replace(/\/list$/, '');
 

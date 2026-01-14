@@ -1,6 +1,7 @@
 import {
   type BatchQueryFiltered,
   type BatchQueryFilterGroup,
+  type Sku,
 } from '#shared/types';
 
 // SELECTOR
@@ -28,6 +29,13 @@ export const enum SelectorSelectionStrategy {
   All = 'all',
   None = 'none',
 }
+
+export const enum SelectorEntityType {
+  Product = 'product',
+  Sku = 'sku',
+  Default = 'default',
+}
+
 export type SelectorSelectionOptionsId =
   | 'entity'
   | 'product'
@@ -91,4 +99,8 @@ export interface SelectorSelectionOption {
 export interface SelectorEntity extends EntityBaseWithName {
   image?: string;
   thumbnail?: string;
+  articleNumber?: string;
+  skus?: SelectorEntity[];
+  productId?: string;
+  isCollapsed?: boolean;
 }

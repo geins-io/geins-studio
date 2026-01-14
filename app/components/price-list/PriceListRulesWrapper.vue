@@ -20,7 +20,9 @@ const mode = defineModel<PriceListRuleMode>('mode', { required: true });
         class="mr-2 border-r pr-2 sm:mr-5 sm:pr-5"
       />
       <div class="flex items-center gap-1 sm:gap-2">
-        <Label :for="modeId" class="text-xs"> Calculate by </Label>
+        <Label :for="modeId" class="text-xs">
+          {{ $t('pricing.calculate_by') }}
+        </Label>
         <Select :id="modeId" v-model="mode" class="mb-4 w-28 sm:w-48!">
           <SelectTrigger class="w-28 sm:w-32" size="sm">
             <SelectValue />

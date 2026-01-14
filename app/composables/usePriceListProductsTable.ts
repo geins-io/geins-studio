@@ -83,7 +83,7 @@ export const usePriceListProductsTable =
           margin: 'editable-percentage',
         },
         columnTitles: {
-          listPrice: `${t('wholesale.price_list_price')} (${vatDescription})`,
+          listPrice: `${t('pricing.price_list_price')} (${vatDescription})`,
           regularPrice: `${t('price')} (${vatDescription})`,
         },
         excludeColumns: ['volumePricing', 'priceMode'],
@@ -145,7 +145,7 @@ export const usePriceListProductsTable =
           return h(
             'div',
             { class: cn(getBasicHeaderStyle(table), 'px-3 sm:px-3') },
-            t('wholesale.price_list_vol_pricing'),
+            t('pricing.price_list_vol_pricing'),
           );
         },
       };

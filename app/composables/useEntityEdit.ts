@@ -129,6 +129,7 @@ export function useEntityEdit<
 >(options: EntityEditOptions<TBase, TResponse, TCreate, TUpdate, TOptions>) {
   const { t } = useI18n();
   const route = useRoute();
+  const router = useRouter();
   const { toast } = useToast();
   const {
     newEntityUrlAlias,
@@ -289,7 +290,7 @@ export function useEntityEdit<
           newEntityUrlAlias.value,
           result._id,
         );
-        await useRouter().replace(newUrl);
+        await router.replace(newUrl);
 
         toast({
           title: t('entity_created', { entityName }),

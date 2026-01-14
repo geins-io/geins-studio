@@ -9,64 +9,100 @@ import type { NavigationItem } from '#shared/types';
  * - Icons from lucide-vue-next
  * - Grouping and visual dividers
  * - Badge support for notifications
+ * - Localization support via i18n keys
  *
  * Note: Items without roles/permissions are visible to all users
  */
-export const navigation: NavigationItem[] = [
-  // {
-  //   label: 'Dashboard',
-  //   href: '/',
-  //   icon: 'LayoutDashboard',
-  //   // Visible to all authenticated users
-  // },
-  {
-    label: 'Wholesale',
-    href: '/wholesale/account/list',
-    icon: 'Building2',
-    group: 'sales',
-    // TODO: Add roles when auth system is ready
-    // roles: ['admin', 'wholesale_manager'],
-    // permissions: ['wholesale.read'],
-    children: [
-      {
-        label: 'Accounts',
-        href: '/wholesale/account/list',
-        childPattern: '/wholesale/account/:id', // Matches detail pages like /wholesale/account/123
-        // permissions: ['wholesale.accounts.read'],
-      },
-      {
-        label: 'Price lists',
-        href: '/wholesale/price-list/list',
-        childPattern: '/wholesale/price-list/:id', // Matches detail pages like /wholesale/price-list/456
-        // permissions: ['wholesale.pricelists.read'],
-      },
-    ],
-  },
-  // {
-  //   label: 'Settings',
-  //   href: '/account/market/list',
-  //   icon: 'Settings',
-  //   // roles: ['admin'],
-  //    children: [
-  //     {
-  //       label: 'Users',
-  //       href: '/account/user/list',
-  //       // permissions: ['users.manage'],
-  //     },
-  //   ],
-  // },
-  {
-    label: 'Account',
-    href: '',
-    icon: 'User',
-    hideFromMenu: true,
-    // roles: ['admin'],
-    children: [
-      {
-        label: 'Profile',
-        href: '/account/profile',
-        // permissions: ['users.manage'],
-      },
-    ],
-  },
-];
+
+/**
+ * Returns localized navigation items
+ * @param t - Translation function from useI18n()
+ */
+export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
+  return [
+    // {
+    //   label: t('navigation.dashboard'),
+    //   href: '/',
+    //   icon: 'LayoutDashboard',
+    //   // Visible to all authenticated users
+    // },
+    {
+      label: t('navigation.pricing'),
+      href: '/pricing/price-list/list',
+      icon: 'Tag',
+      group: 'sales',
+      // TODO: Add roles when auth system is ready
+      // roles: ['admin', 'pricing_manager'],
+      // permissions: ['pricing.read'],
+      children: [
+        {
+          label: t('navigation.price_lists'),
+          href: '/pricing/price-list/list',
+          childPattern: '/pricing/price-list/:id',
+          // permissions: ['pricing.pricelists.read'],
+        },
+      ],
+    },
+    {
+      label: t('navigation.customers'),
+      href: '/customers/company/list',
+      icon: 'Users',
+      group: 'sales',
+      // TODO: Add roles when auth system is ready
+      // roles: ['admin', 'customer_manager'],
+      // permissions: ['customers.read'],
+      children: [
+        {
+          label: t('navigation.companies'),
+          href: '/customers/company/list',
+          childPattern: '/customers/company/:id',
+          // permissions: ['customers.companies.read'],
+        },
+      ],
+    },
+    // {
+    //   label: t('navigation.orders'),
+    //   href: '/orders/quotation/list',
+    //   icon: 'Package',
+    //   group: 'sales',
+    //   // TODO: Add roles when auth system is ready
+    //   // roles: ['admin', 'order_manager'],
+    //   // permissions: ['orders.read'],
+    //   children: [
+    //     {
+    //       label: t('navigation.quotations'),
+    //       href: '/orders/quotation/list',
+    //       childPattern: '/orders/quotation/:id',
+    //       // permissions: ['orders.quotations.read'],
+    //     },
+    //   ],
+    // },
+    // {
+    //   label: t('navigation.settings'),
+    //   href: '/account/market/list',
+    //   icon: 'Settings',
+    //   // roles: ['admin'],
+    //    children: [
+    //     {
+    //       label: t('navigation.users'),
+    //       href: '/account/user/list',
+    //       // permissions: ['users.manage'],
+    //     },
+    //   ],
+    // },
+    {
+      label: t('navigation.account'),
+      href: '',
+      icon: 'User',
+      hideFromMenu: true,
+      // roles: ['admin'],
+      children: [
+        {
+          label: t('navigation.profile'),
+          href: '/account/profile',
+          // permissions: ['users.manage'],
+        },
+      ],
+    },
+  ];
+};
