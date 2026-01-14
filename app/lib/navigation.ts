@@ -47,6 +47,19 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
       ],
     },
     {
+      label: t('navigation.orders'),
+      href: '/orders/quotation/list',
+      icon: 'Package',
+      group: 'sales',
+      children: [
+        {
+          label: t('navigation.quotations'),
+          href: '/orders/quotation/list',
+          childPattern: '/orders/quotation/:id',
+        },
+      ],
+    },
+    {
       label: t('navigation.account'),
       href: '',
       icon: 'User',

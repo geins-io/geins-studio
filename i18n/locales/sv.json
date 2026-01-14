@@ -384,5 +384,18 @@
     "default_price": "Standardpris",
     "error_applying_base_rule": "Fel vid tillämpning av grundregel",
     "error_applying_volume_pricing": "Fel vid tillämpning av volymprissättning"
+  },
+  "orders": {
+    "quotation_create_description": "Skapa en ny offert genom att ange grundläggande information",
+    "quotation_edit_description": "Redigera offertdetaljer och hantera artiklar",
+    "quotation_basic_info": "Grundläggande information",
+    "quotation_additional_info": "Ytterligare information",
+    "quotation_items_description": "Hantera artiklar som ingår i denna offert",
+    "quotation_items_coming_soon": "Artikelhantering kommer snart. Du kommer att kunna lägga till produkter, ange kvantiteter och justera priser.",
+    "quotation_summary_description": "Sammanfattning av offertdetaljer och summor",
+    "buyer_optional_description": "Valfritt - välj en specifik köpare för denna offert",
+    "expiration_date_optional": "Valfritt - standardvärdet är 30 dagar från skapandet",
+    "notes": "Anteckningar",
+    "notes_placeholder": "Lägg till eventuella anteckningar eller speciella instruktioner för denna offert..."
   }
 }
