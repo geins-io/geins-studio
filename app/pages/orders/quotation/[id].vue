@@ -5,8 +5,6 @@
 import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
-import { CalendarIcon } from 'lucide-vue-next';
-import { DateFormatter, getLocalTimeZone } from '@internationalized/date';
 import type {
   QuotationBase,
   Quotation,
@@ -52,7 +50,6 @@ const formSchema = toTypedSchema(
       currency: z
         .string()
         .min(1, t('entity_required', { entityName: 'currency' })),
-      channel: z.string().optional(),
       expirationDate: z.string().optional(),
       notes: z.string().optional(),
     }),
@@ -77,7 +74,6 @@ const entityBase: QuotationCreate = {
   itemCount: 0,
   createdBy: '',
   currency: currentCurrencies.value[0]?._id || 'SEK',
-  channel: currentChannels.value[0]?._id || '',
   items: [],
 };
 
@@ -101,10 +97,48 @@ const users = ref<User[]>([]);
 const buyers = ref<CompanyBuyer[]>([]);
 const selectedCompanyId = ref<string>('');
 const selectedAccountName = ref<string>('');
+const selectedCompany = ref<CustomerCompany | undefined>();
 
-// Date formatter
-const df = new DateFormatter('en-US', {
-  dateStyle: 'long',
+// Filtered sales reps based on selected company
+const availableSalesReps = computed(() => {
+  if (!selectedCompany.value?.salesReps) return [];
+  return users.value.filter((user) =>
+    selectedCompany.value?.salesReps?.some((rep) => {
+      const repId = typeof rep === 'string' ? rep : rep._id;
+      return repId === user._id;
+    }),
+  );
+});
+
+const availableBuyers = computed(() => {
+  return selectedCompany.value?.buyers || [];
+});
+
+// Available currencies based on company's channels
+const availableCurrencies = computed(() => {
+  if (!selectedCompany.value?.channels) return [];
+
+  const companyChannels = selectedCompany.value.channels;
+  const channelCurrencies = new Set<string>();
+
+  // Get all currencies from the company's channel markets
+  companyChannels.forEach((channelId) => {
+    const channel = currentChannels.value.find((ch) => ch._id === channelId);
+    if (channel?.markets) {
+      channel.markets.forEach((market) => {
+        if (market.currency?._id) {
+          channelCurrencies.add(market.currency._id);
+        }
+      });
+    }
+  });
+
+  // If no currencies found, return all available currencies
+  if (channelCurrencies.size === 0) return currentCurrencies.value;
+
+  return currentCurrencies.value.filter((curr) =>
+    channelCurrencies.has(curr._id),
+  );
 });
 
 // =====================================================================================
@@ -160,8 +194,7 @@ const {
       accountId: entityData.accountId || '',
       createdBy: entityData.createdBy || '',
       buyerId: '',
-      currency: entityData.currency || currentCurrencies.value[0]?._id || 'SEK',
-      channel: entityData.channel || currentChannels.value[0]?._id || '',
+      currency: entityData.currency || '',
       expirationDate: entityData.expirationDate || '',
       notes: entityData.notes || '',
     },
@@ -180,7 +213,6 @@ const {
         createdBy: quotation.createdBy || '',
         buyerId: '',
         currency: quotation.currency || 'SEK',
-        channel: quotation.channel || '',
         expirationDate: quotation.expirationDate || '',
         notes: quotation.notes || '',
       },
@@ -198,7 +230,6 @@ const {
       accountName: selectedAccountName.value,
       createdBy: formData.details.createdBy,
       currency: formData.details.currency,
-      channel: formData.details.channel,
       expirationDate,
       notes: formData.details.notes,
       status: 'draft' as QuotationStatus,
@@ -215,7 +246,6 @@ const {
     accountName: selectedAccountName.value,
     createdBy: formData.details.createdBy,
     currency: formData.details.currency,
-    channel: formData.details.channel,
     expirationDate: formData.details.expirationDate,
     notes: formData.details.notes,
   }),
@@ -228,7 +258,6 @@ const {
       accountName: selectedAccountName.value,
       createdBy: values.details.createdBy,
       currency: values.details.currency,
-      channel: values.details.channel,
       expirationDate: values.details.expirationDate,
       notes: values.details.notes,
     };
@@ -245,18 +274,21 @@ const { handleFetchResult } = usePageError({
 });
 
 // =====================================================================================
+// DELETE FUNCTIONALITY
+// =====================================================================================
+const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
+  useDeleteDialog(deleteEntity, entityListUrl);
+
+// =====================================================================================
 // DATA FETCHING
 // =====================================================================================
 const { useGeinsFetch } = useGeinsApi();
 
 // Fetch companies
 const fetchCompanies = async () => {
-  const companiesResult = await useGeinsFetch<CustomerCompany[]>(
-    '/wholesale/account/list',
-  );
-  if (!companiesResult.error.value) {
-    companies.value = companiesResult.data.value as CustomerCompany[];
-  }
+  companies.value = await customerApi.company.list({
+    fields: ['buyers', 'salesreps'],
+  });
 };
 
 // Fetch users (sales reps)
@@ -271,33 +303,33 @@ const fetchUsers = async () => {
   }
 };
 
-// Fetch buyers for selected company
-const fetchBuyersForCompany = async (companyId: string) => {
-  if (!companyId) {
-    buyers.value = [];
-    return;
-  }
-
-  try {
-    const company = await customerApi.company.get(companyId);
-    buyers.value = company.buyers || [];
-  } catch (error) {
-    geinsLogError('Error fetching buyers for company', error);
-    buyers.value = [];
-  }
-};
-
 // Watch for company selection changes
 watch(
   () => form.values.details?.accountId,
   async (newCompanyId) => {
     if (newCompanyId) {
       selectedCompanyId.value = newCompanyId;
-      const selectedCompany = companies.value.find(
-        (c) => c._id === newCompanyId,
-      );
-      selectedAccountName.value = selectedCompany?.name || '';
-      await fetchBuyersForCompany(newCompanyId);
+      const company = companies.value.find((c) => c._id === newCompanyId);
+      selectedCompany.value = company;
+      selectedAccountName.value = company?.name || '';
+
+      // Clear sales rep and buyer when company changes
+      if (createMode.value) {
+        form.setFieldValue('details.createdBy', '');
+        form.setFieldValue('details.buyerId', '');
+
+        // Set currency to first available from company's channels
+        if (availableCurrencies.value.length > 0) {
+          form.setFieldValue(
+            'details.currency',
+            availableCurrencies.value[0]?._id,
+          );
+        }
+      }
+    } else {
+      selectedCompany.value = undefined;
+      selectedAccountName.value = '';
+      buyers.value = [];
     }
   },
 );
@@ -305,35 +337,14 @@ watch(
 // Initialize data
 onMounted(async () => {
   await Promise.all([fetchCompanies(), fetchUsers()]);
-
-  // If editing, fetch buyers for the company
-  if (!createMode.value && entityData.value?.accountId) {
-    await fetchBuyersForCompany(entityData.value.accountId);
-  }
 });
 
 // =====================================================================================
-// SUMMARY SETUP
+// SUMMARY DATA
 // =====================================================================================
-const { summaryProps } = useEntityEditSummary({
-  entityDataUpdate,
-  entityPageTitle,
-  entityName,
-  entityListUrl,
-  entityLiveStatus,
-  loading,
-  createMode,
-  formValid,
-  formTouched,
-  hasUnsavedChanges,
-  currentTab,
-  tabs,
-  onSave: parseAndSaveData,
-  onDelete: deleteEntity,
-});
 
 // Computed properties for summary
-const summaryData = computed(() => {
+const summary = computed(() => {
   if (!entityData.value) return [];
   return [
     {
@@ -355,12 +366,35 @@ const summaryData = computed(() => {
   ];
 });
 
+const settingsSummary = ref<DataItem[]>([]);
+
+const { summaryProps } = useEntityEditSummary({
+  createMode,
+  formTouched,
+  summary,
+  settingsSummary,
+  entityName,
+  entityLiveStatus,
+});
+
 definePageMeta({
   layout: 'default',
 });
 </script>
 
 <template>
+  <DialogUnsavedChanges
+    v-model:open="unsavedChangesDialogOpen"
+    :entity-name="entityName"
+    :loading="loading"
+    @confirm="confirmLeave"
+  />
+  <DialogDelete
+    v-model:open="deleteDialogOpen"
+    :entity-name="entityName"
+    :loading="deleting"
+    @confirm="confirmDelete"
+  />
   <ContentEditWrap
     v-if="!loading"
     :entity-name="entityName"
@@ -368,7 +402,46 @@ definePageMeta({
     :create-mode="createMode"
     :show-sidebar="showSidebar"
   >
-    <form class="contents" @submit.prevent>
+    <template #header>
+      <ContentHeader :title="entityPageTitle" :entity-name="entityName">
+        <ContentActionBar>
+          <ButtonIcon
+            v-if="!createMode"
+            icon="save"
+            :loading="loading"
+            :disabled="!hasUnsavedChanges || loading"
+            >{{ $t('save_entity', { entityName }) }}</ButtonIcon
+          >
+          <DropdownMenu v-if="!createMode">
+            <DropdownMenuTrigger as-child>
+              <Button size="icon" variant="secondary">
+                <LucideMoreHorizontal class="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem as-child>
+                <NuxtLink :to="newEntityUrl">
+                  <LucidePlus class="mr-2 size-4" />
+                  <span>{{ $t('new_entity', { entityName }) }}</span>
+                </NuxtLink>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem @click="openDeleteDialog">
+                <LucideTrash class="mr-2 size-4" />
+                <span>{{ $t('delete_entity', { entityName }) }}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </ContentActionBar>
+        <template v-if="!createMode" #tabs>
+          <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
+        </template>
+        <template v-if="!createMode" #changes>
+          <ContentEditHasChanges :changes="hasUnsavedChanges" />
+        </template>
+      </ContentHeader>
+    </template>
+    <form @submit.prevent>
       <ContentEditMain
         v-model:current-tab="currentTab"
         v-model:show-sidebar="showSidebar"
@@ -418,7 +491,8 @@ definePageMeta({
                       <FormMessage />
                     </FormItem>
                   </FormField>
-
+                </FormGrid>
+                <FormGrid design="1">
                   <FormField
                     v-slot="{ componentField }"
                     name="details.accountId"
@@ -445,32 +519,32 @@ definePageMeta({
                           </SelectContent>
                         </Select>
                       </FormControl>
-                      <FormDescription v-if="createMode">
-                        {{ $t('form.cannot_be_changed') }}
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   </FormField>
                 </FormGrid>
-                <FormGrid design="1+1+1+1">
+                <FormGrid design="1+1+1">
                   <FormField
                     v-slot="{ componentField }"
                     name="details.createdBy"
                   >
                     <FormItem>
-                      <FormLabel>{{ $t('sales_rep') }}</FormLabel>
+                      <FormLabel>Quotation owner</FormLabel>
                       <FormControl>
-                        <Select v-bind="componentField">
+                        <Select
+                          v-bind="componentField"
+                          :disabled="!selectedCompanyId"
+                        >
                           <SelectTrigger>
                             <SelectValue
                               :placeholder="
-                                $t('select_entity', { entityName: 'sales_rep' })
+                                $t('select_entity', { entityName: 'owner' })
                               "
                             />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem
-                              v-for="user in users"
+                              v-for="user in availableSalesReps"
                               :key="user._id"
                               :value="user.name || user._id"
                             >
@@ -489,7 +563,9 @@ definePageMeta({
                       <FormControl>
                         <Select
                           v-bind="componentField"
-                          :disabled="!selectedCompanyId || buyers.length === 0"
+                          :disabled="
+                            !selectedCompanyId || availableBuyers.length === 0
+                          "
                         >
                           <SelectTrigger>
                             <SelectValue
@@ -500,7 +576,7 @@ definePageMeta({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem
-                              v-for="buyer in buyers"
+                              v-for="buyer in availableBuyers"
                               :key="buyer._id"
                               :value="buyer._id"
                             >
@@ -509,9 +585,6 @@ definePageMeta({
                           </SelectContent>
                         </Select>
                       </FormControl>
-                      <FormDescription>
-                        {{ $t('orders.buyer_optional_description') }}
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   </FormField>
@@ -523,47 +596,24 @@ definePageMeta({
                     <FormItem>
                       <FormLabel>{{ $t('currency') }}</FormLabel>
                       <FormControl>
-                        <Select v-bind="componentField" :disabled="!createMode">
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem
-                              v-for="currency in currentCurrencies"
-                              :key="currency._id"
-                              :value="currency._id"
-                            >
-                              {{ currency._id }}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormDescription v-if="createMode">
-                        {{ $t('form.cannot_be_changed') }}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-
-                  <FormField v-slot="{ componentField }" name="details.channel">
-                    <FormItem>
-                      <FormLabel>{{ $t('channel') }}</FormLabel>
-                      <FormControl>
-                        <Select v-bind="componentField">
+                        <Select
+                          v-bind="componentField"
+                          :disabled="!selectedCompanyId"
+                        >
                           <SelectTrigger>
                             <SelectValue
                               :placeholder="
-                                $t('select_entity', { entityName: 'channel' })
+                                $t('select_entity', { entityName: 'currency' })
                               "
                             />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem
-                              v-for="channel in currentChannels"
-                              :key="channel._id"
-                              :value="channel._id"
+                              v-for="currency in availableCurrencies"
+                              :key="currency._id"
+                              :value="currency._id"
                             >
-                              {{ channel.name }}
+                              {{ currency._id }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -587,47 +637,12 @@ definePageMeta({
                   >
                     <FormItem>
                       <FormLabel>{{ $t('expiration_date') }}</FormLabel>
-                      <Popover>
-                        <PopoverTrigger as-child>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              :class="
-                                cn(
-                                  'w-full pl-3 text-left font-normal',
-                                  !componentField.modelValue &&
-                                    'text-muted-foreground',
-                                )
-                              "
-                            >
-                              <span>
-                                {{
-                                  componentField.modelValue
-                                    ? df.format(
-                                        new Date(componentField.modelValue),
-                                      )
-                                    : $t('expiration_date')
-                                }}
-                              </span>
-                              <CalendarIcon class="ml-auto size-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent class="w-auto p-0">
-                          <Calendar
-                            v-model="componentField.modelValue"
-                            @update:model-value="
-                              (v) => {
-                                if (v) {
-                                  componentField.modelValue = new Date(
-                                    v.toString(),
-                                  ).toISOString();
-                                }
-                              }
-                            "
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <FormControl>
+                        <FormInputDate
+                          v-bind="componentField"
+                          :placeholder="$t('expiration_date')"
+                        />
+                      </FormControl>
                       <FormDescription>
                         {{ $t('orders.expiration_date_optional') }}
                       </FormDescription>
@@ -671,48 +686,10 @@ definePageMeta({
           </ContentEditMainContent>
         </KeepAlive>
 
-        <KeepAlive>
-          <ContentEditMainContent
-            v-if="currentTab === 1 && !createMode"
-            :key="`tab-${currentTab}`"
-          >
-            <ContentEditCard
-              :create-mode="false"
-              :title="$t('item', 2)"
-              :description="$t('orders.quotation_items_description')"
-            >
-              <div class="text-muted-foreground text-sm italic">
-                {{ $t('orders.quotation_items_coming_soon') }}
-              </div>
-            </ContentEditCard>
-          </ContentEditMainContent>
-        </KeepAlive>
-
-        <KeepAlive>
-          <ContentEditMainContent
-            v-if="currentTab === 2 && !createMode"
-            :key="`tab-${currentTab}`"
-          >
-            <ContentEditCard
-              :create-mode="false"
-              :title="$t('summary')"
-              :description="$t('orders.quotation_summary_description')"
-            >
-              <ContentDataList :data-list="summaryData" />
-            </ContentEditCard>
-          </ContentEditMainContent>
-        </KeepAlive>
-
         <template #sidebar>
           <ContentEditSummary v-bind="summaryProps" />
         </template>
       </ContentEditMain>
     </form>
   </ContentEditWrap>
-  <DialogUnsavedChanges
-    v-model:open="unsavedChangesDialogOpen"
-    :entity-name="entityName"
-    :loading="loading"
-    @confirm="confirmLeave"
-  />
 </template>

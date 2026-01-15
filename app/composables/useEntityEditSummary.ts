@@ -14,7 +14,7 @@ interface UseEntityEditSummaryReturnType {
     createMode: boolean;
     formTouched: boolean;
     summary: DataItem[];
-    settingsSummary: DataItem[];
+    settingsSummary?: DataItem[];
     entityName: string;
     entityLiveStatus: boolean;
   }>;
