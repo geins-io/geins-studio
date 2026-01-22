@@ -20,10 +20,21 @@ const mainHeightStyle = computed(() => {
 const contentClasses = computed(() => {
   const route = useRoute();
   const pageType = route.meta.pageType;
-  return {
-    'overflow-hidden': pageType === 'list',
-    'overflow-y-auto': pageType !== 'list',
-  };
+  console.log('pageType', pageType);
+  const classes = ['flex grow flex-col'];
+
+  if (pageType === 'canvas') {
+
+  } else {
+    classes.push('p-3 pb-12 @2xl:p-8 @2xl:pb-14');
+    if (pageType === 'list') {
+      classes.push('overflow-hidden');
+    } else {
+      classes.push('overflow-y-auto');
+    }
+  }
+  return classes.join(' ');
+
 });
 </script>
 <template>
@@ -31,12 +42,7 @@ const contentClasses = computed(() => {
     <LayoutSidebar />
     <SidebarInset class="@container" :style="mainWidthStyle">
       <LayoutHeader class="sticky top-0 h-(--h-header)" />
-      <div
-        :class="
-          cn('flex grow flex-col p-3 pb-12 @2xl:p-8 @2xl:pb-14', contentClasses)
-        "
-        :style="mainHeightStyle"
-      >
+      <div :class="cn(contentClasses)" :style="mainHeightStyle">
         <slot />
       </div>
     </SidebarInset>

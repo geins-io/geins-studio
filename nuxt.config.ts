@@ -14,7 +14,7 @@ export default defineNuxtConfig({
     '/auth/*': { prerender: true },
   },
 
-  devtools: { enabled: true },
+  devtools: { enabled: false },
 
   modules: [
     '@sidebase/nuxt-auth',

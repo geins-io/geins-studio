@@ -17,7 +17,9 @@ import '@vue-flow/core/dist/theme-default.css';
 import '@vue-flow/controls/dist/style.css';
 // i//mport '@vue-flow/minimap/dist/style.css';
 // import '@vue-flow/node-resizer/dist/style.css';
-
+definePageMeta({
+  pageType: 'canvas',
+});
 /**
  * `useVueFlow` provides:
  * 1. a set of methods to interact with the VueFlow instance (like `fitView`, `setViewport`, `addEdges`, etc)
@@ -97,7 +99,9 @@ function resetTransform() {
   setViewport({ x: 0, y: 0, zoom: 1 });
 }
 function toggleDarkMode() {
+  console.log('toggleDarkMode', dark.value);
   dark.value = !dark.value;
+  console.log('toggleDarkMode', dark.value);
 }
 function onSave() {
   console.log('onSave', toObject());
@@ -106,8 +110,8 @@ function onSave() {
 </script>
 
 <template>
-  <div class="w-full" style="height: calc(100vh - 120px);">
-    <VueFlow :nodes="nodes" :edges="edges" :class="{ dark }" class="basic-flow" :default-viewport="{ zoom: 1.5 }"
+  <div class="w-full h-full">
+    <VueFlow :nodes="nodes" :edges="edges" :class="{ dark }" class="basic-flow" :default-viewport="{ zoom: 2.0 }"
       :min-zoom="0.2" :max-zoom="4">
       <SaveRestoreControls />
       <template #node-value="props">
@@ -127,30 +131,8 @@ function onSave() {
 
       <Background pattern-color="#aaa" :gap="16" />
 
-      <!--  <MiniMap /> -->
+      <MiniMap v-if="false" />
 
-      <!--       <Controls position="top-left">
-        <ControlButton title="Save" @click="onSave">
-          <Icon name="save" />
-        </ControlButton>
-
-        <ControlButton title="Reset Transform" @click="resetTransform">
-          <Icon name="reset" />
-        </ControlButton>
-
-        <ControlButton title="Shuffle Node Positions" @click="updatePos">
-          <Icon name="update" />
-        </ControlButton>
-
-        <ControlButton title="Toggle Dark Mode" @click="toggleDarkMode">
-          <Icon v-if="dark" name="sun" />
-          <Icon v-else name="moon" />
-        </ControlButton>
-
-        <ControlButton title="Log `toObject`" @click="logToObject">
-          <Icon name="log" />
-        </ControlButton>
-      </Controls> -->
     </VueFlow>
   </div>
 </template>

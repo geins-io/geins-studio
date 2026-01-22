@@ -1,10 +1,11 @@
 <script setup>
 import { Handle, Position, useVueFlow, useNodeConnections, useNodesData } from '@vue-flow/core';
 import Icon from '../toolbar/Icon.vue';
-
+const { onConnect } = useVueFlow();
 const props = defineProps(['id', 'data']);
 
 const operators = ['+', '-', '*', '/'];
+const selectedOperator = ref(null);
 
 const mathFunctions = {
   '+': (a, b) => a + b,
@@ -39,13 +40,20 @@ const calcValueB = computed(() => operatorData.value[1]?.data?.value);
 
 // method to calculate the result of the operator
 const calculate = async (id, operator) => {
+  selectedOperator.value = operator;
   const a = operatorData.value[0]?.data?.value;
   const b = operatorData.value[1]?.data?.value;
 
   let result = 0;
 
-  if (a && b) {
+  console.log('operator', operator)
+
+  if (a && b && operator) {
     result = mathFunctions[operator](a, b);
+  }
+  else {
+    result = 0;
+    updateNodeData(id, { value: result });
   }
 
   const data = {
@@ -54,9 +62,29 @@ const calculate = async (id, operator) => {
     b: b,
     value: result
   };
+  console.log('id', id)
 
   updateNodeData(id, data);
 };
+
+onConnect(({ source, target, sourceHandle, targetHandle }) => {
+
+  console.log('operatorData', operatorData.value)
+
+  console.log('source', source)
+  console.log('target', target)
+
+
+  // these are the handle ids of the source and target node
+  // if no id is specified these will be `null`, meaning the first handle of the necessary type will be used
+
+
+  console.log('sourceHandle', sourceHandle)
+  console.log('targetHandle', targetHandle)
+
+
+  calculate(target, selectedOperator.value);
+})
 </script>
 
 <template>
