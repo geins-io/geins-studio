@@ -310,3 +310,71 @@
 .table-view__header {
   @apply bg-card after:bg-border sticky top-0 after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full;
 }
+
+/* VueFlow Workflow Editor Styles */
+.workflow-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.workflow-canvas .vue-flow__edge-path {
+  stroke: hsl(0 0% 75%);
+  stroke-width: 2px;
+}
+
+.workflow-canvas .vue-flow__edge-path:hover {
+  stroke: hsl(0 0% 60%);
+}
+
+.workflow-canvas .vue-flow__connection-line {
+  stroke: hsl(217 91% 60%);
+  stroke-width: 2px;
+  stroke-dasharray: 5, 5;
+}
+
+.workflow-canvas .vue-flow__controls {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.workflow-canvas .vue-flow__controls-button {
+  border-color: hsl(0 0% 90%);
+}
+
+.workflow-canvas .vue-flow__minimap {
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+/* Dark mode VueFlow styles */
+.dark .workflow-canvas .vue-flow__edge-path {
+  stroke: hsl(240 3.7% 45%);
+}
+
+.dark .workflow-canvas .vue-flow__edge-path:hover {
+  stroke: hsl(240 3.7% 60%);
+}
+
+.dark .workflow-canvas .vue-flow__controls {
+  background: hsl(240 10% 3.9%);
+  border-color: hsl(240 3.7% 15.9%);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3);
+}
+
+.dark .workflow-canvas .vue-flow__controls-button {
+  background: hsl(240 10% 3.9%);
+  border-color: hsl(240 3.7% 15.9%);
+  fill: hsl(0 0% 100%);
+}
+
+.dark .workflow-canvas .vue-flow__controls-button:hover {
+  background: hsl(240 3.7% 15.9%);
+}
+
+.dark .workflow-canvas .vue-flow__minimap {
+  background: hsl(240 10% 3.9%);
+}
+
+.dark .workflow-canvas .vue-flow__background pattern {
+  stroke: hsl(240 3.7% 15.9%);
+}

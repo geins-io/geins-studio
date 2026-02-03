@@ -60,6 +60,19 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
         },
       ],
     },
+    {
+      label: t('navigation.automation'),
+      href: '/workflows/list',
+      icon: 'Workflow',
+      group: 'automation',
+      children: [
+        {
+          label: t('navigation.workflows'),
+          href: '/workflows/list',
+          childPattern: '/workflows/:id',
+        },
+      ],
+    },
     // {
     //   label: t('navigation.orders'),
     //   href: '/orders/quotation/list',
