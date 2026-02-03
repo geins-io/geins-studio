@@ -263,7 +263,10 @@
     "settings": "Settings",
     "users": "Users",
     "account": "Account",
-    "profile": "Profile"
+    "profile": "Profile",
+    "automation": "Automation",
+    "workflows": "Workflows",
+    "executions": "Executions"
   },
   "account_profile": {
     "login_credentials": "Login credentials",

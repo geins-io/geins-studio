@@ -60,6 +60,28 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
         },
       ],
     },
+    {
+      label: t('navigation.automation'),
+      href: '/workflows/list',
+      icon: 'Workflow',
+      group: 'automation',
+      // TODO: Add roles when auth system is ready
+      // roles: ['admin', 'automation_manager'],
+      // permissions: ['automation.read'],
+      children: [
+        {
+          label: t('navigation.workflows'),
+          href: '/workflows/list',
+          childPattern: '/workflows/:id',
+          // permissions: ['automation.workflows.read'],
+        },
+        {
+          label: t('navigation.executions'),
+          href: '/workflows/executions',
+          // permissions: ['automation.executions.read'],
+        },
+      ],
+    },
     // {
     //   label: t('navigation.orders'),
     //   href: '/orders/quotation/list',

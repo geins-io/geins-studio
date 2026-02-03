@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { 
-  Plus, 
-  Play, 
+import {
+  Plus,
+  Play,
   Pause,
-  Pencil, 
-  Trash2, 
+  Pencil,
+  Trash2,
   Copy,
   Clock,
   CheckCircle2,
@@ -123,7 +123,7 @@ const statusFilter = ref<string>('')
 
 const filteredWorkflows = computed(() => {
   return workflows.value.filter(wf => {
-    const matchesSearch = !searchQuery.value || 
+    const matchesSearch = !searchQuery.value ||
       wf.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       wf.description.toLowerCase().includes(searchQuery.value.toLowerCase())
     const matchesStatus = !statusFilter.value || wf.status === statusFilter.value
@@ -250,17 +250,10 @@ const stats = computed(() => ({
         <div class="flex items-center gap-4">
           <div class="relative flex-1 max-w-sm">
             <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search workflows..."
-              class="pl-9"
-            />
+            <Input v-model="searchQuery" type="text" placeholder="Search workflows..." class="pl-9" />
           </div>
-          <select
-            v-model="statusFilter"
-            class="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          >
+          <select v-model="statusFilter"
+            class="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
             <option value="">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -272,19 +265,13 @@ const stats = computed(() => ({
 
     <!-- Workflows Grid -->
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card 
-        v-for="workflow in filteredWorkflows" 
-        :key="workflow.id"
-        class="hover:border-primary/50 transition-colors"
-      >
+      <Card v-for="workflow in filteredWorkflows" :key="workflow.id"
+        class="hover:border-primary/50 transition-colors pt-5">
         <CardHeader class="pb-3">
           <div class="flex items-start justify-between">
             <div class="space-y-1">
               <CardTitle class="text-base">
-                <NuxtLink 
-                  :to="`/workflows/${workflow.id}`"
-                  class="hover:underline"
-                >
+                <NuxtLink :to="`/workflows/${workflow.id}`" class="hover:underline">
                   {{ workflow.name }}
                 </NuxtLink>
               </CardTitle>
@@ -293,9 +280,8 @@ const stats = computed(() => ({
               </CardDescription>
             </div>
             <div class="flex items-center gap-1">
-              <span 
-                :class="['inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize', statusColors[workflow.status]]"
-              >
+              <span
+                :class="['inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize', statusColors[workflow.status]]">
                 {{ workflow.status }}
               </span>
             </div>
@@ -311,11 +297,8 @@ const stats = computed(() => ({
           </div>
 
           <div v-if="workflow.lastRun" class="flex items-center gap-2 text-sm mb-4">
-            <component 
-              :is="runStatusIcons[workflow.lastRunStatus!]" 
-              class="h-4 w-4"
-              :class="runStatusColors[workflow.lastRunStatus!]"
-            />
+            <component :is="runStatusIcons[workflow.lastRunStatus!]" class="h-4 w-4"
+              :class="runStatusColors[workflow.lastRunStatus!]" />
             <span class="text-muted-foreground">
               Last run {{ workflow.lastRun }} · {{ workflow.runs.toLocaleString() }} total runs
             </span>
@@ -325,12 +308,8 @@ const stats = computed(() => ({
           </div>
 
           <div class="flex items-center gap-2">
-            <Button 
-              v-if="workflow.status !== 'draft'"
-              variant="outline" 
-              size="sm"
-              @click="toggleWorkflowStatus(workflow)"
-            >
+            <Button v-if="workflow.status !== 'draft'" variant="outline" size="sm"
+              @click="toggleWorkflowStatus(workflow)">
               <component :is="workflow.status === 'active' ? Pause : Play" class="h-3.5 w-3.5 mr-1" />
               {{ workflow.status === 'active' ? 'Pause' : 'Activate' }}
             </Button>
@@ -356,8 +335,9 @@ const stats = computed(() => ({
           <div class="flex flex-col items-center justify-center text-center">
             <Workflow class="h-12 w-12 text-muted-foreground mb-4" />
             <h3 class="text-lg font-medium mb-2">No workflows found</h3>
-            <p class="text-muted-foreground mb-4">
-              {{ searchQuery || statusFilter ? 'Try adjusting your filters' : 'Create your first workflow to get started' }}
+            <p class="text-muted-foreground mb-4"
+              :html="searchQuery || statusFilter ? 'Try adjusting your filters' : 'Create your first workflow to get started'">
+
             </p>
             <NuxtLink v-if="!searchQuery && !statusFilter" to="/workflows/new">
               <Button>

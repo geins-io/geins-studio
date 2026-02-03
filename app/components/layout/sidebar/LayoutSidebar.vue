@@ -21,6 +21,7 @@ import {
   LucideShieldCheck,
   LucideTag,
   LucideUsers,
+  LucideWorkflow,
   LucideWallet,
   LucideWarehouse,
   LucidePackage,
@@ -56,6 +57,7 @@ const iconComponents = {
   Settings: LucideSettings,
   ShieldCheck: LucideShieldCheck,
   Package: LucidePackage,
+  Workflow: LucideWorkflow,
 };
 
 // Process navigation items to include icon components
@@ -81,11 +83,7 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
     <!-- Header with Logo -->
     <SidebarHeader>
       <NuxtLink to="/" class="mt-0.5 ml-2" @click="handleNavClick">
-        <Logo
-          v-if="state === 'expanded' || isMobile"
-          :font-controlled="false"
-          class="h-8 w-auto"
-        />
+        <Logo v-if="state === 'expanded' || isMobile" :font-controlled="false" class="h-8 w-auto" />
         <LogoLetter v-else :font-controlled="false" class="h-8 w-auto" />
       </NuxtLink>
     </SidebarHeader>
@@ -93,51 +91,31 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
     <!-- Main Navigation Content -->
     <SidebarContent>
       <SidebarGroup>
-        <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in navigationMenu" :key="item.label">
               <!-- Item with children (collapsible) :default-open="isItemOpen(item)" -->
-              <Collapsible
-                v-if="item.children?.length"
-                :default-open="true"
-                :disabled="!sidebarOpen"
-                class="group/collapsible"
-              >
+              <Collapsible v-if="item.children?.length" :default-open="true" :disabled="!sidebarOpen"
+                class="group/collapsible">
                 <CollapsibleTrigger as-child>
                   <SidebarMenuButton class="w-full" as-child>
-                    <NuxtLink
-                      :to="
-                        state === 'collapsed' && item.children?.length
-                          ? item.children[0]?.href || item.href
-                          : undefined
-                      "
-                      @click="handleNavClick"
-                    >
-                      <component
-                        :is="item.iconComponent"
-                        v-if="item.iconComponent"
-                        class="!size-4.5"
-                      />
+                    <NuxtLink :to="state === 'collapsed' && item.children?.length
+                      ? item.children[0]?.href || item.href
+                      : undefined
+                      " @click="handleNavClick">
+                      <component :is="item.iconComponent" v-if="item.iconComponent" class="!size-4.5" />
                       <span>{{ item.label }}</span>
 
                       <LucideChevronRight
-                        class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90"
-                      />
+                        class="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
                     </NuxtLink>
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarMenuSub class="mt-0.5 pl-3">
-                    <SidebarMenuSubItem
-                      v-for="child in item.children"
-                      :key="child.label"
-                    >
-                      <SidebarMenuSubButton
-                        as-child
-                        :is-active="route.path === child.href"
-                        size="sm"
-                      >
+                    <SidebarMenuSubItem v-for="child in item.children" :key="child.label">
+                      <SidebarMenuSubButton as-child :is-active="route.path === child.href" size="sm">
                         <NuxtLink :to="child.href" @click="handleNavClick">
                           <span>{{ child.label }}</span>
                         </NuxtLink>
@@ -148,25 +126,12 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
               </Collapsible>
 
               <!-- Single item or collapsed state -->
-              <SidebarMenuButton
-                v-else
-                as-child
-                :tooltip="item.label"
-                :is-active="isItemActive(item)"
-              >
-                <NuxtLink
-                  :to="
-                    item.children?.length
-                      ? item.children[0]?.href || item.href
-                      : item.href
-                  "
-                  @click="handleNavClick"
-                >
-                  <component
-                    :is="item.iconComponent"
-                    v-if="item.iconComponent"
-                    class="!size-4.5"
-                  />
+              <SidebarMenuButton v-else as-child :tooltip="item.label" :is-active="isItemActive(item)">
+                <NuxtLink :to="item.children?.length
+                  ? item.children[0]?.href || item.href
+                  : item.href
+                  " @click="handleNavClick">
+                  <component :is="item.iconComponent" v-if="item.iconComponent" class="!size-4.5" />
                   <span>{{ item.label }}</span>
                 </NuxtLink>
               </SidebarMenuButton>

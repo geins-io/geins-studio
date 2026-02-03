@@ -263,7 +263,10 @@
     "settings": "Inställningar",
     "users": "Användare",
     "account": "Konto",
-    "profile": "Profil"
+    "profile": "Profil",
+    "automation": "Automation",
+    "workflows": "Arbetsflöden",
+    "executions": "Körningar"
   },
   "account_profile": {
     "login_credentials": "Inloggningsuppgifter",
