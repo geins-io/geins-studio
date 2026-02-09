@@ -36,7 +36,7 @@
     "jwt-decode": "^4.0.0",
     "lucide-vue-next": "^0.525.0",
     "next-auth": "4.21.1",
-    "nuxt": "^3.17.6",
+    "nuxt": "^4.3.1",
     "nuxt-lucide-icons": "1.0.5",
     "nuxt-svgo": "^4.0.1",
     "nuxt-viewport": "2.3.1",
