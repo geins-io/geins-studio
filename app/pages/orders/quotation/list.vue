@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { Quotation, ColumnOptions, StringKeyOf } from '#shared/types';
+import type { QuotationList, ColumnOptions, StringKeyOf } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
-type Entity = Quotation;
-type EntityList = Quotation;
+type Entity = QuotationList;
+type EntityList = QuotationList;
 
-const scope = 'pages/orders/quotations/list.vue';
+const scope = 'pages/orders/quotation/list.vue';
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog(scope);
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
@@ -88,11 +88,23 @@ onMounted(() => {
     },
     excludeColumns: [
       '_type',
-      'accountId',
-      'channel',
+      'quotationId',
+      'quotationNumber',
       'currency',
-      'notes',
-      'items',
+      'validFrom',
+      'validTo',
+      'billingAddress',
+      'shippingAddress',
+      'total',
+      'orderId',
+      'company',
+      'owner',
+      'customer',
+      'validPaymentMethods',
+      'validShippingMethods',
+      'terms',
+      'communication',
+      'changelog',
     ],
   };
   // GET AND SET COLUMNS
