@@ -2,10 +2,6 @@ import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineNuxtConfig({
-  future: {
-    compatibilityVersion: 4,
-  },
-
   ssr: false,
 
   spaLoadingTemplate: 'app-skeleton.html',
