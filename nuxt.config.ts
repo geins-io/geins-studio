@@ -75,13 +75,11 @@ export default defineNuxtConfig({
 
   i18n: {
     defaultLocale: 'en',
+    langDir: 'locales',
     locales: [
       { code: 'en', name: 'English', file: 'en.json' },
       { code: 'sv', name: 'Swedish', file: 'sv.json' },
     ],
-    bundle: {
-      optimizeTranslationDirective: false,
-    },
   },
 
   runtimeConfig: {
