@@ -8,6 +8,12 @@ export default createConfigForNuxt()
   .append(eslintPluginPrettierRecommended)
   .append(tailwind.configs['flat/recommended'])
   .append({
+    settings: {
+      tailwindcss: {
+        // Tailwind CSS 4 doesn't use traditional config file
+        config: false,
+      },
+    },
     rules: {
       'vue/require-default-prop': 'off',
       'vue/no-multiple-template-root': 'off',

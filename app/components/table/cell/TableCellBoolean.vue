@@ -6,8 +6,8 @@ const _props = defineProps<{
 <template>
   <div>
     <span class="flex items-center gap-1.5">
-      <LucideCheck v-if="isTrue" class="size-3.5 text-positive" />
-      <LucideX v-else class="size-3.5 text-negative" />
+      <LucideCheck v-if="isTrue" class="text-positive size-3.5" />
+      <LucideX v-else class="text-negative size-3.5" />
       {{ isTrue ? $t('yes') : $t('no') }}
     </span>
   </div>
