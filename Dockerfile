@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
 # Adjust NODE_VERSION as desired
-ARG NODE_VERSION=21.1.0
+ARG NODE_VERSION=24.13.1
 FROM node:${NODE_VERSION}-slim as base
 
 LABEL fly_launch_runtime="Nuxt"
@@ -11,8 +11,9 @@ WORKDIR /app
 
 # Set production environment
 ENV NODE_ENV="production"
-ARG YARN_VERSION=1.22.22
-RUN npm install -g yarn@$YARN_VERSION --force
+
+# Enable Corepack for Yarn 4 (version resolved from packageManager in package.json)
+RUN corepack enable
 
 
 # Throw-away build stage to reduce size of final image
@@ -23,17 +24,14 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
 
 # Install node modules
-COPY --link package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --production=false
+COPY --link package.json yarn.lock .yarnrc.yml ./
+RUN yarn install --immutable
 
 # Copy application code
 COPY --link . .
 
 # Build application
 RUN yarn run build
-
-# Remove development dependencies
-RUN yarn install --production=true
 
 
 # Final stage for app image
