@@ -1,10 +1,4 @@
 <script setup lang="ts">
-import {
-  LucideServerCrash,
-  LucideRefreshCw,
-  LucideHome,
-} from 'lucide-vue-next';
-
 const props = withDefaults(
   defineProps<{
     message?: string;

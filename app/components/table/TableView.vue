@@ -21,8 +21,8 @@ import {
 } from '@tanstack/vue-table';
 import { useDebounceFn } from '@vueuse/core';
 
-import { LucideSearchX, LucideCircleSlash } from 'lucide-vue-next';
 import type { Component } from 'vue';
+import { LucideSearchX, LucideCircleSlash } from '#components';
 
 const props = withDefaults(
   defineProps<{

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ComboboxPortal } from 'reka-ui';
-import { Check, ChevronsUpDown, Search } from 'lucide-vue-next';
 const { t } = useI18n();
 
 const props = withDefaults(
@@ -130,7 +129,7 @@ const handleKeyDown = () => {
       >
         {{ choice?.label ?? t('select_entity', { entityName }) }}
 
-        <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
+        <LucideChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
       </button>
     </ComboboxAnchor>
     <ComboboxPortal to="body" :disabled="disableTeleport">
@@ -156,7 +155,7 @@ const handleKeyDown = () => {
           <span
             class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
           >
-            <Search class="text-muted-foreground size-4" />
+            <LucideSearch class="text-muted-foreground size-4" />
           </span>
         </div>
 
@@ -169,7 +168,7 @@ const handleKeyDown = () => {
             {{ item.label }}
 
             <ComboboxItemIndicator>
-              <Check :class="cn('ml-auto size-4')" />
+              <LucideCheck :class="cn('ml-auto size-4')" />
             </ComboboxItemIndicator>
           </ComboboxItem>
         </ComboboxGroup>

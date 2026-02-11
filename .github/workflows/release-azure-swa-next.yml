@@ -9,7 +9,7 @@ jobs:
     name: Build and Deploy Job
     steps:
       # Step 1: Checkout the repository
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
@@ -36,27 +36,3 @@ jobs:
           BASE_URL: ${{ vars.AZURE_GEINS_BASE_URL_QA }}
           GEINS_DEBUG: ${{ vars.AZURE_GEINS_DEBUG_QA }}
           NITRO_PRESET: ${{ vars.NITRO_PRESET_AZURE_SWA }}
-          APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.AZURE_APP_INSIGHTS_CONNECTION_STRING }}
-      # Step 3: Post to Slack
-      - name: Post to Slack
-        if: github.event_name == 'push'
-        id: posttoslack
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          URL: ${{ vars.AZURE_GEINS_BASE_URL_QA }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{
-          "text": "*The QA site has been updated!* :unicorn_face:\n\n:point_right: <'"$URL"'|'"$URL"'> :point_left:"
-          }' $SLACK_WEBHOOK_URL
-
-  # close_pull_request_job:
-  #   if: github.event_name == 'pull_request' && github.event.action == 'closed'
-  #   runs-on: ubuntu-latest
-  #   name: Close Pull Request Job
-  #   steps:
-  #     - name: Close Pull Request
-  #       id: closepullrequest
-  #       uses: Azure/static-web-apps-deploy@v1
-  #       with:
-  #         azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APP_QA_TOKEN }}
-  #         action: "close"

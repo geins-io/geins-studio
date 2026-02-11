@@ -16,9 +16,8 @@ import {
   TableCellEditable,
   TableCellCurrency,
   Button,
+  LucideChevronRight,
 } from '#components';
-
-import { ChevronRight } from 'lucide-vue-next';
 
 interface UseColumnsReturnType<T> {
   getBasicHeaderStyle: (table: Table<T>) => string;
@@ -171,7 +170,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
                   size: 'icon-xs',
                 },
                 () =>
-                  h(ChevronRight, {
+                  h(LucideChevronRight, {
                     class:
                       'size-4 transition-transform' +
                       (row.getIsExpanded() ? ' rotate-90' : ''),

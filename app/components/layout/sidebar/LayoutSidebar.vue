@@ -5,26 +5,23 @@ import {
 } from '@/components/ui/sidebar/utils';
 import { useSidebar } from '@/components/ui/sidebar';
 
-import Logo from '@/assets/logos/geins.svg';
-import LogoLetter from '@/assets/logos/geins-g.svg';
-
-// Import icons dynamically
 import {
-  LucideChevronDown,
-  LucideBrush,
-  LucideBuilding2,
-  LucideChartLine,
-  LucideImport,
-  LucideLayers,
   LucideLayoutDashboard,
+  LucideChartLine,
+  LucideTag,
+  LucideBrush,
+  LucideUsers,
+  LucideWarehouse,
+  LucideLayers,
+  LucideWallet,
+  LucideBuilding2,
+  LucideImport,
   LucideSettings,
   LucideShieldCheck,
-  LucideTag,
-  LucideUsers,
-  LucideWallet,
-  LucideWarehouse,
   LucidePackage,
-} from 'lucide-vue-next';
+} from '#components';
+import Logo from '@/assets/logos/geins.svg';
+import LogoLetter from '@/assets/logos/geins-g.svg';
 
 const { state, isMobile, setOpenMobile } = useSidebar();
 
