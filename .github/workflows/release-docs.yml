@@ -14,13 +14,14 @@ jobs:
 
       # Step 2: Set up Node.js environment
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20' # Adjust to your Node.js version
+          node-version: "24"
+          corepack: true
 
       # Step 3: Install dependencies
       - name: Install dependencies
-        run: yarn install
+        run: yarn install --immutable
 
       # Step 4: Build and Deploy to Azure
       - name: Build And Deploy
@@ -29,9 +30,9 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: 'upload'
+          action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          app_location: '/' # App source code path
-          app_build_command: 'yarn docs:build'
-          output_location: 'docs/.vitepress/dist' # Built app content directory - optional
+          app_location: "/" # App source code path
+          app_build_command: "yarn docs:build"
+          output_location: "docs/.vitepress/dist" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
