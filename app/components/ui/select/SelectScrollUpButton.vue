@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
-import { ChevronUp } from 'lucide-vue-next';
 import {
   SelectScrollUpButton,
   type SelectScrollUpButtonProps,
@@ -27,7 +26,7 @@ const forwardedProps = useForwardProps(delegatedProps);
     "
   >
     <slot>
-      <ChevronUp class="size-4" />
+      <LucideChevronUp class="size-4" />
     </slot>
   </SelectScrollUpButton>
 </template>
