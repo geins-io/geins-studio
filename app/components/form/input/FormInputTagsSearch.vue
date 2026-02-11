@@ -131,7 +131,14 @@ const getName = (id: AcceptableValue): string => {
       </TagsInput>
     </ComboboxAnchor>
     <ComboboxPortal to="body" :disabled="disableTeleport">
-      <ComboboxList class="w-(--reka-popper-anchor-width)">
+      <ComboboxList
+        :position="disableTeleport ? 'inline' : 'popper'"
+        :class="
+          disableTeleport
+            ? 'absolute z-10 mt-1 w-full'
+            : 'w-(--reka-popper-anchor-width)'
+        "
+      >
         <ComboboxEmpty v-if="allowCustomTags">
           {{ $t('add_entity_by_typing', { entityName }, 2) }}
         </ComboboxEmpty>

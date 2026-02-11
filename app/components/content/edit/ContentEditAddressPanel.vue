@@ -115,7 +115,7 @@ const handleCancel = () => {
           </SheetDescription>
         </VisuallyHidden>
       </SheetHeader>
-      <SheetBody>
+      <SheetBody class="h-full">
         <form @submit.prevent>
           <ContentAddressForm :disable-teleport="true" />
         </form>
