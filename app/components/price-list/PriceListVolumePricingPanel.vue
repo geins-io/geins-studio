@@ -209,8 +209,8 @@ const handleRemove = async (rule: PriceListRule) => {
           @remove="handleRemove"
         />
         <Feedback
-          v-auto-animate
           v-if="!rulesValid"
+          v-auto-animate
           type="negative"
           class="mt-10"
         >
