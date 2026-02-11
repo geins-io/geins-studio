@@ -136,7 +136,12 @@ const handleKeyDown = () => {
     <ComboboxPortal to="body" :disabled="disableTeleport">
       <ComboboxList
         ref="comboboxList"
-        class="relative w-(--reka-popper-anchor-width)"
+        :position="disableTeleport ? 'inline' : 'popper'"
+        :class="
+          disableTeleport
+            ? 'absolute z-10 mt-1 w-full'
+            : 'relative w-(--reka-popper-anchor-width)'
+        "
       >
         <div
           class="bg-card sticky top-0 z-50 w-full items-center rounded-t border-b"
