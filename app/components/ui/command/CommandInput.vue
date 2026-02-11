@@ -31,7 +31,7 @@ const { filterState } = useCommand();
 <template>
   <div
     data-slot="command-input-wrapper"
-    class="bg-input focus-within:border-primary flex items-center gap-2 rounded-lg border border-b px-3"
+    class="bg-input focus-within:border-primary flex items-center gap-2 rounded-lg border px-3"
   >
     <Search class="mr-2 size-4 shrink-0" />
     <ListboxFilter

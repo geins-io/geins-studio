@@ -1,4 +1,4 @@
-import { type JWT } from 'next-auth/jwt';
+import type { JWT } from 'next-auth/jwt';
 import type {
   AuthTokens,
   LoginCredentials,

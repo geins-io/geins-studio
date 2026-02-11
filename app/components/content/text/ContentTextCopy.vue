@@ -36,6 +36,6 @@ const copyValue = () => {
         cn('size-3 transition-colors', `${hovered ? 'text-positive' : ''}`)
       "
     />
-    <LucideCopyCheck v-else class="size-3 text-positive" />
+    <LucideCopyCheck v-else class="text-positive size-3" />
   </button>
 </template>

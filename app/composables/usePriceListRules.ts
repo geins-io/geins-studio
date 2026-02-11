@@ -122,7 +122,7 @@ export function usePriceListRules({
           : { discountPercent: percentage }),
       };
 
-      if (!!baseRule.value) {
+      if (baseRule.value) {
         globalRule._id = baseRule.value._id;
       }
 

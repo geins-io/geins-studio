@@ -8,7 +8,7 @@ const _props = defineProps<{
     <span
       v-for="(tag, index) in tags"
       :key="index"
-      class="rounded-lg border bg-background px-1.5 py-1 text-xs leading-4"
+      class="bg-background rounded-lg border px-1.5 py-1 text-xs leading-4"
     >
       {{ tag }}
     </span>

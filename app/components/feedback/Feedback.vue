@@ -44,7 +44,7 @@ const icon = computed(() => {
 </script>
 <template>
   <Alert :variant="variant">
-    <component :is="icon" class="-ml-1 -mt-1 size-5" />
+    <component :is="icon" class="-mt-1 -ml-1 size-5" />
     <AlertTitle>
       <slot name="title" />
     </AlertTitle>

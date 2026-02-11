@@ -32,7 +32,7 @@ const handleClick = () => {
   >
     {{ title }}
     <div
-      class="ml-1 flex size-5 flex-col items-center gap-0.5 text-muted-foreground"
+      class="text-muted-foreground ml-1 flex size-5 flex-col items-center gap-0.5"
     >
       <LucideChevronUp
         :class="

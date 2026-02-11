@@ -1,7 +1,7 @@
-import {
-  type BatchQueryFiltered,
-  type BatchQueryFilterGroup,
-  type Sku,
+import type {
+  BatchQueryFiltered,
+  BatchQueryFilterGroup,
+  Sku,
 } from '#shared/types';
 
 // SELECTOR

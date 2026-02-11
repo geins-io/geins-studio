@@ -79,16 +79,19 @@ const handleAddNewOption = () => {
   }
 };
 
-const handleFocus = async () => {
-  setTimeout(() => {
+// Workaround for reka-ui v2.8.0 bug #2428 with open-on-focus
+// Use click to open instead, which doesn't have the infinite loop issue
+const handleInputClick = () => {
+  if (!open.value) {
     open.value = true;
-  }, 0);
+  }
 };
 
-const handleBlur = async () => {
-  setTimeout(() => {
+// Close dropdown on Tab to allow navigating away from the field
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.key === 'Tab') {
     open.value = false;
-  }, 5);
+  }
 };
 
 const getName = (id: AcceptableValue): string => {
@@ -119,9 +122,9 @@ const getName = (id: AcceptableValue): string => {
         <ComboboxInput v-model="searchTerm" as-child>
           <TagsInputInput
             :placeholder="placeholder"
-            class="h-auto w-full min-w-[200px] border-none p-0 focus-visible:ring-0"
-            @focus.stop="handleFocus"
-            @blur.stop="handleBlur"
+            class="h-auto w-full min-w-50 border-none p-0 focus-visible:ring-0"
+            @click="handleInputClick"
+            @keydown="handleKeyDown"
             @keydown.enter.prevent
           />
         </ComboboxInput>
