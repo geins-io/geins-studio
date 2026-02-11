@@ -26,7 +26,8 @@ onMounted(async () => {
       response?.items || [],
     );
   } catch (error) {
-    console.error('Failed to fetch products:', error);
+    const { geinsLogError } = useGeinsLog('sku-selector');
+    geinsLogError('Failed to fetch products:', error);
   } finally {
     loading.value = false;
   }

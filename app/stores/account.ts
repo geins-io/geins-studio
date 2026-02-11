@@ -1,6 +1,22 @@
 import { defineStore } from 'pinia';
 import type { Account, Channel, Currency } from '#shared/types';
 
+/**
+ * Account store — manages the current merchant account context.
+ *
+ * State: account details, channels, currencies, languages, and user-selected
+ * preferences (persisted in cookies with `geins-` prefix).
+ *
+ * Initialization: call `init()` after authentication. The `geins-global.ts` plugin
+ * handles this automatically when `isAuthenticated` changes.
+ *
+ * @example
+ * ```ts
+ * const accountStore = useAccountStore();
+ * const { channels, currentCurrency } = storeToRefs(accountStore);
+ * await accountStore.init();
+ * ```
+ */
 export const useAccountStore = defineStore('account', () => {
   const { geinsLogWarn } = useGeinsLog('store/account.ts');
   const { globalApi } = useGeinsRepository();

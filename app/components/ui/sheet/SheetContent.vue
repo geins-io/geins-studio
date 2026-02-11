@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
 import {
   DialogClose,
@@ -11,6 +10,7 @@ import {
 } from 'reka-ui';
 import { cn } from '@/utils/index';
 import SheetOverlay from './SheetOverlay.vue';
+import type { HTMLAttributes } from 'vue';
 
 interface SheetContentProps extends DialogContentProps {
   class?: HTMLAttributes['class'];

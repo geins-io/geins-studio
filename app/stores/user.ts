@@ -1,5 +1,17 @@
 import { defineStore } from 'pinia';
 
+/**
+ * User store — derives current user info from the auth session.
+ *
+ * Provides computed display properties: initials (for avatars), full name,
+ * email, and role/permission accessors. Reactive to session changes.
+ *
+ * @example
+ * ```ts
+ * const userStore = useUserStore();
+ * const { userInitials, userName, userEmail } = storeToRefs(userStore);
+ * ```
+ */
 export const useUserStore = defineStore('user', () => {
   const { session } = useGeinsAuth();
   const user = ref(session.value?.user);

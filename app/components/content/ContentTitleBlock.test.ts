@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
+import { describe, it, expect } from 'vitest';
 import { ContentTitleBlock } from '#components';
 
 describe('ContentTitleBlock', () => {

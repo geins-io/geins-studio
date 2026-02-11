@@ -1,5 +1,5 @@
-import type { AuthTokens, LoginCredentials, Session } from '#shared/types';
 import { jwtDecode } from 'jwt-decode';
+import type { AuthTokens, LoginCredentials, Session } from '#shared/types';
 
 interface UseGeinsAuthReturnType {
   session: Ref<Session | null | undefined>;

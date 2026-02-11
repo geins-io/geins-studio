@@ -1,5 +1,4 @@
 <script setup lang="ts" generic="T extends SelectorEntity">
-import type { ColumnDef, Row, Table } from '@tanstack/vue-table';
 import {
   type SelectorEntity,
   type SelectorMode,
@@ -7,6 +6,7 @@ import {
   SelectorEntityType,
   TableMode,
 } from '#shared/types';
+import type { ColumnDef, Row, Table } from '@tanstack/vue-table';
 
 // PROPS
 const props = withDefaults(

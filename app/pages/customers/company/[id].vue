@@ -2,11 +2,10 @@
 // =====================================================================================
 // IMPORTS & TYPES
 // =====================================================================================
-import { useToast } from '@/components/ui/toast/use-toast';
+// Intent: Explicit imports for types, schemas, and components not auto-imported by Nuxt.
+// Only add imports here that Nuxt auto-import does not cover (e.g. zod, shared types, specific components).
 import { toTypedSchema } from '@vee-validate/zod';
-import { useCustomerCompanies } from '@/composables/useCustomerCompanies';
-import { useCompanyOrders } from '@/composables/useCompanyOrders';
-import { LucideUser, LucidePackage } from '#components';
+import * as z from 'zod';
 import {
   DataItemDisplayType,
   TableMode,
@@ -14,11 +13,17 @@ import {
   type CustomerCompanyApiOptions,
   type CompanyBuyerList,
 } from '#shared/types';
-import * as z from 'zod';
+import { useToast } from '@/components/ui/toast/use-toast';
+import { useCompanyOrders } from '@/composables/useCompanyOrders';
+import { useCustomerCompanies } from '@/composables/useCustomerCompanies';
+import { LucideUser, LucidePackage } from '#components';
 
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
+// Intent: Initialize all composables and Pinia stores used across this page.
+// Order matters — some composables depend on values from earlier ones (e.g. useGeinsRepository before API calls).
+// Add new composables here; do not scatter initialization throughout the file.
 const scope = 'pages/customers/company/[id].vue';
 const { customerApi } = useGeinsRepository();
 const {
@@ -42,6 +47,9 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // =====================================================================================
 // FORM VALIDATION SCHEMA
 // =====================================================================================
+// Intent: Define Zod validation schemas converted via toTypedSchema for vee-validate.
+// addressSchema is reused for billing and shipping. stepValidationMap (below) ties form steps
+// to schema segments. Keep schema in sync with the form fields in the <template>.
 const addressSchema = z.object({
   email: z.string().min(1, { message: t('form.field_required') }),
   phone: z.string().optional(),
@@ -80,6 +88,8 @@ const formSchema = toTypedSchema(
 // =====================================================================================
 // ENTITY DATA SETUP
 // =====================================================================================
+// Intent: Define default/template objects used as initial state for create and update modes.
+// entityBase and addressBase are passed to useEntityEdit. Ensure every field has a sensible default.
 const entityBase: CustomerCompanyCreate = {
   name: '',
   active: true,
@@ -112,6 +122,8 @@ const addressBase: AddressBase = {
 // =====================================================================================
 // UI STATE MANAGEMENT
 // =====================================================================================
+// Intent: Local reactive state for UI concerns — tabs, steps, address toggles, company groups.
+// This is NOT entity data; it's presentation state. Keep UI state separate from entity/form data.
 // Tabs & Steps
 const tabs = [
   t('general'),
@@ -151,6 +163,9 @@ const createDisabled = ref(true);
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
 // =====================================================================================
+// Intent: Central CRUD orchestrator — provides create/update/delete, form binding, unsaved changes.
+// Configuration callbacks transform data between API shape and form shape.
+// Do NOT duplicate CRUD logic outside this composable.
 const {
   entityName,
   entityId,
@@ -324,6 +339,8 @@ const {
 // =====================================================================================
 // ERROR HANDLING SETUP
 // =====================================================================================
+// Intent: Page-level error handling for API fetch failures.
+// handleFetchResult validates the initial data load and redirects on 404.
 
 const { handleFetchResult } = usePageError({
   entityName,
@@ -334,6 +351,8 @@ const { handleFetchResult } = usePageError({
 // =====================================================================================
 // SALES REPS MANAGEMENT
 // =====================================================================================
+// Intent: Fetch and store user list for the sales rep selector.
+// Users are fetched once on page load and used in the form dropdown and summary display.
 const users = ref<User[]>([]);
 const { useGeinsFetch } = useGeinsApi();
 
@@ -353,6 +372,9 @@ fetchUsers();
 // =====================================================================================
 // BUYERS MANAGEMENT
 // =====================================================================================
+// Intent: Manage the list of buyer contacts associated with this company.
+// Includes table column setup, edit panel state, and buyer data transformations.
+// Buyer CRUD operations happen via the side panel component (CompanyBuyerPanel).
 const buyers = ref<CompanyBuyer[]>([]);
 const buyersList = ref<CompanyBuyerList[]>([]);
 const buyerPanelOpen = ref(false);
@@ -422,6 +444,9 @@ watch(buyerPanelOpen, async (open) => {
 // =====================================================================================
 // PRICELISTS MANAGEMENT
 // =====================================================================================
+// Intent: Manage the association of price lists to this company.
+// Maintains local addedPriceLists state synced to entityDataUpdate.priceLists.
+// Fetches all available price lists for the selector dropdown.
 
 const { productApi } = useGeinsRepository();
 const addedPriceLists = ref<CustomerPriceList[]>([]);
@@ -526,12 +551,17 @@ if (!createMode.value) {
 // =====================================================================================
 // ORDERS MANAGEMENT
 // =====================================================================================
+// Intent: Fetch and display orders for this company in a read-only tab.
+// Delegates to useCompanyOrders composable for data fetching and column definitions.
 
 const { ordersList, orderColumns, fetchOrders } = useCompanyOrders();
 
 // =====================================================================================
 // ADDRESS MANAGEMENT
 // =====================================================================================
+// Intent: CRUD operations for billing and shipping addresses within this company.
+// Addresses are stored in entityDataUpdate.addresses and synced on save.
+// Shipping address is optional and can be added/removed independently.
 const deleteAddressDialogOpen = ref(false);
 const deletingAddressId = ref<string>('');
 
@@ -605,6 +635,9 @@ const saveAddress = async (address: AddressUpdate) => {
 // =====================================================================================
 // STEP ACTIONS & CUSTOM HANDLERS
 // =====================================================================================
+// Intent: Page-specific action handlers for create/update workflows.
+// These orchestrate validation, form resets, and entity persistence.
+// Each handler validates relevant steps before proceeding.
 const saveCompanyDetails = async () => {
   const stepValid = await validateSteps([1]);
 
@@ -663,12 +696,16 @@ const handleUpdateCompany = async () => {
 // =====================================================================================
 // DELETE FUNCTIONALITY
 // =====================================================================================
+// Intent: Delete confirmation dialog wired to useDeleteDialog composable.
+// Redirects to the list page after successful deletion.
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
   useDeleteDialog(deleteEntity, entityListUrl);
 
 // =====================================================================================
 // SUMMARY DATA
 // =====================================================================================
+// Intent: Computed data items displayed in the sidebar summary panel (ContentEditSummary).
+// Builds DataItem arrays from entity state for quick-glance information across tabs.
 const summary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   if (!createMode.value) {
@@ -789,6 +826,9 @@ const { summaryProps } = useEntityEditSummary({
 // =====================================================================================
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
+// Intent: Initial data fetch when editing an existing entity (not in create mode).
+// Uses useAsyncData for SSR-compatible fetching, then parseAndSaveData to hydrate form state.
+// onMounted watchers depend on loaded data — keep watcher setup inside onMounted.
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<CustomerCompany>(
     entityFetchKey.value,

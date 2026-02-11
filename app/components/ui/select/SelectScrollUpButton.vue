@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
 import {
   SelectScrollUpButton,
@@ -7,6 +6,7 @@ import {
   useForwardProps,
 } from 'reka-ui';
 import { cn } from '@/utils/index';
+import type { HTMLAttributes } from 'vue';
 
 const props = defineProps<
   SelectScrollUpButtonProps & { class?: HTMLAttributes['class'] }

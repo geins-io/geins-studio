@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
+import { describe, it, expect } from 'vitest';
 import { AuthForm } from '#components';
 
 describe('AuthForm', () => {

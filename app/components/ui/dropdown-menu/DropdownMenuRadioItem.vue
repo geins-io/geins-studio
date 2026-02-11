@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
 import {
   DropdownMenuItemIndicator,
@@ -9,6 +8,7 @@ import {
   useForwardPropsEmits,
 } from 'reka-ui';
 import { cn } from '@/utils/index';
+import type { HTMLAttributes } from 'vue';
 
 const props = defineProps<
   DropdownMenuRadioItemProps & { class?: HTMLAttributes['class'] }

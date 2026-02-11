@@ -1,4 +1,4 @@
-import type { JWT } from 'next-auth/jwt';
+import { jwtDecode } from 'jwt-decode';
 import type {
   AuthTokens,
   LoginCredentials,
@@ -7,9 +7,8 @@ import type {
   Session,
   ApiOptions,
 } from '#shared/types';
-
-import { jwtDecode } from 'jwt-decode';
 import { buildQueryString } from '#shared/utils/api-query';
+import type { JWT } from 'next-auth/jwt';
 
 const config = useRuntimeConfig();
 const API_URL = config.public.apiUrl;

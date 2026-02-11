@@ -1,5 +1,5 @@
-import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
 import tailwindcss from '@tailwindcss/vite';
+import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
 
 export default defineNuxtConfig({
   ssr: false,

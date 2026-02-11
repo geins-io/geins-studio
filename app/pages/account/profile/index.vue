@@ -4,8 +4,8 @@
 // =====================================================================================
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
-import { useToast } from '@/components/ui/toast/use-toast';
 import { DataItemDisplayType } from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
 import { createPasswordChangeSchema } from '@/utils/password-validation';
 
 // =====================================================================================

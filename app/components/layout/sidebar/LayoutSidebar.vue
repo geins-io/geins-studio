@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import LogoLetter from '@/assets/logos/geins-g.svg';
+import Logo from '@/assets/logos/geins.svg';
+import { useSidebar } from '@/components/ui/sidebar';
 import {
   SIDEBAR_COOKIE_NAME,
   SIDEBAR_COOKIE_MAX_AGE,
 } from '@/components/ui/sidebar/utils';
-import { useSidebar } from '@/components/ui/sidebar';
-
 import {
   LucideLayoutDashboard,
   LucideChartLine,
@@ -20,8 +21,6 @@ import {
   LucideShieldCheck,
   LucidePackage,
 } from '#components';
-import Logo from '@/assets/logos/geins.svg';
-import LogoLetter from '@/assets/logos/geins-g.svg';
 
 const { state, isMobile, setOpenMobile } = useSidebar();
 

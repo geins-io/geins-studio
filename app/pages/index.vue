@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { LucidePackage } from '#components';
 import { TableMode, type CustomerCompany } from '#shared/types';
+import { LucidePackage } from '#components';
 
 definePageMeta({
   layout: 'default',

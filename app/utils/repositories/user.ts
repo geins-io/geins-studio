@@ -1,4 +1,3 @@
-import type { NitroFetchRequest, $Fetch } from 'nitropack';
 import type {
   User,
   UserProfileUpdate,
@@ -7,9 +6,19 @@ import type {
   UserUpdate,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
+import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/user';
 
+/**
+ * Repository for managing user operations.
+ *
+ * Extends base entity CRUD with profile-specific endpoints:
+ * - `me.get()` / `me.update()` — current user profile
+ * - `me.password.update()` — password change
+ *
+ * @param fetch - Authenticated $fetch instance ($geinsApi)
+ */
 export function userRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   const userRepo = repo.entity<User, UserCreate, UserUpdate>(
     BASE_ENDPOINT,

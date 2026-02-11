@@ -1,4 +1,14 @@
 <script setup lang="ts" generic="TData extends Record<string, any>, TValue">
+import {
+  FlexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  getExpandedRowModel,
+  useVueTable,
+} from '@tanstack/vue-table';
+import { useDebounceFn } from '@vueuse/core';
 import { TableMode } from '#shared/types';
 import type {
   ColumnDef,
@@ -10,17 +20,6 @@ import type {
   Column,
   ExpandedState,
 } from '@tanstack/vue-table';
-import {
-  FlexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  getExpandedRowModel,
-  useVueTable,
-} from '@tanstack/vue-table';
-import { useDebounceFn } from '@vueuse/core';
-
 import type { Component } from 'vue';
 import { LucideSearchX, LucideCircleSlash } from '#components';
 

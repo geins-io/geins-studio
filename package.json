@@ -14,6 +14,9 @@
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "lint": "eslint . --fix",
+    "lint:check": "eslint .",
+    "typecheck": "nuxi typecheck",
+    "format:check": "prettier --check .",
     "test": "vitest",
     "changelog:release": "changelogen --bump --release --push",
     "changelog:update": "changelogen --output CHANGELOG.md"

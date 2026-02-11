@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import * as z from 'zod';
-import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
-import { createPasswordResetSchema } from '@/utils/password-validation';
+import { useForm } from 'vee-validate';
+import * as z from 'zod';
 import type {
   LoginCredentials,
   AuthFormMode,
@@ -11,6 +10,7 @@ import type {
   ResetPasswordFormValues,
 } from '#shared/types';
 import LogoLetter from '@/assets/logos/geins-g.svg';
+import { createPasswordResetSchema } from '@/utils/password-validation';
 
 const props = withDefaults(
   defineProps<{

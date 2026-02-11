@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
 import chalk from 'chalk';
 import { toRaw, isRef, isReactive } from 'vue';
 import type { LogMethod, GeinsLogger } from '#shared/types';

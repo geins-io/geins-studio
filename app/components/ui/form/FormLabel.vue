@@ -1,9 +1,9 @@
 <script lang="ts" setup>
+import { Label } from '@/components/ui/label';
+import { cn } from '@/utils/index';
+import { useFormField } from './useFormField';
 import type { LabelProps } from 'reka-ui';
 import type { HTMLAttributes } from 'vue';
-import { cn } from '@/utils/index';
-import { Label } from '@/components/ui/label';
-import { useFormField } from './useFormField';
 
 const { t } = useI18n();
 

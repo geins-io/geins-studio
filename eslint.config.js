@@ -1,6 +1,5 @@
 import { createConfigForNuxt } from '@nuxt/eslint-config/flat';
 import pkg from 'eslint-plugin-prettier/recommended';
-
 import tailwind from 'eslint-plugin-tailwindcss';
 const { eslintPluginPrettierRecommended } = pkg;
 
@@ -31,5 +30,24 @@ export default createConfigForNuxt()
         },
       ],
       'tailwindcss/no-custom-classname': 'off',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'import/order': [
+        'warn',
+        {
+          groups: [
+            'builtin',
+            'external',
+            'internal',
+            ['parent', 'sibling', 'index'],
+            'type',
+          ],
+          pathGroups: [
+            { pattern: '#shared/**', group: 'internal', position: 'before' },
+            { pattern: '@/**', group: 'internal', position: 'after' },
+          ],
+          'newlines-between': 'never',
+          alphabetize: { order: 'asc', caseInsensitive: true },
+        },
+      ],
     },
   });

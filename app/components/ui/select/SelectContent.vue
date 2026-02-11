@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
 import {
   SelectContent,
@@ -11,6 +10,7 @@ import {
 } from 'reka-ui';
 import { cn } from '@/utils/index';
 import { SelectScrollDownButton, SelectScrollUpButton } from '.';
+import type { HTMLAttributes } from 'vue';
 
 defineOptions({
   inheritAttrs: false,

@@ -1,11 +1,11 @@
 <script setup lang="ts" generic="T extends SelectorEntity">
-import { useToast } from '@/components/ui/toast/use-toast';
-import type { ColumnDef } from '@tanstack/vue-table';
 import {
   SelectorMode,
   SelectorSelectionStrategy,
   SelectorSelectionType,
 } from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
+import type { ColumnDef } from '@tanstack/vue-table';
 
 // PROPS
 const props = withDefaults(
