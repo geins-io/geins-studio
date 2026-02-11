@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useCustomerCompanies } from '@/composables/useCustomerCompanies';
 import { useCompanyOrders } from '@/composables/useCompanyOrders';
+import { LucideUser, LucidePackage } from '#components';
 import {
   DataItemDisplayType,
   TableMode,
@@ -14,7 +15,6 @@ import {
   type CompanyBuyerList,
 } from '#shared/types';
 import * as z from 'zod';
-import { LucidePackage, LucideUser } from 'lucide-vue-next';
 
 // =====================================================================================
 // COMPOSABLES & STORES

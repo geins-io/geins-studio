@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
-import { ChevronsUpDown } from 'lucide-vue-next';
 import {
   SelectIcon,
   SelectTrigger,
@@ -38,7 +37,7 @@ const forwardedProps = useForwardProps(delegatedProps);
   >
     <slot />
     <SelectIcon as-child>
-      <ChevronsUpDown class="size-4 shrink-0 opacity-50" />
+      <LucideChevronsUpDown class="size-4 shrink-0 opacity-50" />
     </SelectIcon>
   </SelectTrigger>
 </template>

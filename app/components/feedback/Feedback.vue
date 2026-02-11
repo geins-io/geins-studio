@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import {
-  CheckCircle2,
-  Info,
-  TriangleAlert,
-  CircleAlert,
-} from 'lucide-vue-next';
+  LucideCheckCircle2,
+  LucideTriangleAlert,
+  LucideCircleAlert,
+  LucideInfo,
+} from '#components';
+
 const props = withDefaults(
   defineProps<{
     type: 'positive' | 'negative' | 'warning' | 'info';
@@ -31,14 +32,14 @@ const variant = computed(() => {
 const icon = computed(() => {
   switch (props.type) {
     case 'positive':
-      return CheckCircle2;
+      return LucideCheckCircle2;
     case 'negative':
-      return TriangleAlert;
+      return LucideTriangleAlert;
     case 'warning':
-      return CircleAlert;
+      return LucideCircleAlert;
     case 'info':
     default:
-      return Info;
+      return LucideInfo;
   }
 });
 </script>

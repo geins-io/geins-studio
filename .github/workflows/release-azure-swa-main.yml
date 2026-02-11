@@ -19,7 +19,7 @@ jobs:
       NITRO_PRESET: ${{ vars.NITRO_PRESET_AZURE_SWA }}
     steps:
       # Step 1: Checkout the repository
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
@@ -39,26 +39,3 @@ jobs:
           output_location: ".output/public" # Built app content directory - optional
           api_location: ".output/server" # Api source code path - optional
           ###### End of Repository/Build Configurations ######
-
-      # Step 3: Post to Slack
-      - name: Post to Slack
-        id: posttoslack
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          URL: ${{ vars.AZURE_GEINS_BASE_URL_PROD }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' --data '{
-          "text": "*A new release is live!* :rocket::sparkles:\n\n:point_right: <'"$URL"'|'"$URL"'> :point_left:"
-          }' $SLACK_WEBHOOK_URL
-
-  # close_pull_request_job:
-  #   if: github.event_name == 'pull_request' && github.event.action == 'closed'
-  #   runs-on: ubuntu-latest
-  #   name: Close Pull Request Job
-  #   steps:
-  #     - name: Close Pull Request
-  #       id: closepullrequest
-  #       uses: Azure/static-web-apps-deploy@v1
-  #       with:
-  #         azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APP_PROD_TOKEN }}
-  #         action: 'close'

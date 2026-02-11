@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
-import { Check } from 'lucide-vue-next';
 import {
   DropdownMenuCheckboxItem,
   type DropdownMenuCheckboxItemEmits,
@@ -36,7 +35,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       class="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center"
     >
       <DropdownMenuItemIndicator>
-        <Check class="size-4" />
+        <LucideCheck class="size-4" />
       </DropdownMenuItemIndicator>
     </span>
     <slot />
