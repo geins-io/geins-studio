@@ -208,7 +208,7 @@ yarn install           # Install dependencies (uses Yarn 1.22.22)
 yarn dev              # Start dev server at localhost:3000
 yarn lint             # ESLint with auto-fix
 yarn test             # Run Vitest tests
-yarn docs             # VitePress docs at localhost:3010
+yarn docs:dev          # Start VitePress docs on localhost
 ```
 
 ### Project Commands
