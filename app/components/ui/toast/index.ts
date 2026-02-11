@@ -14,11 +14,11 @@ export { default as ToastViewport } from './ToastViewport.vue';
 export { toast, useToast } from './use-toast';
 
 export const toastVariants = cva(
-  'group pointer-events-auto relative flex w-full items-center max-sm:-ml-3 justify-between space-x-2 overflow-hidden rounded-lg p-4 pr-6 text-foreground shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-(--radix-toast-swipe-end-x) data-[swipe=move]:translate-x-(--radix-toast-swipe-move-x) data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full sm:data-[state=open]:slide-in-from-bottom-full',
+  'group text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full sm:data-[state=open]:slide-in-from-bottom-full pointer-events-auto relative flex w-full items-center justify-between space-x-2 overflow-hidden rounded-lg p-4 pr-6 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-(--radix-toast-swipe-end-x) data-[swipe=move]:translate-x-(--radix-toast-swipe-move-x) data-[swipe=move]:transition-none max-sm:-ml-3',
   {
     variants: {
       variant: {
-        default: 'border bg-card text-card-foreground',
+        default: 'bg-card text-card-foreground border',
         positive: 'bg-positive text-positive-foreground',
         negative: 'bg-negative text-negative-foreground',
         warning: 'bg-warning text-warning-foreground',

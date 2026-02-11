@@ -1,4 +1,4 @@
-import { SelectorCondition, type BatchQueryFiltered } from '#shared/types';
+import type { SelectorCondition, BatchQueryFiltered } from '#shared/types';
 
 export type OrderStatus =
   | 'pending'

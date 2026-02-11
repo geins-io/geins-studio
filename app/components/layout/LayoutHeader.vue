@@ -37,10 +37,10 @@ onMounted(() => {
             @click="toggleSidebar"
           >
             <LucidePanelLeftOpen
-              class="text-muted-foreground size-4"
               v-if="state === 'collapsed'"
+              class="text-muted-foreground size-4"
             />
-            <LucidePanelLeftClose class="text-muted-foreground size-4" v-else />
+            <LucidePanelLeftClose v-else class="text-muted-foreground size-4" />
             <span class="sr-only">Toggle Sidebar</span>
           </Button>
         </TooltipTrigger>

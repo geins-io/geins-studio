@@ -74,7 +74,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
             title="Create a new company"
             description="Create a new company"
             link="/customers/company/new"
-            linkType="create"
+            link-type="create"
           />
 
           <!-- Companies card -->
@@ -82,7 +82,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
             title="Companies"
             description="Manage existing companies"
             link="/customers/company/list"
-            linkType="list"
+            link-type="list"
           />
 
           <!-- Create a new price list card -->
@@ -90,7 +90,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
             title="Create a new price list"
             description="Create a new price list"
             link="/pricing/price-list/new"
-            linkType="create"
+            link-type="create"
           />
 
           <!-- Price lists card -->
@@ -98,7 +98,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
             title="Price lists"
             description="Manage existing price lists"
             link="/pricing/price-list/list"
-            linkType="list"
+            link-type="list"
           />
         </div>
       </div>
