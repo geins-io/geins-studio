@@ -3,13 +3,13 @@
 ## Quick Start
 
 ```bash
-yarn install           # Install dependencies (Yarn 4, via Corepack)
-yarn dev               # Start dev server at localhost:3000
-yarn lint              # ESLint with auto-fix
-yarn lint:check        # ESLint without auto-fix (CI-safe)
-yarn typecheck         # Run nuxi typecheck
-yarn format:check      # Check Prettier formatting
-yarn test              # Run Vitest tests
+pnpm install           # Install dependencies (pnpm, via Corepack)
+pnpm dev               # Start dev server at localhost:3000
+pnpm lint              # ESLint with auto-fix
+pnpm lint:check        # ESLint without auto-fix (CI-safe)
+pnpm typecheck         # Run nuxi typecheck
+pnpm format:check      # Check Prettier formatting
+pnpm test              # Run Vitest tests
 ```
 
 **Required environment variables** — create `.env`:
@@ -98,12 +98,12 @@ geinsLog('Something happened', data);
 
 | Script              | Purpose                         | Safe for CI?       |
 | ------------------- | ------------------------------- | ------------------ |
-| `yarn lint`         | ESLint with auto-fix            | No (mutates files) |
-| `yarn lint:check`   | ESLint read-only                | Yes                |
-| `yarn typecheck`    | Nuxi typecheck                  | Yes                |
-| `yarn format:check` | Prettier read-only              | Yes                |
-| `yarn test`         | Vitest (watch mode)             | No                 |
-| `yarn test --run`   | Vitest single run               | Yes                |
-| `yarn build`        | Nuxt production build           | Yes                |
-| `yarn dev`          | Dev server (localhost:3000)     | —                  |
-| `yarn docs:dev`     | VitePress docs (localhost:3010) | —                  |
+| `pnpm lint`         | ESLint with auto-fix            | No (mutates files) |
+| `pnpm lint:check`   | ESLint read-only                | Yes                |
+| `pnpm typecheck`    | Nuxi typecheck                  | Yes                |
+| `pnpm format:check` | Prettier read-only              | Yes                |
+| `pnpm test`         | Vitest (watch mode)             | No                 |
+| `pnpm test --run`   | Vitest single run               | Yes                |
+| `pnpm build`        | Nuxt production build           | Yes                |
+| `pnpm dev`          | Dev server (localhost:3000)     | —                  |
+| `pnpm docs:dev`     | VitePress docs (localhost:3010) | —                  |
