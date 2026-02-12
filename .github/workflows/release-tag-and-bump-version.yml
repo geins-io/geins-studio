@@ -33,19 +33,22 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "24"
-          corepack: true
+          cache: pnpm
 
       - name: Install dependencies
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
 
       - name: Bump Version and add to Changelog
         run: |
           if [ "${{ github.event.inputs.version_type }}" = "auto" ]; then
-            yarn changelog:release
+            pnpm changelog:release
           else
-            yarn changelog:release --${{ github.event.inputs.version_type }}
+            pnpm changelog:release --${{ github.event.inputs.version_type }}
           fi

@@ -17,23 +17,23 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - name: Enable Corepack
-              run: corepack enable
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
 
             - name: Setup Node.js
               uses: actions/setup-node@v4
               with:
                   node-version: 24
-                  cache: yarn
+                  cache: pnpm
 
             - name: Install dependencies
-              run: yarn install --immutable
+              run: pnpm install --frozen-lockfile
 
             - name: Lint check
-              run: yarn lint:check
+              run: pnpm lint:check
 
             - name: Type check
-              run: yarn typecheck
+              run: pnpm typecheck
 
             - name: Run tests
-              run: yarn test --run
+              run: pnpm test --run
