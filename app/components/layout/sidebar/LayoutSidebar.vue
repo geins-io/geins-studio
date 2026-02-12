@@ -25,7 +25,7 @@ import {
 const { state, isMobile, setOpenMobile } = useSidebar();
 
 // Use the navigation composable for filtered, role-based navigation
-const { navigationItems, isItemActive, isItemOpen } = useNavigation();
+const { navigationItems, isItemActive } = useNavigation();
 
 // Get route for checking active children
 const route = useRoute();

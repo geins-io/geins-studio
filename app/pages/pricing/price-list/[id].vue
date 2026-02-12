@@ -10,7 +10,6 @@ import {
   SelectorSelectionStrategy,
   type PriceListRuleMode,
   type PriceListProductList,
-  type PriceListRule,
   type PriceListProduct,
   type PriceListRuleField,
   type ProductPriceListApiOptions,

@@ -102,25 +102,33 @@ export function usePriceListPreview({
       if (updateProducts) {
         const editedProducts: PriceListProduct[] = priceListProducts.value
           .filter(
-            (p: any) =>
+            (p: { priceMode: string }) =>
               p.priceMode !== 'rule' &&
               p.priceMode !== 'auto' &&
               p.priceMode !== 'autoRule',
           )
-          .map((p: any) => {
-            const priceMode = convertPriceModeToRuleField(p.priceMode);
-            const value = priceMode ? Number(p[priceMode]) || null : null;
-            const product = getPriceListProduct(
-              p.productId,
-              value,
-              priceMode,
-              p.staggeredCount,
-            );
-            return {
-              _id: p._id,
-              ...product,
-            };
-          });
+          .map(
+            (p: {
+              priceMode: string;
+              productId: string;
+              staggeredCount?: number;
+              _id: string;
+              [key: string]: unknown;
+            }) => {
+              const priceMode = convertPriceModeToRuleField(p.priceMode);
+              const value = priceMode ? Number(p[priceMode]) || null : null;
+              const product = getPriceListProduct(
+                p.productId,
+                value,
+                priceMode,
+                p.staggeredCount,
+              );
+              return {
+                _id: p._id,
+                ...product,
+              };
+            },
+          );
 
         await onUpdateProducts(editedProducts);
       }

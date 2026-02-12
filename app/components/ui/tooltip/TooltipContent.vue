@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { reactiveOmit } from '@vueuse/core';
 import {
-  TooltipArrow,
   TooltipContent,
   type TooltipContentEmits,
   type TooltipContentProps,

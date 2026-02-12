@@ -11,7 +11,7 @@ const props = withDefaults(
     buyer?: CompanyBuyerUpdate;
     companyId: string;
     companyName: string;
-    mode: 'edit' | 'add';
+    mode?: 'edit' | 'add';
     priceLists: CustomerPriceList[];
   }>(),
   {

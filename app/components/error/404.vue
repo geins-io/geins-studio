@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = withDefaults(
+withDefaults(
   defineProps<{
     message?: string;
   }>(),
@@ -7,8 +7,6 @@ const props = withDefaults(
     message: '',
   },
 );
-
-const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'clear'): void;

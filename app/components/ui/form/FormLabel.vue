@@ -5,8 +5,6 @@ import { useFormField } from './useFormField';
 import type { LabelProps } from 'reka-ui';
 import type { HTMLAttributes } from 'vue';
 
-const { t } = useI18n();
-
 const props = defineProps<
   LabelProps & { class?: HTMLAttributes['class']; optional?: boolean }
 >();

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    design:
+    design?:
       | '1+1+2'
       | '2+1+1'
       | '2+2'

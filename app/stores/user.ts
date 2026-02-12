@@ -76,7 +76,7 @@ export const useUserStore = defineStore('user', () => {
    * TODO: Implement role checking once user roles are available in the session
    * For now, returns true (all users have access)
    */
-  const hasAnyRole = (roles: string[]): boolean => {
+  const hasAnyRole = (_roles: string[]): boolean => {
     // TODO: Implement actual role checking
     // Example: return roles.some(role => user.value?.roles?.includes(role))
     return true;
@@ -87,7 +87,7 @@ export const useUserStore = defineStore('user', () => {
    * TODO: Implement permission checking once user permissions are available
    * For now, returns true (all users have access)
    */
-  const hasAnyPermission = (permissions: string[]): boolean => {
+  const hasAnyPermission = (_permissions: string[]): boolean => {
     // TODO: Implement actual permission checking
     // Example: return permissions.some(perm => user.value?.permissions?.includes(perm))
     return true;

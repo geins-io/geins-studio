@@ -438,7 +438,7 @@ if (!createMode.value) {
           <ContentEditCard :title="$t('account_profile.login_credentials')">
             <FormGridWrap>
               <FormGrid design="2+1">
-                <FormField v-slot="{ componentField }" name="username">
+                <FormField v-slot="{}" name="username">
                   <FormItem>
                     <FormLabel>{{ $t('account_profile.username') }}</FormLabel>
                     <FormControl>

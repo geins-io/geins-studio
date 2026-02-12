@@ -14,8 +14,8 @@ import { createPasswordResetSchema } from '@/utils/password-validation';
 
 const props = withDefaults(
   defineProps<{
-    loading: boolean;
-    showInvalid: boolean;
+    loading?: boolean;
+    showInvalid?: boolean;
     mode: AuthFormMode;
     mfaMethod?: string;
     accounts?: AuthAccounts[];

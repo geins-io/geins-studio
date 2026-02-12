@@ -11,7 +11,7 @@ import type { LogMethod, GeinsLogger } from '#shared/types';
  */
 export function log(scope?: string, debug: boolean = false): GeinsLogger {
   if (import.meta.nitro || import.meta.server) {
-    debug = import.meta.env.GEINS_DEBUG === 'true';
+    debug = process.env.GEINS_DEBUG === 'true';
   }
   const logTag = '%cgeins';
   const logStyle =

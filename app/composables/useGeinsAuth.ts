@@ -9,15 +9,15 @@ interface UseGeinsAuthReturnType {
   authStateDiffers: ComputedRef<boolean>;
   accountKey: ComputedRef<string | undefined>;
   preLogin: () => Promise<void>;
-  login: (credentials: LoginCredentials) => Promise<any>;
-  verify: (tokens: AuthTokens) => Promise<any>;
-  setAccount: (accountKey: string) => Promise<any>;
-  setSession: (session: Session) => Promise<any>;
+  login: (credentials: LoginCredentials) => Promise<unknown>;
+  verify: (tokens: AuthTokens) => Promise<unknown>;
+  setAccount: (accountKey: string) => Promise<unknown>;
+  setSession: (session: Session) => Promise<unknown>;
   sessionsAreEqual: (session1: Session, session2: Session) => boolean;
   logout: () => Promise<void>;
   refresh: () => Promise<Session>;
   setIsRefreshing: (value: boolean) => void;
-  parseToken: (token?: string | null) => any;
+  parseToken: (token?: string | null) => Record<string, unknown> | null;
   isExpired: (token?: string | null) => boolean;
   expiresSoon: (token?: string | null, threshold?: number) => boolean;
 }

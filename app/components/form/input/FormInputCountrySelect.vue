@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const model = defineModel<string>();
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     disableTeleport?: boolean;
   }>(),

@@ -50,7 +50,7 @@ export function userRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           currentPassword: string,
           newPassword: string,
         ): Promise<void> {
-          await fetch<void>(`${BASE_ENDPOINT}/me/password`, {
+          await fetch<undefined>(`${BASE_ENDPOINT}/me/password`, {
             method: 'POST',
             body: { currentPassword, newPassword },
           });

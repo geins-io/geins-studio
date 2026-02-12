@@ -47,27 +47,7 @@ navigateTo('/account/profile');
 </script>
 
 <template>
-  <!-- <ContentHeader :title="$t(entityName, 2)">
-    <ContentActionBar>
-      <ButtonExport />
-      <ButtonIcon icon="new" :href="newEntityUrl">
-        {{ $t('new_entity', { entityName }) }}
-      </ButtonIcon>
-    </ContentActionBar>
-  </ContentHeader>
-  <NuxtErrorBoundary>
-    <TableView
-      :loading="loading"
-      :entity-name="entityName"
-      :columns="columns"
-      :data="dataList"
-      :searchable-fields="['id', 'firstName', 'lastName', 'email']"
-    />
-    <template #error="{ errorCatched }">
-      <h2 class="text-xl font-bold">
-        {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
-      </h2>
-      <p>{{ errorCatched }}</p>
-    </template>
-  </NuxtErrorBoundary> -->
+  <div>
+    <!-- TODO: Implement user list -->
+  </div>
 </template>

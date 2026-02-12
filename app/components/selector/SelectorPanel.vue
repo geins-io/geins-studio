@@ -30,7 +30,6 @@ const emit = defineEmits<{
 }>();
 
 // GLOBALS
-const { t } = useI18n();
 const productsStore = useProductsStore();
 const { categories, brands } = storeToRefs(productsStore);
 

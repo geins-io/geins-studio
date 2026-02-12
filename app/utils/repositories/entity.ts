@@ -1,7 +1,7 @@
 import type { ApiOptions } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
-import type { EntityBaseRepo } from './entity-base';
 import { entityBaseRepo } from './entity-base';
+import type { EntityBaseRepo } from './entity-base';
 import type { $Fetch } from 'nitropack';
 
 /** Return type for {@link entityRepo} — full CRUD (get + list + create + update + delete) */

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    title: string;
-    description: string;
-    link: string;
-    linkType: 'create' | 'list';
+    title?: string;
+    description?: string;
+    link?: string;
+    linkType?: 'create' | 'list';
   }>(),
   {
     title: 'Card Title',

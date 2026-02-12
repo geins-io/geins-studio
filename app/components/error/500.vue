@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = withDefaults(
+withDefaults(
   defineProps<{
     message?: string;
     errorDetails?: string;
@@ -10,8 +10,6 @@ const props = withDefaults(
     showErrorDetails: false,
   },
 );
-
-const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'clear'): void;

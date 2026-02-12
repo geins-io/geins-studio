@@ -1,8 +1,5 @@
-import type {
-  BatchQueryFiltered,
-  BatchQueryFilterGroup,
-  Sku,
-} from '#shared/types';
+import type { BatchQueryFiltered, BatchQueryFilterGroup } from '#shared/types';
+import type { EntityBaseWithName } from './Global';
 
 // SELECTOR
 
@@ -70,8 +67,10 @@ export interface SelectorSelectionQuery {
   productIds?: string[];
 }
 
-export interface SelectorSelectionInternal
-  extends Omit<SelectorSelectionQuery, 'productIds'> {
+export interface SelectorSelectionInternal extends Omit<
+  SelectorSelectionQuery,
+  'productIds'
+> {
   ids?: string[];
 }
 
