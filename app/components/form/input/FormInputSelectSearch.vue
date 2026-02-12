@@ -163,7 +163,7 @@ const handleKeyDown = () => {
           {{ $t('no_entity_found', { entityName }) }}
         </ComboboxEmpty>
 
-        <ComboboxGroup class="max-h-[300px] overflow-auto">
+        <ComboboxGroup class="max-h-75 overflow-auto">
           <ComboboxItem v-for="item in dataSet" :key="item.value" :value="item">
             {{ item.label }}
 

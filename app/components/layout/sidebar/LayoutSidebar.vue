@@ -113,7 +113,7 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
                       <component
                         :is="item.iconComponent"
                         v-if="item.iconComponent"
-                        class="!size-4.5"
+                        class="size-4.5!"
                       />
                       <span>{{ item.label }}</span>
 
@@ -161,7 +161,7 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
                   <component
                     :is="item.iconComponent"
                     v-if="item.iconComponent"
-                    class="!size-4.5"
+                    class="size-4.5!"
                   />
                   <span>{{ item.label }}</span>
                 </NuxtLink>

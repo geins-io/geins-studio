@@ -1012,7 +1012,7 @@ if (!createMode.value) {
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <i18n-t
-                                    class="block max-w-[300px]"
+                                    class="block max-w-75"
                                     :keypath="
                                       vatValid
                                         ? 'customers.vat_veis_valid'
@@ -1397,7 +1397,7 @@ if (!createMode.value) {
                     <template #tooltip>
                       <p :class="cn('p-2', vatValid ? 'pb-0' : '')">
                         <i18n-t
-                          class="block max-w-[300px]"
+                          class="block max-w-75"
                           :keypath="
                             vatValid
                               ? 'customers.vat_veis_valid'
@@ -1418,7 +1418,7 @@ if (!createMode.value) {
                       </p>
                       <ContentDataList
                         v-if="vatValid"
-                        class="block max-w-[300px] pb-2"
+                        class="block max-w-75 pb-2"
                         :label="$t('customers.vat_validation_summary_label')"
                         :data-list="vatValidationSummary"
                       />

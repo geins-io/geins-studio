@@ -25,7 +25,7 @@ const handleHome = () => {
 </script>
 
 <template>
-  <div class="flex h-full min-h-[600px] w-full items-center justify-center p-6">
+  <div class="flex h-full min-h-150 w-full items-center justify-center p-6">
     <Empty class="max-w-md border-none">
       <EmptyMedia variant="icon">
         <LucideServerCrash class="size-6" />

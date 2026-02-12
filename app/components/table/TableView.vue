@@ -19,6 +19,7 @@ import type {
   ColumnPinningState,
   Column,
   ExpandedState,
+  Row,
 } from '@tanstack/vue-table';
 import type { Component } from 'vue';
 import { LucideSearchX, LucideCircleSlash } from '#components';
@@ -319,13 +320,8 @@ const table = useVueTable({
     if (props.enableExpanding && props.getSubRows) {
       // For expanding tables, getSelectedRowModel() doesn't include child rows properly
       // We need to manually collect all selected rows from the full hierarchy
-      const collectSelectedRows = (
-        rows: {
-          getIsSelected: () => boolean;
-          subRows?: { getIsSelected: () => boolean; subRows?: unknown[] }[];
-        }[],
-      ): typeof rows => {
-        const selected: typeof rows = [];
+      const collectSelectedRows = (rows: Row<unknown>[]): Row<unknown>[] => {
+        const selected: Row<unknown>[] = [];
         for (const row of rows) {
           if (row.getIsSelected()) {
             selected.push(row);
@@ -344,10 +340,7 @@ const table = useVueTable({
       // Only emit leaf rows (children that cannot expand)
       const leafRows = selectedRows.filter((row) => !row.getCanExpand());
 
-      emit(
-        'selection',
-        leafRows.map((row) => row.original),
-      );
+      emit('selection', leafRows.map((row) => row.original) as TData[]);
     } else {
       // Flat table: use standard selection model
       emit(
@@ -599,7 +592,7 @@ const hasSearchableColumns = computed(() => {
       v-if="advancedMode"
       variant="ghost"
       size="icon"
-      class="border-border bg-card absolute -top-px -right-px z-50 !size-6"
+      class="border-border bg-card absolute -top-px -right-px z-50 size-6!"
       @click="tableMaximized = !tableMaximized"
     >
       <LucideMaximize2 v-if="!tableMaximized" class="size-3" />

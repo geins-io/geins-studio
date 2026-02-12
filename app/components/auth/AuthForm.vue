@@ -487,7 +487,7 @@ const backToLogin = () => {
         <div v-else-if="accountMode || logoutMode" class="grid gap-4">
           <ul
             v-if="!loading"
-            class="flex max-h-[14.5rem] flex-col gap-2 overflow-auto px-2"
+            class="flex max-h-58 flex-col gap-2 overflow-auto px-2"
           >
             <li
               v-for="account in accounts"

@@ -1,4 +1,4 @@
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode, type JwtPayload } from 'jwt-decode';
 import type { AuthTokens, LoginCredentials, Session } from '#shared/types';
 
 interface UseGeinsAuthReturnType {
@@ -17,7 +17,7 @@ interface UseGeinsAuthReturnType {
   logout: () => Promise<void>;
   refresh: () => Promise<Session>;
   setIsRefreshing: (value: boolean) => void;
-  parseToken: (token?: string | null) => Record<string, unknown> | null;
+  parseToken: (token?: string | null) => JwtPayload | null;
   isExpired: (token?: string | null) => boolean;
   expiresSoon: (token?: string | null, threshold?: number) => boolean;
 }

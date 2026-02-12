@@ -41,7 +41,7 @@ const icon = computed(() => {
 </script>
 
 <template>
-  <li class="max-md:block max-md:flex-shrink-0">
+  <li class="max-md:block max-md:shrink-0">
     <button
       :class="
         cn(

@@ -48,7 +48,7 @@ const gridColsClass = computed(() => {
         'grid',
         gridColsClass,
         'gap-4 @3xl/form-grid:gap-6',
-        '@max-xl/form-grid:grid-cols-1 @max-xl/form-grid:gap-3 @max-xl/form-grid:[&>*]:col-span-1',
+        '@max-xl/form-grid:grid-cols-1 @max-xl/form-grid:gap-3 @max-xl/form-grid:*:col-span-1',
       )
     "
   >
