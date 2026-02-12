@@ -55,7 +55,12 @@ export function log(scope?: string, debug: boolean = false): GeinsLogger {
           ...processedArgs,
         );
       } else {
-        (console[method] as (...args: unknown[]) => void)(logTag, logStyle, formattedMessage, ...processedArgs);
+        (console[method] as (...args: unknown[]) => void)(
+          logTag,
+          logStyle,
+          formattedMessage,
+          ...processedArgs,
+        );
       }
     };
   };

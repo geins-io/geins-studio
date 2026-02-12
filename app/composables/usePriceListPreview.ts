@@ -107,24 +107,22 @@ export function usePriceListPreview({
               p.priceMode !== 'auto' &&
               p.priceMode !== 'autoRule',
           )
-          .map(
-            (p) => {
-              const priceMode = convertPriceModeToRuleField(p.priceMode);
-              const value = priceMode
-                ? Number(p[priceMode as keyof typeof p]) || null
-                : null;
-              const product = getPriceListProduct(
-                p.productId,
-                value,
-                priceMode,
-                p.staggeredCount ?? 0,
-              );
-              return {
-                _id: p._id,
-                ...product,
-              };
-            },
-          );
+          .map((p) => {
+            const priceMode = convertPriceModeToRuleField(p.priceMode);
+            const value = priceMode
+              ? Number(p[priceMode as keyof typeof p]) || null
+              : null;
+            const product = getPriceListProduct(
+              p.productId,
+              value,
+              priceMode,
+              p.staggeredCount ?? 0,
+            );
+            return {
+              _id: p._id,
+              ...product,
+            };
+          });
 
         await onUpdateProducts(editedProducts);
       }
