@@ -1,3 +1,6 @@
+import type { ApiOptions } from './Api';
+import type { CreateEntity, UpdateEntity, ResponseEntity } from './Global';
+
 export type ApiUserType = 'api' | 'personal';
 
 export interface UserBase {

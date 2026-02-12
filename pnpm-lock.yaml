@@ -11,6 +11,9 @@ importers:
       '@formkit/auto-animate':
         specifier: ^0.9.0
         version: 0.9.0
+      '@internationalized/date':
+        specifier: ^3.11.0
+        version: 3.11.0
       '@nuxtjs/color-mode':
         specifier: 4.0.0
         version: 4.0.0(magicast@0.5.2)

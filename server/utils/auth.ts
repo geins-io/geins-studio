@@ -207,7 +207,7 @@ export const auth = () => {
     if (response.accounts) {
       session.accountKey =
         response.accounts.length === 1
-          ? response.accounts[0].accountKey
+          ? response.accounts[0]?.accountKey
           : undefined;
       return session;
     } else {

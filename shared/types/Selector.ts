@@ -1,4 +1,4 @@
-import type { BatchQueryFiltered, BatchQueryFilterGroup } from '#shared/types';
+import type { BatchQueryFiltered, BatchQueryFilterGroup } from './Api';
 import type { EntityBaseWithName } from './Global';
 
 // SELECTOR

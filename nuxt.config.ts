@@ -33,6 +33,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   vite: {
+    // @ts-expect-error Type conflict: @tailwindcss/vite uses vite 7 types, vitepress pulls in vite 5 types
     plugins: [tailwindcss()],
   },
 

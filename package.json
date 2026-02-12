@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@formkit/auto-animate": "^0.9.0",
+    "@internationalized/date": "^3.11.0",
     "@nuxtjs/color-mode": "4.0.0",
     "@nuxtjs/i18n": "^10.2.3",
     "@pinia/nuxt": "^0.11.1",

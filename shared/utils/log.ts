@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 import chalk from 'chalk';
 import { toRaw, isRef, isReactive } from 'vue';
-import type { LogMethod, GeinsLogger } from '#shared/types';
+import type { LogMethod, GeinsLogger } from '../types';
 
 /**
  * Utility to log messages with a Geins tag
@@ -50,12 +50,12 @@ export function log(scope?: string, debug: boolean = false): GeinsLogger {
         formattedMessage += scope
           ? `${chalk.bold.bgBlack(scope)} ::: ${message}`
           : message;
-        console[method](
+        (console[method] as (...args: unknown[]) => void)(
           `${chalk.bgWhite.bold.red(' geins ')} ${formattedMessage}`,
           ...processedArgs,
         );
       } else {
-        console[method](logTag, logStyle, formattedMessage, ...processedArgs);
+        (console[method] as (...args: unknown[]) => void)(logTag, logStyle, formattedMessage, ...processedArgs);
       }
     };
   };

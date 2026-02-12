@@ -1,5 +1,6 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { describe, it, expect } from 'vitest';
+import type { ColumnDef } from '@tanstack/vue-table';
 import { TableView } from '#components';
 import { useColumns } from '#imports';
 
@@ -27,7 +28,7 @@ describe('TableView', () => {
     const component = await mountSuspended(TableView, {
       props: {
         data: mockData,
-        columns: mockColumns,
+        columns: mockColumns as ColumnDef<Record<string, unknown>, unknown>[],
       },
     });
     expect(component.html()).toMatch('table-view');

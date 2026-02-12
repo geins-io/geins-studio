@@ -1,4 +1,4 @@
-import type { SelectorCondition } from '#shared/types';
+import type { SelectorCondition } from './Selector';
 
 export interface BatchQuery {
   _id?: string;
