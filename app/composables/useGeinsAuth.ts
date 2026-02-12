@@ -1,5 +1,10 @@
 import { jwtDecode, type JwtPayload } from 'jwt-decode';
-import type { AuthTokens, LoginCredentials, Session } from '#shared/types';
+import type {
+  AuthTokens,
+  LoginCredentials,
+  Session,
+  SignInResponse,
+} from '#shared/types';
 
 interface UseGeinsAuthReturnType {
   session: Ref<Session | null | undefined>;
@@ -9,10 +14,10 @@ interface UseGeinsAuthReturnType {
   authStateDiffers: ComputedRef<boolean>;
   accountKey: ComputedRef<string | undefined>;
   preLogin: () => Promise<void>;
-  login: (credentials: LoginCredentials) => Promise<unknown>;
-  verify: (tokens: AuthTokens) => Promise<unknown>;
-  setAccount: (accountKey: string) => Promise<unknown>;
-  setSession: (session: Session) => Promise<unknown>;
+  login: (credentials: LoginCredentials) => Promise<SignInResponse>;
+  verify: (tokens: AuthTokens) => Promise<SignInResponse>;
+  setAccount: (accountKey: string) => Promise<SignInResponse>;
+  setSession: (session: Session) => Promise<SignInResponse>;
   sessionsAreEqual: (session1: Session, session2: Session) => boolean;
   logout: () => Promise<void>;
   refresh: () => Promise<Session>;
@@ -74,21 +79,23 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     $fetch('/api/ping/account');
   };
 
-  const login = async (credentials: LoginCredentials) => {
+  const login = async (
+    credentials: LoginCredentials,
+  ): Promise<SignInResponse> => {
     return await auth.signIn('credentials', {
       redirect: false,
       ...credentials,
     });
   };
 
-  const verify = async (tokens: AuthTokens) => {
+  const verify = async (tokens: AuthTokens): Promise<SignInResponse> => {
     return await auth.signIn('credentials', {
       redirect: false,
       ...tokens,
     });
   };
 
-  const setAccount = async (accountKey: string) => {
+  const setAccount = async (accountKey: string): Promise<SignInResponse> => {
     // Exclude user from the session to prevent it from being stored in JWT
     const { user, ...currentSession } = auth.data.value || {};
     const session: Session = {
@@ -102,7 +109,7 @@ export const useGeinsAuth = (): UseGeinsAuthReturnType => {
     });
   };
 
-  const setSession = async (session: Session) => {
+  const setSession = async (session: Session): Promise<SignInResponse> => {
     // Exclude user from the session to prevent it from being stored in JWT
     const { user, ...sessionWithoutUser } = session;
     const sessionObjectsStringified =

@@ -1,15 +1,12 @@
+import type { GeinsApiFetch } from '#shared/types';
 import type { UseFetchOptions } from '#app';
-import type { NitroFetchOptions } from 'nitropack';
 
 interface UseGeinsApiReturnType {
   useGeinsFetch: <T>(
     url: string | (() => string),
     options?: UseFetchOptions<T>,
   ) => ReturnType<typeof useFetch>;
-  geinsFetch: <T>(
-    url: string,
-    options?: NitroFetchOptions<string>,
-  ) => Promise<T>;
+  geinsFetch: GeinsApiFetch;
 }
 
 /**
@@ -23,7 +20,7 @@ interface UseGeinsApiReturnType {
  * @property {function} geinsFetch - Wrapper around $fetch to directly fetch data from the Geins API using.
  */
 export const useGeinsApi = (): UseGeinsApiReturnType => {
-  const geinsApi = useNuxtApp().$geinsApi;
+  const { $geinsApi, $geinsApiFetchInstance } = useNuxtApp();
 
   const useGeinsFetch = <T>(
     url: string | (() => string),
@@ -31,19 +28,12 @@ export const useGeinsApi = (): UseGeinsApiReturnType => {
   ): ReturnType<typeof useFetch> => {
     return useFetch(url, {
       ...options,
-      $fetch: geinsApi,
+      $fetch: $geinsApiFetchInstance,
     });
-  };
-
-  const geinsFetch = async <T>(
-    url: string,
-    options?: NitroFetchOptions<string>,
-  ): Promise<T> => {
-    return await geinsApi(url, options);
   };
 
   return {
     useGeinsFetch,
-    geinsFetch,
+    geinsFetch: $geinsApi,
   };
 };
