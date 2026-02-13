@@ -11,6 +11,6 @@ describe('AuthForm', () => {
         mode: 'login',
       },
     });
-    expect(component.html()).toMatch('auth-form');
+    expect(component.find('form').exists()).toBe(true);
   });
 });
