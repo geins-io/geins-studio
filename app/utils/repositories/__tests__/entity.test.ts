@@ -2,14 +2,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { entityRepo } from '../entity';
 
-const mockFetch = vi.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockFetch: any = vi.fn();
 
 beforeEach(() => {
   mockFetch.mockReset();
 });
 
 describe('entityRepo', () => {
-  const repo = entityRepo('/products', mockFetch as any);
+  const repo = entityRepo('/products', mockFetch);
 
   describe('inherited read operations', () => {
     it('has get method from entityBaseRepo', () => {

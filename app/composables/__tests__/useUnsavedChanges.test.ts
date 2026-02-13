@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+// eslint-disable-next-line import/order
 import { ref } from 'vue';
-
 const { mockNavigateTo, mockOnBeforeRouteLeave } = vi.hoisted(() => ({
   mockNavigateTo: vi.fn(),
   mockOnBeforeRouteLeave: vi.fn(),
@@ -23,6 +23,7 @@ vi.mock('#app/composables/router', () => ({
 vi.mock('vue-router', () => ({
   onBeforeRouteLeave: mockOnBeforeRouteLeave,
 }));
+// eslint-disable-next-line import/first
 import { useUnsavedChanges } from '../useUnsavedChanges';
 
 describe('useUnsavedChanges', () => {
@@ -132,14 +133,14 @@ describe('useUnsavedChanges', () => {
     it('registers onBeforeRouteLeave callback during setup', () => {
       setup({ name: 'Test' });
       expect(mockOnBeforeRouteLeave).toHaveBeenCalledOnce();
-      expect(typeof mockOnBeforeRouteLeave.mock.calls[0][0]).toBe('function');
+      expect(typeof mockOnBeforeRouteLeave.mock.calls[0]![0]).toBe('function');
     });
 
     it('blocks navigation when there are unsaved changes', () => {
       const { currentData } = setup({ name: 'Test' });
       currentData.value = { name: 'Changed' };
 
-      const guard = mockOnBeforeRouteLeave.mock.calls[0][0];
+      const guard = mockOnBeforeRouteLeave.mock.calls[0]![0];
       const result = guard({ fullPath: '/other' });
       expect(result).toBe(false);
     });
@@ -148,7 +149,7 @@ describe('useUnsavedChanges', () => {
       const { currentData, unsavedChangesDialogOpen } = setup({ name: 'Test' });
       currentData.value = { name: 'Changed' };
 
-      const guard = mockOnBeforeRouteLeave.mock.calls[0][0];
+      const guard = mockOnBeforeRouteLeave.mock.calls[0]![0];
       guard({ fullPath: '/other' });
       expect(unsavedChangesDialogOpen.value).toBe(true);
     });
@@ -156,7 +157,7 @@ describe('useUnsavedChanges', () => {
     it('allows navigation when there are no unsaved changes', () => {
       setup({ name: 'Test' });
 
-      const guard = mockOnBeforeRouteLeave.mock.calls[0][0];
+      const guard = mockOnBeforeRouteLeave.mock.calls[0]![0];
       const result = guard({ fullPath: '/other' });
       expect(result).toBe(true);
     });
@@ -170,7 +171,7 @@ describe('useUnsavedChanges', () => {
       currentData.value = { name: 'Changed' };
 
       // Trigger the guard to set leavingTo
-      const guard = mockOnBeforeRouteLeave.mock.calls[0][0];
+      const guard = mockOnBeforeRouteLeave.mock.calls[0]![0];
       guard({ fullPath: '/destination' });
       expect(unsavedChangesDialogOpen.value).toBe(true);
 

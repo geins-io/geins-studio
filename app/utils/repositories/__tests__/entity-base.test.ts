@@ -2,14 +2,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { entityGetRepo, entityListRepo, entityBaseRepo } from '../entity-base';
 
-const mockFetch = vi.fn();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockFetch: any = vi.fn();
 
 beforeEach(() => {
   mockFetch.mockReset();
 });
 
 describe('entityGetRepo', () => {
-  const repo = entityGetRepo('/products', mockFetch as any);
+  const repo = entityGetRepo('/products', mockFetch);
 
   it('calls fetch with correct endpoint and id', async () => {
     mockFetch.mockResolvedValue({ _id: '1', _type: 'product' });
@@ -49,7 +50,7 @@ describe('entityGetRepo', () => {
 });
 
 describe('entityListRepo', () => {
-  const repo = entityListRepo('/products', mockFetch as any);
+  const repo = entityListRepo('/products', mockFetch);
 
   it('calls fetch with /list endpoint', async () => {
     mockFetch.mockResolvedValue([]);
@@ -86,13 +87,13 @@ describe('entityListRepo', () => {
 
 describe('entityBaseRepo', () => {
   it('combines get and list operations', async () => {
-    const repo = entityBaseRepo('/products', mockFetch as any);
+    const repo = entityBaseRepo('/products', mockFetch);
     expect(typeof repo.get).toBe('function');
     expect(typeof repo.list).toBe('function');
   });
 
   it('get delegates to entityGetRepo logic', async () => {
-    const repo = entityBaseRepo('/orders', mockFetch as any);
+    const repo = entityBaseRepo('/orders', mockFetch);
     mockFetch.mockResolvedValue({ _id: '5', _type: 'order' });
     const result = await repo.get('5');
     expect(mockFetch).toHaveBeenCalledWith('/orders/5', { query: undefined });
@@ -100,7 +101,7 @@ describe('entityBaseRepo', () => {
   });
 
   it('list delegates to entityListRepo logic', async () => {
-    const repo = entityBaseRepo('/orders', mockFetch as any);
+    const repo = entityBaseRepo('/orders', mockFetch);
     mockFetch.mockResolvedValue([{ _id: '1', _type: 'order' }]);
     const result = await repo.list();
     expect(mockFetch).toHaveBeenCalledWith('/orders/list', {

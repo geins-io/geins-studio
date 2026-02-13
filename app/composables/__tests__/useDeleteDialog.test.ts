@@ -1,6 +1,6 @@
 // @vitest-environment node
+// eslint-disable-next-line import/order
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
 const { mockNavigateTo } = vi.hoisted(() => ({
   mockNavigateTo: vi.fn(),
 }));
@@ -9,6 +9,7 @@ vi.mock('#app/composables/router', () => ({
   navigateTo: mockNavigateTo,
 }));
 
+// eslint-disable-next-line import/first
 import { useDeleteDialog } from '../useDeleteDialog';
 
 describe('useDeleteDialog', () => {

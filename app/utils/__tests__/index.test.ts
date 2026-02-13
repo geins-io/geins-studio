@@ -8,7 +8,8 @@ describe('cn', () => {
   });
 
   it('filters out falsy values', () => {
-    expect(cn('base', false && 'hidden', 'visible')).toBe('base visible');
+    const hidden = false as boolean;
+    expect(cn('base', hidden && 'hidden', 'visible')).toBe('base visible');
   });
 
   it('deduplicates conflicting tailwind classes (last wins)', () => {

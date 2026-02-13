@@ -1,6 +1,6 @@
 // @vitest-environment node
+// eslint-disable-next-line import/order
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
 vi.mock('../log', () => ({
   log: () => ({
     geinsLog: vi.fn(),
@@ -10,6 +10,7 @@ vi.mock('../log', () => ({
   }),
 }));
 
+// eslint-disable-next-line import/first
 import { getBaseUrl, getAuthBaseUrl } from '../deployment';
 
 const ENV_KEYS = [
@@ -26,16 +27,16 @@ const saved: Record<string, string | undefined> = {};
 beforeEach(() => {
   for (const key of ENV_KEYS) {
     saved[key] = process.env[key];
-    delete process.env[key];
+    Reflect.deleteProperty(process.env, key);
   }
 });
 
 afterEach(() => {
   for (const key of ENV_KEYS) {
     if (saved[key] !== undefined) {
-      process.env[key] = saved[key];
+      (process.env as Record<string, string | undefined>)[key] = saved[key];
     } else {
-      delete process.env[key];
+      Reflect.deleteProperty(process.env, key);
     }
   }
 });
