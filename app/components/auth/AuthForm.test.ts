@@ -3,8 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { AuthForm } from '#components';
 
 describe('AuthForm', () => {
-  // TODO: Fix in Phase 3 (STU-29) — rendered HTML no longer contains 'auth-form'
-  it.skip('can mount the component', async () => {
+  it('can mount the component', async () => {
     const component = await mountSuspended(AuthForm, {
       props: {
         pending: false,
@@ -12,6 +11,6 @@ describe('AuthForm', () => {
         mode: 'login',
       },
     });
-    expect(component.html()).toMatch('auth-form');
+    expect(component.find('form').exists()).toBe(true);
   });
 });

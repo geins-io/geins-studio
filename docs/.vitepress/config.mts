@@ -157,6 +157,7 @@ export default defineConfig({
         text: 'Guides',
         items: [
           { text: 'Feedback system', link: '/guides/ui/feedback-system' },
+          { text: 'Testing', link: '/guides/testing' },
           // {
           //   text: 'Working with Data Tables',
           //   link: '/guides/data-tables/',
