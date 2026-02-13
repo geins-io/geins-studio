@@ -1,3 +1,14 @@
+import type { ApiOptions, BatchQueryResult } from './Api';
+import type {
+  EntityBase,
+  EntityBaseWithName,
+  CreateEntity,
+  UpdateEntity,
+  ResponseEntity,
+  Price,
+} from './Global';
+import type { SelectorSelectionQueryBase } from './Selector';
+
 export interface Localizations {
   name?: string;
   text1?: string;
@@ -230,12 +241,10 @@ export interface ProductPriceListBase {
   productSelectionQuery?: SelectorSelectionQueryBase;
 }
 
-export interface ProductPriceListCreate
-  extends CreateEntity<ProductPriceListBase> {
+export interface ProductPriceListCreate extends CreateEntity<ProductPriceListBase> {
   products?: PriceListProduct[];
 }
-export interface ProductPriceListUpdate
-  extends UpdateEntity<ProductPriceListBase> {
+export interface ProductPriceListUpdate extends UpdateEntity<ProductPriceListBase> {
   products?: PriceListProduct[];
 }
 export interface ProductPriceList extends ResponseEntity<ProductPriceListBase> {
@@ -250,8 +259,7 @@ export type ProductPriceListFieldsFilter =
   | 'selectionquery'
   | 'productinfo';
 
-export interface ProductPriceListApiOptions
-  extends ApiOptions<ProductPriceListFieldsFilter> {
+export interface ProductPriceListApiOptions extends ApiOptions<ProductPriceListFieldsFilter> {
   pageSize?: string;
   defaultLocale?: string;
 }
@@ -273,8 +281,7 @@ export interface PriceListProduct {
   delete?: boolean;
 }
 
-export interface ProductPriceListProductApiOptions
-  extends ApiOptions<ProductPriceListFieldsFilter> {
+export interface ProductPriceListProductApiOptions extends ApiOptions<ProductPriceListFieldsFilter> {
   defaultLocale?: string;
 }
 

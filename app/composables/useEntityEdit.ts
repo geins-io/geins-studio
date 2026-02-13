@@ -1,6 +1,6 @@
-import { useToast } from '@/components/ui/toast/use-toast';
-import { useForm, type GenericObject } from 'vee-validate';
 import { useDebounceFn } from '@vueuse/core';
+import { useForm, type GenericObject } from 'vee-validate';
+import { useToast } from '@/components/ui/toast/use-toast';
 import type { toTypedSchema } from '@vee-validate/zod';
 
 interface EntityEditOptions<
@@ -44,7 +44,7 @@ interface EntityEditOptions<
   debounceMs?: number;
 }
 
-interface UseEntityEditReturnType<
+interface _UseEntityEditReturnType<
   TBase,
   TResponse extends ResponseEntity<TBase>,
   TCreate extends CreateEntity<TBase>,
@@ -72,7 +72,7 @@ interface UseEntityEditReturnType<
   // Form
   form: ReturnType<typeof useForm>;
   validateOnChange: Ref<boolean>;
-  formValidation: Ref<any>;
+  formValidation: Ref<unknown>;
   formValid: ComputedRef<boolean>;
   formTouched: ComputedRef<boolean>;
 
@@ -93,11 +93,11 @@ interface UseEntityEditReturnType<
   ) => Promise<boolean>;
   createEntity: (
     additionalValidation?: () => Promise<boolean>,
-    queryOptions?: any,
+    queryOptions?: Record<string, unknown>,
   ) => Promise<TResponse | undefined>;
   updateEntity: (
     additionalValidation?: () => Promise<boolean>,
-    queryOptions?: any,
+    queryOptions?: Record<string, unknown>,
     setSavedData?: boolean,
   ) => Promise<TResponse | undefined>;
   deleteEntity: () => Promise<boolean>;

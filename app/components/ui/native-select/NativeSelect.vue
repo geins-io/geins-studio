@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { AcceptableValue } from 'reka-ui';
-import type { HTMLAttributes } from 'vue';
 import { reactiveOmit, useVModel } from '@vueuse/core';
 import { cn } from '@/utils/index';
+import type { AcceptableValue } from 'reka-ui';
+import type { HTMLAttributes } from 'vue';
 
 defineOptions({
   inheritAttrs: false,

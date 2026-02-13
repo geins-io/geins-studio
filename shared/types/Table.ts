@@ -1,5 +1,6 @@
+import type { StringKeyOf } from './Global';
 import '@tanstack/vue-table';
-import type { Column, RowData } from '@tanstack/vue-table';
+import type { RowData } from '@tanstack/vue-table';
 
 export type TableRowAction = 'edit' | 'copy' | 'delete';
 

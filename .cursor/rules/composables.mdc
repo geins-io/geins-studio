@@ -1,0 +1,33 @@
+---
+description: Rules for composables
+globs:
+  - 'app/composables/**/*.ts'
+---
+
+# Composable Conventions
+
+## Naming
+
+- File: `use{Name}.ts` (e.g., `useEntityEdit.ts`)
+- Export: `export function use{Name}(): Use{Name}ReturnType`
+- Always define and export the return type interface ending in `ReturnType`
+
+## Structure
+
+```typescript
+interface Use{Name}ReturnType {
+  // all returned properties and methods, fully typed
+}
+
+export function use{Name}(params: ParamsType): Use{Name}ReturnType {
+  // implementation
+  return { /* typed return */ };
+}
+```
+
+## Rules
+
+- Use `useGeinsLog('composable-name')` for logging, never console.\*
+- Access repositories via `useGeinsRepository()`, never inject `$geinsApi` directly
+- Access stores via `const store = use{Name}Store()` then `storeToRefs(store)`
+- Composables must be usable in `<script setup>` context (no `defineComponent`)

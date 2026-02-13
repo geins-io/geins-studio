@@ -1,15 +1,4 @@
 <script setup lang="ts" generic="TData extends Record<string, any>, TValue">
-import { TableMode } from '#shared/types';
-import type {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  ColumnOrderState,
-  ColumnPinningState,
-  Column,
-  ExpandedState,
-} from '@tanstack/vue-table';
 import {
   FlexRender,
   getCoreRowModel,
@@ -20,7 +9,18 @@ import {
   useVueTable,
 } from '@tanstack/vue-table';
 import { useDebounceFn } from '@vueuse/core';
-
+import { TableMode } from '#shared/types';
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  ColumnOrderState,
+  ColumnPinningState,
+  Column,
+  ExpandedState,
+  Row,
+} from '@tanstack/vue-table';
 import type { Component } from 'vue';
 import { LucideSearchX, LucideCircleSlash } from '#components';
 
@@ -320,8 +320,8 @@ const table = useVueTable({
     if (props.enableExpanding && props.getSubRows) {
       // For expanding tables, getSelectedRowModel() doesn't include child rows properly
       // We need to manually collect all selected rows from the full hierarchy
-      const collectSelectedRows = (rows: any[]): any[] => {
-        const selected: any[] = [];
+      const collectSelectedRows = (rows: Row<unknown>[]): Row<unknown>[] => {
+        const selected: Row<unknown>[] = [];
         for (const row of rows) {
           if (row.getIsSelected()) {
             selected.push(row);
@@ -340,10 +340,7 @@ const table = useVueTable({
       // Only emit leaf rows (children that cannot expand)
       const leafRows = selectedRows.filter((row) => !row.getCanExpand());
 
-      emit(
-        'selection',
-        leafRows.map((row) => row.original),
-      );
+      emit('selection', leafRows.map((row) => row.original) as TData[]);
     } else {
       // Flat table: use standard selection model
       emit(
@@ -398,7 +395,7 @@ const table = useVueTable({
 // Auto-expand all rows when searching in expandable tables
 watch(
   [globalFilter, () => props.data],
-  ([newFilter, newData], [oldFilter, oldData]) => {
+  ([newFilter, _newData], [oldFilter, _oldData]) => {
     if (props.enableExpanding && table) {
       if (newFilter?.trim()) {
         // When search is active, expand all parent rows by building an object with all row IDs set to true
@@ -595,7 +592,7 @@ const hasSearchableColumns = computed(() => {
       v-if="advancedMode"
       variant="ghost"
       size="icon"
-      class="border-border bg-card absolute -top-px -right-px z-50 !size-6"
+      class="border-border bg-card absolute -top-px -right-px z-50 size-6!"
       @click="tableMaximized = !tableMaximized"
     >
       <LucideMaximize2 v-if="!tableMaximized" class="size-3" />

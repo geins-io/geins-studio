@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ColumnOptions, StringKeyOf } from '#shared/types';
-import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
+import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = ProductPriceList;
 type EntityList = ProductPriceList;

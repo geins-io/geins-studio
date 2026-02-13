@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { PrimitiveProps } from 'reka-ui';
 import { reactiveOmit } from '@vueuse/core';
 import { Primitive } from 'reka-ui';
 import { computed, type HTMLAttributes } from 'vue';
 import { cn } from '@/utils/index';
 import { useCommand } from '.';
+import type { PrimitiveProps } from 'reka-ui';
 
 const props = defineProps<
   PrimitiveProps & { class?: HTMLAttributes['class'] }

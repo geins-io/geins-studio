@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
 import {
   ListboxFilter,
@@ -8,6 +7,7 @@ import {
 } from 'reka-ui';
 import { cn } from '@/utils/index';
 import { useCommand } from '.';
+import type { HTMLAttributes } from 'vue';
 
 defineOptions({
   inheritAttrs: false,

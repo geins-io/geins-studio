@@ -1,5 +1,5 @@
-import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
 import tailwindcss from '@tailwindcss/vite';
+import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
 
 export default defineNuxtConfig({
   ssr: false,
@@ -33,6 +33,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   vite: {
+    // @ts-expect-error Type conflict: @tailwindcss/vite uses vite 7 types, vitepress pulls in vite 5 types
     plugins: [tailwindcss()],
   },
 

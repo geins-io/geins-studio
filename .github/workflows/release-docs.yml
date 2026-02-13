@@ -12,18 +12,22 @@ jobs:
           submodules: true
           lfs: false
 
-      # Step 2: Set up Node.js environment
+      # Step 2: Install pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      # Step 3: Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "24"
-          corepack: true
+          cache: pnpm
 
-      # Step 3: Install dependencies
+      # Step 4: Install dependencies
       - name: Install dependencies
-        run: yarn install --immutable
+        run: pnpm install --frozen-lockfile
 
-      # Step 4: Build and Deploy to Azure
+      # Step 5: Build and Deploy to Azure
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -33,6 +37,6 @@ jobs:
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           app_location: "/" # App source code path
-          app_build_command: "yarn docs:build"
+          app_build_command: "pnpm docs:build"
           output_location: "docs/.vitepress/dist" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { ComboboxInputEmits, ComboboxInputProps } from 'reka-ui';
-import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
 import { ComboboxInput, useForwardPropsEmits } from 'reka-ui';
 import { cn } from '@/utils/index';
+import type { ComboboxInputEmits, ComboboxInputProps } from 'reka-ui';
+import type { HTMLAttributes } from 'vue';
 
 defineOptions({
   inheritAttrs: false,

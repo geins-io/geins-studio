@@ -2,24 +2,28 @@
 // =====================================================================================
 // IMPORTS & TYPES
 // =====================================================================================
+// Intent: Explicit imports for types, schemas, and components not auto-imported by Nuxt.
+// Only add imports here that Nuxt auto-import does not cover (e.g. zod, shared types, specific components).
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
-import type { AcceptableValue } from 'reka-ui';
-import { useToast } from '@/components/ui/toast/use-toast';
-import type { ColumnDef, Row } from '@tanstack/vue-table';
 import {
   SelectorSelectionStrategy,
   type PriceListRuleMode,
   type PriceListProductList,
-  type PriceListRule,
   type PriceListProduct,
   type PriceListRuleField,
   type ProductPriceListApiOptions,
 } from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
+import type { ColumnDef, Row } from '@tanstack/vue-table';
+import type { AcceptableValue } from 'reka-ui';
 
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
+// Intent: Initialize all composables and Pinia stores used across this page.
+// Order matters — some composables depend on values from earlier ones (e.g. useGeinsRepository before API calls).
+// Add new composables here; do not scatter initialization throughout the file.
 const scope = 'pages/pricing/price-list/[id].vue';
 const route = useRoute();
 const router = useRouter();
@@ -34,6 +38,8 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
+// Intent: Create typed API repository instances and extract reactive store refs.
+// Uses the repository factory pattern — see app/utils/repositories/ for implementation.
 const { productApi } = useGeinsRepository();
 const { channels, currentCurrencies, currentChannelId, currentCurrency } =
   storeToRefs(accountStore);
@@ -41,6 +47,9 @@ const { channels, currentCurrencies, currentChannelId, currentCurrency } =
 // =====================================================================================
 // FORM VALIDATION SCHEMA
 // =====================================================================================
+// Intent: Define Zod validation schemas converted via toTypedSchema for vee-validate.
+// stepValidationMap ties form steps to their schema segments for step-by-step validation.
+// Keep schema in sync with the form fields in the <template>.
 const formSchema = toTypedSchema(
   z.object({
     vat: z.object({
@@ -63,6 +72,9 @@ const formSchema = toTypedSchema(
 // =====================================================================================
 // ENTITY DATA SETUP
 // =====================================================================================
+// Intent: Define default/template objects used as initial state for create and update modes.
+// entityBase is passed to useEntityEdit as initialEntityData and initialUpdateData.
+// Ensure every field has a sensible default — this shapes the form's starting values.
 const entityBase: ProductPriceListCreate = {
   name: '',
   active: false,
@@ -80,6 +92,9 @@ const entityBase: ProductPriceListCreate = {
 // =====================================================================================
 // UI STATE MANAGEMENT
 // =====================================================================================
+// Intent: Local reactive state for UI concerns — tabs, steps, selections, toggles.
+// This is NOT entity data; it's presentation state that drives the template.
+// Keep UI state separate from entity/form data to avoid unintended side effects.
 // Tabs & Steps
 const tabs = [t('general'), t('pricing.price_list_products_pricing')];
 
@@ -111,6 +126,9 @@ const editedProducts = ref<PriceListProduct[]>([]);
 // =====================================================================================
 // PRICELIST PRODUCTS MANAGEMENT
 // =====================================================================================
+// Intent: Domain logic for managing products within a price list — adding, editing, transforming.
+// Delegates to usePriceListProducts/usePriceListProductsTable composables.
+// Column setup and cell edit callbacks live here because they depend on page-specific refs.
 
 const {
   transformProductsForList,
@@ -183,6 +201,10 @@ watch(
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
 // =====================================================================================
+// Intent: Central CRUD orchestrator — provides create/update/delete, form binding, unsaved changes.
+// Destructures a large set of refs and methods. Configuration callbacks (reshapeEntityData,
+// parseEntityData, prepareCreateData, prepareUpdateData) transform data between API and form shapes.
+// Do NOT duplicate CRUD logic outside this composable.
 const {
   entityName,
   entityId,
@@ -307,6 +329,8 @@ const {
 // =====================================================================================
 // ERROR HANDLING SETUP
 // =====================================================================================
+// Intent: Page-level error handling for API fetch failures and user-facing error toasts.
+// handleFetchResult validates the initial data load; showErrorToast wraps toast() for errors.
 
 const { handleFetchResult, showErrorToast } = usePageError({
   entityName,
@@ -317,6 +341,8 @@ const { handleFetchResult, showErrorToast } = usePageError({
 // =====================================================================================
 // PREVIEW PRICELIST
 // =====================================================================================
+// Intent: Manages the live preview of price list product data after rule or selection changes.
+// previewPriceList re-fetches the computed product prices from the API and updates the table.
 
 const { selectedProducts, hasProductSelection, previewPriceList } =
   usePriceListPreview({
@@ -336,6 +362,9 @@ const { selectedProducts, hasProductSelection, previewPriceList } =
 // =====================================================================================
 // RULES & VOLUME PRICING MANAGEMENT
 // =====================================================================================
+// Intent: Pricing rule logic — base rules (margin/discount) and per-quantity volume pricing.
+// Split across two composables: usePriceListRules (global rules) and usePriceListVolumePricing.
+// Changes here trigger previewPriceList to update the product table.
 
 // Rules management
 const {
@@ -386,6 +415,8 @@ const {
 // =====================================================================================
 // BASE RULES MANAGEMENT
 // =====================================================================================
+// Intent: Page-level handlers that bridge the UI (input fields, buttons) to the rules composable.
+// These thin wrappers read local refs (priceListBaseRuleInput) and delegate to composable methods.
 const handleApplyBaseRule = () => {
   if (priceListBaseRuleInput.value === undefined || !entityId.value) return;
   const percentage = priceListBaseRuleInput.value;
@@ -405,6 +436,9 @@ const handleApplyBaseRuleAndOverwrite = () => {
 // =====================================================================================
 // FORM VALUE WATCHERS
 // =====================================================================================
+// Intent: Reactive watchers that sync form values with dependent state (e.g. channel → currencies).
+// These keep derived UI state in sync when the user or programmatic changes update form fields.
+// Be careful adding watchers — they can trigger cascading updates. Prefer computed where possible.
 watch(
   currentChannelId,
   (newChannelId) => {
@@ -442,6 +476,9 @@ watch(vatDescription, () => {
 // =====================================================================================
 // ENTITY ACTIONS
 // =====================================================================================
+// Intent: High-level user actions — save, copy, channel change handlers.
+// These orchestrate multiple operations (e.g. save = updateEntity + previewPriceList).
+// Error handling and loading state management happen here.
 const saveInProgress = ref(false);
 const handleSave = async () => {
   saveInProgress.value = true;
@@ -507,12 +544,17 @@ const handleChannelChange = async (value: AcceptableValue) => {
 // =====================================================================================
 // DELETE FUNCTIONALITY
 // =====================================================================================
+// Intent: Delete confirmation dialog wired to useDeleteDialog composable.
+// Redirects to the list page after successful deletion.
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
   useDeleteDialog(deleteEntity, '/pricing/price-list/list');
 
 // =====================================================================================
 // SUMMARY DATA
 // =====================================================================================
+// Intent: Computed data items displayed in the sidebar summary panel (ContentEditSummary).
+// Builds an array of DataItem objects from entity state for quick-glance information.
+// Includes entityEditSummary composable for standardized summary props.
 const summary = computed<DataItem[]>(() => {
   if (createMode.value && currentStep.value === 1) return [];
 
@@ -588,6 +630,10 @@ const { summaryProps } = useEntityEditSummary({
 // =====================================================================================
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
+// Intent: Initial data fetch when editing an existing entity (not in create mode).
+// Uses useAsyncData for SSR-compatible fetching, then parseAndSaveData to hydrate form state.
+// onMounted sets up watchers that depend on the loaded data — keep watcher setup inside onMounted
+// to avoid triggering them before data is available.
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<ProductPriceList>(
     entityFetchKey.value,

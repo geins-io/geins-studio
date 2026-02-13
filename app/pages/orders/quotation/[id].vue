@@ -7,12 +7,11 @@ definePageMeta({
 });
 
 const route = useRoute();
-const { t } = useI18n();
 
 const quotationId = computed(() => route.params.id as string);
 
 // Placeholder data structure
-const quotation = ref(null);
+const _quotation = ref(null);
 </script>
 
 <template>

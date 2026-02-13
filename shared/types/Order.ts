@@ -1,4 +1,6 @@
-import type { SelectorCondition, BatchQueryFiltered } from '#shared/types';
+import type { ApiOptions, BatchQueryFiltered } from './Api';
+import type { CreateEntity, UpdateEntity, ResponseEntity } from './Global';
+import type { SelectorCondition } from './Selector';
 
 export type OrderStatus =
   | 'pending'

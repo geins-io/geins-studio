@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
+import { describe, it, expect } from 'vitest';
 import { AuthForm } from '#components';
 
 describe('AuthForm', () => {
@@ -11,6 +11,6 @@ describe('AuthForm', () => {
         mode: 'login',
       },
     });
-    expect(component.html()).toMatch('auth-form');
+    expect(component.find('form').exists()).toBe(true);
   });
 });
