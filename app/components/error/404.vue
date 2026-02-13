@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = withDefaults(
+withDefaults(
   defineProps<{
     message?: string;
   }>(),
@@ -7,8 +7,6 @@ const props = withDefaults(
     message: '',
   },
 );
-
-const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'clear'): void;
@@ -28,7 +26,7 @@ const handleHome = () => {
 </script>
 
 <template>
-  <div class="flex h-full min-h-[600px] w-full items-center justify-center p-6">
+  <div class="flex h-full min-h-150 w-full items-center justify-center p-6">
     <Empty class="max-w-md border-none">
       <EmptyMedia variant="icon">
         <LucideFileQuestion class="size-6" />

@@ -1,6 +1,6 @@
+import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 import type { HTMLAttributes } from 'vue';
-import { cva } from 'class-variance-authority';
 
 export interface SidebarProps {
   side?: 'left' | 'right';

@@ -1,0 +1,39 @@
+---
+description: Rules for creating and editing Vue pages
+globs:
+  - 'app/pages/**/*.vue'
+---
+
+# Page Conventions
+
+## List Pages (`list.vue`)
+
+Required structure:
+
+1. `definePageMeta({ layout: 'default', pageType: 'list' })`
+2. `useGeinsRepository()` for API access
+3. `useAsyncData()` for data fetching
+4. `useColumns<T>()` for column definitions + `addActionsColumn()`
+5. `useTable<T>()` for table visibility state
+6. `useEntityUrl()` for navigation URLs
+7. `usePageError()` for error handling
+
+## Detail/Edit Pages (`[id].vue`)
+
+Required structure:
+
+1. Define Zod schema with `toTypedSchema(z.object({...}))`
+2. Define `initialEntityData` template for create mode
+3. Use `useEntityEdit<TBase, TResponse, TCreate, TUpdate>({...})`
+4. `route.params.id === 'new'` triggers create mode automatically
+5. Provide `reshapeEntityData` to transform API → form shape
+6. Provide `prepareCreateData` / `prepareUpdateData` for form → API shape
+
+## Route Meta
+
+- `pageType: 'list'` → layout uses overflow-hidden (table scrolling)
+- Other pages → layout uses overflow-y-auto
+
+## i18n
+
+Use patterns: `t('entity_required', { entityName })`, `t('new_entity', { entityName })`

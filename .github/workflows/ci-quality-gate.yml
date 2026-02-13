@@ -1,0 +1,39 @@
+name: CI Quality Gate
+
+on:
+    pull_request:
+        branches: [main, next]
+    push:
+        branches: [main, next]
+
+concurrency:
+    group: ci-quality-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    quality:
+        runs-on: ubuntu-latest
+        name: Lint, Typecheck & Test
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: pnpm
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Lint check
+              run: pnpm lint:check
+
+            - name: Type check
+              run: pnpm typecheck
+
+            - name: Run tests
+              run: pnpm test --run

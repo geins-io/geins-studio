@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import * as z from 'zod';
-import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
-import { createPasswordResetSchema } from '@/utils/password-validation';
+import { useForm } from 'vee-validate';
+import * as z from 'zod';
 import type {
   LoginCredentials,
   AuthFormMode,
@@ -11,11 +10,12 @@ import type {
   ResetPasswordFormValues,
 } from '#shared/types';
 import LogoLetter from '@/assets/logos/geins-g.svg';
+import { createPasswordResetSchema } from '@/utils/password-validation';
 
 const props = withDefaults(
   defineProps<{
-    loading: boolean;
-    showInvalid: boolean;
+    loading?: boolean;
+    showInvalid?: boolean;
     mode: AuthFormMode;
     mfaMethod?: string;
     accounts?: AuthAccounts[];
@@ -487,7 +487,7 @@ const backToLogin = () => {
         <div v-else-if="accountMode || logoutMode" class="grid gap-4">
           <ul
             v-if="!loading"
-            class="flex max-h-[14.5rem] flex-col gap-2 overflow-auto px-2"
+            class="flex max-h-58 flex-col gap-2 overflow-auto px-2"
           >
             <li
               v-for="account in accounts"

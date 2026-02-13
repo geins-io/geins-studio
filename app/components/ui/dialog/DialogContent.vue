@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
 import {
   DialogClose,
@@ -11,6 +10,7 @@ import {
 } from 'reka-ui';
 import { cn } from '@/utils/index';
 import DialogOverlay from './DialogOverlay.vue';
+import type { HTMLAttributes } from 'vue';
 
 const props = defineProps<
   DialogContentProps & { class?: HTMLAttributes['class'] }

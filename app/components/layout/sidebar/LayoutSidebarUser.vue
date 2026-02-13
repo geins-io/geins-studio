@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useSidebar } from '@/components/ui/sidebar';
 import LogoLetter from '@/assets/logos/geins-g.svg';
+import { useSidebar } from '@/components/ui/sidebar';
 
 const { geinsLogError } = useGeinsLog('components/../LayoutSidebarUser.vue');
 const { session, setAccount, logout } = useGeinsAuth();

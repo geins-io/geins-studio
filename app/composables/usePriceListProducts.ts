@@ -1,5 +1,4 @@
 import type {
-  Product,
   PriceListProduct,
   PriceListProductList,
   PriceListRule,

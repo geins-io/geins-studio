@@ -20,7 +20,7 @@ Geins Studio is designed to be customizable. You can modify the UI, add new feat
 
 Before setting up Geins Studio, ensure you have the following:
 
-- [Node.js](https://nodejs.org) (v20.0.0 or higher)
+- [Node.js](https://nodejs.org) (v24.0.0 or higher)
 - A Geins account - [Get a free trial here](https://www.geins.io)
 
 ### Getting Started
@@ -30,11 +30,7 @@ To set up Geins Studio, follow these steps:
 1. **Install Dependencies**
 
    ```bash
-   # npm
-   npm install
-
-   # yarn
-   yarn install
+   pnpm install
    ```
 
 2. **Set Up Environment Variables**
@@ -51,11 +47,7 @@ AUTH_SECRET=your_secret_key # https://auth-secret-generator.vercel.app/
 3. **Start the Development Server**
 
    ```bash
-   # npm
-   npm run dev
-
-   # yarn
-   yarn dev
+   pnpm dev
    ```
 
    The application should now be running at `http://localhost:3000`.

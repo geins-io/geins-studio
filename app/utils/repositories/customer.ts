@@ -1,4 +1,3 @@
-import type { NitroFetchRequest, $Fetch } from 'nitropack';
 import type {
   CustomerCompany,
   CustomerCompanyCreate,
@@ -12,6 +11,7 @@ import type {
   CustomerCreate,
   CustomerUpdate,
 } from '#shared/types';
+import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/wholesale';
 

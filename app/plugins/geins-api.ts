@@ -1,4 +1,4 @@
-import type { GeinsApiError, Session } from '#shared/types';
+import type { GeinsApiError, GeinsApiFetch, Session } from '#shared/types';
 /**
  * Nuxt plugin for handling Geins API requests.
  *
@@ -78,7 +78,7 @@ export default defineNuxtPlugin(() => {
    * });
    * ```
    * */
-  const geinsApi = $fetch.create({
+  const geinsApiFetchInstance = $fetch.create({
     baseURL: '/api',
     retryStatusCodes: [401, 500, 502, 503, 504],
     retry: 1,
@@ -182,9 +182,19 @@ export default defineNuxtPlugin(() => {
     },
   });
 
+  /**
+   * Typed wrapper around the $fetch instance for direct API calls.
+   * Uses the GeinsApiFetch interface which avoids Nitro's complex
+   * route type resolution that causes excessive TypeScript stack depth.
+   * All auth interceptors from the underlying $fetch instance are preserved.
+   */
+  const geinsApi: GeinsApiFetch = (request, options) =>
+    geinsApiFetchInstance(request, options);
+
   return {
     provide: {
       geinsApi,
+      geinsApiFetchInstance,
     },
   };
 });

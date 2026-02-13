@@ -8,7 +8,7 @@ import {
 
 const props = withDefaults(
   defineProps<{
-    type: 'positive' | 'negative' | 'warning' | 'info';
+    type?: 'positive' | 'negative' | 'warning' | 'info';
   }>(),
   {
     type: 'info',

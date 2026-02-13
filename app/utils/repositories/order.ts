@@ -1,4 +1,3 @@
-import type { NitroFetchRequest, $Fetch } from 'nitropack';
 import type {
   Order,
   OrderBatchQuery,
@@ -8,6 +7,7 @@ import type {
   QuotationStatus,
 } from '#shared/types';
 import { entityGetRepo } from './entity-base';
+import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/order';
 
@@ -118,7 +118,7 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
        * List all quotations
        * Returns dummy data until real endpoint is available
        */
-      async list(options?: QuotationApiOptions): Promise<Quotation[]> {
+      async list(_options?: QuotationApiOptions): Promise<Quotation[]> {
         // Simulate API delay
         await new Promise((resolve) => setTimeout(resolve, 300));
         return generateDummyQuotations();
@@ -128,7 +128,10 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
        * Get single quotation by ID
        * Returns dummy data until real endpoint is available
        */
-      async get(id: string, options?: QuotationApiOptions): Promise<Quotation> {
+      async get(
+        id: string,
+        _options?: QuotationApiOptions,
+      ): Promise<Quotation> {
         // Simulate API delay
         await new Promise((resolve) => setTimeout(resolve, 200));
         const quotations = generateDummyQuotations();

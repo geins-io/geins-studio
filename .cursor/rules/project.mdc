@@ -1,0 +1,46 @@
+---
+description: General project conventions for Geins Studio
+globs:
+  - '**/*.{ts,vue}'
+---
+
+# Geins Studio — Project Rules
+
+## Tech Stack
+
+- Nuxt 3 (SPA mode, ssr: false), TypeScript, Vue 3 Composition API (<script setup>)
+- shadcn-vue (new-york style) + Tailwind CSS 4 + Reka UI primitives
+- vee-validate + Zod for forms, TanStack Table for data tables
+- Pinia for state, @sidebase/nuxt-auth for auth
+
+## File Placement
+
+- UI primitives → `app/components/ui/` (install via `npx shadcn-vue@latest add`, never create manually)
+- Domain components → `app/components/{domain}/`
+- Composables → `app/composables/use{Name}.ts` (must return typed interface ending in `ReturnType`)
+- Types → `shared/types/` (import via `#shared/types`)
+- Shared utilities → `shared/utils/` (import via `#shared/utils`)
+- Repository factories → `app/utils/repositories/{domain}.ts`
+- Pages → `app/pages/{domain}/{entity}/list.vue` or `[id].vue`
+
+## Conventions
+
+- NEVER use `console.log` — use `useGeinsLog('scope')` for all logging
+- Always use `storeToRefs()` when destructuring Pinia store state
+- Use `toTypedSchema(zodSchema)` for form validation, never raw Zod
+- Props: `defineProps<{}>()` with `withDefaults()`, never define default values in the interface
+- ESLint enforces `no-console` (warn/error allowed), `import/order`, and Prettier
+- Use TypeScript-first approach: explicit return types on exported functions
+
+## API Pattern
+
+```typescript
+const { productApi } = useGeinsRepository();
+const data = await productApi.list({ fields: ['id', 'name'] });
+```
+
+## Imports
+
+- Type imports: `import type { X } from '#shared/types'`
+- Order: builtin → external → internal (#shared) → relative → types
+- Nuxt auto-imports: composables, utils, components — don't import them manually

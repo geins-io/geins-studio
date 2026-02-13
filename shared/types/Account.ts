@@ -1,3 +1,5 @@
+import type { EntityBase } from './Global';
+
 export type ChannelType = 'webshop' | 'physical' | 'other';
 
 export interface Channel extends EntityBase {

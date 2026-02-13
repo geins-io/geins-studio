@@ -1,4 +1,3 @@
-import type { NitroFetchRequest, $Fetch } from 'nitropack';
 import type {
   ProductPriceList,
   ProductPriceListCreate,
@@ -12,6 +11,7 @@ import type {
   ProductPriceListApiOptions,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
+import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
 
