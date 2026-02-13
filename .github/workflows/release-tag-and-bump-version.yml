@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: "Version bump type"
+        description: 'Version bump type'
         required: false
-        default: "auto"
+        default: 'auto'
         type: choice
         options:
           - auto
