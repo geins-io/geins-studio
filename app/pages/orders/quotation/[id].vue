@@ -6,12 +6,10 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import type {
-  QuotationBase,
   Quotation,
   QuotationCreate,
   QuotationUpdate,
   QuotationApiOptions,
-  QuotationStatus,
 } from '#shared/types';
 
 // =====================================================================================
@@ -60,21 +58,9 @@ const formSchema = toTypedSchema(
 // ENTITY DATA SETUP
 // =====================================================================================
 const entityBase: QuotationCreate = {
+  channelId: '',
+  marketId: '',
   name: '',
-  status: 'draft',
-  accountId: '',
-  accountName: '',
-  dateCreated: '',
-  dateModified: '',
-  sum: {
-    price: '0',
-    currency: currentCurrencies.value[0]?._id || 'SEK',
-  },
-  expirationDate: '',
-  itemCount: 0,
-  createdBy: '',
-  currency: currentCurrencies.value[0]?._id || 'SEK',
-  items: [],
 };
 
 // =====================================================================================
@@ -141,6 +127,19 @@ const availableCurrencies = computed(() => {
   );
 });
 
+// Resolve channelId + marketId from selected company and currency
+const resolveChannelMarket = (currency: string | undefined) => {
+  if (!selectedCompany.value?.channels || !currency) return null;
+
+  for (const chId of selectedCompany.value.channels) {
+    const channel = currentChannels.value.find((ch) => ch._id === chId);
+    if (!channel?.markets) continue;
+    const market = channel.markets.find((m) => m.currency?._id === currency);
+    if (market) return { channelId: channel._id, marketId: market._id };
+  }
+  return null;
+};
+
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
 // =====================================================================================
@@ -172,95 +171,86 @@ const {
   deleteEntity,
   parseAndSaveData,
   validateSteps,
-} = useEntityEdit<
-  QuotationBase,
-  Quotation,
-  QuotationCreate,
-  QuotationUpdate,
-  QuotationApiOptions
->({
+  // TBase is `any` because the quotation create request schema differs from the
+  // response schema — the standard CreateEntity<TBase> constraint doesn't apply.
+} = useEntityEdit<any, Quotation, QuotationCreate, QuotationUpdate, QuotationApiOptions>({
   repository: orderApi.quotation,
   validationSchema: formSchema,
   initialEntityData: entityBase,
-  initialUpdateData: entityBase,
+  initialUpdateData: {} as QuotationUpdate,
   stepValidationMap,
   reshapeEntityData: (entityData) => ({
     ...entityData,
     items: undefined,
   }),
-  getInitialFormValues: (entityData) => ({
+  getInitialFormValues: () => ({
     details: {
-      name: entityData.name || '',
-      accountId: entityData.accountId || '',
-      createdBy: entityData.createdBy || '',
+      name: '',
+      accountId: '',
+      createdBy: '',
       buyerId: '',
-      currency: entityData.currency || '',
-      expirationDate: entityData.expirationDate || '',
-      notes: entityData.notes || '',
+      currency: '',
+      expirationDate: '',
+      notes: '',
     },
   }),
   parseEntityData: (quotation: Quotation) => {
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     entityLiveStatus.value =
-      quotation.status === 'sent' || quotation.status === 'accepted';
-    selectedCompanyId.value = quotation.accountId;
-    selectedAccountName.value = quotation.accountName || '';
+      quotation.status === 'pending' || quotation.status === 'accepted';
+
+    const companyId = quotation.company?.companyId?.toString() || '';
+    selectedCompanyId.value = companyId;
+    selectedAccountName.value = quotation.company?.name || '';
 
     form.setValues({
       details: {
         name: quotation.name || '',
-        accountId: quotation.accountId || '',
-        createdBy: quotation.createdBy || '',
-        buyerId: '',
+        accountId: companyId,
+        createdBy: quotation.owner?.name || '',
+        buyerId: quotation.customer?.name || '',
         currency: quotation.currency || 'SEK',
-        expirationDate: quotation.expirationDate || '',
-        notes: quotation.notes || '',
+        expirationDate: quotation.validTo || '',
+        notes: quotation.terms?.text || '',
       },
     });
   },
   prepareCreateData: (formData) => {
-    const expirationDate =
-      formData.details.expirationDate ||
-      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
+    const cm = resolveChannelMarket(formData.details.currency);
     return {
-      ...entityBase,
+      channelId: cm?.channelId || '',
+      marketId: cm?.marketId || '',
       name: formData.details.name,
-      accountId: formData.details.accountId,
-      accountName: selectedAccountName.value,
-      createdBy: formData.details.createdBy,
-      currency: formData.details.currency,
-      expirationDate,
-      notes: formData.details.notes,
-      status: 'draft' as QuotationStatus,
-      sum: {
-        price: '0',
-        currency: formData.details.currency,
-      },
+      companyId: formData.details.accountId || undefined,
+      ownerId: formData.details.createdBy || undefined,
+      customerId: formData.details.buyerId || undefined,
+      validTo: formData.details.expirationDate || undefined,
+      terms: formData.details.notes || undefined,
     };
   },
   prepareUpdateData: (formData, entity) => ({
     ...entity,
     name: formData.details.name,
-    accountId: formData.details.accountId,
-    accountName: selectedAccountName.value,
-    createdBy: formData.details.createdBy,
-    currency: formData.details.currency,
-    expirationDate: formData.details.expirationDate,
-    notes: formData.details.notes,
   }),
   onFormValuesChange: (values) => {
-    const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
-    targetEntity.value = {
-      ...entityData.value,
-      name: values.details.name,
-      accountId: values.details.accountId,
-      accountName: selectedAccountName.value,
-      createdBy: values.details.createdBy,
-      currency: values.details.currency,
-      expirationDate: values.details.expirationDate,
-      notes: values.details.notes,
-    };
+    if (createMode.value) {
+      const cm = resolveChannelMarket(values.details.currency);
+      entityDataCreate.value = {
+        channelId: cm?.channelId || '',
+        marketId: cm?.marketId || '',
+        name: values.details.name,
+        companyId: values.details.accountId || undefined,
+        ownerId: values.details.createdBy || undefined,
+        customerId: values.details.buyerId || undefined,
+        validTo: values.details.expirationDate || undefined,
+        terms: values.details.notes || undefined,
+      };
+    } else {
+      entityDataUpdate.value = {
+        ...entityData.value,
+        name: values.details.name,
+      };
+    }
   },
 });
 
@@ -346,22 +336,26 @@ onMounted(async () => {
 // Computed properties for summary
 const summary = computed(() => {
   if (!entityData.value) return [];
+
+  if (createMode.value) {
+    return [
+      { label: t('company'), value: selectedAccountName.value || '-' },
+      { label: t('status'), value: 'draft' },
+    ];
+  }
+
+  // Edit mode — entityData is the Quotation response shape
+  const data = entityDataUpdate.value as unknown as Quotation;
   return [
-    {
-      label: t('company'),
-      value: entityData.value.accountName || '-',
-    },
-    {
-      label: t('status'),
-      value: entityData.value.status || '-',
-    },
+    { label: t('company'), value: data.company?.name || '-' },
+    { label: t('status'), value: data.status || '-' },
     {
       label: t('sum'),
-      value: `${entityData.value.sum?.price || '0'} ${entityData.value.sum?.currency || ''}`,
+      value: `${data.total?.subtotal || '0'} ${data.currency || ''}`,
     },
     {
       label: t('item', 2),
-      value: entityData.value.itemCount?.toString() || '0',
+      value: data.items?.length?.toString() || '0',
     },
   ];
 });

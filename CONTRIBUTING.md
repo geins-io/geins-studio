@@ -90,7 +90,7 @@ geinsLog('Something happened', data);
 
 ## Branching & CI
 
-- PRs target `main` or `next`
+- PRs target `next`
 - CI runs `lint:check`, `typecheck`, and `test --run` on every PR
 - All checks must pass before merge
 

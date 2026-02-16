@@ -3,7 +3,6 @@ import type {
   UpdateEntity,
   ResponseEntity,
   ApiOptions,
-  Tooltip,
   Price,
   BatchQueryFiltered,
   SelectorCondition,
@@ -154,10 +153,45 @@ export interface QuotationBase {
 }
 
 /**
- * Create type for new quotations
+ * Address request for creating/updating quotations
  */
-export interface QuotationCreate extends CreateEntity<QuotationBase> {
-  items?: QuotationItemCreate[];
+export interface QuotationAddressRequest {
+  name?: string;
+  address1?: string;
+  address2?: string;
+  city?: string;
+  zip?: string;
+  country?: string;
+}
+
+/**
+ * Item request for creating quotations
+ */
+export interface QuotationItemCreateRequest {
+  skuId: string;
+  quantity: number;
+  customPrice?: number;
+}
+
+/**
+ * Create request type matching the POST /quotation API schema
+ */
+export interface QuotationCreate {
+  channelId: string;
+  marketId: string;
+  name: string;
+  validFrom?: string;
+  validTo?: string;
+  companyId?: string;
+  ownerId?: string;
+  customerId?: string;
+  suggestedShippingFee?: number;
+  terms?: string;
+  billingAddress?: QuotationAddressRequest;
+  shippingAddress?: QuotationAddressRequest;
+  validPaymentMethods?: { paymentId: string }[];
+  validShippingMethods?: { shippingId: string; shippingFee?: number }[];
+  items?: QuotationItemCreateRequest[];
 }
 
 /**

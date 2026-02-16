@@ -3,6 +3,8 @@ import type {
   OrderBatchQuery,
   BatchQueryResult,
   Quotation,
+  QuotationCreate,
+  QuotationUpdate,
   QuotationBatchQuery,
   QuotationBatchQueryResult,
   QuotationApiOptions,
@@ -22,6 +24,14 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
   // Use entityGetRepo as base for single order retrieval
   const baseRepo = entityGetRepo<Order, OrderApiOptions>(orderEndpoint, fetch);
+
+  // Standard CRUD for quotations
+  const quotationRepo = repo.entity<
+    Quotation,
+    QuotationCreate,
+    QuotationUpdate,
+    QuotationApiOptions
+  >(QUOTATION_ENDPOINT, fetch);
 
   return {
     ...baseRepo,
@@ -48,12 +58,14 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Quotation repository using real API endpoints
+     * Quotation repository — standard CRUD via repo.entity,
+     * plus custom query and ping endpoints.
      */
     quotation: {
+      ...quotationRepo,
+
       /**
        * Query quotations with batch filtering
-       * Returns all quotations by default
        */
       async query(
         batchQuery: QuotationBatchQuery = { all: true },
@@ -67,53 +79,6 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             query: buildQueryObject(options),
           },
         );
-      },
-
-      /**
-       * List all quotations (convenience method)
-       * Returns items from first page of query
-       */
-      async list(options?: QuotationApiOptions): Promise<Quotation[]> {
-        const result = await fetch<QuotationBatchQueryResult>(
-          `${QUOTATION_ENDPOINT}/query`,
-          {
-            method: 'POST',
-            body: { all: true, pageSize: 1000 },
-            query: buildQueryObject({
-              ...options,
-              fields: options?.fields || ['default'],
-            }),
-          },
-        );
-        return result.items;
-      },
-
-      /**
-       * Get single quotation by ID
-       */
-      async get(
-        quotationId: string,
-        options?: QuotationApiOptions,
-      ): Promise<Quotation> {
-        const result = await fetch<QuotationBatchQueryResult>(
-          `${QUOTATION_ENDPOINT}/query`,
-          {
-            method: 'POST',
-            body: {
-              include: [
-                {
-                  condition: 'or' as const,
-                  selections: [{ quotationIds: [quotationId] }],
-                },
-              ],
-            },
-            query: buildQueryObject(options),
-          },
-        );
-        if (!result.items || result.items.length === 0) {
-          throw new Error(`Quotation with ID ${quotationId} not found`);
-        }
-        return result.items[0]!;
       },
 
       /**

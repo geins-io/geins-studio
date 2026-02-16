@@ -11,7 +11,7 @@
     "generate": "nuxi generate",
     "preview": "nuxi preview",
     "postinstall": "nuxi prepare",
-    "docs:dev": "vitepress dev docs",
+    "docs:dev": "vitepress dev docs --port 3010",
     "docs:build": "vitepress build docs",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
