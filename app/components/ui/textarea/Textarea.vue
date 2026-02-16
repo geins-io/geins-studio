@@ -44,7 +44,7 @@ const inputAttrs = computed(() => {
   <div
     :class="
       cn(
-        'border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs outline-hidden transition-[color,box-shadow] focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+        'bg-input focus-within:border-primary relative field-sizing-content min-h-16 w-full rounded-lg border text-base shadow-xs transition-[color,box-shadow] focus-within:outline-hidden md:text-sm',
         props.class,
       )
     "
@@ -71,7 +71,7 @@ const inputAttrs = computed(() => {
       data-slot="textarea"
       :class="
         cn(
-          `bg-input flex h-full w-full ${valid ? '' : 'outline-destructive outline-2 outline-offset-2 outline-solid'} placeholder:text-muted-foreground text-sm transition-colors focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50`,
+          `flex h-full w-full bg-transparent ${valid ? '' : 'outline-destructive outline-2 outline-offset-2 outline-solid'} placeholder:text-muted-foreground text-sm transition-colors focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50`,
           props.size === 'sm' ? 'min-h-12 text-xs' : 'min-h-16',
           'rounded-lg px-2 py-2 sm:px-3',
         )

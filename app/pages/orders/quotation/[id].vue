@@ -2,7 +2,6 @@
 // =====================================================================================
 // IMPORTS & TYPES
 // =====================================================================================
-import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import type {
@@ -12,6 +11,7 @@ import type {
   QuotationUpdate,
   QuotationApiOptions,
 } from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -44,7 +44,7 @@ const formSchema = toTypedSchema(
         .min(1, t('entity_required', { entityName: 'company' })),
       createdBy: z
         .string()
-        .min(1, t('entity_required', { entityName: 'sales_rep' })),
+        .min(1, t('entity_required', { entityName: 'owner' })),
       buyerId: z.string().optional(),
       currency: z
         .string()
@@ -172,7 +172,13 @@ const {
   deleteEntity,
   parseAndSaveData,
   validateSteps,
-} = useEntityEdit<QuotationBase, Quotation, QuotationCreate, QuotationUpdate, QuotationApiOptions>({
+} = useEntityEdit<
+  QuotationBase,
+  Quotation,
+  QuotationCreate,
+  QuotationUpdate,
+  QuotationApiOptions
+>({
   repository: orderApi.quotation,
   validationSchema: formSchema,
   initialEntityData: entityBase,
@@ -304,8 +310,8 @@ watch(
 
       // Clear sales rep and buyer when company changes
       if (createMode.value) {
-        form.setFieldValue('details.createdBy', '');
-        form.setFieldValue('details.buyerId', '');
+        form.setFieldValue('details.createdBy', '', false);
+        form.setFieldValue('details.buyerId', '', false);
 
         // Set currency to first available from company's channels
         if (availableCurrencies.value.length > 0) {
@@ -337,8 +343,26 @@ const summary = computed(() => {
   if (!entityData.value) return [];
 
   if (createMode.value) {
+    const formValues = form.values.details;
+    const ownerName =
+      availableSalesReps.value.find((u) => u._id === formValues?.createdBy)
+        ?.name || formValues?.createdBy;
+    const buyerObj = availableBuyers.value.find(
+      (b) => b._id === formValues?.buyerId,
+    );
+    const buyerName = buyerObj
+      ? `${buyerObj.firstName} ${buyerObj.lastName}`
+      : '';
     return [
+      { label: t('name'), value: formValues?.name || '-' },
       { label: t('company'), value: selectedAccountName.value || '-' },
+      { label: t('owner'), value: ownerName || '-' },
+      { label: t('buyer'), value: buyerName || '-' },
+      { label: t('currency'), value: formValues?.currency || '-' },
+      {
+        label: t('expiration_date'),
+        value: formValues?.expirationDate || '-',
+      },
       { label: t('status'), value: 'draft' },
     ];
   }
@@ -389,7 +413,6 @@ definePageMeta({
     @confirm="confirmDelete"
   />
   <ContentEditWrap
-    v-if="!loading"
     :entity-name="entityName"
     :entity-id="entityId"
     :create-mode="createMode"
@@ -539,7 +562,7 @@ definePageMeta({
                             <SelectItem
                               v-for="user in availableSalesReps"
                               :key="user._id"
-                              :value="user.name || user._id"
+                              :value="user._id"
                             >
                               {{ user.name }}
                             </SelectItem>
