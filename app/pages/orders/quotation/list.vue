@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import type { Quotation, ColumnOptions, StringKeyOf } from '#shared/types';
+import type {
+  Quotation,
+  QuotationList,
+  ColumnOptions,
+  StringKeyOf,
+} from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = Quotation;
-type EntityList = Quotation;
+type EntityList = QuotationList;
 
-const scope = 'pages/orders/quotations/list.vue';
+const scope = 'pages/orders/quotation/list.vue';
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog(scope);
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
@@ -32,11 +37,22 @@ const { handleFetchResult, showErrorToast } = usePageError({
   scope,
 });
 
-// Add the mapping function
+// Transform raw API quotation data to list view format
 const mapToListData = (list: Entity[]): EntityList[] => {
   return list.map((item) => {
+    const { items, ...rest } = item;
     return {
-      ...item,
+      ...rest,
+      accountName: item.company?.name || '',
+      itemCount: items?.length || 0,
+      sum: {
+        price: item.total.subtotal.toString(),
+        currency: item.currency,
+      },
+      expirationDate: item.validTo || '',
+      createdBy: item.owner?.name || '',
+      dateCreated: item.validFrom,
+      dateModified: item.validFrom,
     };
   });
 };
@@ -66,34 +82,11 @@ onMounted(() => {
     columnTypes: {
       name: 'link',
       status: 'status',
-      dateModified: 'date',
       sum: 'currency',
-      expirationDate: 'date',
-      itemCount: 'number',
     },
     linkColumns: {
       name: { url: entityUrl, idField: '_id' },
     },
-    columnTitles: {
-      _id: 'ID',
-      name: t('name'),
-      status: t('status'),
-      accountName: t('company'),
-      dateCreated: t('created'),
-      dateModified: t('modified'),
-      sum: t('sum'),
-      expirationDate: t('expiration_date'),
-      itemCount: t('item', 2),
-      createdBy: t('created_by'),
-    },
-    excludeColumns: [
-      '_type',
-      'accountId',
-      'channel',
-      'currency',
-      'notes',
-      'items',
-    ],
   };
   // GET AND SET COLUMNS
   columns.value = getColumns(dataList.value, columnOptions);
@@ -101,9 +94,9 @@ onMounted(() => {
   addActionsColumn(
     columns.value,
     {
-      onEdit: (item: Entity) =>
+      onEdit: (item: EntityList) =>
         navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
-      onDelete: async (item: Entity) => await openDeleteDialog(item._id),
+      onDelete: async (item: EntityList) => await openDeleteDialog(item._id),
     },
     'actions',
     ['edit', 'delete'],
@@ -113,7 +106,25 @@ onMounted(() => {
 
 // SET COLUMN VISIBILITY STATE
 const { getVisibilityState } = useTable<EntityList>();
-const hiddenColumns: StringKeyOf<EntityList>[] = [];
+const hiddenColumns: StringKeyOf<EntityList>[] = [
+  'quotationId',
+  'quotationNumber',
+  'currency',
+  'validFrom',
+  'validTo',
+  'billingAddress',
+  'shippingAddress',
+  'total',
+  'company',
+  'owner',
+  'customer',
+  'validPaymentMethods',
+  'validShippingMethods',
+  'terms',
+  'communication',
+  'changelog',
+  'orderId',
+];
 visibilityState.value = getVisibilityState(hiddenColumns);
 
 const { toast } = useToast();
@@ -156,6 +167,15 @@ const confirmDelete = async () => {
   deleting.value = false;
   deleteDialogOpen.value = false;
 };
+
+// SET UP SEARCHABLE FIELDS
+const searchableFields: Array<keyof EntityList> = [
+  '_id',
+  'name',
+  'accountName',
+  'status',
+  'createdBy',
+];
 </script>
 
 <template>
@@ -179,6 +199,7 @@ const confirmDelete = async () => {
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
+      :searchable-fields="searchableFields"
     >
       <template #empty-actions>
         <ButtonIcon
