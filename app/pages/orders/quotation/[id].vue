@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import type {
+  QuotationBase,
   Quotation,
   QuotationCreate,
   QuotationUpdate,
@@ -171,9 +172,7 @@ const {
   deleteEntity,
   parseAndSaveData,
   validateSteps,
-  // TBase is `any` because the quotation create request schema differs from the
-  // response schema — the standard CreateEntity<TBase> constraint doesn't apply.
-} = useEntityEdit<any, Quotation, QuotationCreate, QuotationUpdate, QuotationApiOptions>({
+} = useEntityEdit<QuotationBase, Quotation, QuotationCreate, QuotationUpdate, QuotationApiOptions>({
   repository: orderApi.quotation,
   validationSchema: formSchema,
   initialEntityData: entityBase,
