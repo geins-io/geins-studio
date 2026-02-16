@@ -3,7 +3,6 @@ import type {
   OrderBatchQuery,
   BatchQueryResult,
   Quotation,
-  QuotationList,
   QuotationBatchQuery,
   QuotationBatchQueryResult,
   QuotationApiOptions,
@@ -14,28 +13,6 @@ import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/order';
 const QUOTATION_ENDPOINT = '/quotation';
-
-/**
- * Transform API quotation response to list view format with computed display fields
- */
-function transformQuotationToList(quotation: Quotation): QuotationList {
-  const itemCount = quotation.items?.length || 0;
-  const sum = {
-    price: quotation.total.subtotal.toString(),
-    currency: quotation.currency,
-  };
-
-  return {
-    ...quotation,
-    accountName: quotation.company?.name || '',
-    itemCount,
-    sum,
-    expirationDate: quotation.validTo || '',
-    createdBy: quotation.owner?.name || '',
-    dateCreated: quotation.validFrom,
-    dateModified: quotation.validFrom,
-  };
-}
 
 /**
  * Repository for managing order operations
@@ -96,7 +73,7 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
        * List all quotations (convenience method)
        * Returns items from first page of query
        */
-      async list(options?: QuotationApiOptions): Promise<QuotationList[]> {
+      async list(options?: QuotationApiOptions): Promise<Quotation[]> {
         const result = await fetch<QuotationBatchQueryResult>(
           `${QUOTATION_ENDPOINT}/query`,
           {
@@ -108,7 +85,7 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             }),
           },
         );
-        return result.items.map(transformQuotationToList);
+        return result.items;
       },
 
       /**
