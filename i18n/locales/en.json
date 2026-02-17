@@ -109,6 +109,7 @@
   "and": "and",
   "select": "Select",
   "selected": "Selected",
+  "none": "None",
   "add_selected": "Add selected",
   "select_from": "Select from",
   "cancel": "Cancel",
@@ -128,6 +129,10 @@
   "modified": "Modified",
   "created_by": "Created by",
   "expiration_date": "Expiration date",
+  "ref_number": "Ref number",
+  "customer": "Customer | Customers",
+  "org_nr": "Org. number",
+  "change_buyer": "Change buyer",
   "sum": "Sum",
   "page_of": "Page {page} of {total}",
   "email": "Email",
@@ -396,7 +401,11 @@
     "quotation_summary_description": "Summary of quotation details and totals",
     "buyer_optional_description": "Optional - select a specific buyer for this quotation",
     "expiration_date_optional": "Optional - defaults to 30 days from creation",
+    "set_expiration_date": "Set expiration date",
     "notes": "Notes",
-    "notes_placeholder": "Add any notes or special instructions for this quotation..."
+    "notes_placeholder": "Add any notes or special instructions for this quotation...",
+    "payment_settings": "Payment settings",
+    "payment_terms": "Payment terms",
+    "products_tab_placeholder": "Use the SKU selector to add products to this quotation."
   }
 }

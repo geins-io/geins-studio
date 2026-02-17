@@ -4,7 +4,7 @@
 
 ## Overview
 
-Geins Studio is a **client-side SPA** (`ssr: false`) built with **Nuxt 3**, **TypeScript**, **shadcn-vue**, and **Tailwind CSS 4**. It communicates with the Geins Management API through a Nitro server proxy that handles authentication forwarding.
+Geins Studio is a **client-side SPA** (`ssr: false`) built with **Nuxt 4**, **TypeScript**, **shadcn-vue**, and **Tailwind CSS 4**. It communicates with the Geins Management API through a Nitro server proxy that handles authentication forwarding.
 
 ```
 ┌─────────────────────────────────────────────────────────┐

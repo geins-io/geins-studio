@@ -109,6 +109,7 @@
   "and": "och",
   "select": "Välj",
   "selected": "Vald",
+  "none": "Inga",
   "add_selected": "Lägg till valda",
   "select_from": "Välj från",
   "cancel": "Avbryt",
@@ -128,6 +129,10 @@
   "modified": "Ändrad",
   "created_by": "Skapad av",
   "expiration_date": "Utgångsdatum",
+  "ref_number": "Referensnummer",
+  "customer": "Kund | Kunder",
+  "org_nr": "Org. nummer",
+  "change_buyer": "Ändra köpare",
   "sum": "Summa",
   "page_of": "Sida {page} av {total}",
   "email": "E-post",
@@ -396,7 +401,11 @@
     "quotation_summary_description": "Sammanfattning av offertdetaljer och summor",
     "buyer_optional_description": "Valfritt - välj en specifik köpare för denna offert",
     "expiration_date_optional": "Valfritt - standardvärdet är 30 dagar från skapandet",
+    "set_expiration_date": "Ange utgångsdatum",
     "notes": "Anteckningar",
-    "notes_placeholder": "Lägg till eventuella anteckningar eller speciella instruktioner för denna offert..."
+    "notes_placeholder": "Lägg till eventuella anteckningar eller speciella instruktioner för denna offert...",
+    "payment_settings": "Betalningsinställningar",
+    "payment_terms": "Betalningsvillkor",
+    "products_tab_placeholder": "Använd SKU-väljaren för att lägga till produkter i denna offert."
   }
 }

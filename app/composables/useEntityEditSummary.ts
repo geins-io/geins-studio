@@ -7,6 +7,8 @@ interface EntityEditSummaryProps {
   settingsSummary: Ref<DataItem[]> | ComputedRef<DataItem[]>;
   entityName: string;
   entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
+  showActiveStatus?: boolean;
+  status?: string;
 }
 
 interface UseEntityEditSummaryReturnType {
@@ -17,6 +19,8 @@ interface UseEntityEditSummaryReturnType {
     settingsSummary?: DataItem[];
     entityName: string;
     entityLiveStatus: boolean;
+    showActiveStatus?: boolean;
+    status?: string;
   }>;
 }
 
@@ -40,6 +44,10 @@ export const useEntityEditSummary = (
     settingsSummary: unref(props.settingsSummary),
     entityName: props.entityName,
     entityLiveStatus: unref(props.entityLiveStatus),
+    ...(props.showActiveStatus !== undefined && {
+      showActiveStatus: props.showActiveStatus,
+    }),
+    ...(props.status !== undefined && { status: props.status }),
   }));
 
   return { summaryProps };

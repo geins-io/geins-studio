@@ -4,12 +4,14 @@
 // =====================================================================================
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
+import { SelectorMode, SelectorEntityType, TableMode } from '#shared/types';
 import type {
   QuotationBase,
   Quotation,
   QuotationCreate,
   QuotationUpdate,
   QuotationApiOptions,
+  SelectorEntity,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 
@@ -28,9 +30,14 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
-const { orderApi, customerApi, globalApi } = useGeinsRepository();
+const { orderApi, customerApi, globalApi, productApi } = useGeinsRepository();
 const { currentCurrencies, channels } = storeToRefs(accountStore);
 const currentChannels = computed(() => channels.value);
+const {
+  convertToSimpleSelection,
+  getFallbackSelection,
+  transformProductsToSelectorEntities,
+} = useSelector();
 
 // =====================================================================================
 // FORM VALIDATION SCHEMA
@@ -51,6 +58,7 @@ const formSchema = toTypedSchema(
         .min(1, t('entity_required', { entityName: 'currency' })),
       expirationDate: z.string().optional(),
       notes: z.string().optional(),
+      paymentTerms: z.string().optional(),
     }),
   }),
 );
@@ -85,6 +93,50 @@ const buyers = ref<CompanyBuyer[]>([]);
 const selectedCompanyId = ref<string>('');
 const selectedAccountName = ref<string>('');
 const selectedCompany = ref<CustomerCompany | undefined>();
+
+// Edit mode state
+const hasExpirationDate = ref(false);
+const paymentTermsOptions = [
+  { id: 'net15', label: 'Net 15' },
+  { id: 'net30', label: 'Net 30' },
+  { id: 'net45', label: 'Net 45' },
+  { id: 'net60', label: 'Net 60' },
+  { id: 'due_on_receipt', label: 'Due on receipt' },
+];
+
+// SKU selector state (Products tab)
+const productsWithSkus = ref<SelectorEntity[]>([]);
+const loadingProducts = ref(false);
+const skuSelection = ref<SelectorSelectionInternal>(getFallbackSelection());
+
+const updateSkuSelection = (updatedSelection: SelectorSelectionInternal) => {
+  skuSelection.value = updatedSelection;
+};
+
+const simpleSkuSelection = computed(() =>
+  convertToSimpleSelection(skuSelection.value),
+);
+
+const selectedSkus = computed(() => {
+  const skus: SelectorEntity[] = [];
+  productsWithSkus.value.forEach((product) => {
+    if (Number(product.skus?.length) > 1) {
+      product.skus?.forEach((sku) => {
+        if (simpleSkuSelection.value.includes(sku._id)) {
+          skus.push({ ...sku, name: `${product.name} (${sku.name})` });
+        }
+      });
+    } else {
+      if (simpleSkuSelection.value.includes(product._id)) {
+        skus.push(product);
+      }
+    }
+  });
+  return skus;
+});
+
+const { getColumns } = useColumns<SelectorEntity>();
+const selectedSkuColumns = computed(() => getColumns(selectedSkus.value));
 
 // Filtered sales reps based on selected company
 const availableSalesReps = computed(() => {
@@ -197,6 +249,7 @@ const {
       currency: '',
       expirationDate: '',
       notes: '',
+      paymentTerms: '',
     },
   }),
   parseEntityData: (quotation: Quotation) => {
@@ -204,19 +257,50 @@ const {
     entityLiveStatus.value =
       quotation.status === 'pending' || quotation.status === 'accepted';
 
+    // Set company first so watchers populate filtered lists
     const companyId = quotation.company?.companyId?.toString() || '';
     selectedCompanyId.value = companyId;
     selectedAccountName.value = quotation.company?.name || '';
+    selectedCompany.value = companies.value.find((c) => c._id === companyId);
+
+    // Resolve owner ID from name/email match
+    const ownerId =
+      users.value.find(
+        (u) =>
+          u.name === quotation.owner?.name ||
+          u.email === quotation.owner?.email,
+      )?._id || '';
+
+    // Resolve buyer ID from name/email match
+    const buyerBuyers = selectedCompany.value?.buyers || [];
+    const buyerId =
+      buyerBuyers.find(
+        (b) =>
+          `${b.firstName} ${b.lastName}` === quotation.customer?.name ||
+          b.email === quotation.customer?.email,
+      )?._id || '';
+
+    // Resolve payment terms from validPaymentMethods
+    const paymentTerms = quotation.validPaymentMethods?.[0]?.name || '';
+
+    // Set expiration date toggle
+    hasExpirationDate.value = !!quotation.validTo;
+
+    // Fetch products for SKU selector if not already loaded
+    if (productsWithSkus.value.length === 0) {
+      fetchProducts();
+    }
 
     form.setValues({
       details: {
         name: quotation.name || '',
         accountId: companyId,
-        createdBy: quotation.owner?.name || '',
-        buyerId: quotation.customer?.name || '',
+        createdBy: ownerId,
+        buyerId,
         currency: quotation.currency || 'SEK',
         expirationDate: quotation.validTo || '',
         notes: quotation.terms?.text || '',
+        paymentTerms,
       },
     });
   },
@@ -229,8 +313,6 @@ const {
       companyId: formData.details.accountId || undefined,
       ownerId: formData.details.createdBy || undefined,
       customerId: formData.details.buyerId || undefined,
-      validTo: formData.details.expirationDate || undefined,
-      terms: formData.details.notes || undefined,
     };
   },
   prepareUpdateData: (formData, entity) => ({
@@ -247,13 +329,12 @@ const {
         companyId: values.details.accountId || undefined,
         ownerId: values.details.createdBy || undefined,
         customerId: values.details.buyerId || undefined,
-        validTo: values.details.expirationDate || undefined,
-        terms: values.details.notes || undefined,
       };
     } else {
       entityDataUpdate.value = {
         ...entityData.value,
         name: values.details.name,
+        validTo: values.details.expirationDate || undefined,
       };
     }
   },
@@ -298,6 +379,21 @@ const fetchUsers = async () => {
   }
 };
 
+// Fetch products with SKUs for product selector
+const fetchProducts = async () => {
+  loadingProducts.value = true;
+  try {
+    const response = await productApi.list({ fields: ['media', 'skus'] });
+    productsWithSkus.value = transformProductsToSelectorEntities(
+      response?.items || [],
+    );
+  } catch (error) {
+    geinsLogError('Failed to fetch products:', error);
+  } finally {
+    loadingProducts.value = false;
+  }
+};
+
 // Watch for company selection changes
 watch(
   () => form.values.details?.accountId,
@@ -329,9 +425,26 @@ watch(
   },
 );
 
+// Quotation response data for edit mode display
+const quotationData = computed(() => {
+  if (createMode.value) return null;
+  return entityDataUpdate.value as unknown as Quotation;
+});
+
+// Sync expiration date toggle with form value
+watch(hasExpirationDate, (enabled) => {
+  if (!enabled) {
+    form.setFieldValue('details.expirationDate', '');
+  }
+});
+
 // Initialize data
 onMounted(async () => {
   await Promise.all([fetchCompanies(), fetchUsers()]);
+  // Fetch products for SKU selector (only needed in edit mode)
+  if (!createMode.value) {
+    fetchProducts();
+  }
 });
 
 // =====================================================================================
@@ -342,44 +455,26 @@ onMounted(async () => {
 const summary = computed(() => {
   if (!entityData.value) return [];
 
-  if (createMode.value) {
-    const formValues = form.values.details;
-    const ownerName =
-      availableSalesReps.value.find((u) => u._id === formValues?.createdBy)
-        ?.name || formValues?.createdBy;
-    const buyerObj = availableBuyers.value.find(
-      (b) => b._id === formValues?.buyerId,
-    );
-    const buyerName = buyerObj
-      ? `${buyerObj.firstName} ${buyerObj.lastName}`
-      : '';
-    return [
-      { label: t('name'), value: formValues?.name || '-' },
-      { label: t('company'), value: selectedAccountName.value || '-' },
-      { label: t('owner'), value: ownerName || '-' },
-      { label: t('buyer'), value: buyerName || '-' },
-      { label: t('currency'), value: formValues?.currency || '-' },
-      {
-        label: t('expiration_date'),
-        value: formValues?.expirationDate || '-',
-      },
-      { label: t('status'), value: 'draft' },
-    ];
-  }
-
-  // Edit mode — entityData is the Quotation response shape
-  const data = entityDataUpdate.value as unknown as Quotation;
+  const formValues = form.values.details;
+  const ownerName =
+    availableSalesReps.value.find((u) => u._id === formValues?.createdBy)
+      ?.name || formValues?.createdBy;
+  const buyerObj = availableBuyers.value.find(
+    (b) => b._id === formValues?.buyerId,
+  );
+  const buyerName = buyerObj
+    ? `${buyerObj.firstName} ${buyerObj.lastName}`
+    : '';
   return [
-    { label: t('company'), value: data.company?.name || '-' },
-    { label: t('status'), value: data.status || '-' },
-    {
-      label: t('sum'),
-      value: `${data.total?.subtotal || '0'} ${data.currency || ''}`,
-    },
-    {
-      label: t('item', 2),
-      value: data.items?.length?.toString() || '0',
-    },
+    ...(formValues?.name ? [{ label: t('name'), value: formValues.name }] : []),
+    ...(selectedAccountName.value
+      ? [{ label: t('company'), value: selectedAccountName.value }]
+      : []),
+    ...(ownerName ? [{ label: t('owner'), value: ownerName }] : []),
+    ...(buyerName ? [{ label: t('buyer'), value: buyerName }] : []),
+    ...(formValues?.currency
+      ? [{ label: t('currency'), value: formValues.currency }]
+      : []),
   ];
 });
 
@@ -392,6 +487,8 @@ const { summaryProps } = useEntityEditSummary({
   settingsSummary,
   entityName,
   entityLiveStatus,
+  showActiveStatus: false,
+  status: entityData.value?.status || 'draft',
 });
 
 definePageMeta({
@@ -472,123 +569,406 @@ definePageMeta({
         :tabs="tabs"
         @validate-on-change="validateOnChange"
       >
+        <!-- TAB 0: GENERAL -->
         <KeepAlive>
           <ContentEditMainContent
             v-if="currentTab === 0"
             :key="`tab-${currentTab}`"
           >
-            <ContentEditCard
-              :create-mode="createMode"
-              :title="$t('entity_details', { entityName })"
-              :description="
-                createMode
-                  ? $t('orders.quotation_create_description')
-                  : $t('orders.quotation_edit_description')
-              "
-            >
-              <FormGridWrap>
-                <ContentCardHeader
-                  :title="$t('orders.quotation_basic_info')"
-                  size="md"
-                  heading-level="h3"
-                />
-                <FormGrid design="1+1">
-                  <FormField v-slot="{ componentField }" name="details.name">
+            <!-- ========== CREATE MODE ========== -->
+            <template v-if="createMode">
+              <ContentEditCard
+                :create-mode="createMode"
+                :title="$t('entity_details', { entityName })"
+                :description="$t('orders.quotation_create_description')"
+              >
+                <FormGridWrap>
+                  <ContentCardHeader
+                    :title="$t('orders.quotation_basic_info')"
+                    size="md"
+                    heading-level="h3"
+                  />
+                  <FormGrid design="1+1">
+                    <FormField v-slot="{ componentField }" name="details.name">
+                      <FormItem>
+                        <FormLabel>{{
+                          $t('entity_name', { entityName })
+                        }}</FormLabel>
+                        <FormControl>
+                          <Input
+                            v-bind="componentField"
+                            :placeholder="$t('entity_name', { entityName })"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                  <FormGrid design="1">
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.accountId"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('company') }}</FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField">
+                            <SelectTrigger>
+                              <SelectValue
+                                :placeholder="
+                                  $t('select_entity', { entityName: 'company' })
+                                "
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                v-for="company in companies"
+                                :key="company._id"
+                                :value="company._id"
+                              >
+                                {{ company.name }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                  <FormGrid design="1+1+1">
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.createdBy"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('owner') }}</FormLabel>
+                        <FormControl>
+                          <Select
+                            v-bind="componentField"
+                            :disabled="!selectedCompanyId"
+                          >
+                            <SelectTrigger>
+                              <SelectValue
+                                :placeholder="
+                                  $t('select_entity', { entityName: 'owner' })
+                                "
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                v-for="user in availableSalesReps"
+                                :key="user._id"
+                                :value="user._id"
+                              >
+                                {{ user.name }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.buyerId"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('buyer') }}</FormLabel>
+                        <FormControl>
+                          <Select
+                            v-bind="componentField"
+                            :disabled="
+                              !selectedCompanyId || availableBuyers.length === 0
+                            "
+                          >
+                            <SelectTrigger>
+                              <SelectValue
+                                :placeholder="
+                                  $t('select_entity', { entityName: 'buyer' })
+                                "
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                v-for="buyer in availableBuyers"
+                                :key="buyer._id"
+                                :value="buyer._id"
+                              >
+                                {{ buyer.firstName }} {{ buyer.lastName }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.currency"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('currency') }}</FormLabel>
+                        <FormControl>
+                          <Select
+                            v-bind="componentField"
+                            :disabled="!selectedCompanyId"
+                          >
+                            <SelectTrigger>
+                              <SelectValue
+                                :placeholder="
+                                  $t('select_entity', {
+                                    entityName: 'currency',
+                                  })
+                                "
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                v-for="currency in availableCurrencies"
+                                :key="currency._id"
+                                :value="currency._id"
+                              >
+                                {{ currency._id }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                </FormGridWrap>
+              </ContentEditCard>
+
+              <div class="flex flex-row justify-end gap-4">
+                <Button variant="secondary" as-child>
+                  <NuxtLink :to="entityListUrl">
+                    {{ $t('cancel') }}
+                  </NuxtLink>
+                </Button>
+                <Button
+                  :loading="loading"
+                  :disabled="!formValid || loading"
+                  @click="createEntity"
+                >
+                  {{ $t('create_entity', { entityName }) }}
+                </Button>
+              </div>
+            </template>
+
+            <!-- ========== EDIT MODE ========== -->
+            <template v-else>
+              <!-- Card 1: Quotation Details -->
+              <ContentEditCard
+                :create-mode="false"
+                :title="$t('entity_details', { entityName })"
+                :description="$t('orders.quotation_edit_description')"
+              >
+                <FormGridWrap>
+                  <FormGrid design="1+1">
+                    <FormField v-slot="{ componentField }" name="details.name">
+                      <FormItem>
+                        <FormLabel>{{
+                          $t('entity_name', { entityName })
+                        }}</FormLabel>
+                        <FormControl>
+                          <Input
+                            v-bind="componentField"
+                            :placeholder="$t('entity_name', { entityName })"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+
                     <FormItem>
-                      <FormLabel>{{
-                        $t('entity_name', { entityName })
-                      }}</FormLabel>
+                      <FormLabel>{{ $t('ref_number') }}</FormLabel>
                       <FormControl>
                         <Input
-                          v-bind="componentField"
-                          :placeholder="$t('entity_name', { entityName })"
+                          :model-value="quotationData?.quotationNumber || ''"
+                          disabled
                         />
                       </FormControl>
-                      <FormMessage />
                     </FormItem>
-                  </FormField>
-                </FormGrid>
-                <FormGrid design="1">
-                  <FormField
-                    v-slot="{ componentField }"
-                    name="details.accountId"
-                  >
-                    <FormItem>
-                      <FormLabel>{{ $t('company') }}</FormLabel>
-                      <FormControl>
-                        <Select v-bind="componentField" :disabled="!createMode">
-                          <SelectTrigger>
-                            <SelectValue
-                              :placeholder="
-                                $t('select_entity', { entityName: 'company' })
-                              "
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem
-                              v-for="company in companies"
-                              :key="company._id"
-                              :value="company._id"
-                            >
-                              {{ company.name }}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                </FormGrid>
-                <FormGrid design="1+1+1">
-                  <FormField
-                    v-slot="{ componentField }"
-                    name="details.createdBy"
-                  >
-                    <FormItem>
-                      <FormLabel>Quotation owner</FormLabel>
-                      <FormControl>
-                        <Select
-                          v-bind="componentField"
-                          :disabled="!selectedCompanyId"
-                        >
-                          <SelectTrigger>
-                            <SelectValue
-                              :placeholder="
-                                $t('select_entity', { entityName: 'owner' })
-                              "
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem
-                              v-for="user in availableSalesReps"
-                              :key="user._id"
-                              :value="user._id"
-                            >
-                              {{ user.name }}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
+                  </FormGrid>
 
-                  <FormField v-slot="{ componentField }" name="details.buyerId">
-                    <FormItem>
-                      <FormLabel>{{ $t('buyer') }}</FormLabel>
-                      <FormControl>
-                        <Select
-                          v-bind="componentField"
-                          :disabled="
-                            !selectedCompanyId || availableBuyers.length === 0
+                  <FormGrid design="1+1">
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.createdBy"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('owner') }}</FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField">
+                            <SelectTrigger>
+                              <SelectValue
+                                :placeholder="
+                                  $t('select_entity', { entityName: 'owner' })
+                                "
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                v-for="user in availableSalesReps"
+                                :key="user._id"
+                                :value="user._id"
+                              >
+                                {{ user.name }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.currency"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('currency') }}</FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField" disabled>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                v-for="currency in availableCurrencies"
+                                :key="currency._id"
+                                :value="currency._id"
+                              >
+                                {{ currency._id }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                </FormGridWrap>
+              </ContentEditCard>
+
+              <!-- Card 2: Customer -->
+              <ContentEditCard :create-mode="false" :title="$t('customer')">
+                <div class="space-y-4">
+                  <!-- Company info -->
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <ContentCardHeader
+                        :title="$t('company')"
+                        size="sm"
+                        heading-level="h4"
+                      />
+                      <div class="text-muted-foreground mt-1 text-sm">
+                        <p class="font-medium">
+                          {{ quotationData?.company?.name || '-' }}
+                        </p>
+                        <p v-if="quotationData?.company?.orgNr">
+                          {{ $t('org_nr') }}:
+                          {{ quotationData.company.orgNr }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Addresses -->
+                  <div
+                    v-if="
+                      quotationData?.billingAddress ||
+                      quotationData?.shippingAddress
+                    "
+                    class="grid grid-cols-2 gap-4 border-t pt-4"
+                  >
+                    <div v-if="quotationData?.billingAddress">
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('billing_address') }}
+                      </p>
+                      <div class="text-xs">
+                        <p v-if="quotationData.billingAddress.name">
+                          {{ quotationData.billingAddress.name }}
+                        </p>
+                        <p v-if="quotationData.billingAddress.address1">
+                          {{ quotationData.billingAddress.address1 }}
+                        </p>
+                        <p v-if="quotationData.billingAddress.address2">
+                          {{ quotationData.billingAddress.address2 }}
+                        </p>
+                        <p
+                          v-if="
+                            quotationData.billingAddress.zip ||
+                            quotationData.billingAddress.city
                           "
                         >
+                          {{ quotationData.billingAddress.zip }}
+                          {{ quotationData.billingAddress.city }}
+                        </p>
+                        <p v-if="quotationData.billingAddress.country">
+                          {{ quotationData.billingAddress.country }}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div v-if="quotationData?.shippingAddress">
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('shipping_address') }}
+                      </p>
+                      <div class="text-xs">
+                        <p v-if="quotationData.shippingAddress.name">
+                          {{ quotationData.shippingAddress.name }}
+                        </p>
+                        <p v-if="quotationData.shippingAddress.address1">
+                          {{ quotationData.shippingAddress.address1 }}
+                        </p>
+                        <p v-if="quotationData.shippingAddress.address2">
+                          {{ quotationData.shippingAddress.address2 }}
+                        </p>
+                        <p
+                          v-if="
+                            quotationData.shippingAddress.zip ||
+                            quotationData.shippingAddress.city
+                          "
+                        >
+                          {{ quotationData.shippingAddress.zip }}
+                          {{ quotationData.shippingAddress.city }}
+                        </p>
+                        <p v-if="quotationData.shippingAddress.country">
+                          {{ quotationData.shippingAddress.country }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Buyer -->
+                  <div class="border-t pt-4">
+                    <div class="flex items-start justify-between">
+                      <div>
+                        <ContentCardHeader
+                          :title="$t('buyer')"
+                          size="sm"
+                          heading-level="h4"
+                        />
+                        <div class="text-muted-foreground mt-1 text-sm">
+                          <p>{{ quotationData?.customer?.name || '-' }}</p>
+                          <p v-if="quotationData?.customer?.email">
+                            {{ quotationData.customer.email }}
+                          </p>
+                          <p v-if="quotationData?.customer?.phone">
+                            {{ quotationData.customer.phone }}
+                          </p>
+                        </div>
+                      </div>
+                      <FormField
+                        v-slot="{ componentField }"
+                        name="details.buyerId"
+                      >
+                        <Select v-bind="componentField" class="w-48">
                           <SelectTrigger>
-                            <SelectValue
-                              :placeholder="
-                                $t('select_entity', { entityName: 'buyer' })
-                              "
-                            />
+                            <SelectValue :placeholder="$t('change_buyer')" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem
@@ -600,105 +980,143 @@ definePageMeta({
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
+                      </FormField>
+                    </div>
+                  </div>
+                </div>
+              </ContentEditCard>
 
-                  <FormField
-                    v-slot="{ componentField }"
-                    name="details.currency"
-                  >
-                    <FormItem>
-                      <FormLabel>{{ $t('currency') }}</FormLabel>
-                      <FormControl>
-                        <Select
-                          v-bind="componentField"
-                          :disabled="!selectedCompanyId"
-                        >
-                          <SelectTrigger>
-                            <SelectValue
-                              :placeholder="
-                                $t('select_entity', { entityName: 'currency' })
-                              "
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem
-                              v-for="currency in availableCurrencies"
-                              :key="currency._id"
-                              :value="currency._id"
-                            >
-                              {{ currency._id }}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                </FormGrid>
-              </FormGridWrap>
-
-              <FormGridWrap class="border-t pt-6">
-                <ContentCardHeader
-                  :title="$t('orders.quotation_additional_info')"
-                  size="md"
-                  heading-level="h3"
-                />
-                <FormGrid design="1+1">
-                  <FormField
-                    v-slot="{ componentField }"
-                    name="details.expirationDate"
-                  >
-                    <FormItem>
-                      <FormLabel>{{ $t('expiration_date') }}</FormLabel>
-                      <FormControl>
-                        <FormInputDate
-                          v-bind="componentField"
-                          :placeholder="$t('expiration_date')"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {{ $t('orders.expiration_date_optional') }}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                </FormGrid>
-
-                <FormGrid design="1">
-                  <FormField v-slot="{ componentField }" name="details.notes">
-                    <FormItem>
-                      <FormLabel>{{ $t('orders.notes') }}</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          v-bind="componentField"
-                          :placeholder="$t('orders.notes_placeholder')"
-                          rows="4"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                </FormGrid>
-              </FormGridWrap>
-            </ContentEditCard>
-
-            <div v-if="createMode" class="flex flex-row justify-end gap-4">
-              <Button variant="secondary" as-child>
-                <NuxtLink :to="entityListUrl">
-                  {{ $t('cancel') }}
-                </NuxtLink>
-              </Button>
-              <Button
-                :loading="loading"
-                :disabled="!formValid || loading"
-                @click="createEntity"
+              <!-- Card 3: Expiration Date -->
+              <ContentEditCard
+                :create-mode="false"
+                :title="$t('expiration_date')"
               >
-                {{ $t('create_entity', { entityName }) }}
-              </Button>
-            </div>
+                <ContentSwitch
+                  v-model:checked="hasExpirationDate"
+                  :label="$t('orders.set_expiration_date')"
+                  :description="$t('orders.expiration_date_optional')"
+                >
+                  <FormGrid design="1+1">
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.expirationDate"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('expiration_date') }}</FormLabel>
+                        <FormControl>
+                          <FormInputDate
+                            v-bind="componentField"
+                            :placeholder="$t('expiration_date')"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                </ContentSwitch>
+              </ContentEditCard>
+
+              <!-- Card 4: Payment Settings -->
+              <ContentEditCard
+                :create-mode="false"
+                :title="$t('orders.payment_settings')"
+              >
+                <FormGridWrap>
+                  <FormGrid design="1+1">
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.paymentTerms"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('orders.payment_terms') }}</FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField">
+                            <SelectTrigger>
+                              <SelectValue
+                                :placeholder="
+                                  $t('select_entity', {
+                                    entityName: $t('orders.payment_terms'),
+                                  })
+                                "
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem
+                                v-for="term in paymentTermsOptions"
+                                :key="term.id"
+                                :value="term.id"
+                              >
+                                {{ term.label }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                </FormGridWrap>
+              </ContentEditCard>
+            </template>
+          </ContentEditMainContent>
+        </KeepAlive>
+
+        <!-- TAB 1: PRODUCTS -->
+        <KeepAlive>
+          <ContentEditMainContent
+            v-if="currentTab === 1 && !createMode"
+            :key="`tab-${currentTab}`"
+          >
+            <ContentEditCard :create-mode="false" :title="$t('item', 2)">
+              <template v-if="!loadingProducts">
+                <div class="bg-card mb-4 rounded-lg border p-4">
+                  <p class="text-muted-foreground text-sm">
+                    <strong>{{ $t('selected') }}:</strong>
+                    {{
+                      simpleSkuSelection.length > 0
+                        ? `${simpleSkuSelection.length} SKU(s)`
+                        : $t('none')
+                    }}
+                  </p>
+                </div>
+
+                <SelectorPanel
+                  :selection="skuSelection"
+                  :mode="SelectorMode.Simple"
+                  entity-name="sku"
+                  :entities="productsWithSkus"
+                  :entity-type="SelectorEntityType.Sku"
+                  :options="[
+                    {
+                      id: 'product',
+                      group: 'ids',
+                      label: $t('sku', 2),
+                    },
+                  ]"
+                  @save="updateSkuSelection"
+                >
+                  <ButtonIcon icon="new" size="sm" class="mb-6">
+                    {{ $t('add_entity', { entityName: 'sku' }) }}
+                  </ButtonIcon>
+                </SelectorPanel>
+
+                <TableView
+                  :columns="selectedSkuColumns"
+                  :data="selectedSkus"
+                  entity-name="sku"
+                  :mode="TableMode.Simple"
+                  :page-size="10"
+                  :show-search="true"
+                />
+              </template>
+              <template v-else>
+                <div class="flex items-center justify-center py-8">
+                  <LucideLoader2
+                    class="text-muted-foreground size-6 animate-spin"
+                  />
+                </div>
+              </template>
+            </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
 

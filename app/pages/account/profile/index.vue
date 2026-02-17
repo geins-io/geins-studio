@@ -320,6 +320,7 @@ const { summaryProps } = useEntityEditSummary({
   settingsSummary,
   entityName,
   entityLiveStatus,
+  showActiveStatus: false,
 });
 
 // =====================================================================================
@@ -512,7 +513,7 @@ if (!createMode.value) {
         </ContentEditMainContent>
 
         <template #sidebar>
-          <ContentEditSummary v-bind="summaryProps" :show-active-status="false">
+          <ContentEditSummary v-bind="summaryProps">
             <template #before-active-switch>
               <div
                 class="flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm"
