@@ -358,7 +358,7 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
 // =====================================================================================
 // DATA FETCHING
 // =====================================================================================
-const { useGeinsFetch } = useGeinsApi();
+const { geinsFetch } = useGeinsApi();
 
 // Fetch companies
 const fetchCompanies = async () => {
@@ -369,10 +369,9 @@ const fetchCompanies = async () => {
 
 // Fetch users (sales reps)
 const fetchUsers = async () => {
-  const usersResult = await useGeinsFetch<User[]>('/user/list');
-  if (!usersResult.error.value) {
-    users.value = usersResult.data.value as User[];
-    users.value = users.value.map((user) => ({
+  const usersResult = await geinsFetch<User[]>('/user/list');
+  if (usersResult) {
+    users.value = usersResult.map((user) => ({
       ...user,
       name: user.firstName + ' ' + user.lastName,
     }));
