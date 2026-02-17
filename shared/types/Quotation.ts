@@ -229,15 +229,17 @@ export interface Quotation extends ResponseEntity<QuotationBase> {
  */
 export interface QuotationList extends Omit<
   Quotation,
-  'items' | 'communication' | 'changelog'
+  'items' | 'communication' | 'changelog' | 'company' | 'owner'
 > {
-  accountName: string;
+  company: string;
   itemCount: number;
   sum: Price;
   expirationDate: string;
-  createdBy: string;
   dateCreated: string;
-  dateModified: string;
+  market: string;
+  channel: string;
+  owner: string;
+  buyer: string;
 }
 
 // =============================================================================

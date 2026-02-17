@@ -2,6 +2,7 @@
 import type {
   Quotation,
   QuotationList,
+  QuotationBatchQueryResult,
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
@@ -15,6 +16,7 @@ const scope = 'pages/orders/quotation/list.vue';
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog(scope);
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
+const { getMarketNameById, getChannelNameById } = useAccountStore();
 
 definePageMeta({
   pageType: 'list',
@@ -43,22 +45,24 @@ const mapToListData = (list: Entity[]): EntityList[] => {
     const { items, ...rest } = item;
     return {
       ...rest,
-      accountName: item.company?.name || '',
+      buyer: item.customer?.name || '',
+      company: item.company?.name || '',
       itemCount: items?.length || 0,
       sum: {
         price: item.total.subtotal.toString(),
         currency: item.currency,
       },
+      dateCreated: item.validFrom || '',
       expirationDate: item.validTo || '',
-      createdBy: item.owner?.name || '',
-      dateCreated: item.validFrom,
-      dateModified: item.validFrom,
+      owner: item.owner?.name || '',
+      market: getMarketNameById(item.marketId) || '',
+      channel: getChannelNameById(item.channelId) || '',
     };
   });
 };
 
 // FETCH DATA FOR ENTITY
-const { data, error, refresh } = await useAsyncData<Entity[]>(
+const { data, error, refresh } = await useAsyncData<QuotationBatchQueryResult>(
   'orders-quotations-list',
   () => orderApi.quotation.list(),
 );
@@ -71,7 +75,7 @@ onMounted(() => {
     (newData) => {
       if (newData) {
         const validData = handleFetchResult(error.value, newData);
-        dataList.value = mapToListData(validData);
+        dataList.value = mapToListData(validData.items ?? []);
       }
     },
     { immediate: true },
@@ -87,6 +91,17 @@ onMounted(() => {
     linkColumns: {
       name: { url: entityUrl, idField: '_id' },
     },
+    excludeColumns: [
+      'suggestedShippingFee',
+      'billingAddress',
+      'shippingAddress',
+      'validFrom',
+      'validTo',
+      'customer',
+      'total',
+      'marketId',
+      'channelId',
+    ],
   };
   // GET AND SET COLUMNS
   columns.value = getColumns(dataList.value, columnOptions);
@@ -107,22 +122,11 @@ onMounted(() => {
 // SET COLUMN VISIBILITY STATE
 const { getVisibilityState } = useTable<EntityList>();
 const hiddenColumns: StringKeyOf<EntityList>[] = [
-  'quotationId',
+  '_id',
   'quotationNumber',
   'currency',
-  'validFrom',
-  'validTo',
-  'billingAddress',
-  'shippingAddress',
-  'total',
-  'company',
-  'owner',
-  'customer',
-  'validPaymentMethods',
-  'validShippingMethods',
-  'terms',
-  'communication',
-  'changelog',
+  'market',
+  'channel',
   'orderId',
 ];
 visibilityState.value = getVisibilityState(hiddenColumns);
@@ -172,9 +176,9 @@ const confirmDelete = async () => {
 const searchableFields: Array<keyof EntityList> = [
   '_id',
   'name',
-  'accountName',
+  'company',
   'status',
-  'createdBy',
+  'owner',
 ];
 </script>
 

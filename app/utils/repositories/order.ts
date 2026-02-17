@@ -81,6 +81,20 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         );
       },
 
+      async list(
+        batchQuery: QuotationBatchQuery = { all: true },
+        options?: QuotationApiOptions,
+      ): Promise<QuotationBatchQueryResult> {
+        return await fetch<QuotationBatchQueryResult>(
+          `${QUOTATION_ENDPOINT}/query`,
+          {
+            method: 'POST',
+            body: batchQuery,
+            query: buildQueryObject(options),
+          },
+        );
+      },
+
       /**
        * Ping endpoint to check quotation service availability
        */
