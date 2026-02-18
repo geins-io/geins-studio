@@ -210,8 +210,7 @@ describe('PIM Product Detail Page', () => {
 
   it('should have placeholder content for incomplete tabs', async () => {
     const content = await readFile(PRODUCT_DETAIL_FILE, 'utf-8');
-    // Variants and Stock tabs are now implemented, so no placeholders for those
-    expect(content).toContain('pricing_content_placeholder');
+    // Variants, Stock, and Pricing tabs are now implemented, so no placeholders for those
     expect(content).toContain('images_content_placeholder');
     expect(content).toContain('seo_content_placeholder');
   });
@@ -263,9 +262,7 @@ describe('PIM Product Detail i18n Keys', () => {
   it('should have placeholder keys in en.json', async () => {
     const content = await readFile(EN_FILE, 'utf-8');
     const json = JSON.parse(content);
-    // Variants tab is now implemented, so no placeholder key needed
-    expect(json.pricing_content_placeholder).toBeDefined();
-    expect(json.stock_content_placeholder).toBeDefined();
+    // Variants, Stock, and Pricing tabs are now implemented, so no placeholder keys needed
     expect(json.images_content_placeholder).toBeDefined();
     expect(json.seo_content_placeholder).toBeDefined();
   });

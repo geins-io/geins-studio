@@ -409,6 +409,13 @@
     "select_categories": "Select categories...",
     "categories": "Categories",
     "description": "Description",
-    "no_results": "No results found"
+    "no_results": "No results found",
+    "selling_price": "Selling price",
+    "selling_price_inc_vat": "Selling price (inc VAT)",
+    "selling_price_ex_vat": "Selling price (ex VAT)",
+    "regular_price": "Regular price",
+    "regular_price_inc_vat": "Regular price (inc VAT)",
+    "regular_price_ex_vat": "Regular price (ex VAT)",
+    "vat_rate": "VAT rate"
   }
 }

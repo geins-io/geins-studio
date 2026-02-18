@@ -474,16 +474,15 @@ if (!createMode.value) {
             v-if="currentTab === 2"
             :key="`tab-${currentTab}`"
           >
-            <ContentCard>
-              <ContentCardHeader
-                :title="$t('pricing')"
-                :description="$t('product_pricing_description')"
-                size="lg"
+            <ContentEditCard
+              :title="$t('pricing')"
+              :description="$t('product_pricing_description')"
+            >
+              <ProductPricingDisplay
+                :default-price="entityData?.defaultPrice || entityBase.defaultPrice"
+                :loading="loading"
               />
-              <p class="text-muted-foreground text-sm">
-                {{ $t('pricing_content_placeholder') }}
-              </p>
-            </ContentCard>
+            </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
 

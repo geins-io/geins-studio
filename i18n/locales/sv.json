@@ -409,6 +409,13 @@
     "select_categories": "Välj kategorier...",
     "categories": "Kategorier",
     "description": "Beskrivning",
-    "no_results": "Inga resultat hittades"
+    "no_results": "Inga resultat hittades",
+    "selling_price": "Försäljningspris",
+    "selling_price_inc_vat": "Försäljningspris (inkl moms)",
+    "selling_price_ex_vat": "Försäljningspris (exkl moms)",
+    "regular_price": "Ordinarie pris",
+    "regular_price_inc_vat": "Ordinarie pris (inkl moms)",
+    "regular_price_ex_vat": "Ordinarie pris (exkl moms)",
+    "vat_rate": "Momssats"
   }
 }
