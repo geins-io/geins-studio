@@ -137,10 +137,26 @@ const {
 // ENTITY ACTIONS
 // =====================================================================================
 const handleCreate = async () => {
+  // Validate form before submission
+  const validation = await form.validate();
+  if (!validation.valid) {
+    toast({
+      title: t('validation_failed'),
+      description: t('please_fix_errors'),
+      variant: 'negative',
+    });
+    return;
+  }
+
   try {
-    await createEntity();
+    const result = await createEntity();
+    // createEntity handles success toast and navigation
+    if (result) {
+      geinsLogError('Product created successfully:', result._id);
+    }
   } catch (error) {
-    geinsLogError('error creating product:', error);
+    // Error toast is already handled by createEntity
+    geinsLogError('Error creating product:', error);
   }
 };
 
