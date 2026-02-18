@@ -57,6 +57,8 @@ Access via `useGeinsRepository()`:
 
 Repository factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `entityRepo` (full CRUD). Domain repos extend these with domain-specific logic.
 
+The Nitro server proxy (`server/api/[...].ts`) is a transparent passthrough — it adds auth headers but performs no response transformation. API responses arrive unchanged from the backend.
+
 ## Entity Edit Page Pattern
 
 Entity pages use a single `[id].vue` that handles both create and edit mode:
@@ -64,8 +66,32 @@ Entity pages use a single `[id].vue` that handles both create and edit mode:
 - Route param `new` → create mode, actual ID → edit mode
 - Core composable: `useEntityEdit` from `app/composables/useEntityEdit.ts`
 - Key callbacks: `parseEntityData` (API response → form), `prepareCreateData` (form → POST body), `prepareUpdateData` (form → PATCH body), `onFormValuesChange` (reactive sync)
-- After creation, `useEntityEdit` auto-navigates to the edit URL and calls `parseEntityData`
+- After creation, `useEntityEdit` auto-navigates to the edit URL via `router.replace()`. Nuxt re-mounts the component (dynamic param changes), so the edit-mode data loading block then executes automatically.
 - Provides: `form`, `entityData`, `createMode`, `createEntity()`, `updateEntity()`, `deleteEntity()`, `hasUnsavedChanges`, `confirmLeave`, `currentTab`, `showSidebar`
+
+### Edit Mode Data Loading (required boilerplate)
+
+Every `[id].vue` page **must** include this block at the bottom of `<script setup>` to load entity data in edit mode. Without it, navigating to an existing entity or returning after creation will show an empty form.
+
+```ts
+if (!createMode.value) {
+  const { data, error, refresh } = await useAsyncData<TResponse>(
+    entityFetchKey.value,
+    () => repository.get(entityId.value, { fields: ['all'] }),
+  );
+  refreshEntityData.value = refresh;
+  onMounted(async () => {
+    const entity = handleFetchResult<TResponse>(error.value, data.value);
+    await parseAndSaveData(entity);
+  });
+}
+```
+
+- `useAsyncData` runs at setup time (before mount) — works with Nuxt's data fetching system
+- `handleFetchResult` validates data and throws a page error on 404/500
+- `parseAndSaveData` calls `reshapeEntityData` → sets `entityDataUpdate` → calls `parseEntityData` → sets form values
+- If `parseEntityData` depends on other data (e.g. company/user lists), fetch those first inside `onMounted` before calling `parseAndSaveData`
+- `createMode` is a `ref` (not computed), set once from `route.params.id` at component creation
 
 ## List Page Pattern
 

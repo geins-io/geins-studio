@@ -318,6 +318,7 @@ const {
   prepareUpdateData: (formData, entity) => ({
     ...entity,
     name: formData.details.name,
+    validTo: formData.details.expirationDate || undefined,
   }),
   onFormValuesChange: (values) => {
     if (createMode.value) {
@@ -437,14 +438,34 @@ watch(hasExpirationDate, (enabled) => {
   }
 });
 
-// Initialize data
-onMounted(async () => {
-  await Promise.all([fetchCompanies(), fetchUsers()]);
-  // Fetch products for SKU selector (only needed in edit mode)
-  if (!createMode.value) {
+// =====================================================================================
+// DATA LOADING FOR EDIT MODE
+// =====================================================================================
+if (!createMode.value) {
+  const { data, error, refresh } = await useAsyncData<Quotation>(
+    entityFetchKey.value,
+    () => orderApi.quotation.get(entityId.value, { fields: ['all'] }),
+  );
+
+  refreshEntityData.value = refresh;
+
+  onMounted(async () => {
+    // Fetch dependent data first (companies/users needed for parseEntityData)
+    await Promise.all([fetchCompanies(), fetchUsers()]);
+
+    // Validate and parse entity data
+    const quotation = handleFetchResult<Quotation>(error.value, data.value);
+    await parseAndSaveData(quotation);
+
+    // Fetch products for SKU selector
     fetchProducts();
-  }
-});
+  });
+} else {
+  // Create mode: just fetch companies and users
+  onMounted(async () => {
+    await Promise.all([fetchCompanies(), fetchUsers()]);
+  });
+}
 
 // =====================================================================================
 // SUMMARY DATA
@@ -522,6 +543,7 @@ definePageMeta({
             icon="save"
             :loading="loading"
             :disabled="!hasUnsavedChanges || loading"
+            @click="updateEntity"
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
           <DropdownMenu v-if="!createMode">
