@@ -196,7 +196,10 @@ const { handleFetchResult, showErrorToast } = usePageError({
 // =====================================================================================
 // ENTITY ACTIONS
 // =====================================================================================
+const saving = ref(false);
+
 const handleSave = async () => {
+  saving.value = true;
   try {
     await updateEntity();
     toast({
@@ -206,6 +209,8 @@ const handleSave = async () => {
   } catch (error) {
     geinsLogError('error saving entity:', error);
     showErrorToast(t('error_saving_entity', { entityName }));
+  } finally {
+    saving.value = false;
   }
 };
 
@@ -346,8 +351,8 @@ if (!createMode.value) {
           <ButtonIcon
             v-if="!createMode"
             icon="save"
-            :loading="loading"
-            :disabled="!hasUnsavedChanges"
+            :loading="saving"
+            :disabled="!hasUnsavedChanges || saving"
             @click="handleSave"
           >
             {{ $t('save_entity', { entityName }) }}
@@ -394,7 +399,35 @@ if (!createMode.value) {
               :title="$t('product_general_info')"
               :description="$t('product_general_info_description')"
             >
-              <FormGridWrap>
+              <!-- Loading skeleton for form fields -->
+              <div v-if="loading" class="space-y-6">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div class="space-y-2">
+                    <Skeleton class="h-4 w-24" />
+                    <Skeleton class="h-10 w-full" />
+                  </div>
+                  <div class="space-y-2">
+                    <Skeleton class="h-4 w-24" />
+                    <Skeleton class="h-10 w-full" />
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div class="space-y-2">
+                    <Skeleton class="h-4 w-24" />
+                    <Skeleton class="h-10 w-full" />
+                  </div>
+                  <div class="space-y-2">
+                    <Skeleton class="h-4 w-24" />
+                    <Skeleton class="h-10 w-full" />
+                  </div>
+                </div>
+                <div class="space-y-2">
+                  <Skeleton class="h-4 w-24" />
+                  <Skeleton class="h-24 w-full" />
+                </div>
+              </div>
+              <!-- Actual form fields -->
+              <FormGridWrap v-else>
                 <FormGrid design="1+1">
                   <FormField v-slot="{ componentField }" name="default.name">
                     <FormItem>
