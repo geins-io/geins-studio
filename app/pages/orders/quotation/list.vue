@@ -52,8 +52,10 @@ const mapToListData = (list: Entity[]): EntityList[] => {
         price: item.total.subtotal.toString(),
         currency: item.currency,
       },
-      dateCreated: item.validFrom || '',
+      dateCreated: item.createdAt || '',
+      dateModified: item.modifiedAt || '',
       expirationDate: item.validTo || '',
+      dateSent: item.validFrom || '',
       owner: item.owner?.name || '',
       market: getMarketNameById(item.marketId) || '',
       channel: getChannelNameById(item.channelId) || '',
@@ -101,6 +103,8 @@ onMounted(() => {
       'total',
       'marketId',
       'channelId',
+      'createdAt',
+      'modifiedAt',
     ],
   };
   // GET AND SET COLUMNS
@@ -216,7 +220,7 @@ const searchableFields: Array<keyof EntityList> = [
       </template>
     </TableView>
     <template #error="{ error: errorCatched }">
-      <h2 class="text-xl font-bold">
+      <h2 class="mb-3 text-xl font-bold">
         {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
       </h2>
       <p>{{ errorCatched }}</p>

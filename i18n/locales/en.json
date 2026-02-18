@@ -393,8 +393,8 @@
     "error_applying_volume_pricing": "Error applying volume pricing"
   },
   "orders": {
-    "quotation_create_description": "Create a new quotation by providing the basic information",
-    "quotation_edit_description": "Edit quotation details and manage items",
+    "quotation_create_description": "Create a new quotation draft by providing the basic information",
+    "quotation_edit_description": "Edit quotation details",
     "quotation_basic_info": "Basic information",
     "quotation_additional_info": "Additional information",
     "quotation_items_description": "Manage items included in this quotation",

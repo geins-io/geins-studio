@@ -317,6 +317,7 @@ const {
         currency: quotation.currency || 'SEK',
         expirationDate: quotation.validTo || '',
         notes: quotation.terms?.text || '',
+        quotationNumber: quotation.quotationNumber || '',
         paymentTerms,
       },
     });
@@ -668,11 +669,6 @@ definePageMeta({
                 :description="$t('orders.quotation_create_description')"
               >
                 <FormGridWrap>
-                  <ContentCardHeader
-                    :title="$t('orders.quotation_basic_info')"
-                    size="md"
-                    heading-level="h3"
-                  />
                   <FormGrid design="1+1">
                     <FormField v-slot="{ componentField }" name="details.name">
                       <FormItem>
@@ -695,7 +691,7 @@ definePageMeta({
                       name="details.accountId"
                     >
                       <FormItem>
-                        <FormLabel>{{ $t('company') }}</FormLabel>
+                        <FormLabel>{{ $t('customer') }}</FormLabel>
                         <FormControl>
                           <Select v-bind="componentField">
                             <SelectTrigger>
@@ -729,7 +725,9 @@ definePageMeta({
                       name="details.createdBy"
                     >
                       <FormItem>
-                        <FormLabel>{{ $t('owner') }}</FormLabel>
+                        <FormLabel>{{
+                          $t('orders.quotation_owner')
+                        }}</FormLabel>
                         <FormControl>
                           <Select
                             v-bind="componentField"
@@ -873,42 +871,35 @@ definePageMeta({
                         <FormMessage />
                       </FormItem>
                     </FormField>
-
-                    <FormItem>
-                      <FormLabel>{{ $t('ref_number') }}</FormLabel>
-                      <FormControl>
-                        <Input
-                          :model-value="quotationData?.quotationNumber || ''"
-                          disabled
-                        />
-                      </FormControl>
-                    </FormItem>
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.expirationDate"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('expiration_date') }}</FormLabel>
+                        <FormControl>
+                          <FormInputDate
+                            v-bind="componentField"
+                            :placeholder="$t('expiration_date')"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
                   </FormGrid>
-
-                  <!-- Expiration Date -->
-                  <ContentSwitch
-                    v-model:checked="hasExpirationDate"
-                    :label="$t('orders.set_expiration_date')"
-                    :description="$t('orders.expiration_date_optional')"
-                  >
-                    <FormGrid design="1+1">
-                      <FormField
-                        v-slot="{ componentField }"
-                        name="details.expirationDate"
-                      >
-                        <FormItem>
-                          <FormLabel>{{ $t('expiration_date') }}</FormLabel>
-                          <FormControl>
-                            <FormInputDate
-                              v-bind="componentField"
-                              :placeholder="$t('expiration_date')"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      </FormField>
-                    </FormGrid>
-                  </ContentSwitch>
+                  <FormGrid design="1">
+                    <FormField
+                      v-slot="{ componentField }"
+                      name="details.quotationNumber"
+                    >
+                      <FormItem>
+                        <FormLabel>{{ $t('ref_number') }}</FormLabel>
+                        <FormControl>
+                          <Input v-bind="componentField" />
+                        </FormControl>
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
                 </FormGridWrap>
               </ContentEditCard>
 

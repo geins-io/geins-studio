@@ -1,3 +1,4 @@
+import { useDateFormatter } from 'reka-ui';
 import { h } from 'vue';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
 import {
@@ -71,6 +72,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
   const accountStore = useAccountStore();
   const { currentCurrency } = storeToRefs(accountStore);
   const locale = useCookieLocale();
+  const dateFormatter = useDateFormatter(locale.value);
   const { handleImageError } = useGeinsImage();
 
   // BASIC HEADER STYLE
@@ -420,8 +422,18 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         case 'date':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
+            if (!value) {
+              return h('div', { class: getBasicCellStyle(table) }, '---');
+            }
             const date = new Date(value as string | number | Date);
-            const formatted = date.toLocaleDateString(locale.value);
+            if (isNaN(date.getTime())) {
+              return h(
+                'div',
+                { class: getBasicCellStyle(table) },
+                String(value),
+              );
+            }
+            const formatted = dateFormatter.custom(date, { dateStyle: 'long' });
             return h('div', { class: getBasicCellStyle(table) }, formatted);
           };
           break;

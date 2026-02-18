@@ -100,7 +100,10 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 
 ## Component Conventions
 
-- `ContentEditCard` — Collapsible card sections on edit pages
+- **Naming**: Component filenames must include their full directory path prefix. A file at `app/components/content/edit/CustomerPanel.vue` is auto-imported as `ContentEditCustomerPanel`. The filename IS the component name (Nuxt does not auto-prefix from directory structure in this project).
+- `ContentEditCard` — Collapsible card sections on edit pages. Has `#header-action` slot for buttons next to the title.
+- `ContentEditAddressPanel` — Sheet-based address editor (props: `address: AddressUpdate`, emits: `save`, `delete`)
+- `ContentEditCustomerPanel` — Sheet-based panel for changing quotation customer details (owner, buyer, addresses)
 - `ContentSwitch` — Toggle with animated collapsible slot content
 - `FormGridWrap` / `FormGrid` — Form layout (design prop: `"1"`, `"1+1"`, `"1+1+1"`, `"2+1+1"`)
 - `SelectorPanel` + `TableView` — Entity selection pattern (see `app/pages/examples/sku-selector.vue`)

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { VisuallyHidden } from 'reka-ui';
-import type { Address } from '#shared/types';
+import type { Address, QuotationAddress } from '#shared/types';
 
 const props = defineProps<{
   company: CustomerCompany | undefined;
@@ -24,7 +24,6 @@ const emit = defineEmits<{
   ): void;
 }>();
 
-const { t } = useI18n();
 const open = ref(false);
 
 // Local selections

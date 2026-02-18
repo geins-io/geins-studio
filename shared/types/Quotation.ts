@@ -178,6 +178,8 @@ export interface QuotationBase {
   marketId: string;
   validFrom?: string;
   validTo?: string;
+  createdAt?: string;
+  modifiedAt?: string;
   suggestedShippingFee?: number;
 }
 
