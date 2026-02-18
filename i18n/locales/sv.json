@@ -410,6 +410,7 @@
     "error_applying_base_rule": "Fel vid tillämpning av grundregel",
     "error_applying_volume_pricing": "Fel vid tillämpning av volymprissättning",
     "select_brand": "Välj ett varumärke",
+    "search_brand": "Sök varumärke",
     "select_categories": "Välj kategorier...",
     "categories": "Kategorier",
     "description": "Beskrivning",
