@@ -401,6 +401,11 @@
     "price_set_globally": "Pris satt globalt",
     "default_price": "Standardpris",
     "error_applying_base_rule": "Fel vid tillämpning av grundregel",
-    "error_applying_volume_pricing": "Fel vid tillämpning av volymprissättning"
+    "error_applying_volume_pricing": "Fel vid tillämpning av volymprissättning",
+    "select_brand": "Välj ett varumärke",
+    "select_categories": "Välj kategorier...",
+    "categories": "Kategorier",
+    "description": "Beskrivning",
+    "no_results": "Inga resultat hittades"
   }
 }

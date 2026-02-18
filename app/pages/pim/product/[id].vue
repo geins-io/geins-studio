@@ -17,6 +17,8 @@ const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog(scope);
 const breadcrumbsStore = useBreadcrumbsStore();
+const productsStore = useProductsStore();
+const { brands, categories } = storeToRefs(productsStore);
 
 // =====================================================================================
 // API & REPOSITORY SETUP
@@ -32,6 +34,9 @@ const formSchema = toTypedSchema(
       name: z.string().min(1, t('entity_required', { entityName: 'name' })),
       articleNumber: z.string().min(1, t('entity_required', { entityName: 'article number' })),
       active: z.boolean().optional(),
+      brandId: z.number().optional(),
+      description: z.string().optional(),
+      categoryIds: z.array(z.number()).optional(),
     }),
   }),
 );
@@ -126,6 +131,9 @@ const {
       name: entityData.name || '',
       articleNumber: entityData.articleNumber || '',
       active: entityData.active || false,
+      brandId: entityData.brandId || 0,
+      description: (entityData.localizations?.['en'] as any)?.text1 || '',
+      categoryIds: entityData.categories?.map(c => Number(c._id)) || [],
     },
   }),
   parseEntityData: (entity) => {
@@ -136,17 +144,35 @@ const {
         name: entity.name || '',
         articleNumber: entity.articleNumber || '',
         active: entity.active || false,
+        brandId: entity.brandId || 0,
+        description: (entity.localizations?.['en'] as any)?.text1 || '',
+        categoryIds: entity.categories?.map(c => Number(c._id)) || [],
       },
     });
   },
   prepareCreateData: (formData) => ({
     ...entityBase,
     ...formData.default,
+    localizations: {
+      en: {
+        text1: formData.default.description || '',
+      },
+    },
   }),
-  prepareUpdateData: (formData, entity) => ({
-    ...entity,
-    ...formData.default,
-  }),
+  prepareUpdateData: (formData, entity) => {
+    if (!entity) return { ...entityBase, ...formData.default };
+    return {
+      ...entity,
+      ...formData.default,
+      localizations: {
+        ...entity.localizations,
+        en: {
+          ...entity.localizations?.['en'],
+          text1: formData.default.description || '',
+        },
+      },
+    };
+  },
   onFormValuesChange: (values) => {
     const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
     targetEntity.value = {
@@ -332,6 +358,88 @@ if (!createMode.value) {
                       <FormLabel>{{ $t('article_number') }}</FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="text" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+                <FormGrid design="1+1">
+                  <FormField v-slot="{ componentField }" name="default.brandId">
+                    <FormItem>
+                      <FormLabel>{{ $t('brand') }}</FormLabel>
+                      <Select v-bind="componentField">
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue :placeholder="$t('select_brand')" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem
+                            v-for="brand in brands"
+                            :key="brand._id"
+                            :value="String(brand._id)"
+                          >
+                            {{ brand.name }}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                  <FormField v-slot="{ componentField }" name="default.categoryIds">
+                    <FormItem>
+                      <FormLabel>{{ $t('categories') }}</FormLabel>
+                      <FormControl>
+                        <TagsInput
+                          :model-value="(componentField.modelValue || []).map((id: number) => String(id))"
+                          @update:model-value="(val: any) => componentField['onUpdate:modelValue']?.(val.map((v: any) => Number(v)))"
+                        >
+                          <TagsInputItem
+                            v-for="categoryId in (componentField.modelValue || [])"
+                            :key="categoryId"
+                            :value="String(categoryId)"
+                          >
+                            <TagsInputItemText>
+                              {{ categories.find(c => Number(c._id) === categoryId)?.name || categoryId }}
+                            </TagsInputItemText>
+                            <TagsInputItemDelete />
+                          </TagsInputItem>
+                          <ComboboxRoot
+                            :model-value="(componentField.modelValue || []).map((id: number) => String(id))"
+                            @update:model-value="(val: any) => componentField['onUpdate:modelValue']?.(val.map((v: any) => Number(v)))"
+                            multiple
+                          >
+                            <ComboboxAnchor as-child>
+                              <ComboboxInput as-child>
+                                <TagsInputInput :placeholder="$t('select_categories')" />
+                              </ComboboxInput>
+                            </ComboboxAnchor>
+                            <ComboboxContent>
+                              <ComboboxViewport>
+                                <ComboboxEmpty>{{ $t('no_results') }}</ComboboxEmpty>
+                                <ComboboxItem
+                                  v-for="category in categories"
+                                  :key="category._id"
+                                  :value="String(category._id)"
+                                >
+                                  <ComboboxItemIndicator />
+                                  {{ category.name }}
+                                </ComboboxItem>
+                              </ComboboxViewport>
+                            </ComboboxContent>
+                          </ComboboxRoot>
+                        </TagsInput>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+                <FormGrid design="1">
+                  <FormField v-slot="{ componentField }" name="default.description">
+                    <FormItem>
+                      <FormLabel>{{ $t('description') }}</FormLabel>
+                      <FormControl>
+                        <Textarea v-bind="componentField" rows="4" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

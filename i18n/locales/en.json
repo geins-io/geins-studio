@@ -401,6 +401,11 @@
     "price_set_globally": "Price set globally",
     "default_price": "Default price",
     "error_applying_base_rule": "Error applying base rule",
-    "error_applying_volume_pricing": "Error applying volume pricing"
+    "error_applying_volume_pricing": "Error applying volume pricing",
+    "select_brand": "Select a brand",
+    "select_categories": "Select categories...",
+    "categories": "Categories",
+    "description": "Description",
+    "no_results": "No results found"
   }
 }
