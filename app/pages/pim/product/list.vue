@@ -117,6 +117,9 @@ visibilityState.value = getVisibilityState(hiddenColumns);
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
+      :searchable-fields="['name', 'articleNumber']"
+      :page-size="30"
+      :show-search="true"
     >
       <template #empty-actions>
         <ButtonIcon
