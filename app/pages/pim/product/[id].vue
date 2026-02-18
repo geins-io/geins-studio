@@ -19,6 +19,8 @@ const { geinsLogError } = useGeinsLog(scope);
 const breadcrumbsStore = useBreadcrumbsStore();
 const productsStore = useProductsStore();
 const { brands, categories } = storeToRefs(productsStore);
+const accountStore = useAccountStore();
+const { currentLanguage } = storeToRefs(accountStore);
 
 // =====================================================================================
 // API & REPOSITORY SETUP
@@ -245,6 +247,56 @@ const summary = computed<DataItem[]>(() => {
 });
 
 const settingsSummary = computed<DataItem[]>(() => []);
+
+// =====================================================================================
+// SEO DATA
+// =====================================================================================
+const seoData = computed<DataItem[]>(() => {
+  const dataList: DataItem[] = [];
+  const lang = currentLanguage.value || 'en';
+  const localization = entityData.value?.localizations?.[lang];
+
+  if (!localization) {
+    return dataList;
+  }
+
+  if (localization.name) {
+    dataList.push({
+      label: t('name'),
+      value: localization.name,
+    });
+  }
+
+  if (localization.slug) {
+    dataList.push({
+      label: t('slug'),
+      value: localization.slug,
+    });
+  }
+
+  if (localization.text1) {
+    dataList.push({
+      label: t('text1'),
+      value: localization.text1,
+    });
+  }
+
+  if (localization.text2) {
+    dataList.push({
+      label: t('text2'),
+      value: localization.text2,
+    });
+  }
+
+  if (localization.text3) {
+    dataList.push({
+      label: t('text3'),
+      value: localization.text3,
+    });
+  }
+
+  return dataList;
+});
 
 const { summaryProps } = useEntityEditSummary({
   createMode,
@@ -528,16 +580,22 @@ if (!createMode.value) {
             v-if="currentTab === 5"
             :key="`tab-${currentTab}`"
           >
-            <ContentCard>
-              <ContentCardHeader
-                :title="$t('seo')"
-                :description="$t('product_seo_description')"
-                size="lg"
+            <ContentEditCard
+              :title="$t('seo')"
+              :description="$t('product_seo_description')"
+            >
+              <ContentDataList
+                v-if="seoData.length > 0"
+                :data-list="seoData"
+                :label="$t('seo_metadata_for_language', { language: currentLanguage })"
               />
-              <p class="text-muted-foreground text-sm">
-                {{ $t('seo_content_placeholder') }}
+              <p
+                v-else
+                class="text-muted-foreground text-sm"
+              >
+                {{ $t('no_seo_data_available') }}
               </p>
-            </ContentCard>
+            </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
 
