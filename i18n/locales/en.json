@@ -129,6 +129,7 @@
   "product_general_info": "Product information",
   "product_general_info_description": "Basic product details and identification",
   "product_variants_description": "Product variants and SKUs",
+  "product_no_variants": "No variants found for this product",
   "product_pricing_description": "Product pricing and price lists",
   "product_stock_description": "Stock levels and inventory management",
   "product_images_description": "Product images and media",

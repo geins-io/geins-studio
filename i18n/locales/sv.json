@@ -129,6 +129,7 @@
   "product_general_info": "Produktinformation",
   "product_general_info_description": "Grundläggande produktdetaljer och identifiering",
   "product_variants_description": "Produktvarianter och SKU:er",
+  "product_no_variants": "Inga varianter hittades för denna produkt",
   "product_pricing_description": "Produktprissättning och prislistor",
   "product_stock_description": "Lagernivåer och lagerhantering",
   "product_images_description": "Produktbilder och media",

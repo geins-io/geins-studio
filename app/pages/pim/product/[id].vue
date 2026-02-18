@@ -456,16 +456,15 @@ if (!createMode.value) {
             v-if="currentTab === 1"
             :key="`tab-${currentTab}`"
           >
-            <ContentCard>
-              <ContentCardHeader
-                :title="$t('variants')"
-                :description="$t('product_variants_description')"
-                size="lg"
+            <ContentEditCard
+              :title="$t('variants')"
+              :description="$t('product_variants_description')"
+            >
+              <ProductVariantsTable
+                :skus="entityData?.skus || []"
+                :loading="loading"
               />
-              <p class="text-muted-foreground text-sm">
-                {{ $t('variants_content_placeholder') }}
-              </p>
-            </ContentCard>
+            </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
 
