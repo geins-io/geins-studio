@@ -423,5 +423,8 @@
     "regular_price_ex_vat": "Ordinarie pris (exkl moms)",
     "vat_rate": "Momssats"
   },
-  "no_categories_available": "Inga kategorier tillgängliga"
+  "no_categories_available": "Inga kategorier tillgängliga",
+  "product_create_description": "Ange den grundläggande informationen för att skapa en ny produkt",
+  "main_category": "Huvudkategori",
+  "select_category": "Välj en kategori"
 }

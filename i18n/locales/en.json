@@ -423,5 +423,8 @@
     "regular_price_ex_vat": "Regular price (ex VAT)",
     "vat_rate": "VAT rate"
   },
-  "no_categories_available": "No categories available"
+  "no_categories_available": "No categories available",
+  "product_create_description": "Enter the basic information to create a new product",
+  "main_category": "Main category",
+  "select_category": "Select a category"
 }
