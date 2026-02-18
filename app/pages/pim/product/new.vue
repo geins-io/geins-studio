@@ -156,7 +156,7 @@ const handleCreate = async () => {
     }
   } catch (error) {
     // Error toast is already handled by createEntity
-    geinsLogError('Error creating product:', error);
+    geinsLogError('error creating product:', error);
   }
 };
 
