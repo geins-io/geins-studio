@@ -29,6 +29,11 @@ repomix.config.json
 .env.*
 !.env.example
 
+# Secrets and keys
+*.key
+*.pem
+*.secret
+
 
 # vitepress docs
 docs/.vitepress/dist
