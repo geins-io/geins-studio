@@ -116,6 +116,7 @@
   "continue": "Continue",
   "exclude": "Exclude",
   "save": "Save",
+  "change": "Change",
   "copy": "Copy",
   "new": "New",
   "edit": "Edit",
@@ -406,6 +407,8 @@
     "notes_placeholder": "Add any notes or special instructions for this quotation...",
     "payment_settings": "Payment settings",
     "payment_terms": "Payment terms",
-    "products_tab_placeholder": "Use the SKU selector to add products to this quotation."
+    "products_tab_placeholder": "Use the SKU selector to add products to this quotation.",
+    "quotation_owner": "Quotation owner",
+    "change_customer_details": "Change customer details"
   }
 }

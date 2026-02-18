@@ -11,6 +11,7 @@ import type {
   QuotationCreate,
   QuotationUpdate,
   QuotationApiOptions,
+  QuotationAddressRequest,
   SelectorEntity,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
@@ -76,7 +77,7 @@ const entityBase: QuotationCreate = {
 // UI STATE MANAGEMENT
 // =====================================================================================
 // Tabs & Steps
-const tabs = [t('general'), t('item', 2), t('summary')];
+const tabs = [t('general'), t('product', 2)];
 
 const totalCreateSteps = 1;
 const { currentStep, nextStep, previousStep } =
@@ -96,6 +97,8 @@ const selectedCompany = ref<CustomerCompany | undefined>();
 
 // Edit mode state
 const hasExpirationDate = ref(false);
+const selectedBillingAddress = ref<QuotationAddressRequest | undefined>();
+const selectedShippingAddress = ref<QuotationAddressRequest | undefined>();
 const paymentTermsOptions = [
   { id: 'net15', label: 'Net 15' },
   { id: 'net30', label: 'Net 30' },
@@ -151,6 +154,20 @@ const availableSalesReps = computed(() => {
 
 const availableBuyers = computed(() => {
   return selectedCompany.value?.buyers || [];
+});
+
+// Resolved display names for current owner and buyer
+const currentOwnerName = computed(() => {
+  const ownerId = form.values.details?.createdBy;
+  if (!ownerId) return '';
+  return availableSalesReps.value.find((u) => u._id === ownerId)?.name || '';
+});
+
+const currentBuyerName = computed(() => {
+  const buyerId = form.values.details?.buyerId;
+  if (!buyerId) return '';
+  const buyer = availableBuyers.value.find((b) => b._id === buyerId);
+  return buyer ? `${buyer.firstName} ${buyer.lastName}` : '';
 });
 
 // Available currencies based on company's channels
@@ -319,6 +336,10 @@ const {
     ...entity,
     name: formData.details.name,
     validTo: formData.details.expirationDate || undefined,
+    ownerId: formData.details.createdBy || undefined,
+    customerId: formData.details.buyerId || undefined,
+    billingAddress: selectedBillingAddress.value,
+    shippingAddress: selectedShippingAddress.value,
   }),
   onFormValuesChange: (values) => {
     if (createMode.value) {
@@ -336,6 +357,10 @@ const {
         ...entityData.value,
         name: values.details.name,
         validTo: values.details.expirationDate || undefined,
+        ownerId: values.details.createdBy || undefined,
+        customerId: values.details.buyerId || undefined,
+        billingAddress: selectedBillingAddress.value,
+        shippingAddress: selectedShippingAddress.value,
       };
     }
   },
@@ -437,6 +462,45 @@ watch(hasExpirationDate, (enabled) => {
     form.setFieldValue('details.expirationDate', '');
   }
 });
+
+// =====================================================================================
+// CUSTOMER PANEL HANDLER
+// =====================================================================================
+
+// Convert a company Address to QuotationAddressRequest format
+const toQuotationAddress = (
+  addr: Address | undefined,
+): QuotationAddressRequest | undefined => {
+  if (!addr) return undefined;
+  return {
+    name: [addr.firstName, addr.lastName].filter(Boolean).join(' '),
+    address1: addr.addressLine1,
+    address2: addr.addressLine2,
+    city: addr.city,
+    zip: addr.zip,
+    country: addr.country,
+  };
+};
+
+const handleCustomerPanelSave = (data: {
+  ownerId: string;
+  buyerId: string;
+  billingAddressId: string;
+  shippingAddressId: string;
+}) => {
+  // Update form values for owner and buyer
+  form.setFieldValue('details.createdBy', data.ownerId);
+  form.setFieldValue('details.buyerId', data.buyerId);
+
+  // Find and store selected addresses
+  const addresses = selectedCompany.value?.addresses || [];
+  const billingAddr = addresses.find((a) => a._id === data.billingAddressId);
+  const shippingAddr = addresses.find((a) => a._id === data.shippingAddressId);
+
+  // Store resolved addresses for update payload
+  selectedBillingAddress.value = toQuotationAddress(billingAddr);
+  selectedShippingAddress.value = toQuotationAddress(shippingAddr);
+};
 
 // =====================================================================================
 // DATA LOADING FOR EDIT MODE
@@ -652,6 +716,9 @@ definePageMeta({
                             </SelectContent>
                           </Select>
                         </FormControl>
+                        <FormDescription>
+                          {{ $t('form.cannot_be_changed') }}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     </FormField>
@@ -756,6 +823,9 @@ definePageMeta({
                             </SelectContent>
                           </Select>
                         </FormControl>
+                        <FormDescription>
+                          {{ $t('form.cannot_be_changed') }}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     </FormField>
@@ -815,86 +885,103 @@ definePageMeta({
                     </FormItem>
                   </FormGrid>
 
-                  <FormGrid design="1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="details.createdBy"
-                    >
-                      <FormItem>
-                        <FormLabel>{{ $t('owner') }}</FormLabel>
-                        <FormControl>
-                          <Select v-bind="componentField">
-                            <SelectTrigger>
-                              <SelectValue
-                                :placeholder="
-                                  $t('select_entity', { entityName: 'owner' })
-                                "
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem
-                                v-for="user in availableSalesReps"
-                                :key="user._id"
-                                :value="user._id"
-                              >
-                                {{ user.name }}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="details.currency"
-                    >
-                      <FormItem>
-                        <FormLabel>{{ $t('currency') }}</FormLabel>
-                        <FormControl>
-                          <Select v-bind="componentField" disabled>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem
-                                v-for="currency in availableCurrencies"
-                                :key="currency._id"
-                                :value="currency._id"
-                              >
-                                {{ currency._id }}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
+                  <!-- Expiration Date -->
+                  <ContentSwitch
+                    v-model:checked="hasExpirationDate"
+                    :label="$t('orders.set_expiration_date')"
+                    :description="$t('orders.expiration_date_optional')"
+                  >
+                    <FormGrid design="1+1">
+                      <FormField
+                        v-slot="{ componentField }"
+                        name="details.expirationDate"
+                      >
+                        <FormItem>
+                          <FormLabel>{{ $t('expiration_date') }}</FormLabel>
+                          <FormControl>
+                            <FormInputDate
+                              v-bind="componentField"
+                              :placeholder="$t('expiration_date')"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
+                    </FormGrid>
+                  </ContentSwitch>
                 </FormGridWrap>
               </ContentEditCard>
 
               <!-- Card 2: Customer -->
               <ContentEditCard :create-mode="false" :title="$t('customer')">
+                <template #header-action>
+                  <ContentEditCustomerPanel
+                    :company="selectedCompany"
+                    :available-sales-reps="availableSalesReps"
+                    :available-buyers="availableBuyers"
+                    :current-owner-id="form.values.details?.createdBy || ''"
+                    :current-buyer-id="form.values.details?.buyerId || ''"
+                    :current-billing-address="
+                      quotationData?.billingAddress || null
+                    "
+                    :current-shipping-address="
+                      quotationData?.shippingAddress || null
+                    "
+                    @save="handleCustomerPanelSave"
+                  >
+                    <Button variant="outline" size="sm">
+                      {{ $t('change') }}
+                    </Button>
+                  </ContentEditCustomerPanel>
+                </template>
+
                 <div class="space-y-4">
                   <!-- Company info -->
-                  <div class="flex items-start justify-between">
-                    <div>
-                      <ContentCardHeader
-                        :title="$t('company')"
-                        size="sm"
-                        heading-level="h4"
-                      />
-                      <div class="text-muted-foreground mt-1 text-sm">
-                        <p class="font-medium">
-                          {{ quotationData?.company?.name || '-' }}
-                        </p>
-                        <p v-if="quotationData?.company?.orgNr">
-                          {{ $t('org_nr') }}:
-                          {{ quotationData.company.orgNr }}
-                        </p>
-                      </div>
+                  <div>
+                    <ContentCardHeader
+                      :title="$t('company')"
+                      size="sm"
+                      heading-level="h4"
+                    />
+                    <div class="text-muted-foreground mt-1 text-sm">
+                      <p class="font-medium">
+                        {{ quotationData?.company?.name || '-' }}
+                      </p>
+                      <p v-if="quotationData?.company?.orgNr">
+                        {{ $t('org_nr') }}:
+                        {{ quotationData.company.orgNr }}
+                      </p>
                     </div>
+                  </div>
+
+                  <!-- Owner & Buyer -->
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.quotation_owner') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ currentOwnerName || '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('buyer') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ currentBuyerName || '-' }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Currency -->
+                  <div class="border-t pt-4">
+                    <p class="text-muted-foreground mb-1 text-xs font-medium">
+                      {{ $t('currency') }}
+                    </p>
+                    <p class="text-sm">
+                      {{ form.values.details?.currency || '-' }}
+                    </p>
                   </div>
 
                   <!-- Addresses -->
@@ -963,81 +1050,10 @@ definePageMeta({
                       </div>
                     </div>
                   </div>
-
-                  <!-- Buyer -->
-                  <div class="border-t pt-4">
-                    <div class="flex items-start justify-between">
-                      <div>
-                        <ContentCardHeader
-                          :title="$t('buyer')"
-                          size="sm"
-                          heading-level="h4"
-                        />
-                        <div class="text-muted-foreground mt-1 text-sm">
-                          <p>{{ quotationData?.customer?.name || '-' }}</p>
-                          <p v-if="quotationData?.customer?.email">
-                            {{ quotationData.customer.email }}
-                          </p>
-                          <p v-if="quotationData?.customer?.phone">
-                            {{ quotationData.customer.phone }}
-                          </p>
-                        </div>
-                      </div>
-                      <FormField
-                        v-slot="{ componentField }"
-                        name="details.buyerId"
-                      >
-                        <Select v-bind="componentField" class="w-48">
-                          <SelectTrigger>
-                            <SelectValue :placeholder="$t('change_buyer')" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem
-                              v-for="buyer in availableBuyers"
-                              :key="buyer._id"
-                              :value="buyer._id"
-                            >
-                              {{ buyer.firstName }} {{ buyer.lastName }}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormField>
-                    </div>
-                  </div>
                 </div>
               </ContentEditCard>
 
-              <!-- Card 3: Expiration Date -->
-              <ContentEditCard
-                :create-mode="false"
-                :title="$t('expiration_date')"
-              >
-                <ContentSwitch
-                  v-model:checked="hasExpirationDate"
-                  :label="$t('orders.set_expiration_date')"
-                  :description="$t('orders.expiration_date_optional')"
-                >
-                  <FormGrid design="1+1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="details.expirationDate"
-                    >
-                      <FormItem>
-                        <FormLabel>{{ $t('expiration_date') }}</FormLabel>
-                        <FormControl>
-                          <FormInputDate
-                            v-bind="componentField"
-                            :placeholder="$t('expiration_date')"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                </ContentSwitch>
-              </ContentEditCard>
-
-              <!-- Card 4: Payment Settings -->
+              <!-- Card 3: Payment Settings -->
               <ContentEditCard
                 :create-mode="false"
                 :title="$t('orders.payment_settings')"

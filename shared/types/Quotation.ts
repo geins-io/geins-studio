@@ -199,7 +199,12 @@ export interface QuotationCreate extends CreateEntity<QuotationBase> {
 /**
  * Update type for existing quotations
  */
-export type QuotationUpdate = UpdateEntity<QuotationBase>;
+export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
+  ownerId?: string;
+  customerId?: string;
+  billingAddress?: QuotationAddressRequest;
+  shippingAddress?: QuotationAddressRequest;
+}
 
 /**
  * Response type from API

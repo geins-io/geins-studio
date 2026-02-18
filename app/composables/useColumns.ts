@@ -349,7 +349,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               h('img', {
                 src: value,
                 alt: columnTitle,
-                class: 'size-7 mx-auto max-w-10 p-0.5',
+                class: 'size-7 mx-auto max-w-10 p-0.5 rounded-lg',
                 onerror: handleImageError,
               }),
             );
