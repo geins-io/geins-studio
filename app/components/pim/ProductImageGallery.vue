@@ -45,15 +45,14 @@ const getImageUrl = (image: Media, size: string = '400x400') => {
     </div>
 
     <!-- Empty State -->
-    <div
-      v-else-if="!hasImages"
-      class="flex flex-col items-center justify-center space-y-3 rounded-lg border border-dashed p-12 text-center"
-    >
-      <LucideImage class="size-12 text-muted-foreground" />
-      <div class="space-y-1">
-        <h3 class="text-sm font-medium">{{ $t('product_no_images') }}</h3>
-      </div>
-    </div>
+    <Empty v-else-if="!hasImages">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <LucideImage />
+        </EmptyMedia>
+        <EmptyTitle>{{ $t('product_no_images') }}</EmptyTitle>
+      </EmptyHeader>
+    </Empty>
 
     <!-- Image Grid -->
     <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
