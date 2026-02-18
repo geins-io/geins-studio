@@ -210,9 +210,8 @@ describe('PIM Product Detail Page', () => {
 
   it('should have placeholder content for incomplete tabs', async () => {
     const content = await readFile(PRODUCT_DETAIL_FILE, 'utf-8');
-    // Variants tab is now implemented with ProductVariantsTable, so no placeholder
+    // Variants and Stock tabs are now implemented, so no placeholders for those
     expect(content).toContain('pricing_content_placeholder');
-    expect(content).toContain('stock_content_placeholder');
     expect(content).toContain('images_content_placeholder');
     expect(content).toContain('seo_content_placeholder');
   });

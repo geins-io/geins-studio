@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { Sku } from '#shared/types';
 import { TableMode } from '#shared/types';
-import { LucidePackage } from '#components';
+import type { ColumnDef, Table, Row } from '@tanstack/vue-table';
+import { LucidePackage, Badge } from '#components';
 import { h } from 'vue';
 
 // =====================================================================================
@@ -27,44 +28,55 @@ const { t } = useI18n();
 const isLowStock = (stock: number) => stock < 10;
 
 // =====================================================================================
-// ENRICHED DATA WITH DISPLAY FORMATTING
+// COLUMNS CONFIGURATION WITH CUSTOM RENDERERS
 // =====================================================================================
-interface EnrichedSkuData extends Sku {
-  stockDisplay: string;
-  stockSellableDisplay: string;
-}
+const { getColumns } = useColumns<Sku>();
 
-const enrichedData = computed(() => {
-  return props.skus.map((sku) => ({
-    ...sku,
-    stockDisplay: isLowStock(sku.stock) 
-      ? `${sku.stock} ⚠️ ${t('low_stock')}`
-      : String(sku.stock),
-    stockSellableDisplay: isLowStock(sku.stockSellable)
-      ? `${sku.stockSellable} ⚠️ ${t('low_stock')}`
-      : String(sku.stockSellable),
-  }));
-});
-
-// =====================================================================================
-// COLUMNS CONFIGURATION
-// =====================================================================================
-const { getColumns } = useColumns<EnrichedSkuData>();
-
-const enrichedColumns = computed(() => {
+const columns = computed<ColumnDef<Sku>[]>(() => {
   if (props.skus.length === 0) return [];
 
-  const columnOptions = {
-    includeColumns: ['articleNumber', 'stockDisplay', 'stockSellableDisplay', 'stockOversellable'] as (keyof EnrichedSkuData)[],
+  // First, get base columns from useColumns
+  const baseColumns = getColumns(props.skus, {
+    includeColumns: ['articleNumber', 'stock', 'stockSellable', 'stockOversellable'] as (keyof Sku)[],
     columnTitles: {
       articleNumber: 'Article Number',
-      stockDisplay: 'Stock',
-      stockSellableDisplay: 'Sellable Stock',
+      stock: 'Stock',
+      stockSellable: 'Sellable Stock',
       stockOversellable: 'Oversellable Stock',
     },
-  };
+  });
 
-  return getColumns(enrichedData.value, columnOptions);
+  // Now customize the stock columns to use Badge components
+  return baseColumns.map((col) => {
+    const columnId = col.id as keyof Sku;
+    
+    // For stock and stockSellable columns, add custom cell renderer with Badge
+    if (columnId === 'stock' || columnId === 'stockSellable') {
+      return {
+        ...col,
+        cell: ({ row, table }: { row: Row<Sku>; table: Table<Sku> }) => {
+          const value = row.getValue(columnId) as number;
+          const lowStock = isLowStock(value);
+          
+          // Get base cell style from useColumns
+          const baseCellStyle = 'align-middle sm:text-grid leading-6 text-xs sm:leading-8 w-full h-8 sm:h-10 flex items-center truncate px-3.5';
+          
+          if (lowStock) {
+            // Render stock value with low stock badge
+            return h('div', { class: baseCellStyle }, [
+              h('span', { class: 'mr-2' }, String(value)),
+              h(Badge, { variant: 'negative' }, () => t('low_stock')),
+            ]);
+          } else {
+            // Just render the stock value
+            return h('div', { class: baseCellStyle }, String(value));
+          }
+        },
+      };
+    }
+    
+    return col;
+  });
 });
 </script>
 
@@ -73,8 +85,8 @@ const enrichedColumns = computed(() => {
     <TableView
       :mode="TableMode.Simple"
       entity-name="stock"
-      :columns="enrichedColumns"
-      :data="enrichedData"
+      :columns="columns"
+      :data="skus"
       :loading="loading"
       :empty-text="$t('product_no_stock')"
       :empty-icon="LucidePackage"

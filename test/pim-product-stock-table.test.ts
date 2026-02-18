@@ -24,61 +24,59 @@ describe('ProductStockTable Component', () => {
     });
 
     it('should use useColumns composable', () => {
-      expect(content).toContain('const { getColumns } = useColumns<EnrichedSkuData>()');
+      expect(content).toContain('const { getColumns } = useColumns<Sku>()');
     });
 
-    it('should have enrichedData computed property', () => {
-      expect(content).toContain('const enrichedData = computed(');
-      expect(content).toContain('stockDisplay');
-      expect(content).toContain('stockSellableDisplay');
+    it('should have columns computed property with custom cell renderers', () => {
+      expect(content).toContain('const columns = computed<ColumnDef<Sku>[]>(');
+      expect(content).toContain('const baseColumns = getColumns(props.skus');
     });
 
-    it('should have enrichedColumns computed property', () => {
-      expect(content).toContain('const enrichedColumns = computed(');
-      expect(content).toContain('return getColumns(enrichedData.value, columnOptions)');
-    });
-
-    it('should configure includeColumns with stock display fields', () => {
+    it('should configure includeColumns with stock fields', () => {
       expect(content).toContain('includeColumns:');
       expect(content).toContain('articleNumber');
-      expect(content).toContain('stockDisplay');
-      expect(content).toContain('stockSellableDisplay');
+      expect(content).toContain('stock');
+      expect(content).toContain('stockSellable');
       expect(content).toContain('stockOversellable');
     });
 
     it('should have columnTitles configuration', () => {
       expect(content).toContain('columnTitles:');
       expect(content).toContain("articleNumber: 'Article Number'");
-      expect(content).toContain("stockDisplay: 'Stock'");
-      expect(content).toContain("stockSellableDisplay: 'Sellable Stock'");
+      expect(content).toContain("stock: 'Stock'");
+      expect(content).toContain("stockSellable: 'Sellable Stock'");
       expect(content).toContain("stockOversellable: 'Oversellable Stock'");
-    });
-
-    it('should have EnrichedSkuData interface', () => {
-      expect(content).toContain('interface EnrichedSkuData extends Sku');
-      expect(content).toContain('stockDisplay: string');
-      expect(content).toContain('stockSellableDisplay: string');
     });
 
     it('should have isLowStock helper function', () => {
       expect(content).toContain('const isLowStock = (stock: number) => stock < 10');
     });
 
-    it('should import required types and components', () => {
+    it('should import required types and components including Badge', () => {
       expect(content).toContain("import type { Sku } from '#shared/types'");
       expect(content).toContain("import { TableMode } from '#shared/types'");
-      expect(content).toContain("import { LucidePackage } from '#components'");
+      expect(content).toContain("import { LucidePackage, Badge } from '#components'");
       expect(content).toContain("import { h } from 'vue'");
+      expect(content).toContain("import type { ColumnDef, Table, Row } from '@tanstack/vue-table'");
     });
 
     it('should use i18n for translations', () => {
       expect(content).toContain("const { t } = useI18n()");
     });
 
-    it('should include low stock indicator in display strings', () => {
-      expect(content).toContain("isLowStock(sku.stock)");
+    it('should use Badge component for low stock indicator', () => {
+      expect(content).toContain("h(Badge, { variant: 'negative' }");
       expect(content).toContain("t('low_stock')");
-      expect(content).toContain("isLowStock(sku.stockSellable)");
+    });
+
+    it('should have custom cell renderer for stock columns', () => {
+      expect(content).toContain("cell: ({ row, table }");
+      expect(content).toContain("const lowStock = isLowStock(value)");
+      expect(content).toContain("if (lowStock)");
+    });
+
+    it('should customize stock and stockSellable columns', () => {
+      expect(content).toContain("if (columnId === 'stock' || columnId === 'stockSellable')");
     });
   });
 
@@ -99,12 +97,12 @@ describe('ProductStockTable Component', () => {
       expect(content).toContain(':empty-icon="LucidePackage"');
     });
 
-    it('should use enrichedColumns for table display', () => {
-      expect(content).toContain(':columns="enrichedColumns"');
+    it('should use columns for table display', () => {
+      expect(content).toContain(':columns="columns"');
     });
 
-    it('should use enrichedData for table data', () => {
-      expect(content).toContain(':data="enrichedData"');
+    it('should use skus for table data', () => {
+      expect(content).toContain(':data="skus"');
     });
 
     it('should set entity-name to "stock"', () => {
