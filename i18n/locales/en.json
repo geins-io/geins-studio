@@ -254,6 +254,8 @@
   },
   "navigation": {
     "dashboard": "Dashboard",
+    "pim": "PIM",
+    "products": "Products",
     "pricing": "Pricing",
     "customers": "Customers",
     "orders": "Orders",

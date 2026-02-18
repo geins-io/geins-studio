@@ -254,6 +254,8 @@
   },
   "navigation": {
     "dashboard": "Dashboard",
+    "pim": "PIM",
+    "products": "Produkter",
     "pricing": "Prissättning",
     "customers": "Kunder",
     "orders": "Beställningar",

@@ -21,6 +21,19 @@ import type { NavigationItem } from '#shared/types';
 export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
   return [
     {
+      label: t('navigation.pim'),
+      href: '/pim/product/list',
+      icon: 'Package',
+      group: 'sales',
+      children: [
+        {
+          label: t('navigation.products'),
+          href: '/pim/product/list',
+          childPattern: '/pim/product/:id',
+        },
+      ],
+    },
+    {
       label: t('navigation.pricing'),
       href: '/pricing/price-list/list',
       icon: 'Tag',
