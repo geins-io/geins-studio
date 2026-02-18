@@ -510,16 +510,15 @@ if (!createMode.value) {
             v-if="currentTab === 4"
             :key="`tab-${currentTab}`"
           >
-            <ContentCard>
-              <ContentCardHeader
-                :title="$t('images')"
-                :description="$t('product_images_description')"
-                size="lg"
+            <ContentEditCard
+              :title="$t('images')"
+              :description="$t('product_images_description')"
+            >
+              <ProductImageGallery
+                :media="entityData?.media || []"
+                :loading="loading"
               />
-              <p class="text-muted-foreground text-sm">
-                {{ $t('images_content_placeholder') }}
-              </p>
-            </ContentCard>
+            </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
 

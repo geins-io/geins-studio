@@ -132,6 +132,8 @@
   "product_no_variants": "Inga varianter hittades för denna produkt",
   "product_no_stock": "Ingen lagerinformation hittades för denna produkt",
   "low_stock": "Lågt lager",
+  "product_no_images": "Inga bilder hittades för denna produkt",
+  "primary": "Primär",
   "product_pricing_description": "Produktprissättning och prislistor",
   "product_stock_description": "Lagernivåer och lagerhantering",
   "product_images_description": "Produktbilder och media",

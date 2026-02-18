@@ -132,6 +132,8 @@
   "product_no_variants": "No variants found for this product",
   "product_no_stock": "No stock information found for this product",
   "low_stock": "Low Stock",
+  "product_no_images": "No images found for this product",
+  "primary": "Primary",
   "product_pricing_description": "Product pricing and price lists",
   "product_stock_description": "Stock levels and inventory management",
   "product_images_description": "Product images and media",

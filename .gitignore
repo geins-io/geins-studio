@@ -39,3 +39,6 @@ repomix.config.json
 docs/.vitepress/dist
 docs/.vitepress/cache
 
+# Workflow progress files
+progress-*.txt
+
