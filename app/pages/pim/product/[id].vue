@@ -493,16 +493,15 @@ if (!createMode.value) {
             v-if="currentTab === 3"
             :key="`tab-${currentTab}`"
           >
-            <ContentCard>
-              <ContentCardHeader
-                :title="$t('stock')"
-                :description="$t('product_stock_description')"
-                size="lg"
+            <ContentEditCard
+              :title="$t('stock')"
+              :description="$t('product_stock_description')"
+            >
+              <ProductStockTable
+                :skus="entityData?.skus || []"
+                :loading="loading"
               />
-              <p class="text-muted-foreground text-sm">
-                {{ $t('stock_content_placeholder') }}
-              </p>
-            </ContentCard>
+            </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
 
