@@ -138,6 +138,8 @@
   "product_stock_description": "Stock levels and inventory management",
   "product_images_description": "Product images and media",
   "product_seo_description": "SEO settings and metadata",
+  "no_seo_data_available": "No SEO data available for the current language",
+  "seo_metadata_for_language": "SEO metadata for {language}",
   "variants_content_placeholder": "Variants tab content will be implemented in a future story.",
   "pricing_content_placeholder": "Pricing tab content will be implemented in a future story.",
   "stock_content_placeholder": "Stock tab content will be implemented in a future story.",

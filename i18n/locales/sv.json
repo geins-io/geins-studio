@@ -138,6 +138,8 @@
   "product_stock_description": "Lagernivåer och lagerhantering",
   "product_images_description": "Produktbilder och media",
   "product_seo_description": "SEO-inställningar och metadata",
+  "no_seo_data_available": "Ingen SEO-data tillgänglig för det aktuella språket",
+  "seo_metadata_for_language": "SEO-metadata för {language}",
   "variants_content_placeholder": "Innehåll för fliken Varianter kommer att implementeras i en framtida story.",
   "pricing_content_placeholder": "Innehåll för fliken Prissättning kommer att implementeras i en framtida story.",
   "stock_content_placeholder": "Innehåll för fliken Lager kommer att implementeras i en framtida story.",

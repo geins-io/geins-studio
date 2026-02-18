@@ -208,10 +208,12 @@ describe('PIM Product Detail Page', () => {
     expect(content).toContain('summaryProps');
   });
 
-  it('should have placeholder content for incomplete tabs', async () => {
+  it('should have SEO tab with real content implementation', async () => {
     const content = await readFile(PRODUCT_DETAIL_FILE, 'utf-8');
-    // Variants, Stock, Pricing, and Images tabs are now implemented, so no placeholders for those
-    expect(content).toContain('seo_content_placeholder');
+    // All tabs are now implemented with real content
+    expect(content).toContain('seoData');
+    expect(content).toContain('ContentDataList');
+    expect(content).toContain('no_seo_data_available');
   });
 });
 
@@ -258,11 +260,12 @@ describe('PIM Product Detail i18n Keys', () => {
     expect(json.product_seo_description).toBeDefined();
   });
 
-  it('should have placeholder keys in en.json', async () => {
+  it('should have SEO-related keys in en.json', async () => {
     const content = await readFile(EN_FILE, 'utf-8');
     const json = JSON.parse(content);
-    // Variants, Stock, Pricing, and Images tabs are now implemented, so no placeholder keys needed
-    expect(json.seo_content_placeholder).toBeDefined();
+    // All tabs are now implemented with real content, SEO tab needs these keys
+    expect(json.no_seo_data_available).toBeDefined();
+    expect(json.seo_metadata_for_language).toBeDefined();
   });
 
   it('should have corresponding keys in sv.json', async () => {
