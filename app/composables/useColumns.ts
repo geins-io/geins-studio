@@ -71,6 +71,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
   const accountStore = useAccountStore();
   const { currentCurrency } = storeToRefs(accountStore);
   const locale = useCookieLocale();
+  const { handleImageError } = useGeinsImage();
 
   // BASIC HEADER STYLE
   const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
@@ -349,6 +350,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
                 src: value,
                 alt: columnTitle,
                 class: 'size-7 mx-auto max-w-10 p-0.5',
+                onerror: handleImageError,
               }),
             );
           };

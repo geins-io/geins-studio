@@ -28,6 +28,8 @@ const handleFocused = async () => {
 const handleOutsideClick = () => {
   focused.value = false;
 };
+
+const { handleImageError } = useGeinsImage();
 const isSelected = (id: string) => {
   return props.selection.includes(id);
 };
@@ -81,6 +83,7 @@ const handleClick = (id: string) => {
                     :src="entity.image || entity.thumbnail"
                     alt="entity image"
                     class="size-6 shrink-0 rounded-lg"
+                    @error="handleImageError"
                   />
                   <strong v-if="showId">{{ entity._id }}</strong>
                   <span class="truncate">{{ entity.name }}</span>

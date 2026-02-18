@@ -1,5 +1,8 @@
+const PLACEHOLDER_SRC = '/placeholder.svg';
+
 interface UseGeinsImageReturnType {
   getProductThumbnail: (slug?: string) => string;
+  handleImageError: (event: Event) => void;
 }
 
 /**
@@ -16,11 +19,19 @@ export const useGeinsImage = (): UseGeinsImageReturnType => {
   const { account } = storeToRefs(accountStore);
 
   const getProductThumbnail = (slug?: string) => {
-    if (!slug || !account.value?.name) return '/placeholder.svg';
+    if (!slug || !account.value?.name) return PLACEHOLDER_SRC;
     return `https://${account.value?.name}.commerce.services/product/100x100/${slug}`;
+  };
+
+  const handleImageError = (event: Event) => {
+    const img = event.target as HTMLImageElement;
+    if (img.src !== new URL(PLACEHOLDER_SRC, window.location.origin).href) {
+      img.src = PLACEHOLDER_SRC;
+    }
   };
 
   return {
     getProductThumbnail,
+    handleImageError,
   };
 };
