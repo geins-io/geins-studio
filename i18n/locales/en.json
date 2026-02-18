@@ -421,5 +421,6 @@
     "regular_price_inc_vat": "Regular price (inc VAT)",
     "regular_price_ex_vat": "Regular price (ex VAT)",
     "vat_rate": "VAT rate"
-  }
+  },
+  "no_categories_available": "No categories available"
 }

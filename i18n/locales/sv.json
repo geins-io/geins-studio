@@ -421,5 +421,6 @@
     "regular_price_inc_vat": "Ordinarie pris (inkl moms)",
     "regular_price_ex_vat": "Ordinarie pris (exkl moms)",
     "vat_rate": "Momssats"
-  }
+  },
+  "no_categories_available": "Inga kategorier tillgängliga"
 }
