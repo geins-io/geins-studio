@@ -129,7 +129,7 @@ describe('PIM Product Detail Page', () => {
     const content = await readFile(PRODUCT_DETAIL_FILE, 'utf-8');
     expect(content).toContain('<ButtonIcon');
     expect(content).toContain('icon="save"');
-    expect(content).toContain(':disabled="!hasUnsavedChanges"');
+    expect(content).toContain(':disabled="!hasUnsavedChanges || saving"');
     expect(content).toContain('@click="handleSave"');
   });
 
