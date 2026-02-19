@@ -205,6 +205,10 @@ export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
   customerId?: string;
   billingAddressId?: string;
   shippingAddressId?: string;
+  terms?: string;
+  validPaymentMethods?: QuotationValidPaymentMethodRequest[];
+  validShippingMethods?: QuotationValidShippingMethodRequest[];
+  items?: QuotationItemCreate[];
 }
 
 /**

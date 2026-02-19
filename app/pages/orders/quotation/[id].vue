@@ -3,6 +3,7 @@
 // IMPORTS & TYPES
 // =====================================================================================
 import { toTypedSchema } from '@vee-validate/zod';
+import { h } from 'vue';
 import * as z from 'zod';
 import { SelectorMode, SelectorEntityType, TableMode } from '#shared/types';
 import type {
@@ -12,10 +13,19 @@ import type {
   QuotationUpdate,
   QuotationAddress,
   QuotationApiOptions,
+  QuotationItemCreate,
   SelectorEntity,
   Address,
 } from '#shared/types';
+import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
+import {
+  TableCellProduct,
+  TableCellEditable,
+  TableHeaderSort,
+  Button,
+  LucideX,
+} from '#components';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -101,11 +111,11 @@ const hasExpirationDate = ref(false);
 const selectedBillingAddressId = ref<string>('');
 const selectedShippingAddressId = ref<string>('');
 const paymentTermsOptions = [
-  { id: 'net15', label: 'Net 15' },
-  { id: 'net30', label: 'Net 30' },
-  { id: 'net45', label: 'Net 45' },
-  { id: 'net60', label: 'Net 60' },
-  { id: 'due_on_receipt', label: 'Due on receipt' },
+  'Net 15',
+  'Net 30',
+  'Net 45',
+  'Net 60',
+  'Due on receipt',
 ];
 
 // SKU selector state (Products tab)
@@ -139,8 +149,249 @@ const selectedSkus = computed(() => {
   return skus;
 });
 
-const { getColumns } = useColumns<SelectorEntity>();
-const selectedSkuColumns = computed(() => getColumns(selectedSkus.value));
+// Quotation items data (quantity & custom price per SKU)
+interface SkuItemData {
+  quantity: number;
+  customPrice: number | undefined;
+}
+
+interface QuotationSkuRow {
+  _id: string;
+  name: string;
+  image: string;
+  articleNumber: string;
+  quantity: number;
+  customPrice: number | undefined;
+}
+
+const skuItemData = ref<Map<string, SkuItemData>>(new Map());
+
+const ensureSkuItemData = (skuId: string) => {
+  if (!skuItemData.value.has(skuId)) {
+    skuItemData.value.set(skuId, { quantity: 1, customPrice: undefined });
+  }
+  return skuItemData.value.get(skuId)!;
+};
+
+// Derived table rows merging selected SKUs with item data
+const quotationSkuRows = computed<QuotationSkuRow[]>(() =>
+  selectedSkus.value.map((sku) => {
+    const data = ensureSkuItemData(sku._id);
+    return {
+      _id: sku._id,
+      name: sku.name,
+      image: sku.image || sku.thumbnail || '',
+      articleNumber: sku.articleNumber || '',
+      quantity: data.quantity,
+      customPrice: data.customPrice,
+    };
+  }),
+);
+
+// Build quotation items payload from skuItemData
+const quotationItems = computed<QuotationItemCreate[]>(() =>
+  selectedSkus.value.map((sku) => {
+    const data = ensureSkuItemData(sku._id);
+    return {
+      skuId: sku._id,
+      quantity: data.quantity,
+      ...(data.customPrice !== undefined
+        ? { customPrice: data.customPrice }
+        : {}),
+    };
+  }),
+);
+
+const handleQuantityChange = (
+  value: string | number,
+  row: Row<QuotationSkuRow>,
+) => {
+  const id = row.original._id;
+  const data = ensureSkuItemData(id);
+  data.quantity = Math.max(1, Number(value) || 1);
+  skuItemData.value = new Map(skuItemData.value);
+};
+
+const handleCustomPriceChange = (
+  value: string | number,
+  row: Row<QuotationSkuRow>,
+) => {
+  const id = row.original._id;
+  const data = ensureSkuItemData(id);
+  const num = Number(value);
+  data.customPrice = value === '' || isNaN(num) ? undefined : num;
+  skuItemData.value = new Map(skuItemData.value);
+};
+
+const removeSkuFromSelection = (row: QuotationSkuRow) => {
+  // Remove from the selector selection
+  const id = row._id;
+  const updated = { ...skuSelection.value };
+  if (updated.ids) {
+    updated.ids = updated.ids.filter((skuId) => skuId !== id);
+  }
+  skuSelection.value = updated;
+  // Clean up item data
+  skuItemData.value.delete(id);
+  skuItemData.value = new Map(skuItemData.value);
+};
+
+// Custom columns for quotation SKU table
+const { getBasicHeaderStyle } = useColumns<QuotationSkuRow>();
+
+const selectedSkuColumns = computed<ColumnDef<QuotationSkuRow>[]>(() => {
+  if (quotationSkuRows.value.length === 0) return [];
+
+  const columns: ColumnDef<QuotationSkuRow>[] = [
+    // Product cell: image + name + article number
+    {
+      id: 'product',
+      accessorKey: 'name',
+      header: ({ table }: { table: Table<QuotationSkuRow> }) =>
+        h(
+          'div',
+          { class: getBasicHeaderStyle(table) + ' px-3 sm:px-3' },
+          t('product'),
+        ),
+      cell: ({ row }: { row: Row<QuotationSkuRow> }) =>
+        h(TableCellProduct, {
+          name: row.original.name,
+          articleNumber: row.original.articleNumber,
+          imageUrl: row.original.image,
+        }),
+      enableSorting: false,
+      meta: { type: 'default' as const, title: t('product') },
+    },
+    // Editable quantity
+    {
+      id: 'quantity',
+      accessorKey: 'quantity',
+      header: ({
+        table,
+        column,
+      }: {
+        table: Table<QuotationSkuRow>;
+        column: Column<QuotationSkuRow>;
+      }) =>
+        h(
+          'div',
+          { class: getBasicHeaderStyle(table) },
+          h(TableHeaderSort<QuotationSkuRow>, {
+            column,
+            title: t('quantity'),
+            className: 'text-xs font-semibold uppercase',
+          }),
+        ),
+      cell: ({
+        table,
+        row,
+        column,
+      }: {
+        table: Table<QuotationSkuRow>;
+        row: Row<QuotationSkuRow>;
+        column: Column<QuotationSkuRow>;
+      }) =>
+        h(TableCellEditable<QuotationSkuRow>, {
+          table,
+          row,
+          column,
+          colKey: 'quantity',
+          type: 'number',
+          initialValue: row.original.quantity,
+          placeholder: '1',
+          onChange: (val: string | number, r: Row<QuotationSkuRow>) =>
+            handleQuantityChange(val, r),
+          onBlur: (val: string | number, r: Row<QuotationSkuRow>) =>
+            handleQuantityChange(val, r),
+        }),
+      enableSorting: true,
+      size: 140,
+      minSize: 140,
+      maxSize: 140,
+      meta: { type: 'editable-number' as const, title: t('quantity') },
+    },
+    // Editable custom price
+    {
+      id: 'customPrice',
+      accessorKey: 'customPrice',
+      header: ({
+        table,
+        column,
+      }: {
+        table: Table<QuotationSkuRow>;
+        column: Column<QuotationSkuRow>;
+      }) =>
+        h(
+          'div',
+          { class: getBasicHeaderStyle(table) },
+          h(TableHeaderSort<QuotationSkuRow>, {
+            column,
+            title: t('orders.custom_price'),
+            className: 'text-xs font-semibold uppercase',
+          }),
+        ),
+      cell: ({
+        table,
+        row,
+        column,
+      }: {
+        table: Table<QuotationSkuRow>;
+        row: Row<QuotationSkuRow>;
+        column: Column<QuotationSkuRow>;
+      }) =>
+        h(TableCellEditable<QuotationSkuRow>, {
+          table,
+          row,
+          column,
+          colKey: 'customPrice',
+          type: 'currency',
+          initialValue: row.original.customPrice ?? '',
+          placeholder: t('orders.no_custom_price'),
+          onChange: (val: string | number, r: Row<QuotationSkuRow>) =>
+            handleCustomPriceChange(val, r),
+          onBlur: (val: string | number, r: Row<QuotationSkuRow>) =>
+            handleCustomPriceChange(val, r),
+        }),
+      enableSorting: true,
+      size: 180,
+      minSize: 180,
+      maxSize: 180,
+      meta: {
+        type: 'editable-currency' as const,
+        title: t('orders.custom_price'),
+      },
+    },
+    // Delete action
+    {
+      id: 'actions',
+      enableHiding: false,
+      enableSorting: false,
+      size: 48,
+      maxSize: 48,
+      minSize: 48,
+      header: ({ table }: { table: Table<QuotationSkuRow> }) =>
+        h('div', { class: getBasicHeaderStyle(table) }),
+      cell: ({ row }: { row: Row<QuotationSkuRow> }) =>
+        h(
+          'div',
+          { class: 'flex items-center justify-center h-10' },
+          h(
+            Button,
+            {
+              class: 'hover:text-negative size-6 p-1 sm:size-7',
+              size: 'xs',
+              variant: 'outline',
+              onClick: () => removeSkuFromSelection(row.original),
+            },
+            () => h(LucideX, { class: 'size-3.5' }),
+          ),
+        ),
+      meta: { type: 'actions' as const },
+    },
+  ];
+
+  return columns;
+});
 
 // Filtered sales reps based on selected company
 const availableSalesReps = computed(() => {
@@ -257,6 +508,7 @@ const {
   reshapeEntityData: (entityData) => ({
     ...entityData,
     items: undefined,
+    terms: entityData.terms?.text,
   }),
   getInitialFormValues: () => ({
     details: {
@@ -267,7 +519,7 @@ const {
       currency: '',
       expirationDate: '',
       notes: '',
-      paymentTerms: '',
+      paymentTerms: 'Net 30',
     },
   }),
   parseEntityData: (quotation: Quotation) => {
@@ -290,10 +542,24 @@ const {
       quotation.shippingAddress?.addressId || '';
 
     // Resolve payment terms from validPaymentMethods
-    const paymentTerms = quotation.validPaymentMethods?.[0]?.name || '';
+    const paymentTerms = quotation.terms?.text || 'Net 30';
 
     // Set expiration date toggle
     hasExpirationDate.value = !!quotation.validTo;
+
+    // Initialize SKU item data from existing quotation items
+    if (quotation.items?.length) {
+      const newItemData = new Map<string, SkuItemData>();
+      quotation.items.forEach((item) => {
+        const skuId = item.sku || item._id;
+        newItemData.set(skuId, {
+          quantity: item.quantity || 1,
+          customPrice:
+            item.unitPrice !== item.ordPrice ? item.unitPrice : undefined,
+        });
+      });
+      skuItemData.value = newItemData;
+    }
 
     // Fetch products for SKU selector if not already loaded
     if (productsWithSkus.value.length === 0) {
@@ -323,16 +589,18 @@ const {
       companyId: formData.details.accountId || undefined,
       ownerId: formData.details.createdBy || undefined,
       customerId: formData.details.buyerId || undefined,
+      items: quotationItems.value.length > 0 ? quotationItems.value : undefined,
     };
   },
-  prepareUpdateData: (formData, entity) => ({
-    ...entity,
+  prepareUpdateData: (formData, _entity) => ({
     name: formData.details.name,
     validTo: formData.details.expirationDate || undefined,
     ownerId: formData.details.createdBy || undefined,
     customerId: formData.details.buyerId || undefined,
     billingAddressId: selectedBillingAddressId.value || undefined,
     shippingAddressId: selectedShippingAddressId.value || undefined,
+    terms: formData.details.paymentTerms || undefined,
+    items: quotationItems.value,
   }),
   onFormValuesChange: (values) => {
     if (createMode.value) {
@@ -344,6 +612,8 @@ const {
         companyId: values.details.accountId || undefined,
         ownerId: values.details.createdBy || undefined,
         customerId: values.details.buyerId || undefined,
+        items:
+          quotationItems.value.length > 0 ? quotationItems.value : undefined,
       };
     } else {
       entityDataUpdate.value = {
@@ -354,6 +624,7 @@ const {
         customerId: values.details.buyerId || undefined,
         billingAddressId: selectedBillingAddressId.value || undefined,
         shippingAddressId: selectedShippingAddressId.value || undefined,
+        items: quotationItems.value,
       };
     }
   },
@@ -405,6 +676,15 @@ const fetchProducts = async () => {
     productsWithSkus.value = transformProductsToSelectorEntities(
       response?.items || [],
     );
+
+    // Initialize SKU selection from existing quotation item data
+    if (skuItemData.value.size > 0) {
+      const existingSkuIds = Array.from(skuItemData.value.keys());
+      skuSelection.value = {
+        ...getFallbackSelection(),
+        ids: existingSkuIds,
+      };
+    }
   } catch (error) {
     geinsLogError('Failed to fetch products:', error);
   } finally {
@@ -454,6 +734,19 @@ watch(hasExpirationDate, (enabled) => {
     form.setFieldValue('details.expirationDate', '');
   }
 });
+
+// Sync item changes with entityDataUpdate for unsaved changes detection
+watch(
+  [quotationItems, simpleSkuSelection],
+  () => {
+    if (createMode.value || !entityDataUpdate.value) return;
+    entityDataUpdate.value = {
+      ...entityDataUpdate.value,
+      items: quotationItems.value,
+    };
+  },
+  { deep: true },
+);
 
 // =====================================================================================
 // CUSTOMER PANEL HANDLER
@@ -1039,10 +1332,10 @@ definePageMeta({
                             <SelectContent>
                               <SelectItem
                                 v-for="term in paymentTermsOptions"
-                                :key="term.id"
-                                :value="term.id"
+                                :key="term"
+                                :value="term"
                               >
-                                {{ term.label }}
+                                {{ term }}
                               </SelectItem>
                             </SelectContent>
                           </Select>
@@ -1065,17 +1358,6 @@ definePageMeta({
           >
             <ContentEditCard :create-mode="false" :title="$t('item', 2)">
               <template v-if="!loadingProducts">
-                <div class="bg-card mb-4 rounded-lg border p-4">
-                  <p class="text-muted-foreground text-sm">
-                    <strong>{{ $t('selected') }}:</strong>
-                    {{
-                      simpleSkuSelection.length > 0
-                        ? `${simpleSkuSelection.length} SKU(s)`
-                        : $t('none')
-                    }}
-                  </p>
-                </div>
-
                 <SelectorPanel
                   :selection="skuSelection"
                   :mode="SelectorMode.Simple"
@@ -1098,7 +1380,7 @@ definePageMeta({
 
                 <TableView
                   :columns="selectedSkuColumns"
-                  :data="selectedSkus"
+                  :data="quotationSkuRows"
                   entity-name="sku"
                   :mode="TableMode.Simple"
                   :page-size="10"

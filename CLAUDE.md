@@ -156,3 +156,22 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 ## Vue Gotchas
 
 - `<KeepAlive>` cannot contain HTML comments — they count as children and cause "expects exactly one child" errors
+
+## Table Patterns
+
+- **Custom columns with render functions**: When using generic components (`TableCellEditable`, `TableHeaderSort`) in `h()` render functions inside `.vue` SFCs, pass the generic type parameter directly: `h(TableCellEditable<RowType>, {...})`. This matches the pattern in `useColumns.ts`.
+- **`TableCellProduct`** — Reusable table cell component at `app/components/table/cell/TableCellProduct.vue` that displays a product image, name, and article number. Props: `name`, `articleNumber?`, `imageUrl?`.
+- **Editable columns** — Use `columnTypes` in `useColumns` options with `'editable-number'`, `'editable-string'`, `'editable-currency'`, or `'editable-percentage'`. For custom inline-editable columns, render `TableCellEditable<T>` directly via `h()` with `onChange`/`onBlur` handlers.
+
+## Quotation Items
+
+- `QuotationUpdate.items` accepts `QuotationItemCreate[]` (same shape as create: `{ skuId, quantity, customPrice? }`).
+- The Products tab uses a `Map<string, SkuItemData>` to track per-SKU quantity and custom price, separate from the selector selection state.
+- When loading existing quotation items in edit mode, initialize both `skuItemData` (from response items) and `skuSelection.ids` (from item SKU IDs) after products are fetched.
+
+## Quotation API Shape Differences
+
+- **`terms`**: Response returns `{ text: string }` (object), but CREATE and UPDATE expect a plain `string`. Map `quotation.terms?.text` to form, send string back.
+- **`validPaymentMethods`**: Response returns `{ paymentId: number, name: string }`, but requests expect `{ paymentId: string }` (string, no `name`).
+- **`prepareUpdateData` must NOT spread the entity** — `entityDataUpdate` contains response-only fields (`billingAddress`, `shippingAddress`, `total`, `company`, `owner`, `customer`, `communication`, `changelog`, etc.) that the PATCH endpoint does not accept. Only include fields from the swagger update schema: `name`, `validTo`, `companyId`, `ownerId`, `customerId`, `validPaymentMethods`, `validShippingMethods`, `suggestedShippingFee`, `terms`, `billingAddressId`, `shippingAddressId`, `items`.
+- **Swagger spec URL**: `https://geins-func-quotation-mgmtapi-dev.azurewebsites.net/api/swagger.json`
