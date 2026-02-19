@@ -111,6 +111,8 @@ const selectedCompany = ref<CustomerCompany | undefined>();
 const hasExpirationDate = ref(false);
 const selectedBillingAddressId = ref<string>('');
 const selectedShippingAddressId = ref<string>('');
+const billingAddress = ref<QuotationAddress | null>(null);
+const shippingAddress = ref<QuotationAddress | null>(null);
 const paymentTermsOptions = [
   'Net 15',
   'Net 30',
@@ -537,10 +539,12 @@ const {
     const ownerId = quotation.owner?.ownerId || '';
     const buyerId = quotation.customer?.customerId || '';
 
-    // Set selected address IDs from API response
+    // Set address data from API response
     selectedBillingAddressId.value = quotation.billingAddress?.addressId || '';
     selectedShippingAddressId.value =
       quotation.shippingAddress?.addressId || '';
+    billingAddress.value = quotation.billingAddress || null;
+    shippingAddress.value = quotation.shippingAddress || null;
 
     // Resolve payment terms from validPaymentMethods
     const paymentTerms = quotation.terms?.text || 'Net 30';
@@ -669,42 +673,17 @@ const fetchUsers = async () => {
   }
 };
 
-// Resolve defaultChannel, defaultCurrency and defaultCountry from the selected company
-const resolveProductDefaults = () => {
-  const currency = form.values.details?.currency;
-  if (!selectedCompany.value?.channels || !currency) return undefined;
-
-  for (const chId of selectedCompany.value.channels) {
-    const channel = currentChannels.value.find((ch) => ch._id === chId);
-    if (!channel?.markets) continue;
-    const market = channel.markets.find((m) => m.currency?._id === currency);
-    if (market) {
-      return {
-        defaultChannel: channel._id,
-        defaultCurrency: market.currency._id,
-        defaultCountry: market.country?._id,
-      };
-    }
-  }
-  return undefined;
-};
-
 // Fetch products with SKUs for product selector
 const fetchProducts = async () => {
   loadingProducts.value = true;
   try {
-    const defaults = resolveProductDefaults();
     const response = await productApi.list({
-      fields: ['media', 'skus', 'defaultprice'],
-      ...defaults,
+      fields: ['media', 'skus'],
     });
 
-    // Filter out products that don't have a defaultPrice for the selected channel
-    const items = (response?.items || []).filter(
-      (product) => product.defaultPrice,
+    productsWithSkus.value = transformProductsToSelectorEntities(
+      response?.items || [],
     );
-
-    productsWithSkus.value = transformProductsToSelectorEntities(items);
 
     // Initialize SKU selection from existing quotation item data
     if (skuItemData.value.size > 0) {
@@ -755,12 +734,6 @@ watch(
     }
   },
 );
-
-// Quotation response data for edit mode display
-const quotationData = computed(() => {
-  if (createMode.value) return null;
-  return entityDataUpdate.value as unknown as Quotation;
-});
 
 // Sync expiration date toggle with form value
 watch(hasExpirationDate, (enabled) => {
@@ -817,16 +790,13 @@ const handleCustomerPanelSave = (data: {
   selectedBillingAddressId.value = data.billingAddressId;
   selectedShippingAddressId.value = data.shippingAddressId;
 
-  // Patch full address objects into entityDataUpdate so the Customer card
-  // reflects the newly selected addresses immediately (before API save)
+  // Update address display refs so the Customer card reflects changes immediately
   const addresses = selectedCompany.value?.addresses;
-  if (addresses && entityDataUpdate.value) {
+  if (addresses) {
     const billing = addresses.find((a) => a._id === data.billingAddressId);
     const shipping = addresses.find((a) => a._id === data.shippingAddressId);
-    const patch: Record<string, unknown> = {};
-    if (billing) patch.billingAddress = toQuotationAddress(billing);
-    if (shipping) patch.shippingAddress = toQuotationAddress(shipping);
-    entityDataUpdate.value = { ...entityDataUpdate.value, ...patch };
+    if (billing) billingAddress.value = toQuotationAddress(billing);
+    if (shipping) shippingAddress.value = toQuotationAddress(shipping);
   }
 };
 
@@ -1267,7 +1237,7 @@ definePageMeta({
                         {{ $t('company') }}
                       </p>
                       <p class="text-sm">
-                        {{ quotationData?.company?.name || '-' }}
+                        {{ selectedCompany?.name || '-' }}
                       </p>
                     </div>
                     <div>
@@ -1275,7 +1245,7 @@ definePageMeta({
                         {{ $t('org_nr') }}
                       </p>
                       <p class="text-sm">
-                        {{ quotationData?.company?.orgNr || '-' }}
+                        {{ selectedCompany?.vatNumber || '-' }}
                       </p>
                     </div>
                   </div>
@@ -1287,8 +1257,8 @@ definePageMeta({
                         {{ $t('billing_address') }}
                       </p>
                       <ContentAddressDisplay
-                        v-if="quotationData?.billingAddress"
-                        :address="quotationData.billingAddress"
+                        v-if="billingAddress"
+                        :address="billingAddress"
                         address-only
                       />
                       <p v-else class="text-xs">-</p>
@@ -1299,8 +1269,8 @@ definePageMeta({
                         {{ $t('shipping_address') }}
                       </p>
                       <ContentAddressDisplay
-                        v-if="quotationData?.shippingAddress"
-                        :address="quotationData.shippingAddress"
+                        v-if="shippingAddress"
+                        :address="shippingAddress"
                         address-only
                       />
                       <p v-else class="text-xs">-</p>

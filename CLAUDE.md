@@ -106,6 +106,7 @@ Entity pages use a single `[id].vue` that handles both create and edit mode:
 - Key callbacks: `parseEntityData` (API response → form), `prepareCreateData` (form → POST body), `prepareUpdateData` (form → PATCH body), `onFormValuesChange` (reactive sync)
 - After creation, `useEntityEdit` auto-navigates to the edit URL via `router.replace()`. Nuxt re-mounts the component (dynamic param changes), so the edit-mode data loading block then executes automatically.
 - Provides: `form`, `entityData`, `createMode`, `createEntity()`, `updateEntity()`, `deleteEntity()`, `hasUnsavedChanges`, `confirmLeave`, `currentTab`, `showSidebar`
+- **Display-only response data**: For response-only fields (e.g. nested objects from the API that aren't part of the update type), store them in dedicated `ref`s populated in `parseEntityData`. Do not cast `entityDataUpdate` to the response type or patch response-only fields into it.
 
 #### Edit Mode Data Loading (required boilerplate)
 
@@ -155,7 +156,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - **Naming**: Component filenames must include their full directory path prefix. A file at `app/components/content/edit/CustomerPanel.vue` is auto-imported as `ContentEditCustomerPanel`. The filename IS the component name (Nuxt does not auto-prefix from directory structure in this project).
 - `ContentEditCard` — Collapsible card sections on edit pages. Has `#header-action` slot for buttons next to the title.
 - `ContentEditAddressPanel` — Sheet-based address editor (props: `address: AddressUpdate`, emits: `save`, `delete`)
-- `ContentEditCustomerPanel` — Sheet-based panel for changing quotation customer details (owner, buyer, addresses). Emits address IDs (`billingAddressId`, `shippingAddressId`) not full address objects. **Important**: When handling the `save` event, the parent must also patch the full address objects into `entityDataUpdate` (looked up from `selectedCompany.addresses`) so the Customer card reflects changes immediately without an API round-trip.
+- `ContentEditCustomerPanel` — Sheet-based panel for changing quotation customer details (owner, buyer, addresses). Emits address IDs (`billingAddressId`, `shippingAddressId`) not full address objects. **Important**: When handling the `save` event, the parent must update dedicated display refs (e.g. `billingAddress`, `shippingAddress`) looked up from `selectedCompany.addresses` so the Customer card reflects changes immediately without an API round-trip. Do not patch response-only fields into `entityDataUpdate`.
 - `ContentSwitch` — Toggle with animated collapsible slot content
 - `FormGridWrap` / `FormGrid` — Form layout (design prop: `"1"`, `"1+1"`, `"1+1+1"`, `"2+1+1"`)
 - `SelectorPanel` + `TableView` — Entity selection pattern (see `app/pages/examples/sku-selector.vue`)
@@ -200,8 +201,5 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 
 ### Products
 
-- **Channel filtering workaround**: Until the product API supports a native channel filter, pass `defaultChannel`, `defaultCurrency`, and `defaultCountry` as query params along with the `'defaultprice'` field, then client-side filter out products where `defaultPrice` is falsy.
 - **`ProductApiOptions`** extends `ApiOptions` with `defaultChannel`, `defaultCurrency`, `defaultCountry`, `defaultLocale`. These are forwarded as query params by `buildQueryObject` (which passes through any extra string properties beyond `fields`/`pageSize`).
-- **`ProductFieldsFilter`** includes `'defaultprice'` (lowercase) to request the `defaultPrice` field on each product.
 - **Product swagger spec URL**: `https://geins-func-product-mgmtapi-dev.azurewebsites.net/api/swagger.json`
-- **Resolve defaults from company**: Use company's `channels` array → find matching `Channel` → find `Market` with matching currency → extract `channel._id`, `market.currency._id`, `market.country._id`.
