@@ -34,9 +34,15 @@ export function buildQueryObject<TFields = string>(
     queryObj.fields = options.fields.join(',');
   }
 
-  // Can be extended to handle other common query parameters like:
-  // if (options?.page) queryObj.page = String(options.page);
-  // if (options?.pageSize) queryObj.pageSize = String(options.pageSize);
+  // Forward additional string properties (e.g. defaultChannel, defaultCurrency, defaultCountry)
+  if (options) {
+    const reserved = new Set(['fields', 'pageSize']);
+    for (const [key, value] of Object.entries(options)) {
+      if (!reserved.has(key) && typeof value === 'string' && value) {
+        queryObj[key] = value;
+      }
+    }
+  }
 
   return Object.keys(queryObj).length > 0 ? queryObj : undefined;
 }

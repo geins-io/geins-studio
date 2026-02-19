@@ -1,9 +1,13 @@
 ## Workflow Rules
 
-These MUST be followed at the start and end of every task:
+These MUST be followed at the start, during and end of every task:
 
 1. **Linear issues**: When starting work on a Linear issue, **always** set its status to "In Progress" before writing any code.
-2. **Update CLAUDE.md**: At the end of every task or chat session, add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file.
+2. **Update CLAUDE.md**: At the end of every task or chat session, add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information you find. This file is meant to be a living document that reflects the current best practices and patterns in the codebase, so it should be continuously updated and improved as we learn more.
+3. **Organize CLAUDE.md**: After updating CLAUDE.md, take a general scan of this file to see if it can be better organized for Claude's reference. If you find a better way to structure the information (e.g. grouping related patterns together, adding new sections, improving formatting), make those changes.
+4. **Best practices**: While implementing code: Follow all established patterns and conventions in this file and generally from the frameworks used when writing code. If you find yourself needing to break a pattern, add a note about it here and explain the reasoning.
+5. **Documentation**: After implementing code: Always keep the documentation in /docs up to date with any architectural changes, new patterns, or important information that would be helpful for onboarding new developers or for future reference. Ask before adding new entries to the documentation.
+6. **Think about performance**: While implementing code: Always consider the performance implications of your code changes, especially when it comes to data fetching, state management, and rendering. If you find a potential performance bottleneck or an opportunity to optimize, ask if you should do so.
 
 ---
 
@@ -53,6 +57,27 @@ server/api/             # Nitro proxy + NextAuth.js handler
 i18n/locales/           # en.json, sv.json
 ```
 
+## Path Aliases
+
+| Alias           | Maps To            |
+| --------------- | ------------------ |
+| `#shared/types` | `shared/types/`    |
+| `#shared/utils` | `shared/utils/`    |
+| `@/components`  | `app/components/`  |
+| `@/composables` | `app/composables/` |
+| `@/utils`       | `app/utils/index`  |
+
+## Code Conventions
+
+- **Logging**: Never use `console.log` (ESLint enforces). Use `useGeinsLog('scope')` scoped loggers
+- **Composables**: File `use{Name}.ts`, must export named function, return type interface ending in `ReturnType`
+- **Props**: `defineProps<{}>()` with `withDefaults()` — no `vue/require-default-prop`
+- **Imports**: Nuxt auto-imports composables, utils, and components — don't import them manually. Types: `import type { X } from '#shared/types'`
+- **Stores**: Use `storeToRefs(store)` for reactive state properties
+- **Forms**: Use `<FormField v-slot="{ componentField }">` pattern. Never implement custom unsaved-changes tracking — `useEntityEdit` handles this
+- **Entity URLs**: Use `useEntityUrl()` for constructing entity navigation links. `getEntityUrl(id)` uses current route context; `getEntityUrlFor(entityName, parentPath, id)` generates URLs for any entity (e.g. `getEntityUrlFor('price-list', 'pricing', id)` → `/pricing/price-list/{id}`). Prefer these over hardcoded route strings.
+- **Vue gotcha**: `<KeepAlive>` cannot contain HTML comments — they count as children and cause "expects exactly one child" errors
+
 ## API & Repositories
 
 All API calls flow through typed repository factories → `$geinsApi` → Nitro proxy → Geins Management API.
@@ -60,7 +85,7 @@ All API calls flow through typed repository factories → `$geinsApi` → Nitro 
 Access via `useGeinsRepository()`:
 
 - `orderApi.quotation` — Quotation CRUD + `query()` endpoint
-- `customerApi.company` — Companies with `list({ fields: ['buyers', 'salesreps'] })` or single `get(id, { fields: ['buyers', 'salesreps', 'addresses'] })`
+- `customerApi.company` — Companies with `list({ fields: ['buyers', 'salesreps'] })` or single `get(id, { fields: ['buyers', 'salesreps', 'addresses', 'pricelists'] })`
 - `productApi` — Products with `list({ fields: ['media', 'skus'] })`
 - `globalApi` — Account, channels, currencies, languages
 
@@ -68,7 +93,11 @@ Repository factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRe
 
 The Nitro server proxy (`server/api/[...].ts`) is a transparent passthrough — it adds auth headers but performs no response transformation. API responses arrive unchanged from the backend.
 
-## Entity Edit Page Pattern
+---
+
+## Page Patterns
+
+### Entity Edit Page
 
 Entity pages use a single `[id].vue` that handles both create and edit mode:
 
@@ -78,7 +107,7 @@ Entity pages use a single `[id].vue` that handles both create and edit mode:
 - After creation, `useEntityEdit` auto-navigates to the edit URL via `router.replace()`. Nuxt re-mounts the component (dynamic param changes), so the edit-mode data loading block then executes automatically.
 - Provides: `form`, `entityData`, `createMode`, `createEntity()`, `updateEntity()`, `deleteEntity()`, `hasUnsavedChanges`, `confirmLeave`, `currentTab`, `showSidebar`
 
-### Edit Mode Data Loading (required boilerplate)
+#### Edit Mode Data Loading (required boilerplate)
 
 Every `[id].vue` page **must** include this block at the bottom of `<script setup>` to load entity data in edit mode. Without it, navigating to an existing entity or returning after creation will show an empty form.
 
@@ -102,12 +131,26 @@ if (!createMode.value) {
 - If `parseEntityData` depends on other data (e.g. company/user lists), fetch those first inside `onMounted` before calling `parseAndSaveData`
 - `createMode` is a `ref` (not computed), set once from `route.params.id` at component creation
 
-## List Page Pattern
+### List Page
 
 Pattern: `pages/{domain}/{entity}/list.vue` with `definePageMeta({ pageType: 'list' })`.
 Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `useTable<T>()` → `usePageError()`.
 
-## Component Conventions
+### Adding a New Entity (Checklist)
+
+1. **Types** → `shared/types/{Entity}.ts` — Define `{Entity}Base`, `{Entity}Response`, `{Entity}Create`, `{Entity}Update`
+2. **Repository** → `app/utils/repositories/{entity}.ts` — Create factory using `entityRepo`
+3. **Register repo** → `app/utils/repos.ts` + `app/composables/useGeinsRepository.ts`
+4. **List page** → `app/pages/{domain}/{entity}/list.vue`
+5. **Detail page** → `app/pages/{domain}/{entity}/[id].vue`
+6. **Navigation** → `app/lib/navigation.ts`
+7. **i18n** → `i18n/locales/en.json` + `sv.json`
+
+---
+
+## Component & UI Patterns
+
+### Component Conventions
 
 - **Naming**: Component filenames must include their full directory path prefix. A file at `app/components/content/edit/CustomerPanel.vue` is auto-imported as `ContentEditCustomerPanel`. The filename IS the component name (Nuxt does not auto-prefix from directory structure in this project).
 - `ContentEditCard` — Collapsible card sections on edit pages. Has `#header-action` slot for buttons next to the title.
@@ -118,60 +161,45 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - `SelectorPanel` + `TableView` — Entity selection pattern (see `app/pages/examples/sku-selector.vue`)
 - `ContentAddressDisplay` — Address display (expects `AddressUpdate` type). Also compatible with `QuotationAddress` since both share the same field names (`addressLine1`, `firstName`, etc.)
 
-## Code Conventions
-
-- **Logging**: Never use `console.log` (ESLint enforces). Use `useGeinsLog('scope')` scoped loggers
-- **Composables**: File `use{Name}.ts`, must export named function, return type interface ending in `ReturnType`
-- **Props**: `defineProps<{}>()` with `withDefaults()` — no `vue/require-default-prop`
-- **Imports**: Nuxt auto-imports composables, utils, and components — don't import them manually. Types: `import type { X } from '#shared/types'`
-- **Stores**: Use `storeToRefs(store)` for reactive state properties
-- **Forms**: Use `<FormField v-slot="{ componentField }">` pattern. Never implement custom unsaved-changes tracking — `useEntityEdit` handles this
-
-## Path Aliases
-
-| Alias           | Maps To            |
-| --------------- | ------------------ |
-| `#shared/types` | `shared/types/`    |
-| `#shared/utils` | `shared/utils/`    |
-| `@/components`  | `app/components/`  |
-| `@/composables` | `app/composables/` |
-| `@/utils`       | `app/utils/index`  |
-
-## Adding a New Entity (Checklist)
-
-1. **Types** → `shared/types/{Entity}.ts` — Define `{Entity}Base`, `{Entity}Response`, `{Entity}Create`, `{Entity}Update`
-2. **Repository** → `app/utils/repositories/{entity}.ts` — Create factory using `entityRepo`
-3. **Register repo** → `app/utils/repos.ts` + `app/composables/useGeinsRepository.ts`
-4. **List page** → `app/pages/{domain}/{entity}/list.vue`
-5. **Detail page** → `app/pages/{domain}/{entity}/[id].vue`
-6. **Navigation** → `app/lib/navigation.ts`
-7. **i18n** → `i18n/locales/en.json` + `sv.json`
-
-## Display Patterns in Edit Pages
+### Display Patterns in Edit Pages
 
 - **Labeled value sections** in read-only cards (e.g. Customer card) use a consistent pattern: `<p class="text-muted-foreground mb-1 text-xs font-medium">` for the label, `<p class="text-sm">` for the value, with `'-'` as fallback when empty.
 - **Two-column layouts** in cards use `<div class="grid grid-cols-2 gap-4">`, with `border-t pt-4` for visual separation between sections.
 - **Address display** in cards: always show both billing and shipping address sections (with labels); use `ContentAddressDisplay` when address data exists, otherwise show a `-` placeholder.
 
-## Vue Gotchas
-
-- `<KeepAlive>` cannot contain HTML comments — they count as children and cause "expects exactly one child" errors
-
-## Table Patterns
+### Table Patterns
 
 - **Custom columns with render functions**: When using generic components (`TableCellEditable`, `TableHeaderSort`) in `h()` render functions inside `.vue` SFCs, pass the generic type parameter directly: `h(TableCellEditable<RowType>, {...})`. This matches the pattern in `useColumns.ts`.
 - **`TableCellProduct`** — Reusable table cell component at `app/components/table/cell/TableCellProduct.vue` that displays a product image, name, and article number. Props: `name`, `articleNumber?`, `imageUrl?`.
 - **Editable columns** — Use `columnTypes` in `useColumns` options with `'editable-number'`, `'editable-string'`, `'editable-currency'`, or `'editable-percentage'`. For custom inline-editable columns, render `TableCellEditable<T>` directly via `h()` with `onChange`/`onBlur` handlers.
 
-## Quotation Items
+---
 
+## Domain-Specific Knowledge
+
+### Quotations
+
+**Items:**
 - `QuotationUpdate.items` accepts `QuotationItemCreate[]` (same shape as create: `{ skuId, quantity, customPrice? }`).
 - The Products tab uses a `Map<string, SkuItemData>` to track per-SKU quantity and custom price, separate from the selector selection state.
 - When loading existing quotation items in edit mode, initialize both `skuItemData` (from response items) and `skuSelection.ids` (from item SKU IDs) after products are fetched.
 
-## Quotation API Shape Differences
-
+**API shape differences:**
 - **`terms`**: Response returns `{ text: string }` (object), but CREATE and UPDATE expect a plain `string`. Map `quotation.terms?.text` to form, send string back.
 - **`validPaymentMethods`**: Response returns `{ paymentId: number, name: string }`, but requests expect `{ paymentId: string }` (string, no `name`).
 - **`prepareUpdateData` must NOT spread the entity** — `entityDataUpdate` contains response-only fields (`billingAddress`, `shippingAddress`, `total`, `company`, `owner`, `customer`, `communication`, `changelog`, etc.) that the PATCH endpoint does not accept. Only include fields from the swagger update schema: `name`, `validTo`, `companyId`, `ownerId`, `customerId`, `validPaymentMethods`, `validShippingMethods`, `suggestedShippingFee`, `terms`, `billingAddressId`, `shippingAddressId`, `items`.
 - **Swagger spec URL**: `https://geins-func-quotation-mgmtapi-dev.azurewebsites.net/api/swagger.json`
+
+### Companies
+
+- **`CustomerCompany.priceLists`**: Array of `CustomerPriceList` objects (response type). Each has `_id`, `name`, `channel`, `currency`, `active`, `exVat`, `productCount` (extends `ProductPriceList` minus products/rules/query/forced/dateCreated).
+- **`CustomerCompanyCreate/Update.priceLists`**: Array of `string` (just IDs).
+- **Price list edit route**: `/pricing/price-list/[id]` — use `getEntityUrlFor('price-list', 'pricing', id)` to generate links.
+
+### Products
+
+- **Channel filtering workaround**: Until the product API supports a native channel filter, pass `defaultChannel`, `defaultCurrency`, and `defaultCountry` as query params along with the `'defaultprice'` field, then client-side filter out products where `defaultPrice` is falsy.
+- **`ProductApiOptions`** extends `ApiOptions` with `defaultChannel`, `defaultCurrency`, `defaultCountry`, `defaultLocale`. These are forwarded as query params by `buildQueryObject` (which passes through any extra string properties beyond `fields`/`pageSize`).
+- **`ProductFieldsFilter`** includes `'defaultprice'` (lowercase) to request the `defaultPrice` field on each product.
+- **Product swagger spec URL**: `https://geins-func-product-mgmtapi-dev.azurewebsites.net/api/swagger.json`
+- **Resolve defaults from company**: Use company's `channels` array → find matching `Channel` → find `Market` with matching currency → extract `channel._id`, `market.currency._id`, `market.country._id`.

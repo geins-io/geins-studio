@@ -35,6 +35,7 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { toast } = useToast();
+const { getEntityUrlFor } = useEntityUrl();
 const { geinsLogError } = useGeinsLog(scope);
 const accountStore = useAccountStore();
 const breadcrumbsStore = useBreadcrumbsStore();
@@ -668,14 +669,42 @@ const fetchUsers = async () => {
   }
 };
 
+// Resolve defaultChannel, defaultCurrency and defaultCountry from the selected company
+const resolveProductDefaults = () => {
+  const currency = form.values.details?.currency;
+  if (!selectedCompany.value?.channels || !currency) return undefined;
+
+  for (const chId of selectedCompany.value.channels) {
+    const channel = currentChannels.value.find((ch) => ch._id === chId);
+    if (!channel?.markets) continue;
+    const market = channel.markets.find((m) => m.currency?._id === currency);
+    if (market) {
+      return {
+        defaultChannel: channel._id,
+        defaultCurrency: market.currency._id,
+        defaultCountry: market.country?._id,
+      };
+    }
+  }
+  return undefined;
+};
+
 // Fetch products with SKUs for product selector
 const fetchProducts = async () => {
   loadingProducts.value = true;
   try {
-    const response = await productApi.list({ fields: ['media', 'skus'] });
-    productsWithSkus.value = transformProductsToSelectorEntities(
-      response?.items || [],
+    const defaults = resolveProductDefaults();
+    const response = await productApi.list({
+      fields: ['media', 'skus', 'defaultprice'],
+      ...defaults,
+    });
+
+    // Filter out products that don't have a defaultPrice for the selected channel
+    const items = (response?.items || []).filter(
+      (product) => product.defaultPrice,
     );
+
+    productsWithSkus.value = transformProductsToSelectorEntities(items);
 
     // Initialize SKU selection from existing quotation item data
     if (skuItemData.value.size > 0) {
@@ -714,10 +743,15 @@ watch(
           availableCurrencies.value[0]?._id,
         );
       }
+
+      // Re-fetch products filtered for this company's channel
+      await nextTick();
+      fetchProducts();
     } else {
       selectedCompany.value = undefined;
       selectedAccountName.value = '';
       buyers.value = [];
+      productsWithSkus.value = [];
     }
   },
 );
@@ -818,7 +852,7 @@ if (!createMode.value) {
     const companyId = quotation.company?.companyId?.toString() || '';
     if (companyId) {
       const company = await customerApi.company.get(companyId, {
-        fields: ['buyers', 'salesreps', 'addresses'],
+        fields: ['buyers', 'salesreps', 'addresses', 'pricelists'],
       });
       selectedCompany.value = company;
     }
@@ -1356,8 +1390,8 @@ definePageMeta({
             v-if="currentTab === 1 && !createMode"
             :key="`tab-${currentTab}`"
           >
-            <ContentEditCard :create-mode="false" :title="$t('item', 2)">
-              <template v-if="!loadingProducts">
+            <ContentEditCard :create-mode="false" :title="$t('product', 2)">
+              <template #header-action>
                 <SelectorPanel
                   :selection="skuSelection"
                   :mode="SelectorMode.Simple"
@@ -1373,11 +1407,28 @@ definePageMeta({
                   ]"
                   @save="updateSkuSelection"
                 >
-                  <ButtonIcon icon="new" size="sm" class="mb-6">
-                    {{ $t('add_entity', { entityName: 'sku' }) }}
+                  <ButtonIcon icon="new" size="sm">
+                    {{ $t('add_entity', { entityName: 'product' }) }}
                   </ButtonIcon>
                 </SelectorPanel>
-
+              </template>
+              <template v-if="!loadingProducts">
+                <div
+                  v-if="selectedCompany?.priceLists?.length"
+                  class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm"
+                >
+                  <span class="text-muted-foreground text-xs font-medium">
+                    {{ $t('price_list', 2) }}:
+                  </span>
+                  <NuxtLink
+                    v-for="pl in selectedCompany.priceLists"
+                    :key="pl._id"
+                    :to="getEntityUrlFor('price-list', 'pricing', pl._id)"
+                    class="text-primary hover:underline text-xs"
+                  >
+                    {{ pl.name }}
+                  </NuxtLink>
+                </div>
                 <TableView
                   :columns="selectedSkuColumns"
                   :data="quotationSkuRows"
