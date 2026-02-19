@@ -411,6 +411,7 @@
     "no_custom_price": "No custom price",
     "products_tab_placeholder": "Use the SKU selector to add products to this quotation.",
     "quotation_owner": "Quotation owner",
-    "change_customer_details": "Change customer details"
+    "change_customer_details": "Change customer details",
+    "price_lists_applied": "Price lists applied"
   }
 }

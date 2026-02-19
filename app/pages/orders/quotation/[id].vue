@@ -594,6 +594,7 @@ const {
       companyId: formData.details.accountId || undefined,
       ownerId: formData.details.createdBy || undefined,
       customerId: formData.details.buyerId || undefined,
+      terms: formData.details.paymentTerms || undefined,
       items: quotationItems.value.length > 0 ? quotationItems.value : undefined,
     };
   },
@@ -859,6 +860,9 @@ const summary = computed(() => {
     : '';
   return [
     ...(formValues?.name ? [{ label: t('name'), value: formValues.name }] : []),
+    ...(formValues?.quotationNumber
+      ? [{ label: t('ref_number'), value: formValues.quotationNumber }]
+      : []),
     ...(selectedAccountName.value
       ? [{ label: t('company'), value: selectedAccountName.value }]
       : []),
@@ -867,6 +871,16 @@ const summary = computed(() => {
     ...(formValues?.currency
       ? [{ label: t('currency'), value: formValues.currency }]
       : []),
+    ...(formValues?.expirationDate
+      ? [{ label: t('expiration_date'), value: formValues.expirationDate }]
+      : []),
+    ...(formValues?.paymentTerms
+      ? [{ label: t('orders.payment_terms'), value: formValues.paymentTerms }]
+      : []),
+    {
+      label: t('item', selectedSkus.value.length),
+      value: String(selectedSkus.value.length),
+    },
   ];
 });
 
@@ -1385,18 +1399,22 @@ definePageMeta({
               <template v-if="!loadingProducts">
                 <div
                   v-if="selectedCompany?.priceLists?.length"
-                  class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm"
+                  class="mb-4 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2.5"
                 >
                   <span class="text-muted-foreground text-xs font-medium">
-                    {{ $t('price_list', 2) }}:
+                    {{ $t('orders.price_lists_applied') }}:
                   </span>
                   <NuxtLink
                     v-for="pl in selectedCompany.priceLists"
                     :key="pl._id"
                     :to="getEntityUrlFor('price-list', 'pricing', pl._id)"
-                    class="text-primary text-xs hover:underline"
                   >
-                    {{ pl.name }}
+                    <Badge
+                      variant="outline"
+                      class="hover:bg-primary/10 cursor-pointer"
+                    >
+                      {{ pl.name }}
+                    </Badge>
                   </NuxtLink>
                 </div>
                 <TableView
