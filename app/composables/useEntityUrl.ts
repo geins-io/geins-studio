@@ -7,7 +7,11 @@ interface UseEntityUrlReturnType {
   getEntityUrl: (id: string) => string;
   getEntityListUrl: () => string;
   getEntityNewUrlFor: (entityName: string, targetParent: string) => string;
-  getEntityUrlFor: (entityName: string, targetParent: string, id: string) => string;
+  getEntityUrlFor: (
+    entityName: string,
+    targetParent: string,
+    id: string,
+  ) => string;
   getEntityListUrlFor: (entityName: string, targetParent: string) => string;
 }
 

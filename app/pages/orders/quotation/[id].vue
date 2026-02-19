@@ -1424,7 +1424,7 @@ definePageMeta({
                     v-for="pl in selectedCompany.priceLists"
                     :key="pl._id"
                     :to="getEntityUrlFor('price-list', 'pricing', pl._id)"
-                    class="text-primary hover:underline text-xs"
+                    class="text-primary text-xs hover:underline"
                   >
                     {{ pl.name }}
                   </NuxtLink>
