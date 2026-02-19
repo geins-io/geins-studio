@@ -71,7 +71,7 @@ onMounted(() => {
       active: 'status' 
     },
     linkColumns: {
-      name: { url: entityUrl, idField: '_id' },
+      name: { url: entityUrl, idField: 'productId' },
     },
     columnTitles: { 
       thumbnail: t('image'),
@@ -87,7 +87,7 @@ onMounted(() => {
     columns.value,
     {
       onEdit: (item: Entity) =>
-        navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+        navigateTo(`${entityUrl.replace(entityIdentifier, String(item.productId))}`),
     },
     'actions',
     ['edit'],
