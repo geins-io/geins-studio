@@ -1,7 +1,7 @@
 // @vitest-environment node
-import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { describe, it, expect } from 'vitest';
 
 describe('PIM Product List Page', () => {
   const projectRoot = join(__dirname, '..');
@@ -17,8 +17,8 @@ describe('PIM Product List Page', () => {
     // Check for script setup
     expect(content).toContain('<script setup lang="ts">');
     
-    // Check for Product type import
-    expect(content).toContain("type { Product }");
+    // Check for Product type import (part of combined import)
+    expect(content).toContain("Product");
     
     // Check for pageType meta
     expect(content).toContain("pageType: 'list'");

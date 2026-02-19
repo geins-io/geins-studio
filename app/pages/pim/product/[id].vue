@@ -11,8 +11,8 @@ import { useToast } from '@/components/ui/toast/use-toast';
 // COMPOSABLES & STORES
 // =====================================================================================
 const scope = 'pages/pim/product/[id].vue';
-const route = useRoute();
-const router = useRouter();
+const _route = useRoute();
+const _router = useRouter();
 const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog(scope);
@@ -96,7 +96,7 @@ const {
   createMode,
   loading,
   newEntityUrl,
-  entityListUrl,
+  entityListUrl: _entityListUrl,
   showSidebar,
   currentTab,
   entityDataCreate,
@@ -107,12 +107,12 @@ const {
   entityFetchKey,
   refreshEntityData,
   form,
-  formValid,
+  formValid: _formValid,
   formTouched,
   hasUnsavedChanges,
   unsavedChangesDialogOpen,
   confirmLeave,
-  createEntity,
+  createEntity: _createEntity,
   updateEntity,
   deleteEntity,
   parseAndSaveData,
@@ -134,7 +134,7 @@ const {
       articleNumber: entityData.articleNumber || '',
       active: entityData.active || false,
       brandId: entityData.brandId || 0,
-      description: (entityData.localizations?.['en'] as any)?.text1 || '',
+      description: entityData.localizations?.['en']?.text1 || '',
       categoryIds: entityData.categories?.map(c => Number(c._id)) || [],
     },
   }),
@@ -147,7 +147,7 @@ const {
         articleNumber: entity.articleNumber || '',
         active: entity.active || false,
         brandId: entity.brandId || 0,
-        description: (entity.localizations?.['en'] as any)?.text1 || '',
+        description: entity.localizations?.['en']?.text1 || '',
         categoryIds: entity.categories?.map(c => Number(c._id)) || [],
       },
     });
@@ -491,8 +491,8 @@ if (!createMode.value) {
                           </TagsInputItem>
                           <ComboboxRoot
                             :model-value="(componentField.modelValue || []).map((id: number) => String(id))"
-                            @update:model-value="(val: any) => componentField['onUpdate:modelValue']?.(val.map((v: any) => Number(v)))"
                             multiple
+                            @update:model-value="(val: any) => componentField['onUpdate:modelValue']?.(val.map((v: any) => Number(v)))"
                           >
                             <ComboboxAnchor as-child>
                               <ComboboxInput as-child>

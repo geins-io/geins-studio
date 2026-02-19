@@ -1,12 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { mount } from '@vue/test-utils';
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Product, ProductPrice, Sku, Media } from '#shared/types';
 
 // Mock composables
 mockNuxtImport('useI18n', () => {
   return () => ({
-    t: (key: string, params?: any) => {
+    t: (key: string, params?: Record<string, unknown>) => {
       if (params) {
         return `${key}_${JSON.stringify(params)}`;
       }

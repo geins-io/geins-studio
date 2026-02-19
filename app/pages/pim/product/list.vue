@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { ColumnOptions, StringKeyOf } from '#shared/types';
-import type { Product } from '#shared/types';
+import type { ColumnOptions, StringKeyOf, Product  } from '#shared/types';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = Product;
@@ -8,7 +7,7 @@ type EntityList = Product;
 
 const scope = 'pages/pim/product/list.vue';
 const { t } = useI18n();
-const { geinsLogError } = useGeinsLog(scope);
+const { geinsLogError: _geinsLogError } = useGeinsLog(scope);
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
 definePageMeta({

@@ -1,10 +1,9 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { Brand } from '#shared/types';
+import { describe, it, expect } from 'vitest';
 
 const componentPath = resolve(
   __dirname,

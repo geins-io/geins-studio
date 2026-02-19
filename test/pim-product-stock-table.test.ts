@@ -1,8 +1,8 @@
 /**
  * @vitest-environment node
  */
-import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
 
 // =====================================================================================
 // TEST: ProductStockTable Component
@@ -70,7 +70,8 @@ describe('ProductStockTable Component', () => {
     });
 
     it('should have custom cell renderer for stock columns', () => {
-      expect(content).toContain("cell: ({ row, table }");
+      // May alias table to _table: `cell: ({ row, table: _table }`
+      expect(content).toMatch(/cell:\s*\(\{\s*row,\s*table/);
       expect(content).toContain("const lowStock = isLowStock(value)");
       expect(content).toContain("if (lowStock)");
     });

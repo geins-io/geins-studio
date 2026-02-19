@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { ref } from 'vue';
 import * as z from 'zod';
 
@@ -183,7 +183,7 @@ describe('Product Create Page - Form Validation', () => {
   describe('Form Submission Logic', () => {
     it('should not submit when form is invalid', async () => {
       const formValid = ref(false);
-      const loading = ref(false);
+      const _loading = ref(false);
       const createEntityCalled = ref(false);
 
       const mockCreateEntity = async () => {
@@ -359,7 +359,7 @@ describe('Product Create Page - Form Validation', () => {
       try {
         await mockCreateEntity();
         navigationOccurred.value = true;
-      } catch (error) {
+      } catch {
         // Navigation should not occur
       }
 

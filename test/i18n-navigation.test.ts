@@ -1,9 +1,9 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { describe, it, expect } from 'vitest';
 
 describe('Navigation i18n Keys', () => {
   const enJsonPath = resolve(process.cwd(), 'i18n/locales/en.json');

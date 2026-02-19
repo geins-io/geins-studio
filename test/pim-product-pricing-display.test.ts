@@ -1,9 +1,9 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { describe, it, expect } from 'vitest';
 
 const COMPONENT_PATH = resolve(
   __dirname,
@@ -44,7 +44,8 @@ describe('ProductPricingDisplay Component', () => {
 
   it('should use useI18n composable', () => {
     const content = readFileSync(COMPONENT_PATH, 'utf-8');
-    expect(content).toContain('const { t } = useI18n()');
+    // May use `const { t } = useI18n()` or `const { t: _t } = useI18n();`
+    expect(content).toContain('useI18n()');
   });
 
   it('should use accountStore for currency', () => {

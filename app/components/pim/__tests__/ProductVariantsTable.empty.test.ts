@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import ProductVariantsTable from '../ProductVariantsTable.vue';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Sku } from '#shared/types';
+import ProductVariantsTable from '../ProductVariantsTable.vue';
 
 // Mock the composables
 vi.mock('#app', async () => {
-  const actual = await vi.importActual('#app') as any;
+  const actual = await vi.importActual('#app') as Record<string, unknown>;
   return {
     ...actual,
     useI18n: () => ({
@@ -22,7 +22,7 @@ vi.mock('#app', async () => {
 
 vi.mock('@/composables/useColumns', () => ({
   useColumns: () => ({
-    getColumns: (data: any[], options: any) => {
+    getColumns: (data: unknown[], _options: unknown) => {
       if (data.length === 0) return [];
       return [
         { id: 'articleNumber', header: 'Article Number' },

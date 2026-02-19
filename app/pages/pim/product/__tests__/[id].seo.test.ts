@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { ref, computed } from 'vue';
 
 interface Localizations {
@@ -66,7 +66,7 @@ describe('Product Detail - SEO Tab', () => {
       const currentLanguage = ref('en');
       
       const seoData = computed(() => {
-        const dataList: any[] = [];
+        const dataList: { label: string; value: string }[] = [];
         const lang = currentLanguage.value || 'en';
         const localization = entityData.value?.localizations?.[lang];
 
@@ -140,7 +140,7 @@ describe('Product Detail - SEO Tab', () => {
       const currentLanguage = ref('sv');
       
       const seoData = computed(() => {
-        const dataList: any[] = [];
+        const dataList: { label: string; value: string }[] = [];
         const lang = currentLanguage.value || 'en';
         const localization = entityData.value?.localizations?.[lang];
 
@@ -187,8 +187,8 @@ describe('Product Detail - SEO Tab', () => {
       });
 
       expect(seoData.value).toHaveLength(5);
-      expect(seoData.value[0].value).toBe('Swedish Product Name');
-      expect(seoData.value[1].value).toBe('swedish-product-slug');
+      expect(seoData.value[0]!.value).toBe('Swedish Product Name');
+      expect(seoData.value[1]!.value).toBe('swedish-product-slug');
     });
 
     it('should only return available fields when localization is partial', () => {
@@ -196,7 +196,7 @@ describe('Product Detail - SEO Tab', () => {
       const currentLanguage = ref('en');
       
       const seoData = computed(() => {
-        const dataList: any[] = [];
+        const dataList: { label: string; value: string }[] = [];
         const lang = currentLanguage.value || 'en';
         const localization = entityData.value?.localizations?.[lang];
 
@@ -258,7 +258,7 @@ describe('Product Detail - SEO Tab', () => {
       const currentLanguage = ref('en');
       
       const seoData = computed(() => {
-        const dataList: any[] = [];
+        const dataList: { label: string; value: string }[] = [];
         const lang = currentLanguage.value || 'en';
         const localization = entityData.value?.localizations?.[lang];
 
@@ -312,7 +312,7 @@ describe('Product Detail - SEO Tab', () => {
       const currentLanguage = ref(null);
       
       const seoData = computed(() => {
-        const dataList: any[] = [];
+        const dataList: { label: string; value: string }[] = [];
         const lang = currentLanguage.value || 'en';
         const localization = entityData.value?.localizations?.[lang];
 
@@ -331,7 +331,7 @@ describe('Product Detail - SEO Tab', () => {
       });
 
       expect(seoData.value).toHaveLength(1);
-      expect(seoData.value[0].value).toBe('English Product Name');
+      expect(seoData.value[0]!.value).toBe('English Product Name');
     });
   });
 

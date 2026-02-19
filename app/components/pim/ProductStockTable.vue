@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { h } from 'vue';
 import type { Sku } from '#shared/types';
 import { TableMode } from '#shared/types';
 import type { ColumnDef, Table, Row } from '@tanstack/vue-table';
 import { LucidePackage, Badge } from '#components';
-import { h } from 'vue';
 
 // =====================================================================================
 // PROPS & EMITS
@@ -54,7 +54,7 @@ const columns = computed<ColumnDef<Sku>[]>(() => {
     if (columnId === 'stock' || columnId === 'stockSellable') {
       return {
         ...col,
-        cell: ({ row, table }: { row: Row<Sku>; table: Table<Sku> }) => {
+        cell: ({ row, table: _table }: { row: Row<Sku>; table: Table<Sku> }) => {
           const value = row.getValue(columnId) as number;
           const lowStock = isLowStock(value);
           

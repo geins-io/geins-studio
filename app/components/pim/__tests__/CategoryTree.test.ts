@@ -1,9 +1,9 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { describe, it, expect } from 'vitest';
 
 const componentPath = resolve(
   __dirname,
@@ -31,8 +31,9 @@ describe('CategoryTree.vue', () => {
       expect(componentContent).toContain("import type { Category, CategoryTree } from '#shared/types'");
     });
 
-    it('should import chevron icons from lucide-vue-next', () => {
-      expect(componentContent).toContain("import { ChevronDown, ChevronRight } from 'lucide-vue-next'");
+    it('should render CategoryTreeNode component which handles chevron icons', () => {
+      // Chevron icons are imported in CategoryTreeNode.vue, not in CategoryTree.vue
+      expect(componentContent).toContain('<CategoryTreeNode');
     });
   });
 
@@ -107,7 +108,9 @@ describe('CategoryTree.vue', () => {
 
     it('should show empty state when no categories', () => {
       expect(componentContent).toContain('v-if="categoryTree.length === 0"');
-      expect(componentContent).toContain('text-muted-foreground text-sm');
+      // Check for muted foreground text classes (order may vary)
+      expect(componentContent).toContain('text-muted-foreground');
+      expect(componentContent).toContain('text-sm');
       expect(componentContent).toContain("{{ $t('no_categories_available') }}");
     });
 
@@ -222,12 +225,14 @@ describe('CategoryTreeNode.vue', () => {
 
     it('should show ChevronRight when collapsed', () => {
       expect(componentNodeContent).toContain('<ChevronRight v-if="!isOpen"');
-      expect(componentNodeContent).toContain('class="h-4 w-4 text-muted-foreground"');
+      // Class order may vary: "h-4 w-4 text-muted-foreground" or "text-muted-foreground h-4 w-4"
+      expect(componentNodeContent).toMatch(/ChevronRight[^>]*class="[^"]*h-4[^"]*w-4[^"]*text-muted-foreground[^"]*"|ChevronRight[^>]*class="[^"]*text-muted-foreground[^"]*h-4[^"]*w-4[^"]*"/);
     });
 
     it('should show ChevronDown when expanded', () => {
       expect(componentNodeContent).toContain('<ChevronDown v-else');
-      expect(componentNodeContent).toContain('class="h-4 w-4 text-muted-foreground"');
+      // Class order may vary
+      expect(componentNodeContent).toMatch(/ChevronDown[^>]*class="[^"]*h-4[^"]*w-4[^"]*text-muted-foreground[^"]*"|ChevronDown[^>]*class="[^"]*text-muted-foreground[^"]*h-4[^"]*w-4[^"]*"/);
     });
 
     it('should display category name with click handler', () => {
@@ -272,7 +277,8 @@ describe('CategoryTreeNode.vue', () => {
     });
 
     it('should add extra left padding to leaf categories', () => {
-      expect(componentNodeContent).toMatch(/v-else[\s\S]*?class="pl-6/);
+      // Leaf categories have pl-6 padding class somewhere in their span
+      expect(componentNodeContent).toMatch(/v-else[\s\S]*?pl-6/);
     });
 
     it('should have hover styles on leaf categories', () => {

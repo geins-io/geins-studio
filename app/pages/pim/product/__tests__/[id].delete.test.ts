@@ -235,7 +235,7 @@ describe('Product Detail - Delete Functionality', () => {
       
       const mockToast = vi.fn((_options: unknown) => {
         toastCalled.value = true;
-      }) as Record<string, unknown>;
+      });
       
       const mockNavigate = vi.fn(() => {
         navigationCalled.value = true;
@@ -268,7 +268,7 @@ describe('Product Detail - Delete Functionality', () => {
       
       const mockShowErrorToast = vi.fn((_message: string) => {
         errorToastCalled.value = true;
-      }) as Record<string, unknown>;
+      });
       
       const mockNavigate = vi.fn(() => {
         navigationCalled.value = true;
@@ -414,7 +414,7 @@ describe('Product Detail - Delete Functionality', () => {
       // 4. Success toast shown
       const mockToast = vi.fn((_options: unknown) => {
         toastCalled.value = true;
-      }) as Record<string, unknown>;
+      });
       mockToast({ title: 'Product deleted', variant: 'positive' });
       
       // 5. Navigate to list
@@ -471,7 +471,7 @@ describe('Product Detail - Delete Functionality', () => {
       } catch {
         const mockShowErrorToast = vi.fn((_message: string) => {
           errorToastCalled.value = true;
-        }) as Record<string, unknown>;
+        });
         mockShowErrorToast('Error deleting Product');
       }
       

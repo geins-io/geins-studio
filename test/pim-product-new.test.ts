@@ -1,7 +1,7 @@
 // @vitest-environment node
-import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { describe, it, expect } from 'vitest';
 
 describe('PIM Product New Page', () => {
   const filePath = path.join(
@@ -383,7 +383,8 @@ describe('PIM Product New Page', () => {
 
     it('should have buttons in flex row with gap', () => {
       const content = readFileSync(filePath, 'utf-8');
-      expect(content).toContain('class="flex flex-row justify-end gap-4 mt-6"');
+      // Allow for different class ordering
+      expect(content).toMatch(/class="[^"]*flex[^"]*flex-row[^"]*justify-end[^"]*gap-4[^"]*"/);
     });
   });
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { CategoryTree } from '#shared/types';
 import { ChevronDown, ChevronRight } from 'lucide-vue-next';
+import type { CategoryTree } from '#shared/types';
 import {
   Collapsible,
   CollapsibleContent,
@@ -43,14 +43,14 @@ function handleChildSelect(categoryId: string) {
   <div class="category-tree-node">
     <Collapsible v-if="hasChildren" v-model:open="isOpen" class="w-full">
       <div
-        class="flex items-center hover:bg-muted/50 rounded-md transition-colors"
+        class="hover:bg-muted/50 flex items-center rounded-md transition-colors"
         :style="indentStyle"
       >
-        <CollapsibleTrigger class="flex items-center gap-2 py-2 px-2 flex-1">
-          <ChevronRight v-if="!isOpen" class="h-4 w-4 text-muted-foreground" />
-          <ChevronDown v-else class="h-4 w-4 text-muted-foreground" />
+        <CollapsibleTrigger class="flex flex-1 items-center gap-2 px-2 py-2">
+          <ChevronRight v-if="!isOpen" class="text-muted-foreground h-4 w-4" />
+          <ChevronDown v-else class="text-muted-foreground h-4 w-4" />
           <span
-            class="text-sm cursor-pointer hover:text-primary"
+            class="hover:text-primary cursor-pointer text-sm"
             @click.stop="handleClick"
           >
             {{ category.name }}
@@ -71,11 +71,11 @@ function handleChildSelect(categoryId: string) {
 
     <div
       v-else
-      class="flex items-center py-2 px-2 hover:bg-muted/50 rounded-md transition-colors cursor-pointer"
+      class="hover:bg-muted/50 flex cursor-pointer items-center rounded-md px-2 py-2 transition-colors"
       :style="indentStyle"
       @click="handleClick"
     >
-      <span class="pl-6 text-sm hover:text-primary">
+      <span class="hover:text-primary pl-6 text-sm">
         {{ category.name }}
       </span>
     </div>

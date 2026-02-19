@@ -8,8 +8,8 @@
  * - Images tab empty state
  */
 
-import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { describe, it, expect } from 'vitest';
 
 describe('US-019: PIM Empty States', () => {
   describe('Product List Empty State', () => {

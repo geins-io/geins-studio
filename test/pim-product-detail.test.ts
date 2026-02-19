@@ -1,10 +1,10 @@
 /**
  * @vitest-environment node
  */
-import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { describe, it, expect } from 'vitest';
 
 const PRODUCT_DETAIL_FILE = resolve(
   process.cwd(),

@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<Props>(), {
 // =====================================================================================
 // COMPOSABLES
 // =====================================================================================
-const { t } = useI18n();
+const { t: _t } = useI18n();
 const { getProductThumbnail } = useGeinsImage();
 
 // =====================================================================================
@@ -32,7 +32,7 @@ const sortedImages = computed(() => {
   return [...props.media].sort((a, b) => a.order - b.order);
 });
 
-const getImageUrl = (image: Media, size: string = '400x400') => {
+const getImageUrl = (image: Media, _size: string = '400x400') => {
   return getProductThumbnail(image.filename);
 };
 </script>
@@ -59,7 +59,7 @@ const getImageUrl = (image: Media, size: string = '400x400') => {
       <div
         v-for="(image, index) in sortedImages"
         :key="image._id || index"
-        class="group relative aspect-square overflow-hidden rounded-lg border bg-muted"
+        class="group bg-muted relative aspect-square overflow-hidden rounded-lg border"
       >
         <img
           :src="getImageUrl(image)"
@@ -70,7 +70,7 @@ const getImageUrl = (image: Media, size: string = '400x400') => {
         <Badge
           v-if="index === 0"
           variant="secondary"
-          class="absolute left-2 top-2 shadow-sm"
+          class="absolute top-2 left-2 shadow-sm"
         >
           {{ $t('primary') }}
         </Badge>

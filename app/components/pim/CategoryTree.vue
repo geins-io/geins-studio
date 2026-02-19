@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Category, CategoryTree } from '#shared/types';
-import { ChevronDown, ChevronRight } from 'lucide-vue-next';
 
 interface Props {
   categories: Category[];
@@ -61,7 +60,7 @@ function handleCategoryClick(categoryId: string) {
 
 <template>
   <div class="category-tree">
-    <div v-if="categoryTree.length === 0" class="text-muted-foreground text-sm p-4">
+    <div v-if="categoryTree.length === 0" class="text-muted-foreground p-4 text-sm">
       {{ $t('no_categories_available') }}
     </div>
     

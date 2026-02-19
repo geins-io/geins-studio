@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/toast/use-toast';
 // COMPOSABLES & STORES
 // =====================================================================================
 const scope = 'pages/pim/product/new.vue';
-const router = useRouter();
+const _router = useRouter();
 const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog(scope);
@@ -73,7 +73,7 @@ const entityBase: ProductCreate = {
 // =====================================================================================
 const {
   entityName,
-  createMode,
+  createMode: _createMode,
   loading,
   entityListUrl,
   entityDataCreate,
@@ -243,7 +243,7 @@ onMounted(() => {
               </FormGrid>
             </FormGridWrap>
 
-            <div class="flex flex-row justify-end gap-4 mt-6">
+            <div class="mt-6 flex flex-row justify-end gap-4">
               <Button variant="secondary" as-child>
                 <NuxtLink :to="entityListUrl">
                   {{ $t('cancel') }}

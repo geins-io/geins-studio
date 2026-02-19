@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mountSuspended } from '@nuxt/test-utils/runtime';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import ListPage from '../list.vue';
 
 // Mock the Nuxt composables
 vi.mock('#app', async () => {
-  const actual = await vi.importActual('#app') as any;
+  const actual = await vi.importActual('#app') as Record<string, unknown>;
   return {
     ...actual,
     useI18n: () => ({
-      t: (key: string, params?: any, count?: number) => {
-        const translations: Record<string, any> = {
+      t: (key: string, params?: Record<string, unknown>, count?: number) => {
+        const translations: Record<string, string> = {
           product: count === 2 ? 'Products' : 'Product',
           new_entity: `New ${params?.entityName || 'Product'}`,
           create_new_entity: `Create New ${params?.entityName || 'Product'}`,
@@ -65,7 +65,7 @@ vi.mock('@/composables/useEntityUrl', () => ({
 
 vi.mock('@/composables/usePageError', () => ({
   usePageError: () => ({
-    handleFetchResult: (_error: any, data: any) => data || [],
+    handleFetchResult: (_error: unknown, data: unknown) => data || [],
   }),
 }));
 
@@ -90,16 +90,14 @@ describe('Product List - Empty State', () => {
   it('should show empty state when no products exist', async () => {
     // Mock useAsyncData to return empty array
     const { useAsyncData } = await import('#app');
-    vi.mocked(useAsyncData).mockImplementation((_key: any, handler: any) => {
-      return {
-        data: ref([]),
-        error: ref(null),
-        pending: ref(false),
-        refresh: vi.fn(),
-        execute: vi.fn(),
-        status: ref('success'),
-      } as any;
-    });
+    (vi.mocked(useAsyncData) as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+      data: ref([]),
+      error: ref(null),
+      pending: ref(false),
+      refresh: vi.fn(),
+      execute: vi.fn(),
+      status: ref('success'),
+    }));
 
     const wrapper = await mountSuspended(ListPage);
 
@@ -117,16 +115,14 @@ describe('Product List - Empty State', () => {
   it('should show "Create New Product" button in empty state', async () => {
     // Mock useAsyncData to return empty array
     const { useAsyncData } = await import('#app');
-    vi.mocked(useAsyncData).mockImplementation((_key: any, handler: any) => {
-      return {
-        data: ref([]),
-        error: ref(null),
-        pending: ref(false),
-        refresh: vi.fn(),
-        execute: vi.fn(),
-        status: ref('success'),
-      } as any;
-    });
+    (vi.mocked(useAsyncData) as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+      data: ref([]),
+      error: ref(null),
+      pending: ref(false),
+      refresh: vi.fn(),
+      execute: vi.fn(),
+      status: ref('success'),
+    }));
 
     const wrapper = await mountSuspended(ListPage);
 
@@ -144,16 +140,14 @@ describe('Product List - Empty State', () => {
   it('should have empty-actions slot in TableView component', async () => {
     // Mock useAsyncData to return empty array
     const { useAsyncData } = await import('#app');
-    vi.mocked(useAsyncData).mockImplementation((_key: any, handler: any) => {
-      return {
-        data: ref([]),
-        error: ref(null),
-        pending: ref(false),
-        refresh: vi.fn(),
-        execute: vi.fn(),
-        status: ref('success'),
-      } as any;
-    });
+    (vi.mocked(useAsyncData) as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+      data: ref([]),
+      error: ref(null),
+      pending: ref(false),
+      refresh: vi.fn(),
+      execute: vi.fn(),
+      status: ref('success'),
+    }));
 
     const wrapper = await mountSuspended(ListPage);
 
@@ -170,25 +164,23 @@ describe('Product List - Empty State', () => {
   it('should not show empty state when products exist', async () => {
     // Mock useAsyncData to return products
     const { useAsyncData } = await import('#app');
-    vi.mocked(useAsyncData).mockImplementation((_key: any, handler: any) => {
-      return {
-        data: ref([
-          {
-            _id: 1,
-            _type: 'product',
-            productId: 1,
-            name: 'Test Product',
-            articleNumber: 'TEST-001',
-            active: true,
-          },
-        ]),
-        error: ref(null),
-        pending: ref(false),
-        refresh: vi.fn(),
-        execute: vi.fn(),
-        status: ref('success'),
-      } as any;
-    });
+    (vi.mocked(useAsyncData) as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+      data: ref([
+        {
+          _id: 1,
+          _type: 'product',
+          productId: 1,
+          name: 'Test Product',
+          articleNumber: 'TEST-001',
+          active: true,
+        },
+      ]),
+      error: ref(null),
+      pending: ref(false),
+      refresh: vi.fn(),
+      execute: vi.fn(),
+      status: ref('success'),
+    }));
 
     const wrapper = await mountSuspended(ListPage);
 

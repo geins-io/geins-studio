@@ -174,7 +174,7 @@ describe('Product Detail - Save Functionality', () => {
       
       const mockToast = vi.fn((_options: unknown) => {
         toastCalled.value = true;
-      }) as Record<string, unknown>;
+      });
       
       // Simulate handleSave
       try {
@@ -201,7 +201,7 @@ describe('Product Detail - Save Functionality', () => {
       
       const mockShowErrorToast = vi.fn((_message: string) => {
         errorToastCalled.value = true;
-      }) as Record<string, unknown>;
+      });
       
       // Simulate handleSave with error
       try {
@@ -305,7 +305,7 @@ describe('Product Detail - Save Functionality', () => {
       // 4. Success toast shown
       const mockToast = vi.fn((_options: unknown) => {
         toastCalled.value = true;
-      }) as Record<string, unknown>;
+      });
       mockToast({ title: 'Product saved', variant: 'positive' });
       
       // 5. State reset
@@ -337,7 +337,7 @@ describe('Product Detail - Save Functionality', () => {
       } catch {
         const mockShowErrorToast = vi.fn((_message: string) => {
           errorToastCalled.value = true;
-        }) as Record<string, unknown>;
+        });
         mockShowErrorToast('Error saving Product');
       }
       

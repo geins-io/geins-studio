@@ -6,11 +6,11 @@ interface Props {
   loading?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
+const _props = withDefaults(defineProps<Props>(), {
   loading: false,
 });
 
-const { t } = useI18n();
+const { t: _t } = useI18n();
 const accountStore = useAccountStore();
 const { currentCurrency } = storeToRefs(accountStore);
 const locale = useCookieLocale();

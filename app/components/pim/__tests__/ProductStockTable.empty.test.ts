@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import ProductStockTable from '../ProductStockTable.vue';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Sku } from '#shared/types';
+import ProductStockTable from '../ProductStockTable.vue';
 
 // Mock the composables
 vi.mock('#app', async () => {
-  const actual = await vi.importActual('#app') as any;
+  const actual = await vi.importActual('#app') as Record<string, unknown>;
   return {
     ...actual,
     useI18n: () => ({
@@ -22,7 +22,7 @@ vi.mock('#app', async () => {
 
 vi.mock('@/composables/useColumns', () => ({
   useColumns: () => ({
-    getColumns: (data: any[], options: any) => {
+    getColumns: (data: unknown[], _options: unknown) => {
       if (data.length === 0) return [];
       return [
         { id: 'articleNumber', header: 'Article Number' },
@@ -212,8 +212,8 @@ describe('ProductStockTable - Empty State', () => {
     const columns = tableView.props('columns');
     
     // Check that stock and stockSellable columns have custom cell renderers
-    const stockColumn = columns.find((col: any) => col.id === 'stock');
-    const stockSellableColumn = columns.find((col: any) => col.id === 'stockSellable');
+    const stockColumn = columns.find((col: { id: string }) => col.id === 'stock');
+    const stockSellableColumn = columns.find((col: { id: string }) => col.id === 'stockSellable');
     
     expect(stockColumn).toBeDefined();
     expect(stockSellableColumn).toBeDefined();

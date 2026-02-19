@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import ProductImageGallery from '../ProductImageGallery.vue';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Media } from '#shared/types';
+import ProductImageGallery from '../ProductImageGallery.vue';
 
 // Mock the composables
 vi.mock('#app', async () => {
-  const actual = await vi.importActual('#app') as any;
+  const actual = await vi.importActual('#app') as Record<string, unknown>;
   return {
     ...actual,
     useI18n: () => ({
