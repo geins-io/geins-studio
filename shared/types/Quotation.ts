@@ -52,6 +52,7 @@ export interface QuotationCompany {
  * Owner (sales rep) information
  */
 export interface QuotationOwner {
+  ownerId?: string;
   name: string;
   email: string;
   phone: string;
@@ -61,6 +62,7 @@ export interface QuotationOwner {
  * Customer (buyer) information
  */
 export interface QuotationCustomer {
+  customerId?: string;
   name: string;
   email: string;
   phone: string;
@@ -69,15 +71,24 @@ export interface QuotationCustomer {
 }
 
 /**
- * Address information (response)
+ * Address information (response) — matches the backend quotationAddress schema.
+ * Fields align with the company Address type (addressLine1, firstName, etc.).
  */
 export interface QuotationAddress {
-  name: string;
-  address1: string;
-  address2?: string;
-  city: string;
-  zip: string;
-  country: string;
+  addressId: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  firstName?: string;
+  lastName?: string;
+  careOf?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  addressLine3?: string;
+  zip?: string;
+  city?: string;
+  region?: string;
+  country?: string;
 }
 
 /**
@@ -139,18 +150,6 @@ export interface QuotationTotal {
 // =============================================================================
 
 /**
- * Address request for creating/updating quotations
- */
-export interface QuotationAddressRequest {
-  name?: string;
-  address1?: string;
-  address2?: string;
-  city?: string;
-  zip?: string;
-  country?: string;
-}
-
-/**
  * Valid payment method request
  */
 export interface QuotationValidPaymentMethodRequest {
@@ -191,8 +190,8 @@ export interface QuotationCreate extends CreateEntity<QuotationBase> {
   ownerId?: string;
   customerId?: string;
   terms?: string;
-  billingAddress?: QuotationAddressRequest;
-  shippingAddress?: QuotationAddressRequest;
+  billingAddressId?: string;
+  shippingAddressId?: string;
   validPaymentMethods?: QuotationValidPaymentMethodRequest[];
   validShippingMethods?: QuotationValidShippingMethodRequest[];
   items?: QuotationItemCreate[];
@@ -204,8 +203,8 @@ export interface QuotationCreate extends CreateEntity<QuotationBase> {
 export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
   ownerId?: string;
   customerId?: string;
-  billingAddress?: QuotationAddressRequest;
-  shippingAddress?: QuotationAddressRequest;
+  billingAddressId?: string;
+  shippingAddressId?: string;
 }
 
 /**

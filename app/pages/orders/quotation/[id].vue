@@ -10,9 +10,10 @@ import type {
   Quotation,
   QuotationCreate,
   QuotationUpdate,
+  QuotationAddress,
   QuotationApiOptions,
-  QuotationAddressRequest,
   SelectorEntity,
+  Address,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 
@@ -97,8 +98,8 @@ const selectedCompany = ref<CustomerCompany | undefined>();
 
 // Edit mode state
 const hasExpirationDate = ref(false);
-const selectedBillingAddress = ref<QuotationAddressRequest | undefined>();
-const selectedShippingAddress = ref<QuotationAddressRequest | undefined>();
+const selectedBillingAddressId = ref<string>('');
+const selectedShippingAddressId = ref<string>('');
 const paymentTermsOptions = [
   { id: 'net15', label: 'Net 15' },
   { id: 'net30', label: 'Net 30' },
@@ -274,28 +275,19 @@ const {
     entityLiveStatus.value =
       quotation.status === 'pending' || quotation.status === 'accepted';
 
-    // Set company first so watchers populate filtered lists
+    // Set company info (selectedCompany is already fetched in onMounted for edit mode)
     const companyId = quotation.company?.companyId?.toString() || '';
     selectedCompanyId.value = companyId;
     selectedAccountName.value = quotation.company?.name || '';
-    selectedCompany.value = companies.value.find((c) => c._id === companyId);
 
-    // Resolve owner ID from name/email match
-    const ownerId =
-      users.value.find(
-        (u) =>
-          u.name === quotation.owner?.name ||
-          u.email === quotation.owner?.email,
-      )?._id || '';
+    // Resolve owner and buyer IDs directly from API response
+    const ownerId = quotation.owner?.ownerId || '';
+    const buyerId = quotation.customer?.customerId || '';
 
-    // Resolve buyer ID from name/email match
-    const buyerBuyers = selectedCompany.value?.buyers || [];
-    const buyerId =
-      buyerBuyers.find(
-        (b) =>
-          `${b.firstName} ${b.lastName}` === quotation.customer?.name ||
-          b.email === quotation.customer?.email,
-      )?._id || '';
+    // Set selected address IDs from API response
+    selectedBillingAddressId.value = quotation.billingAddress?.addressId || '';
+    selectedShippingAddressId.value =
+      quotation.shippingAddress?.addressId || '';
 
     // Resolve payment terms from validPaymentMethods
     const paymentTerms = quotation.validPaymentMethods?.[0]?.name || '';
@@ -339,8 +331,8 @@ const {
     validTo: formData.details.expirationDate || undefined,
     ownerId: formData.details.createdBy || undefined,
     customerId: formData.details.buyerId || undefined,
-    billingAddress: selectedBillingAddress.value,
-    shippingAddress: selectedShippingAddress.value,
+    billingAddressId: selectedBillingAddressId.value || undefined,
+    shippingAddressId: selectedShippingAddressId.value || undefined,
   }),
   onFormValuesChange: (values) => {
     if (createMode.value) {
@@ -360,8 +352,8 @@ const {
         validTo: values.details.expirationDate || undefined,
         ownerId: values.details.createdBy || undefined,
         customerId: values.details.buyerId || undefined,
-        billingAddress: selectedBillingAddress.value,
-        shippingAddress: selectedShippingAddress.value,
+        billingAddressId: selectedBillingAddressId.value || undefined,
+        shippingAddressId: selectedShippingAddressId.value || undefined,
       };
     }
   },
@@ -420,10 +412,11 @@ const fetchProducts = async () => {
   }
 };
 
-// Watch for company selection changes
+// Watch for company selection changes (create mode only)
 watch(
   () => form.values.details?.accountId,
   async (newCompanyId) => {
+    if (!createMode.value) return;
     if (newCompanyId) {
       selectedCompanyId.value = newCompanyId;
       const company = companies.value.find((c) => c._id === newCompanyId);
@@ -431,17 +424,15 @@ watch(
       selectedAccountName.value = company?.name || '';
 
       // Clear sales rep and buyer when company changes
-      if (createMode.value) {
-        form.setFieldValue('details.createdBy', '', false);
-        form.setFieldValue('details.buyerId', '', false);
+      form.setFieldValue('details.createdBy', '', false);
+      form.setFieldValue('details.buyerId', '', false);
 
-        // Set currency to first available from company's channels
-        if (availableCurrencies.value.length > 0) {
-          form.setFieldValue(
-            'details.currency',
-            availableCurrencies.value[0]?._id,
-          );
-        }
+      // Set currency to first available from company's channels
+      if (availableCurrencies.value.length > 0) {
+        form.setFieldValue(
+          'details.currency',
+          availableCurrencies.value[0]?._id,
+        );
       }
     } else {
       selectedCompany.value = undefined;
@@ -468,20 +459,22 @@ watch(hasExpirationDate, (enabled) => {
 // CUSTOMER PANEL HANDLER
 // =====================================================================================
 
-// Convert a company Address to QuotationAddressRequest format
-const toQuotationAddress = (
-  addr: Address | undefined,
-): QuotationAddressRequest | undefined => {
-  if (!addr) return undefined;
-  return {
-    name: [addr.firstName, addr.lastName].filter(Boolean).join(' '),
-    address1: addr.addressLine1,
-    address2: addr.addressLine2,
-    city: addr.city,
-    zip: addr.zip,
-    country: addr.country,
-  };
-};
+const toQuotationAddress = (address: Address): QuotationAddress => ({
+  addressId: address._id,
+  email: address.email,
+  phone: address.phone,
+  company: address.company,
+  firstName: address.firstName,
+  lastName: address.lastName,
+  careOf: address.careOf,
+  addressLine1: address.addressLine1,
+  addressLine2: address.addressLine2,
+  addressLine3: address.addressLine3,
+  zip: address.zip,
+  city: address.city,
+  region: address.region,
+  country: address.country,
+});
 
 const handleCustomerPanelSave = (data: {
   ownerId: string;
@@ -493,14 +486,21 @@ const handleCustomerPanelSave = (data: {
   form.setFieldValue('details.createdBy', data.ownerId);
   form.setFieldValue('details.buyerId', data.buyerId);
 
-  // Find and store selected addresses
-  const addresses = selectedCompany.value?.addresses || [];
-  const billingAddr = addresses.find((a) => a._id === data.billingAddressId);
-  const shippingAddr = addresses.find((a) => a._id === data.shippingAddressId);
+  // Store address IDs for update payload
+  selectedBillingAddressId.value = data.billingAddressId;
+  selectedShippingAddressId.value = data.shippingAddressId;
 
-  // Store resolved addresses for update payload
-  selectedBillingAddress.value = toQuotationAddress(billingAddr);
-  selectedShippingAddress.value = toQuotationAddress(shippingAddr);
+  // Patch full address objects into entityDataUpdate so the Customer card
+  // reflects the newly selected addresses immediately (before API save)
+  const addresses = selectedCompany.value?.addresses;
+  if (addresses && entityDataUpdate.value) {
+    const billing = addresses.find((a) => a._id === data.billingAddressId);
+    const shipping = addresses.find((a) => a._id === data.shippingAddressId);
+    const patch: Record<string, unknown> = {};
+    if (billing) patch.billingAddress = toQuotationAddress(billing);
+    if (shipping) patch.shippingAddress = toQuotationAddress(shipping);
+    entityDataUpdate.value = { ...entityDataUpdate.value, ...patch };
+  }
 };
 
 // =====================================================================================
@@ -515,18 +515,28 @@ if (!createMode.value) {
   refreshEntityData.value = refresh;
 
   onMounted(async () => {
-    // Fetch dependent data first (companies/users needed for parseEntityData)
-    await Promise.all([fetchCompanies(), fetchUsers()]);
+    // Fetch users (needed for sales rep display)
+    await fetchUsers();
 
-    // Validate and parse entity data
+    // Validate entity data
     const quotation = handleFetchResult<Quotation>(error.value, data.value);
+
+    // Fetch only the selected company (instead of all companies)
+    const companyId = quotation.company?.companyId?.toString() || '';
+    if (companyId) {
+      const company = await customerApi.company.get(companyId, {
+        fields: ['buyers', 'salesreps', 'addresses'],
+      });
+      selectedCompany.value = company;
+    }
+
     await parseAndSaveData(quotation);
 
     // Fetch products for SKU selector
     fetchProducts();
   });
 } else {
-  // Create mode: just fetch companies and users
+  // Create mode: fetch all companies and users
   onMounted(async () => {
     await Promise.all([fetchCompanies(), fetchUsers()]);
   });
@@ -912,12 +922,8 @@ definePageMeta({
                     :available-buyers="availableBuyers"
                     :current-owner-id="form.values.details?.createdBy || ''"
                     :current-buyer-id="form.values.details?.buyerId || ''"
-                    :current-billing-address="
-                      quotationData?.billingAddress || null
-                    "
-                    :current-shipping-address="
-                      quotationData?.shippingAddress || null
-                    "
+                    :current-billing-address-id="selectedBillingAddressId"
+                    :current-shipping-address-id="selectedShippingAddressId"
                     @save="handleCustomerPanelSave"
                   >
                     <Button variant="outline" size="sm">
@@ -928,20 +934,49 @@ definePageMeta({
 
                 <div class="space-y-4">
                   <!-- Company info -->
-                  <div>
-                    <ContentCardHeader
-                      :title="$t('company')"
-                      size="sm"
-                      heading-level="h4"
-                    />
-                    <div class="text-muted-foreground mt-1 text-sm">
-                      <p class="font-medium">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('company') }}
+                      </p>
+                      <p class="text-sm">
                         {{ quotationData?.company?.name || '-' }}
                       </p>
-                      <p v-if="quotationData?.company?.orgNr">
-                        {{ $t('org_nr') }}:
-                        {{ quotationData.company.orgNr }}
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('org_nr') }}
                       </p>
+                      <p class="text-sm">
+                        {{ quotationData?.company?.orgNr || '-' }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Addresses -->
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('billing_address') }}
+                      </p>
+                      <ContentAddressDisplay
+                        v-if="quotationData?.billingAddress"
+                        :address="quotationData.billingAddress"
+                        address-only
+                      />
+                      <p v-else class="text-xs">-</p>
+                    </div>
+
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('shipping_address') }}
+                      </p>
+                      <ContentAddressDisplay
+                        v-if="quotationData?.shippingAddress"
+                        :address="quotationData.shippingAddress"
+                        address-only
+                      />
+                      <p v-else class="text-xs">-</p>
                     </div>
                   </div>
 
@@ -949,18 +984,18 @@ definePageMeta({
                   <div class="grid grid-cols-2 gap-4 border-t pt-4">
                     <div>
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('orders.quotation_owner') }}
-                      </p>
-                      <p class="text-sm">
-                        {{ currentOwnerName || '-' }}
-                      </p>
-                    </div>
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
                         {{ $t('buyer') }}
                       </p>
                       <p class="text-sm">
                         {{ currentBuyerName || '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.quotation_owner') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ currentOwnerName || '-' }}
                       </p>
                     </div>
                   </div>
@@ -973,73 +1008,6 @@ definePageMeta({
                     <p class="text-sm">
                       {{ form.values.details?.currency || '-' }}
                     </p>
-                  </div>
-
-                  <!-- Addresses -->
-                  <div
-                    v-if="
-                      quotationData?.billingAddress ||
-                      quotationData?.shippingAddress
-                    "
-                    class="grid grid-cols-2 gap-4 border-t pt-4"
-                  >
-                    <div v-if="quotationData?.billingAddress">
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('billing_address') }}
-                      </p>
-                      <div class="text-xs">
-                        <p v-if="quotationData.billingAddress.name">
-                          {{ quotationData.billingAddress.name }}
-                        </p>
-                        <p v-if="quotationData.billingAddress.address1">
-                          {{ quotationData.billingAddress.address1 }}
-                        </p>
-                        <p v-if="quotationData.billingAddress.address2">
-                          {{ quotationData.billingAddress.address2 }}
-                        </p>
-                        <p
-                          v-if="
-                            quotationData.billingAddress.zip ||
-                            quotationData.billingAddress.city
-                          "
-                        >
-                          {{ quotationData.billingAddress.zip }}
-                          {{ quotationData.billingAddress.city }}
-                        </p>
-                        <p v-if="quotationData.billingAddress.country">
-                          {{ quotationData.billingAddress.country }}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div v-if="quotationData?.shippingAddress">
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('shipping_address') }}
-                      </p>
-                      <div class="text-xs">
-                        <p v-if="quotationData.shippingAddress.name">
-                          {{ quotationData.shippingAddress.name }}
-                        </p>
-                        <p v-if="quotationData.shippingAddress.address1">
-                          {{ quotationData.shippingAddress.address1 }}
-                        </p>
-                        <p v-if="quotationData.shippingAddress.address2">
-                          {{ quotationData.shippingAddress.address2 }}
-                        </p>
-                        <p
-                          v-if="
-                            quotationData.shippingAddress.zip ||
-                            quotationData.shippingAddress.city
-                          "
-                        >
-                          {{ quotationData.shippingAddress.zip }}
-                          {{ quotationData.shippingAddress.city }}
-                        </p>
-                        <p v-if="quotationData.shippingAddress.country">
-                          {{ quotationData.shippingAddress.country }}
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </ContentEditCard>

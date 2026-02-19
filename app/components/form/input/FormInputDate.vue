@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { CalendarIcon } from 'lucide-vue-next';
 import { DateFormatter } from '@internationalized/date';
+import { CalendarIcon } from 'lucide-vue-next';
 import { cn } from '@/utils/index';
 
 const model = defineModel<string>();

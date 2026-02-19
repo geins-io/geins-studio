@@ -1,3 +1,12 @@
+## Workflow Rules
+
+These MUST be followed at the start and end of every task:
+
+1. **Linear issues**: When starting work on a Linear issue, **always** set its status to "In Progress" before writing any code.
+2. **Update CLAUDE.md**: At the end of every task or chat session, add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file.
+
+---
+
 # Geins Studio
 
 Admin interface for Geins Commerce Backend. **Client-side SPA** (`ssr: false`) that communicates with Geins Management API through a Nitro server proxy.
@@ -51,7 +60,7 @@ All API calls flow through typed repository factories → `$geinsApi` → Nitro 
 Access via `useGeinsRepository()`:
 
 - `orderApi.quotation` — Quotation CRUD + `query()` endpoint
-- `customerApi.company` — Companies with `list({ fields: ['buyers', 'salesreps'] })`
+- `customerApi.company` — Companies with `list({ fields: ['buyers', 'salesreps'] })` or single `get(id, { fields: ['buyers', 'salesreps', 'addresses'] })`
 - `productApi` — Products with `list({ fields: ['media', 'skus'] })`
 - `globalApi` — Account, channels, currencies, languages
 
@@ -103,11 +112,11 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - **Naming**: Component filenames must include their full directory path prefix. A file at `app/components/content/edit/CustomerPanel.vue` is auto-imported as `ContentEditCustomerPanel`. The filename IS the component name (Nuxt does not auto-prefix from directory structure in this project).
 - `ContentEditCard` — Collapsible card sections on edit pages. Has `#header-action` slot for buttons next to the title.
 - `ContentEditAddressPanel` — Sheet-based address editor (props: `address: AddressUpdate`, emits: `save`, `delete`)
-- `ContentEditCustomerPanel` — Sheet-based panel for changing quotation customer details (owner, buyer, addresses)
+- `ContentEditCustomerPanel` — Sheet-based panel for changing quotation customer details (owner, buyer, addresses). Emits address IDs (`billingAddressId`, `shippingAddressId`) not full address objects. **Important**: When handling the `save` event, the parent must also patch the full address objects into `entityDataUpdate` (looked up from `selectedCompany.addresses`) so the Customer card reflects changes immediately without an API round-trip.
 - `ContentSwitch` — Toggle with animated collapsible slot content
 - `FormGridWrap` / `FormGrid` — Form layout (design prop: `"1"`, `"1+1"`, `"1+1+1"`, `"2+1+1"`)
 - `SelectorPanel` + `TableView` — Entity selection pattern (see `app/pages/examples/sku-selector.vue`)
-- `ContentAddressDisplay` — Address display (expects `AddressUpdate` type, not `QuotationAddress`)
+- `ContentAddressDisplay` — Address display (expects `AddressUpdate` type). Also compatible with `QuotationAddress` since both share the same field names (`addressLine1`, `firstName`, etc.)
 
 ## Code Conventions
 
@@ -137,6 +146,12 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 5. **Detail page** → `app/pages/{domain}/{entity}/[id].vue`
 6. **Navigation** → `app/lib/navigation.ts`
 7. **i18n** → `i18n/locales/en.json` + `sv.json`
+
+## Display Patterns in Edit Pages
+
+- **Labeled value sections** in read-only cards (e.g. Customer card) use a consistent pattern: `<p class="text-muted-foreground mb-1 text-xs font-medium">` for the label, `<p class="text-sm">` for the value, with `'-'` as fallback when empty.
+- **Two-column layouts** in cards use `<div class="grid grid-cols-2 gap-4">`, with `border-t pt-4` for visual separation between sections.
+- **Address display** in cards: always show both billing and shipping address sections (with labels); use `ContentAddressDisplay` when address data exists, otherwise show a `-` placeholder.
 
 ## Vue Gotchas
 

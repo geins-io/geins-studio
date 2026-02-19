@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { VisuallyHidden } from 'reka-ui';
-import type { Address, QuotationAddress } from '#shared/types';
+import type { Address } from '#shared/types';
 
 const props = defineProps<{
   company: CustomerCompany | undefined;
@@ -8,8 +8,8 @@ const props = defineProps<{
   availableBuyers: CompanyBuyer[];
   currentOwnerId: string;
   currentBuyerId: string;
-  currentBillingAddress?: QuotationAddress | null;
-  currentShippingAddress?: QuotationAddress | null;
+  currentBillingAddressId?: string;
+  currentShippingAddressId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -24,6 +24,7 @@ const emit = defineEmits<{
   ): void;
 }>();
 
+const { getCountryNameById } = useAccountStore();
 const open = ref(false);
 
 // Local selections
@@ -36,7 +37,8 @@ const selectedShippingAddressId = ref('');
 const billingAddresses = computed(() => {
   if (!props.company?.addresses) return [];
   return props.company.addresses.filter(
-    (a) => a.addressType === 'billing' || a.addressType === 'billingandshipping',
+    (a) =>
+      a.addressType === 'billing' || a.addressType === 'billingandshipping',
   );
 });
 
@@ -48,30 +50,15 @@ const shippingAddresses = computed(() => {
   );
 });
 
-// Format address for display in select
-const formatAddress = (address: Address) => {
+// Format address as single-line summary (used for select trigger display)
+const formatAddressOneLine = (address: Address) => {
   const parts = [
     address.addressLine1,
     address.zip,
     address.city,
-    address.country,
+    address.country ? getCountryNameById(address.country) : undefined,
   ].filter(Boolean);
   return parts.join(', ');
-};
-
-// Match current quotation address to a company address
-const matchAddress = (
-  quotationAddr: QuotationAddress | null | undefined,
-  companyAddresses: Address[],
-): string => {
-  if (!quotationAddr || companyAddresses.length === 0) return '';
-  const match = companyAddresses.find(
-    (a) =>
-      a.addressLine1 === quotationAddr.address1 &&
-      a.zip === quotationAddr.zip &&
-      a.city === quotationAddr.city,
-  );
-  return match?._id || '';
 };
 
 // Sync current values when panel opens
@@ -79,14 +66,8 @@ watch(open, (value) => {
   if (value) {
     selectedOwnerId.value = props.currentOwnerId || '';
     selectedBuyerId.value = props.currentBuyerId || '';
-    selectedBillingAddressId.value = matchAddress(
-      props.currentBillingAddress,
-      billingAddresses.value,
-    );
-    selectedShippingAddressId.value = matchAddress(
-      props.currentShippingAddress,
-      shippingAddresses.value,
-    );
+    selectedBillingAddressId.value = props.currentBillingAddressId || '';
+    selectedShippingAddressId.value = props.currentShippingAddressId || '';
   }
 });
 
@@ -110,7 +91,7 @@ const handleCancel = () => {
     <SheetTrigger as-child>
       <slot />
     </SheetTrigger>
-    <SheetContent width="medium">
+    <SheetContent width="narrow">
       <SheetHeader>
         <SheetTitle>{{ $t('orders.change_customer_details') }}</SheetTitle>
         <VisuallyHidden>
@@ -123,9 +104,7 @@ const handleCancel = () => {
         <div class="space-y-6">
           <!-- Quotation Owner -->
           <div class="space-y-2">
-            <label class="text-sm font-medium">
-              {{ $t('orders.quotation_owner') }}
-            </label>
+            <Label>{{ $t('orders.quotation_owner') }}</Label>
             <Select v-model="selectedOwnerId">
               <SelectTrigger>
                 <SelectValue
@@ -150,9 +129,7 @@ const handleCancel = () => {
 
           <!-- Buyer -->
           <div class="space-y-2">
-            <label class="text-sm font-medium">
-              {{ $t('buyer') }}
-            </label>
+            <Label>{{ $t('buyer') }}</Label>
             <Select v-model="selectedBuyerId">
               <SelectTrigger>
                 <SelectValue
@@ -177,9 +154,7 @@ const handleCancel = () => {
 
           <!-- Billing Address -->
           <div class="space-y-2">
-            <label class="text-sm font-medium">
-              {{ $t('billing_address') }}
-            </label>
+            <Label>{{ $t('billing_address') }}</Label>
             <Select v-model="selectedBillingAddressId">
               <SelectTrigger>
                 <SelectValue
@@ -196,7 +171,7 @@ const handleCancel = () => {
                   :key="address._id"
                   :value="address._id"
                 >
-                  {{ formatAddress(address) }}
+                  {{ formatAddressOneLine(address) }}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -204,9 +179,7 @@ const handleCancel = () => {
 
           <!-- Shipping Address -->
           <div class="space-y-2">
-            <label class="text-sm font-medium">
-              {{ $t('shipping_address') }}
-            </label>
+            <Label>{{ $t('shipping_address') }}</Label>
             <Select v-model="selectedShippingAddressId">
               <SelectTrigger>
                 <SelectValue
@@ -223,7 +196,7 @@ const handleCancel = () => {
                   :key="address._id"
                   :value="address._id"
                 >
-                  {{ formatAddress(address) }}
+                  {{ formatAddressOneLine(address) }}
                 </SelectItem>
               </SelectContent>
             </Select>
