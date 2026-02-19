@@ -78,7 +78,7 @@ onMounted(() => {
       articleNumber: t('article_number'),
       active: t('status') 
     },
-    includeColumns: ['productId', 'thumbnail', 'name', 'articleNumber', 'active'],
+    includeColumns: ['thumbnail', 'name', 'articleNumber', 'active'],
   };
   // GET AND SET COLUMNS
   columns.value = getColumns(dataList.value, columnOptions);
@@ -97,7 +97,7 @@ onMounted(() => {
 
 // SET COLUMN VISIBILITY STATE
 const { getVisibilityState } = useTable<EntityList>();
-const hiddenColumns: StringKeyOf<EntityList>[] = ['productId'];
+const hiddenColumns: StringKeyOf<EntityList>[] = [];
 visibilityState.value = getVisibilityState(hiddenColumns);
 </script>
 

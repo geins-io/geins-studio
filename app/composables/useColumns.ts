@@ -366,9 +366,9 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
 
             if (linkConfig) {
               if (linkConfig.idField) {
-                // Internal link with ID replacement
-                const idValue = String(row.getValue(linkConfig.idField));
-                if (idValue) {
+                // Internal link with ID replacement - use row.original to access any field
+                const idValue = String((row.original as Record<string, unknown>)[linkConfig.idField] ?? '');
+                if (idValue && idValue !== 'undefined') {
                   fullEditUrl = linkConfig.url.replace('{id}', idValue);
                 }
               } else {
