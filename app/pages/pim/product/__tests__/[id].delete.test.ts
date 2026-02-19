@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ref } from 'vue';
 
-interface Product {
+interface _Product {
   productId: number;
   name: string;
   articleNumber: string;
@@ -13,26 +13,30 @@ interface Product {
 
 describe('Product Detail - Delete Functionality', () => {
   // Mock data for testing
-  const mockProduct: Product = {
-    productId: 1,
-    name: 'Test Product',
-    articleNumber: 'TEST-001',
-    active: true,
-    brandId: 5,
-    description: 'Test description',
-    categoryIds: [1, 2],
-  };
+  // const mockProduct: Product = {
+  //   productId: 1,
+  //   name: 'Test Product',
+  //   articleNumber: 'TEST-001',
+  //   active: true,
+  //   brandId: 5,
+  //   description: 'Test description',
+  //   categoryIds: [1, 2],
+  // };
+
+  // Shared state for delete dialog tests
+  let deleteDialogOpen: ReturnType<typeof ref<boolean>>;
+
+  beforeEach(() => {
+    deleteDialogOpen = ref(false);
+  });
 
   describe('Delete dialog state', () => {
+
     it('should be closed by default', () => {
-      const deleteDialogOpen = ref(false);
-      
       expect(deleteDialogOpen.value).toBe(false);
     });
 
     it('should open when openDeleteDialog is called', () => {
-      const deleteDialogOpen = ref(false);
-      
       const mockOpenDeleteDialog = vi.fn(() => {
         deleteDialogOpen.value = true;
       });
@@ -44,7 +48,7 @@ describe('Product Detail - Delete Functionality', () => {
     });
 
     it('should close after user cancels', () => {
-      const deleteDialogOpen = ref(true);
+      deleteDialogOpen.value = true;
       
       // Simulate cancel action
       deleteDialogOpen.value = false;
@@ -53,7 +57,7 @@ describe('Product Detail - Delete Functionality', () => {
     });
 
     it('should close after successful deletion', async () => {
-      const deleteDialogOpen = ref(true);
+      deleteDialogOpen.value = true;
       const deleting = ref(false);
       
       // Simulate deletion
@@ -146,7 +150,7 @@ describe('Product Detail - Delete Functionality', () => {
       const toastMessage = ref('');
       const toastVariant = ref('');
       
-      const mockToast = vi.fn(({ title, variant }: any) => {
+      const mockToast = vi.fn(({ title, variant }: { title: string; variant: string }) => {
         toastCalled.value = true;
         toastMessage.value = title;
         toastVariant.value = variant;
@@ -170,7 +174,7 @@ describe('Product Detail - Delete Functionality', () => {
       const mockShowErrorToast = vi.fn((message: string) => {
         toastCalled.value = true;
         toastMessage.value = message;
-      }) as any;
+      });
       
       // Simulate failed deletion
       mockShowErrorToast('Error deleting Product');
@@ -210,7 +214,7 @@ describe('Product Detail - Delete Functionality', () => {
       try {
         await mockDeleteEntity();
         mockNavigate();
-      } catch (error) {
+      } catch {
         // Don't navigate on error
       }
       
@@ -229,9 +233,9 @@ describe('Product Detail - Delete Functionality', () => {
         deleteEntityCalled.value = true;
       });
       
-      const mockToast = vi.fn((options: any) => {
+      const mockToast = vi.fn((_options: unknown) => {
         toastCalled.value = true;
-      }) as any;
+      }) as Record<string, unknown>;
       
       const mockNavigate = vi.fn(() => {
         navigationCalled.value = true;
@@ -245,7 +249,7 @@ describe('Product Detail - Delete Functionality', () => {
           variant: 'positive',
         });
         mockNavigate();
-      } catch (error) {
+      } catch {
         // Handle error
       }
       
@@ -262,9 +266,9 @@ describe('Product Detail - Delete Functionality', () => {
         throw new Error('Delete failed');
       });
       
-      const mockShowErrorToast = vi.fn((message: string) => {
+      const mockShowErrorToast = vi.fn((_message: string) => {
         errorToastCalled.value = true;
-      }) as any;
+      }) as Record<string, unknown>;
       
       const mockNavigate = vi.fn(() => {
         navigationCalled.value = true;
@@ -274,7 +278,7 @@ describe('Product Detail - Delete Functionality', () => {
       try {
         await mockDeleteEntity();
         mockNavigate();
-      } catch (error) {
+      } catch {
         mockShowErrorToast('Error deleting entity');
       }
       
@@ -286,7 +290,7 @@ describe('Product Detail - Delete Functionality', () => {
 
   describe('useDeleteDialog composable', () => {
     it('should provide deleteDialogOpen state', () => {
-      const deleteDialogOpen = ref(false);
+      // const deleteDialogOpen = ref(false);
       
       expect(deleteDialogOpen.value).toBe(false);
     });
@@ -298,7 +302,7 @@ describe('Product Detail - Delete Functionality', () => {
     });
 
     it('should provide openDeleteDialog function', () => {
-      const deleteDialogOpen = ref(false);
+      // const deleteDialogOpen = ref(false);
       
       const openDeleteDialog = () => {
         deleteDialogOpen.value = true;
@@ -341,7 +345,7 @@ describe('Product Detail - Delete Functionality', () => {
 
   describe('DialogDelete component', () => {
     it('should bind deleteDialogOpen with v-model:open', () => {
-      const deleteDialogOpen = ref(false);
+      // const deleteDialogOpen = ref(false);
       
       // Simulate v-model binding
       deleteDialogOpen.value = true;
@@ -374,7 +378,7 @@ describe('Product Detail - Delete Functionality', () => {
     });
 
     it('should close dialog when user cancels', () => {
-      const deleteDialogOpen = ref(true);
+      // const deleteDialogOpen = ref(true);
       
       // Simulate cancel action (closing dialog)
       deleteDialogOpen.value = false;
@@ -386,7 +390,7 @@ describe('Product Detail - Delete Functionality', () => {
   describe('Integration tests', () => {
     it('should complete full delete cycle', async () => {
       // Initial state
-      const deleteDialogOpen = ref(false);
+      // const deleteDialogOpen = ref(false);
       const deleting = ref(false);
       const toastCalled = ref(false);
       const navigationTarget = ref('');
@@ -408,9 +412,9 @@ describe('Product Detail - Delete Functionality', () => {
       await mockDeleteEntity();
       
       // 4. Success toast shown
-      const mockToast = vi.fn((options: any) => {
+      const mockToast = vi.fn((_options: unknown) => {
         toastCalled.value = true;
-      }) as any;
+      }) as Record<string, unknown>;
       mockToast({ title: 'Product deleted', variant: 'positive' });
       
       // 5. Navigate to list
@@ -432,7 +436,7 @@ describe('Product Detail - Delete Functionality', () => {
 
     it('should handle delete cancellation', () => {
       // Initial state
-      const deleteDialogOpen = ref(false);
+      // const deleteDialogOpen = ref(false);
       const deleteEntityCalled = ref(false);
       
       // 1. User clicks delete button
@@ -448,7 +452,7 @@ describe('Product Detail - Delete Functionality', () => {
     });
 
     it('should handle delete failure gracefully', async () => {
-      const deleteDialogOpen = ref(true);
+      // const deleteDialogOpen = ref(true);
       const deleting = ref(false);
       const errorToastCalled = ref(false);
       const navigationCalled = ref(false);
@@ -464,10 +468,10 @@ describe('Product Detail - Delete Functionality', () => {
       // 3. Error handling
       try {
         await mockDeleteEntity();
-      } catch (error) {
-        const mockShowErrorToast = vi.fn((message: string) => {
+      } catch {
+        const mockShowErrorToast = vi.fn((_message: string) => {
           errorToastCalled.value = true;
-        }) as any;
+        }) as Record<string, unknown>;
         mockShowErrorToast('Error deleting Product');
       }
       

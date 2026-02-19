@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { ref } from 'vue';
 
 interface Product {
@@ -127,7 +127,7 @@ describe('Product Detail - Save Functionality', () => {
       const toastMessage = ref('');
       const toastVariant = ref('');
       
-      const mockToast = vi.fn(({ title, variant }: any) => {
+      const mockToast = vi.fn(({ title, variant }: { title: string; variant: string }) => {
         toastCalled.value = true;
         toastMessage.value = title;
         toastVariant.value = variant;
@@ -151,7 +151,7 @@ describe('Product Detail - Save Functionality', () => {
       const mockShowErrorToast = vi.fn((message: string) => {
         toastCalled.value = true;
         toastMessage.value = message;
-      }) as any;
+      });
       
       // Simulate failed save
       mockShowErrorToast('Error saving Product');
@@ -172,9 +172,9 @@ describe('Product Detail - Save Functionality', () => {
         hasUnsavedChanges.value = false;
       });
       
-      const mockToast = vi.fn((options: any) => {
+      const mockToast = vi.fn((_options: unknown) => {
         toastCalled.value = true;
-      }) as any;
+      }) as Record<string, unknown>;
       
       // Simulate handleSave
       try {
@@ -183,7 +183,7 @@ describe('Product Detail - Save Functionality', () => {
           title: 'Product saved',
           variant: 'positive',
         });
-      } catch (error) {
+      } catch {
         // Handle error
       }
       
@@ -199,14 +199,14 @@ describe('Product Detail - Save Functionality', () => {
         throw new Error('Save failed');
       });
       
-      const mockShowErrorToast = vi.fn((message: string) => {
+      const mockShowErrorToast = vi.fn((_message: string) => {
         errorToastCalled.value = true;
-      }) as any;
+      }) as Record<string, unknown>;
       
       // Simulate handleSave with error
       try {
         await mockUpdateEntity();
-      } catch (error) {
+      } catch {
         mockShowErrorToast('Error saving entity');
       }
       
@@ -303,9 +303,9 @@ describe('Product Detail - Save Functionality', () => {
       await mockUpdateEntity();
       
       // 4. Success toast shown
-      const mockToast = vi.fn((options: any) => {
+      const mockToast = vi.fn((_options: unknown) => {
         toastCalled.value = true;
-      }) as any;
+      }) as Record<string, unknown>;
       mockToast({ title: 'Product saved', variant: 'positive' });
       
       // 5. State reset
@@ -334,10 +334,10 @@ describe('Product Detail - Save Functionality', () => {
       // 3. Error handling
       try {
         await mockUpdateEntity();
-      } catch (error) {
-        const mockShowErrorToast = vi.fn((message: string) => {
+      } catch {
+        const mockShowErrorToast = vi.fn((_message: string) => {
           errorToastCalled.value = true;
-        }) as any;
+        }) as Record<string, unknown>;
         mockShowErrorToast('Error saving Product');
       }
       
