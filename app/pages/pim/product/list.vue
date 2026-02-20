@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ColumnOptions, StringKeyOf, Product  } from '#shared/types';
+import type { ColumnOptions, StringKeyOf, Product } from '#shared/types';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = Product;
@@ -65,18 +65,18 @@ onMounted(() => {
 
   // SET UP COLUMN OPTIONS FOR ENTITY
   const columnOptions: ColumnOptions<EntityList> = {
-    columnTypes: { 
-      thumbnail: 'image', 
-      name: 'link', 
-      active: 'status' 
+    columnTypes: {
+      thumbnail: 'image',
+      name: 'link',
+      active: 'status',
     },
     linkColumns: {
-      name: { url: entityUrl, idField: 'productId' },
+      name: { url: entityUrl, idField: '_id' },
     },
-    columnTitles: { 
+    columnTitles: {
       thumbnail: t('image'),
       articleNumber: t('article_number'),
-      active: t('status') 
+      active: t('status'),
     },
     includeColumns: ['thumbnail', 'name', 'articleNumber', 'active'],
   };
@@ -87,7 +87,7 @@ onMounted(() => {
     columns.value,
     {
       onEdit: (item: Entity) =>
-        navigateTo(`${entityUrl.replace(entityIdentifier, String(item.productId))}`),
+        navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
     },
     'actions',
     ['edit'],
@@ -119,6 +119,10 @@ visibilityState.value = getVisibilityState(hiddenColumns);
       :searchable-fields="['name', 'articleNumber']"
       :page-size="30"
       :show-search="true"
+      @clicked="
+        (row) =>
+          navigateTo(entityUrl.replace(entityIdentifier, String(row._id)))
+      "
     >
       <template #empty-actions>
         <ButtonIcon
