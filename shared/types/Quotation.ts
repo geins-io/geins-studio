@@ -253,6 +253,27 @@ export interface QuotationList extends Omit<
 }
 
 // =============================================================================
+// Quotation Product Row (table display type)
+// =============================================================================
+
+/**
+ * Row type for the quotation products table.
+ * Maps quotation items + product data into a flat row for display.
+ */
+export interface QuotationProductRow {
+  product: string;
+  skuId: string;
+  quantity: number;
+  price: Price;
+  priceListPrice: Price;
+  quotationPrice: Price;
+  // Internal fields for rendering (not displayed as columns):
+  image: string;
+  articleNumber: string;
+  _id: string;
+}
+
+// =============================================================================
 // Quotation Item Base / Create / Update / Response
 // =============================================================================
 

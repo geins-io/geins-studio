@@ -172,13 +172,14 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 
 ### Table Patterns
 
-- **Table modes**: `TableMode` enum in `shared/types/Table.ts` defines `Advanced` (full-featured list pages), `Simple` (lightweight nested tables), and `Minimal` (de-cluttered, no borders/pagination/sorting — for edit page inline tables like quotation items). Mode is passed via `table.options.meta.mode` and accessible in render functions.
+- **Table modes**: `TableMode` enum in `shared/types/Table.ts` defines `Advanced` (full-featured list pages), `Simple` (lightweight nested tables), and `Minimal` (de-cluttered, no borders/pagination/sorting — for edit page inline tables like quotation items). Mode is passed via `table.options.meta.mode` and accessible in render functions. Minimal mode differences: no outer border/card wrapper, no vertical cell borders, no pagination, no sorting (plain text headers with `font-medium normal-case`), no column pinning, no row hover, taller rows (`h-[68px]`). All minimal overrides use scoped CSS on `.table-view--minimal` in `TableView.vue` — UI primitives are never modified for mode-specific styling.
+- **Minimal mode columns**: Prefer using `useColumns.getColumns()` with `sortable: false`, `includeColumns`, and `columnTypes` so that minimal mode header styling (plain text, no sort buttons) is applied automatically. Pass custom cell behavior (e.g. `onChange`, `onBlur`, `placeholder`) via `columnCellProps`.
 - **TableView architecture**: `app/components/table/TableView.vue` is the main component. It wraps TanStack's `useVueTable` with mode-aware features (pagination, pinning, sorting, column toggle, maximize). Styling overrides per mode are applied via CSS classes on the `.table-view` wrapper — UI primitives in `app/components/ui/table/` provide base styles and should not be modified for mode-specific styling.
 - **TablePagination**: Located at `app/components/table/TablePagination.vue` (not in `ui/table/`). Receives `advanced` boolean prop to show/hide rows-per-page selector.
 - **Custom columns with render functions**: When using generic components (`TableCellEditable`, `TableHeaderSort`) in `h()` render functions inside `.vue` SFCs, pass the generic type parameter directly: `h(TableCellEditable<RowType>, {...})`. This matches the pattern in `useColumns.ts`.
-- **`TableCellProduct`** — Reusable table cell component at `app/components/table/cell/TableCellProduct.vue` that displays a product image, name, and article number. Props: `name`, `articleNumber?`, `imageUrl?`.
+- **`TableCellProduct`** — Reusable table cell component at `app/components/table/cell/TableCellProduct.vue` that displays a product image, name, and article number. Props: `name`, `articleNumber?`, `imageUrl?`. Prefer using the `'product'` column type in `useColumns` (which renders this component automatically) instead of manual `h()` calls. The row data must have `articleNumber` and `image`/`imageUrl` fields alongside the accessor field.
 - **Editable columns** — Use `columnTypes` in `useColumns` options with `'editable-number'`, `'editable-string'`, `'editable-currency'`, or `'editable-percentage'`. For custom inline-editable columns, render `TableCellEditable<T>` directly via `h()` with `onChange`/`onBlur` handlers.
-- **Column type inference**: `useColumns.getColumns()` infers column types from field names (e.g. "date" → date formatter, "price"/"amount" → currency, "image" → thumbnail). Override via `columnTypes` option. Header/cell base styles come from `getBasicHeaderStyle(table)` and `getBasicCellStyle(table)` which branch on the table mode.
+- **Column type inference**: `useColumns.getColumns()` infers column types from field names (e.g. "date" → date formatter, "price"/"amount" → currency, "image" → thumbnail, "product" with `articleNumber` in data → product cell). Override via `columnTypes` option. Header/cell base styles come from `getBasicHeaderStyle(table)` and `getBasicCellStyle(table)` which branch on the table mode.
 - **useSkeleton**: Composable at `app/composables/useSkeleton.ts` generates placeholder rows and columns with `<Skeleton>` components when `TableView` has `loading={true}`.
 
 ---
@@ -190,7 +191,10 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 **Items:**
 
 - `QuotationUpdate.items` accepts `QuotationItemCreate[]` (same shape as create: `{ skuId, quantity, customPrice? }`).
-- The Products tab uses a `Map<string, SkuItemData>` to track per-SKU quantity and custom price, separate from the selector selection state.
+- The Products tab uses a `Map<string, SkuItemData>` to track per-SKU quantity, custom price, and response prices (`ordPrice`, `listPrice`), separate from the selector selection state.
+- `QuotationProductRow` is the table display type that maps `selectedSkus` + `skuItemData` into flat rows with columns: Product, SKU ID, Quantity, Price, Price list price, Quotation price.
+- Price fields in the row type use `{ price: string, currency: string }` objects (matching the `'currency'`/`'editable-currency'` column types). The currency value comes from `form.values.details.currency`.
+- In edit mode, prices are populated from `QuotationItemBase` response fields (`ordPrice`, `listPrice`, `unitPrice`). In create mode, prices are empty strings (displayed as `---` by `TableCellCurrency`).
 - When loading existing quotation items in edit mode, initialize both `skuItemData` (from response items) and `skuSelection.ids` (from item SKU IDs) after products are fetched.
 
 **API shape differences:**

@@ -3,7 +3,6 @@
 // IMPORTS & TYPES
 // =====================================================================================
 import { toTypedSchema } from '@vee-validate/zod';
-import { h } from 'vue';
 import * as z from 'zod';
 import { SelectorMode, SelectorEntityType, TableMode } from '#shared/types';
 import type {
@@ -14,16 +13,12 @@ import type {
   QuotationAddress,
   QuotationApiOptions,
   QuotationItemCreate,
+  QuotationProductRow,
   SelectorEntity,
   Address,
 } from '#shared/types';
-import type { ColumnDef, Row } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
-import {
-  TableCellProduct,
-  Button,
-  LucideX,
-} from '#components';
+import type { ColumnDef, Row } from '@tanstack/vue-table';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -150,44 +145,55 @@ const selectedSkus = computed(() => {
   return skus;
 });
 
-// Quotation items data (quantity & custom price per SKU)
+// Quotation items data (quantity, custom price & response prices per SKU)
 interface SkuItemData {
   quantity: number;
   customPrice: number | undefined;
-}
-
-interface QuotationSkuRow {
-  _id: string;
-  name: string;
-  image: string;
-  articleNumber: string;
-  quantity: number;
-  customPrice: number | undefined;
+  ordPrice: number;
+  listPrice: number;
 }
 
 const skuItemData = ref<Map<string, SkuItemData>>(new Map());
 
 const ensureSkuItemData = (skuId: string) => {
   if (!skuItemData.value.has(skuId)) {
-    skuItemData.value.set(skuId, { quantity: 1, customPrice: undefined });
+    skuItemData.value.set(skuId, {
+      quantity: 1,
+      customPrice: undefined,
+      ordPrice: 0,
+      listPrice: 0,
+    });
   }
   return skuItemData.value.get(skuId)!;
 };
 
 // Derived table rows merging selected SKUs with item data
-const quotationSkuRows = computed<QuotationSkuRow[]>(() =>
-  selectedSkus.value.map((sku) => {
+const quotationProductRows = computed<QuotationProductRow[]>(() => {
+  const currency = form.values.details?.currency || 'SEK';
+  return selectedSkus.value.map((sku) => {
     const data = ensureSkuItemData(sku._id);
     return {
       _id: sku._id,
-      name: sku.name,
+      product: sku.name,
+      skuId: sku._id,
+      quantity: data.quantity,
+      price: {
+        price: data.ordPrice ? String(data.ordPrice) : '',
+        currency,
+      },
+      priceListPrice: {
+        price: data.listPrice ? String(data.listPrice) : '',
+        currency,
+      },
+      quotationPrice: {
+        price: data.customPrice !== undefined ? String(data.customPrice) : '',
+        currency,
+      },
       image: sku.image || sku.thumbnail || '',
       articleNumber: sku.articleNumber || '',
-      quantity: data.quantity,
-      customPrice: data.customPrice,
     };
-  }),
-);
+  });
+});
 
 // Build quotation items payload from skuItemData
 const quotationItems = computed<QuotationItemCreate[]>(() =>
@@ -205,7 +211,7 @@ const quotationItems = computed<QuotationItemCreate[]>(() =>
 
 const handleQuantityChange = (
   value: string | number,
-  row: Row<QuotationSkuRow>,
+  row: Row<QuotationProductRow>,
 ) => {
   const id = row.original._id;
   const data = ensureSkuItemData(id);
@@ -213,9 +219,9 @@ const handleQuantityChange = (
   skuItemData.value = new Map(skuItemData.value);
 };
 
-const handleCustomPriceChange = (
+const handleQuotationPriceChange = (
   value: string | number,
-  row: Row<QuotationSkuRow>,
+  row: Row<QuotationProductRow>,
 ) => {
   const id = row.original._id;
   const data = ensureSkuItemData(id);
@@ -224,107 +230,78 @@ const handleCustomPriceChange = (
   skuItemData.value = new Map(skuItemData.value);
 };
 
-const removeSkuFromSelection = (row: QuotationSkuRow) => {
-  // Remove from the selector selection
-  const id = row._id;
+const removeSkuFromSelection = (rowData: QuotationProductRow) => {
+  const id = rowData._id;
   const updated = { ...skuSelection.value };
   if (updated.ids) {
     updated.ids = updated.ids.filter((skuId) => skuId !== id);
   }
   skuSelection.value = updated;
-  // Clean up item data
   skuItemData.value.delete(id);
   skuItemData.value = new Map(skuItemData.value);
 };
 
-// Custom columns for quotation SKU table
-const {
-  getColumns,
-  getBasicHeaderStyle,
-  extendColumns,
-  orderAndFilterColumns,
-} = useColumns<QuotationSkuRow>();
+// Columns for quotation products table
+const { getColumns, addActionsColumn, orderAndFilterColumns } =
+  useColumns<QuotationProductRow>();
 
-const selectedSkuColumns = computed<ColumnDef<QuotationSkuRow>[]>(() => {
-  if (quotationSkuRows.value.length === 0) return [];
+const selectedSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
+  if (quotationProductRows.value.length === 0) return [];
 
-  // Generate editable columns via useColumns (inherits minimal mode styling)
-  const columns = getColumns(quotationSkuRows.value, {
+  const columns = getColumns(quotationProductRows.value, {
     sortable: false,
-    includeColumns: ['quantity', 'customPrice'],
+    includeColumns: [
+      'product',
+      'skuId',
+      'quantity',
+      'price',
+      'priceListPrice',
+      'quotationPrice',
+    ],
     columnTitles: {
+      product: t('product'),
+      skuId: t('orders.sku_id'),
       quantity: t('quantity'),
-      customPrice: t('orders.custom_price'),
+      price: t('orders.base_price'),
+      priceListPrice: t('orders.price_list_price'),
+      quotationPrice: t('orders.quotation_price'),
     },
     columnTypes: {
+      product: 'product',
+      skuId: 'default',
       quantity: 'editable-number',
-      customPrice: 'editable-number',
+      price: 'currency',
+      priceListPrice: 'currency',
+      quotationPrice: 'editable-currency',
     },
     columnCellProps: {
       quantity: {
-        onChange: handleQuantityChange,
         onBlur: handleQuantityChange,
         placeholder: '1',
       },
-      customPrice: {
-        type: 'currency',
-        onChange: handleCustomPriceChange,
-        onBlur: handleCustomPriceChange,
-        placeholder: t('orders.no_custom_price'),
+      quotationPrice: {
+        onBlur: handleQuotationPriceChange,
+        placeholder: '0',
       },
     },
   });
 
-  // Prepend product column (custom TableCellProduct renderer)
-  columns.unshift({
-    id: 'product',
-    accessorKey: 'name',
-    header: ({ table }) =>
-      h(
-        'div',
-        { class: cn(getBasicHeaderStyle(table), 'px-3 sm:px-3') },
-        t('product'),
-      ),
-    cell: ({ row }) =>
-      h(TableCellProduct, {
-        name: row.original.name,
-        articleNumber: row.original.articleNumber,
-        imageUrl: row.original.image,
-      }),
-    enableSorting: false,
-    meta: { type: 'default' as const, title: t('product') },
-  });
-
-  // Append delete action column
-  extendColumns(columns, {
-    id: 'actions',
-    enableHiding: false,
-    enableSorting: false,
-    size: 48,
-    maxSize: 48,
-    minSize: 48,
-    cell: ({ row }) =>
-      h(
-        'div',
-        { class: 'flex items-center justify-center h-10' },
-        h(
-          Button,
-          {
-            class: 'hover:text-negative size-6 p-1 sm:size-7',
-            size: 'xs',
-            variant: 'outline',
-            onClick: () => removeSkuFromSelection(row.original),
-          },
-          () => h(LucideX, { class: 'size-3.5' }),
-        ),
-      ),
-    meta: { type: 'actions' as const },
-  });
+  addActionsColumn(
+    columns,
+    {
+      onDelete: (rowData: QuotationProductRow) =>
+        removeSkuFromSelection(rowData),
+    },
+    'delete',
+  );
 
   return orderAndFilterColumns(columns, [
     'product',
+    'skuId',
     'quantity',
-    'customPrice',
+    'price',
+    'priceListPrice',
+    'quotationPrice',
     'actions',
   ]);
 });
@@ -486,7 +463,7 @@ const {
     // Set expiration date toggle
     hasExpirationDate.value = !!quotation.validTo;
 
-    // Initialize SKU item data from existing quotation items
+    // Initialize SKU item data from existing quotation items (includes prices)
     if (quotation.items?.length) {
       const newItemData = new Map<string, SkuItemData>();
       quotation.items.forEach((item) => {
@@ -495,6 +472,8 @@ const {
           quantity: item.quantity || 1,
           customPrice:
             item.unitPrice !== item.ordPrice ? item.unitPrice : undefined,
+          ordPrice: item.ordPrice || 0,
+          listPrice: item.listPrice || 0,
         });
       });
       skuItemData.value = newItemData;
@@ -1332,7 +1311,7 @@ definePageMeta({
                   @save="updateSkuSelection"
                 >
                   <ButtonIcon icon="new" size="sm">
-                    {{ $t('add_entity', { entityName: 'product' }) }}
+                    {{ $t('add_entity', { entityName: 'product' }, 2) }}
                   </ButtonIcon>
                 </SelectorPanel>
               </template>
@@ -1359,8 +1338,8 @@ definePageMeta({
                 </div>
                 <TableView
                   :columns="selectedSkuColumns"
-                  :data="quotationSkuRows"
-                  entity-name="sku"
+                  :data="quotationProductRows"
+                  entity-name="product"
                   :mode="TableMode.Minimal"
                   :page-size="10"
                 />

@@ -16,6 +16,7 @@ import {
   TableCellBoolean,
   TableCellEditable,
   TableCellCurrency,
+  TableCellProduct,
   Button,
   LucideChevronRight,
 } from '#components';
@@ -278,6 +279,12 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         columnType = 'tags';
       } else if (keyLower === 'active' || keyLower === 'status') {
         columnType = 'status';
+      } else if (
+        keyLower === 'product' &&
+        data.length > 0 &&
+        'articleNumber' in (data[0] as object)
+      ) {
+        columnType = 'product';
       } else {
         columnType = 'default';
       }
@@ -348,6 +355,29 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
       };
 
       switch (columnType) {
+        case 'product':
+          cellRenderer = ({
+            table,
+            row,
+          }: {
+            table: Table<T>;
+            row: Row<T>;
+          }) => {
+            const name = String(row.getValue(key) ?? '');
+            const original = row.original as Record<string, unknown>;
+            return h(
+              'div',
+              { class: cn(getBasicCellStyle(table), 'px-3 sm:px-3') },
+              h(TableCellProduct, {
+                name,
+                articleNumber: String(original.articleNumber ?? ''),
+                imageUrl: String(
+                  original.image ?? original.imageUrl ?? '',
+                ),
+              }),
+            );
+          };
+          break;
         case 'price':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
