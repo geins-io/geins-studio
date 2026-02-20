@@ -77,8 +77,14 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
 
   // BASIC HEADER STYLE
   const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
+  const minimalHeaderTextStyle = 'text-xs font-medium normal-case';
   const getBasicHeaderStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
+
+    if (mode === TableMode.Minimal) {
+      return `px-0.5 sm:px-1.5 flex items-center whitespace-nowrap h-8 sm:h-10 ${minimalHeaderTextStyle}`;
+    }
+
     const baseStyle =
       'px-0.5 sm:px-1.5 flex items-center whitespace-nowrap ' +
       basicHeaderTextStyle;
@@ -96,6 +102,11 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
   // BASIC CELL STYLE
   const getBasicCellStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
+
+    if (mode === TableMode.Minimal) {
+      return 'align-middle sm:text-grid leading-6 text-xs sm:leading-8 w-full h-[68px] flex items-center truncate px-3.5';
+    }
+
     const baseStyle =
       'align-middle sm:text-grid leading-6 text-xs sm:leading-8 w-full h-8 sm:h-10 flex items-center truncate';
     const simpleStyle = 'px-3.5';
@@ -285,6 +296,15 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
       let cellRenderer;
       let headerRenderer = colSortable
         ? ({ table, column }: { table: Table<T>; column: Column<T> }) => {
+            const mode = table?.options?.meta?.mode || TableMode.Advanced;
+            // Minimal mode: plain text headers, no sort buttons
+            if (mode === TableMode.Minimal) {
+              return h(
+                'div',
+                { class: cn(getBasicHeaderStyle(table), 'px-3 sm:px-3') },
+                columnTitle,
+              );
+            }
             return h(
               'div',
               { class: getBasicHeaderStyle(table) },

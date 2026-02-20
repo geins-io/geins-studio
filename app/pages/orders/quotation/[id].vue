@@ -17,12 +17,10 @@ import type {
   SelectorEntity,
   Address,
 } from '#shared/types';
-import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
+import type { ColumnDef, Row } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
 import {
   TableCellProduct,
-  TableCellEditable,
-  TableHeaderSort,
   Button,
   LucideX,
 } from '#components';
@@ -240,160 +238,95 @@ const removeSkuFromSelection = (row: QuotationSkuRow) => {
 };
 
 // Custom columns for quotation SKU table
-const { getBasicHeaderStyle } = useColumns<QuotationSkuRow>();
+const {
+  getColumns,
+  getBasicHeaderStyle,
+  extendColumns,
+  orderAndFilterColumns,
+} = useColumns<QuotationSkuRow>();
 
 const selectedSkuColumns = computed<ColumnDef<QuotationSkuRow>[]>(() => {
   if (quotationSkuRows.value.length === 0) return [];
 
-  const columns: ColumnDef<QuotationSkuRow>[] = [
-    // Product cell: image + name + article number
-    {
-      id: 'product',
-      accessorKey: 'name',
-      header: ({ table }: { table: Table<QuotationSkuRow> }) =>
-        h(
-          'div',
-          { class: getBasicHeaderStyle(table) + ' px-3 sm:px-3' },
-          t('product'),
-        ),
-      cell: ({ row }: { row: Row<QuotationSkuRow> }) =>
-        h(TableCellProduct, {
-          name: row.original.name,
-          articleNumber: row.original.articleNumber,
-          imageUrl: row.original.image,
-        }),
-      enableSorting: false,
-      meta: { type: 'default' as const, title: t('product') },
+  // Generate editable columns via useColumns (inherits minimal mode styling)
+  const columns = getColumns(quotationSkuRows.value, {
+    sortable: false,
+    includeColumns: ['quantity', 'customPrice'],
+    columnTitles: {
+      quantity: t('quantity'),
+      customPrice: t('orders.custom_price'),
     },
-    // Editable quantity
-    {
-      id: 'quantity',
-      accessorKey: 'quantity',
-      header: ({
-        table,
-        column,
-      }: {
-        table: Table<QuotationSkuRow>;
-        column: Column<QuotationSkuRow>;
-      }) =>
-        h(
-          'div',
-          { class: getBasicHeaderStyle(table) },
-          h(TableHeaderSort<QuotationSkuRow>, {
-            column,
-            title: t('quantity'),
-            className: 'text-xs font-semibold uppercase',
-          }),
-        ),
-      cell: ({
-        table,
-        row,
-        column,
-      }: {
-        table: Table<QuotationSkuRow>;
-        row: Row<QuotationSkuRow>;
-        column: Column<QuotationSkuRow>;
-      }) =>
-        h(TableCellEditable<QuotationSkuRow>, {
-          table,
-          row,
-          column,
-          colKey: 'quantity',
-          type: 'number',
-          initialValue: row.original.quantity,
-          placeholder: '1',
-          onChange: (val: string | number, r: Row<QuotationSkuRow>) =>
-            handleQuantityChange(val, r),
-          onBlur: (val: string | number, r: Row<QuotationSkuRow>) =>
-            handleQuantityChange(val, r),
-        }),
-      enableSorting: true,
-      size: 140,
-      minSize: 140,
-      maxSize: 140,
-      meta: { type: 'editable-number' as const, title: t('quantity') },
+    columnTypes: {
+      quantity: 'editable-number',
+      customPrice: 'editable-number',
     },
-    // Editable custom price
-    {
-      id: 'customPrice',
-      accessorKey: 'customPrice',
-      header: ({
-        table,
-        column,
-      }: {
-        table: Table<QuotationSkuRow>;
-        column: Column<QuotationSkuRow>;
-      }) =>
-        h(
-          'div',
-          { class: getBasicHeaderStyle(table) },
-          h(TableHeaderSort<QuotationSkuRow>, {
-            column,
-            title: t('orders.custom_price'),
-            className: 'text-xs font-semibold uppercase',
-          }),
-        ),
-      cell: ({
-        table,
-        row,
-        column,
-      }: {
-        table: Table<QuotationSkuRow>;
-        row: Row<QuotationSkuRow>;
-        column: Column<QuotationSkuRow>;
-      }) =>
-        h(TableCellEditable<QuotationSkuRow>, {
-          table,
-          row,
-          column,
-          colKey: 'customPrice',
-          type: 'currency',
-          initialValue: row.original.customPrice ?? '',
-          placeholder: t('orders.no_custom_price'),
-          onChange: (val: string | number, r: Row<QuotationSkuRow>) =>
-            handleCustomPriceChange(val, r),
-          onBlur: (val: string | number, r: Row<QuotationSkuRow>) =>
-            handleCustomPriceChange(val, r),
-        }),
-      enableSorting: true,
-      size: 180,
-      minSize: 180,
-      maxSize: 180,
-      meta: {
-        type: 'editable-currency' as const,
-        title: t('orders.custom_price'),
+    columnCellProps: {
+      quantity: {
+        onChange: handleQuantityChange,
+        onBlur: handleQuantityChange,
+        placeholder: '1',
+      },
+      customPrice: {
+        type: 'currency',
+        onChange: handleCustomPriceChange,
+        onBlur: handleCustomPriceChange,
+        placeholder: t('orders.no_custom_price'),
       },
     },
-    // Delete action
-    {
-      id: 'actions',
-      enableHiding: false,
-      enableSorting: false,
-      size: 48,
-      maxSize: 48,
-      minSize: 48,
-      header: ({ table }: { table: Table<QuotationSkuRow> }) =>
-        h('div', { class: getBasicHeaderStyle(table) }),
-      cell: ({ row }: { row: Row<QuotationSkuRow> }) =>
-        h(
-          'div',
-          { class: 'flex items-center justify-center h-10' },
-          h(
-            Button,
-            {
-              class: 'hover:text-negative size-6 p-1 sm:size-7',
-              size: 'xs',
-              variant: 'outline',
-              onClick: () => removeSkuFromSelection(row.original),
-            },
-            () => h(LucideX, { class: 'size-3.5' }),
-          ),
-        ),
-      meta: { type: 'actions' as const },
-    },
-  ];
+  });
 
-  return columns;
+  // Prepend product column (custom TableCellProduct renderer)
+  columns.unshift({
+    id: 'product',
+    accessorKey: 'name',
+    header: ({ table }) =>
+      h(
+        'div',
+        { class: cn(getBasicHeaderStyle(table), 'px-3 sm:px-3') },
+        t('product'),
+      ),
+    cell: ({ row }) =>
+      h(TableCellProduct, {
+        name: row.original.name,
+        articleNumber: row.original.articleNumber,
+        imageUrl: row.original.image,
+      }),
+    enableSorting: false,
+    meta: { type: 'default' as const, title: t('product') },
+  });
+
+  // Append delete action column
+  extendColumns(columns, {
+    id: 'actions',
+    enableHiding: false,
+    enableSorting: false,
+    size: 48,
+    maxSize: 48,
+    minSize: 48,
+    cell: ({ row }) =>
+      h(
+        'div',
+        { class: 'flex items-center justify-center h-10' },
+        h(
+          Button,
+          {
+            class: 'hover:text-negative size-6 p-1 sm:size-7',
+            size: 'xs',
+            variant: 'outline',
+            onClick: () => removeSkuFromSelection(row.original),
+          },
+          () => h(LucideX, { class: 'size-3.5' }),
+        ),
+      ),
+    meta: { type: 'actions' as const },
+  });
+
+  return orderAndFilterColumns(columns, [
+    'product',
+    'quantity',
+    'customPrice',
+    'actions',
+  ]);
 });
 
 // Filtered sales reps based on selected company
@@ -1428,9 +1361,8 @@ definePageMeta({
                   :columns="selectedSkuColumns"
                   :data="quotationSkuRows"
                   entity-name="sku"
-                  :mode="TableMode.Simple"
+                  :mode="TableMode.Minimal"
                   :page-size="10"
-                  :show-search="true"
                 />
               </template>
               <template v-else>

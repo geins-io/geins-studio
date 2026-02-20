@@ -172,9 +172,14 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 
 ### Table Patterns
 
+- **Table modes**: `TableMode` enum in `shared/types/Table.ts` defines `Advanced` (full-featured list pages), `Simple` (lightweight nested tables), and `Minimal` (de-cluttered, no borders/pagination/sorting — for edit page inline tables like quotation items). Mode is passed via `table.options.meta.mode` and accessible in render functions.
+- **TableView architecture**: `app/components/table/TableView.vue` is the main component. It wraps TanStack's `useVueTable` with mode-aware features (pagination, pinning, sorting, column toggle, maximize). Styling overrides per mode are applied via CSS classes on the `.table-view` wrapper — UI primitives in `app/components/ui/table/` provide base styles and should not be modified for mode-specific styling.
+- **TablePagination**: Located at `app/components/table/TablePagination.vue` (not in `ui/table/`). Receives `advanced` boolean prop to show/hide rows-per-page selector.
 - **Custom columns with render functions**: When using generic components (`TableCellEditable`, `TableHeaderSort`) in `h()` render functions inside `.vue` SFCs, pass the generic type parameter directly: `h(TableCellEditable<RowType>, {...})`. This matches the pattern in `useColumns.ts`.
 - **`TableCellProduct`** — Reusable table cell component at `app/components/table/cell/TableCellProduct.vue` that displays a product image, name, and article number. Props: `name`, `articleNumber?`, `imageUrl?`.
 - **Editable columns** — Use `columnTypes` in `useColumns` options with `'editable-number'`, `'editable-string'`, `'editable-currency'`, or `'editable-percentage'`. For custom inline-editable columns, render `TableCellEditable<T>` directly via `h()` with `onChange`/`onBlur` handlers.
+- **Column type inference**: `useColumns.getColumns()` infers column types from field names (e.g. "date" → date formatter, "price"/"amount" → currency, "image" → thumbnail). Override via `columnTypes` option. Header/cell base styles come from `getBasicHeaderStyle(table)` and `getBasicCellStyle(table)` which branch on the table mode.
+- **useSkeleton**: Composable at `app/composables/useSkeleton.ts` generates placeholder rows and columns with `<Skeleton>` components when `TableView` has `loading={true}`.
 
 ---
 
