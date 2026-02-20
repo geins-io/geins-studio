@@ -130,6 +130,8 @@ if (!createMode.value) {
 - `handleFetchResult` validates data and throws a page error on 404/500
 - `parseAndSaveData` calls `reshapeEntityData` → sets `entityDataUpdate` → calls `parseEntityData` → sets form values
 - If `parseEntityData` depends on other data (e.g. company/user lists), fetch those first inside `onMounted` before calling `parseAndSaveData`
+- **Unsaved changes during loading**: `useUnsavedChanges` automatically suppresses `hasUnsavedChanges` while `originalData` is empty (no snapshot set yet). This means the indicator won't flicker during async data loading. No page-specific handling needed for this.
+- **Unsaved changes snapshot timing**: When `parseEntityData` triggers side effects that mutate `entityDataUpdate` (via `form.setValues()` → `onFormValuesChange`, reactive watchers, or async fetches like `fetchProducts()`), the default `parseAndSaveData(entity)` snapshot will be stale. Fix: call `parseAndSaveData(entity, false)` to skip the automatic snapshot, `await` all async work that affects entity data, then `await nextTick(); setOriginalSavedData();` to capture the final settled state. See `price-list/[id].vue` and `quotation/[id].vue` for examples.
 - `createMode` is a `ref` (not computed), set once from `route.params.id` at component creation
 
 ### List Page

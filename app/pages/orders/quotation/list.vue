@@ -144,8 +144,7 @@ const deleteQuotation = async (
     if (!id) {
       throw new Error('ID is required for deletion');
     }
-    // TODO: Implement actual delete when API is available
-    // await orderApi.quotation.delete(id);
+    await orderApi.quotation.delete(id);
     toast({
       title: t('entity_deleted', { entityName }),
       variant: 'positive',

@@ -495,6 +495,7 @@ const {
   updateEntity,
   deleteEntity,
   parseAndSaveData,
+  setOriginalSavedData,
   validateSteps,
 } = useEntityEdit<
   QuotationBase,
@@ -828,10 +829,16 @@ if (!createMode.value) {
       selectedCompany.value = company;
     }
 
-    await parseAndSaveData(quotation);
+    await parseAndSaveData(quotation, false);
 
-    // Fetch products for SKU selector
-    fetchProducts();
+    // Fetch products for SKU selector (must await so skuSelection is
+    // populated before we take the unsaved-changes baseline snapshot)
+    await fetchProducts();
+
+    // Set the saved data snapshot after all async data has settled,
+    // so the unsaved changes baseline matches the fully populated form
+    await nextTick();
+    setOriginalSavedData();
   });
 } else {
   // Create mode: fetch all companies and users
