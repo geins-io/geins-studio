@@ -778,95 +778,106 @@ if (!createMode.value) {
 // =====================================================================================
 // SUMMARY DATA
 // =====================================================================================
-const companySummary = computed(() => {
+const companySummary = computed<DataItem[]>(() => {
+  const dataList: DataItem[] = [];
   const formValues = form.values.details;
+
+  if (selectedAccountName.value) {
+    dataList.push({ label: t('company'), value: selectedAccountName.value });
+  }
+  if (!createMode.value && selectedCompany.value?.vatNumber) {
+    dataList.push({
+      label: t('customers.vat_number'),
+      value: selectedCompany.value.vatNumber,
+    });
+  }
+
   const ownerName =
     availableSalesReps.value.find((u) => u._id === formValues?.createdBy)
       ?.name || formValues?.createdBy;
+  if (ownerName) {
+    dataList.push({ label: t('owner'), value: ownerName });
+  }
+
   const buyerObj = availableBuyers.value.find(
     (b) => b._id === formValues?.buyerId,
   );
-  const buyerName = buyerObj
-    ? `${buyerObj.firstName} ${buyerObj.lastName}`
-    : '';
-  return [
-    ...(selectedAccountName.value
-      ? [{ label: t('company'), value: selectedAccountName.value }]
-      : []),
-    ...(!createMode.value && selectedCompany.value?.vatNumber
-      ? [
-          {
-            label: t('customers.vat_number'),
-            value: selectedCompany.value.vatNumber,
-          },
-        ]
-      : []),
-    ...(ownerName ? [{ label: t('owner'), value: ownerName }] : []),
-    ...(buyerName ? [{ label: t('buyer'), value: buyerName }] : []),
-    ...(formValues?.currency
-      ? [{ label: t('currency'), value: formValues.currency }]
-      : []),
-  ];
+  if (buyerObj) {
+    dataList.push({
+      label: t('buyer'),
+      value: `${buyerObj.firstName} ${buyerObj.lastName}`,
+    });
+  }
+  if (formValues?.currency) {
+    dataList.push({ label: t('currency'), value: formValues.currency });
+  }
+
+  return dataList;
 });
 
 const priceListSummary = computed<DataItem[]>(() => {
   return [];
 });
 
-// Computed properties for summary
-const summary = computed(() => {
-  if (!entityData.value) return [];
+const summary = computed<DataItem[]>(() => {
+  const dataList: DataItem[] = [];
+  if (!entityData.value) return dataList;
 
   const formValues = form.values.details;
-  return [
-    ...(formValues?.name ? [{ label: t('name'), value: formValues.name }] : []),
-    ...(createMode.value && companySummary.value.length
-      ? companySummary.value
-      : []),
-    ...(formValues?.quotationNumber
-      ? [{ label: t('ref_number'), value: formValues.quotationNumber }]
-      : []),
-    ...(formValues?.expirationDate
-      ? [
-          {
-            label: t('expiration_date'),
-            value: formatDate(formValues.expirationDate),
-          },
-        ]
-      : []),
 
-    ...(!createMode.value && formValues?.paymentTerms
-      ? [{ label: t('orders.payment_terms'), value: formValues.paymentTerms }]
-      : []),
-  ];
+  if (formValues?.name) {
+    dataList.push({ label: t('name'), value: formValues.name });
+  }
+  if (createMode.value && companySummary.value.length) {
+    dataList.push(...companySummary.value);
+  }
+  if (formValues?.quotationNumber) {
+    dataList.push({ label: t('ref_number'), value: formValues.quotationNumber });
+  }
+  if (formValues?.expirationDate) {
+    dataList.push({
+      label: t('expiration_date'),
+      value: formatDate(formValues.expirationDate),
+    });
+  }
+  if (!createMode.value && formValues?.paymentTerms) {
+    dataList.push({
+      label: t('orders.payment_terms'),
+      value: formValues.paymentTerms,
+    });
+  }
+
+  return dataList;
 });
 
-const productsSummary = computed(() => {
+const productsSummary = computed<DataItem[]>(() => {
+  const dataList: DataItem[] = [];
   const priceLists = selectedCompany.value?.priceLists;
-  if (!priceLists?.length) return [];
-  const displayValue = priceLists.map((pl) => pl.name).join(', ');
-  if (quotationProductRows.value.length === 0) return [];
-  return [
-    ...(!createMode.value && selectedSkus.value.length > 0
-      ? [
-          {
-            label: t('product', selectedSkus.value.length),
-            value: t(
-              'nr_of_entity',
-              { entityName: 'product', count: selectedSkus.value.length },
-              selectedSkus.value.length,
-            ),
-          },
-        ]
-      : []),
-    {
-      label: t('orders.price_lists_applied'),
-      value: priceLists.map((pl) => pl._id),
-      displayValue,
-      entityName: 'price_list',
-      displayType: DataItemDisplayType.Array,
-    },
-  ];
+
+  if (!priceLists?.length || quotationProductRows.value.length === 0) {
+    return dataList;
+  }
+
+  if (!createMode.value && selectedSkus.value.length > 0) {
+    dataList.push({
+      label: t('product', selectedSkus.value.length),
+      value: t(
+        'nr_of_entity',
+        { entityName: 'product', count: selectedSkus.value.length },
+        selectedSkus.value.length,
+      ),
+    });
+  }
+
+  dataList.push({
+    label: t('orders.price_lists_applied'),
+    value: priceLists.map((pl) => pl._id),
+    displayValue: priceLists.map((pl) => pl.name).join(', '),
+    entityName: 'price_list',
+    displayType: DataItemDisplayType.Array,
+  });
+
+  return dataList;
 });
 
 const settingsSummary = ref<DataItem[]>([]);
@@ -1378,7 +1389,7 @@ definePageMeta({
               <template v-if="!loadingProducts">
                 <div
                   v-if="selectedCompany?.priceLists?.length"
-                  class="mb-4 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2.5"
+                  class="dark:bg-input mb-4 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2.5"
                 >
                   <span class="text-muted-foreground text-xs font-medium">
                     {{ $t('orders.price_lists_applied') }}:
@@ -1387,13 +1398,15 @@ definePageMeta({
                     v-for="pl in selectedCompany.priceLists"
                     :key="pl._id"
                     :to="getEntityUrlFor('price-list', 'pricing', pl._id)"
+                    target="_blank"
+                    :class="
+                      cn(
+                        'bg-secondary dark:bg-card dark:hover:border-primary/50 data-[state=active]:ring-ring ring-offset-background hover:bg-muted/80 flex h-6 items-center rounded-md border px-2 py-0.5 text-sm transition-colors data-[state=active]:ring-2 data-[state=active]:ring-offset-2 dark:h-7',
+                      )
+                    "
                   >
-                    <Badge
-                      variant="outline"
-                      class="hover:bg-primary/10 cursor-pointer"
-                    >
-                      {{ pl.name }}
-                    </Badge>
+                    {{ pl.name }}
+                    <LucideExternalLink class="ml-1.5 size-3" />
                   </NuxtLink>
                 </div>
                 <TableView
