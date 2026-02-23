@@ -4,7 +4,12 @@
 // =====================================================================================
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
-import { SelectorMode, SelectorEntityType, TableMode } from '#shared/types';
+import {
+  DataItemDisplayType,
+  SelectorMode,
+  SelectorEntityType,
+  TableMode,
+} from '#shared/types';
 import type {
   QuotationBase,
   Quotation,
@@ -29,6 +34,7 @@ const router = useRouter();
 const { t } = useI18n();
 const { toast } = useToast();
 const { getEntityUrlFor } = useEntityUrl();
+const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog(scope);
 const accountStore = useAccountStore();
 const breadcrumbsStore = useBreadcrumbsStore();
@@ -186,7 +192,12 @@ const quotationProductRows = computed<QuotationProductRow[]>(() => {
         currency,
       },
       quotationPrice: {
-        price: data.customPrice !== undefined ? String(data.customPrice) : '',
+        price:
+          data.customPrice !== undefined
+            ? String(data.customPrice)
+            : data.listPrice
+              ? String(data.listPrice)
+              : '',
         currency,
       },
       image: sku.image || sku.thumbnail || '',
@@ -202,7 +213,7 @@ const quotationItems = computed<QuotationItemCreate[]>(() =>
     return {
       skuId: sku._id,
       quantity: data.quantity,
-      ...(data.customPrice !== undefined
+      ...(data.customPrice !== undefined && data.customPrice !== data.listPrice
         ? { customPrice: data.customPrice }
         : {}),
     };
@@ -226,7 +237,9 @@ const handleQuotationPriceChange = (
   const id = row.original._id;
   const data = ensureSkuItemData(id);
   const num = Number(value);
-  data.customPrice = value === '' || isNaN(num) ? undefined : num;
+  // Reset to undefined if value is empty, invalid, or matches the list price
+  data.customPrice =
+    value === '' || isNaN(num) || num === data.listPrice ? undefined : num;
   skuItemData.value = new Map(skuItemData.value);
 };
 
@@ -762,11 +775,7 @@ if (!createMode.value) {
 // =====================================================================================
 // SUMMARY DATA
 // =====================================================================================
-
-// Computed properties for summary
-const summary = computed(() => {
-  if (!entityData.value) return [];
-
+const companySummary = computed(() => {
   const formValues = form.values.details;
   const ownerName =
     availableSalesReps.value.find((u) => u._id === formValues?.createdBy)
@@ -778,27 +787,81 @@ const summary = computed(() => {
     ? `${buyerObj.firstName} ${buyerObj.lastName}`
     : '';
   return [
-    ...(formValues?.name ? [{ label: t('name'), value: formValues.name }] : []),
-    ...(formValues?.quotationNumber
-      ? [{ label: t('ref_number'), value: formValues.quotationNumber }]
-      : []),
     ...(selectedAccountName.value
       ? [{ label: t('company'), value: selectedAccountName.value }]
+      : []),
+    ...(!createMode.value && selectedCompany.value?.vatNumber
+      ? [
+          {
+            label: t('customers.vat_number'),
+            value: selectedCompany.value.vatNumber,
+          },
+        ]
       : []),
     ...(ownerName ? [{ label: t('owner'), value: ownerName }] : []),
     ...(buyerName ? [{ label: t('buyer'), value: buyerName }] : []),
     ...(formValues?.currency
       ? [{ label: t('currency'), value: formValues.currency }]
       : []),
-    ...(formValues?.expirationDate
-      ? [{ label: t('expiration_date'), value: formValues.expirationDate }]
+  ];
+});
+
+const priceListSummary = computed<DataItem[]>(() => {
+  return [];
+});
+
+// Computed properties for summary
+const summary = computed(() => {
+  if (!entityData.value) return [];
+
+  const formValues = form.values.details;
+  return [
+    ...(formValues?.name ? [{ label: t('name'), value: formValues.name }] : []),
+    ...(createMode.value && companySummary.value.length
+      ? companySummary.value
       : []),
-    ...(formValues?.paymentTerms
+    ...(formValues?.quotationNumber
+      ? [{ label: t('ref_number'), value: formValues.quotationNumber }]
+      : []),
+    ...(formValues?.expirationDate
+      ? [
+          {
+            label: t('expiration_date'),
+            value: formatDate(formValues.expirationDate),
+          },
+        ]
+      : []),
+
+    ...(!createMode.value && formValues?.paymentTerms
       ? [{ label: t('orders.payment_terms'), value: formValues.paymentTerms }]
       : []),
+  ];
+});
+
+const productsSummary = computed(() => {
+  const priceLists = selectedCompany.value?.priceLists;
+  if (!priceLists?.length) return [];
+  const displayValue = priceLists.map((pl) => pl.name).join(', ');
+  if (quotationProductRows.value.length === 0) return [];
+  return [
+    ...(!createMode.value && selectedSkus.value.length > 0
+      ? [
+          {
+            label: t('product', selectedSkus.value.length),
+            value: t(
+              'nr_of_entity',
+              { entityName: 'product', count: selectedSkus.value.length },
+              selectedSkus.value.length,
+            ),
+          },
+        ]
+      : []),
     {
-      label: t('item', selectedSkus.value.length),
-      value: String(selectedSkus.value.length),
+      label: t('orders.price_lists_applied'),
+      value: priceLists.map((pl) => pl._id),
+      displayValue,
+      entityName: 'price_list',
+      displayType: DataItemDisplayType.Array,
     },
   ];
 });
@@ -1258,13 +1321,7 @@ definePageMeta({
                         <FormControl>
                           <Select v-bind="componentField">
                             <SelectTrigger>
-                              <SelectValue
-                                :placeholder="
-                                  $t('select_entity', {
-                                    entityName: $t('orders.payment_terms'),
-                                  })
-                                "
-                              />
+                              <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem
@@ -1356,7 +1413,25 @@ definePageMeta({
         </KeepAlive>
 
         <template #sidebar>
-          <ContentEditSummary v-bind="summaryProps" />
+          <ContentEditSummary v-bind="summaryProps">
+            <template #after-summary>
+              <ContentDataList
+                v-if="!createMode && companySummary.length"
+                :data-list="companySummary"
+                :label="$t('customer')"
+              />
+              <ContentDataList
+                v-if="!createMode && priceListSummary.length"
+                :data-list="priceListSummary"
+                :label="$t('price_list', 2)"
+              />
+              <ContentDataList
+                v-if="!createMode && productsSummary.length"
+                :data-list="productsSummary"
+                :label="$t('product', 2)"
+              />
+            </template>
+          </ContentEditSummary>
         </template>
       </ContentEditMain>
     </form>

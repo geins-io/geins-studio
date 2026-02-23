@@ -1,4 +1,3 @@
-import { useDateFormatter } from 'reka-ui';
 import { h } from 'vue';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
 import {
@@ -72,8 +71,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
   const viewport = useViewport();
   const accountStore = useAccountStore();
   const { currentCurrency } = storeToRefs(accountStore);
-  const locale = useCookieLocale();
-  const dateFormatter = useDateFormatter(locale.value);
+  const { formatDate } = useDate();
   const { handleImageError } = useGeinsImage();
 
   // BASIC HEADER STYLE
@@ -475,16 +473,12 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             if (!value) {
               return h('div', { class: getBasicCellStyle(table) }, '---');
             }
-            const date = new Date(value as string | number | Date);
-            if (isNaN(date.getTime())) {
-              return h(
-                'div',
-                { class: getBasicCellStyle(table) },
-                String(value),
-              );
-            }
-            const formatted = dateFormatter.custom(date, { dateStyle: 'long' });
-            return h('div', { class: getBasicCellStyle(table) }, formatted);
+            const formatted = formatDate(value as string | Date);
+            return h(
+              'div',
+              { class: getBasicCellStyle(table) },
+              formatted || String(value),
+            );
           };
           break;
         case 'channels':

@@ -1,26 +1,19 @@
 <script setup lang="ts">
-import { DateFormatter } from '@internationalized/date';
 import { CalendarIcon } from 'lucide-vue-next';
 import { cn } from '@/utils/index';
 
 const model = defineModel<string>();
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     placeholder?: string;
-    locale?: string;
-    dateStyle?: 'full' | 'long' | 'medium' | 'short';
   }>(),
   {
     placeholder: 'Pick a date',
-    locale: 'en-US',
-    dateStyle: 'long',
   },
 );
 
-const df = new DateFormatter(props.locale, {
-  dateStyle: props.dateStyle,
-});
+const { formatDate } = useDate();
 
 const handleDateUpdate = (v: any) => {
   if (v) {
@@ -42,7 +35,7 @@ const handleDateUpdate = (v: any) => {
         "
       >
         <span>
-          {{ model ? df.format(new Date(model)) : placeholder }}
+          {{ model ? formatDate(model) : placeholder }}
         </span>
         <CalendarIcon class="ml-auto size-4 opacity-50" />
       </Button>

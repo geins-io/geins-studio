@@ -76,6 +76,7 @@ i18n/locales/           # en.json, sv.json
 - **Stores**: Use `storeToRefs(store)` for reactive state properties
 - **Forms**: Use `<FormField v-slot="{ componentField }">` pattern. Never implement custom unsaved-changes tracking — `useEntityEdit` handles this
 - **Entity URLs**: Use `useEntityUrl()` for constructing entity navigation links. `getEntityUrl(id)` uses current route context; `getEntityUrlFor(entityName, parentPath, id)` generates URLs for any entity (e.g. `getEntityUrlFor('price-list', 'pricing', id)` → `/pricing/price-list/{id}`). Prefer these over hardcoded route strings.
+- **Date formatting**: Use `useDate()` composable for consistent date display. `formatDate(value, options?)` wraps reka-ui's `useDateFormatter` with the app's locale. Defaults to `dateStyle: 'long'` (e.g. "February 23, 2026") — the same format used in table columns and the calendar picker.
 - **Vue gotcha**: `<KeepAlive>` cannot contain HTML comments — they count as children and cause "expects exactly one child" errors
 
 ## API & Repositories
