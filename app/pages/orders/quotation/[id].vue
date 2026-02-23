@@ -19,6 +19,7 @@ import type {
   QuotationApiOptions,
   QuotationItemCreate,
   QuotationProductRow,
+  QuotationTotal,
   SelectorEntity,
   Address,
 } from '#shared/types';
@@ -107,6 +108,7 @@ const selectedAccountName = ref<string>('');
 const selectedCompany = ref<CustomerCompany | undefined>();
 
 // Edit mode state
+const quotationTotal = ref<QuotationTotal | null>(null);
 const hasExpirationDate = ref(false);
 const selectedBillingAddressId = ref<string>('');
 const selectedShippingAddressId = ref<string>('');
@@ -453,6 +455,7 @@ const {
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     entityLiveStatus.value =
       quotation.status === 'pending' || quotation.status === 'accepted';
+    quotationTotal.value = quotation.total || null;
 
     // Set company info (selectedCompany is already fetched in onMounted for edit mode)
     const companyId = quotation.company?.companyId?.toString() || '';
@@ -1238,7 +1241,7 @@ definePageMeta({
                     </div>
                     <div>
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('org_nr') }}
+                        {{ $t('customers.vat_number') }}
                       </p>
                       <p class="text-sm">
                         {{ selectedCompany?.vatNumber || '-' }}
@@ -1400,6 +1403,12 @@ definePageMeta({
                   :mode="TableMode.Minimal"
                   :page-size="10"
                 />
+                <ContentPriceSummary
+                  class="mx-3"
+                  v-if="!createMode && quotationTotal"
+                  :total="quotationTotal"
+                  :currency="form.values.details?.currency || ''"
+                />
               </template>
               <template v-else>
                 <div class="flex items-center justify-center py-8">
@@ -1429,6 +1438,12 @@ definePageMeta({
                 v-if="!createMode && productsSummary.length"
                 :data-list="productsSummary"
                 :label="$t('product', 2)"
+              />
+              <Separator class="my-5" />
+              <ContentPriceSummary
+                v-if="!createMode && quotationTotal"
+                :total="quotationTotal"
+                :currency="form.values.details?.currency || ''"
               />
             </template>
           </ContentEditSummary>

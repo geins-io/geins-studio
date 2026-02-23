@@ -132,7 +132,6 @@
   "expiration_date": "Utgångsdatum",
   "ref_number": "Referensnummer",
   "customer": "Kund | Kunder",
-  "org_nr": "Org. nummer",
   "change_buyer": "Ändra köpare",
   "sum": "Summa",
   "page_of": "Sida {page} av {total}",
@@ -417,6 +416,12 @@
     "products_tab_placeholder": "Använd SKU-väljaren för att lägga till produkter i denna offert.",
     "quotation_owner": "Offertägare",
     "change_customer_details": "Ändra kunduppgifter",
-    "price_lists_applied": "Tillämpade prislistor"
+    "price_lists_applied": "Tillämpade prislistor",
+    "price_summary": "Prissammanställning",
+    "subtotal": "Delsumma",
+    "discount": "Rabatt",
+    "shipping": "Frakt",
+    "tax": "Moms",
+    "grand_total": "Totalt"
   }
 }

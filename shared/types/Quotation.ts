@@ -143,6 +143,7 @@ export interface QuotationTotal {
   shipping: number;
   margin: number;
   tax: number;
+  grandTotal?: number;
 }
 
 // =============================================================================

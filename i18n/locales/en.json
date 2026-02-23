@@ -132,7 +132,6 @@
   "expiration_date": "Expiration date",
   "ref_number": "Ref number",
   "customer": "Customer | Customers",
-  "org_nr": "Org. number",
   "change_buyer": "Change buyer",
   "sum": "Sum",
   "page_of": "Page {page} of {total}",
@@ -417,6 +416,12 @@
     "products_tab_placeholder": "Use the SKU selector to add products to this quotation.",
     "quotation_owner": "Quotation owner",
     "change_customer_details": "Change customer details",
-    "price_lists_applied": "Price lists applied"
+    "price_lists_applied": "Price lists applied",
+    "price_summary": "Price summary",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "shipping": "Shipping",
+    "tax": "Tax",
+    "grand_total": "Grand total"
   }
 }

@@ -110,7 +110,7 @@ const handleCancel = () => {
                 <SelectValue
                   :placeholder="
                     $t('select_entity', {
-                      entityName: $t('orders.quotation_owner').toLowerCase(),
+                      entityName: 'owner',
                     })
                   "
                 />
@@ -135,7 +135,7 @@ const handleCancel = () => {
                 <SelectValue
                   :placeholder="
                     $t('select_entity', {
-                      entityName: $t('buyer').toLowerCase(),
+                      entityName: 'buyer',
                     })
                   "
                 />
@@ -160,7 +160,7 @@ const handleCancel = () => {
                 <SelectValue
                   :placeholder="
                     $t('select_entity', {
-                      entityName: $t('billing_address').toLowerCase(),
+                      entityName: 'billing_address',
                     })
                   "
                 />
@@ -185,7 +185,7 @@ const handleCancel = () => {
                 <SelectValue
                   :placeholder="
                     $t('select_entity', {
-                      entityName: $t('shipping_address').toLowerCase(),
+                      entityName: 'shipping_address',
                     })
                   "
                 />
