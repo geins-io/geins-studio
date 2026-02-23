@@ -1,13 +1,25 @@
 ## Workflow Rules
 
-These MUST be followed at the start, during and end of every task:
+These MUST be followed for every task. Rules are grouped by when they apply.
 
-1. **Linear issues**: When starting work on a Linear issue, **always** set its status to "In Progress" before writing any code.
-2. **Update CLAUDE.md**: At the end of every task or chat session, add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information you find. This file is meant to be a living document that reflects the current best practices and patterns in the codebase, so it should be continuously updated and improved as we learn more.
-3. **Organize CLAUDE.md**: After updating CLAUDE.md, take a general scan of this file to see if it can be better organized for Claude's reference. If you find a better way to structure the information (e.g. grouping related patterns together, adding new sections, improving formatting), make those changes.
-4. **Best practices**: While implementing code: Follow all established patterns and conventions in this file and generally from the frameworks used when writing code. If you find yourself needing to break a pattern, add a note about it here and explain the reasoning.
-5. **Documentation**: After implementing code: Always keep the documentation in /docs up to date with any architectural changes, new patterns, or important information that would be helpful for onboarding new developers or for future reference. Ask before adding new entries to the documentation.
-6. **Think about performance**: While implementing code: Always consider the performance implications of your code changes, especially when it comes to data fetching, state management, and rendering. If you find a potential performance bottleneck or an opportunity to optimize, ask if you should do so.
+### Before writing code
+
+1. **Linear issues**: When starting work on a Linear issue, set its status to "In Progress" before writing any code.
+
+### While writing code
+
+2. **Best practices**: Follow all established patterns and conventions in this file and from the frameworks used. If you need to break a pattern, add a note about it here and explain the reasoning.
+3. **Think about performance**: Consider performance implications of code changes, especially data fetching, state management, and rendering. If you find a potential bottleneck or optimization opportunity, ask if you should address it.
+
+### Immediately after completing each task (before moving to the next)
+
+4. **Update CLAUDE.md**: Add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information. This is a living document — update it continuously, not just at session end.
+5. **Documentation**: Keep `/docs` up to date with any architectural changes, new patterns, or important onboarding information. Ask before adding new entries.
+
+### When the user says "task done"
+
+6. **Organize CLAUDE.md**: Scan the entire file for opportunities to improve organization (group related patterns, add sections, improve formatting, remove duplicates). Make those changes.
+7. **Linear issues**: If working on a Linear issue, set its status to "Done".
 
 ---
 
@@ -132,7 +144,9 @@ if (!createMode.value) {
 - `parseAndSaveData` calls `reshapeEntityData` → sets `entityDataUpdate` → calls `parseEntityData` → sets form values
 - If `parseEntityData` depends on other data (e.g. company/user lists), fetch those first inside `onMounted` before calling `parseAndSaveData`
 - **Unsaved changes during loading**: `useUnsavedChanges` automatically suppresses `hasUnsavedChanges` while `originalData` is empty (no snapshot set yet). This means the indicator won't flicker during async data loading. No page-specific handling needed for this.
-- **Unsaved changes snapshot timing**: When `parseEntityData` triggers side effects that mutate `entityDataUpdate` (via `form.setValues()` → `onFormValuesChange`, reactive watchers, or async fetches like `fetchProducts()`), the default `parseAndSaveData(entity)` snapshot will be stale. Fix: call `parseAndSaveData(entity, false)` to skip the automatic snapshot, `await` all async work that affects entity data, then `await nextTick(); setOriginalSavedData();` to capture the final settled state. See `price-list/[id].vue` and `quotation/[id].vue` for examples.
+- **Unsaved changes snapshot timing**: When `parseEntityData` triggers side effects that mutate `entityDataUpdate` (via `form.setValues()` → `onFormValuesChange`, reactive watchers, or async fetches like `fetchProducts()`), the default `parseAndSaveData(entity)` snapshot will be stale. Fix: call `parseAndSaveData(entity, false)` to skip the automatic snapshot, `await` all async work that affects entity data, then `await nextTick(); setOriginalSavedData();` to capture the final settled state. See `price-list/[id].vue` and `quotation/[id].vue` for examples. **This also applies to save handlers**: `updateEntity` internally calls `parseAndSaveData`, so pages with the same side-effect pattern need a custom save handler: `await updateEntity(undefined, undefined, false)` → `await nextTick()` → `setOriginalSavedData()`. See `quotation/[id].vue` `handleSave` for an example.
+- **`onFormValuesChange` completeness**: The edit-mode branch of `onFormValuesChange` must map ALL update-relevant form fields into `entityDataUpdate`, otherwise changes to missing fields won't trigger `hasUnsavedChanges` (and the save button stays disabled). If a field is in `prepareUpdateData` but not in `onFormValuesChange`, it will save correctly when triggered by _other_ changes but won't enable the save button on its own.
+- **Non-form refs that affect `entityDataUpdate`**: When standalone `ref`s (e.g. `selectedBillingAddressId`) contribute to `entityDataUpdate` but aren't form fields, add a dedicated `watch()` to sync them — `onFormValuesChange` only fires on form value changes. See the address watcher in `quotation/[id].vue` for an example.
 - `createMode` is a `ref` (not computed), set once from `route.params.id` at component creation
 
 ### List Page
@@ -205,6 +219,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - **`terms`**: Response returns `{ text: string }` (object), but CREATE and UPDATE expect a plain `string`. Map `quotation.terms?.text` to form, send string back.
 - **`validPaymentMethods`**: Response returns `{ paymentId: number, name: string }`, but requests expect `{ paymentId: string }` (string, no `name`).
 - **`prepareUpdateData` must NOT spread the entity** — `entityDataUpdate` contains response-only fields (`billingAddress`, `shippingAddress`, `total`, `company`, `owner`, `customer`, `communication`, `changelog`, etc.) that the PATCH endpoint does not accept. Only include fields from the swagger update schema: `name`, `validTo`, `companyId`, `ownerId`, `customerId`, `validPaymentMethods`, `validShippingMethods`, `suggestedShippingFee`, `terms`, `billingAddressId`, `shippingAddressId`, `items`.
+- **`quotationNumber`**: Read-only, auto-generated by the backend. Not accepted on the PATCH endpoint — render as a disabled input in the UI.
 - **Swagger spec URL**: `https://geins-func-quotation-mgmtapi-dev.azurewebsites.net/api/swagger.json`
 
 ### Companies

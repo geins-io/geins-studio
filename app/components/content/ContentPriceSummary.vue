@@ -48,14 +48,14 @@ const rows = computed(() => {
         :key="index"
         :class="
           cn(
-            'text-muted-foreground flex items-center justify-between gap-2 text-right text-xs sm:text-sm',
+            'flex items-center justify-between gap-2 text-right text-xs sm:text-sm',
             index === rows.length - 1 && total.grandTotal !== undefined
-              ? 'text-foreground font-semibold'
+              ? 'font-semibold'
               : '',
           )
         "
       >
-        <span class="text-muted-foreground shrink-0 text-left">
+        <span class="shrink-0 text-left">
           {{ row.label }}
         </span>
         <span
@@ -64,7 +64,7 @@ const rows = computed(() => {
         <span class="shrink-0 tabular-nums">
           {{ row.negate && row.value > 0 ? '-' : ''
           }}{{ formatPrice(row.value) }}
-          {{ currency }}
+          <span class="text-xs font-bold">{{ currency }}</span>
         </span>
       </li>
     </ul>

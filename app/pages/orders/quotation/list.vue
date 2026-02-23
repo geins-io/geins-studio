@@ -47,7 +47,10 @@ const mapToListData = (list: Entity[]): EntityList[] => {
       ...rest,
       buyer: item.customer?.name || '',
       company: item.company?.name || '',
-      itemCount: items?.length || 0,
+      products: t('nr_of_entity', {
+        entityName: 'product',
+        count: items?.length ?? 0,
+      }),
       sum: {
         price: item.total.subtotal.toString(),
         currency: item.currency,

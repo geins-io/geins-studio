@@ -23,17 +23,13 @@ import type {
   SelectorEntity,
   Address,
 } from '#shared/types';
-import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
 const scope = 'pages/orders/quotation/[id].vue';
-const route = useRoute();
-const router = useRouter();
 const { t } = useI18n();
-const { toast } = useToast();
 const { getEntityUrlFor } = useEntityUrl();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog(scope);
@@ -43,7 +39,7 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
-const { orderApi, customerApi, globalApi, productApi } = useGeinsRepository();
+const { orderApi, customerApi, productApi } = useGeinsRepository();
 const { currentCurrencies, channels } = storeToRefs(accountStore);
 const currentChannels = computed(() => channels.value);
 const {
@@ -90,10 +86,6 @@ const entityBase: QuotationCreate = {
 // =====================================================================================
 // Tabs & Steps
 const tabs = [t('general'), t('product', 2)];
-
-const totalCreateSteps = 1;
-const { currentStep, nextStep, previousStep } =
-  useStepManagement(totalCreateSteps);
 
 const stepValidationMap: Record<number, string> = {
   1: 'details',
@@ -421,7 +413,6 @@ const {
   deleteEntity,
   parseAndSaveData,
   setOriginalSavedData,
-  validateSteps,
 } = useEntityEdit<
   QuotationBase,
   Quotation,
@@ -559,6 +550,7 @@ const {
         customerId: values.details.buyerId || undefined,
         billingAddressId: selectedBillingAddressId.value || undefined,
         shippingAddressId: selectedShippingAddressId.value || undefined,
+        terms: values.details.paymentTerms || undefined,
         items: quotationItems.value,
       };
     }
@@ -685,6 +677,16 @@ watch(
   { deep: true },
 );
 
+// Sync address changes with entityDataUpdate for unsaved changes detection
+watch([selectedBillingAddressId, selectedShippingAddressId], () => {
+  if (createMode.value || !entityDataUpdate.value) return;
+  entityDataUpdate.value = {
+    ...entityDataUpdate.value,
+    billingAddressId: selectedBillingAddressId.value || undefined,
+    shippingAddressId: selectedShippingAddressId.value || undefined,
+  };
+});
+
 // =====================================================================================
 // CUSTOMER PANEL HANDLER
 // =====================================================================================
@@ -774,6 +776,20 @@ if (!createMode.value) {
     await Promise.all([fetchCompanies(), fetchUsers()]);
   });
 }
+
+// =====================================================================================
+// SAVE HANDLER
+// =====================================================================================
+// Custom save handler that delays the unsaved-changes snapshot until all
+// reactive side effects (quotationItems watcher, debounced onFormValuesChange)
+// have settled — matching the pattern used during initial data loading.
+const handleSave = async () => {
+  const result = await updateEntity(undefined, undefined, false);
+  if (result) {
+    await nextTick();
+    setOriginalSavedData();
+  }
+};
 
 // =====================================================================================
 // SUMMARY DATA
@@ -929,11 +945,12 @@ definePageMeta({
             icon="save"
             :loading="loading"
             :disabled="!hasUnsavedChanges || loading"
-            @click="updateEntity"
+            @click="handleSave"
             >{{ $t('save_entity', { entityName: 'draft' }) }}</ButtonIcon
           >
           <ButtonGroup>
             <ButtonIcon
+              v-if="!createMode"
               variant="secondary"
               icon="send"
               :disabled="!formValid || loading"

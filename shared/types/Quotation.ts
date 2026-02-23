@@ -243,7 +243,7 @@ export interface QuotationList extends Omit<
   'items' | 'communication' | 'changelog' | 'company' | 'owner'
 > {
   company: string;
-  itemCount: number;
+  products: string;
   sum: Price;
   expirationDate: string;
   dateCreated: string;
