@@ -46,6 +46,7 @@
   "delete_entity": "Delete @.lower:{entityName}",
   "update_entity": "Update @.lower:{entityName}",
   "remove_entity": "Remove @.lower:{entityName}",
+  "send_entity": "Send @.lower:{entityName}",
   "entity_created": "@:{entityName} successfully created!",
   "entity_deleted": "@:{entityName} successfully deleted!",
   "entity_updated": "@:{entityName} successfully updated!",

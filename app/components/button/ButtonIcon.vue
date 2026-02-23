@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ConcreteComponent } from 'vue';
 
-type ButtonIcon = 'new' | 'save' | 'copy' | 'export' | 'settings';
+type ButtonIcon = 'new' | 'save' | 'copy' | 'export' | 'settings' | 'send';
 
 const props = withDefaults(
   defineProps<{
@@ -30,6 +30,9 @@ switch (props.icon) {
     break;
   case 'settings':
     iconComponent = resolveComponent('LucideSettings2');
+    break;
+  case 'send':
+    iconComponent = resolveComponent('LucideSend');
     break;
 }
 

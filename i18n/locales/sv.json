@@ -46,6 +46,7 @@
   "delete_entity": "Ta bort @.lower:{entityName}",
   "update_entity": "Uppdatera @.lower:{entityName}",
   "remove_entity": "Ta bort @.lower:{entityName}",
+  "send_entity": "Skicka @.lower:{entityName}",
   "entity_created": "@:{entityName} skapades!",
   "entity_deleted": "@:{entityName} togs bort!",
   "entity_updated": "@:{entityName} uppdaterades!",

@@ -26,7 +26,7 @@ const imgSrc = computed(() => props.imageUrl || '/placeholder.svg');
       <p class="truncate text-sm leading-tight font-medium">{{ name }}</p>
       <p
         v-if="articleNumber"
-        class="text-muted-foreground truncate text-xs leading-tight"
+        class="text-muted-foreground mt-0.5 truncate text-xs leading-tight"
       >
         {{ articleNumber }}
       </p>

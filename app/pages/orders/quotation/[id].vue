@@ -832,7 +832,10 @@ const summary = computed<DataItem[]>(() => {
     dataList.push(...companySummary.value);
   }
   if (formValues?.quotationNumber) {
-    dataList.push({ label: t('ref_number'), value: formValues.quotationNumber });
+    dataList.push({
+      label: t('ref_number'),
+      value: formValues.quotationNumber,
+    });
   }
   if (formValues?.expirationDate) {
     dataList.push({
@@ -928,26 +931,34 @@ definePageMeta({
             @click="updateEntity"
             >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
-          <DropdownMenu v-if="!createMode">
-            <DropdownMenuTrigger as-child>
-              <Button size="icon" variant="secondary">
-                <LucideMoreHorizontal class="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem as-child>
-                <NuxtLink :to="newEntityUrl">
-                  <LucidePlus class="mr-2 size-4" />
-                  <span>{{ $t('new_entity', { entityName }) }}</span>
-                </NuxtLink>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem @click="openDeleteDialog">
-                <LucideTrash class="mr-2 size-4" />
-                <span>{{ $t('delete_entity', { entityName }) }}</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ButtonGroup>
+            <ButtonIcon
+              variant="secondary"
+              icon="send"
+              :disabled="!formValid || loading"
+              >{{ $t('send_entity', { entityName }) }}
+            </ButtonIcon>
+            <DropdownMenu v-if="!createMode">
+              <DropdownMenuTrigger as-child>
+                <Button size="icon" variant="secondary">
+                  <LucideMoreHorizontal class="size-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem as-child>
+                  <NuxtLink :to="newEntityUrl">
+                    <LucidePlus class="mr-2 size-4" />
+                    <span>{{ $t('new_entity', { entityName }) }}</span>
+                  </NuxtLink>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem @click="openDeleteDialog">
+                  <LucideTrash class="mr-2 size-4" />
+                  <span>{{ $t('delete_entity', { entityName }) }}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </ButtonGroup>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
@@ -1417,8 +1428,8 @@ definePageMeta({
                   :page-size="10"
                 />
                 <ContentPriceSummary
-                  class="mx-3"
                   v-if="!createMode && quotationTotal"
+                  class="mx-3"
                   :total="quotationTotal"
                   :currency="form.values.details?.currency || ''"
                 />
