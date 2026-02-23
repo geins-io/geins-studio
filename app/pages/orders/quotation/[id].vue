@@ -828,14 +828,15 @@ const summary = computed<DataItem[]>(() => {
   if (formValues?.name) {
     dataList.push({ label: t('name'), value: formValues.name });
   }
-  if (createMode.value && companySummary.value.length) {
-    dataList.push(...companySummary.value);
-  }
-  if (formValues?.quotationNumber) {
+  if (!createMode.value) {
     dataList.push({
       label: t('ref_number'),
       value: formValues.quotationNumber,
+      displayType: DataItemDisplayType.Copy,
     });
+  }
+  if (createMode.value && companySummary.value.length) {
+    dataList.push(...companySummary.value);
   }
   if (formValues?.expirationDate) {
     dataList.push({
@@ -929,7 +930,7 @@ definePageMeta({
             :loading="loading"
             :disabled="!hasUnsavedChanges || loading"
             @click="updateEntity"
-            >{{ $t('save_entity', { entityName }) }}</ButtonIcon
+            >{{ $t('save_entity', { entityName: 'draft' }) }}</ButtonIcon
           >
           <ButtonGroup>
             <ButtonIcon
@@ -1402,7 +1403,7 @@ definePageMeta({
                   v-if="selectedCompany?.priceLists?.length"
                   class="dark:bg-input mb-4 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2.5"
                 >
-                  <span class="text-muted-foreground text-xs font-medium">
+                  <span class="text-primary text-xs font-medium">
                     {{ $t('orders.price_lists_applied') }}:
                   </span>
                   <NuxtLink
@@ -1425,10 +1426,19 @@ definePageMeta({
                   :data="quotationProductRows"
                   entity-name="product"
                   :mode="TableMode.Minimal"
+                  :empty-description="
+                    t(
+                      'empty_description_not_added',
+                      {
+                        entityName: 'product',
+                      },
+                      2,
+                    )
+                  "
                   :page-size="10"
                 />
                 <ContentPriceSummary
-                  v-if="!createMode && quotationTotal"
+                  v-if="quotationTotal && selectedSkus.length"
                   class="mx-3"
                   :total="quotationTotal"
                   :currency="form.values.details?.currency || ''"
@@ -1463,9 +1473,12 @@ definePageMeta({
                 :data-list="productsSummary"
                 :label="$t('product', 2)"
               />
-              <Separator class="my-5" />
+              <Separator
+                v-if="!createMode && productsSummary.length"
+                class="my-5"
+              />
               <ContentPriceSummary
-                v-if="!createMode && quotationTotal"
+                v-if="!createMode && quotationTotal && selectedSkus.length"
                 :total="quotationTotal"
                 :currency="form.values.details?.currency || ''"
               />

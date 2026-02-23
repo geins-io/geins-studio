@@ -85,6 +85,9 @@ onMounted(() => {
 
   // SET UP COLUMN OPTIONS FOR ENTITY
   const columnOptions: ColumnOptions<EntityList> = {
+    columnTitles: {
+      quotationNumber: t('ref_number'),
+    },
     columnTypes: {
       name: 'link',
       status: 'status',
