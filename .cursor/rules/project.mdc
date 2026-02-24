@@ -8,7 +8,7 @@ globs:
 
 ## Tech Stack
 
-- Nuxt 3 (SPA mode, ssr: false), TypeScript, Vue 3 Composition API (<script setup>)
+- Nuxt 4 (SPA mode, ssr: false), TypeScript, Vue 3 Composition API (<script setup>)
 - shadcn-vue (new-york style) + Tailwind CSS 4 + Reka UI primitives
 - vee-validate + Zod for forms, TanStack Table for data tables
 - Pinia for state, @sidebase/nuxt-auth for auth

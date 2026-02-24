@@ -1,5 +1,28 @@
 export type StringKeyOf<T> = Extract<keyof T, string>;
 
+/**
+ * Union type for StatusBadge status values.
+ * Combines OrderStatus, QuotationStatus, and boolean (active/inactive).
+ */
+export type StatusBadgeStatus =
+  | boolean
+  | 'pending'
+  | 'on-hold'
+  | 'backorder'
+  | 'partial'
+  | 'sent'
+  | 'cancelled'
+  | 'rejected'
+  | 'refunded'
+  | 'inactive'
+  | 'accepted'
+  | 'completed'
+  | 'confirmed'
+  | 'finalized'
+  | 'canceled'
+  | 'draft'
+  | 'expired';
+
 export const enum DataItemDisplayType {
   String = 'string',
   Array = 'array',

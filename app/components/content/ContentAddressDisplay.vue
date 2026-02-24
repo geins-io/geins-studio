@@ -1,18 +1,24 @@
 <script setup lang="ts">
-const _props = defineProps<{
-  address: AddressUpdate;
-}>();
+withDefaults(
+  defineProps<{
+    address: AddressUpdate;
+    addressOnly?: boolean;
+  }>(),
+  { addressOnly: false },
+);
 
 const { getCountryNameById } = useAccountStore();
 </script>
 <template>
   <div class="text-xs">
-    <p v-if="address.firstName || address.lastName">
-      {{ address.firstName }} {{ address.lastName }}
-    </p>
-    <p v-if="address.company">
-      {{ address.company }}
-    </p>
+    <template v-if="!addressOnly">
+      <p v-if="address.firstName || address.lastName" class="">
+        {{ address.firstName }} {{ address.lastName }}
+      </p>
+      <p v-if="address.company">
+        {{ address.company }}
+      </p>
+    </template>
     <p v-if="address.addressLine1">
       {{ address.addressLine1 }}
     </p>

@@ -332,6 +332,7 @@ When no specific `columnTypes` are provided, the system automatically infers typ
 - Keys exactly named **channels** are inferred as `channels`
 - Keys exactly named **tags** are inferred as `tags`
 - Keys exactly named **active** or **status** are inferred as `status`
+- Keys exactly named **product** (when the data has `articleNumber`) are inferred as `product`
 - All other keys default to `default` type (which handles strings, booleans, and arrays in a graceful manner)
 
 ### Column Types Overview
@@ -339,6 +340,7 @@ When no specific `columnTypes` are provided, the system automatically infers typ
 | Type                  | Description                                                                           |
 | --------------------- | ------------------------------------------------------------------------------------- |
 | `default`             | Basic text display with truncation, boolean indicators, and array formatting          |
+| `product`             | Displays product info (image, name, article number) using `TableCellProduct`          |
 | `currency`            | Expects object with `price` and `currency` properties, displays formatted currency    |
 | `price`               | Simple number formatting as currency with current locale and current currency         |
 | `date`                | Formats to date using current locale                                                  |
@@ -497,6 +499,7 @@ export type ColumnType =
   | 'tags'
   | 'status'
   | 'tooltip'
+  | 'product'
   | 'boolean'
   | `editable-${EditableColumnType}`;
 ```

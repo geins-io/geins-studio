@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Geins Studio is an admin interface for Geins Commerce Backend built with Nuxt 3, TypeScript, and shadcn-vue. It's an SPA (`ssr: false`) that integrates with Geins Management API for e-commerce operations (products, orders, customers, pricing).
+Geins Studio is an admin interface for Geins Commerce Backend built with Nuxt 4, TypeScript, and shadcn-vue. It's an SPA (`ssr: false`) that integrates with Geins Management API for e-commerce operations (products, orders, customers, pricing).
 
 ## Architecture & Data Flow
 

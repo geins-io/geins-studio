@@ -99,7 +99,7 @@ const hasCreateView = computed(() => !!slots.create);
           <slot v-if="hasCreateView && createMode" name="create" />
           <slot v-else />
           <div
-            v-if="createMode"
+            v-if="createMode && (!firstStep || !lastStep)"
             class="flex items-center justify-between border-t border-dashed pt-6"
           >
             <Button

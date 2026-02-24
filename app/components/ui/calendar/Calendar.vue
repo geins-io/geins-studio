@@ -88,12 +88,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     <div class="**:data-[slot=native-select-icon]:right-1">
       <div class="relative">
         <div
-          class="pointer-events-none absolute inset-0 flex h-full items-center pl-2 text-sm"
+          class="pointer-events-none absolute inset-0 flex h-full items-center pl-2.5 text-sm"
         >
           {{ formatter.custom(toDate(date), { month: 'short' }) }}
         </div>
         <NativeSelect
-          class="relative h-8 pr-6 pl-2 text-xs text-transparent"
+          class="relative h-9 pr-6 pl-4 text-xs text-transparent"
           @change="
             (e: Event) => {
               placeholder = placeholder.set({
@@ -119,12 +119,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     <div class="**:data-[slot=native-select-icon]:right-1">
       <div class="relative">
         <div
-          class="pointer-events-none absolute inset-0 flex h-full items-center pl-2 text-sm"
+          class="pointer-events-none absolute inset-0 flex h-full items-center pl-2.5 text-sm"
         >
           {{ formatter.custom(toDate(date), { year: 'numeric' }) }}
         </div>
         <NativeSelect
-          class="relative h-8 pr-6 pl-2 text-xs text-transparent"
+          class="relative h-9 pr-6 pl-4 text-xs text-transparent"
           @change="
             (e: Event) => {
               placeholder = placeholder.set({
