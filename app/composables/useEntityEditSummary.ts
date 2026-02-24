@@ -1,5 +1,5 @@
-import type { ComputedRef, Ref } from 'vue';
 import type { StatusBadgeStatus } from '#shared/types';
+import type { ComputedRef, Ref } from 'vue';
 
 interface EntityEditSummaryProps {
   createMode: Ref<boolean> | ComputedRef<boolean>;
