@@ -376,17 +376,6 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             );
           };
           break;
-        case 'price':
-          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const value = row.getValue(key);
-            const formatted = new Intl.NumberFormat(locale.value, {
-              style: 'currency',
-              currency: currentCurrency.value,
-              minimumFractionDigits: 0,
-            }).format(Number(value));
-            return h('div', { class: getBasicCellStyle(table) }, formatted);
-          };
-          break;
         case 'image':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);

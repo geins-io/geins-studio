@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { CalendarIcon } from 'lucide-vue-next';
 import { cn } from '@/utils/index';
 
 const model = defineModel<string>();
@@ -15,7 +14,7 @@ withDefaults(
 
 const { formatDate } = useDate();
 
-const handleDateUpdate = (v: any) => {
+const handleDateUpdate = (v: unknown) => {
   if (v) {
     model.value = new Date(v.toString()).toISOString();
   }
@@ -37,7 +36,7 @@ const handleDateUpdate = (v: any) => {
         <span>
           {{ model ? formatDate(model) : placeholder }}
         </span>
-        <CalendarIcon class="ml-auto size-4 opacity-50" />
+        <LucideCalendar class="ml-auto size-4 opacity-50" />
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-auto p-0">

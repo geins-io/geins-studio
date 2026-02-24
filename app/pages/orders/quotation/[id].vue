@@ -429,6 +429,13 @@ const {
     ...entityData,
     items: undefined,
     terms: entityData.terms?.text,
+    validPaymentMethods: entityData.validPaymentMethods?.map((pm) => ({
+      paymentId: String(pm.paymentId),
+    })),
+    validShippingMethods: entityData.validShippingMethods?.map((sm) => ({
+      shippingId: String(sm.shippingId),
+      shippingFee: sm.shippingFee,
+    })),
   }),
   getInitialFormValues: () => ({
     details: {
