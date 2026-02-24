@@ -139,6 +139,23 @@ Constructs a URL for creating a new entity for any entity type.
 - **Example**:  
   `getEntityNewUrlFor("product", "pim")` returns `/pim/product/new`.
 
+### `getEntityUrlFor`
+
+```ts
+getEntityUrlFor(targetEntityName: string, targetParent: string, id: string): string
+```
+
+Constructs a URL for editing a specific entity of any entity type.
+
+- **Parameters**:
+  - `targetEntityName`: The name of the entity (e.g., "price-list", "product")
+  - `targetParent`: The parent path segment (e.g., "pricing", "pim")
+  - `id`: The entity identifier
+
+- **Returns**: A string representing the entity edit URL.
+- **Example**:  
+  `getEntityUrlFor("price-list", "pricing", "abc-123")` returns `/pricing/price-list/abc-123`.
+
 ### `getEntityListUrlFor`
 
 ```ts
@@ -190,6 +207,11 @@ interface UseEntityUrlReturnType {
   getEntityUrl: (id: string) => string;
   getEntityListUrl: () => string;
   getEntityNewUrlFor: (entityName: string, targetParent: string) => string;
+  getEntityUrlFor: (
+    entityName: string,
+    targetParent: string,
+    id: string,
+  ) => string;
   getEntityListUrlFor: (entityName: string, targetParent: string) => string;
 }
 ```

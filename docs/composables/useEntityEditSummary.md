@@ -112,10 +112,10 @@ Controls whether the active/inactive badge and toggle are displayed. Defaults to
 #### `status`
 
 ```ts
-status?: string;
+status?: StatusBadgeStatus;
 ```
 
-Optional explicit status string (e.g., `'draft'`, `'pending'`, `'accepted'`). When provided, overrides the default active/inactive badge with a `StatusBadge` supporting all status variants.
+Optional explicit status value (e.g., `'draft'`, `'pending'`, `'accepted'`, `true`/`false`). When provided, overrides the default active/inactive badge with a `StatusBadge` supporting all status variants. See `StatusBadgeStatus` in `shared/types/Global.ts` for the full union type.
 
 ## Properties and Methods
 
@@ -130,7 +130,7 @@ summaryProps: ComputedRef<{
   entityName: string;
   entityLiveStatus: boolean;
   showActiveStatus?: boolean;
-  status?: string;
+  status?: StatusBadgeStatus;
 }>;
 ```
 
@@ -147,7 +147,7 @@ function useEntityEditSummary(props: {
   entityName: string;
   entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
   showActiveStatus?: boolean;
-  status?: string;
+  status?: StatusBadgeStatus;
 }): UseEntityEditSummaryReturnType;
 
 interface UseEntityEditSummaryReturnType {
@@ -159,7 +159,7 @@ interface UseEntityEditSummaryReturnType {
     entityName: string;
     entityLiveStatus: boolean;
     showActiveStatus?: boolean;
-    status?: string;
+    status?: StatusBadgeStatus;
   }>;
 }
 
