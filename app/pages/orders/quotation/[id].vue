@@ -500,7 +500,6 @@ const {
         currency: quotation.currency || 'SEK',
         expirationDate: quotation.validTo || '',
         notes: quotation.terms?.text || '',
-        quotationNumber: quotation.quotationNumber || '',
         paymentTerms,
       },
     });
@@ -847,7 +846,7 @@ const summary = computed<DataItem[]>(() => {
   if (!createMode.value) {
     dataList.push({
       label: t('ref_number'),
-      value: formValues.quotationNumber,
+      value: entityData.value.quotationNumber,
       displayType: DataItemDisplayType.Copy,
     });
   }
@@ -1230,19 +1229,6 @@ definePageMeta({
                           />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                  <FormGrid design="1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="details.quotationNumber"
-                    >
-                      <FormItem>
-                        <FormLabel>{{ $t('ref_number') }}</FormLabel>
-                        <FormControl>
-                          <Input v-bind="componentField" />
-                        </FormControl>
                       </FormItem>
                     </FormField>
                   </FormGrid>
