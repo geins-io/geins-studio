@@ -7,6 +7,11 @@ interface UseEntityUrlReturnType {
   getEntityUrl: (id: string) => string;
   getEntityListUrl: () => string;
   getEntityNewUrlFor: (entityName: string, targetParent: string) => string;
+  getEntityUrlFor: (
+    entityName: string,
+    targetParent: string,
+    id: string,
+  ) => string;
   getEntityListUrlFor: (entityName: string, targetParent: string) => string;
 }
 
@@ -81,6 +86,14 @@ export const useEntityUrl = (): UseEntityUrlReturnType => {
     return `/${targetParent}/${targetEntityName}/${newEntityUrlAlias.value}`;
   };
 
+  const getEntityUrlFor = (
+    targetEntityName: string,
+    targetParent: string,
+    id: string,
+  ) => {
+    return `/${targetParent}/${targetEntityName}/${id}`;
+  };
+
   const getEntityListUrlFor = (
     targetEntityName: string,
     targetParent: string,
@@ -97,6 +110,7 @@ export const useEntityUrl = (): UseEntityUrlReturnType => {
     getEntityUrl,
     getEntityListUrl,
     getEntityNewUrlFor,
+    getEntityUrlFor,
     getEntityListUrlFor,
   };
 };

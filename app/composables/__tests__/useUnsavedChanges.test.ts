@@ -77,6 +77,14 @@ describe('useUnsavedChanges', () => {
       expect(hasUnsavedChanges.value).toBe(true);
     });
 
+    it('returns false when original data is empty (still loading)', () => {
+      const currentData = ref({ name: 'Test' });
+      const originalData = ref('');
+      const createMode = ref(false);
+      const result = useUnsavedChanges(currentData, originalData, createMode);
+      expect(result.hasUnsavedChanges.value).toBe(false);
+    });
+
     it('returns false in create mode regardless of data changes', () => {
       const { hasUnsavedChanges, currentData } = setup(
         { name: 'Test' },

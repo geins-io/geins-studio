@@ -5,6 +5,7 @@ The `useGeinsImage` composable provides utilities for generating Geins image URL
 ## Features
 
 - **Product thumbnail generation** with placeholder fallback
+- **Image error handling** with automatic placeholder substitution
 
 ## Usage
 
@@ -37,6 +38,23 @@ Generates a product thumbnail URL using the Geins commerce services infrastructu
 
 - **URL Format**: `https://{account-name}.commerce.services/product/100x100/{slug}`
 
+### `handleImageError`
+
+```ts
+handleImageError(event: Event): void
+```
+
+Handles image load errors by replacing the broken image with the placeholder. Prevents infinite error loops by checking if the image source is already the placeholder.
+
+- **Parameters**:
+  - `event`: The error `Event` from the `<img>` element
+
+- **Usage**: Attach to `@error` on `<img>` elements to gracefully handle missing images.
+
+```vue
+<img :src="thumbnailUrl" @error="handleImageError" />
+```
+
 ## Image Sizing
 
 The composable currently generates images with a fixed size of **100x100 pixels**. This size is optimized for:
@@ -54,5 +72,6 @@ function useGeinsImage(): UseGeinsImageReturnType;
 
 interface UseGeinsImageReturnType {
   getProductThumbnail: (slug?: string) => string;
+  handleImageError: (event: Event) => void;
 }
 ```

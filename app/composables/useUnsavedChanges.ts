@@ -31,6 +31,7 @@ export function useUnsavedChanges<T extends Record<string, unknown>>(
 
   const hasUnsavedChanges = computed(() => {
     if (createMode.value) return false;
+    if (!originalData.value) return false;
     const current = JSON.stringify(currentData.value);
 
     if (excludeFields?.length) {

@@ -32,6 +32,9 @@ const { summaryProps } = useEntityEditSummary({
   formTouched,
   summary,
   entityName,
+  entityLiveStatus,
+  showActiveStatus: false,
+  status: 'pending',
 });
 
 ```
@@ -98,6 +101,22 @@ entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
 
 Indicates the live/active status of the entity.
 
+#### `showActiveStatus`
+
+```ts
+showActiveStatus?: boolean;
+```
+
+Controls whether the active/inactive badge and toggle are displayed. Defaults to `true` if omitted.
+
+#### `status`
+
+```ts
+status?: StatusBadgeStatus;
+```
+
+Optional explicit status value (e.g., `'draft'`, `'pending'`, `'accepted'`, `true`/`false`). When provided, overrides the default active/inactive badge with a `StatusBadge` supporting all status variants. See `StatusBadgeStatus` in `shared/types/Global.ts` for the full union type.
+
 ## Properties and Methods
 
 ### `summaryProps`
@@ -110,22 +129,26 @@ summaryProps: ComputedRef<{
   settingsSummary: DataItem[];
   entityName: string;
   entityLiveStatus: boolean;
+  showActiveStatus?: boolean;
+  status?: StatusBadgeStatus;
 }>;
 ```
 
-A computed property that unwraps all reactive inputs and returns a plain object with the current values. This is perfect for passing to components that expect non-reactive props.
+A computed property that unwraps all reactive inputs and returns a plain object with the current values. This is perfect for passing to components that expect non-reactive props. The `showActiveStatus` and `status` fields are only included when explicitly set, so they don't override the component defaults when omitted.
 
 ## Type Definitions
 
 ```ts
-function useEntityEditSummary(
-  createMode: Ref<boolean> | ComputedRef<boolean>,
-  formTouched: Ref<boolean> | ComputedRef<boolean>,
-  summary: Ref<DataItem[]> | ComputedRef<DataItem[]>,
-  settingsSummary: Ref<DataItem[]> | ComputedRef<DataItem[]>,
-  entityName: string,
-  entityLiveStatus: Ref<boolean> | ComputedRef<boolean>,
-): UseEntityEditSummaryReturnType;
+function useEntityEditSummary(props: {
+  createMode: Ref<boolean> | ComputedRef<boolean>;
+  formTouched: Ref<boolean> | ComputedRef<boolean>;
+  summary: Ref<DataItem[]> | ComputedRef<DataItem[]>;
+  settingsSummary: Ref<DataItem[]> | ComputedRef<DataItem[]>;
+  entityName: string;
+  entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
+  showActiveStatus?: boolean;
+  status?: StatusBadgeStatus;
+}): UseEntityEditSummaryReturnType;
 
 interface UseEntityEditSummaryReturnType {
   summaryProps: ComputedRef<{
@@ -135,6 +158,8 @@ interface UseEntityEditSummaryReturnType {
     settingsSummary: DataItem[];
     entityName: string;
     entityLiveStatus: boolean;
+    showActiveStatus?: boolean;
+    status?: StatusBadgeStatus;
   }>;
 }
 
