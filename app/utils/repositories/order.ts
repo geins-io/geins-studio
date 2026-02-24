@@ -8,6 +8,7 @@ import type {
   QuotationBatchQuery,
   QuotationBatchQueryResult,
   QuotationApiOptions,
+  StatusTransitionRequest,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import { entityGetRepo } from './entity-base';
@@ -93,6 +94,55 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
        */
       async ping(): Promise<void> {
         await fetch<null>(`${QUOTATION_ENDPOINT}/ping`);
+      },
+
+      // Status transition methods — all return void; caller must re-fetch.
+      async send(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/send`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async accept(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/accept`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async reject(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/reject`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async confirm(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/confirm`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async expire(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/expire`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async cancel(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/cancel`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async finalize(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/finalize`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async duplicate(id: string): Promise<Quotation> {
+        return await fetch<Quotation>(`${QUOTATION_ENDPOINT}/${id}/duplicate`, {
+          method: 'POST',
+        });
       },
     },
   };

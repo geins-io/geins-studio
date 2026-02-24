@@ -20,6 +20,10 @@ import type {
   QuotationItemCreate,
   QuotationProductRow,
   QuotationTotal,
+  QuotationMessage,
+  QuotationMessageType,
+  QuotationStatus,
+  StatusTransitionRequest,
   SelectorEntity,
   Address,
 } from '#shared/types';
@@ -30,11 +34,13 @@ import type { ColumnDef, Row } from '@tanstack/vue-table';
 // =====================================================================================
 const scope = 'pages/orders/quotation/[id].vue';
 const { t } = useI18n();
-const { getEntityUrlFor } = useEntityUrl();
+const { getEntityUrl, getEntityUrlFor } = useEntityUrl();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog(scope);
+const router = useRouter();
 const accountStore = useAccountStore();
 const breadcrumbsStore = useBreadcrumbsStore();
+const userStore = useUserStore();
 
 // =====================================================================================
 // API & REPOSITORY SETUP
@@ -84,8 +90,16 @@ const entityBase: QuotationCreate = {
 // =====================================================================================
 // UI STATE MANAGEMENT
 // =====================================================================================
+// Sent mode — set from API response in parseEntityData
+const sentMode = ref(false);
+const communications = ref<QuotationMessage[]>([]);
+
 // Tabs & Steps
-const tabs = [t('general'), t('product', 2)];
+const tabs = computed(() =>
+  sentMode.value
+    ? [t('general'), t('communication', 2)]
+    : [t('general'), t('product', 2)],
+);
 
 const stepValidationMap: Record<number, string> = {
   1: 'details',
@@ -479,6 +493,10 @@ const {
       quotation.status === 'pending' || quotation.status === 'accepted';
     quotationTotal.value = quotation.total || null;
 
+    // Sent mode: any non-draft status
+    sentMode.value = quotation.status !== 'draft';
+    communications.value = quotation.communication || [];
+
     // Set company info (selectedCompany is already fetched in onMounted for edit mode)
     const companyId = quotation.company?.companyId?.toString() || '';
     selectedCompanyId.value = companyId;
@@ -822,6 +840,217 @@ const handleSave = async () => {
 };
 
 // =====================================================================================
+// STATUS TRANSITION LOGIC
+// =====================================================================================
+const isTerminalStatus = computed(() =>
+  ['rejected', 'expired', 'canceled', 'finalized'].includes(
+    entityData.value?.status || '',
+  ),
+);
+
+interface StatusAction {
+  action: string;
+  label: string;
+  variant?: 'default' | 'destructive';
+}
+
+const statusActions = computed<{
+  primary: StatusAction | null;
+  secondary: StatusAction[];
+}>(() => {
+  const status = entityData.value?.status;
+  switch (status) {
+    case 'pending':
+      return {
+        primary: {
+          action: 'accept',
+          label: t('orders.accept_quotation'),
+        },
+        secondary: [
+          {
+            action: 'reject',
+            label: t('orders.reject_quotation'),
+            variant: 'destructive',
+          },
+          {
+            action: 'cancel',
+            label: t('orders.cancel_quotation'),
+            variant: 'destructive',
+          },
+          {
+            action: 'expire',
+            label: t('orders.expire_quotation'),
+            variant: 'destructive',
+          },
+        ],
+      };
+    case 'accepted':
+      return {
+        primary: {
+          action: 'confirm',
+          label: t('orders.confirm_quotation'),
+        },
+        secondary: [
+          {
+            action: 'cancel',
+            label: t('orders.cancel_quotation'),
+            variant: 'destructive',
+          },
+        ],
+      };
+    case 'confirmed':
+      return {
+        primary: {
+          action: 'finalize',
+          label: t('orders.finalize_quotation'),
+        },
+        secondary: [
+          {
+            action: 'cancel',
+            label: t('orders.cancel_quotation'),
+            variant: 'destructive',
+          },
+        ],
+      };
+    default:
+      return { primary: null, secondary: [] };
+  }
+});
+
+// Transition dialog state
+const transitionDialogOpen = ref(false);
+const transitionAction = ref<StatusAction | null>(null);
+const transitionLoading = ref(false);
+
+const openTransitionDialog = (action: StatusAction) => {
+  transitionAction.value = action;
+  transitionDialogOpen.value = true;
+};
+
+const buildTransitionRequest = (
+  message?: string,
+  messageType: QuotationMessageType = 'internal',
+): StatusTransitionRequest => {
+  const { userName, userEmail } = storeToRefs(userStore);
+  const request: StatusTransitionRequest = {
+    authorId: userEmail.value,
+    authorName: userName.value,
+  };
+  if (message) {
+    request.message = { type: messageType, message };
+  }
+  return request;
+};
+
+type TransitionMethod = (
+  id: string,
+  data: StatusTransitionRequest,
+) => Promise<void>;
+
+const transitionMethods: Record<string, TransitionMethod> = {
+  send: (id, data) => orderApi.quotation.send(id, data),
+  accept: (id, data) => orderApi.quotation.accept(id, data),
+  reject: (id, data) => orderApi.quotation.reject(id, data),
+  confirm: (id, data) => orderApi.quotation.confirm(id, data),
+  expire: (id, data) => orderApi.quotation.expire(id, data),
+  cancel: (id, data) => orderApi.quotation.cancel(id, data),
+  finalize: (id, data) => orderApi.quotation.finalize(id, data),
+};
+
+const handleStatusTransition = async (
+  action: string,
+  message?: string,
+  messageType: QuotationMessageType = 'internal',
+) => {
+  const method = transitionMethods[action];
+  if (!method) return;
+
+  transitionLoading.value = true;
+  try {
+    const request = buildTransitionRequest(message, messageType);
+    await method(entityId.value, request);
+    await refreshEntityData.value?.();
+  } catch (error) {
+    geinsLogError(`Failed to ${action} quotation:`, error);
+  } finally {
+    transitionLoading.value = false;
+    transitionDialogOpen.value = false;
+  }
+};
+
+// Send quotation dialog state
+const sendDialogOpen = ref(false);
+const sendLoading = ref(false);
+
+const handleSendQuotation = async (message?: string) => {
+  sendLoading.value = true;
+  try {
+    const request = buildTransitionRequest(message, 'toCustomer');
+    await orderApi.quotation.send(entityId.value, request);
+    await refreshEntityData.value?.();
+  } catch (error) {
+    geinsLogError('Failed to send quotation:', error);
+  } finally {
+    sendLoading.value = false;
+    sendDialogOpen.value = false;
+  }
+};
+
+// Copy as new draft
+const handleDuplicate = async () => {
+  try {
+    const newQuotation = await orderApi.quotation.duplicate(entityId.value);
+    if (newQuotation?._id) {
+      await router.push(getEntityUrl(newQuotation._id));
+    }
+  } catch (error) {
+    geinsLogError('Failed to duplicate quotation:', error);
+  }
+};
+
+// Read-only columns for sent mode items table
+const sentModeSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
+  if (quotationProductRows.value.length === 0) return [];
+
+  const columns = getColumns(quotationProductRows.value, {
+    sortable: false,
+    includeColumns: [
+      'product',
+      'skuId',
+      'quantity',
+      'price',
+      'priceListPrice',
+      'quotationPrice',
+    ],
+    columnTitles: {
+      product: t('product'),
+      skuId: t('orders.sku_id'),
+      quantity: t('quantity'),
+      price: t('orders.base_price'),
+      priceListPrice: t('orders.price_list_price'),
+      quotationPrice: t('orders.quotation_price'),
+    },
+    columnTypes: {
+      product: 'product',
+      skuId: 'default',
+      quantity: 'default',
+      price: 'currency',
+      priceListPrice: 'currency',
+      quotationPrice: 'currency',
+    },
+  });
+
+  return orderAndFilterColumns(columns, [
+    'product',
+    'skuId',
+    'quantity',
+    'price',
+    'priceListPrice',
+    'quotationPrice',
+  ]);
+});
+
+// =====================================================================================
 // SUMMARY DATA
 // =====================================================================================
 const companySummary = computed<DataItem[]>(() => {
@@ -932,6 +1161,10 @@ const productsSummary = computed<DataItem[]>(() => {
 
 const settingsSummary = ref<DataItem[]>([]);
 
+const quotationStatus = computed<QuotationStatus>(
+  () => entityData.value?.status || 'draft',
+);
+
 const { summaryProps } = useEntityEditSummary({
   createMode,
   formTouched,
@@ -940,7 +1173,7 @@ const { summaryProps } = useEntityEditSummary({
   entityName,
   entityLiveStatus,
   showActiveStatus: false,
-  status: entityData.value?.status || 'draft',
+  status: quotationStatus,
 });
 
 definePageMeta({
@@ -961,6 +1194,21 @@ definePageMeta({
     :loading="deleting"
     @confirm="confirmDelete"
   />
+  <DialogConfirmSend
+    v-model:open="sendDialogOpen"
+    :entity-name="entityName"
+    :loading="sendLoading"
+    @confirm="handleSendQuotation"
+  />
+  <DialogStatusTransition
+    v-if="transitionAction"
+    v-model:open="transitionDialogOpen"
+    :action="transitionAction.label"
+    :entity-name="entityName"
+    :loading="transitionLoading"
+    :variant="transitionAction.variant || 'default'"
+    @confirm="(msg) => handleStatusTransition(transitionAction!.action, msg)"
+  />
   <ContentEditWrap
     :entity-name="entityName"
     :entity-id="entityId"
@@ -970,48 +1218,110 @@ definePageMeta({
     <template #header>
       <ContentHeader :title="entityPageTitle" :entity-name="entityName">
         <ContentActionBar>
-          <ButtonIcon
-            v-if="!createMode"
-            icon="save"
-            :loading="loading"
-            :disabled="!hasUnsavedChanges || loading"
-            @click="handleSave"
-            >{{ $t('save_entity', { entityName: 'draft' }) }}</ButtonIcon
-          >
-          <ButtonGroup>
+          <!-- DRAFT MODE actions -->
+          <template v-if="!createMode && !sentMode">
             <ButtonIcon
-              v-if="!createMode"
-              variant="secondary"
-              icon="send"
-              :disabled="!formValid || loading"
-              >{{ $t('send_entity', { entityName }) }}
-            </ButtonIcon>
-            <DropdownMenu v-if="!createMode">
-              <DropdownMenuTrigger as-child>
-                <Button size="icon" variant="secondary">
-                  <LucideMoreHorizontal class="size-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem as-child>
-                  <NuxtLink :to="newEntityUrl">
-                    <LucidePlus class="mr-2 size-4" />
-                    <span>{{ $t('new_entity', { entityName }) }}</span>
-                  </NuxtLink>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem @click="openDeleteDialog">
-                  <LucideTrash class="mr-2 size-4" />
-                  <span>{{ $t('delete_entity', { entityName }) }}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </ButtonGroup>
+              icon="save"
+              :loading="loading"
+              :disabled="!hasUnsavedChanges || loading"
+              @click="handleSave"
+              >{{ $t('save_entity', { entityName: 'draft' }) }}</ButtonIcon
+            >
+            <ButtonGroup>
+              <ButtonIcon
+                variant="secondary"
+                icon="send"
+                :disabled="!formValid || loading"
+                @click="sendDialogOpen = true"
+                >{{ $t('send_entity', { entityName }) }}
+              </ButtonIcon>
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button size="icon" variant="secondary">
+                    <LucideMoreHorizontal class="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem as-child>
+                    <NuxtLink :to="newEntityUrl">
+                      <LucidePlus class="mr-2 size-4" />
+                      <span>{{ $t('new_entity', { entityName }) }}</span>
+                    </NuxtLink>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem @click="openDeleteDialog">
+                    <LucideTrash class="mr-2 size-4" />
+                    <span>{{ $t('delete_entity', { entityName }) }}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </ButtonGroup>
+          </template>
+
+          <!-- SENT MODE actions -->
+          <template v-if="sentMode">
+            <ButtonGroup>
+              <Button
+                v-if="statusActions.primary"
+                @click="openTransitionDialog(statusActions.primary)"
+              >
+                {{ statusActions.primary.label }}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button
+                    :size="statusActions.primary ? 'icon' : 'default'"
+                    :variant="statusActions.primary ? 'outline' : 'secondary'"
+                  >
+                    <LucideMoreHorizontal
+                      v-if="statusActions.primary"
+                      class="size-3.5"
+                    />
+                    <template v-else>
+                      {{ $t('actions') }}
+                      <LucideChevronDown class="ml-2 size-3.5" />
+                    </template>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <template
+                    v-if="statusActions.secondary.length"
+                  >
+                    <DropdownMenuItem
+                      v-for="action in statusActions.secondary"
+                      :key="action.action"
+                      @click="openTransitionDialog(action)"
+                    >
+                      {{ action.label }}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </template>
+                  <DropdownMenuItem as-child>
+                    <NuxtLink :to="newEntityUrl">
+                      <LucidePlus class="mr-2 size-4" />
+                      <span>{{ $t('new_entity', { entityName }) }}</span>
+                    </NuxtLink>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem @click="handleDuplicate">
+                    <LucideCopy class="mr-2 size-4" />
+                    <span>{{ $t('orders.copy_as_new_draft') }}</span>
+                  </DropdownMenuItem>
+                  <template v-if="isTerminalStatus">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem @click="openDeleteDialog">
+                      <LucideTrash class="mr-2 size-4" />
+                      <span>{{ $t('delete_entity', { entityName }) }}</span>
+                    </DropdownMenuItem>
+                  </template>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </ButtonGroup>
+          </template>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
         </template>
-        <template v-if="!createMode" #changes>
+        <template v-if="!createMode && !sentMode" #changes>
           <ContentEditHasChanges :changes="hasUnsavedChanges" />
         </template>
       </ContentHeader>
@@ -1223,7 +1533,220 @@ definePageMeta({
               </div>
             </template>
 
-            <!-- ========== EDIT MODE ========== -->
+            <!-- ========== SENT MODE (read-only) ========== -->
+            <template v-else-if="sentMode">
+              <!-- Card 1: Quotation Details (read-only) -->
+              <ContentEditCard
+                :create-mode="false"
+                :title="$t('entity_details', { entityName })"
+              >
+                <div class="space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('entity_name', { entityName }) }}
+                      </p>
+                      <p class="text-sm">
+                        {{ entityData?.name || '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('ref_number') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ entityData?.quotationNumber || '-' }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('status') }}
+                      </p>
+                      <StatusBadge :status="quotationStatus" />
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('expiration_date') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ entityData?.validTo ? formatDate(entityData.validTo) : '-' }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.valid_from') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ entityData?.validFrom ? formatDate(entityData.validFrom) : '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.modified_at') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ entityData?.modifiedAt ? formatDate(entityData.modifiedAt) : '-' }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </ContentEditCard>
+
+              <!-- Card 2: Customer (read-only, no Change button) -->
+              <ContentEditCard :create-mode="false" :title="$t('customer')">
+                <div class="space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('company') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ selectedCompany?.name || '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('customers.vat_number') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ selectedCompany?.vatNumber || '-' }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('billing_address') }}
+                      </p>
+                      <ContentAddressDisplay
+                        v-if="billingAddress"
+                        :address="billingAddress"
+                        address-only
+                      />
+                      <p v-else class="text-xs">-</p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('shipping_address') }}
+                      </p>
+                      <ContentAddressDisplay
+                        v-if="shippingAddress"
+                        :address="shippingAddress"
+                        address-only
+                      />
+                      <p v-else class="text-xs">-</p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('buyer') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ currentBuyerName || '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.quotation_owner') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ currentOwnerName || '-' }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="border-t pt-4">
+                    <p class="text-muted-foreground mb-1 text-xs font-medium">
+                      {{ $t('currency') }}
+                    </p>
+                    <p class="text-sm">
+                      {{ form.values.details?.currency || '-' }}
+                    </p>
+                  </div>
+                </div>
+              </ContentEditCard>
+
+              <!-- Card 3: Payment Terms (read-only) -->
+              <ContentEditCard
+                :create-mode="false"
+                :title="$t('orders.payment_settings')"
+              >
+                <div>
+                  <p class="text-muted-foreground mb-1 text-xs font-medium">
+                    {{ $t('orders.payment_terms') }}
+                  </p>
+                  <p class="text-sm">
+                    {{ form.values.details?.paymentTerms || '-' }}
+                  </p>
+                </div>
+              </ContentEditCard>
+
+              <!-- Card 4: Items & Summary -->
+              <ContentEditCard
+                :create-mode="false"
+                :title="$t('orders.items_and_summary')"
+              >
+                <template v-if="!loadingProducts">
+                  <div
+                    v-if="selectedCompany?.priceLists?.length"
+                    class="dark:bg-input mb-4 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2.5"
+                  >
+                    <span class="text-primary text-xs font-medium">
+                      {{ $t('orders.price_lists_applied') }}:
+                    </span>
+                    <NuxtLink
+                      v-for="pl in selectedCompany.priceLists"
+                      :key="pl._id"
+                      :to="getEntityUrlFor('price-list', 'pricing', pl._id)"
+                      target="_blank"
+                      :class="
+                        cn(
+                          'bg-secondary dark:bg-card dark:hover:border-primary/50 data-[state=active]:ring-ring ring-offset-background hover:bg-muted/80 flex h-6 items-center rounded-md border px-2 py-0.5 text-sm transition-colors data-[state=active]:ring-2 data-[state=active]:ring-offset-2 dark:h-7',
+                        )
+                      "
+                    >
+                      {{ pl.name }}
+                      <LucideExternalLink class="ml-1.5 size-3" />
+                    </NuxtLink>
+                  </div>
+                  <TableView
+                    :columns="sentModeSkuColumns"
+                    :data="quotationProductRows"
+                    entity-name="product"
+                    :mode="TableMode.Minimal"
+                    :empty-description="
+                      t(
+                        'empty_description_not_added',
+                        {
+                          entityName: 'product',
+                        },
+                        2,
+                      )
+                    "
+                    :page-size="10"
+                  />
+                  <ContentPriceSummary
+                    v-if="quotationTotal && selectedSkus.length"
+                    class="mx-3"
+                    :total="quotationTotal"
+                    :currency="form.values.details?.currency || ''"
+                  />
+                </template>
+                <template v-else>
+                  <div class="flex items-center justify-center py-8">
+                    <LucideLoader2
+                      class="text-muted-foreground size-6 animate-spin"
+                    />
+                  </div>
+                </template>
+              </ContentEditCard>
+            </template>
+
+            <!-- ========== EDIT MODE (draft) ========== -->
             <template v-else>
               <!-- Card 1: Quotation Details -->
               <ContentEditCard
@@ -1404,11 +1927,11 @@ definePageMeta({
           </ContentEditMainContent>
         </KeepAlive>
 
-        <!-- TAB 1: PRODUCTS -->
+        <!-- TAB 1: PRODUCTS (draft edit mode) -->
         <KeepAlive>
           <ContentEditMainContent
-            v-if="currentTab === 1 && !createMode"
-            :key="`tab-${currentTab}`"
+            v-if="currentTab === 1 && !createMode && !sentMode"
+            :key="`tab-products`"
           >
             <ContentEditCard :create-mode="false" :title="$t('product', 2)">
               <template #header-action>
@@ -1485,6 +2008,21 @@ definePageMeta({
                   />
                 </div>
               </template>
+            </ContentEditCard>
+          </ContentEditMainContent>
+        </KeepAlive>
+
+        <!-- TAB 1: COMMUNICATIONS (sent mode) -->
+        <KeepAlive>
+          <ContentEditMainContent
+            v-if="currentTab === 1 && sentMode"
+            :key="`tab-communications`"
+          >
+            <ContentEditCard
+              :create-mode="false"
+              :title="$t('communication', 2)"
+            >
+              <QuotationCommunications :communications="communications" />
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>

@@ -147,6 +147,22 @@ export interface QuotationTotal {
 }
 
 // =============================================================================
+// Status Transition Request
+// =============================================================================
+
+/**
+ * Request body for quotation status transitions (send, accept, reject, etc.)
+ */
+export interface StatusTransitionRequest {
+  authorId: string;
+  authorName: string;
+  message?: {
+    type: QuotationMessageType;
+    message: string;
+  };
+}
+
+// =============================================================================
 // Request Sub-Types (sent to the API)
 // =============================================================================
 
