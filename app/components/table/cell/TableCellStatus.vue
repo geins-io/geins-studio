@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { StatusBadgeStatus } from '#shared/types';
+
 defineProps<{
-  status: boolean | string;
+  status: StatusBadgeStatus;
 }>();
 </script>
 <template>

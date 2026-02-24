@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Account, Channel, Currency } from '#shared/types';
+import type { Account, Channel, Currency, Language } from '#shared/types';
 
 /**
  * Account store — manages the current merchant account context.

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import type { StatusBadgeStatus } from '#shared/types';
+
 const props = defineProps<{
-  status: boolean | string;
+  status: StatusBadgeStatus;
 }>();
 
 const { t } = useI18n();

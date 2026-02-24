@@ -155,23 +155,47 @@ interface SkuItemData {
 
 const skuItemData = ref<Map<string, SkuItemData>>(new Map());
 
+const defaultSkuItemData: SkuItemData = {
+  quantity: 1,
+  customPrice: undefined,
+  ordPrice: 0,
+  listPrice: 0,
+};
+
+const getSkuItemData = (skuId: string): SkuItemData => {
+  return skuItemData.value.get(skuId) || defaultSkuItemData;
+};
+
 const ensureSkuItemData = (skuId: string) => {
   if (!skuItemData.value.has(skuId)) {
-    skuItemData.value.set(skuId, {
-      quantity: 1,
-      customPrice: undefined,
-      ordPrice: 0,
-      listPrice: 0,
-    });
+    skuItemData.value.set(skuId, { ...defaultSkuItemData });
   }
   return skuItemData.value.get(skuId)!;
 };
+
+// Initialize item data for newly selected SKUs
+watch(
+  () => selectedSkus.value,
+  (skus) => {
+    let added = false;
+    for (const sku of skus) {
+      if (!skuItemData.value.has(sku._id)) {
+        skuItemData.value.set(sku._id, { ...defaultSkuItemData });
+        added = true;
+      }
+    }
+    if (added) {
+      skuItemData.value = new Map(skuItemData.value);
+    }
+  },
+  { immediate: true },
+);
 
 // Derived table rows merging selected SKUs with item data
 const quotationProductRows = computed<QuotationProductRow[]>(() => {
   const currency = form.values.details?.currency || 'SEK';
   return selectedSkus.value.map((sku) => {
-    const data = ensureSkuItemData(sku._id);
+    const data = getSkuItemData(sku._id);
     return {
       _id: sku._id,
       product: sku.name,
@@ -203,7 +227,7 @@ const quotationProductRows = computed<QuotationProductRow[]>(() => {
 // Build quotation items payload from skuItemData
 const quotationItems = computed<QuotationItemCreate[]>(() =>
   selectedSkus.value.map((sku) => {
-    const data = ensureSkuItemData(sku._id);
+    const data = getSkuItemData(sku._id);
     return {
       skuId: sku._id,
       quantity: data.quantity,

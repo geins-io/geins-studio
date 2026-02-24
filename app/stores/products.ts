@@ -90,6 +90,7 @@ export const useProductsStore = defineStore('products', () => {
     categories.value = [];
     brands.value = [];
     ready.value = false;
+    initialized.value = false;
   }
 
   function getCategoryName(id: string): string {

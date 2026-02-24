@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
+import type { StatusBadgeStatus } from '#shared/types';
 
 interface EntityEditSummaryProps {
   createMode: Ref<boolean> | ComputedRef<boolean>;
@@ -8,7 +9,7 @@ interface EntityEditSummaryProps {
   entityName: string;
   entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
   showActiveStatus?: boolean;
-  status?: string;
+  status?: StatusBadgeStatus;
 }
 
 interface UseEntityEditSummaryReturnType {
@@ -20,7 +21,7 @@ interface UseEntityEditSummaryReturnType {
     entityName: string;
     entityLiveStatus: boolean;
     showActiveStatus?: boolean;
-    status?: string;
+    status?: StatusBadgeStatus;
   }>;
 }
 

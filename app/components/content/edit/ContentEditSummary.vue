@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { StatusBadgeStatus } from '#shared/types';
+
 const props = withDefaults(
   defineProps<{
     createMode?: boolean;
@@ -9,7 +11,7 @@ const props = withDefaults(
     entityName?: string;
     entityLiveStatus?: boolean;
     showActiveStatus?: boolean;
-    status?: string;
+    status?: StatusBadgeStatus;
   }>(),
   {
     createMode: false,

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { VisuallyHidden } from 'reka-ui';
-import type { Address } from '#shared/types';
+import type {
+  Address,
+  CustomerCompany,
+  User,
+  CompanyBuyer,
+} from '#shared/types';
 
 const props = defineProps<{
   company: CustomerCompany | undefined;

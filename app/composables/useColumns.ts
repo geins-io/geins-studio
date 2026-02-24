@@ -70,7 +70,7 @@ interface UseColumnsReturnType<T> {
 export const useColumns = <T>(): UseColumnsReturnType<T> => {
   const viewport = useViewport();
   const accountStore = useAccountStore();
-  const { currentCurrency } = storeToRefs(accountStore);
+  const { currentCurrency: _currentCurrency } = storeToRefs(accountStore);
   const { formatDate } = useDate();
   const { handleImageError } = useGeinsImage();
 
@@ -354,13 +354,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
 
       switch (columnType) {
         case 'product':
-          cellRenderer = ({
-            table,
-            row,
-          }: {
-            table: Table<T>;
-            row: Row<T>;
-          }) => {
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const name = String(row.getValue(key) ?? '');
             const original = row.original as Record<string, unknown>;
             return h(
@@ -369,9 +363,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               h(TableCellProduct, {
                 name,
                 articleNumber: String(original.articleNumber ?? ''),
-                imageUrl: String(
-                  original.image ?? original.imageUrl ?? '',
-                ),
+                imageUrl: String(original.image ?? original.imageUrl ?? ''),
               }),
             );
           };
@@ -512,7 +504,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             }
             return h(TableCellStatus, {
               class: getBasicCellStyle(table),
-              status: value,
+              status: value as StatusBadgeStatus,
               ...cellProps,
             });
           };
