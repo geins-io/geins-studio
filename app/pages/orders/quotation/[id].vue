@@ -27,6 +27,7 @@ import type {
   SelectorEntity,
   Address,
 } from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
 // =====================================================================================
@@ -34,6 +35,7 @@ import type { ColumnDef, Row } from '@tanstack/vue-table';
 // =====================================================================================
 const scope = 'pages/orders/quotation/[id].vue';
 const { t } = useI18n();
+const { toast } = useToast();
 const { getEntityUrl, getEntityUrlFor } = useEntityUrl();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog(scope);
@@ -607,7 +609,7 @@ const {
 // =====================================================================================
 // ERROR HANDLING SETUP
 // =====================================================================================
-const { handleFetchResult } = usePageError({
+const { handleFetchResult, showErrorToast } = usePageError({
   entityName,
   entityId: entityId.value,
   scope,
@@ -1005,8 +1007,10 @@ const handleStatusTransition = async (
     const request = buildTransitionRequest(message, messageType);
     await method(entityId.value, request);
     await refreshEntityData.value?.();
+    toast({ title: t('orders.quotation_transition_success'), variant: 'positive' });
   } catch (error) {
     geinsLogError(`Failed to ${action} quotation:`, error);
+    showErrorToast(t('orders.quotation_transition_error'));
   } finally {
     transitionLoading.value = false;
     transitionDialogOpen.value = false;
@@ -1023,8 +1027,10 @@ const handleSendQuotation = async (message?: string) => {
     const request = buildTransitionRequest(message, 'toCustomer');
     await orderApi.quotation.send(entityId.value, request);
     await refreshEntityData.value?.();
+    toast({ title: t('entity_sent', { entityName }), variant: 'positive' });
   } catch (error) {
     geinsLogError('Failed to send quotation:', error);
+    showErrorToast(t('error_sending_entity', { entityName }));
   } finally {
     sendLoading.value = false;
     sendDialogOpen.value = false;
@@ -1032,14 +1038,20 @@ const handleSendQuotation = async (message?: string) => {
 };
 
 // Copy as new draft
-const handleDuplicate = async () => {
+const copyLoading = ref(false);
+const handleCopy = async () => {
+  copyLoading.value = true;
   try {
-    const newQuotation = await orderApi.quotation.duplicate(entityId.value);
+    const newQuotation = await orderApi.quotation.copy(entityId.value);
     if (newQuotation?._id) {
+      toast({ title: t('entity_copied', { entityName }), variant: 'positive' });
       await router.push(getEntityUrl(newQuotation._id));
     }
   } catch (error) {
-    geinsLogError('Failed to duplicate quotation:', error);
+    geinsLogError('Failed to copy quotation:', error);
+    showErrorToast(t('error_copying_entity', { entityName }));
+  } finally {
+    copyLoading.value = false;
   }
 };
 
@@ -1296,6 +1308,10 @@ definePageMeta({
                       <span>{{ $t('new_entity', { entityName }) }}</span>
                     </NuxtLink>
                   </DropdownMenuItem>
+                  <DropdownMenuItem :disabled="copyLoading" @click="handleCopy">
+                    <LucideCopy class="mr-2 size-4" />
+                    <span>{{ $t('orders.copy_as_new_draft') }}</span>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem @click="openDeleteDialog">
                     <LucideTrash class="mr-2 size-4" />
@@ -1348,7 +1364,7 @@ definePageMeta({
                       <span>{{ $t('new_entity', { entityName }) }}</span>
                     </NuxtLink>
                   </DropdownMenuItem>
-                  <DropdownMenuItem @click="handleDuplicate">
+                  <DropdownMenuItem :disabled="copyLoading" @click="handleCopy">
                     <LucideCopy class="mr-2 size-4" />
                     <span>{{ $t('orders.copy_as_new_draft') }}</span>
                   </DropdownMenuItem>

@@ -139,8 +139,8 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           body: data,
         });
       },
-      async duplicate(id: string): Promise<Quotation> {
-        return await fetch<Quotation>(`${QUOTATION_ENDPOINT}/${id}/duplicate`, {
+      async copy(id: string): Promise<Quotation> {
+        return await fetch<Quotation>(`${QUOTATION_ENDPOINT}/${id}/copy`, {
           method: 'POST',
         });
       },

@@ -91,6 +91,7 @@ i18n/locales/           # en.json, sv.json
 - **Full name display**: Use `fullName(entity)` (auto-imported from `app/utils/index.ts`) where `entity` is any object with optional `firstName`/`lastName` fields (or `null`/`undefined`). Never use inline template literals — it handles missing parts via `.trim()`.
 - **Date formatting**: Use `useDate()` composable for consistent date display. `formatDate(value, options?)` wraps reka-ui's `useDateFormatter` with the app's locale. Defaults to `dateStyle: 'long'` (e.g. "February 23, 2026") — the same format used in table columns and the calendar picker.
 - **Vue gotcha**: `<KeepAlive>` cannot contain HTML comments — they count as children and cause "expects exactly one child" errors
+- **Toasts**: Use `useToast` from `@/components/ui/toast/use-toast` (explicit import required — not auto-imported). Init: `const { toast } = useToast()`. For errors, get `showErrorToast` from `usePageError`. Success: `toast({ title: t('entity_copied', { entityName }), variant: 'positive' })`. Error: `showErrorToast(t('error_copying_entity', { entityName }))`. `useEntityEdit` already handles toasts for create/update/delete — only add toasts in pages for additional actions (status transitions, send, copy, etc.). Import order: `@/components` imports must come after `#shared/types` type imports but before `@tanstack` type imports.
 
 ## API & Repositories
 
@@ -240,7 +241,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - Status transition actions use a two-step pattern: `POST /quotation/{id}/{action}` (returns void) → `refreshEntityData()` re-fetches → `parseEntityData` updates all UI state including `sentMode`, `communications`, and the sidebar status badge.
 - `StatusTransitionRequest` type: `{ authorId, authorName, message?: { type: QuotationMessageType, message } }`. Author info comes from `useUserStore`.
 - `DialogConfirmSend` handles the initial draft→pending transition with an optional `toCustomer` message. `DialogStatusTransition` is reusable for all other transitions (accept, reject, confirm, cancel, expire, finalize).
-- "Copy as new draft" calls `orderApi.quotation.duplicate(id)` → navigates to the new draft.
+- "Copy as new draft" calls `orderApi.quotation.copy(id)` (`POST /quotation/{id}/copy`) → shows success toast → navigates to the new draft.
 - Delete is only available on terminal statuses (`rejected`, `expired`, `canceled`, `finalized`).
 - The sidebar `StatusBadge` is reactive: `useEntityEditSummary` accepts `status` as a `Ref` and `unref`s it in the computed.
 
