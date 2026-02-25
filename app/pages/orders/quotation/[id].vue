@@ -1026,6 +1026,7 @@ const handleSendQuotation = async (message?: string) => {
   try {
     const request = buildTransitionRequest(message, 'toCustomer');
     await orderApi.quotation.send(entityId.value, request);
+    currentTab.value = 0;
     await refreshEntityData.value?.();
     toast({ title: t('entity_sent', { entityName }), variant: 'positive' });
   } catch (error) {
