@@ -66,15 +66,12 @@ const formSchema = toTypedSchema(
       accountId: z
         .string()
         .min(1, t('entity_required', { entityName: 'company' })),
-      createdBy: z
-        .string()
-        .min(1, t('entity_required', { entityName: 'owner' })),
+      ownerId: z.string().min(1, t('entity_required', { entityName: 'owner' })),
       buyerId: z.string().optional(),
       currency: z
         .string()
         .min(1, t('entity_required', { entityName: 'currency' })),
       expirationDate: z.string().optional(),
-      notes: z.string().optional(),
       paymentTerms: z.string().optional(),
     }),
   }),
@@ -370,7 +367,7 @@ const availableBuyers = computed(() => {
 
 // Resolved display names for current owner and buyer
 const currentOwnerName = computed(() => {
-  const ownerId = form.values.details?.createdBy;
+  const ownerId = form.values.details?.ownerId;
   if (!ownerId) return '';
   return availableSalesReps.value.find((u) => u._id === ownerId)?.name || '';
 });
@@ -468,7 +465,6 @@ const {
   reshapeEntityData: (entityData) => ({
     ...entityData,
     items: undefined,
-    terms: entityData.terms,
     validPaymentMethods: entityData.validPaymentMethods?.map((pm) => ({
       paymentId: String(pm.paymentId),
     })),
@@ -481,11 +477,10 @@ const {
     details: {
       name: '',
       accountId: '',
-      createdBy: '',
+      ownerId: '',
       buyerId: '',
       currency: '',
       expirationDate: '',
-      notes: '',
       paymentTerms: 'Net 30',
     },
   }),
@@ -545,11 +540,10 @@ const {
       details: {
         name: quotation.name || '',
         accountId: companyId,
-        createdBy: ownerId,
+        ownerId,
         buyerId,
         currency: quotation.currency || 'SEK',
         expirationDate: quotation.validTo || '',
-        notes: quotation.terms || '',
         paymentTerms,
       },
     });
@@ -561,7 +555,7 @@ const {
       marketId: cm?.marketId || '',
       name: formData.details.name,
       companyId: formData.details.accountId || undefined,
-      ownerId: formData.details.createdBy || undefined,
+      ownerId: formData.details.ownerId || undefined,
       customerId: formData.details.buyerId || undefined,
       terms: formData.details.paymentTerms || undefined,
       items: quotationItems.value.length > 0 ? quotationItems.value : undefined,
@@ -570,7 +564,7 @@ const {
   prepareUpdateData: (formData, _entity) => ({
     name: formData.details.name,
     validTo: formData.details.expirationDate || undefined,
-    ownerId: formData.details.createdBy || undefined,
+    ownerId: formData.details.ownerId || undefined,
     customerId: formData.details.buyerId || undefined,
     billingAddressId: selectedBillingAddressId.value || undefined,
     shippingAddressId: selectedShippingAddressId.value || undefined,
@@ -585,7 +579,7 @@ const {
         marketId: cm?.marketId || '',
         name: values.details.name,
         companyId: values.details.accountId || undefined,
-        ownerId: values.details.createdBy || undefined,
+        ownerId: values.details.ownerId || undefined,
         customerId: values.details.buyerId || undefined,
         items:
           quotationItems.value.length > 0 ? quotationItems.value : undefined,
@@ -595,7 +589,7 @@ const {
         ...entityData.value,
         name: values.details.name,
         validTo: values.details.expirationDate || undefined,
-        ownerId: values.details.createdBy || undefined,
+        ownerId: values.details.ownerId || undefined,
         customerId: values.details.buyerId || undefined,
         billingAddressId: selectedBillingAddressId.value || undefined,
         shippingAddressId: selectedShippingAddressId.value || undefined,
@@ -683,7 +677,7 @@ watch(
       selectedAccountName.value = company?.name || '';
 
       // Clear sales rep and buyer when company changes
-      form.setFieldValue('details.createdBy', '', false);
+      form.setFieldValue('details.ownerId', '', false);
       form.setFieldValue('details.buyerId', '', false);
 
       // Set currency to first available from company's channels
@@ -765,7 +759,7 @@ const handleCustomerPanelSave = (data: {
   shippingAddressId: string;
 }) => {
   // Update form values for owner and buyer
-  form.setFieldValue('details.createdBy', data.ownerId);
+  form.setFieldValue('details.ownerId', data.ownerId);
   form.setFieldValue('details.buyerId', data.buyerId);
 
   // Store address IDs for update payload
@@ -863,7 +857,7 @@ const sendBlockReasons = computed<string[]>(() => {
   if (!details?.accountId) {
     reasons.push(t('orders.send_requires_customer'));
   }
-  if (!details?.createdBy) {
+  if (!details?.ownerId) {
     reasons.push(t('orders.send_requires_owner'));
   }
   if (!details?.buyerId) {
@@ -1007,7 +1001,10 @@ const handleStatusTransition = async (
     const request = buildTransitionRequest(message, messageType);
     await method(entityId.value, request);
     await refreshEntityData.value?.();
-    toast({ title: t('orders.quotation_transition_success'), variant: 'positive' });
+    toast({
+      title: t('orders.quotation_transition_success'),
+      variant: 'positive',
+    });
   } catch (error) {
     geinsLogError(`Failed to ${action} quotation:`, error);
     showErrorToast(t('orders.quotation_transition_error'));
@@ -1115,8 +1112,8 @@ const companySummary = computed<DataItem[]>(() => {
   }
 
   const ownerName =
-    availableSalesReps.value.find((u) => u._id === formValues?.createdBy)
-      ?.name || formValues?.createdBy;
+    availableSalesReps.value.find((u) => u._id === formValues?.ownerId)?.name ||
+    formValues?.ownerId;
   if (ownerName) {
     dataList.push({ label: t('owner'), value: ownerName });
   }
@@ -1470,7 +1467,7 @@ definePageMeta({
                   <FormGrid design="1+1+1">
                     <FormField
                       v-slot="{ componentField }"
-                      name="details.createdBy"
+                      name="details.ownerId"
                     >
                       <FormItem>
                         <FormLabel>{{
@@ -1870,7 +1867,7 @@ definePageMeta({
                     :company="selectedCompany"
                     :available-sales-reps="availableSalesReps"
                     :available-buyers="availableBuyers"
-                    :current-owner-id="form.values.details?.createdBy || ''"
+                    :current-owner-id="form.values.details?.ownerId || ''"
                     :current-buyer-id="form.values.details?.buyerId || ''"
                     :current-billing-address-id="selectedBillingAddressId"
                     :current-shipping-address-id="selectedShippingAddressId"
