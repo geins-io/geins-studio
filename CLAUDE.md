@@ -203,6 +203,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - **Editable columns** — Use `columnTypes` in `useColumns` options with `'editable-number'`, `'editable-string'`, `'editable-currency'`, or `'editable-percentage'`. For custom inline-editable columns, render `TableCellEditable<T>` directly via `h()` with `onChange`/`onBlur` handlers.
 - **Column type inference**: `useColumns.getColumns()` infers column types from field names (e.g. "date" → date formatter, "price"/"amount" → currency, "image" → thumbnail, "product" with `articleNumber` in data → product cell). Override via `columnTypes` option. Header/cell base styles come from `getBasicHeaderStyle(table)` and `getBasicCellStyle(table)` which branch on the table mode.
 - **useSkeleton**: Composable at `app/composables/useSkeleton.ts` generates placeholder rows and columns with `<Skeleton>` components when `TableView` has `loading={true}`.
+- **`TableCellActions` actions**: Default `availableActions` is `['edit', 'copy', 'delete']`. To enable copy on a list page: add `'copy'` to the array passed to `addActionsColumn` and provide an `onCopy` handler in the props object. Handler pattern: call the copy API, show a success toast, then `navigateTo` the new entity's URL. On error: `geinsLogError` + `showErrorToast`.
 - **`TableCellActions` disabled actions**: Accepts a `disabledActions` prop — either a static `TableRowAction[]` or a per-row callback `(rowData: T) => TableRowAction[]`. Disabled items remain visible but non-interactive. Pass via `addActionsColumn` props: `disabledActions: (item) => item.status !== 'draft' ? ['delete'] : []`.
 
 ---
@@ -258,3 +259,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 
 - **`ProductApiOptions`** extends `ApiOptions` with `defaultChannel`, `defaultCurrency`, `defaultCountry`, `defaultLocale`. These are forwarded as query params by `buildQueryObject` (which passes through any extra string properties beyond `fields`/`pageSize`).
 - **Product OpenAPI spec URL**: `https://geins-func-product-mgmtapi-dev.azurewebsites.net/api/openapi/v3.json`
+
+### Price Lists
+
+- **Copy endpoint**: Uses an ID-scoped sub-object: `productApi.priceList.id(id).copy()` (returns `ProductPriceList`). Unlike quotation which is flat (`orderApi.quotation.copy(id)`), price list copy is accessed via `.id(id).copy()`.
