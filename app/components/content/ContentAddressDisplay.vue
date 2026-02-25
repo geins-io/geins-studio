@@ -13,7 +13,7 @@ const { getCountryNameById } = useAccountStore();
   <div class="text-xs">
     <template v-if="!addressOnly">
       <p v-if="address.firstName || address.lastName" class="">
-        {{ address.firstName }} {{ address.lastName }}
+        {{ fullName(address) }}
       </p>
       <p v-if="address.company">
         {{ address.company }}

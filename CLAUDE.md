@@ -88,6 +88,7 @@ i18n/locales/           # en.json, sv.json
 - **Stores**: Use `storeToRefs(store)` for reactive state properties
 - **Forms**: Use `<FormField v-slot="{ componentField }">` pattern. Never implement custom unsaved-changes tracking — `useEntityEdit` handles this
 - **Entity URLs**: Use `useEntityUrl()` for constructing entity navigation links. `getEntityUrl(id)` uses current route context; `getEntityUrlFor(entityName, parentPath, id)` generates URLs for any entity (e.g. `getEntityUrlFor('price-list', 'pricing', id)` → `/pricing/price-list/{id}`). Prefer these over hardcoded route strings.
+- **Full name display**: Use `fullName(entity)` (auto-imported from `app/utils/index.ts`) where `entity` is any object with optional `firstName`/`lastName` fields (or `null`/`undefined`). Never use inline template literals — it handles missing parts via `.trim()`.
 - **Date formatting**: Use `useDate()` composable for consistent date display. `formatDate(value, options?)` wraps reka-ui's `useDateFormatter` with the app's locale. Defaults to `dateStyle: 'long'` (e.g. "February 23, 2026") — the same format used in table columns and the calendar picker.
 - **Vue gotcha**: `<KeepAlive>` cannot contain HTML comments — they count as children and cause "expects exactly one child" errors
 
@@ -148,6 +149,7 @@ if (!createMode.value) {
 - **`onFormValuesChange` completeness**: The edit-mode branch of `onFormValuesChange` must map ALL update-relevant form fields into `entityDataUpdate`, otherwise changes to missing fields won't trigger `hasUnsavedChanges` (and the save button stays disabled). If a field is in `prepareUpdateData` but not in `onFormValuesChange`, it will save correctly when triggered by _other_ changes but won't enable the save button on its own.
 - **Non-form refs that affect `entityDataUpdate`**: When standalone `ref`s (e.g. `selectedBillingAddressId`) contribute to `entityDataUpdate` but aren't form fields, add a dedicated `watch()` to sync them — `onFormValuesChange` only fires on form value changes. See the address watcher in `quotation/[id].vue` for an example.
 - `createMode` is a `ref` (not computed), set once from `route.params.id` at component creation
+- **Reactive refresh after status transitions**: `refresh()` from `useAsyncData` updates `data.value` reactively, but `parseAndSaveData` is only called explicitly inside `onMounted`. Pages that call `refreshEntityData` after status transitions (e.g. quotation send/accept) must add `watch(data, async (newData) => { await parseAndSaveData(newData, false); await nextTick(); setOriginalSavedData(); })` inside the `if (!createMode.value)` block so that refreshed data is re-parsed. The watch fires only on subsequent changes (not the initial value), so it doesn't interfere with the `onMounted` flow.
 
 ### List Page
 
@@ -214,9 +216,16 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - In edit mode, prices are populated from `QuotationItemBase` response fields (`ordPrice`, `listPrice`, `unitPrice`). In create mode, prices are empty strings (displayed as `---` by `TableCellCurrency`).
 - When loading existing quotation items in edit mode, initialize both `skuItemData` (from response items) and `skuSelection.ids` (from item SKU IDs) after products are fetched.
 
+**Snapshot convention (entity sub-objects in responses):**
+
+- `QuotationOwner`, `QuotationCustomer`, `QuotationCompany`, and `QuotationAddress` are snapshots — point-in-time captures stored with the quotation.
+- Each snapshot extends `EntitySnapshot` (`shared/types/Api.ts`), which provides `_id: string`, `_type: string`, `_snapshotAt?: string | null` (leading underscores, matching the top-level entity shape).
+- `QuotationOwner` and `QuotationCustomer` use `firstName`/`lastName` (no combined `name` or `email`). Use `fullName(x.firstName, x.lastName)` for display.
+- To read IDs from snapshots: `company._id`, `owner._id`, `customer._id`, `billingAddress._id` (not `companyId`/`ownerId`/`customerId`/`addressId`).
+- `toQuotationAddress()` in `[id].vue` maps a company `Address` → `QuotationAddress`, setting `_type: 'geins.wholesale_account_address'`.
+
 **API shape differences:**
 
-- **`terms`**: Response returns `{ text: string }` (object), but CREATE and UPDATE expect a plain `string`. Map `quotation.terms?.text` to form, send string back.
 - **`validPaymentMethods`**: Response returns `{ paymentId: number, name: string }`, but requests expect `{ paymentId: string }` (string, no `name`).
 - **`prepareUpdateData` must NOT spread the entity** — `entityDataUpdate` contains response-only fields (`billingAddress`, `shippingAddress`, `total`, `company`, `owner`, `customer`, `communication`, `changelog`, etc.) that the PATCH endpoint does not accept. Only include fields from the swagger update schema: `name`, `validTo`, `companyId`, `ownerId`, `customerId`, `validPaymentMethods`, `validShippingMethods`, `suggestedShippingFee`, `terms`, `billingAddressId`, `shippingAddressId`, `items`.
 - **`quotationNumber`**: Read-only, auto-generated by the backend. Not accepted on the PATCH endpoint — render as a disabled input in the UI.

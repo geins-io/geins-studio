@@ -151,7 +151,7 @@ const handleCancel = () => {
                   :key="buyer._id"
                   :value="buyer._id"
                 >
-                  {{ buyer.firstName }} {{ buyer.lastName }}
+                  {{ fullName(buyer) }}
                 </SelectItem>
               </SelectContent>
             </Select>

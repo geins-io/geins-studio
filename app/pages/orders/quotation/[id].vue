@@ -377,7 +377,7 @@ const currentBuyerName = computed(() => {
   const buyerId = form.values.details?.buyerId;
   if (!buyerId) return '';
   const buyer = availableBuyers.value.find((b) => b._id === buyerId);
-  return buyer ? `${buyer.firstName} ${buyer.lastName}` : '';
+  return fullName(buyer);
 });
 
 // Available currencies based on company's channels
@@ -466,7 +466,7 @@ const {
   reshapeEntityData: (entityData) => ({
     ...entityData,
     items: undefined,
-    terms: entityData.terms?.text,
+    terms: entityData.terms,
     validPaymentMethods: entityData.validPaymentMethods?.map((pm) => ({
       paymentId: String(pm.paymentId),
     })),
@@ -498,23 +498,22 @@ const {
     communications.value = quotation.communication || [];
 
     // Set company info (selectedCompany is already fetched in onMounted for edit mode)
-    const companyId = quotation.company?.companyId?.toString() || '';
+    const companyId = quotation.company?._id || '';
     selectedCompanyId.value = companyId;
     selectedAccountName.value = quotation.company?.name || '';
 
     // Resolve owner and buyer IDs directly from API response
-    const ownerId = quotation.owner?.ownerId || '';
-    const buyerId = quotation.customer?.customerId || '';
+    const ownerId = quotation.owner?._id || '';
+    const buyerId = quotation.customer?._id || '';
 
     // Set address data from API response
-    selectedBillingAddressId.value = quotation.billingAddress?.addressId || '';
-    selectedShippingAddressId.value =
-      quotation.shippingAddress?.addressId || '';
+    selectedBillingAddressId.value = quotation.billingAddress?._id || '';
+    selectedShippingAddressId.value = quotation.shippingAddress?._id || '';
     billingAddress.value = quotation.billingAddress || null;
     shippingAddress.value = quotation.shippingAddress || null;
 
     // Resolve payment terms from validPaymentMethods
-    const paymentTerms = quotation.terms?.text || 'Net 30';
+    const paymentTerms = quotation.terms || 'Net 30';
 
     // Set expiration date toggle
     hasExpirationDate.value = !!quotation.validTo;
@@ -548,7 +547,7 @@ const {
         buyerId,
         currency: quotation.currency || 'SEK',
         expirationDate: quotation.validTo || '',
-        notes: quotation.terms?.text || '',
+        notes: quotation.terms || '',
         paymentTerms,
       },
     });
@@ -638,7 +637,7 @@ const fetchUsers = async () => {
   if (usersResult) {
     users.value = usersResult.map((user) => ({
       ...user,
-      name: user.firstName + ' ' + user.lastName,
+      name: fullName(user),
     }));
   }
 };
@@ -740,7 +739,8 @@ watch([selectedBillingAddressId, selectedShippingAddressId], () => {
 // =====================================================================================
 
 const toQuotationAddress = (address: Address): QuotationAddress => ({
-  addressId: address._id,
+  _id: address._id,
+  _type: 'geins.wholesale_account_address',
   email: address.email,
   phone: address.phone,
   company: address.company,
@@ -799,7 +799,7 @@ if (!createMode.value) {
     const quotation = handleFetchResult<Quotation>(error.value, data.value);
 
     // Fetch only the selected company (instead of all companies)
-    const companyId = quotation.company?.companyId?.toString() || '';
+    const companyId = quotation.company?._id || '';
     if (companyId) {
       const company = await customerApi.company.get(companyId, {
         fields: ['buyers', 'salesreps', 'addresses', 'pricelists'],
@@ -815,6 +815,16 @@ if (!createMode.value) {
 
     // Set the saved data snapshot after all async data has settled,
     // so the unsaved changes baseline matches the fully populated form
+    await nextTick();
+    setOriginalSavedData();
+  });
+
+  // Re-parse entity data when refreshed (e.g., after a status transition).
+  // refresh() from useAsyncData updates data.value reactively, but parseAndSaveData
+  // is only called explicitly in onMounted — so we watch data for subsequent changes.
+  watch(data, async (newData) => {
+    if (!newData) return;
+    await parseAndSaveData(newData, false);
     await nextTick();
     setOriginalSavedData();
   });
@@ -838,6 +848,31 @@ const handleSave = async () => {
     setOriginalSavedData();
   }
 };
+
+// =====================================================================================
+// SEND READINESS
+// =====================================================================================
+const sendBlockReasons = computed<string[]>(() => {
+  const reasons: string[] = [];
+  const details = form.values.details;
+  if (quotationItems.value.length === 0) {
+    reasons.push(t('orders.send_requires_products'));
+  }
+  if (!details?.accountId) {
+    reasons.push(t('orders.send_requires_customer'));
+  }
+  if (!details?.createdBy) {
+    reasons.push(t('orders.send_requires_owner'));
+  }
+  if (!details?.buyerId) {
+    reasons.push(t('orders.send_requires_buyer'));
+  }
+  return reasons;
+});
+
+const canSend = computed(
+  () => formValid.value && sendBlockReasons.value.length === 0,
+);
 
 // =====================================================================================
 // STATUS TRANSITION LOGIC
@@ -1080,7 +1115,7 @@ const companySummary = computed<DataItem[]>(() => {
   if (buyerObj) {
     dataList.push({
       label: t('buyer'),
-      value: `${buyerObj.firstName} ${buyerObj.lastName}`,
+      value: fullName(buyerObj),
     });
   }
   if (formValues?.currency) {
@@ -1228,13 +1263,26 @@ definePageMeta({
               >{{ $t('save_entity', { entityName: 'draft' }) }}</ButtonIcon
             >
             <ButtonGroup>
-              <ButtonIcon
-                variant="secondary"
-                icon="send"
-                :disabled="!formValid || loading"
-                @click="sendDialogOpen = true"
-                >{{ $t('send_entity', { entityName }) }}
-              </ButtonIcon>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <ButtonIcon
+                      variant="secondary"
+                      icon="send"
+                      :disabled="!canSend || loading"
+                      @click="sendDialogOpen = true"
+                      >{{ $t('send_entity', { entityName }) }}
+                    </ButtonIcon>
+                  </TooltipTrigger>
+                  <TooltipContent v-if="!canSend">
+                    <ul class="space-y-0.5 text-xs">
+                      <li v-for="reason in sendBlockReasons" :key="reason">
+                        {{ reason }}
+                      </li>
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                   <Button size="icon" variant="secondary">
@@ -1284,9 +1332,7 @@ definePageMeta({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <template
-                    v-if="statusActions.secondary.length"
-                  >
+                  <template v-if="statusActions.secondary.length">
                     <DropdownMenuItem
                       v-for="action in statusActions.secondary"
                       :key="action.action"
@@ -1467,7 +1513,7 @@ definePageMeta({
                                 :key="buyer._id"
                                 :value="buyer._id"
                               >
-                                {{ buyer.firstName }} {{ buyer.lastName }}
+                                {{ fullName(buyer) }}
                               </SelectItem>
                             </SelectContent>
                           </Select>
@@ -1571,7 +1617,11 @@ definePageMeta({
                         {{ $t('expiration_date') }}
                       </p>
                       <p class="text-sm">
-                        {{ entityData?.validTo ? formatDate(entityData.validTo) : '-' }}
+                        {{
+                          entityData?.validTo
+                            ? formatDate(entityData.validTo)
+                            : '-'
+                        }}
                       </p>
                     </div>
                   </div>
@@ -1581,7 +1631,11 @@ definePageMeta({
                         {{ $t('orders.valid_from') }}
                       </p>
                       <p class="text-sm">
-                        {{ entityData?.validFrom ? formatDate(entityData.validFrom) : '-' }}
+                        {{
+                          entityData?.validFrom
+                            ? formatDate(entityData.validFrom)
+                            : '-'
+                        }}
                       </p>
                     </div>
                     <div>
@@ -1589,7 +1643,11 @@ definePageMeta({
                         {{ $t('orders.modified_at') }}
                       </p>
                       <p class="text-sm">
-                        {{ entityData?.modifiedAt ? formatDate(entityData.modifiedAt) : '-' }}
+                        {{
+                          entityData?.modifiedAt
+                            ? formatDate(entityData.modifiedAt)
+                            : '-'
+                        }}
                       </p>
                     </div>
                   </div>

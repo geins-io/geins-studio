@@ -446,6 +446,10 @@
     "internal_messages": "Intern",
     "no_messages": "Inga meddelanden ännu",
     "valid_from": "Giltig från",
-    "modified_at": "Ändrad"
+    "modified_at": "Ändrad",
+    "send_requires_products": "Lägg till minst en produkt",
+    "send_requires_customer": "Välj ett företag",
+    "send_requires_owner": "Välj en ägare",
+    "send_requires_buyer": "Välj en köpare"
   }
 }

@@ -7,6 +7,7 @@ import type {
   BatchQueryFiltered,
   SelectorCondition,
   BatchQueryResult,
+  EntitySnapshot,
 } from './index';
 
 // =============================================================================
@@ -40,42 +41,38 @@ export type QuotationMessageType =
 // =============================================================================
 
 /**
- * Company (wholesale account) information
+ * Company (wholesale account) snapshot
  */
-export interface QuotationCompany {
-  companyId: number;
+export interface QuotationCompany extends EntitySnapshot {
   name: string;
   orgNr: string;
 }
 
 /**
- * Owner (sales rep) information
+ * Owner (sales rep) snapshot
  */
-export interface QuotationOwner {
-  ownerId?: string;
-  name: string;
-  email: string;
+export interface QuotationOwner extends EntitySnapshot {
+  firstName: string;
+  lastName: string;
   phone: string;
 }
 
 /**
- * Customer (buyer) information
+ * Customer (buyer) snapshot
  */
-export interface QuotationCustomer {
-  customerId?: string;
-  name: string;
-  email: string;
+export interface QuotationCustomer extends EntitySnapshot {
+  firstName: string;
+  lastName: string;
   phone: string;
-  approvedAt?: string;
-  rejectedAt?: string;
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
 }
 
 /**
- * Address information (response) — matches the backend quotationAddress schema.
+ * Address snapshot — matches the backend quotationAddress schema.
  * Fields align with the company Address type (addressLine1, firstName, etc.).
  */
-export interface QuotationAddress {
-  addressId: string;
+export interface QuotationAddress extends EntitySnapshot {
   email?: string;
   phone?: string;
   company?: string;
@@ -106,13 +103,6 @@ export interface QuotationValidShippingMethod {
   shippingId: number;
   name: string;
   shippingFee: number;
-}
-
-/**
- * Quotation terms (response)
- */
-export interface QuotationTerms {
-  text: string;
 }
 
 /**
@@ -232,7 +222,6 @@ export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
  * Response type from API
  */
 export interface Quotation extends ResponseEntity<QuotationBase> {
-  quotationId: string;
   quotationNumber: string;
   currency: string;
   status: QuotationStatus;
@@ -245,7 +234,7 @@ export interface Quotation extends ResponseEntity<QuotationBase> {
   customer?: QuotationCustomer;
   validPaymentMethods?: QuotationValidPaymentMethod[];
   validShippingMethods?: QuotationValidShippingMethod[];
-  terms?: QuotationTerms;
+  terms?: string;
   communication?: QuotationMessage[];
   changelog?: QuotationChangelog[];
   items?: QuotationItem[];

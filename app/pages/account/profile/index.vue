@@ -61,7 +61,7 @@ const entityBase: UserProfileCreate = {
 };
 
 const userFullName = computed(() =>
-  `${entityData.value.firstName || ''} ${entityData.value.lastName || ''}`.trim(),
+  fullName(entityData.value),
 );
 
 const entityPageTitle = computed(() =>

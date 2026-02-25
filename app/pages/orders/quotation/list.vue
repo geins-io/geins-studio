@@ -45,7 +45,7 @@ const mapToListData = (list: Entity[]): EntityList[] => {
     const { items, ...rest } = item;
     return {
       ...rest,
-      buyer: item.customer?.name || '',
+      buyer: fullName(item.customer),
       company: item.company?.name || '',
       products: t('nr_of_entity', {
         entityName: 'product',
@@ -59,7 +59,7 @@ const mapToListData = (list: Entity[]): EntityList[] => {
       dateModified: item.modifiedAt || '',
       expirationDate: item.validTo || '',
       dateSent: item.validFrom || '',
-      owner: item.owner?.name || '',
+      owner: fullName(item.owner),
       market: getMarketNameById(item.marketId) || '',
       channel: getChannelNameById(item.channelId) || '',
     };

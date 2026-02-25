@@ -446,6 +446,10 @@
     "internal_messages": "Internal",
     "no_messages": "No messages yet",
     "valid_from": "Valid from",
-    "modified_at": "Modified"
+    "modified_at": "Modified",
+    "send_requires_products": "Add at least one product",
+    "send_requires_customer": "Select a company",
+    "send_requires_owner": "Select an owner",
+    "send_requires_buyer": "Select a buyer"
   }
 }

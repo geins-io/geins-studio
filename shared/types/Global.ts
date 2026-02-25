@@ -33,6 +33,14 @@ export interface EntityBase {
   _type: string;
 }
 
+/**
+ * Shared base for snapshot sub-objects stored with an entity.
+ * Extends EntityBase with a timestamp for when the snapshot was captured.
+ */
+export interface EntitySnapshot extends EntityBase {
+  _snapshotAt?: string | null;
+}
+
 export interface EntityBaseWithName extends Omit<EntityBase, '_type'> {
   name: string;
   displayName?: string;
