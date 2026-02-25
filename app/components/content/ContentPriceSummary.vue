@@ -22,22 +22,14 @@ const formatPrice = (value: number) => {
 };
 
 const rows = computed(() => {
-  const items = [
+  return [
     { label: t('orders.subtotal'), value: props.total.subtotal },
     { label: t('orders.discount'), value: props.total.discount, negate: true },
     { label: t('orders.shipping'), value: props.total.shipping },
-    { label: t('orders.tax'), value: props.total.tax },
+    { label: t('orders.grand_total_ex_vat'), value: props.total.grandTotalExVat },
+    { label: t('orders.vat'), value: props.total.vat },
+    { label: t('orders.grand_total_inc_vat'), value: props.total.grandTotalIncVat },
   ];
-
-  if (props.total.grandTotal !== undefined) {
-    items.push({
-      label: t('orders.grand_total'),
-      value: props.total.grandTotal,
-      negate: false,
-    });
-  }
-
-  return items;
 });
 </script>
 <template>
@@ -49,9 +41,7 @@ const rows = computed(() => {
         :class="
           cn(
             'flex items-center justify-between gap-2 text-right text-xs sm:text-sm',
-            index === rows.length - 1 && total.grandTotal !== undefined
-              ? 'font-semibold'
-              : '',
+            index === rows.length - 1 ? 'font-semibold' : '',
           )
         "
       >

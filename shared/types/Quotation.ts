@@ -45,7 +45,7 @@ export type QuotationMessageType =
  */
 export interface QuotationCompany extends EntitySnapshot {
   name: string;
-  orgNr: string;
+  vatNumber: string;
 }
 
 /**
@@ -132,8 +132,9 @@ export interface QuotationTotal {
   discount: number;
   shipping: number;
   margin: number;
-  tax: number;
-  grandTotal?: number;
+  vat: number;
+  grandTotalExVat: number;
+  grandTotalIncVat: number;
 }
 
 // =============================================================================
@@ -304,7 +305,7 @@ export interface QuotationItemBase {
 export interface QuotationItemCreate {
   skuId: string;
   quantity: number;
-  customPrice?: number;
+  unitPrice?: number;
 }
 
 export type QuotationItemUpdate = UpdateEntity<QuotationItemBase>;

@@ -214,8 +214,8 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 
 **Items:**
 
-- `QuotationUpdate.items` accepts `QuotationItemCreate[]` (same shape as create: `{ skuId, quantity, customPrice? }`).
-- The Products tab uses a `Map<string, SkuItemData>` to track per-SKU quantity, custom price, and response prices (`ordPrice`, `listPrice`), separate from the selector selection state.
+- `QuotationUpdate.items` accepts `QuotationItemCreate[]` (same shape as create: `{ skuId, quantity, unitPrice? }`).
+- The Products tab uses a `Map<string, SkuItemData>` to track per-SKU quantity, unit price, and response prices (`ordPrice`, `listPrice`), separate from the selector selection state.
 - `QuotationProductRow` is the table display type that maps `selectedSkus` + `skuItemData` into flat rows with columns: Product, SKU ID, Quantity, Price, Price list price, Quotation price.
 - Price fields in the row type use `{ price: string, currency: string }` objects (matching the `'currency'`/`'editable-currency'` column types). The currency value comes from `form.values.details.currency`.
 - In edit mode, prices are populated from `QuotationItemBase` response fields (`ordPrice`, `listPrice`, `unitPrice`). In create mode, prices are empty strings (displayed as `---` by `TableCellCurrency`).

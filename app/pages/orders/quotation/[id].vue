@@ -161,7 +161,7 @@ const selectedSkus = computed(() => {
 // Quotation items data (quantity, custom price & response prices per SKU)
 interface SkuItemData {
   quantity: number;
-  customPrice: number | undefined;
+  unitPrice: number | undefined;
   ordPrice: number;
   listPrice: number;
 }
@@ -170,7 +170,7 @@ const skuItemData = ref<Map<string, SkuItemData>>(new Map());
 
 const defaultSkuItemData: SkuItemData = {
   quantity: 1,
-  customPrice: undefined,
+  unitPrice: undefined,
   ordPrice: 0,
   listPrice: 0,
 };
@@ -224,8 +224,8 @@ const quotationProductRows = computed<QuotationProductRow[]>(() => {
       },
       quotationPrice: {
         price:
-          data.customPrice !== undefined
-            ? String(data.customPrice)
+          data.unitPrice !== undefined
+            ? String(data.unitPrice)
             : data.listPrice
               ? String(data.listPrice)
               : '',
@@ -244,8 +244,8 @@ const quotationItems = computed<QuotationItemCreate[]>(() =>
     return {
       skuId: sku._id,
       quantity: data.quantity,
-      ...(data.customPrice !== undefined && data.customPrice !== data.listPrice
-        ? { customPrice: data.customPrice }
+      ...(data.unitPrice !== undefined && data.unitPrice !== data.listPrice
+        ? { unitPrice: data.unitPrice }
         : {}),
     };
   }),
@@ -269,7 +269,7 @@ const handleQuotationPriceChange = (
   const data = ensureSkuItemData(id);
   const num = Number(value);
   // Reset to undefined if value is empty, invalid, or matches the list price
-  data.customPrice =
+  data.unitPrice =
     value === '' || isNaN(num) || num === data.listPrice ? undefined : num;
   skuItemData.value = new Map(skuItemData.value);
 };
@@ -522,7 +522,7 @@ const {
         const skuId = item.sku || item._id;
         newItemData.set(skuId, {
           quantity: item.quantity || 1,
-          customPrice:
+          unitPrice:
             item.unitPrice !== item.ordPrice ? item.unitPrice : undefined,
           ordPrice: item.ordPrice || 0,
           listPrice: item.listPrice || 0,
