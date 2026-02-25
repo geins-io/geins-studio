@@ -876,11 +876,6 @@ const canSend = computed(
 // =====================================================================================
 // STATUS TRANSITION LOGIC
 // =====================================================================================
-const isTerminalStatus = computed(() =>
-  ['rejected', 'expired', 'canceled', 'finalized'].includes(
-    entityData.value?.status || '',
-  ),
-);
 
 interface StatusAction {
   action: string;
@@ -1374,13 +1369,6 @@ definePageMeta({
                     <LucideCopy class="mr-2 size-4" />
                     <span>{{ $t('orders.copy_as_new_draft') }}</span>
                   </DropdownMenuItem>
-                  <template v-if="isTerminalStatus">
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem @click="openDeleteDialog">
-                      <LucideTrash class="mr-2 size-4" />
-                      <span>{{ $t('delete_entity', { entityName }) }}</span>
-                    </DropdownMenuItem>
-                  </template>
                 </DropdownMenuContent>
               </DropdownMenu>
             </ButtonGroup>

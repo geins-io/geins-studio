@@ -122,6 +122,8 @@ onMounted(() => {
       onEdit: (item: EntityList) =>
         navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
       onDelete: async (item: EntityList) => await openDeleteDialog(item._id),
+      disabledActions: (item: EntityList) =>
+        item.status !== 'draft' ? (['delete'] as TableRowAction[]) : [],
     },
     'actions',
     ['edit', 'delete'],
