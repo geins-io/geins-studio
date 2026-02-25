@@ -585,6 +585,9 @@ const {
           quotationItems.value.length > 0 ? quotationItems.value : undefined,
       };
     } else {
+      // In sent mode, form fields are unmounted and VeeValidate clears their values.
+      // Skip the update to preserve entityDataUpdate from reshapeEntityData.
+      if (sentMode.value) return;
       entityDataUpdate.value = {
         ...entityData.value,
         name: values.details.name,
@@ -1143,9 +1146,14 @@ const summary = computed<DataItem[]>(() => {
   if (!entityData.value) return dataList;
 
   const formValues = form.values.details;
+  // In sent mode, VeeValidate clears form values when fields unmount.
+  // Use entityData (from reshapeEntityData) as the primary source to stay correct in all modes.
+  const summaryName = entityData.value?.name || formValues?.name;
+  const summaryExpirationDate = entityData.value?.validTo || formValues?.expirationDate;
+  const summaryPaymentTerms = entityData.value?.terms || formValues?.paymentTerms;
 
-  if (formValues?.name) {
-    dataList.push({ label: t('name'), value: formValues.name });
+  if (summaryName) {
+    dataList.push({ label: t('name'), value: summaryName });
   }
   if (!createMode.value) {
     dataList.push({
@@ -1157,16 +1165,16 @@ const summary = computed<DataItem[]>(() => {
   if (createMode.value && companySummary.value.length) {
     dataList.push(...companySummary.value);
   }
-  if (formValues?.expirationDate) {
+  if (summaryExpirationDate) {
     dataList.push({
       label: t('expiration_date'),
-      value: formatDate(formValues.expirationDate),
+      value: formatDate(summaryExpirationDate),
     });
   }
-  if (!createMode.value && formValues?.paymentTerms) {
+  if (!createMode.value && summaryPaymentTerms) {
     dataList.push({
       label: t('orders.payment_terms'),
-      value: formValues.paymentTerms,
+      value: summaryPaymentTerms,
     });
   }
 
@@ -1735,7 +1743,7 @@ definePageMeta({
                       {{ $t('currency') }}
                     </p>
                     <p class="text-sm">
-                      {{ form.values.details?.currency || '-' }}
+                      {{ entityData?.currency || '-' }}
                     </p>
                   </div>
                 </div>
@@ -1751,7 +1759,7 @@ definePageMeta({
                     {{ $t('orders.payment_terms') }}
                   </p>
                   <p class="text-sm">
-                    {{ form.values.details?.paymentTerms || '-' }}
+                    {{ entityData?.terms || '-' }}
                   </p>
                 </div>
               </ContentEditCard>
