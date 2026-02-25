@@ -22,7 +22,6 @@ const copyValue = () => {
 </script>
 <template>
   <button
-    v-auto-animate
     class="flex items-center gap-1 rounded-lg border px-1.5 py-0.5 shadow-xs transition-all hover:shadow-sm"
     type="button"
     @click="copyValue"
@@ -30,12 +29,17 @@ const copyValue = () => {
     @mouseleave="hovered = false"
   >
     <slot />
-    <LucideCopy
-      v-if="!copied"
-      :class="
-        cn('size-3 transition-colors', `${hovered ? 'text-positive' : ''}`)
-      "
-    />
-    <LucideCopyCheck v-else class="text-positive size-3" />
+    <span class="relative size-3">
+      <LucideCopy
+        :class="
+          cn('absolute inset-0 size-3 transition-all', hovered && !copied ? 'text-positive' : '', copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100')
+        "
+      />
+      <LucideCopyCheck
+        :class="
+          cn('absolute inset-0 size-3 text-positive transition-all', copied ? 'opacity-100 scale-100' : 'opacity-0 scale-75')
+        "
+      />
+    </span>
   </button>
 </template>
