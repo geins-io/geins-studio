@@ -38,9 +38,9 @@ watch(open, (isOpen) => {
         </AlertDialogDescription>
       </AlertDialogHeader>
       <div class="space-y-2">
-        <label class="text-sm font-medium">
+        <Label>
           {{ $t('orders.message_to_customer') }}
-        </label>
+        </Label>
         <Textarea
           v-model="message"
           :placeholder="$t('orders.message_to_customer_placeholder')"
@@ -51,12 +51,13 @@ watch(open, (isOpen) => {
         <AlertDialogCancel @click="$emit('cancel')">{{
           $t('cancel')
         }}</AlertDialogCancel>
-        <Button
+        <ButtonIcon
+          icon="send"
           :loading="props.loading"
           @click.prevent.stop="handleConfirm"
         >
           {{ $t('send_entity', { entityName: props.entityName }) }}
-        </Button>
+        </ButtonIcon>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>

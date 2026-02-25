@@ -450,7 +450,7 @@
     "external_messages": "Extern",
     "internal_messages": "Intern",
     "no_messages": "Inga meddelanden ännu",
-    "valid_from": "Giltig från",
+    "sent_on": "Skickad den",
     "modified_at": "Ändrad",
     "send_requires_products": "Lägg till minst en produkt",
     "send_requires_customer": "Välj ett företag",

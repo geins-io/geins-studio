@@ -1145,8 +1145,10 @@ const summary = computed<DataItem[]>(() => {
   // In sent mode, VeeValidate clears form values when fields unmount.
   // Use entityData (from reshapeEntityData) as the primary source to stay correct in all modes.
   const summaryName = entityData.value?.name || formValues?.name;
-  const summaryExpirationDate = entityData.value?.validTo || formValues?.expirationDate;
-  const summaryPaymentTerms = entityData.value?.terms || formValues?.paymentTerms;
+  const summaryExpirationDate =
+    entityData.value?.validTo || formValues?.expirationDate;
+  const summaryPaymentTerms =
+    entityData.value?.terms || formValues?.paymentTerms;
 
   if (summaryName) {
     dataList.push({ label: t('name'), value: summaryName });
@@ -1638,7 +1640,7 @@ definePageMeta({
                   <div class="grid grid-cols-2 gap-4 border-t pt-4">
                     <div>
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('orders.valid_from') }}
+                        {{ $t('orders.sent_on') }}
                       </p>
                       <p class="text-sm">
                         {{

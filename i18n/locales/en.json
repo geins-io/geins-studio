@@ -450,7 +450,7 @@
     "external_messages": "External",
     "internal_messages": "Internal",
     "no_messages": "No messages yet",
-    "valid_from": "Valid from",
+    "sent_on": "Sent on",
     "modified_at": "Modified",
     "send_requires_products": "Add at least one product",
     "send_requires_customer": "Select a company",
