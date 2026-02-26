@@ -51,15 +51,15 @@ const mapToListData = (list: Entity[]): EntityList[] => {
         entityName: 'product',
         count: items?.length ?? 0,
       }),
+      owner: fullName(item.owner),
       sum: {
         price: item.total.subtotal.toString(),
         currency: item.currency,
       },
-      dateCreated: item.createdAt || '',
       dateModified: item.modifiedAt || '',
-      expirationDate: item.validTo || '',
       dateSent: item.validFrom || '',
-      owner: fullName(item.owner),
+      expirationDate: item.validTo || '',
+      dateCreated: item.createdAt || '',
       market: getMarketNameById(item.marketId) || '',
       channel: getChannelNameById(item.channelId) || '',
     };
@@ -72,7 +72,8 @@ const { data, error, refresh } = await useAsyncData<QuotationBatchQueryResult>(
   () => orderApi.quotation.list(),
 );
 
-const { getColumns, addActionsColumn } = useColumns<EntityList>();
+const { getColumns, addActionsColumn, setColumnOrder } =
+  useColumns<EntityList>();
 
 onMounted(() => {
   watch(
@@ -93,7 +94,6 @@ onMounted(() => {
     },
     columnTypes: {
       name: 'link',
-      status: 'status',
       sum: 'currency',
     },
     linkColumns: {
@@ -115,6 +115,7 @@ onMounted(() => {
   };
   // GET AND SET COLUMNS
   columns.value = getColumns(dataList.value, columnOptions);
+  columns.value = setColumnOrder(columns.value, 'status', 10);
 
   addActionsColumn(
     columns.value,
@@ -124,8 +125,13 @@ onMounted(() => {
       onCopy: async (item: EntityList) => {
         try {
           const newDraft = await orderApi.quotation.copy(item._id);
-          toast({ title: t('entity_copied', { entityName }), variant: 'positive' });
-          await navigateTo(entityUrl.replace(entityIdentifier, String(newDraft._id)));
+          toast({
+            title: t('entity_copied', { entityName }),
+            variant: 'positive',
+          });
+          await navigateTo(
+            entityUrl.replace(entityIdentifier, String(newDraft._id)),
+          );
         } catch (err) {
           geinsLogError('copyQuotation :::', getErrorMessage(err));
           showErrorToast(t('error_copying_entity', { entityName }));

@@ -46,6 +46,11 @@ interface UseColumnsReturnType<T> {
     columns: ColumnDef<T>[],
     key: ColumnKey<T>,
   ) => ColumnDef<T>[];
+  setColumnOrder: (
+    columns: ColumnDef<T>[],
+    key: ColumnKey<T>,
+    order: number,
+  ) => ColumnDef<T>[];
 }
 
 /**
@@ -761,6 +766,20 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
     return newColumns;
   };
 
+  const setColumnOrder = (
+    columns: ColumnDef<T>[],
+    key: ColumnKey<T>,
+    order: number,
+  ): ColumnDef<T>[] => {
+    const idx = columns.findIndex((col) => col.id === key);
+    if (idx === -1) return columns;
+    const col = columns[idx];
+    if (!col) return columns;
+    const filtered = columns.filter((c, i) => i !== idx);
+    filtered.splice(order, 0, col);
+    return filtered;
+  };
+
   const addExpandingColumn = (columns: ColumnDef<T>[]): ColumnDef<T>[] => {
     // Add expander column at the beginning
     columns.unshift(expandingColumn);
@@ -773,8 +792,9 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
     getColumns,
     extendColumns,
     addActionsColumn,
-    addExpandingColumn,
     orderAndFilterColumns,
     orderColumnLast,
+    setColumnOrder,
+    addExpandingColumn,
   };
 };
