@@ -1,3 +1,23 @@
+<!--
+SKILLS INDEX (agent runbooks)
+
+This file (CLAUDE.md) is the canonical reference for how we work + how this codebase works.
+For step-by-step, task-focused runbooks, use the files in /skills.
+When adding or changing a workflow, update CLAUDE.md first, then update/create the relevant skill.
+-->
+
+## Skills index
+
+- Skills overview: `skills/README.md`
+- Start dev & fast checks: `skills/dev-loop.md` (see also “Geins Studio - Commands”)
+- CI preflight (run before PR): `skills/ci-preflight.md` (see also “Geins Studio - Commands”)
+- Add a new entity (end-to-end): `skills/add-new-entity.md` (see also “Page Patterns - Adding a New Entity Checklist”)
+- Entity edit page: required edit-mode loading: `skills/entity-edit-page-edit-mode-loading.md` (see also “Entity Edit Page - Edit Mode Data Loading required boilerplate”)
+- i18n updates: `skills/i18n-update.md` (see also i18n rules in “Stack” / “Project Structure”)
+- Add/extend API repository: `skills/api-repository-add-or-extend.md` (see also “API Repositories”)
+- UI component conventions: `skills/ui-component-conventions.md` (see also “Component UI Patterns - Component Conventions”)
+- Table patterns: `skills/table-patterns.md` (see also “Component UI Patterns - Table Patterns”)
+
 ## Workflow Rules
 
 These MUST be followed for every task. Rules are grouped by when they apply.
