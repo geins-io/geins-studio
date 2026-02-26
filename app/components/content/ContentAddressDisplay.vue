@@ -13,8 +13,8 @@ const { getCountryNameById } = useAccountStore();
 <template>
   <div class="text-xs">
     <template v-if="loading">
-      <Skeleton class="mb-1 h-4 w-24" />
-      <Skeleton class="mb-1 h-4 w-32" />
+      <Skeleton class="mb-0.5 h-4 w-24" />
+      <Skeleton class="mb-0.5 h-4 w-32" />
       <Skeleton class="h-4 w-16" />
     </template>
     <template v-else-if="!address">
