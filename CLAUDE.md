@@ -1,12 +1,10 @@
 <!--
-SKILLS INDEX (agent runbooks)
-
 This file (CLAUDE.md) is the canonical reference for how we work + how this codebase works.
 For step-by-step, task-focused runbooks, use the files in /skills.
 When adding or changing a workflow, update CLAUDE.md first, then update/create the relevant skill.
 -->
 
-## Skills index
+## Skills Index
 
 - Skills overview: `skills/README.md`
 - Start dev & fast checks: `skills/dev-loop.md` (see also “Geins Studio - Commands”)
@@ -17,6 +15,17 @@ When adding or changing a workflow, update CLAUDE.md first, then update/create t
 - Add/extend API repository: `skills/api-repository-add-or-extend.md` (see also “API Repositories”)
 - UI component conventions: `skills/ui-component-conventions.md` (see also “Component UI Patterns - Component Conventions”)
 - Table patterns: `skills/table-patterns.md` (see also “Component UI Patterns - Table Patterns”)
+
+## Token Efficiency Rules
+
+- Minimize token usage in all responses and tool calls.
+- Prefer referencing existing docs/code (file path + section/heading) over repeating content.
+- Only quote code/file content when necessary; quote the smallest snippet that supports the decision.
+- Read narrowly first: search for keywords and open only the specific files/sections needed.
+- Keep outputs diff-shaped: list intended changes + exact file paths; avoid pasting unchanged code.
+- Batch work: propose a short plan, then execute related edits together (avoid back-and-forth refactors).
+- If the request is ambiguous (scope, acceptance criteria, target files, expected behavior), ask clarifying questions before doing large reads or broad changes.
+- If a task would require broad context, ask for approval before pulling lots of files/logs.
 
 ## Workflow Rules
 
