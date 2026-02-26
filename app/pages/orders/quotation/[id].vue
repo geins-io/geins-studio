@@ -782,7 +782,11 @@ const handleCustomerPanelSave = (data: {
 // =====================================================================================
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
+const fetchingData = ref(false);
+
 if (!createMode.value) {
+  fetchingData.value = true;
+
   const { data, error, refresh } = await useAsyncData<Quotation>(
     entityFetchKey.value,
     () => orderApi.quotation.get(entityId.value, { fields: ['all'] }),
@@ -807,6 +811,7 @@ if (!createMode.value) {
     }
 
     await parseAndSaveData(quotation, false);
+    fetchingData.value = false;
 
     // Fetch products for SKU selector (must await so skuSelection is
     // populated before we take the unsaved-changes baseline snapshot)
@@ -1675,7 +1680,10 @@ definePageMeta({
                         {{ $t('company') }}
                       </p>
                       <p class="text-sm">
-                        {{ selectedCompany?.name || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ selectedCompany?.name || '-' }}
+                        </template>
                       </p>
                     </div>
                     <div>
@@ -1683,7 +1691,10 @@ definePageMeta({
                         {{ $t('customers.vat_number') }}
                       </p>
                       <p class="text-sm">
-                        {{ selectedCompany?.vatNumber || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ selectedCompany?.vatNumber || '-' }}
+                        </template>
                       </p>
                     </div>
                   </div>
@@ -1693,22 +1704,20 @@ definePageMeta({
                         {{ $t('billing_address') }}
                       </p>
                       <ContentAddressDisplay
-                        v-if="billingAddress"
+                        :loading="fetchingData"
                         :address="billingAddress"
                         address-only
                       />
-                      <p v-else class="text-xs">-</p>
                     </div>
                     <div>
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
                         {{ $t('shipping_address') }}
                       </p>
                       <ContentAddressDisplay
-                        v-if="shippingAddress"
+                        :loading="fetchingData"
                         :address="shippingAddress"
                         address-only
                       />
-                      <p v-else class="text-xs">-</p>
                     </div>
                   </div>
                   <div class="grid grid-cols-2 gap-4 border-t pt-4">
@@ -1717,7 +1726,10 @@ definePageMeta({
                         {{ $t('buyer') }}
                       </p>
                       <p class="text-sm">
-                        {{ currentBuyerName || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ currentBuyerName || '-' }}
+                        </template>
                       </p>
                     </div>
                     <div>
@@ -1725,7 +1737,10 @@ definePageMeta({
                         {{ $t('orders.quotation_owner') }}
                       </p>
                       <p class="text-sm">
-                        {{ currentOwnerName || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ currentOwnerName || '-' }}
+                        </template>
                       </p>
                     </div>
                   </div>
@@ -1734,7 +1749,10 @@ definePageMeta({
                       {{ $t('currency') }}
                     </p>
                     <p class="text-sm">
-                      {{ entityData?.currency || '-' }}
+                      <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                      <template v-else>
+                        {{ entityData?.currency || '-' }}
+                      </template>
                     </p>
                   </div>
                 </div>
@@ -1750,7 +1768,10 @@ definePageMeta({
                     {{ $t('orders.payment_terms') }}
                   </p>
                   <p class="text-sm">
-                    {{ entityData?.terms || '-' }}
+                    <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                    <template v-else>
+                      {{ entityData?.terms || '-' }}
+                    </template>
                   </p>
                 </div>
               </ContentEditCard>
@@ -1886,7 +1907,10 @@ definePageMeta({
                         {{ $t('company') }}
                       </p>
                       <p class="text-sm">
-                        {{ selectedCompany?.name || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ selectedCompany?.name || '-' }}
+                        </template>
                       </p>
                     </div>
                     <div>
@@ -1894,7 +1918,10 @@ definePageMeta({
                         {{ $t('customers.vat_number') }}
                       </p>
                       <p class="text-sm">
-                        {{ selectedCompany?.vatNumber || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ selectedCompany?.vatNumber || '-' }}
+                        </template>
                       </p>
                     </div>
                   </div>
@@ -1906,11 +1933,10 @@ definePageMeta({
                         {{ $t('billing_address') }}
                       </p>
                       <ContentAddressDisplay
-                        v-if="billingAddress"
+                        :loading="fetchingData"
                         :address="billingAddress"
                         address-only
                       />
-                      <p v-else class="text-xs">-</p>
                     </div>
 
                     <div>
@@ -1918,11 +1944,10 @@ definePageMeta({
                         {{ $t('shipping_address') }}
                       </p>
                       <ContentAddressDisplay
-                        v-if="shippingAddress"
+                        :loading="fetchingData"
                         :address="shippingAddress"
                         address-only
                       />
-                      <p v-else class="text-xs">-</p>
                     </div>
                   </div>
 
@@ -1933,7 +1958,10 @@ definePageMeta({
                         {{ $t('buyer') }}
                       </p>
                       <p class="text-sm">
-                        {{ currentBuyerName || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ currentBuyerName || '-' }}
+                        </template>
                       </p>
                     </div>
                     <div>
@@ -1941,7 +1969,10 @@ definePageMeta({
                         {{ $t('orders.quotation_owner') }}
                       </p>
                       <p class="text-sm">
-                        {{ currentOwnerName || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ currentOwnerName || '-' }}
+                        </template>
                       </p>
                     </div>
                   </div>
@@ -1952,7 +1983,10 @@ definePageMeta({
                       {{ $t('currency') }}
                     </p>
                     <p class="text-sm">
-                      {{ form.values.details?.currency || '-' }}
+                      <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                      <template v-else>
+                        {{ form.values.details?.currency || '-' }}
+                      </template>
                     </p>
                   </div>
                 </div>
