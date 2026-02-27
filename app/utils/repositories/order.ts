@@ -8,6 +8,8 @@ import type {
   QuotationBatchQuery,
   QuotationBatchQueryResult,
   QuotationApiOptions,
+  QuotationPreviewRequest,
+  QuotationPreviewResponse,
   StatusTransitionRequest,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
@@ -143,6 +145,18 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return await fetch<Quotation>(`${QUOTATION_ENDPOINT}/${id}/copy`, {
           method: 'POST',
         });
+      },
+      async preview(
+        id: string,
+        data: QuotationPreviewRequest,
+      ): Promise<QuotationPreviewResponse> {
+        return await fetch<QuotationPreviewResponse>(
+          `${QUOTATION_ENDPOINT}/${id}/preview`,
+          {
+            method: 'POST',
+            body: data,
+          },
+        );
       },
     },
   };

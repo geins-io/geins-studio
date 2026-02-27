@@ -138,6 +138,51 @@ export interface QuotationTotal {
 }
 
 // =============================================================================
+// Preview Types
+// =============================================================================
+
+/**
+ * Discount configuration for a quotation (used in create, update, and preview requests).
+ */
+export interface QuotationDiscountRequest {
+  type: 'fixedAmount' | 'percent';
+  value: number;
+}
+
+/**
+ * Request body for the preview endpoint — calculates totals without persisting.
+ */
+export interface QuotationPreviewRequest {
+  companyId?: string | null;
+  buyerId?: string | null;
+  suggestedShippingFee?: number | null;
+  discount?: QuotationDiscountRequest | null;
+  items?: QuotationItemCreate[] | null;
+}
+
+/**
+ * Totals returned by the preview endpoint.
+ * Uses suggestedShippingFee (not shipping) and omits margin.
+ */
+export interface QuotationPreviewTotal {
+  subtotal: number;
+  discount: number;
+  suggestedShippingFee: number;
+  grandTotalExVat: number;
+  vat: number;
+  grandTotalIncVat: number;
+}
+
+/**
+ * Response from the preview endpoint.
+ * Items are enriched with calculated ordPrice, listPrice, and unitPrice.
+ */
+export interface QuotationPreviewResponse {
+  items?: QuotationItem[];
+  total: QuotationPreviewTotal;
+}
+
+// =============================================================================
 // Status Transition Request
 // =============================================================================
 
@@ -203,6 +248,7 @@ export interface QuotationCreate extends CreateEntity<QuotationBase> {
   validPaymentMethods?: QuotationValidPaymentMethodRequest[];
   validShippingMethods?: QuotationValidShippingMethodRequest[];
   items?: QuotationItemCreate[];
+  discount?: QuotationDiscountRequest | null;
 }
 
 /**
@@ -217,6 +263,7 @@ export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
   validPaymentMethods?: QuotationValidPaymentMethodRequest[];
   validShippingMethods?: QuotationValidShippingMethodRequest[];
   items?: QuotationItemCreate[];
+  discount?: QuotationDiscountRequest | null;
 }
 
 /**
@@ -239,6 +286,7 @@ export interface Quotation extends ResponseEntity<QuotationBase> {
   communication?: QuotationMessage[];
   changelog?: QuotationChangelog[];
   items?: QuotationItem[];
+  discount?: QuotationDiscountRequest;
 }
 
 /**

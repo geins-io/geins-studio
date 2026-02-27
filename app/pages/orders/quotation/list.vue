@@ -111,6 +111,7 @@ onMounted(() => {
       'channelId',
       'createdAt',
       'modifiedAt',
+      'discount',
     ],
   };
   // GET AND SET COLUMNS

@@ -456,6 +456,9 @@
     "send_requires_products": "Lägg till minst en produkt",
     "send_requires_customer": "Välj ett företag",
     "send_requires_owner": "Välj en ägare",
-    "send_requires_buyer": "Välj en köpare"
+    "send_requires_buyer": "Välj en köpare",
+    "discount_type_percent": "Procent (%)",
+    "discount_type_fixed": "Fast belopp",
+    "calculating": "Beräknar…"
   }
 }

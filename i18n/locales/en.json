@@ -456,6 +456,9 @@
     "send_requires_products": "Add at least one product",
     "send_requires_customer": "Select a company",
     "send_requires_owner": "Select an owner",
-    "send_requires_buyer": "Select a buyer"
+    "send_requires_buyer": "Select a buyer",
+    "discount_type_percent": "Percent (%)",
+    "discount_type_fixed": "Fixed amount",
+    "calculating": "Calculating…"
   }
 }
