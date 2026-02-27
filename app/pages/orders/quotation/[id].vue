@@ -3,6 +3,7 @@
 // IMPORTS & TYPES
 // =====================================================================================
 import { toTypedSchema } from '@vee-validate/zod';
+import { useDebounceFn } from '@vueuse/core';
 import * as z from 'zod';
 import {
   DataItemDisplayType,
@@ -20,6 +21,8 @@ import type {
   QuotationItemCreate,
   QuotationProductRow,
   QuotationTotal,
+  QuotationPreviewTotal,
+  QuotationDiscountRequest,
   QuotationMessage,
   QuotationMessageType,
   QuotationStatus,
@@ -93,6 +96,15 @@ const entityBase: QuotationCreate = {
 const sentMode = ref(false);
 const communications = ref<QuotationMessage[]>([]);
 
+// Discount & shipping (standalone refs, not form fields)
+const discountType = ref<'percent' | 'fixedAmount'>('percent');
+const discountValue = ref<string>('');
+const shippingFeeInput = ref<string>('');
+
+// Live preview state
+const previewTotal = ref<QuotationPreviewTotal | null>(null);
+const previewLoading = ref(false);
+
 // Tabs & Steps
 const tabs = computed(() =>
   sentMode.value
@@ -114,6 +126,19 @@ const selectedCompany = ref<CustomerCompany | undefined>();
 
 // Edit mode state
 const quotationTotal = ref<QuotationTotal | null>(null);
+
+// Computed: prefer live preview total, fall back to saved total
+const displayTotal = computed<QuotationTotal | QuotationPreviewTotal | null>(
+  () => previewTotal.value ?? quotationTotal.value,
+);
+
+// Computed: build discount request from standalone refs
+const discountRequest = computed<QuotationDiscountRequest | null>(() => {
+  const val = Number(discountValue.value);
+  if (!val || isNaN(val)) return null;
+  return { type: discountType.value, value: val };
+});
+
 const hasExpirationDate = ref(false);
 const selectedBillingAddressId = ref<string>('');
 const selectedShippingAddressId = ref<string>('');
@@ -259,6 +284,7 @@ const handleQuantityChange = (
   const data = ensureSkuItemData(id);
   data.quantity = Math.max(1, Number(value) || 1);
   skuItemData.value = new Map(skuItemData.value);
+  debouncedCallPreview();
 };
 
 const handleQuotationPriceChange = (
@@ -272,6 +298,7 @@ const handleQuotationPriceChange = (
   data.unitPrice =
     value === '' || isNaN(num) || num === data.listPrice ? undefined : num;
   skuItemData.value = new Map(skuItemData.value);
+  debouncedCallPreview();
 };
 
 const removeSkuFromSelection = (rowData: QuotationProductRow) => {
@@ -283,7 +310,46 @@ const removeSkuFromSelection = (rowData: QuotationProductRow) => {
   skuSelection.value = updated;
   skuItemData.value.delete(id);
   skuItemData.value = new Map(skuItemData.value);
+  debouncedCallPreview();
 };
+
+// =====================================================================================
+// LIVE PREVIEW
+// =====================================================================================
+const callPreview = async () => {
+  if (createMode.value || sentMode.value || !entityId.value) return;
+  if (quotationItems.value.length === 0) {
+    previewTotal.value = null;
+    return;
+  }
+  previewLoading.value = true;
+  try {
+    const response = await orderApi.quotation.preview(entityId.value, {
+      suggestedShippingFee: Number(shippingFeeInput.value) || undefined,
+      discount: discountRequest.value || undefined,
+      items: quotationItems.value,
+    });
+    previewTotal.value = response.total;
+    // Enrich skuItemData with calculated prices (ordPrice, listPrice).
+    // Do NOT touch unitPrice — that is user-controlled.
+    if (response.items?.length) {
+      for (const item of response.items) {
+        const skuId = item.sku || item._id;
+        const data = skuItemData.value.get(skuId);
+        if (data) {
+          data.ordPrice = item.ordPrice || 0;
+          data.listPrice = item.listPrice || 0;
+        }
+      }
+      skuItemData.value = new Map(skuItemData.value);
+    }
+  } catch (error) {
+    geinsLogError('Failed to fetch preview:', error);
+  } finally {
+    previewLoading.value = false;
+  }
+};
+const debouncedCallPreview = useDebounceFn(callPreview, 500);
 
 // Columns for quotation products table
 const { getColumns, addActionsColumn, orderAndFilterColumns } =
@@ -489,10 +555,23 @@ const {
     entityLiveStatus.value =
       quotation.status === 'pending' || quotation.status === 'accepted';
     quotationTotal.value = quotation.total || null;
+    previewTotal.value = null;
 
     // Sent mode: any non-draft status
     sentMode.value = quotation.status !== 'draft';
     communications.value = quotation.communication || [];
+
+    // Discount & shipping fee from API response
+    if (quotation.discount) {
+      discountType.value = quotation.discount.type;
+      discountValue.value = String(quotation.discount.value);
+    } else {
+      discountType.value = 'percent';
+      discountValue.value = '';
+    }
+    shippingFeeInput.value = quotation.suggestedShippingFee
+      ? String(quotation.suggestedShippingFee)
+      : '';
 
     // Set company info (selectedCompany is already fetched in onMounted for edit mode)
     const companyId = quotation.company?._id || '';
@@ -559,6 +638,8 @@ const {
       customerId: formData.details.buyerId || undefined,
       terms: formData.details.paymentTerms || undefined,
       items: quotationItems.value.length > 0 ? quotationItems.value : undefined,
+      discount: discountRequest.value || undefined,
+      suggestedShippingFee: Number(shippingFeeInput.value) || undefined,
     };
   },
   prepareUpdateData: (formData, _entity) => ({
@@ -570,6 +651,8 @@ const {
     shippingAddressId: selectedShippingAddressId.value || undefined,
     terms: formData.details.paymentTerms || undefined,
     items: quotationItems.value,
+    discount: discountRequest.value || undefined,
+    suggestedShippingFee: Number(shippingFeeInput.value) || undefined,
   }),
   onFormValuesChange: (values) => {
     if (createMode.value) {
@@ -598,6 +681,8 @@ const {
         shippingAddressId: selectedShippingAddressId.value || undefined,
         terms: values.details.paymentTerms || undefined,
         items: quotationItems.value,
+        discount: discountRequest.value || undefined,
+        suggestedShippingFee: Number(shippingFeeInput.value) || undefined,
       };
     }
   },
@@ -733,6 +818,23 @@ watch([selectedBillingAddressId, selectedShippingAddressId], () => {
   };
 });
 
+// Sync discount & shipping fee with entityDataUpdate for unsaved changes detection
+watch([discountType, discountValue, shippingFeeInput], () => {
+  if (createMode.value || !entityDataUpdate.value) return;
+  entityDataUpdate.value = {
+    ...entityDataUpdate.value,
+    discount: discountRequest.value || undefined,
+    suggestedShippingFee: Number(shippingFeeInput.value) || undefined,
+  };
+});
+
+// Trigger preview when SKU selection changes
+watch(simpleSkuSelection, () => {
+  if (!createMode.value && !sentMode.value) {
+    debouncedCallPreview();
+  }
+});
+
 // =====================================================================================
 // CUSTOMER PANEL HANDLER
 // =====================================================================================
@@ -816,6 +918,11 @@ if (!createMode.value) {
     // Fetch products for SKU selector (must await so skuSelection is
     // populated before we take the unsaved-changes baseline snapshot)
     await fetchProducts();
+
+    // Trigger initial preview so prices are enriched before the snapshot
+    if (quotationItems.value.length > 0) {
+      await callPreview();
+    }
 
     // Set the saved data snapshot after all async data has settled,
     // so the unsaved changes baseline matches the fully populated form
@@ -1824,7 +1931,7 @@ definePageMeta({
                     v-if="quotationTotal && selectedSkus.length"
                     class="mx-3"
                     :total="quotationTotal"
-                    :currency="form.values.details?.currency || ''"
+                    :currency="entityData?.currency || ''"
                   />
                 </template>
                 <template v-else>
@@ -2099,10 +2206,15 @@ definePageMeta({
                   :page-size="10"
                 />
                 <ContentPriceSummary
-                  v-if="quotationTotal && selectedSkus.length"
+                  v-if="displayTotal && selectedSkus.length"
+                  v-model:discount-type="discountType"
+                  v-model:discount-value="discountValue"
+                  v-model:shipping-fee="shippingFeeInput"
                   class="mx-3"
-                  :total="quotationTotal"
+                  edit-mode
+                  :total="displayTotal"
                   :currency="form.values.details?.currency || ''"
+                  @blur="debouncedCallPreview()"
                 />
               </template>
               <template v-else>
@@ -2154,9 +2266,9 @@ definePageMeta({
                 class="my-5"
               />
               <ContentPriceSummary
-                v-if="!createMode && quotationTotal && selectedSkus.length"
-                :total="quotationTotal"
-                :currency="form.values.details?.currency || ''"
+                v-if="!createMode && displayTotal && selectedSkus.length"
+                :total="displayTotal"
+                :currency="entityData?.currency || form.values.details?.currency || ''"
               />
             </template>
           </ContentEditSummary>

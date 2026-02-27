@@ -33,6 +33,7 @@
   "sku": "SKU | SKUs",
   "owner": "Ägare | Ägare",
   "draft": "Utkast | Utkast",
+  "account": "Konto | Konton",
   "new_entity_url_alias": "ny",
   "list_entity_url_alias": "lista",
   "entity_id": "@:{entityName}-ID",

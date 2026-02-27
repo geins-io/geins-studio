@@ -214,6 +214,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - `ContentAddressDisplay` — Address display (expects `AddressUpdate` type). Also compatible with `QuotationAddress` since both share the same field names (`addressLine1`, `firstName`, etc.)
 - `InputGroup` / `InputGroupAddon` / `InputGroupButton` / `InputGroupInput` / `InputGroupTextarea` — Composable input groups with addons (icons, buttons, text) positioned via `align` prop (`inline-start`, `inline-end`, `block-start`, `block-end`). Use `InputGroupInput` instead of `Input` inside groups.
 - `ButtonGroup` / `ButtonGroupSeparator` / `ButtonGroupText` — Groups related buttons with shared border radius. Supports `orientation` (`horizontal` | `vertical`) and nesting.
+- `ContentPriceSummary` — Price summary rows (subtotal, discount, shipping, VAT, grand total). Props: `total` (`QuotationTotal | QuotationPreviewTotal`), `currency`, `editMode?`. When `editMode=true`: discount row becomes an inline-editable input with a percent/fixed-amount toggle; shipping row becomes an inline-editable input. Uses `defineModel` for `discountType`, `discountValue`, `shippingFee` (two-way binding) and emits `blur` when an editable field loses focus (parent triggers preview).
 
 ### Display Patterns in Edit Pages
 
@@ -272,7 +273,11 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 **Live preview pattern:**
 
 - Endpoint: `POST /quotation/{id}/preview` — calculates totals without persisting. Only available in draft edit mode (requires an existing quotation ID).
-- Response: `{ items: QuotationItem[], total: QuotationPreviewTotal }`.
+- Called automatically via `debouncedCallPreview` (500 ms) whenever `quotationItems` or `discountRequest` change.
+- Response: `{ items: QuotationItem[], total: QuotationPreviewTotal }`. Items are enriched with `ordPrice` / `listPrice` from the applied price lists — these update `skuItemData` reactively. `unitPrice` is never overwritten from the preview response.
+- `previewTotal` ref holds the live result; `displayTotal = computed(() => previewTotal.value ?? quotationTotal.value)` is passed to `ContentPriceSummary`. Sent mode uses `quotationTotal` (from GET) because preview is disabled.
+- **Infinite loop prevention**: Preview is triggered from explicit user-action handlers (`handleQuantityChange`, `handleQuotationPriceChange`, `removeSkuFromSelection`, `ContentPriceSummary` blur event) and a `watch(simpleSkuSelection)`. Do NOT watch `quotationItems` to trigger preview — the preview response updates `skuItemData` (ordPrice/listPrice), which could change `quotationItems` output (via the `unitPrice !== listPrice` condition), creating an infinite loop.
+- `ContentPriceSummary` accepts `QuotationTotal | QuotationPreviewTotal` — handles `shipping` vs `suggestedShippingFee` field name difference via `'suggestedShippingFee' in props.total` type narrowing.
 
 **Sent mode (non-draft statuses):**
 

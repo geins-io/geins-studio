@@ -33,6 +33,7 @@
   "sku": "SKU | SKUs",
   "owner": "Owner | Owners",
   "draft": "Draft | Drafts",
+  "account": "Account | Accounts",
   "new_entity_url_alias": "new",
   "list_entity_url_alias": "list",
   "entity_id": "@:{entityName} ID",
