@@ -9,13 +9,13 @@ See also:
 
 ## Run (recommended order)
 
-1. `pnpm lintcheck` (read-only, CI-safe)
+1. `pnpm lint:check` (read-only, CI-safe)
 2. `pnpm typecheck`
 3. `pnpm test --run`
 
 ## If lint fails
 
-- Fix locally using `pnpm lint` (auto-fix), then re-run `pnpm lintcheck`.
+- Fix locally using `pnpm lint` (auto-fix), then re-run `pnpm lint:check`.
 
 ## If typecheck fails
 

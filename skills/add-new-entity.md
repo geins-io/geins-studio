@@ -13,18 +13,18 @@ See also:
 
 1. Types
 
-- Add types in `sharedtypes/<Entity>.ts`:
+- Add types in `shared/types/<Entity>.ts`:
   - `EntityBase`, `EntityResponse`, `EntityCreate`, `EntityUpdate` (names per project conventions).
 
 2. Repository
 
-- Create repository factory in `apputils/repositories/<entity>.ts` using the standard `entityRepo` chain.
+- Create repository factory in `app/utils/repositories/<entity>.ts` using the standard `entityRepo` chain.
 - If domain-specific logic is needed, extend the base repo pattern (don’t bypass it).
 
 3. Register repo
 
 - Register the repo in:
-  - `apputils/repos.ts`
+  - `app/utils/repos.ts`
   - `app/composables/useGeinsRepository.ts` (or wherever the registry is wired, per CLAUDE.md)
 
 4. List page
@@ -52,7 +52,7 @@ See also:
 
 ## Verify
 
-- `pnpm lintcheck`
+- `pnpm lint:check`
 - `pnpm typecheck`
 - `pnpm test --run` (at least smoke the impacted areas)
 - Manual smoke: can create entity, auto-navigate to edit URL, can reload and see data.

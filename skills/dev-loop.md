@@ -15,7 +15,7 @@ See also:
 ## Fast checks (pick what matches your change)
 
 - Lint with fixes: `pnpm lint`
-- CI-safe lint (no fixes): `pnpm lintcheck`
+- CI-safe lint (no fixes): `pnpm lint:check`
 - Typecheck: `pnpm typecheck`
 - Unit tests (single run): `pnpm test --run`
 

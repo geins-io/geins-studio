@@ -5,7 +5,7 @@ Goal: Add a new typed repository (or extend an existing one) without bypassing t
 See also:
 
 - CLAUDE.md → “API Repositories”
-- CLAUDE.md → “Project Structure” (apputils/repositories, server/api proxy)
+- CLAUDE.md → “Project Structure” (app/utils/repositories, server/api proxy)
 
 ## Rules
 
