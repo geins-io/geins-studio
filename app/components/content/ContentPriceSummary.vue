@@ -39,6 +39,18 @@ const shippingValue = computed(() =>
     : props.total.shipping,
 );
 
+const discountTypeOptions = computed(() => [
+  { value: 'percent' as const, label: '%' },
+  { value: 'fixedAmount' as const, label: props.currency },
+]);
+
+const onDiscountTypeChange = (value: 'percent' | 'fixedAmount') => {
+  discountType.value = value;
+  if (discountValue.value) {
+    emit('blur');
+  }
+};
+
 interface PriceRow {
   key: string;
   label: string;
@@ -46,6 +58,8 @@ interface PriceRow {
   negate?: boolean;
   editable?: 'discount' | 'shipping';
   bold?: boolean;
+  big?: boolean;
+  vat?: string;
 }
 
 const rows = computed<PriceRow[]>(() => [
@@ -65,25 +79,21 @@ const rows = computed<PriceRow[]>(() => [
   },
   {
     key: 'grandTotalExVat',
-    label: t('orders.grand_total_ex_vat'),
+    label: t('orders.total'),
     value: props.total.grandTotalExVat,
+    bold: true,
+    vat: t('ex_vat'),
   },
   { key: 'vat', label: t('orders.vat'), value: props.total.vat },
   {
     key: 'grandTotalIncVat',
-    label: t('orders.grand_total_inc_vat'),
+    label: t('orders.grand_total'),
     value: props.total.grandTotalIncVat,
     bold: true,
+    big: true,
+    vat: t('inc_vat'),
   },
 ]);
-
-const onTypeToggle = (type: 'percent' | 'fixedAmount') => {
-  if (discountType.value === type) return;
-  discountType.value = type;
-  if (discountValue.value) {
-    emit('blur');
-  }
-};
 </script>
 <template>
   <div>
@@ -95,6 +105,7 @@ const onTypeToggle = (type: 'percent' | 'fixedAmount') => {
           cn(
             'flex items-center justify-between gap-2 text-right text-xs sm:text-sm',
             row.bold ? 'font-semibold' : '',
+            row.big ? 'text-sm sm:text-base' : '',
           )
         "
       >
@@ -102,66 +113,75 @@ const onTypeToggle = (type: 'percent' | 'fixedAmount') => {
           {{ row.label }}
         </span>
         <span
+          v-if="row.vat"
+          class="text-muted-foreground shrink-0 text-xs font-normal"
+          >({{ row.vat }})</span
+        >
+        <span
           class="border-muted-foreground/30 min-w-4 flex-1 translate-y-[-0.4em] self-end border-b border-dashed"
         />
 
         <!-- Editable discount row -->
         <template v-if="editMode && row.editable === 'discount'">
           <div class="flex shrink-0 items-center gap-1.5">
-            <div class="flex h-7 overflow-hidden rounded-md border text-xs">
-              <button
-                type="button"
-                :class="
-                  cn(
-                    'px-2 transition-colors',
-                    discountType === 'percent'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted',
-                  )
-                "
-                @click="onTypeToggle('percent')"
-              >
-                %
-              </button>
-              <button
-                type="button"
-                :class="
-                  cn(
-                    'border-l px-2 transition-colors',
-                    discountType === 'fixedAmount'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted',
-                  )
-                "
-                @click="onTypeToggle('fixedAmount')"
-              >
-                {{ currency }}
-              </button>
-            </div>
-            <input
+            <Input
               v-model="discountValue"
-              type="text"
+              size="sm"
               inputmode="decimal"
-              class="bg-background border-input focus:ring-ring h-7 w-20 rounded-md border px-2 text-right text-xs tabular-nums focus:ring-1 focus:outline-none"
               placeholder="0"
+              class="w-30 text-right text-xs"
               @blur="emit('blur')"
-            />
+            >
+              <template #valueDescriptor>
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <button
+                      class="flex cursor-pointer items-center gap-0.5 text-xs"
+                    >
+                      {{ discountType === 'percent' ? '%' : currency }}
+                      <LucideChevronDown class="size-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" class="min-w-10">
+                    <DropdownMenuItem
+                      v-for="opt in discountTypeOptions"
+                      :key="opt.value"
+                      class="text-xs"
+                      @click="onDiscountTypeChange(opt.value)"
+                    >
+                      {{ opt.label }}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </template>
+            </Input>
+            <span class="shrink-0 tabular-nums">
+              {{ row.negate && row.value > 0 ? '-' : ''
+              }}{{ formatPrice(row.value) }}
+              <span class="text-xs font-bold">{{ currency }}</span>
+            </span>
           </div>
         </template>
 
         <!-- Editable shipping row -->
         <template v-else-if="editMode && row.editable === 'shipping'">
-          <div class="flex shrink-0 items-center gap-1.5">
-            <input
-              v-model="shippingFee"
-              type="text"
-              inputmode="decimal"
-              class="bg-background border-input focus:ring-ring h-7 w-20 rounded-md border px-2 text-right text-xs tabular-nums focus:ring-1 focus:outline-none"
-              placeholder="0"
-              @blur="emit('blur')"
-            />
+          <Input
+            v-model="shippingFee"
+            size="sm"
+            inputmode="decimal"
+            placeholder="0"
+            class="w-30 shrink-0 text-right text-xs tabular-nums"
+            @blur="emit('blur')"
+          >
+            <template #valueDescriptor>
+              {{ currency }}
+            </template>
+          </Input>
+          <span class="shrink-0 tabular-nums">
+            {{ row.negate && row.value > 0 ? '-' : ''
+            }}{{ formatPrice(row.value) }}
             <span class="text-xs font-bold">{{ currency }}</span>
-          </div>
+          </span>
         </template>
 
         <!-- Read-only row -->
