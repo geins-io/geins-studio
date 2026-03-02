@@ -21,7 +21,6 @@ import type {
   QuotationItemCreate,
   QuotationProductRow,
   QuotationTotal,
-  QuotationPreviewTotal,
   QuotationDiscountRequest,
   QuotationMessage,
   QuotationMessageType,
@@ -325,7 +324,10 @@ const callPreview = async () => {
   previewLoading.value = true;
   try {
     const response = await orderApi.quotation.preview(entityId.value, {
-      suggestedShippingFee: Number(shippingFeeInput.value) || undefined,
+      suggestedShippingFee:
+        shippingFeeInput.value !== ''
+          ? Number(shippingFeeInput.value)
+          : undefined,
       discount: discountRequest.value || undefined,
       items: quotationItems.value,
     });
@@ -635,7 +637,10 @@ const {
       terms: formData.details.paymentTerms || undefined,
       items: quotationItems.value.length > 0 ? quotationItems.value : undefined,
       discount: discountRequest.value || undefined,
-      suggestedShippingFee: Number(shippingFeeInput.value) || undefined,
+      suggestedShippingFee:
+        shippingFeeInput.value !== ''
+          ? Number(shippingFeeInput.value)
+          : undefined,
     };
   },
   prepareUpdateData: (formData, _entity) => ({
@@ -648,7 +653,10 @@ const {
     terms: formData.details.paymentTerms || undefined,
     items: quotationItems.value,
     discount: discountRequest.value || undefined,
-    suggestedShippingFee: Number(shippingFeeInput.value) || undefined,
+    suggestedShippingFee:
+      shippingFeeInput.value !== ''
+        ? Number(shippingFeeInput.value)
+        : undefined,
   }),
   onFormValuesChange: (values) => {
     if (createMode.value) {
@@ -678,7 +686,10 @@ const {
         terms: values.details.paymentTerms || undefined,
         items: quotationItems.value,
         discount: discountRequest.value || undefined,
-        suggestedShippingFee: Number(shippingFeeInput.value) || undefined,
+        suggestedShippingFee:
+          shippingFeeInput.value !== ''
+            ? Number(shippingFeeInput.value)
+            : undefined,
       };
     }
   },
@@ -808,7 +819,10 @@ watch([discountType, discountValue, shippingFeeInput], () => {
   entityDataUpdate.value = {
     ...entityDataUpdate.value,
     discount: discountRequest.value || undefined,
-    suggestedShippingFee: Number(shippingFeeInput.value) || undefined,
+    suggestedShippingFee:
+      shippingFeeInput.value !== ''
+        ? Number(shippingFeeInput.value)
+        : undefined,
   };
 });
 

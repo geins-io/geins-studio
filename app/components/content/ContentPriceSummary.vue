@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { QuotationTotal, QuotationPreviewTotal } from '#shared/types';
+import type { QuotationTotal } from '#shared/types';
 
 const props = withDefaults(
   defineProps<{
-    total: QuotationTotal | QuotationPreviewTotal;
+    total: QuotationTotal;
     currency: string;
     label?: string;
     editMode?: boolean;
@@ -14,11 +14,19 @@ const props = withDefaults(
   },
 );
 
+const shipping = props.total.shipping || 0;
+
 const discountType = defineModel<'percent' | 'fixedAmount'>('discountType', {
   default: 'percent',
 });
-const discountValue = defineModel<string>('discountValue', { default: '' });
-const shippingFee = defineModel<string>('shippingFee', { default: '' });
+const discountValue = defineModel<string>('discountValue', {
+  default: '',
+});
+const shippingFee = defineModel<string>('shippingFee', {
+  default: '',
+});
+
+shippingFee.value = String(shipping || 0);
 
 const emit = defineEmits<{
   blur: [];
@@ -74,7 +82,7 @@ const rows = computed<PriceRow[]>(() => [
   {
     key: 'shipping',
     label: t('orders.shipping'),
-    value: shippingValue.value,
+    value: shippingValue.value || 0,
     editable: 'shipping',
   },
   {
@@ -106,30 +114,33 @@ const rows = computed<PriceRow[]>(() => [
             'flex items-center justify-between gap-2 text-right text-xs sm:text-sm',
             row.bold ? 'font-semibold' : '',
             row.big ? 'text-sm sm:text-base' : '',
+            editMode ? 'h-6' : '',
           )
         "
       >
         <span class="shrink-0 text-left">
           {{ row.label }}
         </span>
-        <span
-          v-if="row.vat"
-          class="text-muted-foreground shrink-0 text-xs font-normal"
-          >({{ row.vat }})</span
-        >
-        <span
-          class="border-muted-foreground/30 min-w-4 flex-1 translate-y-[-0.4em] self-end border-b border-dashed"
-        />
 
-        <!-- Editable discount row -->
-        <template v-if="editMode && row.editable === 'discount'">
-          <div class="flex shrink-0 items-center gap-1.5">
+        <!-- Discount popover trigger -->
+        <Popover v-if="editMode && row.editable === 'discount'">
+          <PopoverTrigger as-child>
+            <Button variant="outline" size="icon-xs" class="relative shrink-0">
+              <LucidePlus class="size-3" />
+              <span
+                v-if="Number(discountValue) > 0"
+                class="bg-primary absolute -top-0.5 -right-0.5 flex size-1.5 rounded-full"
+              />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" class="w-auto p-2">
+            <Label class="text-xs">{{ t('orders.discount') }}</Label>
             <Input
               v-model="discountValue"
               size="sm"
-              inputmode="decimal"
               placeholder="0"
-              class="w-30 text-right text-xs"
+              class="w-46 text-right text-xs tabular-nums"
+              description="Add a discount to your quotation"
               @blur="emit('blur')"
             >
               <template #valueDescriptor>
@@ -155,43 +166,54 @@ const rows = computed<PriceRow[]>(() => [
                 </DropdownMenu>
               </template>
             </Input>
-            <span class="shrink-0 tabular-nums">
-              {{ row.negate && row.value > 0 ? '-' : ''
-              }}{{ formatPrice(row.value) }}
-              <span class="text-xs font-bold">{{ currency }}</span>
-            </span>
-          </div>
-        </template>
+          </PopoverContent>
+        </Popover>
+        <!-- Shipping popover trigger -->
 
-        <!-- Editable shipping row -->
-        <template v-else-if="editMode && row.editable === 'shipping'">
-          <Input
-            v-model="shippingFee"
-            size="sm"
-            inputmode="decimal"
-            placeholder="0"
-            class="w-30 shrink-0 text-right text-xs tabular-nums"
-            @blur="emit('blur')"
-          >
-            <template #valueDescriptor>
-              {{ currency }}
-            </template>
-          </Input>
-          <span class="shrink-0 tabular-nums">
-            {{ row.negate && row.value > 0 ? '-' : ''
-            }}{{ formatPrice(row.value) }}
-            <span class="text-xs font-bold">{{ currency }}</span>
-          </span>
-        </template>
+        <Popover v-else-if="editMode && row.editable === 'shipping'">
+          <PopoverTrigger as-child>
+            <Button variant="outline" size="icon-xs" class="relative shrink-0">
+              <LucidePlus class="size-3" />
+              <span
+                v-if="shippingValue && Number(shippingValue) > 0"
+                class="bg-primary absolute -top-0.5 -right-0.5 flex size-1.5 rounded-full"
+              />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" class="w-auto p-2">
+            <Label class="text-xs">{{ t('orders.shipping') }}</Label>
+            <Input
+              v-model="shippingFee"
+              size="sm"
+              inputmode="decimal"
+              placeholder="0"
+              class="w-46 text-right text-xs tabular-nums"
+              description="Add a suggested shipping fee"
+              @blur="emit('blur')"
+            >
+              <template #valueDescriptor>
+                {{ currency }}
+              </template>
+            </Input>
+          </PopoverContent>
+        </Popover>
 
-        <!-- Read-only row -->
-        <template v-else>
-          <span class="shrink-0 tabular-nums">
-            {{ row.negate && row.value > 0 ? '-' : ''
-            }}{{ formatPrice(row.value) }}
-            <span class="text-xs font-bold">{{ currency }}</span>
-          </span>
-        </template>
+        <span
+          v-if="row.vat"
+          class="text-muted-foreground shrink-0 text-xs font-normal"
+          >({{ row.vat }})</span
+        >
+
+        <span
+          class="border-muted-foreground/30 min-w-4 flex-1 translate-y-[-0.4em] self-end border-b border-dashed"
+        />
+
+        <!-- Value display (all rows) -->
+        <span class="shrink-0 tabular-nums">
+          {{ row.negate && row.value > 0 ? '-' : '' }}
+          {{ formatPrice(row.value) }}
+          <span class="text-xs font-bold">{{ currency }}</span>
+        </span>
       </li>
     </ul>
   </div>

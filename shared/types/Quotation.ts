@@ -135,6 +135,7 @@ export interface QuotationTotal {
   vat: number;
   grandTotalExVat: number;
   grandTotalIncVat: number;
+  suggestedShippingFee?: number;
 }
 
 // =============================================================================
@@ -161,25 +162,12 @@ export interface QuotationPreviewRequest {
 }
 
 /**
- * Totals returned by the preview endpoint.
- * Uses suggestedShippingFee (not shipping) and omits margin.
- */
-export interface QuotationPreviewTotal {
-  subtotal: number;
-  discount: number;
-  suggestedShippingFee: number;
-  grandTotalExVat: number;
-  vat: number;
-  grandTotalIncVat: number;
-}
-
-/**
  * Response from the preview endpoint.
  * Items are enriched with calculated ordPrice, listPrice, and unitPrice.
  */
 export interface QuotationPreviewResponse {
   items?: QuotationItem[];
-  total: QuotationPreviewTotal;
+  total: QuotationTotal;
 }
 
 // =============================================================================
