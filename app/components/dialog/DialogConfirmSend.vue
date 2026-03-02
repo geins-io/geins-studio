@@ -2,6 +2,7 @@
 const props = defineProps<{
   entityName: string;
   loading: boolean;
+  blockReasons?: string[];
 }>();
 const open = defineModel('open', {
   type: Boolean,
@@ -13,6 +14,10 @@ const emit = defineEmits<{
 }>();
 
 const message = ref('');
+
+const canSend = computed(
+  () => !props.blockReasons || props.blockReasons.length === 0,
+);
 
 const handleConfirm = () => {
   emit('confirm', message.value || undefined);
@@ -37,7 +42,19 @@ watch(open, (isOpen) => {
           {{ $t('orders.send_quotation_warning') }}
         </AlertDialogDescription>
       </AlertDialogHeader>
-      <div class="space-y-2">
+      <Feedback v-if="!canSend" type="warning">
+        <template #title>
+          {{ $t('orders.send_blocked_title') }}
+        </template>
+        <template #description>
+          <ul class="mt-1 list-inside list-disc space-y-0.5 text-xs">
+            <li v-for="reason in blockReasons" :key="reason">
+              {{ reason }}
+            </li>
+          </ul>
+        </template>
+      </Feedback>
+      <div v-if="canSend" class="space-y-2">
         <Label>
           {{ $t('orders.message_to_customer') }}
         </Label>
@@ -54,6 +71,7 @@ watch(open, (isOpen) => {
         <ButtonIcon
           icon="send"
           :loading="props.loading"
+          :disabled="!canSend"
           @click.prevent.stop="handleConfirm"
         >
           {{ $t('send_entity', { entityName: props.entityName }) }}

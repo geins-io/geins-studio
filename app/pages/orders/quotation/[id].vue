@@ -966,8 +966,8 @@ const handleSave = async () => {
 const sendBlockReasons = computed<string[]>(() => {
   const reasons: string[] = [];
   const details = form.values.details;
-  if (quotationItems.value.length === 0) {
-    reasons.push(t('orders.send_requires_products'));
+  if (!details?.name) {
+    reasons.push(t('orders.send_requires_name'));
   }
   if (!details?.accountId) {
     reasons.push(t('orders.send_requires_customer'));
@@ -978,12 +978,26 @@ const sendBlockReasons = computed<string[]>(() => {
   if (!details?.buyerId) {
     reasons.push(t('orders.send_requires_buyer'));
   }
+  if (!selectedBillingAddressId.value) {
+    reasons.push(t('orders.send_requires_billing_address'));
+  }
+  if (!selectedShippingAddressId.value) {
+    reasons.push(t('orders.send_requires_shipping_address'));
+  }
+  if (!details?.paymentTerms) {
+    reasons.push(t('orders.send_requires_terms'));
+  }
+  if (!details?.currency) {
+    reasons.push(t('orders.send_requires_currency'));
+  }
+  if (quotationItems.value.length === 0) {
+    reasons.push(t('orders.send_requires_products'));
+  }
+  if (hasUnsavedChanges.value) {
+    reasons.push(t('orders.send_requires_no_unsaved_changes'));
+  }
   return reasons;
 });
-
-const canSend = computed(
-  () => formValid.value && sendBlockReasons.value.length === 0,
-);
 
 // =====================================================================================
 // STATUS TRANSITION LOGIC
@@ -1360,6 +1374,7 @@ definePageMeta({
     v-model:open="sendDialogOpen"
     :entity-name="entityName"
     :loading="sendLoading"
+    :block-reasons="sendBlockReasons"
     @confirm="handleSendQuotation"
   />
   <DialogStatusTransition
@@ -1390,26 +1405,13 @@ definePageMeta({
               >{{ $t('save_entity', { entityName: 'draft' }) }}</ButtonIcon
             >
             <ButtonGroup>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger as-child>
-                    <ButtonIcon
-                      variant="secondary"
-                      icon="send"
-                      :disabled="!canSend || loading"
-                      @click="sendDialogOpen = true"
-                      >{{ $t('send_entity', { entityName }) }}
-                    </ButtonIcon>
-                  </TooltipTrigger>
-                  <TooltipContent v-if="!canSend">
-                    <ul class="space-y-0.5 text-xs">
-                      <li v-for="reason in sendBlockReasons" :key="reason">
-                        {{ reason }}
-                      </li>
-                    </ul>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <ButtonIcon
+                variant="secondary"
+                icon="send"
+                :disabled="loading"
+                @click="sendDialogOpen = true"
+                >{{ $t('send_entity', { entityName }) }}
+              </ButtonIcon>
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                   <Button size="icon" variant="secondary">
@@ -2149,14 +2151,14 @@ definePageMeta({
                 <SelectorPanel
                   :selection="skuSelection"
                   :mode="SelectorMode.Simple"
-                  entity-name="sku"
+                  entity-name="product"
                   :entities="productsWithSkus"
                   :entity-type="SelectorEntityType.Sku"
                   :options="[
                     {
                       id: 'product',
                       group: 'ids',
-                      label: $t('sku', 2),
+                      label: $t('product', 2),
                     },
                   ]"
                   @save="updateSkuSelection"
@@ -2268,7 +2270,9 @@ definePageMeta({
               <ContentPriceSummary
                 v-if="!createMode && displayTotal && selectedSkus.length"
                 :total="displayTotal"
-                :currency="entityData?.currency || form.values.details?.currency || ''"
+                :currency="
+                  entityData?.currency || form.values.details?.currency || ''
+                "
               />
             </template>
           </ContentEditSummary>
