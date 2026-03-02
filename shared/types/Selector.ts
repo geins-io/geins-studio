@@ -62,6 +62,7 @@ export interface SelectorSelectionQuery {
   condition?: SelectorCondition;
   categoryIds?: string[];
   brandIds?: string[];
+  channelIds?: string[];
   price?: PriceSelection[];
   stock?: StockSelection[];
   productIds?: string[];

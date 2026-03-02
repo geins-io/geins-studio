@@ -29,6 +29,7 @@ import type {
   StatusTransitionRequest,
   SelectorEntity,
   Address,
+  ProductApiOptions,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
@@ -118,7 +119,6 @@ const stepValidationMap: Record<number, string> = {
 
 // Company & User selection
 const companies = ref<CustomerCompany[]>([]);
-const users = ref<User[]>([]);
 const buyers = ref<CompanyBuyer[]>([]);
 const selectedCompanyId = ref<string>('');
 const selectedAccountName = ref<string>('');
@@ -416,15 +416,10 @@ const selectedSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
   ]);
 });
 
-// Filtered sales reps based on selected company
+// Sales reps from selected company
 const availableSalesReps = computed(() => {
   if (!selectedCompany.value?.salesReps) return [];
-  return users.value.filter((user) =>
-    selectedCompany.value?.salesReps?.some((rep) => {
-      const repId = typeof rep === 'string' ? rep : rep._id;
-      return repId === user._id;
-    }),
-  );
+  return selectedCompany.value.salesReps;
 });
 
 const availableBuyers = computed(() => {
@@ -435,7 +430,8 @@ const availableBuyers = computed(() => {
 const currentOwnerName = computed(() => {
   const ownerId = form.values.details?.ownerId;
   if (!ownerId) return '';
-  return availableSalesReps.value.find((u) => u._id === ownerId)?.name || '';
+  const owner = availableSalesReps.value.find((u) => u._id === ownerId);
+  return fullName(owner);
 });
 
 const currentBuyerName = computed(() => {
@@ -706,8 +702,6 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
 // =====================================================================================
 // DATA FETCHING
 // =====================================================================================
-const { geinsFetch } = useGeinsApi();
-
 // Fetch companies
 const fetchCompanies = async () => {
   companies.value = await customerApi.company.list({
@@ -715,24 +709,18 @@ const fetchCompanies = async () => {
   });
 };
 
-// Fetch users (sales reps)
-const fetchUsers = async () => {
-  const usersResult = await geinsFetch<User[]>('/user/list');
-  if (usersResult) {
-    users.value = usersResult.map((user) => ({
-      ...user,
-      name: fullName(user),
-    }));
-  }
-};
-
 // Fetch products with SKUs for product selector
 const fetchProducts = async () => {
   loadingProducts.value = true;
   try {
-    const response = await productApi.list({
-      fields: ['media', 'skus'],
-    });
+    const channelId = entityData.value?.channelId;
+    const options: ProductApiOptions = { fields: ['media', 'skus'] };
+    const response = channelId
+      ? await productApi.query(
+          { include: [{ selections: [{ channelIds: [channelId] }] }] },
+          options,
+        )
+      : await productApi.list(options);
 
     productsWithSkus.value = transformProductsToSelectorEntities(
       response?.items || [],
@@ -775,10 +763,6 @@ watch(
           availableCurrencies.value[0]?._id,
         );
       }
-
-      // Re-fetch products filtered for this company's channel
-      await nextTick();
-      fetchProducts();
     } else {
       selectedCompany.value = undefined;
       selectedAccountName.value = '';
@@ -897,9 +881,6 @@ if (!createMode.value) {
   refreshEntityData.value = refresh;
 
   onMounted(async () => {
-    // Fetch users (needed for sales rep display)
-    await fetchUsers();
-
     // Validate entity data
     const quotation = handleFetchResult<Quotation>(error.value, data.value);
 
@@ -940,9 +921,9 @@ if (!createMode.value) {
     setOriginalSavedData();
   });
 } else {
-  // Create mode: fetch all companies and users
+  // Create mode: fetch all companies
   onMounted(async () => {
-    await Promise.all([fetchCompanies(), fetchUsers()]);
+    await fetchCompanies();
   });
 }
 
@@ -1227,7 +1208,10 @@ const companySummary = computed<DataItem[]>(() => {
   const formValues = form.values.details;
 
   if (selectedAccountName.value) {
-    dataList.push({ label: t('company'), value: selectedAccountName.value });
+    dataList.push({
+      label: t('company'),
+      value: selectedAccountName.value,
+    });
   }
   if (!createMode.value && selectedCompany.value?.vatNumber) {
     dataList.push({
@@ -1236,20 +1220,17 @@ const companySummary = computed<DataItem[]>(() => {
     });
   }
 
-  const ownerName =
-    availableSalesReps.value.find((u) => u._id === formValues?.ownerId)?.name ||
-    formValues?.ownerId;
-  if (ownerName) {
-    dataList.push({ label: t('owner'), value: ownerName });
+  if (currentOwnerName.value) {
+    dataList.push({
+      label: t('owner'),
+      value: currentOwnerName.value,
+    });
   }
 
-  const buyerObj = availableBuyers.value.find(
-    (b) => b._id === formValues?.buyerId,
-  );
-  if (buyerObj) {
+  if (currentBuyerName.value) {
     dataList.push({
       label: t('buyer'),
-      value: fullName(buyerObj),
+      value: currentBuyerName.value,
     });
   }
   if (formValues?.currency) {
@@ -1600,11 +1581,11 @@ definePageMeta({
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem
-                                v-for="user in availableSalesReps"
-                                :key="user._id"
-                                :value="user._id"
+                                v-for="salesRep in availableSalesReps"
+                                :key="salesRep._id"
+                                :value="salesRep._id"
                               >
-                                {{ user.name }}
+                                {{ fullName(salesRep) }}
                               </SelectItem>
                             </SelectContent>
                           </Select>

@@ -21,6 +21,7 @@ const badgeVariant = computed(() => {
     case 'refunded':
     case 'inactive':
       return 'inactive';
+    case 'finalized':
     case 'accepted':
     case 'completed':
     case 'confirmed':

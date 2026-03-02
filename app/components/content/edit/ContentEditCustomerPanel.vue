@@ -3,13 +3,13 @@ import { VisuallyHidden } from 'reka-ui';
 import type {
   Address,
   CustomerCompany,
-  User,
   CompanyBuyer,
+  CustomerSalesRep,
 } from '#shared/types';
 
 const props = defineProps<{
   company: CustomerCompany | undefined;
-  availableSalesReps: User[];
+  availableSalesReps: CustomerSalesRep[];
   availableBuyers: CompanyBuyer[];
   currentOwnerId: string;
   currentBuyerId: string;
@@ -122,11 +122,11 @@ const handleCancel = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem
-                  v-for="user in availableSalesReps"
-                  :key="user._id"
-                  :value="user._id"
+                  v-for="salesRep in availableSalesReps"
+                  :key="salesRep._id"
+                  :value="salesRep._id"
                 >
-                  {{ user.name }}
+                  {{ fullName(salesRep) }}
                 </SelectItem>
               </SelectContent>
             </Select>

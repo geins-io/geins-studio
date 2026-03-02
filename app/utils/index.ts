@@ -35,9 +35,13 @@ export function generateInternalId(): string {
  * Handles null/undefined entity and missing name parts gracefully.
  */
 export function fullName(
-  entity?: { firstName?: string; lastName?: string } | null,
+  entity?: { _id?: string; firstName?: string; lastName?: string } | null,
 ): string {
-  return `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim();
+  return (
+    `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim() ||
+    entity?._id ||
+    ''
+  );
 }
 
 /**

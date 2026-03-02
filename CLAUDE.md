@@ -287,7 +287,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - Tabs are a `computed` that switches between `[General, Products]` (draft) and `[General, Communications]` (sent).
 - Status transition actions use a two-step pattern: `POST /quotation/{id}/{action}` (returns void) → `refreshEntityData()` re-fetches → `parseEntityData` updates all UI state including `sentMode`, `communications`, and the sidebar status badge.
 - `StatusTransitionRequest` type: `{ authorId, authorName, message?: { type: QuotationMessageType, message } }`. Author info comes from `useUserStore`.
-- `DialogConfirmSend` handles the initial draft→pending transition with an optional `toCustomer` message. `DialogStatusTransition` is reusable for all other transitions (accept, reject, confirm, cancel, expire, finalize).
+- `DialogConfirmSend` handles the initial draft→pending transition with an optional `toCustomer` message. Accepts `blockReasons` prop (string array from `sendBlockReasons` computed) — when non-empty, shows a `Feedback` warning with the list and disables the Send button. The send button in the actions bar is always clickable (no disabled/tooltip gating). `DialogStatusTransition` is reusable for all other transitions (accept, reject, confirm, cancel, expire, finalize).
 - "Copy as new draft" calls `orderApi.quotation.copy(id)` (`POST /quotation/{id}/copy`) → shows success toast → navigates to the new draft.
 - Delete is not available in sent mode at all. In draft mode, delete is always accessible from the `...` dropdown.
 - The sidebar `StatusBadge` is reactive: `useEntityEditSummary` accepts `status` as a `Ref` and `unref`s it in the computed.
