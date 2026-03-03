@@ -68,40 +68,53 @@ interface PriceRow {
   bold?: boolean;
   big?: boolean;
   vat?: string;
+  show?: boolean;
 }
 
-const rows = computed<PriceRow[]>(() => [
-  { key: 'subtotal', label: t('orders.subtotal'), value: props.total.subtotal },
-  {
-    key: 'discount',
-    label: t('orders.discount'),
-    value: props.total.discount,
-    negate: true,
-    editable: 'discount',
-  },
-  {
-    key: 'shipping',
-    label: t('orders.shipping'),
-    value: shippingValue.value || 0,
-    editable: 'shipping',
-  },
-  {
-    key: 'grandTotalExVat',
-    label: t('orders.total'),
-    value: props.total.grandTotalExVat,
-    bold: true,
-    vat: t('ex_vat'),
-  },
-  { key: 'vat', label: t('orders.vat'), value: props.total.vat },
-  {
-    key: 'grandTotalIncVat',
-    label: t('orders.grand_total'),
-    value: props.total.grandTotalIncVat,
-    bold: true,
-    big: true,
-    vat: t('inc_vat'),
-  },
-]);
+const rows = computed<PriceRow[]>(() => {
+  const discount = props.total.discount;
+  const shipping = shippingValue.value || 0;
+
+  return ([
+    {
+      key: 'subtotal',
+      label: t('orders.subtotal'),
+      value: props.total.subtotal,
+      show: props.editMode || discount > 0 || shipping > 0,
+    },
+    {
+      key: 'discount',
+      label: t('orders.discount'),
+      value: discount,
+      negate: true,
+      editable: 'discount' as const,
+      show: props.editMode || discount > 0,
+    },
+    {
+      key: 'shipping',
+      label: t('orders.shipping'),
+      value: shipping,
+      editable: 'shipping' as const,
+      show: props.editMode || shipping > 0,
+    },
+    {
+      key: 'grandTotalExVat',
+      label: t('orders.total'),
+      value: props.total.grandTotalExVat,
+      bold: true,
+      vat: t('ex_vat'),
+    },
+    { key: 'vat', label: t('orders.vat'), value: props.total.vat },
+    {
+      key: 'grandTotalIncVat',
+      label: t('orders.grand_total'),
+      value: props.total.grandTotalIncVat,
+      bold: true,
+      big: true,
+      vat: t('inc_vat'),
+    },
+  ] as PriceRow[]).filter((r) => r.show !== false);
+});
 </script>
 <template>
   <div>
