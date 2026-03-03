@@ -467,6 +467,17 @@
     "send_requires_no_unsaved_changes": "Spara alla ändringar innan du skickar",
     "discount_type_percent": "Procent (%)",
     "discount_type_fixed": "Fast belopp",
-    "calculating": "Beräknar…"
+    "calculating": "Beräknar…",
+    "place_order": "Lägg order",
+    "require_confirmation": "Kräv bekräftelse",
+    "workflow_default_title": "Standardflöde",
+    "workflow_default_description": "Kund (eller du) kan lägga ordern direkt efter acceptans.",
+    "workflow_strict_title": "Strikt flöde",
+    "workflow_strict_description": "Ett extra bekräftelsesteg krävs innan ordern kan läggas.",
+    "workflow_step_draft": "Du kan göra ändringar",
+    "workflow_step_pending": "Kund (eller du) kan acceptera",
+    "workflow_step_accepted": "Du kan bekräfta",
+    "workflow_step_confirmed": "Kund (eller du) kan lägga ordern",
+    "workflow_step_pending_default": "Kund (eller du) kan lägga ordern"
   }
 }

@@ -205,6 +205,13 @@ export interface QuotationValidShippingMethodRequest {
   shippingFee?: number;
 }
 
+/**
+ * Quotation settings (controls workflow behavior).
+ */
+export interface QuotationSettings {
+  requireConfirmation?: boolean;
+}
+
 // =============================================================================
 // Quotation Base / Create / Update / Response
 // =============================================================================
@@ -237,6 +244,7 @@ export interface QuotationCreate extends CreateEntity<QuotationBase> {
   validShippingMethods?: QuotationValidShippingMethodRequest[];
   items?: QuotationItemCreate[];
   discount?: QuotationDiscountRequest | null;
+  settings?: QuotationSettings;
 }
 
 /**
@@ -252,6 +260,7 @@ export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
   validShippingMethods?: QuotationValidShippingMethodRequest[];
   items?: QuotationItemCreate[];
   discount?: QuotationDiscountRequest | null;
+  settings?: QuotationSettings;
 }
 
 /**
@@ -275,6 +284,7 @@ export interface Quotation extends ResponseEntity<QuotationBase> {
   changelog?: QuotationChangelog[];
   items?: QuotationItem[];
   discount?: QuotationDiscountRequest;
+  settings?: QuotationSettings;
 }
 
 /**

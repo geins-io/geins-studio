@@ -76,6 +76,7 @@ const formSchema = toTypedSchema(
         .min(1, t('entity_required', { entityName: 'currency' })),
       expirationDate: z.string().optional(),
       paymentTerms: z.string().optional(),
+      requireConfirmation: z.boolean().optional(),
     }),
   }),
 );
@@ -546,6 +547,7 @@ const {
       currency: '',
       expirationDate: '',
       paymentTerms: 'Net 30',
+      requireConfirmation: false,
     },
   }),
   parseEntityData: (quotation: Quotation) => {
@@ -622,6 +624,7 @@ const {
         currency: quotation.currency || 'SEK',
         expirationDate: quotation.validTo || '',
         paymentTerms,
+        requireConfirmation: quotation.settings?.requireConfirmation ?? false,
       },
     });
   },
@@ -641,6 +644,7 @@ const {
         shippingFeeInput.value !== ''
           ? Number(shippingFeeInput.value)
           : undefined,
+      settings: { requireConfirmation: formData.details.requireConfirmation },
     };
   },
   prepareUpdateData: (formData, _entity) => ({
@@ -657,6 +661,7 @@ const {
       shippingFeeInput.value !== ''
         ? Number(shippingFeeInput.value)
         : undefined,
+    settings: { requireConfirmation: formData.details.requireConfirmation },
   }),
   onFormValuesChange: (values) => {
     if (createMode.value) {
@@ -670,6 +675,7 @@ const {
         customerId: values.details.buyerId || undefined,
         items:
           quotationItems.value.length > 0 ? quotationItems.value : undefined,
+        settings: { requireConfirmation: values.details.requireConfirmation },
       };
     } else {
       // In sent mode, form fields are unmounted and VeeValidate clears their values.
@@ -690,6 +696,9 @@ const {
           shippingFeeInput.value !== ''
             ? Number(shippingFeeInput.value)
             : undefined,
+        settings: {
+          requireConfirmation: values.details.requireConfirmation,
+        },
       };
     }
   },
@@ -1772,6 +1781,21 @@ definePageMeta({
                       </p>
                     </div>
                   </div>
+                  <div class="border-t pt-4">
+                    <div class="mb-1 flex items-center gap-1.5">
+                      <p class="text-muted-foreground text-xs font-medium">
+                        {{ $t('orders.require_confirmation') }}
+                      </p>
+                      <ContentQuotationWorkflowInfo />
+                    </div>
+                    <p class="text-sm">
+                      {{
+                        entityData?.settings?.requireConfirmation
+                          ? $t('yes')
+                          : $t('no')
+                      }}
+                    </p>
+                  </div>
                 </div>
               </ContentEditCard>
 
@@ -1979,6 +2003,24 @@ definePageMeta({
                         </FormControl>
                         <FormMessage />
                       </FormItem>
+                    </FormField>
+                  </FormGrid>
+                  <FormGrid design="1">
+                    <FormField
+                      v-slot="{ value, handleChange }"
+                      name="details.requireConfirmation"
+                    >
+                      <FormItemSwitch
+                        :model-value="value"
+                        :label="$t('orders.require_confirmation')"
+                        description="Requires the customer to accept and then you to confirm before the order can be placed."
+                        class="mt-4"
+                        @update:model-value="handleChange"
+                      >
+                        <template #after-label>
+                          <ContentQuotationWorkflowInfo />
+                        </template>
+                      </FormItemSwitch>
                     </FormField>
                   </FormGrid>
                 </FormGridWrap>

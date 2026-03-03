@@ -467,6 +467,17 @@
     "send_requires_no_unsaved_changes": "Save all changes before sending",
     "discount_type_percent": "Percent (%)",
     "discount_type_fixed": "Fixed amount",
-    "calculating": "Calculating…"
+    "calculating": "Calculating…",
+    "require_confirmation": "Require confirmation",
+    "place_order": "Place order",
+    "workflow_default_title": "Default flow",
+    "workflow_default_description": "Customer (or you) can place the order directly after acceptance.",
+    "workflow_strict_title": "Strict flow",
+    "workflow_strict_description": "An extra confirmation step is required before the order can be placed.",
+    "workflow_step_draft": "You can make changes",
+    "workflow_step_pending": "Customer (or you) can accept",
+    "workflow_step_accepted": "You can confirm",
+    "workflow_step_confirmed": "Customer (or you) can place the order",
+    "workflow_step_pending_default": "Customer (or you) can place the order"
   }
 }
