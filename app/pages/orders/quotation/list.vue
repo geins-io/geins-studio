@@ -53,9 +53,12 @@ const mapToListData = (list: Entity[]): EntityList[] => {
       }),
       owner: fullName(item.owner),
       sum: {
-        price: item.total.subtotal.toString(),
+        price: item.total.grandTotalExVat.toString(),
         currency: item.currency,
       },
+      requireConfirmation: item.settings?.requireConfirmation
+        ? t('yes')
+        : t('no'),
       dateModified: item.modifiedAt || '',
       dateSent: item.validFrom || '',
       expirationDate: item.validTo || '',
@@ -91,6 +94,7 @@ onMounted(() => {
   const columnOptions: ColumnOptions<EntityList> = {
     columnTitles: {
       quotationNumber: t('ref_number'),
+      sum: t('total') + ` (${t('ex_vat')})`,
     },
     columnTypes: {
       name: 'link',
@@ -112,6 +116,7 @@ onMounted(() => {
       'createdAt',
       'modifiedAt',
       'discount',
+      'settings',
     ],
   };
   // GET AND SET COLUMNS
@@ -157,6 +162,8 @@ const hiddenColumns: StringKeyOf<EntityList>[] = [
   'market',
   'channel',
   'orderId',
+  'terms',
+  'requireConfirmation',
 ];
 visibilityState.value = getVisibilityState(hiddenColumns);
 

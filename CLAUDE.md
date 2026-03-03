@@ -250,6 +250,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - Price fields in the row type use `{ price: string, currency: string }` objects (matching the `'currency'`/`'editable-currency'` column types). The currency value comes from `form.values.details.currency`.
 - In edit mode, prices are populated from `QuotationItemBase` response fields (`ordPrice`, `listPrice`, `unitPrice`). In create mode, prices are empty strings (displayed as `---` by `TableCellCurrency`).
 - When loading existing quotation items in edit mode, initialize both `skuItemData` (from response items) and `skuSelection.ids` (from item SKU IDs) after products are fetched.
+- `fetchProducts()` filters by both `channelIds` and `currencyIds` (from `entityData`) so the product selector only returns products with prices in the quotation's currency. Uses `productApi.query()` with a `SelectorSelectionQuery` selection object.
 
 **Snapshot convention (entity sub-objects in responses):**
 
@@ -302,6 +303,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 ### Products
 
 - **`ProductApiOptions`** extends `ApiOptions` with `defaultChannel`, `defaultCurrency`, `defaultCountry`, `defaultLocale`. These are forwarded as query params by `buildQueryObject` (which passes through any extra string properties beyond `fields`/`pageSize`).
+- **Product query filters**: `SelectorSelectionQuery` supports `channelIds`, `currencyIds`, `countryIds`, `categoryIds`, `brandIds`, `productIds`, `price`, and `stock` filters. These are passed in the POST body via `productApi.query({ include: [{ selections: [...] }] })`.
 - **Product OpenAPI spec URL**: `https://geins-func-product-mgmtapi-dev.azurewebsites.net/api/openapi/v3.json`
 
 ### Price Lists

@@ -303,6 +303,7 @@ export interface QuotationList extends Omit<
   channel: string;
   owner: string;
   buyer: string;
+  requireConfirmation: string;
 }
 
 // =============================================================================
