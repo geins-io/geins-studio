@@ -50,14 +50,14 @@ const mapToListData = (companies: Entity[]): EntityList[] => {
       items: company.buyers,
       entityName: 'buyer',
       formatter: (buyer) =>
-        `${buyer.firstName} ${buyer.lastName} (${buyer._id})`,
+        `${fullName(buyer)} (${buyer._id})`,
       t,
     });
 
     const salesReps = createTooltip({
       items: company.salesReps,
       entityName: 'sales_rep',
-      formatter: (salesRep) => `${salesRep?.firstName} ${salesRep?.lastName}`,
+      formatter: (salesRep) => fullName(salesRep),
       t,
     });
 

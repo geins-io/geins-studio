@@ -249,7 +249,7 @@ const handleCancel = () => {
 const existingCustomerName = computed(() => {
   // First try to get name from existing customer
   if (existingCustomer.value?.firstName || existingCustomer.value?.lastName) {
-    return `${existingCustomer.value.firstName} ${existingCustomer.value.lastName}`.trim();
+    return fullName(existingCustomer.value);
   }
 
   return existingCustomer.value?._id || 'customer';

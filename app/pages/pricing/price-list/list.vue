@@ -78,10 +78,20 @@ onMounted(() => {
     {
       onEdit: (item: Entity) =>
         navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+      onCopy: async (item: Entity) => {
+        try {
+          const newPriceList = await productApi.priceList.id(item._id).copy();
+          toast({ title: t('entity_copied', { entityName }), variant: 'positive' });
+          await navigateTo(entityUrl.replace(entityIdentifier, String(newPriceList._id)));
+        } catch (err) {
+          geinsLogError('copyPriceList :::', getErrorMessage(err));
+          showErrorToast(t('error_copying_entity', { entityName }));
+        }
+      },
       onDelete: async (item: Entity) => await openDeleteDialog(item._id),
     },
     'actions',
-    ['edit', 'delete'],
+    ['edit', 'copy', 'delete'],
   );
   loading.value = false;
 });

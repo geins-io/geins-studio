@@ -85,7 +85,7 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
   ): string => {
     const buyer = allBuyers.find((b) => b._id === email);
     if (buyer) {
-      return `${buyer.firstName || ''} ${buyer.lastName || ''}`.trim();
+      return fullName(buyer);
     }
     return email;
   };

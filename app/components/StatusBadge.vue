@@ -10,20 +10,24 @@ const { t } = useI18n();
 const badgeVariant = computed(() => {
   switch (props.status) {
     case 'pending':
-      return 'outline';
     case 'on-hold':
     case 'backorder':
     case 'partial':
     case 'sent':
       return 'warning';
-    case 'cancelled':
+    case 'canceled':
+      return 'negative-light';
     case 'rejected':
       return 'negative';
     case 'refunded':
     case 'inactive':
       return 'inactive';
+    case 'finalized':
+      return 'positive-light';
     case 'accepted':
+      return 'positive-outline';
     case 'completed':
+    case 'confirmed':
     case true:
       return 'positive';
     case 'draft':

@@ -45,7 +45,7 @@ export const useUserStore = defineStore('user', () => {
   });
 
   const userName = computed(() => {
-    return `${user.value?.firstName || ''} ${user.value?.lastName || ''}`;
+    return fullName(user.value);
   });
 
   const userEmail = computed(() => {

@@ -362,7 +362,7 @@ const fetchUsers = async () => {
     users.value = usersResult.data.value as User[];
     users.value = users.value.map((user) => ({
       ...user,
-      name: user.firstName + ' ' + user.lastName,
+      name: fullName(user),
     }));
   }
 };
@@ -780,7 +780,7 @@ const otherSummary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   if (entityData.value?.buyers?.length) {
     const displayValue = entityData.value.buyers
-      .map((buyer: CompanyBuyer) => `${buyer.firstName} ${buyer.lastName}`)
+      .map((buyer: CompanyBuyer) => fullName(buyer))
       .join(', ');
     dataList.push({
       label: t('buyer', 2),

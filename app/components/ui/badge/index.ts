@@ -12,7 +12,11 @@ export const badgeVariants = cva(
         outline:
           'bg-secondary text-primary/70 dark:border-muted-foreground/30 border',
         positive: 'bg-positive text-positive-foreground',
+        'positive-light': 'bg-positive/20 ring-positive text-positive ring-1',
+        'positive-outline':
+          'text-positive ring-positive border-positive bg-transparent ring-1',
         negative: 'bg-negative text-negative-foreground',
+        'negative-light': 'bg-negative/20 ring-negative text-negative ring-1',
         warning: 'bg-warning text-warning-foreground',
         inactive:
           'bg-muted text-muted-foreground/60 dark:bg-muted/90 dark:text-muted-foreground/60',
