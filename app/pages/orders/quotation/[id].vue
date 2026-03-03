@@ -1011,68 +1011,91 @@ interface StatusAction {
   action: string;
   label: string;
   variant?: 'default' | 'destructive';
+  icon?: 'check' | 'ban' | 'x';
 }
 
-const statusActions = computed<{
-  primary: StatusAction | null;
-  secondary: StatusAction[];
-}>(() => {
+interface StatusActionLayout {
+  placeOrder: boolean;
+  groupActions: StatusAction[];
+  dropdownActions: StatusAction[];
+}
+
+const statusActions = computed<StatusActionLayout>(() => {
   const status = entityData.value?.status;
+  const strict = entityData.value?.settings?.requireConfirmation ?? false;
+
   switch (status) {
     case 'pending':
+      if (strict) {
+        return {
+          placeOrder: false,
+          groupActions: [
+            {
+              action: 'accept',
+              label: t('orders.accept_quotation'),
+              icon: 'check',
+            },
+            {
+              action: 'reject',
+              label: t('orders.reject_quotation'),
+              icon: 'x',
+            },
+          ],
+          dropdownActions: [
+            {
+              action: 'cancel',
+              label: t('orders.cancel_quotation'),
+              icon: 'ban',
+            },
+          ],
+        };
+      }
       return {
-        primary: {
-          action: 'accept',
-          label: t('orders.accept_quotation'),
-        },
-        secondary: [
-          {
-            action: 'reject',
-            label: t('orders.reject_quotation'),
-            variant: 'destructive',
-          },
+        placeOrder: true,
+        groupActions: [
           {
             action: 'cancel',
             label: t('orders.cancel_quotation'),
-            variant: 'destructive',
-          },
-          {
-            action: 'expire',
-            label: t('orders.expire_quotation'),
-            variant: 'destructive',
+            icon: 'ban',
           },
         ],
+        dropdownActions: [],
       };
+
     case 'accepted':
       return {
-        primary: {
-          action: 'confirm',
-          label: t('orders.confirm_quotation'),
-        },
-        secondary: [
+        placeOrder: true,
+        groupActions: [
+          {
+            action: 'confirm',
+            label: t('orders.confirm_quotation'),
+            icon: 'check',
+          },
+        ],
+        dropdownActions: [
           {
             action: 'cancel',
             label: t('orders.cancel_quotation'),
-            variant: 'destructive',
+            icon: 'ban',
           },
         ],
       };
+
     case 'confirmed':
       return {
-        primary: {
-          action: 'finalize',
-          label: t('orders.finalize_quotation'),
-        },
-        secondary: [
+        placeOrder: true,
+        groupActions: [
           {
             action: 'cancel',
             label: t('orders.cancel_quotation'),
-            variant: 'destructive',
+            icon: 'ban',
           },
         ],
+        dropdownActions: [],
       };
+
     default:
-      return { primary: null, secondary: [] };
+      return { placeOrder: false, groupActions: [], dropdownActions: [] };
   }
 });
 
@@ -1451,36 +1474,57 @@ definePageMeta({
 
           <!-- SENT MODE actions -->
           <template v-if="sentMode">
+            <Button
+              v-if="statusActions.placeOrder"
+              @click="
+                openTransitionDialog({
+                  action: 'finalize',
+                  label: $t('orders.place_order'),
+                })
+              "
+            >
+              <LucideShoppingCart class="mr-2 size-4" />
+              {{ $t('orders.place_order') }}
+            </Button>
             <ButtonGroup>
               <Button
-                v-if="statusActions.primary"
-                @click="openTransitionDialog(statusActions.primary)"
+                v-for="action in statusActions.groupActions"
+                :key="action.action"
+                variant="secondary"
+                @click="openTransitionDialog(action)"
               >
-                {{ statusActions.primary.label }}
+                <LucideCheck
+                  v-if="action.icon === 'check'"
+                  class="mr-2 size-4"
+                />
+                <LucideBan v-if="action.icon === 'ban'" class="mr-2 size-4" />
+                <LucideX v-if="action.icon === 'x'" class="mr-2 size-4" />
+                {{ action.label }}
               </Button>
-              <DropdownMenu>
+              <DropdownMenu v-if="statusActions.groupActions.length">
                 <DropdownMenuTrigger as-child>
-                  <Button
-                    :size="statusActions.primary ? 'icon' : 'default'"
-                    :variant="statusActions.primary ? 'outline' : 'secondary'"
-                  >
+                  <Button size="icon" variant="secondary">
                     <LucideMoreHorizontal
-                      v-if="statusActions.primary"
+                      v-if="statusActions.groupActions.length"
                       class="size-3.5"
                     />
-                    <template v-else>
-                      {{ $t('actions') }}
-                      <LucideChevronDown class="ml-2 size-3.5" />
-                    </template>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <template v-if="statusActions.secondary.length">
+                  <template v-if="statusActions.dropdownActions.length">
                     <DropdownMenuItem
-                      v-for="action in statusActions.secondary"
+                      v-for="action in statusActions.dropdownActions"
                       :key="action.action"
                       @click="openTransitionDialog(action)"
                     >
+                      <LucideCheck
+                        v-if="action.icon === 'check'"
+                        class="mr-2 size-4"
+                      />
+                      <LucideBan
+                        v-if="action.icon === 'ban'"
+                        class="mr-2 size-4"
+                      />
                       {{ action.label }}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -1497,6 +1541,22 @@ definePageMeta({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <template v-else>
+                <Button variant="secondary" as-child>
+                  <NuxtLink :to="newEntityUrl">
+                    <LucidePlus class="mr-2 size-4" />
+                    <span>{{ $t('new_entity', { entityName }) }}</span>
+                  </NuxtLink>
+                </Button>
+                <Button
+                  :disabled="copyLoading"
+                  variant="secondary"
+                  @click="handleCopy"
+                >
+                  <LucideCopy class="mr-2 size-4" />
+                  {{ $t('orders.copy_as_new_draft') }}
+                </Button>
+              </template>
             </ButtonGroup>
           </template>
         </ContentActionBar>
@@ -1792,7 +1852,11 @@ definePageMeta({
                       <p class="text-muted-foreground text-xs font-medium">
                         {{ $t('orders.require_confirmation') }}
                       </p>
-                      <ContentQuotationWorkflowInfo />
+                      <ContentQuotationWorkflowInfo
+                        :require-confirmation="
+                          entityData?.settings?.requireConfirmation
+                        "
+                      />
                     </div>
                     <p class="text-sm">
                       {{
@@ -2026,7 +2090,9 @@ definePageMeta({
                         @update:model-value="handleChange"
                       >
                         <template #after-label>
-                          <ContentQuotationWorkflowInfo />
+                          <ContentQuotationWorkflowInfo
+                            :require-confirmation="value"
+                          />
                         </template>
                       </FormItemSwitch>
                     </FormField>

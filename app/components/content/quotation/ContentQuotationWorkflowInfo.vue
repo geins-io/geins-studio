@@ -9,6 +9,12 @@ import {
 
 const { t } = useI18n();
 
+const props = defineProps<{
+  requireConfirmation?: boolean;
+}>();
+
+const requireConfirmation = toRef(props, 'requireConfirmation');
+
 interface Step {
   status: StatusBadgeStatus;
   actors?: string[];
@@ -109,9 +115,32 @@ const strictFlow = computed<FlowItem[]>(() => [
   },
 ]);
 
-function getPrevAction(items: FlowItem[], index: number): Action | undefined {
+const flows = computed(() => [
+  {
+    title: t('orders.workflow_default_title'),
+    items: defaultFlow.value,
+    name: 'default',
+  },
+  {
+    title: t('orders.workflow_strict_title'),
+    items: strictFlow.value,
+    name: 'strict',
+  },
+]);
+
+const getPrevAction = (
+  items: FlowItem[],
+  index: number,
+): Action | undefined => {
   return index > 0 ? items[index - 1]?.action : undefined;
-}
+};
+
+const isSelectedFlow = (flowName: string) => {
+  if (requireConfirmation.value) {
+    return flowName === 'strict';
+  }
+  return flowName === 'default';
+};
 </script>
 
 <template>
@@ -132,21 +161,22 @@ function getPrevAction(items: FlowItem[], index: number): Action | undefined {
         </SheetDescription>
       </SheetHeader>
       <SheetBody>
-        <div class="grid grid-cols-2 gap-8">
+        <div class="grid grid-cols-2 gap-6">
           <div
-            v-for="(flow, index) in [
-              {
-                title: t('orders.workflow_default_title'),
-                items: defaultFlow,
-              },
-              {
-                title: t('orders.workflow_strict_title'),
-                items: strictFlow,
-              },
-            ]"
+            v-for="(flow, index) in flows"
             :key="index"
-            class="max-w-60 space-y-2"
+            :class="
+              cn('relative max-w-60 space-y-2 rounded-lg border p-4', {
+                'border-positive border': isSelectedFlow(flow.name),
+              })
+            "
           >
+            <span
+              v-if="isSelectedFlow(flow.name)"
+              class="bg-card border-positive absolute -end-2 -top-2 flex size-6 items-center justify-center rounded-full border"
+            >
+              <LucideCheck class="text-positive size-4" />
+            </span>
             <p class="text-sm font-semibold">{{ flow.title }}</p>
             <div class="flex flex-col items-center gap-2">
               <template v-for="(item, i) in flow.items" :key="i">
