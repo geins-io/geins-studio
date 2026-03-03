@@ -7,6 +7,7 @@ import type {
   BatchQueryFiltered,
   SelectorCondition,
   BatchQueryResult,
+  EntitySnapshot,
 } from './index';
 
 // =============================================================================
@@ -40,42 +41,38 @@ export type QuotationMessageType =
 // =============================================================================
 
 /**
- * Company (wholesale account) information
+ * Company (wholesale account) snapshot
  */
-export interface QuotationCompany {
-  companyId: number;
+export interface QuotationCompany extends EntitySnapshot {
   name: string;
-  orgNr: string;
+  vatNumber: string;
 }
 
 /**
- * Owner (sales rep) information
+ * Owner (sales rep) snapshot
  */
-export interface QuotationOwner {
-  ownerId?: string;
-  name: string;
-  email: string;
+export interface QuotationOwner extends EntitySnapshot {
+  firstName: string;
+  lastName: string;
   phone: string;
 }
 
 /**
- * Customer (buyer) information
+ * Customer (buyer) snapshot
  */
-export interface QuotationCustomer {
-  customerId?: string;
-  name: string;
-  email: string;
+export interface QuotationCustomer extends EntitySnapshot {
+  firstName: string;
+  lastName: string;
   phone: string;
-  approvedAt?: string;
-  rejectedAt?: string;
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
 }
 
 /**
- * Address information (response) — matches the backend quotationAddress schema.
+ * Address snapshot — matches the backend quotationAddress schema.
  * Fields align with the company Address type (addressLine1, firstName, etc.).
  */
-export interface QuotationAddress {
-  addressId: string;
+export interface QuotationAddress extends EntitySnapshot {
   email?: string;
   phone?: string;
   company?: string;
@@ -109,13 +106,6 @@ export interface QuotationValidShippingMethod {
 }
 
 /**
- * Quotation terms (response)
- */
-export interface QuotationTerms {
-  text: string;
-}
-
-/**
  * Communication message
  */
 export interface QuotationMessage {
@@ -142,8 +132,58 @@ export interface QuotationTotal {
   discount: number;
   shipping: number;
   margin: number;
-  tax: number;
-  grandTotal?: number;
+  vat: number;
+  grandTotalExVat: number;
+  grandTotalIncVat: number;
+  suggestedShippingFee?: number;
+}
+
+// =============================================================================
+// Preview Types
+// =============================================================================
+
+/**
+ * Discount configuration for a quotation (used in create, update, and preview requests).
+ */
+export interface QuotationDiscountRequest {
+  type: 'fixedAmount' | 'percent';
+  value: number;
+}
+
+/**
+ * Request body for the preview endpoint — calculates totals without persisting.
+ */
+export interface QuotationPreviewRequest {
+  companyId?: string | null;
+  buyerId?: string | null;
+  suggestedShippingFee?: number | null;
+  discount?: QuotationDiscountRequest | null;
+  items?: QuotationItemCreate[] | null;
+}
+
+/**
+ * Response from the preview endpoint.
+ * Items are enriched with calculated ordPrice, listPrice, and unitPrice.
+ */
+export interface QuotationPreviewResponse {
+  items?: QuotationItem[];
+  total: QuotationTotal;
+}
+
+// =============================================================================
+// Status Transition Request
+// =============================================================================
+
+/**
+ * Request body for quotation status transitions (send, accept, reject, etc.)
+ */
+export interface StatusTransitionRequest {
+  authorId: string;
+  authorName: string;
+  message?: {
+    type: QuotationMessageType;
+    message: string;
+  };
 }
 
 // =============================================================================
@@ -163,6 +203,13 @@ export interface QuotationValidPaymentMethodRequest {
 export interface QuotationValidShippingMethodRequest {
   shippingId: string;
   shippingFee?: number;
+}
+
+/**
+ * Quotation settings (controls workflow behavior).
+ */
+export interface QuotationSettings {
+  requireConfirmation?: boolean;
 }
 
 // =============================================================================
@@ -196,6 +243,8 @@ export interface QuotationCreate extends CreateEntity<QuotationBase> {
   validPaymentMethods?: QuotationValidPaymentMethodRequest[];
   validShippingMethods?: QuotationValidShippingMethodRequest[];
   items?: QuotationItemCreate[];
+  discount?: QuotationDiscountRequest | null;
+  settings?: QuotationSettings;
 }
 
 /**
@@ -210,13 +259,14 @@ export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
   validPaymentMethods?: QuotationValidPaymentMethodRequest[];
   validShippingMethods?: QuotationValidShippingMethodRequest[];
   items?: QuotationItemCreate[];
+  discount?: QuotationDiscountRequest | null;
+  settings?: QuotationSettings;
 }
 
 /**
  * Response type from API
  */
 export interface Quotation extends ResponseEntity<QuotationBase> {
-  quotationId: string;
   quotationNumber: string;
   currency: string;
   status: QuotationStatus;
@@ -229,10 +279,12 @@ export interface Quotation extends ResponseEntity<QuotationBase> {
   customer?: QuotationCustomer;
   validPaymentMethods?: QuotationValidPaymentMethod[];
   validShippingMethods?: QuotationValidShippingMethod[];
-  terms?: QuotationTerms;
+  terms?: string;
   communication?: QuotationMessage[];
   changelog?: QuotationChangelog[];
   items?: QuotationItem[];
+  discount?: QuotationDiscountRequest;
+  settings?: QuotationSettings;
 }
 
 /**
@@ -251,6 +303,7 @@ export interface QuotationList extends Omit<
   channel: string;
   owner: string;
   buyer: string;
+  requireConfirmation: string;
 }
 
 // =============================================================================
@@ -299,7 +352,7 @@ export interface QuotationItemBase {
 export interface QuotationItemCreate {
   skuId: string;
   quantity: number;
-  customPrice?: number;
+  unitPrice?: number;
 }
 
 export type QuotationItemUpdate = UpdateEntity<QuotationItemBase>;

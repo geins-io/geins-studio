@@ -3,6 +3,7 @@
 // IMPORTS & TYPES
 // =====================================================================================
 import { toTypedSchema } from '@vee-validate/zod';
+import { useDebounceFn } from '@vueuse/core';
 import * as z from 'zod';
 import {
   DataItemDisplayType,
@@ -20,9 +21,17 @@ import type {
   QuotationItemCreate,
   QuotationProductRow,
   QuotationTotal,
+  QuotationDiscountRequest,
+  QuotationMessage,
+  QuotationMessageType,
+  QuotationStatus,
+  StatusTransitionRequest,
   SelectorEntity,
+  SelectorSelectionQuery,
   Address,
+  ProductApiOptions,
 } from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
 // =====================================================================================
@@ -30,11 +39,14 @@ import type { ColumnDef, Row } from '@tanstack/vue-table';
 // =====================================================================================
 const scope = 'pages/orders/quotation/[id].vue';
 const { t } = useI18n();
-const { getEntityUrlFor } = useEntityUrl();
+const { toast } = useToast();
+const { getEntityUrl, getEntityUrlFor } = useEntityUrl();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog(scope);
+const router = useRouter();
 const accountStore = useAccountStore();
 const breadcrumbsStore = useBreadcrumbsStore();
+const userStore = useUserStore();
 
 // =====================================================================================
 // API & REPOSITORY SETUP
@@ -58,16 +70,14 @@ const formSchema = toTypedSchema(
       accountId: z
         .string()
         .min(1, t('entity_required', { entityName: 'company' })),
-      createdBy: z
-        .string()
-        .min(1, t('entity_required', { entityName: 'owner' })),
+      ownerId: z.string().min(1, t('entity_required', { entityName: 'owner' })),
       buyerId: z.string().optional(),
       currency: z
         .string()
         .min(1, t('entity_required', { entityName: 'currency' })),
       expirationDate: z.string().optional(),
-      notes: z.string().optional(),
       paymentTerms: z.string().optional(),
+      requireConfirmation: z.boolean().optional(),
     }),
   }),
 );
@@ -84,8 +94,25 @@ const entityBase: QuotationCreate = {
 // =====================================================================================
 // UI STATE MANAGEMENT
 // =====================================================================================
+// Sent mode — set from API response in parseEntityData
+const sentMode = ref(false);
+const communications = ref<QuotationMessage[]>([]);
+
+// Discount & shipping (standalone refs, not form fields)
+const discountType = ref<'percent' | 'fixedAmount'>('percent');
+const discountValue = ref<string>('');
+const shippingFeeInput = ref<string>('');
+
+// Live preview state
+const previewTotal = ref<QuotationTotal | null>(null);
+const previewLoading = ref(false);
+
 // Tabs & Steps
-const tabs = [t('general'), t('product', 2)];
+const tabs = computed(() =>
+  sentMode.value
+    ? [t('general'), t('communication', 2)]
+    : [t('general'), t('product', 2)],
+);
 
 const stepValidationMap: Record<number, string> = {
   1: 'details',
@@ -93,7 +120,6 @@ const stepValidationMap: Record<number, string> = {
 
 // Company & User selection
 const companies = ref<CustomerCompany[]>([]);
-const users = ref<User[]>([]);
 const buyers = ref<CompanyBuyer[]>([]);
 const selectedCompanyId = ref<string>('');
 const selectedAccountName = ref<string>('');
@@ -101,6 +127,19 @@ const selectedCompany = ref<CustomerCompany | undefined>();
 
 // Edit mode state
 const quotationTotal = ref<QuotationTotal | null>(null);
+
+// Computed: prefer live preview total, fall back to saved total
+const displayTotal = computed<QuotationTotal | null>(
+  () => previewTotal.value ?? quotationTotal.value,
+);
+
+// Computed: build discount request from standalone refs
+const discountRequest = computed<QuotationDiscountRequest | null>(() => {
+  const val = Number(discountValue.value);
+  if (!val || isNaN(val)) return null;
+  return { type: discountType.value, value: val };
+});
+
 const hasExpirationDate = ref(false);
 const selectedBillingAddressId = ref<string>('');
 const selectedShippingAddressId = ref<string>('');
@@ -148,7 +187,7 @@ const selectedSkus = computed(() => {
 // Quotation items data (quantity, custom price & response prices per SKU)
 interface SkuItemData {
   quantity: number;
-  customPrice: number | undefined;
+  unitPrice: number | undefined;
   ordPrice: number;
   listPrice: number;
 }
@@ -157,7 +196,7 @@ const skuItemData = ref<Map<string, SkuItemData>>(new Map());
 
 const defaultSkuItemData: SkuItemData = {
   quantity: 1,
-  customPrice: undefined,
+  unitPrice: undefined,
   ordPrice: 0,
   listPrice: 0,
 };
@@ -211,8 +250,8 @@ const quotationProductRows = computed<QuotationProductRow[]>(() => {
       },
       quotationPrice: {
         price:
-          data.customPrice !== undefined
-            ? String(data.customPrice)
+          data.unitPrice !== undefined
+            ? String(data.unitPrice)
             : data.listPrice
               ? String(data.listPrice)
               : '',
@@ -231,8 +270,8 @@ const quotationItems = computed<QuotationItemCreate[]>(() =>
     return {
       skuId: sku._id,
       quantity: data.quantity,
-      ...(data.customPrice !== undefined && data.customPrice !== data.listPrice
-        ? { customPrice: data.customPrice }
+      ...(data.unitPrice !== undefined && data.unitPrice !== data.listPrice
+        ? { unitPrice: data.unitPrice }
         : {}),
     };
   }),
@@ -246,6 +285,7 @@ const handleQuantityChange = (
   const data = ensureSkuItemData(id);
   data.quantity = Math.max(1, Number(value) || 1);
   skuItemData.value = new Map(skuItemData.value);
+  debouncedCallPreview();
 };
 
 const handleQuotationPriceChange = (
@@ -256,9 +296,10 @@ const handleQuotationPriceChange = (
   const data = ensureSkuItemData(id);
   const num = Number(value);
   // Reset to undefined if value is empty, invalid, or matches the list price
-  data.customPrice =
+  data.unitPrice =
     value === '' || isNaN(num) || num === data.listPrice ? undefined : num;
   skuItemData.value = new Map(skuItemData.value);
+  debouncedCallPreview();
 };
 
 const removeSkuFromSelection = (rowData: QuotationProductRow) => {
@@ -270,7 +311,49 @@ const removeSkuFromSelection = (rowData: QuotationProductRow) => {
   skuSelection.value = updated;
   skuItemData.value.delete(id);
   skuItemData.value = new Map(skuItemData.value);
+  debouncedCallPreview();
 };
+
+// =====================================================================================
+// LIVE PREVIEW
+// =====================================================================================
+const callPreview = async () => {
+  if (createMode.value || sentMode.value || !entityId.value) return;
+  if (quotationItems.value.length === 0) {
+    previewTotal.value = null;
+    return;
+  }
+  previewLoading.value = true;
+  try {
+    const response = await orderApi.quotation.preview(entityId.value, {
+      suggestedShippingFee:
+        shippingFeeInput.value !== ''
+          ? Number(shippingFeeInput.value)
+          : undefined,
+      discount: discountRequest.value || undefined,
+      items: quotationItems.value,
+    });
+    previewTotal.value = response.total;
+    // Enrich skuItemData with calculated prices (ordPrice, listPrice).
+    // Do NOT touch unitPrice — that is user-controlled.
+    if (response.items?.length) {
+      for (const item of response.items) {
+        const skuId = item.sku || item._id;
+        const data = skuItemData.value.get(skuId);
+        if (data) {
+          data.ordPrice = item.ordPrice || 0;
+          data.listPrice = item.listPrice || 0;
+        }
+      }
+      skuItemData.value = new Map(skuItemData.value);
+    }
+  } catch (error) {
+    geinsLogError('Failed to fetch preview:', error);
+  } finally {
+    previewLoading.value = false;
+  }
+};
+const debouncedCallPreview = useDebounceFn(callPreview, 500);
 
 // Columns for quotation products table
 const { getColumns, addActionsColumn, orderAndFilterColumns } =
@@ -337,15 +420,10 @@ const selectedSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
   ]);
 });
 
-// Filtered sales reps based on selected company
+// Sales reps from selected company
 const availableSalesReps = computed(() => {
   if (!selectedCompany.value?.salesReps) return [];
-  return users.value.filter((user) =>
-    selectedCompany.value?.salesReps?.some((rep) => {
-      const repId = typeof rep === 'string' ? rep : rep._id;
-      return repId === user._id;
-    }),
-  );
+  return selectedCompany.value.salesReps;
 });
 
 const availableBuyers = computed(() => {
@@ -354,16 +432,17 @@ const availableBuyers = computed(() => {
 
 // Resolved display names for current owner and buyer
 const currentOwnerName = computed(() => {
-  const ownerId = form.values.details?.createdBy;
+  const ownerId = form.values.details?.ownerId;
   if (!ownerId) return '';
-  return availableSalesReps.value.find((u) => u._id === ownerId)?.name || '';
+  const owner = availableSalesReps.value.find((u) => u._id === ownerId);
+  return fullName(owner);
 });
 
 const currentBuyerName = computed(() => {
   const buyerId = form.values.details?.buyerId;
   if (!buyerId) return '';
   const buyer = availableBuyers.value.find((b) => b._id === buyerId);
-  return buyer ? `${buyer.firstName} ${buyer.lastName}` : '';
+  return fullName(buyer);
 });
 
 // Available currencies based on company's channels
@@ -452,7 +531,6 @@ const {
   reshapeEntityData: (entityData) => ({
     ...entityData,
     items: undefined,
-    terms: entityData.terms?.text,
     validPaymentMethods: entityData.validPaymentMethods?.map((pm) => ({
       paymentId: String(pm.paymentId),
     })),
@@ -465,12 +543,12 @@ const {
     details: {
       name: '',
       accountId: '',
-      createdBy: '',
+      ownerId: '',
       buyerId: '',
       currency: '',
       expirationDate: '',
-      notes: '',
       paymentTerms: 'Net 30',
+      requireConfirmation: false,
     },
   }),
   parseEntityData: (quotation: Quotation) => {
@@ -478,25 +556,41 @@ const {
     entityLiveStatus.value =
       quotation.status === 'pending' || quotation.status === 'accepted';
     quotationTotal.value = quotation.total || null;
+    previewTotal.value = null;
+
+    // Sent mode: any non-draft status
+    sentMode.value = quotation.status !== 'draft';
+    communications.value = quotation.communication || [];
+
+    // Discount & shipping fee from API response
+    if (quotation.discount) {
+      discountType.value = quotation.discount.type;
+      discountValue.value = String(quotation.discount.value);
+    } else {
+      discountType.value = 'percent';
+      discountValue.value = '';
+    }
+    shippingFeeInput.value = quotation.suggestedShippingFee
+      ? String(quotation.suggestedShippingFee)
+      : '';
 
     // Set company info (selectedCompany is already fetched in onMounted for edit mode)
-    const companyId = quotation.company?.companyId?.toString() || '';
+    const companyId = quotation.company?._id || '';
     selectedCompanyId.value = companyId;
     selectedAccountName.value = quotation.company?.name || '';
 
     // Resolve owner and buyer IDs directly from API response
-    const ownerId = quotation.owner?.ownerId || '';
-    const buyerId = quotation.customer?.customerId || '';
+    const ownerId = quotation.owner?._id || '';
+    const buyerId = quotation.customer?._id || '';
 
     // Set address data from API response
-    selectedBillingAddressId.value = quotation.billingAddress?.addressId || '';
-    selectedShippingAddressId.value =
-      quotation.shippingAddress?.addressId || '';
+    selectedBillingAddressId.value = quotation.billingAddress?._id || '';
+    selectedShippingAddressId.value = quotation.shippingAddress?._id || '';
     billingAddress.value = quotation.billingAddress || null;
     shippingAddress.value = quotation.shippingAddress || null;
 
     // Resolve payment terms from validPaymentMethods
-    const paymentTerms = quotation.terms?.text || 'Net 30';
+    const paymentTerms = quotation.terms || 'Net 30';
 
     // Set expiration date toggle
     hasExpirationDate.value = !!quotation.validTo;
@@ -508,7 +602,7 @@ const {
         const skuId = item.sku || item._id;
         newItemData.set(skuId, {
           quantity: item.quantity || 1,
-          customPrice:
+          unitPrice:
             item.unitPrice !== item.ordPrice ? item.unitPrice : undefined,
           ordPrice: item.ordPrice || 0,
           listPrice: item.listPrice || 0,
@@ -526,12 +620,12 @@ const {
       details: {
         name: quotation.name || '',
         accountId: companyId,
-        createdBy: ownerId,
+        ownerId,
         buyerId,
         currency: quotation.currency || 'SEK',
         expirationDate: quotation.validTo || '',
-        notes: quotation.terms?.text || '',
         paymentTerms,
+        requireConfirmation: quotation.settings?.requireConfirmation ?? false,
       },
     });
   },
@@ -542,21 +636,33 @@ const {
       marketId: cm?.marketId || '',
       name: formData.details.name,
       companyId: formData.details.accountId || undefined,
-      ownerId: formData.details.createdBy || undefined,
+      ownerId: formData.details.ownerId || undefined,
       customerId: formData.details.buyerId || undefined,
       terms: formData.details.paymentTerms || undefined,
       items: quotationItems.value.length > 0 ? quotationItems.value : undefined,
+      discount: discountRequest.value || undefined,
+      suggestedShippingFee:
+        shippingFeeInput.value !== ''
+          ? Number(shippingFeeInput.value)
+          : undefined,
+      settings: { requireConfirmation: formData.details.requireConfirmation },
     };
   },
   prepareUpdateData: (formData, _entity) => ({
     name: formData.details.name,
     validTo: formData.details.expirationDate || undefined,
-    ownerId: formData.details.createdBy || undefined,
+    ownerId: formData.details.ownerId || undefined,
     customerId: formData.details.buyerId || undefined,
     billingAddressId: selectedBillingAddressId.value || undefined,
     shippingAddressId: selectedShippingAddressId.value || undefined,
     terms: formData.details.paymentTerms || undefined,
     items: quotationItems.value,
+    discount: discountRequest.value || undefined,
+    suggestedShippingFee:
+      shippingFeeInput.value !== ''
+        ? Number(shippingFeeInput.value)
+        : undefined,
+    settings: { requireConfirmation: formData.details.requireConfirmation },
   }),
   onFormValuesChange: (values) => {
     if (createMode.value) {
@@ -566,22 +672,34 @@ const {
         marketId: cm?.marketId || '',
         name: values.details.name,
         companyId: values.details.accountId || undefined,
-        ownerId: values.details.createdBy || undefined,
+        ownerId: values.details.ownerId || undefined,
         customerId: values.details.buyerId || undefined,
         items:
           quotationItems.value.length > 0 ? quotationItems.value : undefined,
+        settings: { requireConfirmation: values.details.requireConfirmation },
       };
     } else {
+      // In sent mode, form fields are unmounted and VeeValidate clears their values.
+      // Skip the update to preserve entityDataUpdate from reshapeEntityData.
+      if (sentMode.value) return;
       entityDataUpdate.value = {
         ...entityData.value,
         name: values.details.name,
         validTo: values.details.expirationDate || undefined,
-        ownerId: values.details.createdBy || undefined,
+        ownerId: values.details.ownerId || undefined,
         customerId: values.details.buyerId || undefined,
         billingAddressId: selectedBillingAddressId.value || undefined,
         shippingAddressId: selectedShippingAddressId.value || undefined,
         terms: values.details.paymentTerms || undefined,
         items: quotationItems.value,
+        discount: discountRequest.value || undefined,
+        suggestedShippingFee:
+          shippingFeeInput.value !== ''
+            ? Number(shippingFeeInput.value)
+            : undefined,
+        settings: {
+          requireConfirmation: values.details.requireConfirmation,
+        },
       };
     }
   },
@@ -590,7 +708,7 @@ const {
 // =====================================================================================
 // ERROR HANDLING SETUP
 // =====================================================================================
-const { handleFetchResult } = usePageError({
+const { handleFetchResult, showErrorToast } = usePageError({
   entityName,
   entityId: entityId.value,
   scope,
@@ -605,8 +723,6 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
 // =====================================================================================
 // DATA FETCHING
 // =====================================================================================
-const { geinsFetch } = useGeinsApi();
-
 // Fetch companies
 const fetchCompanies = async () => {
   companies.value = await customerApi.company.list({
@@ -614,24 +730,24 @@ const fetchCompanies = async () => {
   });
 };
 
-// Fetch users (sales reps)
-const fetchUsers = async () => {
-  const usersResult = await geinsFetch<User[]>('/user/list');
-  if (usersResult) {
-    users.value = usersResult.map((user) => ({
-      ...user,
-      name: user.firstName + ' ' + user.lastName,
-    }));
-  }
-};
-
 // Fetch products with SKUs for product selector
 const fetchProducts = async () => {
   loadingProducts.value = true;
   try {
-    const response = await productApi.list({
-      fields: ['media', 'skus'],
-    });
+    const channelId = entityData.value?.channelId;
+    const currency = entityData.value?.currency;
+    const options: ProductApiOptions = { fields: ['media', 'skus'] };
+    const selection: SelectorSelectionQuery = {
+      ...(channelId && { channelIds: [channelId] }),
+      ...(currency && { currencyIds: [currency] }),
+    };
+    const hasFilters = channelId || currency;
+    const response = hasFilters
+      ? await productApi.query(
+          { include: [{ selections: [selection] }] },
+          options,
+        )
+      : await productApi.list(options);
 
     productsWithSkus.value = transformProductsToSelectorEntities(
       response?.items || [],
@@ -664,7 +780,7 @@ watch(
       selectedAccountName.value = company?.name || '';
 
       // Clear sales rep and buyer when company changes
-      form.setFieldValue('details.createdBy', '', false);
+      form.setFieldValue('details.ownerId', '', false);
       form.setFieldValue('details.buyerId', '', false);
 
       // Set currency to first available from company's channels
@@ -674,10 +790,6 @@ watch(
           availableCurrencies.value[0]?._id,
         );
       }
-
-      // Re-fetch products filtered for this company's channel
-      await nextTick();
-      fetchProducts();
     } else {
       selectedCompany.value = undefined;
       selectedAccountName.value = '';
@@ -717,12 +829,33 @@ watch([selectedBillingAddressId, selectedShippingAddressId], () => {
   };
 });
 
+// Sync discount & shipping fee with entityDataUpdate for unsaved changes detection
+watch([discountType, discountValue, shippingFeeInput], () => {
+  if (createMode.value || !entityDataUpdate.value) return;
+  entityDataUpdate.value = {
+    ...entityDataUpdate.value,
+    discount: discountRequest.value || undefined,
+    suggestedShippingFee:
+      shippingFeeInput.value !== ''
+        ? Number(shippingFeeInput.value)
+        : undefined,
+  };
+});
+
+// Trigger preview when SKU selection changes
+watch(simpleSkuSelection, () => {
+  if (!createMode.value && !sentMode.value) {
+    debouncedCallPreview();
+  }
+});
+
 // =====================================================================================
 // CUSTOMER PANEL HANDLER
 // =====================================================================================
 
 const toQuotationAddress = (address: Address): QuotationAddress => ({
-  addressId: address._id,
+  _id: address._id,
+  _type: 'geins.wholesale_account_address',
   email: address.email,
   phone: address.phone,
   company: address.company,
@@ -745,7 +878,7 @@ const handleCustomerPanelSave = (data: {
   shippingAddressId: string;
 }) => {
   // Update form values for owner and buyer
-  form.setFieldValue('details.createdBy', data.ownerId);
+  form.setFieldValue('details.ownerId', data.ownerId);
   form.setFieldValue('details.buyerId', data.buyerId);
 
   // Store address IDs for update payload
@@ -765,7 +898,11 @@ const handleCustomerPanelSave = (data: {
 // =====================================================================================
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
+const fetchingData = ref(false);
+
 if (!createMode.value) {
+  fetchingData.value = true;
+
   const { data, error, refresh } = await useAsyncData<Quotation>(
     entityFetchKey.value,
     () => orderApi.quotation.get(entityId.value, { fields: ['all'] }),
@@ -774,14 +911,11 @@ if (!createMode.value) {
   refreshEntityData.value = refresh;
 
   onMounted(async () => {
-    // Fetch users (needed for sales rep display)
-    await fetchUsers();
-
     // Validate entity data
     const quotation = handleFetchResult<Quotation>(error.value, data.value);
 
     // Fetch only the selected company (instead of all companies)
-    const companyId = quotation.company?.companyId?.toString() || '';
+    const companyId = quotation.company?._id || '';
     if (companyId) {
       const company = await customerApi.company.get(companyId, {
         fields: ['buyers', 'salesreps', 'addresses', 'pricelists'],
@@ -790,20 +924,36 @@ if (!createMode.value) {
     }
 
     await parseAndSaveData(quotation, false);
+    fetchingData.value = false;
 
     // Fetch products for SKU selector (must await so skuSelection is
     // populated before we take the unsaved-changes baseline snapshot)
     await fetchProducts();
+
+    // Trigger initial preview so prices are enriched before the snapshot
+    if (quotationItems.value.length > 0) {
+      await callPreview();
+    }
 
     // Set the saved data snapshot after all async data has settled,
     // so the unsaved changes baseline matches the fully populated form
     await nextTick();
     setOriginalSavedData();
   });
+
+  // Re-parse entity data when refreshed (e.g., after a status transition).
+  // refresh() from useAsyncData updates data.value reactively, but parseAndSaveData
+  // is only called explicitly in onMounted — so we watch data for subsequent changes.
+  watch(data, async (newData) => {
+    if (!newData) return;
+    await parseAndSaveData(newData, false);
+    await nextTick();
+    setOriginalSavedData();
+  });
 } else {
-  // Create mode: fetch all companies and users
+  // Create mode: fetch all companies
   onMounted(async () => {
-    await Promise.all([fetchCompanies(), fetchUsers()]);
+    await fetchCompanies();
   });
 }
 
@@ -822,6 +972,288 @@ const handleSave = async () => {
 };
 
 // =====================================================================================
+// SEND READINESS
+// =====================================================================================
+const sendBlockReasons = computed<string[]>(() => {
+  const reasons: string[] = [];
+  const details = form.values.details;
+  if (!details?.name) {
+    reasons.push(t('orders.send_requires_name'));
+  }
+  if (!details?.accountId) {
+    reasons.push(t('orders.send_requires_customer'));
+  }
+  if (!details?.ownerId) {
+    reasons.push(t('orders.send_requires_owner'));
+  }
+  if (!details?.buyerId) {
+    reasons.push(t('orders.send_requires_buyer'));
+  }
+  if (!selectedBillingAddressId.value) {
+    reasons.push(t('orders.send_requires_billing_address'));
+  }
+  if (!selectedShippingAddressId.value) {
+    reasons.push(t('orders.send_requires_shipping_address'));
+  }
+  if (!details?.paymentTerms) {
+    reasons.push(t('orders.send_requires_terms'));
+  }
+  if (!details?.currency) {
+    reasons.push(t('orders.send_requires_currency'));
+  }
+  if (quotationItems.value.length === 0) {
+    reasons.push(t('orders.send_requires_products'));
+  }
+  if (hasUnsavedChanges.value) {
+    reasons.push(t('orders.send_requires_no_unsaved_changes'));
+  }
+  return reasons;
+});
+
+// =====================================================================================
+// STATUS TRANSITION LOGIC
+// =====================================================================================
+
+interface StatusAction {
+  action: string;
+  label: string;
+  variant?: 'default' | 'destructive';
+  icon?: 'check' | 'ban' | 'x';
+}
+
+interface StatusActionLayout {
+  placeOrder: boolean;
+  groupActions: StatusAction[];
+  dropdownActions: StatusAction[];
+}
+
+const statusActions = computed<StatusActionLayout>(() => {
+  const status = entityData.value?.status;
+  const strict = entityData.value?.settings?.requireConfirmation ?? false;
+
+  switch (status) {
+    case 'pending':
+      if (strict) {
+        return {
+          placeOrder: false,
+          groupActions: [
+            {
+              action: 'accept',
+              label: t('orders.accept_quotation'),
+              icon: 'check',
+            },
+            {
+              action: 'reject',
+              label: t('orders.reject_quotation'),
+              icon: 'x',
+            },
+          ],
+          dropdownActions: [
+            {
+              action: 'cancel',
+              label: t('orders.cancel_quotation'),
+              icon: 'ban',
+            },
+          ],
+        };
+      }
+      return {
+        placeOrder: true,
+        groupActions: [
+          {
+            action: 'cancel',
+            label: t('orders.cancel_quotation'),
+            icon: 'ban',
+          },
+        ],
+        dropdownActions: [],
+      };
+
+    case 'accepted':
+      return {
+        placeOrder: true,
+        groupActions: [
+          {
+            action: 'confirm',
+            label: t('orders.confirm_quotation'),
+            icon: 'check',
+          },
+        ],
+        dropdownActions: [
+          {
+            action: 'cancel',
+            label: t('orders.cancel_quotation'),
+            icon: 'ban',
+          },
+        ],
+      };
+
+    case 'confirmed':
+      return {
+        placeOrder: true,
+        groupActions: [
+          {
+            action: 'cancel',
+            label: t('orders.cancel_quotation'),
+            icon: 'ban',
+          },
+        ],
+        dropdownActions: [],
+      };
+
+    default:
+      return { placeOrder: false, groupActions: [], dropdownActions: [] };
+  }
+});
+
+// Transition dialog state
+const transitionDialogOpen = ref(false);
+const transitionAction = ref<StatusAction | null>(null);
+const transitionLoading = ref(false);
+
+const openTransitionDialog = (action: StatusAction) => {
+  transitionAction.value = action;
+  transitionDialogOpen.value = true;
+};
+
+const buildTransitionRequest = (
+  message?: string,
+  messageType: QuotationMessageType = 'internal',
+): StatusTransitionRequest => {
+  const { userName, userEmail } = storeToRefs(userStore);
+  const request: StatusTransitionRequest = {
+    authorId: userEmail.value,
+    authorName: userName.value,
+  };
+  if (message) {
+    request.message = { type: messageType, message };
+  }
+  return request;
+};
+
+type TransitionMethod = (
+  id: string,
+  data: StatusTransitionRequest,
+) => Promise<void>;
+
+const transitionMethods: Record<string, TransitionMethod> = {
+  send: (id, data) => orderApi.quotation.send(id, data),
+  accept: (id, data) => orderApi.quotation.accept(id, data),
+  reject: (id, data) => orderApi.quotation.reject(id, data),
+  confirm: (id, data) => orderApi.quotation.confirm(id, data),
+  expire: (id, data) => orderApi.quotation.expire(id, data),
+  cancel: (id, data) => orderApi.quotation.cancel(id, data),
+  finalize: (id, data) => orderApi.quotation.finalize(id, data),
+};
+
+const handleStatusTransition = async (
+  action: string,
+  message?: string,
+  messageType: QuotationMessageType = 'internal',
+) => {
+  const method = transitionMethods[action];
+  if (!method) return;
+
+  transitionLoading.value = true;
+  try {
+    const request = buildTransitionRequest(message, messageType);
+    await method(entityId.value, request);
+    await refreshEntityData.value?.();
+    toast({
+      title: t('orders.quotation_transition_success'),
+      variant: 'positive',
+    });
+  } catch (error) {
+    geinsLogError(`Failed to ${action} quotation:`, error);
+    showErrorToast(t('orders.quotation_transition_error'));
+  } finally {
+    transitionLoading.value = false;
+    transitionDialogOpen.value = false;
+  }
+};
+
+// Send quotation dialog state
+const sendDialogOpen = ref(false);
+const sendLoading = ref(false);
+
+const handleSendQuotation = async (message?: string) => {
+  sendLoading.value = true;
+  try {
+    const request = buildTransitionRequest(message, 'toCustomer');
+    await orderApi.quotation.send(entityId.value, request);
+    currentTab.value = 0;
+    await refreshEntityData.value?.();
+    toast({ title: t('entity_sent', { entityName }), variant: 'positive' });
+  } catch (error) {
+    geinsLogError('Failed to send quotation:', error);
+    showErrorToast(t('error_sending_entity', { entityName }));
+  } finally {
+    sendLoading.value = false;
+    sendDialogOpen.value = false;
+  }
+};
+
+// Copy as new draft
+const copyLoading = ref(false);
+const handleCopy = async () => {
+  copyLoading.value = true;
+  try {
+    const newQuotation = await orderApi.quotation.copy(entityId.value);
+    if (newQuotation?._id) {
+      toast({ title: t('entity_copied', { entityName }), variant: 'positive' });
+      await router.push(getEntityUrl(newQuotation._id));
+    }
+  } catch (error) {
+    geinsLogError('Failed to copy quotation:', error);
+    showErrorToast(t('error_copying_entity', { entityName }));
+  } finally {
+    copyLoading.value = false;
+  }
+};
+
+// Read-only columns for sent mode items table
+const sentModeSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
+  if (quotationProductRows.value.length === 0) return [];
+
+  const columns = getColumns(quotationProductRows.value, {
+    sortable: false,
+    includeColumns: [
+      'product',
+      'skuId',
+      'quantity',
+      'price',
+      'priceListPrice',
+      'quotationPrice',
+    ],
+    columnTitles: {
+      product: t('product'),
+      skuId: t('orders.sku_id'),
+      quantity: t('quantity'),
+      price: t('orders.base_price'),
+      priceListPrice: t('orders.price_list_price'),
+      quotationPrice: t('orders.quotation_price'),
+    },
+    columnTypes: {
+      product: 'product',
+      skuId: 'default',
+      quantity: 'default',
+      price: 'currency',
+      priceListPrice: 'currency',
+      quotationPrice: 'currency',
+    },
+  });
+
+  return orderAndFilterColumns(columns, [
+    'product',
+    'skuId',
+    'quantity',
+    'price',
+    'priceListPrice',
+    'quotationPrice',
+  ]);
+});
+
+// =====================================================================================
 // SUMMARY DATA
 // =====================================================================================
 const companySummary = computed<DataItem[]>(() => {
@@ -829,7 +1261,10 @@ const companySummary = computed<DataItem[]>(() => {
   const formValues = form.values.details;
 
   if (selectedAccountName.value) {
-    dataList.push({ label: t('company'), value: selectedAccountName.value });
+    dataList.push({
+      label: t('company'),
+      value: selectedAccountName.value,
+    });
   }
   if (!createMode.value && selectedCompany.value?.vatNumber) {
     dataList.push({
@@ -838,20 +1273,17 @@ const companySummary = computed<DataItem[]>(() => {
     });
   }
 
-  const ownerName =
-    availableSalesReps.value.find((u) => u._id === formValues?.createdBy)
-      ?.name || formValues?.createdBy;
-  if (ownerName) {
-    dataList.push({ label: t('owner'), value: ownerName });
+  if (currentOwnerName.value) {
+    dataList.push({
+      label: t('owner'),
+      value: currentOwnerName.value,
+    });
   }
 
-  const buyerObj = availableBuyers.value.find(
-    (b) => b._id === formValues?.buyerId,
-  );
-  if (buyerObj) {
+  if (currentBuyerName.value) {
     dataList.push({
       label: t('buyer'),
-      value: `${buyerObj.firstName} ${buyerObj.lastName}`,
+      value: currentBuyerName.value,
     });
   }
   if (formValues?.currency) {
@@ -870,9 +1302,16 @@ const summary = computed<DataItem[]>(() => {
   if (!entityData.value) return dataList;
 
   const formValues = form.values.details;
+  // In sent mode, VeeValidate clears form values when fields unmount.
+  // Use entityData (from reshapeEntityData) as the primary source to stay correct in all modes.
+  const summaryName = entityData.value?.name || formValues?.name;
+  const summaryExpirationDate =
+    entityData.value?.validTo || formValues?.expirationDate;
+  const summaryPaymentTerms =
+    entityData.value?.terms || formValues?.paymentTerms;
 
-  if (formValues?.name) {
-    dataList.push({ label: t('name'), value: formValues.name });
+  if (summaryName) {
+    dataList.push({ label: t('name'), value: summaryName });
   }
   if (!createMode.value) {
     dataList.push({
@@ -880,20 +1319,26 @@ const summary = computed<DataItem[]>(() => {
       value: entityData.value.quotationNumber,
       displayType: DataItemDisplayType.Copy,
     });
+    dataList.push({
+      label: t('orders.require_confirmation'),
+      value: entityData.value.settings?.requireConfirmation
+        ? t('yes')
+        : t('no'),
+    });
   }
   if (createMode.value && companySummary.value.length) {
     dataList.push(...companySummary.value);
   }
-  if (formValues?.expirationDate) {
+  if (summaryExpirationDate) {
     dataList.push({
       label: t('expiration_date'),
-      value: formatDate(formValues.expirationDate),
+      value: formatDate(summaryExpirationDate),
     });
   }
-  if (!createMode.value && formValues?.paymentTerms) {
+  if (!createMode.value && summaryPaymentTerms) {
     dataList.push({
       label: t('orders.payment_terms'),
-      value: formValues.paymentTerms,
+      value: summaryPaymentTerms,
     });
   }
 
@@ -932,6 +1377,10 @@ const productsSummary = computed<DataItem[]>(() => {
 
 const settingsSummary = ref<DataItem[]>([]);
 
+const quotationStatus = computed<QuotationStatus>(
+  () => entityData.value?.status || 'draft',
+);
+
 const { summaryProps } = useEntityEditSummary({
   createMode,
   formTouched,
@@ -940,7 +1389,7 @@ const { summaryProps } = useEntityEditSummary({
   entityName,
   entityLiveStatus,
   showActiveStatus: false,
-  status: entityData.value?.status || 'draft',
+  status: quotationStatus,
 });
 
 definePageMeta({
@@ -961,6 +1410,22 @@ definePageMeta({
     :loading="deleting"
     @confirm="confirmDelete"
   />
+  <DialogConfirmSend
+    v-model:open="sendDialogOpen"
+    :entity-name="entityName"
+    :loading="sendLoading"
+    :block-reasons="sendBlockReasons"
+    @confirm="handleSendQuotation"
+  />
+  <DialogStatusTransition
+    v-if="transitionAction"
+    v-model:open="transitionDialogOpen"
+    :action="transitionAction.label"
+    :entity-name="entityName"
+    :loading="transitionLoading"
+    :variant="transitionAction.variant || 'default'"
+    @confirm="(msg) => handleStatusTransition(transitionAction!.action, msg)"
+  />
   <ContentEditWrap
     :entity-name="entityName"
     :entity-id="entityId"
@@ -970,48 +1435,142 @@ definePageMeta({
     <template #header>
       <ContentHeader :title="entityPageTitle" :entity-name="entityName">
         <ContentActionBar>
-          <ButtonIcon
-            v-if="!createMode"
-            icon="save"
-            :loading="loading"
-            :disabled="!hasUnsavedChanges || loading"
-            @click="handleSave"
-            >{{ $t('save_entity', { entityName: 'draft' }) }}</ButtonIcon
-          >
-          <ButtonGroup>
+          <!-- DRAFT MODE actions -->
+          <template v-if="!createMode && !sentMode">
             <ButtonIcon
-              v-if="!createMode"
-              variant="secondary"
-              icon="send"
-              :disabled="!formValid || loading"
-              >{{ $t('send_entity', { entityName }) }}
-            </ButtonIcon>
-            <DropdownMenu v-if="!createMode">
-              <DropdownMenuTrigger as-child>
-                <Button size="icon" variant="secondary">
-                  <LucideMoreHorizontal class="size-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem as-child>
+              icon="save"
+              :loading="loading"
+              :disabled="!hasUnsavedChanges || loading"
+              @click="handleSave"
+              >{{ $t('save_entity', { entityName: 'draft' }) }}</ButtonIcon
+            >
+            <ButtonGroup>
+              <ButtonIcon
+                variant="secondary"
+                icon="send"
+                :disabled="loading"
+                @click="sendDialogOpen = true"
+                >{{ $t('send_entity', { entityName }) }}
+              </ButtonIcon>
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button size="icon" variant="secondary">
+                    <LucideMoreHorizontal class="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem as-child>
+                    <NuxtLink :to="newEntityUrl">
+                      <LucidePlus class="mr-2 size-4" />
+                      <span>{{ $t('new_entity', { entityName }) }}</span>
+                    </NuxtLink>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem :disabled="copyLoading" @click="handleCopy">
+                    <LucideCopy class="mr-2 size-4" />
+                    <span>{{ $t('orders.copy_as_new_draft') }}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem @click="openDeleteDialog">
+                    <LucideTrash class="mr-2 size-4" />
+                    <span>{{ $t('delete_entity', { entityName }) }}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </ButtonGroup>
+          </template>
+
+          <!-- SENT MODE actions -->
+          <template v-if="sentMode">
+            <Button
+              v-if="statusActions.placeOrder"
+              @click="
+                openTransitionDialog({
+                  action: 'finalize',
+                  label: $t('orders.place_order'),
+                })
+              "
+            >
+              <LucideShoppingCart class="mr-2 size-4" />
+              {{ $t('orders.place_order') }}
+            </Button>
+            <ButtonGroup>
+              <Button
+                v-for="action in statusActions.groupActions"
+                :key="action.action"
+                variant="secondary"
+                @click="openTransitionDialog(action)"
+              >
+                <LucideCheck
+                  v-if="action.icon === 'check'"
+                  class="mr-2 size-4"
+                />
+                <LucideBan v-if="action.icon === 'ban'" class="mr-2 size-4" />
+                <LucideX v-if="action.icon === 'x'" class="mr-2 size-4" />
+                {{ action.label }}
+              </Button>
+              <DropdownMenu v-if="statusActions.groupActions.length">
+                <DropdownMenuTrigger as-child>
+                  <Button size="icon" variant="secondary">
+                    <LucideMoreHorizontal
+                      v-if="statusActions.groupActions.length"
+                      class="size-3.5"
+                    />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <template v-if="statusActions.dropdownActions.length">
+                    <DropdownMenuItem
+                      v-for="action in statusActions.dropdownActions"
+                      :key="action.action"
+                      @click="openTransitionDialog(action)"
+                    >
+                      <LucideCheck
+                        v-if="action.icon === 'check'"
+                        class="mr-2 size-4"
+                      />
+                      <LucideBan
+                        v-if="action.icon === 'ban'"
+                        class="mr-2 size-4"
+                      />
+                      {{ action.label }}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </template>
+                  <DropdownMenuItem as-child>
+                    <NuxtLink :to="newEntityUrl">
+                      <LucidePlus class="mr-2 size-4" />
+                      <span>{{ $t('new_entity', { entityName }) }}</span>
+                    </NuxtLink>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem :disabled="copyLoading" @click="handleCopy">
+                    <LucideCopy class="mr-2 size-4" />
+                    <span>{{ $t('orders.copy_as_new_draft') }}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <template v-else>
+                <Button variant="secondary" as-child>
                   <NuxtLink :to="newEntityUrl">
                     <LucidePlus class="mr-2 size-4" />
                     <span>{{ $t('new_entity', { entityName }) }}</span>
                   </NuxtLink>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem @click="openDeleteDialog">
-                  <LucideTrash class="mr-2 size-4" />
-                  <span>{{ $t('delete_entity', { entityName }) }}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </ButtonGroup>
+                </Button>
+                <Button
+                  :disabled="copyLoading"
+                  variant="secondary"
+                  @click="handleCopy"
+                >
+                  <LucideCopy class="mr-2 size-4" />
+                  {{ $t('orders.copy_as_new_draft') }}
+                </Button>
+              </template>
+            </ButtonGroup>
+          </template>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
         </template>
-        <template v-if="!createMode" #changes>
+        <template v-if="!createMode && !sentMode" #changes>
           <ContentEditHasChanges :changes="hasUnsavedChanges" />
         </template>
       </ContentHeader>
@@ -1098,7 +1657,7 @@ definePageMeta({
                   <FormGrid design="1+1+1">
                     <FormField
                       v-slot="{ componentField }"
-                      name="details.createdBy"
+                      name="details.ownerId"
                     >
                       <FormItem>
                         <FormLabel>{{
@@ -1118,11 +1677,11 @@ definePageMeta({
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem
-                                v-for="user in availableSalesReps"
-                                :key="user._id"
-                                :value="user._id"
+                                v-for="salesRep in availableSalesReps"
+                                :key="salesRep._id"
+                                :value="salesRep._id"
                               >
-                                {{ user.name }}
+                                {{ fullName(salesRep) }}
                               </SelectItem>
                             </SelectContent>
                           </Select>
@@ -1157,7 +1716,7 @@ definePageMeta({
                                 :key="buyer._id"
                                 :value="buyer._id"
                               >
-                                {{ buyer.firstName }} {{ buyer.lastName }}
+                                {{ fullName(buyer) }}
                               </SelectItem>
                             </SelectContent>
                           </Select>
@@ -1223,7 +1782,267 @@ definePageMeta({
               </div>
             </template>
 
-            <!-- ========== EDIT MODE ========== -->
+            <!-- ========== SENT MODE (read-only) ========== -->
+            <template v-else-if="sentMode">
+              <!-- Card 1: Quotation Details (read-only) -->
+              <ContentEditCard
+                :create-mode="false"
+                :title="$t('entity_details', { entityName })"
+              >
+                <div class="space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('entity_name', { entityName }) }}
+                      </p>
+                      <p class="text-sm">
+                        {{ entityData?.name || '-' }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('ref_number') }}
+                      </p>
+                      <p class="text-sm">
+                        {{ entityData?.quotationNumber || '-' }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('status') }}
+                      </p>
+                      <StatusBadge :status="quotationStatus" />
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('expiration_date') }}
+                      </p>
+                      <p class="text-sm">
+                        {{
+                          entityData?.validTo
+                            ? formatDate(entityData.validTo)
+                            : $t('orders.no_expiration_date')
+                        }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.sent_on') }}
+                      </p>
+                      <p class="text-sm">
+                        {{
+                          entityData?.validFrom
+                            ? formatDate(entityData.validFrom)
+                            : '-'
+                        }}
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.modified_at') }}
+                      </p>
+                      <p class="text-sm">
+                        {{
+                          entityData?.modifiedAt
+                            ? formatDate(entityData.modifiedAt)
+                            : '-'
+                        }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="border-t pt-4">
+                    <div class="mb-1 flex items-center gap-1.5">
+                      <p class="text-muted-foreground text-xs font-medium">
+                        {{ $t('orders.require_confirmation') }}
+                      </p>
+                      <ContentQuotationWorkflowInfo
+                        :require-confirmation="
+                          entityData?.settings?.requireConfirmation
+                        "
+                      />
+                    </div>
+                    <p class="text-sm">
+                      {{
+                        entityData?.settings?.requireConfirmation
+                          ? $t('yes')
+                          : $t('no')
+                      }}
+                    </p>
+                  </div>
+                </div>
+              </ContentEditCard>
+
+              <!-- Card 2: Customer (read-only, no Change button) -->
+              <ContentEditCard :create-mode="false" :title="$t('customer')">
+                <div class="space-y-4">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('company') }}
+                      </p>
+                      <p class="text-sm">
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ selectedCompany?.name || '-' }}
+                        </template>
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('customers.vat_number') }}
+                      </p>
+                      <p class="text-sm">
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ selectedCompany?.vatNumber || '-' }}
+                        </template>
+                      </p>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('billing_address') }}
+                      </p>
+                      <ContentAddressDisplay
+                        :loading="fetchingData"
+                        :address="billingAddress"
+                        address-only
+                      />
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('shipping_address') }}
+                      </p>
+                      <ContentAddressDisplay
+                        :loading="fetchingData"
+                        :address="shippingAddress"
+                        address-only
+                      />
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('buyer') }}
+                      </p>
+                      <p class="text-sm">
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ currentBuyerName || '-' }}
+                        </template>
+                      </p>
+                    </div>
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('orders.quotation_owner') }}
+                      </p>
+                      <p class="text-sm">
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ currentOwnerName || '-' }}
+                        </template>
+                      </p>
+                    </div>
+                  </div>
+                  <div class="border-t pt-4">
+                    <p class="text-muted-foreground mb-1 text-xs font-medium">
+                      {{ $t('currency') }}
+                    </p>
+                    <p class="text-sm">
+                      <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                      <template v-else>
+                        {{ entityData?.currency || '-' }}
+                      </template>
+                    </p>
+                  </div>
+                </div>
+              </ContentEditCard>
+
+              <!-- Card 3: Payment Terms (read-only) -->
+              <ContentEditCard
+                :create-mode="false"
+                :title="$t('orders.payment_settings')"
+              >
+                <div>
+                  <p class="text-muted-foreground mb-1 text-xs font-medium">
+                    {{ $t('orders.payment_terms') }}
+                  </p>
+                  <p class="text-sm">
+                    <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                    <template v-else>
+                      {{ entityData?.terms || '-' }}
+                    </template>
+                  </p>
+                </div>
+              </ContentEditCard>
+
+              <!-- Card 4: Items & Summary -->
+              <ContentEditCard
+                :create-mode="false"
+                :title="$t('orders.items_and_summary')"
+              >
+                <template v-if="!loadingProducts">
+                  <div
+                    v-if="selectedCompany?.priceLists?.length"
+                    class="dark:bg-input mb-4 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2.5"
+                  >
+                    <span class="text-primary text-xs font-medium">
+                      {{ $t('orders.price_lists_applied') }}:
+                    </span>
+                    <NuxtLink
+                      v-for="pl in selectedCompany.priceLists"
+                      :key="pl._id"
+                      :to="getEntityUrlFor('price-list', 'pricing', pl._id)"
+                      target="_blank"
+                      :class="
+                        cn(
+                          'bg-secondary dark:bg-card dark:hover:border-primary/50 data-[state=active]:ring-ring ring-offset-background hover:bg-muted/80 flex h-6 items-center rounded-md border px-2 py-0.5 text-sm transition-colors data-[state=active]:ring-2 data-[state=active]:ring-offset-2 dark:h-7',
+                        )
+                      "
+                    >
+                      {{ pl.name }}
+                      <LucideExternalLink class="ml-1.5 size-3" />
+                    </NuxtLink>
+                  </div>
+                  <TableView
+                    :columns="sentModeSkuColumns"
+                    :data="quotationProductRows"
+                    entity-name="product"
+                    :mode="TableMode.Minimal"
+                    :empty-description="
+                      t(
+                        'empty_description_not_added',
+                        {
+                          entityName: 'product',
+                        },
+                        2,
+                      )
+                    "
+                    :page-size="10"
+                  />
+                  <ContentPriceSummary
+                    v-if="quotationTotal && selectedSkus.length"
+                    class="mx-3"
+                    :total="quotationTotal"
+                    :currency="entityData?.currency || ''"
+                  />
+                </template>
+                <template v-else>
+                  <div class="flex items-center justify-center py-8">
+                    <LucideLoader2
+                      class="text-muted-foreground size-6 animate-spin"
+                    />
+                  </div>
+                </template>
+              </ContentEditCard>
+            </template>
+
+            <!-- ========== EDIT MODE (draft) ========== -->
             <template v-else>
               <!-- Card 1: Quotation Details -->
               <ContentEditCard
@@ -1263,6 +2082,30 @@ definePageMeta({
                       </FormItem>
                     </FormField>
                   </FormGrid>
+                  <FormGrid design="1">
+                    <FormField
+                      v-slot="{ value, handleChange }"
+                      name="details.requireConfirmation"
+                    >
+                      <FormItemSwitch
+                        :model-value="value"
+                        :label="$t('orders.require_confirmation')"
+                        :description="
+                          $t('orders.require_confirmation_description')
+                        "
+                        class="mt-4"
+                        @update:model-value="handleChange"
+                      >
+                        <template #after-label>
+                          <ContentQuotationWorkflowInfo
+                            :require-confirmation="value"
+                            edit-mode
+                            @update:require-confirmation="handleChange"
+                          />
+                        </template>
+                      </FormItemSwitch>
+                    </FormField>
+                  </FormGrid>
                 </FormGridWrap>
               </ContentEditCard>
 
@@ -1273,7 +2116,7 @@ definePageMeta({
                     :company="selectedCompany"
                     :available-sales-reps="availableSalesReps"
                     :available-buyers="availableBuyers"
-                    :current-owner-id="form.values.details?.createdBy || ''"
+                    :current-owner-id="form.values.details?.ownerId || ''"
                     :current-buyer-id="form.values.details?.buyerId || ''"
                     :current-billing-address-id="selectedBillingAddressId"
                     :current-shipping-address-id="selectedShippingAddressId"
@@ -1293,7 +2136,10 @@ definePageMeta({
                         {{ $t('company') }}
                       </p>
                       <p class="text-sm">
-                        {{ selectedCompany?.name || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ selectedCompany?.name || '-' }}
+                        </template>
                       </p>
                     </div>
                     <div>
@@ -1301,7 +2147,10 @@ definePageMeta({
                         {{ $t('customers.vat_number') }}
                       </p>
                       <p class="text-sm">
-                        {{ selectedCompany?.vatNumber || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ selectedCompany?.vatNumber || '-' }}
+                        </template>
                       </p>
                     </div>
                   </div>
@@ -1313,11 +2162,10 @@ definePageMeta({
                         {{ $t('billing_address') }}
                       </p>
                       <ContentAddressDisplay
-                        v-if="billingAddress"
+                        :loading="fetchingData"
                         :address="billingAddress"
                         address-only
                       />
-                      <p v-else class="text-xs">-</p>
                     </div>
 
                     <div>
@@ -1325,11 +2173,10 @@ definePageMeta({
                         {{ $t('shipping_address') }}
                       </p>
                       <ContentAddressDisplay
-                        v-if="shippingAddress"
+                        :loading="fetchingData"
                         :address="shippingAddress"
                         address-only
                       />
-                      <p v-else class="text-xs">-</p>
                     </div>
                   </div>
 
@@ -1340,7 +2187,10 @@ definePageMeta({
                         {{ $t('buyer') }}
                       </p>
                       <p class="text-sm">
-                        {{ currentBuyerName || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ currentBuyerName || '-' }}
+                        </template>
                       </p>
                     </div>
                     <div>
@@ -1348,7 +2198,10 @@ definePageMeta({
                         {{ $t('orders.quotation_owner') }}
                       </p>
                       <p class="text-sm">
-                        {{ currentOwnerName || '-' }}
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ currentOwnerName || '-' }}
+                        </template>
                       </p>
                     </div>
                   </div>
@@ -1359,7 +2212,10 @@ definePageMeta({
                       {{ $t('currency') }}
                     </p>
                     <p class="text-sm">
-                      {{ form.values.details?.currency || '-' }}
+                      <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                      <template v-else>
+                        {{ form.values.details?.currency || '-' }}
+                      </template>
                     </p>
                   </div>
                 </div>
@@ -1404,25 +2260,25 @@ definePageMeta({
           </ContentEditMainContent>
         </KeepAlive>
 
-        <!-- TAB 1: PRODUCTS -->
+        <!-- TAB 1: PRODUCTS (draft edit mode) -->
         <KeepAlive>
           <ContentEditMainContent
-            v-if="currentTab === 1 && !createMode"
-            :key="`tab-${currentTab}`"
+            v-if="currentTab === 1 && !createMode && !sentMode"
+            :key="`tab-products`"
           >
             <ContentEditCard :create-mode="false" :title="$t('product', 2)">
               <template #header-action>
                 <SelectorPanel
                   :selection="skuSelection"
                   :mode="SelectorMode.Simple"
-                  entity-name="sku"
+                  entity-name="product"
                   :entities="productsWithSkus"
                   :entity-type="SelectorEntityType.Sku"
                   :options="[
                     {
                       id: 'product',
                       group: 'ids',
-                      label: $t('sku', 2),
+                      label: $t('product', 2),
                     },
                   ]"
                   @save="updateSkuSelection"
@@ -1472,10 +2328,15 @@ definePageMeta({
                   :page-size="10"
                 />
                 <ContentPriceSummary
-                  v-if="quotationTotal && selectedSkus.length"
+                  v-if="displayTotal && selectedSkus.length"
+                  v-model:discount-type="discountType"
+                  v-model:discount-value="discountValue"
+                  v-model:shipping-fee="shippingFeeInput"
                   class="mx-3"
-                  :total="quotationTotal"
+                  edit-mode
+                  :total="displayTotal"
                   :currency="form.values.details?.currency || ''"
+                  @blur="debouncedCallPreview()"
                 />
               </template>
               <template v-else>
@@ -1485,6 +2346,21 @@ definePageMeta({
                   />
                 </div>
               </template>
+            </ContentEditCard>
+          </ContentEditMainContent>
+        </KeepAlive>
+
+        <!-- TAB 1: COMMUNICATIONS (sent mode) -->
+        <KeepAlive>
+          <ContentEditMainContent
+            v-if="currentTab === 1 && sentMode"
+            :key="`tab-communications`"
+          >
+            <ContentEditCard
+              :create-mode="false"
+              :title="$t('communication', 2)"
+            >
+              <QuotationCommunications :communications="communications" />
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
@@ -1512,9 +2388,11 @@ definePageMeta({
                 class="my-5"
               />
               <ContentPriceSummary
-                v-if="!createMode && quotationTotal && selectedSkus.length"
-                :total="quotationTotal"
-                :currency="form.values.details?.currency || ''"
+                v-if="!createMode && displayTotal && selectedSkus.length"
+                :total="displayTotal"
+                :currency="
+                  entityData?.currency || form.values.details?.currency || ''
+                "
               />
             </template>
           </ContentEditSummary>

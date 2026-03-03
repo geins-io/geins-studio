@@ -45,21 +45,24 @@ const mapToListData = (list: Entity[]): EntityList[] => {
     const { items, ...rest } = item;
     return {
       ...rest,
-      buyer: item.customer?.name || '',
+      buyer: fullName(item.customer),
       company: item.company?.name || '',
       products: t('nr_of_entity', {
         entityName: 'product',
         count: items?.length ?? 0,
       }),
+      owner: fullName(item.owner),
       sum: {
-        price: item.total.subtotal.toString(),
+        price: item.total.grandTotalExVat.toString(),
         currency: item.currency,
       },
-      dateCreated: item.createdAt || '',
+      requireConfirmation: item.settings?.requireConfirmation
+        ? t('yes')
+        : t('no'),
       dateModified: item.modifiedAt || '',
-      expirationDate: item.validTo || '',
       dateSent: item.validFrom || '',
-      owner: item.owner?.name || '',
+      expirationDate: item.validTo || '',
+      dateCreated: item.createdAt || '',
       market: getMarketNameById(item.marketId) || '',
       channel: getChannelNameById(item.channelId) || '',
     };
@@ -72,7 +75,8 @@ const { data, error, refresh } = await useAsyncData<QuotationBatchQueryResult>(
   () => orderApi.quotation.list(),
 );
 
-const { getColumns, addActionsColumn } = useColumns<EntityList>();
+const { getColumns, addActionsColumn, setColumnOrder } =
+  useColumns<EntityList>();
 
 onMounted(() => {
   watch(
@@ -90,10 +94,10 @@ onMounted(() => {
   const columnOptions: ColumnOptions<EntityList> = {
     columnTitles: {
       quotationNumber: t('ref_number'),
+      sum: t('orders.total') + ` (${t('ex_vat')})`,
     },
     columnTypes: {
       name: 'link',
-      status: 'status',
       sum: 'currency',
     },
     linkColumns: {
@@ -111,20 +115,40 @@ onMounted(() => {
       'channelId',
       'createdAt',
       'modifiedAt',
+      'discount',
+      'settings',
     ],
   };
   // GET AND SET COLUMNS
   columns.value = getColumns(dataList.value, columnOptions);
+  columns.value = setColumnOrder(columns.value, 'status', 10);
 
   addActionsColumn(
     columns.value,
     {
       onEdit: (item: EntityList) =>
         navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+      onCopy: async (item: EntityList) => {
+        try {
+          const newDraft = await orderApi.quotation.copy(item._id);
+          toast({
+            title: t('entity_copied', { entityName }),
+            variant: 'positive',
+          });
+          await navigateTo(
+            entityUrl.replace(entityIdentifier, String(newDraft._id)),
+          );
+        } catch (err) {
+          geinsLogError('copyQuotation :::', getErrorMessage(err));
+          showErrorToast(t('error_copying_entity', { entityName }));
+        }
+      },
       onDelete: async (item: EntityList) => await openDeleteDialog(item._id),
+      disabledActions: (item: EntityList) =>
+        item.status !== 'draft' ? (['delete'] as TableRowAction[]) : [],
     },
     'actions',
-    ['edit', 'delete'],
+    ['edit', 'copy', 'delete'],
   );
   loading.value = false;
 });
@@ -138,6 +162,8 @@ const hiddenColumns: StringKeyOf<EntityList>[] = [
   'market',
   'channel',
   'orderId',
+  'terms',
+  'requireConfirmation',
 ];
 visibilityState.value = getVisibilityState(hiddenColumns);
 

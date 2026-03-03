@@ -9,7 +9,7 @@ interface EntityEditSummaryProps {
   entityName: string;
   entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
   showActiveStatus?: boolean;
-  status?: StatusBadgeStatus;
+  status?: Ref<StatusBadgeStatus> | ComputedRef<StatusBadgeStatus> | StatusBadgeStatus;
 }
 
 interface UseEntityEditSummaryReturnType {
@@ -48,7 +48,7 @@ export const useEntityEditSummary = (
     ...(props.showActiveStatus !== undefined && {
       showActiveStatus: props.showActiveStatus,
     }),
-    ...(props.status !== undefined && { status: props.status }),
+    ...(props.status !== undefined && { status: unref(props.status) }),
   }));
 
   return { summaryProps };

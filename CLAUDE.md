@@ -1,3 +1,32 @@
+<!--
+This file (CLAUDE.md) is the canonical reference for how we work + how this codebase works.
+For step-by-step, task-focused runbooks, use the files in /skills.
+When adding or changing a workflow, update CLAUDE.md first, then update/create the relevant skill.
+-->
+
+## Skills Index
+
+- Skills overview: `skills/README.md`
+- Start dev & fast checks: `skills/dev-loop.md` (see also “Geins Studio - Commands”)
+- CI preflight (run before PR): `skills/ci-preflight.md` (see also “Geins Studio - Commands”)
+- Add a new entity (end-to-end): `skills/add-new-entity.md` (see also “Page Patterns - Adding a New Entity Checklist”)
+- Entity edit page: required edit-mode loading: `skills/entity-edit-page-edit-mode-loading.md` (see also “Entity Edit Page - Edit Mode Data Loading required boilerplate”)
+- i18n updates: `skills/i18n-update.md` (see also i18n rules in “Stack” / “Project Structure”)
+- Add/extend API repository: `skills/api-repository-add-or-extend.md` (see also “API Repositories”)
+- UI component conventions: `skills/ui-component-conventions.md` (see also “Component UI Patterns - Component Conventions”)
+- Table patterns: `skills/table-patterns.md` (see also “Component UI Patterns - Table Patterns”)
+
+## Token Efficiency Rules
+
+- Minimize token usage in all responses and tool calls.
+- Prefer referencing existing docs/code (file path + section/heading) over repeating content.
+- Only quote code/file content when necessary; quote the smallest snippet that supports the decision.
+- Read narrowly first: search for keywords and open only the specific files/sections needed.
+- Keep outputs diff-shaped: list intended changes + exact file paths; avoid pasting unchanged code.
+- Batch work: propose a short plan, then execute related edits together (avoid back-and-forth refactors).
+- If the request is ambiguous (scope, acceptance criteria, target files, expected behavior), ask clarifying questions before doing large reads or broad changes.
+- If a task would require broad context, ask for approval before pulling lots of files/logs.
+
 ## Workflow Rules
 
 These MUST be followed for every task. Rules are grouped by when they apply.
@@ -88,8 +117,11 @@ i18n/locales/           # en.json, sv.json
 - **Stores**: Use `storeToRefs(store)` for reactive state properties
 - **Forms**: Use `<FormField v-slot="{ componentField }">` pattern. Never implement custom unsaved-changes tracking — `useEntityEdit` handles this
 - **Entity URLs**: Use `useEntityUrl()` for constructing entity navigation links. `getEntityUrl(id)` uses current route context; `getEntityUrlFor(entityName, parentPath, id)` generates URLs for any entity (e.g. `getEntityUrlFor('price-list', 'pricing', id)` → `/pricing/price-list/{id}`). Prefer these over hardcoded route strings.
+- **Full name display**: Use `fullName(entity)` (auto-imported from `app/utils/index.ts`) where `entity` is any object with optional `firstName`/`lastName` fields (or `null`/`undefined`). Never use inline template literals — it handles missing parts via `.trim()`.
 - **Date formatting**: Use `useDate()` composable for consistent date display. `formatDate(value, options?)` wraps reka-ui's `useDateFormatter` with the app's locale. Defaults to `dateStyle: 'long'` (e.g. "February 23, 2026") — the same format used in table columns and the calendar picker.
 - **Vue gotcha**: `<KeepAlive>` cannot contain HTML comments — they count as children and cause "expects exactly one child" errors
+- **`v-auto-animate` gotcha**: Avoid using `v-auto-animate` on elements that swap small icon-sized children via `v-if/v-else` — it briefly renders both elements simultaneously, causing a layout shift. Fix: render both icons absolutely positioned inside a fixed-size `relative` wrapper and use CSS `opacity`/`scale` transitions instead.
+- **Toasts**: Use `useToast` from `@/components/ui/toast/use-toast` (explicit import required — not auto-imported). Init: `const { toast } = useToast()`. For errors, get `showErrorToast` from `usePageError`. Success: `toast({ title: t('entity_copied', { entityName }), variant: 'positive' })`. Error: `showErrorToast(t('error_copying_entity', { entityName }))`. `useEntityEdit` already handles toasts for create/update/delete — only add toasts in pages for additional actions (status transitions, send, copy, etc.). Import order: `@/components` imports must come after `#shared/types` type imports but before `@tanstack` type imports.
 
 ## API & Repositories
 
@@ -147,7 +179,9 @@ if (!createMode.value) {
 - **Unsaved changes snapshot timing**: When `parseEntityData` triggers side effects that mutate `entityDataUpdate` (via `form.setValues()` → `onFormValuesChange`, reactive watchers, or async fetches like `fetchProducts()`), the default `parseAndSaveData(entity)` snapshot will be stale. Fix: call `parseAndSaveData(entity, false)` to skip the automatic snapshot, `await` all async work that affects entity data, then `await nextTick(); setOriginalSavedData();` to capture the final settled state. See `price-list/[id].vue` and `quotation/[id].vue` for examples. **This also applies to save handlers**: `updateEntity` internally calls `parseAndSaveData`, so pages with the same side-effect pattern need a custom save handler: `await updateEntity(undefined, undefined, false)` → `await nextTick()` → `setOriginalSavedData()`. See `quotation/[id].vue` `handleSave` for an example.
 - **`onFormValuesChange` completeness**: The edit-mode branch of `onFormValuesChange` must map ALL update-relevant form fields into `entityDataUpdate`, otherwise changes to missing fields won't trigger `hasUnsavedChanges` (and the save button stays disabled). If a field is in `prepareUpdateData` but not in `onFormValuesChange`, it will save correctly when triggered by _other_ changes but won't enable the save button on its own.
 - **Non-form refs that affect `entityDataUpdate`**: When standalone `ref`s (e.g. `selectedBillingAddressId`) contribute to `entityDataUpdate` but aren't form fields, add a dedicated `watch()` to sync them — `onFormValuesChange` only fires on form value changes. See the address watcher in `quotation/[id].vue` for an example.
+- **VeeValidate clears values on field unmount**: When an entity page switches between form-mode and read-only mode (e.g. draft → sent), VeeValidate unregisters fields as they leave the DOM and clears their values from `form.values`. The debounced `onFormValuesChange` then fires with empty values and overwrites `entityDataUpdate`. Fix: add `if (sentMode.value) return;` (or equivalent mode guard) at the top of the edit-mode branch in `onFormValuesChange`. Additionally, sent-mode read-only templates must read display data from `entityData` (populated by `reshapeEntityData`) rather than `form.values.details`, since the latter is unreliable after field unmount. See `quotation/[id].vue` for the pattern.
 - `createMode` is a `ref` (not computed), set once from `route.params.id` at component creation
+- **Reactive refresh after status transitions**: `refresh()` from `useAsyncData` updates `data.value` reactively, but `parseAndSaveData` is only called explicitly inside `onMounted`. Pages that call `refreshEntityData` after status transitions (e.g. quotation send/accept) must add `watch(data, async (newData) => { await parseAndSaveData(newData, false); await nextTick(); setOriginalSavedData(); })` inside the `if (!createMode.value)` block so that refreshed data is re-parsed. The watch fires only on subsequent changes (not the initial value), so it doesn't interfere with the `onMounted` flow.
 
 ### List Page
 
@@ -180,6 +214,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - `ContentAddressDisplay` — Address display (expects `AddressUpdate` type). Also compatible with `QuotationAddress` since both share the same field names (`addressLine1`, `firstName`, etc.)
 - `InputGroup` / `InputGroupAddon` / `InputGroupButton` / `InputGroupInput` / `InputGroupTextarea` — Composable input groups with addons (icons, buttons, text) positioned via `align` prop (`inline-start`, `inline-end`, `block-start`, `block-end`). Use `InputGroupInput` instead of `Input` inside groups.
 - `ButtonGroup` / `ButtonGroupSeparator` / `ButtonGroupText` — Groups related buttons with shared border radius. Supports `orientation` (`horizontal` | `vertical`) and nesting.
+- `ContentPriceSummary` — Price summary rows (subtotal, discount, shipping, VAT, grand total). Props: `total` (`QuotationTotal`), `currency`, `editMode?`. When `editMode=true`: discount row becomes a shadcn `Input` (with `#valueDescriptor` slot containing a `Select` dropdown for switching between `%` and currency) plus a calculated discount amount display (e.g. "-100.00 SEK"); shipping row becomes an `Input` with currency in `#valueDescriptor`. Uses `defineModel` for `discountType`, `discountValue`, `shippingFee` (two-way binding) and emits `blur` when an editable field loses focus (parent triggers preview).
 
 ### Display Patterns in Edit Pages
 
@@ -198,6 +233,8 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - **Editable columns** — Use `columnTypes` in `useColumns` options with `'editable-number'`, `'editable-string'`, `'editable-currency'`, or `'editable-percentage'`. For custom inline-editable columns, render `TableCellEditable<T>` directly via `h()` with `onChange`/`onBlur` handlers.
 - **Column type inference**: `useColumns.getColumns()` infers column types from field names (e.g. "date" → date formatter, "price"/"amount" → currency, "image" → thumbnail, "product" with `articleNumber` in data → product cell). Override via `columnTypes` option. Header/cell base styles come from `getBasicHeaderStyle(table)` and `getBasicCellStyle(table)` which branch on the table mode.
 - **useSkeleton**: Composable at `app/composables/useSkeleton.ts` generates placeholder rows and columns with `<Skeleton>` components when `TableView` has `loading={true}`.
+- **`TableCellActions` actions**: Default `availableActions` is `['edit', 'copy', 'delete']`. To enable copy on a list page: add `'copy'` to the array passed to `addActionsColumn` and provide an `onCopy` handler in the props object. Handler pattern: call the copy API, show a success toast, then `navigateTo` the new entity's URL. On error: `geinsLogError` + `showErrorToast`.
+- **`TableCellActions` disabled actions**: Accepts a `disabledActions` prop — either a static `TableRowAction[]` or a per-row callback `(rowData: T) => TableRowAction[]`. Disabled items remain visible but non-interactive. Pass via `addActionsColumn` props: `disabledActions: (item) => item.status !== 'draft' ? ['delete'] : []`.
 
 ---
 
@@ -207,20 +244,55 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 
 **Items:**
 
-- `QuotationUpdate.items` accepts `QuotationItemCreate[]` (same shape as create: `{ skuId, quantity, customPrice? }`).
-- The Products tab uses a `Map<string, SkuItemData>` to track per-SKU quantity, custom price, and response prices (`ordPrice`, `listPrice`), separate from the selector selection state.
+- `QuotationUpdate.items` accepts `QuotationItemCreate[]` (same shape as create: `{ skuId, quantity, unitPrice? }`).
+- The Products tab uses a `Map<string, SkuItemData>` to track per-SKU quantity, unit price, and response prices (`ordPrice`, `listPrice`), separate from the selector selection state.
 - `QuotationProductRow` is the table display type that maps `selectedSkus` + `skuItemData` into flat rows with columns: Product, SKU ID, Quantity, Price, Price list price, Quotation price.
 - Price fields in the row type use `{ price: string, currency: string }` objects (matching the `'currency'`/`'editable-currency'` column types). The currency value comes from `form.values.details.currency`.
 - In edit mode, prices are populated from `QuotationItemBase` response fields (`ordPrice`, `listPrice`, `unitPrice`). In create mode, prices are empty strings (displayed as `---` by `TableCellCurrency`).
 - When loading existing quotation items in edit mode, initialize both `skuItemData` (from response items) and `skuSelection.ids` (from item SKU IDs) after products are fetched.
+- `fetchProducts()` filters by both `channelIds` and `currencyIds` (from `entityData`) so the product selector only returns products with prices in the quotation's currency. Uses `productApi.query()` with a `SelectorSelectionQuery` selection object.
+
+**Snapshot convention (entity sub-objects in responses):**
+
+- `QuotationOwner`, `QuotationCustomer`, `QuotationCompany`, and `QuotationAddress` are snapshots — point-in-time captures stored with the quotation.
+- Each snapshot extends `EntitySnapshot` (`shared/types/Global.ts`), which provides `_id: string`, `_type: string`, `_snapshotAt?: string | null` (leading underscores, matching the top-level entity shape).
+- `QuotationOwner` and `QuotationCustomer` use `firstName`/`lastName` (no combined `name` or `email`). Use `fullName(x.firstName, x.lastName)` for display.
+- To read IDs from snapshots: `company._id`, `owner._id`, `customer._id`, `billingAddress._id` (not `companyId`/`ownerId`/`customerId`/`addressId`).
+- `toQuotationAddress()` in `[id].vue` maps a company `Address` → `QuotationAddress`, setting `_type: 'geins.wholesale_account_address'`.
 
 **API shape differences:**
 
-- **`terms`**: Response returns `{ text: string }` (object), but CREATE and UPDATE expect a plain `string`. Map `quotation.terms?.text` to form, send string back.
 - **`validPaymentMethods`**: Response returns `{ paymentId: number, name: string }`, but requests expect `{ paymentId: string }` (string, no `name`).
-- **`prepareUpdateData` must NOT spread the entity** — `entityDataUpdate` contains response-only fields (`billingAddress`, `shippingAddress`, `total`, `company`, `owner`, `customer`, `communication`, `changelog`, etc.) that the PATCH endpoint does not accept. Only include fields from the swagger update schema: `name`, `validTo`, `companyId`, `ownerId`, `customerId`, `validPaymentMethods`, `validShippingMethods`, `suggestedShippingFee`, `terms`, `billingAddressId`, `shippingAddressId`, `items`.
+- **`QuotationTotal` shape**: `{ subtotal, discount, shipping, margin, vat, grandTotalExVat, grandTotalIncVat }` — all `number`. Note: field is `vat` (not `tax`), and grand total is split into ex-VAT and inc-VAT variants.
+- **`QuotationCompany.vatNumber`**: The company snapshot uses `vatNumber` (not `orgNr`).
+- **`QuotationStatus` casing**: All status values are lowercase (`'draft'`, `'pending'`, `'accepted'`, etc.) — consistent with the API.
+- **`prepareUpdateData` must NOT spread the entity** — `entityDataUpdate` contains response-only fields (`billingAddress`, `shippingAddress`, `total`, `company`, `owner`, `customer`, `communication`, `changelog`, etc.) that the PATCH endpoint does not accept. Only include fields from the openapi update schema: `name`, `validTo`, `companyId`, `ownerId`, `customerId`, `validPaymentMethods`, `validShippingMethods`, `suggestedShippingFee`, `terms`, `billingAddressId`, `shippingAddressId`, `items`.
 - **`quotationNumber`**: Read-only, auto-generated by the backend. Not accepted on the PATCH endpoint — render as a disabled input in the UI.
-- **Swagger spec URL**: `https://geins-func-quotation-mgmtapi-dev.azurewebsites.net/api/swagger.json`
+- **`discount`**: Optional `{ type: 'fixedAmount' | 'percent', value: number }` — accepted by both the PATCH and preview endpoints. The GET response also returns the saved discount configuration. Stored in `discountType`/`discountValue` refs (not form fields) in the edit page; synced to `entityDataUpdate` via a dedicated watcher.
+- **`settings`**: `{ requireConfirmation?: boolean }` — nested object on create, update, and response. Controls whether the quotation workflow requires an explicit confirmation step before finalization. Stored in a standalone `requireConfirmation` ref (same pattern as discount); synced to `entityDataUpdate` via a dedicated watcher. Shown as a `Switch` toggle with a `ContentQuotationWorkflowInfo` popover in draft mode, read-only in sent mode.
+- **OpenAPI spec URL**: `https://geins-func-quotation-mgmtapi-dev.azurewebsites.net/api/openapi/v3.json`
+
+**Live preview pattern:**
+
+- Endpoint: `POST /quotation/{id}/preview` — calculates totals without persisting. Only available in draft edit mode (requires an existing quotation ID).
+- Called automatically via `debouncedCallPreview` (500 ms) whenever `quotationItems` or `discountRequest` change.
+- Response: `{ items: QuotationItem[], total: QuotationTotal }`. Items are enriched with `ordPrice` / `listPrice` from the applied price lists — these update `skuItemData` reactively. `unitPrice` is never overwritten from the preview response.
+- `previewTotal` ref holds the live result; `displayTotal = computed(() => previewTotal.value ?? quotationTotal.value)` is passed to `ContentPriceSummary`. Sent mode uses `quotationTotal` (from GET) because preview is disabled.
+- **Infinite loop prevention**: Preview is triggered from explicit user-action handlers (`handleQuantityChange`, `handleQuotationPriceChange`, `removeSkuFromSelection`, `ContentPriceSummary` blur event) and a `watch(simpleSkuSelection)`. Do NOT watch `quotationItems` to trigger preview — the preview response updates `skuItemData` (ordPrice/listPrice), which could change `quotationItems` output (via the `unitPrice !== listPrice` condition), creating an infinite loop.
+- `ContentPriceSummary` accepts `QuotationTotal` — at runtime it handles `shipping` vs `suggestedShippingFee` differences via `'suggestedShippingFee' in props.total` to distinguish preview vs saved totals.
+
+**Sent mode (non-draft statuses):**
+
+- Three mutually exclusive modes: `createMode` (route param `new`), edit/draft mode (`!createMode && !sentMode`), sent mode (`quotation.status !== 'draft'`).
+- `sentMode` is a `ref<boolean>` set in `parseEntityData` — since status transitions are one-way, it never reverts to draft.
+- In sent mode, the General tab renders read-only display cards instead of form inputs, plus an "Items & Summary" card with a non-editable `TableMode.Minimal` table. The Products tab is replaced by a Communications tab.
+- Tabs are a `computed` that switches between `[General, Products]` (draft) and `[General, Communications]` (sent).
+- Status transition actions use a two-step pattern: `POST /quotation/{id}/{action}` (returns void) → `refreshEntityData()` re-fetches → `parseEntityData` updates all UI state including `sentMode`, `communications`, and the sidebar status badge.
+- `StatusTransitionRequest` type: `{ authorId, authorName, message?: { type: QuotationMessageType, message } }`. Author info comes from `useUserStore`.
+- `DialogConfirmSend` handles the initial draft→pending transition with an optional `toCustomer` message. Accepts `blockReasons` prop (string array from `sendBlockReasons` computed) — when non-empty, shows a `Feedback` warning with the list and disables the Send button. The send button in the actions bar is always clickable (no disabled/tooltip gating). `DialogStatusTransition` is reusable for all other transitions (accept, reject, confirm, cancel, expire, finalize).
+- "Copy as new draft" calls `orderApi.quotation.copy(id)` (`POST /quotation/{id}/copy`) → shows success toast → navigates to the new draft.
+- Delete is not available in sent mode at all. In draft mode, delete is always accessible from the `...` dropdown.
+- The sidebar `StatusBadge` is reactive: `useEntityEditSummary` accepts `status` as a `Ref` and `unref`s it in the computed.
 
 ### Companies
 
@@ -231,4 +303,9 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 ### Products
 
 - **`ProductApiOptions`** extends `ApiOptions` with `defaultChannel`, `defaultCurrency`, `defaultCountry`, `defaultLocale`. These are forwarded as query params by `buildQueryObject` (which passes through any extra string properties beyond `fields`/`pageSize`).
-- **Product swagger spec URL**: `https://geins-func-product-mgmtapi-dev.azurewebsites.net/api/swagger.json`
+- **Product query filters**: `SelectorSelectionQuery` supports `channelIds`, `currencyIds`, `countryIds`, `categoryIds`, `brandIds`, `productIds`, `price`, and `stock` filters. These are passed in the POST body via `productApi.query({ include: [{ selections: [...] }] })`.
+- **Product OpenAPI spec URL**: `https://geins-func-product-mgmtapi-dev.azurewebsites.net/api/openapi/v3.json`
+
+### Price Lists
+
+- **Copy endpoint**: Uses an ID-scoped sub-object: `productApi.priceList.id(id).copy()` (returns `ProductPriceList`). Unlike quotation which is flat (`orderApi.quotation.copy(id)`), price list copy is accessed via `.id(id).copy()`.

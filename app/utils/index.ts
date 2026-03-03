@@ -31,6 +31,20 @@ export function generateInternalId(): string {
 }
 
 /**
+ * Returns a person's full name from an entity with firstName/lastName fields.
+ * Handles null/undefined entity and missing name parts gracefully.
+ */
+export function fullName(
+  entity?: { _id?: string; firstName?: string; lastName?: string } | null,
+): string {
+  return (
+    `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim() ||
+    entity?._id ||
+    ''
+  );
+}
+
+/**
  * Returns the name of an entity given its ID from a list of entities.
  * @returns {string}
  */
