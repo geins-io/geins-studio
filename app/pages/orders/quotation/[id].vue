@@ -2092,6 +2092,8 @@ definePageMeta({
                         <template #after-label>
                           <ContentQuotationWorkflowInfo
                             :require-confirmation="value"
+                            edit-mode
+                            @update:require-confirmation="handleChange"
                           />
                         </template>
                       </FormItemSwitch>

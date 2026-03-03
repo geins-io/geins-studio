@@ -9,11 +9,13 @@ import {
 
 const { t } = useI18n();
 
-const props = defineProps<{
-  requireConfirmation?: boolean;
+defineProps<{
+  editMode?: boolean;
 }>();
 
-const requireConfirmation = toRef(props, 'requireConfirmation');
+const requireConfirmation = defineModel<boolean>('requireConfirmation', {
+  default: false,
+});
 
 interface Step {
   status: StatusBadgeStatus;
@@ -141,6 +143,10 @@ const isSelectedFlow = (flowName: string) => {
   }
   return flowName === 'default';
 };
+
+const selectFlow = (flowName: string) => {
+  requireConfirmation.value = flowName === 'strict';
+};
 </script>
 
 <template>
@@ -156,7 +162,7 @@ const isSelectedFlow = (flowName: string) => {
     <SheetContent>
       <SheetHeader>
         <SheetTitle>{{ $t('orders.workflow_info_title') }}</SheetTitle>
-        <SheetDescription>
+        <SheetDescription class="max-w-120">
           {{ $t('orders.workflow_info_description') }}
         </SheetDescription>
       </SheetHeader>
@@ -168,8 +174,11 @@ const isSelectedFlow = (flowName: string) => {
             :class="
               cn('relative max-w-60 space-y-2 rounded-lg border p-4', {
                 'border-positive border': isSelectedFlow(flow.name),
+                'hover:border-positive/50 cursor-pointer transition-colors':
+                  editMode && !isSelectedFlow(flow.name),
               })
             "
+            @click="editMode ? selectFlow(flow.name) : undefined"
           >
             <span
               v-if="isSelectedFlow(flow.name)"
@@ -225,7 +234,7 @@ const isSelectedFlow = (flowName: string) => {
         </div>
       </SheetBody>
       <SheetFooter>
-        <Button variant="outline">
+        <Button>
           {{ $t('close') }}
         </Button>
       </SheetFooter>
