@@ -27,6 +27,7 @@ import type {
   QuotationStatus,
   StatusTransitionRequest,
   SelectorEntity,
+  SelectorSelectionQuery,
   Address,
   ProductApiOptions,
 } from '#shared/types';
@@ -734,10 +735,16 @@ const fetchProducts = async () => {
   loadingProducts.value = true;
   try {
     const channelId = entityData.value?.channelId;
+    const currency = entityData.value?.currency;
     const options: ProductApiOptions = { fields: ['media', 'skus'] };
-    const response = channelId
+    const selection: SelectorSelectionQuery = {
+      ...(channelId && { channelIds: [channelId] }),
+      ...(currency && { currencyIds: [currency] }),
+    };
+    const hasFilters = channelId || currency;
+    const response = hasFilters
       ? await productApi.query(
-          { include: [{ selections: [{ channelIds: [channelId] }] }] },
+          { include: [{ selections: [selection] }] },
           options,
         )
       : await productApi.list(options);

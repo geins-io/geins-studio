@@ -63,6 +63,8 @@ export interface SelectorSelectionQuery {
   categoryIds?: string[];
   brandIds?: string[];
   channelIds?: string[];
+  currencyIds?: string[];
+  countryIds?: string[];
   price?: PriceSelection[];
   stock?: StockSelection[];
   productIds?: string[];
