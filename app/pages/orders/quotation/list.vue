@@ -94,7 +94,7 @@ onMounted(() => {
   const columnOptions: ColumnOptions<EntityList> = {
     columnTitles: {
       quotationNumber: t('ref_number'),
-      sum: t('total') + ` (${t('ex_vat')})`,
+      sum: t('orders.total') + ` (${t('ex_vat')})`,
     },
     columnTypes: {
       name: 'link',
