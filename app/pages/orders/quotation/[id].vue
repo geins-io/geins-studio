@@ -1289,6 +1289,12 @@ const summary = computed<DataItem[]>(() => {
       value: entityData.value.quotationNumber,
       displayType: DataItemDisplayType.Copy,
     });
+    dataList.push({
+      label: t('orders.require_confirmation'),
+      value: entityData.value.settings?.requireConfirmation
+        ? t('yes')
+        : t('no'),
+    });
   }
   if (createMode.value && companySummary.value.length) {
     dataList.push(...companySummary.value);
@@ -1750,7 +1756,7 @@ definePageMeta({
                         {{
                           entityData?.validTo
                             ? formatDate(entityData.validTo)
-                            : '-'
+                            : $t('orders.no_expiration_date')
                         }}
                       </p>
                     </div>

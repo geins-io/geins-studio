@@ -412,6 +412,7 @@
     "buyer_optional_description": "Optional - select a specific buyer for this quotation",
     "expiration_date_optional": "Optional - defaults to 30 days from creation",
     "set_expiration_date": "Set expiration date",
+    "no_expiration_date": "Will not expire",
     "notes": "Notes",
     "notes_placeholder": "Add any notes or special instructions for this quotation...",
     "payment_settings": "Payment settings",

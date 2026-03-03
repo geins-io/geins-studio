@@ -15,14 +15,17 @@ const badgeVariant = computed(() => {
     case 'partial':
     case 'sent':
       return 'warning';
-    case 'cancelled':
+    case 'canceled':
+      return 'negative-light';
     case 'rejected':
       return 'negative';
     case 'refunded':
     case 'inactive':
       return 'inactive';
     case 'finalized':
+      return 'positive-light';
     case 'accepted':
+      return 'positive-outline';
     case 'completed':
     case 'confirmed':
     case true:

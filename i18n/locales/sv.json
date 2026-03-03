@@ -412,6 +412,7 @@
     "buyer_optional_description": "Valfritt - välj en specifik köpare för denna offert",
     "expiration_date_optional": "Valfritt - standardvärdet är 30 dagar från skapandet",
     "set_expiration_date": "Ange utgångsdatum",
+    "no_expiration_date": "Inget utgångsdatum",
     "notes": "Anteckningar",
     "notes_placeholder": "Lägg till eventuella anteckningar eller speciella instruktioner för denna offert...",
     "payment_settings": "Betalningsinställningar",
