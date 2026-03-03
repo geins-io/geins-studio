@@ -2013,7 +2013,9 @@ definePageMeta({
                       <FormItemSwitch
                         :model-value="value"
                         :label="$t('orders.require_confirmation')"
-                        description="Requires the customer to accept and then you to confirm before the order can be placed."
+                        :description="
+                          $t('orders.require_confirmation_description')
+                        "
                         class="mt-4"
                         @update:model-value="handleChange"
                       >

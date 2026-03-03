@@ -118,6 +118,7 @@
   "select": "Välj",
   "selected": "Vald",
   "none": "Inga",
+  "close": "Stäng",
   "add_selected": "Lägg till valda",
   "select_from": "Välj från",
   "cancel": "Avbryt",
@@ -470,14 +471,18 @@
     "calculating": "Beräknar…",
     "place_order": "Lägg order",
     "require_confirmation": "Kräv bekräftelse",
+    "workflow_info_title": "Offertflöde",
+    "workflow_info_description": "En visuell förklaring av offertflödet och dess olika steg.",
     "workflow_default_title": "Standardflöde",
     "workflow_default_description": "Kund (eller du) kan lägga ordern direkt efter acceptans.",
-    "workflow_strict_title": "Strikt flöde",
-    "workflow_strict_description": "Ett extra bekräftelsesteg krävs innan ordern kan läggas.",
+    "workflow_strict_title": "Bekräftelse krävs",
     "workflow_step_draft": "Du kan göra ändringar",
-    "workflow_step_pending": "Kund (eller du) kan acceptera",
+    "workflow_step_pending": "Kund kan acceptera",
     "workflow_step_accepted": "Du kan bekräfta",
     "workflow_step_confirmed": "Kund (eller du) kan lägga ordern",
-    "workflow_step_pending_default": "Kund (eller du) kan lägga ordern"
+    "workflow_step_pending_default": "Kund (eller du) kan lägga ordern",
+    "workflow_step_finalized": "Order lagd",
+    "workflow_action_accept": "Acceptera (kund)",
+    "workflow_action_confirm": "Bekräfta (du)"
   }
 }

@@ -1,111 +1,204 @@
 <script setup lang="ts">
+import type { StatusBadgeStatus } from '#shared/types';
+import {
+  LucideSend,
+  LucidePackageCheck,
+  LucideThumbsUp,
+  LucideCheckCheck,
+} from '#components';
+
 const { t } = useI18n();
+
+interface Step {
+  status: StatusBadgeStatus;
+  actors?: string[];
+  description: string;
+}
+
+interface Action {
+  icon: Component;
+  label: string;
+}
+
+interface FlowItem {
+  step: Step;
+  action?: Action;
+}
+
+const defaultFlow = computed<FlowItem[]>(() => [
+  {
+    step: {
+      status: 'draft',
+      actors: ['You'],
+      description: t('orders.workflow_step_draft'),
+    },
+    action: {
+      icon: LucideSend,
+      label: t('send_entity', { entityName: 'quotation' }),
+    },
+  },
+  {
+    step: {
+      status: 'pending',
+      actors: ['Customer', 'You'],
+      description: t('orders.workflow_step_pending_default'),
+    },
+    action: {
+      icon: LucidePackageCheck,
+      label: t('orders.place_order'),
+    },
+  },
+  {
+    step: {
+      status: 'finalized',
+      description: t('orders.workflow_step_finalized'),
+    },
+  },
+]);
+
+const strictFlow = computed<FlowItem[]>(() => [
+  {
+    step: {
+      status: 'draft',
+      actors: ['You'],
+      description: t('orders.workflow_step_draft'),
+    },
+    action: {
+      icon: LucideSend,
+      label: t('send_entity', { entityName: 'quotation' }),
+    },
+  },
+  {
+    step: {
+      status: 'pending',
+      actors: ['Customer', 'You'],
+      description: t('orders.workflow_step_pending'),
+    },
+    action: {
+      icon: LucideThumbsUp,
+      label: t('orders.workflow_action_accept'),
+    },
+  },
+  {
+    step: {
+      status: 'accepted',
+      actors: ['You'],
+      description: t('orders.workflow_step_accepted'),
+    },
+    action: {
+      icon: LucideCheckCheck,
+      label: t('orders.workflow_action_confirm'),
+    },
+  },
+  {
+    step: {
+      status: 'confirmed',
+      actors: ['Customer', 'You'],
+      description: t('orders.workflow_step_confirmed'),
+    },
+    action: {
+      icon: LucidePackageCheck,
+      label: t('orders.place_order'),
+    },
+  },
+  {
+    step: {
+      status: 'finalized',
+      description: t('orders.workflow_step_finalized'),
+    },
+  },
+]);
+
+function getPrevAction(items: FlowItem[], index: number): Action | undefined {
+  return index > 0 ? items[index - 1]?.action : undefined;
+}
 </script>
 
 <template>
-  <Popover>
-    <PopoverTrigger as-child>
+  <Sheet>
+    <SheetTrigger as-child>
       <button
         type="button"
         class="text-muted-foreground hover:text-foreground inline-flex items-center"
       >
         <LucideCircleHelp class="size-4" />
       </button>
-    </PopoverTrigger>
-    <PopoverContent align="start" :side-offset="8" class="w-auto max-w-[480px]">
-      <div class="grid grid-cols-2 gap-6">
-        <!-- Default flow -->
-        <div class="space-y-2">
-          <p class="text-xs font-semibold">
-            {{ t('orders.workflow_default_title') }}
-          </p>
-          <div class="flex flex-col items-center gap-2">
-            <div class="w-full rounded border px-3 py-2 text-center text-xs">
-              <StatusBadge status="draft" class="mb-1.5" />
-              <p class="text-muted-foreground">
-                {{ t('orders.workflow_step_draft') }}
-              </p>
-            </div>
-            <div class="flex flex-col items-center gap-1">
-              <LucideMinus
-                class="text-muted-foreground size-3 shrink-0 rotate-90"
-              />
-              <span
-                class="text-muted-foreground flex shrink-0 items-center gap-1.5 text-xs font-bold"
-              >
-                <LucideSend class="size-3" />
-                {{ t('send_entity', { entityName: 'quotation' }) }}
-              </span>
-              <LucideArrowDown class="text-muted-foreground size-3 shrink-0" />
-            </div>
-            <div class="w-full rounded border px-3 py-2 text-center text-xs">
-              <StatusBadge status="pending" class="mb-1.5" />
-              <p class="text-muted-foreground">
-                {{ t('orders.workflow_step_pending_default') }}
-              </p>
-            </div>
-            <div class="flex flex-col items-center gap-1">
-              <LucideMinus
-                class="text-muted-foreground size-3 shrink-0 rotate-90"
-              />
-              <span
-                class="text-muted-foreground flex shrink-0 items-center gap-1.5 text-xs font-bold"
-              >
-                <LucidePackageCheck class="size-3" />
-                {{ t('orders.place_order') }}
-              </span>
-              <LucideArrowDown class="text-muted-foreground size-3 shrink-0" />
-              <div class="w-full rounded border px-3 py-2 text-center text-xs">
-                <StatusBadge status="finalized" class="mb-1.5" />
-                <p class="text-muted-foreground">
-                  {{ t('orders.workflow_step_finalized') }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+    </SheetTrigger>
+    <SheetContent>
+      <SheetHeader>
+        <SheetTitle>{{ $t('orders.workflow_info_title') }}</SheetTitle>
+        <SheetDescription>
+          {{ $t('orders.workflow_info_description') }}
+        </SheetDescription>
+      </SheetHeader>
+      <SheetBody>
+        <div class="grid grid-cols-2 gap-8">
+          <div
+            v-for="(flow, index) in [
+              {
+                title: t('orders.workflow_default_title'),
+                items: defaultFlow,
+              },
+              {
+                title: t('orders.workflow_strict_title'),
+                items: strictFlow,
+              },
+            ]"
+            :key="index"
+            class="max-w-60 space-y-2"
+          >
+            <p class="text-sm font-semibold">{{ flow.title }}</p>
+            <div class="flex flex-col items-center gap-2">
+              <template v-for="(item, i) in flow.items" :key="i">
+                <!-- Action arrow (between steps) -->
+                <div
+                  v-if="getPrevAction(flow.items, i)"
+                  class="flex flex-col items-center gap-1"
+                >
+                  <LucideMinus
+                    class="text-muted-foreground size-3 shrink-0 rotate-90"
+                  />
+                  <span
+                    class="text-muted-foreground flex shrink-0 flex-wrap items-center justify-center gap-1.5 text-xs font-bold"
+                  >
+                    <component
+                      :is="getPrevAction(flow.items, i)!.icon"
+                      class="size-3"
+                    />
+                    {{ getPrevAction(flow.items, i)!.label }}
+                  </span>
+                  <LucideArrowDown
+                    class="text-muted-foreground size-3 shrink-0"
+                  />
+                </div>
 
-        <!-- Strict flow -->
-        <div class="space-y-2">
-          <p class="text-xs font-semibold">
-            {{ t('orders.workflow_strict_title') }}
-          </p>
-          <div class="flex flex-col items-center gap-1">
-            <div class="w-full rounded border px-3 py-2 text-center text-xs">
-              <p class="font-medium">Draft</p>
-              <p class="text-muted-foreground">
-                {{ t('orders.workflow_step_draft') }}
-              </p>
-            </div>
-            <LucideArrowDown class="text-muted-foreground size-3.5 shrink-0" />
-            <div class="w-full rounded border px-3 py-2 text-center text-xs">
-              <p class="font-medium">Pending</p>
-              <p class="text-muted-foreground">
-                {{ t('orders.workflow_step_pending') }}
-              </p>
-            </div>
-            <LucideArrowDown class="text-muted-foreground size-3.5 shrink-0" />
-            <div class="w-full rounded border px-3 py-2 text-center text-xs">
-              <p class="font-medium">Accepted</p>
-              <p class="text-muted-foreground">
-                {{ t('orders.workflow_step_accepted') }}
-              </p>
-            </div>
-            <LucideArrowDown class="text-muted-foreground size-3.5 shrink-0" />
-            <div
-              class="bg-primary/10 text-primary w-full rounded border px-3 py-2 text-center text-xs"
-            >
-              <p class="font-medium">Confirmed</p>
-              <p class="opacity-80">
-                {{ t('orders.workflow_step_confirmed') }}
-              </p>
+                <!-- Status box -->
+                <div
+                  class="w-full rounded border px-3 py-2.5 text-center text-xs"
+                >
+                  <StatusBadge :status="item.step.status" class="mb-2" />
+                  <p v-if="item.step.actors" class="mb-0.5 text-[0.7rem]">
+                    <template v-for="(actor, ai) in item.step.actors" :key="ai">
+                      <span v-if="ai > 0" class="text-muted-foreground">
+                        /
+                      </span>
+                      {{ actor }}
+                    </template>
+                  </p>
+                  <p class="text-muted-foreground">
+                    {{ item.step.description }}
+                  </p>
+                </div>
+              </template>
             </div>
           </div>
-          <p class="text-muted-foreground text-xs">
-            {{ t('orders.workflow_strict_description') }}
-          </p>
         </div>
-      </div>
-    </PopoverContent>
-  </Popover>
+      </SheetBody>
+      <SheetFooter>
+        <Button variant="outline">
+          {{ $t('close') }}
+        </Button>
+      </SheetFooter>
+    </SheetContent>
+  </Sheet>
 </template>
