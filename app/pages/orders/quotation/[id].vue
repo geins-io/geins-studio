@@ -104,7 +104,7 @@ const discountValue = ref<string>('');
 const shippingFeeInput = ref<string>('');
 
 // Live preview state
-const previewTotal = ref<QuotationPreviewTotal | null>(null);
+const previewTotal = ref<QuotationTotal | null>(null);
 const previewLoading = ref(false);
 
 // Tabs & Steps
@@ -129,7 +129,7 @@ const selectedCompany = ref<CustomerCompany | undefined>();
 const quotationTotal = ref<QuotationTotal | null>(null);
 
 // Computed: prefer live preview total, fall back to saved total
-const displayTotal = computed<QuotationTotal | QuotationPreviewTotal | null>(
+const displayTotal = computed<QuotationTotal | null>(
   () => previewTotal.value ?? quotationTotal.value,
 );
 
