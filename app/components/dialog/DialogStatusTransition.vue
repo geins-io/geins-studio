@@ -56,11 +56,19 @@ watch(open, (isOpen) => {
       </AlertDialogHeader>
       <div v-if="props.showMessage" class="space-y-2">
         <label class="text-sm font-medium">
-          {{ $t('orders.message_to_customer') }}
+          {{
+            props.messageType === 'toCustomer'
+              ? $t('orders.message_to_customer')
+              : $t('orders.internal_note')
+          }}
         </label>
         <Textarea
           v-model="message"
-          :placeholder="$t('orders.message_to_customer_placeholder')"
+          :placeholder="
+            props.messageType === 'toCustomer'
+              ? $t('orders.message_to_customer_placeholder')
+              : $t('orders.internal_note_placeholder')
+          "
           rows="3"
         />
       </div>

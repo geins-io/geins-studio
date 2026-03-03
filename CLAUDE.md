@@ -214,7 +214,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - `ContentAddressDisplay` — Address display (expects `AddressUpdate` type). Also compatible with `QuotationAddress` since both share the same field names (`addressLine1`, `firstName`, etc.)
 - `InputGroup` / `InputGroupAddon` / `InputGroupButton` / `InputGroupInput` / `InputGroupTextarea` — Composable input groups with addons (icons, buttons, text) positioned via `align` prop (`inline-start`, `inline-end`, `block-start`, `block-end`). Use `InputGroupInput` instead of `Input` inside groups.
 - `ButtonGroup` / `ButtonGroupSeparator` / `ButtonGroupText` — Groups related buttons with shared border radius. Supports `orientation` (`horizontal` | `vertical`) and nesting.
-- `ContentPriceSummary` — Price summary rows (subtotal, discount, shipping, VAT, grand total). Props: `total` (`QuotationTotal | QuotationPreviewTotal`), `currency`, `editMode?`. When `editMode=true`: discount row becomes a shadcn `Input` (with `#valueDescriptor` slot containing a `Select` dropdown for switching between `%` and currency) plus a calculated discount amount display (e.g. "-100.00 SEK"); shipping row becomes an `Input` with currency in `#valueDescriptor`. Uses `defineModel` for `discountType`, `discountValue`, `shippingFee` (two-way binding) and emits `blur` when an editable field loses focus (parent triggers preview).
+- `ContentPriceSummary` — Price summary rows (subtotal, discount, shipping, VAT, grand total). Props: `total` (`QuotationTotal`), `currency`, `editMode?`. When `editMode=true`: discount row becomes a shadcn `Input` (with `#valueDescriptor` slot containing a `Select` dropdown for switching between `%` and currency) plus a calculated discount amount display (e.g. "-100.00 SEK"); shipping row becomes an `Input` with currency in `#valueDescriptor`. Uses `defineModel` for `discountType`, `discountValue`, `shippingFee` (two-way binding) and emits `blur` when an editable field loses focus (parent triggers preview).
 
 ### Display Patterns in Edit Pages
 
@@ -255,7 +255,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 **Snapshot convention (entity sub-objects in responses):**
 
 - `QuotationOwner`, `QuotationCustomer`, `QuotationCompany`, and `QuotationAddress` are snapshots — point-in-time captures stored with the quotation.
-- Each snapshot extends `EntitySnapshot` (`shared/types/Api.ts`), which provides `_id: string`, `_type: string`, `_snapshotAt?: string | null` (leading underscores, matching the top-level entity shape).
+- Each snapshot extends `EntitySnapshot` (`shared/types/Global.ts`), which provides `_id: string`, `_type: string`, `_snapshotAt?: string | null` (leading underscores, matching the top-level entity shape).
 - `QuotationOwner` and `QuotationCustomer` use `firstName`/`lastName` (no combined `name` or `email`). Use `fullName(x.firstName, x.lastName)` for display.
 - To read IDs from snapshots: `company._id`, `owner._id`, `customer._id`, `billingAddress._id` (not `companyId`/`ownerId`/`customerId`/`addressId`).
 - `toQuotationAddress()` in `[id].vue` maps a company `Address` → `QuotationAddress`, setting `_type: 'geins.wholesale_account_address'`.
@@ -276,10 +276,10 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 
 - Endpoint: `POST /quotation/{id}/preview` — calculates totals without persisting. Only available in draft edit mode (requires an existing quotation ID).
 - Called automatically via `debouncedCallPreview` (500 ms) whenever `quotationItems` or `discountRequest` change.
-- Response: `{ items: QuotationItem[], total: QuotationPreviewTotal }`. Items are enriched with `ordPrice` / `listPrice` from the applied price lists — these update `skuItemData` reactively. `unitPrice` is never overwritten from the preview response.
+- Response: `{ items: QuotationItem[], total: QuotationTotal }`. Items are enriched with `ordPrice` / `listPrice` from the applied price lists — these update `skuItemData` reactively. `unitPrice` is never overwritten from the preview response.
 - `previewTotal` ref holds the live result; `displayTotal = computed(() => previewTotal.value ?? quotationTotal.value)` is passed to `ContentPriceSummary`. Sent mode uses `quotationTotal` (from GET) because preview is disabled.
 - **Infinite loop prevention**: Preview is triggered from explicit user-action handlers (`handleQuantityChange`, `handleQuotationPriceChange`, `removeSkuFromSelection`, `ContentPriceSummary` blur event) and a `watch(simpleSkuSelection)`. Do NOT watch `quotationItems` to trigger preview — the preview response updates `skuItemData` (ordPrice/listPrice), which could change `quotationItems` output (via the `unitPrice !== listPrice` condition), creating an infinite loop.
-- `ContentPriceSummary` accepts `QuotationTotal | QuotationPreviewTotal` — handles `shipping` vs `suggestedShippingFee` field name difference via `'suggestedShippingFee' in props.total` type narrowing.
+- `ContentPriceSummary` accepts `QuotationTotal` — at runtime it handles `shipping` vs `suggestedShippingFee` differences via `'suggestedShippingFee' in props.total` to distinguish preview vs saved totals.
 
 **Sent mode (non-draft statuses):**
 

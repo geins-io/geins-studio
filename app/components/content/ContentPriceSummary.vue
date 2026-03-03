@@ -26,7 +26,9 @@ const shippingFee = defineModel<string>('shippingFee', {
   default: '',
 });
 
-shippingFee.value = String(shipping || 0);
+if (!shippingFee.value) {
+  shippingFee.value = String(shipping || 0);
+}
 
 const emit = defineEmits<{
   blur: [];
@@ -153,7 +155,7 @@ const rows = computed<PriceRow[]>(() => {
               size="sm"
               placeholder="0"
               class="w-46 text-right text-xs tabular-nums"
-              description="Add a discount to your quotation"
+              :description="t('orders.discount_description')"
               @blur="emit('blur')"
             >
               <template #valueDescriptor>
@@ -201,7 +203,7 @@ const rows = computed<PriceRow[]>(() => {
               inputmode="decimal"
               placeholder="0"
               class="w-46 text-right text-xs tabular-nums"
-              description="Add a suggested shipping fee"
+              :description="t('orders.shipping_fee_description')"
               @blur="emit('blur')"
             >
               <template #valueDescriptor>

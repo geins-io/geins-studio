@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { StatusBadgeStatus } from '#shared/types';
+import type { Component } from 'vue';
 import {
   LucideSend,
   LucidePackageCheck,
@@ -234,9 +235,11 @@ const selectFlow = (flowName: string) => {
         </div>
       </SheetBody>
       <SheetFooter>
-        <Button>
-          {{ $t('close') }}
-        </Button>
+        <SheetClose as-child>
+          <Button>
+            {{ $t('close') }}
+          </Button>
+        </SheetClose>
       </SheetFooter>
     </SheetContent>
   </Sheet>
