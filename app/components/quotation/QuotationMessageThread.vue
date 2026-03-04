@@ -60,7 +60,7 @@ const getParentMessage = (answerRef: string | null | undefined): QuotationMessag
 };
 
 const isOwnMessage = (msg: QuotationMessage): boolean => {
-  return !!props.currentUserEmail && msg.author.id === props.currentUserEmail;
+  return !!props.currentUserEmail && msg.authorId === props.currentUserEmail;
 };
 
 const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
@@ -92,7 +92,7 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
           class="bg-muted/50 border-l-border mb-3 block rounded border-l-2 px-3 py-2 opacity-60 transition-opacity hover:opacity-100"
         >
           <p class="text-muted-foreground text-xs font-medium">
-            {{ getParentMessage(msg.answerRef)!.author.name }}
+            {{ getParentMessage(msg.answerRef)!.authorName }}
           </p>
           <p class="truncate text-xs">
             {{ getParentMessage(msg.answerRef)!.message }}
@@ -104,12 +104,12 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
           <div class="flex items-center gap-3">
             <Avatar class="size-8 shrink-0 rounded-lg">
               <AvatarFallback class="rounded-lg text-xs">
-                {{ getInitials(msg.author.name) }}
+                {{ getInitials(msg.authorName) }}
               </AvatarFallback>
             </Avatar>
             <div class="grid text-left text-sm leading-tight">
-              <span class="truncate font-medium">{{ msg.author.name }}</span>
-              <span class="text-muted-foreground truncate text-xs">{{ msg.author.id }}</span>
+              <span class="truncate font-medium">{{ msg.authorName }}</span>
+              <span class="text-muted-foreground truncate text-xs">{{ msg.authorId }}</span>
             </div>
             <Badge
               v-if="msg.type === 'quotationNote'"

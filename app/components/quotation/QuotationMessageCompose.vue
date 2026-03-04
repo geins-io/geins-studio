@@ -46,7 +46,7 @@ const handleSend = () => {
     >
       <LucideCornerDownRight class="size-3" />
       <span>{{
-        t('orders.replying_to', { author: replyTo.author.name })
+        t('orders.replying_to', { author: replyTo.authorName })
       }}</span>
       <button class="hover:text-foreground" @click="emit('cancelReply')">
         <LucideX class="size-3" />

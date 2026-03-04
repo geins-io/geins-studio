@@ -106,21 +106,14 @@ export interface QuotationValidShippingMethod {
 }
 
 /**
- * Author of a communication message
- */
-export interface QuotationMessageAuthor {
-  id: string;
-  name: string;
-}
-
-/**
  * Communication message (response)
  */
 export interface QuotationMessage {
   _id: string;
   _type: string;
   type: QuotationMessageType;
-  author: QuotationMessageAuthor;
+  authorId: string;
+  authorName: string;
   message: string;
   timestamp: string;
   answerRef?: string | null;

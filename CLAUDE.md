@@ -277,7 +277,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - `orderApi.quotation.deleteMessage(messageId)` — `DELETE /quotation/message/{messageId}` (returns void, 204).
 - `QuotationMessageCreate`: `{ type, authorId, authorName, message, answerRef? }`.
 - `QuotationMessageUpdate`: `{ type?, message?, answerRef? }`.
-- `QuotationMessage` (response): `{ _id, _type, type, author: { id, name }, message, timestamp, answerRef? }`. Note: response uses nested `author` object, while create request uses flat `authorId`/`authorName`.
+- `QuotationMessage` (response): `{ _id, _type, type, authorId, authorName, message, timestamp, answerRef? }`. Same flat shape as the create request.
 - After any message mutation, call `refreshEntityData()` to re-fetch — the API does not return the updated message list.
 - UI: `QuotationCommunications` → `QuotationMessageThread` (display with reply/edit/delete) + `QuotationMessageCompose` (send new). Shown in sent-mode Communications tab only.
 
