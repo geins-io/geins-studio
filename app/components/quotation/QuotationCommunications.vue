@@ -6,10 +6,12 @@ const props = withDefaults(
     communications: QuotationMessage[];
     currentUserEmail?: string;
     loading?: boolean;
+    editLoading?: boolean;
   }>(),
   {
     currentUserEmail: '',
     loading: false,
+    editLoading: false,
   },
 );
 
@@ -65,6 +67,7 @@ const handleInternalSend = (message: string) => {
         :messages="externalMessages"
         :all-communications="communications"
         :current-user-email="currentUserEmail"
+        :edit-loading="editLoading"
         @reply="(msg) => (externalReplyTo = msg)"
         @edit="(id, text) => emit('editMessage', id, text)"
         @delete="(id) => emit('deleteMessage', id)"
@@ -83,6 +86,7 @@ const handleInternalSend = (message: string) => {
         :messages="internalMessages"
         :all-communications="communications"
         :current-user-email="currentUserEmail"
+        :edit-loading="editLoading"
         @reply="(msg) => (internalReplyTo = msg)"
         @edit="(id, text) => emit('editMessage', id, text)"
         @delete="(id) => emit('deleteMessage', id)"
