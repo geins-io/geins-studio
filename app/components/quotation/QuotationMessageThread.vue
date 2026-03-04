@@ -63,15 +63,12 @@ const getInitials = (name: string): string => {
   return first[0]?.toUpperCase() || '';
 };
 
-const getParentMessage = (
-  answerRef: string | null | undefined,
-): QuotationMessage | null => {
-  if (!answerRef) return null;
+const parentMessagesMap = computed<Map<string, QuotationMessage>>(() => {
   const source = props.allCommunications.length
     ? props.allCommunications
     : props.messages;
-  return source.find((m) => m._id === answerRef) || null;
-};
+  return new Map(source.map((m) => [m._id, m]));
+});
 
 const isOwnMessage = (msg: QuotationMessage): boolean => {
   return !!props.currentUserEmail && msg.authorId === props.currentUserEmail;
@@ -120,15 +117,15 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
       >
         <!-- Reply excerpt -->
         <a
-          v-if="getParentMessage(msg.answerRef)"
+          v-if="msg.answerRef && parentMessagesMap.has(msg.answerRef)"
           :href="`#msg-${msg.answerRef}`"
           class="bg-muted/50 border-l-border mb-3 block rounded border-l-2 px-3 py-2 opacity-60 transition-opacity hover:opacity-100"
         >
           <p class="text-muted-foreground text-xs font-medium">
-            {{ getParentMessage(msg.answerRef)!.authorName }}
+            {{ parentMessagesMap.get(msg.answerRef)?.authorName }}
           </p>
           <p class="truncate text-xs">
-            {{ getParentMessage(msg.answerRef)!.message }}
+            {{ parentMessagesMap.get(msg.answerRef)?.message }}
           </p>
         </a>
 

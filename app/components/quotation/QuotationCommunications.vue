@@ -7,11 +7,13 @@ const props = withDefaults(
     currentUserEmail?: string;
     loading?: boolean;
     editLoading?: boolean;
+    messageSendSuccessCount?: number;
   }>(),
   {
     currentUserEmail: '',
     loading: false,
     editLoading: false,
+    messageSendSuccessCount: 0,
   },
 );
 
@@ -27,6 +29,22 @@ const emit = defineEmits<{
 
 const externalReplyTo = ref<QuotationMessage | null>(null);
 const internalReplyTo = ref<QuotationMessage | null>(null);
+const externalClearTrigger = ref(0);
+const internalClearTrigger = ref(0);
+type PendingSendTab = 'external' | 'internal' | null;
+const pendingSendTab = ref<PendingSendTab>(null);
+
+watch(
+  () => props.messageSendSuccessCount,
+  () => {
+    if (pendingSendTab.value === 'external') {
+      externalClearTrigger.value++;
+    } else if (pendingSendTab.value === 'internal') {
+      internalClearTrigger.value++;
+    }
+    pendingSendTab.value = null;
+  },
+);
 
 const externalMessages = computed(() =>
   props.communications.filter(
@@ -41,13 +59,13 @@ const internalMessages = computed(() =>
 );
 
 const handleExternalSend = (message: string) => {
+  pendingSendTab.value = 'external';
   emit('sendMessage', 'toCustomer', message, externalReplyTo.value?._id);
-  externalReplyTo.value = null;
 };
 
 const handleInternalSend = (message: string) => {
+  pendingSendTab.value = 'internal';
   emit('sendMessage', 'internal', message, internalReplyTo.value?._id);
-  internalReplyTo.value = null;
 };
 </script>
 
@@ -77,6 +95,7 @@ const handleInternalSend = (message: string) => {
         message-type="toCustomer"
         :loading="loading"
         :reply-to="externalReplyTo"
+        :clear-trigger="externalClearTrigger"
         @send="handleExternalSend"
         @cancel-reply="externalReplyTo = null"
       />
@@ -96,6 +115,7 @@ const handleInternalSend = (message: string) => {
         message-type="internal"
         :loading="loading"
         :reply-to="internalReplyTo"
+        :clear-trigger="internalClearTrigger"
         @send="handleInternalSend"
         @cancel-reply="internalReplyTo = null"
       />

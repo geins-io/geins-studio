@@ -1216,6 +1216,7 @@ const handleCopy = async () => {
 // =====================================================================================
 const messageLoading = ref(false);
 const messageEditLoading = ref(false);
+const messageSendSuccessCount = ref(0);
 
 const handleSendMessage = async (
   type: QuotationMessageType,
@@ -1233,6 +1234,7 @@ const handleSendMessage = async (
       ...(answerRef ? { answerRef } : {}),
     });
     await refreshEntityData.value?.();
+    messageSendSuccessCount.value++;
     toast({ title: t('orders.message_sent'), variant: 'positive' });
   } catch (error) {
     geinsLogError('Failed to create message:', error);
@@ -2421,6 +2423,7 @@ definePageMeta({
                 :current-user-email="userStore.userEmail"
                 :loading="messageLoading"
                 :edit-loading="messageEditLoading"
+                :message-send-success-count="messageSendSuccessCount"
                 @send-message="handleSendMessage"
                 @edit-message="handleEditMessage"
                 @delete-message="handleDeleteMessage"
