@@ -108,6 +108,11 @@ export interface QuotationValidShippingMethod {
 /**
  * Communication message (response)
  */
+export interface QuotationMessageTag {
+  key: string;
+  value: string;
+}
+
 export interface QuotationMessage {
   _id: string;
   _type: string;
@@ -117,6 +122,7 @@ export interface QuotationMessage {
   message: string;
   timestamp: string;
   answerRef?: string | null;
+  tags?: QuotationMessageTag[] | null;
 }
 
 /**

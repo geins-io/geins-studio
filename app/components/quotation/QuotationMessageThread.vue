@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { QuotationMessage } from '#shared/types';
+import type { QuotationMessage, StatusBadgeStatus } from '#shared/types';
 
 const props = withDefaults(
   defineProps<{
@@ -75,6 +75,21 @@ const isOwnMessage = (msg: QuotationMessage): boolean => {
 };
 
 const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
+
+const getTag = (msg: QuotationMessage, key: string): string | undefined =>
+  msg.tags?.find((t) => t.key === key)?.value;
+
+const getStatusTransition = (
+  msg: QuotationMessage,
+): { from: StatusBadgeStatus; to: StatusBadgeStatus } | null => {
+  const from = getTag(msg, 'statusFrom');
+  const to = getTag(msg, 'statusTo');
+  if (!from || !to) return null;
+  return {
+    from: from.toLowerCase() as StatusBadgeStatus,
+    to: to.toLowerCase() as StatusBadgeStatus,
+  };
+};
 </script>
 
 <template>
@@ -143,22 +158,16 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
                 msg.authorId
               }}</span>
             </div>
-            <Badge
-              v-if="msg.type === 'quotationNote'"
-              variant="secondary"
-              class="text-xs"
-            >
-              {{ t('orders.notes') }}
-            </Badge>
-            <Badge
-              v-if="mode === 'external' && msg.type === 'fromCustomer'"
-              variant="secondary"
-              class="text-xs"
-            >
-              {{ t('customer') }}
-            </Badge>
           </div>
           <div class="flex items-center gap-2">
+            <div
+              v-if="getStatusTransition(msg)"
+              class="mr-2 flex items-center gap-1.5"
+            >
+              <StatusBadge :status="getStatusTransition(msg)!.from" />
+              <LucideArrowRight class="text-muted-foreground size-3" />
+              <StatusBadge :status="getStatusTransition(msg)!.to" />
+            </div>
             <span class="text-muted-foreground text-xs">
               {{ msg.timestamp ? formatDate(msg.timestamp) : '' }}
             </span>
@@ -180,9 +189,7 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
                     <LucidePencil class="mr-2 size-4" />
                     {{ t('orders.edit_message') }}
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    @click="emit('delete', msg._id)"
-                  >
+                  <DropdownMenuItem @click="emit('delete', msg._id)">
                     <LucideTrash2 class="mr-2 size-4" />
                     {{ t('orders.delete_message') }}
                   </DropdownMenuItem>
