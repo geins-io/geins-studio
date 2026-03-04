@@ -23,8 +23,8 @@ const messageText = ref('');
 
 const placeholder = computed(() =>
   props.messageType === 'toCustomer' || props.messageType === 'fromCustomer'
-    ? t('orders.message_to_customer_placeholder')
-    : t('orders.internal_note_placeholder'),
+    ? t('orders.message_to_customer_compose_placeholder')
+    : t('orders.internal_note_compose_placeholder'),
 );
 
 const canSend = computed(
@@ -52,7 +52,12 @@ const handleSend = () => {
         <LucideX class="size-3" />
       </button>
     </div>
-    <Textarea v-model="messageText" :placeholder="placeholder" rows="3" />
+    <Textarea
+      v-model="messageText"
+      :placeholder="placeholder"
+      rows="4"
+      class="p-2"
+    />
     <div class="flex justify-end">
       <Button size="sm" :disabled="!canSend" @click="handleSend">
         <LucideSend class="mr-2 size-4" />
