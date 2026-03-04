@@ -1,0 +1,100 @@
+<script setup lang="ts">
+import type { QuotationMessage, QuotationMessageType } from '#shared/types';
+
+const props = withDefaults(
+  defineProps<{
+    communications: QuotationMessage[];
+    currentUserEmail?: string;
+    loading?: boolean;
+  }>(),
+  {
+    currentUserEmail: '',
+    loading: false,
+  },
+);
+
+const emit = defineEmits<{
+  sendMessage: [
+    type: QuotationMessageType,
+    message: string,
+    answerRef?: string,
+  ];
+  editMessage: [messageId: string, newText: string];
+  deleteMessage: [messageId: string];
+}>();
+
+const externalReplyTo = ref<QuotationMessage | null>(null);
+const internalReplyTo = ref<QuotationMessage | null>(null);
+
+const externalMessages = computed(() =>
+  props.communications.filter(
+    (m) => m.type === 'toCustomer' || m.type === 'fromCustomer',
+  ),
+);
+
+const internalMessages = computed(() =>
+  props.communications.filter(
+    (m) => m.type === 'internal' || m.type === 'quotationNote',
+  ),
+);
+
+const handleExternalSend = (message: string) => {
+  emit('sendMessage', 'toCustomer', message, externalReplyTo.value?._id);
+  externalReplyTo.value = null;
+};
+
+const handleInternalSend = (message: string) => {
+  emit('sendMessage', 'internal', message, internalReplyTo.value?._id);
+  internalReplyTo.value = null;
+};
+</script>
+
+<template>
+  <Tabs default-value="external" class="w-full">
+    <TabsList>
+      <TabsTrigger value="external">
+        {{ $t('orders.external_messages') }}
+      </TabsTrigger>
+      <TabsTrigger value="internal">
+        {{ $t('orders.internal_messages') }}
+      </TabsTrigger>
+    </TabsList>
+    <TabsContent value="external" class="mt-4 border-t pt-4">
+      <QuotationMessageThread
+        mode="external"
+        :messages="externalMessages"
+        :all-communications="communications"
+        :current-user-email="currentUserEmail"
+        @reply="(msg) => (externalReplyTo = msg)"
+        @edit="(id, text) => emit('editMessage', id, text)"
+        @delete="(id) => emit('deleteMessage', id)"
+      />
+      <QuotationMessageCompose
+        class="mt-4"
+        message-type="toCustomer"
+        :loading="loading"
+        :reply-to="externalReplyTo"
+        @send="handleExternalSend"
+        @cancel-reply="externalReplyTo = null"
+      />
+    </TabsContent>
+    <TabsContent value="internal" class="mt-4 border-t pt-4">
+      <QuotationMessageThread
+        :messages="internalMessages"
+        :all-communications="communications"
+        :current-user-email="currentUserEmail"
+        @reply="(msg) => (internalReplyTo = msg)"
+        @edit="(id, text) => emit('editMessage', id, text)"
+        @delete="(id) => emit('deleteMessage', id)"
+      />
+      <QuotationMessageCompose
+        class="mt-4"
+        message-type="internal"
+        :loading="loading"
+        :reply-to="internalReplyTo"
+        @send="handleInternalSend"
+        @cancel-reply="internalReplyTo = null"
+      />
+    </TabsContent>
+  </Tabs>
+</template>

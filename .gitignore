@@ -4,7 +4,6 @@
 .nuxt
 .nitro
 .cache
-.yarn
 .temp
 .vitepress
 
@@ -22,6 +21,7 @@ logs
 .DS_Store
 .fleet
 .idea
+.claude
 repomix.config.json
 .windsurfrules
 

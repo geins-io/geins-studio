@@ -1,16 +1,22 @@
 <script setup lang="ts">
-import type { Quotation } from '#shared/types';
-import type { ColumnOptions, StringKeyOf } from '#shared/types';
-import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
+import type {
+  Quotation,
+  QuotationList,
+  QuotationBatchQueryResult,
+  ColumnOptions,
+  StringKeyOf,
+} from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
+import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = Quotation;
-type EntityList = Quotation;
+type EntityList = QuotationList;
 
-const scope = 'pages/orders/quotations/list.vue';
+const scope = 'pages/orders/quotation/list.vue';
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog(scope);
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
+const { getMarketNameById, getChannelNameById } = useAccountStore();
 
 definePageMeta({
   pageType: 'list',
@@ -33,22 +39,44 @@ const { handleFetchResult, showErrorToast } = usePageError({
   scope,
 });
 
-// Add the mapping function
+// Transform raw API quotation data to list view format
 const mapToListData = (list: Entity[]): EntityList[] => {
   return list.map((item) => {
+    const { items, ...rest } = item;
     return {
-      ...item,
+      ...rest,
+      buyer: fullName(item.customer),
+      company: item.company?.name || '',
+      products: t('nr_of_entity', {
+        entityName: 'product',
+        count: items?.length ?? 0,
+      }),
+      owner: fullName(item.owner),
+      sum: {
+        price: item.total.grandTotalExVat.toString(),
+        currency: item.currency,
+      },
+      requireConfirmation: item.settings?.requireConfirmation
+        ? t('yes')
+        : t('no'),
+      dateModified: item.modifiedAt || '',
+      dateSent: item.validFrom || '',
+      expirationDate: item.validTo || '',
+      dateCreated: item.createdAt || '',
+      market: getMarketNameById(item.marketId) || '',
+      channel: getChannelNameById(item.channelId) || '',
     };
   });
 };
 
 // FETCH DATA FOR ENTITY
-const { data, error, refresh } = await useAsyncData<Entity[]>(
+const { data, error, refresh } = await useAsyncData<QuotationBatchQueryResult>(
   'orders-quotations-list',
   () => orderApi.quotation.list(),
 );
 
-const { getColumns, addActionsColumn } = useColumns<EntityList>();
+const { getColumns, addActionsColumn, setColumnOrder } =
+  useColumns<EntityList>();
 
 onMounted(() => {
   watch(
@@ -56,7 +84,7 @@ onMounted(() => {
     (newData) => {
       if (newData) {
         const validData = handleFetchResult(error.value, newData);
-        dataList.value = mapToListData(validData);
+        dataList.value = mapToListData(validData.items ?? []);
       }
     },
     { immediate: true },
@@ -64,57 +92,79 @@ onMounted(() => {
 
   // SET UP COLUMN OPTIONS FOR ENTITY
   const columnOptions: ColumnOptions<EntityList> = {
+    columnTitles: {
+      quotationNumber: t('ref_number'),
+      sum: t('orders.total') + ` (${t('ex_vat')})`,
+    },
     columnTypes: {
       name: 'link',
-      status: 'status',
-      dateModified: 'date',
       sum: 'currency',
-      expirationDate: 'date',
-      itemCount: 'number',
     },
     linkColumns: {
       name: { url: entityUrl, idField: '_id' },
     },
-    columnTitles: {
-      _id: 'ID',
-      name: t('name'),
-      status: t('status'),
-      accountName: t('company'),
-      dateCreated: t('created'),
-      dateModified: t('modified'),
-      sum: t('sum'),
-      expirationDate: t('expiration_date'),
-      itemCount: t('item', 2),
-      createdBy: t('created_by'),
-    },
     excludeColumns: [
-      '_type',
-      'accountId',
-      'channel',
-      'currency',
-      'notes',
-      'items',
+      'suggestedShippingFee',
+      'billingAddress',
+      'shippingAddress',
+      'validFrom',
+      'validTo',
+      'customer',
+      'total',
+      'marketId',
+      'channelId',
+      'createdAt',
+      'modifiedAt',
+      'discount',
+      'settings',
     ],
   };
   // GET AND SET COLUMNS
   columns.value = getColumns(dataList.value, columnOptions);
+  columns.value = setColumnOrder(columns.value, 'status', 10);
 
   addActionsColumn(
     columns.value,
     {
-      onEdit: (item: Entity) =>
+      onEdit: (item: EntityList) =>
         navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
-      onDelete: async (item: Entity) => await openDeleteDialog(item._id),
+      onCopy: async (item: EntityList) => {
+        try {
+          const newDraft = await orderApi.quotation.copy(item._id);
+          toast({
+            title: t('entity_copied', { entityName }),
+            variant: 'positive',
+          });
+          await navigateTo(
+            entityUrl.replace(entityIdentifier, String(newDraft._id)),
+          );
+        } catch (err) {
+          geinsLogError('copyQuotation :::', getErrorMessage(err));
+          showErrorToast(t('error_copying_entity', { entityName }));
+        }
+      },
+      onDelete: async (item: EntityList) => await openDeleteDialog(item._id),
+      disabledActions: (item: EntityList) =>
+        item.status !== 'draft' ? (['delete'] as TableRowAction[]) : [],
     },
     'actions',
-    ['edit', 'delete'],
+    ['edit', 'copy', 'delete'],
   );
   loading.value = false;
 });
 
 // SET COLUMN VISIBILITY STATE
 const { getVisibilityState } = useTable<EntityList>();
-const hiddenColumns: StringKeyOf<EntityList>[] = [];
+const hiddenColumns: StringKeyOf<EntityList>[] = [
+  '_id',
+  'quotationNumber',
+  'currency',
+  'market',
+  'channel',
+  'orderId',
+  'terms',
+  'requireConfirmation',
+];
 visibilityState.value = getVisibilityState(hiddenColumns);
 
 const { toast } = useToast();
@@ -126,8 +176,7 @@ const deleteQuotation = async (
     if (!id) {
       throw new Error('ID is required for deletion');
     }
-    // TODO: Implement actual delete when API is available
-    // await orderApi.quotation.delete(id);
+    await orderApi.quotation.delete(id);
     toast({
       title: t('entity_deleted', { entityName }),
       variant: 'positive',
@@ -157,6 +206,15 @@ const confirmDelete = async () => {
   deleting.value = false;
   deleteDialogOpen.value = false;
 };
+
+// SET UP SEARCHABLE FIELDS
+const searchableFields: Array<keyof EntityList> = [
+  '_id',
+  'name',
+  'company',
+  'status',
+  'owner',
+];
 </script>
 
 <template>
@@ -180,6 +238,7 @@ const confirmDelete = async () => {
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
+      :searchable-fields="searchableFields"
     >
       <template #empty-actions>
         <ButtonIcon
@@ -192,7 +251,7 @@ const confirmDelete = async () => {
       </template>
     </TableView>
     <template #error="{ error: errorCatched }">
-      <h2 class="text-xl font-bold">
+      <h2 class="mb-3 text-xl font-bold">
         {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
       </h2>
       <p>{{ errorCatched }}</p>

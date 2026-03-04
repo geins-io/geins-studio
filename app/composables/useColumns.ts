@@ -15,10 +15,10 @@ import {
   TableCellBoolean,
   TableCellEditable,
   TableCellCurrency,
+  TableCellProduct,
   Button,
+  LucideChevronRight,
 } from '#components';
-
-import { ChevronRight } from 'lucide-vue-next';
 
 interface UseColumnsReturnType<T> {
   getBasicHeaderStyle: (table: Table<T>) => string;
@@ -46,6 +46,11 @@ interface UseColumnsReturnType<T> {
     columns: ColumnDef<T>[],
     key: ColumnKey<T>,
   ) => ColumnDef<T>[];
+  setColumnOrder: (
+    columns: ColumnDef<T>[],
+    key: ColumnKey<T>,
+    order: number,
+  ) => ColumnDef<T>[];
 }
 
 /**
@@ -70,13 +75,20 @@ interface UseColumnsReturnType<T> {
 export const useColumns = <T>(): UseColumnsReturnType<T> => {
   const viewport = useViewport();
   const accountStore = useAccountStore();
-  const { currentCurrency } = storeToRefs(accountStore);
-  const locale = useCookieLocale();
+  const { currentCurrency: _currentCurrency } = storeToRefs(accountStore);
+  const { formatDate } = useDate();
+  const { handleImageError } = useGeinsImage();
 
   // BASIC HEADER STYLE
   const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
+  const minimalHeaderTextStyle = 'text-xs font-medium normal-case';
   const getBasicHeaderStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
+
+    if (mode === TableMode.Minimal) {
+      return `px-0.5 sm:px-1.5 flex items-center whitespace-nowrap h-8 sm:h-10 ${minimalHeaderTextStyle}`;
+    }
+
     const baseStyle =
       'px-0.5 sm:px-1.5 flex items-center whitespace-nowrap ' +
       basicHeaderTextStyle;
@@ -94,6 +106,11 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
   // BASIC CELL STYLE
   const getBasicCellStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
+
+    if (mode === TableMode.Minimal) {
+      return 'align-middle sm:text-grid leading-6 text-xs sm:leading-8 w-full h-[68px] flex items-center truncate px-3.5';
+    }
+
     const baseStyle =
       'align-middle sm:text-grid leading-6 text-xs sm:leading-8 w-full h-8 sm:h-10 flex items-center truncate';
     const simpleStyle = 'px-3.5';
@@ -171,7 +188,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
                   size: 'icon-xs',
                 },
                 () =>
-                  h(ChevronRight, {
+                  h(LucideChevronRight, {
                     class:
                       'size-4 transition-transform' +
                       (row.getIsExpanded() ? ' rotate-90' : ''),
@@ -265,6 +282,12 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         columnType = 'tags';
       } else if (keyLower === 'active' || keyLower === 'status') {
         columnType = 'status';
+      } else if (
+        keyLower === 'product' &&
+        data.length > 0 &&
+        'articleNumber' in (data[0] as object)
+      ) {
+        columnType = 'product';
       } else {
         columnType = 'default';
       }
@@ -283,6 +306,15 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
       let cellRenderer;
       let headerRenderer = colSortable
         ? ({ table, column }: { table: Table<T>; column: Column<T> }) => {
+            const mode = table?.options?.meta?.mode || TableMode.Advanced;
+            // Minimal mode: plain text headers, no sort buttons
+            if (mode === TableMode.Minimal) {
+              return h(
+                'div',
+                { class: cn(getBasicHeaderStyle(table), 'px-3 sm:px-3') },
+                columnTitle,
+              );
+            }
             return h(
               'div',
               { class: getBasicHeaderStyle(table) },
@@ -326,15 +358,19 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
       };
 
       switch (columnType) {
-        case 'price':
+        case 'product':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const value = row.getValue(key);
-            const formatted = new Intl.NumberFormat(locale.value, {
-              style: 'currency',
-              currency: currentCurrency.value,
-              minimumFractionDigits: 0,
-            }).format(Number(value));
-            return h('div', { class: getBasicCellStyle(table) }, formatted);
+            const name = String(row.getValue(key) ?? '');
+            const original = row.original as Record<string, unknown>;
+            return h(
+              'div',
+              { class: cn(getBasicCellStyle(table), 'px-3 sm:px-3') },
+              h(TableCellProduct, {
+                name,
+                articleNumber: String(original.articleNumber ?? ''),
+                imageUrl: String(original.image ?? original.imageUrl ?? ''),
+              }),
+            );
           };
           break;
         case 'image':
@@ -349,7 +385,8 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               h('img', {
                 src: value,
                 alt: columnTitle,
-                class: 'size-7 mx-auto max-w-10 p-0.5',
+                class: 'size-7 mx-auto max-w-10 p-0.5 rounded-lg',
+                onerror: handleImageError,
               }),
             );
           };
@@ -419,9 +456,15 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         case 'date':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
-            const date = new Date(value as string | number | Date);
-            const formatted = date.toLocaleDateString(locale.value);
-            return h('div', { class: getBasicCellStyle(table) }, formatted);
+            if (!value) {
+              return h('div', { class: getBasicCellStyle(table) }, '---');
+            }
+            const formatted = formatDate(value as string | Date);
+            return h(
+              'div',
+              { class: getBasicCellStyle(table) },
+              formatted || String(value),
+            );
           };
           break;
         case 'channels':
@@ -466,7 +509,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             }
             return h(TableCellStatus, {
               class: getBasicCellStyle(table),
-              status: value,
+              status: value as StatusBadgeStatus,
               ...cellProps,
             });
           };
@@ -723,6 +766,20 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
     return newColumns;
   };
 
+  const setColumnOrder = (
+    columns: ColumnDef<T>[],
+    key: ColumnKey<T>,
+    order: number,
+  ): ColumnDef<T>[] => {
+    const idx = columns.findIndex((col) => col.id === key);
+    if (idx === -1) return columns;
+    const col = columns[idx];
+    if (!col) return columns;
+    const filtered = columns.filter((c, i) => i !== idx);
+    filtered.splice(order, 0, col);
+    return filtered;
+  };
+
   const addExpandingColumn = (columns: ColumnDef<T>[]): ColumnDef<T>[] => {
     // Add expander column at the beginning
     columns.unshift(expandingColumn);
@@ -735,8 +792,9 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
     getColumns,
     extendColumns,
     addActionsColumn,
-    addExpandingColumn,
     orderAndFilterColumns,
     orderColumnLast,
+    setColumnOrder,
+    addExpandingColumn,
   };
 };

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Geins Studio is an admin interface for Geins Commerce Backend built with Nuxt 3, TypeScript, and shadcn-vue. It's an SPA (`ssr: false`) that integrates with Geins Management API for e-commerce operations (products, orders, customers, pricing).
+Geins Studio is an admin interface for Geins Commerce Backend built with Nuxt 4, TypeScript, and shadcn-vue. It's an SPA (`ssr: false`) that integrates with Geins Management API for e-commerce operations (products, orders, customers, pricing).
 
 ## Architecture & Data Flow
 
@@ -204,19 +204,19 @@ Used in `nuxt.config.ts` for `auth.baseURL` configuration.
 ### Running the Project
 
 ```bash
-yarn install           # Install dependencies (uses Yarn 1.22.22)
-yarn dev              # Start dev server at localhost:3000
-yarn lint             # ESLint with auto-fix
-yarn test             # Run Vitest tests
-yarn docs             # VitePress docs at localhost:3010
+pnpm install           # Install dependencies (pnpm, via Corepack)
+pnpm dev              # Start dev server at localhost:3000
+pnpm lint             # ESLint with auto-fix
+pnpm test             # Run Vitest tests
+pnpm docs:dev          # Start VitePress docs on localhost
 ```
 
 ### Project Commands
 
-- `yarn build` - Production build (Nuxt)
-- `yarn preview` - Preview production build
-- `yarn changelog:release` - Bump version and create release
-- `yarn docs:build` - Build VitePress documentation
+- `pnpm build` - Production build (Nuxt)
+- `pnpm preview` - Preview production build
+- `pnpm changelog:release` - Bump version and create release
+- `pnpm docs:build` - Build VitePress documentation
 
 ### Testing
 
@@ -318,4 +318,4 @@ Configured in `components.json` (used by shadcn-nuxt):
 - `guides/` - Feature guides (data tables, forms, etc.)
 - `introduction/` - Getting started, deployment
 
-Run `yarn docs` to view at `localhost:3010`.
+Run `pnpm docs:dev` to view at `localhost:3010`.

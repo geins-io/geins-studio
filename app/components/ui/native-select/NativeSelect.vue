@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { reactiveOmit, useVModel } from '@vueuse/core';
+import { cn } from '@/utils/index';
 import type { AcceptableValue } from 'reka-ui';
 import type { HTMLAttributes } from 'vue';
-import { reactiveOmit, useVModel } from '@vueuse/core';
-import { ChevronDownIcon } from 'lucide-vue-next';
-import { cn } from '@/utils/index';
 
 defineOptions({
   inheritAttrs: false,
@@ -37,7 +36,7 @@ const delegatedProps = reactiveOmit(props, 'class');
       data-slot="native-select"
       :class="
         cn(
-          'border-input placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 dark:hover:bg-input/50 h-9 w-full min-w-0 appearance-none rounded-md border bg-transparent px-3 py-2 pr-9 text-sm shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed',
+          'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 dark:hover:bg-input/50 h-9 w-full min-w-0 appearance-none rounded-md border bg-transparent px-3 py-2 pr-9 text-sm shadow-xs outline-hidden transition-[color,box-shadow] disabled:pointer-events-none disabled:cursor-not-allowed',
           'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
           'aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
           props.class,
@@ -46,7 +45,7 @@ const delegatedProps = reactiveOmit(props, 'class');
     >
       <slot />
     </select>
-    <ChevronDownIcon
+    <LucideChevronDown
       class="text-muted-foreground pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 opacity-50 select-none"
       aria-hidden="true"
       data-slot="native-select-icon"

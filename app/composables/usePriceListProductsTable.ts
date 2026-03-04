@@ -1,5 +1,5 @@
-import type { ColumnDef, Row } from '@tanstack/vue-table';
 import type { PriceListProductList } from '#shared/types';
+import type { ColumnDef, Row } from '@tanstack/vue-table';
 import {
   PriceListVolumePricingCell,
   PriceListPriceModeCell,

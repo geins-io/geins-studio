@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ComboboxPortal } from 'reka-ui';
-import { Check, ChevronsUpDown, Search } from 'lucide-vue-next';
 const { t } = useI18n();
 
 const props = withDefaults(
@@ -130,13 +129,18 @@ const handleKeyDown = () => {
       >
         {{ choice?.label ?? t('select_entity', { entityName }) }}
 
-        <ChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
+        <LucideChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
       </button>
     </ComboboxAnchor>
     <ComboboxPortal to="body" :disabled="disableTeleport">
       <ComboboxList
         ref="comboboxList"
-        class="relative w-(--reka-popper-anchor-width)"
+        :position="disableTeleport ? 'inline' : 'popper'"
+        :class="
+          disableTeleport
+            ? 'absolute z-10 mt-1 w-full'
+            : 'relative w-(--reka-popper-anchor-width)'
+        "
       >
         <div
           class="bg-card sticky top-0 z-50 w-full items-center rounded-t border-b"
@@ -151,7 +155,7 @@ const handleKeyDown = () => {
           <span
             class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
           >
-            <Search class="text-muted-foreground size-4" />
+            <LucideSearch class="text-muted-foreground size-4" />
           </span>
         </div>
 
@@ -159,12 +163,12 @@ const handleKeyDown = () => {
           {{ $t('no_entity_found', { entityName }) }}
         </ComboboxEmpty>
 
-        <ComboboxGroup class="max-h-[300px] overflow-auto">
+        <ComboboxGroup class="max-h-75 overflow-auto">
           <ComboboxItem v-for="item in dataSet" :key="item.value" :value="item">
             {{ item.label }}
 
             <ComboboxItemIndicator>
-              <Check :class="cn('ml-auto size-4')" />
+              <LucideCheck :class="cn('ml-auto size-4')" />
             </ComboboxItemIndicator>
           </ComboboxItem>
         </ComboboxGroup>

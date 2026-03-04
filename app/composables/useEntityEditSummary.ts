@@ -1,3 +1,4 @@
+import type { StatusBadgeStatus } from '#shared/types';
 import type { ComputedRef, Ref } from 'vue';
 
 interface EntityEditSummaryProps {
@@ -7,6 +8,8 @@ interface EntityEditSummaryProps {
   settingsSummary: Ref<DataItem[]> | ComputedRef<DataItem[]>;
   entityName: string;
   entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
+  showActiveStatus?: boolean;
+  status?: Ref<StatusBadgeStatus> | ComputedRef<StatusBadgeStatus> | StatusBadgeStatus;
 }
 
 interface UseEntityEditSummaryReturnType {
@@ -14,9 +17,11 @@ interface UseEntityEditSummaryReturnType {
     createMode: boolean;
     formTouched: boolean;
     summary: DataItem[];
-    settingsSummary: DataItem[];
+    settingsSummary?: DataItem[];
     entityName: string;
     entityLiveStatus: boolean;
+    showActiveStatus?: boolean;
+    status?: StatusBadgeStatus;
   }>;
 }
 
@@ -40,6 +45,10 @@ export const useEntityEditSummary = (
     settingsSummary: unref(props.settingsSummary),
     entityName: props.entityName,
     entityLiveStatus: unref(props.entityLiveStatus),
+    ...(props.showActiveStatus !== undefined && {
+      showActiveStatus: props.showActiveStatus,
+    }),
+    ...(props.status !== undefined && { status: unref(props.status) }),
   }));
 
   return { summaryProps };

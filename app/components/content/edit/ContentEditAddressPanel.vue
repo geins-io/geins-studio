@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import * as z from 'zod';
-import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import { VisuallyHidden } from 'reka-ui';
+import { useForm } from 'vee-validate';
+import * as z from 'zod';
 
 const props = defineProps<{
   address: AddressUpdate;
@@ -115,7 +115,7 @@ const handleCancel = () => {
           </SheetDescription>
         </VisuallyHidden>
       </SheetHeader>
-      <SheetBody>
+      <SheetBody class="h-full">
         <form @submit.prevent>
           <ContentAddressForm :disable-teleport="true" />
         </form>

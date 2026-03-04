@@ -23,13 +23,13 @@ interface UseGeinsRepositoryReturnType {
  * @property {object} customerApi - Customer API repository for customer and account operations
  */
 export function useGeinsRepository(): UseGeinsRepositoryReturnType {
-  const { $geinsApi } = useNuxtApp();
+  const { $geinsApiFetchInstance } = useNuxtApp();
 
   return {
-    globalApi: repo.global($geinsApi),
-    orderApi: repo.order($geinsApi),
-    productApi: repo.product($geinsApi),
-    userApi: repo.user($geinsApi),
-    customerApi: repo.customer($geinsApi),
+    globalApi: repo.global($geinsApiFetchInstance),
+    orderApi: repo.order($geinsApiFetchInstance),
+    productApi: repo.product($geinsApiFetchInstance),
+    userApi: repo.user($geinsApiFetchInstance),
+    customerApi: repo.customer($geinsApiFetchInstance),
   };
 }

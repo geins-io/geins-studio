@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    mode: 'margin' | 'discount' | 'all';
+    mode?: 'margin' | 'discount' | 'all';
     index: number;
     currency?: string;
     loading?: boolean;

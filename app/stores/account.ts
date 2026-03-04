@@ -1,6 +1,22 @@
 import { defineStore } from 'pinia';
-import type { Account, Channel, Currency } from '#shared/types';
+import type { Account, Channel, Currency, Language } from '#shared/types';
 
+/**
+ * Account store — manages the current merchant account context.
+ *
+ * State: account details, channels, currencies, languages, and user-selected
+ * preferences (persisted in cookies with `geins-` prefix).
+ *
+ * Initialization: call `init()` after authentication. The `geins-global.ts` plugin
+ * handles this automatically when `isAuthenticated` changes.
+ *
+ * @example
+ * ```ts
+ * const accountStore = useAccountStore();
+ * const { channels, currentCurrency } = storeToRefs(accountStore);
+ * await accountStore.init();
+ * ```
+ */
 export const useAccountStore = defineStore('account', () => {
   const { geinsLogWarn } = useGeinsLog('store/account.ts');
   const { globalApi } = useGeinsRepository();
@@ -127,6 +143,15 @@ export const useAccountStore = defineStore('account', () => {
       );
   }
 
+  function getMarketNameById(id: string): string {
+    const market = channels.value
+      .flatMap((channel) => channel.markets)
+      .find((market) => market._id === String(id));
+    const country = market?.country.name || '';
+    const currency = market?.currency._id || '';
+    return `${country} (${currency})`;
+  }
+
   // GETTERS
   const currentChannel = computed(() => {
     return channels.value.find(
@@ -180,6 +205,7 @@ export const useAccountStore = defineStore('account', () => {
     getCountryNameById,
     getDefaultCountryByChannelId,
     getCurrenciesByChannelId,
+    getMarketNameById,
     currentChannel,
     currentCountries,
     currentCurrencies,

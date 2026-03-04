@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import { useVModel } from '@vueuse/core';
 import { cn } from '@/utils/index';
+import type { HTMLAttributes } from 'vue';
 
 defineOptions({
   inheritAttrs: false,
@@ -100,7 +100,15 @@ const inputAttrs = computed(() => {
   <p v-if="!valid && feedback" class="text-destructive text-sm font-semibold">
     {{ feedback }}
   </p>
-  <p v-else-if="description" class="text-muted-foreground text-sm">
+  <p
+    v-else-if="description"
+    :class="
+      cn(
+        'text-muted-foreground',
+        props.size === 'sm' ? 'mt-0.5 text-xs' : 'text-sm',
+      )
+    "
+  >
     {{ description }}
   </p>
 </template>

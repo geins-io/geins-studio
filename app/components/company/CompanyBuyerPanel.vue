@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import * as z from 'zod';
-import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import { VisuallyHidden } from 'reka-ui';
+import { useForm } from 'vee-validate';
+import * as z from 'zod';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = withDefaults(
@@ -11,7 +11,7 @@ const props = withDefaults(
     buyer?: CompanyBuyerUpdate;
     companyId: string;
     companyName: string;
-    mode: 'edit' | 'add';
+    mode?: 'edit' | 'add';
     priceLists: CustomerPriceList[];
   }>(),
   {
@@ -249,7 +249,7 @@ const handleCancel = () => {
 const existingCustomerName = computed(() => {
   // First try to get name from existing customer
   if (existingCustomer.value?.firstName || existingCustomer.value?.lastName) {
-    return `${existingCustomer.value.firstName} ${existingCustomer.value.lastName}`.trim();
+    return fullName(existingCustomer.value);
   }
 
   return existingCustomer.value?._id || 'customer';

@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-
 import type { Updater } from '@tanstack/vue-table';
 import type { Ref } from 'vue';
 
@@ -29,6 +28,20 @@ export function valueUpdater<T extends Updater<unknown>>(
  */
 export function generateInternalId(): string {
   return `internal_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
+
+/**
+ * Returns a person's full name from an entity with firstName/lastName fields.
+ * Handles null/undefined entity and missing name parts gracefully.
+ */
+export function fullName(
+  entity?: { _id?: string; firstName?: string; lastName?: string } | null,
+): string {
+  return (
+    `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim() ||
+    entity?._id ||
+    ''
+  );
 }
 
 /**

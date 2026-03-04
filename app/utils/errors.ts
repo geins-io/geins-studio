@@ -51,9 +51,13 @@ export function getErrorStatus(error: unknown): number {
 }
 
 // Helper function to get appropriate error messages
-export function getFallbackErrorMessage(status: number, data: any): string {
+export function getFallbackErrorMessage(
+  status: number,
+  data: Record<string, unknown> | null,
+): string {
   // Extract meaningful message from response data if possible
-  const serverMessage = data?.message || data?.error || null;
+  const msg = data?.message || data?.error || null;
+  const serverMessage = typeof msg === 'string' ? msg : null;
 
   const statusMessages: Record<number, string> = {
     400: 'Bad request',

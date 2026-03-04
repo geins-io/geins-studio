@@ -10,7 +10,7 @@ definePageMeta({
   },
 });
 
-const handleSetMode = async (mode: AuthFormMode) => {
+const handleSetMode = async (_mode: AuthFormMode) => {
   await navigateTo('/auth/login');
 };
 </script>

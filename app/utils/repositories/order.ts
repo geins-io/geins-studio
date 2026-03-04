@@ -1,80 +1,25 @@
-import type { NitroFetchRequest, $Fetch } from 'nitropack';
 import type {
   Order,
   OrderBatchQuery,
   BatchQueryResult,
   Quotation,
+  QuotationCreate,
+  QuotationUpdate,
+  QuotationBatchQuery,
+  QuotationBatchQueryResult,
   QuotationApiOptions,
-  QuotationStatus,
+  QuotationPreviewRequest,
+  QuotationPreviewResponse,
+  QuotationMessageCreate,
+  QuotationMessageUpdate,
+  StatusTransitionRequest,
 } from '#shared/types';
+import { buildQueryObject } from '#shared/utils/api-query';
 import { entityGetRepo } from './entity-base';
+import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/order';
-
-/**
- * Dummy quotation data generator
- * TODO: Replace with real API endpoint when available
- */
-function generateDummyQuotations(): Quotation[] {
-  const statuses: QuotationStatus[] = [
-    'draft',
-    'pending',
-    'sent',
-    'accepted',
-    'rejected',
-    'expired',
-  ];
-  const accounts = [
-    { id: 'acc-001', name: 'Acme Corporation' },
-    { id: 'acc-002', name: 'TechStart AB' },
-    { id: 'acc-003', name: 'Global Trading Ltd' },
-    { id: 'acc-004', name: 'Nordic Solutions' },
-    { id: 'acc-005', name: 'Modern Retail Co' },
-  ];
-  const channels = ['web', 'retail', 'wholesale', 'mobile'];
-  const currencies = ['SEK', 'EUR', 'USD', 'NOK'];
-  const creators = ['John Doe', 'Jane Smith', 'Alex Johnson', 'Maria Garcia'];
-
-  return Array.from({ length: 25 }, (_, i) => {
-    const account = accounts[i % accounts.length]!;
-    const status = statuses[i % statuses.length]!;
-    const itemCount = Math.floor(Math.random() * 10) + 1;
-    const sumAmount = Math.floor(Math.random() * 50000) + 1000;
-    const currency = currencies[i % currencies.length]!;
-    const daysAgo = Math.floor(Math.random() * 90);
-    const expirationDays = Math.floor(Math.random() * 60) + 1;
-    const dateCreated = new Date(
-      Date.now() - daysAgo * 24 * 60 * 60 * 1000,
-    ).toISOString();
-    const dateModified = new Date(
-      Date.now() - Math.floor(daysAgo / 2) * 24 * 60 * 60 * 1000,
-    ).toISOString();
-    const expirationDate = new Date(
-      new Date(dateCreated).getTime() + expirationDays * 24 * 60 * 60 * 1000,
-    ).toISOString();
-
-    return {
-      _id: `quote-${String(i + 1).padStart(3, '0')}`,
-      _type: 'quotation',
-      name: `Quote ${String(i + 1).padStart(4, '0')}`,
-      status,
-      accountId: account.id,
-      accountName: account.name,
-      dateCreated,
-      dateModified,
-      sum: {
-        price: sumAmount.toString(),
-        currency,
-      },
-      expirationDate,
-      itemCount,
-      createdBy: creators[i % creators.length],
-      channel: channels[i % channels.length],
-      currency,
-      notes: i % 3 === 0 ? 'Urgent delivery required' : undefined,
-    } as Quotation;
-  });
-}
+const QUOTATION_ENDPOINT = '/quotation';
 
 /**
  * Repository for managing order operations
@@ -84,6 +29,14 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
   // Use entityGetRepo as base for single order retrieval
   const baseRepo = entityGetRepo<Order, OrderApiOptions>(orderEndpoint, fetch);
+
+  // Standard CRUD for quotations
+  const quotationRepo = repo.entity<
+    Quotation,
+    QuotationCreate,
+    QuotationUpdate,
+    QuotationApiOptions
+  >(QUOTATION_ENDPOINT, fetch);
 
   return {
     ...baseRepo,
@@ -110,33 +63,127 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Quotation repository with dummy data
-     * TODO: Replace with real API endpoint when available
+     * Quotation repository — standard CRUD via repo.entity,
+     * plus custom query and ping endpoints.
      */
     quotation: {
+      ...quotationRepo,
+
       /**
-       * List all quotations
-       * Returns dummy data until real endpoint is available
+       * Query quotations with batch filtering
        */
-      async list(options?: QuotationApiOptions): Promise<Quotation[]> {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        return generateDummyQuotations();
+      async query(
+        batchQuery: QuotationBatchQuery = { all: true },
+        options?: QuotationApiOptions,
+      ): Promise<QuotationBatchQueryResult> {
+        return await fetch<QuotationBatchQueryResult>(
+          `${QUOTATION_ENDPOINT}/query`,
+          {
+            method: 'POST',
+            body: batchQuery,
+            query: buildQueryObject(options),
+          },
+        );
+      },
+
+      async list(
+        batchQuery: QuotationBatchQuery = { all: true },
+        options?: QuotationApiOptions,
+      ): Promise<QuotationBatchQueryResult> {
+        return await this.query(batchQuery, options);
       },
 
       /**
-       * Get single quotation by ID
-       * Returns dummy data until real endpoint is available
+       * Ping endpoint to check quotation service availability
        */
-      async get(id: string, options?: QuotationApiOptions): Promise<Quotation> {
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        const quotations = generateDummyQuotations();
-        const quotation = quotations.find((q) => q._id === id);
-        if (!quotation) {
-          throw new Error(`Quotation with ID ${id} not found`);
-        }
-        return quotation;
+      async ping(): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/ping`);
+      },
+
+      // Status transition methods — all return void; caller must re-fetch.
+      async send(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/send`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async accept(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/accept`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async reject(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/reject`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async confirm(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/confirm`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async expire(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/expire`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async cancel(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/cancel`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async finalize(id: string, data: StatusTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/finalize`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async copy(id: string): Promise<Quotation> {
+        return await fetch<Quotation>(`${QUOTATION_ENDPOINT}/${id}/copy`, {
+          method: 'POST',
+        });
+      },
+      async preview(
+        id: string,
+        data: QuotationPreviewRequest,
+      ): Promise<QuotationPreviewResponse> {
+        return await fetch<QuotationPreviewResponse>(
+          `${QUOTATION_ENDPOINT}/${id}/preview`,
+          {
+            method: 'POST',
+            body: data,
+          },
+        );
+      },
+
+      // Message CRUD — all return void; caller must re-fetch.
+      async createMessage(
+        quotationId: string,
+        data: QuotationMessageCreate,
+      ): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${quotationId}/message`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async updateMessage(
+        messageId: string,
+        data: QuotationMessageUpdate,
+      ): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/message/${messageId}`, {
+          method: 'PATCH',
+          body: data,
+        });
+      },
+      async deleteMessage(messageId: string): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/message/${messageId}`, {
+          method: 'DELETE',
+        });
       },
     },
   };
