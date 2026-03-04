@@ -283,8 +283,8 @@ export interface Quotation extends ResponseEntity<QuotationBase> {
   quotationNumber: string;
   currency: string;
   status: QuotationStatus;
-  billingAddress: Address;
-  shippingAddress: Address;
+  billingAddress: Address | null;
+  shippingAddress: Address | null;
   total: QuotationTotal;
   orderId?: string;
   company?: QuotationCompany;

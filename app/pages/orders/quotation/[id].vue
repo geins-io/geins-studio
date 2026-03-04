@@ -1472,7 +1472,7 @@ definePageMeta({
     :entity-name="entityName"
     :loading="transitionLoading"
     :variant="transitionAction.variant || 'default'"
-    @confirm="(msg) => handleStatusTransition(transitionAction!.action, msg)"
+    @confirm="(msg: string | undefined) => handleStatusTransition(transitionAction!.action, msg)"
   />
   <ContentEditWrap
     :entity-name="entityName"
