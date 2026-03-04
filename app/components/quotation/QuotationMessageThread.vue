@@ -7,11 +7,13 @@ const props = withDefaults(
     allCommunications?: QuotationMessage[];
     currentUserEmail?: string;
     mode?: 'external' | 'internal';
+    editLoading?: boolean;
   }>(),
   {
     allCommunications: () => [],
     currentUserEmail: '',
     mode: 'internal',
+    editLoading: false,
   },
 );
 
@@ -40,9 +42,17 @@ const cancelEdit = () => {
 const confirmEdit = (messageId: string) => {
   if (!editText.value.trim()) return;
   emit('edit', messageId, editText.value.trim());
-  editingMessageId.value = null;
-  editText.value = '';
 };
+
+watch(
+  () => props.editLoading,
+  (loading) => {
+    if (!loading && editingMessageId.value !== null) {
+      editingMessageId.value = null;
+      editText.value = '';
+    }
+  },
+);
 
 const getInitials = (name: string): string => {
   const parts = name.trim().split(/\s+/);
@@ -196,7 +206,8 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
               </Button>
               <Button
                 size="sm"
-                :disabled="!editText.trim()"
+                :loading="editLoading"
+                :disabled="!editText.trim() || editLoading"
                 @click="confirmEdit(msg._id)"
               >
                 {{ t('save') }}

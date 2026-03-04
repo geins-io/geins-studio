@@ -31,10 +31,22 @@ const canSend = computed(
   () => messageText.value.trim().length > 0 && !props.loading,
 );
 
+const pendingSend = ref(false);
+
+watch(
+  () => props.loading,
+  (loading) => {
+    if (!loading && pendingSend.value) {
+      messageText.value = '';
+      pendingSend.value = false;
+    }
+  },
+);
+
 const handleSend = () => {
   if (!canSend.value) return;
+  pendingSend.value = true;
   emit('send', messageText.value.trim());
-  messageText.value = '';
 };
 </script>
 
@@ -59,7 +71,7 @@ const handleSend = () => {
       class="p-2"
     />
     <div class="flex justify-end">
-      <Button size="sm" :disabled="!canSend" @click="handleSend">
+      <Button size="sm" :loading="loading" :disabled="!canSend" @click="handleSend">
         <LucideSend class="mr-2 size-4" />
         {{ t('send') }}
       </Button>

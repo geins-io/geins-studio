@@ -1215,6 +1215,7 @@ const handleCopy = async () => {
 // MESSAGE CRUD
 // =====================================================================================
 const messageLoading = ref(false);
+const messageEditLoading = ref(false);
 
 const handleSendMessage = async (
   type: QuotationMessageType,
@@ -1242,6 +1243,7 @@ const handleSendMessage = async (
 };
 
 const handleEditMessage = async (messageId: string, newText: string) => {
+  messageEditLoading.value = true;
   try {
     await orderApi.quotation.updateMessage(messageId, { message: newText });
     await refreshEntityData.value?.();
@@ -1249,6 +1251,8 @@ const handleEditMessage = async (messageId: string, newText: string) => {
   } catch (error) {
     geinsLogError('Failed to update message:', error);
     showErrorToast(t('orders.message_update_error'));
+  } finally {
+    messageEditLoading.value = false;
   }
 };
 
@@ -2416,6 +2420,7 @@ definePageMeta({
                 :communications="communications"
                 :current-user-email="userStore.userEmail"
                 :loading="messageLoading"
+                :edit-loading="messageEditLoading"
                 @send-message="handleSendMessage"
                 @edit-message="handleEditMessage"
                 @delete-message="handleDeleteMessage"
