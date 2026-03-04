@@ -6,10 +6,12 @@ const props = withDefaults(
     messageType: QuotationMessageType;
     loading?: boolean;
     replyTo?: QuotationMessage | null;
+    clearTrigger?: number;
   }>(),
   {
     loading: false,
     replyTo: null,
+    clearTrigger: 0,
   },
 );
 
@@ -34,11 +36,12 @@ const canSend = computed(
 const pendingSend = ref(false);
 
 watch(
-  () => props.loading,
-  (loading) => {
-    if (!loading && pendingSend.value) {
+  () => props.clearTrigger,
+  () => {
+    if (pendingSend.value) {
       messageText.value = '';
       pendingSend.value = false;
+      emit('cancelReply');
     }
   },
 );
