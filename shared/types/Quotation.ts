@@ -106,13 +106,46 @@ export interface QuotationValidShippingMethod {
 }
 
 /**
- * Communication message
+ * Author of a communication message
+ */
+export interface QuotationMessageAuthor {
+  id: string;
+  name: string;
+}
+
+/**
+ * Communication message (response)
  */
 export interface QuotationMessage {
+  _id: string;
+  _type: string;
   type: QuotationMessageType;
-  author: string;
+  author: QuotationMessageAuthor;
   message: string;
   timestamp: string;
+  answerRef?: string | null;
+}
+
+/**
+ * Request body for creating a quotation communication message.
+ * POST /quotation/{quotationId}/message
+ */
+export interface QuotationMessageCreate {
+  type: QuotationMessageType;
+  authorId: string;
+  authorName: string;
+  message: string;
+  answerRef?: string;
+}
+
+/**
+ * Request body for updating a quotation communication message.
+ * PATCH /quotation/message/{messageId}
+ */
+export interface QuotationMessageUpdate {
+  type?: QuotationMessageType;
+  message?: string;
+  answerRef?: string;
 }
 
 /**

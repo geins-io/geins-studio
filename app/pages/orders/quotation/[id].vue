@@ -1211,6 +1211,58 @@ const handleCopy = async () => {
   }
 };
 
+// =====================================================================================
+// MESSAGE CRUD
+// =====================================================================================
+const messageLoading = ref(false);
+
+const handleSendMessage = async (
+  type: QuotationMessageType,
+  message: string,
+  answerRef?: string,
+) => {
+  const { userName, userEmail } = storeToRefs(userStore);
+  messageLoading.value = true;
+  try {
+    await orderApi.quotation.createMessage(entityId.value, {
+      type,
+      authorId: userEmail.value,
+      authorName: userName.value,
+      message,
+      ...(answerRef ? { answerRef } : {}),
+    });
+    await refreshEntityData.value?.();
+    toast({ title: t('orders.message_sent'), variant: 'positive' });
+  } catch (error) {
+    geinsLogError('Failed to create message:', error);
+    showErrorToast(t('orders.message_send_error'));
+  } finally {
+    messageLoading.value = false;
+  }
+};
+
+const handleEditMessage = async (messageId: string, newText: string) => {
+  try {
+    await orderApi.quotation.updateMessage(messageId, { message: newText });
+    await refreshEntityData.value?.();
+    toast({ title: t('orders.message_updated'), variant: 'positive' });
+  } catch (error) {
+    geinsLogError('Failed to update message:', error);
+    showErrorToast(t('orders.message_update_error'));
+  }
+};
+
+const handleDeleteMessage = async (messageId: string) => {
+  try {
+    await orderApi.quotation.deleteMessage(messageId);
+    await refreshEntityData.value?.();
+    toast({ title: t('orders.message_deleted'), variant: 'positive' });
+  } catch (error) {
+    geinsLogError('Failed to delete message:', error);
+    showErrorToast(t('orders.message_delete_error'));
+  }
+};
+
 // Read-only columns for sent mode items table
 const sentModeSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
   if (quotationProductRows.value.length === 0) return [];
@@ -2360,7 +2412,14 @@ definePageMeta({
               :create-mode="false"
               :title="$t('communication', 2)"
             >
-              <QuotationCommunications :communications="communications" />
+              <QuotationCommunications
+                :communications="communications"
+                :current-user-email="userStore.userEmail"
+                :loading="messageLoading"
+                @send-message="handleSendMessage"
+                @edit-message="handleEditMessage"
+                @delete-message="handleDeleteMessage"
+              />
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
