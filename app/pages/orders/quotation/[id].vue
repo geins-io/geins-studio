@@ -1214,6 +1214,70 @@ const handleCopy = async () => {
   }
 };
 
+// =====================================================================================
+// MESSAGE CRUD
+// =====================================================================================
+const messageLoading = ref(false);
+const messageEditLoading = ref(false);
+const messageSendSuccessCount = ref(0);
+
+const handleSendMessage = async (
+  type: QuotationMessageType,
+  message: string,
+  answerRef?: string,
+) => {
+  const { userName, userEmail } = storeToRefs(userStore);
+  messageLoading.value = true;
+  try {
+    await orderApi.quotation.createMessage(entityId.value, {
+      type,
+      authorId: userEmail.value,
+      authorName: userName.value,
+      message,
+      ...(answerRef ? { answerRef } : {}),
+    });
+    await refreshEntityData.value?.();
+    messageSendSuccessCount.value++;
+    toast({
+      title: t('entity_sent', { entityName: 'message' }),
+      variant: 'positive',
+    });
+  } catch (error) {
+    geinsLogError('Failed to create message:', error);
+    showErrorToast(t('error_sending_entity', { entityName: 'message' }));
+  } finally {
+    messageLoading.value = false;
+  }
+};
+
+const handleEditMessage = async (messageId: string, newText: string) => {
+  messageEditLoading.value = true;
+  try {
+    await orderApi.quotation.updateMessage(messageId, { message: newText });
+    await refreshEntityData.value?.();
+    toast({ title: t('entity_updated'), variant: 'positive' });
+  } catch (error) {
+    geinsLogError('Failed to update message:', error);
+    showErrorToast(t('error_updating_entity', { entityName: 'message' }));
+  } finally {
+    messageEditLoading.value = false;
+  }
+};
+
+const handleDeleteMessage = async (messageId: string) => {
+  try {
+    await orderApi.quotation.deleteMessage(messageId);
+    await refreshEntityData.value?.();
+    toast({
+      title: t('entity_deleted', { entityName: 'message' }),
+      variant: 'positive',
+    });
+  } catch (error) {
+    geinsLogError('Failed to delete message:', error);
+    showErrorToast(t('error_deleting_entity', { entityName: 'message' }));
+  }
+};
+
 // Read-only columns for sent mode items table
 const sentModeSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
   if (quotationProductRows.value.length === 0) return [];
@@ -2363,7 +2427,16 @@ definePageMeta({
               :create-mode="false"
               :title="$t('communication', 2)"
             >
-              <QuotationCommunications :communications="communications" />
+              <QuotationCommunications
+                :communications="communications"
+                :current-user-email="userStore.userEmail"
+                :loading="messageLoading"
+                :edit-loading="messageEditLoading"
+                :message-send-success-count="messageSendSuccessCount"
+                @send-message="handleSendMessage"
+                @edit-message="handleEditMessage"
+                @delete-message="handleDeleteMessage"
+              />
             </ContentEditCard>
           </ContentEditMainContent>
         </KeepAlive>
