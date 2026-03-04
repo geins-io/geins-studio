@@ -7,10 +7,17 @@ const price = toRef(props, 'price');
 <template>
   <div>
     <div class="flex items-center">
-      <span :class="cn('mr-2 border-r pr-2 text-xs text-muted-foreground')">
+      <span :class="cn('text-muted-foreground mr-2 border-r pr-2 text-xs')">
         {{ currency }}
       </span>
-      <span class="size-full rounded-lg bg-transparent text-xs">
+      <span
+        :class="
+          cn(
+            'size-full rounded-lg bg-transparent text-xs',
+            price === '---' ? 'text-muted-foreground' : '',
+          )
+        "
+      >
         {{ price }}
       </span>
     </div>

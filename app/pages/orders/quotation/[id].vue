@@ -245,7 +245,10 @@ const quotationProductRows = computed<QuotationProductRow[]>(() => {
         currency,
       },
       priceListPrice: {
-        price: data.listPrice ? String(data.listPrice) : '',
+        price:
+          data.listPrice && data.listPrice !== data.ordPrice
+            ? String(data.listPrice)
+            : '---',
         currency,
       },
       quotationPrice: {
