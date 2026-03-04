@@ -53,9 +53,13 @@ const getInitials = (name: string): string => {
   return first[0]?.toUpperCase() || '';
 };
 
-const getParentMessage = (answerRef: string | null | undefined): QuotationMessage | null => {
+const getParentMessage = (
+  answerRef: string | null | undefined,
+): QuotationMessage | null => {
   if (!answerRef) return null;
-  const source = props.allCommunications.length ? props.allCommunications : props.messages;
+  const source = props.allCommunications.length
+    ? props.allCommunications
+    : props.messages;
   return source.find((m) => m._id === answerRef) || null;
 };
 
@@ -70,8 +74,8 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
   <Empty v-if="messages.length === 0" class="border-none py-8">
     <EmptyHeader>
       <EmptyMedia variant="icon">
-        <LucideMail v-if="mode === 'external'" class="size-5" />
-        <LucideMessageSquare v-else class="size-5" />
+        <LucideMessageSquare v-if="mode === 'external'" class="size-5" />
+        <LucideNotebookPen v-else class="size-5" />
       </EmptyMedia>
       <EmptyTitle>
         {{
@@ -128,7 +132,9 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
             </Avatar>
             <div class="grid text-left text-sm leading-tight">
               <span class="truncate font-medium">{{ msg.authorName }}</span>
-              <span class="text-muted-foreground truncate text-xs">{{ msg.authorId }}</span>
+              <span class="text-muted-foreground truncate text-xs">{{
+                msg.authorId
+              }}</span>
             </div>
             <Badge
               v-if="msg.type === 'quotationNote'"
