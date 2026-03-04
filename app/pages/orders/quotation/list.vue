@@ -16,7 +16,7 @@ const scope = 'pages/orders/quotation/list.vue';
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog(scope);
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
-const { getMarketNameById, getChannelNameById } = useAccountStore();
+const { getChannelNameById } = useAccountStore();
 
 definePageMeta({
   pageType: 'list',
@@ -63,7 +63,6 @@ const mapToListData = (list: Entity[]): EntityList[] => {
       dateSent: item.validFrom || '',
       expirationDate: item.validTo || '',
       dateCreated: item.createdAt || '',
-      market: getMarketNameById(item.marketId) || '',
       channel: getChannelNameById(item.channelId) || '',
     };
   });
@@ -159,7 +158,6 @@ const hiddenColumns: StringKeyOf<EntityList>[] = [
   '_id',
   'quotationNumber',
   'currency',
-  'market',
   'channel',
   'orderId',
   'terms',
