@@ -430,7 +430,7 @@ const availableSalesReps = computed(() => {
 });
 
 const availableBuyers = computed(() => {
-  return selectedCompany.value?.buyers || [];
+  return selectedCompany.value?.buyers?.filter((b) => b.active) || [];
 });
 
 // Resolved display names for current owner and buyer
@@ -1641,7 +1641,7 @@ definePageMeta({
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem
-                                v-for="company in companies"
+                                v-for="company in companies.filter(c => c.active)"
                                 :key="company._id"
                                 :value="company._id"
                               >
