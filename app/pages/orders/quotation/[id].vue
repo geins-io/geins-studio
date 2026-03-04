@@ -1235,10 +1235,13 @@ const handleSendMessage = async (
     });
     await refreshEntityData.value?.();
     messageSendSuccessCount.value++;
-    toast({ title: t('orders.message_sent'), variant: 'positive' });
+    toast({
+      title: t('entity_sent', { entityName: 'message' }),
+      variant: 'positive',
+    });
   } catch (error) {
     geinsLogError('Failed to create message:', error);
-    showErrorToast(t('orders.message_send_error'));
+    showErrorToast(t('error_sending_entity', { entityName: 'message' }));
   } finally {
     messageLoading.value = false;
   }
@@ -1249,10 +1252,10 @@ const handleEditMessage = async (messageId: string, newText: string) => {
   try {
     await orderApi.quotation.updateMessage(messageId, { message: newText });
     await refreshEntityData.value?.();
-    toast({ title: t('orders.message_updated'), variant: 'positive' });
+    toast({ title: t('entity_updated'), variant: 'positive' });
   } catch (error) {
     geinsLogError('Failed to update message:', error);
-    showErrorToast(t('orders.message_update_error'));
+    showErrorToast(t('error_updating_entity', { entityName: 'message' }));
   } finally {
     messageEditLoading.value = false;
   }
@@ -1262,10 +1265,13 @@ const handleDeleteMessage = async (messageId: string) => {
   try {
     await orderApi.quotation.deleteMessage(messageId);
     await refreshEntityData.value?.();
-    toast({ title: t('orders.message_deleted'), variant: 'positive' });
+    toast({
+      title: t('entity_deleted', { entityName: 'message' }),
+      variant: 'positive',
+    });
   } catch (error) {
     geinsLogError('Failed to delete message:', error);
-    showErrorToast(t('orders.message_delete_error'));
+    showErrorToast(t('error_deleting_entity', { entityName: 'message' }));
   }
 };
 
