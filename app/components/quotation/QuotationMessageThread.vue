@@ -184,7 +184,6 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
                     {{ t('orders.edit_message') }}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    class="text-destructive"
                     @click="emit('delete', msg._id)"
                   >
                     <LucideTrash2 class="mr-2 size-4" />
