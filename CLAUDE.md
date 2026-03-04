@@ -34,21 +34,19 @@ These MUST be followed for every task. Rules are grouped by when they apply.
 ### Before writing code
 
 1. **Linear issues**: When starting work on a Linear issue, set its status to "In Progress" before writing any code.
+2. **Branching**: Always ask if you should create a new branch or keep working in the current one. If a new branch is needed, create it with the naming convention `feat/{linear-issue-number}-{short-description}` (e.g. `123-fix-quotation-preview-bug`). Always use the `next` branch as the base for new branches, if not explicitly instructed otherwise. This keeps the commit history clean and Linear integration accurate. If the issue is a bug, include "fix" instead of "feat" in the branch name.
 
 ### While writing code
 
-2. **Best practices**: Follow all established patterns and conventions in this file and from the frameworks used. If you need to break a pattern, add a note about it here and explain the reasoning.
-3. **Think about performance**: Consider performance implications of code changes, especially data fetching, state management, and rendering. If you find a potential bottleneck or optimization opportunity, ask if you should address it.
-
-### Immediately after completing each task (before moving to the next)
-
-4. **Update CLAUDE.md**: Add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information. This is a living document — update it continuously, not just at session end.
-5. **Documentation**: Keep `/docs` up to date with any architectural changes, new patterns, or important onboarding information. Ask before adding new entries.
+3. **Best practices**: Follow all established patterns and conventions in this file and from the frameworks used. If you need to break a pattern, add a note about it here and explain the reasoning.
+4. **Think about performance**: Consider performance implications of code changes, especially data fetching, state management, and rendering. If you find a potential bottleneck or optimization opportunity, ask if you should address it.
 
 ### When the user says "task done"
 
-6. **Organize CLAUDE.md**: Scan the entire file for opportunities to improve organization (group related patterns, add sections, improve formatting, remove duplicates). Make those changes.
-7. **Linear issues**: If working on a Linear issue, set its status to "Done".
+5. **Documentation**: Keep `/docs` up to date with any architectural changes, new patterns, or important onboarding information. Ask before adding new entries.
+6. **Update CLAUDE.md**: Add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information. This is a living document — update it continuously, not just at session end.
+7. **Organize CLAUDE.md**: Scan the entire file for opportunities to improve organization (group related patterns, add sections, improve formatting, remove duplicates). Make those changes.
+8. **Linear issues**: If working on a Linear issue, set its status to "Done".
 
 ---
 
@@ -271,6 +269,17 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - **`discount`**: Optional `{ type: 'fixedAmount' | 'percent', value: number }` — accepted by both the PATCH and preview endpoints. The GET response also returns the saved discount configuration. Stored in `discountType`/`discountValue` refs (not form fields) in the edit page; synced to `entityDataUpdate` via a dedicated watcher.
 - **`settings`**: `{ requireConfirmation?: boolean }` — nested object on create, update, and response. Controls whether the quotation workflow requires an explicit confirmation step before finalization. Stored in a standalone `requireConfirmation` ref (same pattern as discount); synced to `entityDataUpdate` via a dedicated watcher. Shown as a `Switch` toggle with a `ContentQuotationWorkflowInfo` popover in draft mode, read-only in sent mode.
 - **OpenAPI spec URL**: `https://geins-func-quotation-mgmtapi-dev.azurewebsites.net/api/openapi/v3.json`
+
+**Message CRUD:**
+
+- `orderApi.quotation.createMessage(quotationId, data)` — `POST /quotation/{quotationId}/message` (returns void, 201). Re-fetch quotation to get the new message.
+- `orderApi.quotation.updateMessage(messageId, data)` — `PATCH /quotation/message/{messageId}` (returns void, 204).
+- `orderApi.quotation.deleteMessage(messageId)` — `DELETE /quotation/message/{messageId}` (returns void, 204).
+- `QuotationMessageCreate`: `{ type, authorId, authorName, message, answerRef? }`.
+- `QuotationMessageUpdate`: `{ type?, message?, answerRef? }`.
+- `QuotationMessage` (response): `{ _id, _type, type, authorId, authorName, message, timestamp, answerRef? }`. Same flat shape as the create request.
+- After any message mutation, call `refreshEntityData()` to re-fetch — the API does not return the updated message list.
+- UI: `QuotationCommunications` → `QuotationMessageThread` (display with reply/edit/delete) + `QuotationMessageCompose` (send new). Shown in sent-mode Communications tab only.
 
 **Live preview pattern:**
 

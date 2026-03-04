@@ -10,6 +10,8 @@ import type {
   QuotationApiOptions,
   QuotationPreviewRequest,
   QuotationPreviewResponse,
+  QuotationMessageCreate,
+  QuotationMessageUpdate,
   StatusTransitionRequest,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
@@ -157,6 +159,31 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             body: data,
           },
         );
+      },
+
+      // Message CRUD — all return void; caller must re-fetch.
+      async createMessage(
+        quotationId: string,
+        data: QuotationMessageCreate,
+      ): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${quotationId}/message`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async updateMessage(
+        messageId: string,
+        data: QuotationMessageUpdate,
+      ): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/message/${messageId}`, {
+          method: 'PATCH',
+          body: data,
+        });
+      },
+      async deleteMessage(messageId: string): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/message/${messageId}`, {
+          method: 'DELETE',
+        });
       },
     },
   };
