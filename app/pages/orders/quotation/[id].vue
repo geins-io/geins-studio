@@ -16,7 +16,6 @@ import type {
   Quotation,
   QuotationCreate,
   QuotationUpdate,
-  QuotationAddress,
   QuotationApiOptions,
   QuotationItemCreate,
   QuotationProductRow,
@@ -143,8 +142,8 @@ const discountRequest = computed<QuotationDiscountRequest | null>(() => {
 const hasExpirationDate = ref(false);
 const selectedBillingAddressId = ref<string>('');
 const selectedShippingAddressId = ref<string>('');
-const billingAddress = ref<QuotationAddress | null>(null);
-const shippingAddress = ref<QuotationAddress | null>(null);
+const billingAddress = ref<Address | null>(null);
+const shippingAddress = ref<Address | null>(null);
 const paymentTermsOptions = [
   'Net 15',
   'Net 30',
@@ -856,24 +855,6 @@ watch(simpleSkuSelection, () => {
 // CUSTOMER PANEL HANDLER
 // =====================================================================================
 
-const toQuotationAddress = (address: Address): QuotationAddress => ({
-  _id: address._id,
-  _type: 'geins.wholesale_account_address',
-  email: address.email,
-  phone: address.phone,
-  company: address.company,
-  firstName: address.firstName,
-  lastName: address.lastName,
-  careOf: address.careOf,
-  addressLine1: address.addressLine1,
-  addressLine2: address.addressLine2,
-  addressLine3: address.addressLine3,
-  zip: address.zip,
-  city: address.city,
-  region: address.region,
-  country: address.country,
-});
-
 const handleCustomerPanelSave = (data: {
   ownerId: string;
   buyerId: string;
@@ -893,8 +874,8 @@ const handleCustomerPanelSave = (data: {
   if (addresses) {
     const billing = addresses.find((a) => a._id === data.billingAddressId);
     const shipping = addresses.find((a) => a._id === data.shippingAddressId);
-    if (billing) billingAddress.value = toQuotationAddress(billing);
-    if (shipping) shippingAddress.value = toQuotationAddress(shipping);
+    if (billing) billingAddress.value = billing;
+    if (shipping) shippingAddress.value = shipping;
   }
 };
 
@@ -1705,7 +1686,9 @@ definePageMeta({
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem
-                                v-for="company in companies.filter(c => c.active)"
+                                v-for="company in companies.filter(
+                                  (c) => c.active,
+                                )"
                                 :key="company._id"
                                 :value="company._id"
                               >

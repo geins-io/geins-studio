@@ -8,6 +8,7 @@ import type {
   SelectorCondition,
   BatchQueryResult,
   EntitySnapshot,
+  Address,
 } from './index';
 
 // =============================================================================
@@ -66,26 +67,6 @@ export interface QuotationCustomer extends EntitySnapshot {
   phone: string;
   approvedAt?: string | null;
   rejectedAt?: string | null;
-}
-
-/**
- * Address snapshot — matches the backend quotationAddress schema.
- * Fields align with the company Address type (addressLine1, firstName, etc.).
- */
-export interface QuotationAddress extends EntitySnapshot {
-  email?: string;
-  phone?: string;
-  company?: string;
-  firstName?: string;
-  lastName?: string;
-  careOf?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  addressLine3?: string;
-  zip?: string;
-  city?: string;
-  region?: string;
-  country?: string;
 }
 
 /**
@@ -302,8 +283,8 @@ export interface Quotation extends ResponseEntity<QuotationBase> {
   quotationNumber: string;
   currency: string;
   status: QuotationStatus;
-  billingAddress: QuotationAddress;
-  shippingAddress: QuotationAddress;
+  billingAddress: Address;
+  shippingAddress: Address;
   total: QuotationTotal;
   orderId?: string;
   company?: QuotationCompany;
