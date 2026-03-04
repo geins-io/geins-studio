@@ -904,6 +904,7 @@ const handleCustomerPanelSave = (data: {
 
 // Address content fields to compare when syncing snapshots.
 // Excludes identity fields (_id, _type, _snapshotAt) — only content matters.
+// Must stay in sync with the shared fields of QuotationAddress and Address types.
 const addressContentFields = [
   'email',
   'phone',
@@ -973,7 +974,12 @@ const syncCompanySnapshots = () => {
     }
   }
 
-  // Update entityDataUpdate so hasUnsavedChanges detects the difference
+  // Update entityDataUpdate so hasUnsavedChanges detects the content difference.
+  // reshapeEntityData spreads the full Quotation response into entityDataUpdate
+  // (including billingAddress/shippingAddress), so these fields exist at runtime
+  // even though QuotationUpdate doesn't declare them. The type cast preserves
+  // the ref's identity. prepareUpdateData only sends address IDs to the API,
+  // so these response-only fields never reach the backend directly.
   if (updated) {
     entityDataUpdate.value = {
       ...entityDataUpdate.value,
