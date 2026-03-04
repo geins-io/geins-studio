@@ -53,9 +53,13 @@ const getInitials = (name: string): string => {
   return first[0]?.toUpperCase() || '';
 };
 
-const getParentMessage = (answerRef: string | null | undefined): QuotationMessage | null => {
+const getParentMessage = (
+  answerRef: string | null | undefined,
+): QuotationMessage | null => {
   if (!answerRef) return null;
-  const source = props.allCommunications.length ? props.allCommunications : props.messages;
+  const source = props.allCommunications.length
+    ? props.allCommunications
+    : props.messages;
   return source.find((m) => m._id === answerRef) || null;
 };
 
@@ -67,9 +71,28 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
 </script>
 
 <template>
-  <div v-if="messages.length === 0" class="text-muted-foreground py-8 text-center text-sm">
-    {{ t('orders.no_messages') }}
-  </div>
+  <Empty v-if="messages.length === 0" class="border-none py-8">
+    <EmptyHeader>
+      <EmptyMedia variant="icon">
+        <LucideMessageSquare v-if="mode === 'external'" class="size-5" />
+        <LucideNotebookPen v-else class="size-5" />
+      </EmptyMedia>
+      <EmptyTitle>
+        {{
+          mode === 'external'
+            ? t('orders.no_external_messages')
+            : t('orders.no_internal_messages')
+        }}
+      </EmptyTitle>
+      <EmptyDescription>
+        {{
+          mode === 'external'
+            ? t('orders.no_external_messages_description')
+            : t('orders.no_internal_messages_description')
+        }}
+      </EmptyDescription>
+    </EmptyHeader>
+  </Empty>
   <div v-else class="space-y-4">
     <div
       v-for="msg in messages"
@@ -109,7 +132,9 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
             </Avatar>
             <div class="grid text-left text-sm leading-tight">
               <span class="truncate font-medium">{{ msg.authorName }}</span>
-              <span class="text-muted-foreground truncate text-xs">{{ msg.authorId }}</span>
+              <span class="text-muted-foreground truncate text-xs">{{
+                msg.authorId
+              }}</span>
             </div>
             <Badge
               v-if="msg.type === 'quotationNote'"
