@@ -67,9 +67,28 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
 </script>
 
 <template>
-  <div v-if="messages.length === 0" class="text-muted-foreground py-8 text-center text-sm">
-    {{ t('orders.no_messages') }}
-  </div>
+  <Empty v-if="messages.length === 0" class="border-none py-8">
+    <EmptyHeader>
+      <EmptyMedia variant="icon">
+        <LucideMail v-if="mode === 'external'" class="size-5" />
+        <LucideMessageSquare v-else class="size-5" />
+      </EmptyMedia>
+      <EmptyTitle>
+        {{
+          mode === 'external'
+            ? t('orders.no_external_messages')
+            : t('orders.no_internal_messages')
+        }}
+      </EmptyTitle>
+      <EmptyDescription>
+        {{
+          mode === 'external'
+            ? t('orders.no_external_messages_description')
+            : t('orders.no_internal_messages_description')
+        }}
+      </EmptyDescription>
+    </EmptyHeader>
+  </Empty>
   <div v-else class="space-y-4">
     <div
       v-for="msg in messages"
