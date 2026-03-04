@@ -588,8 +588,8 @@ const {
     // Set address data from API response
     selectedBillingAddressId.value = quotation.billingAddress?._id || '';
     selectedShippingAddressId.value = quotation.shippingAddress?._id || '';
-    billingAddress.value = quotation.billingAddress || null;
-    shippingAddress.value = quotation.shippingAddress || null;
+    billingAddress.value = quotation.billingAddress;
+    shippingAddress.value = quotation.shippingAddress;
 
     // Resolve payment terms from validPaymentMethods
     const paymentTerms = quotation.terms || 'Net 30';
