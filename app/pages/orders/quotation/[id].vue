@@ -250,9 +250,9 @@ const removeSkuFromSelection = (rowData: QuotationProductRow) => {
 // =====================================================================================
 // LIVE PREVIEW
 // =====================================================================================
-const callPreview = async (extraItems?: QuotationItemCreate[]) => {
+const callPreview = async () => {
   if (createMode.value || sentMode.value || !entityId.value) return;
-  const items = [...quotationItems.value, ...(extraItems || [])];
+  const items = quotationItems.value;
   if (items.length === 0) {
     previewTotal.value = null;
     return;
@@ -279,7 +279,40 @@ const callPreview = async (extraItems?: QuotationItemCreate[]) => {
 };
 const debouncedCallPreview = useDebounceFn(callPreview, 500);
 
-// Handle SelectorPanel save — pass new SKU IDs to preview
+// Build a placeholder QuotationItem for a newly added SKU, using productsWithSkus
+// data for display info. Prices are zeroed out; the API will fill them in on success.
+const createPlaceholderItem = (skuId: string): QuotationItem => {
+  let productName = skuId;
+  let skuName = '';
+  let articleNumber = '';
+  let primaryImage = '';
+  for (const product of productsWithSkus.value) {
+    const sku = product.skus?.find((s) => s._id === skuId);
+    if (sku) {
+      productName = product.name;
+      skuName = sku.name || '';
+      articleNumber = product.articleNumber || '';
+      primaryImage = product.thumbnail || product.image || '';
+      break;
+    }
+  }
+  return {
+    _id: skuId,
+    _type: 'quotation_item',
+    skuId,
+    quantity: 1,
+    name: productName,
+    skuName,
+    articleNumber,
+    primaryImage,
+    ordPrice: 0,
+    ordPriceIncVat: 0,
+    listPrice: 0,
+    listPriceIncVat: 0,
+  };
+};
+
+// Handle SelectorPanel save — optimistically add new SKUs before calling preview
 const updateSkuSelection = async (
   updatedSelection: SelectorSelectionInternal,
 ) => {
@@ -292,12 +325,18 @@ const updateSkuSelection = async (
     newIdSet.has(item.skuId),
   );
 
-  // Build minimal items for newly added SKUs and pass as extra to preview
-  const addedItems: QuotationItemCreate[] = newIds
-    .filter((id) => !currentSkuIds.has(id))
-    .map((id) => ({ skuId: id, quantity: 1 }));
+  // Add placeholder items for newly added SKUs so they are visible even if the
+  // preview API call fails. The placeholders will be replaced by the API response
+  // on success.
+  const addedSkuIds = newIds.filter((id) => !currentSkuIds.has(id));
+  if (addedSkuIds.length > 0) {
+    displayItems.value = [
+      ...displayItems.value,
+      ...addedSkuIds.map(createPlaceholderItem),
+    ];
+  }
 
-  await callPreview(addedItems.length > 0 ? addedItems : undefined);
+  await callPreview();
 };
 
 // Columns for quotation products table
