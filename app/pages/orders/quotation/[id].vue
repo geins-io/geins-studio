@@ -2,6 +2,7 @@
 // =====================================================================================
 // IMPORTS & TYPES
 // =====================================================================================
+import { getLocalTimeZone, today } from '@internationalized/date';
 import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import * as z from 'zod';
@@ -2074,6 +2075,7 @@ definePageMeta({
                           <FormInputDate
                             v-bind="componentField"
                             :placeholder="$t('expiration_date')"
+                            :min-value="today(getLocalTimeZone())"
                           />
                         </FormControl>
                         <FormMessage />
