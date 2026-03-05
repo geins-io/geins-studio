@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { cn } from '@/utils/index';
+import type { DateValue } from '@internationalized/date';
 
 const model = defineModel<string>();
 
 withDefaults(
   defineProps<{
     placeholder?: string;
+    minValue?: DateValue;
   }>(),
   {
     placeholder: 'Pick a date',
@@ -42,6 +44,7 @@ const handleDateUpdate = (v: unknown) => {
     <PopoverContent class="w-auto p-0">
       <Calendar
         layout="month-and-year"
+        :min-value="minValue"
         @update:model-value="handleDateUpdate"
       />
     </PopoverContent>
