@@ -829,6 +829,73 @@ const handleCustomerPanelSave = (data: {
 };
 
 // =====================================================================================
+// DRAFT ADDRESS SYNC
+// =====================================================================================
+// In draft mode, compare snapshot addresses against live company addresses.
+// If the company's address content has changed since the snapshot was taken,
+// update the local refs so the Customer card shows current data.
+// This runs after setOriginalSavedData() so changes appear as "unsaved".
+const addressFieldsToCompare: (keyof Address)[] = [
+  'firstName',
+  'lastName',
+  'company',
+  'careOf',
+  'addressLine1',
+  'addressLine2',
+  'addressLine3',
+  'zip',
+  'city',
+  'region',
+  'country',
+  'email',
+  'phone',
+];
+
+function hasAddressChanged(
+  snapshot: Address | null,
+  live: Address | undefined,
+): boolean {
+  if (!snapshot || !live) return false;
+  return addressFieldsToCompare.some(
+    (field) => snapshot[field] !== live[field],
+  );
+}
+
+function syncDraftAddresses() {
+  if (sentMode.value) return;
+  const addresses = selectedCompany.value?.addresses;
+  if (!addresses) return;
+
+  let changed = false;
+
+  const liveBilling = addresses.find(
+    (a) => a._id === selectedBillingAddressId.value,
+  );
+  if (hasAddressChanged(billingAddress.value, liveBilling) && liveBilling) {
+    billingAddress.value = liveBilling;
+    changed = true;
+  }
+
+  const liveShipping = addresses.find(
+    (a) => a._id === selectedShippingAddressId.value,
+  );
+  if (hasAddressChanged(shippingAddress.value, liveShipping) && liveShipping) {
+    shippingAddress.value = liveShipping;
+    changed = true;
+  }
+
+  // Force entityDataUpdate mutation so the address IDs are re-sent on save,
+  // causing the backend to re-snapshot the updated address content.
+  if (changed && entityDataUpdate.value) {
+    entityDataUpdate.value = {
+      ...entityDataUpdate.value,
+      billingAddressId: selectedBillingAddressId.value || undefined,
+      shippingAddressId: selectedShippingAddressId.value || undefined,
+    };
+  }
+}
+
+// =====================================================================================
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 const fetchingData = ref(false);
@@ -872,6 +939,10 @@ if (!createMode.value) {
     // so the unsaved changes baseline matches the fully populated form
     await nextTick();
     setOriginalSavedData();
+
+    // Sync stale snapshot addresses with live company data (draft only).
+    // Runs after the baseline so any detected changes show as "unsaved".
+    syncDraftAddresses();
   });
 
   // Re-parse entity data when refreshed (e.g., after a status transition).
