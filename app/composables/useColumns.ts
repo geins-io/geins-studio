@@ -282,12 +282,6 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         columnType = 'tags';
       } else if (keyLower === 'active' || keyLower === 'status') {
         columnType = 'status';
-      } else if (
-        keyLower === 'product' &&
-        data.length > 0 &&
-        'articleNumber' in (data[0] as object)
-      ) {
-        columnType = 'product';
       } else {
         columnType = 'default';
       }
