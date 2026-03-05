@@ -369,7 +369,7 @@ export interface QuotationProductRow {
 export interface QuotationItemBase {
   name: string;
   articleNumber: string;
-  sku: string;
+  skuId: string;
   skuName: string;
   primaryImage: string;
   quantity: number;
