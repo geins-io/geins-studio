@@ -17,6 +17,7 @@ import type {
   QuotationCreate,
   QuotationUpdate,
   QuotationApiOptions,
+  QuotationItem,
   QuotationItemCreate,
   QuotationProductRow,
   QuotationTotal,
@@ -53,11 +54,8 @@ const userStore = useUserStore();
 const { orderApi, customerApi, productApi } = useGeinsRepository();
 const { currentCurrencies, channels } = storeToRefs(accountStore);
 const currentChannels = computed(() => channels.value);
-const {
-  convertToSimpleSelection,
-  getFallbackSelection,
-  transformProductsToSelectorEntities,
-} = useSelector();
+const { getFallbackSelection, transformProductsToSelectorEntities } =
+  useSelector();
 
 // =====================================================================================
 // FORM VALIDATION SCHEMA
@@ -155,138 +153,75 @@ const paymentTermsOptions = [
 // SKU selector state (Products tab)
 const productsWithSkus = ref<SelectorEntity[]>([]);
 const loadingProducts = ref(false);
-const skuSelection = ref<SelectorSelectionInternal>(getFallbackSelection());
 
-const updateSkuSelection = (updatedSelection: SelectorSelectionInternal) => {
-  skuSelection.value = updatedSelection;
+// Items source of truth — populated from GET, update, or preview response
+const displayItems = ref<QuotationItem[]>([]);
+
+// Derived SKU selection for SelectorPanel (read-only)
+const skuSelection = computed<SelectorSelectionInternal>(() => ({
+  ...getFallbackSelection(),
+  ids: displayItems.value.map((item) => item.skuId),
+}));
+
+const getItemName = (item: QuotationItem) => {
+  const hasSkuName = item.skuName && item.skuName !== '-';
+  const skuNamePart = hasSkuName ? ` (${item.skuName})` : '';
+  return `${item.name}${skuNamePart}`;
 };
 
-const simpleSkuSelection = computed(() =>
-  convertToSimpleSelection(skuSelection.value),
-);
-
-const selectedSkus = computed(() => {
-  const skus: SelectorEntity[] = [];
-  productsWithSkus.value.forEach((product) => {
-    if (Number(product.skus?.length) > 1) {
-      product.skus?.forEach((sku) => {
-        if (simpleSkuSelection.value.includes(sku._id)) {
-          skus.push({ ...sku, name: `${product.name} (${sku.name})` });
-        }
-      });
-    } else {
-      if (simpleSkuSelection.value.includes(product._id)) {
-        skus.push(product);
-      }
-    }
-  });
-  return skus;
-});
-
-// Quotation items data (quantity, custom price & response prices per SKU)
-interface SkuItemData {
-  quantity: number;
-  unitPrice: number | undefined;
-  ordPrice: number;
-  listPrice: number;
-}
-
-const skuItemData = ref<Map<string, SkuItemData>>(new Map());
-
-const defaultSkuItemData: SkuItemData = {
-  quantity: 1,
-  unitPrice: undefined,
-  ordPrice: 0,
-  listPrice: 0,
-};
-
-const getSkuItemData = (skuId: string): SkuItemData => {
-  return skuItemData.value.get(skuId) || defaultSkuItemData;
-};
-
-const ensureSkuItemData = (skuId: string) => {
-  if (!skuItemData.value.has(skuId)) {
-    skuItemData.value.set(skuId, { ...defaultSkuItemData });
-  }
-  return skuItemData.value.get(skuId)!;
-};
-
-// Initialize item data for newly selected SKUs
-watch(
-  () => selectedSkus.value,
-  (skus) => {
-    let added = false;
-    for (const sku of skus) {
-      if (!skuItemData.value.has(sku._id)) {
-        skuItemData.value.set(sku._id, { ...defaultSkuItemData });
-        added = true;
-      }
-    }
-    if (added) {
-      skuItemData.value = new Map(skuItemData.value);
-    }
-  },
-  { immediate: true },
-);
-
-// Derived table rows merging selected SKUs with item data
+// Derived table rows from displayItems
 const quotationProductRows = computed<QuotationProductRow[]>(() => {
   const currency = form.values.details?.currency || 'SEK';
-  return selectedSkus.value.map((sku) => {
-    const data = getSkuItemData(sku._id);
-    return {
-      _id: sku._id,
-      product: sku.name,
-      skuId: sku._id,
-      quantity: data.quantity,
-      price: {
-        price: data.ordPrice ? String(data.ordPrice) : '',
-        currency,
-      },
-      priceListPrice: {
-        price:
-          data.listPrice && data.listPrice !== data.ordPrice
-            ? String(data.listPrice)
-            : '---',
-        currency,
-      },
-      quotationPrice: {
-        price:
-          data.unitPrice !== undefined
-            ? String(data.unitPrice)
-            : data.listPrice
-              ? String(data.listPrice)
-              : '',
-        currency,
-      },
-      image: sku.image || sku.thumbnail || '',
-      articleNumber: sku.articleNumber || '',
-    };
-  });
+  return displayItems.value.map((item) => ({
+    _id: item.skuId,
+    product: getItemName(item),
+    skuId: item.skuId,
+    quantity: item.quantity,
+    price: {
+      price: item.ordPrice ? String(item.ordPrice) : '',
+      currency,
+    },
+    priceListPrice: {
+      price:
+        item.listPrice && item.listPrice !== item.ordPrice
+          ? String(item.listPrice)
+          : '---',
+      currency,
+    },
+    quotationPrice: {
+      price:
+        item.unitPrice !== undefined
+          ? String(item.unitPrice)
+          : item.listPrice
+            ? String(item.listPrice)
+            : '',
+      currency,
+    },
+    image: item.primaryImage || '',
+    articleNumber: item.articleNumber || '',
+  }));
 });
 
-// Build quotation items payload from skuItemData
+// Build quotation items payload from displayItems
 const quotationItems = computed<QuotationItemCreate[]>(() =>
-  selectedSkus.value.map((sku) => {
-    const data = getSkuItemData(sku._id);
-    return {
-      skuId: sku._id,
-      quantity: data.quantity,
-      ...(data.unitPrice !== undefined && data.unitPrice !== data.listPrice
-        ? { unitPrice: data.unitPrice }
-        : {}),
-    };
-  }),
+  displayItems.value.map((item) => ({
+    skuId: item.skuId,
+    quantity: item.quantity,
+    ...(item.unitPrice !== undefined && item.unitPrice !== item.listPrice
+      ? { unitPrice: item.unitPrice }
+      : {}),
+  })),
 );
 
 const handleQuantityChange = (
   value: string | number,
   row: Row<QuotationProductRow>,
 ) => {
-  const id = row.original._id;
-  const data = ensureSkuItemData(id);
-  data.quantity = Math.max(1, Number(value) || 1);
-  skuItemData.value = new Map(skuItemData.value);
+  const skuId = row.original._id;
+  const item = displayItems.value.find((i) => i.skuId === skuId);
+  if (!item) return;
+  item.quantity = Math.max(1, Number(value) || 1);
+  displayItems.value = [...displayItems.value];
   debouncedCallPreview();
 };
 
@@ -294,34 +229,31 @@ const handleQuotationPriceChange = (
   value: string | number,
   row: Row<QuotationProductRow>,
 ) => {
-  const id = row.original._id;
-  const data = ensureSkuItemData(id);
+  const skuId = row.original._id;
+  const item = displayItems.value.find((i) => i.skuId === skuId);
+  if (!item) return;
   const num = Number(value);
   // Reset to undefined if value is empty, invalid, or matches the list price
-  data.unitPrice =
-    value === '' || isNaN(num) || num === data.listPrice ? undefined : num;
-  skuItemData.value = new Map(skuItemData.value);
+  item.unitPrice =
+    value === '' || isNaN(num) || num === item.listPrice ? undefined : num;
+  displayItems.value = [...displayItems.value];
   debouncedCallPreview();
 };
 
 const removeSkuFromSelection = (rowData: QuotationProductRow) => {
-  const id = rowData._id;
-  const updated = { ...skuSelection.value };
-  if (updated.ids) {
-    updated.ids = updated.ids.filter((skuId) => skuId !== id);
-  }
-  skuSelection.value = updated;
-  skuItemData.value.delete(id);
-  skuItemData.value = new Map(skuItemData.value);
+  displayItems.value = displayItems.value.filter(
+    (item) => item.skuId !== rowData._id,
+  );
   debouncedCallPreview();
 };
 
 // =====================================================================================
 // LIVE PREVIEW
 // =====================================================================================
-const callPreview = async () => {
+const callPreview = async (extraItems?: QuotationItemCreate[]) => {
   if (createMode.value || sentMode.value || !entityId.value) return;
-  if (quotationItems.value.length === 0) {
+  const items = [...quotationItems.value, ...(extraItems || [])];
+  if (items.length === 0) {
     previewTotal.value = null;
     return;
   }
@@ -333,21 +265,11 @@ const callPreview = async () => {
           ? Number(shippingFeeInput.value)
           : undefined,
       discount: discountRequest.value || undefined,
-      items: quotationItems.value,
+      items,
     });
     previewTotal.value = response.total;
-    // Enrich skuItemData with calculated prices (ordPrice, listPrice).
-    // Do NOT touch unitPrice — that is user-controlled.
     if (response.items?.length) {
-      for (const item of response.items) {
-        const skuId = item.sku || item._id;
-        const data = skuItemData.value.get(skuId);
-        if (data) {
-          data.ordPrice = item.ordPrice || 0;
-          data.listPrice = item.listPrice || 0;
-        }
-      }
-      skuItemData.value = new Map(skuItemData.value);
+      displayItems.value = response.items;
     }
   } catch (error) {
     geinsLogError('Failed to fetch preview:', error);
@@ -356,6 +278,27 @@ const callPreview = async () => {
   }
 };
 const debouncedCallPreview = useDebounceFn(callPreview, 500);
+
+// Handle SelectorPanel save — pass new SKU IDs to preview
+const updateSkuSelection = async (
+  updatedSelection: SelectorSelectionInternal,
+) => {
+  const newIds = updatedSelection.ids || [];
+  const currentSkuIds = new Set(displayItems.value.map((item) => item.skuId));
+  const newIdSet = new Set(newIds);
+
+  // Remove deselected SKUs
+  displayItems.value = displayItems.value.filter((item) =>
+    newIdSet.has(item.skuId),
+  );
+
+  // Build minimal items for newly added SKUs and pass as extra to preview
+  const addedItems: QuotationItemCreate[] = newIds
+    .filter((id) => !currentSkuIds.has(id))
+    .map((id) => ({ skuId: id, quantity: 1 }));
+
+  await callPreview(addedItems.length > 0 ? addedItems : undefined);
+};
 
 // Columns for quotation products table
 const { getColumns, addActionsColumn, orderAndFilterColumns } =
@@ -597,26 +540,8 @@ const {
     // Set expiration date toggle
     hasExpirationDate.value = !!quotation.validTo;
 
-    // Initialize SKU item data from existing quotation items (includes prices)
-    if (quotation.items?.length) {
-      const newItemData = new Map<string, SkuItemData>();
-      quotation.items.forEach((item) => {
-        const skuId = item.sku || item._id;
-        newItemData.set(skuId, {
-          quantity: item.quantity || 1,
-          unitPrice:
-            item.unitPrice !== item.ordPrice ? item.unitPrice : undefined,
-          ordPrice: item.ordPrice || 0,
-          listPrice: item.listPrice || 0,
-        });
-      });
-      skuItemData.value = newItemData;
-    }
-
-    // Fetch products for SKU selector if not already loaded
-    if (productsWithSkus.value.length === 0) {
-      fetchProducts();
-    }
+    // Set items from API response as the source of truth
+    displayItems.value = quotation.items || [];
 
     form.setValues({
       details: {
@@ -754,15 +679,6 @@ const fetchProducts = async () => {
     productsWithSkus.value = transformProductsToSelectorEntities(
       response?.items || [],
     );
-
-    // Initialize SKU selection from existing quotation item data
-    if (skuItemData.value.size > 0) {
-      const existingSkuIds = Array.from(skuItemData.value.keys());
-      skuSelection.value = {
-        ...getFallbackSelection(),
-        ids: existingSkuIds,
-      };
-    }
   } catch (error) {
     geinsLogError('Failed to fetch products:', error);
   } finally {
@@ -810,7 +726,7 @@ watch(hasExpirationDate, (enabled) => {
 
 // Sync item changes with entityDataUpdate for unsaved changes detection
 watch(
-  [quotationItems, simpleSkuSelection],
+  quotationItems,
   () => {
     if (createMode.value || !entityDataUpdate.value) return;
     entityDataUpdate.value = {
@@ -842,13 +758,6 @@ watch([discountType, discountValue, shippingFeeInput], () => {
         ? Number(shippingFeeInput.value)
         : undefined,
   };
-});
-
-// Trigger preview when SKU selection changes
-watch(simpleSkuSelection, () => {
-  if (!createMode.value && !sentMode.value) {
-    debouncedCallPreview();
-  }
 });
 
 // =====================================================================================
@@ -1401,13 +1310,13 @@ const productsSummary = computed<DataItem[]>(() => {
     return dataList;
   }
 
-  if (!createMode.value && selectedSkus.value.length > 0) {
+  if (!createMode.value && displayItems.value.length > 0) {
     dataList.push({
-      label: t('product', selectedSkus.value.length),
+      label: t('product', displayItems.value.length),
       value: t(
         'nr_of_entity',
-        { entityName: 'product', count: selectedSkus.value.length },
-        selectedSkus.value.length,
+        { entityName: 'product', count: displayItems.value.length },
+        displayItems.value.length,
       ),
     });
   }
@@ -2076,7 +1985,7 @@ definePageMeta({
                     :page-size="10"
                   />
                   <ContentPriceSummary
-                    v-if="quotationTotal && selectedSkus.length"
+                    v-if="quotationTotal && displayItems.length"
                     class="mx-3"
                     :total="quotationTotal"
                     :currency="entityData?.currency || ''"
@@ -2378,7 +2287,7 @@ definePageMeta({
                   :page-size="10"
                 />
                 <ContentPriceSummary
-                  v-if="displayTotal && selectedSkus.length"
+                  v-if="displayTotal && displayItems.length"
                   v-model:discount-type="discountType"
                   v-model:discount-value="discountValue"
                   v-model:shipping-fee="shippingFeeInput"
@@ -2447,7 +2356,7 @@ definePageMeta({
                 class="my-5"
               />
               <ContentPriceSummary
-                v-if="!createMode && displayTotal && selectedSkus.length"
+                v-if="!createMode && displayTotal && displayItems.length"
                 :total="displayTotal"
                 :currency="
                   entityData?.currency || form.values.details?.currency || ''
