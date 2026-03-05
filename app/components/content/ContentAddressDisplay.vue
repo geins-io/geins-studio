@@ -22,7 +22,7 @@ const { getCountryNameById } = useAccountStore();
     </template>
     <template v-else>
       <template v-if="!addressOnly">
-        <p v-if="address.firstName || address.lastName" class="">
+        <p v-if="address.firstName || address.lastName">
           {{ fullName(address) }}
         </p>
         <p v-if="address.company">

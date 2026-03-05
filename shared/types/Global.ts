@@ -26,7 +26,10 @@ export type StatusBadgeKnownStatus =
  * StatusBadge accepts booleans (active/inactive), known statuses with
  * dedicated styling, or any string (rendered with 'outline' variant).
  */
-export type StatusBadgeStatus = boolean | StatusBadgeKnownStatus | (string & {});
+export type StatusBadgeStatus =
+  | boolean
+  | StatusBadgeKnownStatus
+  | (string & {});
 
 export const enum DataItemDisplayType {
   String = 'string',

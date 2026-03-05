@@ -209,7 +209,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - `ContentSwitch` — Toggle with animated collapsible slot content
 - `FormGridWrap` / `FormGrid` — Form layout (design prop: `"1"`, `"1+1"`, `"1+1+1"`, `"2+1+1"`)
 - `SelectorPanel` + `TableView` — Entity selection pattern (see `app/pages/examples/sku-selector.vue`)
-- `ContentAddressDisplay` — Address display (expects `AddressUpdate` type). Also compatible with `QuotationAddress` since both share the same field names (`addressLine1`, `firstName`, etc.)
+- `ContentAddressDisplay` — Address display (expects `AddressUpdate` type). Also compatible with `Address` since both share the same field names (`addressLine1`, `firstName`, etc.)
 - `InputGroup` / `InputGroupAddon` / `InputGroupButton` / `InputGroupInput` / `InputGroupTextarea` — Composable input groups with addons (icons, buttons, text) positioned via `align` prop (`inline-start`, `inline-end`, `block-start`, `block-end`). Use `InputGroupInput` instead of `Input` inside groups.
 - `ButtonGroup` / `ButtonGroupSeparator` / `ButtonGroupText` — Groups related buttons with shared border radius. Supports `orientation` (`horizontal` | `vertical`) and nesting.
 - `ContentPriceSummary` — Price summary rows (subtotal, discount, shipping, VAT, grand total). Props: `total` (`QuotationTotal`), `currency`, `editMode?`. When `editMode=true`: discount row becomes a shadcn `Input` (with `#valueDescriptor` slot containing a `Select` dropdown for switching between `%` and currency) plus a calculated discount amount display (e.g. "-100.00 SEK"); shipping row becomes an `Input` with currency in `#valueDescriptor`. Uses `defineModel` for `discountType`, `discountValue`, `shippingFee` (two-way binding) and emits `blur` when an editable field loses focus (parent triggers preview).
@@ -252,11 +252,11 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 
 **Snapshot convention (entity sub-objects in responses):**
 
-- `QuotationOwner`, `QuotationCustomer`, `QuotationCompany`, and `QuotationAddress` are snapshots — point-in-time captures stored with the quotation.
+- `QuotationOwner`, `QuotationCustomer`, and `QuotationCompany` are snapshots — point-in-time captures stored with the quotation.
 - Each snapshot extends `EntitySnapshot` (`shared/types/Global.ts`), which provides `_id: string`, `_type: string`, `_snapshotAt?: string | null` (leading underscores, matching the top-level entity shape).
 - `QuotationOwner` and `QuotationCustomer` use `firstName`/`lastName` (no combined `name` or `email`). Use `fullName(x.firstName, x.lastName)` for display.
 - To read IDs from snapshots: `company._id`, `owner._id`, `customer._id`, `billingAddress._id` (not `companyId`/`ownerId`/`customerId`/`addressId`).
-- `toQuotationAddress()` in `[id].vue` maps a company `Address` → `QuotationAddress`, setting `_type: 'geins.wholesale_account_address'`.
+- Quotation `billingAddress` and `shippingAddress` use the standard `Address` type (`shared/types/Global.ts`) — no separate snapshot type needed since the address shape is identical.
 
 **API shape differences:**
 

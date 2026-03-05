@@ -114,6 +114,15 @@ export const useAccountStore = defineStore('account', () => {
     return getEntityNameById(id, currentCountries.value);
   }
 
+  function getMarketNameById(id: string): string {
+    const market = channels.value
+      .flatMap((channel) => channel.markets)
+      .find((market) => market._id === String(id));
+    const country = market?.country.name || '';
+    const currency = market?.currency._id || '';
+    return `${country} (${currency})`;
+  }
+
   function getDefaultCountryByChannelId(channelId: string): string {
     const channel = channels.value.find((c) => c._id === String(channelId));
 
@@ -141,15 +150,6 @@ export const useAccountStore = defineStore('account', () => {
         (currency, index, self) =>
           index === self.findIndex((c) => c === currency),
       );
-  }
-
-  function getMarketNameById(id: string): string {
-    const market = channels.value
-      .flatMap((channel) => channel.markets)
-      .find((market) => market._id === String(id));
-    const country = market?.country.name || '';
-    const currency = market?.currency._id || '';
-    return `${country} (${currency})`;
   }
 
   // GETTERS
@@ -203,9 +203,9 @@ export const useAccountStore = defineStore('account', () => {
     reset,
     getChannelNameById,
     getCountryNameById,
+    getMarketNameById,
     getDefaultCountryByChannelId,
     getCurrenciesByChannelId,
-    getMarketNameById,
     currentChannel,
     currentCountries,
     currentCurrencies,
