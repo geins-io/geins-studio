@@ -79,37 +79,12 @@ const isSent = (msg: QuotationMessage): boolean => msg.type === 'toCustomer';
 const getTag = (msg: QuotationMessage, key: string): string | undefined =>
   msg.tags?.find((t) => t.key === key)?.value;
 
-const VALID_STRING_STATUSES = new Set<string>([
-  'pending',
-  'on-hold',
-  'backorder',
-  'partial',
-  'sent',
-  'cancelled',
-  'rejected',
-  'refunded',
-  'inactive',
-  'accepted',
-  'completed',
-  'confirmed',
-  'finalized',
-  'canceled',
-  'draft',
-  'expired',
-]);
-
-const isStatusBadgeStatus = (
-  value: string,
-): value is Exclude<StatusBadgeStatus, boolean> =>
-  VALID_STRING_STATUSES.has(value);
-
 const getStatusTransition = (
   msg: QuotationMessage,
 ): { from: StatusBadgeStatus; to: StatusBadgeStatus } | null => {
   const from = getTag(msg, 'statusFrom');
   const to = getTag(msg, 'statusTo');
   if (!from || !to) return null;
-  if (!isStatusBadgeStatus(from) || !isStatusBadgeStatus(to)) return null;
   return { from, to };
 };
 
