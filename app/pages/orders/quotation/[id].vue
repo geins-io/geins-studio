@@ -829,13 +829,23 @@ const handleCustomerPanelSave = (data: {
 };
 
 // =====================================================================================
-// DRAFT ADDRESS SYNC
+// DRAFT SNAPSHOT SYNC
 // =====================================================================================
-// In draft mode, compare snapshot addresses against live company addresses.
-// If the company's address content has changed since the snapshot was taken,
-// update the local refs so the Customer card shows current data.
-// This runs after setOriginalSavedData() so changes appear as "unsaved".
-const addressFieldsToCompare: (keyof Address)[] = [
+// In draft mode, compare snapshot data (addresses, owner, buyer, company) against
+// live company data. If content has changed since the snapshot was taken, update
+// local refs so the UI shows current data and trigger unsaved changes.
+// This runs after setOriginalSavedData() so detected changes show as "unsaved".
+
+function hasFieldsChanged<T>(
+  snapshot: T | null | undefined,
+  live: T | null | undefined,
+  fields: (keyof T)[],
+): boolean {
+  if (!snapshot || !live) return false;
+  return fields.some((field) => snapshot[field] !== live[field]);
+}
+
+const addressFields: (keyof Address)[] = [
   'firstName',
   'lastName',
   'company',
@@ -851,44 +861,77 @@ const addressFieldsToCompare: (keyof Address)[] = [
   'phone',
 ];
 
-function hasAddressChanged(
-  snapshot: Address | null,
-  live: Address | undefined,
-): boolean {
-  if (!snapshot || !live) return false;
-  return addressFieldsToCompare.some(
-    (field) => snapshot[field] !== live[field],
-  );
-}
+const personFields = ['firstName', 'lastName', 'phone'] as const;
 
-function syncDraftAddresses() {
+function syncCompanySnapshots() {
   if (sentMode.value) return;
-  const addresses = selectedCompany.value?.addresses;
-  if (!addresses) return;
+  const company = selectedCompany.value;
+  if (!company) return;
 
   let changed = false;
 
-  const liveBilling = addresses.find(
-    (a) => a._id === selectedBillingAddressId.value,
+  // --- Addresses ---
+  const addresses = company.addresses;
+  if (addresses) {
+    const liveBilling = addresses.find(
+      (a) => a._id === selectedBillingAddressId.value,
+    );
+    if (
+      hasFieldsChanged(billingAddress.value, liveBilling, addressFields) &&
+      liveBilling
+    ) {
+      billingAddress.value = liveBilling;
+      changed = true;
+    }
+
+    const liveShipping = addresses.find(
+      (a) => a._id === selectedShippingAddressId.value,
+    );
+    if (
+      hasFieldsChanged(shippingAddress.value, liveShipping, addressFields) &&
+      liveShipping
+    ) {
+      shippingAddress.value = liveShipping;
+      changed = true;
+    }
+  }
+
+  // --- Owner (sales rep) ---
+  const ownerSnapshot = entityData.value?.owner;
+  const liveOwner = company.salesReps?.find(
+    (sr) => sr._id === ownerSnapshot?._id,
   );
-  if (hasAddressChanged(billingAddress.value, liveBilling) && liveBilling) {
-    billingAddress.value = liveBilling;
+  if (hasFieldsChanged(ownerSnapshot, liveOwner, [...personFields])) {
     changed = true;
   }
 
-  const liveShipping = addresses.find(
-    (a) => a._id === selectedShippingAddressId.value,
+  // --- Buyer (customer) ---
+  const buyerSnapshot = entityData.value?.customer;
+  const liveBuyer = company.buyers?.find(
+    (b) => b._id === buyerSnapshot?._id,
   );
-  if (hasAddressChanged(shippingAddress.value, liveShipping) && liveShipping) {
-    shippingAddress.value = liveShipping;
+  if (hasFieldsChanged(buyerSnapshot, liveBuyer, [...personFields])) {
     changed = true;
   }
 
-  // Force entityDataUpdate mutation so the address IDs are re-sent on save,
-  // causing the backend to re-snapshot the updated address content.
+  // --- Company name / VAT ---
+  const companySnapshot = entityData.value?.company;
+  if (
+    companySnapshot &&
+    (companySnapshot.name !== company.name ||
+      companySnapshot.vatNumber !== company.vatNumber)
+  ) {
+    selectedAccountName.value = company.name || '';
+    changed = true;
+  }
+
+  // Force entityDataUpdate mutation so IDs are re-sent on save,
+  // causing the backend to re-snapshot the updated content.
   if (changed && entityDataUpdate.value) {
     entityDataUpdate.value = {
       ...entityDataUpdate.value,
+      ownerId: form.values.details?.ownerId || undefined,
+      customerId: form.values.details?.buyerId || undefined,
       billingAddressId: selectedBillingAddressId.value || undefined,
       shippingAddressId: selectedShippingAddressId.value || undefined,
     };
@@ -940,9 +983,9 @@ if (!createMode.value) {
     await nextTick();
     setOriginalSavedData();
 
-    // Sync stale snapshot addresses with live company data (draft only).
+    // Sync stale snapshots (addresses, owner, buyer, company) with live data.
     // Runs after the baseline so any detected changes show as "unsaved".
-    syncDraftAddresses();
+    syncCompanySnapshots();
   });
 
   // Re-parse entity data when refreshed (e.g., after a status transition).
