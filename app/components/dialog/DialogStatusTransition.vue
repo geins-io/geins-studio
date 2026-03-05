@@ -55,13 +55,13 @@ watch(open, (isOpen) => {
         </AlertDialogDescription>
       </AlertDialogHeader>
       <div v-if="props.showMessage" class="space-y-2">
-        <label class="text-sm font-medium">
+        <Label>
           {{
             props.messageType === 'toCustomer'
               ? $t('orders.message_to_customer')
               : $t('orders.internal_note')
           }}
-        </label>
+        </Label>
         <Textarea
           v-model="message"
           :placeholder="
