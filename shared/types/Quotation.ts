@@ -374,8 +374,11 @@ export interface QuotationItemBase {
   primaryImage: string;
   quantity: number;
   ordPrice: number;
+  ordPriceIncVat: number;
   listPrice: number;
-  unitPrice: number;
+  listPriceIncVat: number;
+  unitPrice?: number;
+  unitPriceIncVat?: number;
 }
 
 /**
