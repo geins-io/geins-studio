@@ -312,7 +312,6 @@ export interface QuotationList extends Omit<
   sum: Price;
   expirationDate: string;
   dateCreated: string;
-  market: string;
   channel: string;
   owner: string;
   buyer: string;
