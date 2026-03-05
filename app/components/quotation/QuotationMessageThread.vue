@@ -85,11 +85,22 @@ const getStatusTransition = (
   const from = getTag(msg, 'statusFrom');
   const to = getTag(msg, 'statusTo');
   if (!from || !to) return null;
-  return {
-    from: from.toLowerCase() as StatusBadgeStatus,
-    to: to.toLowerCase() as StatusBadgeStatus,
-  };
+  return { from, to };
 };
+
+const statusTransitionsMap = computed<
+  Map<string, { from: StatusBadgeStatus; to: StatusBadgeStatus }>
+>(() => {
+  const map = new Map<
+    string,
+    { from: StatusBadgeStatus; to: StatusBadgeStatus }
+  >();
+  for (const msg of props.messages) {
+    const transition = getStatusTransition(msg);
+    if (transition) map.set(msg._id, transition);
+  }
+  return map;
+});
 </script>
 
 <template>
@@ -161,12 +172,12 @@ const getStatusTransition = (
           </div>
           <div class="flex items-center gap-2">
             <div
-              v-if="getStatusTransition(msg)"
+              v-if="statusTransitionsMap.has(msg._id)"
               class="mr-2 flex items-center gap-1.5"
             >
-              <StatusBadge :status="getStatusTransition(msg)!.from" />
+              <StatusBadge :status="statusTransitionsMap.get(msg._id)!.from" />
               <LucideArrowRight class="text-muted-foreground size-3" />
-              <StatusBadge :status="getStatusTransition(msg)!.to" />
+              <StatusBadge :status="statusTransitionsMap.get(msg._id)!.to" />
             </div>
             <span class="text-muted-foreground text-xs">
               {{ msg.timestamp ? formatDate(msg.timestamp) : '' }}
