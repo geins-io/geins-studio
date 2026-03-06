@@ -312,6 +312,7 @@ export function useEntityEdit<
     additionalValidation?: () => Promise<boolean>,
     queryOptions?: TOptions,
     setSavedData?: boolean,
+    silent?: boolean,
   ) => {
     loading.value = true;
     try {
@@ -341,14 +342,18 @@ export function useEntityEdit<
         result ?? (await options.repository.get(id, queryOptions));
       await parseAndSaveData(newData, setSavedData);
 
-      toast({
-        title: t('entity_updated', { entityName }),
-        variant: 'positive',
-      });
+      if (!silent) {
+        toast({
+          title: t('entity_updated', { entityName }),
+          variant: 'positive',
+        });
+      }
 
       return result;
     } catch (error) {
-      showErrorToast(t('error_updating_entity', { entityName }));
+      if (!silent) {
+        showErrorToast(t('error_updating_entity', { entityName }));
+      }
       throw error;
     } finally {
       loading.value = false;

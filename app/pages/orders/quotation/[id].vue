@@ -977,7 +977,7 @@ if (!createMode.value) {
     // If any snapshot is outdated, auto-save so the backend re-snapshots
     // the current content — prevents sending a quotation with stale data.
     if (syncCompanySnapshots()) {
-      await updateEntity(undefined, undefined, false);
+      await updateEntity(undefined, undefined, false, true);
       await nextTick();
       setOriginalSavedData();
     }
