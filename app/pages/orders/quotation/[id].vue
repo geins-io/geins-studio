@@ -833,8 +833,8 @@ const handleCustomerPanelSave = (data: {
 // =====================================================================================
 // In draft mode, compare snapshot data (addresses, owner, buyer, company) against
 // live company data. If content has changed since the snapshot was taken, update
-// local refs so the UI shows current data and trigger unsaved changes.
-// This runs after setOriginalSavedData() so detected changes show as "unsaved".
+// local refs so the UI shows current data. Returns true if any snapshot was stale,
+// so the caller can auto-save to persist the updated snapshots.
 
 function hasFieldsChanged<T>(
   snapshot: T | null | undefined,
@@ -863,10 +863,10 @@ const addressFields: (keyof Address)[] = [
 
 const personFields = ['firstName', 'lastName', 'phone'] as const;
 
-function syncCompanySnapshots() {
-  if (sentMode.value) return;
+function syncCompanySnapshots(): boolean {
+  if (sentMode.value) return false;
   const company = selectedCompany.value;
-  if (!company) return;
+  if (!company) return false;
 
   let changed = false;
 
@@ -925,17 +925,7 @@ function syncCompanySnapshots() {
     changed = true;
   }
 
-  // Force entityDataUpdate mutation so IDs are re-sent on save,
-  // causing the backend to re-snapshot the updated content.
-  if (changed && entityDataUpdate.value) {
-    entityDataUpdate.value = {
-      ...entityDataUpdate.value,
-      ownerId: form.values.details?.ownerId || undefined,
-      customerId: form.values.details?.buyerId || undefined,
-      billingAddressId: selectedBillingAddressId.value || undefined,
-      shippingAddressId: selectedShippingAddressId.value || undefined,
-    };
-  }
+  return changed;
 }
 
 // =====================================================================================
@@ -984,8 +974,13 @@ if (!createMode.value) {
     setOriginalSavedData();
 
     // Sync stale snapshots (addresses, owner, buyer, company) with live data.
-    // Runs after the baseline so any detected changes show as "unsaved".
-    syncCompanySnapshots();
+    // If any snapshot is outdated, auto-save so the backend re-snapshots
+    // the current content — prevents sending a quotation with stale data.
+    if (syncCompanySnapshots()) {
+      await updateEntity(undefined, undefined, false);
+      await nextTick();
+      setOriginalSavedData();
+    }
   });
 
   // Re-parse entity data when refreshed (e.g., after a status transition).
