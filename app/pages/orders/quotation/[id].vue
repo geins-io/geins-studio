@@ -829,6 +829,106 @@ const handleCustomerPanelSave = (data: {
 };
 
 // =====================================================================================
+// DRAFT SNAPSHOT SYNC
+// =====================================================================================
+// In draft mode, compare snapshot data (addresses, owner, buyer, company) against
+// live company data. If content has changed since the snapshot was taken, update
+// local refs so the UI shows current data. Returns true if any snapshot was stale,
+// so the caller can auto-save to persist the updated snapshots.
+
+function hasFieldsChanged<T>(
+  snapshot: T | null | undefined,
+  live: T | null | undefined,
+  fields: (keyof T)[],
+): boolean {
+  if (!snapshot || !live) return false;
+  return fields.some((field) => snapshot[field] !== live[field]);
+}
+
+const addressFields: (keyof Address)[] = [
+  'firstName',
+  'lastName',
+  'company',
+  'careOf',
+  'addressLine1',
+  'addressLine2',
+  'addressLine3',
+  'zip',
+  'city',
+  'region',
+  'country',
+  'email',
+  'phone',
+];
+
+const personFields = ['firstName', 'lastName', 'phone'] as const;
+
+function syncCompanySnapshots(): boolean {
+  if (sentMode.value) return false;
+  const company = selectedCompany.value;
+  if (!company) return false;
+
+  let changed = false;
+
+  // --- Addresses ---
+  const addresses = company.addresses;
+  if (addresses) {
+    const liveBilling = addresses.find(
+      (a) => a._id === selectedBillingAddressId.value,
+    );
+    if (
+      hasFieldsChanged(billingAddress.value, liveBilling, addressFields) &&
+      liveBilling
+    ) {
+      billingAddress.value = liveBilling;
+      changed = true;
+    }
+
+    const liveShipping = addresses.find(
+      (a) => a._id === selectedShippingAddressId.value,
+    );
+    if (
+      hasFieldsChanged(shippingAddress.value, liveShipping, addressFields) &&
+      liveShipping
+    ) {
+      shippingAddress.value = liveShipping;
+      changed = true;
+    }
+  }
+
+  // --- Owner (sales rep) ---
+  const ownerSnapshot = entityData.value?.owner;
+  const liveOwner = company.salesReps?.find(
+    (sr) => sr._id === ownerSnapshot?._id,
+  );
+  if (hasFieldsChanged(ownerSnapshot, liveOwner, [...personFields])) {
+    changed = true;
+  }
+
+  // --- Buyer (customer) ---
+  const buyerSnapshot = entityData.value?.customer;
+  const liveBuyer = company.buyers?.find(
+    (b) => b._id === buyerSnapshot?._id,
+  );
+  if (hasFieldsChanged(buyerSnapshot, liveBuyer, [...personFields])) {
+    changed = true;
+  }
+
+  // --- Company name / VAT ---
+  const companySnapshot = entityData.value?.company;
+  if (
+    companySnapshot &&
+    (companySnapshot.name !== company.name ||
+      companySnapshot.vatNumber !== company.vatNumber)
+  ) {
+    selectedAccountName.value = company.name || '';
+    changed = true;
+  }
+
+  return changed;
+}
+
+// =====================================================================================
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
 const fetchingData = ref(false);
@@ -872,6 +972,15 @@ if (!createMode.value) {
     // so the unsaved changes baseline matches the fully populated form
     await nextTick();
     setOriginalSavedData();
+
+    // Sync stale snapshots (addresses, owner, buyer, company) with live data.
+    // If any snapshot is outdated, auto-save so the backend re-snapshots
+    // the current content — prevents sending a quotation with stale data.
+    if (syncCompanySnapshots()) {
+      await updateEntity(undefined, undefined, false, true);
+      await nextTick();
+      setOriginalSavedData();
+    }
   });
 
   // Re-parse entity data when refreshed (e.g., after a status transition).
