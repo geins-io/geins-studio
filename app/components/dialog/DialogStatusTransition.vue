@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { QuotationMessageType } from '#shared/types';
 
+type TransitionIcon = 'send' | 'check' | 'x' | 'ban';
+
 const props = withDefaults(
   defineProps<{
     action: string;
@@ -9,11 +11,15 @@ const props = withDefaults(
     showMessage?: boolean;
     messageType?: QuotationMessageType;
     variant?: 'default' | 'destructive';
+    icon?: TransitionIcon;
+    blockReasons?: string[];
   }>(),
   {
     showMessage: true,
     messageType: 'internal',
     variant: 'default',
+    icon: undefined,
+    blockReasons: undefined,
   },
 );
 const open = defineModel('open', {
@@ -26,6 +32,10 @@ const emit = defineEmits<{
 }>();
 
 const message = ref('');
+
+const isBlocked = computed(
+  () => props.blockReasons && props.blockReasons.length > 0,
+);
 
 const handleConfirm = () => {
   emit('confirm', message.value || undefined);
@@ -54,7 +64,19 @@ watch(open, (isOpen) => {
           }}
         </AlertDialogDescription>
       </AlertDialogHeader>
-      <div v-if="props.showMessage" class="space-y-2">
+      <Feedback v-if="isBlocked" type="warning">
+        <template #title>
+          {{ $t('orders.send_blocked_title') }}
+        </template>
+        <template #description>
+          <ul class="mt-1 list-inside list-disc space-y-0.5 text-xs">
+            <li v-for="reason in blockReasons" :key="reason">
+              {{ reason }}
+            </li>
+          </ul>
+        </template>
+      </Feedback>
+      <div v-if="props.showMessage && !isBlocked" class="space-y-2">
         <Label>
           {{
             props.messageType === 'toCustomer'
@@ -79,8 +101,13 @@ watch(open, (isOpen) => {
         <Button
           :loading="props.loading"
           :variant="props.variant"
+          :disabled="isBlocked"
           @click.prevent.stop="handleConfirm"
         >
+          <LucideSend v-if="props.icon === 'send'" class="mr-2 size-4" />
+          <LucideCheck v-if="props.icon === 'check'" class="mr-2 size-4" />
+          <LucideX v-if="props.icon === 'x'" class="mr-2 size-4" />
+          <LucideBan v-if="props.icon === 'ban'" class="mr-2 size-4" />
           {{ props.action }}
         </Button>
       </AlertDialogFooter>

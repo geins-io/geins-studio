@@ -951,7 +951,9 @@ interface StatusAction {
   action: string;
   label: string;
   variant?: 'default' | 'destructive';
-  icon?: 'check' | 'ban' | 'x';
+  icon?: 'send' | 'check' | 'ban' | 'x';
+  messageType?: QuotationMessageType;
+  blockReasons?: string[];
 }
 
 interface StatusActionLayout {
@@ -1082,15 +1084,19 @@ const transitionMethods: Record<string, TransitionMethod> = {
 const handleStatusTransition = async (
   action: string,
   message?: string,
-  messageType: QuotationMessageType = 'internal',
 ) => {
   const method = transitionMethods[action];
   if (!method) return;
+
+  const messageType = transitionAction.value?.messageType ?? 'internal';
 
   transitionLoading.value = true;
   try {
     const request = buildTransitionRequest(message, messageType);
     await method(entityId.value, request);
+    if (action === 'send') {
+      currentTab.value = 0;
+    }
     await refreshEntityData.value?.();
     toast({
       title: t('orders.quotation_transition_success'),
@@ -1102,27 +1108,6 @@ const handleStatusTransition = async (
   } finally {
     transitionLoading.value = false;
     transitionDialogOpen.value = false;
-  }
-};
-
-// Send quotation dialog state
-const sendDialogOpen = ref(false);
-const sendLoading = ref(false);
-
-const handleSendQuotation = async (message?: string) => {
-  sendLoading.value = true;
-  try {
-    const request = buildTransitionRequest(message, 'toCustomer');
-    await orderApi.quotation.send(entityId.value, request);
-    currentTab.value = 0;
-    await refreshEntityData.value?.();
-    toast({ title: t('entity_sent', { entityName }), variant: 'positive' });
-  } catch (error) {
-    geinsLogError('Failed to send quotation:', error);
-    showErrorToast(t('error_sending_entity', { entityName }));
-  } finally {
-    sendLoading.value = false;
-    sendDialogOpen.value = false;
   }
 };
 
@@ -1407,13 +1392,6 @@ definePageMeta({
     :loading="deleting"
     @confirm="confirmDelete"
   />
-  <DialogConfirmSend
-    v-model:open="sendDialogOpen"
-    :entity-name="entityName"
-    :loading="sendLoading"
-    :block-reasons="sendBlockReasons"
-    @confirm="handleSendQuotation"
-  />
   <DialogStatusTransition
     v-if="transitionAction"
     v-model:open="transitionDialogOpen"
@@ -1421,6 +1399,9 @@ definePageMeta({
     :entity-name="entityName"
     :loading="transitionLoading"
     :variant="transitionAction.variant || 'default'"
+    :icon="transitionAction.icon"
+    :message-type="transitionAction.messageType"
+    :block-reasons="transitionAction.blockReasons"
     @confirm="(msg: string | undefined) => handleStatusTransition(transitionAction!.action, msg)"
   />
   <ContentEditWrap
@@ -1446,7 +1427,7 @@ definePageMeta({
                 variant="secondary"
                 icon="send"
                 :disabled="loading"
-                @click="sendDialogOpen = true"
+                @click="openTransitionDialog({ action: 'send', label: $t('send_entity', { entityName }), icon: 'send', messageType: 'toCustomer', blockReasons: sendBlockReasons })"
                 >{{ $t('send_entity', { entityName }) }}
               </ButtonIcon>
               <DropdownMenu>
