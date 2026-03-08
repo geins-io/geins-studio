@@ -1244,7 +1244,10 @@ const handleStatusTransition = async (action: string, message?: string) => {
       entityData.value?.status === 'accepted'
     ) {
       const confirmRequest = buildTransitionRequest(undefined, messageType);
-      await transitionMethods.confirm(entityId.value, confirmRequest);
+      const confirmMethod = transitionMethods.confirm;
+      if (confirmMethod) {
+        await confirmMethod(entityId.value, confirmRequest);
+      }
     }
 
     await method(entityId.value, request);
