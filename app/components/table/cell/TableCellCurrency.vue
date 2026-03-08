@@ -3,6 +3,11 @@ import type { Price } from '#shared/types';
 const props = defineProps<Price>();
 const currency = toRef(props, 'currency');
 const price = toRef(props, 'price');
+const { formatCurrency } = usePrice();
+const displayPrice = computed(() => {
+  if (!price.value || price.value === '---') return price.value;
+  return formatCurrency(price.value);
+});
 </script>
 <template>
   <div>
@@ -18,7 +23,7 @@ const price = toRef(props, 'price');
           )
         "
       >
-        {{ price }}
+        {{ displayPrice }}
       </span>
     </div>
   </div>

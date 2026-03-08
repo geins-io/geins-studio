@@ -35,13 +35,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-
-const formatPrice = (value: number) => {
-  return value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
+const { formatCurrency } = usePrice();
 
 const shippingValue = computed(() =>
   'suggestedShippingFee' in props.total
@@ -226,7 +220,7 @@ const rows = computed<PriceRow[]>(() => {
         <!-- Value display (all rows) -->
         <span class="shrink-0 tabular-nums">
           {{ row.negate && row.value > 0 ? '-' : '' }}
-          {{ formatPrice(row.value) }}
+          {{ formatCurrency(row.value) }}
           <span class="text-xs font-bold">{{ currency }}</span>
         </span>
       </li>

@@ -105,6 +105,9 @@ const shippingFeeInput = ref<string>('');
 const previewTotal = ref<QuotationTotal | null>(null);
 const previewLoading = ref(false);
 
+// Guard flag: prevents watchers from mutating entityDataUpdate during initial load
+const isInitialLoadComplete = ref(false);
+
 // Tabs & Steps
 const tabs = computed(() =>
   sentMode.value
@@ -173,34 +176,40 @@ const getItemName = (item: QuotationItem) => {
 // Derived table rows from displayItems
 const quotationProductRows = computed<QuotationProductRow[]>(() => {
   const currency = form.values.details?.currency || 'SEK';
-  return displayItems.value.map((item) => ({
-    _id: item.skuId,
-    product: getItemName(item),
-    skuId: item.skuId,
-    quantity: item.quantity,
-    price: {
-      price: item.ordPrice ? String(item.ordPrice) : '',
-      currency,
-    },
-    priceListPrice: {
-      price:
-        item.listPrice && item.listPrice !== item.ordPrice
-          ? String(item.listPrice)
-          : '---',
-      currency,
-    },
-    quotationPrice: {
-      price:
-        item.unitPrice !== undefined
-          ? String(item.unitPrice)
-          : item.listPrice
+  return displayItems.value.map((item) => {
+    return {
+      _id: item.skuId,
+      product: getItemName(item),
+      skuId: item.skuId,
+      quantity: item.quantity,
+      price: {
+        price: item.ordPrice ? String(item.ordPrice) : '',
+        currency,
+      },
+      priceListPrice: {
+        price:
+          item.listPrice && item.listPrice !== item.ordPrice
             ? String(item.listPrice)
-            : '',
-      currency,
-    },
-    image: item.primaryImage || '',
-    articleNumber: item.articleNumber || '',
-  }));
+            : '---',
+        currency,
+      },
+      quotationPrice: {
+        price:
+          item.unitPrice !== undefined
+            ? String(item.unitPrice)
+            : item.listPrice
+              ? String(item.listPrice)
+              : '',
+        currency,
+      },
+      rowTotal: {
+        price: String(item.rowTotal),
+        currency,
+      },
+      image: item.primaryImage || '',
+      articleNumber: item.articleNumber || '',
+    };
+  });
 });
 
 // Build quotation items payload from displayItems
@@ -356,6 +365,7 @@ const selectedSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
       'price',
       'priceListPrice',
       'quotationPrice',
+      'rowTotal',
     ],
     columnTitles: {
       product: t('product'),
@@ -364,6 +374,7 @@ const selectedSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
       price: t('orders.base_price'),
       priceListPrice: t('orders.price_list_price'),
       quotationPrice: t('orders.quotation_price'),
+      rowTotal: t('orders.row_total'),
     },
     columnTypes: {
       product: 'product',
@@ -372,6 +383,7 @@ const selectedSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
       price: 'currency',
       priceListPrice: 'currency',
       quotationPrice: 'editable-currency',
+      rowTotal: 'currency',
     },
     columnCellProps: {
       quantity: {
@@ -401,6 +413,7 @@ const selectedSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
     'price',
     'priceListPrice',
     'quotationPrice',
+    'rowTotal',
     'actions',
   ]);
 });
@@ -648,7 +661,9 @@ const {
     } else {
       // In sent mode, form fields are unmounted and VeeValidate clears their values.
       // Skip the update to preserve entityDataUpdate from reshapeEntityData.
-      if (sentMode.value) return;
+      // During initial load, the debounced callback fires after setOriginalSavedData,
+      // which would overwrite entityDataUpdate and cause false unsaved changes.
+      if (sentMode.value || !isInitialLoadComplete.value) return;
       entityDataUpdate.value = {
         ...entityData.value,
         name: values.details.name,
@@ -768,7 +783,12 @@ watch(hasExpirationDate, (enabled) => {
 watch(
   quotationItems,
   () => {
-    if (createMode.value || !entityDataUpdate.value) return;
+    if (
+      createMode.value ||
+      !entityDataUpdate.value ||
+      !isInitialLoadComplete.value
+    )
+      return;
     entityDataUpdate.value = {
       ...entityDataUpdate.value,
       items: quotationItems.value,
@@ -779,7 +799,12 @@ watch(
 
 // Sync address changes with entityDataUpdate for unsaved changes detection
 watch([selectedBillingAddressId, selectedShippingAddressId], () => {
-  if (createMode.value || !entityDataUpdate.value) return;
+  if (
+    createMode.value ||
+    !entityDataUpdate.value ||
+    !isInitialLoadComplete.value
+  )
+    return;
   entityDataUpdate.value = {
     ...entityDataUpdate.value,
     billingAddressId: selectedBillingAddressId.value || undefined,
@@ -789,7 +814,12 @@ watch([selectedBillingAddressId, selectedShippingAddressId], () => {
 
 // Sync discount & shipping fee with entityDataUpdate for unsaved changes detection
 watch([discountType, discountValue, shippingFeeInput], () => {
-  if (createMode.value || !entityDataUpdate.value) return;
+  if (
+    createMode.value ||
+    !entityDataUpdate.value ||
+    !isInitialLoadComplete.value
+  )
+    return;
   entityDataUpdate.value = {
     ...entityDataUpdate.value,
     discount: discountRequest.value || undefined,
@@ -907,9 +937,7 @@ function syncCompanySnapshots(): boolean {
 
   // --- Buyer (customer) ---
   const buyerSnapshot = entityData.value?.customer;
-  const liveBuyer = company.buyers?.find(
-    (b) => b._id === buyerSnapshot?._id,
-  );
+  const liveBuyer = company.buyers?.find((b) => b._id === buyerSnapshot?._id);
   if (hasFieldsChanged(buyerSnapshot, liveBuyer, [...personFields])) {
     changed = true;
   }
@@ -981,6 +1009,11 @@ if (!createMode.value) {
       await nextTick();
       setOriginalSavedData();
     }
+
+    // Enable watchers only after all async loading and snapshot syncing is complete.
+    // Prevents debounced onFormValuesChange and reactive watchers from mutating
+    // entityDataUpdate after the baseline snapshot, which caused false unsaved changes.
+    isInitialLoadComplete.value = true;
   });
 
   // Re-parse entity data when refreshed (e.g., after a status transition).
@@ -1060,7 +1093,7 @@ interface StatusAction {
   action: string;
   label: string;
   variant?: 'default' | 'destructive';
-  icon?: 'send' | 'check' | 'ban' | 'x';
+  icon?: 'send' | 'check' | 'ban' | 'x' | 'shopping-cart';
   messageType?: QuotationMessageType;
   blockReasons?: string[];
 }
@@ -1190,10 +1223,7 @@ const transitionMethods: Record<string, TransitionMethod> = {
   finalize: (id, data) => orderApi.quotation.finalize(id, data),
 };
 
-const handleStatusTransition = async (
-  action: string,
-  message?: string,
-) => {
+const handleStatusTransition = async (action: string, message?: string) => {
   const method = transitionMethods[action];
   if (!method) return;
 
@@ -1202,6 +1232,18 @@ const handleStatusTransition = async (
   transitionLoading.value = true;
   try {
     const request = buildTransitionRequest(message, messageType);
+
+    // Auto-confirm before finalize when requireConfirmation is enabled and status is accepted.
+    // Send confirm without a message to avoid duplicate entries in the communications tab.
+    if (
+      action === 'finalize' &&
+      entityData.value?.settings?.requireConfirmation &&
+      entityData.value?.status === 'accepted'
+    ) {
+      const confirmRequest = buildTransitionRequest(undefined, messageType);
+      await transitionMethods.confirm(entityId.value, confirmRequest);
+    }
+
     await method(entityId.value, request);
     if (action === 'send') {
       currentTab.value = 0;
@@ -1315,6 +1357,7 @@ const sentModeSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
       'price',
       'priceListPrice',
       'quotationPrice',
+      'rowTotal',
     ],
     columnTitles: {
       product: t('product'),
@@ -1323,6 +1366,7 @@ const sentModeSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
       price: t('orders.base_price'),
       priceListPrice: t('orders.price_list_price'),
       quotationPrice: t('orders.quotation_price'),
+      rowTotal: t('orders.row_total'),
     },
     columnTypes: {
       product: 'product',
@@ -1331,6 +1375,7 @@ const sentModeSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
       price: 'currency',
       priceListPrice: 'currency',
       quotationPrice: 'currency',
+      rowTotal: 'currency',
     },
   });
 
@@ -1341,6 +1386,7 @@ const sentModeSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
     'price',
     'priceListPrice',
     'quotationPrice',
+    'rowTotal',
   ]);
 });
 
@@ -1352,9 +1398,15 @@ const companySummary = computed<DataItem[]>(() => {
   const formValues = form.values.details;
 
   if (selectedAccountName.value) {
+    const companyId = selectedCompanyId.value;
     dataList.push({
       label: t('company'),
       value: selectedAccountName.value,
+      ...(companyId && {
+        displayType: DataItemDisplayType.Link,
+        href: getEntityUrlFor('company', 'customers', companyId),
+        target: '_blank',
+      }),
     });
   }
   if (!createMode.value && selectedCompany.value?.vatNumber) {
@@ -1511,7 +1563,10 @@ definePageMeta({
     :icon="transitionAction.icon"
     :message-type="transitionAction.messageType"
     :block-reasons="transitionAction.blockReasons"
-    @confirm="(msg: string | undefined) => handleStatusTransition(transitionAction!.action, msg)"
+    @confirm="
+      (msg: string | undefined) =>
+        handleStatusTransition(transitionAction!.action, msg)
+    "
   />
   <ContentEditWrap
     :entity-name="entityName"
@@ -1536,7 +1591,15 @@ definePageMeta({
                 variant="secondary"
                 icon="send"
                 :disabled="loading"
-                @click="openTransitionDialog({ action: 'send', label: $t('send_entity', { entityName }), icon: 'send', messageType: 'toCustomer', blockReasons: sendBlockReasons })"
+                @click="
+                  openTransitionDialog({
+                    action: 'send',
+                    label: $t('send_entity', { entityName }),
+                    icon: 'send',
+                    messageType: 'toCustomer',
+                    blockReasons: sendBlockReasons,
+                  })
+                "
                 >{{ $t('send_entity', { entityName }) }}
               </ButtonIcon>
               <DropdownMenu>
@@ -1574,6 +1637,7 @@ definePageMeta({
                 openTransitionDialog({
                   action: 'finalize',
                   label: $t('orders.place_order'),
+                  icon: 'shopping-cart',
                 })
               "
             >
@@ -1967,89 +2031,16 @@ definePageMeta({
 
               <!-- Card 2: Customer (read-only, no Change button) -->
               <ContentEditCard :create-mode="false" :title="$t('customer')">
-                <div class="space-y-4">
-                  <div class="grid grid-cols-2 gap-4">
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('company') }}
-                      </p>
-                      <p class="text-sm">
-                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                        <template v-else>
-                          {{ selectedCompany?.name || '-' }}
-                        </template>
-                      </p>
-                    </div>
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('customers.vat_number') }}
-                      </p>
-                      <p class="text-sm">
-                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                        <template v-else>
-                          {{ selectedCompany?.vatNumber || '-' }}
-                        </template>
-                      </p>
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('billing_address') }}
-                      </p>
-                      <ContentAddressDisplay
-                        :loading="fetchingData"
-                        :address="billingAddress"
-                        address-only
-                      />
-                    </div>
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('shipping_address') }}
-                      </p>
-                      <ContentAddressDisplay
-                        :loading="fetchingData"
-                        :address="shippingAddress"
-                        address-only
-                      />
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('buyer') }}
-                      </p>
-                      <p class="text-sm">
-                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                        <template v-else>
-                          {{ currentBuyerName || '-' }}
-                        </template>
-                      </p>
-                    </div>
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('orders.quotation_owner') }}
-                      </p>
-                      <p class="text-sm">
-                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                        <template v-else>
-                          {{ currentOwnerName || '-' }}
-                        </template>
-                      </p>
-                    </div>
-                  </div>
-                  <div class="border-t pt-4">
-                    <p class="text-muted-foreground mb-1 text-xs font-medium">
-                      {{ $t('currency') }}
-                    </p>
-                    <p class="text-sm">
-                      <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                      <template v-else>
-                        {{ entityData?.currency || '-' }}
-                      </template>
-                    </p>
-                  </div>
-                </div>
+                <ContentQuotationCustomerDisplay
+                  :company-name="selectedCompany?.name"
+                  :vat-number="selectedCompany?.vatNumber"
+                  :billing-address="billingAddress"
+                  :shipping-address="shippingAddress"
+                  :buyer-name="currentBuyerName"
+                  :owner-name="currentOwnerName"
+                  :currency="entityData?.currency"
+                  :loading="fetchingData"
+                />
               </ContentEditCard>
 
               <!-- Card 3: Payment Terms (read-only) -->
@@ -2218,97 +2209,16 @@ definePageMeta({
                   </ContentEditCustomerPanel>
                 </template>
 
-                <div class="space-y-4">
-                  <!-- Company info -->
-                  <div class="grid grid-cols-2 gap-4">
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('company') }}
-                      </p>
-                      <p class="text-sm">
-                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                        <template v-else>
-                          {{ selectedCompany?.name || '-' }}
-                        </template>
-                      </p>
-                    </div>
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('customers.vat_number') }}
-                      </p>
-                      <p class="text-sm">
-                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                        <template v-else>
-                          {{ selectedCompany?.vatNumber || '-' }}
-                        </template>
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- Addresses -->
-                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('billing_address') }}
-                      </p>
-                      <ContentAddressDisplay
-                        :loading="fetchingData"
-                        :address="billingAddress"
-                        address-only
-                      />
-                    </div>
-
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('shipping_address') }}
-                      </p>
-                      <ContentAddressDisplay
-                        :loading="fetchingData"
-                        :address="shippingAddress"
-                        address-only
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Owner & Buyer -->
-                  <div class="grid grid-cols-2 gap-4 border-t pt-4">
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('buyer') }}
-                      </p>
-                      <p class="text-sm">
-                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                        <template v-else>
-                          {{ currentBuyerName || '-' }}
-                        </template>
-                      </p>
-                    </div>
-                    <div>
-                      <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('orders.quotation_owner') }}
-                      </p>
-                      <p class="text-sm">
-                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                        <template v-else>
-                          {{ currentOwnerName || '-' }}
-                        </template>
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- Currency -->
-                  <div class="border-t pt-4">
-                    <p class="text-muted-foreground mb-1 text-xs font-medium">
-                      {{ $t('currency') }}
-                    </p>
-                    <p class="text-sm">
-                      <Skeleton v-if="fetchingData" class="h-5 w-32" />
-                      <template v-else>
-                        {{ form.values.details?.currency || '-' }}
-                      </template>
-                    </p>
-                  </div>
-                </div>
+                <ContentQuotationCustomerDisplay
+                  :company-name="selectedCompany?.name"
+                  :vat-number="selectedCompany?.vatNumber"
+                  :billing-address="billingAddress"
+                  :shipping-address="shippingAddress"
+                  :buyer-name="currentBuyerName"
+                  :owner-name="currentOwnerName"
+                  :currency="form.values.details?.currency"
+                  :loading="fetchingData"
+                />
               </ContentEditCard>
 
               <!-- Card 3: Payment Settings -->
