@@ -242,10 +242,11 @@ const handleQuotationPriceChange = (
   const skuId = row.original._id;
   const item = displayItems.value.find((i) => i.skuId === skuId);
   if (!item) return;
-  const num = Number(value);
+  const normalized = String(value).replace(',', '.');
+  const num = Number(normalized);
   // Reset to undefined if value is empty, invalid, or matches the list price
   item.unitPrice =
-    value === '' || isNaN(num) || num === item.listPrice ? undefined : num;
+    normalized === '' || isNaN(num) || num === item.listPrice ? undefined : num;
   displayItems.value = [...displayItems.value];
   debouncedCallPreview();
 };
@@ -319,6 +320,8 @@ const createPlaceholderItem = (skuId: string): QuotationItem => {
     ordPriceIncVat: 0,
     listPrice: 0,
     listPriceIncVat: 0,
+    rowTotal: 0,
+    rowTotalIncVat: 0,
   };
 };
 
