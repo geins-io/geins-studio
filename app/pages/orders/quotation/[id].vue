@@ -517,6 +517,7 @@ const {
   deleteEntity,
   parseAndSaveData,
   setOriginalSavedData,
+  cancelPendingFormSync,
 } = useEntityEdit<
   QuotationBase,
   Quotation,
@@ -529,16 +530,49 @@ const {
   initialEntityData: entityBase,
   initialUpdateData: {} as QuotationUpdate,
   stepValidationMap,
+  excludeSaveFields: [
+    'billingAddress',
+    'shippingAddress',
+    'company',
+    'owner',
+    'customer',
+    'communication',
+    'changelog',
+    'total',
+    'createdAt',
+    'modifiedAt',
+    'orderId',
+    'quotationNumber',
+    'status',
+    'currency',
+    'channelId',
+    'marketId',
+  ],
   reshapeEntityData: (entityData) => ({
     ...entityData,
-    items: undefined,
-    validPaymentMethods: entityData.validPaymentMethods?.map((pm) => ({
-      paymentId: String(pm.paymentId),
+    // Normalize update-relevant fields to match onFormValuesChange shape
+    ownerId: entityData.owner?._id || undefined,
+    customerId: entityData.customer?._id || undefined,
+    billingAddressId: entityData.billingAddress?._id || undefined,
+    shippingAddressId: entityData.shippingAddress?._id || undefined,
+    items: (entityData.items || []).map((item) => ({
+      skuId: item.skuId,
+      quantity: item.quantity,
+      ...(item.unitPrice !== undefined && item.unitPrice !== item.listPrice
+        ? { unitPrice: item.unitPrice }
+        : {}),
     })),
-    validShippingMethods: entityData.validShippingMethods?.map((sm) => ({
-      shippingId: String(sm.shippingId),
-      shippingFee: sm.shippingFee,
-    })),
+    discount: entityData.discount?.value ? entityData.discount : undefined,
+    settings: entityData.settings ?? { requireConfirmation: false },
+    validPaymentMethods:
+      entityData.validPaymentMethods?.map((pm) => ({
+        paymentId: String(pm.paymentId),
+      })) ?? [],
+    validShippingMethods:
+      entityData.validShippingMethods?.map((sm) => ({
+        shippingId: String(sm.shippingId),
+        shippingFee: sm.shippingFee,
+      })) ?? [],
   }),
   getInitialFormValues: () => ({
     details: {
@@ -668,7 +702,7 @@ const {
       // which would overwrite entityDataUpdate and cause false unsaved changes.
       if (sentMode.value || !isInitialLoadComplete.value) return;
       entityDataUpdate.value = {
-        ...entityData.value,
+        ...entityDataUpdate.value,
         name: values.details.name,
         validTo: values.details.expirationDate || undefined,
         ownerId: values.details.ownerId || undefined,
@@ -683,7 +717,7 @@ const {
             ? Number(shippingFeeInput.value)
             : undefined,
         settings: {
-          requireConfirmation: values.details.requireConfirmation,
+          requireConfirmation: values.details.requireConfirmation ?? false,
         },
       };
     }
@@ -988,7 +1022,6 @@ if (!createMode.value) {
     }
 
     await parseAndSaveData(quotation, false);
-    fetchingData.value = false;
 
     // Fetch products for SKU selector (must await so skuSelection is
     // populated before we take the unsaved-changes baseline snapshot)
@@ -998,6 +1031,11 @@ if (!createMode.value) {
     if (quotationItems.value.length > 0) {
       await callPreview();
     }
+
+    // Cancel any pending debounced onFormValuesChange that was queued by
+    // form.setValues() in parseEntityData — it would mutate entityDataUpdate
+    // after the snapshot and cause false unsaved changes.
+    cancelPendingFormSync();
 
     // Set the saved data snapshot after all async data has settled,
     // so the unsaved changes baseline matches the fully populated form
@@ -1009,6 +1047,7 @@ if (!createMode.value) {
     // the current content — prevents sending a quotation with stale data.
     if (syncCompanySnapshots()) {
       await updateEntity(undefined, undefined, false, true);
+      cancelPendingFormSync();
       await nextTick();
       setOriginalSavedData();
     }
@@ -1017,6 +1056,7 @@ if (!createMode.value) {
     // Prevents debounced onFormValuesChange and reactive watchers from mutating
     // entityDataUpdate after the baseline snapshot, which caused false unsaved changes.
     isInitialLoadComplete.value = true;
+    fetchingData.value = false;
   });
 
   // Re-parse entity data when refreshed (e.g., after a status transition).
@@ -1025,6 +1065,7 @@ if (!createMode.value) {
   watch(data, async (newData) => {
     if (!newData) return;
     await parseAndSaveData(newData, false);
+    cancelPendingFormSync();
     await nextTick();
     setOriginalSavedData();
   });
@@ -1044,6 +1085,7 @@ if (!createMode.value) {
 const handleSave = async () => {
   const result = await updateEntity(undefined, undefined, false);
   if (result) {
+    cancelPendingFormSync();
     await nextTick();
     setOriginalSavedData();
   }
@@ -1732,7 +1774,10 @@ definePageMeta({
         </template>
       </ContentHeader>
     </template>
-    <form @submit.prevent>
+    <form
+      :class="{ 'pointer-events-none opacity-60': fetchingData }"
+      @submit.prevent
+    >
       <ContentEditMain
         v-model:current-tab="currentTab"
         v-model:show-sidebar="showSidebar"

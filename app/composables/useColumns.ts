@@ -362,7 +362,12 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               h(TableCellProduct, {
                 name,
                 articleNumber: String(original.articleNumber ?? ''),
-                imageUrl: String(original.image ?? original.imageUrl ?? ''),
+                imageUrl: String(
+                  original.image ??
+                    original.imageUrl ??
+                    original.primaryImage ??
+                    '',
+                ),
               }),
             );
           };
