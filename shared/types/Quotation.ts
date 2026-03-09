@@ -264,6 +264,7 @@ export interface QuotationCreate extends CreateEntity<QuotationBase> {
  * Update type for existing quotations
  */
 export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
+  companyId?: string;
   ownerId?: string;
   customerId?: string;
   billingAddressId?: string;
