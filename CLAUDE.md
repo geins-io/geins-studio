@@ -250,6 +250,10 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - When loading existing quotation items in edit mode, initialize both `skuItemData` (from response items) and `skuSelection.ids` (from item SKU IDs) after products are fetched.
 - `fetchProducts()` filters by both `channelIds` and `currencyIds` (from `entityData`) so the product selector only returns products with prices in the quotation's currency. Uses `productApi.query()` with a `SelectorSelectionQuery` selection object.
 
+**Currency default in create mode:**
+
+- When a company is selected, the currency auto-defaults to the channel's **default market** currency (via `channel.defaultMarket` → market lookup → `market.currency._id`), falling back to `availableCurrencies[0]` if no default market is found. This uses `getDefaultCurrencyForCompany()` in the company-selection watcher.
+
 **Snapshot convention (entity sub-objects in responses):**
 
 - `QuotationOwner`, `QuotationCustomer`, and `QuotationCompany` are snapshots — point-in-time captures stored with the quotation.
@@ -300,7 +304,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - `StatusTransitionRequest` type: `{ authorId, authorName, message?: { type: QuotationMessageType, message } }`. Author info comes from `useUserStore`.
 - `DialogConfirmSend` handles the initial draft→pending transition with an optional `toCustomer` message. Accepts `blockReasons` prop (string array from `sendBlockReasons` computed) — when non-empty, shows a `Feedback` warning with the list and disables the Send button. The send button in the actions bar is always clickable (no disabled/tooltip gating). `DialogStatusTransition` is reusable for all other transitions (accept, reject, confirm, cancel, expire, finalize).
 - "Copy as new draft" calls `orderApi.quotation.copy(id)` (`POST /quotation/{id}/copy`) → shows success toast → navigates to the new draft.
-- Delete is not available in sent mode at all. In draft mode, delete is always accessible from the `...` dropdown.
+- **Deletable statuses**: Delete is available for `draft`, `rejected`, `expired`, and `canceled` quotations. In draft mode, delete is in the `...` dropdown. In sent mode, `canDeleteInSentMode` (computed from `currentStatus`) gates a delete option in the sent-mode dropdown. Statuses like `pending`, `accepted`, `confirmed`, and `finalized` do not allow deletion.
 - The sidebar `StatusBadge` is reactive: `useEntityEditSummary` accepts `status` as a `Ref` and `unref`s it in the computed.
 
 ### Companies

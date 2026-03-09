@@ -94,6 +94,12 @@ const entityBase: QuotationCreate = {
 // =====================================================================================
 // Sent mode — set from API response in parseEntityData
 const sentMode = ref(false);
+const currentStatus = ref<QuotationStatus>('draft');
+const canDeleteInSentMode = computed(() =>
+  (['rejected', 'expired', 'canceled'] as QuotationStatus[]).includes(
+    currentStatus.value,
+  ),
+);
 const communications = ref<QuotationMessage[]>([]);
 
 // Discount & shipping (standalone refs, not form fields)
@@ -182,6 +188,7 @@ const quotationProductRows = computed<QuotationProductRow[]>(() => {
       product: getItemName(item),
       skuId: item.skuId,
       quantity: item.quantity,
+      image: item.primaryImage || '',
       price: {
         price: item.ordPrice ? String(item.ordPrice) : '',
         currency,
@@ -206,7 +213,6 @@ const quotationProductRows = computed<QuotationProductRow[]>(() => {
         price: String(item.rowTotal),
         currency,
       },
-      image: item.primaryImage || '',
       articleNumber: item.articleNumber || '',
     };
   });
@@ -473,6 +479,22 @@ const availableCurrencies = computed(() => {
   );
 });
 
+// Get the default currency for a company based on its first channel's default market
+const getDefaultCurrencyForCompany = (
+  company: CustomerCompany | undefined,
+): string | undefined => {
+  if (!company?.channels?.length) return undefined;
+  for (const channelId of company.channels) {
+    const channel = currentChannels.value.find((ch) => ch._id === channelId);
+    if (!channel?.markets?.length) continue;
+    const defaultMarket = channel.markets.find(
+      (m) => m._id === String(channel.defaultMarket),
+    );
+    if (defaultMarket?.currency?._id) return defaultMarket.currency._id;
+  }
+  return undefined;
+};
+
 // Resolve channelId + marketId from selected company and currency
 const resolveChannelMarket = (currency: string | undefined) => {
   if (!selectedCompany.value?.channels || !currency) return null;
@@ -517,6 +539,7 @@ const {
   deleteEntity,
   parseAndSaveData,
   setOriginalSavedData,
+  cancelPendingFormSync,
 } = useEntityEdit<
   QuotationBase,
   Quotation,
@@ -529,16 +552,50 @@ const {
   initialEntityData: entityBase,
   initialUpdateData: {} as QuotationUpdate,
   stepValidationMap,
+  excludeSaveFields: [
+    'billingAddress',
+    'shippingAddress',
+    'company',
+    'owner',
+    'customer',
+    'communication',
+    'changelog',
+    'total',
+    'createdAt',
+    'modifiedAt',
+    'orderId',
+    'quotationNumber',
+    'status',
+    'currency',
+    'channelId',
+    'marketId',
+  ],
   reshapeEntityData: (entityData) => ({
     ...entityData,
-    items: undefined,
-    validPaymentMethods: entityData.validPaymentMethods?.map((pm) => ({
-      paymentId: String(pm.paymentId),
+    // Normalize update-relevant fields to match onFormValuesChange shape
+    ownerId: entityData.owner?._id || undefined,
+    customerId: entityData.customer?._id || undefined,
+    companyId: entityData.company?._id || undefined,
+    billingAddressId: entityData.billingAddress?._id || undefined,
+    shippingAddressId: entityData.shippingAddress?._id || undefined,
+    items: (entityData.items || []).map((item) => ({
+      skuId: item.skuId,
+      quantity: item.quantity,
+      ...(item.unitPrice !== undefined && item.unitPrice !== item.listPrice
+        ? { unitPrice: item.unitPrice }
+        : {}),
     })),
-    validShippingMethods: entityData.validShippingMethods?.map((sm) => ({
-      shippingId: String(sm.shippingId),
-      shippingFee: sm.shippingFee,
-    })),
+    discount: entityData.discount?.value ? entityData.discount : undefined,
+    settings: entityData.settings ?? { requireConfirmation: false },
+    validPaymentMethods:
+      entityData.validPaymentMethods?.map((pm) => ({
+        paymentId: String(pm.paymentId),
+      })) ?? [],
+    validShippingMethods:
+      entityData.validShippingMethods?.map((sm) => ({
+        shippingId: String(sm.shippingId),
+        shippingFee: sm.shippingFee,
+      })) ?? [],
   }),
   getInitialFormValues: () => ({
     details: {
@@ -560,6 +617,7 @@ const {
     previewTotal.value = null;
 
     // Sent mode: any non-draft status
+    currentStatus.value = quotation.status;
     sentMode.value = quotation.status !== 'draft';
     communications.value = quotation.communication || [];
 
@@ -636,6 +694,7 @@ const {
     validTo: formData.details.expirationDate || undefined,
     ownerId: formData.details.ownerId || undefined,
     customerId: formData.details.buyerId || undefined,
+    companyId: formData.details.accountId || undefined,
     billingAddressId: selectedBillingAddressId.value || undefined,
     shippingAddressId: selectedShippingAddressId.value || undefined,
     terms: formData.details.paymentTerms || undefined,
@@ -668,11 +727,12 @@ const {
       // which would overwrite entityDataUpdate and cause false unsaved changes.
       if (sentMode.value || !isInitialLoadComplete.value) return;
       entityDataUpdate.value = {
-        ...entityData.value,
+        ...entityDataUpdate.value,
         name: values.details.name,
         validTo: values.details.expirationDate || undefined,
         ownerId: values.details.ownerId || undefined,
         customerId: values.details.buyerId || undefined,
+        companyId: values.details.accountId || undefined,
         billingAddressId: selectedBillingAddressId.value || undefined,
         shippingAddressId: selectedShippingAddressId.value || undefined,
         terms: values.details.paymentTerms || undefined,
@@ -683,7 +743,7 @@ const {
             ? Number(shippingFeeInput.value)
             : undefined,
         settings: {
-          requireConfirmation: values.details.requireConfirmation,
+          requireConfirmation: values.details.requireConfirmation ?? false,
         },
       };
     }
@@ -759,11 +819,12 @@ watch(
       form.setFieldValue('details.ownerId', '', false);
       form.setFieldValue('details.buyerId', '', false);
 
-      // Set currency to first available from company's channels
+      // Set currency to channel's default market currency, or first available
       if (availableCurrencies.value.length > 0) {
+        const defaultCurrency = getDefaultCurrencyForCompany(company);
         form.setFieldValue(
           'details.currency',
-          availableCurrencies.value[0]?._id,
+          defaultCurrency || availableCurrencies.value[0]?._id,
         );
       }
     } else {
@@ -988,7 +1049,6 @@ if (!createMode.value) {
     }
 
     await parseAndSaveData(quotation, false);
-    fetchingData.value = false;
 
     // Fetch products for SKU selector (must await so skuSelection is
     // populated before we take the unsaved-changes baseline snapshot)
@@ -998,6 +1058,11 @@ if (!createMode.value) {
     if (quotationItems.value.length > 0) {
       await callPreview();
     }
+
+    // Cancel any pending debounced onFormValuesChange that was queued by
+    // form.setValues() in parseEntityData — it would mutate entityDataUpdate
+    // after the snapshot and cause false unsaved changes.
+    cancelPendingFormSync();
 
     // Set the saved data snapshot after all async data has settled,
     // so the unsaved changes baseline matches the fully populated form
@@ -1009,6 +1074,7 @@ if (!createMode.value) {
     // the current content — prevents sending a quotation with stale data.
     if (syncCompanySnapshots()) {
       await updateEntity(undefined, undefined, false, true);
+      cancelPendingFormSync();
       await nextTick();
       setOriginalSavedData();
     }
@@ -1017,6 +1083,7 @@ if (!createMode.value) {
     // Prevents debounced onFormValuesChange and reactive watchers from mutating
     // entityDataUpdate after the baseline snapshot, which caused false unsaved changes.
     isInitialLoadComplete.value = true;
+    fetchingData.value = false;
   });
 
   // Re-parse entity data when refreshed (e.g., after a status transition).
@@ -1025,6 +1092,7 @@ if (!createMode.value) {
   watch(data, async (newData) => {
     if (!newData) return;
     await parseAndSaveData(newData, false);
+    cancelPendingFormSync();
     await nextTick();
     setOriginalSavedData();
   });
@@ -1044,6 +1112,7 @@ if (!createMode.value) {
 const handleSave = async () => {
   const result = await updateEntity(undefined, undefined, false);
   if (result) {
+    cancelPendingFormSync();
     await nextTick();
     setOriginalSavedData();
   }
@@ -1588,7 +1657,7 @@ definePageMeta({
             <ButtonIcon
               icon="save"
               :loading="loading"
-              :disabled="!hasUnsavedChanges || loading"
+              :disabled="!hasUnsavedChanges || loading || fetchingData"
               @click="handleSave"
               >{{ $t('save_entity', { entityName: 'draft' }) }}</ButtonIcon
             >
@@ -1703,6 +1772,13 @@ definePageMeta({
                     <LucideCopy class="mr-2 size-4" />
                     <span>{{ $t('orders.copy_as_new_draft') }}</span>
                   </DropdownMenuItem>
+                  <template v-if="canDeleteInSentMode">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem @click="openDeleteDialog">
+                      <LucideTrash class="mr-2 size-4" />
+                      <span>{{ $t('delete_entity', { entityName }) }}</span>
+                    </DropdownMenuItem>
+                  </template>
                 </DropdownMenuContent>
               </DropdownMenu>
               <template v-else>
@@ -1720,6 +1796,14 @@ definePageMeta({
                   <LucideCopy class="mr-2 size-4" />
                   {{ $t('orders.copy_as_new_draft') }}
                 </Button>
+                <Button
+                  v-if="canDeleteInSentMode"
+                  variant="secondary"
+                  @click="openDeleteDialog"
+                >
+                  <LucideTrash class="mr-2 size-4" />
+                  {{ $t('delete_entity', { entityName }) }}
+                </Button>
               </template>
             </ButtonGroup>
           </template>
@@ -1728,11 +1812,16 @@ definePageMeta({
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
         </template>
         <template v-if="!createMode && !sentMode" #changes>
-          <ContentEditHasChanges :changes="hasUnsavedChanges" />
+          <ContentEditHasChanges
+            :changes="hasUnsavedChanges && !fetchingData"
+          />
         </template>
       </ContentHeader>
     </template>
-    <form @submit.prevent>
+    <form
+      :class="{ 'pointer-events-none opacity-60': fetchingData }"
+      @submit.prevent
+    >
       <ContentEditMain
         v-model:current-tab="currentTab"
         v-model:show-sidebar="showSidebar"
