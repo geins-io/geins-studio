@@ -364,7 +364,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
                 articleNumber: String(original.articleNumber ?? ''),
                 imageUrl: String(
                   original.image ??
-                    original.imageUrl ??
+                    original.thumbnail ??
                     original.primaryImage ??
                     '',
                 ),
@@ -384,7 +384,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               h('img', {
                 src: value,
                 alt: columnTitle,
-                class: 'size-7 mx-auto max-w-10 p-0.5 rounded-lg',
+                class: 'size-7 mx-auto max-w-10 p-0.5 rounded-md object-cover',
                 onerror: handleImageError,
               }),
             );

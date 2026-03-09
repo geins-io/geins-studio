@@ -182,6 +182,7 @@ const quotationProductRows = computed<QuotationProductRow[]>(() => {
       product: getItemName(item),
       skuId: item.skuId,
       quantity: item.quantity,
+      image: item.primaryImage || '',
       price: {
         price: item.ordPrice ? String(item.ordPrice) : '',
         currency,
@@ -1772,7 +1773,9 @@ definePageMeta({
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
         </template>
         <template v-if="!createMode && !sentMode" #changes>
-          <ContentEditHasChanges :changes="hasUnsavedChanges && !fetchingData" />
+          <ContentEditHasChanges
+            :changes="hasUnsavedChanges && !fetchingData"
+          />
         </template>
       </ContentHeader>
     </template>
