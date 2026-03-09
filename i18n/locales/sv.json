@@ -424,6 +424,7 @@
     "base_price": "Pris",
     "price_list_price": "Prislistepris",
     "quotation_price": "Offertpris",
+    "row_total": "Radsumma",
     "no_quotation_price": "Inget offertpris",
     "custom_price": "Anpassat pris",
     "no_custom_price": "Inget anpassat pris",

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { QuotationMessageType } from '#shared/types';
 
-type TransitionIcon = 'send' | 'check' | 'x' | 'ban';
+type TransitionIcon = 'send' | 'check' | 'x' | 'ban' | 'shopping-cart';
 
 const props = withDefaults(
   defineProps<{
@@ -108,6 +108,7 @@ watch(open, (isOpen) => {
           <LucideCheck v-if="props.icon === 'check'" class="mr-2 size-4" />
           <LucideX v-if="props.icon === 'x'" class="mr-2 size-4" />
           <LucideBan v-if="props.icon === 'ban'" class="mr-2 size-4" />
+          <LucideShoppingCart v-if="props.icon === 'shopping-cart'" class="mr-2 size-4" />
           {{ props.action }}
         </Button>
       </AlertDialogFooter>
