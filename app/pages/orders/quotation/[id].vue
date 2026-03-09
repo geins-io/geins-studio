@@ -213,7 +213,6 @@ const quotationProductRows = computed<QuotationProductRow[]>(() => {
         price: String(item.rowTotal),
         currency,
       },
-      image: item.primaryImage || '',
       articleNumber: item.articleNumber || '',
     };
   });
