@@ -333,6 +333,7 @@ export interface QuotationProductRow {
   price: Price;
   priceListPrice: Price;
   quotationPrice: Price;
+  rowTotal: Price;
   // Internal fields for rendering (not displayed as columns):
   image: string;
   articleNumber: string;
@@ -359,6 +360,8 @@ export interface QuotationItemBase {
   listPriceIncVat: number;
   unitPrice?: number;
   unitPriceIncVat?: number;
+  rowTotal: number;
+  rowTotalIncVat: number;
 }
 
 /**

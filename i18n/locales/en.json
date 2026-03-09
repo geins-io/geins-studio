@@ -424,6 +424,7 @@
     "base_price": "Price",
     "price_list_price": "Price list price",
     "quotation_price": "Quotation price",
+    "row_total": "Row total",
     "no_quotation_price": "No quotation price",
     "custom_price": "Custom price",
     "no_custom_price": "No custom price",

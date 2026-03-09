@@ -35,6 +35,7 @@ export const enum DataItemDisplayType {
   String = 'string',
   Array = 'array',
   Copy = 'copy',
+  Link = 'link',
 }
 export interface EntityBase {
   _id: string;
@@ -72,6 +73,8 @@ export interface DataItem {
   displayValue?: string;
   displayType?: DataItemDisplayType;
   entityName?: string;
+  href?: string;
+  target?: string;
 }
 export interface PlainDataItem {
   label: string;
