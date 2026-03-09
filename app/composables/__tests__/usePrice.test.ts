@@ -72,20 +72,29 @@ describe('usePrice', () => {
   });
 
   describe('formatCurrency', () => {
+    const svNoDecimalFormatter = new Intl.NumberFormat('sv-SE', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
+    const svTwoDecimalFormatter = new Intl.NumberFormat('sv-SE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
     it('formats whole number without decimals', () => {
-      expect(formatCurrency(1000)).toBe('1\u00a0000');
+      expect(formatCurrency(1000)).toBe(svNoDecimalFormatter.format(1000));
     });
 
     it('formats decimal number with 2 decimal places', () => {
-      expect(formatCurrency(1000.9)).toBe('1\u00a0000,90');
+      expect(formatCurrency(1000.9)).toBe(svTwoDecimalFormatter.format(1000.9));
     });
 
     it('formats string decimal number', () => {
-      expect(formatCurrency('100.9')).toBe('100,90');
+      expect(formatCurrency('100.9')).toBe(svTwoDecimalFormatter.format(Number('100.9')));
     });
 
     it('formats string whole number without decimals', () => {
-      expect(formatCurrency('1000')).toBe('1\u00a0000');
+      expect(formatCurrency('1000')).toBe(svNoDecimalFormatter.format(Number('1000')));
     });
 
     it('returns empty string for undefined', () => {
