@@ -51,6 +51,7 @@ const handleBlur = () => {
       class="w-full min-w-[105px]"
       :placeholder="placeholder"
       @blur="handleBlur"
+      @keydown.enter.prevent="$event.target?.blur()"
     >
       <template v-if="valueDesc" #valueDescriptor>
         {{ valueDesc }}
