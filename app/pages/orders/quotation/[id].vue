@@ -94,6 +94,12 @@ const entityBase: QuotationCreate = {
 // =====================================================================================
 // Sent mode — set from API response in parseEntityData
 const sentMode = ref(false);
+const currentStatus = ref<QuotationStatus>('draft');
+const canDeleteInSentMode = computed(() =>
+  (['rejected', 'expired', 'canceled'] as QuotationStatus[]).includes(
+    currentStatus.value,
+  ),
+);
 const communications = ref<QuotationMessage[]>([]);
 
 // Discount & shipping (standalone refs, not form fields)
@@ -474,6 +480,22 @@ const availableCurrencies = computed(() => {
   );
 });
 
+// Get the default currency for a company based on its first channel's default market
+const getDefaultCurrencyForCompany = (
+  company: CustomerCompany | undefined,
+): string | undefined => {
+  if (!company?.channels?.length) return undefined;
+  for (const channelId of company.channels) {
+    const channel = currentChannels.value.find((ch) => ch._id === channelId);
+    if (!channel?.markets?.length) continue;
+    const defaultMarket = channel.markets.find(
+      (m) => m._id === String(channel.defaultMarket),
+    );
+    if (defaultMarket?.currency?._id) return defaultMarket.currency._id;
+  }
+  return undefined;
+};
+
 // Resolve channelId + marketId from selected company and currency
 const resolveChannelMarket = (currency: string | undefined) => {
   if (!selectedCompany.value?.channels || !currency) return null;
@@ -595,6 +617,7 @@ const {
     previewTotal.value = null;
 
     // Sent mode: any non-draft status
+    currentStatus.value = quotation.status;
     sentMode.value = quotation.status !== 'draft';
     communications.value = quotation.communication || [];
 
@@ -796,11 +819,12 @@ watch(
       form.setFieldValue('details.ownerId', '', false);
       form.setFieldValue('details.buyerId', '', false);
 
-      // Set currency to first available from company's channels
+      // Set currency to channel's default market currency, or first available
       if (availableCurrencies.value.length > 0) {
+        const defaultCurrency = getDefaultCurrencyForCompany(company);
         form.setFieldValue(
           'details.currency',
-          availableCurrencies.value[0]?._id,
+          defaultCurrency || availableCurrencies.value[0]?._id,
         );
       }
     } else {
@@ -1748,6 +1772,13 @@ definePageMeta({
                     <LucideCopy class="mr-2 size-4" />
                     <span>{{ $t('orders.copy_as_new_draft') }}</span>
                   </DropdownMenuItem>
+                  <template v-if="canDeleteInSentMode">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem @click="openDeleteDialog">
+                      <LucideTrash class="mr-2 size-4" />
+                      <span>{{ $t('delete_entity', { entityName }) }}</span>
+                    </DropdownMenuItem>
+                  </template>
                 </DropdownMenuContent>
               </DropdownMenu>
               <template v-else>
@@ -1764,6 +1795,14 @@ definePageMeta({
                 >
                   <LucideCopy class="mr-2 size-4" />
                   {{ $t('orders.copy_as_new_draft') }}
+                </Button>
+                <Button
+                  v-if="canDeleteInSentMode"
+                  variant="secondary"
+                  @click="openDeleteDialog"
+                >
+                  <LucideTrash class="mr-2 size-4" />
+                  {{ $t('delete_entity', { entityName }) }}
                 </Button>
               </template>
             </ButtonGroup>

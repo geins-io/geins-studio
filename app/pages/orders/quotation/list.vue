@@ -144,7 +144,11 @@ onMounted(() => {
       },
       onDelete: async (item: EntityList) => await openDeleteDialog(item._id),
       disabledActions: (item: EntityList) =>
-        item.status !== 'draft' ? (['delete'] as TableRowAction[]) : [],
+        !['draft', 'rejected', 'expired', 'canceled'].includes(
+          item.status as string,
+        )
+          ? (['delete'] as TableRowAction[])
+          : [],
     },
     'actions',
     ['edit', 'copy', 'delete'],
