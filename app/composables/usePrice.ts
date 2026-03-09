@@ -7,6 +7,15 @@ interface UsePriceReturnType {
   formatCurrency: (value: string | number | undefined | null) => string;
 }
 
+const wholeFormatter = new Intl.NumberFormat('sv-SE', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+const decimalFormatter = new Intl.NumberFormat('sv-SE', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 /**
  * Composable for price conversion and formatting utilities.
  *
@@ -18,14 +27,6 @@ interface UsePriceReturnType {
  * @property {function} formatCurrency - Formats a numeric value with locale-aware thousands separators and 2 decimal places
  */
 export const usePrice = (): UsePriceReturnType => {
-  const wholeFormatter = new Intl.NumberFormat('sv-SE', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-  const decimalFormatter = new Intl.NumberFormat('sv-SE', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 
   const formatCurrency = (
     value: string | number | undefined | null,
