@@ -1632,7 +1632,7 @@ definePageMeta({
             <ButtonIcon
               icon="save"
               :loading="loading"
-              :disabled="!hasUnsavedChanges || loading"
+              :disabled="!hasUnsavedChanges || loading || fetchingData"
               @click="handleSave"
               >{{ $t('save_entity', { entityName: 'draft' }) }}</ButtonIcon
             >
@@ -1772,7 +1772,7 @@ definePageMeta({
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
         </template>
         <template v-if="!createMode && !sentMode" #changes>
-          <ContentEditHasChanges :changes="hasUnsavedChanges" />
+          <ContentEditHasChanges :changes="hasUnsavedChanges && !fetchingData" />
         </template>
       </ContentHeader>
     </template>
