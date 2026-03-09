@@ -576,6 +576,7 @@ const {
     // Normalize update-relevant fields to match onFormValuesChange shape
     ownerId: entityData.owner?._id || undefined,
     customerId: entityData.customer?._id || undefined,
+    companyId: entityData.company?._id || undefined,
     billingAddressId: entityData.billingAddress?._id || undefined,
     shippingAddressId: entityData.shippingAddress?._id || undefined,
     items: (entityData.items || []).map((item) => ({
