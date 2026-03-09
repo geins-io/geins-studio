@@ -1,4 +1,3 @@
-import { useDebounceFn } from '@vueuse/core';
 import { useForm, type GenericObject } from 'vee-validate';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { toTypedSchema } from '@vee-validate/zod';
@@ -24,7 +23,7 @@ interface EntityEditOptions<
   validationSchema: ReturnType<typeof toTypedSchema>;
   initialEntityData: TCreate;
   initialUpdateData: TUpdate;
-  excludeSaveFields?: StringKeyOf<TBase>[];
+  excludeSaveFields?: string[];
   externalChanges?: Ref<boolean>;
   parseEntityData?: (entity: TResponse) => Promise<void> | void;
   prepareCreateData?: (formData: GenericObject) => TCreate;
@@ -80,6 +79,7 @@ interface _UseEntityEditReturnType<
   hasUnsavedChanges: ComputedRef<boolean>;
   unsavedChangesDialogOpen: Ref<boolean>;
   setOriginalSavedData: () => void;
+  cancelPendingFormSync: () => void;
   confirmLeave: () => Promise<boolean>;
 
   // Methods
@@ -204,24 +204,37 @@ export function useEntityEdit<
   const formValid = computed(() => form?.meta.value.valid ?? true);
   const formTouched = computed(() => form?.meta.value.touched ?? false);
 
-  // Form values watcher
+  // Form values watcher — track pending timeout so callers can cancel it
+  let formSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const cancelPendingFormSync = () => {
+    if (formSyncTimer !== null) {
+      clearTimeout(formSyncTimer);
+      formSyncTimer = null;
+    }
+  };
+
   if (options.onFormValuesChange) {
     watch(
       form.values,
-      useDebounceFn(async (values) => {
-        if (validateOnChange.value) {
-          await form.validate();
-        }
+      (values) => {
+        cancelPendingFormSync();
+        formSyncTimer = setTimeout(async () => {
+          formSyncTimer = null;
+          if (validateOnChange.value) {
+            await form.validate();
+          }
 
-        if (options.onFormValuesChange) {
-          await options.onFormValuesChange(
-            values,
-            entityDataCreate as Ref<TCreate>,
-            entityDataUpdate as Ref<TUpdate>,
-            createMode,
-          );
-        }
-      }, options.debounceMs || 500),
+          if (options.onFormValuesChange) {
+            await options.onFormValuesChange(
+              values,
+              entityDataCreate as Ref<TCreate>,
+              entityDataUpdate as Ref<TUpdate>,
+              createMode,
+            );
+          }
+        }, options.debounceMs || 500);
+      },
       { deep: true },
     );
   }
@@ -409,6 +422,7 @@ export function useEntityEdit<
     hasUnsavedChanges,
     unsavedChangesDialogOpen,
     setOriginalSavedData,
+    cancelPendingFormSync,
     confirmLeave,
 
     // Methods

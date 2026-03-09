@@ -11,8 +11,8 @@ const props = withDefaults(
   },
 );
 
-const { handleImageError } = useGeinsImage();
-const imgSrc = computed(() => props.imageUrl || '/placeholder.svg');
+const { handleImageError, getProductThumbnail } = useGeinsImage();
+const imgSrc = computed(() => getProductThumbnail(props.imageUrl));
 </script>
 <template>
   <div class="flex items-center gap-3 py-1">
