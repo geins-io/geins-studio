@@ -1,6 +1,7 @@
 export * from './Account';
 export * from './Api';
 export * from './Auth';
+export * from './Changelog';
 export * from './Entity';
 export * from './Global';
 export * from './Order';

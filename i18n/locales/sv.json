@@ -292,7 +292,6 @@
     "last_name": "Efternamn",
     "phone": "Telefon"
   },
-
   "contact_person": "Kontaktperson",
   "contact_person_description": "Kontaktperson relaterad till adressen",
   "customers": {
@@ -384,5 +383,17 @@
     "default_price": "Standardpris",
     "error_applying_base_rule": "Fel vid tillämpning av grundregel",
     "error_applying_volume_pricing": "Fel vid tillämpning av volymprissättning"
+  },
+  "changelog": {
+    "tab_title": "Ändringslogg",
+    "column_date": "Datum",
+    "column_user": "Användare",
+    "column_action": "Åtgärd",
+    "column_area": "Område",
+    "column_details": "Detaljer",
+    "empty_text": "Inga loggposter",
+    "empty_description": "Inga ändringar har registrerats för denna offert ännu.",
+    "error_title": "Kunde inte ladda ändringsloggen",
+    "error_description": "Ändringsloggen är inte tillgänglig. Offerten är fortfarande fullt tillgänglig."
   }
 }

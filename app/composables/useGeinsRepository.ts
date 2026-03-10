@@ -6,6 +6,7 @@ interface UseGeinsRepositoryReturnType {
   productApi: ReturnType<typeof repo.product>;
   userApi: ReturnType<typeof repo.user>;
   customerApi: ReturnType<typeof repo.customer>;
+  changelogApi: ReturnType<typeof repo.changelog>;
 }
 
 /**
@@ -21,6 +22,7 @@ interface UseGeinsRepositoryReturnType {
  * @property {object} productApi - Product API repository for product operations
  * @property {object} userApi - User API repository for user management
  * @property {object} customerApi - Customer API repository for customer and account operations
+ * @property {object} changelogApi - Changelog API repository for entity change history
  */
 export function useGeinsRepository(): UseGeinsRepositoryReturnType {
   const { $geinsApi } = useNuxtApp();
@@ -31,5 +33,6 @@ export function useGeinsRepository(): UseGeinsRepositoryReturnType {
     productApi: repo.product($geinsApi),
     userApi: repo.user($geinsApi),
     customerApi: repo.customer($geinsApi),
+    changelogApi: repo.changelog($geinsApi),
   };
 }

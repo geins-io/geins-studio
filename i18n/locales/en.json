@@ -292,7 +292,6 @@
     "last_name": "Last name",
     "phone": "Phone"
   },
-
   "contact_person": "Contact person",
   "contact_person_description": "Contact person related to the address",
   "customers": {
@@ -384,5 +383,17 @@
     "default_price": "Default price",
     "error_applying_base_rule": "Error applying base rule",
     "error_applying_volume_pricing": "Error applying volume pricing"
+  },
+  "changelog": {
+    "tab_title": "Changelog",
+    "column_date": "Date",
+    "column_user": "User",
+    "column_action": "Action",
+    "column_area": "Area",
+    "column_details": "Details",
+    "empty_text": "No changelog entries",
+    "empty_description": "No changes have been recorded for this quotation yet.",
+    "error_title": "Could not load changelog",
+    "error_description": "The changelog is unavailable. The quotation is still fully accessible."
   }
 }
