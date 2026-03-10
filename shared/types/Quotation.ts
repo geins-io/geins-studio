@@ -31,11 +31,18 @@ export type QuotationStatus =
 /**
  * Communication message type
  */
-export type QuotationMessageType =
-  | 'quotationNote'
-  | 'internal'
-  | 'toCustomer'
-  | 'fromCustomer';
+export type QuotationMessageType = 'internal' | 'toCustomer' | 'fromCustomer';
+
+export type QuotationActionKnown =
+  | 'send'
+  | 'accept'
+  | 'reject'
+  | 'confirm'
+  | 'finalize'
+  | 'cancel'
+  | 'copy';
+
+export type QuotationAction = QuotationActionKnown | (string & {});
 
 // =============================================================================
 // Response Sub-Types (returned by the API)

@@ -54,15 +54,13 @@ const handleSend = () => {
 </script>
 
 <template>
-  <div class="space-y-2 border-t pt-4">
+  <div class="space-y-3 border-t pt-4">
     <div
       v-if="replyTo"
       class="text-muted-foreground flex items-center gap-2 text-xs"
     >
       <LucideCornerDownRight class="size-3" />
-      <span>{{
-        t('orders.replying_to', { author: replyTo.authorName })
-      }}</span>
+      <span>{{ t('orders.replying_to', { author: replyTo.authorName }) }}</span>
       <button class="hover:text-foreground" @click="emit('cancelReply')">
         <LucideX class="size-3" />
       </button>
@@ -72,9 +70,15 @@ const handleSend = () => {
       :placeholder="placeholder"
       rows="4"
       class="p-2"
+      @keydown.enter.exact.prevent="handleSend"
     />
     <div class="flex justify-end">
-      <Button size="sm" :loading="loading" :disabled="!canSend" @click="handleSend">
+      <Button
+        size="sm"
+        :loading="loading"
+        :disabled="!canSend"
+        @click="handleSend"
+      >
         <LucideSend class="mr-2 size-4" />
         {{ t('send') }}
       </Button>
