@@ -462,8 +462,8 @@
     "copy_as_new_draft": "Copy as new draft",
     "quotation_transition_success": "Quotation status updated",
     "quotation_transition_error": "Failed to update quotation status",
-    "external_messages": "External",
-    "internal_messages": "Internal",
+    "external_messages": "With customer",
+    "internal_messages": "Internal notes",
     "no_messages": "No messages yet",
     "no_external_messages": "No messages yet",
     "no_external_messages_description": "Start the conversation by sending the first message to the customer.",
@@ -503,6 +503,14 @@
     "workflow_step_pending_default": "can place the order",
     "workflow_step_finalized": "Order is placed and quotation is finalized",
     "workflow_action_accept": "Accept quotation",
-    "workflow_action_confirm": "Confirm quotation"
+    "workflow_action_confirm": "Confirm quotation",
+    "actions": {
+      "send": "sent the quotation",
+      "accept": "accepted the quotation",
+      "reject": "rejected the quotation",
+      "confirm": "confirmed the quotation",
+      "cancel": "canceled the quotation",
+      "finalize": "placed the order"
+    }
   }
 }

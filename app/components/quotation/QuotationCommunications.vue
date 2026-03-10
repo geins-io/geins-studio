@@ -74,9 +74,23 @@ const handleInternalSend = (message: string) => {
     <TabsList>
       <TabsTrigger value="external">
         {{ $t('orders.external_messages') }}
+        <Badge
+          v-if="externalMessages.length"
+          variant="secondary"
+          class="ml-0.5 size-4 text-[10px]"
+        >
+          {{ externalMessages.length }}
+        </Badge>
       </TabsTrigger>
       <TabsTrigger value="internal">
         {{ $t('orders.internal_messages') }}
+        <Badge
+          v-if="internalMessages.length"
+          variant="secondary"
+          class="ml-0.5 size-4 text-[10px]"
+        >
+          {{ internalMessages.length }}
+        </Badge>
       </TabsTrigger>
     </TabsList>
     <TabsContent value="external" class="mt-4 border-t pt-4">
