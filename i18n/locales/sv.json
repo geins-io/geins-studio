@@ -83,6 +83,8 @@
   "empty_filtered_description": "Försök justera din sökning eller filter för att hitta det du letar efter.",
   "empty_description_not_added": "Inga @.lower:{entityName} har lagts till ännu.",
   "error_updating_preview": "Fel vid uppdatering av förhandsgranskning av prislista",
+  "error_empty_description": "Något gick fel vid hämtning av data. Vänligen försök igen.",
+  "retry": "Försök igen",
   "error_try_again": "Försök igen.",
   "price_updated_for": "Pris uppdaterat för {name} ({id})",
   "product_selection_updated": "Produktval uppdaterat",

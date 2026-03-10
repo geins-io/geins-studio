@@ -8,7 +8,6 @@ import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 type Entity = CustomerCompany;
 type EntityList = CustomerCompanyList;
 
-const scope = 'pages/customers/company/list.vue';
 const { t } = useI18n();
 const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
 
@@ -28,11 +27,7 @@ const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
 
-const { handleFetchResult } = usePageError({
-  entityName,
-  entityList: true,
-  scope,
-});
+const fetchError = ref(false);
 
 // Add the mapping function
 const mapToListData = (companies: Entity[]): EntityList[] => {
@@ -93,9 +88,13 @@ onMounted(() => {
   watch(
     data,
     (newData) => {
+      if (error.value) {
+        fetchError.value = true;
+        return;
+      }
+      fetchError.value = false;
       if (newData) {
-        const validData = handleFetchResult(error.value, newData);
-        dataList.value = mapToListData(validData);
+        dataList.value = mapToListData(newData);
       }
     },
     { immediate: true },
@@ -189,6 +188,8 @@ const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
       :data="dataList"
       :init-visibility-state="visibilityState"
       :searchable-fields="searchableFields"
+      :error="fetchError"
+      :on-retry="refresh"
     >
       <template #empty-actions>
         <ButtonIcon
@@ -200,11 +201,5 @@ const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
         </ButtonIcon>
       </template>
     </TableView>
-    <template #error="{ error: errorCatched }">
-      <h2 class="text-xl font-bold">
-        {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
-      </h2>
-      <p>{{ errorCatched }}</p>
-    </template>
   </NuxtErrorBoundary>
 </template>
