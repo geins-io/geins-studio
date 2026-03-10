@@ -117,7 +117,7 @@ const isInitialLoadComplete = ref(false);
 // Tabs & Steps
 const tabs = computed(() =>
   sentMode.value
-    ? [t('general'), t('communication', 2)]
+    ? [t('general'), t('communication')]
     : [t('general'), t('product', 2)],
 );
 
@@ -1694,7 +1694,9 @@ definePageMeta({
                     label: $t('send_entity', { entityName }),
                     title: $t('send_entity', { entityName }),
                     description: form.values.details.requireConfirmation
-                      ? $t('orders.send_quotation_description_require_confirmation')
+                      ? $t(
+                          'orders.send_quotation_description_require_confirmation',
+                        )
                       : $t('orders.send_quotation_description'),
                     icon: 'send',
                     messageType: 'toCustomer',
@@ -2473,16 +2475,13 @@ definePageMeta({
           </ContentEditMainContent>
         </KeepAlive>
 
-        <!-- TAB 1: COMMUNICATIONS (sent mode) -->
+        <!-- TAB 1: COMMUNICATION (sent mode) -->
         <KeepAlive>
           <ContentEditMainContent
             v-if="currentTab === 1 && sentMode"
             :key="`tab-communications`"
           >
-            <ContentEditCard
-              :create-mode="false"
-              :title="$t('communication', 2)"
-            >
+            <ContentEditCard :create-mode="false" :title="$t('communication')">
               <QuotationCommunications
                 :communications="communications"
                 :current-user-email="userStore.userEmail"

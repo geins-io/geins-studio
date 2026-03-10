@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { QuotationMessage, StatusBadgeStatus } from '#shared/types';
+import type {
+  QuotationMessage,
+  StatusBadgeStatus,
+  QuotationAction,
+} from '#shared/types';
 
 const props = withDefaults(
   defineProps<{
@@ -81,19 +85,27 @@ const getTag = (msg: QuotationMessage, key: string): string | undefined =>
 
 const getStatusTransition = (
   msg: QuotationMessage,
-): { from: StatusBadgeStatus; to: StatusBadgeStatus } | null => {
+): {
+  from: StatusBadgeStatus;
+  to: StatusBadgeStatus;
+  action: QuotationAction;
+} | null => {
   const from = getTag(msg, 'statusFrom');
   const to = getTag(msg, 'statusTo');
-  if (!from || !to) return null;
-  return { from, to };
+  const action = getTag(msg, 'action');
+  if (!from || !to || !action) return null;
+  return { from, to, action };
 };
 
 const statusTransitionsMap = computed<
-  Map<string, { from: StatusBadgeStatus; to: StatusBadgeStatus }>
+  Map<
+    string,
+    { from: StatusBadgeStatus; to: StatusBadgeStatus; action: QuotationAction }
+  >
 >(() => {
   const map = new Map<
     string,
-    { from: StatusBadgeStatus; to: StatusBadgeStatus }
+    { from: StatusBadgeStatus; to: StatusBadgeStatus; action: QuotationAction }
   >();
   for (const msg of props.messages) {
     const transition = getStatusTransition(msg);
@@ -164,10 +176,22 @@ const statusTransitionsMap = computed<
               </AvatarFallback>
             </Avatar>
             <div class="grid text-left text-sm leading-tight">
-              <span class="truncate font-medium">{{ msg.authorName }}</span>
-              <span class="text-muted-foreground truncate text-xs">{{
-                msg.authorId
-              }}</span>
+              <span class="flex items-baseline gap-1.5 truncate font-medium">
+                {{ msg.authorName }}
+                <span
+                  v-if="statusTransitionsMap.has(msg._id)"
+                  class="text-muted-foreground/70 text-xs italic"
+                >
+                  {{
+                    t(
+                      `orders.actions.${statusTransitionsMap.get(msg._id)!.action}`,
+                    )
+                  }}
+                </span>
+              </span>
+              <span class="text-muted-foreground truncate text-xs">
+                {{ msg.authorId }}
+              </span>
             </div>
           </div>
           <div class="flex items-center gap-2">
