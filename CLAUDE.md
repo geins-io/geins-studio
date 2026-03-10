@@ -62,7 +62,7 @@ Admin interface for Geins Commerce Backend. **Client-side SPA** (`ssr: false`) t
 - **Styling**: Tailwind CSS 4 with CSS custom properties theming
 - **UI Components**: shadcn-vue (`app/components/ui/`) — install via `npx shadcn-vue@latest add`, never create manually
 - **Icons**: Lucide (auto-imported via `nuxt-lucide-icons`)
-- **i18n**: `@nuxtjs/i18n` — always update both `i18n/locales/en.json` and `sv.json`
+- **i18n**: `@nuxtjs/i18n` — always update both `i18n/locales/en.json` and `sv.json`. Global entity action keys (top-level, outside any namespace): `save_entity`, `delete_entity`, `send_entity`, `accept_entity`, `reject_entity`, `confirm_entity`, `cancel_entity` — all use `@.lower:{entityName}` interpolation and serve as both button labels and dialog titles. Quotation-specific description text lives in the `orders` namespace (e.g. `orders.accept_quotation_description`).
 - **State**: Pinia stores in `app/stores/`
 - **Tables**: TanStack Table (`@tanstack/vue-table`)
 
@@ -302,7 +302,10 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - Tabs are a `computed` that switches between `[General, Products]` (draft) and `[General, Communications]` (sent).
 - Status transition actions use a two-step pattern: `POST /quotation/{id}/{action}` (returns void) → `refreshEntityData()` re-fetches → `parseEntityData` updates all UI state including `sentMode`, `communications`, and the sidebar status badge.
 - `StatusTransitionRequest` type: `{ authorId, authorName, message?: { type: QuotationMessageType, message } }`. Author info comes from `useUserStore`.
-- `DialogConfirmSend` handles the initial draft→pending transition with an optional `toCustomer` message. Accepts `blockReasons` prop (string array from `sendBlockReasons` computed) — when non-empty, shows a `Feedback` warning with the list and disables the Send button. The send button in the actions bar is always clickable (no disabled/tooltip gating). `DialogStatusTransition` is reusable for all other transitions (accept, reject, confirm, cancel, expire, finalize).
+- All status transitions (including send) go through `DialogStatusTransition`. Required props: `action` (button label), `title` (dialog heading), `description` (dialog subtext), `loading`. Optional: `defaultMessageType` (sets initial tab selection, defaults to `'internal'`), `variant`, `icon`, `blockReasons`, `showMessage`. The dialog includes a `Tabs` toggle for switching between "Message to customer" and "Internal note". It emits `confirm(message, messageType)` and `cancel`.
+- `StatusAction` interface: `{ action, label, title, description, variant?, icon?, messageType?, blockReasons? }`. All actions in `statusActions` computed use global i18n keys (`accept_entity`, `reject_entity`, `confirm_entity`, `cancel_entity` with `{ entityName }`) for label+title, and quotation-specific `orders.*_quotation_description` keys for description. The send action also uses `orders.send_quotation_description` (or `send_quotation_description_require_confirmation` when `requireConfirmation` is true). The finalize/place-order action uses `orders.place_order` (label+title) and `orders.place_order_description`.
+- `handleStatusTransition(action, message, messageType)` — `messageType` now comes from the dialog emit, not the action config. The confirm action defaults to `messageType: 'toCustomer'` via `defaultMessageType` prop on the dialog.
+- **`expire` status**: Never triggered manually — happens automatically. No UI actions or i18n keys needed for it.
 - "Copy as new draft" calls `orderApi.quotation.copy(id)` (`POST /quotation/{id}/copy`) → shows success toast → navigates to the new draft.
 - **Deletable statuses**: Delete is available for `draft`, `rejected`, `expired`, and `canceled` quotations. In draft mode, delete is in the `...` dropdown. In sent mode, `canDeleteInSentMode` (computed from `currentStatus`) gates a delete option in the sent-mode dropdown. Statuses like `pending`, `accepted`, `confirmed`, and `finalized` do not allow deletion.
 - The sidebar `StatusBadge` is reactive: `useEntityEditSummary` accepts `status` as a `Ref` and `unref`s it in the computed.

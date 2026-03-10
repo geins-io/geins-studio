@@ -1164,6 +1164,8 @@ const sendBlockReasons = computed<string[]>(() => {
 interface StatusAction {
   action: string;
   label: string;
+  title: string;
+  description: string;
   variant?: 'default' | 'destructive';
   icon?: 'send' | 'check' | 'ban' | 'x' | 'shopping-cart';
   messageType?: QuotationMessageType;
@@ -1180,6 +1182,8 @@ const statusActions = computed<StatusActionLayout>(() => {
   const status = entityData.value?.status;
   const strict = entityData.value?.settings?.requireConfirmation ?? false;
 
+  const en = { entityName };
+
   switch (status) {
     case 'pending':
       if (strict) {
@@ -1188,19 +1192,25 @@ const statusActions = computed<StatusActionLayout>(() => {
           groupActions: [
             {
               action: 'accept',
-              label: t('orders.accept_quotation'),
+              label: t('accept_entity', en),
+              title: t('accept_entity', en),
+              description: t('orders.accept_quotation_description'),
               icon: 'check',
             },
             {
               action: 'reject',
-              label: t('orders.reject_quotation'),
+              label: t('reject_entity', en),
+              title: t('reject_entity', en),
+              description: t('orders.reject_quotation_description'),
               icon: 'x',
             },
           ],
           dropdownActions: [
             {
               action: 'cancel',
-              label: t('orders.cancel_quotation'),
+              label: t('cancel_entity', en),
+              title: t('cancel_entity', en),
+              description: t('orders.cancel_quotation_description'),
               icon: 'ban',
             },
           ],
@@ -1211,7 +1221,9 @@ const statusActions = computed<StatusActionLayout>(() => {
         groupActions: [
           {
             action: 'cancel',
-            label: t('orders.cancel_quotation'),
+            label: t('cancel_entity', en),
+            title: t('cancel_entity', en),
+            description: t('orders.cancel_quotation_description'),
             icon: 'ban',
           },
         ],
@@ -1224,7 +1236,9 @@ const statusActions = computed<StatusActionLayout>(() => {
         groupActions: [
           {
             action: 'confirm',
-            label: t('orders.confirm_quotation'),
+            label: t('confirm_entity', en),
+            title: t('confirm_entity', en),
+            description: t('orders.confirm_quotation_description'),
             icon: 'check',
             messageType: 'toCustomer',
           },
@@ -1232,7 +1246,9 @@ const statusActions = computed<StatusActionLayout>(() => {
         dropdownActions: [
           {
             action: 'cancel',
-            label: t('orders.cancel_quotation'),
+            label: t('cancel_entity', en),
+            title: t('cancel_entity', en),
+            description: t('orders.cancel_quotation_description'),
             icon: 'ban',
           },
         ],
@@ -1244,7 +1260,9 @@ const statusActions = computed<StatusActionLayout>(() => {
         groupActions: [
           {
             action: 'cancel',
-            label: t('orders.cancel_quotation'),
+            label: t('cancel_entity', en),
+            title: t('cancel_entity', en),
+            description: t('orders.cancel_quotation_description'),
             icon: 'ban',
           },
         ],
@@ -1635,7 +1653,8 @@ definePageMeta({
     v-if="transitionAction"
     v-model:open="transitionDialogOpen"
     :action="transitionAction.label"
-    :entity-name="entityName"
+    :title="transitionAction.title"
+    :description="transitionAction.description"
     :loading="transitionLoading"
     :variant="transitionAction.variant || 'default'"
     :icon="transitionAction.icon"
@@ -1673,6 +1692,10 @@ definePageMeta({
                   openTransitionDialog({
                     action: 'send',
                     label: $t('send_entity', { entityName }),
+                    title: $t('send_entity', { entityName }),
+                    description: form.values.details.requireConfirmation
+                      ? $t('orders.send_quotation_description_require_confirmation')
+                      : $t('orders.send_quotation_description'),
                     icon: 'send',
                     messageType: 'toCustomer',
                     blockReasons: sendBlockReasons,
@@ -1715,6 +1738,8 @@ definePageMeta({
                 openTransitionDialog({
                   action: 'finalize',
                   label: $t('orders.place_order'),
+                  title: $t('orders.place_order'),
+                  description: $t('orders.place_order_description'),
                   icon: 'shopping-cart',
                 })
               "
