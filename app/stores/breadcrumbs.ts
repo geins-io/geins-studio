@@ -95,7 +95,7 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
         const wasOnChildPage = isOnChildPage(oldPath, navigationConfig.value);
 
         // Clear when leaving any child page — handles both child→list and child→child
-        // (e.g. /quotation/123 → /quotation/new must clear the entity name override)
+        // (e.g. /orders/quotation/123 → /orders/quotation/456 must clear the entity name override)
         if (wasOnChildPage) {
           clearOverrides();
         }
