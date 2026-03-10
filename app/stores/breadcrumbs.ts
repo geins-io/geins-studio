@@ -93,10 +93,10 @@ export const useBreadcrumbsStore = defineStore('breadcrumbs', () => {
       if (oldPath && newPath !== oldPath && titleOverride.value) {
         // Use stored navigation config
         const wasOnChildPage = isOnChildPage(oldPath, navigationConfig.value);
-        const isNowOnChildPage = isOnChildPage(newPath, navigationConfig.value);
 
-        // If we were on a child page (with override) and now we're NOT, clear it
-        if (wasOnChildPage && !isNowOnChildPage) {
+        // Clear when leaving any child page — handles both child→list and child→child
+        // (e.g. /orders/quotation/123 → /orders/quotation/456 must clear the entity name override)
+        if (wasOnChildPage) {
           clearOverrides();
         }
       }
