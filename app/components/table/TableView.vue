@@ -22,7 +22,11 @@ import type {
   Row,
 } from '@tanstack/vue-table';
 import type { Component } from 'vue';
-import { LucideSearchX, LucideCircleSlash } from '#components';
+import {
+  LucideSearchX,
+  LucideCircleSlash,
+  LucideCircleAlert,
+} from '#components';
 
 const props = withDefaults(
   defineProps<{
@@ -44,6 +48,8 @@ const props = withDefaults(
     emptyFilteredDescription?: string;
     emptyIcon?: Component;
     showEmptyActions?: boolean;
+    error?: boolean;
+    onRetry?: () => void;
     initVisibilityState?: VisibilityState;
     enableExpanding?: boolean;
     getSubRows?: (row: TData) => TData[] | undefined;
@@ -274,8 +280,10 @@ const table = useVueTable({
     return props.loading ? getSkeletonColumns<TData>() : props.columns;
   },
   getCoreRowModel: getCoreRowModel(),
-  getPaginationRowModel: props.mode !== TableMode.Minimal ? getPaginationRowModel() : undefined,
-  getSortedRowModel: props.mode !== TableMode.Minimal ? getSortedRowModel() : undefined,
+  getPaginationRowModel:
+    props.mode !== TableMode.Minimal ? getPaginationRowModel() : undefined,
+  getSortedRowModel:
+    props.mode !== TableMode.Minimal ? getSortedRowModel() : undefined,
   getExpandedRowModel: props.enableExpanding
     ? getExpandedRowModel()
     : undefined,
@@ -554,7 +562,27 @@ const hasSearchableColumns = computed(() => {
         <template v-else>
           <TableRow class="hover:bg-transparent">
             <TableCell :colspan="columns.length" class="p-0">
-              <Empty>
+              <!-- Error empty state -->
+              <Empty v-if="error">
+                <EmptyHeader>
+                  <EmptyMedia variant="destructive">
+                    <LucideCircleAlert />
+                  </EmptyMedia>
+                  <EmptyTitle>
+                    {{ $t('error_fetching_entity', { entityName }, 2) }}
+                  </EmptyTitle>
+                  <EmptyDescription>
+                    {{ $t('error_empty_description') }}
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent v-if="onRetry">
+                  <ButtonIcon icon="retry" variant="secondary" @click="onRetry">
+                    {{ $t('retry') }}
+                  </ButtonIcon>
+                </EmptyContent>
+              </Empty>
+              <!-- Normal empty state -->
+              <Empty v-else>
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
                     <component

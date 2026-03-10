@@ -83,6 +83,8 @@
   "empty_filtered_description": "Try adjusting your search or filters to find what you're looking for.",
   "empty_description_not_added": "No @.lower:{entityName} have been added yet.",
   "error_updating_preview": "Error updating price list preview",
+  "error_empty_description": "Something went wrong while fetching your data. Please try again.",
+  "retry": "Retry",
   "error_try_again": "Please try again.",
   "price_updated_for": "Price updated for {name} ({id})",
   "product_selection_updated": "Product selection updated",
