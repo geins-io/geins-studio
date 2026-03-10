@@ -42,7 +42,7 @@ export type QuotationActionKnown =
   | 'cancel'
   | 'copy';
 
-export type QuotationAction = QuotationActionKnown | string;
+export type QuotationAction = QuotationActionKnown | (string & {});
 
 // =============================================================================
 // Response Sub-Types (returned by the API)

@@ -176,8 +176,8 @@ const statusTransitionsMap = computed<
               </AvatarFallback>
             </Avatar>
             <div class="grid text-left text-sm leading-tight">
-              <span class="flex items-baseline gap-1.5 truncate font-medium"
-                >{{ msg.authorName }}
+              <span class="flex items-baseline gap-1.5 truncate font-medium">
+                {{ msg.authorName }}
                 <span
                   v-if="statusTransitionsMap.has(msg._id)"
                   class="text-muted-foreground/70 text-xs italic"
@@ -187,11 +187,11 @@ const statusTransitionsMap = computed<
                       `orders.actions.${statusTransitionsMap.get(msg._id)!.action}`,
                     )
                   }}
-                </span></span
-              >
-              <span class="text-muted-foreground truncate text-xs">{{
-                msg.authorId
-              }}</span>
+                </span>
+              </span>
+              <span class="text-muted-foreground truncate text-xs">
+                {{ msg.authorId }}
+              </span>
             </div>
           </div>
           <div class="flex items-center gap-2">

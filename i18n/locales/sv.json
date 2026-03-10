@@ -503,6 +503,14 @@
     "workflow_step_pending_default": "Kund (eller du) kan lägga ordern",
     "workflow_step_finalized": "Order lagd",
     "workflow_action_accept": "Acceptera (kund)",
-    "workflow_action_confirm": "Bekräfta (du)"
+    "workflow_action_confirm": "Bekräfta (du)",
+    "actions": {
+      "send": "skickade offerten",
+      "accept": "accepterade offerten",
+      "reject": "avvisade offerten",
+      "confirm": "bekräftade offerten",
+      "cancel": "avbröt offerten",
+      "finalize": "lade ordern"
+    }
   }
 }
