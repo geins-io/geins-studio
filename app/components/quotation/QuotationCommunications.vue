@@ -53,9 +53,7 @@ const externalMessages = computed(() =>
 );
 
 const internalMessages = computed(() =>
-  props.communications.filter(
-    (m) => m.type === 'internal' || m.type === 'quotationNote',
-  ),
+  props.communications.filter((m) => m.type === 'internal'),
 );
 
 const handleExternalSend = (message: string) => {
