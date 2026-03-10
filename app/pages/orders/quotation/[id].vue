@@ -1226,6 +1226,7 @@ const statusActions = computed<StatusActionLayout>(() => {
             action: 'confirm',
             label: t('orders.confirm_quotation'),
             icon: 'check',
+            messageType: 'toCustomer',
           },
         ],
         dropdownActions: [
@@ -1295,11 +1296,13 @@ const transitionMethods: Record<string, TransitionMethod> = {
   finalize: (id, data) => orderApi.quotation.finalize(id, data),
 };
 
-const handleStatusTransition = async (action: string, message?: string) => {
+const handleStatusTransition = async (
+  action: string,
+  message?: string,
+  messageType: QuotationMessageType = 'internal',
+) => {
   const method = transitionMethods[action];
   if (!method) return;
-
-  const messageType = transitionAction.value?.messageType ?? 'internal';
 
   transitionLoading.value = true;
   try {
@@ -1636,11 +1639,11 @@ definePageMeta({
     :loading="transitionLoading"
     :variant="transitionAction.variant || 'default'"
     :icon="transitionAction.icon"
-    :message-type="transitionAction.messageType"
+    :default-message-type="transitionAction.messageType"
     :block-reasons="transitionAction.blockReasons"
     @confirm="
-      (msg: string | undefined) =>
-        handleStatusTransition(transitionAction!.action, msg)
+      (msg: string | undefined, msgType: QuotationMessageType) =>
+        handleStatusTransition(transitionAction!.action, msg, msgType)
     "
   />
   <ContentEditWrap

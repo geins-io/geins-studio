@@ -9,14 +9,14 @@ const props = withDefaults(
     entityName: string;
     loading: boolean;
     showMessage?: boolean;
-    messageType?: QuotationMessageType;
+    defaultMessageType?: QuotationMessageType;
     variant?: 'default' | 'destructive';
     icon?: TransitionIcon;
     blockReasons?: string[];
   }>(),
   {
     showMessage: true,
-    messageType: 'internal',
+    defaultMessageType: 'internal',
     variant: 'default',
     icon: undefined,
     blockReasons: undefined,
@@ -27,24 +27,27 @@ const open = defineModel('open', {
   default: false,
 });
 const emit = defineEmits<{
-  confirm: [message?: string];
+  confirm: [message: string | undefined, messageType: QuotationMessageType];
   cancel: [];
 }>();
 
 const message = ref('');
+const selectedMessageType = ref<QuotationMessageType>(props.defaultMessageType);
 
 const isBlocked = computed(
   () => props.blockReasons && props.blockReasons.length > 0,
 );
 
 const handleConfirm = () => {
-  emit('confirm', message.value || undefined);
+  emit('confirm', message.value || undefined, selectedMessageType.value);
 };
 
-// Reset message when dialog closes
+// Reset state when dialog opens/closes
 watch(open, (isOpen) => {
   if (!isOpen) {
     message.value = '';
+  } else {
+    selectedMessageType.value = props.defaultMessageType;
   }
 });
 </script>
@@ -76,18 +79,21 @@ watch(open, (isOpen) => {
           </ul>
         </template>
       </Feedback>
-      <div v-if="props.showMessage && !isBlocked" class="space-y-2">
-        <Label>
-          {{
-            props.messageType === 'toCustomer'
-              ? $t('orders.message_to_customer')
-              : $t('orders.internal_note')
-          }}
-        </Label>
+      <div v-if="props.showMessage && !isBlocked" class="space-y-3">
+        <Tabs v-model="selectedMessageType">
+          <TabsList>
+            <TabsTrigger value="toCustomer">
+              {{ $t('orders.message_to_customer') }}
+            </TabsTrigger>
+            <TabsTrigger value="internal">
+              {{ $t('orders.internal_note') }}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         <Textarea
           v-model="message"
           :placeholder="
-            props.messageType === 'toCustomer'
+            selectedMessageType === 'toCustomer'
               ? $t('orders.message_to_customer_placeholder')
               : $t('orders.internal_note_placeholder')
           "
@@ -108,7 +114,10 @@ watch(open, (isOpen) => {
           <LucideCheck v-if="props.icon === 'check'" class="mr-2 size-4" />
           <LucideX v-if="props.icon === 'x'" class="mr-2 size-4" />
           <LucideBan v-if="props.icon === 'ban'" class="mr-2 size-4" />
-          <LucideShoppingCart v-if="props.icon === 'shopping-cart'" class="mr-2 size-4" />
+          <LucideShoppingCart
+            v-if="props.icon === 'shopping-cart'"
+            class="mr-2 size-4"
+          />
           {{ props.action }}
         </Button>
       </AlertDialogFooter>
