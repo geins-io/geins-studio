@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import type { ConcreteComponent } from 'vue';
 
-type ButtonIcon = 'new' | 'save' | 'copy' | 'export' | 'settings' | 'send';
+type ButtonIcon =
+  | 'new'
+  | 'save'
+  | 'copy'
+  | 'export'
+  | 'settings'
+  | 'send'
+  | 'retry';
 
 const props = withDefaults(
   defineProps<{
@@ -33,6 +40,9 @@ switch (props.icon) {
     break;
   case 'send':
     iconComponent = resolveComponent('LucideSend');
+    break;
+  case 'retry':
+    iconComponent = resolveComponent('LucideRotateCw');
     break;
 }
 

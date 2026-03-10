@@ -33,11 +33,12 @@ const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
 
-const { handleFetchResult, showErrorToast } = usePageError({
+const { showErrorToast } = usePageError({
   entityName,
   entityList: true,
   scope,
 });
+const fetchError = ref(false);
 
 // Transform raw API quotation data to list view format
 const mapToListData = (list: Entity[]): EntityList[] => {
@@ -79,11 +80,16 @@ const { getColumns, addActionsColumn, setColumnOrder } =
 
 onMounted(() => {
   watch(
-    data,
-    (newData) => {
+    [data, error],
+    ([newData, newError]) => {
+      if (newError) {
+        fetchError.value = true;
+        dataList.value = [];
+        return;
+      }
+      fetchError.value = false;
       if (newData) {
-        const validData = handleFetchResult(error.value, newData);
-        dataList.value = mapToListData(validData.items ?? []);
+        dataList.value = mapToListData(newData.items ?? []);
       }
     },
     { immediate: true },
@@ -241,6 +247,8 @@ const searchableFields: Array<keyof EntityList> = [
       :data="dataList"
       :init-visibility-state="visibilityState"
       :searchable-fields="searchableFields"
+      :error="fetchError"
+      :on-retry="refresh"
     >
       <template #empty-actions>
         <ButtonIcon
@@ -252,11 +260,5 @@ const searchableFields: Array<keyof EntityList> = [
         </ButtonIcon>
       </template>
     </TableView>
-    <template #error="{ error: errorCatched }">
-      <h2 class="mb-3 text-xl font-bold">
-        {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
-      </h2>
-      <p>{{ errorCatched }}</p>
-    </template>
   </NuxtErrorBoundary>
 </template>
