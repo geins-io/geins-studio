@@ -86,10 +86,11 @@ const { getColumns, addActionsColumn } = useColumns<EntityList>();
 
 onMounted(() => {
   watch(
-    data,
-    (newData) => {
-      if (error.value) {
+    [data, error],
+    ([newData, newError]) => {
+      if (newError) {
         fetchError.value = true;
+        dataList.value = [];
         return;
       }
       fetchError.value = false;
