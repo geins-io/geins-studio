@@ -6,7 +6,8 @@ type TransitionIcon = 'send' | 'check' | 'x' | 'ban' | 'shopping-cart';
 const props = withDefaults(
   defineProps<{
     action: string;
-    entityName: string;
+    title: string;
+    description: string;
     loading: boolean;
     showMessage?: boolean;
     defaultMessageType?: QuotationMessageType;
@@ -56,15 +57,9 @@ watch(open, (isOpen) => {
   <AlertDialog v-model:open="open">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>{{
-          $t('orders.status_transition_title', { action: props.action })
-        }}</AlertDialogTitle>
+        <AlertDialogTitle>{{ props.title }}</AlertDialogTitle>
         <AlertDialogDescription>
-          {{
-            $t('orders.status_transition_description', {
-              action: props.action.toLowerCase(),
-            })
-          }}
+          {{ props.description }}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <Feedback v-if="isBlocked" type="warning">
