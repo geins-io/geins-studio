@@ -19,7 +19,7 @@ This release introduces the full quotation lifecycle and major infrastructure up
 
 ### 🔄 Refactor
 
-- Migrate to Nuxt 4 and Node 22+ ([#122](https://github.com/geins-io/geins-studio/pull/122))
+- Migrate to Nuxt 4 and Node 24+ ([#122](https://github.com/geins-io/geins-studio/pull/122))
 
 ### 🏡 Chore
 
