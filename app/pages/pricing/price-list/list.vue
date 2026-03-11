@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ColumnOptions, StringKeyOf } from '#shared/types';
-import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 import { useToast } from '@/components/ui/toast/use-toast';
+import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = ProductPriceList;
 type EntityList = ProductPriceList;
@@ -26,11 +26,12 @@ const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
 
-const { handleFetchResult, showErrorToast } = usePageError({
+const { showErrorToast } = usePageError({
   entityName,
   entityList: true,
   scope,
 });
+const fetchError = ref(false);
 
 // Add the mapping function
 const mapToListData = (list: Entity[]): EntityList[] => {
@@ -51,11 +52,16 @@ const { getColumns, addActionsColumn } = useColumns<EntityList>();
 
 onMounted(() => {
   watch(
-    data,
-    (newData) => {
+    [data, error],
+    ([newData, newError]) => {
+      if (newError) {
+        fetchError.value = true;
+        dataList.value = [];
+        return;
+      }
+      fetchError.value = false;
       if (newData) {
-        const validData = handleFetchResult(error.value, newData);
-        dataList.value = mapToListData(validData);
+        dataList.value = mapToListData(newData);
       }
     },
     { immediate: true },
@@ -78,10 +84,20 @@ onMounted(() => {
     {
       onEdit: (item: Entity) =>
         navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+      onCopy: async (item: Entity) => {
+        try {
+          const newPriceList = await productApi.priceList.id(item._id).copy();
+          toast({ title: t('entity_copied', { entityName }), variant: 'positive' });
+          await navigateTo(entityUrl.replace(entityIdentifier, String(newPriceList._id)));
+        } catch (err) {
+          geinsLogError('copyPriceList :::', getErrorMessage(err));
+          showErrorToast(t('error_copying_entity', { entityName }));
+        }
+      },
       onDelete: async (item: Entity) => await openDeleteDialog(item._id),
     },
     'actions',
-    ['edit', 'delete'],
+    ['edit', 'copy', 'delete'],
   );
   loading.value = false;
 });
@@ -153,6 +169,8 @@ const confirmDelete = async () => {
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
+      :error="fetchError"
+      :on-retry="refresh"
     >
       <template #empty-actions>
         <ButtonIcon
@@ -164,11 +182,5 @@ const confirmDelete = async () => {
         </ButtonIcon>
       </template>
     </TableView>
-    <template #error="{ error: errorCatched }">
-      <h2 class="text-xl font-bold">
-        {{ $t('error_loading_entity', { entityName: $t(entityName, 2) }) }}
-      </h2>
-      <p>{{ errorCatched }}</p>
-    </template>
   </NuxtErrorBoundary>
 </template>

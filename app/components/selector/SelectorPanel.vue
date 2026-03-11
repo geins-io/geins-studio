@@ -1,5 +1,4 @@
 <script setup lang="ts" generic="T extends SelectorEntity">
-import type { ColumnDef, Row, Table } from '@tanstack/vue-table';
 import {
   type SelectorEntity,
   type SelectorMode,
@@ -7,6 +6,7 @@ import {
   SelectorEntityType,
   TableMode,
 } from '#shared/types';
+import type { ColumnDef, Row, Table } from '@tanstack/vue-table';
 
 // PROPS
 const props = withDefaults(
@@ -30,7 +30,6 @@ const emit = defineEmits<{
 }>();
 
 // GLOBALS
-const { t } = useI18n();
 const productsStore = useProductsStore();
 const { categories, brands } = storeToRefs(productsStore);
 
@@ -79,7 +78,12 @@ const currentSelectionGroup = computed(
   () => options.value.find((o) => o.id === currentOption.value)?.group || 'ids',
 );
 const selectedEntities: ComputedRef<
-  { _id: string; name: string; productId?: string; isCollapsed?: boolean }[]
+  {
+    _id: string;
+    name: string;
+    productId?: string | number;
+    isCollapsed?: boolean;
+  }[]
 > = computed(() => {
   switch (currentSelectionGroup.value) {
     case 'categoryIds': {
@@ -365,7 +369,7 @@ const handleCancel = () => {
       <SheetBody
         class="p-0 max-md:pb-14 md:flex md:h-[calc(100vh-10.1rem)] md:p-0"
       >
-        <div class="w-full shrink-0 px-4 pt-3 md:w-[170px] md:py-3">
+        <div class="w-full shrink-0 px-4 pt-3 md:w-42.5 md:py-3">
           <ContentHeading>{{ $t('select_from') }}</ContentHeading>
           <SidebarNav>
             <SidebarNavItem
@@ -433,7 +437,7 @@ const handleCancel = () => {
         <div
           :class="
             cn(
-              'max-md:bg-card shrink-0 px-4 py-3 max-md:fixed max-md:bottom-16 max-md:z-50 max-md:w-full max-md:overflow-hidden max-md:border-t max-md:border-b max-md:transition-all md:h-full md:w-[200px] lg:w-80',
+              'max-md:bg-card shrink-0 px-4 py-3 max-md:fixed max-md:bottom-16 max-md:z-50 max-md:w-full max-md:overflow-hidden max-md:border-t max-md:border-b max-md:transition-all md:h-full md:w-50 lg:w-80',
               !showSelectedList && 'max-md:max-h-11',
               showSelectedList && 'max-md:max-h-[50vh]',
             )

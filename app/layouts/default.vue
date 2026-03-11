@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { SpeedInsights } from '@vercel/speed-insights/vue';
 
+usePageTitle();
 const { currentSidebarWidth, sidebarOpen } = useLayout();
 const route = useRoute();
 

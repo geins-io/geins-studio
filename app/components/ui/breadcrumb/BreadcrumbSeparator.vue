@@ -1,7 +1,6 @@
 <script lang="ts" setup>
-import type { HTMLAttributes } from 'vue';
-import { ChevronRight } from 'lucide-vue-next';
 import { cn } from '@/utils/index';
+import type { HTMLAttributes } from 'vue';
 
 const props = defineProps<{
   class?: HTMLAttributes['class'];
@@ -16,7 +15,7 @@ const props = defineProps<{
     :class="cn('[&>svg]:size-3.5', props.class)"
   >
     <slot>
-      <ChevronRight />
+      <LucideChevronRight />
     </slot>
   </li>
 </template>

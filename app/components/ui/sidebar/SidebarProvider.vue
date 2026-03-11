@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HTMLAttributes, Ref } from 'vue';
 import {
   defaultDocument,
   useEventListener,
@@ -17,6 +16,7 @@ import {
   SIDEBAR_WIDTH,
   SIDEBAR_WIDTH_ICON,
 } from './utils';
+import type { HTMLAttributes, Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{

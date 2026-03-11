@@ -1,10 +1,11 @@
-import { entityBaseRepo } from './repositories/entity-base';
-import { entityRepo } from './repositories/entity';
-import { productRepo } from './repositories/product';
-import { globalRepo } from './repositories/global';
-import { userRepo } from './repositories/user';
+import { changelogRepo } from './repositories/changelog';
 import { customerRepo } from './repositories/customer';
+import { entityRepo } from './repositories/entity';
+import { entityBaseRepo } from './repositories/entity-base';
+import { globalRepo } from './repositories/global';
 import { orderRepo } from './repositories/order';
+import { productRepo } from './repositories/product';
+import { userRepo } from './repositories/user';
 
 export const repo = {
   global: globalRepo,
@@ -14,4 +15,5 @@ export const repo = {
   user: userRepo,
   customer: customerRepo,
   order: orderRepo,
+  changelog: changelogRepo,
 };

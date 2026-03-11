@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
 import {
   PinInputRoot,
@@ -8,6 +7,7 @@ import {
   useForwardPropsEmits,
 } from 'reka-ui';
 import { cn } from '@/utils/index';
+import type { HTMLAttributes } from 'vue';
 
 const props = withDefaults(
   defineProps<PinInputRootProps & { class?: HTMLAttributes['class'] }>(),

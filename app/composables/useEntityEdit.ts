@@ -1,6 +1,5 @@
-import { useToast } from '@/components/ui/toast/use-toast';
 import { useForm, type GenericObject } from 'vee-validate';
-import { useDebounceFn } from '@vueuse/core';
+import { useToast } from '@/components/ui/toast/use-toast';
 import type { toTypedSchema } from '@vee-validate/zod';
 
 interface EntityEditOptions<
@@ -24,7 +23,7 @@ interface EntityEditOptions<
   validationSchema: ReturnType<typeof toTypedSchema>;
   initialEntityData: TCreate;
   initialUpdateData: TUpdate;
-  excludeSaveFields?: StringKeyOf<TBase>[];
+  excludeSaveFields?: string[];
   externalChanges?: Ref<boolean>;
   parseEntityData?: (entity: TResponse) => Promise<void> | void;
   prepareCreateData?: (formData: GenericObject) => TCreate;
@@ -44,7 +43,7 @@ interface EntityEditOptions<
   debounceMs?: number;
 }
 
-interface UseEntityEditReturnType<
+interface _UseEntityEditReturnType<
   TBase,
   TResponse extends ResponseEntity<TBase>,
   TCreate extends CreateEntity<TBase>,
@@ -72,7 +71,7 @@ interface UseEntityEditReturnType<
   // Form
   form: ReturnType<typeof useForm>;
   validateOnChange: Ref<boolean>;
-  formValidation: Ref<any>;
+  formValidation: Ref<unknown>;
   formValid: ComputedRef<boolean>;
   formTouched: ComputedRef<boolean>;
 
@@ -80,6 +79,7 @@ interface UseEntityEditReturnType<
   hasUnsavedChanges: ComputedRef<boolean>;
   unsavedChangesDialogOpen: Ref<boolean>;
   setOriginalSavedData: () => void;
+  cancelPendingFormSync: () => void;
   confirmLeave: () => Promise<boolean>;
 
   // Methods
@@ -93,11 +93,11 @@ interface UseEntityEditReturnType<
   ) => Promise<boolean>;
   createEntity: (
     additionalValidation?: () => Promise<boolean>,
-    queryOptions?: any,
+    queryOptions?: Record<string, unknown>,
   ) => Promise<TResponse | undefined>;
   updateEntity: (
     additionalValidation?: () => Promise<boolean>,
-    queryOptions?: any,
+    queryOptions?: Record<string, unknown>,
     setSavedData?: boolean,
   ) => Promise<TResponse | undefined>;
   deleteEntity: () => Promise<boolean>;
@@ -204,24 +204,37 @@ export function useEntityEdit<
   const formValid = computed(() => form?.meta.value.valid ?? true);
   const formTouched = computed(() => form?.meta.value.touched ?? false);
 
-  // Form values watcher
+  // Form values watcher — track pending timeout so callers can cancel it
+  let formSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const cancelPendingFormSync = () => {
+    if (formSyncTimer !== null) {
+      clearTimeout(formSyncTimer);
+      formSyncTimer = null;
+    }
+  };
+
   if (options.onFormValuesChange) {
     watch(
       form.values,
-      useDebounceFn(async (values) => {
-        if (validateOnChange.value) {
-          await form.validate();
-        }
+      (values) => {
+        cancelPendingFormSync();
+        formSyncTimer = setTimeout(async () => {
+          formSyncTimer = null;
+          if (validateOnChange.value) {
+            await form.validate();
+          }
 
-        if (options.onFormValuesChange) {
-          await options.onFormValuesChange(
-            values,
-            entityDataCreate as Ref<TCreate>,
-            entityDataUpdate as Ref<TUpdate>,
-            createMode,
-          );
-        }
-      }, options.debounceMs || 500),
+          if (options.onFormValuesChange) {
+            await options.onFormValuesChange(
+              values,
+              entityDataCreate as Ref<TCreate>,
+              entityDataUpdate as Ref<TUpdate>,
+              createMode,
+            );
+          }
+        }, options.debounceMs || 500);
+      },
       { deep: true },
     );
   }
@@ -312,6 +325,7 @@ export function useEntityEdit<
     additionalValidation?: () => Promise<boolean>,
     queryOptions?: TOptions,
     setSavedData?: boolean,
+    silent?: boolean,
   ) => {
     loading.value = true;
     try {
@@ -341,14 +355,18 @@ export function useEntityEdit<
         result ?? (await options.repository.get(id, queryOptions));
       await parseAndSaveData(newData, setSavedData);
 
-      toast({
-        title: t('entity_updated', { entityName }),
-        variant: 'positive',
-      });
+      if (!silent) {
+        toast({
+          title: t('entity_updated', { entityName }),
+          variant: 'positive',
+        });
+      }
 
       return result;
     } catch (error) {
-      showErrorToast(t('error_updating_entity', { entityName }));
+      if (!silent) {
+        showErrorToast(t('error_updating_entity', { entityName }));
+      }
       throw error;
     } finally {
       loading.value = false;
@@ -404,6 +422,7 @@ export function useEntityEdit<
     hasUnsavedChanges,
     unsavedChangesDialogOpen,
     setOriginalSavedData,
+    cancelPendingFormSync,
     confirmLeave,
 
     // Methods

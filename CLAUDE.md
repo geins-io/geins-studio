@@ -62,7 +62,7 @@ Admin interface for Geins Commerce Backend. **Client-side SPA** (`ssr: false`) t
 - **Styling**: Tailwind CSS 4 with CSS custom properties theming
 - **UI Components**: shadcn-vue (`app/components/ui/`) — install via `npx shadcn-vue@latest add`, never create manually
 - **Icons**: Lucide (auto-imported via `nuxt-lucide-icons`)
-- **i18n**: `@nuxtjs/i18n` — always update both `i18n/locales/en.json` and `sv.json`
+- **i18n**: `@nuxtjs/i18n` — always update both `i18n/locales/en.json` and `sv.json`. Global entity action keys (top-level, outside any namespace): `save_entity`, `delete_entity`, `send_entity`, `accept_entity`, `reject_entity`, `confirm_entity`, `cancel_entity` — all use `@.lower:{entityName}` interpolation and serve as both button labels and dialog titles. Quotation-specific description text lives in the `orders` namespace (e.g. `orders.accept_quotation_description`).
 - **State**: Pinia stores in `app/stores/`
 - **Tables**: TanStack Table (`@tanstack/vue-table`)
 
@@ -119,6 +119,7 @@ i18n/locales/           # en.json, sv.json
 - **Date formatting**: Use `useDate()` composable for consistent date display. `formatDate(value, options?)` wraps reka-ui's `useDateFormatter` with the app's locale. Defaults to `dateStyle: 'long'` (e.g. "February 23, 2026") — the same format used in table columns and the calendar picker.
 - **Vue gotcha**: `<KeepAlive>` cannot contain HTML comments — they count as children and cause "expects exactly one child" errors
 - **`v-auto-animate` gotcha**: Avoid using `v-auto-animate` on elements that swap small icon-sized children via `v-if/v-else` — it briefly renders both elements simultaneously, causing a layout shift. Fix: render both icons absolutely positioned inside a fixed-size `relative` wrapper and use CSS `opacity`/`scale` transitions instead.
+- **Page titles**: `usePageTitle()` is called once in `default.vue` and auto-derives the browser tab title from `useBreadcrumbsStore().breadcrumbTrail`. Format: `"Most Specific - Parent - Geins Studio"` (breadcrumb labels reversed). Entity edit pages get the entity name in the title automatically once they call `setCurrentTitle` (same call used for breadcrumbs — no extra setup needed). The breadcrumbs store clears overrides whenever leaving a child page (entity detail route), so navigating from one entity to another or to `new` always starts fresh.
 - **Toasts**: Use `useToast` from `@/components/ui/toast/use-toast` (explicit import required — not auto-imported). Init: `const { toast } = useToast()`. For errors, get `showErrorToast` from `usePageError`. Success: `toast({ title: t('entity_copied', { entityName }), variant: 'positive' })`. Error: `showErrorToast(t('error_copying_entity', { entityName }))`. `useEntityEdit` already handles toasts for create/update/delete — only add toasts in pages for additional actions (status transitions, send, copy, etc.). Import order: `@/components` imports must come after `#shared/types` type imports but before `@tanstack` type imports.
 
 ## API & Repositories
@@ -186,6 +187,8 @@ if (!createMode.value) {
 Pattern: `pages/{domain}/{entity}/list.vue` with `definePageMeta({ pageType: 'list' })`.
 Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `useTable<T>()` → `usePageError()`.
 
+**Error handling**: List pages handle fetch errors gracefully via a `fetchError` ref passed to `TableView`, instead of throwing fatal errors. The watcher watches `[data, error]` and sets `fetchError.value = true` + clears `dataList` on error, resets on success. `TableView` renders an inline error empty state (destructive icon + retry button) when `:error="fetchError"` and `:on-retry="refresh"` are passed. `NuxtErrorBoundary` wraps `TableView` as a safety net for unexpected runtime errors only.
+
 ### Adding a New Entity (Checklist)
 
 1. **Types** → `shared/types/{Entity}.ts` — Define `{Entity}Base`, `{Entity}Response`, `{Entity}Create`, `{Entity}Update`
@@ -209,9 +212,10 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - `ContentSwitch` — Toggle with animated collapsible slot content
 - `FormGridWrap` / `FormGrid` — Form layout (design prop: `"1"`, `"1+1"`, `"1+1+1"`, `"2+1+1"`)
 - `SelectorPanel` + `TableView` — Entity selection pattern (see `app/pages/examples/sku-selector.vue`)
-- `ContentAddressDisplay` — Address display (expects `AddressUpdate` type). Also compatible with `QuotationAddress` since both share the same field names (`addressLine1`, `firstName`, etc.)
+- `ContentAddressDisplay` — Address display (expects `AddressUpdate` type). Also compatible with `Address` since both share the same field names (`addressLine1`, `firstName`, etc.)
 - `InputGroup` / `InputGroupAddon` / `InputGroupButton` / `InputGroupInput` / `InputGroupTextarea` — Composable input groups with addons (icons, buttons, text) positioned via `align` prop (`inline-start`, `inline-end`, `block-start`, `block-end`). Use `InputGroupInput` instead of `Input` inside groups.
 - `ButtonGroup` / `ButtonGroupSeparator` / `ButtonGroupText` — Groups related buttons with shared border radius. Supports `orientation` (`horizontal` | `vertical`) and nesting.
+- `ContentEditTabs` — Tab navigation bar for edit pages. `tabs` prop accepts `string[]` or `(string | { label: string; badge?: number })[]` — pass an object to show a numeric badge pill on the trigger. Badge hides when `0` or `undefined`. Used in quotation `[id].vue` to show total message count on the Communications tab.
 - `ContentPriceSummary` — Price summary rows (subtotal, discount, shipping, VAT, grand total). Props: `total` (`QuotationTotal`), `currency`, `editMode?`. When `editMode=true`: discount row becomes a shadcn `Input` (with `#valueDescriptor` slot containing a `Select` dropdown for switching between `%` and currency) plus a calculated discount amount display (e.g. "-100.00 SEK"); shipping row becomes an `Input` with currency in `#valueDescriptor`. Uses `defineModel` for `discountType`, `discountValue`, `shippingFee` (two-way binding) and emits `blur` when an editable field loses focus (parent triggers preview).
 
 ### Display Patterns in Edit Pages
@@ -225,6 +229,7 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - **Table modes**: `TableMode` enum in `shared/types/Table.ts` defines `Advanced` (full-featured list pages), `Simple` (lightweight nested tables), and `Minimal` (de-cluttered, no borders/pagination/sorting — for edit page inline tables like quotation items). Mode is passed via `table.options.meta.mode` and accessible in render functions. Minimal mode differences: no outer border/card wrapper, no vertical cell borders, no pagination, no sorting (plain text headers with `font-medium normal-case`), no column pinning, no row hover, taller rows (`h-[68px]`). All minimal overrides use scoped CSS on `.table-view--minimal` in `TableView.vue` — UI primitives are never modified for mode-specific styling.
 - **Minimal mode columns**: Prefer using `useColumns.getColumns()` with `sortable: false`, `includeColumns`, and `columnTypes` so that minimal mode header styling (plain text, no sort buttons) is applied automatically. Pass custom cell behavior (e.g. `onChange`, `onBlur`, `placeholder`) via `columnCellProps`.
 - **TableView architecture**: `app/components/table/TableView.vue` is the main component. It wraps TanStack's `useVueTable` with mode-aware features (pagination, pinning, sorting, column toggle, maximize). Styling overrides per mode are applied via CSS classes on the `.table-view` wrapper — UI primitives in `app/components/ui/table/` provide base styles and should not be modified for mode-specific styling.
+- **TableView error state**: Pass `error` (boolean) and `onRetry` (callback) props to show an inline error empty state with a destructive icon and retry button. Uses `EmptyMedia variant="destructive"` (red background). Used by list pages for failed data fetches.
 - **TablePagination**: Located at `app/components/table/TablePagination.vue` (not in `ui/table/`). Receives `advanced` boolean prop to show/hide rows-per-page selector.
 - **Custom columns with render functions**: When using generic components (`TableCellEditable`, `TableHeaderSort`) in `h()` render functions inside `.vue` SFCs, pass the generic type parameter directly: `h(TableCellEditable<RowType>, {...})`. This matches the pattern in `useColumns.ts`.
 - **`TableCellProduct`** — Reusable table cell component at `app/components/table/cell/TableCellProduct.vue` that displays a product image, name, and article number. Props: `name`, `articleNumber?`, `imageUrl?`. Prefer using the `'product'` column type in `useColumns` (which renders this component automatically) instead of manual `h()` calls. The row data must have `articleNumber` and `image`/`imageUrl` fields alongside the accessor field.
@@ -250,13 +255,17 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - When loading existing quotation items in edit mode, initialize both `skuItemData` (from response items) and `skuSelection.ids` (from item SKU IDs) after products are fetched.
 - `fetchProducts()` filters by both `channelIds` and `currencyIds` (from `entityData`) so the product selector only returns products with prices in the quotation's currency. Uses `productApi.query()` with a `SelectorSelectionQuery` selection object.
 
+**Currency default in create mode:**
+
+- When a company is selected, the currency auto-defaults to the channel's **default market** currency (via `channel.defaultMarket` → market lookup → `market.currency._id`), falling back to `availableCurrencies[0]` if no default market is found. This uses `getDefaultCurrencyForCompany()` in the company-selection watcher.
+
 **Snapshot convention (entity sub-objects in responses):**
 
-- `QuotationOwner`, `QuotationCustomer`, `QuotationCompany`, and `QuotationAddress` are snapshots — point-in-time captures stored with the quotation.
+- `QuotationOwner`, `QuotationCustomer`, and `QuotationCompany` are snapshots — point-in-time captures stored with the quotation.
 - Each snapshot extends `EntitySnapshot` (`shared/types/Global.ts`), which provides `_id: string`, `_type: string`, `_snapshotAt?: string | null` (leading underscores, matching the top-level entity shape).
 - `QuotationOwner` and `QuotationCustomer` use `firstName`/`lastName` (no combined `name` or `email`). Use `fullName(x.firstName, x.lastName)` for display.
 - To read IDs from snapshots: `company._id`, `owner._id`, `customer._id`, `billingAddress._id` (not `companyId`/`ownerId`/`customerId`/`addressId`).
-- `toQuotationAddress()` in `[id].vue` maps a company `Address` → `QuotationAddress`, setting `_type: 'geins.wholesale_account_address'`.
+- Quotation `billingAddress` and `shippingAddress` use the standard `Address` type (`shared/types/Global.ts`) — no separate snapshot type needed since the address shape is identical.
 
 **API shape differences:**
 
@@ -298,9 +307,12 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - Tabs are a `computed` that switches between `[General, Products]` (draft) and `[General, Communications]` (sent).
 - Status transition actions use a two-step pattern: `POST /quotation/{id}/{action}` (returns void) → `refreshEntityData()` re-fetches → `parseEntityData` updates all UI state including `sentMode`, `communications`, and the sidebar status badge.
 - `StatusTransitionRequest` type: `{ authorId, authorName, message?: { type: QuotationMessageType, message } }`. Author info comes from `useUserStore`.
-- `DialogConfirmSend` handles the initial draft→pending transition with an optional `toCustomer` message. Accepts `blockReasons` prop (string array from `sendBlockReasons` computed) — when non-empty, shows a `Feedback` warning with the list and disables the Send button. The send button in the actions bar is always clickable (no disabled/tooltip gating). `DialogStatusTransition` is reusable for all other transitions (accept, reject, confirm, cancel, expire, finalize).
+- All status transitions (including send) go through `DialogStatusTransition`. Required props: `action` (button label), `title` (dialog heading), `description` (dialog subtext), `loading`. Optional: `defaultMessageType` (sets initial tab selection, defaults to `'internal'`), `variant`, `icon`, `blockReasons`, `showMessage`. The dialog includes a `Tabs` toggle for switching between "Message to customer" and "Internal note". It emits `confirm(message, messageType)` and `cancel`.
+- `StatusAction` interface: `{ action, label, title, description, variant?, icon?, messageType?, blockReasons? }`. All actions in `statusActions` computed use global i18n keys (`accept_entity`, `reject_entity`, `confirm_entity`, `cancel_entity` with `{ entityName }`) for label+title, and quotation-specific `orders.*_quotation_description` keys for description. The send action also uses `orders.send_quotation_description` (or `send_quotation_description_require_confirmation` when `requireConfirmation` is true). The finalize/place-order action uses `orders.place_order` (label+title) and `orders.place_order_description`.
+- `handleStatusTransition(action, message, messageType)` — `messageType` now comes from the dialog emit, not the action config. The confirm action defaults to `messageType: 'toCustomer'` via `defaultMessageType` prop on the dialog.
+- **`expire` status**: Never triggered manually — happens automatically. No UI actions or i18n keys needed for it.
 - "Copy as new draft" calls `orderApi.quotation.copy(id)` (`POST /quotation/{id}/copy`) → shows success toast → navigates to the new draft.
-- Delete is not available in sent mode at all. In draft mode, delete is always accessible from the `...` dropdown.
+- **Deletable statuses**: Delete is available for `draft`, `rejected`, `expired`, and `canceled` quotations. In draft mode, delete is in the `...` dropdown. In sent mode, `canDeleteInSentMode` (computed from `currentStatus`) gates a delete option in the sent-mode dropdown. Statuses like `pending`, `accepted`, `confirmed`, and `finalized` do not allow deletion.
 - The sidebar `StatusBadge` is reactive: `useEntityEditSummary` accepts `status` as a `Ref` and `unref`s it in the computed.
 
 ### Companies

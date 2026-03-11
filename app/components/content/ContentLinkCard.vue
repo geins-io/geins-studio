@@ -1,10 +1,10 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    title: string;
-    description: string;
-    link: string;
-    linkType: 'create' | 'list';
+    title?: string;
+    description?: string;
+    link?: string;
+    linkType?: 'create' | 'list';
   }>(),
   {
     title: 'Card Title',
@@ -25,9 +25,9 @@ const props = withDefaults(
         />
         <LucideChevronRight
           v-if="props.linkType === 'list'"
-          class="size-5 flex-shrink-0"
+          class="size-5 shrink-0"
         />
-        <LucidePlus v-else class="size-5 flex-shrink-0" />
+        <LucidePlus v-else class="size-5 shrink-0" />
       </div>
     </Card>
   </NuxtLink>

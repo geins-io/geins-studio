@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
 import { reactiveOmit } from '@vueuse/core';
-import { Search } from 'lucide-vue-next';
 import {
   ListboxFilter,
   type ListboxFilterProps,
@@ -9,6 +7,7 @@ import {
 } from 'reka-ui';
 import { cn } from '@/utils/index';
 import { useCommand } from '.';
+import type { HTMLAttributes } from 'vue';
 
 defineOptions({
   inheritAttrs: false,
@@ -31,9 +30,9 @@ const { filterState } = useCommand();
 <template>
   <div
     data-slot="command-input-wrapper"
-    class="bg-input focus-within:border-primary flex items-center gap-2 rounded-lg border border-b px-3"
+    class="bg-input focus-within:border-primary flex items-center gap-2 rounded-lg border px-3"
   >
-    <Search class="mr-2 size-4 shrink-0" />
+    <LucideSearch class="mr-2 size-4 shrink-0" />
     <ListboxFilter
       v-bind="{ ...forwardedProps, ...$attrs }"
       v-model="filterState.search"

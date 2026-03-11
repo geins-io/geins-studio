@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { StatusBadgeStatus } from '#shared/types';
+
 const props = withDefaults(
   defineProps<{
     createMode?: boolean;
@@ -9,6 +11,7 @@ const props = withDefaults(
     entityName?: string;
     entityLiveStatus?: boolean;
     showActiveStatus?: boolean;
+    status?: StatusBadgeStatus;
   }>(),
   {
     createMode: false,
@@ -24,6 +27,11 @@ const props = withDefaults(
 const { t } = useI18n();
 
 const active = defineModel<boolean>('active');
+
+const hasExplicitStatus = computed(() => props.status !== undefined);
+const displayStatus = computed(() =>
+  hasExplicitStatus.value ? props.status! : props.entityLiveStatus,
+);
 
 const description = computed(() => {
   return props.createMode && props.summary?.length === 0
@@ -51,12 +59,10 @@ const activeDescription = computed(() => {
   <Card class="max-h-[80vh] space-y-4 overflow-y-auto p-6">
     <div class="flex items-center justify-between">
       <ContentCardHeader :title="$t('summary')" :description="description" />
-      <Badge
-        v-if="!createMode && showActiveStatus"
-        :variant="entityLiveStatus ? 'positive' : 'secondary'"
-      >
-        {{ entityLiveStatus ? $t('active') : $t('inactive') }}
-      </Badge>
+      <StatusBadge
+        v-if="!createMode && (hasExplicitStatus || showActiveStatus)"
+        :status="displayStatus"
+      />
     </div>
     <slot name="before-active-switch" />
     <ContentSwitch

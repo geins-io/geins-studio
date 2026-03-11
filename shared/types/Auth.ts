@@ -1,3 +1,6 @@
+import type { ApiOptions } from './Api';
+import type { CreateEntity, UpdateEntity, ResponseEntity } from './Global';
+
 export type ApiUserType = 'api' | 'personal';
 
 export interface UserBase {
@@ -71,6 +74,24 @@ export interface AuthAccounts {
 export interface AuthBroadcastData {
   session?: Session | null;
   isRefreshing?: boolean;
+}
+
+/**
+ * Response from auth sign-in operations.
+ *
+ * Represents the result of calling signIn through @sidebase/nuxt-auth.
+ * Used as the return type for login, verify, setAccount, and setSession
+ * in the useGeinsAuth composable.
+ */
+export interface SignInResponse {
+  /** Error message if the sign-in failed, null on success */
+  error: string | null;
+  /** HTTP status code of the sign-in response */
+  status: number;
+  /** Whether the sign-in was successful */
+  ok: boolean;
+  /** Redirect URL, if any */
+  url: string | null;
 }
 
 export type AuthFormMode =

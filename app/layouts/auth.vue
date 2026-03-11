@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { SpeedInsights } from '@vercel/speed-insights/vue';
-
 import LogoLetter from '@/assets/logos/geins-g.svg';
 </script>
 

@@ -1,5 +1,36 @@
 # Changelog
 
+## v0.3.0 - 2026-03-11
+
+This release introduces the full quotation lifecycle and major infrastructure upgrades.
+
+### 🚀 Enhancements
+
+- Quotation create & edit ([#132](https://github.com/geins-io/geins-studio/pull/132))
+- Quotation sent mode ([#133](https://github.com/geins-io/geins-studio/pull/133))
+- Quotation communications ([#137](https://github.com/geins-io/geins-studio/pull/137))
+- Better error states for list page grids with inline retry ([#156](https://github.com/geins-io/geins-studio/pull/156))
+- Dynamic browser tab titles derived from breadcrumb trail ([#158](https://github.com/geins-io/geins-studio/pull/158))
+
+### 🐛 Bug Fixes
+
+- Blur instead of submit on Enter in editable table cells ([#153](https://github.com/geins-io/geins-studio/pull/153))
+- ComboboxList inline positioning inside Sheet ([#123](https://github.com/geins-io/geins-studio/pull/123))
+
+### 🔄 Refactor
+
+- Migrate to Nuxt 4 and Node 24+ ([#122](https://github.com/geins-io/geins-studio/pull/122))
+
+### 🏡 Chore
+
+- Upgrade Node and migrate from Yarn to pnpm ([#124](https://github.com/geins-io/geins-studio/pull/124))
+- Repository pruning — remove dead code, unused deps & stale config ([#125](https://github.com/geins-io/geins-studio/pull/125))
+- Agent operability — tooling, conventions & documentation ([#126](https://github.com/geins-io/geins-studio/pull/126))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.2.0 - 2026-01-14
 
 This is a major release with significant refactoring and new features ([#120](https://github.com/geins-io/geins-studio/pull/120)).

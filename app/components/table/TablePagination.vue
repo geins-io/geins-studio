@@ -59,7 +59,7 @@ const setPageSize = (value: AcceptableValue) => {
           :model-value="`${table.getState().pagination.pageSize}`"
           @update:model-value="setPageSize"
         >
-          <SelectTrigger size="sm" class="w-[70px]">
+          <SelectTrigger size="sm" class="w-auto">
             <SelectValue
               :placeholder="`${table.getState().pagination.pageSize}`"
             />

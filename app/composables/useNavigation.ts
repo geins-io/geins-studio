@@ -28,7 +28,7 @@ export const useNavigation = () => {
    * Filter navigation items based on user roles and permissions
    * Recursively processes children and removes empty parent items
    */
-  const filterByPermissions = (items: NavigationItem[]): NavigationItem[] => {
+  const _filterByPermissions = (items: NavigationItem[]): NavigationItem[] => {
     return (
       items
         .filter((item) => {
@@ -48,7 +48,7 @@ export const useNavigation = () => {
           ...item,
           // Recursively filter children
           children: item.children
-            ? filterByPermissions(item.children)
+            ? _filterByPermissions(item.children)
             : undefined,
         }))
         // Remove parent items that have no visible children (if they originally had children)
@@ -69,7 +69,7 @@ export const useNavigation = () => {
   const navigationItems = computed(() => {
     // For now, return all items since role/permission methods aren't implemented yet
     // Once userStore has hasAnyRole/hasAnyPermission, uncomment:
-    // return filterByPermissions(navigationConfig);
+    // return _filterByPermissions(navigationConfig);
     return navigationConfig;
   });
 

@@ -103,13 +103,28 @@ export default defineConfig({
             text: 'Global',
             items: [
               { text: 'useGeinsAuth', link: '/composables/useGeinsAuth.md' },
+              { text: 'useDate', link: '/composables/useDate.md' },
               { text: 'useGeinsImage', link: '/composables/useGeinsImage.md' },
               { text: 'useGeinsLog', link: '/composables/useGeinsLog.md' },
               { text: 'useLayout', link: '/composables/useLayout.md' },
               { text: 'useNavigation', link: '/composables/useNavigation.md' },
               { text: 'usePageError', link: '/composables/usePageError.md' },
+              { text: 'usePageTitle', link: '/composables/usePageTitle.md' },
               { text: 'usePrice', link: '/composables/usePrice.md' },
               { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
+            ],
+          },
+          {
+            text: 'Orders',
+            items: [
+              {
+                text: 'useCompanyOrders',
+                link: '/composables/useCompanyOrders.md',
+              },
+              {
+                text: 'useCustomerCompanies',
+                link: '/composables/useCustomerCompanies.md',
+              },
             ],
           },
           {
@@ -157,6 +172,7 @@ export default defineConfig({
         text: 'Guides',
         items: [
           { text: 'Feedback system', link: '/guides/ui/feedback-system' },
+          { text: 'Testing', link: '/guides/testing' },
           // {
           //   text: 'Working with Data Tables',
           //   link: '/guides/data-tables/',

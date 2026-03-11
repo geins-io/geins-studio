@@ -23,8 +23,11 @@ const modelValue = defineModel<boolean>();
     "
   >
     <div :class="cn('text-left', disabled ? 'opacity-60' : '')">
-      <FormLabel class="text-sm font-semibold">{{ label }}</FormLabel>
-      <FormDescription class="mt-1 pl-0 text-xs text-muted-foreground">
+      <div class="flex items-center gap-1.5">
+        <FormLabel class="text-sm font-semibold">{{ label }}</FormLabel>
+        <slot name="after-label" />
+      </div>
+      <FormDescription class="text-muted-foreground mt-1 pl-0 text-xs">
         {{ description }}
       </FormDescription>
     </div>

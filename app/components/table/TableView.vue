@@ -1,15 +1,4 @@
 <script setup lang="ts" generic="TData extends Record<string, any>, TValue">
-import { TableMode } from '#shared/types';
-import type {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  ColumnOrderState,
-  ColumnPinningState,
-  Column,
-  ExpandedState,
-} from '@tanstack/vue-table';
 import {
   FlexRender,
   getCoreRowModel,
@@ -20,9 +9,24 @@ import {
   useVueTable,
 } from '@tanstack/vue-table';
 import { useDebounceFn } from '@vueuse/core';
-
-import { LucideSearchX, LucideCircleSlash } from 'lucide-vue-next';
+import { TableMode } from '#shared/types';
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  ColumnOrderState,
+  ColumnPinningState,
+  Column,
+  ExpandedState,
+  Row,
+} from '@tanstack/vue-table';
 import type { Component } from 'vue';
+import {
+  LucideSearchX,
+  LucideCircleSlash,
+  LucideCircleAlert,
+} from '#components';
 
 const props = withDefaults(
   defineProps<{
@@ -44,6 +48,8 @@ const props = withDefaults(
     emptyFilteredDescription?: string;
     emptyIcon?: Component;
     showEmptyActions?: boolean;
+    error?: boolean;
+    onRetry?: () => void;
     initVisibilityState?: VisibilityState;
     enableExpanding?: boolean;
     getSubRows?: (row: TData) => TData[] | undefined;
@@ -76,6 +82,14 @@ const { t } = useI18n();
 const showSearch =
   props.mode === TableMode.Advanced ? ref(true) : ref(props.showSearch);
 
+// Minimal mode: disable column pinning
+const pinnedStateOverride = computed(() => {
+  if (props.mode === TableMode.Minimal) {
+    return { left: [] as string[], right: [] as string[] };
+  }
+  return undefined;
+});
+
 /**
  * Setup table state
  */
@@ -90,6 +104,7 @@ const { getSkeletonColumns, getSkeletonData } = useSkeleton();
 const tableMaximized = useState<boolean>('table-maximized', () => false);
 const advancedMode = computed(() => props.mode === TableMode.Advanced);
 const simpleMode = computed(() => props.mode === TableMode.Simple);
+const minimalMode = computed(() => props.mode === TableMode.Minimal);
 
 // Debounced search - wait 300ms after user stops typing
 const debouncedSearch = useDebounceFn((value: string) => {
@@ -240,6 +255,10 @@ const pinnedStyles = computed(() => {
 
 // Remove select and actions columns from pinned state if not present in columns
 const columnPinningState = computed(() => {
+  // Minimal mode: no column pinning
+  if (pinnedStateOverride.value) {
+    return pinnedStateOverride.value;
+  }
   const left =
     pinnedState.value?.left?.filter((id) =>
       props.columns.some((column) => column.id === id),
@@ -261,8 +280,10 @@ const table = useVueTable({
     return props.loading ? getSkeletonColumns<TData>() : props.columns;
   },
   getCoreRowModel: getCoreRowModel(),
-  getPaginationRowModel: getPaginationRowModel(),
-  getSortedRowModel: getSortedRowModel(),
+  getPaginationRowModel:
+    props.mode !== TableMode.Minimal ? getPaginationRowModel() : undefined,
+  getSortedRowModel:
+    props.mode !== TableMode.Minimal ? getSortedRowModel() : undefined,
   getExpandedRowModel: props.enableExpanding
     ? getExpandedRowModel()
     : undefined,
@@ -320,8 +341,8 @@ const table = useVueTable({
     if (props.enableExpanding && props.getSubRows) {
       // For expanding tables, getSelectedRowModel() doesn't include child rows properly
       // We need to manually collect all selected rows from the full hierarchy
-      const collectSelectedRows = (rows: any[]): any[] => {
-        const selected: any[] = [];
+      const collectSelectedRows = (rows: Row<unknown>[]): Row<unknown>[] => {
+        const selected: Row<unknown>[] = [];
         for (const row of rows) {
           if (row.getIsSelected()) {
             selected.push(row);
@@ -340,10 +361,7 @@ const table = useVueTable({
       // Only emit leaf rows (children that cannot expand)
       const leafRows = selectedRows.filter((row) => !row.getCanExpand());
 
-      emit(
-        'selection',
-        leafRows.map((row) => row.original),
-      );
+      emit('selection', leafRows.map((row) => row.original) as TData[]);
     } else {
       // Flat table: use standard selection model
       emit(
@@ -385,7 +403,7 @@ const table = useVueTable({
   },
   initialState: {
     pagination: {
-      pageSize: props.pageSize,
+      pageSize: props.mode === TableMode.Minimal ? 99999 : props.pageSize,
     },
     columnPinning: columnPinningState.value,
   },
@@ -398,7 +416,7 @@ const table = useVueTable({
 // Auto-expand all rows when searching in expandable tables
 watch(
   [globalFilter, () => props.data],
-  ([newFilter, newData], [oldFilter, oldData]) => {
+  ([newFilter, _newData], [oldFilter, _oldData]) => {
     if (props.enableExpanding && table) {
       if (newFilter?.trim()) {
         // When search is active, expand all parent rows by building an object with all row IDs set to true
@@ -484,6 +502,7 @@ const hasSearchableColumns = computed(() => {
       cn(
         'table-view',
         `${advancedMode ? 'table-view--advanced' : ''}`,
+        `${minimalMode ? 'table-view--minimal' : ''}`,
         `${tableMaximized ? 'table-view--maximized' : ''}`,
         `${advancedMode && !tableMaximized ? '-mt-40' : ''}`,
       )
@@ -502,7 +521,7 @@ const hasSearchableColumns = computed(() => {
             :class="
               cn(
                 `z-30 ${getCellClasses(header.column, true)} table-view__header`,
-                `${simpleMode ? 'bg-background' : ''}`,
+                `${simpleMode || minimalMode ? 'bg-background' : ''}`,
               )
             "
             :style="pinnedStyles(header.column)"
@@ -543,7 +562,27 @@ const hasSearchableColumns = computed(() => {
         <template v-else>
           <TableRow class="hover:bg-transparent">
             <TableCell :colspan="columns.length" class="p-0">
-              <Empty>
+              <!-- Error empty state -->
+              <Empty v-if="error">
+                <EmptyHeader>
+                  <EmptyMedia variant="destructive">
+                    <LucideCircleAlert />
+                  </EmptyMedia>
+                  <EmptyTitle>
+                    {{ $t('error_fetching_entity', { entityName }, 2) }}
+                  </EmptyTitle>
+                  <EmptyDescription>
+                    {{ $t('error_empty_description') }}
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent v-if="onRetry">
+                  <ButtonIcon icon="retry" variant="secondary" @click="onRetry">
+                    {{ $t('retry') }}
+                  </ButtonIcon>
+                </EmptyContent>
+              </Empty>
+              <!-- Normal empty state -->
+              <Empty v-else>
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
                     <component
@@ -586,6 +625,7 @@ const hasSearchableColumns = computed(() => {
       </TableBody>
     </Table>
     <TablePagination
+      v-if="!minimalMode"
       :entity-name="entityName"
       :rows-selectable="rowsSelectable"
       :table="table"
@@ -595,7 +635,7 @@ const hasSearchableColumns = computed(() => {
       v-if="advancedMode"
       variant="ghost"
       size="icon"
-      class="border-border bg-card absolute -top-px -right-px z-50 !size-6"
+      class="border-border bg-card absolute -top-px -right-px z-50 size-6!"
       @click="tableMaximized = !tableMaximized"
     >
       <LucideMaximize2 v-if="!tableMaximized" class="size-3" />
@@ -603,3 +643,38 @@ const hasSearchableColumns = computed(() => {
     </Button>
   </div>
 </template>
+
+<style scoped>
+/* Minimal mode: remove outer border, padding, and rounding from .table-view wrapper */
+.table-view--minimal {
+  border: 0;
+  border-radius: 0;
+  padding-bottom: 0;
+  overflow: visible;
+}
+
+/* Minimal mode: transparent background, no rounded corners on inner container */
+.table-view--minimal :deep([data-slot='table-container']) {
+  background: transparent;
+  border-radius: 0;
+}
+
+/* Minimal mode: remove vertical cell borders */
+.table-view--minimal :deep(td[data-slot='table-cell']),
+.table-view--minimal :deep(th[data-slot='table-head']) {
+  border-left: 0;
+}
+
+/* Minimal mode: remove header rounding */
+.table-view--minimal :deep(th[data-slot='table-head']:first-child) {
+  border-top-left-radius: 0;
+}
+.table-view--minimal :deep(th[data-slot='table-head']:last-child) {
+  border-top-right-radius: 0;
+}
+
+/* Minimal mode: no row hover */
+.table-view--minimal :deep(tr[data-slot='table-row']:hover) {
+  background: transparent;
+}
+</style>

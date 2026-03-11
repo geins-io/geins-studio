@@ -1,8 +1,8 @@
 /**
  * Composable for customer API operations, supporting both reactive and imperative usage
  */
-import { useToast } from '@/components/ui/toast/use-toast';
 import type { CustomerVatValidation } from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
 
 interface UseCustomerCompaniesReturnType {
   deleteCompany: (id?: string, entityName?: string) => Promise<boolean>;

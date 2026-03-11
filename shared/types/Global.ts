@@ -1,13 +1,53 @@
 export type StringKeyOf<T> = Extract<keyof T, string>;
 
+/**
+ * Known status values for StatusBadge with dedicated styling.
+ * Any other string falls back to 'outline' variant with auto-capitalized text.
+ */
+export type StatusBadgeKnownStatus =
+  | 'pending'
+  | 'on-hold'
+  | 'backorder'
+  | 'partial'
+  | 'sent'
+  | 'cancelled'
+  | 'rejected'
+  | 'refunded'
+  | 'inactive'
+  | 'accepted'
+  | 'completed'
+  | 'confirmed'
+  | 'finalized'
+  | 'canceled'
+  | 'draft'
+  | 'expired';
+
+/**
+ * StatusBadge accepts booleans (active/inactive), known statuses with
+ * dedicated styling, or any string (rendered with 'outline' variant).
+ */
+export type StatusBadgeStatus =
+  | boolean
+  | StatusBadgeKnownStatus
+  | (string & {});
+
 export const enum DataItemDisplayType {
   String = 'string',
   Array = 'array',
   Copy = 'copy',
+  Link = 'link',
 }
 export interface EntityBase {
   _id: string;
   _type: string;
+}
+
+/**
+ * Shared base for snapshot sub-objects stored with an entity.
+ * Extends EntityBase with a timestamp for when the snapshot was captured.
+ */
+export interface EntitySnapshot extends EntityBase {
+  _snapshotAt?: string | null;
 }
 
 export interface EntityBaseWithName extends Omit<EntityBase, '_type'> {
@@ -33,6 +73,8 @@ export interface DataItem {
   displayValue?: string;
   displayType?: DataItemDisplayType;
   entityName?: string;
+  href?: string;
+  target?: string;
 }
 export interface PlainDataItem {
   label: string;

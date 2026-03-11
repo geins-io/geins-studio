@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { cn } from '@/utils/index';
-import { X } from 'lucide-vue-next';
 import { ToastClose, type ToastCloseProps } from 'reka-ui';
 import { computed, type HTMLAttributes } from 'vue';
+import { cn } from '@/utils/index';
 
 const props = defineProps<
   ToastCloseProps & {
@@ -27,6 +26,6 @@ const delegatedProps = computed(() => {
       )
     "
   >
-    <X class="size-4" />
+    <LucideX class="size-4" />
   </ToastClose>
 </template>

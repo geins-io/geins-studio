@@ -1,0 +1,37 @@
+---
+description: Rules for UI components using shadcn-vue
+globs:
+  - 'app/components/**/*.vue'
+---
+
+# Component Conventions
+
+## shadcn-vue (app/components/ui/)
+
+- Install via `npx shadcn-vue@latest add <component>` — NEVER create manually
+- Config: components.json (style: new-york, baseColor: stone, iconLibrary: lucide)
+- Based on Reka UI headless primitives
+
+## Domain Components (app/components/{domain}/)
+
+- Group by feature domain: company/, price-list/, table/, form/, etc.
+- Use TypeScript-first props with `defineProps<{}>()` + `withDefaults()`
+- No `vue/require-default-prop` — use TypeScript defaults instead
+
+## Form Pattern
+
+```vue
+<FormField v-slot="{ componentField }" name="fieldName">
+  <FormItem>
+    <FormLabel>Label</FormLabel>
+    <FormControl>
+      <Input v-bind="componentField" />
+    </FormControl>
+    <FormMessage />
+  </FormItem>
+</FormField>
+```
+
+## Icons
+
+Use Lucide icons via `nuxt-lucide-icons` module (auto-imported).

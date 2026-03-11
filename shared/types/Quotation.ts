@@ -3,9 +3,17 @@ import type {
   UpdateEntity,
   ResponseEntity,
   ApiOptions,
-  Tooltip,
   Price,
+  BatchQueryFiltered,
+  SelectorCondition,
+  BatchQueryResult,
+  EntitySnapshot,
+  Address,
 } from './index';
+
+// =============================================================================
+// Enums & Primitive Types
+// =============================================================================
 
 /**
  * Status values for quotations
@@ -13,81 +21,426 @@ import type {
 export type QuotationStatus =
   | 'draft'
   | 'pending'
-  | 'sent'
-  | 'accepted'
+  | 'expired'
   | 'rejected'
-  | 'expired';
+  | 'accepted'
+  | 'confirmed'
+  | 'finalized'
+  | 'canceled';
 
 /**
- * Base Quotation type with core properties
+ * Communication message type
  */
-export interface QuotationBase {
+export type QuotationMessageType = 'internal' | 'toCustomer' | 'fromCustomer';
+
+export type QuotationActionKnown =
+  | 'send'
+  | 'accept'
+  | 'reject'
+  | 'confirm'
+  | 'finalize'
+  | 'cancel'
+  | 'copy';
+
+export type QuotationAction = QuotationActionKnown | (string & {});
+
+// =============================================================================
+// Response Sub-Types (returned by the API)
+// =============================================================================
+
+/**
+ * Company (wholesale account) snapshot
+ */
+export interface QuotationCompany extends EntitySnapshot {
   name: string;
-  status: QuotationStatus;
-  accountId: string;
-  accountName?: string;
-  dateCreated: string;
-  dateModified: string;
-  sum: Price;
-  expirationDate: string;
-  itemCount: number;
-  createdBy: string;
-  channel?: string;
-  currency?: string;
-  notes?: string;
+  vatNumber: string;
 }
 
 /**
- * Create type for new quotations
+ * Owner (sales rep) snapshot
+ */
+export interface QuotationOwner extends EntitySnapshot {
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
+/**
+ * Customer (buyer) snapshot
+ */
+export interface QuotationCustomer extends EntitySnapshot {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
+}
+
+/**
+ * Valid payment method (response)
+ */
+export interface QuotationValidPaymentMethod {
+  paymentId: number;
+  name: string;
+}
+
+/**
+ * Valid shipping method (response)
+ */
+export interface QuotationValidShippingMethod {
+  shippingId: number;
+  name: string;
+  shippingFee: number;
+}
+
+/**
+ * Communication message (response)
+ */
+export interface QuotationMessageTag {
+  key: string;
+  value: string;
+}
+
+export interface QuotationMessage {
+  _id: string;
+  _type: string;
+  type: QuotationMessageType;
+  authorId: string;
+  authorName: string;
+  message: string;
+  timestamp: string;
+  answerRef?: string | null;
+  tags?: QuotationMessageTag[] | null;
+}
+
+/**
+ * Request body for creating a quotation communication message.
+ * POST /quotation/{quotationId}/message
+ */
+export interface QuotationMessageCreate {
+  type: QuotationMessageType;
+  authorId: string;
+  authorName: string;
+  message: string;
+  answerRef?: string;
+}
+
+/**
+ * Request body for updating a quotation communication message.
+ * PATCH /quotation/message/{messageId}
+ */
+export interface QuotationMessageUpdate {
+  type?: QuotationMessageType;
+  message?: string;
+  answerRef?: string;
+}
+
+/**
+ * Quotation changelog entry
+ */
+export interface QuotationChangelog {
+  change: string;
+  author: string;
+  timestamp: string;
+}
+
+/**
+ * Quotation totals and summary
+ */
+export interface QuotationTotal {
+  subtotal: number;
+  discount: number;
+  shipping: number;
+  margin: number;
+  vat: number;
+  grandTotalExVat: number;
+  grandTotalIncVat: number;
+  suggestedShippingFee?: number;
+}
+
+// =============================================================================
+// Preview Types
+// =============================================================================
+
+/**
+ * Discount configuration for a quotation (used in create, update, and preview requests).
+ */
+export interface QuotationDiscountRequest {
+  type: 'fixedAmount' | 'percent';
+  value: number;
+}
+
+/**
+ * Request body for the preview endpoint — calculates totals without persisting.
+ */
+export interface QuotationPreviewRequest {
+  companyId?: string | null;
+  buyerId?: string | null;
+  suggestedShippingFee?: number | null;
+  discount?: QuotationDiscountRequest | null;
+  items?: QuotationItemCreate[] | null;
+}
+
+/**
+ * Response from the preview endpoint.
+ * Items are enriched with calculated ordPrice, listPrice, and unitPrice.
+ */
+export interface QuotationPreviewResponse {
+  items?: QuotationItem[];
+  total: QuotationTotal;
+}
+
+// =============================================================================
+// Status Transition Request
+// =============================================================================
+
+/**
+ * Request body for quotation status transitions (send, accept, reject, etc.)
+ */
+export interface StatusTransitionRequest {
+  authorId: string;
+  authorName: string;
+  message?: {
+    type: QuotationMessageType;
+    message: string;
+  };
+}
+
+// =============================================================================
+// Request Sub-Types (sent to the API)
+// =============================================================================
+
+/**
+ * Valid payment method request
+ */
+export interface QuotationValidPaymentMethodRequest {
+  paymentId: string;
+}
+
+/**
+ * Valid shipping method request
+ */
+export interface QuotationValidShippingMethodRequest {
+  shippingId: string;
+  shippingFee?: number;
+}
+
+/**
+ * Quotation settings (controls workflow behavior).
+ */
+export interface QuotationSettings {
+  requireConfirmation?: boolean;
+}
+
+// =============================================================================
+// Quotation Base / Create / Update / Response
+// =============================================================================
+
+/**
+ * Base Quotation type — shared properties between create, update, and response.
+ */
+export interface QuotationBase {
+  name: string;
+  channelId: string;
+  marketId: string;
+  validFrom?: string;
+  validTo?: string;
+  createdAt?: string;
+  modifiedAt?: string;
+  suggestedShippingFee?: number;
+}
+
+/**
+ * Create request type matching the POST /quotation API schema.
  */
 export interface QuotationCreate extends CreateEntity<QuotationBase> {
+  companyId?: string;
+  ownerId?: string;
+  customerId?: string;
+  terms?: string;
+  billingAddressId?: string;
+  shippingAddressId?: string;
+  validPaymentMethods?: QuotationValidPaymentMethodRequest[];
+  validShippingMethods?: QuotationValidShippingMethodRequest[];
   items?: QuotationItemCreate[];
+  discount?: QuotationDiscountRequest | null;
+  settings?: QuotationSettings;
 }
 
 /**
  * Update type for existing quotations
  */
 export interface QuotationUpdate extends UpdateEntity<QuotationBase> {
-  items?: QuotationItemUpdate[];
+  companyId?: string;
+  ownerId?: string;
+  customerId?: string;
+  billingAddressId?: string;
+  shippingAddressId?: string;
+  terms?: string;
+  validPaymentMethods?: QuotationValidPaymentMethodRequest[];
+  validShippingMethods?: QuotationValidShippingMethodRequest[];
+  items?: QuotationItemCreate[];
+  discount?: QuotationDiscountRequest | null;
+  settings?: QuotationSettings;
 }
 
 /**
  * Response type from API
  */
 export interface Quotation extends ResponseEntity<QuotationBase> {
+  quotationNumber: string;
+  currency: string;
+  status: QuotationStatus;
+  billingAddress: Address | null;
+  shippingAddress: Address | null;
+  total: QuotationTotal;
+  orderId?: string;
+  company?: QuotationCompany;
+  owner?: QuotationOwner;
+  customer?: QuotationCustomer;
+  validPaymentMethods?: QuotationValidPaymentMethod[];
+  validShippingMethods?: QuotationValidShippingMethod[];
+  terms?: string;
+  communication?: QuotationMessage[];
+  changelog?: QuotationChangelog[];
   items?: QuotationItem[];
+  discount?: QuotationDiscountRequest;
+  settings?: QuotationSettings;
 }
 
 /**
- * List view type with tooltip information
+ * List view type with computed display fields
  */
-export interface QuotationList extends Omit<Quotation, 'items'> {
-  items: Tooltip;
+export interface QuotationList extends Omit<
+  Quotation,
+  'items' | 'communication' | 'changelog' | 'company' | 'owner'
+> {
+  company: string;
+  products: string;
+  sum: Price;
+  expirationDate: string;
+  dateCreated: string;
+  channel: string;
+  owner: string;
+  buyer: string;
+  requireConfirmation: string;
 }
 
+// =============================================================================
+// Quotation Product Row (table display type)
+// =============================================================================
+
 /**
- * Base type for quotation items
+ * Row type for the quotation products table.
+ * Maps quotation items + product data into a flat row for display.
+ */
+export interface QuotationProductRow {
+  product: string;
+  skuId: string;
+  quantity: number;
+  price: Price;
+  priceListPrice: Price;
+  quotationPrice: Price;
+  rowTotal: Price;
+  // Internal fields for rendering (not displayed as columns):
+  image: string;
+  articleNumber: string;
+  _id: string;
+}
+
+// =============================================================================
+// Quotation Item Base / Create / Update / Response
+// =============================================================================
+
+/**
+ * Base type for quotation items (response shape)
  */
 export interface QuotationItemBase {
-  productId: string;
-  sku: string;
   name: string;
+  articleNumber: string;
+  skuId: string;
+  skuName: string;
+  primaryImage: string;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  discount?: number;
+  ordPrice: number;
+  ordPriceIncVat: number;
+  listPrice: number;
+  listPriceIncVat: number;
+  unitPrice?: number;
+  unitPriceIncVat?: number;
+  rowTotal: number;
+  rowTotalIncVat: number;
 }
 
-export type QuotationItemCreate = CreateEntity<QuotationItemBase>;
+/**
+ * Item create request — different shape from response, matches POST API schema
+ */
+export interface QuotationItemCreate {
+  skuId: string;
+  quantity: number;
+  unitPrice?: number;
+}
+
 export type QuotationItemUpdate = UpdateEntity<QuotationItemBase>;
 export type QuotationItem = ResponseEntity<QuotationItemBase>;
+
+// =============================================================================
+// Field Filtering & API Options
+// =============================================================================
 
 /**
  * Field filter options for API queries
  */
-export type QuotationFieldsFilter = 'all' | 'default' | 'items';
+export type QuotationFieldsFilter =
+  | 'default'
+  | 'all'
+  | 'company'
+  | 'owner'
+  | 'customer'
+  | 'items'
+  | 'changelog'
+  | 'communication'
+  | 'terms'
+  | 'validShipping'
+  | 'validPayment';
 
 /**
  * API options type with field filtering
  */
 export type QuotationApiOptions = ApiOptions<QuotationFieldsFilter>;
+
+// =============================================================================
+// Batch Query Types
+// =============================================================================
+
+/**
+ * Quotation selection query for batch operations
+ */
+export interface QuotationSelectionQuery {
+  condition?: SelectorCondition;
+  quotationIds?: string[];
+  quotationNumbers?: string[];
+  names?: string[];
+  currencies?: string[];
+  marketIds?: string[];
+  channelIds?: string[];
+  companyIds?: number[];
+  companyNames?: string[];
+  ownerIds?: number[];
+  ownerNames?: string[];
+  customerNames?: string[];
+  customerEmails?: string[];
+  statuses?: QuotationStatus[];
+  validFrom?: string;
+  validTo?: string;
+}
+
+/**
+ * Batch query type for quotations
+ */
+export type QuotationBatchQuery = BatchQueryFiltered<QuotationSelectionQuery>;
+
+/**
+ * Batch query result type for quotations
+ */
+export type QuotationBatchQueryResult = BatchQueryResult<Quotation>;

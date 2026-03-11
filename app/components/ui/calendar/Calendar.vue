@@ -1,17 +1,14 @@
 <script lang="ts" setup>
-import type { CalendarRootEmits, CalendarRootProps, DateValue } from 'reka-ui';
-import type { HTMLAttributes, Ref } from 'vue';
-import type { LayoutTypes } from '.';
 import { getLocalTimeZone, today } from '@internationalized/date';
 import { createReusableTemplate, reactiveOmit, useVModel } from '@vueuse/core';
 import { CalendarRoot, useDateFormatter, useForwardPropsEmits } from 'reka-ui';
 import { createYear, createYearRange, toDate } from 'reka-ui/date';
 import { computed, toRaw } from 'vue';
-import { cn } from '@/utils/index';
 import {
   NativeSelect,
   NativeSelectOption,
 } from '@/components/ui/native-select';
+import { cn } from '@/utils/index';
 import {
   CalendarCell,
   CalendarCellTrigger,
@@ -25,6 +22,9 @@ import {
   CalendarNextButton,
   CalendarPrevButton,
 } from '.';
+import type { LayoutTypes } from '.';
+import type { CalendarRootEmits, CalendarRootProps, DateValue } from 'reka-ui';
+import type { HTMLAttributes, Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<
@@ -88,12 +88,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     <div class="**:data-[slot=native-select-icon]:right-1">
       <div class="relative">
         <div
-          class="pointer-events-none absolute inset-0 flex h-full items-center pl-2 text-sm"
+          class="pointer-events-none absolute inset-0 flex h-full items-center pl-2.5 text-sm"
         >
           {{ formatter.custom(toDate(date), { month: 'short' }) }}
         </div>
         <NativeSelect
-          class="relative h-8 pr-6 pl-2 text-xs text-transparent"
+          class="relative h-9 pr-6 pl-4 text-xs text-transparent"
           @change="
             (e: Event) => {
               placeholder = placeholder.set({
@@ -119,12 +119,12 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     <div class="**:data-[slot=native-select-icon]:right-1">
       <div class="relative">
         <div
-          class="pointer-events-none absolute inset-0 flex h-full items-center pl-2 text-sm"
+          class="pointer-events-none absolute inset-0 flex h-full items-center pl-2.5 text-sm"
         >
           {{ formatter.custom(toDate(date), { year: 'numeric' }) }}
         </div>
         <NativeSelect
-          class="relative h-8 pr-6 pl-2 text-xs text-transparent"
+          class="relative h-9 pr-6 pl-4 text-xs text-transparent"
           @change="
             (e: Event) => {
               placeholder = placeholder.set({

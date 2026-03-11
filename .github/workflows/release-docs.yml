@@ -7,31 +7,36 @@ jobs:
     name: Build and Deploy Job
     steps:
       # Step 1: Checkout the repository
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
 
-      # Step 2: Set up Node.js environment
+      # Step 2: Install pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      # Step 3: Set up Node.js environment
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20' # Adjust to your Node.js version
+          node-version: "24"
+          cache: pnpm
 
-      # Step 3: Install dependencies
+      # Step 4: Install dependencies
       - name: Install dependencies
-        run: yarn install
+        run: pnpm install --frozen-lockfile
 
-      # Step 4: Build and Deploy to Azure
+      # Step 5: Build and Deploy to Azure
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: 'upload'
+          action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          app_location: '/' # App source code path
-          app_build_command: 'yarn docs:build'
-          output_location: 'docs/.vitepress/dist' # Built app content directory - optional
+          app_location: "/" # App source code path
+          app_build_command: "pnpm docs:build"
+          output_location: "docs/.vitepress/dist" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######

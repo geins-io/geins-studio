@@ -1,5 +1,21 @@
 import { defineStore } from 'pinia';
 import type { Product, Category, Brand } from '#shared/types';
+
+/**
+ * Products store — caches product, category, and brand data for cross-page use.
+ *
+ * Fetches and transforms product data from the API, providing thumbnail URLs
+ * and localized names. Responds to language changes by re-fetching.
+ *
+ * Initialization: call `init()` once after authentication. The `geins-global.ts`
+ * plugin handles this automatically.
+ *
+ * @example
+ * ```ts
+ * const productsStore = useProductsStore();
+ * const { products, categories, brands } = storeToRefs(productsStore);
+ * ```
+ */
 export const useProductsStore = defineStore('products', () => {
   const { geinsLogWarn } = useGeinsLog('store/products.ts');
   const { productApi } = useGeinsRepository();
@@ -74,6 +90,7 @@ export const useProductsStore = defineStore('products', () => {
     categories.value = [];
     brands.value = [];
     ready.value = false;
+    initialized.value = false;
   }
 
   function getCategoryName(id: string): string {

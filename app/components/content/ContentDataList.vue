@@ -49,6 +49,16 @@ const _props = withDefaults(
         >
           {{ item.displayValue || item.value }}
         </ContentTextCopy>
+        <NuxtLink
+          v-else-if="item.displayType === DataItemDisplayType.Link && item.href"
+          :to="item.href"
+          :target="item.target"
+          :rel="item.target === '_blank' ? 'noopener noreferrer' : undefined"
+          class="hover:text-foreground inline-flex items-center gap-1 underline decoration-dotted underline-offset-4 transition-colors"
+        >
+          {{ item.displayValue || item.value }}
+          <LucideExternalLink v-if="item.target === '_blank'" class="size-3" />
+        </NuxtLink>
         <span v-else>{{ item.value }}</span>
       </li>
     </ul>
