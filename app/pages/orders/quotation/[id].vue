@@ -31,6 +31,7 @@ import type {
   SelectorSelectionQuery,
   Address,
   ProductApiOptions,
+  ChangelogEntry,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
@@ -52,7 +53,7 @@ const userStore = useUserStore();
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
-const { orderApi, customerApi, productApi } = useGeinsRepository();
+const { orderApi, customerApi, productApi, changelogApi } = useGeinsRepository();
 const { currentCurrencies, channels } = storeToRefs(accountStore);
 const currentChannels = computed(() => channels.value);
 const { getFallbackSelection, transformProductsToSelectorEntities } =
@@ -116,10 +117,17 @@ const isInitialLoadComplete = ref(false);
 
 // Tabs & Steps
 const tabs = computed(() =>
-  sentMode.value
-    ? [t('general'), t('communication')]
-    : [t('general'), t('product', 2)],
+  createMode.value
+    ? [t('general'), t('product', 2)]
+    : sentMode.value
+      ? [t('general'), t('communication'), t('changelog.tab_title')]
+      : [t('general'), t('product', 2), t('changelog.tab_title')],
 );
+
+// Changelog state
+const changelogEntries = ref<ChangelogEntry[]>([]);
+const changelogLoading = ref(false);
+const changelogError = ref(false);
 
 const stepValidationMap: Record<number, string> = {
   1: 'details',
@@ -804,6 +812,24 @@ const fetchProducts = async () => {
   }
 };
 
+// Fetch changelog entries — non-blocking, errors captured in changelogError
+const fetchChangelog = async () => {
+  if (!entityId.value) return;
+  changelogLoading.value = true;
+  changelogError.value = false;
+  try {
+    changelogEntries.value = await changelogApi.getForEntity(
+      'quotation',
+      entityId.value,
+    );
+  } catch (error) {
+    geinsLogError('Failed to fetch changelog:', error);
+    changelogError.value = true;
+  } finally {
+    changelogLoading.value = false;
+  }
+};
+
 // Watch for company selection changes (create mode only)
 watch(
   () => form.values.details?.accountId,
@@ -1084,6 +1110,9 @@ if (!createMode.value) {
     // entityDataUpdate after the baseline snapshot, which caused false unsaved changes.
     isInitialLoadComplete.value = true;
     fetchingData.value = false;
+
+    // Fetch changelog non-blocking — errors captured in changelogError
+    fetchChangelog();
   });
 
   // Re-parse entity data when refreshed (e.g., after a status transition).
@@ -2491,6 +2520,26 @@ definePageMeta({
                 @send-message="handleSendMessage"
                 @edit-message="handleEditMessage"
                 @delete-message="handleDeleteMessage"
+              />
+            </ContentEditCard>
+          </ContentEditMainContent>
+        </KeepAlive>
+
+        <!-- TAB 2: CHANGELOG (all non-create modes) -->
+        <KeepAlive>
+          <ContentEditMainContent
+            v-if="currentTab === 2 && !createMode"
+            :key="`tab-changelog`"
+          >
+            <ContentEditCard
+              :create-mode="false"
+              :title="$t('changelog.tab_title')"
+            >
+              <QuotationChangelog
+                :entries="changelogEntries"
+                :loading="changelogLoading"
+                :error="changelogError"
+                @retry="fetchChangelog"
               />
             </ContentEditCard>
           </ContentEditMainContent>

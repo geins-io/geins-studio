@@ -1,3 +1,4 @@
+import { changelogRepo } from './repositories/changelog';
 import { customerRepo } from './repositories/customer';
 import { entityRepo } from './repositories/entity';
 import { entityBaseRepo } from './repositories/entity-base';
@@ -14,4 +15,5 @@ export const repo = {
   user: userRepo,
   customer: customerRepo,
   order: orderRepo,
+  changelog: changelogRepo,
 };
