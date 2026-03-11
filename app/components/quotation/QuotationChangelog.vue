@@ -84,8 +84,7 @@ const rows = computed<ChangelogRow[]>(() =>
 
 const { getColumns, orderAndFilterColumns } = useColumns<ChangelogRow>();
 
-// Derive columns once when entries first arrive — not on every reactive tick.
-// Avoids the reactive loop that caused browser hangs on hard reload.
+// Derive columns once when entries first arrive.
 const columns = ref<ColumnDef<ChangelogRow>[]>([]);
 watch(
   () => props.entries.length,
@@ -102,16 +101,25 @@ watch(
   },
   { immediate: true },
 );
+
+// Only render TableView once columns are ready — mounting it with
+// columns=[] causes a browser hang (TanStack Table + empty column set).
+const ready = computed(() => columns.value.length > 0 || !props.loading);
 </script>
 
 <template>
-  <TableView
-    :columns="columns"
-    :data="rows"
-    entity-name="changelog_entry"
-    :mode="TableMode.Simple"
-    :loading="loading"
-    :error="error"
-    :on-retry="() => emit('retry')"
-  />
+  <template v-if="ready">
+    <TableView
+      :columns="columns"
+      :data="rows"
+      entity-name="changelog_entry"
+      :mode="TableMode.Simple"
+      :loading="loading"
+      :error="error"
+      :on-retry="() => emit('retry')"
+    />
+  </template>
+  <div v-else class="flex items-center justify-center py-8">
+    <LucideLoader2 class="text-muted-foreground size-6 animate-spin" />
+  </div>
 </template>
