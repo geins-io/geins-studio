@@ -1,3 +1,4 @@
+/** Return type for {@link useEntityUrl}. */
 interface UseEntityUrlReturnType {
   newEntityUrlAlias: ComputedRef<string>;
   listEntityUrlAlias: ComputedRef<string>;

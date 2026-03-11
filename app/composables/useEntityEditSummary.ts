@@ -12,6 +12,7 @@ interface EntityEditSummaryProps {
   status?: Ref<StatusBadgeStatus> | ComputedRef<StatusBadgeStatus> | StatusBadgeStatus;
 }
 
+/** Return type for {@link useEntityEditSummary}. */
 interface UseEntityEditSummaryReturnType {
   summaryProps: ComputedRef<{
     createMode: boolean;

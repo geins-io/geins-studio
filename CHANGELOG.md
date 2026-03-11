@@ -1,5 +1,53 @@
 # Changelog
 
+## v0.3.0 - 2026-03-11
+
+This release introduces the full quotation lifecycle, communications, and major infrastructure upgrades.
+
+### 🚀 Enhancements
+
+- Quotation create & edit with live price preview ([#132](https://github.com/geins-io/geins-studio/pull/132))
+- Quotation sent mode — read-only UI for non-draft statuses ([#133](https://github.com/geins-io/geins-studio/pull/133))
+- Quotation communications — threaded messages with customer and internal types ([#137](https://github.com/geins-io/geins-studio/pull/137))
+- Status transition messages attached to quotation actions ([#144](https://github.com/geins-io/geins-studio/pull/144))
+- Better error states for list page grids with inline retry ([#156](https://github.com/geins-io/geins-studio/pull/156))
+- Dynamic browser tab titles derived from breadcrumb trail ([#158](https://github.com/geins-io/geins-studio/pull/158))
+
+### 🐛 Bug Fixes
+
+- Sync draft quotation addresses with live company data ([#149](https://github.com/geins-io/geins-studio/pull/149))
+- Only show active buyers and companies in selectors
+- Price list price not set when assigning to company
+- Table pagination select auto width
+- Min value for expiration date picker ([#148](https://github.com/geins-io/geins-studio/pull/148))
+- Blur instead of submit on Enter in editable table cells ([#153](https://github.com/geins-io/geins-studio/pull/153))
+- ComboboxList inline positioning inside Sheet ([#123](https://github.com/geins-io/geins-studio/pull/123))
+
+### 🔄 Refactor
+
+- Migrate to Nuxt 4 and Node 22+ ([#122](https://github.com/geins-io/geins-studio/pull/122))
+- Merge DialogConfirmSend into DialogStatusTransition ([#150](https://github.com/geins-io/geins-studio/pull/150))
+- Unify QuotationAddress with standard Address type ([#139](https://github.com/geins-io/geins-studio/pull/139))
+- SKU items flow — single source of truth for item data ([#146](https://github.com/geins-io/geins-studio/pull/146))
+- Remove Market column from Quotations list ([#140](https://github.com/geins-io/geins-studio/pull/140))
+
+### 🏡 Chore
+
+- Upgrade Node and migrate from Yarn to pnpm ([#124](https://github.com/geins-io/geins-studio/pull/124))
+- Repository pruning — remove dead code, unused deps & stale config ([#125](https://github.com/geins-io/geins-studio/pull/125))
+- Agent operability — tooling, conventions & documentation ([#126](https://github.com/geins-io/geins-studio/pull/126))
+
+### 📚 Docs
+
+- Document list page error handling and TableView error state
+- Add usePageTitle composable documentation
+- Update features list with new capabilities
+- Add missing JSDoc to composable return type interfaces
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.2.0 - 2026-01-14
 
 This is a major release with significant refactoring and new features ([#120](https://github.com/geins-io/geins-studio/pull/120)).

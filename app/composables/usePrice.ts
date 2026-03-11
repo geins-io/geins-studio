@@ -1,3 +1,4 @@
+/** Return type for {@link usePrice}. */
 interface UsePriceReturnType {
   convertToPrice: (
     price: string | number | undefined,
