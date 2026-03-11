@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { TableMode } from '#shared/types';
 import type { ChangelogEntry, ChangelogChange } from '#shared/types';
+import type { ColumnDef } from '@tanstack/vue-table';
 
 const props = withDefaults(
   defineProps<{
@@ -18,7 +19,6 @@ const emit = defineEmits<{
   retry: [];
 }>();
 
-const { t } = useI18n();
 const { formatDate } = useDate();
 
 interface ChangelogRow {
@@ -71,7 +71,10 @@ function parseChanges(
 const rows = computed<ChangelogRow[]>(() =>
   props.entries.map((entry) => ({
     _id: entry.id,
-    date: formatDate(entry.changeDate),
+    date: formatDate(entry.changeDate, {
+      dateStyle: 'long',
+      timeStyle: 'short',
+    }),
     user: entry.identity || '-',
     action: entry.action || '-',
     area: entry.subEntity || '-',
@@ -81,34 +84,24 @@ const rows = computed<ChangelogRow[]>(() =>
 
 const { getColumns, orderAndFilterColumns } = useColumns<ChangelogRow>();
 
-const columns = computed(() => {
-  if (rows.value.length === 0) return [];
-  const cols = getColumns(rows.value, {
-    sortable: false,
-    includeColumns: ['date', 'user', 'action', 'area', 'details'],
-    columnTitles: {
-      date: t('changelog.col_date'),
-      user: t('changelog.col_user'),
-      action: t('changelog.col_action'),
-      area: t('changelog.col_area'),
-      details: t('changelog.col_details'),
-    },
-    columnTypes: {
-      date: 'default',
-      user: 'default',
-      action: 'default',
-      area: 'default',
-      details: 'default',
-    },
-  });
-  return orderAndFilterColumns(cols, [
-    'date',
-    'user',
-    'action',
-    'area',
-    'details',
-  ]);
-});
+// Derive columns once when entries first arrive — not on every reactive tick.
+// Avoids the reactive loop that caused browser hangs on hard reload.
+const columns = ref<ColumnDef<ChangelogRow>[]>([]);
+watch(
+  () => props.entries.length,
+  (len) => {
+    if (len > 0 && columns.value.length === 0) {
+      columns.value = orderAndFilterColumns(getColumns(rows.value), [
+        'date',
+        'user',
+        'action',
+        'area',
+        'details',
+      ]);
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -116,10 +109,9 @@ const columns = computed(() => {
     :columns="columns"
     :data="rows"
     entity-name="changelog_entry"
-    :mode="TableMode.Minimal"
+    :mode="TableMode.Simple"
     :loading="loading"
     :error="error"
-    :empty-description="$t('changelog.empty')"
     :on-retry="() => emit('retry')"
   />
 </template>
