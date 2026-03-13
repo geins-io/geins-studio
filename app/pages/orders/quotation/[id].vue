@@ -1048,15 +1048,16 @@ function syncCompanySnapshots(): boolean {
   return changed;
 }
 
-function syncItemPrices(
+function hasItemPriceDrift(
   savedItems: QuotationItem[],
   previewItems: QuotationItem[],
 ): boolean {
   if (sentMode.value || savedItems.length === 0 || previewItems.length === 0)
     return false;
 
+  const savedBySkuId = new Map(savedItems.map((s) => [s.skuId, s]));
   for (const previewItem of previewItems) {
-    const saved = savedItems.find((s) => s.skuId === previewItem.skuId);
+    const saved = savedBySkuId.get(previewItem.skuId);
     if (!saved) continue;
     if (
       saved.ordPrice !== previewItem.ordPrice ||
@@ -1103,9 +1104,7 @@ if (!createMode.value) {
     await fetchProducts();
 
     // Capture saved item prices before preview overwrites them with current pricelist values
-    const savedItems: QuotationItem[] | undefined = [
-      ...(quotation.items || []),
-    ];
+    const savedItems: QuotationItem[] = [...(quotation.items || [])];
 
     // Trigger initial preview so prices are enriched before the snapshot
     if (quotationItems.value.length > 0) {
@@ -1122,19 +1121,12 @@ if (!createMode.value) {
     await nextTick();
     setOriginalSavedData();
 
-    // Sync stale snapshots (addresses, owner, buyer, company) with live data.
-    // If any snapshot is outdated, auto-save so the backend re-snapshots
-    // the current content — prevents sending a quotation with stale data.
-    if (syncCompanySnapshots()) {
-      await updateEntity(undefined, undefined, false, true);
-      cancelPendingFormSync();
-      await nextTick();
-      setOriginalSavedData();
-    }
-
-    // Sync stale pricelist prices: if preview returned different ordPrice/listPrice
-    // than what was saved, auto-save so the quotation reflects current prices.
-    if (syncItemPrices(savedItems, displayItems.value)) {
+    // Sync stale snapshots (addresses, owner, buyer, company) and stale pricelist
+    // prices. If either is outdated, auto-save once so the backend re-snapshots
+    // the current content and persists current prices.
+    const snapshotsDrifted = syncCompanySnapshots();
+    const pricesDrifted = hasItemPriceDrift(savedItems, displayItems.value);
+    if (snapshotsDrifted || pricesDrifted) {
       await updateEntity(undefined, undefined, false, true);
       cancelPendingFormSync();
       await nextTick();
