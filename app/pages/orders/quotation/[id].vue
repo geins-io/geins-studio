@@ -1152,6 +1152,7 @@ if (!createMode.value) {
     cancelPendingFormSync();
     await nextTick();
     setOriginalSavedData();
+    fetchChangelog();
   });
 } else {
   // Create mode: fetch all companies
@@ -1172,6 +1173,7 @@ const handleSave = async () => {
     cancelPendingFormSync();
     await nextTick();
     setOriginalSavedData();
+    fetchChangelog();
   }
 };
 
