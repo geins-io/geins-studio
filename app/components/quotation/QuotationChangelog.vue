@@ -67,7 +67,7 @@ const filteredEntries = computed(() =>
 
 const rows = computed<ChangelogRow[]>(() =>
   filteredEntries.value.map((entry) => ({
-    _id: entry.id,
+    _id: String(entry.id),
     date: formatDate(entry.changeDate, {
       dateStyle: 'long',
       timeStyle: 'short',
@@ -234,7 +234,7 @@ const ready = computed(() => columns.value.length > 0 || !props.loading);
       :data="rows"
       entity-name="changelog_entry"
       :mode="TableMode.Simple"
-      :loading="loading"
+      :loading="loading && rows.length === 0"
       :error="error"
       :on-retry="() => emit('retry')"
     />
