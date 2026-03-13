@@ -461,6 +461,10 @@
     "reject_quotation_description": "Vill du avvisa denna offert för kunden?",
     "confirm_quotation_description": "När du bekräftat offerten kan kunden lägga ordern.",
     "cancel_quotation_description": "Detta avbryter offerten. Kunden eller du kan inte längre vidta några åtgärder på denna offert.",
+    "extend_quotation": "Sätt nytt utgångsdatum",
+    "extend_quotation_description_pending": "Välj ett nytt utgångsdatum för denna offert.",
+    "extend_quotation_description_expired": "Välj ett nytt utgångsdatum för denna offert. Detta kommer att återaktivera offerten och sätta statusen till väntande.",
+    "new_expiration_date": "Nytt utgångsdatum",
     "place_order_description": "Detta lägger ordern för kunden och slutför offerten.",
     "copy_as_new_draft": "Kopiera som nytt utkast",
     "quotation_transition_success": "Offertstatus uppdaterades",
@@ -513,6 +517,8 @@
       "reject": "avvisade offerten",
       "confirm": "bekräftade offerten",
       "cancel": "avbröt offerten",
+      "expire": "satte offerten som utgången",
+      "extend": "satte ett nytt utgångsdatum",
       "finalize": "lade ordern"
     }
   },
