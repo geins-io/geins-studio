@@ -1048,6 +1048,26 @@ function syncCompanySnapshots(): boolean {
   return changed;
 }
 
+function syncItemPrices(
+  savedItems: QuotationItem[],
+  previewItems: QuotationItem[],
+): boolean {
+  if (sentMode.value || savedItems.length === 0 || previewItems.length === 0)
+    return false;
+
+  for (const previewItem of previewItems) {
+    const saved = savedItems.find((s) => s.skuId === previewItem.skuId);
+    if (!saved) continue;
+    if (
+      saved.ordPrice !== previewItem.ordPrice ||
+      saved.listPrice !== previewItem.listPrice
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // =====================================================================================
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
@@ -1082,6 +1102,11 @@ if (!createMode.value) {
     // populated before we take the unsaved-changes baseline snapshot)
     await fetchProducts();
 
+    // Capture saved item prices before preview overwrites them with current pricelist values
+    const savedItems: QuotationItem[] | undefined = [
+      ...(quotation.items || []),
+    ];
+
     // Trigger initial preview so prices are enriched before the snapshot
     if (quotationItems.value.length > 0) {
       await callPreview();
@@ -1101,6 +1126,15 @@ if (!createMode.value) {
     // If any snapshot is outdated, auto-save so the backend re-snapshots
     // the current content — prevents sending a quotation with stale data.
     if (syncCompanySnapshots()) {
+      await updateEntity(undefined, undefined, false, true);
+      cancelPendingFormSync();
+      await nextTick();
+      setOriginalSavedData();
+    }
+
+    // Sync stale pricelist prices: if preview returned different ordPrice/listPrice
+    // than what was saved, auto-save so the quotation reflects current prices.
+    if (syncItemPrices(savedItems, displayItems.value)) {
       await updateEntity(undefined, undefined, false, true);
       cancelPendingFormSync();
       await nextTick();
@@ -1269,13 +1303,17 @@ const statusActions = computed<StatusActionLayout>(() => {
             icon: 'ban',
           },
         ],
-        dropdownActions: [extendAction(t('orders.extend_quotation_description_pending'))],
+        dropdownActions: [
+          extendAction(t('orders.extend_quotation_description_pending')),
+        ],
       };
 
     case 'expired':
       return {
         placeOrder: false,
-        groupActions: [extendAction(t('orders.extend_quotation_description_expired'))],
+        groupActions: [
+          extendAction(t('orders.extend_quotation_description_expired')),
+        ],
         dropdownActions: [],
       };
 
