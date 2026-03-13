@@ -74,7 +74,7 @@ const rows = computed<ChangelogRow[]>(() =>
     }),
     user: entry.identity || '-',
     action: entry.action || '-',
-    area: entry.subEntity,
+    area: entry.subEntity || '-',
     changes: parseChanges(entry.changes),
   })),
 );
