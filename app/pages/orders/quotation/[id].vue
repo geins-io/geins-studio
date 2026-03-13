@@ -1048,6 +1048,27 @@ function syncCompanySnapshots(): boolean {
   return changed;
 }
 
+function hasItemPriceDrift(
+  savedItems: QuotationItem[],
+  previewItems: QuotationItem[],
+): boolean {
+  if (sentMode.value || savedItems.length === 0 || previewItems.length === 0)
+    return false;
+
+  const savedBySkuId = new Map(savedItems.map((s) => [s.skuId, s]));
+  for (const previewItem of previewItems) {
+    const saved = savedBySkuId.get(previewItem.skuId);
+    if (!saved) continue;
+    if (
+      saved.ordPrice !== previewItem.ordPrice ||
+      saved.listPrice !== previewItem.listPrice
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // =====================================================================================
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
@@ -1082,6 +1103,9 @@ if (!createMode.value) {
     // populated before we take the unsaved-changes baseline snapshot)
     await fetchProducts();
 
+    // Capture saved item prices before preview overwrites them with current pricelist values
+    const savedItems: QuotationItem[] = [...(quotation.items || [])];
+
     // Trigger initial preview so prices are enriched before the snapshot
     if (quotationItems.value.length > 0) {
       await callPreview();
@@ -1097,10 +1121,12 @@ if (!createMode.value) {
     await nextTick();
     setOriginalSavedData();
 
-    // Sync stale snapshots (addresses, owner, buyer, company) with live data.
-    // If any snapshot is outdated, auto-save so the backend re-snapshots
-    // the current content — prevents sending a quotation with stale data.
-    if (syncCompanySnapshots()) {
+    // Sync stale snapshots (addresses, owner, buyer, company) and stale pricelist
+    // prices. If either is outdated, auto-save once so the backend re-snapshots
+    // the current content and persists current prices.
+    const snapshotsDrifted = syncCompanySnapshots();
+    const pricesDrifted = hasItemPriceDrift(savedItems, displayItems.value);
+    if (snapshotsDrifted || pricesDrifted) {
       await updateEntity(undefined, undefined, false, true);
       cancelPendingFormSync();
       await nextTick();
@@ -1269,13 +1295,17 @@ const statusActions = computed<StatusActionLayout>(() => {
             icon: 'ban',
           },
         ],
-        dropdownActions: [extendAction(t('orders.extend_quotation_description_pending'))],
+        dropdownActions: [
+          extendAction(t('orders.extend_quotation_description_pending')),
+        ],
       };
 
     case 'expired':
       return {
         placeOrder: false,
-        groupActions: [extendAction(t('orders.extend_quotation_description_expired'))],
+        groupActions: [
+          extendAction(t('orders.extend_quotation_description_expired')),
+        ],
         dropdownActions: [],
       };
 
