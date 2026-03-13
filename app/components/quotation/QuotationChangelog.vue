@@ -121,9 +121,9 @@ const changesColumn: ColumnDef<ChangelogRow> = {
         validToChange.to && isValidDate(validToChange.to)
           ? formatDate(validToChange.to, { dateStyle: 'long' })
           : (validToChange.to ??
-            (validToChange.value
+            (validToChange.value && isValidDate(validToChange.value)
               ? formatDate(validToChange.value, { dateStyle: 'long' })
-              : '-'));
+              : (validToChange.value ?? '-')));
 
       const dateParts: VNode[] = [];
       if (validToChange.from && validToChange.to) {
