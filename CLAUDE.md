@@ -235,7 +235,8 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - **`TableCellProduct`** — Reusable table cell component at `app/components/table/cell/TableCellProduct.vue` that displays a product image, name, and article number. Props: `name`, `articleNumber?`, `imageUrl?`. Prefer using the `'product'` column type in `useColumns` (which renders this component automatically) instead of manual `h()` calls. The row data must have `articleNumber` and `image`/`imageUrl` fields alongside the accessor field.
 - **Editable columns** — Use `columnTypes` in `useColumns` options with `'editable-number'`, `'editable-string'`, `'editable-currency'`, or `'editable-percentage'`. For custom inline-editable columns, render `TableCellEditable<T>` directly via `h()` with `onChange`/`onBlur` handlers.
 - **Column type inference**: `useColumns.getColumns()` infers column types from field names (e.g. "date" → date formatter, "price"/"amount" → currency, "image" → thumbnail, "product" with `articleNumber` in data → product cell). Override via `columnTypes` option. Header/cell base styles come from `getBasicHeaderStyle(table)` and `getBasicCellStyle(table)` which branch on the table mode.
-- **useSkeleton**: Composable at `app/composables/useSkeleton.ts` generates placeholder rows and columns with `<Skeleton>` components when `TableView` has `loading={true}`.
+- **useSkeleton**: Composable at `app/composables/useSkeleton.ts` generates placeholder rows and columns with `<Skeleton>` components when `TableView` has `loading={true}`. **Important**: Skeleton rows don't have `_id` fields, so passing `loading=true` while the table already has data causes "Duplicate keys: undefined" warnings and potential browser freezes. For tables that re-fetch data (e.g. after status transitions), use `:loading="loading && rows.length === 0"` to only show skeletons on initial load.
+- **Custom columns with `extendColumns`**: Always use `useColumns` (`getColumns` + `orderAndFilterColumns` + `extendColumns`) instead of manually defining all columns — otherwise default cell/header styling is lost. Use `excludeColumns` to skip fields that need custom rendering, then `extendColumns` to add them back with a custom `cell` render function. For the header, provide a render function using `getBasicHeaderStyle(table)` (not a plain string) to match the styled headers from `getColumns`.
 - **`TableCellActions` actions**: Default `availableActions` is `['edit', 'copy', 'delete']`. To enable copy on a list page: add `'copy'` to the array passed to `addActionsColumn` and provide an `onCopy` handler in the props object. Handler pattern: call the copy API, show a success toast, then `navigateTo` the new entity's URL. On error: `geinsLogError` + `showErrorToast`.
 - **`TableCellActions` disabled actions**: Accepts a `disabledActions` prop — either a static `TableRowAction[]` or a per-row callback `(rowData: T) => TableRowAction[]`. Disabled items remain visible but non-interactive. Pass via `addActionsColumn` props: `disabledActions: (item) => item.status !== 'draft' ? ['delete'] : []`.
 
@@ -314,6 +315,14 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - "Copy as new draft" calls `orderApi.quotation.copy(id)` (`POST /quotation/{id}/copy`) → shows success toast → navigates to the new draft.
 - **Deletable statuses**: Delete is available for `draft`, `rejected`, `expired`, and `canceled` quotations. In draft mode, delete is in the `...` dropdown. In sent mode, `canDeleteInSentMode` (computed from `currentStatus`) gates a delete option in the sent-mode dropdown. Statuses like `pending`, `accepted`, `confirmed`, and `finalized` do not allow deletion.
 - The sidebar `StatusBadge` is reactive: `useEntityEditSummary` accepts `status` as a `Ref` and `unref`s it in the computed.
+
+**Changelog:**
+
+- `changelogApi.getForEntity('quotation', id)` fetches changelog entries. Displayed in the Changelog tab (sent mode, tab index 2).
+- `ChangelogEntry.id` is a `number` from the API (typed as `string | number`). Always use `String(entry.id)` when mapping to `_id` for table rows.
+- Changelog entries with `subEntity === 'message'` are filtered out since messages are shown in the Communications tab.
+- The `changes` field is a JSON string of `[{ p: string, c: string[] }]`. For status transitions (`p === 'status'`), render `StatusBadge` components. For `validTo` changes, format ISO dates with `formatDate()`. When both appear in the same entry (e.g. extend from expired → pending), render them together on the same row.
+- `fetchChangelog()` is called after every `refreshEntityData` (via the `watch(data)` block) and after `handleSave` to keep the changelog in sync.
 
 ### Companies
 
