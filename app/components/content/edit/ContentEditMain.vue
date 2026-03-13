@@ -23,6 +23,11 @@ watch(initialSidebarVisible, (newValue) => {
   sidebarCanBeToggled.value = hasSidebar.value && !newValue;
 });
 
+provide(
+  'sidebar-floating',
+  computed(() => sidebarCanBeToggled.value && sidebarVisible.value),
+);
+
 const handleToggleSidebar = () => {
   if (!sidebarToggled.value) {
     sidebarVisible.value = false;
