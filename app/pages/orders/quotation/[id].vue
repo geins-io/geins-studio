@@ -53,7 +53,8 @@ const userStore = useUserStore();
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
-const { orderApi, customerApi, productApi, changelogApi } = useGeinsRepository();
+const { orderApi, customerApi, productApi, changelogApi } =
+  useGeinsRepository();
 const { currentCurrencies, channels } = storeToRefs(accountStore);
 const currentChannels = computed(() => channels.value);
 const { getFallbackSelection, transformProductsToSelectorEntities } =
@@ -121,7 +122,7 @@ const tabs = computed(() =>
     ? [t('general'), t('product', 2)]
     : sentMode.value
       ? [t('general'), t('communication'), t('changelog.tab_title')]
-      : [t('general'), t('product', 2), t('changelog.tab_title')],
+      : [t('general'), t('product', 2)],
 );
 
 // Changelog state
