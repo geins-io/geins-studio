@@ -461,6 +461,10 @@
     "reject_quotation_description": "Do you want to reject this quotation for the customer?",
     "confirm_quotation_description": "Once confirmed, the customer will be able to place the order.",
     "cancel_quotation_description": "This will cancel the quotation. The customer or you will no longer be able to take any further actions on this quotation.",
+    "extend_quotation": "Set new expiration date",
+    "extend_quotation_description_pending": "Select a new expiration date for this quotation.",
+    "extend_quotation_description_expired": "Select a new expiration date for this quotation. This will reactivate this quotation and set the status to pending.",
+    "new_expiration_date": "New expiration date",
     "place_order_description": "This will place the order for the customer and finalize the quotation.",
     "copy_as_new_draft": "Copy as new draft",
     "quotation_transition_success": "Quotation status updated",
@@ -513,6 +517,8 @@
       "reject": "rejected the quotation",
       "confirm": "confirmed the quotation",
       "cancel": "canceled the quotation",
+      "expire": "set the quotation as expired",
+      "extend": "set a new expiration date",
       "finalize": "placed the order"
     }
   },

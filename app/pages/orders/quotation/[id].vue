@@ -27,6 +27,7 @@ import type {
   QuotationMessageType,
   QuotationStatus,
   StatusTransitionRequest,
+  ExtendTransitionRequest,
   SelectorEntity,
   SelectorSelectionQuery,
   Address,
@@ -1197,9 +1198,10 @@ interface StatusAction {
   title: string;
   description: string;
   variant?: 'default' | 'destructive';
-  icon?: 'send' | 'check' | 'ban' | 'x' | 'shopping-cart';
+  icon?: 'send' | 'check' | 'ban' | 'x' | 'shopping-cart' | 'calendar-plus';
   messageType?: QuotationMessageType;
   blockReasons?: string[];
+  showDatePicker?: boolean;
 }
 
 interface StatusActionLayout {
@@ -1213,6 +1215,15 @@ const statusActions = computed<StatusActionLayout>(() => {
   const strict = entityData.value?.settings?.requireConfirmation ?? false;
 
   const en = { entityName };
+
+  const extendAction = (description: string): StatusAction => ({
+    action: 'extend',
+    label: t('orders.extend_quotation'),
+    title: t('orders.extend_quotation'),
+    description,
+    icon: 'calendar-plus',
+    showDatePicker: true,
+  });
 
   switch (status) {
     case 'pending':
@@ -1236,6 +1247,7 @@ const statusActions = computed<StatusActionLayout>(() => {
             },
           ],
           dropdownActions: [
+            extendAction(t('orders.extend_quotation_description_pending')),
             {
               action: 'cancel',
               label: t('cancel_entity', en),
@@ -1257,6 +1269,13 @@ const statusActions = computed<StatusActionLayout>(() => {
             icon: 'ban',
           },
         ],
+        dropdownActions: [extendAction(t('orders.extend_quotation_description_pending'))],
+      };
+
+    case 'expired':
+      return {
+        placeOrder: false,
+        groupActions: [extendAction(t('orders.extend_quotation_description_expired'))],
         dropdownActions: [],
       };
 
@@ -1348,7 +1367,33 @@ const handleStatusTransition = async (
   action: string,
   message?: string,
   messageType: QuotationMessageType = 'internal',
+  validTo?: string,
 ) => {
+  // Extend uses a dedicated endpoint with validTo in the request body
+  if (action === 'extend') {
+    if (!validTo) return;
+    transitionLoading.value = true;
+    try {
+      const request: ExtendTransitionRequest = {
+        ...buildTransitionRequest(message, messageType),
+        validTo,
+      };
+      await orderApi.quotation.extend(entityId.value, request);
+      await refreshEntityData.value?.();
+      toast({
+        title: t('orders.quotation_transition_success'),
+        variant: 'positive',
+      });
+    } catch (error) {
+      geinsLogError('Failed to extend quotation:', error);
+      showErrorToast(t('orders.quotation_transition_error'));
+    } finally {
+      transitionLoading.value = false;
+      transitionDialogOpen.value = false;
+    }
+    return;
+  }
+
   const method = transitionMethods[action];
   if (!method) return;
 
@@ -1690,9 +1735,15 @@ definePageMeta({
     :icon="transitionAction.icon"
     :default-message-type="transitionAction.messageType"
     :block-reasons="transitionAction.blockReasons"
+    :show-date-picker="transitionAction.showDatePicker"
+    :date-picker-label="$t('orders.new_expiration_date')"
     @confirm="
-      (msg: string | undefined, msgType: QuotationMessageType) =>
-        handleStatusTransition(transitionAction!.action, msg, msgType)
+      (
+        msg: string | undefined,
+        msgType: QuotationMessageType,
+        validTo?: string,
+      ) =>
+        handleStatusTransition(transitionAction!.action, msg, msgType, validTo)
     "
   />
   <ContentEditWrap
@@ -1792,6 +1843,10 @@ definePageMeta({
                 />
                 <LucideBan v-if="action.icon === 'ban'" class="mr-2 size-4" />
                 <LucideX v-if="action.icon === 'x'" class="mr-2 size-4" />
+                <LucideCalendarPlus
+                  v-if="action.icon === 'calendar-plus'"
+                  class="mr-2 size-4"
+                />
                 {{ action.label }}
               </Button>
               <DropdownMenu v-if="statusActions.groupActions.length">
@@ -1816,6 +1871,10 @@ definePageMeta({
                       />
                       <LucideBan
                         v-if="action.icon === 'ban'"
+                        class="mr-2 size-4"
+                      />
+                      <LucideCalendarPlus
+                        v-if="action.icon === 'calendar-plus'"
                         class="mr-2 size-4"
                       />
                       {{ action.label }}
@@ -2123,17 +2182,34 @@ definePageMeta({
                       </p>
                       <StatusBadge :status="quotationStatus" />
                     </div>
-                    <div>
+                    <div
+                      v-if="
+                        quotationStatus === 'pending' ||
+                        quotationStatus === 'expired'
+                      "
+                    >
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
                         {{ $t('expiration_date') }}
                       </p>
-                      <p class="text-sm">
-                        {{
-                          entityData?.validTo
-                            ? formatDate(entityData.validTo)
-                            : $t('orders.no_expiration_date')
-                        }}
-                      </p>
+                      <div class="flex items-center gap-2">
+                        <p
+                          :class="
+                            cn(
+                              'text-sm',
+                              quotationStatus === 'expired' &&
+                                entityData?.validTo
+                                ? 'text-destructive'
+                                : '',
+                            )
+                          "
+                        >
+                          {{
+                            entityData?.validTo
+                              ? formatDate(entityData.validTo)
+                              : $t('orders.no_expiration_date')
+                          }}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <div class="grid grid-cols-2 gap-4 border-t pt-4">
