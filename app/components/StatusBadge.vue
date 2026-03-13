@@ -31,7 +31,6 @@ const badgeVariant = computed(() => {
     case true:
       return 'positive';
     case 'draft':
-    case 'expired':
     case false:
       return 'secondary';
     default:
