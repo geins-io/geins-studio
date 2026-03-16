@@ -4,7 +4,7 @@ export interface ChangelogChange {
 }
 
 export interface ChangelogEntry {
-  id: string;
+  id: string | number;
   changeDate: string;
   action: string;
   entity: string;

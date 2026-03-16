@@ -1,7 +1,14 @@
 <script setup lang="ts">
+import { getLocalTimeZone, today } from '@internationalized/date';
 import type { QuotationMessageType } from '#shared/types';
 
-type TransitionIcon = 'send' | 'check' | 'x' | 'ban' | 'shopping-cart';
+type TransitionIcon =
+  | 'send'
+  | 'check'
+  | 'x'
+  | 'ban'
+  | 'shopping-cart'
+  | 'calendar-plus';
 
 const props = withDefaults(
   defineProps<{
@@ -10,6 +17,8 @@ const props = withDefaults(
     description: string;
     loading: boolean;
     showMessage?: boolean;
+    showDatePicker?: boolean;
+    datePickerLabel?: string;
     defaultMessageType?: QuotationMessageType;
     variant?: 'default' | 'destructive';
     icon?: TransitionIcon;
@@ -17,6 +26,8 @@ const props = withDefaults(
   }>(),
   {
     showMessage: true,
+    showDatePicker: false,
+    datePickerLabel: undefined,
     defaultMessageType: 'internal',
     variant: 'default',
     icon: undefined,
@@ -28,25 +39,40 @@ const open = defineModel('open', {
   default: false,
 });
 const emit = defineEmits<{
-  confirm: [message: string | undefined, messageType: QuotationMessageType];
+  confirm: [
+    message: string | undefined,
+    messageType: QuotationMessageType,
+    validTo?: string,
+  ];
   cancel: [];
 }>();
 
 const message = ref('');
+const selectedDate = ref<string>();
 const selectedMessageType = ref<QuotationMessageType>(props.defaultMessageType);
 
 const isBlocked = computed(
   () => props.blockReasons && props.blockReasons.length > 0,
 );
 
+const isDateRequired = computed(
+  () => props.showDatePicker && !selectedDate.value,
+);
+
 const handleConfirm = () => {
-  emit('confirm', message.value || undefined, selectedMessageType.value);
+  emit(
+    'confirm',
+    message.value || undefined,
+    selectedMessageType.value,
+    selectedDate.value,
+  );
 };
 
 // Reset state when dialog opens/closes
 watch(open, (isOpen) => {
   if (!isOpen) {
     message.value = '';
+    selectedDate.value = undefined;
   } else {
     selectedMessageType.value = props.defaultMessageType;
   }
@@ -74,6 +100,16 @@ watch(open, (isOpen) => {
           </ul>
         </template>
       </Feedback>
+      <div v-if="props.showDatePicker && !isBlocked" class="space-y-1.5">
+        <Label>
+          {{ props.datePickerLabel || $t('expiration_date') }}
+        </Label>
+        <FormInputDate
+          v-model="selectedDate"
+          :placeholder="props.datePickerLabel || $t('expiration_date')"
+          :min-value="today(getLocalTimeZone())"
+        />
+      </div>
       <div v-if="props.showMessage && !isBlocked" class="space-y-3">
         <Tabs v-model="selectedMessageType">
           <TabsList>
@@ -102,7 +138,7 @@ watch(open, (isOpen) => {
         <Button
           :loading="props.loading"
           :variant="props.variant"
-          :disabled="isBlocked"
+          :disabled="isBlocked || isDateRequired"
           @click.prevent.stop="handleConfirm"
         >
           <LucideSend v-if="props.icon === 'send'" class="mr-2 size-4" />
@@ -111,6 +147,10 @@ watch(open, (isOpen) => {
           <LucideBan v-if="props.icon === 'ban'" class="mr-2 size-4" />
           <LucideShoppingCart
             v-if="props.icon === 'shopping-cart'"
+            class="mr-2 size-4"
+          />
+          <LucideCalendarPlus
+            v-if="props.icon === 'calendar-plus'"
             class="mr-2 size-4"
           />
           {{ props.action }}

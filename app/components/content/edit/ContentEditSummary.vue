@@ -26,6 +26,8 @@ const props = withDefaults(
 
 const { t } = useI18n();
 
+const sidebarFloating = inject<Ref<boolean>>('sidebar-floating', ref(false));
+
 const active = defineModel<boolean>('active');
 
 const hasExplicitStatus = computed(() => props.status !== undefined);
@@ -56,7 +58,14 @@ const activeDescription = computed(() => {
 });
 </script>
 <template>
-  <Card class="max-h-[80vh] space-y-4 overflow-y-auto p-6">
+  <Card
+    :class="
+      cn(
+        'space-y-4 p-6',
+        sidebarFloating && '@max-2xl:max-h-[80vh] @max-2xl:overflow-y-auto',
+      )
+    "
+  >
     <div class="flex items-center justify-between">
       <ContentCardHeader :title="$t('summary')" :description="description" />
       <StatusBadge

@@ -27,6 +27,7 @@ import type {
   QuotationMessageType,
   QuotationStatus,
   StatusTransitionRequest,
+  ExtendTransitionRequest,
   SelectorEntity,
   SelectorSelectionQuery,
   Address,
@@ -53,7 +54,8 @@ const userStore = useUserStore();
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
-const { orderApi, customerApi, productApi, changelogApi } = useGeinsRepository();
+const { orderApi, customerApi, productApi, changelogApi } =
+  useGeinsRepository();
 const { currentCurrencies, channels } = storeToRefs(accountStore);
 const currentChannels = computed(() => channels.value);
 const { getFallbackSelection, transformProductsToSelectorEntities } =
@@ -121,7 +123,7 @@ const tabs = computed(() =>
     ? [t('general'), t('product', 2)]
     : sentMode.value
       ? [t('general'), t('communication'), t('changelog.tab_title')]
-      : [t('general'), t('product', 2), t('changelog.tab_title')],
+      : [t('general'), t('product', 2)],
 );
 
 // Changelog state
@@ -1046,6 +1048,27 @@ function syncCompanySnapshots(): boolean {
   return changed;
 }
 
+function hasItemPriceDrift(
+  savedItems: QuotationItem[],
+  previewItems: QuotationItem[],
+): boolean {
+  if (sentMode.value || savedItems.length === 0 || previewItems.length === 0)
+    return false;
+
+  const savedBySkuId = new Map(savedItems.map((s) => [s.skuId, s]));
+  for (const previewItem of previewItems) {
+    const saved = savedBySkuId.get(previewItem.skuId);
+    if (!saved) continue;
+    if (
+      saved.ordPrice !== previewItem.ordPrice ||
+      saved.listPrice !== previewItem.listPrice
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // =====================================================================================
 // DATA LOADING FOR EDIT MODE
 // =====================================================================================
@@ -1080,6 +1103,9 @@ if (!createMode.value) {
     // populated before we take the unsaved-changes baseline snapshot)
     await fetchProducts();
 
+    // Capture saved item prices before preview overwrites them with current pricelist values
+    const savedItems: QuotationItem[] = [...(quotation.items || [])];
+
     // Trigger initial preview so prices are enriched before the snapshot
     if (quotationItems.value.length > 0) {
       await callPreview();
@@ -1095,10 +1121,12 @@ if (!createMode.value) {
     await nextTick();
     setOriginalSavedData();
 
-    // Sync stale snapshots (addresses, owner, buyer, company) with live data.
-    // If any snapshot is outdated, auto-save so the backend re-snapshots
-    // the current content — prevents sending a quotation with stale data.
-    if (syncCompanySnapshots()) {
+    // Sync stale snapshots (addresses, owner, buyer, company) and stale pricelist
+    // prices. If either is outdated, auto-save once so the backend re-snapshots
+    // the current content and persists current prices.
+    const snapshotsDrifted = syncCompanySnapshots();
+    const pricesDrifted = hasItemPriceDrift(savedItems, displayItems.value);
+    if (snapshotsDrifted || pricesDrifted) {
       await updateEntity(undefined, undefined, false, true);
       cancelPendingFormSync();
       await nextTick();
@@ -1124,6 +1152,7 @@ if (!createMode.value) {
     cancelPendingFormSync();
     await nextTick();
     setOriginalSavedData();
+    fetchChangelog();
   });
 } else {
   // Create mode: fetch all companies
@@ -1144,6 +1173,7 @@ const handleSave = async () => {
     cancelPendingFormSync();
     await nextTick();
     setOriginalSavedData();
+    fetchChangelog();
   }
 };
 
@@ -1196,9 +1226,10 @@ interface StatusAction {
   title: string;
   description: string;
   variant?: 'default' | 'destructive';
-  icon?: 'send' | 'check' | 'ban' | 'x' | 'shopping-cart';
+  icon?: 'send' | 'check' | 'ban' | 'x' | 'shopping-cart' | 'calendar-plus';
   messageType?: QuotationMessageType;
   blockReasons?: string[];
+  showDatePicker?: boolean;
 }
 
 interface StatusActionLayout {
@@ -1212,6 +1243,15 @@ const statusActions = computed<StatusActionLayout>(() => {
   const strict = entityData.value?.settings?.requireConfirmation ?? false;
 
   const en = { entityName };
+
+  const extendAction = (description: string): StatusAction => ({
+    action: 'extend',
+    label: t('orders.extend_quotation'),
+    title: t('orders.extend_quotation'),
+    description,
+    icon: 'calendar-plus',
+    showDatePicker: true,
+  });
 
   switch (status) {
     case 'pending':
@@ -1235,6 +1275,7 @@ const statusActions = computed<StatusActionLayout>(() => {
             },
           ],
           dropdownActions: [
+            extendAction(t('orders.extend_quotation_description_pending')),
             {
               action: 'cancel',
               label: t('cancel_entity', en),
@@ -1255,6 +1296,17 @@ const statusActions = computed<StatusActionLayout>(() => {
             description: t('orders.cancel_quotation_description'),
             icon: 'ban',
           },
+        ],
+        dropdownActions: [
+          extendAction(t('orders.extend_quotation_description_pending')),
+        ],
+      };
+
+    case 'expired':
+      return {
+        placeOrder: false,
+        groupActions: [
+          extendAction(t('orders.extend_quotation_description_expired')),
         ],
         dropdownActions: [],
       };
@@ -1347,7 +1399,33 @@ const handleStatusTransition = async (
   action: string,
   message?: string,
   messageType: QuotationMessageType = 'internal',
+  validTo?: string,
 ) => {
+  // Extend uses a dedicated endpoint with validTo in the request body
+  if (action === 'extend') {
+    if (!validTo) return;
+    transitionLoading.value = true;
+    try {
+      const request: ExtendTransitionRequest = {
+        ...buildTransitionRequest(message, messageType),
+        validTo,
+      };
+      await orderApi.quotation.extend(entityId.value, request);
+      await refreshEntityData.value?.();
+      toast({
+        title: t(`orders.quotation_transition_success_${action}`),
+        variant: 'positive',
+      });
+    } catch (error) {
+      geinsLogError('Failed to extend quotation:', error);
+      showErrorToast(t('orders.quotation_transition_error'));
+    } finally {
+      transitionLoading.value = false;
+      transitionDialogOpen.value = false;
+    }
+    return;
+  }
+
   const method = transitionMethods[action];
   if (!method) return;
 
@@ -1375,7 +1453,7 @@ const handleStatusTransition = async (
     }
     await refreshEntityData.value?.();
     toast({
-      title: t('orders.quotation_transition_success'),
+      title: t(`orders.quotation_transition_success_${action}`),
       variant: 'positive',
     });
   } catch (error) {
@@ -1689,9 +1767,15 @@ definePageMeta({
     :icon="transitionAction.icon"
     :default-message-type="transitionAction.messageType"
     :block-reasons="transitionAction.blockReasons"
+    :show-date-picker="transitionAction.showDatePicker"
+    :date-picker-label="$t('orders.new_expiration_date')"
     @confirm="
-      (msg: string | undefined, msgType: QuotationMessageType) =>
-        handleStatusTransition(transitionAction!.action, msg, msgType)
+      (
+        msg: string | undefined,
+        msgType: QuotationMessageType,
+        validTo?: string,
+      ) =>
+        handleStatusTransition(transitionAction!.action, msg, msgType, validTo)
     "
   />
   <ContentEditWrap
@@ -1791,6 +1875,10 @@ definePageMeta({
                 />
                 <LucideBan v-if="action.icon === 'ban'" class="mr-2 size-4" />
                 <LucideX v-if="action.icon === 'x'" class="mr-2 size-4" />
+                <LucideCalendarPlus
+                  v-if="action.icon === 'calendar-plus'"
+                  class="mr-2 size-4"
+                />
                 {{ action.label }}
               </Button>
               <DropdownMenu v-if="statusActions.groupActions.length">
@@ -1815,6 +1903,10 @@ definePageMeta({
                       />
                       <LucideBan
                         v-if="action.icon === 'ban'"
+                        class="mr-2 size-4"
+                      />
+                      <LucideCalendarPlus
+                        v-if="action.icon === 'calendar-plus'"
                         class="mr-2 size-4"
                       />
                       {{ action.label }}
@@ -2122,17 +2214,34 @@ definePageMeta({
                       </p>
                       <StatusBadge :status="quotationStatus" />
                     </div>
-                    <div>
+                    <div
+                      v-if="
+                        quotationStatus === 'pending' ||
+                        quotationStatus === 'expired'
+                      "
+                    >
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
                         {{ $t('expiration_date') }}
                       </p>
-                      <p class="text-sm">
-                        {{
-                          entityData?.validTo
-                            ? formatDate(entityData.validTo)
-                            : $t('orders.no_expiration_date')
-                        }}
-                      </p>
+                      <div class="flex items-center gap-2">
+                        <p
+                          :class="
+                            cn(
+                              'text-sm',
+                              quotationStatus === 'expired' &&
+                                entityData?.validTo
+                                ? 'text-destructive'
+                                : '',
+                            )
+                          "
+                        >
+                          {{
+                            entityData?.validTo
+                              ? formatDate(entityData.validTo)
+                              : $t('orders.no_expiration_date')
+                          }}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <div class="grid grid-cols-2 gap-4 border-t pt-4">

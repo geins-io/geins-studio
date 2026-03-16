@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.3.1 - 2026-03-16
+
+### 🚀 Enhancements
+
+- Extend quotation with new expiry date ([#166](https://github.com/geins-io/geins-studio/pull/166))
+- Improved quotation changelog display ([#169](https://github.com/geins-io/geins-studio/pull/169))
+- Action-specific toast messages for quotation status updates ([#171](https://github.com/geins-io/geins-studio/pull/171))
+
+### 🐛 Bug Fixes
+
+- Auto-save quotation items when pricelist prices have drifted ([#167](https://github.com/geins-io/geins-studio/pull/167))
+- No changelog shown in draft mode ([#165](https://github.com/geins-io/geins-studio/pull/165))
+- Sidebar overflow ([#164](https://github.com/geins-io/geins-studio/pull/164))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.3.0 - 2026-03-11
 
 This release introduces the full quotation lifecycle and major infrastructure upgrades.

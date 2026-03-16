@@ -40,7 +40,8 @@ export type QuotationActionKnown =
   | 'confirm'
   | 'finalize'
   | 'cancel'
-  | 'copy';
+  | 'copy'
+  | 'extend';
 
 export type QuotationAction = QuotationActionKnown | (string & {});
 
@@ -204,6 +205,14 @@ export interface StatusTransitionRequest {
     type: QuotationMessageType;
     message: string;
   };
+}
+
+/**
+ * Request body for the extend transition (POST /quotation/{id}/extend).
+ * Same as StatusTransitionRequest with a required validTo date.
+ */
+export interface ExtendTransitionRequest extends StatusTransitionRequest {
+  validTo: string;
 }
 
 // =============================================================================

@@ -13,6 +13,7 @@ import type {
   QuotationMessageCreate,
   QuotationMessageUpdate,
   StatusTransitionRequest,
+  ExtendTransitionRequest,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import { entityGetRepo } from './entity-base';
@@ -139,6 +140,12 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
       async finalize(id: string, data: StatusTransitionRequest): Promise<void> {
         await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/finalize`, {
+          method: 'POST',
+          body: data,
+        });
+      },
+      async extend(id: string, data: ExtendTransitionRequest): Promise<void> {
+        await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/extend`, {
           method: 'POST',
           body: data,
         });
