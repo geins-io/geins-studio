@@ -1413,7 +1413,7 @@ const handleStatusTransition = async (
       await orderApi.quotation.extend(entityId.value, request);
       await refreshEntityData.value?.();
       toast({
-        title: t('orders.quotation_transition_success'),
+        title: t(`orders.quotation_transition_success_${action}`),
         variant: 'positive',
       });
     } catch (error) {
@@ -1453,7 +1453,7 @@ const handleStatusTransition = async (
     }
     await refreshEntityData.value?.();
     toast({
-      title: t('orders.quotation_transition_success'),
+      title: t(`orders.quotation_transition_success_${action}`),
       variant: 'positive',
     });
   } catch (error) {
