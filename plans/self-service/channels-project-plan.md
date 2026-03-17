@@ -3,6 +3,10 @@
 > **Figma**: [Self-service - Channels - UX handoff](https://www.figma.com/design/Ayaap7VbZKzPt4kjf2sFAp/Self-service---Channels---UX-handoff?node-id=0-1&p=f)
 > **Date**: 2026-03-16
 > **Status**: Draft — iterating before Linear import
+>
+> **Related docs**:
+> - [Channels — Concept Documentation](./channels-concept.md) — domain model, relationships, and data flow
+> - [Storefront Settings — Schema & Data Spec](./storefront-settings-schema-spec.md) — full schema types, default schema, renderer behavior
 
 ---
 
@@ -172,6 +176,8 @@ Build the Channel entity management pages in Geins Studio. Channels represent sa
 - **Storefront settings - Layout options** (Figma node `132:4185`)
 
 ### Architecture
+
+> **Full specification**: [Storefront Settings — Schema & Data Spec](./storefront-settings-schema-spec.md)
 
 The entire Storefront settings section is driven by a **JSON schema**. The schema's **top level defines tabs** — each top-level key becomes a sub-tab. This means the user has full control over what tabs and fields appear. By default, Geins provides a standard schema with "Base settings" and "Layout options" tabs. Users building custom storefronts can paste their own schema to get a completely different tab structure and field set.
 
