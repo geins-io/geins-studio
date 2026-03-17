@@ -30,67 +30,67 @@ type StorefrontSchema = Record<string, SchemaTab>;
 
 /** A single tab in the settings UI */
 interface SchemaTab {
-  label: string;              // Display name for the tab
-  icon?: string;              // Lucide icon name (optional)
-  sections: SchemaSection[];  // Ordered list of sections within the tab
+  label: string; // Display name for the tab
+  icon?: string; // Lucide icon name (optional)
+  sections: SchemaSection[]; // Ordered list of sections within the tab
 }
 
 /** A visual section/card within a tab */
 interface SchemaSection {
-  key: string;                // Unique key for the section
-  title: string;              // Section heading
-  description?: string;       // Subtitle/description text
-  icon?: string;              // Lucide icon name (optional)
-  fields: SchemaField[];      // Ordered list of fields in this section
+  key: string; // Unique key for the section
+  title: string; // Section heading
+  description?: string; // Subtitle/description text
+  icon?: string; // Lucide icon name (optional)
+  fields: SchemaField[]; // Ordered list of fields in this section
 }
 
 /** A single form field or group of fields */
 interface SchemaField {
-  key: string;                // Maps to the settings value key (dot-notation path)
-  type: SchemaFieldType;      // Determines which component to render
-  label: string;              // Display label
-  description?: string;       // Help text shown below the label
-  icon?: string;              // Lucide icon name (shown before label)
-  default?: unknown;          // Default value if not set in settings
-  required?: boolean;         // Whether the field is required
-  disabled?: boolean;         // Whether the field is read-only
+  key: string; // Maps to the settings value key (dot-notation path)
+  type: SchemaFieldType; // Determines which component to render
+  label: string; // Display label
+  description?: string; // Help text shown below the label
+  icon?: string; // Lucide icon name (shown before label)
+  default?: unknown; // Default value if not set in settings
+  required?: boolean; // Whether the field is required
+  disabled?: boolean; // Whether the field is read-only
 
   // Type-specific properties
-  options?: SchemaFieldOption[];  // For 'select' and 'radio-cards'
-  accept?: string;                // For 'file' — MIME types (e.g. "image/*")
-  min?: number;                   // For 'number'
-  max?: number;                   // For 'number'
-  pattern?: string;               // Regex validation for 'string'
-  placeholder?: string;           // Placeholder text for inputs
+  options?: SchemaFieldOption[]; // For 'select' and 'radio-cards'
+  accept?: string; // For 'file' — MIME types (e.g. "image/*")
+  min?: number; // For 'number'
+  max?: number; // For 'number'
+  pattern?: string; // Regex validation for 'string'
+  placeholder?: string; // Placeholder text for inputs
 
   // Grouping
-  children?: SchemaField[];       // For 'group' — nested child fields
+  children?: SchemaField[]; // For 'group' — nested child fields
 
   // Layout
-  columns?: 1 | 2 | 3;           // Number of columns for this field (default: 1 = full width)
+  columns?: 1 | 2 | 3; // Number of columns for this field (default: 1 = full width)
 
   // Conditional visibility
   visibleWhen?: {
-    field: string;                // Key of another field to check
-    equals: unknown;              // Value that field must have for this field to be visible
+    field: string; // Key of another field to check
+    equals: unknown; // Value that field must have for this field to be visible
   };
 }
 
 type SchemaFieldType =
-  | 'string'        // Text input
-  | 'number'        // Number input
-  | 'boolean'       // Switch toggle
-  | 'select'        // Dropdown select
-  | 'color'         // Color picker (hex input + swatch)
-  | 'file'          // File upload
-  | 'radio-cards'   // Card-style radio selector with icon + description
-  | 'group';        // Container for nested child fields (with its own toggle)
+  | 'string' // Text input
+  | 'number' // Number input
+  | 'boolean' // Switch toggle
+  | 'select' // Dropdown select
+  | 'color' // Color picker (hex input + swatch)
+  | 'file' // File upload
+  | 'radio-cards' // Card-style radio selector with icon + description
+  | 'group'; // Container for nested child fields (with its own toggle)
 
 interface SchemaFieldOption {
   value: string;
   label: string;
-  description?: string;       // For radio-cards: shown below the label
-  icon?: string;              // For radio-cards: Lucide icon name
+  description?: string; // For radio-cards: shown below the label
+  icon?: string; // For radio-cards: Lucide icon name
 }
 ```
 
@@ -123,16 +123,16 @@ The settings object is intentionally untyped beyond `Record<string, unknown>` be
 
 ### Value types per field type
 
-| Schema field type | Settings value type | Example |
-|---|---|---|
-| `string` | `string` | `"www.butiken.se"` |
-| `number` | `number` | `1.5` |
-| `boolean` | `boolean` | `true` |
-| `select` | `string` | `"geist"` |
-| `color` | `string` | `"#5cc190"` |
-| `file` | `string` (URL/path) | `"/uploads/logo.png"` |
-| `radio-cards` | `string` | `"commerce"` |
-| `group` | `boolean` | `true` (the group's own toggle state) |
+| Schema field type | Settings value type | Example                               |
+| ----------------- | ------------------- | ------------------------------------- |
+| `string`          | `string`            | `"www.butiken.se"`                    |
+| `number`          | `number`            | `1.5`                                 |
+| `boolean`         | `boolean`           | `true`                                |
+| `select`          | `string`            | `"geist"`                             |
+| `color`           | `string`            | `"#5cc190"`                           |
+| `file`            | `string` (URL/path) | `"/uploads/logo.png"`                 |
+| `radio-cards`     | `string`            | `"commerce"`                          |
+| `group`           | `boolean`           | `true` (the group's own toggle state) |
 
 ### Nested keys
 
@@ -386,16 +386,16 @@ A custom schema with `{ "myTab": { label: "My Custom Tab", sections: [...] } }` 
 
 ### Field rendering mapping
 
-| `type` | Component | Notes |
-|--------|-----------|-------|
-| `string` | `<Input>` | Standard text input, optional `placeholder` and `pattern` validation |
-| `number` | `<Input type="number">` | With `min`/`max` bounds |
-| `boolean` | `<Switch>` | With label + description |
-| `select` | `<Select>` | Dropdown with `options[]` |
-| `color` | Color input | Hex text input + swatch preview square |
-| `file` | File upload | "Choose file" button, `accept` for MIME filter |
-| `radio-cards` | Card radio group | Side-by-side cards with icon + label + description, selected state has border highlight |
-| `group` | Bordered container | Icon + label + description + toggle on the group header; children rendered indented inside |
+| `type`        | Component               | Notes                                                                                      |
+| ------------- | ----------------------- | ------------------------------------------------------------------------------------------ |
+| `string`      | `<Input>`               | Standard text input, optional `placeholder` and `pattern` validation                       |
+| `number`      | `<Input type="number">` | With `min`/`max` bounds                                                                    |
+| `boolean`     | `<Switch>`              | With label + description                                                                   |
+| `select`      | `<Select>`              | Dropdown with `options[]`                                                                  |
+| `color`       | Color input             | Hex text input + swatch preview square                                                     |
+| `file`        | File upload             | "Choose file" button, `accept` for MIME filter                                             |
+| `radio-cards` | Card radio group        | Side-by-side cards with icon + label + description, selected state has border highlight    |
+| `group`       | Bordered container      | Icon + label + description + toggle on the group header; children rendered indented inside |
 
 ### Conditional visibility
 
@@ -477,8 +477,16 @@ A user building a custom storefront might paste this schema, which produces comp
             "type": "radio-cards",
             "label": "Menu style",
             "options": [
-              { "value": "horizontal", "label": "Horizontal", "description": "Top navigation bar" },
-              { "value": "sidebar", "label": "Sidebar", "description": "Left sidebar navigation" }
+              {
+                "value": "horizontal",
+                "label": "Horizontal",
+                "description": "Top navigation bar"
+              },
+              {
+                "value": "sidebar",
+                "label": "Sidebar",
+                "description": "Left sidebar navigation"
+              }
             ]
           },
           {
