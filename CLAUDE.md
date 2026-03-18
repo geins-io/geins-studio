@@ -27,6 +27,22 @@ When adding or changing a workflow, update CLAUDE.md first, then update/create t
 - If the request is ambiguous (scope, acceptance criteria, target files, expected behavior), ask clarifying questions before doing large reads or broad changes.
 - If a task would require broad context, ask for approval before pulling lots of files/logs.
 
+## Hard Blocks — What Must NEVER Happen
+
+Quick-scan reference for inviolable rules. Details live in the relevant sections below.
+
+- NEVER use `console.log` — use `useGeinsLog('scope')` (ESLint enforces)
+- NEVER create shadcn-vue components manually — use `npx shadcn-vue@latest add`
+- NEVER import auto-imported composables, utils, or components — Nuxt handles this
+- NEVER implement custom unsaved-changes tracking — `useEntityEdit` handles this
+- NEVER use inline template literals for names — use `fullName(entity)`
+- NEVER cast `entityDataUpdate` to the response type or patch response-only fields into it
+- NEVER spread `entityDataUpdate` in `prepareUpdateData` — only include OpenAPI update fields
+- NEVER modify UI primitives in `app/components/ui/table/` for mode-specific styling
+- NEVER watch `quotationItems` to trigger preview — causes infinite loops (see Quotations → Live preview)
+- NEVER `git push --force` to `main` or `next`
+- NEVER commit `.env`, credentials, or secret files
+
 ## Workflow Rules
 
 These MUST be followed for every task. Rules are grouped by when they apply.
@@ -41,12 +57,16 @@ These MUST be followed for every task. Rules are grouped by when they apply.
 3. **Best practices**: Follow all established patterns and conventions in this file and from the frameworks used. If you need to break a pattern, add a note about it here and explain the reasoning.
 4. **Think about performance**: Consider performance implications of code changes, especially data fetching, state management, and rendering. If you find a potential bottleneck or optimization opportunity, ask if you should address it.
 
+### Before committing
+
+5. **Gates**: Run `pnpm lint:check && pnpm typecheck` before every commit. Also run `pnpm test --run` when tests exist for the changed code. All must pass — do not commit with known failures.
+
 ### When the user says "task done"
 
-5. **Documentation**: Keep `/docs` up to date with any architectural changes, new patterns, or important onboarding information. Ask before adding new entries.
-6. **Update CLAUDE.md**: Add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information. This is a living document — update it continuously, not just at session end.
-7. **Organize CLAUDE.md**: Scan the entire file for opportunities to improve organization (group related patterns, add sections, improve formatting, remove duplicates). Make those changes.
-8. **Linear issues**: If working on a Linear issue, set its status to "Done".
+6. **Documentation**: Keep `/docs` up to date with any architectural changes, new patterns, or important onboarding information. Ask before adding new entries.
+7. **Update CLAUDE.md**: Add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information. This is a living document — update it continuously, not just at session end.
+8. **Organize CLAUDE.md**: Scan the entire file for opportunities to improve organization (group related patterns, add sections, improve formatting, remove duplicates). Make those changes.
+9. **Linear issues**: If working on a Linear issue, set its status to "Done".
 
 ---
 
