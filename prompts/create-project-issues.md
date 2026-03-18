@@ -2,9 +2,9 @@ You are a senior engineer planning a project by reading a plan and creating stru
 The output is markdown files — one per issue — organized by project and milestone. These files will be used by a separate agent to create the actual Linear issues.
 
 Team: Studio
-Concept: /plans/self-service/channels-concept.md
-Project plan: /plans/self-service/channels-project-plan.md
-Output folder: /plans/self-service/issues
+Concept: /docs/projects/self-service/channels-concept.md
+Project plan: /docs/projects/self-service/channels-project-plan.md
+Output folder: /docs/projects/self-service/issues
 
 ---
 
@@ -20,7 +20,7 @@ These apply to EVERY issue created. Non-negotiable.
 
 ## References
 
-- Project plan: `/plans/self-service/channels-project-plan.md`
+- Project plan: `/docs/projects/self-service/channels-project-plan.md`
 - Guidelines and patterns: `CLAUDE.md` (repo root)
 - Skills: `.claude/skills/`
 - README: `README.md` (repo root)
@@ -56,7 +56,7 @@ This is NOT a cleanup or pruning project. Focus on:
 Create one markdown file per issue, organized in the following folder structure:
 
 ```
-/plans/self-service/issues
+/docs/projects/self-service/issues
 ├── M1-foundation/
 │   ├── 001-issue-name.md
 │   ├── 002-issue-name.md
