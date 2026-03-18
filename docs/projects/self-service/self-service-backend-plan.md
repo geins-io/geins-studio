@@ -1,6 +1,7 @@
 # Self Service Backend — Implementation Plan
 
 > **Related docs (frontend repo — geins-studio)**:
+>
 > - [Channels — Frontend Project Plan](./channels-project-plan.md) — frontend UI implementation plan
 > - [Channels — Concept Documentation](./channels-concept.md) — domain model, relationships, and data flow
 > - [Storefront Settings — Schema & Data Spec](./storefront-settings-schema-spec.md) — JSON schema types, default schema, renderer behavior
@@ -57,33 +58,40 @@ The Figma design ("self service") defines 11 screens plus 5 dialog sheets. Searc
 
 ## Decisions Made
 
-| #   | Decision                          | Answer                                                                                                                                                                                                                                                                                                                                                                               |
-| --- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Where do all features live?       | **Account service**                                                                                                                                                                                                                                                                                                                                                                  |
-| 2   | tblSiteCountry refactoring?       | **No refactor** — `tblMarket` is a template for which markets _can_ be added. Actual assignment stays in `tblSiteCountry`, fully backward-compatible                                                                                                                                                                                                                                 |
-| 3   | Pre-populate markets?             | **Yes** — auto-populate `tblMarket` with data matching an existing customer (Kayo), minus Asian markets                                                                                                                                                                                                                                                                              |
-| 4   | Channel/market activation events? | **Yes** — publish events. Consuming services (AccountProvisioning, Databridge) handle heavy background work. Must restrict free toggling (lockout timer / confirmation)                                                                                                                                                                                                              |
-| 5   | "Transactional mails: Enabled"?   | **Already exists** — legacy `MailSettings.Disabled` bool is a global master toggle per customer-environment. No per-type toggle exists in legacy.                                                                                                                                                                                                                                    |
-| 6   | Mail config access pattern?       | **Direct** — edit Azure Table Storage directly from Account service using `Geins.MgmtApi.Util.Table`                                                                                                                                                                                                                                                                                 |
-| 7   | Mail layout options?              | **Flat properties on `MailSettings` TableEntity** — colors, fonts, border-radius, logo/header URIs are all stored as properties on the same entity (not a separate table or hard-coded model)                                                                                                                                                                                        |
-| 8   | Mail text override tracking?      | **Already implemented** in legacy — `MailSettings.Texts` is a JSON string: `Dict<textKey, Dict<langCode, overrideValue>>`. Keys omit the `MAIL_V2_` prefix. Falls back to embedded `.resx` resources when no override exists.                                                                                                                                                        |
-| 9   | Payment data source?              | `tblPayment` + `tblPaymentRow` (active payments connected to channel)                                                                                                                                                                                                                                                                                                                |
-| 10  | Storefront settings endpoints?    | **On channel** — schema + settings are opaque JSON returned by `GetChannel` and updated via `UpdateChannel` (multipart/form-data). Backend stores without interpreting schema semantics. No separate storefront endpoints.                                                                                                                                                            |
-| 11  | Storefront template defaults?     | Customer-agnostic default schema + default values docs in Cosmos `Settings` container. API auto-falls back to defaults if merchant-specific doc not found. Frontend team to supply default docs                                                                                                                                                                                      |
-| 12  | Existing Cosmos settings doc?     | **Not used** — Frontend team provides new documents                                                                                                                                                                                                                                                                                                                                  |
-| 13  | Default language on channel?      | Hooked to `tblSiteLanguage` — 1st in sort order is the default                                                                                                                                                                                                                                                                                                                       |
-| 14  | Channel URL?                      | Stored in `tblSite.strUrl`. Backend host-binding changes needed later (separate from just setting the value)                                                                                                                                                                                                                                                                         |
-| 15  | Mail preview without entity?      | Legacy mail service preview endpoints (e.g. `OrderConfirmationPreview`) are HTTP POST, receive `MailRequestModel<T>`, and fetch real data from mgmt API via Service Broker. The "dummy values" concern is about the **mgmt API's** `Mail/*` endpoints needing to handle `orderid=0` etc., not the mail service itself.                                                               |
-| 16  | File upload approach?             | **Inline on `UpdateChannel`** — `PATCH /account/channel/{id}` accepts `multipart/form-data` with file uploads whose field names must match settings property names. Files uploaded to customer blob storage with static names; blob URL replaces the field value. Limited validation (max size only, no image processing). Gallery is out of scope.                                   |
-| 17  | Mail layout image URLs?           | **Change mail service to accept absolute URLs** — currently `LogoUri`/`HeaderImgUri` must be relative to shop URL. Mail service URL resolution will be updated to also allow absolute blob storage URLs.                                                                                                                                                                             |
-| 18  | Single write surface?             | **Yes** — `PATCH /account/channel/{id}` (multipart/form-data) is the single write surface for channel properties AND all sub-entities: languages, market assignments, payment toggles, mail general/layout settings, storefront schema + settings, file uploads. Only mail text overrides and mail preview have dedicated endpoints.                                                  |
-| 19  | Channel DELETE?                   | **Not supported** — channels cannot be deleted.                                                                                                                                                                                                                                                                                                                                      |
-| 20  | Channel COPY?                     | **Out of scope** — no copy/duplicate functionality.                                                                                                                                                                                                                                                                                                                                  |
-| 21  | Payment write support?            | **Yes** — payment active/inactive toggling via `UpdateChannel` PATCH (same mechanism as markets/languages). Not a separate endpoint.                                                                                                                                                                                                                                                 |
-| 22  | Activation safety?                | **Backend handles internally** — no transitional states exposed to frontend. Backend enforces lockout timer / confirmation logic. Frontend provides UX guardrails only (debounce, informational message).                                                                                                                                                                            |
-| 23  | Storefront data shape?            | **Nested JSON** — backend accepts and returns nested JSON. Treats schema + settings as opaque. Frontend owns schema↔UI mapping (dot-notation ↔ nested).                                                                                                                                                                                                                             |
-| 24  | Product search?                   | **Explicitly out of scope** — removed from this project. No search configuration endpoints.                                                                                                                                                                                                                                                                                          |
-| 25  | Mail types (9 vs 15)?             | **All 15 backend types are canonical** — frontend renders dynamically from backend response. Figma showing 9 is non-blocking.                                                                                                                                                                                                                                                        |
+| #   | Decision                          | Answer                                                                                                                                                                                                                                                                                                                                              |
+| --- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Where do all features live?       | **Account service**                                                                                                                                                                                                                                                                                                                                 |
+| 2   | tblSiteCountry refactoring?       | **No refactor** — `tblMarket` is a template for which markets _can_ be added. Actual assignment stays in `tblSiteCountry`, fully backward-compatible                                                                                                                                                                                                |
+| 3   | Pre-populate markets?             | **Yes** — auto-populate `tblMarket` with data matching an existing customer (Kayo), minus Asian markets                                                                                                                                                                                                                                             |
+| 4   | Channel/market activation events? | **Yes** — publish events. Consuming services (AccountProvisioning, Databridge) handle heavy background work. Must restrict free toggling (lockout timer / confirmation)                                                                                                                                                                             |
+| 5   | "Transactional mails: Enabled"?   | **Already exists** — legacy `MailSettings.Disabled` bool is a global master toggle per customer-environment. No per-type toggle exists in legacy.                                                                                                                                                                                                   |
+| 6   | Mail config access pattern?       | **Direct** — edit Azure Table Storage directly from Account service using `Geins.MgmtApi.Util.Table`                                                                                                                                                                                                                                                |
+| 7   | Mail layout options?              | **Flat properties on `MailSettings` TableEntity** — colors, fonts, border-radius, logo/header URIs are all stored as properties on the same entity (not a separate table or hard-coded model)                                                                                                                                                       |
+| 8   | Mail text override tracking?      | **Already implemented** in legacy — `MailSettings.Texts` is a JSON string: `Dict<textKey, Dict<langCode, overrideValue>>`. Keys omit the `MAIL_V2_` prefix. Falls back to embedded `.resx` resources when no override exists.                                                                                                                       |
+| 9   | Payment data source?              | `tblPayment` + `tblPaymentRow` (active payments connected to channel)                                                                                                                                                                                                                                                                               |
+| 10  | Storefront settings endpoints?    | **On channel** — schema + settings are opaque JSON returned by `GetChannel` and updated via `UpdateChannel` (multipart/form-data). Backend stores without interpreting schema semantics. No separate storefront endpoints.                                                                                                                          |
+| 11  | Storefront template defaults?     | Customer-agnostic default schema + default values docs in Cosmos `Settings` container. API auto-falls back to defaults if merchant-specific doc not found. Frontend team to supply default docs                                                                                                                                                     |
+| 12  | Existing Cosmos settings doc?     | **Not used** — Frontend team provides new documents                                                                                                                                                                                                                                                                                                 |
+| 13  | Default language on channel?      | Hooked to `tblSiteLanguage` — 1st in sort order is the default                                                                                                                                                                                                                                                                                      |
+| 14  | Channel URL?                      | Stored in `tblSite.strUrl`. Backend host-binding changes needed later (separate from just setting the value)                                                                                                                                                                                                                                        |
+| 15  | Mail preview without entity?      | Legacy mail service preview endpoints (e.g. `OrderConfirmationPreview`) are HTTP POST, receive `MailRequestModel<T>`, and fetch real data from mgmt API via Service Broker. The "dummy values" concern is about the **mgmt API's** `Mail/*` endpoints needing to handle `orderid=0` etc., not the mail service itself.                              |
+| 16  | File upload approach?             | **Inline on `UpdateChannel`** — `PATCH /account/channel/{id}` accepts `multipart/form-data` with file uploads whose field names must match settings property names. Files uploaded to customer blob storage with static names; blob URL replaces the field value. Limited validation (max size only, no image processing). Gallery is out of scope. |
+| 17  | Mail layout image URLs?           | **Change mail service to accept absolute URLs** — currently `LogoUri`/`HeaderImgUri` must be relative to shop URL. Mail service URL resolution will be updated to also allow absolute blob storage URLs.                                                                                                                                            |
+| 18  | Single write surface?             | **Yes** — `PATCH /account/channel/{id}` (multipart/form-data) is the single write surface for channel properties AND all sub-entities: languages, market assignments, payment toggles, mail general/layout settings, storefront schema + settings, file uploads. Only mail text overrides and mail preview have dedicated endpoints.                |
+| 19  | Channel DELETE?                   | **Not supported** — channels cannot be deleted.                                                                                                                                                                                                                                                                                                     |
+| 20  | Channel COPY?                     | **Out of scope** — no copy/duplicate functionality.                                                                                                                                                                                                                                                                                                 |
+| 21  | Payment write support?            | **Yes** — payment active/inactive toggling via `UpdateChannel` PATCH (same mechanism as markets/languages). Not a separate endpoint.                                                                                                                                                                                                                |
+| 22  | Activation safety?                | **Backend handles internally** — no transitional states exposed to frontend. Backend enforces lockout timer / confirmation logic. Frontend provides UX guardrails only (debounce, informational message).                                                                                                                                           |
+| 23  | Storefront data shape?            | **Nested JSON** — backend accepts and returns nested JSON. Treats schema + settings as opaque. Frontend owns schema↔UI mapping (dot-notation ↔ nested).                                                                                                                                                                                             |
+| 24  | Product search?                   | **Explicitly out of scope** — removed from this project. No search configuration endpoints.                                                                                                                                                                                                                                                         |
+| 25  | Mail types (9 vs 15)?             | **All 15 backend types are canonical** — frontend renders dynamically from backend response. Figma showing 9 is non-blocking.                                                                                                                                                                                                                       |
+| 26  | Market endpoint routes?           | `ListAllMarkets` = `GET /account/market/list` (replaces `ListMarketDefinitions`). `ListMarkets` = `GET /account/channel/{id}/market/list`. `CreateMarketDefinition` removed. Assignments via `UpdateChannel`.                                                                                                                                       |
+| 27  | Mail endpoint routes?             | `GetMailTexts` = `GET /account/channel/{channelId}/mail/{mailType}?language={lang}`. `UpdateMailTexts` = `PATCH .../mail/{mailType}` (flat key-value body with `language`). `PreviewMail` = `POST .../mail/{mailType}/preview` (language in body). `ListMailTypes` + `GetMailSettings`/`UpdateMailSettings` removed — integrated into channel.      |
+| 28  | Payment endpoint routes?          | `ListAllPayments` = `GET /account/payment/list`. `ListPayments` = `GET /account/channel/{channelId}/payment/list`. `GetPayment` = `GET .../payment/{paymentId}`. Toggling via `UpdateChannel`.                                                                                                                                                      |
+| 29  | Language endpoint routes?         | `ListAllLanguages` = `GET /account/language/list`. `GetLanguage` = `GET /account/language/{languageId}`. Per-channel languages from channel response. Assignment via `UpdateChannel`.                                                                                                                                                               |
+| 30  | Channel list route?               | `ListAllChannels` = `GET /account/channel/list` (not `/account/channels`).                                                                                                                                                                                                                                                                          |
+| 31  | Default convention?               | First item in any assignment array (markets, languages) is the default. No separate "set default" endpoints.                                                                                                                                                                                                                                        |
+| 32  | CreateMarketDefinition?           | **Removed** — market definition creation is out of scope.                                                                                                                                                                                                                                                                                           |
 
 ## Remaining Open Questions
 
@@ -183,19 +191,38 @@ Geins.Account.Test/
 
 **New endpoints:**
 
-| Endpoint          | Method | Route                                     | Description                                                                                                                                                                    |
-| ----------------- | ------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| CreateChannel     | POST   | `/account/channel`                        | Create a new channel                                                                                                                                                           |
-| UpdateChannel     | PATCH  | `/account/channel/{channelId}`            | **Single write surface** (multipart/form-data) for channel properties AND all sub-entities: languages, market assignments, payment toggles, mail general/layout, storefront schema + settings, file uploads (Decision #18) |
-| ActivateChannel   | PUT    | `/account/channel/{channelId}/activate`   | Set channel active (publishes event; backend enforces lockout/safety internally — Decision #22)                                                                                |
-| DeactivateChannel | PUT    | `/account/channel/{channelId}/deactivate` | Set channel inactive (publishes event; triggers product deletion via AccountProvisioning; backend enforces lockout/safety internally)                                           |
+| Endpoint          | Method | Route                              | Description                                                                                                                                                                                                                                                                                                                                        |
+| ----------------- | ------ | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ListAllChannels   | GET    | `/account/channel/list`            | List all channels with summary counts and status                                                                                                                                                                                                                                                                                                   |
+| GetChannel        | GET    | `/account/channel/{id}`            | Return **full channel object** including all sub-entities: languages, market assignments, payment methods (with active state), mail types + general/layout settings, storefront schema + settings                                                                                                                                                  |
+| CreateChannel     | POST   | `/account/channel`                 | Create a new channel                                                                                                                                                                                                                                                                                                                               |
+| UpdateChannel     | PATCH  | `/account/channel/{id}`            | **Single write surface** (multipart/form-data) for channel properties AND all sub-entities: languages, market assignments, payment toggles, mail general/layout, storefront schema + settings, file uploads (Decision #18). The JSON part is named `"channel"`. File parts are named by the setting property they map to (e.g. `"settings.logo"`). |
+| ActivateChannel   | PUT    | `/account/channel/{id}/activate`   | Set channel active (publishes event; backend enforces lockout/safety internally — Decision #22)                                                                                                                                                                                                                                                    |
+| DeactivateChannel | PUT    | `/account/channel/{id}/deactivate` | Set channel inactive (publishes event; triggers product deletion via AccountProvisioning; backend enforces lockout/safety internally)                                                                                                                                                                                                              |
+| ListAllLanguages  | GET    | `/account/language/list`           | List all available system languages                                                                                                                                                                                                                                                                                                                |
+| GetLanguage       | GET    | `/account/language/{languageId}`   | Get single language detail                                                                                                                                                                                                                                                                                                                         |
 
 **No DELETE endpoint** — channel deletion is not supported (Decision #19).
+**No COPY endpoint** — channel duplication is out of scope (Decision #20).
 
-**Existing endpoints to enhance:**
+**Default convention**: The first item in any assignment array (markets, languages) is considered the default when applicable.
 
-- `GetChannel` — return **full channel object** including all sub-entities: languages, market assignments, payment methods (with active state), mail general/layout settings, storefront schema + settings, summary counts
-- `ListChannels` — add markets count, status in list response
+**UpdateChannel multipart/form-data format:**
+
+```
+Content-Type: multipart/form-data; boundary=####boundary####
+--####boundary####
+Content-Disposition: form-data; name="channel"
+Content-Type: application/json
+{ "markets": [{"_id": "1", "active": true}, {"_id": "2", "active": false}],
+  "settings": "{ \"logo\": \"\", \"someOtherSetting\": \"value\" }",
+  "settingsSchema": "<json>" }
+--####boundary####
+Content-Disposition: form-data; name="settings.logo"; filename="image1.png"
+Content-Type: application/octet-stream
+<file content>
+--####boundary####
+```
 
 **Tasks:**
 
@@ -253,12 +280,14 @@ Assigning a market to a channel INSERTs into `tblSiteCountry` using properties f
 
 **New endpoints:**
 
-| Endpoint               | Method | Route                         | Description                                |
-| ---------------------- | ------ | ----------------------------- | ------------------------------------------ |
-| ListMarketDefinitions  | GET    | `/account/market-definitions` | List all defined markets (dropdown source) |
-| CreateMarketDefinition | POST   | `/account/market-definition`  | Create a new market definition             |
+| Endpoint       | Method | Route                               | Description                                       |
+| -------------- | ------ | ----------------------------------- | ------------------------------------------------- |
+| ListAllMarkets | GET    | `/account/market/list`              | List all defined markets (dropdown/global source) |
+| ListMarkets    | GET    | `/account/channel/{id}/market/list` | List markets assigned to a specific channel       |
 
-Channel-market assignments (add, remove, toggle active, set default) are handled via `UpdateChannel` PATCH (Decision #18). The `UpdateChannelRequest` includes a market assignments array.
+`CreateMarketDefinition` has been **removed** — market definitions are managed outside this scope. `ListAllMarkets` replaces the former `ListMarketDefinitions`.
+
+Channel-market assignments (add, remove, toggle active, set default) are handled via `UpdateChannel` PATCH (Decision #18). The first item in the market assignments array is the default.
 
 **Tasks:**
 
@@ -266,8 +295,8 @@ Channel-market assignments (add, remove, toggle active, set default) are handled
    - 1a. DDL script for `tblMarket` (market definitions); assignment uses existing `tblSiteCountry`
    - 1b. Seed script to auto-populate `tblMarket` from existing customer data (Kayo, minus Asian markets)
 2. **Request & response models**
-   - 2a. Request models: `CreateMarketDefinitionRequest`; extend `UpdateChannelRequest` to include market assignments array
-   - 2b. Response models: `MarketDefinition`, `ChannelMarket` (included in `GetChannel` response)
+   - 2a. Extend `UpdateChannelRequest` to include market assignments array (first item = default)
+   - 2b. Response models: `Market` (for `ListAllMarkets`), `ChannelMarket` (for `ListMarkets` and in `GetChannel` response)
 3. **Service & repository methods for market definition and assignment**
    - 3a. Extend `LegacyMarketRepository` with `tblMarket` CRUD and write operations on `tblSiteCountry` for channel-market assignment
    - 3b. Extend `MarketService` with market definition and assignment methods
@@ -291,7 +320,15 @@ Channel-market assignments (add, remove, toggle active, set default) are handled
 
 **Data sources:** `tblPayment` + `tblPaymentRow` (active payments connected to channel)
 
-Payment methods are included in the `GetChannel` response and toggleable (active `true`/`false`) via `UpdateChannel` PATCH (Decision #21). No separate payment endpoints.
+**New endpoints:**
+
+| Endpoint        | Method | Route                                              | Description                             |
+| --------------- | ------ | -------------------------------------------------- | --------------------------------------- |
+| ListAllPayments | GET    | `/account/payment/list`                            | List all available payment methods      |
+| ListPayments    | GET    | `/account/channel/{channelId}/payment/list`        | List payments for a specific channel    |
+| GetPayment      | GET    | `/account/channel/{channelId}/payment/{paymentId}` | Get single payment detail for a channel |
+
+Payment active/inactive toggling is via `UpdateChannel` PATCH (Decision #21). Payment methods are also included in the `GetChannel` response with their active state.
 
 **Tasks:**
 
@@ -389,16 +426,15 @@ Preview endpoints receive the same `MailRequestModel<T>` payload as send endpoin
 
 The self-service UI manages a subset of these settings. The `MailSettings` entity's flat structure means "general settings", "layout", and "text overrides" are all properties on the same Table Storage row.
 
-Mail general + layout settings (from address, display name, SMTP overrides, colors, fonts, images, disabled flag) are part of the channel object — returned by `GetChannel` and updated via `UpdateChannel` PATCH (multipart/form-data, including file uploads for LogoUri/HeaderImgUri). These are available from M1 onward.
+Mail general + layout settings AND the mail types list are part of the channel object — returned by `GetChannel` and updated via `UpdateChannel` PATCH (multipart/form-data, including file uploads for LogoUri/HeaderImgUri). The `ListMailTypes` endpoint has been **removed** and integrated into the channel response. These are available from M1 onward.
 
 **Dedicated mail endpoints (this milestone):**
 
-| Endpoint            | Method | Route                                                                       | Description                                                                                                                                     |
-| ------------------- | ------ | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| ListMailTypes       | GET    | `/account/channel/{channelId}/mail/type/list`                               | List all 15 mail types with all text keys, default values, and override status per language                                                     |
-| GetMailTypeTexts    | GET    | `/account/channel/{channelId}/mail/type/{mailType}`                         | All text keys for a mail type with default values and override status per language                                                              |
-| UpdateMailTypeTexts | PATCH  | `/account/channel/{channelId}/mail/type/{mailType}`                         | Update text overrides for a mail type. Omitted/null texts are left untouched; providing an empty string reverts that text to its default value. |
-| PreviewMail         | POST   | `/account/channel/{channelId}/mail/type/{mailType}/preview?language={lang}` | Proxy to legacy mail service preview endpoint (POST, not GET)                                                                                   |
+| Endpoint        | Method | Route                                                          | Description                                                                                                                                                            |
+| --------------- | ------ | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GetMailTexts    | GET    | `/account/channel/{channelId}/mail/{mailType}?language={lang}` | Text keys for a mail type in a specific language, with default values and override status                                                                              |
+| UpdateMailTexts | PATCH  | `/account/channel/{channelId}/mail/{mailType}`                 | Update text overrides. Request body is flat JSON: `{ "language": "sv", "ORDER_DELIVERY_TITLE": "...", ... }`. Omitted keys untouched; empty string reverts to default. |
+| PreviewMail     | POST   | `/account/channel/{channelId}/mail/{mailType}/preview`         | Proxy to legacy mail service preview endpoint. Request body: `{ "language": "sv" }` (language in body, not query param).                                               |
 
 **Tasks:**
 
@@ -409,15 +445,15 @@ Mail general + layout settings (from address, display name, SMTP overrides, colo
    - 2c. **Extend `GetChannel` response** — include mail general + layout settings (read from `MailSettings` entity)
    - 2d. **Extend `UpdateChannel` handler** — process mail general + layout setting changes from the PATCH payload (including file uploads for LogoUri/HeaderImgUri)
 3. **Request/response models & mail type enum**
-   - 3a. Extend `UpdateChannelRequest` to include mail general + layout settings; create `UpdateMailTypeTextsRequest` (text overrides per language)
-   - 3b. Response models: mail general + layout fields on `ChannelResponse`, `MailTypeInfo` (type name, category, all text keys with default values and override status per language), `MailTypeTexts` (text key → language → {default value, override value, isOverridden flag}), `MailPreviewResponse`
+   - 3a. Extend `UpdateChannelRequest` to include mail general + layout settings; create `UpdateMailTextsRequest` (flat key-value with `language` field)
+   - 3b. Response models: mail general + layout + mail types list on `ChannelResponse`, `MailTexts` (text keys with default values and override status for a specific language), `MailPreviewResponse`
    - 3c. Mail type enum with all **15** types (6 order + 6 customer + 3 product) — all 15 are canonical (Decision #25)
 4. **Text override logic**
    - 4a. Read/write: parse/serialize the `Texts` JSON property on `MailSettings` — structure is `Dictionary<string, Dictionary<string, string>>` (text key without `MAIL_V2_` prefix → 2-letter language code → override value). Providing an empty string for a text key removes the override, reverting to the default value.
 5. **Legacy Mail service text-key endpoints** — Two new endpoints must be created in the legacy Mail service (`carismar-mail`):
    - 5a. **GetMailTypeTextKeys** — returns all text keys with their default values for a given mail type + language. Accepts a `skipOverrides` query parameter (bool).
    - 5b. **GetAllMailTypeTextKeys** — returns all text keys with their default values for all mail types + language. Accepts a `skipOverrides` query parameter (bool).
-   - 5c. `GetMailTypeTexts` and `ListMailTypes` in the Account service call these legacy endpoints with `skipOverrides=true` (getting raw defaults), then apply overrides from the `MailSettings.Texts` JSON themselves. This allows the Account service to distinguish which texts have been overridden vs which are using defaults.
+   - 5c. `GetMailTexts` and the channel response's mail types list call these legacy endpoints with `skipOverrides=true` (getting raw defaults), then apply overrides from the `MailSettings.Texts` JSON themselves. This allows the Account service to distinguish which texts have been overridden vs which are using defaults.
 6. **Mail preview proxy** — POST proxy to legacy mail service preview endpoint via Service Broker (or direct HTTP). Preview already renders HTML from real data — the Account service acts as a proxy.
    - 6a. **Default preview mode (reference ID = 0):** When the reference ID is `0` (or missing), the mail service must generate a **dummy model** instead of fetching real data from the legacy mgmtapi. This applies to all 15 preview endpoints:
      - **Order previews** (OrderConfirmation, OrderProcessing, OrderDelivered, OrderCancelled, OrderRowRemoved, OrderRowReturned): generate a dummy `MailV2OrderModel` with plausible fake data — sample order rows, formatted prices, placeholder addresses ("Jane Doe, 123 Example Street…"), a realistic order date, tracking link, etc.
@@ -623,15 +659,17 @@ Three test layers, matching Workflow's architecture:
 
 All previously open issues between backend and frontend plans have been resolved:
 
-| Issue                    | Resolution                                                                                          |
-| ------------------------ | --------------------------------------------------------------------------------------------------- |
-| Channel DELETE           | **Not supported** (Decision #19). Frontend has removed delete flows.                                |
-| Channel COPY             | **Out of scope** (Decision #20). Frontend has removed copy flows.                                   |
-| Payment write endpoint   | **Resolved** — payments are toggleable via `UpdateChannel` PATCH (Decision #21).                    |
-| Search config endpoint   | **Explicitly out of scope** (Decision #24). Frontend M8 deferred.                                   |
-| Storefront data shape    | **Resolved** — backend accepts nested JSON, treats as opaque (Decision #23). Frontend owns mapping. |
-| Activation safety        | **Resolved** — backend handles internally (Decision #22). Frontend provides UX guardrails only.     |
-| Mail types (9 vs 15)     | **Resolved** — all 15 are canonical (Decision #25). Frontend renders dynamically.                   |
+| Issue                  | Resolution                                                                                                                               |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Channel DELETE         | **Not supported** (Decision #19). Frontend has removed delete flows.                                                                     |
+| Channel COPY           | **Out of scope** (Decision #20). Frontend has removed copy flows.                                                                        |
+| Payment write endpoint | **Resolved** — payments are toggleable via `UpdateChannel` PATCH (Decision #21). Dedicated read endpoints added (Decision #28).          |
+| Search config endpoint | **Explicitly out of scope** (Decision #24). Frontend M8 deferred.                                                                        |
+| Storefront data shape  | **Resolved** — backend accepts nested JSON, treats as opaque (Decision #23). Frontend owns mapping.                                      |
+| Activation safety      | **Resolved** — backend handles internally (Decision #22). Frontend provides UX guardrails only.                                          |
+| Mail types (9 vs 15)   | **Resolved** — all 15 are canonical (Decision #25). Mail types list integrated into channel response (Decision #27).                     |
+| Market endpoints       | **Resolved** — `ListAllMarkets`/`ListMarkets` replace old `ListMarketDefinitions`. `CreateMarketDefinition` removed (Decision #26, #32). |
+| Default convention     | **Resolved** — first item in assignment array = default (Decision #31). No separate "set default" endpoints.                             |
 
 ---
 
@@ -675,12 +713,12 @@ All previously open issues between backend and frontend plans have been resolved
 
 ### Milestones → Linear Sub-Projects or Cycles
 
-| Linear Milestone             | Issues (suggested breakdown)                                                                                                                                                                                                      |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **M0 — Test Infra**          | `test-project-setup` · `sql-fixture` · `legacy-ddl-scripts` · `cosmos-fixture` · `azurite-fixture` · `integration-fixture` · `func-host-fixture` · `e2e-auth-bypass` · `test-builders` · `infra-smoke-test`                       |
-| **M1 — Channel CRUD**        | `channel-sql-scripts` · `channel-models` · `channel-service-repo` · `channel-endpoints` · `channel-validation` · `channel-unit-tests` · `channel-integration-tests`                                                               |
-| **M2 — Storefront** ⭐       | `storefront-cosmos-repo-and-di` · `storefront-fallback-and-schema` · `storefront-channel-integration` · `storefront-validation` · `storefront-file-uploads` · `storefront-unit-tests` · `storefront-integration-tests`             |
-| **M3 — Market Management**   | `market-ddl-and-seed` · `market-models` · `market-service-repo` · `market-channel-integration` · `market-activation-events` · `market-validation` · `market-unit-tests` · `market-integration-tests`                              |
-| **M4 — Payments**            | `payment-sql-and-repo` · `payment-service-and-model` · `payment-channel-integration` · `payment-toggle-support` · `payment-unit-tests` · `payment-integration-tests`                                                              |
-| **M5 — Mail Config**         | `mail-infra-setup` · `mail-repo-and-mapping` · `mail-models-and-enum` · `mail-text-override-logic` · `mail-legacy-text-key-endpoints` · `mail-preview-proxy` · `mail-channel-integration` · `mail-unit-tests` · `mail-integration-tests` |
-| **M6 — Events & Background** | `event-grid-publishing` · `activation-restrictions` · `event-handlers-provisioning-databridge` · `channel-url-host-bindings` · `event-integration-tests`                                                                          |
+| Linear Milestone             | Issues (suggested breakdown)                                                                                                                                                                                                                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **M0 — Test Infra**          | `test-project-setup` · `sql-fixture` · `legacy-ddl-scripts` · `cosmos-fixture` · `azurite-fixture` · `integration-fixture` · `func-host-fixture` · `e2e-auth-bypass` · `test-builders` · `infra-smoke-test`                                                                                            |
+| **M1 — Channel CRUD**        | `channel-sql-scripts` · `channel-models` · `channel-service-repo` · `channel-endpoints` · `list-all-languages-endpoint` · `get-language-endpoint` · `channel-validation` · `channel-unit-tests` · `channel-integration-tests`                                                                          |
+| **M2 — Storefront** ⭐       | `storefront-cosmos-repo-and-di` · `storefront-fallback-and-schema` · `storefront-channel-integration` · `storefront-validation` · `storefront-file-uploads` · `storefront-unit-tests` · `storefront-integration-tests`                                                                                 |
+| **M3 — Market Management**   | `market-ddl-and-seed` · `market-models` · `market-service-repo` · `list-all-markets-endpoint` · `list-markets-endpoint` · `market-channel-integration` · `market-activation-events` · `market-validation` · `market-unit-tests` · `market-integration-tests`                                           |
+| **M4 — Payments**            | `payment-sql-and-repo` · `payment-service-and-model` · `list-all-payments-endpoint` · `list-payments-endpoint` · `get-payment-endpoint` · `payment-channel-integration` · `payment-toggle-support` · `payment-unit-tests` · `payment-integration-tests`                                                |
+| **M5 — Mail Config**         | `mail-infra-setup` · `mail-repo-and-mapping` · `mail-models-and-enum` · `mail-text-override-logic` · `get-mail-texts-endpoint` · `update-mail-texts-endpoint` · `mail-preview-endpoint` · `mail-legacy-text-key-endpoints` · `mail-channel-integration` · `mail-unit-tests` · `mail-integration-tests` |
+| **M6 — Events & Background** | `event-grid-publishing` · `activation-restrictions` · `event-handlers-provisioning-databridge` · `channel-url-host-bindings` · `event-integration-tests`                                                                                                                                               |
