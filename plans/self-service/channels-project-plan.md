@@ -7,12 +7,13 @@
 > **Related docs**:
 > - [Channels — Concept Documentation](./channels-concept.md) — domain model, relationships, and data flow
 > - [Storefront Settings — Schema & Data Spec](./storefront-settings-schema-spec.md) — full schema types, default schema, renderer behavior
+> - [Self Service Backend Plan](./self-service-backend-plan.md) — backend API implementation plan (geins-platform repo)
 
 ---
 
 ## Overview
 
-Build the Channel entity management pages in Geins Studio. Channels represent sales channels (webshops, physical stores) and contain markets, languages, payment methods, mail templates, product search config, and storefront settings.
+Build the Channel entity management pages in Geins Studio. Channels represent sales channels (webshops, physical stores) and contain markets, languages, payment methods, mail templates, and storefront settings.
 
 ### Existing codebase state
 
@@ -29,7 +30,8 @@ Build the Channel entity management pages in Geins Studio. Channels represent sa
 3. **Markets**
 4. **Payments**
 5. **Mails**
-6. **Product search** (lowest priority)
+
+> Product search has been deferred (out of backend scope). See Milestone 8.
 
 ---
 
@@ -45,17 +47,29 @@ Build the Channel entity management pages in Geins Studio. Channels represent sa
   - Define `ChannelUpdate` (partial of create + ID)
   - Define `ChannelListItem` for list page (id, name, url, market count, status)
   - Keep existing `Channel` interface in `Account.ts` for backwards compatibility (used by accountStore)
-  - Add `PaymentMethod`, `MailTemplate`, `SearchConfig`, `StorefrontSettings` types as they become known from the API
+  - Add `PaymentMethod`, `MailTemplate`, `StorefrontSettings` types as they become known from the API
 
 - [ ] **1.2 Create channel API repository** (`app/utils/repositories/channel.ts`)
   - Use `entityRepo` factory chain (base → list → get → full CRUD)
-  - Endpoints (assumed, confirm with API):
-    - `GET /channel/list` — list all
-    - `GET /channel/{id}` — single channel with full details
-    - `POST /channel` — create
-    - `PATCH /channel/{id}` — update
-    - `DELETE /channel/{id}` — delete
+  - **Primary channel endpoints** (all under `/account/` prefix):
+    - `GET /account/channels` — list all channels
+    - `GET /account/channel/{id}` — single channel with **all sub-entities** (languages, markets, payments, mail general/layout settings, storefront schema + settings)
+    - `POST /account/channel` — create channel
+    - `PATCH /account/channel/{id}` — **single write surface** (multipart/form-data) for channel properties AND all sub-entities: languages, market assignments, payment toggles, mail general/layout settings, storefront schema + settings, file uploads
+    - `PUT /account/channel/{id}/activate` — set channel active
+    - `PUT /account/channel/{id}/deactivate` — set channel inactive
+  - **No DELETE** — channel deletion is not supported (RESOLVED)
+  - **No COPY** — channel duplication is out of scope (RESOLVED)
+  - **Market definition endpoints** (not channel sub-entities — separate concern):
+    - `GET /account/market-definitions` — list all defined markets (dropdown source for "Add market" dialog)
+    - `POST /account/market-definition` — create a new market definition
+  - **Mail text + preview endpoints** (dedicated — not part of channel PATCH):
+    - `GET /account/channel/{channelId}/mail/type/list` — all 15 mail types with text keys, defaults, and override status per language
+    - `GET /account/channel/{channelId}/mail/type/{mailType}` — text keys for one mail type
+    - `PATCH /account/channel/{channelId}/mail/type/{mailType}` — update text overrides
+    - `POST /account/channel/{channelId}/mail/type/{mailType}/preview?language={lang}` — rendered HTML preview
   - Register in `app/utils/repos.ts` and `useGeinsRepository.ts`
+  - **DEPENDENCY**: Requires backend M1 (Channel CRUD) for core channel + language endpoints
 
 - [ ] **1.3 Channel list page** (`app/pages/store/channel/list.vue`)
   - Table columns from Figma: ID, Name (link), URL, Markets (tooltip), Status (status)
@@ -65,7 +79,7 @@ Build the Channel entity management pages in Geins Studio. Channels represent sa
 
 - [ ] **1.4 Channel edit page scaffold** (`app/pages/store/channel/[id].vue`)
   - `useEntityEdit` with create/edit mode
-  - Tab bar: General, Markets, Payments, Mails, Storefront settings
+  - Tab bar: Storefront settings, General, Markets, Payments, Mails
   - Sidebar summary: Active toggle, Display name, Languages count, Markets count, Payment method, Transaction mails status
   - Standard edit-mode data loading boilerplate
   - Zod form schema for channel fields
@@ -76,17 +90,20 @@ Build the Channel entity management pages in Geins Studio. Channels represent sa
 
 ### Confirmed API details
 
-- `url` is a field on Channel for both GET and PATCH
-- `defaultLanguage` is a field on Channel for both GET and PATCH
-- Languages are updated as part of the channel PATCH (no separate endpoint)
-
-### Open questions
-
-- Confirm channel API endpoint structure (especially if it differs from `/account/channel/`)
+- `url` is a field on Channel for both GET and PATCH (stored as `tblSite.strUrl`)
+- `defaultLanguage` is derived from the 1st language in sort order of `tblSiteLanguage` (not a direct field — see backend plan Decision #13)
+- **Languages, markets, payments, mail general/layout, storefront settings** are all managed via `PATCH /account/channel/{id}` (multipart/form-data). The channel GET response returns all sub-entities.
+- All endpoints use the `/account/` prefix (e.g. `/account/channel/{id}`, not `/channel/{id}`)
+- Channel activate/deactivate use dedicated PUT endpoints (not a PATCH field)
+- **Activation safety (RESOLVED)**: Backend handles lockout and safety internally. No transitional states are exposed to the frontend. Frontend provides UX guardrails only: disable rapid toggling (debounce/cooldown on the toggle) and show an informational message (e.g. "Activating a channel triggers background processing. This may take a moment."). No confirmation dialog required by the backend.
+- **No DELETE endpoint** — channel deletion is not supported (RESOLVED)
+- **No COPY endpoint** — channel duplication is out of scope (RESOLVED)
 
 ---
 
 ## Milestone 2: Storefront Settings Tab (Highest Priority Feature)
+
+> **DEPENDENCY**: Requires backend M2 (Storefront Settings — reprioritized from original M5). Frontend can build the schema renderer and UI against the default JSON schema without the API, but API integration requires the channel GET/PATCH to include storefront data.
 
 **Goal**: Build a JSON schema-driven settings editor for storefront configuration. This is the most complex and highest-priority tab.
 
@@ -162,12 +179,21 @@ The entire Storefront settings section is driven by a **JSON schema**. The schem
   - Opens `{storefront_url}?preview={token}` in a new browser tab
   - Token generation: TBD — likely a backend endpoint that issues a short-lived preview token
 
+### Confirmed API details
+
+- **Storefront schema and settings are part of the channel object** — returned by `GET /account/channel/{id}` and updated via `PATCH /account/channel/{id}` (multipart/form-data). No separate storefront endpoints.
+- Backend treats both schema and settings as **opaque JSON** — it stores and returns them without interpreting schema semantics or validating field values. Only basic JSON validity is checked.
+- File uploads for image fields (e.g. `logoUrl`) are inline on the channel PATCH via multipart/form-data — upload field names must match setting property names. Backend replaces the value with the resulting blob URL.
+- Backend validates max file size only (no image processing).
+- Data stored in Cosmos DB `Settings` container.
+- **Data shape (RESOLVED)**: Backend accepts and returns **nested JSON** for storefront settings. **Frontend owns** the mapping between the schema's dot-notation keys (e.g. `"accessRequirements.priceVisibility"`) and the nested JSON structure (e.g. `{ "accessRequirements": { "priceVisibility": true } }`). The schema renderer handles this conversion in both directions.
+- Auto-fallback: if no merchant-specific storefront doc exists, the GET response returns customer-agnostic defaults.
+
 ### Open questions
 
 - What is the storefront preview URL pattern? Does the API provide it or is it derived from the channel URL?
 - For the JSON schema, do we need to support array fields (e.g. multiple banner slots)?
 - Should the schema editor have syntax highlighting? (Could use a lightweight lib like `vue-codemirror` later)
-- Does the API already have a settings endpoint, or will the schema/settings be stored as part of the channel object?
 
 ### Future considerations
 
@@ -214,8 +240,10 @@ The entire Storefront settings section is driven by a **JSON schema**. The schem
 
 ### Confirmed API details
 
-- Languages are updated as part of the channel PATCH payload (no separate endpoint)
+- Languages are managed via `PATCH /account/channel/{id}` — the update payload includes the full languages array (add, remove, reorder, toggle active). No separate language sub-endpoints.
+- Default language = 1st in sort order of channel languages (backend Decision #13)
 - The "Add" dialog shows all system languages (from `globalApi.language.list()`), filtered to exclude already-added ones
+- **DEPENDENCY**: Requires backend M1 (Channel CRUD & Language Management)
 
 ---
 
@@ -248,10 +276,13 @@ The entire Storefront settings section is driven by a **JSON schema**. The schem
 ### Confirmed API details
 
 - Market properties (currency, VAT, group) **cannot** be edited from the channel context — read-only display only. Editing happens on a dedicated market page.
-
-### Open questions
-
-- Is adding/removing a market from a channel its own endpoint, or part of the channel PATCH payload?
+- Market assignments (add, remove, toggle active, set default) are managed via `PATCH /account/channel/{id}` — the update payload includes the market assignments array. No separate channel-market sub-endpoints.
+- **Market definition endpoints** (separate from channel — these are global, not per-channel):
+  - `GET /account/market-definitions` — list all market definitions (source for "Add market" dialog)
+  - `POST /account/market-definition` — create a new market definition
+- **Market Definitions vs Market Assignments** — Backend introduces `tblMarket` as a template for markets that _can_ be assigned. Assigning a market to a channel creates a `tblSiteCountry` row. The "Add market" dialog should list market definitions, not raw countries.
+- Market activation/deactivation publishes events (like channels). Backend handles safety internally; frontend provides UX guardrails only (same pattern as channel activation).
+- **DEPENDENCY**: Requires backend M3 (Market Management) endpoints
 
 ---
 
@@ -263,23 +294,29 @@ The entire Storefront settings section is driven by a **JSON schema**. The schem
 
 - **Channel - edit - payments** ([Figma](https://www.figma.com/design/RlRU6LojxD3cGjaBMOVkk7/Self-service---Sales-channels?node-id=29-7163)) — simplified: no "Add payment" button, no configure (gear) button, only switches
 
+### Confirmed API details
+
+- Payment methods are included in the `GET /account/channel/{id}` response with their current active state per channel.
+- **Payments are toggleable** (active `true`/`false`) via `PATCH /account/channel/{id}` — same mechanism as markets and languages. (RESOLVED — no longer read-only.)
+- Data source: `tblPayment` + `tblPaymentRow` (active payments connected to channel)
+- Response model: `ChannelPayment` with nested market/customer type info and `active` boolean
+- **DEPENDENCY**: Requires backend M4 (Payment Assignment) endpoint
+
 ### Tasks
 
 - [ ] **5.1 Payments card — All available payment methods**
   - `ContentEditCard` with title "Payments"
-  - List of all available payment methods (not just configured ones), each row showing:
+  - List of all available payment methods for this channel, each row showing:
     - Payment icon/logo (e.g. Manual Invoice icon, Geins Pay logo, SVEA text, PayPal logo)
     - Method name
     - Subtitle: "Markets: X | Customer types: X | Customer groups: X"
-    - Enable/disable `Switch` toggle
+    - Enable/disable `Switch` toggle — toggles `active` on the payment, saved via channel PATCH
   - No "Add payment" button — all available methods are always shown
   - No configure (gear) button — just the switch for now
-  - Toggling a switch enables/disables that payment method for this channel
 
 - [ ] **5.2 Payment method types**
-  - Define `PaymentMethod` type (id, name, icon?, markets, customerTypes, customerGroups, enabled)
-  - Extend `ChannelResponse` to include `paymentMethods`
-  - Determine if enabling/disabling is part of the channel PATCH or a separate endpoint
+  - Define `PaymentMethod` type (id, name, icon?, markets, customerTypes, customerGroups, active)
+  - `ChannelResponse` includes `paymentMethods` array (part of the channel object)
 
 ### Future considerations
 
@@ -292,6 +329,8 @@ The entire Storefront settings section is driven by a **JSON schema**. The schem
 
 **Goal**: Display and configure transaction mail templates per channel.
 
+> **DEPENDENCY**: Requires backend M5 (Mail Configuration) for mail text + preview endpoints, and backend M1 for mail general/layout (which live on the channel object). Also requires two **new endpoints in the legacy mail service** (`carismar-mail` repo) for text key defaults — cross-team dependency.
+
 ### Screens reference
 
 - **Mails - Mail content** (Figma node `99:21317`)
@@ -300,6 +339,21 @@ The entire Storefront settings section is driven by a **JSON schema**. The schem
 - **Sheet - configure mail** (Figma node `184:6761`)
 - **Sheet - preview mail** (Figma node `188:4756`)
 
+### Confirmed API details
+
+- **Mail general + layout settings live on the channel object** — returned by `GET /account/channel/{id}` and updated via `PATCH /account/channel/{id}` (multipart/form-data, including file uploads for LogoUri/HeaderImgUri). No separate mail settings endpoint.
+- **Mail text override endpoints** (dedicated — not part of channel PATCH):
+  - `GET /account/channel/{channelId}/mail/type/list` — all 15 mail types with text keys, defaults, and override status per language
+  - `GET /account/channel/{channelId}/mail/type/{mailType}` — text keys for one mail type
+  - `PATCH /account/channel/{channelId}/mail/type/{mailType}` — update text overrides (omitted = untouched, empty string = revert to default)
+- **Mail preview** (dedicated):
+  - `POST /account/channel/{channelId}/mail/type/{mailType}/preview?language={lang}` — proxy to legacy mail service, returns rendered HTML
+  - Default preview (no real data) uses reference ID = 0, which generates dummy data
+- **Data store**: Azure Table Storage (`MailSettings` entity — flat row per customer-environment)
+- **Text overrides**: `MailSettings.Texts` JSON property — `Dict<textKey, Dict<langCode, override>>`. Keys strip `MAIL_V2_` prefix.
+- **All 15 mail types are canonical** (RESOLVED — Figma shows 9, but the frontend renders dynamically from the backend response). Full list: OrderConfirmation, OrderProcessing, OrderDelivered, OrderCancelled, OrderRowRemoved, OrderRowReturned, CustomerWishlist, CustomerRefunded, CustomerRegistered, CustomerUnregistered, CustomerMessageNotification, CustomerPasswordReset, ProductTellAFriend, ProductSizeAvailable, ProductMonitorNotification
+- **Master toggle**: `MailSettings.Disabled` is a global master toggle per customer-environment (already exists in legacy)
+
 ### Tasks
 
 - [ ] **6.1 Mails card with sub-tabs**
@@ -307,36 +361,36 @@ The entire Storefront settings section is driven by a **JSON schema**. The schem
   - Settings gear icon in card header (for global mail settings)
 
 - [ ] **6.2 Mail content sub-tab**
-  - List of mail templates, each showing: icon, template name (e.g. "CustomerRefunded"), description, Edit (pencil) icon, Enabled/Disabled toggle
-  - Mail types from Figma: CustomerRefunded, CustomerRegistered, CustomerUnregistered, CustomerPasswordReset, OrderConfirmation, OrderDelivered, OrderCancelled, OrderRowRemoved, OrderRowReturned
-  - Single API endpoint with template type as parameter
+  - List of mail templates rendered **dynamically from backend response** — not a hardcoded list
+  - Each row showing: icon, template name, description, Edit (pencil) icon, override status per language
+  - Uses `GET /account/channel/{channelId}/mail/type/list` (returns all 15 types)
+  - Note: per-type enable/disable toggle may not be supported — backend has only a **global** `Disabled` toggle, not per-type.
 
 - [ ] **6.3 Mail configuration sheet**
   - Sheet with Edit/Preview tabs
-  - **Edit tab**: Language selector (flag dropdown), fields: Inbox preview, Mail title, Mail subtitle, Mail footer — all text inputs with template variable support (e.g. `{name}`, `{refund_amount}`, `{site_name}`)
-  - "Restore to system default" button
-  - "Email enabled" toggle at bottom
+  - **Edit tab**: Language selector (flag dropdown), text fields for each text key returned by `GET /account/channel/{channelId}/mail/type/{mailType}`. Each field shows default value as placeholder, with override status indicator.
+  - Template variable support (e.g. `{name}`, `{refund_amount}`, `{site_name}`)
+  - "Restore to system default" button — sends empty string for overridden text keys to revert
+  - Save via `PATCH /account/channel/{channelId}/mail/type/{mailType}`
   - Footer: Cancel + Update
 
 - [ ] **6.4 Mail preview sheet tab**
   - Renders an HTML preview of the mail template
-  - Fetched from a dedicated API endpoint that returns rendered HTML
+  - `POST /account/channel/{channelId}/mail/type/{mailType}/preview?language={lang}`
+  - Preview renders with dummy data when no real entity ID is provided (reference ID = 0)
 
 - [ ] **6.5 General settings sub-tab**
-  - Required settings: Display name, From email address, Login URL, Password reset URL
-  - Optional settings: BCC email for order confirmation emails
+  - Required settings: Display name (`DisplayName`), From email address (`FromEmailAddress`), Login URL (`LoginUrl`), Password reset URL (`PasswordResetUrl`)
+  - Optional settings: BCC email (`OrderConfirmationBCCEmail`), SMTP overrides (`SmtpHost`, `SmtpPort`, `SmtpUser`, `SmtpPassword`)
   - `FormGrid design="1+1+1"` for the 3-column row
+  - Data sourced from `GET /account/channel/{id}`, saved via `PATCH /account/channel/{id}`
 
 - [ ] **6.6 Layout options sub-tab**
-  - Images section: Logo upload ("Use Theme logo" option), Header image upload
-  - Colors section: Background color, Body color, Header background (hex inputs + color swatches) + "Apply theme colors" button
-  - Font settings: Headings + Body text dropdowns + "Apply theme fonts" button
-
-### Confirmed API details
-
-- Single endpoint for all mail templates, with template type as a parameter
-- Mail preview is a dedicated endpoint that returns rendered HTML
-- Layout options are shared across all mails (not per-mail)
+  - Images section: Logo upload (`LogoUri`), Header image upload (`HeaderImgUri`) — via multipart/form-data on channel PATCH
+  - Colors section: All color properties from `MailSettings` (BackgroundColor, BodyColor, HeaderColor, FooterColor, etc.) — 13 color fields total
+  - Typography: FontLink, FontFamily, FontSizeSmall/Medium/Large, LineHeight
+  - Shape: BorderRadius, ProdImgSize
+  - Data sourced from `GET /account/channel/{id}`, saved via `PATCH /account/channel/{id}`
 
 ---
 
@@ -348,7 +402,7 @@ The entire Storefront settings section is driven by a **JSON schema**. The schem
 
 - [ ] **7.1 i18n completion**
   - All labels, descriptions, placeholders, error messages in both `en.json` and `sv.json`
-  - Entity action keys: `save_entity`, `delete_entity` with channel interpolation
+  - Entity action keys: `save_entity` with channel interpolation (no `delete_entity` — deletion not supported)
 
 - [ ] **7.2 Unsaved changes across tabs**
   - Ensure `useEntityEdit` tracks changes across all tabs correctly
@@ -358,79 +412,96 @@ The entire Storefront settings section is driven by a **JSON schema**. The schem
   - Store > Channels > [Channel name]
   - `setCurrentTitle` integration for entity name in tab title
 
-- [ ] **7.4 Delete channel**
-  - Confirmation dialog
-  - Only available for non-active channels (or with explicit warning)
-
-- [ ] **7.5 Copy channel**
-  - If API supports it, add copy action to list page table actions
-  - Similar pattern to quotation copy
-
-- [ ] **7.6 Form validation**
+- [ ] **7.4 Form validation**
   - Zod schemas for all editable fields
   - Per-tab validation before save
 
+~~**7.5 Delete channel**~~ — **REMOVED**: Channel deletion is not supported by the backend. No DELETE endpoint. (RESOLVED)
+
+~~**7.6 Copy channel**~~ — **REMOVED**: Channel duplication is out of scope. No COPY endpoint. (RESOLVED)
+
 ---
 
-## Milestone 8: Product Search Tab
+## ~~Milestone 8: Product Search Tab~~ — DEFERRED
 
-**Goal**: Configure search field weighting and indexing per channel.
-
-### Screens reference
-
-- **Channel - edit - search** (Figma node `110:3779`)
-
-### Tasks
-
-- [ ] **8.1 Search configuration card**
-  - Table-like layout with columns: Field, Weighting (number input), Enabled (toggle)
-  - Built-in fields: ArticleNumber, Product id, Name, Category name, Category description, Brand, SKU Article number, Text 1-3
-  - "Restore to default weighting" button in card header
-  - Each row is editable inline (number input + toggle)
-
-- [ ] **8.2 Custom search field configuration**
-  - Section below the main table
-  - "+ Add field" button to add up to 6 custom search fields
-  - Each custom field: name input, weighting input, enabled toggle, remove action
-
-- [ ] **8.3 Search config types**
-  - Define `SearchFieldConfig` (field, weighting, enabled)
-  - Define `SearchConfig` (fields array + custom fields array)
-  - Likely its own endpoint per channel
-
-### Open questions
-
-- Is this its own endpoint (e.g. `GET/PATCH /channel/{id}/search`) or part of the channel object?
-- What are the valid weighting ranges?
+> **RESOLVED**: Product search configuration is explicitly out of backend scope. This milestone is deferred until a backend endpoint is available. No mock API work required. The Product search tab should be omitted from the channel edit page tab bar until this milestone is revived.
 
 ---
 
 ## Type Gaps (assumed fields not yet in types)
 
-Based on the Figma designs, the current `Channel` type is missing:
+Based on the Figma designs and backend plan, the current `Channel` type is missing:
 
-| Field                | Figma Source   | Notes                                          |
-| -------------------- | -------------- | ---------------------------------------------- |
-| `url`                | General tab    | Confirmed: available on GET and PATCH           |
-| `defaultLanguage`    | General tab    | Confirmed: available on GET and PATCH           |
-| `paymentMethods`     | Payments tab   | Array of configured payment methods         |
-| `mailSettings`       | Mails tab      | Mail configuration (general + per-template) |
-| `searchConfig`       | Search tab     | Search field weighting + custom fields      |
-| `storefrontSettings` | Storefront tab | JSON blob driven by schema                  |
-| `storefrontSchema`   | Storefront tab | Custom JSON schema (if overridden)          |
+| Field                | Source           | Notes                                                                                  |
+| -------------------- | ---------------- | -------------------------------------------------------------------------------------- |
+| `url`                | General tab      | Confirmed: stored in `tblSite.strUrl`, available on GET and PATCH                      |
+| `defaultLanguage`    | General tab      | Derived: 1st in sort order of `tblSiteLanguage` (backend Decision #13)                 |
+| `languages`          | General tab      | Array on channel object — managed via channel PATCH                                    |
+| `markets`            | Markets tab      | Array on channel object — assignments managed via channel PATCH                        |
+| `paymentMethods`     | Payments tab     | Array on channel object — active toggles managed via channel PATCH                     |
+| `mailSettings`       | Mails tab        | General + layout settings on channel object; text overrides via dedicated endpoints     |
+| `storefrontSettings` | Storefront tab   | Opaque nested JSON on channel object — frontend owns schema↔UI mapping                 |
+| `storefrontSchema`   | Storefront tab   | Opaque JSON on channel object — backend stores without interpretation                  |
 
-These will be defined as the API endpoints become available. Start with assumed shapes and refine once the API is confirmed.
+**Key insight**: All sub-entities live on the channel object and are returned by `GET /account/channel/{id}`. The single `PATCH /account/channel/{id}` (multipart/form-data) is the write surface for everything except mail text overrides and mail preview, which have dedicated endpoints.
 
 ---
 
 ## Dependencies & Risks
 
-| Risk                                | Impact                               | Mitigation                                                    |
-| ----------------------------------- | ------------------------------------ | ------------------------------------------------------------- |
-| Channel CRUD API not ready          | Blocks all milestones                | Start with mock data / existing list endpoint; build UI first |
-| Storefront schema design complexity | Could delay highest-priority feature | Define minimal schema spec first, iterate                     |
-| Mail endpoints unknown              | Blocks Milestone 6                   | Build UI shell, connect when endpoints are confirmed          |
-| Search endpoint unknown             | Blocks Milestone 8                   | Same approach — UI first                                      |
+| Risk                                         | Impact                               | Mitigation                                                                            |
+| -------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------- |
+| Channel CRUD API not ready (backend M1)      | Blocks FE M1, M3                     | Start with mock data / existing list endpoint; build UI first                         |
+| Storefront data not on channel yet (BE M2)   | Blocks FE M2 API integration         | Schema renderer + default JSON can be built without API; connect when BE M2 is ready  |
+| Market API not ready (backend M3)            | Blocks FE M4                         | Build UI shell with mock data                                                         |
+| Payment API not ready (backend M4)           | Blocks FE M5                         | Build UI shell with mock data                                                         |
+| Mail text/preview not ready (backend M5)     | Blocks FE M6 text editing + preview  | General/layout settings available via channel earlier; text editing waits for BE M5    |
+| Legacy mail service changes (backend M5)     | Blocks FE M6 preview + text keys     | Cross-team dependency on `carismar-mail` repo — coordinate early                      |
+
+---
+
+## Resolved Issues
+
+All previously open issues have been resolved. Decisions applied:
+
+| # | Issue | Resolution |
+|---|-------|------------|
+| 1 | Channel DELETE | **Not supported.** No DELETE endpoint. Frontend omits delete flows. |
+| 2 | Channel COPY | **Out of scope.** No COPY endpoint. Frontend omits copy flows. |
+| 3 | Payments read-only vs toggles | **Toggleable.** Payments have `active` flag, toggled via `PATCH /account/channel/{id}`. |
+| 4 | Activation lockout | **Backend handles safety internally.** Frontend provides UX guardrails only (disable rapid toggling, informational message). No transitional states exposed. |
+| 5 | Storefront data shape | **Backend accepts nested JSON, treats it as opaque.** Frontend owns schema↔UI mapping (dot-notation ↔ nested). |
+| 6 | Product search | **Deferred.** Explicitly out of backend scope. Frontend M8 deferred. |
+| 7 | Mail types (9 vs 15) | **All 15 backend types are canonical.** Frontend renders dynamically from backend response. |
+
+---
+
+## Cross-Plan Dependency Map
+
+The backend team has reprioritized Storefront Settings from M5 → M2 to align with the frontend's highest-priority feature.
+
+```
+Backend (new order)          → Frontend dependency
+─────────────────────────────────────────────────────
+BE M0: Test Infra            → (no frontend dependency)
+BE M1: Channel CRUD          → FE M1 (Foundation), FE M3 (General Tab)
+BE M2: Storefront Settings   → FE M2 (Storefront Settings — highest FE priority) ✅ aligned
+BE M3: Market Management     → FE M4 (Markets Tab)
+BE M4: Payment Assignment    → FE M5 (Payments Tab)
+BE M5: Mail Configuration    → FE M6 (Mails Tab — text overrides + preview)
+BE M6: Events & Background   → (no direct FE dependency — safety is backend-internal)
+
+Frontend                     → Backend dependency
+─────────────────────────────────────────────────────
+FE M1 (Foundation)           → BE M1
+FE M2 (Storefront Settings)  → BE M2 (for API integration; UI can be built ahead)
+FE M3 (General Tab)          → BE M1
+FE M4 (Markets Tab)          → BE M3
+FE M5 (Payments Tab)         → BE M4
+FE M6 (Mails Tab)            → BE M1 (general/layout on channel) + BE M5 (text/preview endpoints) + legacy mail service
+FE M7 (Polish)               → (no blockers — all APIs available by this point)
+FE M8 (Product Search)       → DEFERRED — no backend support
+```
 
 ---
 
@@ -438,16 +509,18 @@ These will be defined as the API endpoints become available. Start with assumed 
 
 ```
 Project: Channels
-├── Milestone 1: Foundation (Types, Repository, CRUD)
-├── Milestone 2: Storefront Settings (highest priority)
-├── Milestone 3: General Tab
-├── Milestone 4: Markets Tab
-├── Milestone 5: Payments Tab
-├── Milestone 6: Mails Tab
-├── Milestone 7: Polish & Integration
-└── Milestone 8: Product Search Tab (lowest priority)
+├── Milestone 1: Foundation (Types, Repository, CRUD)    ← needs BE M1
+├── Milestone 2: Storefront Settings (highest priority)  ← needs BE M2 ✅
+├── Milestone 3: General Tab                             ← needs BE M1
+├── Milestone 4: Markets Tab                             ← needs BE M3
+├── Milestone 5: Payments Tab                            ← needs BE M4
+├── Milestone 6: Mails Tab                               ← needs BE M1 + BE M5 + legacy mail
+├── Milestone 7: Polish & Integration                    ← no blockers
+└── Milestone 8: Product Search Tab                      ← DEFERRED
 ```
 
-> **Build order**: M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 (milestones are numbered by priority)
+> **Build order**: M1 → M2 → M3 → M4 → M5 → M6 → M7 (milestones are numbered by priority)
+>
+> **Recommended parallel work strategy**: Frontend can build UI shells (components, local state, mock data) ahead of backend API availability. API integration passes happen as backend milestones complete. The schema renderer (M2) and mail UI shell (M6) are the best candidates for early frontend-only work.
 
 Each milestone's tasks become individual Linear issues. Milestones map to Linear milestones (or cycles) within the project.
