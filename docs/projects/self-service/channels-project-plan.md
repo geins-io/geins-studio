@@ -95,7 +95,7 @@ Build the Channel entity management pages in Geins Studio. Channels represent sa
   - Zod form schema for channel fields
 
 - [ ] **1.5 Navigation entry**
-  - Add "Channels" to `app/lib/navigation.ts` under the Store section
+  - Add "Channels" to `app/lib/navigation.ts` under the Settings section, also add the Settings section
   - i18n keys in `en.json` and `sv.json`
 
 ### Confirmed API details
@@ -201,11 +201,11 @@ The entire Storefront settings section is driven by a **JSON schema**. The schem
 - **Data shape (RESOLVED)**: Backend accepts and returns **nested JSON** for storefront settings. **Frontend owns** the mapping between the schema's dot-notation keys (e.g. `"accessRequirements.priceVisibility"`) and the nested JSON structure (e.g. `{ "accessRequirements": { "priceVisibility": true } }`). The schema renderer handles this conversion in both directions.
 - Auto-fallback: if no merchant-specific storefront doc exists, the GET response returns customer-agnostic defaults.
 
-### Open questions
+### Resolved questions
 
-- What is the storefront preview URL pattern? Does the API provide it or is it derived from the channel URL?
-- For the JSON schema, do we need to support array fields (e.g. multiple banner slots)?
-- Should the schema editor have syntax highlighting? (Could use a lightweight lib like `vue-codemirror` later)
+- **Preview URL**: TBD — will be confirmed later. Preview functionality (task 2.6) is the **lowest priority** within this milestone.
+- **Array fields in schema**: Not needed for now. May be added in a future iteration.
+- **Schema editor syntax highlighting**: Yes — use a lightweight lib (e.g. `vue-codemirror` or similar).
 
 ### Future considerations
 
