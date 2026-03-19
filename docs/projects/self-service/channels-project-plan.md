@@ -423,7 +423,7 @@ The entire Storefront settings section is driven by a **JSON schema**. The schem
   - Tab switching should not lose data
 
 - [ ] **7.3 Breadcrumbs & page titles**
-  - Store > Channels > [Channel name]
+  - Settings > Channels > [Channel name]
   - `setCurrentTitle` integration for entity name in tab title
 
 - [ ] **7.4 Form validation**

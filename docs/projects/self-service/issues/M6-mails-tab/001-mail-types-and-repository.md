@@ -32,93 +32,102 @@ The Mails tab is the fifth tab on the channel edit page. Before any UI can be bu
 ```ts
 // The 15 canonical mail type identifiers
 type MailTypeId =
-  | 'OrderConfirmation' | 'OrderProcessing' | 'OrderDelivered'
-  | 'OrderCancelled' | 'OrderRowRemoved' | 'OrderRowReturned'
-  | 'CustomerWishlist' | 'CustomerRefunded' | 'CustomerRegistered'
-  | 'CustomerUnregistered' | 'CustomerMessageNotification'
-  | 'CustomerPasswordReset' | 'ProductTellAFriend'
-  | 'ProductSizeAvailable' | 'ProductMonitorNotification'
+  | 'OrderConfirmation'
+  | 'OrderProcessing'
+  | 'OrderDelivered'
+  | 'OrderCancelled'
+  | 'OrderRowRemoved'
+  | 'OrderRowReturned'
+  | 'CustomerWishlist'
+  | 'CustomerRefunded'
+  | 'CustomerRegistered'
+  | 'CustomerUnregistered'
+  | 'CustomerMessageNotification'
+  | 'CustomerPasswordReset'
+  | 'ProductTellAFriend'
+  | 'ProductSizeAvailable'
+  | 'ProductMonitorNotification';
 
-// One entry in the mailTypes array on the channel response
-interface ChannelMailType {
-  _id: string
-  _type: string
-  typeId: MailTypeId
-  name: string          // human-readable name
-  description?: string  // optional description shown in the list
+// One entry in the mailTypes array on the channel response (extend EntityBaseWithName)
+interface ChannelMailType extends EntityBaseWithName {
+  _id: string;
+  _type: string;
+  typeId: MailTypeId;
+  name: string; // human-readable name
+  description?: string; // optional description shown in the list
 }
 
 // General mail settings (shared across all templates)
 interface MailGeneralSettings {
-  displayName?: string
-  fromEmailAddress?: string
-  loginUrl?: string
-  passwordResetUrl?: string
-  orderConfirmationBccEmail?: string
-  smtpHost?: string
-  smtpPort?: number | null
-  smtpUser?: string
-  smtpPassword?: string
-  disabled?: boolean    // global master toggle
+  displayName?: string;
+  fromEmailAddress?: string;
+  loginUrl?: string;
+  passwordResetUrl?: string;
+  orderConfirmationBccEmail?: string;
+  smtpHost?: string;
+  smtpPort?: number | null;
+  smtpUser?: string;
+  smtpPassword?: string;
+  disabled?: boolean; // global master toggle
 }
 
 // Layout mail settings (shared visual styling)
 interface MailLayoutSettings {
-  logoUri?: string | null
-  headerImgUri?: string | null
-  backgroundColor?: string | null
-  bodyColor?: string | null
-  headerColor?: string | null
-  footerColor?: string | null
-  headerTextColor?: string | null
-  footerTextColor?: string | null
-  buttonBackgroundColor?: string | null
-  buttonTextColor?: string | null
-  textColor?: string | null
-  linkColor?: string | null
-  priceColor?: string | null
-  fontLink?: string | null
-  fontFamily?: string | null
-  fontSizeSmall?: string | null
-  fontSizeMedium?: string | null
-  fontSizeLarge?: string | null
-  lineHeight?: string | null
-  borderRadius?: string | null
-  prodImgSize?: string | null
+  logoUri?: string | null;
+  headerImgUri?: string | null;
+  backgroundColor?: string | null;
+  bodyColor?: string | null;
+  headerColor?: string | null;
+  footerColor?: string | null;
+  headerTextColor?: string | null;
+  footerTextColor?: string | null;
+  buttonBackgroundColor?: string | null;
+  buttonTextColor?: string | null;
+  textColor?: string | null;
+  linkColor?: string | null;
+  priceColor?: string | null;
+  fontLink?: string | null;
+  fontFamily?: string | null;
+  fontSizeSmall?: string | null;
+  fontSizeMedium?: string | null;
+  fontSizeLarge?: string | null;
+  lineHeight?: string | null;
+  borderRadius?: string | null;
+  prodImgSize?: string | null;
 }
 
 interface ChannelMailSettings {
-  general: MailGeneralSettings
-  layout: MailLayoutSettings
+  general: MailGeneralSettings;
+  layout: MailLayoutSettings;
 }
 
 // Text key entry returned by GetMailTexts
 interface MailTextEntry {
-  key: string           // e.g. "ORDER_DELIVERY_TITLE"
-  value: string         // current override (empty if not overridden)
-  defaultValue: string  // system default (shown as placeholder)
-  hasOverride: boolean
+  key: string; // e.g. "ORDER_DELIVERY_TITLE"
+  value: string; // current override (empty if not overridden)
+  defaultValue: string; // system default (shown as placeholder)
+  hasOverride: boolean;
 }
 
 interface MailTextsResponse {
-  mailType: MailTypeId
-  language: string
-  texts: MailTextEntry[]
+  mailType: MailTypeId;
+  language: string;
+  texts: MailTextEntry[];
 }
 
 // Flat key-value request body for UpdateMailTexts
 // Backend expects: { language: string, [textKey: string]: string }
 interface MailTextsUpdateRequest {
-  language: string
-  [key: string]: string
+  language: string;
+  [key: string]: string;
 }
 
 interface MailPreviewRequest {
-  language: string
+  language: string;
 }
 
 interface MailPreviewResponse {
-  html: string
+  html: string;
 }
 ```
 
