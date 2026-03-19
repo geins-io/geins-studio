@@ -71,6 +71,10 @@ Geins Studio is fully customizable with Tailwind CSS and shadcn-vue. You can mod
 
 For detailed deployment instructions, check the [Deployment Guide](docs/introduction/deploy.md).
 
+## Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for system architecture and domain documentation.
+
 ## Contributing
 
 We welcome contributions! Feel free to open issues or submit pull requests to improve Geins Studio.
