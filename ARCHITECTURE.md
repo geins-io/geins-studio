@@ -35,6 +35,17 @@ Geins Studio is a **client-side SPA** (`ssr: false`) built with **Nuxt 4**, **Ty
                    (https://mgmtapi.geins.services/v2)
 ```
 
+## Golden Path
+
+The primary flow through the system from start to finish:
+
+1. **Entry** — User visits a protected route → `auth.global.ts` middleware checks session → redirects to `/auth/login` if unauthenticated → NextAuth.js `CredentialsProvider` verifies credentials → JWT issued → user lands on the dashboard.
+2. **Core** — Dashboard → navigate to a domain (Customers / Orders / Pricing) → list page shows entities via `useAsyncData` → click an entity (or "New") → detail/edit page loads with `useEntityEdit`.
+3. **Data flow** — Page calls `useGeinsRepository()` → composable injects `$geinsApi` into a repository factory → factory method calls `$geinsApi('/endpoint')` → Nitro catch-all proxy (`server/api/[...].ts`) adds the Bearer token and forwards to the Geins Management API → response returned to the page.
+4. **Exit** — User edits the form and clicks Save → `updateEntity()` (or `createEntity()`) calls the repository → API responds → `parseAndSaveData` resets the form to the saved state → `hasUnsavedChanges` clears → unsaved-changes guard deactivates.
+
+The sections below expand on specific parts of this flow.
+
 ## Directory Structure
 
 ```
