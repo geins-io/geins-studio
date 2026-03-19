@@ -64,23 +64,35 @@ i18n/locales/               # en.json, sv.json
 
 ## Business Domains
 
-| Domain | Route prefix | Key entity | Domain doc |
-| --- | --- | --- | --- |
-| Products | — | Product, SKU, Category, Brand | [docs/domains/products.md](docs/domains/products.md) |
-| Customers | `/customers/*` | Company, Buyer, Sales Rep | [docs/domains/customers.md](docs/domains/customers.md) |
-| Orders | `/orders/*` | Quotation, Order | [docs/domains/orders.md](docs/domains/orders.md) |
-| Pricing | `/pricing/*` | Price List, Price Rule | [docs/domains/pricing.md](docs/domains/pricing.md) |
-| Account & Auth | `/auth/*`, `/account/*` | User, Session, Channel | [docs/domains/account-auth.md](docs/domains/account-auth.md) |
+| Domain         | Route prefix            | Key entity                    | Domain doc                                                   |
+| -------------- | ----------------------- | ----------------------------- | ------------------------------------------------------------ |
+| Products       | —                       | Product, SKU, Category, Brand | [docs/domains/products.md](docs/domains/products.md)         |
+| Customers      | `/customers/*`          | Company, Buyer, Sales Rep     | [docs/domains/customers.md](docs/domains/customers.md)       |
+| Orders         | `/orders/*`             | Quotation, Order              | [docs/domains/orders.md](docs/domains/orders.md)             |
+| Pricing        | `/pricing/*`            | Price List, Price Rule        | [docs/domains/pricing.md](docs/domains/pricing.md)           |
+| Account & Auth | `/auth/*`, `/account/*` | User, Session, Channel        | [docs/domains/account-auth.md](docs/domains/account-auth.md) |
+
+### Domain Dependency Graph
+
+```
+Account/Auth ◄── all domains (session, channels, currencies)
+Products     ◄── Pricing   (price list product data)
+Products     ◄── Orders    (SKU selection for quotation items)
+Customers    ◄── Orders    (company, buyer, addresses for quotations)
+Pricing      ◄── Customers (company price list assignments via ProductPriceList)
+```
+
+Dependencies are acyclic. Account/Auth and Products are foundational (no domain deps). Orders is a leaf (depends on all others, nothing depends on it). See individual `docs/domains/*.md` files for detailed dependency notes.
 
 ## Key Dependencies
 
-| Package | Purpose |
-| --- | --- |
-| `@tanstack/vue-table` | Data tables |
-| `vee-validate` + `zod` | Form validation |
-| `reka-ui` | Headless component primitives (used by shadcn-vue) |
-| `pinia` | State management |
-| `@sidebase/nuxt-auth` | Auth module (wraps NextAuth.js) |
+| Package                | Purpose                                            |
+| ---------------------- | -------------------------------------------------- |
+| `@tanstack/vue-table`  | Data tables                                        |
+| `vee-validate` + `zod` | Form validation                                    |
+| `reka-ui`              | Headless component primitives (used by shadcn-vue) |
+| `pinia`                | State management                                   |
+| `@sidebase/nuxt-auth`  | Auth module (wraps NextAuth.js)                    |
 
 ## Further Reading
 

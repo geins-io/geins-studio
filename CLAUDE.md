@@ -10,6 +10,7 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 - UI components: `geins-ui-components` | Tables: `geins-table-patterns`
 - Linear issues: `linear` | Implementation plan: `implementation-plan`
 - Learning loop: `geins-learning-loop`
+- Sync domain docs: `sync-domain` | Verify docs: `verify-docs`
 
 ## Token Efficiency Rules
 
