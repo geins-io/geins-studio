@@ -72,6 +72,21 @@ i18n/locales/               # en.json, sv.json
 | Pricing | `/pricing/*` | Price List, Price Rule | [docs/domains/pricing.md](docs/domains/pricing.md) |
 | Account & Auth | `/auth/*`, `/account/*` | User, Session, Channel | [docs/domains/account-auth.md](docs/domains/account-auth.md) |
 
+### Domain Dependency Graph
+
+```
+Account/Auth ◄── all domains (session, channels, currencies)
+     │
+Products ◄────── Pricing (price list product data)
+     │  ◄──────── Orders (SKU selection for quotation items)
+     │
+Customers ◄───── Orders (company, buyer, addresses for quotations)
+     │
+     └──────────► Pricing (company price list assignments use ProductPriceList type)
+```
+
+Dependencies are acyclic. Account/Auth and Products are foundational (no domain deps). Orders is a leaf (depends on all others, nothing depends on it). See individual `docs/domains/*.md` files for detailed dependency notes.
+
 ## Key Dependencies
 
 | Package | Purpose |
