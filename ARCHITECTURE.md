@@ -284,3 +284,29 @@ geinsLog('Debug message', data); // Only logs when GEINS_DEBUG=true
 | `@sidebase/nuxt-auth`   | Auth module (wraps NextAuth.js)                    |
 | `@formkit/auto-animate` | Automatic animations                               |
 | `nuxt-lucide-icons`     | Icon library                                       |
+
+## Decision Log
+
+**2024-05-24: Nuxt 4 + Vue 3 as application framework**
+Nuxt provides file-based routing, auto-imports, and a Nitro server — eliminating boilerplate for an admin SPA. Vue 3 Composition API aligns with the composable-first architecture.
+
+**2024-05-24: shadcn-vue for UI components**
+Provides accessible, customizable primitives without the lock-in of a traditional component library. Components are copied into the project (`app/components/ui/`) and owned by the team.
+
+**2024-05-24: Client-side SPA with Nitro proxy (no SSR)**
+An admin interface has no SEO requirements. Running as `ssr: false` simplifies auth, avoids hydration mismatches, and lets the Nitro server focus on proxying API calls with auth headers.
+
+**2024-06-10: Pinia for state management**
+Official Vue 3 state management with first-class TypeScript support and devtools integration. Used for account, user, products, and breadcrumbs stores.
+
+**2024-06-17: TanStack Table for data tables**
+Headless table logic that integrates with Vue 3 reactivity. Supports sorting, pagination, column visibility, and pinning without prescribing UI — pairs well with shadcn-vue table primitives.
+
+**2024-06-26: @nuxtjs/i18n for internationalization**
+Standard Nuxt module for i18n. English and Swedish locale files live in `i18n/locales/`.
+
+**2024-07-02: NextAuth.js (via @sidebase/nuxt-auth) for authentication**
+Provides JWT-based auth with credential providers, token refresh, and session management. Server-side handler keeps secrets off the client.
+
+**2024-07-02: VeeValidate + Zod for form validation**
+Zod schemas define validation rules in TypeScript; VeeValidate bridges them to Vue form components via `toTypedSchema()`. Enables type-safe validation that mirrors API contracts.

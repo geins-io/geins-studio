@@ -382,3 +382,14 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 ### Price Lists
 
 - **Copy endpoint**: Uses an ID-scoped sub-object: `productApi.priceList.id(id).copy()` (returns `ProductPriceList`). Unlike quotation which is flat (`orderApi.quotation.copy(id)`), price list copy is accessed via `.id(id).copy()`.
+
+## Decision Log
+
+**2025-01-15: Skills-based agent architecture**
+Agent skills live in `.agents/skills/` as self-contained runbooks. CLAUDE.md is the source of truth for conventions; skills reference it for task-specific workflows.
+
+**2025-02-01: `useEntityEdit` as universal entity page composable**
+Every entity detail/edit page uses the same composable. Prevents divergence in unsaved-changes tracking, CRUD flows, and navigation patterns across domains.
+
+**2025-02-25: Nested documentation hierarchy (ARCHITECTURE.md → APP.md → DOMAIN.md)**
+Clara Philosophy: each altitude is self-contained. Architecture for the 10,000ft view, APP.md for composition/routing, DOMAIN.md for business rules, CLAUDE.md as the AI entry point.

@@ -107,3 +107,14 @@ geinsLog('Something happened', data);
 | `pnpm build`        | Nuxt production build           | Yes                |
 | `pnpm dev`          | Dev server (localhost:3000)     | —                  |
 | `pnpm docs:dev`     | VitePress docs (localhost:3010) | —                  |
+
+## Decision Log
+
+**2024-05-24: pnpm as package manager**
+Strict dependency resolution and workspace support. Enforced via Corepack.
+
+**2024-05-29: ESLint + Prettier for code quality**
+ESLint handles logic rules (no console.log, import order). Prettier handles formatting. Both run in CI via `lint:check` and `format:check`.
+
+**2024-06-20: VitePress for documentation site**
+Lightweight Vite-powered static site for developer docs. Lives in `docs/` alongside the app code.
