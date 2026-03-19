@@ -24,14 +24,9 @@ GEINS_DEBUG=true               # enable useGeinsLog output
 
 ### Adding a New Entity (end-to-end checklist)
 
-1. **Types** → `shared/types/{Entity}.ts` — Define `{Entity}Base`, `{Entity}Response`, `{Entity}Create`, `{Entity}Update`
-2. **Repository** → `app/utils/repositories/{entity}.ts` — Create factory using `entityRepo<Response, Create, Update>`
-3. **Register repo** → `app/utils/repos.ts` — Add to barrel export
-4. **Register in composable** → `app/composables/useGeinsRepository.ts` — Expose via return object
-5. **List page** → `app/pages/{domain}/{entity}/list.vue` — Follow list page pattern
-6. **Detail page** → `app/pages/{domain}/{entity}/[id].vue` — Follow detail/edit page pattern
-7. **Navigation** → `app/lib/navigation.ts` — Add nav entry
-8. **i18n** → `i18n/locales/en.json` + `sv.json` — Add translations
+> Full checklist with details: see [APP.md](APP.md) → "Adding a New Entity"
+
+Types → Repository → Register repo → List page → Detail page → Navigation → i18n
 
 ### Decision Guide
 

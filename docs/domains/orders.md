@@ -21,13 +21,21 @@ draft → pending → accepted → confirmed → finalized
 
 All status transitions are one-way (no revert to draft). Each transition is a `POST /quotation/{id}/{action}` with a `StatusTransitionRequest` body. The `expire` transition is automatic (never triggered manually).
 
-**Snapshots** — When a quotation is created, the API captures point-in-time snapshots of the company (`QuotationCompany`), owner/sales rep (`QuotationOwner`), and buyer (`QuotationCustomer`). Each snapshot extends `EntitySnapshot` with `_id`, `_type`, `_snapshotAt`. IDs are read via `company._id`, not `companyId`.
+**Snapshots** — When a quotation is created, the API captures point-in-time snapshots of the company (`QuotationCompany`), owner/sales rep (`QuotationOwner`), and buyer (`QuotationCustomer`). Each snapshot extends `EntitySnapshot` with `_id`, `_type`, `_snapshotAt`. Read IDs via `company._id`, `owner._id`, `customer._id` (not `companyId`/`ownerId`). Owner and customer use `firstName`/`lastName` (no combined `name` or `email`). Addresses use the standard `Address` type.
 
 **Items** — `QuotationUpdate.items` accepts `QuotationItemCreate[]` (shape: `{ skuId, quantity, unitPrice? }`), not the response item type. The response `QuotationItem` includes enriched fields: `ordPrice`, `listPrice`, `name`, `articleNumber`, `primaryImage`.
 
-**Live preview** — `POST /quotation/{id}/preview` calculates totals without persisting. Returns `{ items, total }` where items are enriched with `ordPrice`/`listPrice` from applied price lists.
+**Live preview** — `POST /quotation/{id}/preview` calculates totals without persisting. Only available in draft edit mode. Returns `{ items, total }` where items are enriched with `ordPrice`/`listPrice` from applied price lists. `unitPrice` is never overwritten from the preview response. **Infinite loop prevention**: Do NOT watch `quotationItems` to trigger preview — the preview response updates `skuItemData` (ordPrice/listPrice), which changes `quotationItems` output, creating a loop. Trigger from explicit user-action handlers instead.
 
-**Communications** — Messages (`QuotationMessage`) are typed as `internal`, `toCustomer`, or `fromCustomer`. CRUD via `/quotation/{id}/message` (create) and `/quotation/message/{messageId}` (update/delete). All message mutations require re-fetching the quotation.
+**Sent mode** — Three mutually exclusive modes: `createMode` (route param `new`), draft mode, sent mode (`status !== 'draft'`). `sentMode` is a `ref<boolean>` set in `parseEntityData` — never reverts since transitions are one-way. In sent mode, General tab renders read-only cards; Products tab is replaced by Communications tab. Status transitions use `POST /quotation/{id}/{action}` → `refreshEntityData()` to update all UI state.
+
+**Communications** — Messages (`QuotationMessage`) are typed as `internal`, `toCustomer`, or `fromCustomer`. CRUD via `/quotation/{id}/message` (create) and `/quotation/message/{messageId}` (update/delete). All message mutations require re-fetching the quotation. `QuotationMessageCreate`: `{ type, authorId, authorName, message, answerRef? }`. `QuotationMessageUpdate`: `{ type?, message?, answerRef? }`.
+
+**Currency default in create mode** — When a company is selected, the currency auto-defaults to the channel's default market currency (via `channel.defaultMarket` → market lookup → `market.currency._id`), falling back to `availableCurrencies[0]`.
+
+**Deletable statuses** — Delete is available for `draft`, `rejected`, `expired`, and `canceled` quotations. Statuses like `pending`, `accepted`, `confirmed`, and `finalized` do not allow deletion.
+
+**Changelog** — `changelogApi.getForEntity('quotation', id)` fetches changelog entries. `ChangelogEntry.id` is a `number` from the API (typed as `string | number`). Entries with `subEntity === 'message'` are filtered out (messages are shown separately). The `changes` field is a JSON string of `[{ p: string, c: string[] }]`.
 
 ## API Shape Quirks
 
@@ -43,7 +51,13 @@ All status transitions are one-way (no revert to draft). Each transition is a `P
 
 **`terms`** — Plain `string` on create/update. Response returns `string` (not `{ text: string }` as previously documented).
 
-**`prepareUpdateData` must NOT spread** — `entityDataUpdate` contains response-only fields (`billingAddress`, `shippingAddress`, `total`, `company`, `owner`, `customer`, `communication`, `changelog`). Only include OpenAPI update schema fields.
+**`QuotationTotal` shape** — `{ subtotal, discount, shipping, margin, vat, grandTotalExVat, grandTotalIncVat }` — all `number`. Note: field is `vat` (not `tax`), and grand total is split into ex-VAT and inc-VAT variants.
+
+**`QuotationCompany.vatNumber`** — The company snapshot uses `vatNumber` (not `orgNr`).
+
+**`QuotationStatus` casing** — All status values are lowercase (`'draft'`, `'pending'`, `'accepted'`, etc.) — consistent with the API.
+
+**`prepareUpdateData` must NOT spread** — `entityDataUpdate` contains response-only fields (`billingAddress`, `shippingAddress`, `total`, `company`, `owner`, `customer`, `communication`, `changelog`). Only include OpenAPI update schema fields: `name`, `validTo`, `companyId`, `ownerId`, `customerId`, `validPaymentMethods`, `validShippingMethods`, `suggestedShippingFee`, `terms`, `billingAddressId`, `shippingAddressId`, `items`.
 
 **OpenAPI spec**: `https://geins-func-quotation-mgmtapi-dev.azurewebsites.net/api/openapi/v3.json`
 
