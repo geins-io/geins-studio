@@ -1,5 +1,7 @@
 # Geins Studio — GitHub Copilot Agent Instructions
 
+IMPORTANT: NEVER branch from main. ALWAYS branch from `next`. ALWAYS open PRs targeting `next`, not main.
+
 ## Source of Truth
 
 **`CLAUDE.md` is the canonical reference** for all codebase conventions, patterns, architecture, and domain knowledge. Read it before starting any task. Follow every convention described there.
