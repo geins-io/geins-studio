@@ -1,5 +1,21 @@
 # Geins Studio — GitHub Copilot Agent Instructions
 
+<!-- ⚠️ BRANCHING RULE — READ THIS FIRST, BEFORE ANY OTHER ACTION ⚠️ -->
+> **NEVER branch from `main`. ALWAYS branch from `next`. ALWAYS open PRs targeting `next`, not `main`.**
+>
+> The repository is cloned as a **shallow clone** — `next` may not be available locally.
+> Run these exact commands at the start of every task, before creating any branch:
+>
+> ```bash
+> git fetch origin next:refs/remotes/origin/next
+> git checkout -b feat/{issue-number}-{short-description} origin/next
+> # or for bug fixes:
+> git checkout -b fix/{issue-number}-{short-description} origin/next
+> ```
+>
+> If you skip the fetch and the branch creation from `origin/next`, you will branch from the wrong commit.
+> The PR **must** target `next`. Never target `main`.
+
 ## Source of Truth
 
 **`CLAUDE.md` is the canonical reference** for all codebase conventions, patterns, architecture, and domain knowledge. Read it before starting any task. Follow every convention described there.
@@ -16,7 +32,12 @@ These MUST be followed for every task.
 ### 1. Before writing code
 
 1. **Linear issue status**: Set the issue status to **"In Progress"** before writing any code.
-2. **Branch from `next`**: Always create a new branch from the `next` branch without asking. Use the naming convention:
+2. **Branch from `next`**: Always create a new branch from the `next` branch without asking. The repo is a shallow clone — `next` is not fetched by default. Use these exact commands:
+   ```bash
+   git fetch origin next:refs/remotes/origin/next
+   git checkout -b feat/{linear-issue-number}-{short-description} origin/next
+   ```
+   Naming convention:
    - Features: `feat/{linear-issue-number}-{short-description}`
    - Bug fixes: `fix/{linear-issue-number}-{short-description}`
    - Example: `feat/123-add-quotation-export`, `fix/456-price-list-save-error`
