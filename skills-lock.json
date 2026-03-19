@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "linear": {
+      "source": "openai/skills",
+      "sourceType": "github",
+      "computedHash": "702e1b8bb122bb981d276fbdcaa2fde1435b8c548910e1b365f088735b7a5365"
+    },
+    "nuxt": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "computedHash": "9e8237ec92083db9a6f4c77d5e5bf4b1d9873d670671235bc75455ee1ca39c74"
+    },
+    "reka-ui": {
+      "source": "onmax/nuxt-skills",
+      "sourceType": "github",
+      "computedHash": "c4de68cf105e52e41f068f406cf4846884d6116742e175a02f16b1a5536eb77e"
+    },
+    "shadcn-vue": {
+      "source": "noartem/laravel-vue-skills",
+      "sourceType": "github",
+      "computedHash": "be51072c8a02539c500dcb81a60680f36778ba9064fa2ea95181e40eb9564073"
+    },
+    "vitest": {
+      "source": "onmax/nuxt-skills",
+      "sourceType": "github",
+      "computedHash": "04ed1b09da8ac778d693ad12fab49b1c48aadfe1758fe13eb4d6de3fdcbb22f4"
+    },
+    "vue": {
+      "source": "onmax/nuxt-skills",
+      "sourceType": "github",
+      "computedHash": "cb120821c275a351b6e3c154d82cf62a9277b6260c2c30b3101f688928a3428b"
+    }
+  }
+}
