@@ -30,6 +30,13 @@ export default defineNuxtConfig({
     componentDir: './app/components/ui',
   },
 
+  imports: {
+    dirs: [
+      'composables',
+      'composables/**',
+    ],
+  },
+
   css: ['~/assets/css/main.css'],
 
   vite: {
