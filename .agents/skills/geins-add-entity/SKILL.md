@@ -41,6 +41,21 @@ export interface Entity extends ResponseEntity<EntityBase> {
 
 Prefer the plain entity name for the response type (`Entity`), not `EntityResponse`, unless a separate response-specific type name is genuinely clearer.
 
+**This applies to ALL types in the file — including sub-entities, auxiliary response types, and nested objects.** If a type has `_id` and/or `_type` fields, it MUST use `ResponseEntity<Base>` or extend `EntityBase`. Never write `_id: string` or `_type: string` inline in any interface.
+
+```ts
+// BAD — even for non-primary types
+export interface WorkflowExecution {
+  _id: string;    // ❌
+  _type: string;  // ❌
+  status: string;
+}
+
+// GOOD
+export interface WorkflowExecutionBase { status: string }
+export type WorkflowExecution = ResponseEntity<WorkflowExecutionBase>;
+```
+
 ## 2. Export types — `shared/types/index.ts`
 
 Every new type file must be exported:
