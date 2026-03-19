@@ -135,3 +135,12 @@ Cross-domain links: the quotation edit page links to company and price-list enti
 ---
 
 ## Decision Log
+
+**2024-05-27: Two-layout system (default + auth)**
+Authenticated pages get the full sidebar/header layout; auth pages get a minimal centered card. Keeps auth flows visually distinct and avoids loading sidebar state before login.
+
+**2024-05-30: File-based routing with `{domain}/{entity}/list.vue` and `[id].vue` convention**
+Consistent URL structure across all domains. The `new` param on `[id].vue` activates create mode, avoiding separate create pages.
+
+**2025-02-01: `useEntityEdit` as the universal detail/edit page composable**
+Centralizes form state, unsaved-changes tracking, CRUD operations, and navigation for all entity pages. Prevents each page from reimplementing the same boilerplate.
