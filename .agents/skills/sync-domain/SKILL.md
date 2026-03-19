@@ -19,13 +19,18 @@ Domain names: `products`, `customers`, `orders`, `pricing`, `account-auth`
 
 ## Domain File Map
 
-| Domain | Types | Repository | Composables | Components | Pages | Store | Doc |
-|---|---|---|---|---|---|---|---|
-| products | `shared/types/Product.ts` | `app/utils/repositories/product.ts` | `app/composables/products/` | `app/components/selector/` | — | `app/stores/products.ts` | `docs/domains/products.md` |
-| customers | `shared/types/Customer.ts` | `app/utils/repositories/customer.ts` | `app/composables/customers/` | `app/components/company/` | `app/pages/customers/` | — | `docs/domains/customers.md` |
-| orders | `shared/types/Order.ts`, `shared/types/Quotation.ts` | `app/utils/repositories/order.ts` | `app/composables/orders/` | `app/components/quotation/`, `app/components/content/quotation/` | `app/pages/orders/` | — | `docs/domains/orders.md` |
-| pricing | `shared/types/Product.ts` (price list types) | `app/utils/repositories/product.ts` (`.priceList`) | `app/composables/pricing/` | `app/components/price-list/` | `app/pages/pricing/` | — | `docs/domains/pricing.md` |
-| account-auth | `shared/types/Auth.ts`, `shared/types/Account.ts` | `app/utils/repositories/user.ts`, `global.ts` | `app/composables/auth/` | `app/components/auth/` | `app/pages/auth/`, `app/pages/account/` | `app/stores/account.ts`, `app/stores/user.ts` | `docs/domains/account-auth.md` |
+| Domain       | Types                                                | Repository                                                           | Composables                  | Components                                                       | Pages                                   | Store                                         | Doc                            |
+| ------------ | ---------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------- | ---------------------------------------------------------------- | --------------------------------------- | --------------------------------------------- | ------------------------------ |
+| products     | `shared/types/Product.ts`                            | `app/utils/repositories/product.ts`                                  | `app/composables/products/`  | `app/components/selector/`                                       | —                                       | `app/stores/products.ts`                      | `docs/domains/products.md`     |
+| customers    | `shared/types/Customer.ts`                           | `app/utils/repositories/customer.ts`                                 | `app/composables/customers/` | `app/components/company/`                                        | `app/pages/customers/`                  | —                                             | `docs/domains/customers.md`    |
+| orders       | `shared/types/Order.ts`, `shared/types/Quotation.ts` | `app/utils/repositories/order.ts`                                    | `app/composables/orders/`    | `app/components/quotation/`, `app/components/content/quotation/` | `app/pages/orders/`                     | —                                             | `docs/domains/orders.md`       |
+| pricing      | `shared/types/Product.ts` (price list types)         | `app/utils/repositories/product.ts` (`.priceList`)                   | `app/composables/pricing/`   | `app/components/price-list/`                                     | `app/pages/pricing/`                    | —                                             | `docs/domains/pricing.md`      |
+| account-auth | `shared/types/Auth.ts`, `shared/types/Account.ts`    | `app/utils/repositories/user.ts`, `app/utils/repositories/global.ts` | `app/composables/auth/`      | `app/components/auth/`                                           | `app/pages/auth/`, `app/pages/account/` | `app/stores/account.ts`, `app/stores/user.ts` | `docs/domains/account-auth.md` |
+
+Scope shared files carefully:
+- `pricing` and `products` both read from `shared/types/Product.ts` and `app/utils/repositories/product.ts`, but they document different subdomains.
+- For `pricing`, only extract price-list-related contracts and APIs, such as `PriceList*`, `PriceRule*`, and methods under `.priceList`. Ignore product/catalog/SKU/category contracts that are unrelated to pricing behavior.
+- For `products`, focus on product/catalog/SKU/category contracts and product-facing repository methods. Ignore pricing-only contracts and `.priceList` methods unless the products doc already treats them as a dependency.
 
 ## Workflow
 
@@ -34,7 +39,13 @@ Domain names: `products`, `customers`, `orders`, `pricing`, `account-auth`
 For the given domain, read all files from the Domain File Map above. Extract:
 
 1. **Exported types**: All `export interface`, `export type` from the type files
+	- If a mapped type file is shared across domains, filter the exported types to the current domain's subdomain instead of treating the entire file as in-scope.
+	- For `pricing`, keep only price-list/pricing contracts from `shared/types/Product.ts`.
+	- For `products`, keep only product/catalog/SKU/category contracts from `shared/types/Product.ts`.
 2. **Repository methods**: All public methods from the repository file
+	- If a mapped repository file is shared across domains, keep only the methods relevant to the current domain.
+	- For `pricing`, inspect `app/utils/repositories/product.ts` only for `.priceList` methods.
+	- For `products`, inspect `app/utils/repositories/product.ts` for product-facing methods and treat `.priceList` methods as out of scope unless they are explicitly documented as dependencies.
 3. **Composable exports**: All exported functions from composable files
 4. **Component list**: All `.vue` files in the component directories
 5. **Cross-domain imports**: Any imports from other domain's type files
@@ -65,6 +76,7 @@ Format the output as a markdown diff proposal:
 ### New content to add
 
 **Key Concepts section:**
+
 - Add: `NewConcept` — description based on code analysis
 
 **Contracts table:**
@@ -78,6 +90,7 @@ Format the output as a markdown diff proposal:
 ### Content to update
 
 **API Shape Quirks:**
+
 - `fieldName` — documented as X, actual type is Y
 
 ### Content to remove
