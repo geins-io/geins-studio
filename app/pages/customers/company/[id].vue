@@ -14,8 +14,6 @@ import {
   type CompanyBuyerList,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
-import { useCompanyOrders } from '@/composables/useCompanyOrders';
-import { useCustomerCompanies } from '@/composables/useCustomerCompanies';
 import { LucideUser, LucidePackage } from '#components';
 
 // =====================================================================================
