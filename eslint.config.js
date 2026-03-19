@@ -4,6 +4,9 @@ import tailwind from 'eslint-plugin-tailwindcss';
 const { eslintPluginPrettierRecommended } = pkg;
 
 export default createConfigForNuxt()
+  .prepend({
+    ignores: ['.agents/**'],
+  })
   .append(eslintPluginPrettierRecommended)
   .append(tailwind.configs['flat/recommended'])
   .append({
