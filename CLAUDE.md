@@ -1,20 +1,21 @@
 <!--
 This file (CLAUDE.md) is the canonical reference for how we work + how this codebase works.
-For step-by-step, task-focused runbooks, use the files in /skills.
+For step-by-step, task-focused runbooks, use the agent skills in .agents/skills/.
 When adding or changing a workflow, update CLAUDE.md first, then update/create the relevant skill.
 -->
 
 ## Skills Index
 
-- Skills overview: `skills/README.md`
-- Start dev & fast checks: `skills/dev-loop.md` (see also “Geins Studio - Commands”)
-- CI preflight (run before PR): `skills/ci-preflight.md` (see also “Geins Studio - Commands”)
-- Add a new entity (end-to-end): `skills/add-new-entity.md` (see also “Page Patterns - Adding a New Entity Checklist”)
-- Entity edit page: required edit-mode loading: `skills/entity-edit-page-edit-mode-loading.md` (see also “Entity Edit Page - Edit Mode Data Loading required boilerplate”)
-- i18n updates: `skills/i18n-update.md` (see also i18n rules in “Stack” / “Project Structure”)
-- Add/extend API repository: `skills/api-repository-add-or-extend.md` (see also “API Repositories”)
-- UI component conventions: `skills/ui-component-conventions.md` (see also “Component UI Patterns - Component Conventions”)
-- Table patterns: `skills/table-patterns.md` (see also “Component UI Patterns - Table Patterns”)
+Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the agent.
+- Start dev & fast checks: `.agents/skills/geins-dev-loop/SKILL.md` (see also “Geins Studio - Commands”)
+- CI preflight (run before PR): `.agents/skills/geins-ci-preflight/SKILL.md` (see also “Geins Studio - Commands”)
+- Add a new entity (end-to-end): `.agents/skills/geins-add-entity/SKILL.md` (see also “Page Patterns - Adding a New Entity Checklist”)
+- Entity edit page patterns: `.agents/skills/geins-entity-edit-page/SKILL.md` (see also “Entity Edit Page - Edit Mode Data Loading required boilerplate”)
+- i18n updates: `.agents/skills/geins-i18n-update/SKILL.md` (see also i18n rules in “Stack” / “Project Structure”)
+- Add/extend API repository: `.agents/skills/geins-api-repository/SKILL.md` (see also “API Repositories”)
+- UI component conventions: `.agents/skills/geins-ui-components/SKILL.md` (see also “Component UI Patterns - Component Conventions”)
+- Table patterns: `.agents/skills/geins-table-patterns/SKILL.md` (see also “Component UI Patterns - Table Patterns”)
+- Linear issue management: `.agents/skills/linear/SKILL.md`
 
 ## Token Efficiency Rules
 
