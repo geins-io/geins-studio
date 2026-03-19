@@ -7,6 +7,7 @@ interface UseGeinsRepositoryReturnType {
   userApi: ReturnType<typeof repo.user>;
   customerApi: ReturnType<typeof repo.customer>;
   changelogApi: ReturnType<typeof repo.changelog>;
+  workflowApi: ReturnType<typeof repo.workflow>;
 }
 
 /**
@@ -33,5 +34,6 @@ export function useGeinsRepository(): UseGeinsRepositoryReturnType {
     userApi: repo.user($geinsApiFetchInstance),
     customerApi: repo.customer($geinsApiFetchInstance),
     changelogApi: repo.changelog($geinsApiFetchInstance),
+    workflowApi: repo.workflow($geinsApiFetchInstance),
   };
 }
