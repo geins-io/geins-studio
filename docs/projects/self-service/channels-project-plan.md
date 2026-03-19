@@ -8,7 +8,6 @@
 >
 > - [Channels — Concept Documentation](./channels-concept.md) — domain model, relationships, and data flow
 > - [Storefront Settings — Schema & Data Spec](./storefront-settings-schema-spec.md) — full schema types, default schema, renderer behavior
-> - [Self Service Backend Plan](./self-service-backend-plan.md) — backend API implementation plan (geins-platform repo)
 
 ---
 
