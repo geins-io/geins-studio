@@ -1,20 +1,21 @@
 <!--
 This file (CLAUDE.md) is the canonical reference for how we work + how this codebase works.
-For step-by-step, task-focused runbooks, use the files in /skills.
+For step-by-step, task-focused runbooks, use the agent skills in .agents/skills/.
 When adding or changing a workflow, update CLAUDE.md first, then update/create the relevant skill.
 -->
 
 ## Skills Index
 
-- Skills overview: `skills/README.md`
-- Start dev & fast checks: `skills/dev-loop.md` (see also “Geins Studio - Commands”)
-- CI preflight (run before PR): `skills/ci-preflight.md` (see also “Geins Studio - Commands”)
-- Add a new entity (end-to-end): `skills/add-new-entity.md` (see also “Page Patterns - Adding a New Entity Checklist”)
-- Entity edit page: required edit-mode loading: `skills/entity-edit-page-edit-mode-loading.md` (see also “Entity Edit Page - Edit Mode Data Loading required boilerplate”)
-- i18n updates: `skills/i18n-update.md` (see also i18n rules in “Stack” / “Project Structure”)
-- Add/extend API repository: `skills/api-repository-add-or-extend.md` (see also “API Repositories”)
-- UI component conventions: `skills/ui-component-conventions.md` (see also “Component UI Patterns - Component Conventions”)
-- Table patterns: `skills/table-patterns.md` (see also “Component UI Patterns - Table Patterns”)
+Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the agent.
+- Start dev & fast checks: `.agents/skills/geins-dev-loop/SKILL.md` (see also “Geins Studio - Commands”)
+- CI preflight (run before PR): `.agents/skills/geins-ci-preflight/SKILL.md` (see also “Geins Studio - Commands”)
+- Add a new entity (end-to-end): `.agents/skills/geins-add-entity/SKILL.md` (see also “Page Patterns - Adding a New Entity Checklist”)
+- Entity edit page patterns: `.agents/skills/geins-entity-edit-page/SKILL.md` (see also “Entity Edit Page - Edit Mode Data Loading required boilerplate”)
+- i18n updates: `.agents/skills/geins-i18n-update/SKILL.md` (see also i18n rules in “Stack” / “Project Structure”)
+- Add/extend API repository: `.agents/skills/geins-api-repository/SKILL.md` (see also “API Repositories”)
+- UI component conventions: `.agents/skills/geins-ui-components/SKILL.md` (see also “Component UI Patterns - Component Conventions”)
+- Table patterns: `.agents/skills/geins-table-patterns/SKILL.md` (see also “Component UI Patterns - Table Patterns”)
+- Linear issue management: `.agents/skills/linear/SKILL.md`
 
 ## Token Efficiency Rules
 
@@ -26,6 +27,22 @@ When adding or changing a workflow, update CLAUDE.md first, then update/create t
 - Batch work: propose a short plan, then execute related edits together (avoid back-and-forth refactors).
 - If the request is ambiguous (scope, acceptance criteria, target files, expected behavior), ask clarifying questions before doing large reads or broad changes.
 - If a task would require broad context, ask for approval before pulling lots of files/logs.
+
+## Hard Blocks — What Must NEVER Happen
+
+Quick-scan reference for inviolable rules. Details live in the relevant sections below.
+
+- NEVER use `console.log` — use `useGeinsLog('scope')` (ESLint enforces)
+- NEVER create shadcn-vue components manually — use `npx shadcn-vue@latest add`
+- NEVER import auto-imported composables, utils, or components — Nuxt handles this
+- NEVER implement custom unsaved-changes tracking — `useEntityEdit` handles this
+- NEVER use inline template literals for names — use `fullName(entity)`
+- NEVER cast `entityDataUpdate` to the response type or patch response-only fields into it
+- NEVER spread `entityDataUpdate` in `prepareUpdateData` — only include OpenAPI update fields
+- NEVER modify UI primitives in `app/components/ui/table/` for mode-specific styling
+- NEVER watch `quotationItems` to trigger preview — causes infinite loops (see Quotations → Live preview)
+- NEVER `git push --force` to `main` or `next`
+- NEVER commit `.env`, credentials, or secret files
 
 ## Workflow Rules
 
@@ -41,12 +58,16 @@ These MUST be followed for every task. Rules are grouped by when they apply.
 3. **Best practices**: Follow all established patterns and conventions in this file and from the frameworks used. If you need to break a pattern, add a note about it here and explain the reasoning.
 4. **Think about performance**: Consider performance implications of code changes, especially data fetching, state management, and rendering. If you find a potential bottleneck or optimization opportunity, ask if you should address it.
 
+### Before committing
+
+5. **Gates**: Run `pnpm lint:check && pnpm typecheck` before every commit. Also run `pnpm test --run` when tests exist for the changed code. All must pass — do not commit with known failures.
+
 ### When the user says "task done"
 
-5. **Documentation**: Keep `/docs` up to date with any architectural changes, new patterns, or important onboarding information. Ask before adding new entries.
-6. **Update CLAUDE.md**: Add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information. This is a living document — update it continuously, not just at session end.
-7. **Organize CLAUDE.md**: Scan the entire file for opportunities to improve organization (group related patterns, add sections, improve formatting, remove duplicates). Make those changes.
-8. **Linear issues**: If working on a Linear issue, set its status to "Done".
+6. **Documentation**: Keep `/docs` up to date with any architectural changes, new patterns, or important onboarding information. Ask before adding new entries.
+7. **Update CLAUDE.md**: Add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information. This is a living document — update it continuously, not just at session end.
+8. **Organize CLAUDE.md**: Scan the entire file for opportunities to improve organization (group related patterns, add sections, improve formatting, remove duplicates). Make those changes.
+9. **Linear issues**: If working on a Linear issue, set its status to "Done".
 
 ---
 
