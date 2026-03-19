@@ -53,4 +53,17 @@ export default createConfigForNuxt()
         },
       ],
     },
+  })
+  .append({
+    files: ['shared/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['@/*', '~/*', '~/app/*', '@/components/*', '@/composables/*', '@/utils/*'], message: 'shared/ must not import from app/ — dependency direction violation.' },
+          ],
+        },
+      ],
+    },
   });
