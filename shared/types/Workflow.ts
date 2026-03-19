@@ -137,7 +137,7 @@ export interface WorkflowVersionBase {
   createdBy: string;
   createdAt: string;
   changelog?: string;
-  definition: WorkflowBase;
+  definition: Workflow;
 }
 
 export type WorkflowVersion = ResponseEntity<WorkflowVersionBase>;
