@@ -29,6 +29,8 @@ The Customers domain manages B2B wholesale accounts. A company is the central en
 
 **Field selection** — `list({ fields: ['buyers', 'salesreps'] })` and `get(id, { fields: ['buyers', 'salesreps', 'addresses', 'pricelists'] })`. Use field filters to control payload size.
 
+**Price list edit route** — `/pricing/price-list/[id]` — use `getEntityUrlFor('price-list', 'pricing', id)` to generate links.
+
 ## Contracts (Cross-Domain Usage)
 
 | Type | Used By | Purpose |

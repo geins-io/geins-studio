@@ -35,6 +35,8 @@ The Products domain is the foundational data layer for the commerce backend. It 
 
 **Product selection filters** (`SelectorSelectionQuery`) — `channelIds`, `currencyIds`, `countryIds`, `categoryIds`, `brandIds`, `productIds`, `price`, `stock`. Used by the quotation product selector to filter products matching the quotation's channel and currency.
 
+**OpenAPI spec**: `https://geins-func-product-mgmtapi-dev.azurewebsites.net/api/openapi/v3.json`
+
 ## Contracts (Cross-Domain Usage)
 
 | Type | Used By | Purpose |
