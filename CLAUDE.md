@@ -3,6 +3,7 @@
 ## Skills Index
 
 Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the agent.
+
 - Dev loop: `geins-dev-loop` | CI preflight: `geins-ci-preflight`
 - Add entity: `geins-add-entity` | Entity edit page: `geins-entity-edit-page`
 - i18n: `geins-i18n-update` | API repos: `geins-api-repository`
@@ -18,6 +19,7 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 
 ## Hard Blocks — What Must NEVER Happen
 
+- NEVER add `_id: string` or `_type: string` directly to any interface — use `ResponseEntity<Base>` or extend `EntityBase`. Applies to all response types including sub-entities and auxiliary types
 - NEVER `console.log` — use `useGeinsLog('scope')` | NEVER create shadcn-vue manually — use CLI
 - NEVER import auto-imported composables/utils/components | NEVER custom unsaved-changes tracking
 - NEVER inline template literals for names — use `fullName()` | NEVER cast `entityDataUpdate` to response type

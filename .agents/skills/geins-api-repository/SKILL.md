@@ -20,6 +20,7 @@ Add a new typed repository or extend an existing one without bypassing the proje
 - **NEVER use PUT for updates** — the standard is PATCH (the `entityRepo` factory handles this).
 - **ALWAYS use `buildQueryObject(options)` for query params** — never pass raw objects as `{ query: options }`.
 - **ALWAYS use typed `ApiOptions` interfaces** — never use untyped option objects.
+- **NEVER add `_id: string` or `_type: string` directly to any interface** — any type that has `_id`/`_type` MUST use `ResponseEntity<Base>` or extend `EntityBase`. This applies to ALL response types, including sub-entities, nested objects, and auxiliary response types (e.g. `WorkflowExecution`, `WorkflowVersion`) — not just primary CRUD entities.
 - All API calls flow through typed repository factories accessed via `useGeinsRepository()`.
 - The Nitro server proxy (`server/api/[...].ts`) is a transparent passthrough — adds auth headers, no response transformation.
 
@@ -85,6 +86,22 @@ export interface MyEntityResponse { ... }        // Prefer MyEntity extends Resp
 
 // BAD: No shared base interface — duplicates fields across types
 // BAD: Response type doesn't extend ResponseEntity<Base> — may lack _id/_type contract
+
+// BAD: Inline _id/_type on ANY interface — even sub-entities and auxiliary response types
+export interface WorkflowExecution {
+  _id: string;     // ❌ never inline these
+  _type: string;   // ❌ never inline these
+  workflowId: string;
+  status: string;
+}
+
+// GOOD: Always extract a Base and use ResponseEntity
+export interface WorkflowExecutionBase {
+  workflowId: string;
+  status: string;
+}
+export type WorkflowExecution = ResponseEntity<WorkflowExecutionBase>;
+// Or if it only needs _id (no _type), still extend EntityBase — it has both
 ```
 
 ### Options types
@@ -276,6 +293,7 @@ async send(id: string, data: StatusTransitionRequest): Promise<void> {
 
 ## Self-check before finishing
 
+- [ ] **No interface has `_id: string` or `_type: string` written inline** — grep for `_id: string` in new type files and replace with `ResponseEntity<Base>` or `extends EntityBase`
 - [ ] Response types extend `ResponseEntity<Base>` (have `_id`, `_type`)
 - [ ] Response type naming follows the existing repo pattern (`MyEntity`, not `MyEntityResponse`) unless there is a strong reason not to
 - [ ] CRUD operations use the factory chain, not manual fetch calls
