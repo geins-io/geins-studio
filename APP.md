@@ -114,7 +114,81 @@ Zod schema → toTypedSchema()
 
 `useEntityEdit` provides: `form`, `entityData`, `createMode`, `createEntity()`, `updateEntity()`, `deleteEntity()`, `hasUnsavedChanges`, `confirmLeave`, `currentTab`, `showSidebar`.
 
-Edit mode requires the standard data-loading block (see `CLAUDE.md` → "Edit Mode Data Loading") using `useAsyncData` + `onMounted` + `parseAndSaveData`.
+#### Edit Mode Data Loading (required boilerplate)
+
+Every `[id].vue` page **must** include this block at the bottom of `<script setup>` to load entity data in edit mode:
+
+```ts
+if (!createMode.value) {
+  const { data, error, refresh } = await useAsyncData<TResponse>(
+    entityFetchKey.value,
+    () => repository.get(entityId.value, { fields: ['all'] }),
+  );
+  refreshEntityData.value = refresh;
+  onMounted(async () => {
+    const entity = handleFetchResult<TResponse>(error.value, data.value);
+    await parseAndSaveData(entity);
+  });
+}
+```
+
+- `useAsyncData` runs at setup time (before mount); `handleFetchResult` validates and throws on 404/500
+- `parseAndSaveData` calls `reshapeEntityData` → sets `entityDataUpdate` → calls `parseEntityData` → sets form values
+- If `parseEntityData` depends on other data, fetch those first inside `onMounted` before calling `parseAndSaveData`
+- **Unsaved changes**: `useUnsavedChanges` suppresses `hasUnsavedChanges` while `originalData` is empty — no page-specific handling needed during loading
+- **Snapshot timing**: When `parseEntityData` triggers side effects (watchers, async fetches), call `parseAndSaveData(entity, false)` to skip auto-snapshot, `await` all async work, then `await nextTick(); setOriginalSavedData();`. Same applies to save handlers: `await updateEntity(undefined, undefined, false)` → `await nextTick()` → `setOriginalSavedData()`
+- **`onFormValuesChange` completeness**: Must map ALL update-relevant form fields into `entityDataUpdate`, otherwise missing fields won't trigger `hasUnsavedChanges`
+- **Non-form refs**: When standalone `ref`s contribute to `entityDataUpdate` but aren't form fields, add a dedicated `watch()` to sync them
+- **VeeValidate field unmount**: When switching from form-mode to read-only mode, VeeValidate unregisters fields and clears values. Guard with `if (sentMode.value) return;` in `onFormValuesChange`. Read display data from `entityData` (not `form.values`) in read-only mode
+- **Reactive refresh**: Pages calling `refreshEntityData` after status transitions need `watch(data, async (newData) => { await parseAndSaveData(newData, false); await nextTick(); setOriginalSavedData(); })` in the `if (!createMode.value)` block
+
+### Adding a New Entity (Checklist)
+
+1. **Types** → `shared/types/{Entity}.ts` — Define `{Entity}Base`, `{Entity}Create`, `{Entity}Update`, and `{Entity}` (response type)
+2. **Export types** → `shared/types/index.ts`
+3. **Repository** → `app/utils/repositories/{entity}.ts`
+4. **Register repo** → `app/utils/repos.ts` + `app/composables/useGeinsRepository.ts`
+5. **List page** → `app/pages/{domain}/{entity}/list.vue`
+6. **Detail page** → `app/pages/{domain}/{entity}/[id].vue`
+7. **Navigation** → `app/lib/navigation.ts`
+8. **i18n** → `i18n/locales/en.json` + `sv.json`
+
+---
+
+## Component Conventions
+
+- **Naming**: Component filenames must include their full directory path prefix. `app/components/content/edit/CustomerPanel.vue` → auto-imported as `ContentEditCustomerPanel`.
+- `ContentEditCard` — Collapsible card sections on edit pages. Has `#header-action` slot.
+- `ContentEditAddressPanel` — Sheet-based address editor (props: `address: AddressUpdate`, emits: `save`, `delete`)
+- `ContentEditCustomerPanel` — Sheet-based panel for changing quotation customer details. Emits address IDs not full objects. Parent must update dedicated display refs from `selectedCompany.addresses`.
+- `ContentSwitch` — Toggle with animated collapsible slot content
+- `FormGridWrap` / `FormGrid` — Form layout (design prop: `"1"`, `"1+1"`, `"1+1+1"`, `"2+1+1"`)
+- `SelectorPanel` + `TableView` — Entity selection pattern (see `app/pages/examples/sku-selector.vue`)
+- `ContentAddressDisplay` — Address display (expects `AddressUpdate` type, compatible with `Address`)
+- `InputGroup` / `InputGroupAddon` / `InputGroupButton` / `InputGroupInput` / `InputGroupTextarea` — Composable input groups with `align` prop (`inline-start`, `inline-end`, `block-start`, `block-end`)
+- `ButtonGroup` / `ButtonGroupSeparator` / `ButtonGroupText` — Groups buttons with shared border radius. Supports `orientation` and nesting.
+- `ContentEditTabs` — Tab navigation. Accepts `string[]` or `(string | { label: string; badge?: number })[]`.
+- `ContentPriceSummary` — Price summary rows. Props: `total` (`QuotationTotal`), `currency`, `editMode?`. Uses `defineModel` for two-way binding and emits `blur`.
+
+### Display Patterns in Edit Pages
+
+- **Labeled values** in read-only cards: `<p class="text-muted-foreground mb-1 text-xs font-medium">` for label, `<p class="text-sm">` for value, `'-'` fallback.
+- **Two-column layouts**: `<div class="grid grid-cols-2 gap-4">`, `border-t pt-4` for separation.
+- **Address display**: Always show both billing and shipping sections; use `ContentAddressDisplay` or `-` placeholder.
+
+---
+
+## Table Patterns
+
+- **Table modes**: `TableMode` enum — `Advanced` (list pages), `Simple` (nested), `Minimal` (edit page inline tables). Mode via `table.options.meta.mode`. Minimal: no borders/pagination/sorting/pinning/hover, taller rows (`h-[68px]`). All overrides use scoped CSS on `.table-view--minimal`.
+- **TableView**: Wraps TanStack's `useVueTable` with mode-aware features. Styling per mode via CSS classes — never modify `app/components/ui/table/` primitives.
+- **TableView error state**: `error` (boolean) + `onRetry` (callback) props show inline error with retry button.
+- **TablePagination**: At `app/components/table/TablePagination.vue`. `advanced` prop controls rows-per-page selector.
+- **Column type inference**: `useColumns.getColumns()` infers from field names (date → formatter, price → currency, image → thumbnail, product → product cell). Override via `columnTypes`.
+- **Editable columns**: Use `columnTypes` with `'editable-number'`, `'editable-string'`, `'editable-currency'`, `'editable-percentage'`.
+- **Custom columns**: Use `useColumns` (`getColumns` + `orderAndFilterColumns` + `extendColumns`), not manual column defs. Use `excludeColumns` + `extendColumns` for custom cell rendering.
+- **`TableCellActions`**: Default `availableActions`: `['edit', 'copy', 'delete']`. `disabledActions` accepts static array or per-row callback.
+- **useSkeleton**: Use `:loading="loading && rows.length === 0"` to avoid duplicate key warnings when re-fetching.
 
 ---
 
@@ -144,3 +218,6 @@ Consistent URL structure across all domains. The `new` param on `[id].vue` activ
 
 **2025-02-01: `useEntityEdit` as the universal detail/edit page composable**
 Centralizes form state, unsaved-changes tracking, CRUD operations, and navigation for all entity pages. Prevents each page from reimplementing the same boilerplate.
+
+**2026-03-19: APP.md as composition + patterns reference**
+APP.md serves dual role: 1,000ft composition/routing doc AND detailed pattern reference (entity edit boilerplate, component conventions, table patterns). Moved here from CLAUDE.md to keep CLAUDE.md slim (≤150 lines) while preserving patterns in a single authoritative location.
