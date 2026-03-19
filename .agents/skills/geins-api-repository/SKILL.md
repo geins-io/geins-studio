@@ -7,6 +7,13 @@ description: "Add a new typed API repository or extend an existing one in Geins 
 
 Add a new typed repository or extend an existing one without bypassing the project's API architecture. See `CLAUDE.md` → "API Repositories" for the canonical reference.
 
+## Before writing code
+
+- If this work comes from a Linear issue, set the issue to `In Progress` before writing code.
+- Ask whether to keep working on the current branch or create a new one.
+- If creating a branch, base it on `next` and use `feat/{linear-issue-number}-{short-description}` or `fix/{linear-issue-number}-{short-description}`.
+- Read the issue against `CLAUDE.md` and this skill first. If the issue is missing codebase-specific repository/type guidance, update it before implementing.
+
 ## Hard Rules
 
 - **NEVER write raw `fetch()` calls for standard CRUD** — always use the factory chain.
@@ -51,7 +58,9 @@ export interface MyEntity extends ResponseEntity<MyEntityBase> {
 }
 ```
 
-**Response types MUST extend `ResponseEntity<Base>`** (which adds `_id: string` and `_type: string`). The factory chain has `TResponse extends EntityBase` constraints — types without `_id`/`_type` will fail.
+**Response type naming**: Prefer the plain entity name for the response type, e.g. `CustomerCompany`, `Quotation`, `ProductPriceList`, not `{Entity}Response`, unless a separate response-specific name is genuinely clearer.
+
+**Response types MUST extend `ResponseEntity<Base>`** (which adds `_id: string` and `_type: string`) where applicable. The factory chain has `TResponse extends EntityBase` constraints — types without `_id`/`_type` will fail.
 
 For simple entities where Create/Update/Response don't need extra fields, use type aliases:
 
@@ -66,13 +75,13 @@ Register in `shared/types/index.ts`:
 export * from './MyEntity';
 ```
 
-### Anti-patterns (from the Workflow types — DO NOT repeat)
+### Anti-patterns
 
 ```ts
 // BAD: Standalone request/response types that ignore the Base/Create/Update/Response convention
-export interface CreateWorkflowRequest { ... }   // Should be WorkflowCreate extends CreateEntity<WorkflowBase>
-export interface UpdateWorkflowRequest { ... }    // Should be WorkflowUpdate extends UpdateEntity<WorkflowBase>
-export interface WorkflowDefinition { ... }       // Should be Workflow extends ResponseEntity<WorkflowBase>
+export interface CreateMyEntityRequest { ... }   // Should be MyEntityCreate extends CreateEntity<MyEntityBase>
+export interface UpdateMyEntityRequest { ... }   // Should be MyEntityUpdate extends UpdateEntity<MyEntityBase>
+export interface MyEntityResponse { ... }        // Prefer MyEntity extends ResponseEntity<MyEntityBase>
 
 // BAD: No shared base interface — duplicates fields across types
 // BAD: Response type doesn't extend ResponseEntity<Base> — may lack _id/_type contract
@@ -141,7 +150,7 @@ export function myDomainRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 }
 ```
 
-### Anti-patterns (from the Workflow repo — DO NOT repeat)
+### Anti-patterns
 
 ```ts
 // BAD: Manual CRUD instead of using the factory
@@ -166,13 +175,13 @@ workflow: {
 options?: ListExecutionLogsOptions  // Should extend ApiOptions<string>
 ```
 
-### Correct fix for workflow-style CRUD
+### Correct fix for CRUD + custom actions
 
 ```ts
 const workflowCrud = repo.entity<
-  WorkflowDefinition,
-  CreateWorkflowRequest,
-  UpdateWorkflowRequest
+  Workflow,
+  WorkflowCreate,
+  WorkflowUpdate
 >(WORKFLOW_ENDPOINT, fetch);
 
 return {
@@ -180,7 +189,7 @@ return {
     ...workflowCrud,  // get, list, create, update (PATCH), delete — all handled
 
     // Only write custom methods for non-CRUD endpoints
-    async validate(data: CreateWorkflowRequest): Promise<ValidateWorkflowResult> {
+    async validate(data: WorkflowCreate): Promise<ValidateWorkflowResult> {
       return await fetch<ValidateWorkflowResult>(`${WORKFLOW_ENDPOINT}/validate`, {
         method: 'POST',
         body: data,
@@ -228,6 +237,24 @@ return {
 };
 ```
 
+### Non-standard list endpoints
+
+If an endpoint does **not** follow the standard `/{endpoint}/list` shape or returns a non-array payload, do **not** force it through `entityListRepo` / `entityBaseRepo`. Override `list()` or add a custom `query()` method instead:
+
+```ts
+return {
+  ...productRepo,
+
+  async list(options?: ProductApiOptions): Promise<BatchQueryResult<Product>> {
+    return await fetch<BatchQueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
+      method: 'POST',
+      body: { ...batchQueryMatchAll.value, ...batchQueryNoPagination.value },
+      query: buildQueryObject(options),
+    });
+  },
+};
+```
+
 ### Status transition methods (like quotation)
 
 ```ts
@@ -241,16 +268,20 @@ async send(id: string, data: StatusTransitionRequest): Promise<void> {
 
 ## Checklist
 
-1. **Types** → `shared/types/{Entity}.ts` using `{Entity}Base` → `CreateEntity`/`UpdateEntity`/`ResponseEntity` convention. Register in `shared/types/index.ts`.
-2. **Repository** → `app/utils/repositories/{entity}.ts` using factory chain. Spread CRUD, only write custom fetch calls for non-standard endpoints.
-3. **Register** → Add factory to `app/utils/repos.ts` and expose via `app/composables/useGeinsRepository.ts`.
-4. **Verify** → `pnpm typecheck` passes. `list()` and `get(id)` use `buildQueryObject` for `fields` support.
+1. **Types** → `shared/types/{Entity}.ts` using `{Entity}Base` → `CreateEntity`/`UpdateEntity`/`ResponseEntity` convention, with `{Entity}` as the default response type name.
+2. **Export types** → Register the new file in `shared/types/index.ts`.
+3. **Repository** → `app/utils/repositories/{entity}.ts` using the factory chain. Spread CRUD, only write custom fetch calls for non-standard endpoints/actions.
+4. **Register** → Add the factory to `app/utils/repos.ts` and expose it via `app/composables/useGeinsRepository.ts`.
+5. **Verify** → Run `pnpm lint:check` and `pnpm typecheck`. Run `pnpm test --run` when tests exist for the changed code. Use `buildQueryObject(options)` for supported query params and custom `list()` / `query()` methods for non-standard list shapes.
 
 ## Self-check before finishing
 
 - [ ] Response types extend `ResponseEntity<Base>` (have `_id`, `_type`)
+- [ ] Response type naming follows the existing repo pattern (`MyEntity`, not `MyEntityResponse`) unless there is a strong reason not to
 - [ ] CRUD operations use the factory chain, not manual fetch calls
 - [ ] Updates use PATCH (via `entityRepo`), not PUT
 - [ ] Query params use `buildQueryObject(options)`, not raw objects
 - [ ] Options types extend `ApiOptions<string>` if field filtering is needed
+- [ ] New shared types are exported from `shared/types/index.ts`
+- [ ] Non-standard list endpoints use a custom `list()` / `query()` method instead of forcing `entityListRepo`
 - [ ] No duplicated logic that the factory already provides

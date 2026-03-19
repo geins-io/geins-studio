@@ -9,6 +9,13 @@ Entity pages are single `[id].vue` files that handle both create (`id === 'new'`
 
 Read `CLAUDE.md` → "Page Patterns - Entity Edit Page" for the full reference. This skill gives you the critical patterns and gotchas so you don't have to scan the whole file.
 
+## Before writing code
+
+- If this work comes from a Linear issue, set the issue to `In Progress` before writing code.
+- Ask whether to keep working on the current branch or create a new one.
+- If creating a branch, base it on `next` and use `feat/{linear-issue-number}-{short-description}` or `fix/{linear-issue-number}-{short-description}`.
+- Read the issue against `CLAUDE.md` and this skill first. If the issue is missing codebase-specific implementation detail, update it before writing the page.
+
 ## Orientation
 
 `useEntityEdit` provides:
@@ -111,3 +118,5 @@ For fields the API returns but the PATCH endpoint doesn't accept (e.g. nested sn
 - Edit mode: reload page on existing entity → form is populated
 - Unsaved changes: indicator doesn't flicker on load; enables on changes; clears after save
 - Read-only/sent mode: no empty-value wipe on field unmount
+- Run `pnpm lint:check` and `pnpm typecheck`
+- Run `pnpm test --run` when tests exist for the changed code

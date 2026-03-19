@@ -12,7 +12,8 @@ Make translation changes safely and consistently. See `CLAUDE.md` → "Stack" (i
 - **Always** update BOTH locale files in the same change:
   - `i18n/locales/en.json`
   - `i18n/locales/sv.json`
-- Global entity action keys (top-level, outside any namespace): `save_entity`, `delete_entity`, `send_entity`, `accept_entity`, `reject_entity`, `confirm_entity`, `cancel_entity` — all use `@.lower:{entityName}` interpolation.
+- Global entity action keys (top-level, outside any namespace): `save_entity`, `delete_entity`, `send_entity`, `accept_entity`, `reject_entity`, `confirm_entity`, `cancel_entity` — all use `@.lower:{entityName}` interpolation and serve as both button labels and dialog titles.
+- Quotation-specific description text belongs in the `orders` namespace (for example `orders.accept_quotation_description`).
 
 ## Checklist
 
@@ -24,3 +25,5 @@ Make translation changes safely and consistently. See `CLAUDE.md` → "Stack" (i
 
 - Start dev server and navigate to the relevant UI.
 - Toggle locale (if supported) or sanity-check at least English and Swedish paths.
+- Run `pnpm lint:check` and `pnpm typecheck` when code usage changed alongside the locale keys.
+- Run `pnpm test --run` when tests exist for the changed code.
