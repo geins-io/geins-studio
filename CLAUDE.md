@@ -16,6 +16,7 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 - UI component conventions: `.agents/skills/geins-ui-components/SKILL.md` (see also “Component UI Patterns - Component Conventions”)
 - Table patterns: `.agents/skills/geins-table-patterns/SKILL.md` (see also “Component UI Patterns - Table Patterns”)
 - Linear issue management: `.agents/skills/linear/SKILL.md`
+- Learning loop / retrospectives: `.agents/skills/geins-learning-loop/SKILL.md` (use when a task exposes a durable repo-specific mistake, gotcha, or missing rule)
 
 ## Token Efficiency Rules
 
@@ -51,23 +52,25 @@ These MUST be followed for every task. Rules are grouped by when they apply.
 ### Before writing code
 
 1. **Linear issues**: When starting work on a Linear issue, set its status to "In Progress" before writing any code.
-2. **Branching**: Always ask if you should create a new branch or keep working in the current one. If a new branch is needed, create it with the naming convention `feat/{linear-issue-number}-{short-description}` (e.g. `123-fix-quotation-preview-bug`). Always use the `next` branch as the base for new branches, if not explicitly instructed otherwise. This keeps the commit history clean and Linear integration accurate. If the issue is a bug, include "fix" instead of "feat" in the branch name.
+2. **Branching**: Always ask if you should create a new branch or keep working in the current one. If a new branch is needed, create it with the naming convention `feat/{linear-issue-number}-{short-description}` (e.g. `feat/STU-52-workflow-api`). Always use the `next` branch as the base for new branches, if not explicitly instructed otherwise. This keeps the commit history clean and Linear integration accurate. If the issue is a bug, use `fix/{linear-issue-number}-{short-description}` instead.
+3. **Issue readiness for agent execution**: Before implementing from a Linear issue, verify that the issue contains enough codebase-specific guidance to follow existing Geins patterns. If it is missing repository/type conventions, registration steps, validation requirements, or verification steps, update the issue first so another agent can execute it reliably without inventing new patterns.
+4. **Issue review**: For implementation tasks coming from Linear, read the issue body and compare it against the relevant sections in this file and the matching skill before writing code. Capture any gaps up front instead of discovering them mid-implementation.
 
 ### While writing code
 
-3. **Best practices**: Follow all established patterns and conventions in this file and from the frameworks used. If you need to break a pattern, add a note about it here and explain the reasoning.
-4. **Think about performance**: Consider performance implications of code changes, especially data fetching, state management, and rendering. If you find a potential bottleneck or optimization opportunity, ask if you should address it.
+5. **Best practices**: Follow all established patterns and conventions in this file and from the frameworks used. If you need to break a pattern, add a note about it here and explain the reasoning.
+6. **Think about performance**: Consider performance implications of code changes, especially data fetching, state management, and rendering. If you find a potential bottleneck or optimization opportunity, ask if you should address it.
 
 ### Before committing
 
-5. **Gates**: Run `pnpm lint:check && pnpm typecheck` before every commit. Also run `pnpm test --run` when tests exist for the changed code. All must pass — do not commit with known failures.
+7. **Gates**: Run `pnpm lint:check && pnpm typecheck` before every commit. Also run `pnpm test --run` when tests exist for the changed code. All must pass — do not commit with known failures.
 
 ### When the user says "task done"
 
-6. **Documentation**: Keep `/docs` up to date with any architectural changes, new patterns, or important onboarding information. Ask before adding new entries.
-7. **Update CLAUDE.md**: Add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information. This is a living document — update it continuously, not just at session end.
-8. **Organize CLAUDE.md**: Scan the entire file for opportunities to improve organization (group related patterns, add sections, improve formatting, remove duplicates). Make those changes.
-9. **Linear issues**: If working on a Linear issue, set its status to "Done".
+8. **Documentation**: Keep `/docs` up to date with any architectural changes, new patterns, or important onboarding information. Ask before adding new entries.
+9. **Update CLAUDE.md**: Add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information. This is a living document — update it continuously, not just at session end.
+10. **Organize CLAUDE.md**: Scan the entire file for opportunities to improve organization (group related patterns, add sections, improve formatting, remove duplicates). Make those changes.
+11. **Linear issues**: If working on a Linear issue, set its status to "Done".
 
 ---
 
@@ -158,6 +161,24 @@ Repository factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRe
 
 The Nitro server proxy (`server/api/[...].ts`) is a transparent passthrough — it adds auth headers but performs no response transformation. API responses arrive unchanged from the backend.
 
+### Repository implementation rules
+
+- **Prefer the factory chain**: Use `repo.entity` / `entityRepo` for standard CRUD and `repo.entityBase` / `entityBaseRepo` for standard get+list. Do not manually re-implement CRUD that the generic factories already provide.
+- **Standard update verb**: Studio uses `PATCH` for updates. Never introduce `PUT` in repository factories unless an endpoint is explicitly non-standard and requires it.
+- **Query params**: Always pass options through `buildQueryObject(options)` instead of raw `query` objects.
+- **Custom endpoints**: Use thin typed `fetch` wrappers only for non-standard actions/endpoints (status transitions, preview, compare, validate, replay, aggregates, etc.).
+- **Non-standard list endpoints**: If an endpoint does not follow the standard `/{endpoint}/list` shape or returns a non-array payload, implement a custom `list()` or `query()` method instead of forcing it through `entityListRepo`.
+- **Error handling**: Let repository errors propagate to the page/composable layer. Do not add ad-hoc error normalization in repositories unless there is an established shared pattern for it.
+
+### Type conventions for repositories
+
+- **Shared base shape**: Define `{Entity}Base` for the reusable entity fields.
+- **Create type**: Define `{Entity}Create` using `CreateEntity<{Entity}Base>` and extend it only when the create payload truly adds extra fields.
+- **Update type**: Define `{Entity}Update` using `UpdateEntity<{Entity}Base>` and extend it only when the update payload truly adds extra fields.
+- **Response type naming**: Prefer the plain entity name for the response type, e.g. `CustomerCompany`, `Quotation`, `ProductPriceList`, not `{Entity}Response`, unless a separate response-specific type name is needed for clarity.
+- **Response type shape**: Response entity types should use `ResponseEntity<{Entity}Base>` where applicable so they include `_id` and `_type`.
+- **Exports**: Every new type file in `shared/types/` must also be exported from `shared/types/index.ts`.
+
 ---
 
 ## Page Patterns
@@ -212,13 +233,14 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 
 ### Adding a New Entity (Checklist)
 
-1. **Types** → `shared/types/{Entity}.ts` — Define `{Entity}Base`, `{Entity}Response`, `{Entity}Create`, `{Entity}Update`
-2. **Repository** → `app/utils/repositories/{entity}.ts` — Create factory using `entityRepo`
-3. **Register repo** → `app/utils/repos.ts` + `app/composables/useGeinsRepository.ts`
-4. **List page** → `app/pages/{domain}/{entity}/list.vue`
-5. **Detail page** → `app/pages/{domain}/{entity}/[id].vue`
-6. **Navigation** → `app/lib/navigation.ts`
-7. **i18n** → `i18n/locales/en.json` + `sv.json`
+1. **Types** → `shared/types/{Entity}.ts` — Define `{Entity}Base`, `{Entity}Create`, `{Entity}Update`, and `{Entity}` (response type). Use `CreateEntity`, `UpdateEntity`, and `ResponseEntity` helpers where applicable.
+2. **Export types** → `shared/types/index.ts`
+3. **Repository** → `app/utils/repositories/{entity}.ts` — Create the factory using `entityRepo`/`entityBaseRepo` where the endpoint shape matches the standard pattern; use thin custom wrappers for non-standard endpoints.
+4. **Register repo** → `app/utils/repos.ts` + `app/composables/useGeinsRepository.ts`
+5. **List page** → `app/pages/{domain}/{entity}/list.vue`
+6. **Detail page** → `app/pages/{domain}/{entity}/[id].vue`
+7. **Navigation** → `app/lib/navigation.ts`
+8. **i18n** → `i18n/locales/en.json` + `sv.json`
 
 ---
 
