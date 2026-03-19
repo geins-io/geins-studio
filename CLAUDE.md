@@ -16,6 +16,7 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 - UI component conventions: `.agents/skills/geins-ui-components/SKILL.md` (see also “Component UI Patterns - Component Conventions”)
 - Table patterns: `.agents/skills/geins-table-patterns/SKILL.md` (see also “Component UI Patterns - Table Patterns”)
 - Linear issue management: `.agents/skills/linear/SKILL.md`
+- Rigorous implementation planning (required for issue-driven work): `.agents/skills/implementation-plan/SKILL.md`
 - Learning loop / retrospectives: `.agents/skills/geins-learning-loop/SKILL.md` (use when a task exposes a durable repo-specific mistake, gotcha, or missing rule)
 
 ## Token Efficiency Rules
@@ -55,22 +56,23 @@ These MUST be followed for every task. Rules are grouped by when they apply.
 2. **Branching**: Always ask if you should create a new branch or keep working in the current one. If a new branch is needed, create it with the naming convention `feat/{linear-issue-number}-{short-description}` (e.g. `feat/STU-52-workflow-api`). Always use the `next` branch as the base for new branches, if not explicitly instructed otherwise. This keeps the commit history clean and Linear integration accurate. If the issue is a bug, use `fix/{linear-issue-number}-{short-description}` instead.
 3. **Issue readiness for agent execution**: Before implementing from a Linear issue, verify that the issue contains enough codebase-specific guidance to follow existing Geins patterns. If it is missing repository/type conventions, registration steps, validation requirements, or verification steps, update the issue first so another agent can execute it reliably without inventing new patterns.
 4. **Issue review**: For implementation tasks coming from Linear, read the issue body and compare it against the relevant sections in this file and the matching skill before writing code. Capture any gaps up front instead of discovering them mid-implementation.
+5. **Plan-first requirement for issue-driven work**: Before coding, run the `implementation-plan` skill and produce a repository-grounded plan with reference implementations, explicit wiring steps, scope boundaries ("Will NOT do"), and verification steps.
 
 ### While writing code
 
-5. **Best practices**: Follow all established patterns and conventions in this file and from the frameworks used. If you need to break a pattern, add a note about it here and explain the reasoning.
-6. **Think about performance**: Consider performance implications of code changes, especially data fetching, state management, and rendering. If you find a potential bottleneck or optimization opportunity, ask if you should address it.
+6. **Best practices**: Follow all established patterns and conventions in this file and from the frameworks used. If you need to break a pattern, add a note about it here and explain the reasoning.
+7. **Think about performance**: Consider performance implications of code changes, especially data fetching, state management, and rendering. If you find a potential bottleneck or optimization opportunity, ask if you should address it.
 
 ### Before committing
 
-7. **Gates**: Run `pnpm lint:check && pnpm typecheck` before every commit. Also run `pnpm test --run` when tests exist for the changed code. All must pass — do not commit with known failures.
+8. **Gates**: Run `pnpm lint:check && pnpm typecheck` before every commit. Also run `pnpm test --run` when tests exist for the changed code. All must pass — do not commit with known failures.
 
 ### When the user says "task done"
 
-8. **Documentation**: Keep `/docs` up to date with any architectural changes, new patterns, or important onboarding information. Ask before adding new entries.
-9. **Update CLAUDE.md**: Add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information. This is a living document — update it continuously, not just at session end.
-10. **Organize CLAUDE.md**: Scan the entire file for opportunities to improve organization (group related patterns, add sections, improve formatting, remove duplicates). Make those changes.
-11. **Linear issues**: If working on a Linear issue, set its status to "Done".
+9. **Documentation**: Keep `/docs` up to date with any architectural changes, new patterns, or important onboarding information. Ask before adding new entries.
+10. **Update CLAUDE.md**: Add any new learnings about the codebase, patterns, or conventions discovered during the task to the relevant section of this file. Also remove any outdated or incorrect information. This is a living document — update it continuously, not just at session end.
+11. **Organize CLAUDE.md**: Scan the entire file for opportunities to improve organization (group related patterns, add sections, improve formatting, remove duplicates). Make those changes.
+12. **Linear issues**: If working on a Linear issue, set its status to "Done".
 
 ---
 
