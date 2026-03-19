@@ -6,7 +6,6 @@ import { globalRepo } from './repositories/global';
 import { orderRepo } from './repositories/order';
 import { productRepo } from './repositories/product';
 import { userRepo } from './repositories/user';
-import { workflowRepo } from './repositories/workflow';
 
 export const repo = {
   global: globalRepo,
@@ -17,5 +16,4 @@ export const repo = {
   customer: customerRepo,
   order: orderRepo,
   changelog: changelogRepo,
-  workflow: workflowRepo,
 };
