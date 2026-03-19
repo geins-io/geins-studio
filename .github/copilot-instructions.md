@@ -1,6 +1,7 @@
 # Geins Studio — GitHub Copilot Agent Instructions
 
 <!-- ⚠️ BRANCHING RULE — READ THIS FIRST, BEFORE ANY OTHER ACTION ⚠️ -->
+
 > **NEVER branch from `main`. ALWAYS branch from `next`. ALWAYS open PRs targeting `next`, not `main`.**
 >
 > The repository is cloned as a **shallow clone** — `next` may not be available locally.
