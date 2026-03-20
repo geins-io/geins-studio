@@ -216,6 +216,45 @@ return {
 };
 ```
 
+## Method Naming — Hard Rules
+
+- **`list()` means "list all"** — NEVER create `listAll()`, `listAllX()`, or `listXs()` methods. The base `list()` already means "list everything at this endpoint".
+- **Scoped lists use `.id(parentId)` chaining** — NEVER create `listForX(parentId)` or `listXForY(parentId)` methods. Instead, use the established builder pattern: `parent.id(parentId).child.list()`.
+- **Flat methods for non-CRUD actions only** — custom named methods (e.g., `send()`, `copy()`, `validate()`) are reserved for actions that don't map to standard CRUD. Listing is always `list()`.
+
+### Correct patterns
+
+```ts
+// List all markets in the system
+market.list()                        // ✅ GET /account/market/list
+
+// List markets scoped to a channel
+channel.id(channelId).market.list()  // ✅ GET /account/channel/{id}/market/list
+
+// List payments scoped to a channel
+channel.id(channelId).payment.list() // ✅ GET /account/channel/{id}/payment/list
+
+// Get a specific payment within a channel
+channel.id(channelId).payment.get(paymentId) // ✅ GET /account/channel/{id}/payment/{paymentId}
+```
+
+### Anti-patterns
+
+```ts
+// ❌ NEVER — "listAll" suffix is redundant; list() already means all
+market.listAll()
+payment.listAll()
+listAllPayments()
+
+// ❌ NEVER — "listFor" flattens the parent scope; use .id() chaining
+market.listForChannel(channelId)
+payment.listForChannel(channelId)
+listPayments(channelId)
+
+// ❌ NEVER — flat getter with multiple parent args; use chaining
+getPayment(channelId, paymentId)  // → channel.id(channelId).payment.get(paymentId)
+```
+
 ## Domain repo patterns (reference examples)
 
 ### Nested sub-repos (like customer)
