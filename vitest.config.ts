@@ -4,11 +4,7 @@ export default defineVitestConfig({
   test: {
     environment: 'nuxt',
     setupFiles: ['./test/vitest.setup.ts'],
-    exclude: [
-      '**/node_modules/**',
-      '**/dist/**',
-      '**/.claude/**',
-    ],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/.claude/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'text-summary', 'lcov'],

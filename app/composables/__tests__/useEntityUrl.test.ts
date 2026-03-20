@@ -2,7 +2,9 @@
 // eslint-disable-next-line import/order
 import { describe, it, expect, vi } from 'vitest';
 
-const { route: mockRoute } = vi.hoisted(() => createRouteMock({ path: '/cms/products/123' }));
+const { route: mockRoute } = vi.hoisted(() =>
+  createRouteMock({ path: '/cms/products/123' }),
+);
 
 vi.mock('#app/composables/router', () => ({
   useRoute: () => mockRoute,

@@ -6,9 +6,7 @@ export function createNavigateToMock() {
   return { navigateTo };
 }
 
-export function createRouteMock(
-  overrides?: Partial<RouteLocationNormalized>,
-) {
+export function createRouteMock(overrides?: Partial<RouteLocationNormalized>) {
   const route = {
     params: {},
     query: {},

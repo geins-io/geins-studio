@@ -3,7 +3,10 @@ import { computed, defineComponent, h, ref } from 'vue';
 import { provideSidebarContext } from '@/components/ui/sidebar/utils';
 import type { ComponentMountingOptions } from '@vue/test-utils';
 
-type MountContextOptions = Pick<ComponentMountingOptions<unknown>, 'props' | 'slots' | 'global'>;
+type MountContextOptions = Pick<
+  ComponentMountingOptions<unknown>,
+  'props' | 'slots' | 'global'
+>;
 
 export async function mountWithContext(
   component: unknown,
@@ -48,7 +51,12 @@ export async function mountWithSidebar(
     setup() {
       return () =>
         h(SidebarProviderStub, null, {
-          default: () => h(component as Parameters<typeof h>[0], options?.props, options?.slots),
+          default: () =>
+            h(
+              component as Parameters<typeof h>[0],
+              options?.props,
+              options?.slots,
+            ),
         });
     },
   });

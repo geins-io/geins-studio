@@ -4,7 +4,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ref } from 'vue';
 
 const { navigateTo: mockNavigateTo } = vi.hoisted(() => createNavigateToMock());
-const { onBeforeRouteLeave: mockOnBeforeRouteLeave } = vi.hoisted(() => createOnBeforeRouteLeaveMock());
+const { onBeforeRouteLeave: mockOnBeforeRouteLeave } = vi.hoisted(() =>
+  createOnBeforeRouteLeaveMock(),
+);
 const { useGeinsLog } = vi.hoisted(() => createLoggerMock());
 
 vi.mock('../useGeinsLog', () => ({
