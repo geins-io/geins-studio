@@ -324,6 +324,13 @@ Uses: `useGeinsRepository()` → `useAsyncData()` → `useColumns<T>()` → `use
 - The `changes` field is a JSON string of `[{ p: string, c: string[] }]`. For status transitions (`p === 'status'`), render `StatusBadge` components. For `validTo` changes, format ISO dates with `formatDate()`. When both appear in the same entry (e.g. extend from expired → pending), render them together on the same row.
 - `fetchChangelog()` is called after every `refreshEntityData` (via the `watch(data)` block) and after `handleSave` to keep the changelog in sync.
 
+### Channels
+
+- **Types file**: `shared/types/Channel.ts` — contains all Channel-related types (`ChannelResponse`, `ChannelCreate`, `ChannelUpdate`, `ChannelListItem`, and sub-entity types). The existing `Channel` interface in `Account.ts` is a minimal stub used by `accountStore` — do not modify it.
+- **`ChannelType`**: Defined in `Account.ts` (`'webshop' | 'physical' | 'other'`), reused by Channel types via import.
+- **Sub-entity pattern**: Response sub-entities (`ChannelLanguage`, `ChannelMarket`, `ChannelPaymentMethod`, `ChannelMailType`) use `ResponseEntity<Base>`. Write/assignment sub-entities (`ChannelLanguageAssignment`, `ChannelMarketAssignment`, `ChannelPaymentMethodAssignment`) extend `EntityBase` + `{ active: boolean }`.
+- **Ordered arrays**: `languages` and `markets` in both response and update are ordered — the first item is the default.
+
 ### Companies
 
 - **`CustomerCompany.priceLists`**: Array of `CustomerPriceList` objects (response type). Each has `_id`, `name`, `channel`, `currency`, `active`, `exVat`, `productCount` (extends `ProductPriceList` minus products/rules/query/forced/dateCreated).
