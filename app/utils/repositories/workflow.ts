@@ -16,7 +16,7 @@ import type {
   WorkflowVersionComparison,
   WorkflowVariable,
   WorkflowVariableCreate,
-  WorkflowEditorManifest,
+  WorkflowEditorDefinition,
   WorkflowAction,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
@@ -315,11 +315,11 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Editor manifest and action catalog
+     * Editor definition and action catalog
      */
     editor: {
-      async getManifest(): Promise<WorkflowEditorManifest> {
-        return await fetch<WorkflowEditorManifest>(
+      async getDefinition(): Promise<WorkflowEditorDefinition> {
+        return await fetch<WorkflowEditorDefinition>(
           `${EDITOR_ENDPOINT}/manifest`,
         );
       },

@@ -170,7 +170,7 @@ export type WorkflowVariable = ResponseEntity<WorkflowVariableBase>;
 
 // ─── Editor ────────────────────────────────────────────────────────
 
-export interface WorkflowEditorManifest {
+export interface WorkflowEditorDefinition {
   version: string;
   actions: WorkflowAction[];
   triggers: WorkflowTriggerDefinition[];
