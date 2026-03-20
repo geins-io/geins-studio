@@ -53,7 +53,10 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         });
       },
 
-      async create(data: WorkflowCreate, options?: WorkflowApiOptions): Promise<Workflow> {
+      async create(
+        data: WorkflowCreate,
+        options?: WorkflowApiOptions,
+      ): Promise<Workflow> {
         return await fetch<Workflow>(WORKFLOW_DEFINITION_ENDPOINT, {
           method: 'POST',
           body: data,
@@ -157,13 +160,10 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
 
       async replay(id: string): Promise<WorkflowExecution> {
-        return await fetch<WorkflowExecution>(
-          `${EXECUTION_ENDPOINT}/replay`,
-          {
-            method: 'POST',
-            body: { originalInstanceId: id },
-          },
-        );
+        return await fetch<WorkflowExecution>(`${EXECUTION_ENDPOINT}/replay`, {
+          method: 'POST',
+          body: { originalInstanceId: id },
+        });
       },
 
       async bulkCancel(ids: string[]): Promise<void> {
@@ -180,13 +180,13 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         });
       },
 
-      async getLog(
-        id: string,
-        stepId: string,
-      ): Promise<WorkflowExecutionLog> {
-        const logs = await fetch<WorkflowExecutionLog[]>(`${EXECUTION_ENDPOINT}/logs`, {
-          query: { instanceId: id },
-        });
+      async getLog(id: string, stepId: string): Promise<WorkflowExecutionLog> {
+        const logs = await fetch<WorkflowExecutionLog[]>(
+          `${EXECUTION_ENDPOINT}/logs`,
+          {
+            query: { instanceId: id },
+          },
+        );
         return (
           logs.find((log) => log.stepId === stepId) ??
           ({
@@ -242,12 +242,17 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
 
       async recalculate(workflowId: string): Promise<void> {
-        await fetch<null>(`${WORKFLOW_DEFINITION_ENDPOINT}/${workflowId}/metric/recalculate`, {
-          method: 'POST',
-        });
+        await fetch<null>(
+          `${WORKFLOW_DEFINITION_ENDPOINT}/${workflowId}/metric/recalculate`,
+          {
+            method: 'POST',
+          },
+        );
       },
 
-      async getErrorSummary(workflowId: string): Promise<WorkflowErrorSummary[]> {
+      async getErrorSummary(
+        workflowId: string,
+      ): Promise<WorkflowErrorSummary[]> {
         return await fetch<WorkflowErrorSummary[]>(
           `${EXECUTION_ENDPOINT}/errors`,
           { query: { workflowId } },
@@ -265,10 +270,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         );
       },
 
-      async get(
-        workflowId: string,
-        version: number,
-      ): Promise<WorkflowVersion> {
+      async get(workflowId: string, version: number): Promise<WorkflowVersion> {
         return await fetch<WorkflowVersion>(
           `${WORKFLOW_DEFINITION_ENDPOINT}/${workflowId}/version/${version}`,
         );
@@ -315,7 +317,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     },
 
     /**
-     * Editor manifest and action catalog
+     * Editor definition and action catalog
      */
     editor: {
       async getManifest(): Promise<WorkflowEditorManifest> {
