@@ -1,16 +1,16 @@
 // @vitest-environment node
 // eslint-disable-next-line import/order
 import { describe, it, expect, vi } from 'vitest';
-const { mockRoute } = vi.hoisted(() => ({
-  mockRoute: { path: '/cms/products/123' },
-}));
+
+const { route: mockRoute } = vi.hoisted(() => createRouteMock({ path: '/cms/products/123' }));
 
 vi.mock('#app/composables/router', () => ({
   useRoute: () => mockRoute,
 }));
 
+const { t } = vi.hoisted(() => createI18nMock());
 vi.mock('vue-i18n', () => ({
-  useI18n: () => ({ t: (key: string) => key }),
+  useI18n: () => ({ t }),
 }));
 
 // eslint-disable-next-line import/first

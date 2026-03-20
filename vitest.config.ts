@@ -9,5 +9,22 @@ export default defineVitestConfig({
       '**/dist/**',
       '**/.claude/**',
     ],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'text-summary', 'lcov'],
+      reportsDirectory: './coverage',
+      include: [
+        'app/composables/**/*.ts',
+        'app/utils/**/*.ts',
+        'app/components/**/*.vue',
+        'shared/utils/**/*.ts',
+      ],
+      exclude: [
+        '**/__tests__/**',
+        '**/node_modules/**',
+        '**/*.d.ts',
+        'app/components/ui/**',
+      ],
+    },
   },
 });
