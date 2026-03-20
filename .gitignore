@@ -22,6 +22,7 @@ logs
 .fleet
 .idea
 .claude
+.projects
 .mcp.json
 repomix.config.json
 .windsurfrules
