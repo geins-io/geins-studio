@@ -12,6 +12,8 @@ declare global {
   var createLoggerMock: typeof MockFactories.createLoggerMock;
 
   var createToastMock: typeof MockFactories.createToastMock;
+
+  var createMockRepository: typeof MockFactories.createMockRepository;
 }
 
 export {};
