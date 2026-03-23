@@ -117,7 +117,7 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
         :key="groupKey"
       >
         <SidebarGroupLabel>{{
-          groupLabels[groupKey] || groupKey
+          groupLabels[groupKey] ?? groupKey
         }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
