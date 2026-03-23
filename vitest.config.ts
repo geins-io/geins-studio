@@ -17,6 +17,8 @@ export default defineVitestConfig({
       ],
       exclude: [
         '**/__tests__/**',
+        '**/*.test.ts',
+        '**/*.spec.ts',
         '**/node_modules/**',
         '**/*.d.ts',
         'app/components/ui/**',
