@@ -20,6 +20,7 @@ import {
   LucideSettings,
   LucideShieldCheck,
   LucidePackage,
+  LucideStore,
 } from '#components';
 
 const { state, isMobile, setOpenMobile } = useSidebar();
@@ -37,6 +38,8 @@ const handleNavClick = () => {
   }
 };
 
+const { t } = useI18n();
+
 // Icon component mapping
 const iconComponents = {
   LayoutDashboard: LucideLayoutDashboard,
@@ -52,6 +55,13 @@ const iconComponents = {
   Settings: LucideSettings,
   ShieldCheck: LucideShieldCheck,
   Package: LucidePackage,
+  Store: LucideStore,
+};
+
+// Group label translations keyed by navigation group
+const groupLabels: Record<string, string> = {
+  sales: t('navigation.workspace'),
+  settings: t('navigation.settings'),
 };
 
 // Process navigation items to include icon components
@@ -64,6 +74,19 @@ const navigationMenu = computed(() => {
         ? iconComponents[item.icon as keyof typeof iconComponents]
         : undefined,
     }));
+});
+
+// Group navigation items by their `group` property, preserving insertion order
+const groupedNavigation = computed(() => {
+  const groups = new Map<string, typeof navigationMenu.value>();
+  for (const item of navigationMenu.value) {
+    const key = item.group || 'sales';
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key)!.push(item);
+  }
+  return groups;
 });
 
 const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
@@ -88,12 +111,17 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
 
     <!-- Main Navigation Content -->
     <SidebarContent>
-      <SidebarGroup>
-        <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+      <SidebarGroup
+        v-for="[groupKey, items] in groupedNavigation"
+        :key="groupKey"
+      >
+        <SidebarGroupLabel>{{
+          groupLabels[groupKey] || groupKey
+        }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            <SidebarMenuItem v-for="item in navigationMenu" :key="item.label">
-              <!-- Item with children (collapsible) :default-open="isItemOpen(item)" -->
+            <SidebarMenuItem v-for="item in items" :key="item.label">
+              <!-- Item with children (collapsible) -->
               <Collapsible
                 v-if="item.children?.length"
                 :default-open="true"
