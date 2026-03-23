@@ -60,7 +60,7 @@ const iconComponents = {
 
 // Group label translations keyed by navigation group
 const groupLabels: Record<string, string> = {
-  sales: t('navigation.workspace'),
+  workspace: t('navigation.workspace'),
   settings: t('navigation.settings'),
 };
 
@@ -80,7 +80,7 @@ const navigationMenu = computed(() => {
 const groupedNavigation = computed(() => {
   const groups = new Map<string, typeof navigationMenu.value>();
   for (const item of navigationMenu.value) {
-    const key = item.group || 'sales';
+    const key = item.group || 'workspace';
     if (!groups.has(key)) {
       groups.set(key, []);
     }
