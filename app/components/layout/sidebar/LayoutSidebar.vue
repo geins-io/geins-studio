@@ -130,7 +130,11 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
                 class="group/collapsible"
               >
                 <CollapsibleTrigger as-child>
-                  <SidebarMenuButton class="w-full" as-child>
+                  <SidebarMenuButton
+                    class="w-full"
+                    :tooltip="state === 'collapsed' ? item.label : undefined"
+                    as-child
+                  >
                     <NuxtLink
                       :to="
                         state === 'collapsed' && item.children?.length
