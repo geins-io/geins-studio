@@ -540,8 +540,7 @@
     "col_details": "Detaljer",
     "empty": "Inga loggposter hittades"
   },
-  "channel": {
-    "entity_name": "kanal",
+  "channels": {
     "name": "Internt namn",
     "display_name": "Visningsnamn",
     "url": "Butiksadress",

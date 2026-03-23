@@ -540,8 +540,7 @@
     "col_details": "Details",
     "empty": "No changelog entries found"
   },
-  "channel": {
-    "entity_name": "channel",
+  "channels": {
     "name": "Internal name",
     "display_name": "Display name",
     "url": "Storefront URL",
