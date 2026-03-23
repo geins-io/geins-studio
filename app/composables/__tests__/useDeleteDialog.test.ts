@@ -1,9 +1,8 @@
 // @vitest-environment node
 // eslint-disable-next-line import/order
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-const { mockNavigateTo } = vi.hoisted(() => ({
-  mockNavigateTo: vi.fn(),
-}));
+
+const { navigateTo: mockNavigateTo } = vi.hoisted(() => createNavigateToMock());
 
 vi.mock('#app/composables/router', () => ({
   navigateTo: mockNavigateTo,
