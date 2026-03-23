@@ -2,7 +2,11 @@ import type { EntityBase } from './Global';
 
 export type ChannelType = 'webshop' | 'physical' | 'other';
 
-export interface Channel extends EntityBase {
+/**
+ * Lightweight channel snapshot used by the account store.
+ * For the full channel entity type, use `Channel` from Channel.ts.
+ */
+export interface AccountChannel extends EntityBase {
   name: string;
   displayName: string;
   location: string;

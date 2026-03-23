@@ -130,11 +130,9 @@ export interface ChannelUpdate extends UpdateEntity<ChannelBase> {
 
 /**
  * Full channel API response shape (used by the edit page).
- * Named `ChannelResponse` to avoid conflict with the minimal `Channel`
- * interface in Account.ts (used by accountStore).
  * Languages and markets are ordered arrays — the first item is the default.
  */
-export interface ChannelResponse extends ResponseEntity<ChannelBase> {
+export interface Channel extends ResponseEntity<ChannelBase> {
   languages: ChannelLanguage[];
   markets: ChannelMarket[];
   paymentMethods: ChannelPaymentMethod[];

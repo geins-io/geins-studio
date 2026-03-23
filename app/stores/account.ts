@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import type { Account, Channel, Currency, Language } from '#shared/types';
+import type { Account, AccountChannel, Currency, Language } from '#shared/types';
 
 /**
  * Account store — manages the current merchant account context.
@@ -24,7 +24,7 @@ export const useAccountStore = defineStore('account', () => {
 
   // STATE
   const account = ref<Account>();
-  const channels = ref<Channel[]>([]);
+  const channels = ref<AccountChannel[]>([]);
   const currencies = ref<Currency[]>([]);
   const languages = ref<Language[]>([]);
   const ready = ref(false);
@@ -44,7 +44,7 @@ export const useAccountStore = defineStore('account', () => {
     account.value = data;
     return data;
   }
-  async function fetchChannels(): Promise<Channel[]> {
+  async function fetchChannels(): Promise<AccountChannel[]> {
     const data = await globalApi.channel.list();
     channels.value = data;
     return data;

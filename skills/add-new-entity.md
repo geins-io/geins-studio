@@ -14,7 +14,7 @@ See also:
 1. Types
 
 - Add types in `shared/types/<Entity>.ts`:
-  - `EntityBase`, `EntityResponse`, `EntityCreate`, `EntityUpdate` (names per project conventions).
+  - `EntityBase`, `EntityCreate`, `EntityUpdate`, `Entity` (response type; names per project conventions — see CLAUDE.md → "Type conventions").
 
 2. Repository
 
