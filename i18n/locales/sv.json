@@ -289,7 +289,9 @@
     "settings": "Inställningar",
     "users": "Användare",
     "account": "Konto",
-    "profile": "Profil"
+    "profile": "Profil",
+    "workspace": "Arbetsyta",
+    "channels": "Kanaler"
   },
   "account_profile": {
     "login_credentials": "Inloggningsuppgifter",
@@ -537,5 +539,28 @@
     "col_area": "Område",
     "col_details": "Detaljer",
     "empty": "Inga loggposter hittades"
+  },
+  "channel": {
+    "entity_name": "kanal",
+    "name": "Internt namn",
+    "display_name": "Visningsnamn",
+    "url": "Butiksadress",
+    "type": "Kanaltyp",
+    "type_webshop": "Webshop",
+    "type_physical": "Fysisk butik",
+    "type_other": "Annat",
+    "markets_count": "Marknader",
+    "languages_count": "Språk",
+    "transaction_mails": "Transaktionsmejl",
+    "activate_info": "Att aktivera en kanal startar bakgrundsbearbetning. Det kan ta en stund.",
+    "activate_error": "Kunde inte aktivera kanalen",
+    "deactivate_error": "Kunde inte inaktivera kanalen",
+    "tab_storefront_settings": "Butikinställningar",
+    "tab_general": "Allmänt",
+    "tab_markets": "Marknader",
+    "tab_payments": "Betalningar",
+    "tab_mails": "Mejl",
+    "name_helper": "Genereras automatiskt från visningsnamnet vid skapande.",
+    "url_helper": "Att ändra URL:en bryter befintliga länkar."
   }
 }

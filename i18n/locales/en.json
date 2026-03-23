@@ -289,7 +289,9 @@
     "settings": "Settings",
     "users": "Users",
     "account": "Account",
-    "profile": "Profile"
+    "profile": "Profile",
+    "workspace": "Workspace",
+    "channels": "Channels"
   },
   "account_profile": {
     "login_credentials": "Login credentials",
@@ -537,5 +539,28 @@
     "col_area": "Area",
     "col_details": "Details",
     "empty": "No changelog entries found"
+  },
+  "channel": {
+    "entity_name": "channel",
+    "name": "Internal name",
+    "display_name": "Display name",
+    "url": "Storefront URL",
+    "type": "Channel type",
+    "type_webshop": "Webshop",
+    "type_physical": "Physical store",
+    "type_other": "Other",
+    "markets_count": "Markets",
+    "languages_count": "Languages",
+    "transaction_mails": "Transaction mails",
+    "activate_info": "Activating a channel triggers background processing. This may take a moment.",
+    "activate_error": "Failed to activate channel",
+    "deactivate_error": "Failed to deactivate channel",
+    "tab_storefront_settings": "Storefront settings",
+    "tab_general": "General",
+    "tab_markets": "Markets",
+    "tab_payments": "Payments",
+    "tab_mails": "Mails",
+    "name_helper": "Generated automatically from the display name on creation.",
+    "url_helper": "Changing the URL will break existing links."
   }
 }
