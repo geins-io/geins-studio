@@ -2,6 +2,7 @@ import { repo } from '@/utils/repos';
 
 interface UseGeinsRepositoryReturnType {
   globalApi: ReturnType<typeof repo.global>;
+  channelApi: ReturnType<typeof repo.channel>;
   orderApi: ReturnType<typeof repo.order>;
   productApi: ReturnType<typeof repo.product>;
   userApi: ReturnType<typeof repo.user>;
@@ -31,6 +32,7 @@ export function useGeinsRepository(): UseGeinsRepositoryReturnType {
 
   return {
     globalApi: repo.global($geinsApiFetchInstance),
+    channelApi: repo.channel($geinsApiFetchInstance),
     orderApi: repo.order($geinsApiFetchInstance),
     productApi: repo.product($geinsApiFetchInstance),
     userApi: repo.user($geinsApiFetchInstance),

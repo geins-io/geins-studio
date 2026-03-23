@@ -1,0 +1,227 @@
+// @vitest-environment node
+import { describe, it, expect, beforeEach } from 'vitest';
+import {
+  buildChannel,
+  buildChannelListItem,
+  buildChannelCreate,
+  buildChannelUpdate,
+  buildChannelLanguage,
+  buildChannelLanguageAssignment,
+  buildChannelMarket,
+  buildChannelMarketAssignment,
+  buildChannelPaymentMethod,
+  buildChannelPaymentMethodAssignment,
+  buildMailSettings,
+  buildMailType,
+  nextId,
+  resetIdCounter,
+} from '../index';
+
+beforeEach(() => {
+  resetIdCounter();
+});
+
+describe('nextId', () => {
+  it('produces unique IDs across calls', () => {
+    const id1 = nextId();
+    const id2 = nextId();
+    const id3 = nextId();
+    expect(id1).not.toBe(id2);
+    expect(id2).not.toBe(id3);
+  });
+
+  it('uses the provided prefix', () => {
+    const id = nextId('channel');
+    expect(id).toMatch(/^channel-\d+$/);
+  });
+
+  it('resets with resetIdCounter', () => {
+    nextId();
+    nextId();
+    resetIdCounter();
+    const id = nextId();
+    expect(id).toBe('test-1');
+  });
+});
+
+describe('buildChannel', () => {
+  it('returns a complete object with all required fields', () => {
+    const channel = buildChannel();
+    expect(channel._id).toBeDefined();
+    expect(channel._type).toBe('channel');
+    expect(channel.name).toBeDefined();
+    expect(channel.displayName).toBeDefined();
+    expect(channel.url).toBeDefined();
+    expect(channel.type).toBeDefined();
+    expect(typeof channel.active).toBe('boolean');
+    expect(Array.isArray(channel.languages)).toBe(true);
+    expect(channel.languages.length).toBeGreaterThan(0);
+    expect(Array.isArray(channel.markets)).toBe(true);
+    expect(channel.markets.length).toBeGreaterThan(0);
+    expect(Array.isArray(channel.paymentMethods)).toBe(true);
+    expect(channel.paymentMethods.length).toBeGreaterThan(0);
+    expect(channel.mailSettings).toBeDefined();
+    expect(Array.isArray(channel.mailTypes)).toBe(true);
+    expect(channel.mailTypes.length).toBeGreaterThan(0);
+    expect(channel.storefrontSettings).toBeDefined();
+    expect(channel.storefrontSchema).toBeDefined();
+  });
+
+  it('correctly overrides the name field', () => {
+    const channel = buildChannel({ name: 'custom' });
+    expect(channel.name).toBe('custom');
+    // Other fields should still have defaults
+    expect(channel._type).toBe('channel');
+    expect(channel.displayName).toBe('Test Channel');
+  });
+
+  it('allows overriding nested arrays', () => {
+    const channel = buildChannel({ languages: [] });
+    expect(channel.languages).toEqual([]);
+  });
+});
+
+describe('buildChannelListItem', () => {
+  it('returns an object matching ChannelListItem shape', () => {
+    const item = buildChannelListItem();
+    expect(item._id).toBeDefined();
+    expect(item._type).toBe('channel');
+    expect(item.name).toBeDefined();
+    expect(item.displayName).toBeDefined();
+    expect(item.url).toBeDefined();
+    expect(item.type).toBeDefined();
+    expect(typeof item.active).toBe('boolean');
+    expect(typeof item.marketCount).toBe('number');
+  });
+
+  it('accepts overrides', () => {
+    const item = buildChannelListItem({ marketCount: 5 });
+    expect(item.marketCount).toBe(5);
+  });
+});
+
+describe('buildChannelCreate', () => {
+  it('returns a valid create payload without EntityBase fields', () => {
+    const data = buildChannelCreate();
+    expect(data.name).toBeDefined();
+    expect(data.displayName).toBeDefined();
+    expect(data.url).toBeDefined();
+    expect(data.type).toBeDefined();
+    expect(typeof data.active).toBe('boolean');
+    // Should not have EntityBase fields
+    expect(data).not.toHaveProperty('_id');
+    expect(data).not.toHaveProperty('_type');
+  });
+});
+
+describe('buildChannelUpdate', () => {
+  it('returns a valid partial update payload', () => {
+    const data = buildChannelUpdate();
+    expect(data.name).toBeDefined();
+    expect(data.displayName).toBeDefined();
+  });
+
+  it('accepts overrides', () => {
+    const data = buildChannelUpdate({ active: false });
+    expect(data.active).toBe(false);
+  });
+});
+
+describe('buildChannelLanguage', () => {
+  it('produces a valid sub-entity shape', () => {
+    const lang = buildChannelLanguage();
+    expect(lang._id).toBeDefined();
+    expect(lang._type).toBe('language');
+    expect(lang.name).toBeDefined();
+    expect(typeof lang.active).toBe('boolean');
+  });
+
+  it('accepts overrides', () => {
+    const lang = buildChannelLanguage({ name: 'Swedish', active: false });
+    expect(lang.name).toBe('Swedish');
+    expect(lang.active).toBe(false);
+  });
+});
+
+describe('buildChannelLanguageAssignment', () => {
+  it('produces a valid assignment shape', () => {
+    const assignment = buildChannelLanguageAssignment();
+    expect(assignment._id).toBeDefined();
+    expect(assignment._type).toBe('language');
+    expect(typeof assignment.active).toBe('boolean');
+  });
+});
+
+describe('buildChannelMarket', () => {
+  it('produces a valid sub-entity shape', () => {
+    const market = buildChannelMarket();
+    expect(market._id).toBeDefined();
+    expect(market._type).toBe('market');
+    expect(market.country).toBeDefined();
+    expect(market.currency).toBeDefined();
+    expect(typeof market.active).toBe('boolean');
+  });
+
+  it('accepts overrides', () => {
+    const market = buildChannelMarket({ country: 'NO', currency: 'NOK' });
+    expect(market.country).toBe('NO');
+    expect(market.currency).toBe('NOK');
+  });
+});
+
+describe('buildChannelMarketAssignment', () => {
+  it('produces a valid assignment shape', () => {
+    const assignment = buildChannelMarketAssignment();
+    expect(assignment._id).toBeDefined();
+    expect(assignment._type).toBe('market');
+    expect(typeof assignment.active).toBe('boolean');
+  });
+});
+
+describe('buildChannelPaymentMethod', () => {
+  it('produces a valid sub-entity shape', () => {
+    const pm = buildChannelPaymentMethod();
+    expect(pm._id).toBeDefined();
+    expect(pm._type).toBe('paymentMethod');
+    expect(pm.name).toBeDefined();
+    expect(Array.isArray(pm.markets)).toBe(true);
+    expect(Array.isArray(pm.customerTypes)).toBe(true);
+    expect(Array.isArray(pm.customerGroups)).toBe(true);
+    expect(typeof pm.active).toBe('boolean');
+  });
+});
+
+describe('buildChannelPaymentMethodAssignment', () => {
+  it('produces a valid assignment shape', () => {
+    const assignment = buildChannelPaymentMethodAssignment();
+    expect(assignment._id).toBeDefined();
+    expect(assignment._type).toBe('paymentMethod');
+    expect(typeof assignment.active).toBe('boolean');
+  });
+});
+
+describe('buildMailSettings', () => {
+  it('produces a valid mail settings object', () => {
+    const settings = buildMailSettings();
+    expect(settings.displayName).toBeDefined();
+    expect(settings.fromEmailAddress).toBeDefined();
+    expect(settings.loginUrl).toBeDefined();
+    expect(settings.passwordResetUrl).toBeDefined();
+  });
+
+  it('accepts overrides', () => {
+    const settings = buildMailSettings({ displayName: 'Custom Store' });
+    expect(settings.displayName).toBe('Custom Store');
+  });
+});
+
+describe('buildMailType', () => {
+  it('produces a valid mail type object', () => {
+    const mailType = buildMailType();
+    expect(mailType._id).toBeDefined();
+    expect(mailType._type).toBe('mailType');
+    expect(typeof mailType.typeId).toBe('number');
+    expect(mailType.name).toBeDefined();
+    expect(typeof mailType.active).toBe('boolean');
+  });
+});

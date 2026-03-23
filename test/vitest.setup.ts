@@ -7,6 +7,7 @@ import {
   createI18nMock,
   createLoggerMock,
   createToastMock,
+  createMockRepository,
 } from './mocks';
 
 const i18n = createI18n({});
@@ -21,4 +22,5 @@ Object.assign(globalThis, {
   createI18nMock,
   createLoggerMock,
   createToastMock,
+  createMockRepository,
 });
