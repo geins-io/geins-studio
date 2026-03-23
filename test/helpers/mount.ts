@@ -46,6 +46,15 @@ export async function mountWithSidebar(
   component: unknown,
   options?: MountContextOptions,
 ) {
+  const normalizedSlots = options?.slots
+    ? Object.fromEntries(
+        Object.entries(options.slots).map(([k, v]) => [
+          k,
+          typeof v === 'function' ? v : () => v,
+        ]),
+      )
+    : undefined;
+
   const wrapper = defineComponent({
     components: { SidebarProviderStub },
     setup() {
@@ -55,7 +64,7 @@ export async function mountWithSidebar(
             h(
               component as Parameters<typeof h>[0],
               options?.props,
-              options?.slots,
+              normalizedSlots,
             ),
         });
     },
