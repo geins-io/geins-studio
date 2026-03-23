@@ -10,26 +10,6 @@ import { buildMailSettings, buildMailType } from './mail';
 import { buildChannelMarket } from './market';
 import { buildChannelPaymentMethod } from './payment';
 
-export function buildChannel(overrides?: Partial<Channel>): Channel {
-  return {
-    _id: nextId('ch'),
-    _type: 'channel',
-    name: 'test-channel',
-    displayName: 'Test Channel',
-    url: 'www.test-channel.com',
-    type: 'webshop',
-    active: true,
-    languages: [buildChannelLanguage()],
-    markets: [buildChannelMarket()],
-    paymentMethods: [buildChannelPaymentMethod()],
-    mailSettings: buildMailSettings(),
-    mailTypes: [buildMailType()],
-    storefrontSettings: {},
-    storefrontSchema: {},
-    ...overrides,
-  };
-}
-
 export function buildChannelListItem(
   overrides?: Partial<ChannelListItem>,
 ): ChannelListItem {
@@ -39,9 +19,25 @@ export function buildChannelListItem(
     name: 'test-channel',
     displayName: 'Test Channel',
     url: 'www.test-channel.com',
+    location: 'www.test-channel.com',
     type: 'webshop',
     active: true,
-    marketCount: 1,
+    markets: [buildChannelMarket()],
+    defaultMarket: 1,
+    languages: [buildChannelLanguage()],
+    ...overrides,
+  };
+}
+
+export function buildChannel(overrides?: Partial<Channel>): Channel {
+  const listItem = buildChannelListItem();
+  return {
+    ...listItem,
+    paymentMethods: [buildChannelPaymentMethod()],
+    mailSettings: buildMailSettings(),
+    mailTypes: [buildMailType()],
+    storefrontSettings: {},
+    storefrontSchema: {},
     ...overrides,
   };
 }
@@ -53,6 +49,7 @@ export function buildChannelCreate(
     name: 'new-channel',
     displayName: 'New Channel',
     url: 'www.new-channel.com',
+    location: 'www.new-channel.com',
     type: 'webshop',
     active: true,
     ...overrides,

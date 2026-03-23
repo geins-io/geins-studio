@@ -1,55 +1,5 @@
 import type { EntityBase } from './Global';
 
-export type ChannelType = 'webshop' | 'physical' | 'other';
-
-/**
- * Lightweight channel snapshot used by the account store.
- * For the full channel entity type, use `Channel` from Channel.ts.
- */
-export interface AccountChannel extends EntityBase {
-  name: string;
-  displayName: string;
-  location: string;
-  type: ChannelType;
-  active: boolean;
-  markets: Market[];
-  defaultMarket: number;
-  languages: Language[];
-}
-
-export interface Market extends EntityBase {
-  channelId: number;
-  country: Country;
-  currency: Currency;
-  virtual: boolean;
-  attributes: string[];
-  allowedLanguages: string[];
-  defaultLanguage: string;
-  group?: string;
-  active: boolean;
-}
-
-export interface Country extends EntityBase {
-  name: string;
-  active: boolean;
-}
-
-export interface Language extends EntityBase {
-  name: string;
-  active: boolean;
-}
-
-export interface Currency extends EntityBase {
-  name: string;
-  symbol: CurrencySymbol;
-  conversionRate: number;
-}
-
-export interface CurrencySymbol {
-  value: string;
-  prefixed: boolean;
-}
-
 export interface Account extends EntityBase {
   accountKey: string;
   name: string;

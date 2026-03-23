@@ -1,4 +1,4 @@
-import type { Account, AccountChannel } from '#shared/types';
+import type { Account, ChannelListItem } from '#shared/types';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const ENDPOINTS = {
@@ -31,8 +31,8 @@ export const globalRepo = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
     },
   },
   channel: {
-    async list(): Promise<AccountChannel[]> {
-      return await fetch<AccountChannel[]>(ENDPOINTS.CHANNELS);
+    async list(): Promise<ChannelListItem[]> {
+      return await fetch<ChannelListItem[]>(ENDPOINTS.CHANNELS);
     },
   },
   currency: {

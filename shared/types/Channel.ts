@@ -1,33 +1,53 @@
-import type { ChannelType } from './Account';
 import type {
   CreateEntity,
   UpdateEntity,
   ResponseEntity,
   EntityBase,
+  Tooltip,
 } from './Global';
 
 // =============================================================================
-// Sub-Entity Types (Response)
+// Shared Domain Types (used by Channel, Account Store, etc.)
 // =============================================================================
 
-/**
- * Language assigned to a channel (response shape).
- */
-export type ChannelLanguage = ResponseEntity<{
+export type ChannelType = 'webshop' | 'physical' | 'other';
+
+export interface CurrencySymbol {
+  value: string;
+  prefixed: boolean;
+}
+
+export interface Country extends EntityBase {
   name: string;
   active: boolean;
-}>;
+}
 
-/**
- * Market assigned to a channel (response shape).
- */
-export type ChannelMarket = ResponseEntity<{
-  country: string;
-  currency: string;
-  vat?: number;
+export interface Language extends EntityBase {
+  name: string;
+  active: boolean;
+}
+
+export interface Currency extends EntityBase {
+  name: string;
+  symbol: CurrencySymbol;
+  conversionRate: number;
+}
+
+export interface Market extends EntityBase {
+  channelId: number;
+  country: Country;
+  currency: Currency;
+  virtual: boolean;
+  attributes: string[];
+  allowedLanguages: string[];
+  defaultLanguage: string;
   group?: string;
   active: boolean;
-}>;
+}
+
+// =============================================================================
+// Channel Detail Sub-Types (only on detail endpoint)
+// =============================================================================
 
 /**
  * Payment method assigned to a channel (response shape).
@@ -54,13 +74,11 @@ export type ChannelMailType = ResponseEntity<{
  * General and layout settings for channel email templates.
  */
 export interface ChannelMailSettings {
-  // General settings
   displayName: string;
   fromEmailAddress: string;
   loginUrl: string;
   passwordResetUrl: string;
   orderConfirmationBCCEmail?: string;
-  // Layout settings
   logoUrl?: string;
   logoSecondaryUrl?: string;
   primaryColor?: string;
@@ -71,7 +89,7 @@ export interface ChannelMailSettings {
 }
 
 // =============================================================================
-// Sub-Entity Types (Write / Assignment)
+// Assignment Types (Write / PATCH)
 // =============================================================================
 
 /**
@@ -100,12 +118,14 @@ export interface ChannelPaymentMethodAssignment extends EntityBase {
 // =============================================================================
 
 /**
- * Core channel fields shared across Create, Update, and Response types.
+ * Core channel identity fields shared across Create, Update, and Response types.
+ * Kept slim so ChannelCreate/ChannelUpdate don't inherit markets/languages.
  */
 export interface ChannelBase {
   name: string;
   displayName: string;
   url: string;
+  location: string;
   type: ChannelType;
   active: boolean;
 }
@@ -129,22 +149,34 @@ export interface ChannelUpdate extends UpdateEntity<ChannelBase> {
 }
 
 /**
- * Full channel API response shape (used by the edit page).
- * Languages and markets are ordered arrays — the first item is the default.
+ * API list response item (GET /account/channel/list).
+ * Also used by the account store for channel context.
  */
-export interface Channel extends ResponseEntity<ChannelBase> {
-  languages: ChannelLanguage[];
-  markets: ChannelMarket[];
+export interface ChannelListItem extends ResponseEntity<ChannelBase> {
+  markets: Market[];
+  defaultMarket: number;
+  languages: Language[];
+}
+
+/**
+ * Table row shape for the channel list page.
+ * Markets and languages are transformed to Tooltip for display.
+ * Follows the CustomerCompanyList pattern.
+ */
+export interface ChannelList
+  extends Omit<ChannelListItem, 'markets' | 'languages'> {
+  markets: Tooltip;
+  languages: Tooltip;
+}
+
+/**
+ * Full channel API response shape (GET /account/channel/{id}).
+ * Extends the list item with detail-only fields.
+ */
+export interface Channel extends ChannelListItem {
   paymentMethods: ChannelPaymentMethod[];
   mailSettings: ChannelMailSettings;
   mailTypes: ChannelMailType[];
   storefrontSettings: Record<string, unknown>;
   storefrontSchema: Record<string, unknown>;
-}
-
-/**
- * Table row shape for the channel list page.
- */
-export interface ChannelListItem extends ResponseEntity<ChannelBase> {
-  marketCount: number;
 }

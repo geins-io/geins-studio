@@ -1,15 +1,28 @@
-import type { ChannelMarket, ChannelMarketAssignment } from '#shared/types';
+import type { Market, ChannelMarketAssignment } from '#shared/types';
 import { nextId } from './ids';
 
-export function buildChannelMarket(
-  overrides?: Partial<ChannelMarket>,
-): ChannelMarket {
+export function buildChannelMarket(overrides?: Partial<Market>): Market {
   return {
     _id: nextId('market'),
     _type: 'market',
-    country: 'SE',
-    currency: 'SEK',
-    vat: 25,
+    channelId: 1,
+    country: {
+      _id: 'SE',
+      _type: 'country',
+      name: 'Sweden',
+      active: true,
+    },
+    currency: {
+      _id: 'SEK',
+      _type: 'currency',
+      name: 'Swedish Krona',
+      symbol: { value: 'kr', prefixed: false },
+      conversionRate: 1,
+    },
+    virtual: false,
+    attributes: [],
+    allowedLanguages: ['en', 'sv'],
+    defaultLanguage: 'en',
     group: 'nordic',
     active: true,
     ...overrides,

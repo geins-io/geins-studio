@@ -89,14 +89,19 @@ describe('buildChannelListItem', () => {
     expect(item.name).toBeDefined();
     expect(item.displayName).toBeDefined();
     expect(item.url).toBeDefined();
+    expect(item.location).toBeDefined();
     expect(item.type).toBeDefined();
     expect(typeof item.active).toBe('boolean');
-    expect(typeof item.marketCount).toBe('number');
+    expect(Array.isArray(item.markets)).toBe(true);
+    expect(item.markets.length).toBeGreaterThan(0);
+    expect(Array.isArray(item.languages)).toBe(true);
+    expect(item.languages.length).toBeGreaterThan(0);
+    expect(typeof item.defaultMarket).toBe('number');
   });
 
   it('accepts overrides', () => {
-    const item = buildChannelListItem({ marketCount: 5 });
-    expect(item.marketCount).toBe(5);
+    const item = buildChannelListItem({ markets: [] });
+    expect(item.markets).toEqual([]);
   });
 });
 
@@ -157,15 +162,22 @@ describe('buildChannelMarket', () => {
     const market = buildChannelMarket();
     expect(market._id).toBeDefined();
     expect(market._type).toBe('market');
-    expect(market.country).toBeDefined();
-    expect(market.currency).toBeDefined();
+    expect(market.country._id).toBe('SE');
+    expect(market.country.name).toBe('Sweden');
+    expect(market.currency._id).toBe('SEK');
+    expect(market.currency.symbol).toEqual({ value: 'kr', prefixed: false });
+    expect(typeof market.channelId).toBe('number');
+    expect(typeof market.virtual).toBe('boolean');
+    expect(Array.isArray(market.allowedLanguages)).toBe(true);
     expect(typeof market.active).toBe('boolean');
   });
 
   it('accepts overrides', () => {
-    const market = buildChannelMarket({ country: 'NO', currency: 'NOK' });
-    expect(market.country).toBe('NO');
-    expect(market.currency).toBe('NOK');
+    const market = buildChannelMarket({
+      country: { _id: 'NO', _type: 'country', name: 'Norway', active: true },
+    });
+    expect(market.country._id).toBe('NO');
+    expect(market.country.name).toBe('Norway');
   });
 });
 

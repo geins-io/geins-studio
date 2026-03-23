@@ -1,9 +1,9 @@
-import type { ChannelLanguage, ChannelLanguageAssignment } from '#shared/types';
+import type { Language, ChannelLanguageAssignment } from '#shared/types';
 import { nextId } from './ids';
 
 export function buildChannelLanguage(
-  overrides?: Partial<ChannelLanguage>,
-): ChannelLanguage {
+  overrides?: Partial<Language>,
+): Language {
   return {
     _id: nextId('lang'),
     _type: 'language',
