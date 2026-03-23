@@ -2,18 +2,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 // eslint-disable-next-line import/order
 import { ref } from 'vue';
-const { mockNavigateTo, mockOnBeforeRouteLeave } = vi.hoisted(() => ({
-  mockNavigateTo: vi.fn(),
-  mockOnBeforeRouteLeave: vi.fn(),
-}));
+
+const { navigateTo: mockNavigateTo } = vi.hoisted(() => createNavigateToMock());
+const { onBeforeRouteLeave: mockOnBeforeRouteLeave } = vi.hoisted(() =>
+  createOnBeforeRouteLeaveMock(),
+);
+const { useGeinsLog } = vi.hoisted(() => createLoggerMock());
 
 vi.mock('../useGeinsLog', () => ({
-  useGeinsLog: vi.fn(() => ({
-    geinsLog: vi.fn(),
-    geinsLogError: vi.fn(),
-    geinsLogInfo: vi.fn(),
-    geinsLogWarn: vi.fn(),
-  })),
+  useGeinsLog,
 }));
 
 vi.mock('#app/composables/router', () => ({
