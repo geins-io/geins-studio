@@ -25,10 +25,7 @@ const CHANNEL_ENDPOINT = `${BASE_ENDPOINT}/channel`;
  * for storefront settings (logos, etc.) alongside JSON data.
  */
 export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const channelBase = entityBaseRepo<ChannelListItem>(
-    CHANNEL_ENDPOINT,
-    fetch,
-  );
+  const channelBase = entityBaseRepo<ChannelListItem>(CHANNEL_ENDPOINT, fetch);
 
   return {
     channel: {
@@ -120,10 +117,7 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
               { method: 'PATCH', body: data },
             );
           },
-          async preview(
-            mailType: string,
-            language: string,
-          ): Promise<unknown> {
+          async preview(mailType: string, language: string): Promise<unknown> {
             return await fetch<unknown>(
               `${CHANNEL_ENDPOINT}/${channelId}/mail/${mailType}/preview`,
               { method: 'POST', body: { language } },
