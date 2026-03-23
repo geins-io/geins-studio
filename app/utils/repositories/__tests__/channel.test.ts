@@ -73,10 +73,9 @@ describe('channelRepo', () => {
     it('channel.activate() calls PUT /account/channel/:id/activate', async () => {
       mockFetch.mockResolvedValue(null);
       await api.channel.activate('123');
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/account/channel/123/activate',
-        { method: 'PUT' },
-      );
+      expect(mockFetch).toHaveBeenCalledWith('/account/channel/123/activate', {
+        method: 'PUT',
+      });
     });
 
     it('channel.deactivate() calls PUT /account/channel/:id/deactivate', async () => {

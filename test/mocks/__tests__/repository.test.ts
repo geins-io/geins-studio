@@ -65,9 +65,7 @@ describe('createMockRepository', () => {
 
     // Different vi.fn instances
     expect(mock1.channelApi.channel.get).not.toBe(mock2.channelApi.channel.get);
-    expect(mock1.orderApi.quotation.get).not.toBe(
-      mock2.orderApi.quotation.get,
-    );
+    expect(mock1.orderApi.quotation.get).not.toBe(mock2.orderApi.quotation.get);
     expect(mock1.useGeinsRepository).not.toBe(mock2.useGeinsRepository);
 
     // Calling one doesn't affect the other
