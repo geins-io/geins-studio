@@ -64,13 +64,7 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
       href: '/settings/channel/list',
       icon: 'Store',
       group: 'settings',
-      children: [
-        {
-          label: t('navigation.channels'),
-          href: '/settings/channel/list',
-          childPattern: '/settings/channel/:id',
-        },
-      ],
+      childPattern: '/settings/channel/:id',
     },
     {
       label: t('navigation.account'),
