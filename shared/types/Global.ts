@@ -93,7 +93,7 @@ export interface NavigationItem {
   roles?: string[]; // e.g., ['admin', 'editor', 'viewer']
   permissions?: string[]; // e.g., ['customer.read', 'products.write']
 
-  group?: string; // Group items together (e.g., 'sales', 'content')
+  group?: string; // Group items together (e.g., 'workspace', 'settings')
 
   // Child page pattern - defines dynamic child routes
   // Example: '/customer/account/:id' matches /customer/account/123
