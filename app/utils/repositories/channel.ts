@@ -3,8 +3,8 @@ import type {
   ChannelCreate,
   ChannelUpdate,
   ChannelListItem,
-  ChannelMarket,
-  ChannelLanguage,
+  Market,
+  Language,
   ChannelPaymentMethod,
   ChannelMailType,
   ChannelMailSettings,
@@ -80,8 +80,8 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
        */
       id: (channelId: string) => ({
         market: {
-          async list(): Promise<ChannelMarket[]> {
-            return await fetch<ChannelMarket[]>(
+          async list(): Promise<Market[]> {
+            return await fetch<Market[]>(
               `${CHANNEL_ENDPOINT}/${channelId}/market/list`,
             );
           },
@@ -129,16 +129,16 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
     // Top-level sub-resources (not scoped to a channel)
     market: {
-      async list(): Promise<ChannelMarket[]> {
-        return await fetch<ChannelMarket[]>(`${BASE_ENDPOINT}/market/list`);
+      async list(): Promise<Market[]> {
+        return await fetch<Market[]>(`${BASE_ENDPOINT}/market/list`);
       },
     },
     language: {
-      async list(): Promise<ChannelLanguage[]> {
-        return await fetch<ChannelLanguage[]>(`${BASE_ENDPOINT}/language/list`);
+      async list(): Promise<Language[]> {
+        return await fetch<Language[]>(`${BASE_ENDPOINT}/language/list`);
       },
-      async get(id: string): Promise<ChannelLanguage> {
-        return await fetch<ChannelLanguage>(`${BASE_ENDPOINT}/language/${id}`);
+      async get(id: string): Promise<Language> {
+        return await fetch<Language>(`${BASE_ENDPOINT}/language/${id}`);
       },
     },
     payment: {

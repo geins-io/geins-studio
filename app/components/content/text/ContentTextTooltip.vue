@@ -15,7 +15,7 @@ const props = withDefaults(
         <span
           :class="
             cn(
-              'decoration-muted-foreground underline decoration-dashed decoration-1 underline-offset-4',
+              'tooltip-text',
               props.triggerClass,
             )
           "

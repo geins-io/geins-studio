@@ -39,8 +39,12 @@ export type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
 export type ColumnKey<T> = keyof T | ColumnType;
 
 export interface LinkColumnConfig<T> {
-  url: string;
+  url?: string;
   idField?: StringKeyOf<T>;
+  /** Use the cell value itself as the URL */
+  useValueAsUrl?: boolean;
+  /** Render as an external link (opens in new tab, shows external icon) */
+  external?: boolean;
 }
 
 export interface ColumnOptions<T> {

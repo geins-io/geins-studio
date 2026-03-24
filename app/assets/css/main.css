@@ -310,3 +310,15 @@
 .table-view__header {
   @apply bg-card after:bg-border sticky top-0 after:absolute after:bottom-0 after:left-0 after:z-10 after:h-px after:w-full;
 }
+
+.link-text {
+  @apply text-link hover:text-muted-foreground font-semibold underline underline-offset-2;
+}
+
+.external-link-text {
+  @apply hover:text-foreground text-muted-foreground inline-flex items-center gap-1 underline underline-offset-4 transition-colors;
+}
+
+.tooltip-text {
+  @apply decoration-muted-foreground underline decoration-dashed decoration-1 underline-offset-4;
+}

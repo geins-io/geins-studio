@@ -18,6 +18,7 @@ import {
   TableCellProduct,
   Button,
   LucideChevronRight,
+  LucideExternalLink,
 } from '#components';
 
 interface UseColumnsReturnType<T> {
@@ -399,43 +400,62 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         case 'link':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const linkConfig = options.linkColumns?.[key];
-            let fullEditUrl: string | undefined;
+            const text = String(row.getValue(key));
+            let fullUrl: string | undefined;
+            let isExternal = false;
 
             if (linkConfig) {
-              if (linkConfig.idField) {
+              isExternal = !!linkConfig.external;
+
+              if (linkConfig.useValueAsUrl) {
+                // Use the cell value itself as the URL
+                fullUrl = text || undefined;
+              } else if (linkConfig.idField && linkConfig.url) {
                 // Internal link with ID replacement
                 const idValue = String(row.getValue(linkConfig.idField));
                 if (idValue) {
-                  fullEditUrl = linkConfig.url.replace('{id}', idValue);
+                  fullUrl = linkConfig.url.replace('{id}', idValue);
                 }
-              } else {
-                // External link
-                fullEditUrl = linkConfig.url;
+              } else if (linkConfig.url) {
+                // Static URL
+                fullUrl = linkConfig.url;
               }
             }
 
-            const text = String(row.getValue(key));
-
-            if (!fullEditUrl) {
-              // Fallback to plain text if no URL configuration
+            if (!fullUrl) {
+              // Fallback to plain text if no URL resolved
               return h('div', { class: getBasicCellStyle(table) }, text);
             }
 
-            const link = h(
-              NuxtLink,
-              {
-                to: fullEditUrl,
-                class: cn(
-                  'underline underline-offset-2 font-semibold text-link hover:text-muted-foreground',
-                ),
-              },
-              {
-                default: () =>
-                  text.length > maxTextLength
-                    ? text.slice(0, maxTextLength) + '...'
-                    : text,
-              },
-            );
+            const displayText =
+              text.length > maxTextLength
+                ? text.slice(0, maxTextLength) + '...'
+                : text;
+
+            const linkClass = isExternal ? 'external-link-text' : 'link-text';
+
+            const link = isExternal
+              ? h(
+                  'a',
+                  {
+                    href: fullUrl,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    class: linkClass,
+                  },
+                  [
+                    displayText,
+                    h(LucideExternalLink, {
+                      class:
+                        'inline-block ml-0.5 size-3 align-baseline opacity-60',
+                    }),
+                  ],
+                )
+              : h(
+                  NuxtLink,
+                  { to: fullUrl, class: linkClass },
+                  { default: () => displayText },
+                );
 
             if (text.length > maxTextLength) {
               return h(
