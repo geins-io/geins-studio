@@ -561,6 +561,7 @@
     "tab_mails": "Mails",
     "name_helper": "Generated automatically from the display name on creation.",
     "url_helper": "Changing the URL will break existing links.",
+    "card_details": "Channel details",
     "locked_toast": "Channel update is being processed in the background. This may take a moment.",
     "save_error": "Failed to save channel",
     "tab_placeholder": "This section will be available in a future update."

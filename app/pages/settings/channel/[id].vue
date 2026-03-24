@@ -332,9 +332,9 @@ if (!createMode.value) {
             v-if="currentTab === 0"
             :key="`tab-${currentTab}`"
           >
-            <ContentEditCard :title="$t('channels.tab_general')">
+            <ContentEditCard :title="$t('channels.card_details')">
               <FormGridWrap>
-                <FormGrid design="1">
+                <FormGrid design="1+1">
                   <FormField v-slot="{ componentField }" name="displayName">
                     <FormItem>
                       <FormLabel>{{ $t('channels.display_name') }}</FormLabel>
@@ -363,6 +363,8 @@ if (!createMode.value) {
                       <FormMessage />
                     </FormItem>
                   </FormField>
+                </FormGrid>
+                <FormGrid design="1">
                   <FormField v-slot="{ componentField }" name="url">
                     <FormItem>
                       <FormLabel>{{ $t('channels.url') }}</FormLabel>
@@ -375,6 +377,8 @@ if (!createMode.value) {
                       <FormMessage />
                     </FormItem>
                   </FormField>
+                </FormGrid>
+                <FormGrid design="1">
                   <FormField v-slot="{ componentField }" name="channelType">
                     <FormItem>
                       <FormLabel>{{ $t('channels.type') }}</FormLabel>

@@ -32,13 +32,13 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 
 These MUST be followed for every task.
 
-**Before writing code**: (1) Set Linear issue to "In Progress". (2) Ask about branching — `feat/{issue}-{desc}` or `fix/{issue}-{desc}` from `next`. (3) Verify issue has enough codebase-specific guidance. (4) Read issue body against this file + matching skill. (5) Run `implementation-plan` skill before coding.
+**Before writing code**: (1) Set Linear issue to "In Progress". (2) Ask about branching — `feat/{issue}-{desc}` or `fix/{issue}-{desc}` from `next`. (3) Verify issue has enough codebase-specific guidance. (4) Read issue body against this file + matching skill. (5) Check the Linear project plan and issue for Figma links — if a design exists, fetch it with `get_design_context` and match the layout (field grouping, grid design, card structure) before coding. (6) Run `implementation-plan` skill before coding.
 
-**While writing code**: (6) Follow all patterns in this file. If breaking a pattern, document why. (7) Consider performance implications.
+**While writing code**: (7) Follow all patterns in this file. If breaking a pattern, document why. (8) Consider performance implications.
 
-**Before committing**: (8) Run `pnpm lint:check && pnpm typecheck` (and `pnpm test --run` if tests exist). All must pass.
+**Before committing**: (9) Run `pnpm lint:check && pnpm typecheck` (and `pnpm test --run` if tests exist). All must pass.
 
-**When user says "task done"**: (9) Update `/docs` if architectural changes. (10) Update CLAUDE.md with new learnings. (11) Organize CLAUDE.md (dedup, group, format). (12) Set Linear issue to "Done".
+**When user says "task done"**: (10) Update `/docs` if architectural changes. (11) Update CLAUDE.md with new learnings. (12) Organize CLAUDE.md (dedup, group, format). (13) Set Linear issue to "Done".
 
 ---
 
