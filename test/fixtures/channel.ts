@@ -58,7 +58,6 @@ export function buildChannelUpdate(
   overrides?: Partial<ChannelUpdate>,
 ): ChannelUpdate {
   return {
-    name: 'updated-channel',
     displayName: 'Updated Channel',
     ...overrides,
   };

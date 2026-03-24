@@ -122,7 +122,6 @@ export interface ChannelPaymentMethodAssignment extends EntityBase {
  * Kept slim so ChannelCreate/ChannelUpdate don't inherit markets/languages.
  */
 export interface ChannelBase {
-  name: string;
   displayName: string;
   url: string;
   channelType: ChannelType;
@@ -136,7 +135,9 @@ export interface ChannelBase {
 /**
  * POST body for creating a new channel.
  */
-export type ChannelCreate = CreateEntity<ChannelBase>;
+export interface ChannelCreate extends CreateEntity<ChannelBase> {
+  name: string;
+}
 
 /**
  * PATCH body for updating a channel.
@@ -156,6 +157,7 @@ export interface ChannelUpdate extends UpdateEntity<ChannelBase> {
  * Also used by the account store for channel context.
  */
 export interface ChannelListItem extends ResponseEntity<ChannelBase> {
+  name: string;
   markets: Market[];
   languages: Language[];
 }

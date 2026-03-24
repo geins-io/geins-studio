@@ -52,7 +52,7 @@ describe('buildChannel', () => {
     expect(channel.name).toBeDefined();
     expect(channel.displayName).toBeDefined();
     expect(channel.url).toBeDefined();
-    expect(channel.type).toBeDefined();
+    expect(channel.channelType).toBeDefined();
     expect(typeof channel.active).toBe('boolean');
     expect(Array.isArray(channel.languages)).toBe(true);
     expect(channel.languages.length).toBeGreaterThan(0);
@@ -89,14 +89,13 @@ describe('buildChannelListItem', () => {
     expect(item.name).toBeDefined();
     expect(item.displayName).toBeDefined();
     expect(item.url).toBeDefined();
-    expect(item.location).toBeDefined();
-    expect(item.type).toBeDefined();
+    expect(item.channelType).toBeDefined();
     expect(typeof item.active).toBe('boolean');
     expect(Array.isArray(item.markets)).toBe(true);
     expect(item.markets.length).toBeGreaterThan(0);
     expect(Array.isArray(item.languages)).toBe(true);
     expect(item.languages.length).toBeGreaterThan(0);
-    expect(typeof item.defaultMarket).toBe('number');
+    expect(typeof item.defaultMarket).toBe('string');
   });
 
   it('accepts overrides', () => {
@@ -111,7 +110,7 @@ describe('buildChannelCreate', () => {
     expect(data.name).toBeDefined();
     expect(data.displayName).toBeDefined();
     expect(data.url).toBeDefined();
-    expect(data.type).toBeDefined();
+    expect(data.channelType).toBeDefined();
     expect(typeof data.active).toBe('boolean');
     // Should not have EntityBase fields
     expect(data).not.toHaveProperty('_id');
@@ -122,7 +121,6 @@ describe('buildChannelCreate', () => {
 describe('buildChannelUpdate', () => {
   it('returns a valid partial update payload', () => {
     const data = buildChannelUpdate();
-    expect(data.name).toBeDefined();
     expect(data.displayName).toBeDefined();
   });
 
