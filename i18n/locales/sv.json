@@ -542,7 +542,7 @@
   },
   "channels": {
     "name": "Internt namn",
-    "display_name": "Visningsnamn",
+    "display_name": "Namn",
     "url": "Butiksadress",
     "type": "Kanaltyp",
     "type_webshop": "Webshop",
@@ -560,6 +560,10 @@
     "tab_payments": "Betalningar",
     "tab_mails": "Mejl",
     "name_helper": "Genereras automatiskt från visningsnamnet vid skapande.",
-    "url_helper": "Att ändra URL:en bryter befintliga länkar."
+    "url_helper": "Att ändra URL:en bryter befintliga länkar.",
+    "invalid_url": "Ange en giltig URL",
+    "card_details": "Kanaldetaljer",
+    "locked_toast": "Kanaluppdateringen bearbetas i bakgrunden. Det kan ta en stund.",
+    "tab_placeholder": "Den här sektionen blir tillgänglig i en framtida uppdatering."
   }
 }

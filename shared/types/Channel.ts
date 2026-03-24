@@ -130,10 +130,9 @@ export interface ChannelBase {
 
 /**
  * POST body for creating a new channel.
+ * `name` is auto-generated from `displayName` by the API — not sent in the request.
  */
-export interface ChannelCreate extends CreateEntity<ChannelBase> {
-  name: string;
-}
+export type ChannelCreate = CreateEntity<ChannelBase>;
 
 /**
  * PATCH body for updating a channel.
@@ -156,10 +155,10 @@ export interface ChannelListItem extends ResponseEntity<ChannelBase> {
   name: string;
   markets: Market[];
   languages: Language[];
-  languageCount?: number;
-  marketCount?: number;
-  defaultLanguage?: string;
-  defaultMarket?: string;
+  languageCount: number;
+  marketCount: number;
+  defaultLanguage: string;
+  defaultMarket: string;
   locked: boolean;
 }
 

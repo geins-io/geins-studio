@@ -542,7 +542,7 @@
   },
   "channels": {
     "name": "Internal name",
-    "display_name": "Display name",
+    "display_name": "Name",
     "url": "Storefront URL",
     "type": "Channel type",
     "type_webshop": "Webshop",
@@ -560,6 +560,10 @@
     "tab_payments": "Payments",
     "tab_mails": "Mails",
     "name_helper": "Generated automatically from the display name on creation.",
-    "url_helper": "Changing the URL will break existing links."
+    "url_helper": "Changing the URL will break existing links.",
+    "invalid_url": "Please enter a valid URL",
+    "card_details": "Channel details",
+    "locked_toast": "Channel update is being processed in the background. This may take a moment.",
+    "tab_placeholder": "This section will be available in a future update."
   }
 }
