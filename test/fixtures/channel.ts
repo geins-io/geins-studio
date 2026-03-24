@@ -49,7 +49,6 @@ export function buildChannelCreate(
   overrides?: Partial<ChannelCreate>,
 ): ChannelCreate {
   return {
-    name: 'new-channel',
     displayName: 'New Channel',
     url: 'www.new-channel.com',
     channelType: 'webshop',

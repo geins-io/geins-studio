@@ -542,7 +542,7 @@
   },
   "channels": {
     "name": "Internal name",
-    "display_name": "Display name",
+    "display_name": "Name",
     "url": "Storefront URL",
     "type": "Channel type",
     "type_webshop": "Webshop",

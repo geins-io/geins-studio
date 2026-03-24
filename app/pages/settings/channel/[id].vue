@@ -41,7 +41,6 @@ const formSchema = toTypedSchema(
     displayName: z
       .string()
       .min(1, t('entity_required', { entityName: 'displayName' })),
-    name: z.string().min(1, t('entity_required', { entityName: 'name' })),
     url: z.string().url(t('entity_required', { entityName: 'url' })),
     channelType: z.enum(['webshop', 'physical', 'other'] as const),
     active: z.boolean(),
@@ -53,7 +52,6 @@ const formSchema = toTypedSchema(
 // =====================================================================================
 const initialCreateData: ChannelCreate = {
   displayName: '',
-  name: '',
   url: '',
   channelType: 'webshop',
   active: false,
@@ -79,6 +77,8 @@ const tabs = [
 
 // Locked state — background processing guard for active toggle
 const isLocked = ref(false);
+
+const internalName = ref(''); // For displaying the non-editable internal name field
 
 // Channel type options for select
 const channelTypeOptions: { value: ChannelType; label: string }[] = [
@@ -123,7 +123,6 @@ const {
   initialUpdateData,
   getInitialFormValues: (entityData) => ({
     displayName: entityData.displayName || '',
-    name: 'name' in entityData ? (entityData as ChannelCreate).name : '',
     url: entityData.url || '',
     channelType: entityData.channelType || 'webshop',
     active: entityData.active ?? false,
@@ -137,10 +136,10 @@ const {
   parseEntityData: (entity) => {
     entityLiveStatus.value = entity.active;
     isLocked.value = entity.locked;
+    internalName.value = entity.name;
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       displayName: entity.displayName,
-      name: entity.name,
       url: entity.url,
       channelType: entity.channelType,
       active: entity.active,
@@ -148,7 +147,6 @@ const {
   },
   prepareCreateData: (formData) => ({
     displayName: formData.displayName,
-    name: formData.name,
     url: formData.url,
     channelType: formData.channelType,
     active: formData.active,
@@ -167,7 +165,6 @@ const {
       url: values.url,
       channelType: values.channelType,
       active: values.active,
-      ...(createMode.value && { name: values.name }),
     };
   },
 });
@@ -344,25 +341,13 @@ if (!createMode.value) {
                       <FormMessage />
                     </FormItem>
                   </FormField>
-                  <FormField v-slot="{ componentField }" name="name">
-                    <FormItem>
-                      <FormLabel>{{ $t('channels.name') }}</FormLabel>
-                      <FormControl>
-                        <Input
-                          v-bind="componentField"
-                          :disabled="!createMode"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {{
-                          createMode
-                            ? $t('channels.name_helper')
-                            : $t('validation.cannot_be_changed')
-                        }}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
+                  <div v-if="!createMode" class="space-y-2">
+                    <Label>{{ $t('channels.name') }}</Label>
+                    <Input :model-value="internalName" disabled />
+                    <p class="text-muted-foreground text-sm">
+                      {{ $t('channels.name_helper') }}
+                    </p>
+                  </div>
                 </FormGrid>
                 <FormGrid design="1">
                   <FormField v-slot="{ componentField }" name="url">

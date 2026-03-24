@@ -542,7 +542,7 @@
   },
   "channels": {
     "name": "Internt namn",
-    "display_name": "Visningsnamn",
+    "display_name": "Namn",
     "url": "Butiksadress",
     "type": "Kanaltyp",
     "type_webshop": "Webshop",
