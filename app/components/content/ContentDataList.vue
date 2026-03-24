@@ -54,10 +54,13 @@ const _props = withDefaults(
           :to="item.href"
           :target="item.target"
           :rel="item.target === '_blank' ? 'noopener noreferrer' : undefined"
-          class="hover:text-foreground inline-flex items-center gap-1 underline decoration-dotted underline-offset-4 transition-colors"
+          class="external-link-text"
         >
           {{ item.displayValue || item.value }}
-          <LucideExternalLink v-if="item.target === '_blank'" class="size-3" />
+          <LucideExternalLink
+            v-if="item.target === '_blank'"
+            class="ml-0.5 inline-block size-3 align-baseline opacity-60"
+          />
         </NuxtLink>
         <span v-else>{{ item.value }}</span>
       </li>

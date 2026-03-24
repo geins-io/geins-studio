@@ -125,8 +125,11 @@ export interface ChannelBase {
   name: string;
   displayName: string;
   url: string;
-  location: string;
-  type: ChannelType;
+  channelType: ChannelType;
+  languageCount?: number;
+  marketCount?: number;
+  defaultLanguage?: string;
+  defaultMarket?: string;
   active: boolean;
 }
 
@@ -154,7 +157,6 @@ export interface ChannelUpdate extends UpdateEntity<ChannelBase> {
  */
 export interface ChannelListItem extends ResponseEntity<ChannelBase> {
   markets: Market[];
-  defaultMarket: number;
   languages: Language[];
 }
 
@@ -163,8 +165,10 @@ export interface ChannelListItem extends ResponseEntity<ChannelBase> {
  * Markets and languages are transformed to Tooltip for display.
  * Follows the CustomerCompanyList pattern.
  */
-export interface ChannelList
-  extends Omit<ChannelListItem, 'markets' | 'languages'> {
+export interface ChannelList extends Omit<
+  ChannelListItem,
+  'markets' | 'languages'
+> {
   markets: Tooltip;
   languages: Tooltip;
 }

@@ -172,12 +172,20 @@ Configure clickable links for specific columns. See [Link Columns](#link-columns
 
 ```ts
 linkColumns: {
+  // Internal link — replaces {id} with the row's _id value
   name: {
     url: '/parent/entity/{id}',
     idField: '_id',
   },
+  // External link — uses the cell value itself as the URL, opens in new tab
   website: {
+    useValueAsUrl: true,
+    external: true,
+  },
+  // Static external link
+  docs: {
     url: 'https://example.com',
+    external: true,
   },
 }
 ```
@@ -345,7 +353,7 @@ When no specific `columnTypes` are provided, the system automatically infers typ
 | `price`               | Simple number formatting as currency with current locale and current currency         |
 | `date`                | Formats to date using current locale                                                  |
 | `image`               | Displays images as small thumbnails with alt text                                     |
-| `link`                | Creates clickable links using NuxtLink with internal/external URL support             |
+| `link`                | Creates clickable links — internal via NuxtLink or external (`<a>` with icon) via `useValueAsUrl` / `external` |
 | `expander`            | Expander button for hierarchical rows, shows chevron icon for expand/collapse         |
 | `channels`            | Displays channel IDs as badge components with channel names using `TableCellChannels` |
 | `tags`                | Displays string arrays as tag badge components using `TableCellTags`                  |
@@ -476,8 +484,12 @@ type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
 type ColumnKey<T> = keyof T | ColumnType;
 
 interface LinkColumnConfig<T> {
-  url: string;
+  url?: string;
   idField?: StringKeyOf<T>;
+  /** Use the cell value itself as the URL */
+  useValueAsUrl?: boolean;
+  /** Render as an external link (opens in new tab, shows external icon) */
+  external?: boolean;
 }
 
 type StringKeyOf<T> = Extract<keyof T, string>;
