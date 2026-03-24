@@ -125,10 +125,6 @@ export interface ChannelBase {
   displayName: string;
   url: string;
   channelType: ChannelType;
-  languageCount?: number;
-  marketCount?: number;
-  defaultLanguage?: string;
-  defaultMarket?: string;
   active: boolean;
 }
 
@@ -160,6 +156,11 @@ export interface ChannelListItem extends ResponseEntity<ChannelBase> {
   name: string;
   markets: Market[];
   languages: Language[];
+  languageCount?: number;
+  marketCount?: number;
+  defaultLanguage?: string;
+  defaultMarket?: string;
+  locked: boolean;
 }
 
 /**

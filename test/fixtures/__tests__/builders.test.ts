@@ -95,7 +95,11 @@ describe('buildChannelListItem', () => {
     expect(item.markets.length).toBeGreaterThan(0);
     expect(Array.isArray(item.languages)).toBe(true);
     expect(item.languages.length).toBeGreaterThan(0);
+    expect(typeof item.languageCount).toBe('number');
+    expect(typeof item.marketCount).toBe('number');
+    expect(typeof item.defaultLanguage).toBe('string');
     expect(typeof item.defaultMarket).toBe('string');
+    expect(typeof item.locked).toBe('boolean');
   });
 
   it('accepts overrides', () => {

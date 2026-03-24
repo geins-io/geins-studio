@@ -103,9 +103,11 @@ onMounted(() => {
     },
     excludeColumns: [
       'channelType',
+      'defaultLanguage',
       'defaultMarket',
       'languageCount',
       'marketCount',
+      'locked',
     ],
   };
 
