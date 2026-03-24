@@ -22,8 +22,12 @@ export function buildChannelListItem(
     channelType: 'webshop',
     active: true,
     markets: [buildChannelMarket()],
-    defaultMarket: '1',
     languages: [buildChannelLanguage()],
+    languageCount: 1,
+    marketCount: 1,
+    defaultLanguage: 'en',
+    defaultMarket: '1',
+    locked: false,
     ...overrides,
   };
 }
