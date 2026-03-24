@@ -61,7 +61,7 @@ const iconComponents = {
 // Group label translations keyed by navigation group
 // Group label translations keyed by navigation group
 const groupLabels = computed<Record<string, string>>(() => ({
-  sales: t('navigation.workspace'),
+  workspace: t('navigation.workspace'),
   settings: t('navigation.settings'),
 }));
 
