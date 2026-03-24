@@ -97,6 +97,7 @@ onMounted(() => {
       url: { useValueAsUrl: true, external: true },
     },
     columnTitles: {
+      displayName: t('channels.display_name'),
       active: t('status'),
       markets: t('channels.markets_count'),
       languages: t('channels.languages_count'),

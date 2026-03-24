@@ -112,6 +112,18 @@ The watch fires only on subsequent changes, so it doesn't interfere with the ini
 
 For fields the API returns but the PATCH endpoint doesn't accept (e.g. nested snapshot objects like `billingAddress`, `company`, `total`), store them in dedicated `ref`s populated in `parseEntityData`. Don't cast `entityDataUpdate` to the response type or spread the full entity into the update payload — the backend will reject unknown fields.
 
+## Gotcha: sidebar summary entity ID
+
+Always use `entityId.value` (from `useEntityEdit`) for the entity ID row in the sidebar summary, not `entityDataUpdate.value?._id`. The latter can be `undefined` before data loads, showing "undefined" in the UI. `entityId` falls back to the route param and is always populated.
+
+```ts
+dataList.push({
+  label: t('entity_id', { entityName }),
+  value: entityId.value ?? '',
+  displayType: DataItemDisplayType.Copy,
+});
+```
+
 ## Verify
 
 - Create mode: submit form → auto-navigates to edit URL → data is pre-populated

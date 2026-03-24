@@ -32,13 +32,13 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 
 These MUST be followed for every task.
 
-**Before writing code**: (1) Set Linear issue to "In Progress". (2) Ask about branching — `feat/{issue}-{desc}` or `fix/{issue}-{desc}` from `next`. (3) Verify issue has enough codebase-specific guidance. (4) Read issue body against this file + matching skill. (5) Run `implementation-plan` skill before coding.
+**Before writing code**: (1) Set Linear issue to "In Progress". (2) Ask about branching — `feat/{issue}-{desc}` or `fix/{issue}-{desc}` from `next`. (3) Verify issue has enough codebase-specific guidance. (4) Read issue body against this file + matching skill. (5) Check the Linear project plan and issue for Figma links — if a design exists, fetch it with `get_design_context` and match the layout (field grouping, grid design, card structure) before coding. (6) Run `implementation-plan` skill before coding.
 
-**While writing code**: (6) Follow all patterns in this file. If breaking a pattern, document why. (7) Consider performance implications.
+**While writing code**: (7) Follow all patterns in this file. If breaking a pattern, document why. (8) Consider performance implications.
 
-**Before committing**: (8) Run `pnpm lint:check && pnpm typecheck` (and `pnpm test --run` if tests exist). All must pass.
+**Before committing**: (9) Run `pnpm lint:check && pnpm typecheck` (and `pnpm test --run` if tests exist). All must pass.
 
-**When user says "task done"**: (9) Update `/docs` if architectural changes. (10) Update CLAUDE.md with new learnings. (11) Organize CLAUDE.md (dedup, group, format). (12) Set Linear issue to "Done".
+**When user says "task done"**: (10) Update `/docs` if architectural changes. (11) Update CLAUDE.md with new learnings. (12) Organize CLAUDE.md (dedup, group, format). (13) Set Linear issue to "Done".
 
 ---
 
@@ -104,11 +104,12 @@ i18n/locales/           # en.json, sv.json
 - **Composables**: File `use{Name}.ts`, export named function, return type ending in `ReturnType`
 - **Props**: `defineProps<{}>()` with `withDefaults()` | **Stores**: `storeToRefs(store)` for reactive state
 - **Imports**: Nuxt auto-imports composables/utils/components. Types: `import type { X } from '#shared/types'`
-- **Forms**: `<FormField v-slot="{ componentField }">` pattern. `useEntityEdit` handles unsaved-changes.
+- **Forms**: `<FormField v-slot="{ componentField }">` pattern. `useEntityEdit` handles unsaved-changes. Read-only display fields must NOT use `FormItem`/`FormLabel` (they require `<FormField>` parent) — use plain `div`/`Label`/`p` instead.
+- **Sidebar summary entity ID**: Always use `entityId.value` (from `useEntityEdit`) for the summary ID row, not `entityDataUpdate.value?._id` which can be `undefined` before data loads.
 - **Entity URLs**: Use `useEntityUrl()` — `getEntityUrl(id)` for current context, `getEntityUrlFor(entityName, parentPath, id)` for any entity. Prefer over hardcoded routes.
 - **Full name display**: Use `fullName(entity)` (auto-imported). Never use inline template literals.
 - **Date formatting**: Use `useDate()` → `formatDate(value, options?)`. Defaults to `dateStyle: 'long'`.
-- **Vue gotchas**: `<KeepAlive>` cannot contain HTML comments. `v-auto-animate` on icon-swapping `v-if/v-else` causes layout shift — use CSS transitions instead.
+- **Vue gotchas**: `<KeepAlive>` expects exactly one child — wrap each tab in its own `<KeepAlive>` with a single `v-if` child (never use `v-else-if` chains inside one `<KeepAlive>`). `<KeepAlive>` cannot contain HTML comments. `v-auto-animate` on icon-swapping `v-if/v-else` causes layout shift — use CSS transitions instead.
 - **Page titles**: `usePageTitle()` auto-derives from breadcrumbs. Entity pages get names via `setCurrentTitle`.
 - **Toasts**: `useToast` from `@/components/ui/toast/use-toast` (explicit import). `useEntityEdit` handles CRUD toasts — only add toasts for extra actions (status transitions, copy, etc.).
 

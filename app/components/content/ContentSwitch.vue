@@ -1,7 +1,8 @@
 <script setup lang="ts">
-const _props = defineProps<{
+const props = defineProps<{
   label: string;
   description?: string;
+  disabled?: boolean;
 }>();
 
 const checked = defineModel<boolean>('checked');
@@ -40,7 +41,7 @@ const hasSlotContent = computed(() => !!slots.default);
         class="p-px"
       />
       <div>
-        <Switch v-model="checked" />
+        <Switch v-model="checked" :disabled="props.disabled" />
       </div>
     </div>
     <transition
