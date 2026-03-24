@@ -156,10 +156,10 @@ export interface ChannelListItem extends ResponseEntity<ChannelBase> {
   name: string;
   markets: Market[];
   languages: Language[];
-  languageCount?: number;
-  marketCount?: number;
-  defaultLanguage?: string;
-  defaultMarket?: string;
+  languageCount: number;
+  marketCount: number;
+  defaultLanguage: string;
+  defaultMarket: string;
   locked: boolean;
 }
 
