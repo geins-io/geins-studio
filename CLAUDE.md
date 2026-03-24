@@ -104,7 +104,8 @@ i18n/locales/           # en.json, sv.json
 - **Composables**: File `use{Name}.ts`, export named function, return type ending in `ReturnType`
 - **Props**: `defineProps<{}>()` with `withDefaults()` | **Stores**: `storeToRefs(store)` for reactive state
 - **Imports**: Nuxt auto-imports composables/utils/components. Types: `import type { X } from '#shared/types'`
-- **Forms**: `<FormField v-slot="{ componentField }">` pattern. `useEntityEdit` handles unsaved-changes.
+- **Forms**: `<FormField v-slot="{ componentField }">` pattern. `useEntityEdit` handles unsaved-changes. Read-only display fields must NOT use `FormItem`/`FormLabel` (they require `<FormField>` parent) — use plain `div`/`Label`/`p` instead.
+- **Sidebar summary entity ID**: Always use `entityId.value` (from `useEntityEdit`) for the summary ID row, not `entityDataUpdate.value?._id` which can be `undefined` before data loads.
 - **Entity URLs**: Use `useEntityUrl()` — `getEntityUrl(id)` for current context, `getEntityUrlFor(entityName, parentPath, id)` for any entity. Prefer over hardcoded routes.
 - **Full name display**: Use `fullName(entity)` (auto-imported). Never use inline template literals.
 - **Date formatting**: Use `useDate()` → `formatDate(value, options?)`. Defaults to `dateStyle: 'long'`.

@@ -127,11 +127,8 @@ const {
     channelType: entityData.channelType || 'webshop',
     active: entityData.active ?? false,
   }),
-  reshapeEntityData: (entity) => ({
-    displayName: entity.displayName,
-    url: entity.url,
-    channelType: entity.channelType,
-    active: entity.active,
+  reshapeEntityData: (entityData) => ({
+    ...entityData,
   }),
   parseEntityData: (entity) => {
     entityLiveStatus.value = entity.active;
@@ -212,7 +209,7 @@ const summary = computed<DataItem[]>(() => {
   if (!createMode.value) {
     dataList.push({
       label: t('entity_id', { entityName }),
-      value: String(entityDataUpdate.value?._id),
+      value: entityId.value ?? '',
       displayType: DataItemDisplayType.Copy,
     });
   }
