@@ -7,9 +7,7 @@ const props = defineProps<{
   icon?: string;
 }>();
 
-const showTooltip = computed(
-  () => !!props.disabled && !!props.disabledTooltip,
-);
+const showTooltip = computed(() => !!props.disabled && !!props.disabledTooltip);
 
 const checked = defineModel<boolean>('checked');
 
