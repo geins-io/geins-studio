@@ -19,11 +19,10 @@ export function buildChannelListItem(
     name: 'test-channel',
     displayName: 'Test Channel',
     url: 'www.test-channel.com',
-    location: 'www.test-channel.com',
-    type: 'webshop',
+    channelType: 'webshop',
     active: true,
     markets: [buildChannelMarket()],
-    defaultMarket: 1,
+    defaultMarket: '1',
     languages: [buildChannelLanguage()],
     ...overrides,
   };
@@ -49,8 +48,7 @@ export function buildChannelCreate(
     name: 'new-channel',
     displayName: 'New Channel',
     url: 'www.new-channel.com',
-    location: 'www.new-channel.com',
-    type: 'webshop',
+    channelType: 'webshop',
     active: true,
     ...overrides,
   };
