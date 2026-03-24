@@ -11,6 +11,7 @@ const props = withDefaults(
     entityName?: string;
     entityLiveStatus?: boolean;
     showActiveStatus?: boolean;
+    disabled?: boolean;
     status?: StatusBadgeStatus;
   }>(),
   {
@@ -21,6 +22,7 @@ const props = withDefaults(
     settingsSummary: () => [],
     entityLiveStatus: false,
     showActiveStatus: true,
+    disabled: false,
   },
 );
 
@@ -79,6 +81,7 @@ const activeDescription = computed(() => {
       v-model:checked="active"
       :label="active ? $t('active') : $t('inactive')"
       :description="activeDescription"
+      :disabled="props.disabled"
     />
     <slot name="before-summary" />
     <ContentDataList v-if="summary.length" :data-list="summary" />

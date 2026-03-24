@@ -108,7 +108,7 @@ i18n/locales/           # en.json, sv.json
 - **Entity URLs**: Use `useEntityUrl()` — `getEntityUrl(id)` for current context, `getEntityUrlFor(entityName, parentPath, id)` for any entity. Prefer over hardcoded routes.
 - **Full name display**: Use `fullName(entity)` (auto-imported). Never use inline template literals.
 - **Date formatting**: Use `useDate()` → `formatDate(value, options?)`. Defaults to `dateStyle: 'long'`.
-- **Vue gotchas**: `<KeepAlive>` cannot contain HTML comments. `v-auto-animate` on icon-swapping `v-if/v-else` causes layout shift — use CSS transitions instead.
+- **Vue gotchas**: `<KeepAlive>` expects exactly one child — wrap each tab in its own `<KeepAlive>` with a single `v-if` child (never use `v-else-if` chains inside one `<KeepAlive>`). `<KeepAlive>` cannot contain HTML comments. `v-auto-animate` on icon-swapping `v-if/v-else` causes layout shift — use CSS transitions instead.
 - **Page titles**: `usePageTitle()` auto-derives from breadcrumbs. Entity pages get names via `setCurrentTitle`.
 - **Toasts**: `useToast` from `@/components/ui/toast/use-toast` (explicit import). `useEntityEdit` handles CRUD toasts — only add toasts for extra actions (status transitions, copy, etc.).
 
