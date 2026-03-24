@@ -561,9 +561,9 @@
     "tab_mails": "Mejl",
     "name_helper": "Genereras automatiskt från visningsnamnet vid skapande.",
     "url_helper": "Att ändra URL:en bryter befintliga länkar.",
+    "invalid_url": "Ange en giltig URL",
     "card_details": "Kanaldetaljer",
     "locked_toast": "Kanaluppdateringen bearbetas i bakgrunden. Det kan ta en stund.",
-    "save_error": "Kunde inte spara kanalen",
     "tab_placeholder": "Den här sektionen blir tillgänglig i en framtida uppdatering."
   }
 }

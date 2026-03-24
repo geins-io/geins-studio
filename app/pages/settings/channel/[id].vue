@@ -41,7 +41,7 @@ const formSchema = toTypedSchema(
     displayName: z
       .string()
       .min(1, t('entity_required', { entityName: 'displayName' })),
-    url: z.string().url(t('entity_required', { entityName: 'url' })),
+    url: z.url(t('channels.invalid_url')),
     channelType: z.enum(['webshop', 'physical', 'other'] as const),
     active: z.boolean(),
   }),
