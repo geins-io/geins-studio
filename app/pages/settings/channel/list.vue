@@ -96,8 +96,8 @@ onMounted(() => {
     },
     columnTitles: {
       active: t('status'),
-      markets: t('channel.markets_count'),
-      languages: t('channel.languages_count'),
+      markets: t('channels.markets_count'),
+      languages: t('channels.languages_count'),
     },
     excludeColumns: ['displayName', 'type', 'location', 'defaultMarket'],
   };
