@@ -206,14 +206,30 @@ const summary = computed<DataItem[]>(() => {
   }
   if (!createMode.value) {
     const channelData = entityData.value as Channel;
-    dataList.push({
-      label: t('channels.languages_count'),
-      value: String(channelData?.languages?.length ?? 0),
-    });
-    dataList.push({
-      label: t('channels.markets_count'),
-      value: String(channelData?.markets?.length ?? 0),
-    });
+    if (channelData?.languages?.length) {
+      const displayValue = channelData.languages
+        .map((l) => l.name)
+        .join(', ');
+      dataList.push({
+        label: t('channels.languages_count'),
+        value: channelData.languages.map((l) => l._id),
+        displayValue,
+        displayType: DataItemDisplayType.Array,
+        entityName: 'language',
+      });
+    }
+    if (channelData?.markets?.length) {
+      const displayValue = channelData.markets
+        .map((m) => `${m.country.name} (${m.currency._id})`)
+        .join(', ');
+      dataList.push({
+        label: t('channels.markets_count'),
+        value: channelData.markets.map((m) => m._id),
+        displayValue,
+        displayType: DataItemDisplayType.Array,
+        entityName: 'market',
+      });
+    }
     // First active payment method
     const firstPayment = channelData?.paymentMethods?.find((p) => p.active);
     dataList.push({

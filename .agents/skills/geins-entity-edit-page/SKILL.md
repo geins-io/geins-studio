@@ -124,6 +124,20 @@ dataList.push({
 });
 ```
 
+## Gotcha: use tooltips for related entity counts in summary
+
+When showing 1+ related entities (languages, markets, sales reps, price lists, etc.) in the sidebar summary, **always use `DataItemDisplayType.Array` with tooltip** instead of plain count strings. This shows the count as trigger text and the full list on hover — matching the list table `createTooltip` pattern.
+
+```ts
+dataList.push({
+  label: t('channels.languages_count'),
+  value: channelData?.languages ?? [],
+  displayValue: (channelData?.languages ?? []).map((l) => l.name).join(', '),
+  displayType: DataItemDisplayType.Array,
+  entityName: 'language', // used by nr_of_entity i18n key
+});
+```
+
 ## Verify
 
 - Create mode: submit form → auto-navigates to edit URL → data is pre-populated
