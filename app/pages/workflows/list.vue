@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type {
-  Workflow,
+  WorkflowSummary,
   WorkflowMetrics,
-  WorkflowAggregateMetrics,
-  WorkflowListItem,
+  AggregateMetrics,
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
@@ -16,7 +15,18 @@ import {
   CardDescription,
 } from '~/components/ui/card';
 
-type Entity = Workflow;
+export interface WorkflowListItem {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  triggerSummary: string;
+  nodeCount: number;
+  health: string;
+  enabled: boolean;
+}
+
+type Entity = WorkflowSummary;
 type EntityList = WorkflowListItem;
 
 const scope = 'pages/workflows/list.vue';
@@ -69,18 +79,15 @@ const metrics = computed<WorkflowMetrics[]>(() => {
   return [];
 });
 
-const { data: aggregate } = await useAsyncData<WorkflowAggregateMetrics>(
+const { data: aggregate } = await useAsyncData<AggregateMetrics>(
   'workflows-aggregate',
   () => workflowApi.metrics.getAggregate(),
 );
 
 // ─── Data Mapping ──────────────────────────────────────────────────
-const deriveTriggerSummary = (
-  wf: Entity,
-  wfMetrics?: WorkflowMetrics,
-): string => {
-  if (wfMetrics?.cronExpression) return wfMetrics.cronExpression;
-  if (wfMetrics?.eventName) return wfMetrics.eventName;
+const deriveTriggerSummary = (wf: Entity): string => {
+  if (wf.trigger?.cron) return wf.trigger.cron;
+  if (wf.trigger?.eventFilters) return 'Event Filters';
   if (wf.trigger?.type) return wf.trigger.type;
   return t('workflows.trigger_manual');
 };
@@ -92,7 +99,6 @@ const mapToListData = (
   const metricsMap = new Map(metricsList.map((m) => [m.workflowId, m]));
 
   return list.map((wf) => {
-    // API returns 'id' but EntityBase types it as '_id'
     const workflowId = wf._id || (wf as unknown as { id: string }).id || '';
     const wfMetrics = metricsMap.get(workflowId);
     return {
@@ -100,10 +106,10 @@ const mapToListData = (
       name: wf.name,
       description: wf.description || '',
       type: wf.trigger?.type || 'OnDemand',
-      triggerSummary: deriveTriggerSummary(wf, wfMetrics),
-      nodeCount: wf.steps?.length || 0,
-      health: wfMetrics?.status?.health || 'unknown',
-      enabled: wfMetrics?.enabled ?? wf.enabled ?? false,
+      triggerSummary: deriveTriggerSummary(wf),
+      nodeCount: wf.nodeCount || 0,
+      health: wfMetrics?.healthStatus || 'Unknown',
+      enabled: wf.trigger?.enabled ?? false,
     };
   });
 };
@@ -112,10 +118,12 @@ const mapToListData = (
 const stats = computed(() => {
   const agg = aggregate.value;
   return {
-    total: agg?.workflowCount ?? 0,
-    healthy: agg?.healthSummary?.healthy ?? 0,
-    executions24h: agg?.totalExecutions24h ?? 0,
-    failures24h: agg?.totalFailures24h ?? 0,
+    total: agg?.totalWorkflows ?? 0,
+    healthy: agg?.healthBreakdown?.Healthy ?? 0,
+    executions24h: agg?.executions24h ?? 0,
+    failures24h: (agg?.executions24h && agg?.successRate24h !== undefined)
+      ? Math.round(agg.executions24h * ((100 - agg.successRate24h) / 100))
+      : 0,
   };
 });
 

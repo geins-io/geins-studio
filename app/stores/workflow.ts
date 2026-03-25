@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import type {
-  WorkflowEditorManifest,
+  EditorManifest,
   WorkflowAction,
-  WorkflowTriggerDefinition,
+  ManifestTriggerType,
 } from '#shared/types';
 
 const CACHE_KEY = 'geins-workflow-manifest';
@@ -27,12 +27,12 @@ export const useWorkflowStore = defineStore('workflow', () => {
   const { workflowApi } = useGeinsRepository();
 
   // STATE
-  const manifest = ref<WorkflowEditorManifest>();
+  const manifest = ref<EditorManifest>();
   const ready = ref(false);
   const initialized = ref(false);
 
   // GETTERS
-  const version = computed(() => manifest.value?.version ?? '');
+  const version = computed(() => manifest.value?.schemaVersion ?? '');
 
   const actions = computed<WorkflowAction[]>(
     () => manifest.value?.actions ?? [],
@@ -50,8 +50,8 @@ export const useWorkflowStore = defineStore('workflow', () => {
     return grouped;
   });
 
-  const triggerTypes = computed<WorkflowTriggerDefinition[]>(
-    () => manifest.value?.triggers ?? [],
+  const triggerTypes = computed<ManifestTriggerType[]>(
+    () => manifest.value?.triggerTypes ?? [],
   );
 
   // ACTIONS
@@ -61,7 +61,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
     try {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
-        manifest.value = JSON.parse(cached) as WorkflowEditorManifest;
+        manifest.value = JSON.parse(cached) as EditorManifest;
         return true;
       }
     } catch {
@@ -70,7 +70,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
     return false;
   }
 
-  function persistToCache(data: WorkflowEditorManifest): void {
+  function persistToCache(data: EditorManifest): void {
     if (!import.meta.client) return;
 
     try {
@@ -80,7 +80,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
     }
   }
 
-  async function fetchManifest(): Promise<WorkflowEditorManifest> {
+  async function fetchManifest(): Promise<EditorManifest> {
     const data = await workflowApi.editor.getManifest();
     manifest.value = data;
     return data;
