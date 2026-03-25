@@ -541,8 +541,8 @@
     "empty": "No changelog entries found"
   },
   "channels": {
-    "name": "Internal name",
-    "display_name": "Name",
+    "name": "Name",
+    "identifier": "Internal name",
     "url": "Storefront URL",
     "type": "Channel type",
     "type_webshop": "Webshop",
@@ -559,7 +559,7 @@
     "tab_markets": "Markets",
     "tab_payments": "Payments",
     "tab_mails": "Mails",
-    "name_helper": "Generated automatically from the display name on creation.",
+    "identifier_helper": "Generated automatically from the name on creation.",
     "url_helper": "Changing the URL will break existing links.",
     "invalid_url": "Please enter a valid URL",
     "card_details": "Channel details",
