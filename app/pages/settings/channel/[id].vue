@@ -82,8 +82,12 @@ const isLocked = ref(false);
 const internalName = ref(''); // For displaying the non-editable internal name field
 
 // Storefront settings state
-const activeSchema = ref<StorefrontSchema>(defaultStorefrontSchema as StorefrontSchema);
-const storefrontSettings = ref<StorefrontSettings>(getDefaultSettings(defaultStorefrontSchema as StorefrontSchema));
+const activeSchema = ref<StorefrontSchema>(
+  defaultStorefrontSchema as StorefrontSchema,
+);
+const storefrontSettings = ref<StorefrontSettings>(
+  getDefaultSettings(defaultStorefrontSchema as StorefrontSchema),
+);
 const schemaEditorOpen = ref(false);
 const schemaChanged = ref(false);
 
@@ -134,9 +138,10 @@ const {
     entityLiveStatus.value = entity.active;
     isLocked.value = entity.locked;
     internalName.value = entity.identifier;
-    activeSchema.value = (entity.storefrontSchema && Object.keys(entity.storefrontSchema).length > 0)
-      ? entity.storefrontSchema
-      : defaultStorefrontSchema as StorefrontSchema;
+    activeSchema.value =
+      entity.storefrontSchema && Object.keys(entity.storefrontSchema).length > 0
+        ? entity.storefrontSchema
+        : (defaultStorefrontSchema as StorefrontSchema);
     storefrontSettings.value = entity.storefrontSettings
       ? { ...entity.storefrontSettings }
       : getDefaultSettings(activeSchema.value);
@@ -187,11 +192,15 @@ function handleSchemaReset() {
   schemaChanged.value = true;
 }
 
-watch(storefrontSettings, (val) => {
-  if (!createMode.value) {
-    entityDataUpdate.value.storefrontSettings = val;
-  }
-}, { deep: true });
+watch(
+  storefrontSettings,
+  (val) => {
+    if (!createMode.value) {
+      entityDataUpdate.value.storefrontSettings = val;
+    }
+  },
+  { deep: true },
+);
 
 // =====================================================================================
 // ERROR HANDLING SETUP

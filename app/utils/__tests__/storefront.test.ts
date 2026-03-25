@@ -2,7 +2,11 @@
 import { describe, it, expect } from 'vitest';
 import type { StorefrontSchema } from '#shared/types';
 import defaultSchema from '../../assets/schemas/storefront-settings-default.json';
-import { getDefaultSettings, getSettingValue, setSettingValue } from '../storefront';
+import {
+  getDefaultSettings,
+  getSettingValue,
+  setSettingValue,
+} from '../storefront';
 
 describe('getDefaultSettings', () => {
   it('extracts all default values from the default schema', () => {
@@ -51,9 +55,7 @@ describe('getDefaultSettings', () => {
           {
             key: 'test',
             title: 'Test',
-            fields: [
-              { key: 'noDefault', type: 'string', label: 'No default' },
-            ],
+            fields: [{ key: 'noDefault', type: 'string', label: 'No default' }],
           },
         ],
       },
@@ -72,7 +74,9 @@ describe('getSettingValue', () => {
 
   it('reads a dot-notation key as a flat key', () => {
     const settings = { 'accessRequirements.priceVisibility': true };
-    expect(getSettingValue(settings, 'accessRequirements.priceVisibility')).toBe(true);
+    expect(
+      getSettingValue(settings, 'accessRequirements.priceVisibility'),
+    ).toBe(true);
   });
 
   it('returns undefined for missing keys', () => {

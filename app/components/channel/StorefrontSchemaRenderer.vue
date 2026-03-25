@@ -22,14 +22,19 @@ function updateValue(key: string, value: unknown) {
 
 function isVisible(field: SchemaField): boolean {
   if (!field.visibleWhen) return true;
-  return getSettingValue(props.modelValue, field.visibleWhen.field) === field.visibleWhen.equals;
+  return (
+    getSettingValue(props.modelValue, field.visibleWhen.field) ===
+    field.visibleWhen.equals
+  );
 }
 
 /**
  * Groups consecutive fields with the same `columns` value into layout rows.
  * Fields without `columns` (or columns: 1) are placed in their own row.
  */
-function groupFieldsIntoRows(fields: SchemaField[]): { columns: number; fields: SchemaField[] }[] {
+function groupFieldsIntoRows(
+  fields: SchemaField[],
+): { columns: number; fields: SchemaField[] }[] {
   const rows: { columns: number; fields: SchemaField[] }[] = [];
 
   for (const field of fields) {
@@ -106,9 +111,7 @@ function onFileChange(key: string, event: Event) {
                     :max="field.max"
                     :placeholder="field.placeholder"
                     :disabled="field.disabled"
-                    @update:model-value="
-                      updateValue(field.key, Number($event))
-                    "
+                    @update:model-value="updateValue(field.key, Number($event))"
                   />
                   <p
                     v-if="field.description"
@@ -211,10 +214,7 @@ function onFileChange(key: string, event: Event) {
                 </div>
 
                 <!-- radio-cards -->
-                <div
-                  v-else-if="field.type === 'radio-cards'"
-                  class="space-y-2"
-                >
+                <div v-else-if="field.type === 'radio-cards'" class="space-y-2">
                   <Label>{{ field.label }}</Label>
                   <ChannelSchemaFieldRadioCards
                     :options="field.options ?? []"
@@ -230,9 +230,7 @@ function onFileChange(key: string, event: Event) {
                   v-else-if="field.type === 'group'"
                   class="rounded-lg border"
                 >
-                  <div
-                    class="flex items-center justify-between gap-4 p-4"
-                  >
+                  <div class="flex items-center justify-between gap-4 p-4">
                     <div class="flex items-center gap-3">
                       <component
                         :is="resolveIcon(field.icon)"

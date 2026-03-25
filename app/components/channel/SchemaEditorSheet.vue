@@ -31,7 +31,11 @@ watch(
 const jsonError = computed<string | null>(() => {
   try {
     const parsed = JSON.parse(editorContent.value);
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
       return t('channels.schema_editor_invalid_schema');
     }
     if (Object.keys(parsed).length === 0) {
@@ -57,10 +61,7 @@ function handleReset() {
 </script>
 
 <template>
-  <Sheet
-    :open="props.open"
-    @update:open="emit('update:open', $event)"
-  >
+  <Sheet :open="props.open" @update:open="emit('update:open', $event)">
     <SheetContent width="medium">
       <SheetHeader>
         <SheetTitle>{{ t('channels.schema_editor_title') }}</SheetTitle>
