@@ -61,7 +61,7 @@ const mapToListData = (list: Entity[]): EntityList[] => {
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(
   'settings-channels-list',
-  () => channelApi.channel.list(),
+  () => channelApi.channel.list({ fields: ['languages', 'markets'] }),
 );
 
 const { getColumns, addActionsColumn } = useColumns<EntityList>();
