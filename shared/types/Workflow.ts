@@ -103,22 +103,41 @@ export interface WorkflowExecutionConcurrency {
 
 // ─── Metrics ───────────────────────────────────────────────────────
 
-export interface WorkflowMetrics {
-  workflowId: string;
+export interface WorkflowMetricWindow {
   totalExecutions: number;
   successCount: number;
   failureCount: number;
-  averageDuration: number;
-  p95Duration: number;
-  lastExecutedAt?: string;
+  averageDurationMs: number;
+}
+
+export interface WorkflowMetrics {
+  workflowId: string;
+  enabled: boolean;
+  cronExpression?: string;
+  eventName?: string;
+  status: {
+    health: 'healthy' | 'degraded' | 'unhealthy' | 'disabled' | 'unknown';
+    lastExecutionStatus?: string;
+    lastExecutionDurationMs?: number;
+  };
+  metrics24h: WorkflowMetricWindow;
+  metrics7d: WorkflowMetricWindow;
+  metrics30d: WorkflowMetricWindow;
+  metricsAllTime: WorkflowMetricWindow;
 }
 
 export interface WorkflowAggregateMetrics {
-  totalWorkflows: number;
-  totalExecutions: number;
-  successRate: number;
-  averageDuration: number;
-  period: string;
+  workflowCount: number;
+  healthSummary: {
+    healthy: number;
+    degraded: number;
+    unhealthy: number;
+    disabled: number;
+    unknown: number;
+  };
+  totalExecutions24h: number;
+  totalFailures24h: number;
+  overallSuccessRate24h: number;
 }
 
 export interface WorkflowErrorSummary {
@@ -127,6 +146,19 @@ export interface WorkflowErrorSummary {
   message: string;
   count: number;
   lastOccurredAt: string;
+}
+
+// ─── List Display ──────────────────────────────────────────────────
+
+export interface WorkflowListItem {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+  triggerSummary: string;
+  nodeCount: number;
+  health: string;
+  enabled: boolean;
 }
 
 // ─── Version ───────────────────────────────────────────────────────

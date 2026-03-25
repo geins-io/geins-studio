@@ -311,6 +311,10 @@ return {
 };
 ```
 
+**Common Geins Interface Gotchas:**
+1. **Array Wrappers**: External APIs often wrap lists in objects (e.g. `{ workflows: [...] }`). You must handle this unwrapping in your custom `list()` method or in the Vue component wrapper, as the standard Geins table patterns expect a flat array.
+2. **ID Property Mismatches**: External APIs might return identifiers as `id`, but Geins `EntityBase` and table actions expect `_id`. Ensure you map `_id: item.id || item._id` or handle this discrepancy defensively when mapping API responses to UI grids/links to prevent broken routing (`/entity/undefined`).
+
 ### Status transition methods (like quotation)
 
 ```ts

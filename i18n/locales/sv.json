@@ -28,6 +28,7 @@
   "margin": "Marginal | Marginaler",
   "discount": "Rabatt | Rabatter",
   "quotation": "Offert | Offerter",
+  "workflow": "Arbetsflöde | Arbetsflöden",
   "communication": "Kommunikation | Kommunikationer",
   "entity": "Entitet | Entiteter",
   "sku": "SKU | SKUs",
@@ -291,7 +292,28 @@
     "account": "Konto",
     "profile": "Profil",
     "workspace": "Arbetsyta",
-    "channels": "Kanaler"
+    "channels": "Kanaler",
+    "workflows": "Arbetsflöden",
+    "orchestrator": "Orkestrator"
+  },
+  "workflows": {
+    "total": "Totalt antal arbetsflöden",
+    "healthy": "Friska",
+    "executions_24h": "Körningar (24h)",
+    "failures_24h": "Fel (24h)",
+    "no_workflows": "Inga arbetsflöden hittades",
+    "create_first": "Skapa ditt första arbetsflöde för att komma igång",
+    "search_placeholder": "Sök arbetsflöden...",
+    "trigger_manual": "Manuell",
+    "nodes": "{count} noder",
+    "type": "Typ",
+    "trigger": "Utlösare",
+    "health": "Hälsa",
+    "node_count": "Noder",
+    "view_table": "Tabellvy",
+    "view_cards": "Kortvy",
+    "table_description": "Beskrivning",
+    "description": "Automatisera uppgifter med visuell arbetsflödesbyggare."
   },
   "account_profile": {
     "login_credentials": "Inloggningsuppgifter",

@@ -60,6 +60,19 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
       ],
     },
     {
+      label: t('navigation.orchestrator'),
+      href: '/workflows/list',
+      icon: 'Workflow',
+      group: 'workspace',
+      children: [
+        {
+          label: t('navigation.workflows'),
+          href: '/workflows/list',
+          childPattern: '/workflows/:id',
+        },
+      ],
+    },
+    {
       label: t('navigation.channels'),
       href: '/settings/channel/list',
       icon: 'Store',
