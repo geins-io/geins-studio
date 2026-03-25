@@ -18,6 +18,7 @@
     "typecheck": "nuxi typecheck",
     "format:check": "prettier --check .",
     "test": "vitest",
+    "test:coverage": "vitest run --coverage",
     "changelog:release": "changelogen --bump --release --push",
     "changelog:update": "changelogen --output CHANGELOG.md"
   },
@@ -59,6 +60,7 @@
     "@nuxt/devtools": "^3.1.1",
     "@nuxt/eslint-config": "1.15.1",
     "@nuxt/test-utils": "^4.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "@vue/test-utils": "^2.4.6",
     "changelogen": "^0.6.2",
     "eslint": "^10.0.0",

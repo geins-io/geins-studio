@@ -1,6 +1,7 @@
 export * from './Account';
 export * from './Api';
 export * from './Auth';
+export * from './Channel';
 export * from './Global';
 export * from './Order';
 export * from './Quotation';

@@ -1,4 +1,5 @@
 import { changelogRepo } from './repositories/changelog';
+import { channelRepo } from './repositories/channel';
 import { customerRepo } from './repositories/customer';
 import { entityRepo } from './repositories/entity';
 import { entityBaseRepo } from './repositories/entity-base';
@@ -12,6 +13,7 @@ export const repo = {
   global: globalRepo,
   entityBase: entityBaseRepo,
   entity: entityRepo,
+  channel: channelRepo,
   product: productRepo,
   user: userRepo,
   customer: customerRepo,

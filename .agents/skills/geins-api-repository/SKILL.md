@@ -7,12 +7,20 @@ description: "Add a new typed API repository or extend an existing one in Geins 
 
 Add a new typed repository or extend an existing one without bypassing the project's API architecture. See `CLAUDE.md` → "API Repositories" for the canonical reference.
 
+## Before writing code
+
+- If this work comes from a Linear issue, set the issue to `In Progress` before writing code.
+- Ask whether to keep working on the current branch or create a new one.
+- If creating a branch, base it on `next` and use `feat/{linear-issue-number}-{short-description}` or `fix/{linear-issue-number}-{short-description}`.
+- Read the issue against `CLAUDE.md` and this skill first. If the issue is missing codebase-specific repository/type guidance, update it before implementing.
+
 ## Hard Rules
 
 - **NEVER write raw `fetch()` calls for standard CRUD** — always use the factory chain.
 - **NEVER use PUT for updates** — the standard is PATCH (the `entityRepo` factory handles this).
 - **ALWAYS use `buildQueryObject(options)` for query params** — never pass raw objects as `{ query: options }`.
 - **ALWAYS use typed `ApiOptions` interfaces** — never use untyped option objects.
+- **NEVER add `_id: string` or `_type: string` directly to any interface** — any type that has `_id`/`_type` MUST use `ResponseEntity<Base>` or extend `EntityBase`. This applies to ALL response types, including sub-entities, nested objects, and auxiliary response types (e.g. `WorkflowExecution`, `WorkflowVersion`) — not just primary CRUD entities.
 - All API calls flow through typed repository factories accessed via `useGeinsRepository()`.
 - The Nitro server proxy (`server/api/[...].ts`) is a transparent passthrough — adds auth headers, no response transformation.
 
@@ -51,7 +59,9 @@ export interface MyEntity extends ResponseEntity<MyEntityBase> {
 }
 ```
 
-**Response types MUST extend `ResponseEntity<Base>`** (which adds `_id: string` and `_type: string`). The factory chain has `TResponse extends EntityBase` constraints — types without `_id`/`_type` will fail.
+**Response type naming**: Prefer the plain entity name for the response type, e.g. `CustomerCompany`, `Quotation`, `ProductPriceList`, not `{Entity}Response`, unless a separate response-specific name is genuinely clearer.
+
+**Response types MUST extend `ResponseEntity<Base>`** (which adds `_id: string` and `_type: string`) where applicable. The factory chain has `TResponse extends EntityBase` constraints — types without `_id`/`_type` will fail.
 
 For simple entities where Create/Update/Response don't need extra fields, use type aliases:
 
@@ -66,16 +76,32 @@ Register in `shared/types/index.ts`:
 export * from './MyEntity';
 ```
 
-### Anti-patterns (from the Workflow types — DO NOT repeat)
+### Anti-patterns
 
 ```ts
 // BAD: Standalone request/response types that ignore the Base/Create/Update/Response convention
-export interface CreateWorkflowRequest { ... }   // Should be WorkflowCreate extends CreateEntity<WorkflowBase>
-export interface UpdateWorkflowRequest { ... }    // Should be WorkflowUpdate extends UpdateEntity<WorkflowBase>
-export interface WorkflowDefinition { ... }       // Should be Workflow extends ResponseEntity<WorkflowBase>
+export interface CreateMyEntityRequest { ... }   // Should be MyEntityCreate extends CreateEntity<MyEntityBase>
+export interface UpdateMyEntityRequest { ... }   // Should be MyEntityUpdate extends UpdateEntity<MyEntityBase>
+export interface MyEntityResponse { ... }        // Prefer MyEntity extends ResponseEntity<MyEntityBase>
 
 // BAD: No shared base interface — duplicates fields across types
 // BAD: Response type doesn't extend ResponseEntity<Base> — may lack _id/_type contract
+
+// BAD: Inline _id/_type on ANY interface — even sub-entities and auxiliary response types
+export interface WorkflowExecution {
+  _id: string;     // ❌ never inline these
+  _type: string;   // ❌ never inline these
+  workflowId: string;
+  status: string;
+}
+
+// GOOD: Always extract a Base and use ResponseEntity
+export interface WorkflowExecutionBase {
+  workflowId: string;
+  status: string;
+}
+export type WorkflowExecution = ResponseEntity<WorkflowExecutionBase>;
+// Or if it only needs _id (no _type), still extend EntityBase — it has both
 ```
 
 ### Options types
@@ -141,7 +167,7 @@ export function myDomainRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 }
 ```
 
-### Anti-patterns (from the Workflow repo — DO NOT repeat)
+### Anti-patterns
 
 ```ts
 // BAD: Manual CRUD instead of using the factory
@@ -166,13 +192,13 @@ workflow: {
 options?: ListExecutionLogsOptions  // Should extend ApiOptions<string>
 ```
 
-### Correct fix for workflow-style CRUD
+### Correct fix for CRUD + custom actions
 
 ```ts
 const workflowCrud = repo.entity<
-  WorkflowDefinition,
-  CreateWorkflowRequest,
-  UpdateWorkflowRequest
+  Workflow,
+  WorkflowCreate,
+  WorkflowUpdate
 >(WORKFLOW_ENDPOINT, fetch);
 
 return {
@@ -180,7 +206,7 @@ return {
     ...workflowCrud,  // get, list, create, update (PATCH), delete — all handled
 
     // Only write custom methods for non-CRUD endpoints
-    async validate(data: CreateWorkflowRequest): Promise<ValidateWorkflowResult> {
+    async validate(data: WorkflowCreate): Promise<ValidateWorkflowResult> {
       return await fetch<ValidateWorkflowResult>(`${WORKFLOW_ENDPOINT}/validate`, {
         method: 'POST',
         body: data,
@@ -188,6 +214,45 @@ return {
     },
   },
 };
+```
+
+## Method Naming — Hard Rules
+
+- **`list()` means "list all"** — NEVER create `listAll()`, `listAllX()`, or `listXs()` methods. The base `list()` already means "list everything at this endpoint".
+- **Scoped lists use `.id(parentId)` chaining** — NEVER create `listForX(parentId)` or `listXForY(parentId)` methods. Instead, use the established builder pattern: `parent.id(parentId).child.list()`.
+- **Flat methods for non-CRUD actions only** — custom named methods (e.g., `send()`, `copy()`, `validate()`) are reserved for actions that don't map to standard CRUD. Listing is always `list()`.
+
+### Correct patterns
+
+```ts
+// List all markets in the system
+market.list()                        // ✅ GET /account/market/list
+
+// List markets scoped to a channel
+channel.id(channelId).market.list()  // ✅ GET /account/channel/{id}/market/list
+
+// List payments scoped to a channel
+channel.id(channelId).payment.list() // ✅ GET /account/channel/{id}/payment/list
+
+// Get a specific payment within a channel
+channel.id(channelId).payment.get(paymentId) // ✅ GET /account/channel/{id}/payment/{paymentId}
+```
+
+### Anti-patterns
+
+```ts
+// ❌ NEVER — "listAll" suffix is redundant; list() already means all
+market.listAll()
+payment.listAll()
+listAllPayments()
+
+// ❌ NEVER — "listFor" flattens the parent scope; use .id() chaining
+market.listForChannel(channelId)
+payment.listForChannel(channelId)
+listPayments(channelId)
+
+// ❌ NEVER — flat getter with multiple parent args; use chaining
+getPayment(channelId, paymentId)  // → channel.id(channelId).payment.get(paymentId)
 ```
 
 ## Domain repo patterns (reference examples)
@@ -228,6 +293,28 @@ return {
 };
 ```
 
+### Non-standard list endpoints
+
+If an endpoint does **not** follow the standard `/{endpoint}/list` shape or returns a non-array payload, do **not** force it through `entityListRepo` / `entityBaseRepo`. Override `list()` or add a custom `query()` method instead:
+
+```ts
+return {
+  ...productRepo,
+
+  async list(options?: ProductApiOptions): Promise<BatchQueryResult<Product>> {
+    return await fetch<BatchQueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
+      method: 'POST',
+      body: { ...batchQueryMatchAll.value, ...batchQueryNoPagination.value },
+      query: buildQueryObject(options),
+    });
+  },
+};
+```
+
+**Common Geins Interface Gotchas:**
+1. **Array Wrappers**: External APIs often wrap lists in objects (e.g. `{ workflows: [...] }`). You must handle this unwrapping in your custom `list()` method or in the Vue component wrapper, as the standard Geins table patterns expect a flat array.
+2. **ID Property Mismatches**: External APIs might return identifiers as `id`, but Geins `EntityBase` and table actions expect `_id`. Ensure you map `_id: item.id || item._id` or handle this discrepancy defensively when mapping API responses to UI grids/links to prevent broken routing (`/entity/undefined`).
+
 ### Status transition methods (like quotation)
 
 ```ts
@@ -241,16 +328,21 @@ async send(id: string, data: StatusTransitionRequest): Promise<void> {
 
 ## Checklist
 
-1. **Types** → `shared/types/{Entity}.ts` using `{Entity}Base` → `CreateEntity`/`UpdateEntity`/`ResponseEntity` convention. Register in `shared/types/index.ts`.
-2. **Repository** → `app/utils/repositories/{entity}.ts` using factory chain. Spread CRUD, only write custom fetch calls for non-standard endpoints.
-3. **Register** → Add factory to `app/utils/repos.ts` and expose via `app/composables/useGeinsRepository.ts`.
-4. **Verify** → `pnpm typecheck` passes. `list()` and `get(id)` use `buildQueryObject` for `fields` support.
+1. **Types** → `shared/types/{Entity}.ts` using `{Entity}Base` → `CreateEntity`/`UpdateEntity`/`ResponseEntity` convention, with `{Entity}` as the default response type name.
+2. **Export types** → Register the new file in `shared/types/index.ts`.
+3. **Repository** → `app/utils/repositories/{entity}.ts` using the factory chain. Spread CRUD, only write custom fetch calls for non-standard endpoints/actions.
+4. **Register** → Add the factory to `app/utils/repos.ts` and expose it via `app/composables/useGeinsRepository.ts`.
+5. **Verify** → Run `pnpm lint:check` and `pnpm typecheck`. Run `pnpm test --run` when tests exist for the changed code. Use `buildQueryObject(options)` for supported query params and custom `list()` / `query()` methods for non-standard list shapes.
 
 ## Self-check before finishing
 
+- [ ] **No interface has `_id: string` or `_type: string` written inline** — grep for `_id: string` in new type files and replace with `ResponseEntity<Base>` or `extends EntityBase`
 - [ ] Response types extend `ResponseEntity<Base>` (have `_id`, `_type`)
+- [ ] Response type naming follows the existing repo pattern (`MyEntity`, not `MyEntityResponse`) unless there is a strong reason not to
 - [ ] CRUD operations use the factory chain, not manual fetch calls
 - [ ] Updates use PATCH (via `entityRepo`), not PUT
 - [ ] Query params use `buildQueryObject(options)`, not raw objects
 - [ ] Options types extend `ApiOptions<string>` if field filtering is needed
+- [ ] New shared types are exported from `shared/types/index.ts`
+- [ ] Non-standard list endpoints use a custom `list()` / `query()` method instead of forcing `entityListRepo`
 - [ ] No duplicated logic that the factory already provides

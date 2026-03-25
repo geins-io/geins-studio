@@ -2,6 +2,7 @@ import { repo } from '@/utils/repos';
 
 interface UseGeinsRepositoryReturnType {
   globalApi: ReturnType<typeof repo.global>;
+  channelApi: ReturnType<typeof repo.channel>;
   orderApi: ReturnType<typeof repo.order>;
   productApi: ReturnType<typeof repo.product>;
   userApi: ReturnType<typeof repo.user>;
@@ -23,12 +24,15 @@ interface UseGeinsRepositoryReturnType {
  * @property {object} productApi - Product API repository for product operations
  * @property {object} userApi - User API repository for user management
  * @property {object} customerApi - Customer API repository for customer and account operations
+ * @property {object} changelogApi - Changelog API repository for tracking and managing changes
+ * @property {object} workflowApi - Workflow API repository for workflow and process management
  */
 export function useGeinsRepository(): UseGeinsRepositoryReturnType {
   const { $geinsApiFetchInstance } = useNuxtApp();
 
   return {
     globalApi: repo.global($geinsApiFetchInstance),
+    channelApi: repo.channel($geinsApiFetchInstance),
     orderApi: repo.order($geinsApiFetchInstance),
     productApi: repo.product($geinsApiFetchInstance),
     userApi: repo.user($geinsApiFetchInstance),

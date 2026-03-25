@@ -24,7 +24,7 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
       label: t('navigation.pricing'),
       href: '/pricing/price-list/list',
       icon: 'Tag',
-      group: 'sales',
+      group: 'workspace',
       children: [
         {
           label: t('navigation.price_lists'),
@@ -37,7 +37,7 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
       label: t('navigation.customers'),
       href: '/customers/company/list',
       icon: 'Users',
-      group: 'sales',
+      group: 'workspace',
       children: [
         {
           label: t('navigation.companies'),
@@ -50,7 +50,7 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
       label: t('navigation.orders'),
       href: '/orders/quotation/list',
       icon: 'Package',
-      group: 'sales',
+      group: 'workspace',
       children: [
         {
           label: t('navigation.quotations'),
@@ -58,6 +58,26 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
           childPattern: '/orders/quotation/:id',
         },
       ],
+    },
+    {
+      label: t('navigation.orchestrator'),
+      href: '/workflows/list',
+      icon: 'Workflow',
+      group: 'workspace',
+      children: [
+        {
+          label: t('navigation.workflows'),
+          href: '/workflows/list',
+          childPattern: '/workflows/:id',
+        },
+      ],
+    },
+    {
+      label: t('navigation.channels'),
+      href: '/settings/channel/list',
+      icon: 'Store',
+      group: 'settings',
+      childPattern: '/settings/channel/:id',
     },
     {
       label: t('navigation.account'),

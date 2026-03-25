@@ -77,10 +77,15 @@ export const useNavigation = () => {
    * Check if a navigation item is currently active
    * An item is active if:
    * - The current route matches its href
+   * - The current route matches its childPattern (e.g. /settings/channel/:id)
    * - Any of its children match the current route
    */
   const isItemActive = (item: NavigationItem): boolean => {
     if (item.href === route.path) return true;
+    if (item.childPattern) {
+      const regex = item.childPattern.replace(/:[\w]+/g, '[^/]+');
+      if (new RegExp(`^${regex}$`).test(route.path)) return true;
+    }
     if (item.children) {
       return item.children.some((child) => isItemActive(child));
     }

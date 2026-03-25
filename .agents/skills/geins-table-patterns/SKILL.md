@@ -24,9 +24,11 @@ Pass mode via `table.options.meta.mode`. Minimal-mode styling overrides live in 
 Prefer `getColumns()` over hand-rolling `h()` calls — it handles header/cell styles, mode-awareness, and type inference automatically:
 
 ```ts
-const { columns } = useColumns<RowType>({
+const { getColumns } = useColumns<RowType>()
+
+const columns = getColumns(rows, {
   includeColumns: ['name', 'articleNumber', 'quantity', 'createdAt'],
-  sortable: false,                    // set false for Minimal mode
+  sortable: false, // set false for Minimal mode
   columnTypes: {
     quantity: 'editable-number',
     unitPrice: 'editable-currency',
@@ -45,16 +47,24 @@ Column type inference from field names: `date*` → date formatter, `*price`/`*a
 Use `columnTypes` with `'editable-number'`, `'editable-string'`, `'editable-currency'`, or `'editable-percentage'`. Pass handlers via `columnCellProps`. For fully custom editable columns, render `TableCellEditable<T>` via `h()`:
 
 ```ts
-{
-  id: 'customField',
-  header: () => h('span', 'Label'),
-  cell: ({ row }) => h(TableCellEditable<RowType>, {
-    row: row.original,
-    field: 'customField',
-    type: 'number',
-    onChange: (row, value) => handleChange(row, value),
-  }),
-}
+let columns = getColumns(rows, {
+  excludeColumns: ['customField'],
+})
+
+columns = extendColumns(columns, [
+  {
+    id: 'customField',
+    header: ({ table }) =>
+      h('div', { class: getBasicHeaderStyle(table) }, 'Label'),
+    cell: ({ row }) =>
+      h(TableCellEditable<RowType>, {
+        row: row.original,
+        field: 'customField',
+        type: 'number',
+        onChange: (currentRow, value) => handleChange(currentRow, value),
+      }),
+  },
+])
 ```
 
 ## Actions column
@@ -71,6 +81,7 @@ addActionsColumn<RowType>(columns, {
       toast({ title: t('entity_copied', { entityName: item.name }), variant: 'positive' })
       navigateTo(getEntityUrl(newEntity._id))
     } catch {
+      geinsLogError('Failed to copy entity', item)
       showErrorToast(t('error_copying_entity', { entityName: item.name }))
     }
   },
@@ -89,7 +100,8 @@ Use the `'product'` column type (or `TableCellProduct` directly) to show image +
 
 ```vue
 <script setup>
-const { columns } = useColumns<QuotationItemRow>({
+const { getColumns } = useColumns<QuotationItemRow>()
+const columns = getColumns(itemRows.value, {
   includeColumns: ['productName', 'skuId', 'quantity', 'unitPrice'],
   sortable: false,
   columnTypes: { quantity: 'editable-number', unitPrice: 'editable-currency' },

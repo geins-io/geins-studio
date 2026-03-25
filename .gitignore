@@ -22,8 +22,13 @@ logs
 .fleet
 .idea
 .claude
+.projects
+.mcp.json
 repomix.config.json
 .windsurfrules
+
+# Test coverage
+/coverage
 
 # Local env files
 .env

@@ -7,18 +7,18 @@ description: "Run the same checks locally that CI will run, so PRs don't bounce.
 
 Run the same checks locally that CI will run so PRs don't bounce. See `CLAUDE.md` → "Workflow Rules" → "Before committing" for the canonical reference.
 
-## Before every commit (required by workflow rule 5)
+## Before every commit (required)
 
 ```bash
 pnpm lint:check   # read-only, CI-safe
 pnpm typecheck
 ```
 
-## Before PR (full suite)
+Do not commit with known failures.
 
-```bash
-pnpm test --run
-```
+## Tests
+
+Run `pnpm test --run` when tests exist for the changed code. This is part of the commit gate, not just a PR-only step.
 
 ## If lint fails
 
