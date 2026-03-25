@@ -86,23 +86,24 @@ onMounted(() => {
   // SET UP COLUMN OPTIONS FOR ENTITY
   const columnOptions: ColumnOptions<EntityList> = {
     columnTypes: {
-      displayName: 'link',
+      name: 'link',
       markets: 'tooltip',
       languages: 'tooltip',
       url: 'link',
       active: 'status',
     },
     linkColumns: {
-      displayName: { url: entityUrl, idField: '_id' },
+      name: { url: entityUrl, idField: '_id' },
       url: { useValueAsUrl: true, external: true },
     },
     columnTitles: {
-      displayName: t('channels.display_name'),
+      name: t('channels.name'),
       active: t('status'),
       markets: t('channels.markets_count'),
       languages: t('channels.languages_count'),
     },
     excludeColumns: [
+      'identifier',
       'channelType',
       'defaultLanguage',
       'defaultMarket',

@@ -111,7 +111,7 @@ describe('channelRepo', () => {
   // ===========================================================================
   describe('multipart/form-data update', () => {
     it('wraps JSON payload in a part named "channel"', async () => {
-      const data = buildChannelUpdate({ displayName: 'updated' });
+      const data = buildChannelUpdate({ name: 'updated' });
       mockFetch.mockResolvedValue(buildChannel());
       await api.channel.update('123', data);
 
@@ -119,13 +119,13 @@ describe('channelRepo', () => {
       const channelPart = formData.get('channel');
       expect(channelPart).toBeDefined();
       const parsed = JSON.parse(channelPart as string);
-      expect(parsed.displayName).toBe('updated');
+      expect(parsed.name).toBe('updated');
     });
 
     it('attaches File values as separate parts', async () => {
       const file = new File(['logo'], 'logo.png', { type: 'image/png' });
       // Cast to allow file in update data
-      const data = { displayName: 'updated', logoFile: file } as Record<
+      const data = { name: 'updated', logoFile: file } as Record<
         string,
         unknown
       >;
@@ -138,12 +138,12 @@ describe('channelRepo', () => {
       // JSON part should not contain the file
       const parsed = JSON.parse(formData.get('channel') as string);
       expect(parsed.logoFile).toBeUndefined();
-      expect(parsed.displayName).toBe('updated');
+      expect(parsed.name).toBe('updated');
     });
 
     it('non-file fields are serialized into the "channel" JSON part', async () => {
       const data = buildChannelUpdate({
-        displayName: 'Test Display',
+        name: 'Test Name',
         active: false,
       });
       mockFetch.mockResolvedValue(buildChannel());
@@ -151,7 +151,7 @@ describe('channelRepo', () => {
 
       const formData: FormData = mockFetch.mock.calls[0][1].body;
       const parsed = JSON.parse(formData.get('channel') as string);
-      expect(parsed.displayName).toBe('Test Display');
+      expect(parsed.name).toBe('Test Name');
       expect(parsed.active).toBe(false);
     });
   });

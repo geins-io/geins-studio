@@ -16,8 +16,8 @@ export function buildChannelListItem(
   return {
     _id: nextId('ch'),
     _type: 'channel',
-    name: 'test-channel',
-    displayName: 'Test Channel',
+    identifier: 'test-channel',
+    name: 'Test Channel',
     url: 'www.test-channel.com',
     channelType: 'webshop',
     active: true,
@@ -49,7 +49,7 @@ export function buildChannelCreate(
   overrides?: Partial<ChannelCreate>,
 ): ChannelCreate {
   return {
-    displayName: 'New Channel',
+    name: 'New Channel',
     url: 'www.new-channel.com',
     active: true,
     ...overrides,
@@ -60,7 +60,7 @@ export function buildChannelUpdate(
   overrides?: Partial<ChannelUpdate>,
 ): ChannelUpdate {
   return {
-    displayName: 'Updated Channel',
+    name: 'Updated Channel',
     ...overrides,
   };
 }

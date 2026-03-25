@@ -924,7 +924,7 @@ if (!createMode.value) {
                               :key="channel._id"
                               :value="channel._id"
                             >
-                              {{ channel.displayName || channel.name }}
+                              {{ channel.name || channel.identifier }}
                             </SelectItem>
                           </SelectContent>
                         </Select>

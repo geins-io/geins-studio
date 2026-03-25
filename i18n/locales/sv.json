@@ -541,8 +541,8 @@
     "empty": "Inga loggposter hittades"
   },
   "channels": {
-    "name": "Internt namn",
-    "display_name": "Namn",
+    "name": "Namn",
+    "identifier": "Internt namn",
     "url": "Butiksadress",
     "type": "Kanaltyp",
     "type_webshop": "Webshop",
@@ -559,7 +559,7 @@
     "tab_markets": "Marknader",
     "tab_payments": "Betalningar",
     "tab_mails": "Mejl",
-    "name_helper": "Genereras automatiskt från visningsnamnet vid skapande.",
+    "identifier_helper": "Genereras automatiskt från namnet vid skapande.",
     "url_helper": "Att ändra URL:en bryter befintliga länkar.",
     "invalid_url": "Ange en giltig URL",
     "card_details": "Kanaldetaljer",
