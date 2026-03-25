@@ -141,6 +141,11 @@ Add route entries. Use `useEntityUrl()` helpers — never hardcode route strings
 - `getEntityUrl(id)` — uses current route context
 - `getEntityUrlFor('entity-name', 'domain', id)` — cross-domain links
 
+**Sidebar gotchas** (all three are required for correct rendering):
+1. Items in the `workspace` group **must** have a `children` array — without it, the sidebar renders a flat button instead of the collapsible parent/child style used by all other workspace items.
+2. Parent and child labels **must be distinct** (domain ≠ entity). If both share the same label and href, breadcrumbs and page title duplicate (e.g. "Workflows > Workflows"). Use a domain-level parent label: "Pricing" > "Price lists", "Orchestrator" > "Workflows".
+3. New `icon` strings require importing the Lucide component and adding it to the `iconComponents` map in `app/components/layout/sidebar/LayoutSidebar.vue`. The string→component resolution is manual.
+
 ## 8. i18n — **both** locale files (don't skip this)
 
 Always update both files in the same commit — leaving one out breaks the Swedish locale:

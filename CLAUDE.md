@@ -109,8 +109,10 @@ i18n/locales/           # en.json, sv.json
 - **Entity URLs**: Use `useEntityUrl()` — `getEntityUrl(id)` for current context, `getEntityUrlFor(entityName, parentPath, id)` for any entity. Prefer over hardcoded routes.
 - **Full name display**: Use `fullName(entity)` (auto-imported). Never use inline template literals.
 - **Date formatting**: Use `useDate()` → `formatDate(value, options?)`. Defaults to `dateStyle: 'long'`.
+- **Loading state resilience**: In list pages, `loading.value = false` must be reached in ALL code paths (error, empty, success). Either place it at the end of `onMounted` outside the watcher (reference pattern), or ensure every early `return` in the watcher also clears loading. Never let an unhandled throw leave the page stuck on skeletons.
 - **Vue gotchas**: `<KeepAlive>` expects exactly one child — wrap each tab in its own `<KeepAlive>` with a single `v-if` child (never use `v-else-if` chains inside one `<KeepAlive>`). `<KeepAlive>` cannot contain HTML comments. `v-auto-animate` on icon-swapping `v-if/v-else` causes layout shift — use CSS transitions instead.
 - **Page titles**: `usePageTitle()` auto-derives from breadcrumbs. Entity pages get names via `setCurrentTitle`.
+- **Navigation items**: Workspace-group items MUST have a `children` array — without it, the sidebar renders a flat button instead of the collapsible parent/child style. Parent and child labels must be distinct (domain ≠ entity, e.g. "Orchestrator" > "Workflows") or breadcrumbs/page title will duplicate. New `icon` strings require adding a Lucide import + mapping in `app/components/layout/sidebar/LayoutSidebar.vue` → `iconComponents`. Use `import.meta.dev` to gate dev-only nav items (Vite tree-shakes at build time).
 - **Toasts**: `useToast` from `@/components/ui/toast/use-toast` (explicit import). `useEntityEdit` handles CRUD toasts — only add toasts for extra actions (status transitions, copy, etc.).
 
 ## API & Repositories
@@ -127,6 +129,7 @@ Factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `en
 - `PATCH` for updates. Never `PUT` unless endpoint requires it.
 - Always pass options through `buildQueryObject(options)`.
 - Thin `fetch` wrappers only for non-standard actions. Let errors propagate.
+- **Normalize API list responses at the consumer**: Repository return types are aspirational — the Geins Management API may wrap arrays in envelopes (`{ items: [...] }`). Always guard with `Array.isArray()` or a normalizer before calling `.map()` on API data, especially in list pages.
 
 ### Type conventions
 
