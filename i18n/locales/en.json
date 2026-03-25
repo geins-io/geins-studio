@@ -619,6 +619,16 @@
     "invalid_url": "Please enter a valid URL",
     "card_details": "Channel details",
     "locked_toast": "Channel update is being processed in the background. This may take a moment.",
-    "tab_placeholder": "This section will be available in a future update."
+    "tab_placeholder": "This section will be available in a future update.",
+    "storefront_settings": "Storefront settings",
+    "change_schema": "Change JSON schema",
+    "preview_storefront": "Preview",
+    "preview_storefront_coming_soon": "Coming soon",
+    "schema_editor_title": "JSON Schema Editor",
+    "schema_editor_description": "Edit the raw JSON schema that drives the storefront settings form. Changes take effect when you click Apply.",
+    "schema_editor_apply": "Apply",
+    "schema_editor_reset": "Reset",
+    "schema_editor_invalid_json": "Invalid JSON",
+    "schema_editor_invalid_schema": "Schema must be a non-empty object with tab entries"
   }
 }

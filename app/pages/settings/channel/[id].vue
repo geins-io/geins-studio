@@ -10,8 +10,12 @@ import type {
   ChannelCreate,
   ChannelUpdate,
   ChannelApiOptions,
+  StorefrontSchema,
+  StorefrontSettings,
 } from '#shared/types';
+import defaultStorefrontSchema from '@/assets/schemas/storefront-settings-default.json';
 import { useToast } from '@/components/ui/toast/use-toast';
+import { getDefaultSettings } from '@/utils/storefront';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -77,6 +81,13 @@ const isLocked = ref(false);
 
 const internalName = ref(''); // For displaying the non-editable internal name field
 
+// Storefront settings state
+const activeSchema = ref<StorefrontSchema>(defaultStorefrontSchema as StorefrontSchema);
+const storefrontSettings = ref<StorefrontSettings>(getDefaultSettings(defaultStorefrontSchema as StorefrontSchema));
+const schemaEditorOpen = ref(false);
+const schemaChanged = ref(false);
+
+
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
 // =====================================================================================
@@ -123,6 +134,13 @@ const {
     entityLiveStatus.value = entity.active;
     isLocked.value = entity.locked;
     internalName.value = entity.identifier;
+    activeSchema.value = (entity.storefrontSchema && Object.keys(entity.storefrontSchema).length > 0)
+      ? entity.storefrontSchema
+      : defaultStorefrontSchema as StorefrontSchema;
+    storefrontSettings.value = entity.storefrontSettings
+      ? { ...entity.storefrontSettings }
+      : getDefaultSettings(activeSchema.value);
+    schemaChanged.value = false;
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       name: entity.name,
@@ -134,11 +152,15 @@ const {
     name: formData.name,
     url: formData.url,
     active: formData.active,
+    storefrontSchema: activeSchema.value,
+    storefrontSettings: storefrontSettings.value,
   }),
   prepareUpdateData: (formData) => ({
     name: formData.name,
     url: formData.url,
     active: formData.active,
+    storefrontSettings: storefrontSettings.value,
+    ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
   onFormValuesChange: (values) => {
     const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
@@ -150,6 +172,26 @@ const {
     };
   },
 });
+
+// =====================================================================================
+// STOREFRONT SETTINGS HANDLERS
+// =====================================================================================
+function handleSchemaApply(schema: StorefrontSchema) {
+  activeSchema.value = schema;
+  schemaChanged.value = true;
+}
+
+function handleSchemaReset() {
+  activeSchema.value = defaultStorefrontSchema as StorefrontSchema;
+  storefrontSettings.value = getDefaultSettings(activeSchema.value);
+  schemaChanged.value = true;
+}
+
+watch(storefrontSettings, (val) => {
+  if (!createMode.value) {
+    entityDataUpdate.value.storefrontSettings = val;
+  }
+}, { deep: true });
 
 // =====================================================================================
 // ERROR HANDLING SETUP
@@ -413,12 +455,17 @@ if (!createMode.value) {
             v-if="currentTab === 4"
             :key="`tab-${currentTab}`"
           >
-            <!-- TODO: M2 -->
-            <ContentEditCard :title="$t('channels.tab_storefront_settings')">
-              <div class="text-muted-foreground text-sm">
-                {{ $t('channels.tab_placeholder') }}
-              </div>
-            </ContentEditCard>
+            <ChannelStorefrontSettings
+              v-model="storefrontSettings"
+              :schema="activeSchema"
+              @open-schema-editor="schemaEditorOpen = true"
+            />
+            <ChannelSchemaEditorSheet
+              v-model:open="schemaEditorOpen"
+              :schema="activeSchema"
+              @apply="handleSchemaApply"
+              @reset="handleSchemaReset"
+            />
           </ContentEditMainContent>
         </KeepAlive>
 

@@ -1,0 +1,184 @@
+{
+  "baseSettings": {
+    "label": "Base settings",
+    "sections": [
+      {
+        "key": "storefrontMode",
+        "title": "Storefront mode",
+        "description": "Choose if you want your storefront to enable direct purchases of your products, or work as a product catalogue",
+        "fields": [
+          {
+            "key": "storefrontMode",
+            "type": "radio-cards",
+            "label": "Storefront mode",
+            "default": "commerce",
+            "options": [
+              {
+                "value": "commerce",
+                "label": "Commerce",
+                "description": "Enables visitors to purchase your products directly in the page. With buy buttons and checkout flow.",
+                "icon": "ShoppingCart"
+              },
+              {
+                "value": "catalogue",
+                "label": "Catalogue",
+                "description": "Shows all your products, but without commerce functionality such as buy buttons and checkout.",
+                "icon": "BookOpenText"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "defaultSettings",
+        "title": "Default settings",
+        "description": "Base settings used globally unless otherwise configured.",
+        "fields": [
+          {
+            "key": "accessRequirements",
+            "type": "group",
+            "label": "Access Requirements",
+            "description": "Define which actions require login. These settings are global and may be overridden by roles or permissions.",
+            "icon": "UserLock",
+            "default": true,
+            "children": [
+              {
+                "key": "accessRequirements.priceVisibility",
+                "type": "boolean",
+                "label": "Price visibility",
+                "description": "Prices are visible only to logged-in users.",
+                "icon": "DollarSign",
+                "default": true
+              },
+              {
+                "key": "accessRequirements.orderPlacement",
+                "type": "boolean",
+                "label": "Order placement",
+                "description": "Orders can only be placed by logged-in users.",
+                "icon": "ShoppingCart",
+                "default": true
+              },
+              {
+                "key": "accessRequirements.stockStatus",
+                "type": "boolean",
+                "label": "Stock status",
+                "description": "Products stock levels are visible only to logged-in users.",
+                "icon": "BarChart3",
+                "default": false
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "layoutOptions": {
+    "label": "Layout options",
+    "sections": [
+      {
+        "key": "logotype",
+        "title": "Logotype",
+        "description": "Choose between rounded or square corners for interface elements.",
+        "icon": "Image",
+        "fields": [
+          {
+            "key": "logotype",
+            "type": "file",
+            "label": "Logotype",
+            "accept": "image/*"
+          }
+        ]
+      },
+      {
+        "key": "cornerStyle",
+        "title": "Corner style",
+        "description": "Choose between rounded or square corners for interface elements.",
+        "icon": "Square",
+        "fields": [
+          {
+            "key": "cornerStyle",
+            "type": "radio-cards",
+            "label": "Corner style",
+            "default": "square",
+            "options": [
+              {
+                "value": "square",
+                "label": "Square",
+                "description": "Gives interface elements square corners.",
+                "icon": "Square"
+              },
+              {
+                "value": "round",
+                "label": "Round",
+                "description": "Gives interface elements rounded corners.",
+                "icon": "Circle"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "fonts",
+        "title": "Font settings",
+        "description": "Choose between rounded or square corners for interface elements.",
+        "icon": "Type",
+        "fields": [
+          {
+            "key": "fonts.headings",
+            "type": "select",
+            "label": "Headings",
+            "description": "Used for selected heading elements used on pages and content",
+            "placeholder": "Geist (template default)",
+            "columns": 2,
+            "options": [
+              { "value": "geist", "label": "Geist (template default)" },
+              { "value": "inter", "label": "Inter" },
+              { "value": "roboto", "label": "Roboto" },
+              { "value": "open-sans", "label": "Open Sans" }
+            ]
+          },
+          {
+            "key": "fonts.body",
+            "type": "select",
+            "label": "Body text",
+            "description": "Applied to body text, descriptions, and supporting content.",
+            "placeholder": "Geist (template default)",
+            "columns": 2,
+            "options": [
+              { "value": "geist", "label": "Geist (template default)" },
+              { "value": "inter", "label": "Inter" },
+              { "value": "roboto", "label": "Roboto" },
+              { "value": "open-sans", "label": "Open Sans" }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "themeColors",
+        "title": "Theme colors",
+        "description": "Set the color palette for your storefront.",
+        "icon": "Palette",
+        "fields": [
+          {
+            "key": "themeColors.primary",
+            "type": "color",
+            "label": "Primary color",
+            "default": "#171717"
+          },
+          {
+            "key": "themeColors.background",
+            "type": "color",
+            "label": "Background color",
+            "default": "#ffffff"
+          },
+          {
+            "key": "themeColors.accent",
+            "type": "color",
+            "label": "Accent color",
+            "default": "#5cc190"
+          }
+        ]
+      }
+    ]
+  }
+}

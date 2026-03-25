@@ -6,6 +6,7 @@ import type {
   EntityBase,
   Tooltip,
 } from './Global';
+import type { StorefrontSchema, StorefrontSettings } from './Storefront';
 
 // =============================================================================
 // Shared Domain Types (used by Channel, Account Store, etc.)
@@ -143,8 +144,8 @@ export interface ChannelUpdate extends UpdateEntity<ChannelBase> {
   markets?: ChannelMarketAssignment[];
   paymentMethods?: ChannelPaymentMethodAssignment[];
   mailSettings?: Partial<ChannelMailSettings>;
-  storefrontSettings?: Record<string, unknown>;
-  storefrontSchema?: Record<string, unknown>;
+  storefrontSettings?: StorefrontSettings;
+  storefrontSchema?: StorefrontSchema;
 }
 
 /**
@@ -184,8 +185,8 @@ export interface Channel extends ChannelListItem {
   paymentMethods: ChannelPaymentMethod[];
   mailSettings: ChannelMailSettings;
   mailTypes: ChannelMailType[];
-  storefrontSettings: Record<string, unknown>;
-  storefrontSchema: Record<string, unknown>;
+  storefrontSettings: StorefrontSettings;
+  storefrontSchema: StorefrontSchema;
 }
 
 // =============================================================================
