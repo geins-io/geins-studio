@@ -23,6 +23,7 @@ const props = withDefaults(
     entityLiveStatus: false,
     showActiveStatus: true,
     disabled: false,
+    status: undefined,
   },
 );
 
