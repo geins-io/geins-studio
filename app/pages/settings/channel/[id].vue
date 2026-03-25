@@ -38,9 +38,9 @@ definePageMeta({
 // =====================================================================================
 const formSchema = toTypedSchema(
   z.object({
-    displayName: z
+    name: z
       .string()
-      .min(1, t('entity_required', { entityName: 'displayName' })),
+      .min(1, t('entity_required', { entityName: 'name' })),
     url: z.url(t('channels.invalid_url')),
     active: z.boolean(),
   }),
@@ -50,13 +50,13 @@ const formSchema = toTypedSchema(
 // ENTITY DATA SETUP
 // =====================================================================================
 const initialCreateData: ChannelCreate = {
-  displayName: '',
+  name: '',
   url: '',
   active: false,
 };
 
 const initialUpdateData: ChannelUpdate = {
-  displayName: '',
+  name: '',
   url: '',
   active: false,
 };
@@ -112,7 +112,7 @@ const {
   initialEntityData: initialCreateData,
   initialUpdateData,
   getInitialFormValues: (entityData) => ({
-    displayName: entityData.displayName || '',
+    name: entityData.name || '',
     url: entityData.url || '',
     active: entityData.active ?? false,
   }),
@@ -122,21 +122,21 @@ const {
   parseEntityData: (entity) => {
     entityLiveStatus.value = entity.active;
     isLocked.value = entity.locked;
-    internalName.value = entity.name;
+    internalName.value = entity.identifier;
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
-      displayName: entity.displayName,
+      name: entity.name,
       url: entity.url,
       active: entity.active,
     });
   },
   prepareCreateData: (formData) => ({
-    displayName: formData.displayName,
+    name: formData.name,
     url: formData.url,
     active: formData.active,
   }),
   prepareUpdateData: (formData) => ({
-    displayName: formData.displayName,
+    name: formData.name,
     url: formData.url,
     active: formData.active,
   }),
@@ -144,7 +144,7 @@ const {
     const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
     targetEntity.value = {
       ...entityData.value,
-      displayName: values.displayName,
+      name: values.name,
       url: values.url,
       active: values.active,
     };
@@ -198,10 +198,10 @@ const summary = computed<DataItem[]>(() => {
       displayType: DataItemDisplayType.Copy,
     });
   }
-  if (entityData.value?.displayName) {
+  if (entityData.value?.name) {
     dataList.push({
-      label: t('channels.display_name'),
-      value: entityData.value.displayName,
+      label: t('channels.name'),
+      value: entityData.value.name,
     });
   }
   if (!createMode.value) {
@@ -330,9 +330,9 @@ if (!createMode.value) {
             <ContentEditCard :title="$t('channels.card_details')">
               <FormGridWrap>
                 <FormGrid design="1+1">
-                  <FormField v-slot="{ componentField }" name="displayName">
+                  <FormField v-slot="{ componentField }" name="name">
                     <FormItem>
-                      <FormLabel>{{ $t('channels.display_name') }}</FormLabel>
+                      <FormLabel>{{ $t('channels.name') }}</FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" />
                       </FormControl>
@@ -340,10 +340,10 @@ if (!createMode.value) {
                     </FormItem>
                   </FormField>
                   <div v-if="!createMode" class="space-y-2">
-                    <Label>{{ $t('channels.name') }}</Label>
+                    <Label>{{ $t('channels.identifier') }}</Label>
                     <Input :model-value="internalName" disabled />
                     <p class="text-muted-foreground text-sm">
-                      {{ $t('channels.name_helper') }}
+                      {{ $t('channels.identifier_helper') }}
                     </p>
                   </div>
                 </FormGrid>
