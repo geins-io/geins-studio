@@ -1,17 +1,24 @@
-<!-- CLAUDE.md: conventions + pointers. Skills: .agents/skills/. Update here first, then skills. -->
-
+<!--
+This file (CLAUDE.md) is the canonical reference for how we work + how this codebase works.
+For step-by-step, task-focused runbooks, use the agent skills in .agents/skills/.
+When adding or changing a workflow, update CLAUDE.md first, then update/create the relevant skill.
+-->
 ## Skills Index
 
 Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the agent.
-
-- Dev loop: `geins-dev-loop` | CI preflight: `geins-ci-preflight`
-- Add entity: `geins-add-entity` | Entity edit page: `geins-entity-edit-page`
-- i18n: `geins-i18n-update` | API repos: `geins-api-repository`
-- UI components: `geins-ui-components` | Tables: `geins-table-patterns` | List pages: `geins-list-page`
-- Linear issues: `linear` | Implementation plan: `implementation-plan`
-- Learning loop: `geins-learning-loop`
-- Sync domain docs: `sync-domain` | Verify docs: `verify-docs`
-
+- Start dev & fast checks: `.agents/skills/geins-dev-loop/SKILL.md` (see also “Geins Studio - Commands”)
+- CI preflight (run before PR): `.agents/skills/geins-ci-preflight/SKILL.md` (see also “Geins Studio - Commands”)
+- Add a new entity (end-to-end): `.agents/skills/geins-add-entity/SKILL.md` (see also “Page Patterns - Adding a New Entity Checklist”)
+- Entity edit page patterns: `.agents/skills/geins-entity-edit-page/SKILL.md` (see also “Entity Edit Page - Edit Mode Data Loading required boilerplate”)
+- i18n updates: `.agents/skills/geins-i18n-update/SKILL.md` (see also i18n rules in “Stack” / “Project Structure”)
+- Add/extend API repository: `.agents/skills/geins-api-repository/SKILL.md` (see also “API Repositories”)
+- UI component conventions: `.agents/skills/geins-ui-components/SKILL.md` (see also “Component UI Patterns - Component Conventions”)
+- Table patterns: `.agents/skills/geins-table-patterns/SKILL.md` (see also “Component UI Patterns - Table Patterns”)
+- Linear issue management: `.agents/skills/linear/SKILL.md`
+- Implementation plan: `.agents/skills/implementation-plan/SKILL.md`
+- Learning loop: `.agents/skills/geins-learning-loop/SKILL.md`
+- Sync domain docs: `.agents/skills/sync-domain/SKILL.md`
+- Verify docs: `.agents/skills/verify-docs/SKILL.md`
 ## Token Efficiency Rules
 
 - Prefer referencing docs/code paths over repeating content. Read narrowly — only the files/sections needed.
@@ -28,18 +35,33 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 - NEVER watch `quotationItems` for preview (infinite loop) | NEVER `git push --force` to `main`/`next`
 - NEVER commit `.env`, credentials, or secret files
 
+## Hard Blocks — What Must NEVER Happen
+
+Quick-scan reference for inviolable rules. Details live in the relevant sections below.
+
+- NEVER use `console.log` — use `useGeinsLog('scope')` (ESLint enforces)
+- NEVER create shadcn-vue components manually — use `npx shadcn-vue@latest add`
+- NEVER import auto-imported composables, utils, or components — Nuxt handles this
+- NEVER implement custom unsaved-changes tracking — `useEntityEdit` handles this
+- NEVER use inline template literals for names — use `fullName(entity)`
+- NEVER cast `entityDataUpdate` to the response type or patch response-only fields into it
+- NEVER spread `entityDataUpdate` in `prepareUpdateData` — only include OpenAPI update fields
+- NEVER modify UI primitives in `app/components/ui/table/` for mode-specific styling
+- NEVER watch `quotationItems` to trigger preview — causes infinite loops (see Quotations → Live preview)
+- NEVER `git push --force` to `main` or `next`
+- NEVER commit `.env`, credentials, or secret files
+
 ## Workflow Rules
 
 These MUST be followed for every task.
 
 **Before writing code**: (1) Set Linear issue to "In Progress". (2) Ask about branching — `feat/{issue}-{desc}` or `fix/{issue}-{desc}` from `next`. (3) Verify issue has enough codebase-specific guidance. (4) Read issue body against this file + matching skill. (5) Check the Linear project plan and issue for Figma links — if a design exists, fetch it with `get_design_context` and match the layout (field grouping, grid design, card structure) before coding. (6) Run `implementation-plan` skill before coding.
 
-**While writing code**: (7) Follow all patterns in this file. If breaking a pattern, document why. (8) Consider performance implications.
+**While writing code**: (7) Follow all established patterns and conventions in this file. If breaking a pattern, document why. (8) Consider performance implications of code changes, especially data fetching and state management.
 
-**Before committing**: (9) Run `pnpm lint:check && pnpm typecheck` (and `pnpm test --run` if tests exist). All must pass.
+**Before committing**: (9) Run `pnpm lint:check && pnpm typecheck` before every commit. Also run `pnpm test --run` when tests exist. All must pass — do not commit with known failures.
 
-**When user says "task done"**: (10) Update `/docs` if architectural changes. (11) Update CLAUDE.md with new learnings. (12) Organize CLAUDE.md (dedup, group, format). (13) Set Linear issue to "Done".
-
+**When the user says "task done"**: (10) Keep `/docs` up to date with architectural changes. (11) Update CLAUDE.md with new learnings discovered during the task. (12) Organize CLAUDE.md (group related patterns, format, remove duplicates). (13) If working on a Linear issue, set its status to "Done".
 ---
 
 # Geins Studio

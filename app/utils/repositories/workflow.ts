@@ -1,90 +1,82 @@
 import type {
-  Workflow,
-  WorkflowCreate,
-  WorkflowUpdate,
-  WorkflowApiOptions,
-  WorkflowValidationResult,
-  WorkflowExecution,
-  WorkflowExecutionApiOptions,
-  WorkflowExecutionStartRequest,
-  WorkflowExecutionLog,
-  WorkflowExecutionConcurrency,
+  WorkflowSummary,
+  WorkflowDefinition,
+  CreateWorkflowRequest,
+  UpdateWorkflowRequest,
+  ValidateWorkflowResult,
+  ExecutionLog,
+  ExecutionDetails,
+  ReplayChain,
+  ConcurrencyState,
+  StartWorkflowRequest,
+  StartWorkflowResponse,
+  CancelExecutionRequest,
+  PauseExecutionRequest,
+  ResumeExecutionRequest,
+  ReplayExecutionRequest,
+  BulkCancelRequest,
+  BulkCancelResponse,
+  BulkReplayFailedRequest,
+  BulkReplayFailedResponse,
+  ListExecutionLogsOptions,
+  ListWorkflowExecutionsOptions,
+  ListFailedExecutionsOptions,
   WorkflowMetrics,
-  WorkflowAggregateMetrics,
-  WorkflowErrorSummary,
-  WorkflowVersion,
-  WorkflowVersionComparison,
+  WorkflowMetricsOptions,
+  AggregateMetrics,
+  ErrorSummary,
+  ErrorSummaryOptions,
+  WorkflowHistory,
+  WorkflowHistoryOptions,
+  VersionComparison,
   WorkflowVariable,
-  WorkflowVariableCreate,
-  WorkflowEditorManifest,
+  SaveVariableRequest,
+  EditorManifest,
   WorkflowAction,
 } from '#shared/types';
-import { buildQueryObject } from '#shared/utils/api-query';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const WORKFLOW_ENDPOINT = '/workflow';
-const EXECUTION_ENDPOINT = '/workflow/execution';
-const WORKFLOW_DEFINITION_ENDPOINT = '/workflow/definition';
-const METRIC_ENDPOINT = '/workflow/metric';
-const VARIABLE_ENDPOINT = '/workflow/variable';
-const EDITOR_ENDPOINT = '/workflow/editor';
-const ACTION_ENDPOINT = '/workflow/action';
 
-/**
- * Repository for managing workflow engine operations.
- *
- * Sub-objects: workflow, execution, metrics, version, variable, editor
- */
 export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   return {
-    /**
-     * Workflow CRUD + validate
-     */
+    // -- Workflow CRUD ------------------------------------------------------
+
     workflow: {
-      async list(options?: WorkflowApiOptions): Promise<Workflow[]> {
-        return await fetch<Workflow[]>(WORKFLOW_DEFINITION_ENDPOINT, {
-          query: buildQueryObject(options),
-        });
+      async list(): Promise<WorkflowSummary[]> {
+        return await fetch<WorkflowSummary[]>(WORKFLOW_ENDPOINT);
       },
 
-      async get(id: string, options?: WorkflowApiOptions): Promise<Workflow> {
-        return await fetch<Workflow>(`${WORKFLOW_DEFINITION_ENDPOINT}/${id}`, {
-          query: buildQueryObject(options),
-        });
+      async get(id: string): Promise<WorkflowDefinition> {
+        return await fetch<WorkflowDefinition>(`${WORKFLOW_ENDPOINT}/${id}`);
       },
 
-      async create(
-        data: WorkflowCreate,
-        options?: WorkflowApiOptions,
-      ): Promise<Workflow> {
-        return await fetch<Workflow>(WORKFLOW_DEFINITION_ENDPOINT, {
+      async create(data: CreateWorkflowRequest): Promise<WorkflowDefinition> {
+        return await fetch<WorkflowDefinition>(WORKFLOW_ENDPOINT, {
           method: 'POST',
           body: data,
-          query: buildQueryObject(options),
         });
       },
 
       async update(
         id: string,
-        data: WorkflowUpdate,
-        options?: WorkflowApiOptions,
-      ): Promise<Workflow> {
-        return await fetch<Workflow>(`${WORKFLOW_DEFINITION_ENDPOINT}/${id}`, {
+        data: UpdateWorkflowRequest,
+      ): Promise<WorkflowDefinition> {
+        return await fetch<WorkflowDefinition>(`${WORKFLOW_ENDPOINT}/${id}`, {
           method: 'PUT',
           body: data,
-          query: buildQueryObject(options),
         });
       },
 
       async delete(id: string): Promise<void> {
-        await fetch<null>(`${WORKFLOW_DEFINITION_ENDPOINT}/${id}`, {
+        await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}`, {
           method: 'DELETE',
         });
       },
 
-      async validate(data: WorkflowCreate): Promise<WorkflowValidationResult> {
-        return await fetch<WorkflowValidationResult>(
-          `${WORKFLOW_DEFINITION_ENDPOINT}/validate`,
+      async validate(data: CreateWorkflowRequest): Promise<ValidateWorkflowResult> {
+        return await fetch<ValidateWorkflowResult>(
+          `${WORKFLOW_ENDPOINT}/validate`,
           {
             method: 'POST',
             body: data,
@@ -93,186 +85,210 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
     },
 
-    /**
-     * Execution management — start, cancel, pause, resume, replay, bulk ops, logs
-     */
-    execution: {
-      async list(
-        options?: WorkflowExecutionApiOptions,
-      ): Promise<WorkflowExecution[]> {
-        return await fetch<WorkflowExecution[]>(`${EXECUTION_ENDPOINT}/logs`, {
-          query: buildQueryObject(options),
-        });
-      },
+    // -- Executions ---------------------------------------------------------
 
-      async listFailed(
-        options?: WorkflowExecutionApiOptions,
-      ): Promise<WorkflowExecution[]> {
-        return await fetch<WorkflowExecution[]>(
-          `${EXECUTION_ENDPOINT}/errors`,
+    execution: {
+      async start(
+        workflowId: string,
+        data?: StartWorkflowRequest,
+      ): Promise<StartWorkflowResponse> {
+        return await fetch<StartWorkflowResponse>(
+          `${WORKFLOW_ENDPOINT}/${workflowId}/start`,
           {
-            query: buildQueryObject(options),
+            method: 'POST',
+            body: data ?? {},
           },
         );
       },
 
-      async get(
-        id: string,
-        options?: WorkflowExecutionApiOptions,
-      ): Promise<WorkflowExecution> {
-        return await fetch<WorkflowExecution>(`${EXECUTION_ENDPOINT}/details`, {
-          query: { instanceId: id, ...buildQueryObject(options) },
-        });
+      async cancel(
+        instanceId: string,
+        data?: CancelExecutionRequest,
+      ): Promise<void> {
+        await fetch<null>(
+          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/cancel`,
+          {
+            method: 'POST',
+            body: data ?? {},
+          },
+        );
       },
 
-      async start(
-        workflowId: string,
-        data?: WorkflowExecutionStartRequest,
-      ): Promise<WorkflowExecution> {
-        return await fetch<WorkflowExecution>(
-          `${WORKFLOW_DEFINITION_ENDPOINT}/${workflowId}/execute`,
+      async pause(
+        instanceId: string,
+        data?: PauseExecutionRequest,
+      ): Promise<void> {
+        await fetch<null>(
+          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/pause`,
           {
-            method: 'GET',
+            method: 'POST',
+            body: data ?? {},
+          },
+        );
+      },
+
+      async resume(
+        instanceId: string,
+        data?: ResumeExecutionRequest,
+      ): Promise<void> {
+        await fetch<null>(
+          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/resume`,
+          {
+            method: 'POST',
+            body: data ?? {},
+          },
+        );
+      },
+
+      async replay(
+        instanceId: string,
+        data?: ReplayExecutionRequest,
+      ): Promise<StartWorkflowResponse> {
+        return await fetch<StartWorkflowResponse>(
+          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/replay`,
+          {
+            method: 'POST',
+            body: data ?? {},
+          },
+        );
+      },
+
+      async bulkCancel(data: BulkCancelRequest): Promise<BulkCancelResponse> {
+        return await fetch<BulkCancelResponse>(
+          `${WORKFLOW_ENDPOINT}/execution/bulk-cancel`,
+          {
+            method: 'POST',
             body: data,
           },
         );
       },
 
-      async cancel(id: string): Promise<void> {
-        await fetch<null>(`${EXECUTION_ENDPOINT}/cancel`, {
-          method: 'POST',
-          body: { instanceId: id },
-        });
-      },
-
-      async pause(id: string): Promise<void> {
-        await fetch<null>(`${EXECUTION_ENDPOINT}/pause`, {
-          method: 'POST',
-          body: { instanceId: id },
-        });
-      },
-
-      async resume(id: string): Promise<void> {
-        await fetch<null>(`${EXECUTION_ENDPOINT}/resume`, {
-          method: 'POST',
-          body: { instanceId: id },
-        });
-      },
-
-      async replay(id: string): Promise<WorkflowExecution> {
-        return await fetch<WorkflowExecution>(`${EXECUTION_ENDPOINT}/replay`, {
-          method: 'POST',
-          body: { originalInstanceId: id },
-        });
-      },
-
-      async bulkCancel(ids: string[]): Promise<void> {
-        await fetch<null>(`${EXECUTION_ENDPOINT}/bulk-cancel`, {
-          method: 'POST',
-          body: { instanceIds: ids },
-        });
-      },
-
-      async bulkReplayFailed(workflowId: string): Promise<void> {
-        await fetch<null>(`${EXECUTION_ENDPOINT}/bulk-replay`, {
-          method: 'POST',
-          body: { workflowId },
-        });
-      },
-
-      async getLog(id: string, stepId: string): Promise<WorkflowExecutionLog> {
-        const logs = await fetch<WorkflowExecutionLog[]>(
-          `${EXECUTION_ENDPOINT}/logs`,
+      async bulkReplayFailed(
+        data: BulkReplayFailedRequest,
+      ): Promise<BulkReplayFailedResponse> {
+        return await fetch<BulkReplayFailedResponse>(
+          `${WORKFLOW_ENDPOINT}/execution/bulk-replay`,
           {
-            query: { instanceId: id },
+            method: 'POST',
+            body: data,
           },
         );
-        return (
-          logs.find((log) => log.stepId === stepId) ??
-          ({
-            stepId,
-            stepName: '',
-            status: '',
-            startedAt: '',
-          } as WorkflowExecutionLog)
+      },
+
+      async listLogs(
+        options?: ListExecutionLogsOptions,
+      ): Promise<ExecutionLog[]> {
+        return await fetch<ExecutionLog[]>(
+          `${WORKFLOW_ENDPOINT}/execution`,
+          { query: options },
         );
       },
 
-      async listLogs(id: string): Promise<WorkflowExecutionLog[]> {
-        return await fetch<WorkflowExecutionLog[]>(
-          `${EXECUTION_ENDPOINT}/logs`,
-          { query: { instanceId: id } },
-        );
-      },
-
-      async getReplayChain(id: string): Promise<WorkflowExecution[]> {
-        return await fetch<WorkflowExecution[]>(
-          `${EXECUTION_ENDPOINT}/replay-chain`,
-          { query: { instanceId: id } },
-        );
-      },
-
-      async getConcurrency(
+      async listForWorkflow(
         workflowId: string,
-      ): Promise<WorkflowExecutionConcurrency> {
-        return await fetch<WorkflowExecutionConcurrency>(
+        options?: ListWorkflowExecutionsOptions,
+      ): Promise<ExecutionLog[]> {
+        return await fetch<ExecutionLog[]>(
+          `${WORKFLOW_ENDPOINT}/${workflowId}/execution`,
+          { query: options },
+        );
+      },
+
+      async listFailed(
+        options?: ListFailedExecutionsOptions,
+      ): Promise<ExecutionLog[]> {
+        return await fetch<ExecutionLog[]>(
+          `${WORKFLOW_ENDPOINT}/execution/failed`,
+          { query: options },
+        );
+      },
+
+      async get(instanceId: string): Promise<ExecutionDetails> {
+        return await fetch<ExecutionDetails>(
+          `${WORKFLOW_ENDPOINT}/execution/${instanceId}`,
+        );
+      },
+
+      async getLog(instanceId: string): Promise<ExecutionLog> {
+        return await fetch<ExecutionLog>(
+          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/log`,
+        );
+      },
+
+      async getReplayChain(instanceId: string): Promise<ReplayChain> {
+        return await fetch<ReplayChain>(
+          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/replay-chain`,
+        );
+      },
+
+      async getConcurrency(workflowId: string): Promise<ConcurrencyState> {
+        return await fetch<ConcurrencyState>(
           `${WORKFLOW_ENDPOINT}/${workflowId}/concurrency`,
         );
       },
     },
 
-    /**
-     * Workflow metrics and error summaries
-     */
+    // -- Metrics ------------------------------------------------------------
+
     metrics: {
-      async get(workflowId: string): Promise<WorkflowMetrics> {
+      async get(
+        workflowId: string,
+        options?: WorkflowMetricsOptions,
+      ): Promise<WorkflowMetrics> {
         return await fetch<WorkflowMetrics>(
-          `${WORKFLOW_DEFINITION_ENDPOINT}/${workflowId}/metric`,
+          `${WORKFLOW_ENDPOINT}/${workflowId}/metrics`,
+          { query: options },
         );
       },
 
       async listAll(): Promise<WorkflowMetrics[]> {
-        return await fetch<WorkflowMetrics[]>(METRIC_ENDPOINT);
+        return await fetch<WorkflowMetrics[]>(
+          `${WORKFLOW_ENDPOINT}/metrics`,
+        );
       },
 
-      async getAggregate(): Promise<WorkflowAggregateMetrics> {
-        return await fetch<WorkflowAggregateMetrics>(
-          `${METRIC_ENDPOINT}/aggregate`,
+      async getAggregate(): Promise<AggregateMetrics> {
+        return await fetch<AggregateMetrics>(
+          `${WORKFLOW_ENDPOINT}/metrics/aggregate`,
         );
       },
 
       async recalculate(workflowId: string): Promise<void> {
         await fetch<null>(
-          `${WORKFLOW_DEFINITION_ENDPOINT}/${workflowId}/metric/recalculate`,
-          {
-            method: 'POST',
-          },
+          `${WORKFLOW_ENDPOINT}/${workflowId}/metrics/recalculate`,
+          { method: 'POST' },
         );
       },
 
       async getErrorSummary(
-        workflowId: string,
-      ): Promise<WorkflowErrorSummary[]> {
-        return await fetch<WorkflowErrorSummary[]>(
-          `${EXECUTION_ENDPOINT}/errors`,
-          { query: { workflowId } },
+        options?: ErrorSummaryOptions,
+      ): Promise<ErrorSummary> {
+        return await fetch<ErrorSummary>(
+          `${WORKFLOW_ENDPOINT}/metrics/errors`,
+          { query: options },
         );
       },
     },
 
-    /**
-     * Version history and comparison
-     */
+    // -- Versioning ---------------------------------------------------------
+
     version: {
-      async getHistory(workflowId: string): Promise<WorkflowVersion[]> {
-        return await fetch<WorkflowVersion[]>(
-          `${WORKFLOW_DEFINITION_ENDPOINT}/${workflowId}/history`,
+      async getHistory(
+        workflowId: string,
+        options?: WorkflowHistoryOptions,
+      ): Promise<WorkflowHistory> {
+        return await fetch<WorkflowHistory>(
+          `${WORKFLOW_ENDPOINT}/${workflowId}/history`,
+          { query: options },
         );
       },
 
-      async get(workflowId: string, version: number): Promise<WorkflowVersion> {
-        return await fetch<WorkflowVersion>(
-          `${WORKFLOW_DEFINITION_ENDPOINT}/${workflowId}/version/${version}`,
+      async get(
+        workflowId: string,
+        version: number,
+      ): Promise<WorkflowDefinition> {
+        return await fetch<WorkflowDefinition>(
+          `${WORKFLOW_ENDPOINT}/${workflowId}/version/${version}`,
         );
       },
 
@@ -280,54 +296,59 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         workflowId: string,
         fromVersion: number,
         toVersion: number,
-      ): Promise<WorkflowVersionComparison> {
-        return await fetch<WorkflowVersionComparison>(
-          `${WORKFLOW_DEFINITION_ENDPOINT}/${workflowId}/version/diff`,
-          {
-            query: { from: fromVersion, to: toVersion },
-          },
+      ): Promise<VersionComparison> {
+        return await fetch<VersionComparison>(
+          `${WORKFLOW_ENDPOINT}/${workflowId}/version/compare`,
+          { query: { fromVersion, toVersion } },
         );
       },
     },
 
-    /**
-     * Workflow variables — CRUD with secret support
-     */
+    // -- Variables -----------------------------------------------------------
+
     variable: {
       async list(): Promise<WorkflowVariable[]> {
-        return await fetch<WorkflowVariable[]>(VARIABLE_ENDPOINT);
+        return await fetch<WorkflowVariable[]>(
+          `${WORKFLOW_ENDPOINT}/variable`,
+        );
       },
 
       async get(key: string): Promise<WorkflowVariable> {
-        return await fetch<WorkflowVariable>(`${VARIABLE_ENDPOINT}/${key}`);
+        return await fetch<WorkflowVariable>(
+          `${WORKFLOW_ENDPOINT}/variable/${key}`,
+        );
       },
 
-      async save(data: WorkflowVariableCreate): Promise<WorkflowVariable> {
-        return await fetch<WorkflowVariable>(VARIABLE_ENDPOINT, {
-          method: 'POST',
-          body: data,
-        });
+      async save(data: SaveVariableRequest): Promise<WorkflowVariable> {
+        return await fetch<WorkflowVariable>(
+          `${WORKFLOW_ENDPOINT}/variable`,
+          {
+            method: 'PUT',
+            body: data,
+          },
+        );
       },
 
       async delete(key: string): Promise<void> {
-        await fetch<null>(`${VARIABLE_ENDPOINT}/${key}`, {
+        await fetch<null>(`${WORKFLOW_ENDPOINT}/variable/${key}`, {
           method: 'DELETE',
         });
       },
     },
 
-    /**
-     * Editor definition and action catalog
-     */
+    // -- Editor Manifest ----------------------------------------------------
+
     editor: {
-      async getManifest(): Promise<WorkflowEditorManifest> {
-        return await fetch<WorkflowEditorManifest>(
-          `${EDITOR_ENDPOINT}/manifest`,
+      async getManifest(): Promise<EditorManifest> {
+        return await fetch<EditorManifest>(
+          `${WORKFLOW_ENDPOINT}/editor/manifest`,
         );
       },
 
       async listActions(): Promise<WorkflowAction[]> {
-        return await fetch<WorkflowAction[]>(ACTION_ENDPOINT);
+        return await fetch<WorkflowAction[]>(
+          `${WORKFLOW_ENDPOINT}/editor/actions`,
+        );
       },
     },
   };
