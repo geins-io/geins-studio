@@ -9,6 +9,7 @@ import type {
   Channel,
   ChannelCreate,
   ChannelUpdate,
+  ChannelApiOptions,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 
@@ -101,7 +102,7 @@ const {
   createEntity,
   updateEntity,
   parseAndSaveData,
-} = useEntityEdit<ChannelBase, Channel, ChannelCreate, ChannelUpdate>({
+} = useEntityEdit<ChannelBase, Channel, ChannelCreate, ChannelUpdate, ChannelApiOptions>({
   repository: {
     get: channelApi.channel.get,
     create: channelApi.channel.create,
@@ -245,7 +246,7 @@ const { summaryProps } = useEntityEditSummary({
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<Channel>(
     entityFetchKey.value,
-    () => channelApi.channel.get(entityId.value),
+    () => channelApi.channel.get(entityId.value, { fields: ['languages', 'markets'] }),
   );
   refreshEntityData.value = refresh;
   onMounted(async () => {

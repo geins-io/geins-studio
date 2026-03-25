@@ -1,3 +1,4 @@
+import type { ApiOptions } from './Api';
 import type {
   CreateEntity,
   UpdateEntity,
@@ -186,3 +187,15 @@ export interface Channel extends ChannelListItem {
   storefrontSettings: Record<string, unknown>;
   storefrontSchema: Record<string, unknown>;
 }
+
+// =============================================================================
+// API Options
+// =============================================================================
+
+export type ChannelFieldsFilter =
+  | 'all'
+  | 'default'
+  | 'languages'
+  | 'markets';
+
+export type ChannelApiOptions = ApiOptions<ChannelFieldsFilter>;

@@ -45,7 +45,7 @@ export const useAccountStore = defineStore('account', () => {
     return data;
   }
   async function fetchChannels(): Promise<ChannelListItem[]> {
-    const data = await globalApi.channel.list();
+    const data = await globalApi.channel.list({ fields: ['languages', 'markets'] });
     channels.value = data;
     return data;
   }

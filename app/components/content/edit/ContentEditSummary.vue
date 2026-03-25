@@ -24,6 +24,7 @@ const props = withDefaults(
     showActiveStatus: true,
     status: undefined,
     disabled: false,
+    status: undefined,
   },
 );
 
