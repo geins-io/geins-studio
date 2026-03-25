@@ -1,4 +1,5 @@
-import type { Account, ChannelListItem } from '#shared/types';
+import type { Account, ChannelListItem, ChannelApiOptions } from '#shared/types';
+import { buildQueryObject } from '#shared/utils/api-query';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const ENDPOINTS = {
@@ -31,8 +32,10 @@ export const globalRepo = <T>(fetch: $Fetch<T, NitroFetchRequest>) => ({
     },
   },
   channel: {
-    async list(): Promise<ChannelListItem[]> {
-      return await fetch<ChannelListItem[]>(ENDPOINTS.CHANNELS);
+    async list(options?: ChannelApiOptions): Promise<ChannelListItem[]> {
+      return await fetch<ChannelListItem[]>(ENDPOINTS.CHANNELS, {
+        query: buildQueryObject(options),
+      });
     },
   },
   currency: {

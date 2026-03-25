@@ -3,12 +3,14 @@ import type {
   ChannelCreate,
   ChannelUpdate,
   ChannelListItem,
+  ChannelApiOptions,
   Market,
   Language,
   ChannelPaymentMethod,
   ChannelMailType,
   ChannelMailSettings,
 } from '#shared/types';
+import { buildQueryObject } from '#shared/utils/api-query';
 import { entityBaseRepo } from './entity-base';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
@@ -25,14 +27,16 @@ const CHANNEL_ENDPOINT = `${BASE_ENDPOINT}/channel`;
  * for storefront settings (logos, etc.) alongside JSON data.
  */
 export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const channelBase = entityBaseRepo<ChannelListItem>(CHANNEL_ENDPOINT, fetch);
+  const channelBase = entityBaseRepo<ChannelListItem, ChannelApiOptions>(CHANNEL_ENDPOINT, fetch);
 
   return {
     channel: {
       list: channelBase.list,
 
-      async get(id: string): Promise<Channel> {
-        return await fetch<Channel>(`${CHANNEL_ENDPOINT}/${id}`);
+      async get(id: string, options?: ChannelApiOptions): Promise<Channel> {
+        return await fetch<Channel>(`${CHANNEL_ENDPOINT}/${id}`, {
+          query: buildQueryObject(options),
+        });
       },
 
       async create(data: ChannelCreate): Promise<Channel> {

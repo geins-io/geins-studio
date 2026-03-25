@@ -42,8 +42,26 @@ describe('channelRepo', () => {
       const channel = buildChannel();
       mockFetch.mockResolvedValue(channel);
       const result = await api.channel.get('123');
-      expect(mockFetch).toHaveBeenCalledWith('/account/channel/123');
+      expect(mockFetch).toHaveBeenCalledWith('/account/channel/123', {
+        query: undefined,
+      });
       expect(result).toEqual(channel);
+    });
+
+    it('channel.list() passes fields as query params', async () => {
+      mockFetch.mockResolvedValue([buildChannelListItem()]);
+      await api.channel.list({ fields: ['languages', 'markets'] });
+      expect(mockFetch).toHaveBeenCalledWith('/account/channel/list', {
+        query: { fields: 'languages,markets' },
+      });
+    });
+
+    it('channel.get() passes fields as query params', async () => {
+      mockFetch.mockResolvedValue(buildChannel());
+      await api.channel.get('123', { fields: ['languages', 'markets'] });
+      expect(mockFetch).toHaveBeenCalledWith('/account/channel/123', {
+        query: { fields: 'languages,markets' },
+      });
     });
 
     it('channel.create() calls POST /account/channel with body', async () => {
