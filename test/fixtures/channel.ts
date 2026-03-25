@@ -51,7 +51,6 @@ export function buildChannelCreate(
   return {
     displayName: 'New Channel',
     url: 'www.new-channel.com',
-    channelType: 'webshop',
     active: true,
     ...overrides,
   };
