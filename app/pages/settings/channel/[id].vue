@@ -9,7 +9,6 @@ import type {
   Channel,
   ChannelCreate,
   ChannelUpdate,
-  ChannelType,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 
@@ -42,7 +41,6 @@ const formSchema = toTypedSchema(
       .string()
       .min(1, t('entity_required', { entityName: 'displayName' })),
     url: z.url(t('channels.invalid_url')),
-    channelType: z.enum(['webshop', 'physical', 'other'] as const),
     active: z.boolean(),
   }),
 );
@@ -53,14 +51,12 @@ const formSchema = toTypedSchema(
 const initialCreateData: ChannelCreate = {
   displayName: '',
   url: '',
-  channelType: 'webshop',
   active: false,
 };
 
 const initialUpdateData: ChannelUpdate = {
   displayName: '',
   url: '',
-  channelType: 'webshop',
   active: false,
 };
 
@@ -79,13 +75,6 @@ const tabs = [
 const isLocked = ref(false);
 
 const internalName = ref(''); // For displaying the non-editable internal name field
-
-// Channel type options for select
-const channelTypeOptions: { value: ChannelType; label: string }[] = [
-  { value: 'webshop', label: t('channels.type_webshop') },
-  { value: 'physical', label: t('channels.type_physical') },
-  { value: 'other', label: t('channels.type_other') },
-];
 
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
@@ -124,7 +113,6 @@ const {
   getInitialFormValues: (entityData) => ({
     displayName: entityData.displayName || '',
     url: entityData.url || '',
-    channelType: entityData.channelType || 'webshop',
     active: entityData.active ?? false,
   }),
   reshapeEntityData: (entityData) => ({
@@ -138,20 +126,17 @@ const {
     form.setValues({
       displayName: entity.displayName,
       url: entity.url,
-      channelType: entity.channelType,
       active: entity.active,
     });
   },
   prepareCreateData: (formData) => ({
     displayName: formData.displayName,
     url: formData.url,
-    channelType: formData.channelType,
     active: formData.active,
   }),
   prepareUpdateData: (formData) => ({
     displayName: formData.displayName,
     url: formData.url,
-    channelType: formData.channelType,
     active: formData.active,
   }),
   onFormValuesChange: (values) => {
@@ -160,7 +145,6 @@ const {
       ...entityData.value,
       displayName: values.displayName,
       url: values.url,
-      channelType: values.channelType,
       active: values.active,
     };
   },
@@ -356,30 +340,6 @@ if (!createMode.value) {
                       <FormDescription>
                         {{ $t('channels.url_helper') }}
                       </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  </FormField>
-                </FormGrid>
-                <FormGrid design="1">
-                  <FormField v-slot="{ componentField }" name="channelType">
-                    <FormItem>
-                      <FormLabel>{{ $t('channels.type') }}</FormLabel>
-                      <Select v-bind="componentField">
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem
-                            v-for="option in channelTypeOptions"
-                            :key="option.value"
-                            :value="option.value"
-                          >
-                            {{ option.label }}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
                       <FormMessage />
                     </FormItem>
                   </FormField>

@@ -124,7 +124,6 @@ export interface ChannelPaymentMethodAssignment extends EntityBase {
 export interface ChannelBase {
   displayName: string;
   url: string;
-  channelType: ChannelType;
   active: boolean;
 }
 
@@ -153,6 +152,7 @@ export interface ChannelUpdate extends UpdateEntity<ChannelBase> {
  */
 export interface ChannelListItem extends ResponseEntity<ChannelBase> {
   name: string;
+  channelType: ChannelType;
   markets: Market[];
   languages: Language[];
   languageCount: number;
