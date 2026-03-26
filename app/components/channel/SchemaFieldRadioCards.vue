@@ -9,35 +9,28 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:modelValue': [value: string];
 }>();
-
-const { resolveIcon } = useLucideIcon();
 </script>
 
 <template>
-  <div class="grid grid-cols-2 gap-3">
+  <div class="grid grid-cols-2 gap-6">
     <button
       v-for="option in props.options"
       :key="option.value"
       type="button"
       :class="[
-        'flex flex-col gap-2 rounded-lg border p-4 text-left transition-colors',
+        'flex flex-col gap-2 rounded-lg border p-5 text-left transition-colors',
         modelValue === option.value
-          ? 'border-primary bg-primary/5'
+          ? 'border-positive bg-primary/5'
           : 'border-border hover:border-muted-foreground/50',
       ]"
       @click="emit('update:modelValue', option.value)"
     >
-      <div class="flex items-center gap-2">
-        <component
-          :is="resolveIcon(option.icon)"
-          v-if="option.icon"
-          class="text-muted-foreground size-4"
-        />
-        <span class="text-sm font-medium">{{ option.label }}</span>
-      </div>
-      <p v-if="option.description" class="text-muted-foreground text-xs">
-        {{ option.description }}
-      </p>
+      <ContentCardHeader
+        :title="option.label"
+        :description="option.description"
+        :icon="option.icon"
+        size="sm"
+      />
     </button>
   </div>
 </template>

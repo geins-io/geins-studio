@@ -64,7 +64,7 @@ const gridClassMap: Record<number, string> = {
   4: 'grid grid-cols-4',
 };
 
-export function gridClass(cols: number, gap = 'gap-4'): string | undefined {
+export function gridClass(cols: number, gap = 'gap-6'): string | undefined {
   if (cols <= 1) return undefined;
   return `${gridClassMap[cols]} ${gap}`;
 }

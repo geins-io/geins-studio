@@ -85,7 +85,8 @@
             "key": "logotype",
             "type": "file",
             "label": "Logotype",
-            "accept": "image/*"
+            "accept": "image/*",
+            "columns": 2
           }
         ]
       },
@@ -93,7 +94,7 @@
         "key": "cornerStyle",
         "title": "Corner style",
         "description": "Choose between rounded or square corners for interface elements.",
-        "icon": "Square",
+        "icon": "SquareArrowUpRight",
         "fields": [
           {
             "key": "cornerStyle",
@@ -121,7 +122,7 @@
         "key": "fonts",
         "title": "Font settings",
         "description": "Choose between rounded or square corners for interface elements.",
-        "icon": "Type",
+        "icon": "FileTypeCorner",
         "fields": [
           {
             "key": "fonts.headings",

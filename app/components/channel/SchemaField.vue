@@ -224,8 +224,8 @@ function onFileChange(key: string, event: Event) {
 
   <!-- group -->
   <div v-else-if="field.type === 'group'" class="rounded-lg border">
-    <div class="flex items-center justify-between gap-4 p-4">
-      <div class="flex items-center gap-3">
+    <div class="flex items-center justify-between gap-6 p-4">
+      <div class="flex items-center gap-6">
         <component
           :is="resolveIcon(field.icon)"
           v-if="field.icon"

@@ -3,6 +3,7 @@ const props = withDefaults(
   defineProps<{
     title: string;
     description?: string;
+    icon?: string;
     size?: 'lg' | 'md' | 'sm';
     headingLevel?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
   }>(),
@@ -11,6 +12,8 @@ const props = withDefaults(
     headingLevel: 'h2',
   },
 );
+
+const { resolveIcon } = useLucideIcon();
 
 const headerClasses = ref('');
 const descriptionClasses = ref('');
@@ -31,15 +34,20 @@ switch (props.size) {
 }
 </script>
 <template>
-  <div class="text-left">
-    <component :is="headingLevel" :class="cn('font-semibold', headerClasses)">
-      {{ title }}
-    </component>
-    <p
-      v-if="description"
-      :class="cn('text-muted-foreground', descriptionClasses)"
-    >
-      {{ description }}
-    </p>
+  <div :class="cn('text-left', icon ? 'flex gap-4' : '')">
+    <div v-if="icon" class="flex size-8 shrink-0 items-center justify-center">
+      <component :is="resolveIcon(icon)" class="size-8" :stroke-width="1" />
+    </div>
+    <div>
+      <component :is="headingLevel" :class="cn('font-semibold', headerClasses)">
+        {{ title }}
+      </component>
+      <p
+        v-if="description"
+        :class="cn('text-muted-foreground', descriptionClasses)"
+      >
+        {{ description }}
+      </p>
+    </div>
   </div>
 </template>

@@ -14,13 +14,14 @@ defineEmits<{
 
 <template>
   <div class="space-y-6">
-    <ContentEditCard
-      v-for="section in schema.sections"
-      :key="section.key"
-      :title="section.title"
-      :description="section.description"
-    >
+    <ContentCard v-for="section in schema.sections" :key="section.key">
       <div class="space-y-4">
+        <ContentCardHeader
+          :title="section.title"
+          :description="section.description"
+          :icon="section.icon"
+          size="md"
+        />
         <template
           v-for="row in groupFieldsIntoRows(section.fields)"
           :key="row.fields.map((f) => f.key).join('-')"
@@ -40,6 +41,6 @@ defineEmits<{
           </div>
         </template>
       </div>
-    </ContentEditCard>
+    </ContentCard>
   </div>
 </template>
