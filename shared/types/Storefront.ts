@@ -61,6 +61,7 @@ export type SchemaFieldType =
   | 'number'
   | 'boolean'
   | 'select'
+  | 'font'
   | 'color'
   | 'file'
   | 'radio-cards'

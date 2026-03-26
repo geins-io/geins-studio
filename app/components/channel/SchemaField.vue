@@ -125,6 +125,18 @@ function onFileChange(key: string, event: Event) {
     </p>
   </div>
 
+  <!-- font -->
+  <div v-else-if="field.type === 'font'" class="space-y-2">
+    <Label>{{ field.label }}</Label>
+    <ChannelSchemaFieldFont
+      :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
+      @update:model-value="updateValue(field.key, $event)"
+    />
+    <p v-if="field.description" class="text-muted-foreground text-xs">
+      {{ field.description }}
+    </p>
+  </div>
+
   <!-- color -->
   <div v-else-if="field.type === 'color'" class="space-y-2">
     <Label>{{ field.label }}</Label>

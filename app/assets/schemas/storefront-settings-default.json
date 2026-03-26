@@ -126,31 +126,19 @@
         "fields": [
           {
             "key": "fonts.headings",
-            "type": "select",
+            "type": "font",
             "label": "Headings",
             "description": "Used for selected heading elements used on pages and content",
             "placeholder": "Geist (template default)",
-            "columns": 2,
-            "options": [
-              { "value": "geist", "label": "Geist (template default)" },
-              { "value": "inter", "label": "Inter" },
-              { "value": "roboto", "label": "Roboto" },
-              { "value": "open-sans", "label": "Open Sans" }
-            ]
+            "columns": 2
           },
           {
             "key": "fonts.body",
-            "type": "select",
+            "type": "font",
             "label": "Body text",
             "description": "Applied to body text, descriptions, and supporting content.",
             "placeholder": "Geist (template default)",
-            "columns": 2,
-            "options": [
-              { "value": "geist", "label": "Geist (template default)" },
-              { "value": "inter", "label": "Inter" },
-              { "value": "roboto", "label": "Roboto" },
-              { "value": "open-sans", "label": "Open Sans" }
-            ]
+            "columns": 2
           }
         ]
       },
