@@ -20,8 +20,9 @@ describe('getDefaultSettings', () => {
       'accessRequirements.stockStatus': false,
       cornerStyle: 'square',
       'themeColors.primary': '#171717',
-      'themeColors.background': '#ffffff',
-      'themeColors.accent': '#5cc190',
+      'themeColors.secondary': '#ffffff',
+      'themeColors.siteBackground.color': 'white',
+      'themeColors.navBarBackground.color': 'light-gray',
     });
   });
 

@@ -35,7 +35,8 @@ function groupFieldsIntoRows(
   const rows: { columns: number; fields: SchemaField[] }[] = [];
 
   for (const field of fields) {
-    const cols = field.columns ?? 1;
+    // Sub-sections use `columns` for internal layout, not parent grid placement
+    const cols = field.type === 'sub-section' ? 1 : (field.columns ?? 1);
     const lastRow = rows[rows.length - 1];
 
     if (lastRow && lastRow.columns === cols && cols > 1) {
@@ -46,6 +47,18 @@ function groupFieldsIntoRows(
   }
 
   return rows;
+}
+
+/** Static grid class map — avoids dynamic Tailwind class generation */
+const gridClasses: Record<number, string> = {
+  2: 'grid grid-cols-2',
+  3: 'grid grid-cols-3',
+  4: 'grid grid-cols-4',
+};
+
+function gridClass(cols: number, gap = 'gap-4'): string | undefined {
+  if (cols <= 1) return undefined;
+  return `${gridClasses[cols]} ${gap}`;
 }
 
 function onFileChange(key: string, event: Event) {
@@ -71,7 +84,7 @@ function onFileChange(key: string, event: Event) {
           <div
             :class="
               row.columns > 1
-                ? `grid grid-cols-${row.columns} gap-4`
+                ? gridClass(row.columns)
                 : undefined
             "
           >
@@ -220,6 +233,186 @@ function onFileChange(key: string, event: Event) {
                     "
                     @update:model-value="updateValue(field.key, $event)"
                   />
+                </div>
+
+                <!-- radio -->
+                <div v-else-if="field.type === 'radio'" class="space-y-2">
+                  <RadioGroup
+                    :model-value="
+                      (getSettingValue(modelValue, field.key) as string) ?? ''
+                    "
+                    @update:model-value="updateValue(field.key, $event)"
+                  >
+                    <div
+                      v-for="option in field.options"
+                      :key="option.value"
+                      class="flex items-center gap-3"
+                    >
+                      <RadioGroupItem :id="option.value" :value="option.value" />
+                      <Label :for="option.value" class="font-medium">
+                        {{ option.label }}
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <!-- sub-section -->
+                <div
+                  v-else-if="field.type === 'sub-section'"
+                  class="space-y-3.5"
+                >
+                  <div class="pt-2">
+                    <p class="text-base font-medium">{{ field.label }}</p>
+                    <p
+                      v-if="field.description"
+                      class="text-muted-foreground text-sm"
+                    >
+                      {{ field.description }}
+                    </p>
+                  </div>
+                  <!-- Sub-section with columns: lay out children directly in grid -->
+                  <div
+                    v-if="
+                      field.children &&
+                      field.columns &&
+                      field.columns > 1
+                    "
+                    :class="gridClass(field.columns, 'gap-8')"
+                  >
+                    <template
+                      v-for="child in field.children"
+                      :key="child.key"
+                    >
+                      <div v-if="isVisible(child)">
+                        <!-- nested sub-section (e.g. General/Purchase buttons) -->
+                        <div
+                          v-if="child.type === 'sub-section'"
+                          class="space-y-3.5"
+                        >
+                          <div class="pt-2">
+                            <p class="text-base font-medium">
+                              {{ child.label }}
+                            </p>
+                          </div>
+                          <div
+                            v-if="child.children"
+                            class="flex flex-wrap gap-4"
+                          >
+                            <template
+                              v-for="grandchild in child.children"
+                              :key="grandchild.key"
+                            >
+                              <div
+                                v-if="
+                                  isVisible(grandchild) &&
+                                  grandchild.type === 'color'
+                                "
+                                class="min-w-0 flex-1 space-y-2"
+                              >
+                                <Label>{{ grandchild.label }}</Label>
+                                <ChannelSchemaFieldColor
+                                  :model-value="
+                                    (getSettingValue(
+                                      modelValue,
+                                      grandchild.key,
+                                    ) as string) ?? ''
+                                  "
+                                  :label="grandchild.label"
+                                  @update:model-value="
+                                    updateValue(
+                                      grandchild.key,
+                                      $event,
+                                    )
+                                  "
+                                />
+                              </div>
+                            </template>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                  <!-- Sub-section without columns: group children into rows -->
+                  <div
+                    v-else-if="field.children"
+                    class="space-y-4"
+                  >
+                    <template
+                      v-for="subRow in groupFieldsIntoRows(field.children)"
+                      :key="
+                        subRow.fields.map((f) => f.key).join('-')
+                      "
+                    >
+                      <div
+                        :class="
+                          subRow.columns > 1
+                            ? gridClass(subRow.columns)
+                            : undefined
+                        "
+                      >
+                        <template
+                          v-for="child in subRow.fields"
+                          :key="child.key"
+                        >
+                          <div v-if="isVisible(child)">
+                            <!-- radio child -->
+                            <div
+                              v-if="child.type === 'radio'"
+                              class="space-y-2"
+                            >
+                              <RadioGroup
+                                :model-value="
+                                  (getSettingValue(
+                                    modelValue,
+                                    child.key,
+                                  ) as string) ?? ''
+                                "
+                                @update:model-value="
+                                  updateValue(child.key, $event)
+                                "
+                              >
+                                <div
+                                  v-for="option in child.options"
+                                  :key="option.value"
+                                  class="flex items-center gap-3"
+                                >
+                                  <RadioGroupItem
+                                    :id="`${child.key}-${option.value}`"
+                                    :value="option.value"
+                                  />
+                                  <Label
+                                    :for="`${child.key}-${option.value}`"
+                                    class="font-medium"
+                                  >
+                                    {{ option.label }}
+                                  </Label>
+                                </div>
+                              </RadioGroup>
+                            </div>
+                            <!-- color child -->
+                            <div
+                              v-else-if="child.type === 'color'"
+                              class="space-y-2"
+                            >
+                              <Label>{{ child.label }}</Label>
+                              <ChannelSchemaFieldColor
+                                :model-value="
+                                  (getSettingValue(
+                                    modelValue,
+                                    child.key,
+                                  ) as string) ?? ''
+                                "
+                                :label="child.label"
+                                @update:model-value="
+                                  updateValue(child.key, $event)
+                                "
+                              />
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
                 </div>
 
                 <!-- group -->

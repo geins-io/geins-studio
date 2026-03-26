@@ -156,26 +156,141 @@
       {
         "key": "themeColors",
         "title": "Theme colors",
-        "description": "Set the color palette for your storefront.",
+        "description": "Set background and text colors for selected interface elements.",
         "icon": "Palette",
         "fields": [
           {
             "key": "themeColors.primary",
             "type": "color",
             "label": "Primary color",
+            "columns": 4,
             "default": "#171717"
           },
           {
-            "key": "themeColors.background",
+            "key": "themeColors.secondary",
             "type": "color",
-            "label": "Background color",
+            "label": "Secondary color",
+            "columns": 4,
             "default": "#ffffff"
           },
           {
-            "key": "themeColors.accent",
-            "type": "color",
-            "label": "Accent color",
-            "default": "#5cc190"
+            "key": "themeColors.buttons",
+            "type": "sub-section",
+            "label": "Buttons",
+            "description": "Set background and text colors for selected interface elements.",
+            "columns": 2,
+            "children": [
+              {
+                "key": "themeColors.buttons.general",
+                "type": "sub-section",
+                "label": "General buttons",
+                "children": [
+                  {
+                    "key": "themeColors.buttons.general.background",
+                    "type": "color",
+                    "label": "Background"
+                  },
+                  {
+                    "key": "themeColors.buttons.general.text",
+                    "type": "color",
+                    "label": "Text"
+                  }
+                ]
+              },
+              {
+                "key": "themeColors.buttons.purchase",
+                "type": "sub-section",
+                "label": "Purchase buttons",
+                "children": [
+                  {
+                    "key": "themeColors.buttons.purchase.background",
+                    "type": "color",
+                    "label": "Background"
+                  },
+                  {
+                    "key": "themeColors.buttons.purchase.text",
+                    "type": "color",
+                    "label": "Text"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "key": "themeColors.siteBackground",
+            "type": "sub-section",
+            "label": "Site background",
+            "description": "Set background and text colors for selected interface elements.",
+            "children": [
+              {
+                "key": "themeColors.siteBackground.color",
+                "type": "radio",
+                "label": "Site background",
+                "default": "white",
+                "options": [
+                  { "value": "white", "label": "White" },
+                  { "value": "light-gray", "label": "Light Gray" }
+                ]
+              }
+            ]
+          },
+          {
+            "key": "themeColors.navBarBackground",
+            "type": "sub-section",
+            "label": "Navigation bar background",
+            "description": "Set background and text colors for selected interface elements.",
+            "children": [
+              {
+                "key": "themeColors.navBarBackground.color",
+                "type": "radio",
+                "label": "Navigation bar background",
+                "default": "light-gray",
+                "options": [
+                  { "value": "white", "label": "White" },
+                  { "value": "light-gray", "label": "Light Gray" }
+                ]
+              }
+            ]
+          },
+          {
+            "key": "themeColors.topBar",
+            "type": "sub-section",
+            "label": "Site top bar",
+            "description": "Set background and text colors for selected interface elements.",
+            "children": [
+              {
+                "key": "themeColors.topBar.background",
+                "type": "color",
+                "label": "Background",
+                "columns": 4
+              },
+              {
+                "key": "themeColors.topBar.text",
+                "type": "color",
+                "label": "Text",
+                "columns": 4
+              }
+            ]
+          },
+          {
+            "key": "themeColors.footer",
+            "type": "sub-section",
+            "label": "Footer",
+            "description": "Set background and text colors for selected interface elements.",
+            "children": [
+              {
+                "key": "themeColors.footer.background",
+                "type": "color",
+                "label": "Background",
+                "columns": 4
+              },
+              {
+                "key": "themeColors.footer.text",
+                "type": "color",
+                "label": "Text",
+                "columns": 4
+              }
+            ]
           }
         ]
       }

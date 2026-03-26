@@ -47,7 +47,7 @@ export interface SchemaField {
   children?: SchemaField[];
 
   // Layout
-  columns?: 1 | 2 | 3;
+  columns?: 1 | 2 | 3 | 4;
 
   // Conditional visibility
   visibleWhen?: {
@@ -64,7 +64,9 @@ export type SchemaFieldType =
   | 'color'
   | 'file'
   | 'radio-cards'
-  | 'group';
+  | 'radio'
+  | 'group'
+  | 'sub-section';
 
 export interface SchemaFieldOption {
   value: string;
