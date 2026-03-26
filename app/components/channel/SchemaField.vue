@@ -229,6 +229,7 @@ function onFileChange(key: string, event: Event) {
     v-else-if="field.type === 'group'"
     :label="field.label"
     :description="field.description"
+    :icon="field.icon"
     :checked="(getSettingValue(modelValue, field.key) as boolean) ?? false"
     @update:checked="updateValue(field.key, $event)"
   >
