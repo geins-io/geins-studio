@@ -145,6 +145,7 @@ onMounted(() => {
       if (newError) {
         fetchError.value = true;
         dataList.value = [];
+        loading.value = false;
         return;
       }
       fetchError.value = false;
@@ -305,7 +306,7 @@ onMounted(() => {
           <div class="flex items-center gap-2">
             <Button disabled variant="outline" size="sm">
               <LucidePlay class="mr-1 h-3.5 w-3.5" />
-              Activate
+              {{ $t('workflows.enable') }}
             </Button>
             <NuxtLink :to="`/orchestrator/workflows/${workflow.id}`">
               <Button variant="outline" size="sm">

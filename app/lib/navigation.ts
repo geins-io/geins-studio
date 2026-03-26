@@ -18,9 +18,10 @@ import type { NavigationItem } from '#shared/types';
  * Returns localized navigation items
  * @param t - Translation function from useI18n()
  */
-export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
-  const config = useRuntimeConfig();
-
+export const getNavigation = (
+  t: (key: string) => string,
+  options?: { featureOrchestrator?: boolean },
+): NavigationItem[] => {
   return [
     {
       label: t('navigation.pricing'),
@@ -61,7 +62,7 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
         },
       ],
     },
-    ...(config.public.featureOrchestrator
+    ...(options?.featureOrchestrator
       ? [
           {
             label: t('navigation.orchestrator'),

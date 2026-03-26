@@ -39,15 +39,15 @@ import type { NitroFetchRequest, $Fetch } from 'nitropack';
 // todo: under renaming
 // const ORCHESTRATOR_ENDPOINT = '/orchestrator';
 const ORCHESTRATOR_ENDPOINT = '/workflow';
-const ORCHESTRATOR_ENDPOINT_LIST = `${ORCHESTRATOR_ENDPOINT}/metric`;
+const METRIC_ENDPOINT = `${ORCHESTRATOR_ENDPOINT}/metric`;
 
 export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   return {
     // -- Workflow CRUD ------------------------------------------------------
 
     workflow: {
-      async list(): Promise<WorkflowSummary[]> {     
-        return await fetch<WorkflowSummary[]>(ORCHESTRATOR_ENDPOINT_LIST);
+      async list(): Promise<WorkflowSummary[]> {
+        return await fetch<WorkflowSummary[]>(ORCHESTRATOR_ENDPOINT);
       },
 
       async get(id: string): Promise<WorkflowDefinition> {
@@ -245,15 +245,11 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
 
       async list(): Promise<WorkflowMetrics[]> {
-        return await fetch<WorkflowMetrics[]>(
-          `${ORCHESTRATOR_ENDPOINT}/metric`,
-        );
+        return await fetch<WorkflowMetrics[]>(METRIC_ENDPOINT);
       },
 
       async getAggregate(): Promise<AggregateMetrics> {
-        return await fetch<AggregateMetrics>(
-          `${ORCHESTRATOR_ENDPOINT}/metric/aggregate`,
-        );
+        return await fetch<AggregateMetrics>(`${METRIC_ENDPOINT}/aggregate`);
       },
 
       async recalculate(workflowId: string): Promise<void> {
@@ -267,7 +263,7 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         options?: ErrorSummaryOptions,
       ): Promise<ErrorSummary> {
         return await fetch<ErrorSummary>(
-          `${ORCHESTRATOR_ENDPOINT}/metric/errors`,
+          `${METRIC_ENDPOINT}/errors`,
           { query: options },
         );
       },
