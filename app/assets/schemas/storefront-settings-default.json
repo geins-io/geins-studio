@@ -188,12 +188,14 @@
                   {
                     "key": "themeColors.buttons.general.background",
                     "type": "color",
-                    "label": "Background"
+                    "label": "Background",
+                    "columns": 2
                   },
                   {
                     "key": "themeColors.buttons.general.text",
                     "type": "color",
-                    "label": "Text"
+                    "label": "Text",
+                    "columns": 2
                   }
                 ]
               },
@@ -205,12 +207,14 @@
                   {
                     "key": "themeColors.buttons.purchase.background",
                     "type": "color",
-                    "label": "Background"
+                    "label": "Background",
+                    "columns": 2
                   },
                   {
                     "key": "themeColors.buttons.purchase.text",
                     "type": "color",
-                    "label": "Text"
+                    "label": "Text",
+                    "columns": 2
                   }
                 ]
               }

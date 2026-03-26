@@ -33,6 +33,42 @@ export function getDefaultSettings(
   return settings;
 }
 
+/**
+ * Groups consecutive fields with the same `columns` value into layout rows.
+ * Fields without `columns` (or columns: 1) are placed in their own row.
+ * Sub-sections use `columns` for internal layout, not parent grid placement.
+ */
+export function groupFieldsIntoRows(
+  fields: SchemaField[],
+): { columns: number; fields: SchemaField[] }[] {
+  const rows: { columns: number; fields: SchemaField[] }[] = [];
+
+  for (const field of fields) {
+    const cols = field.type === 'sub-section' ? 1 : (field.columns ?? 1);
+    const lastRow = rows[rows.length - 1];
+
+    if (lastRow && lastRow.columns === cols && cols > 1) {
+      lastRow.fields.push(field);
+    } else {
+      rows.push({ columns: cols, fields: [field] });
+    }
+  }
+
+  return rows;
+}
+
+/** Static grid class map — avoids dynamic Tailwind class generation */
+const gridClassMap: Record<number, string> = {
+  2: 'grid grid-cols-2',
+  3: 'grid grid-cols-3',
+  4: 'grid grid-cols-4',
+};
+
+export function gridClass(cols: number, gap = 'gap-4'): string | undefined {
+  if (cols <= 1) return undefined;
+  return `${gridClassMap[cols]} ${gap}`;
+}
+
 /** Read a flat dot-notation key from the settings object */
 export function getSettingValue(
   settings: StorefrontSettings,

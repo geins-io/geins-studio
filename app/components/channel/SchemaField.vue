@@ -1,0 +1,266 @@
+<script setup lang="ts">
+import type { SchemaField, StorefrontSettings } from '#shared/types';
+import {
+  getSettingValue,
+  setSettingValue,
+  groupFieldsIntoRows,
+  gridClass,
+} from '@/utils/storefront';
+
+defineOptions({ name: 'ChannelSchemaField' });
+
+const props = defineProps<{
+  field: SchemaField;
+  modelValue: StorefrontSettings;
+}>();
+
+const emit = defineEmits<{
+  'update:modelValue': [value: StorefrontSettings];
+}>();
+
+const { resolveIcon } = useLucideIcon();
+
+function updateValue(key: string, value: unknown) {
+  emit('update:modelValue', setSettingValue(props.modelValue, key, value));
+}
+
+function isVisible(field: SchemaField): boolean {
+  if (!field.visibleWhen) return true;
+  return (
+    getSettingValue(props.modelValue, field.visibleWhen.field) ===
+    field.visibleWhen.equals
+  );
+}
+
+function onFileChange(key: string, event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  updateValue(key, file ? file.name : null);
+}
+</script>
+
+<template>
+  <!-- string -->
+  <div v-if="field.type === 'string'" class="space-y-2">
+    <Label>{{ field.label }}</Label>
+    <Input
+      :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
+      :placeholder="field.placeholder"
+      :disabled="field.disabled"
+      @update:model-value="updateValue(field.key, $event)"
+    />
+    <p v-if="field.description" class="text-muted-foreground text-xs">
+      {{ field.description }}
+    </p>
+  </div>
+
+  <!-- number -->
+  <div v-else-if="field.type === 'number'" class="space-y-2">
+    <Label>{{ field.label }}</Label>
+    <Input
+      type="number"
+      :model-value="(getSettingValue(modelValue, field.key) as number) ?? ''"
+      :min="field.min"
+      :max="field.max"
+      :placeholder="field.placeholder"
+      :disabled="field.disabled"
+      @update:model-value="updateValue(field.key, Number($event))"
+    />
+    <p v-if="field.description" class="text-muted-foreground text-xs">
+      {{ field.description }}
+    </p>
+  </div>
+
+  <!-- boolean -->
+  <div
+    v-else-if="field.type === 'boolean'"
+    class="flex items-center justify-between rounded-lg border p-3"
+  >
+    <div class="flex items-center gap-3">
+      <component
+        :is="resolveIcon(field.icon)"
+        v-if="field.icon"
+        class="text-muted-foreground size-4"
+      />
+      <div>
+        <p class="text-sm font-medium">{{ field.label }}</p>
+        <p v-if="field.description" class="text-muted-foreground text-xs">
+          {{ field.description }}
+        </p>
+      </div>
+    </div>
+    <Switch
+      :model-value="
+        (getSettingValue(modelValue, field.key) as boolean) ?? false
+      "
+      :disabled="field.disabled"
+      @update:model-value="updateValue(field.key, $event)"
+    />
+  </div>
+
+  <!-- select -->
+  <div v-else-if="field.type === 'select'" class="space-y-2">
+    <Label>{{ field.label }}</Label>
+    <Select
+      :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
+      @update:model-value="updateValue(field.key, $event)"
+    >
+      <SelectTrigger :disabled="field.disabled">
+        <SelectValue :placeholder="field.placeholder || 'Select...'" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem
+          v-for="option in field.options"
+          :key="option.value"
+          :value="option.value"
+        >
+          {{ option.label }}
+        </SelectItem>
+      </SelectContent>
+    </Select>
+    <p v-if="field.description" class="text-muted-foreground text-xs">
+      {{ field.description }}
+    </p>
+  </div>
+
+  <!-- color -->
+  <div v-else-if="field.type === 'color'" class="space-y-2">
+    <Label>{{ field.label }}</Label>
+    <ChannelSchemaFieldColor
+      :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
+      :label="field.label"
+      @update:model-value="updateValue(field.key, $event)"
+    />
+  </div>
+
+  <!-- file -->
+  <div v-else-if="field.type === 'file'" class="space-y-2">
+    <Label>{{ field.label }}</Label>
+    <Input
+      type="file"
+      :accept="field.accept"
+      :disabled="field.disabled"
+      @change="onFileChange(field.key, $event)"
+    />
+    <p v-if="field.description" class="text-muted-foreground text-xs">
+      {{ field.description }}
+    </p>
+  </div>
+
+  <!-- radio-cards -->
+  <div v-else-if="field.type === 'radio-cards'" class="space-y-2">
+    <Label>{{ field.label }}</Label>
+    <ChannelSchemaFieldRadioCards
+      :options="field.options ?? []"
+      :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
+      @update:model-value="updateValue(field.key, $event)"
+    />
+  </div>
+
+  <!-- radio -->
+  <div v-else-if="field.type === 'radio'" class="space-y-2">
+    <RadioGroup
+      :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
+      @update:model-value="updateValue(field.key, $event)"
+    >
+      <div
+        v-for="option in field.options"
+        :key="option.value"
+        class="flex items-center gap-3"
+      >
+        <RadioGroupItem
+          :id="`${field.key}-${option.value}`"
+          :value="option.value"
+        />
+        <Label :for="`${field.key}-${option.value}`" class="font-medium">
+          {{ option.label }}
+        </Label>
+      </div>
+    </RadioGroup>
+  </div>
+
+  <!-- sub-section -->
+  <div v-else-if="field.type === 'sub-section'" class="space-y-3.5">
+    <div class="pt-2">
+      <ContentCardHeader
+        :title="field.label"
+        :description="field.description"
+        size="md"
+      />
+    </div>
+    <!-- With columns: lay out children directly in grid -->
+    <div
+      v-if="field.children && field.columns && field.columns > 1"
+      :class="gridClass(field.columns, 'gap-8')"
+    >
+      <template v-for="child in field.children" :key="child.key">
+        <ChannelSchemaField
+          v-if="isVisible(child)"
+          :field="child"
+          :model-value="modelValue"
+          @update:model-value="$emit('update:modelValue', $event)"
+        />
+      </template>
+    </div>
+    <!-- Without columns: group children into rows -->
+    <div v-else-if="field.children" class="space-y-4">
+      <template
+        v-for="row in groupFieldsIntoRows(field.children)"
+        :key="row.fields.map((f) => f.key).join('-')"
+      >
+        <div :class="row.columns > 1 ? gridClass(row.columns) : undefined">
+          <template v-for="child in row.fields" :key="child.key">
+            <ChannelSchemaField
+              v-if="isVisible(child)"
+              :field="child"
+              :model-value="modelValue"
+              @update:model-value="$emit('update:modelValue', $event)"
+            />
+          </template>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- group -->
+  <div v-else-if="field.type === 'group'" class="rounded-lg border">
+    <div class="flex items-center justify-between gap-4 p-4">
+      <div class="flex items-center gap-3">
+        <component
+          :is="resolveIcon(field.icon)"
+          v-if="field.icon"
+          class="text-muted-foreground size-4"
+        />
+        <div>
+          <p class="text-sm font-medium">{{ field.label }}</p>
+          <p v-if="field.description" class="text-muted-foreground text-xs">
+            {{ field.description }}
+          </p>
+        </div>
+      </div>
+      <Switch
+        :model-value="
+          (getSettingValue(modelValue, field.key) as boolean) ?? false
+        "
+        @update:model-value="updateValue(field.key, $event)"
+      />
+    </div>
+    <div
+      v-if="
+        field.children && (getSettingValue(modelValue, field.key) as boolean)
+      "
+      class="border-t p-4"
+    >
+      <div class="space-y-4">
+        <template v-for="child in field.children" :key="child.key">
+          <ChannelSchemaField
+            v-if="isVisible(child)"
+            :field="child"
+            :model-value="modelValue"
+            @update:model-value="$emit('update:modelValue', $event)"
+          />
+        </template>
+      </div>
+    </div>
+  </div>
+</template>
