@@ -11,10 +11,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: StorefrontSettings];
 }>();
 
-function resolveIcon(iconName?: string) {
-  if (!iconName) return null;
-  return resolveComponent(`Lucide${iconName}`);
-}
+const { resolveIcon } = useLucideIcon();
 
 function updateValue(key: string, value: unknown) {
   emit('update:modelValue', setSettingValue(props.modelValue, key, value));

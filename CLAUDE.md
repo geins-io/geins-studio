@@ -39,7 +39,7 @@ These MUST be followed for every task.
 
 **Before committing**: (9) Run `pnpm lint:check && pnpm typecheck` (and `pnpm test --run` if tests exist). All must pass.
 
-**When user says "task done"**: (10) Update `/docs` if architectural changes. (11) Update CLAUDE.md with new learnings. (12) Organize CLAUDE.md (dedup, group, format). (13) Set Linear issue to "Done".
+**When user says "task done"**: (10) Update `/docs` if architectural changes. (11) Update CLAUDE.md with new learnings. (12) Organize CLAUDE.md (dedup, group, format).
 
 ---
 
@@ -54,7 +54,7 @@ Admin interface for Geins Commerce Backend. **Client-side SPA** (`ssr: false`) t
 - **Forms**: VeeValidate + Zod schemas (`toTypedSchema`)
 - **Styling**: Tailwind CSS 4 with CSS custom properties theming
 - **UI Components**: shadcn-vue (`app/components/ui/`) — install via `npx shadcn-vue@latest add`, never create manually
-- **Icons**: Lucide (auto-imported via `nuxt-lucide-icons`)
+- **Icons**: Lucide (auto-imported via `nuxt-lucide-icons`). Dynamic name→component resolution: `useLucideIcon()` (uses `@lucide/vue` v1). Never use `resolveComponent('Lucide...')` — tree-shaking removes unresolved icons.
 - **i18n**: `@nuxtjs/i18n` — always update both `en.json` and `sv.json`. Entity action keys: `save_entity`, `delete_entity`, `send_entity`, etc. use `@.lower:{entityName}` interpolation.
 - **State**: Pinia stores in `app/stores/`
 - **Tables**: TanStack Table (`@tanstack/vue-table`)
@@ -113,7 +113,7 @@ i18n/locales/           # en.json, sv.json
 - **Loading state resilience**: In list pages, `loading.value = false` must be reached in ALL code paths (error, empty, success). Either place it at the end of `onMounted` outside the watcher (reference pattern), or ensure every early `return` in the watcher also clears loading. Never let an unhandled throw leave the page stuck on skeletons.
 - **Vue gotchas**: `<KeepAlive>` expects exactly one child — wrap each tab in its own `<KeepAlive>` with a single `v-if` child (never use `v-else-if` chains inside one `<KeepAlive>`). `<KeepAlive>` cannot contain HTML comments. `v-auto-animate` on icon-swapping `v-if/v-else` causes layout shift — use CSS transitions instead.
 - **Page titles**: `usePageTitle()` auto-derives from breadcrumbs. Entity pages get names via `setCurrentTitle`.
-- **Navigation items**: Workspace-group items MUST have a `children` array — without it, the sidebar renders a flat button instead of the collapsible parent/child style. Parent and child labels must be distinct (domain ≠ entity, e.g. "Orchestrator" > "Workflows") or breadcrumbs/page title will duplicate. New `icon` strings require adding a Lucide import + mapping in `app/components/layout/sidebar/LayoutSidebar.vue` → `iconComponents`. Use `import.meta.dev` to gate dev-only nav items (Vite tree-shakes at build time).
+- **Navigation items**: Workspace-group items MUST have a `children` array — without it, the sidebar renders a flat button instead of the collapsible parent/child style. Parent and child labels must be distinct (domain ≠ entity, e.g. "Orchestrator" > "Workflows") or breadcrumbs/page title will duplicate. Icon strings are resolved dynamically by `useLucideIcon()` (any PascalCase Lucide icon name works — no manual import map needed). Use `import.meta.dev` to gate dev-only nav items (Vite tree-shakes at build time).
 - **Toasts**: `useToast` from `@/components/ui/toast/use-toast` (explicit import). `useEntityEdit` handles CRUD toasts — only add toasts for extra actions (status transitions, copy, etc.).
 
 ## API & Repositories

@@ -10,10 +10,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string];
 }>();
 
-function resolveIcon(iconName?: string) {
-  if (!iconName) return null;
-  return resolveComponent(`Lucide${iconName}`);
-}
+const { resolveIcon } = useLucideIcon();
 </script>
 
 <template>

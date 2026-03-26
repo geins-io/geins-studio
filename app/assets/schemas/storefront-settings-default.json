@@ -63,7 +63,7 @@
                 "type": "boolean",
                 "label": "Stock status",
                 "description": "Products stock levels are visible only to logged-in users.",
-                "icon": "BarChart3",
+                "icon": "ChartColumn",
                 "default": false
               }
             ]
@@ -111,7 +111,7 @@
                 "value": "round",
                 "label": "Round",
                 "description": "Gives interface elements rounded corners.",
-                "icon": "Circle"
+                "icon": "SquareRoundCorner"
               }
             ]
           }
