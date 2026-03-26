@@ -36,23 +36,26 @@ import type {
 } from '#shared/types';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
-const WORKFLOW_ENDPOINT = '/workflow';
+// todo: under renaming
+// const ORCHESTRATOR_ENDPOINT = '/orchestrator';
+const ORCHESTRATOR_ENDPOINT = '/workflow';
+const ORCHESTRATOR_ENDPOINT_LIST = `${ORCHESTRATOR_ENDPOINT}/metric`;
 
-export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
+export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   return {
     // -- Workflow CRUD ------------------------------------------------------
 
     workflow: {
-      async list(): Promise<WorkflowSummary[]> {
-        return await fetch<WorkflowSummary[]>(WORKFLOW_ENDPOINT);
+      async list(): Promise<WorkflowSummary[]> {     
+        return await fetch<WorkflowSummary[]>(ORCHESTRATOR_ENDPOINT_LIST);
       },
 
       async get(id: string): Promise<WorkflowDefinition> {
-        return await fetch<WorkflowDefinition>(`${WORKFLOW_ENDPOINT}/${id}`);
+        return await fetch<WorkflowDefinition>(`${ORCHESTRATOR_ENDPOINT}/${id}`);
       },
 
       async create(data: CreateWorkflowRequest): Promise<WorkflowDefinition> {
-        return await fetch<WorkflowDefinition>(WORKFLOW_ENDPOINT, {
+        return await fetch<WorkflowDefinition>(ORCHESTRATOR_ENDPOINT, {
           method: 'POST',
           body: data,
         });
@@ -62,21 +65,21 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         id: string,
         data: UpdateWorkflowRequest,
       ): Promise<WorkflowDefinition> {
-        return await fetch<WorkflowDefinition>(`${WORKFLOW_ENDPOINT}/${id}`, {
+        return await fetch<WorkflowDefinition>(`${ORCHESTRATOR_ENDPOINT}/${id}`, {
           method: 'PUT',
           body: data,
         });
       },
 
       async delete(id: string): Promise<void> {
-        await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}`, {
+        await fetch<null>(`${ORCHESTRATOR_ENDPOINT}/${id}`, {
           method: 'DELETE',
         });
       },
 
       async validate(data: CreateWorkflowRequest): Promise<ValidateWorkflowResult> {
         return await fetch<ValidateWorkflowResult>(
-          `${WORKFLOW_ENDPOINT}/validate`,
+          `${ORCHESTRATOR_ENDPOINT}/validate`,
           {
             method: 'POST',
             body: data,
@@ -93,7 +96,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         data?: StartWorkflowRequest,
       ): Promise<StartWorkflowResponse> {
         return await fetch<StartWorkflowResponse>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/start`,
+          `${ORCHESTRATOR_ENDPOINT}/${workflowId}/start`,
           {
             method: 'POST',
             body: data ?? {},
@@ -106,7 +109,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         data?: CancelExecutionRequest,
       ): Promise<void> {
         await fetch<null>(
-          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/cancel`,
+          `${ORCHESTRATOR_ENDPOINT}/execution/${instanceId}/cancel`,
           {
             method: 'POST',
             body: data ?? {},
@@ -119,7 +122,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         data?: PauseExecutionRequest,
       ): Promise<void> {
         await fetch<null>(
-          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/pause`,
+          `${ORCHESTRATOR_ENDPOINT}/execution/${instanceId}/pause`,
           {
             method: 'POST',
             body: data ?? {},
@@ -132,7 +135,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         data?: ResumeExecutionRequest,
       ): Promise<void> {
         await fetch<null>(
-          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/resume`,
+          `${ORCHESTRATOR_ENDPOINT}/execution/${instanceId}/resume`,
           {
             method: 'POST',
             body: data ?? {},
@@ -145,7 +148,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         data?: ReplayExecutionRequest,
       ): Promise<StartWorkflowResponse> {
         return await fetch<StartWorkflowResponse>(
-          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/replay`,
+          `${ORCHESTRATOR_ENDPOINT}/execution/${instanceId}/replay`,
           {
             method: 'POST',
             body: data ?? {},
@@ -155,7 +158,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
       async bulkCancel(data: BulkCancelRequest): Promise<BulkCancelResponse> {
         return await fetch<BulkCancelResponse>(
-          `${WORKFLOW_ENDPOINT}/execution/bulk-cancel`,
+          `${ORCHESTRATOR_ENDPOINT}/execution/bulk-cancel`,
           {
             method: 'POST',
             body: data,
@@ -167,7 +170,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         data: BulkReplayFailedRequest,
       ): Promise<BulkReplayFailedResponse> {
         return await fetch<BulkReplayFailedResponse>(
-          `${WORKFLOW_ENDPOINT}/execution/bulk-replay`,
+          `${ORCHESTRATOR_ENDPOINT}/execution/bulk-replay`,
           {
             method: 'POST',
             body: data,
@@ -179,7 +182,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         options?: ListExecutionLogsOptions,
       ): Promise<ExecutionLog[]> {
         return await fetch<ExecutionLog[]>(
-          `${WORKFLOW_ENDPOINT}/execution`,
+          `${ORCHESTRATOR_ENDPOINT}/execution`,
           { query: options },
         );
       },
@@ -189,7 +192,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         options?: ListWorkflowExecutionsOptions,
       ): Promise<ExecutionLog[]> {
         return await fetch<ExecutionLog[]>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/execution`,
+          `${ORCHESTRATOR_ENDPOINT}/${workflowId}/execution`,
           { query: options },
         );
       },
@@ -198,32 +201,32 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         options?: ListFailedExecutionsOptions,
       ): Promise<ExecutionLog[]> {
         return await fetch<ExecutionLog[]>(
-          `${WORKFLOW_ENDPOINT}/execution/failed`,
+          `${ORCHESTRATOR_ENDPOINT}/execution/failed`,
           { query: options },
         );
       },
 
       async get(instanceId: string): Promise<ExecutionDetails> {
         return await fetch<ExecutionDetails>(
-          `${WORKFLOW_ENDPOINT}/execution/${instanceId}`,
+          `${ORCHESTRATOR_ENDPOINT}/execution/${instanceId}`,
         );
       },
 
       async getLog(instanceId: string): Promise<ExecutionLog> {
         return await fetch<ExecutionLog>(
-          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/log`,
+          `${ORCHESTRATOR_ENDPOINT}/execution/${instanceId}/log`,
         );
       },
 
       async getReplayChain(instanceId: string): Promise<ReplayChain> {
         return await fetch<ReplayChain>(
-          `${WORKFLOW_ENDPOINT}/execution/${instanceId}/replay-chain`,
+          `${ORCHESTRATOR_ENDPOINT}/execution/${instanceId}/replay-chain`,
         );
       },
 
       async getConcurrency(workflowId: string): Promise<ConcurrencyState> {
         return await fetch<ConcurrencyState>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/concurrency`,
+          `${ORCHESTRATOR_ENDPOINT}/${workflowId}/concurrency`,
         );
       },
     },
@@ -236,26 +239,26 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         options?: WorkflowMetricsOptions,
       ): Promise<WorkflowMetrics> {
         return await fetch<WorkflowMetrics>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/metrics`,
+          `${ORCHESTRATOR_ENDPOINT}/${workflowId}/metric`,
           { query: options },
         );
       },
 
-      async listAll(): Promise<WorkflowMetrics[]> {
+      async list(): Promise<WorkflowMetrics[]> {
         return await fetch<WorkflowMetrics[]>(
-          `${WORKFLOW_ENDPOINT}/metrics`,
+          `${ORCHESTRATOR_ENDPOINT}/metric`,
         );
       },
 
       async getAggregate(): Promise<AggregateMetrics> {
         return await fetch<AggregateMetrics>(
-          `${WORKFLOW_ENDPOINT}/metrics/aggregate`,
+          `${ORCHESTRATOR_ENDPOINT}/metric/aggregate`,
         );
       },
 
       async recalculate(workflowId: string): Promise<void> {
         await fetch<null>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/metrics/recalculate`,
+          `${ORCHESTRATOR_ENDPOINT}/${workflowId}/metric/recalculate`,
           { method: 'POST' },
         );
       },
@@ -264,7 +267,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         options?: ErrorSummaryOptions,
       ): Promise<ErrorSummary> {
         return await fetch<ErrorSummary>(
-          `${WORKFLOW_ENDPOINT}/metrics/errors`,
+          `${ORCHESTRATOR_ENDPOINT}/metric/errors`,
           { query: options },
         );
       },
@@ -278,7 +281,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         options?: WorkflowHistoryOptions,
       ): Promise<WorkflowHistory> {
         return await fetch<WorkflowHistory>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/history`,
+          `${ORCHESTRATOR_ENDPOINT}/${workflowId}/history`,
           { query: options },
         );
       },
@@ -288,7 +291,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         version: number,
       ): Promise<WorkflowDefinition> {
         return await fetch<WorkflowDefinition>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/version/${version}`,
+          `${ORCHESTRATOR_ENDPOINT}/${workflowId}/version/${version}`,
         );
       },
 
@@ -298,7 +301,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         toVersion: number,
       ): Promise<VersionComparison> {
         return await fetch<VersionComparison>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/version/compare`,
+          `${ORCHESTRATOR_ENDPOINT}/${workflowId}/version/compare`,
           { query: { fromVersion, toVersion } },
         );
       },
@@ -309,19 +312,19 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     variable: {
       async list(): Promise<WorkflowVariable[]> {
         return await fetch<WorkflowVariable[]>(
-          `${WORKFLOW_ENDPOINT}/variable`,
+          `${ORCHESTRATOR_ENDPOINT}/variable`,
         );
       },
 
       async get(key: string): Promise<WorkflowVariable> {
         return await fetch<WorkflowVariable>(
-          `${WORKFLOW_ENDPOINT}/variable/${key}`,
+          `${ORCHESTRATOR_ENDPOINT}/variable/${key}`,
         );
       },
 
       async save(data: SaveVariableRequest): Promise<WorkflowVariable> {
         return await fetch<WorkflowVariable>(
-          `${WORKFLOW_ENDPOINT}/variable`,
+          `${ORCHESTRATOR_ENDPOINT}/variable`,
           {
             method: 'PUT',
             body: data,
@@ -330,7 +333,7 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
 
       async delete(key: string): Promise<void> {
-        await fetch<null>(`${WORKFLOW_ENDPOINT}/variable/${key}`, {
+        await fetch<null>(`${ORCHESTRATOR_ENDPOINT}/variable/${key}`, {
           method: 'DELETE',
         });
       },
@@ -341,13 +344,13 @@ export function workflowRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     editor: {
       async getManifest(): Promise<EditorManifest> {
         return await fetch<EditorManifest>(
-          `${WORKFLOW_ENDPOINT}/editor/manifest`,
+          `${ORCHESTRATOR_ENDPOINT}/editor/manifest`,
         );
       },
 
       async listActions(): Promise<WorkflowAction[]> {
         return await fetch<WorkflowAction[]>(
-          `${WORKFLOW_ENDPOINT}/editor/actions`,
+          `${ORCHESTRATOR_ENDPOINT}/editor/actions`,
         );
       },
     },

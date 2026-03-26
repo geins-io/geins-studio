@@ -19,6 +19,8 @@ import type { NavigationItem } from '#shared/types';
  * @param t - Translation function from useI18n()
  */
 export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
+  const config = useRuntimeConfig();
+
   return [
     {
       label: t('navigation.pricing'),
@@ -59,19 +61,27 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
         },
       ],
     },
-    {
-      label: t('navigation.orchestrator'),
-      href: '/workflows/list',
-      icon: 'Workflow',
-      group: 'workspace',
-      children: [
-        {
-          label: t('navigation.workflows'),
-          href: '/workflows/list',
-          childPattern: '/workflows/:id',
-        },
-      ],
-    },
+    ...(config.public.featureOrchestrator
+      ? [
+          {
+            label: t('navigation.orchestrator'),
+            href: '/orchestrator/overview',
+            icon: 'Workflow',
+            group: 'workspace',
+            children: [
+              {
+                label: t('navigation.overview'),
+                href: '/orchestrator/overview',
+              },
+              {
+                label: t('navigation.workflows'),
+                href: '/orchestrator/workflows',
+                childPattern: '/orchestrator/workflows/:id',
+              },
+            ],
+          } as NavigationItem,
+        ]
+      : []),
     {
       label: t('navigation.channels'),
       href: '/settings/channel/list',

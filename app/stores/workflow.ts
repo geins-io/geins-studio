@@ -24,7 +24,7 @@ const CACHE_KEY = 'geins-workflow-manifest';
  */
 export const useWorkflowStore = defineStore('workflow', () => {
   const { geinsLogWarn } = useGeinsLog('store/workflow.ts');
-  const { workflowApi } = useGeinsRepository();
+  const { orchestratorApi } = useGeinsRepository();
 
   // STATE
   const manifest = ref<EditorManifest>();
@@ -81,7 +81,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
   }
 
   async function fetchManifest(): Promise<EditorManifest> {
-    const data = await workflowApi.editor.getManifest();
+    const data = await orchestratorApi.editor.getManifest();
     manifest.value = data;
     return data;
   }

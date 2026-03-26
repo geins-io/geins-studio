@@ -294,7 +294,8 @@
     "workspace": "Arbetsyta",
     "channels": "Kanaler",
     "workflows": "Arbetsflöden",
-    "orchestrator": "Orkestrator"
+    "orchestrator": "Orkestrator",
+    "overview": "Översikt"
   },
   "workflows": {
     "total": "Totalt antal arbetsflöden",
@@ -313,7 +314,12 @@
     "view_table": "Tabellvy",
     "view_cards": "Kortvy",
     "table_description": "Beskrivning",
-    "description": "Automatisera uppgifter med visuell arbetsflödesbyggare."
+    "description": "Automatisera uppgifter med visuell arbetsflödesbyggare.",
+    "enabled": "Aktiverat",
+    "enable": "Aktivera"
+  },
+  "orchestrator": {
+    "description": "Översikt över dina arbetsflödens hälsa, prestanda och körningar."
   },
   "account_profile": {
     "login_credentials": "Inloggningsuppgifter",

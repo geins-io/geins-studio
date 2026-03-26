@@ -294,7 +294,8 @@
     "workspace": "Workspace",
     "channels": "Channels",
     "workflows": "Workflows",
-    "orchestrator": "Orchestrator"
+    "orchestrator": "Orchestrator",
+    "overview": "Overview"
   },
   "workflows": {
     "total": "Total Workflows",
@@ -313,7 +314,12 @@
     "view_table": "Table view",
     "view_cards": "Card view",
     "table_description": "Description",
-    "description": "Automate tasks with visual workflow builder."
+    "description": "Automate tasks with visual workflow builder.",
+    "enabled": "Enabled",
+    "enable": "Enable"
+  },
+  "orchestrator": {
+    "description": "Overview of your workflows' health, performance, and executions."
   },
   "account_profile": {
     "login_credentials": "Login credentials",

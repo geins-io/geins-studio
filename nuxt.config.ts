@@ -101,6 +101,7 @@ export default defineNuxtConfig({
       baseUrl: getBaseUrl(),
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
+      featureOrchestrator: process.env.NUXT_PUBLIC_FEATURE_ORCHESTRATOR === 'true',
     },
     private: {
       authSecret: process.env.AUTH_SECRET,
