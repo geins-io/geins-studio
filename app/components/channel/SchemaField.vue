@@ -72,31 +72,33 @@ function onFileChange(key: string, event: Event) {
   </div>
 
   <!-- boolean -->
-  <div
+  <Item
     v-else-if="field.type === 'boolean'"
-    class="flex items-center justify-between rounded-lg border p-3"
+    variant="outline"
+    class="rounded-lg p-3"
   >
-    <div class="flex items-center gap-3">
+    <ItemMedia v-if="field.icon" variant="icon">
       <component
         :is="resolveIcon(field.icon)"
-        v-if="field.icon"
         class="text-muted-foreground size-4"
       />
-      <div>
-        <p class="text-sm font-medium">{{ field.label }}</p>
-        <p v-if="field.description" class="text-muted-foreground text-xs">
-          {{ field.description }}
-        </p>
-      </div>
-    </div>
-    <Switch
-      :model-value="
-        (getSettingValue(modelValue, field.key) as boolean) ?? false
-      "
-      :disabled="field.disabled"
-      @update:model-value="updateValue(field.key, $event)"
-    />
-  </div>
+    </ItemMedia>
+    <ItemContent>
+      <ItemTitle>{{ field.label }}</ItemTitle>
+      <ItemDescription v-if="field.description">
+        {{ field.description }}
+      </ItemDescription>
+    </ItemContent>
+    <ItemActions>
+      <Switch
+        :model-value="
+          (getSettingValue(modelValue, field.key) as boolean) ?? false
+        "
+        :disabled="field.disabled"
+        @update:model-value="updateValue(field.key, $event)"
+      />
+    </ItemActions>
+  </Item>
 
   <!-- select -->
   <div v-else-if="field.type === 'select'" class="space-y-2">
@@ -223,44 +225,22 @@ function onFileChange(key: string, event: Event) {
   </div>
 
   <!-- group -->
-  <div v-else-if="field.type === 'group'" class="rounded-lg border">
-    <div class="flex items-center justify-between gap-6 p-4">
-      <div class="flex items-center gap-6">
-        <component
-          :is="resolveIcon(field.icon)"
-          v-if="field.icon"
-          class="text-muted-foreground size-4"
+  <ContentSwitch
+    v-else-if="field.type === 'group'"
+    :label="field.label"
+    :description="field.description"
+    :checked="(getSettingValue(modelValue, field.key) as boolean) ?? false"
+    @update:checked="updateValue(field.key, $event)"
+  >
+    <div v-if="field.children" class="space-y-4 border-t pt-4">
+      <template v-for="child in field.children" :key="child.key">
+        <ChannelSchemaField
+          v-if="isVisible(child)"
+          :field="child"
+          :model-value="modelValue"
+          @update:model-value="$emit('update:modelValue', $event)"
         />
-        <div>
-          <p class="text-sm font-medium">{{ field.label }}</p>
-          <p v-if="field.description" class="text-muted-foreground text-xs">
-            {{ field.description }}
-          </p>
-        </div>
-      </div>
-      <Switch
-        :model-value="
-          (getSettingValue(modelValue, field.key) as boolean) ?? false
-        "
-        @update:model-value="updateValue(field.key, $event)"
-      />
+      </template>
     </div>
-    <div
-      v-if="
-        field.children && (getSettingValue(modelValue, field.key) as boolean)
-      "
-      class="border-t p-4"
-    >
-      <div class="space-y-4">
-        <template v-for="child in field.children" :key="child.key">
-          <ChannelSchemaField
-            v-if="isVisible(child)"
-            :field="child"
-            :model-value="modelValue"
-            @update:model-value="$emit('update:modelValue', $event)"
-          />
-        </template>
-      </div>
-    </div>
-  </div>
+  </ContentSwitch>
 </template>

@@ -37,7 +37,7 @@
           {
             "key": "accessRequirements",
             "type": "group",
-            "label": "Access Requirements",
+            "label": "Access requirements",
             "description": "Define which actions require login. These settings are global and may be overridden by roles or permissions.",
             "icon": "UserLock",
             "default": true,

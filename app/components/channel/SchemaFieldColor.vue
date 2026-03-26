@@ -29,7 +29,7 @@ function onTextInput(event: Event) {
 
 <template>
   <div
-    class="bg-input flex h-9 w-full items-center gap-3 rounded-md border px-3 py-1"
+    class="bg-input focus-within:border-primary flex h-10 w-full items-center gap-3 rounded-md border px-3 py-1 focus-within:outline-hidden"
   >
     <button
       type="button"
