@@ -110,6 +110,8 @@ const {
   form,
   formTouched,
   hasUnsavedChanges,
+  unsavedChangesDialogOpen,
+  confirmLeave,
   validateOnChange,
   createEntity,
   updateEntity,
@@ -328,6 +330,12 @@ if (!createMode.value) {
 </script>
 
 <template>
+  <DialogUnsavedChanges
+    v-model:open="unsavedChangesDialogOpen"
+    :entity-name="entityName"
+    :loading="loading"
+    @confirm="confirmLeave"
+  />
   <ContentEditWrap>
     <template #header>
       <ContentHeader :title="entityPageTitle" :entity-name="entityName">
@@ -468,7 +476,7 @@ if (!createMode.value) {
         </KeepAlive>
         <!-- Tab 4: Storefront settings -->
         <KeepAlive>
-          <!-- <ContentEditMainContent
+          <ContentEditMainContent
             v-if="currentTab === 4"
             :key="`tab-${currentTab}`"
           >
@@ -483,7 +491,7 @@ if (!createMode.value) {
               @apply="handleSchemaApply"
               @reset="handleSchemaReset"
             />
-          </ContentEditMainContent> -->
+          </ContentEditMainContent>
         </KeepAlive>
 
         <template #sidebar>

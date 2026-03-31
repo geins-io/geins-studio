@@ -26,6 +26,7 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 - NEVER inline template literals for names — use `fullName()` | NEVER cast `entityDataUpdate` to response type
 - NEVER use `as unknown as` type casts — reshape data to fit the target type instead (e.g. `.map(x => x._id)` to get `string[]`)
 - NEVER spread `entityDataUpdate` in `prepareUpdateData` | NEVER modify `ui/table/` primitives for modes
+- NEVER omit `<DialogUnsavedChanges>` from entity edit page templates — without it the route guard silently blocks all navigation with no user feedback (stuck page, no error, no dialog)
 - NEVER watch `quotationItems` for preview (infinite loop) | NEVER `git push --force` to `main`/`next`
 - NEVER commit `.env`, credentials, or secret files
 
