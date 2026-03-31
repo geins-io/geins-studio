@@ -41,7 +41,7 @@ function onFileChange(key: string, event: Event) {
 
 <template>
   <!-- string -->
-  <div v-if="field.type === 'string'" class="space-y-2">
+  <div v-if="field.type === 'string'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
     <Input
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
@@ -49,13 +49,13 @@ function onFileChange(key: string, event: Event) {
       :disabled="field.disabled"
       @update:model-value="updateValue(field.key, $event)"
     />
-    <p v-if="field.description" class="text-muted-foreground text-xs">
+    <FormInputDescription v-if="field.description">
       {{ field.description }}
-    </p>
+    </FormInputDescription>
   </div>
 
   <!-- number -->
-  <div v-else-if="field.type === 'number'" class="space-y-2">
+  <div v-else-if="field.type === 'number'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
     <Input
       type="number"
@@ -66,9 +66,9 @@ function onFileChange(key: string, event: Event) {
       :disabled="field.disabled"
       @update:model-value="updateValue(field.key, Number($event))"
     />
-    <p v-if="field.description" class="text-muted-foreground text-xs">
+    <FormInputDescription v-if="field.description">
       {{ field.description }}
-    </p>
+    </FormInputDescription>
   </div>
 
   <!-- boolean -->
@@ -101,7 +101,7 @@ function onFileChange(key: string, event: Event) {
   </Item>
 
   <!-- select -->
-  <div v-else-if="field.type === 'select'" class="space-y-2">
+  <div v-else-if="field.type === 'select'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
     <Select
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
@@ -120,35 +120,38 @@ function onFileChange(key: string, event: Event) {
         </SelectItem>
       </SelectContent>
     </Select>
-    <p v-if="field.description" class="text-muted-foreground text-xs">
+    <FormInputDescription v-if="field.description">
       {{ field.description }}
-    </p>
+    </FormInputDescription>
   </div>
 
   <!-- font -->
-  <div v-else-if="field.type === 'font'" class="space-y-2">
+  <div v-else-if="field.type === 'font'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
     <ChannelSchemaFieldFont
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       @update:model-value="updateValue(field.key, $event)"
     />
-    <p v-if="field.description" class="text-muted-foreground text-xs">
+    <FormInputDescription v-if="field.description">
       {{ field.description }}
-    </p>
+    </FormInputDescription>
   </div>
 
   <!-- color -->
-  <div v-else-if="field.type === 'color'" class="space-y-2">
+  <div v-else-if="field.type === 'color'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
     <ChannelSchemaFieldColor
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       :label="field.label"
       @update:model-value="updateValue(field.key, $event)"
     />
+    <FormInputDescription v-if="field.description">
+      {{ field.description }}
+    </FormInputDescription>
   </div>
 
   <!-- file -->
-  <div v-else-if="field.type === 'file'" class="space-y-2">
+  <div v-else-if="field.type === 'file'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
     <Input
       type="file"
@@ -156,13 +159,13 @@ function onFileChange(key: string, event: Event) {
       :disabled="field.disabled"
       @change="onFileChange(field.key, $event)"
     />
-    <p v-if="field.description" class="text-muted-foreground text-xs">
+    <FormInputDescription v-if="field.description">
       {{ field.description }}
-    </p>
+    </FormInputDescription>
   </div>
 
   <!-- radio-cards -->
-  <div v-else-if="field.type === 'radio-cards'" class="space-y-2">
+  <div v-else-if="field.type === 'radio-cards'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
     <ChannelSchemaFieldRadioCards
       :options="field.options ?? []"
@@ -172,7 +175,7 @@ function onFileChange(key: string, event: Event) {
   </div>
 
   <!-- radio -->
-  <div v-else-if="field.type === 'radio'" class="space-y-2">
+  <div v-else-if="field.type === 'radio'" class="space-y-1.5">
     <RadioGroup
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       @update:model-value="updateValue(field.key, $event)"

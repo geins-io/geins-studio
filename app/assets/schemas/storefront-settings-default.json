@@ -130,6 +130,7 @@
             "label": "Headings",
             "description": "Used for selected heading elements used on pages and content",
             "placeholder": "Geist (template default)",
+            "default": "Geist",
             "columns": 2
           },
           {
@@ -138,6 +139,7 @@
             "label": "Body text",
             "description": "Applied to body text, descriptions, and supporting content.",
             "placeholder": "Geist (template default)",
+            "default": "Geist",
             "columns": 2
           }
         ]
