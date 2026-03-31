@@ -219,12 +219,22 @@
             "children": [
               {
                 "key": "themeColors.siteBackground.color",
-                "type": "radio",
+                "type": "radio-cards",
                 "label": "Site background",
-                "default": "white",
+                "default": "#ffffff",
                 "options": [
-                  { "value": "white", "label": "White" },
-                  { "value": "light-gray", "label": "Light Gray" }
+                  {
+                    "value": "#ffffff",
+                    "label": "White",
+                    "type": "color",
+                    "description": "The background of your storefront will be white"
+                  },
+                  {
+                    "value": "#FAFAFA",
+                    "label": "Light gray",
+                    "type": "color",
+                    "description": "The background of your storefront will be light gray"
+                  }
                 ]
               }
             ]
@@ -237,12 +247,22 @@
             "children": [
               {
                 "key": "themeColors.navBarBackground.color",
-                "type": "radio",
+                "type": "radio-cards",
                 "label": "Navigation bar background",
-                "default": "light-gray",
+                "default": "#F5F5F5",
                 "options": [
-                  { "value": "white", "label": "White" },
-                  { "value": "light-gray", "label": "Light Gray" }
+                  {
+                    "value": "#ffffff",
+                    "label": "White",
+                    "type": "color",
+                    "description": "The background of your navigation bar will be white"
+                  },
+                  {
+                    "value": "#F5F5F5",
+                    "label": "Light gray",
+                    "type": "color",
+                    "description": "The background of your navigation bar will be light gray"
+                  }
                 ]
               }
             ]

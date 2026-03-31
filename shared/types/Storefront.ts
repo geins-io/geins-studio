@@ -74,4 +74,5 @@ export interface SchemaFieldOption {
   label: string;
   description?: string;
   icon?: string;
+  type?: 'icon' | 'color';
 }
