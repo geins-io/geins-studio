@@ -27,7 +27,7 @@ export function useUnsavedChanges<T extends Record<string, unknown>>(
   excludeFields?: string[],
   externalChanges?: Ref<boolean>,
 ): UseUnsavedChangesReturnType {
-  useGeinsLog('composables/useUnsavedChanges.ts');
+  const { geinsLogInfo } = useGeinsLog('composables/useUnsavedChanges.ts');
 
   const hasUnsavedChanges = computed(() => {
     if (createMode.value) return false;
@@ -48,15 +48,15 @@ export function useUnsavedChanges<T extends Record<string, unknown>>(
           ([key]) => !excludeFields.includes(key),
         ),
       );
-      // geinsLogInfo('current :::', JSON.stringify(current));
-      // geinsLogInfo('original :::', JSON.stringify(original));
+      geinsLogInfo('current :::', JSON.stringify(current));
+      geinsLogInfo('original :::', JSON.stringify(original));
       return (
         JSON.stringify(current) !== JSON.stringify(original) ||
         (externalChanges ? externalChanges.value : false)
       );
     }
-    // geinsLogInfo('current :::', current);
-    // geinsLogInfo('original :::', originalData.value);
+    geinsLogInfo('current :::', current);
+    geinsLogInfo('original :::', originalData.value);
     return (
       current !== originalData.value ||
       (externalChanges ? externalChanges.value : false)

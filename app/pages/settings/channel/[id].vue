@@ -42,9 +42,7 @@ definePageMeta({
 // =====================================================================================
 const formSchema = toTypedSchema(
   z.object({
-    name: z
-      .string()
-      .min(1, t('entity_required', { entityName: 'name' })),
+    name: z.string().min(1, t('entity_required', { entityName: 'name' })),
     url: z.url(t('channels.invalid_url')),
     active: z.boolean(),
   }),
@@ -91,7 +89,6 @@ const storefrontSettings = ref<StorefrontSettings>(
 const schemaEditorOpen = ref(false);
 const schemaChanged = ref(false);
 
-
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
 // =====================================================================================
@@ -117,7 +114,13 @@ const {
   createEntity,
   updateEntity,
   parseAndSaveData,
-} = useEntityEdit<ChannelBase, Channel, ChannelCreate, ChannelUpdate, ChannelApiOptions>({
+} = useEntityEdit<
+  ChannelBase,
+  Channel,
+  ChannelCreate,
+  ChannelUpdate,
+  ChannelApiOptions
+>({
   repository: {
     get: channelApi.channel.get,
     create: channelApi.channel.create,
@@ -258,9 +261,7 @@ const summary = computed<DataItem[]>(() => {
   if (!createMode.value) {
     const channelData = entityData.value as Channel;
     if (channelData?.languages?.length) {
-      const displayValue = channelData.languages
-        .map((l) => l.name)
-        .join(', ');
+      const displayValue = channelData.languages.map((l) => l.name).join(', ');
       dataList.push({
         label: t('channels.languages_count'),
         value: channelData.languages.map((l) => l._id),
@@ -313,7 +314,10 @@ const { summaryProps } = useEntityEditSummary({
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<Channel>(
     entityFetchKey.value,
-    () => channelApi.channel.get(entityId.value, { fields: ['languages', 'markets'] }),
+    () =>
+      channelApi.channel.get(entityId.value, {
+        fields: ['languages', 'markets'],
+      }),
   );
   refreshEntityData.value = refresh;
   onMounted(async () => {
@@ -390,13 +394,17 @@ if (!createMode.value) {
                       <FormMessage />
                     </FormItem>
                   </FormField>
-                  <div v-if="!createMode" class="space-y-2">
-                    <Label>{{ $t('channels.identifier') }}</Label>
-                    <Input :model-value="internalName" disabled />
-                    <p class="text-muted-foreground text-sm">
-                      {{ $t('channels.identifier_helper') }}
-                    </p>
-                  </div>
+                  <FormField v-if="!createMode" name="identifier">
+                    <FormItem>
+                      <FormLabel>{{ $t('channels.identifier') }}</FormLabel>
+                      <FormControl>
+                        <Input :model-value="internalName" disabled />
+                      </FormControl>
+                      <FormDescription>
+                        {{ $t('channels.identifier_helper') }}
+                      </FormDescription>
+                    </FormItem>
+                  </FormField>
                 </FormGrid>
                 <FormGrid design="1">
                   <FormField v-slot="{ componentField }" name="url">
@@ -460,7 +468,7 @@ if (!createMode.value) {
         </KeepAlive>
         <!-- Tab 4: Storefront settings -->
         <KeepAlive>
-          <ContentEditMainContent
+          <!-- <ContentEditMainContent
             v-if="currentTab === 4"
             :key="`tab-${currentTab}`"
           >
@@ -475,7 +483,7 @@ if (!createMode.value) {
               @apply="handleSchemaApply"
               @reset="handleSchemaReset"
             />
-          </ContentEditMainContent>
+          </ContentEditMainContent> -->
         </KeepAlive>
 
         <template #sidebar>
