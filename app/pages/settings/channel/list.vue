@@ -24,7 +24,6 @@ const dataList = ref<EntityList[]>([]);
 const entityName = 'channel';
 const entityIdentifier = '{id}';
 const entityUrl = getEntityUrlFor('channel', 'settings', entityIdentifier);
-const newEntityUrl = '/settings/channel/new';
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});

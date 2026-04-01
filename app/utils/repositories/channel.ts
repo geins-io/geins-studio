@@ -35,27 +35,26 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       ...channelRepo,
 
       async update(id: string, data: ChannelUpdate): Promise<Channel> {
-        // File upload: each file part's name matches its dot-notation schema path
-        // (e.g. "baseSettings.logotype"). Backend detects file parts by Content-Type,
-        // writes to blob storage, and sets the field to the resulting URL.
-        const formData = new FormData();
-        const nonFileSettings: Record<string, unknown> = {};
-
-        for (const [key, value] of Object.entries(
+        const fileEntries = Object.entries(
           data.storefrontSettings ?? {},
-        )) {
-          if (value instanceof File) {
-            formData.append(key, value, value.name);
-          } else {
-            nonFileSettings[key] = value;
-          }
+        ).filter((entry): entry is [string, File] => entry[1] instanceof File);
+
+        // File part name must be the full JSON path: "storefrontSettings.{fieldKey}"
+        // The field must also exist in the JSON payload's storefrontSettings as "" so
+        // the backend knows where to write the blob URL back.
+        const formData = new FormData();
+        const settingsPayload: Record<string, unknown> = {
+          ...(data.storefrontSettings ?? {}),
+        };
+
+        for (const [key, file] of fileEntries) {
+          formData.append(`storefrontSettings.${key}`, file, file.name);
+          settingsPayload[key] = '';
         }
 
-        // Non-file fields alongside file parts — confirm exact format with backend
-        // once the file upload endpoint is live (see STU-147).
         const jsonPayload: ChannelUpdate = {
           ...data,
-          storefrontSettings: nonFileSettings,
+          storefrontSettings: settingsPayload,
         };
         formData.append('channel', JSON.stringify(jsonPayload));
 

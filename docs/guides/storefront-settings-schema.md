@@ -346,6 +346,7 @@ Settings are stored as a flat key→value object using the dot-notation `key` fr
   "accessRequirements.priceVisibility": true,
   "accessRequirements.orderPlacement": true,
   "accessRequirements.stockStatus": false,
+  "logotype": "",
   "borderRadius": "0",
   "fonts.headings": "Hanuman",
   "fonts.body": "Geist",

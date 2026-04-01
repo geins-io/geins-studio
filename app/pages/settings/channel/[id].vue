@@ -97,7 +97,6 @@ const {
   entityId,
   createMode,
   loading,
-  newEntityUrl,
   showSidebar,
   currentTab,
   entityDataCreate,
