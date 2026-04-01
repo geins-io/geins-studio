@@ -29,6 +29,7 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 - NEVER omit `<DialogUnsavedChanges>` from entity edit page templates — without it the route guard silently blocks all navigation with no user feedback (stuck page, no error, no dialog)
 - NEVER watch `quotationItems` for preview (infinite loop) | NEVER `git push --force` to `main`/`next`
 - NEVER commit `.env`, credentials, or secret files
+- NEVER use `FormData`/`multipart/form-data` for entity PATCH unless the backend endpoint explicitly requires it and you have verified this with a working network trace. Default to plain JSON (`body: data`). Premature multipart (e.g. "in case we need file uploads later") will break updates silently. File upload support requires a separate dedicated method confirmed against the actual API.
 
 ## Workflow Rules
 

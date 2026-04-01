@@ -1,8 +1,6 @@
 import type {
   Channel,
-  ChannelCreate,
   ChannelUpdate,
-  ChannelListItem,
   ChannelApiOptions,
   Market,
   Language,
@@ -10,8 +8,6 @@ import type {
   ChannelMailType,
   ChannelMailSettings,
 } from '#shared/types';
-import { buildQueryObject } from '#shared/utils/api-query';
-import { entityBaseRepo } from './entity-base';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/account';
@@ -23,59 +19,49 @@ const CHANNEL_ENDPOINT = `${BASE_ENDPOINT}/channel`;
  * Provides full CRUD for channels, activate/deactivate actions,
  * and sub-resources scoped to a specific channel (markets, payments, mail).
  *
- * The update endpoint uses multipart/form-data to support file uploads
- * for storefront settings (logos, etc.) alongside JSON data.
+ * File uploads (storefront logos etc.) use uploadStorefrontFiles() — a separate
+ * multipart method where each file part's name matches its dot-notation schema path.
  */
 export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const channelBase = entityBaseRepo<ChannelListItem, ChannelApiOptions>(CHANNEL_ENDPOINT, fetch);
+  const channelRepo = repo.entity<
+    Channel,
+    ChannelCreate,
+    ChannelUpdate,
+    ChannelApiOptions
+  >(CHANNEL_ENDPOINT, fetch);
 
   return {
     channel: {
-      list: channelBase.list,
-
-      async get(id: string, options?: ChannelApiOptions): Promise<Channel> {
-        return await fetch<Channel>(`${CHANNEL_ENDPOINT}/${id}`, {
-          query: buildQueryObject(options),
-        });
-      },
-
-      async create(data: ChannelCreate): Promise<Channel> {
-        return await fetch<Channel>(CHANNEL_ENDPOINT, {
-          method: 'POST',
-          body: data,
-        });
-      },
+      ...channelRepo,
 
       async update(id: string, data: ChannelUpdate): Promise<Channel> {
+        // File upload: each file part's name matches its dot-notation schema path
+        // (e.g. "baseSettings.logotype"). Backend detects file parts by Content-Type,
+        // writes to blob storage, and sets the field to the resulting URL.
         const formData = new FormData();
+        const nonFileSettings: Record<string, unknown> = {};
 
-        // Separate file values from JSON data
-        const jsonData: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(data)) {
-          if (value instanceof File || value instanceof Blob) {
-            formData.append(key, value);
+        for (const [key, value] of Object.entries(
+          data.storefrontSettings ?? {},
+        )) {
+          if (value instanceof File) {
+            formData.append(key, value, value.name);
           } else {
-            jsonData[key] = value;
+            nonFileSettings[key] = value;
           }
         }
 
-        formData.append('channel', JSON.stringify(jsonData));
+        // Non-file fields alongside file parts — confirm exact format with backend
+        // once the file upload endpoint is live (see STU-147).
+        const jsonPayload: ChannelUpdate = {
+          ...data,
+          storefrontSettings: nonFileSettings,
+        };
+        formData.append('channel', JSON.stringify(jsonPayload));
 
         return await fetch<Channel>(`${CHANNEL_ENDPOINT}/${id}`, {
           method: 'PATCH',
           body: formData,
-        });
-      },
-
-      async activate(id: string): Promise<void> {
-        await fetch<null>(`${CHANNEL_ENDPOINT}/${id}/activate`, {
-          method: 'PUT',
-        });
-      },
-
-      async deactivate(id: string): Promise<void> {
-        await fetch<null>(`${CHANNEL_ENDPOINT}/${id}/deactivate`, {
-          method: 'PUT',
         });
       },
 

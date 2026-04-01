@@ -135,13 +135,7 @@ visibilityState.value = getVisibilityState(hiddenColumns);
 </script>
 
 <template>
-  <ContentHeader :title="$t('navigation.channels')">
-    <ContentActionBar>
-      <ButtonIcon icon="new" :href="newEntityUrl">
-        {{ $t('new_entity', { entityName }) }}
-      </ButtonIcon>
-    </ContentActionBar>
-  </ContentHeader>
+  <ContentHeader :title="$t('navigation.channels')" />
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
@@ -151,16 +145,6 @@ visibilityState.value = getVisibilityState(hiddenColumns);
       :init-visibility-state="visibilityState"
       :error="fetchError"
       :on-retry="refresh"
-    >
-      <template #empty-actions>
-        <ButtonIcon
-          icon="new"
-          variant="secondary"
-          @click="navigateTo(newEntityUrl)"
-        >
-          {{ $t('create_new_entity', { entityName }) }}
-        </ButtonIcon>
-      </template>
-    </TableView>
+    />
   </NuxtErrorBoundary>
 </template>

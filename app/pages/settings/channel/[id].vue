@@ -318,7 +318,7 @@ if (!createMode.value) {
     entityFetchKey.value,
     () =>
       channelApi.channel.get(entityId.value, {
-        fields: ['languages', 'markets'],
+        fields: ['languages', 'markets', 'storefrontSettings'],
       }),
   );
   refreshEntityData.value = refresh;
@@ -352,7 +352,7 @@ if (!createMode.value) {
             v-if="!createMode"
             icon="save"
             :loading="loading"
-            :disabled="!hasUnsavedChanges"
+            :disabled="!hasUnsavedChanges || loading"
             @click="handleSave"
           >
             {{ $t('save_entity', { entityName }) }}

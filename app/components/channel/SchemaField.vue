@@ -34,8 +34,8 @@ function isVisible(field: SchemaField): boolean {
 
 function onFileChange(key: string, event: Event) {
   const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-  updateValue(key, file ? file.name : null);
+  const file = target.files?.[0] ?? null;
+  updateValue(key, file);
 }
 </script>
 
