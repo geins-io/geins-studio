@@ -357,21 +357,6 @@ if (!createMode.value) {
           >
             {{ $t('save_entity', { entityName }) }}
           </ButtonIcon>
-          <DropdownMenu v-if="!createMode">
-            <DropdownMenuTrigger as-child>
-              <Button class="p-1" size="icon" variant="secondary">
-                <LucideMoreHorizontal class="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem as-child>
-                <NuxtLink :to="newEntityUrl">
-                  <LucidePlus class="mr-2 size-4" />
-                  <span>{{ $t('new_entity', { entityName }) }}</span>
-                </NuxtLink>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
