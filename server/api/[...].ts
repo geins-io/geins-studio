@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, getHeaders, getQuery } from 'h3';
+import { defineEventHandler, readBody, readRawBody, getHeaders, getQuery } from 'h3';
 import { useRuntimeConfig } from '#imports';
 /**
  * Event handler for processing API requests.
@@ -13,12 +13,17 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
   const { geinsLog, geinsLogError } = log('server/api/[...].ts');
 
+  const headers = getHeaders(event);
+
   let body;
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
-    body = await readBody(event);
+    const contentType = headers['content-type'] ?? '';
+    if (contentType.includes('multipart/form-data')) {
+      body = await readRawBody(event);
+    } else {
+      body = await readBody(event);
+    }
   }
-
-  const headers = getHeaders(event);
   const token = headers['x-access-token'];
 
   const targetUrl = event.context.params?._;

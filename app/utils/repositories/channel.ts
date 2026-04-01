@@ -16,8 +16,7 @@ const CHANNEL_ENDPOINT = `${BASE_ENDPOINT}/channel`;
 /**
  * Repository for managing channel operations.
  *
- * Provides full CRUD for channels, activate/deactivate actions,
- * and sub-resources scoped to a specific channel (markets, payments, mail).
+ * Provides full CRUD for channels and sub-resources scoped to a specific channel (markets, payments, mail).
  *
  * File uploads (storefront logos etc.) use uploadStorefrontFiles() — a separate
  * multipart method where each file part's name matches its dot-notation schema path.

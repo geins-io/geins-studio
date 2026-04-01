@@ -88,22 +88,6 @@ describe('channelRepo', () => {
       });
     });
 
-    it('channel.activate() calls PUT /account/channel/:id/activate', async () => {
-      mockFetch.mockResolvedValue(null);
-      await api.channel.activate('123');
-      expect(mockFetch).toHaveBeenCalledWith('/account/channel/123/activate', {
-        method: 'PUT',
-      });
-    });
-
-    it('channel.deactivate() calls PUT /account/channel/:id/deactivate', async () => {
-      mockFetch.mockResolvedValue(null);
-      await api.channel.deactivate('123');
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/account/channel/123/deactivate',
-        { method: 'PUT' },
-      );
-    });
   });
 
   // ===========================================================================
@@ -298,11 +282,6 @@ describe('channelRepo', () => {
       await expect(api.channel.create(buildChannelCreate())).rejects.toThrow(
         'Conflict',
       );
-    });
-
-    it('channel.activate propagates fetch errors', async () => {
-      mockFetch.mockRejectedValue(new Error('Forbidden'));
-      await expect(api.channel.activate('123')).rejects.toThrow('Forbidden');
     });
 
     it('market.list propagates fetch errors', async () => {
