@@ -128,6 +128,34 @@ Renders a set of card-style radio buttons. Each option shows an icon, label, and
 
 ---
 
+### `radio`
+
+Renders a standard vertical list of radio buttons. Simpler than `radio-cards` — shows only a label per option, no icons or descriptions.
+
+```json
+{
+  "key": "layoutMode",
+  "type": "radio",
+  "label": "Layout mode",
+  "default": "grid",
+  "options": [
+    { "value": "grid", "label": "Grid" },
+    { "value": "list", "label": "List" }
+  ]
+}
+```
+
+**Renders as:** A vertical stack of radio button + label rows.
+
+**Option properties:**
+
+| Property | Description                                   |
+| -------- | --------------------------------------------- |
+| `value`  | The stored value when this option is selected |
+| `label`  | Option label shown next to the radio button   |
+
+---
+
 ### `boolean`
 
 Renders a toggle switch.
@@ -314,18 +342,23 @@ Settings are stored as a flat key→value object using the dot-notation `key` fr
 ```json
 {
   "storefrontMode": "commerce",
+  "accessRequirements": true,
   "accessRequirements.priceVisibility": true,
   "accessRequirements.orderPlacement": true,
   "accessRequirements.stockStatus": false,
-  "cornerStyle": "round",
-  "fonts.headings": "Inter",
+  "borderRadius": "0",
+  "fonts.headings": "Hanuman",
   "fonts.body": "Geist",
-  "themeColors.primary": "#0f172a",
-  "themeColors.secondary": "#ffffff",
-  "themeColors.buttons.general.background": "#0f172a",
-  "themeColors.buttons.general.text": "#ffffff",
+  "themeColors.buttons.general.background": "#0E7490",
+  "themeColors.buttons.general.text": "#FFFFFF",
+  "themeColors.buttons.purchase.background": "#0E7490",
+  "themeColors.buttons.purchase.text": "#FFFFFF",
   "themeColors.siteBackground.color": "#ffffff",
-  "themeColors.navBarBackground.color": "#F5F5F5"
+  "themeColors.navBarBackground.color": "#F5F5F5",
+  "themeColors.topBar.background": "#0E7490",
+  "themeColors.topBar.text": "#FFFFFF",
+  "themeColors.footer.background": "#F5F5F5",
+  "themeColors.footer.text": "#0A0A0A"
 }
 ```
 
@@ -351,21 +384,19 @@ The default Geins schema covers two tabs:
 | Section       | Field                                     | Type        | Default   |
 | ------------- | ----------------------------------------- | ----------- | --------- |
 | Logotype      | `logotype`                                | file        | —         |
-| Corner style  | `cornerStyle`                             | radio-cards | `square`  |
-| Font settings | `fonts.headings`                          | font        | `Geist`   |
+| Corner style  | `borderRadius`                            | radio-cards | `0`       |
+| Font settings | `fonts.headings`                          | font        | `Hanuman` |
 | Font settings | `fonts.body`                              | font        | `Geist`   |
-| Theme colors  | `themeColors.primary`                     | color       | `#171717` |
-| Theme colors  | `themeColors.secondary`                   | color       | `#ffffff` |
-| Theme colors  | `themeColors.buttons.general.background`  | color       | —         |
-| Theme colors  | `themeColors.buttons.general.text`        | color       | —         |
-| Theme colors  | `themeColors.buttons.purchase.background` | color       | —         |
-| Theme colors  | `themeColors.buttons.purchase.text`       | color       | —         |
+| Theme colors  | `themeColors.buttons.general.background`  | color       | `#0E7490` |
+| Theme colors  | `themeColors.buttons.general.text`        | color       | `#FFFFFF` |
+| Theme colors  | `themeColors.buttons.purchase.background` | color       | `#0E7490` |
+| Theme colors  | `themeColors.buttons.purchase.text`       | color       | `#FFFFFF` |
 | Theme colors  | `themeColors.siteBackground.color`        | radio-cards | `#ffffff` |
 | Theme colors  | `themeColors.navBarBackground.color`      | radio-cards | `#F5F5F5` |
-| Theme colors  | `themeColors.topBar.background`           | color       | —         |
-| Theme colors  | `themeColors.topBar.text`                 | color       | —         |
-| Theme colors  | `themeColors.footer.background`           | color       | —         |
-| Theme colors  | `themeColors.footer.text`                 | color       | —         |
+| Theme colors  | `themeColors.topBar.background`           | color       | `#0E7490` |
+| Theme colors  | `themeColors.topBar.text`                 | color       | `#FFFFFF` |
+| Theme colors  | `themeColors.footer.background`           | color       | `#F5F5F5` |
+| Theme colors  | `themeColors.footer.text`                 | color       | `#0A0A0A` |
 
 ---
 

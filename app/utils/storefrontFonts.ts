@@ -25,6 +25,7 @@ export const storefrontFonts: StorefrontFont[] = [
   { label: 'Source Sans 3', value: 'Source Sans 3', category: 'sans-serif' },
 
   // Serif
+  { label: 'Hanuman', value: 'Hanuman', category: 'serif' },
   { label: 'Playfair Display', value: 'Playfair Display', category: 'serif' },
   { label: 'Merriweather', value: 'Merriweather', category: 'serif' },
   { label: 'Lora', value: 'Lora', category: 'serif' },

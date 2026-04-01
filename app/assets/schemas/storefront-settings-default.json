@@ -91,25 +91,25 @@
         ]
       },
       {
-        "key": "cornerStyle",
+        "key": "borderRadius",
         "title": "Corner style",
         "description": "Choose between rounded or square corners for interface elements.",
         "icon": "SquareArrowUpRight",
         "fields": [
           {
-            "key": "cornerStyle",
+            "key": "borderRadius",
             "type": "radio-cards",
             "label": "Corner style",
-            "default": "square",
+            "default": "0",
             "options": [
               {
-                "value": "square",
+                "value": "0",
                 "label": "Square",
                 "description": "Gives interface elements square corners.",
                 "icon": "Square"
               },
               {
-                "value": "round",
+                "value": "0.375rem",
                 "label": "Round",
                 "description": "Gives interface elements rounded corners.",
                 "icon": "SquareRoundCorner"
@@ -130,7 +130,7 @@
             "label": "Headings",
             "description": "Used for selected heading elements used on pages and content",
             "placeholder": "Geist (template default)",
-            "default": "Geist",
+            "default": "Hanuman",
             "columns": 2
           },
           {
@@ -151,20 +151,6 @@
         "icon": "Palette",
         "fields": [
           {
-            "key": "themeColors.primary",
-            "type": "color",
-            "label": "Primary color",
-            "columns": 4,
-            "default": "#171717"
-          },
-          {
-            "key": "themeColors.secondary",
-            "type": "color",
-            "label": "Secondary color",
-            "columns": 4,
-            "default": "#ffffff"
-          },
-          {
             "key": "themeColors.buttons",
             "type": "sub-section",
             "label": "Buttons",
@@ -180,13 +166,15 @@
                     "key": "themeColors.buttons.general.background",
                     "type": "color",
                     "label": "Background",
-                    "columns": 2
+                    "columns": 2,
+                    "default": "#0E7490"
                   },
                   {
                     "key": "themeColors.buttons.general.text",
                     "type": "color",
                     "label": "Text",
-                    "columns": 2
+                    "columns": 2,
+                    "default": "#FFFFFF"
                   }
                 ]
               },
@@ -199,13 +187,15 @@
                     "key": "themeColors.buttons.purchase.background",
                     "type": "color",
                     "label": "Background",
-                    "columns": 2
+                    "columns": 2,
+                    "default": "#0E7490"
                   },
                   {
                     "key": "themeColors.buttons.purchase.text",
                     "type": "color",
                     "label": "Text",
-                    "columns": 2
+                    "columns": 2,
+                    "default": "#FFFFFF"
                   }
                 ]
               }
@@ -277,13 +267,15 @@
                 "key": "themeColors.topBar.background",
                 "type": "color",
                 "label": "Background",
-                "columns": 4
+                "columns": 4,
+                "default": "#0E7490"
               },
               {
                 "key": "themeColors.topBar.text",
                 "type": "color",
                 "label": "Text",
-                "columns": 4
+                "columns": 4,
+                "default": "#FFFFFF"
               }
             ]
           },
@@ -297,13 +289,15 @@
                 "key": "themeColors.footer.background",
                 "type": "color",
                 "label": "Background",
-                "columns": 4
+                "columns": 4,
+                "default": "#F5F5F5"
               },
               {
                 "key": "themeColors.footer.text",
                 "type": "color",
                 "label": "Text",
-                "columns": 4
+                "columns": 4,
+                "default": "#0A0A0A"
               }
             ]
           }
