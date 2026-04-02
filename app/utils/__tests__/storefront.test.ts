@@ -18,21 +18,27 @@ describe('getDefaultSettings', () => {
       'accessRequirements.priceVisibility': true,
       'accessRequirements.orderPlacement': true,
       'accessRequirements.stockStatus': false,
-      cornerStyle: 'square',
-      'themeColors.primary': '#171717',
-      'themeColors.secondary': '#ffffff',
-      'themeColors.siteBackground.color': 'white',
-      'themeColors.navBarBackground.color': 'light-gray',
+      borderRadius: '0',
+      'fonts.headings': 'Hanuman',
+      'fonts.body': 'Geist',
+      'themeColors.buttons.general.background': '#0E7490',
+      'themeColors.buttons.general.text': '#FFFFFF',
+      'themeColors.buttons.purchase.background': '#0E7490',
+      'themeColors.buttons.purchase.text': '#FFFFFF',
+      'themeColors.siteBackground.color': '#ffffff',
+      'themeColors.navBarBackground.color': '#F5F5F5',
+      'themeColors.topBar.background': '#0E7490',
+      'themeColors.topBar.text': '#FFFFFF',
+      'themeColors.footer.background': '#F5F5F5',
+      'themeColors.footer.text': '#0A0A0A',
     });
   });
 
   it('omits fields without a default value', () => {
     const settings = getDefaultSettings(defaultSchema as StorefrontSchema);
 
-    // logotype has no default, fonts.headings and fonts.body have no default
+    // logotype has no default
     expect(settings).not.toHaveProperty('logotype');
-    expect(settings).not.toHaveProperty('fonts.headings');
-    expect(settings).not.toHaveProperty('fonts.body');
   });
 
   it('includes group children defaults', () => {
