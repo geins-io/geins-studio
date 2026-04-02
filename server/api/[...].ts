@@ -51,6 +51,7 @@ export default defineEventHandler(async (event) => {
     ...headers,
     ...(token ? { authorization: `Bearer ${token}` } : {}),
   };
+
   if (event.method === 'DELETE' && apiHeaders['content-length'] === '0') {
     delete apiHeaders['content-length'];
   }
@@ -61,7 +62,6 @@ export default defineEventHandler(async (event) => {
       body,
       headers: apiHeaders,
     });
-    
 
     return response;
   } catch (error) {
