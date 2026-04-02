@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.3.2 - 2026-04-02
+
+### 🐛 Bug Fixes
+
+- Status badge always showing inactive regardless of entity live status
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.3.1 - 2026-03-16
 
 ### 🚀 Enhancements
