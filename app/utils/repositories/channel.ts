@@ -1,5 +1,6 @@
 import type {
   Channel,
+  ChannelCreate,
   ChannelUpdate,
   ChannelApiOptions,
   Market,

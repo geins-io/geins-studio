@@ -205,6 +205,8 @@ async function handleResetToDefault() {
   }
 }
 
+// Sync storefrontSettings into entityDataUpdate so useUnsavedChanges detects changes
+// (prepareUpdateData also reads storefrontSettings.value at save time)
 watch(
   storefrontSettings,
   (val) => {
@@ -326,7 +328,7 @@ if (!createMode.value) {
     entityFetchKey.value,
     () =>
       channelApi.channel.get(entityId.value, {
-        fields: ['languages', 'markets', 'storefrontSettings'],
+        fields: ['languages', 'markets', 'storefrontSettings', 'storefrontSchema'],
       }),
   );
   refreshEntityData.value = refresh;

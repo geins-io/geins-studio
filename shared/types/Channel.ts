@@ -198,6 +198,7 @@ export type ChannelFieldsFilter =
   | 'default'
   | 'languages'
   | 'markets'
-  | 'storefrontSettings';
+  | 'storefrontSettings'
+  | 'storefrontSchema';
 
 export type ChannelApiOptions = ApiOptions<ChannelFieldsFilter>;

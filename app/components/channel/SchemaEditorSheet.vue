@@ -76,9 +76,6 @@ function handleApply() {
         />
         <Feedback v-if="jsonError" type="negative">
           <template #title>{{ jsonError }}</template>
-          <template #description>{{
-            t('channels.schema_editor_invalid_schema')
-          }}</template>
         </Feedback>
       </SheetBody>
       <SheetFooter>
