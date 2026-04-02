@@ -32,11 +32,6 @@ function isVisible(field: SchemaField): boolean {
   );
 }
 
-function onFileChange(key: string, event: Event) {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0] ?? null;
-  updateValue(key, file);
-}
 </script>
 
 <template>
@@ -150,14 +145,13 @@ function onFileChange(key: string, event: Event) {
     </FormInputDescription>
   </div>
 
-  <!-- file -->
-  <div v-else-if="field.type === 'file'" class="space-y-1.5">
+  <!-- image -->
+  <div v-else-if="field.type === 'image'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
-    <Input
-      type="file"
-      :accept="field.accept"
+    <ChannelSchemaFieldImage
+      :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       :disabled="field.disabled"
-      @change="onFileChange(field.key, $event)"
+      @update:model-value="updateValue(field.key, $event)"
     />
     <FormInputDescription v-if="field.description">
       {{ field.description }}

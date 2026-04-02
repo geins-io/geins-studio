@@ -258,26 +258,24 @@ Renders a font picker (searchable select populated with Google Fonts).
 
 ---
 
-### `file`
+### `image`
 
-Renders a file upload input. Used for images (e.g. logotype).
+Renders an image upload input with a square preview thumbnail.
 
 ```json
 {
   "key": "logotype",
-  "type": "file",
+  "type": "image",
   "label": "Logotype",
-  "accept": "image/*",
   "columns": 2
 }
 ```
 
 | Property  | Description                                         |
 | --------- | --------------------------------------------------- |
-| `accept`  | MIME type filter, e.g. `"image/*"` or `"image/png"` |
 | `columns` | Grid width (out of 4). `2` = half width, `4` = full |
 
-**Renders as:** A drag-and-drop upload zone with a preview thumbnail after upload.
+**Renders as:** A square preview thumbnail (showing the current image or a placeholder) with a "Choose file" button alongside it. Only accepts image files (`image/*`).
 
 ---
 
@@ -384,7 +382,7 @@ The default Geins schema covers two tabs:
 
 | Section       | Field                                     | Type        | Default   |
 | ------------- | ----------------------------------------- | ----------- | --------- |
-| Logotype      | `logotype`                                | file        | —         |
+| Logotype      | `logotype`                                | image       | —         |
 | Corner style  | `borderRadius`                            | radio-cards | `0`       |
 | Font settings | `fonts.headings`                          | font        | `Hanuman` |
 | Font settings | `fonts.body`                              | font        | `Geist`   |

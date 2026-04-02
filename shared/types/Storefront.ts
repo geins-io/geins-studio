@@ -37,7 +37,6 @@ export interface SchemaField {
 
   // Type-specific properties
   options?: SchemaFieldOption[];
-  accept?: string;
   min?: number;
   max?: number;
   pattern?: string;
@@ -63,7 +62,7 @@ export type SchemaFieldType =
   | 'select'
   | 'font'
   | 'color'
-  | 'file'
+  | 'image'
   | 'radio-cards'
   | 'radio'
   | 'group'

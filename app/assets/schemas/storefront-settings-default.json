@@ -83,9 +83,8 @@
         "fields": [
           {
             "key": "logotype",
-            "type": "file",
+            "type": "image",
             "label": "Logotype",
-            "accept": "image/*",
             "columns": 2
           }
         ]
