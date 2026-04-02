@@ -1,6 +1,7 @@
 import type { StringKeyOf } from './Global';
 import '@tanstack/vue-table';
 import type { RowData } from '@tanstack/vue-table';
+import type { Component } from 'vue';
 
 export type TableRowAction = 'edit' | 'copy' | 'delete';
 
@@ -23,6 +24,7 @@ export type ColumnType =
   | 'date'
   | 'number'
   | 'image'
+  | 'icon'
   | 'link'
   | 'select'
   | 'actions'
@@ -47,6 +49,15 @@ export interface LinkColumnConfig<T> {
   external?: boolean;
 }
 
+export interface IconColumnConfig<T> {
+  /** Static icon for all rows */
+  icon?: Component;
+  /** Derive icon + optional CSS class from the row data */
+  resolveIcon?: (row: T) => { icon: Component; class?: string } | undefined;
+  url?: string;
+  idField?: StringKeyOf<T>;
+}
+
 export interface ColumnOptions<T> {
   selectable?: boolean;
   sortable?: boolean;
@@ -57,6 +68,7 @@ export interface ColumnOptions<T> {
   includeColumns?: StringKeyOf<T>[];
   columnCellProps?: Partial<Record<StringKeyOf<T>, Record<string, unknown>>>;
   linkColumns?: Partial<Record<StringKeyOf<T>, LinkColumnConfig<T>>>;
+  iconColumns?: Partial<Record<StringKeyOf<T>, IconColumnConfig<T>>>;
   maxTextLength?: number;
 }
 

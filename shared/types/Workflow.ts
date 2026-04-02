@@ -1,5 +1,8 @@
+import type { ApiOptions } from './Api';
+import type { CreateEntity, UpdateEntity, ResponseEntity } from './Global';
+
 // ---------------------------------------------------------------------------
-// Workflow Engine Types
+// Workflow Engine Types (Orchestrator)
 // ---------------------------------------------------------------------------
 
 // -- Enums ------------------------------------------------------------------
@@ -512,3 +515,223 @@ export interface EditorManifest {
   eventEntities: ManifestEventEntity[];
   enums: Record<string, string[]>;
 }
+
+// ---------------------------------------------------------------------------
+// Workflow Entity Types (next branch — entity-pattern CRUD)
+// ---------------------------------------------------------------------------
+
+export interface WorkflowEntityBase {
+  name: string;
+  description: string;
+  status: WorkflowEntityStatus;
+  trigger: WorkflowEntityTrigger;
+  steps: WorkflowStep[];
+  tags: string[];
+  version: number;
+  enabled: boolean;
+}
+
+export type WorkflowEntityCreate = CreateEntity<WorkflowEntityBase>;
+export type WorkflowEntityUpdate = UpdateEntity<WorkflowEntityBase>;
+export type WorkflowEntity = ResponseEntity<WorkflowEntityBase>;
+
+export type WorkflowEntityStatus = 'draft' | 'active' | 'inactive' | 'archived';
+
+export interface WorkflowEntityTrigger {
+  type: string;
+  config: Record<string, unknown>;
+}
+
+export interface WorkflowStep {
+  id: string;
+  actionId: string;
+  name: string;
+  config: Record<string, unknown>;
+  next?: string[];
+  errorHandler?: string;
+}
+
+// ─── Entity Validation ─────────────────────────────────────────────
+
+export interface WorkflowEntityValidationResult {
+  valid: boolean;
+  errors: WorkflowEntityValidationError[];
+  warnings: WorkflowEntityValidationWarning[];
+}
+
+export interface WorkflowEntityValidationError {
+  code: string;
+  message: string;
+  stepId?: string;
+}
+
+export interface WorkflowEntityValidationWarning {
+  code: string;
+  message: string;
+  stepId?: string;
+}
+
+// ─── Entity Execution ──────────────────────────────────────────────
+
+export interface WorkflowEntityExecutionBase {
+  workflowId: string;
+  status: WorkflowEntityExecutionStatus;
+  triggeredBy: string;
+  startedAt: string;
+  completedAt?: string;
+  duration?: number;
+  input: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  error?: string;
+  currentStepId?: string;
+}
+
+export type WorkflowEntityExecution = ResponseEntity<WorkflowEntityExecutionBase>;
+
+export type WorkflowEntityExecutionStatus =
+  | 'pending'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
+
+export interface WorkflowEntityExecutionStartRequest {
+  input?: Record<string, unknown>;
+}
+
+export interface WorkflowEntityExecutionLog {
+  stepId: string;
+  stepName: string;
+  status: string;
+  startedAt: string;
+  completedAt?: string;
+  duration?: number;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  error?: string;
+}
+
+export interface WorkflowEntityExecutionConcurrency {
+  workflowId: string;
+  running: number;
+  limit: number;
+}
+
+// ─── Entity Metrics ────────────────────────────────────────────────
+
+export interface WorkflowEntityMetrics {
+  workflowId: string;
+  totalExecutions: number;
+  successCount: number;
+  failureCount: number;
+  averageDuration: number;
+  p95Duration: number;
+  lastExecutedAt?: string;
+}
+
+export interface WorkflowEntityAggregateMetrics {
+  totalWorkflows: number;
+  totalExecutions: number;
+  successRate: number;
+  averageDuration: number;
+  period: string;
+}
+
+export interface WorkflowEntityErrorSummary {
+  workflowId: string;
+  errorCode: string;
+  message: string;
+  count: number;
+  lastOccurredAt: string;
+}
+
+// ─── Entity Version ────────────────────────────────────────────────
+
+export interface WorkflowEntityVersionBase {
+  workflowId: string;
+  version: number;
+  createdBy: string;
+  createdAt: string;
+  changelog?: string;
+  definition: WorkflowEntity;
+}
+
+export type WorkflowEntityVersion = ResponseEntity<WorkflowEntityVersionBase>;
+
+export interface WorkflowEntityVersionComparison {
+  fromVersion: number;
+  toVersion: number;
+  changes: WorkflowEntityVersionChange[];
+}
+
+export interface WorkflowEntityVersionChange {
+  path: string;
+  type: 'added' | 'removed' | 'modified';
+  oldValue?: unknown;
+  newValue?: unknown;
+}
+
+// ─── Entity Variable ───────────────────────────────────────────────
+
+export interface WorkflowEntityVariableBase {
+  key: string;
+  value: string;
+  description?: string;
+  isSecret: boolean;
+  workflowId?: string;
+}
+
+export type WorkflowEntityVariableCreate = CreateEntity<WorkflowEntityVariableBase>;
+export type WorkflowEntityVariable = ResponseEntity<WorkflowEntityVariableBase>;
+
+// ─── Entity Editor ─────────────────────────────────────────────────
+
+export interface WorkflowEditorManifest {
+  version: string;
+  actions: WorkflowEditorAction[];
+  triggers: WorkflowTriggerDefinition[];
+}
+
+export interface WorkflowEditorAction {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  inputs: WorkflowEditorActionParameter[];
+  outputs: WorkflowEditorActionParameter[];
+}
+
+export interface WorkflowEditorActionParameter {
+  name: string;
+  type: string;
+  required: boolean;
+  description?: string;
+  defaultValue?: unknown;
+}
+
+export interface WorkflowTriggerDefinition {
+  type: string;
+  name: string;
+  description: string;
+  configSchema: Record<string, unknown>;
+}
+
+// ─── Entity API Options ────────────────────────────────────────────
+
+export type WorkflowFieldsFilter =
+  | 'all'
+  | 'default'
+  | 'steps'
+  | 'trigger'
+  | 'tags';
+export type WorkflowApiOptions = ApiOptions<WorkflowFieldsFilter>;
+
+export type WorkflowExecutionFieldsFilter =
+  | 'all'
+  | 'default'
+  | 'input'
+  | 'output'
+  | 'logs';
+export type WorkflowExecutionApiOptions =
+  ApiOptions<WorkflowExecutionFieldsFilter>;
