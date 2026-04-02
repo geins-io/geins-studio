@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, readRawBody, getHeaders, getQuery } from 'h3';
+import { defineEventHandler, readBody, proxyRequest, getHeaders, getQuery } from 'h3';
 import { useRuntimeConfig } from '#imports';
 /**
  * Event handler for processing API requests.
@@ -14,16 +14,6 @@ export default defineEventHandler(async (event) => {
   const { geinsLog, geinsLogError } = log('server/api/[...].ts');
 
   const headers = getHeaders(event);
-
-  let body;
-  if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
-    const contentType = headers['content-type'] ?? '';
-    if (contentType.includes('multipart/form-data')) {
-      body = await readRawBody(event);
-    } else {
-      body = await readBody(event);
-    }
-  }
   const token = headers['x-access-token'];
 
   const targetUrl = event.context.params?._;
@@ -59,6 +49,18 @@ export default defineEventHandler(async (event) => {
 
   if (event.method === 'DELETE' && apiHeaders['content-length'] === '0') {
     delete apiHeaders['content-length'];
+  }
+
+  const contentType = headers['content-type'] ?? '';
+  if (contentType.includes('multipart/form-data')) {
+    // Stream multipart bodies directly — readBody/readRawBody decode to string,
+    // changing the byte length and breaking the Content-Length the client sent.
+    return proxyRequest(event, fetchUrl, { headers: apiHeaders });
+  }
+
+  let body;
+  if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
+    body = await readBody(event);
   }
 
   try {
