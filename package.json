@@ -23,6 +23,7 @@
     "changelog:update": "changelogen --output CHANGELOG.md"
   },
   "dependencies": {
+    "@codemirror/lang-json": "^6.0.2",
     "@formkit/auto-animate": "^0.9.0",
     "@internationalized/date": "^3.11.0",
     "@lucide/vue": "^1.7.0",
@@ -40,6 +41,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cronstrue": "^3.14.0",
+    "codemirror": "^6.0.2",
     "jwt-decode": "^4.0.0",
     "next-auth": "4.21.1",
     "nuxt": "^4.3.1",

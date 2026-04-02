@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import type { StorefrontSchema } from '#shared/types';
-import defaultSchemaJson from '@/assets/schemas/storefront-settings-default.json';
-
 const props = defineProps<{
   open: boolean;
   schema: StorefrontSchema;
@@ -10,7 +8,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:open': [value: boolean];
   apply: [schema: StorefrontSchema];
-  reset: [];
 }>();
 
 const { t } = useI18n();
@@ -53,11 +50,6 @@ function handleApply() {
   emit('apply', parsed);
   emit('update:open', false);
 }
-
-function handleReset() {
-  editorContent.value = JSON.stringify(defaultSchemaJson, null, 2);
-  emit('reset');
-}
 </script>
 
 <template>
@@ -70,18 +62,28 @@ function handleReset() {
         </SheetDescription>
       </SheetHeader>
       <SheetBody class="flex flex-1 flex-col gap-4 overflow-hidden">
-        <textarea
+        <Feedback type="warning">
+          <template #title>{{
+            t('channels.schema_editor_warning_title')
+          }}</template>
+          <template #description>{{
+            t('channels.schema_editor_warning_description')
+          }}</template>
+        </Feedback>
+        <LazyChannelJsonCodeEditor
           v-model="editorContent"
-          class="bg-muted text-foreground border-input flex-1 resize-none rounded-lg border p-3 font-mono text-sm focus:outline-none"
-          spellcheck="false"
+          class="min-h-0 flex-1"
         />
-        <p v-if="jsonError" class="text-destructive text-sm">
-          {{ jsonError }}
-        </p>
+        <Feedback v-if="jsonError" type="negative">
+          <template #title>{{ jsonError }}</template>
+          <template #description>{{
+            t('channels.schema_editor_invalid_schema')
+          }}</template>
+        </Feedback>
       </SheetBody>
       <SheetFooter>
-        <Button variant="outline" @click="handleReset">
-          {{ t('channels.schema_editor_reset') }}
+        <Button variant="outline" @click="emit('update:open', false)">
+          {{ t('cancel') }}
         </Button>
         <Button :disabled="!!jsonError" @click="handleApply">
           {{ t('channels.schema_editor_apply') }}

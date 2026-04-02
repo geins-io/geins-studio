@@ -191,12 +191,6 @@ function handleSchemaApply(schema: StorefrontSchema) {
   schemaChanged.value = true;
 }
 
-function handleSchemaReset() {
-  activeSchema.value = defaultStorefrontSchema as StorefrontSchema;
-  storefrontSettings.value = getDefaultSettings(activeSchema.value);
-  schemaChanged.value = true;
-}
-
 async function handleResetToDefault() {
   if (!entityId.value) return;
   isResettingSchema.value = true;
@@ -490,7 +484,6 @@ if (!createMode.value) {
               v-model:open="schemaEditorOpen"
               :schema="activeSchema"
               @apply="handleSchemaApply"
-              @reset="handleSchemaReset"
             />
           </ContentEditMainContent>
         </KeepAlive>

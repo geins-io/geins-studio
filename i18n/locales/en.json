@@ -633,6 +633,8 @@
     "schema_editor_reset": "Reset",
     "schema_editor_invalid_json": "Invalid JSON",
     "schema_editor_invalid_schema": "Schema must be a non-empty object with tab entries",
+    "schema_editor_warning_title": "Schema editing",
+    "schema_editor_warning_description": "Editing the schema directly affects which settings are available in the Storefront Settings UI. Invalid changes may break the settings form.",
     "reset_schema": "Reset to default",
     "reset_schema_confirm_title": "Reset to default",
     "reset_schema_confirm_description": "This will reset the storefront settings to the system default. Any custom JSON schema modifications will also be lost. Continue?",
