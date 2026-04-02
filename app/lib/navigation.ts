@@ -91,13 +91,6 @@ export const getNavigation = (
       childPattern: '/settings/channel/:id',
     },
     {
-      label: t('navigation.channels'),
-      href: '/settings/channel/list',
-      icon: 'Store',
-      group: 'settings',
-      childPattern: '/settings/channel/:id',
-    },
-    {
       label: t('navigation.account'),
       href: '',
       icon: 'User',
