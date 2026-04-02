@@ -9,6 +9,7 @@ interface UseGeinsRepositoryReturnType {
   customerApi: ReturnType<typeof repo.customer>;
   changelogApi: ReturnType<typeof repo.changelog>;
   orchestratorApi: ReturnType<typeof repo.orchestrator>;
+  workflowApi: ReturnType<typeof repo.workflow>;
 }
 
 /**
@@ -26,6 +27,7 @@ interface UseGeinsRepositoryReturnType {
  * @property {object} customerApi - Customer API repository for customer and account operations
  * @property {object} changelogApi - Changelog API repository for tracking and managing changes
  * @property {object} orchestratorApi - Orchestrator API repository for workflow and process management
+ * @property {object} workflowApi - Workflow API repository for workflow and process management
  */
 export function useGeinsRepository(): UseGeinsRepositoryReturnType {
   const { $geinsApiFetchInstance } = useNuxtApp();
@@ -39,5 +41,6 @@ export function useGeinsRepository(): UseGeinsRepositoryReturnType {
     customerApi: repo.customer($geinsApiFetchInstance),
     changelogApi: repo.changelog($geinsApiFetchInstance),
     orchestratorApi: repo.orchestrator($geinsApiFetchInstance),
+    workflowApi: repo.workflow($geinsApiFetchInstance),
   };
 }

@@ -20,7 +20,12 @@ export type StatusBadgeKnownStatus =
   | 'finalized'
   | 'canceled'
   | 'draft'
-  | 'expired';
+  | 'expired'
+  | 'healthy'
+  | 'degraded'
+  | 'unhealthy'
+  | 'idle'
+  | 'enabled';
 
 /**
  * StatusBadge accepts booleans (active/inactive), known statuses with

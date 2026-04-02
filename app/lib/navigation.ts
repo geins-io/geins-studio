@@ -18,7 +18,10 @@ import type { NavigationItem } from '#shared/types';
  * Returns localized navigation items
  * @param t - Translation function from useI18n()
  */
-export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
+export const getNavigation = (
+  t: (key: string) => string,
+  options?: { featureOrchestrator?: boolean },
+): NavigationItem[] => {
   return [
     {
       label: t('navigation.pricing'),
@@ -59,6 +62,27 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
         },
       ],
     },
+    ...(options?.featureOrchestrator
+      ? [
+          {
+            label: t('navigation.orchestrator'),
+            href: '/orchestrator/overview',
+            icon: 'Workflow',
+            group: 'workspace',
+            children: [
+              {
+                label: t('navigation.overview'),
+                href: '/orchestrator/overview',
+              },
+              {
+                label: t('navigation.workflows'),
+                href: '/orchestrator/workflows',
+                childPattern: '/orchestrator/workflows/:id',
+              },
+            ],
+          } as NavigationItem,
+        ]
+      : []),
     {
       label: t('navigation.channels'),
       href: '/settings/channel/list',

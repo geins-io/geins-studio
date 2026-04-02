@@ -397,6 +397,71 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             });
           columnSize = { size: 40, minSize: 40, maxSize: 40 };
           break;
+        case 'icon': {
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const iconConfig = options.iconColumns?.[key];
+            if (!iconConfig) {
+              return h('div', { class: getBasicCellStyle(table) });
+            }
+
+            // Resolve icon: static or per-row via resolveIcon()
+            let iconComponent = iconConfig.icon;
+            let iconClass = 'size-4 shrink-0 text-muted-foreground';
+
+            if (iconConfig.resolveIcon) {
+              const resolved = iconConfig.resolveIcon(row.original);
+              if (resolved) {
+                iconComponent = resolved.icon;
+                if (resolved.class) {
+                  iconClass = `size-4 shrink-0 ${resolved.class}`;
+                }
+              }
+            }
+
+            if (!iconComponent) {
+              const text = String(row.getValue(key) ?? '');
+              return h('div', { class: getBasicCellStyle(table) }, text);
+            }
+
+            const iconEl = h(iconComponent as ReturnType<typeof defineComponent>, {
+              class: iconClass,
+            });
+
+            const text = String(row.getValue(key) ?? '');
+            const hasText = text.length > 0 && text !== 'undefined';
+
+            const children = hasText
+              ? [iconEl, h('span', { class: 'truncate' }, text)]
+              : [iconEl];
+
+            const cellClass = hasText
+              ? cn(getBasicCellStyle(table), 'gap-1.5')
+              : cn(getBasicCellStyle(table), 'justify-center');
+
+            if (iconConfig.url && iconConfig.idField) {
+              const original = row.original as Record<string, unknown>;
+              const idValue = String(
+                original[iconConfig.idField] ?? row.getValue(iconConfig.idField),
+              );
+              const fullUrl = iconConfig.url.replace('{id}', idValue);
+              return h(
+                'div',
+                { class: cellClass },
+                h(
+                  NuxtLink,
+                  {
+                    to: fullUrl,
+                    class: 'flex items-center gap-1.5 hover:text-foreground transition-colors',
+                  },
+                  { default: () => children },
+                ),
+              );
+            }
+
+            return h('div', { class: cellClass }, children);
+          };
+          break;
+        }
         case 'link':
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const linkConfig = options.linkColumns?.[key];
@@ -422,10 +487,11 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               }
             }
 
-            if (!fullUrl) {
-              // Fallback to plain text if no URL resolved
+            if (!fullUrl || text === '–' || text === '-') {
+              // Fallback to plain text if no URL resolved or value is a placeholder
               return h('div', { class: getBasicCellStyle(table) }, text);
             }
+
 
             const displayText =
               text.length > maxTextLength

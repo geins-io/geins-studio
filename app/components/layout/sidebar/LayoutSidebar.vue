@@ -21,6 +21,7 @@ import {
   LucideShieldCheck,
   LucidePackage,
   LucideStore,
+  LucideWorkflow,
 } from '#components';
 
 const { state, isMobile, setOpenMobile } = useSidebar();
@@ -56,9 +57,9 @@ const iconComponents = {
   ShieldCheck: LucideShieldCheck,
   Package: LucidePackage,
   Store: LucideStore,
+  Workflow: LucideWorkflow,
 };
 
-// Group label translations keyed by navigation group
 // Group label translations keyed by navigation group
 const groupLabels = computed<Record<string, string>>(() => ({
   workspace: t('navigation.workspace'),

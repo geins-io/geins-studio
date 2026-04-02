@@ -38,6 +38,7 @@
     "chalk": "^5.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cronstrue": "^3.14.0",
     "jwt-decode": "^4.0.0",
     "next-auth": "4.21.1",
     "nuxt": "^4.3.1",
