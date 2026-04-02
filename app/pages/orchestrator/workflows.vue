@@ -286,6 +286,9 @@ onMounted(() => {
 const { getVisibilityState } = useTable<EntityList>();
 const hiddenColumns: StringKeyOf<EntityList>[] = ['id', 'description', 'groupSlug'];
 visibilityState.value = getVisibilityState(hiddenColumns);
+
+// SET UP SEARCHABLE FIELDS
+const searchableFields: Array<keyof EntityList> = ['name', 'type', 'health', 'status', 'group', 'triggerSummary'];
 </script>
 
 <template>
@@ -315,7 +318,7 @@ visibilityState.value = getVisibilityState(hiddenColumns);
   <NuxtErrorBoundary>
     <TableView
 :loading="loading" :entity-name="entityName" :columns="columns" :data="dataList"
-      :init-visibility-state="visibilityState" :error="fetchError" :on-retry="refresh">
+      :init-visibility-state="visibilityState" :searchable-fields="searchableFields" :error="fetchError" :on-retry="refresh">
       <template #empty-actions>
         <ButtonIcon icon="new" variant="secondary" @click="navigateTo('/orchestrator/workflows/new')">
           {{ $t('create_new_entity', { entityName }) }}
