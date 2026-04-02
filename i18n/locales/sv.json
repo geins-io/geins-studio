@@ -627,6 +627,7 @@
     "schema_editor_description": "Redigera det JSON-schema som styr formuläret för butikinställningar. Ändringar träder i kraft när du klickar på Tillämpa.",
     "schema_editor_apply": "Tillämpa",
     "schema_editor_reset": "Återställ",
+    "schema_editor_invalid_title": "Fel i inställningsschemat",
     "schema_editor_invalid_json": "Ogiltig JSON",
     "schema_editor_invalid_schema": "Schemat måste vara ett icke-tomt objekt med flikposter",
     "schema_editor_warning_title": "Schemaredigering",

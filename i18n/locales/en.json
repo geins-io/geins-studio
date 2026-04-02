@@ -631,6 +631,7 @@
     "schema_editor_description": "Edit the raw JSON schema that drives the storefront settings form. Changes take effect when you click Apply.",
     "schema_editor_apply": "Apply",
     "schema_editor_reset": "Reset",
+    "schema_editor_invalid_title": "Error in the settings schema",
     "schema_editor_invalid_json": "Invalid JSON",
     "schema_editor_invalid_schema": "Schema must be a non-empty object with tab entries",
     "schema_editor_warning_title": "Schema editing",
