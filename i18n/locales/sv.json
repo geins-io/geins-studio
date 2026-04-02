@@ -28,6 +28,7 @@
   "margin": "Marginal | Marginaler",
   "discount": "Rabatt | Rabatter",
   "quotation": "Offert | Offerter",
+  "workflow": "Arbetsflöde | Arbetsflöden",
   "communication": "Kommunikation | Kommunikationer",
   "entity": "Entitet | Entiteter",
   "sku": "SKU | SKUs",
@@ -291,7 +292,57 @@
     "account": "Konto",
     "profile": "Profil",
     "workspace": "Arbetsyta",
-    "channels": "Kanaler"
+    "channels": "Kanaler",
+    "workflows": "Arbetsflöden",
+    "orchestrator": "Orkestrator",
+    "overview": "Översikt"
+  },
+  "workflows": {
+    "total": "Totalt antal arbetsflöden",
+    "healthy": "Friska",
+    "degraded": "Degraderad",
+    "executions_24h": "Körningar (24h)",
+    "executions_7d": "Körningar (7d)",
+    "executions_30d": "Körningar (30d)",
+    "failures_24h": "Fel (24h)",
+    "healthy_workflows": "Friska arbetsflöden",
+    "no_workflows": "Inga arbetsflöden hittades",
+    "create_first": "Skapa ditt första arbetsflöde för att komma igång",
+    "search_placeholder": "Sök arbetsflöden...",
+    "trigger_manual": "Manuell",
+    "nodes": "{count} noder",
+    "type": "Typ",
+    "trigger": "Utlösare",
+    "health": "Hälsa",
+    "node_count": "Noder",
+    "view_table": "Tabellvy",
+    "view_cards": "Kortvy",
+    "table_description": "Beskrivning",
+    "description": "Automatisera uppgifter med visuell arbetsflödesbyggare.",
+    "enabled": "Aktiverat",
+    "enable": "Aktivera",
+    "pause": "Pausa",
+    "group": "Grupp",
+    "total_executions": "Totalt antal körningar",
+    "success_rate_total": "Framgångsfrekvens (totalt)",
+    "success_rate_24h": "Framgångsfrekvens (24h)",
+    "success_rate_7d": "Framgångsfrekvens (7d)",
+    "success_rate_30d": "Framgångsfrekvens (30d)",
+    "events": {
+      "order": {
+        "created": "Order skapad",
+        "update": "Order uppdaterad",
+        "cancelled": "Order annullerad",
+        "refunded": "Order återbetald",
+        "shipped": "Order skickad",
+        "returned": "Order returnerad",
+        "paid": "Order paid",
+        "unpaid": "Order unpaid"
+      }
+    }
+  },
+  "orchestrator": {
+    "description": "Översikt över dina arbetsflödens hälsa, prestanda och körningar."
   },
   "account_profile": {
     "login_credentials": "Inloggningsuppgifter",
@@ -320,7 +371,6 @@
     "last_name": "Efternamn",
     "phone": "Telefon"
   },
-
   "contact_person": "Kontaktperson",
   "contact_person_description": "Kontaktperson relaterad till adressen",
   "customers": {
