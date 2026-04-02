@@ -1,4 +1,10 @@
-import { defineEventHandler, readBody, proxyRequest, getHeaders, getQuery } from 'h3';
+import {
+  defineEventHandler,
+  readBody,
+  proxyRequest,
+  getHeaders,
+  getQuery,
+} from 'h3';
 import { useRuntimeConfig } from '#imports';
 /**
  * Event handler for processing API requests.
@@ -53,8 +59,6 @@ export default defineEventHandler(async (event) => {
 
   const contentType = headers['content-type'] ?? '';
   if (contentType.includes('multipart/form-data')) {
-    // Stream multipart bodies directly — readBody/readRawBody decode to string,
-    // changing the byte length and breaking the Content-Length the client sent.
     return proxyRequest(event, fetchUrl, { headers: apiHeaders });
   }
 
