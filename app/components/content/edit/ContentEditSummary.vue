@@ -21,6 +21,7 @@ const props = withDefaults(
     settingsSummary: () => [],
     entityLiveStatus: false,
     showActiveStatus: true,
+    status: undefined,
   },
 );
 
