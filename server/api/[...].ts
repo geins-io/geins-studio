@@ -51,7 +51,6 @@ export default defineEventHandler(async (event) => {
     ...headers,
     ...(token ? { authorization: `Bearer ${token}` } : {}),
   };
-   console.log(token);
   if (event.method === 'DELETE' && apiHeaders['content-length'] === '0') {
     delete apiHeaders['content-length'];
   }
