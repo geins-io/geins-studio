@@ -264,7 +264,7 @@ watchEffect(() => {
       <CardContent class="pt-6">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-muted-foreground text-sm">Success Rate</p>
+            <p class="text-muted-foreground text-sm">{{ $t('workflows.success_rate') }}</p>
             <p class="text-2xl font-bold" :class="stats.successRate24h < 95 ? 'text-yellow-500' : 'text-green-500'">
               {{ stats.successRate24h }}%
             </p>
@@ -372,7 +372,7 @@ v-for="group in groups" :key="group.id"
             </div>
             <!-- SUCCESS RATE -->
             <div class="bg-background flex flex-col gap-0.5 px-3 py-2.5">
-              <span class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">Success Rate</span>
+              <span class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">{{ $t('workflows.success_rate') }}</span>
               <span
 class="text-sm font-semibold"
                 :class="group.successRate < 95 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'">

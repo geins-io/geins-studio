@@ -328,6 +328,7 @@
     "scheduled": "Scheduled",
     "on_demand": "On Demand",
     "total_executions": "Total executions",
+    "success_rate": "Success rate",
     "success_rate_total": "Success rate (total)",
     "success_rate_24h": "Success rate (24h)",
     "success_rate_7d": "Success rate (7d)",

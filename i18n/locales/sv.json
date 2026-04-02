@@ -324,6 +324,7 @@
     "pause": "Pausa",
     "group": "Grupp",
     "total_executions": "Totalt antal körningar",
+    "success_rate": "Framgångsfrekvens",
     "success_rate_total": "Framgångsfrekvens (totalt)",
     "success_rate_24h": "Framgångsfrekvens (24h)",
     "success_rate_7d": "Framgångsfrekvens (7d)",
