@@ -5,11 +5,13 @@ import defaultSchemaJson from '@/assets/schemas/storefront-settings-default.json
 const props = defineProps<{
   schema: StorefrontSchema;
   modelValue: StorefrontSettings;
+  resetting?: boolean;
 }>();
 
 const emit = defineEmits<{
   'update:modelValue': [value: StorefrontSettings];
   'open-schema-editor': [];
+  'reset-to-default': [];
 }>();
 
 const { t } = useI18n();
@@ -35,6 +37,8 @@ watch(tabKeys, (keys) => {
   }
 });
 
+const resetConfirmOpen = ref(false);
+
 function onSettingsUpdate(value: StorefrontSettings) {
   emit('update:modelValue', value);
 }
@@ -46,9 +50,9 @@ function onSettingsUpdate(value: StorefrontSettings) {
       <div class="flex items-center gap-2">
         <TooltipProvider :delay-duration="100">
           <Tooltip>
-            <TooltipTrigger as-child>
-              <Button variant="outline" size="sm" disabled>
-                <LucideEye class="mr-2 size-4" />
+            <TooltipTrigger>
+              <Button variant="outline" disabled>
+                <LucideScanEye class="mr-2 size-4" />
                 {{ t('channels.preview_storefront') }}
               </Button>
             </TooltipTrigger>
@@ -69,8 +73,38 @@ function onSettingsUpdate(value: StorefrontSettings) {
               <LucideBraces class="mr-2 size-4" />
               <span>{{ t('channels.change_schema') }}</span>
             </DropdownMenuItem>
+            <DropdownMenuItem @click="resetConfirmOpen = true">
+              <LucideRotateCcw class="mr-2 size-4" />
+              <span>{{ t('channels.reset_schema') }}</span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <AlertDialog v-model:open="resetConfirmOpen">
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{{
+                t('channels.reset_schema_confirm_title')
+              }}</AlertDialogTitle>
+              <AlertDialogDescription>{{
+                t('channels.reset_schema_confirm_description')
+              }}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{{ t('cancel') }}</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                :loading="props.resetting"
+                @click.prevent.stop="
+                  emit('reset-to-default');
+                  resetConfirmOpen = false;
+                "
+              >
+                {{ t('continue') }}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </template>
 

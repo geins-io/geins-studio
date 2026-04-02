@@ -76,6 +76,7 @@ const tabs = [
 
 // Locked state — background processing guard for active toggle
 const isLocked = ref(false);
+const isResettingSchema = ref(false);
 
 const internalName = ref(''); // For displaying the non-editable internal name field
 
@@ -194,6 +195,20 @@ function handleSchemaReset() {
   activeSchema.value = defaultStorefrontSchema as StorefrontSchema;
   storefrontSettings.value = getDefaultSettings(activeSchema.value);
   schemaChanged.value = true;
+}
+
+async function handleResetToDefault() {
+  if (!entityId.value) return;
+  isResettingSchema.value = true;
+  try {
+    await channelApi.channel.id(entityId.value).resetStorefrontSchema();
+    await refreshEntityData.value?.();
+    toast({ title: t('channels.reset_schema_success') });
+  } catch {
+    toast({ title: t('channels.reset_schema_error'), variant: 'negative' });
+  } finally {
+    isResettingSchema.value = false;
+  }
 }
 
 watch(
@@ -467,7 +482,9 @@ if (!createMode.value) {
             <ChannelStorefrontSettings
               v-model="storefrontSettings"
               :schema="activeSchema"
+              :resetting="isResettingSchema"
               @open-schema-editor="schemaEditorOpen = true"
+              @reset-to-default="handleResetToDefault"
             />
             <ChannelSchemaEditorSheet
               v-model:open="schemaEditorOpen"

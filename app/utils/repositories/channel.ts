@@ -112,6 +112,12 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             );
           },
         },
+        async resetStorefrontSchema(): Promise<Channel> {
+          return await fetch<Channel>(
+            `${CHANNEL_ENDPOINT}/${channelId}/resetStorefrontSchema`,
+            { method: 'POST' },
+          );
+        },
       }),
     },
 

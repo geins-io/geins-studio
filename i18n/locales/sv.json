@@ -628,6 +628,11 @@
     "schema_editor_apply": "Tillämpa",
     "schema_editor_reset": "Återställ",
     "schema_editor_invalid_json": "Ogiltig JSON",
-    "schema_editor_invalid_schema": "Schemat måste vara ett icke-tomt objekt med flikposter"
+    "schema_editor_invalid_schema": "Schemat måste vara ett icke-tomt objekt med flikposter",
+    "reset_schema": "Återställ till standard",
+    "reset_schema_confirm_title": "Återställ till standard",
+    "reset_schema_confirm_description": "Det här återställer butiksschemat till systemets standard. Alla anpassade ändringar går förlorade. Fortsätta?",
+    "reset_schema_success": "Butiksschemat återställdes till standard",
+    "reset_schema_error": "Det gick inte att återställa butiksschemat"
   }
 }
