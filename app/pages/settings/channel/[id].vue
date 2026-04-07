@@ -134,6 +134,16 @@ const confirmDefaultLanguageChange = () => {
   defaultLanguageDialogOpen.value = false;
 };
 
+const handleAddLanguages = (newLangs: ChannelLanguageAssignment[]) => {
+  channelLanguages.value = [...channelLanguages.value, ...newLangs];
+};
+
+const handleUpdateLanguage = (updated: ChannelLanguageAssignment) => {
+  channelLanguages.value = channelLanguages.value.map((l) =>
+    l._id === updated._id ? { ...l, active: updated.active } : l,
+  );
+};
+
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
 // =====================================================================================
@@ -534,6 +544,14 @@ if (!createMode.value) {
                   </div>
                 </div>
               </div>
+
+              <!-- Additional languages -->
+              <ChannelAdditionalLanguages
+                :all-languages="allLanguages"
+                :channel-languages="channelLanguages"
+                @add="handleAddLanguages"
+                @update="handleUpdateLanguage"
+              />
             </ContentEditCard>
 
             <!-- Change default language dialog -->
