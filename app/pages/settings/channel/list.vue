@@ -99,7 +99,7 @@ onMounted(() => {
       name: t('channels.name'),
       active: t('status'),
       markets: t('channels.markets_count'),
-      languages: t('channels.languages_count'),
+      languages: t('language', 2),
     },
     excludeColumns: [
       'identifier',

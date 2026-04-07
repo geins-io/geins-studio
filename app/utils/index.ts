@@ -46,12 +46,13 @@ export function fullName(
 
 /**
  * Returns the CSS class string for rendering a flag icon via the `flag-icons` library.
+ * Renders as a circle by default (square aspect ratio + rounded-full).
  * @param countryCode — ISO 3166-1 alpha-2 country code (e.g. "se", "GB")
- * @param square — render as a square (default true); false renders the standard 4:3 ratio
+ * @param round — render as a circle (default true); false renders the standard 4:3 ratio
  */
-export function flagClass(countryCode: string, square = true): string {
+export function flagClass(countryCode: string, round = true): string {
   const code = countryCode.toLowerCase();
-  return square ? `fi fis fi-${code}` : `fi fi-${code}`;
+  return round ? `fib fis fi-${code} rounded-full` : `fi fi-${code}`;
 }
 
 /**

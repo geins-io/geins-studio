@@ -27,9 +27,7 @@ const languages = computed<PlainDataItem[]>(() => {
 });
 
 const findItem = (value: string | undefined) =>
-  value
-    ? languages.value.find((item) => item.value === value)
-    : undefined;
+  value ? languages.value.find((item) => item.value === value) : undefined;
 
 const choice = ref<PlainDataItem | undefined>(findItem(model.value));
 
@@ -120,14 +118,16 @@ const handleKeyDown = () => {
         @keydown.enter.prevent="handleKeyDown"
       >
         <span v-if="choice" class="inline-flex items-center">
-          <span
+          <ChannelLanguageIcon
             v-if="showFlags"
-            :class="flagClass(languageToCountryCode(choice.value))"
-            class="mr-2 inline-block text-base"
+            :language-id="choice.value"
+            :name="choice.label"
           />
-          {{ choice.label }}
+          <template v-else>{{ choice.label }}</template>
         </span>
-        <span v-else>{{ t('select_entity', { entityName: t('language') }) }}</span>
+        <span v-else>{{
+          t('select_entity', { entityName: t('language') })
+        }}</span>
 
         <LucideChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
       </button>
@@ -148,7 +148,9 @@ const handleKeyDown = () => {
           <ComboboxInput
             ref="searchInput"
             class="focus:border-primary focus-visible:border-primary h-10 rounded-none border-0 border-b pl-9 focus:rounded-lg focus:border focus-visible:ring-0 focus-visible:outline-hidden"
-            :placeholder="t('search_entity', { entityName: t('language') }) + '...'"
+            :placeholder="
+              t('search_entity', { entityName: t('language') }) + '...'
+            "
             autocomplete="off"
             @blur="handleBlur"
           />
@@ -169,12 +171,12 @@ const handleKeyDown = () => {
             :key="item.value"
             :value="item"
           >
-            <span
+            <ChannelLanguageIcon
               v-if="showFlags"
-              :class="flagClass(languageToCountryCode(item.value))"
-              class="mr-2 inline-block text-base"
+              :language-id="item.value"
+              :name="item.label"
             />
-            {{ item.label }}
+            <template v-else>{{ item.label }}</template>
 
             <ComboboxItemIndicator>
               <LucideCheck :class="cn('ml-auto size-4')" />

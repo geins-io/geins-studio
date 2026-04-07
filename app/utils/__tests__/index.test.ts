@@ -90,16 +90,16 @@ describe('generateInternalId', () => {
 });
 
 describe('flagClass', () => {
-  it('returns square flag classes by default', () => {
-    expect(flagClass('se')).toBe('fi fis fi-se');
+  it('returns circular background flag classes by default', () => {
+    expect(flagClass('se')).toBe('fib fis fi-se rounded-full');
   });
 
-  it('returns non-square flag classes when square is false', () => {
+  it('returns non-circular flag classes when round is false', () => {
     expect(flagClass('gb', false)).toBe('fi fi-gb');
   });
 
   it('lowercases the country code', () => {
-    expect(flagClass('US')).toBe('fi fis fi-us');
+    expect(flagClass('US')).toBe('fib fis fi-us rounded-full');
   });
 });
 
