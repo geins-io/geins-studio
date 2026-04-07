@@ -1,6 +1,12 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
-import { cn, getEntityNameById, generateInternalId } from '../index';
+import {
+  cn,
+  getEntityNameById,
+  generateInternalId,
+  flagClass,
+  languageToCountryCode,
+} from '../index';
 
 describe('cn', () => {
   it('merges class names', () => {
@@ -80,5 +86,49 @@ describe('generateInternalId', () => {
 
   it('matches expected format: internal_{timestamp}_{random}', () => {
     expect(generateInternalId()).toMatch(/^internal_\d+_[a-z0-9]+$/);
+  });
+});
+
+describe('flagClass', () => {
+  it('returns square flag classes by default', () => {
+    expect(flagClass('se')).toBe('fi fis fi-se');
+  });
+
+  it('returns non-square flag classes when square is false', () => {
+    expect(flagClass('gb', false)).toBe('fi fi-gb');
+  });
+
+  it('lowercases the country code', () => {
+    expect(flagClass('US')).toBe('fi fis fi-us');
+  });
+});
+
+describe('languageToCountryCode', () => {
+  it('maps "en" to "gb"', () => {
+    expect(languageToCountryCode('en')).toBe('gb');
+  });
+
+  it('maps "sv" to "se"', () => {
+    expect(languageToCountryCode('sv')).toBe('se');
+  });
+
+  it('maps "da" to "dk"', () => {
+    expect(languageToCountryCode('da')).toBe('dk');
+  });
+
+  it('maps "ja" to "jp"', () => {
+    expect(languageToCountryCode('ja')).toBe('jp');
+  });
+
+  it('falls back to the language code itself for unmapped codes', () => {
+    expect(languageToCountryCode('fr')).toBe('fr');
+  });
+
+  it('handles codes with region subtags by using the language part', () => {
+    expect(languageToCountryCode('en-US')).toBe('gb');
+  });
+
+  it('lowercases the input', () => {
+    expect(languageToCountryCode('SV')).toBe('se');
   });
 });
