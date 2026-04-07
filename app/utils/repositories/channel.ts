@@ -2,7 +2,6 @@ import type {
   Channel,
   ChannelCreate,
   ChannelUpdate,
-  ChannelListItem,
   ChannelApiOptions,
   Market,
   Language,
@@ -10,8 +9,6 @@ import type {
   ChannelMailType,
   ChannelMailSettings,
 } from '#shared/types';
-import { buildQueryObject } from '#shared/utils/api-query';
-import { entityBaseRepo } from './entity-base';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/account';
@@ -20,62 +17,50 @@ const CHANNEL_ENDPOINT = `${BASE_ENDPOINT}/channel`;
 /**
  * Repository for managing channel operations.
  *
- * Provides full CRUD for channels, activate/deactivate actions,
- * and sub-resources scoped to a specific channel (markets, payments, mail).
+ * Provides full CRUD for channels and sub-resources scoped to a specific channel (markets, payments, mail).
  *
- * The update endpoint uses multipart/form-data to support file uploads
- * for storefront settings (logos, etc.) alongside JSON data.
+ * File uploads (storefront logos etc.) use uploadStorefrontFiles() — a separate
+ * multipart method where each file part's name matches its dot-notation schema path.
  */
 export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const channelBase = entityBaseRepo<ChannelListItem, ChannelApiOptions>(CHANNEL_ENDPOINT, fetch);
+  const channelRepo = repo.entity<
+    Channel,
+    ChannelCreate,
+    ChannelUpdate,
+    ChannelApiOptions
+  >(CHANNEL_ENDPOINT, fetch);
 
   return {
     channel: {
-      list: channelBase.list,
-
-      async get(id: string, options?: ChannelApiOptions): Promise<Channel> {
-        return await fetch<Channel>(`${CHANNEL_ENDPOINT}/${id}`, {
-          query: buildQueryObject(options),
-        });
-      },
-
-      async create(data: ChannelCreate): Promise<Channel> {
-        return await fetch<Channel>(CHANNEL_ENDPOINT, {
-          method: 'POST',
-          body: data,
-        });
-      },
+      ...channelRepo,
 
       async update(id: string, data: ChannelUpdate): Promise<Channel> {
-        const formData = new FormData();
+        const fileEntries = Object.entries(
+          data.storefrontSettings ?? {},
+        ).filter((entry): entry is [string, File] => entry[1] instanceof File);
 
-        // Separate file values from JSON data
-        const jsonData: Record<string, unknown> = {};
-        for (const [key, value] of Object.entries(data)) {
-          if (value instanceof File || value instanceof Blob) {
-            formData.append(key, value);
-          } else {
-            jsonData[key] = value;
-          }
+        // File part name must be the full JSON path: "storefrontSettings.{fieldKey}"
+        // The field must also exist in the JSON payload's storefrontSettings as "" so
+        // the backend knows where to write the blob URL back.
+        const formData = new FormData();
+        const settingsPayload: Record<string, unknown> = {
+          ...(data.storefrontSettings ?? {}),
+        };
+
+        for (const [key, file] of fileEntries) {
+          formData.append(`storefrontSettings.${key}`, file, file.name);
+          settingsPayload[key] = '';
         }
 
-        formData.append('channel', JSON.stringify(jsonData));
+        const jsonPayload: ChannelUpdate = {
+          ...data,
+          storefrontSettings: settingsPayload,
+        };
+        formData.append('channel', JSON.stringify(jsonPayload));
 
         return await fetch<Channel>(`${CHANNEL_ENDPOINT}/${id}`, {
           method: 'PATCH',
           body: formData,
-        });
-      },
-
-      async activate(id: string): Promise<void> {
-        await fetch<null>(`${CHANNEL_ENDPOINT}/${id}/activate`, {
-          method: 'PUT',
-        });
-      },
-
-      async deactivate(id: string): Promise<void> {
-        await fetch<null>(`${CHANNEL_ENDPOINT}/${id}/deactivate`, {
-          method: 'PUT',
         });
       },
 
@@ -127,6 +112,12 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
               { method: 'POST', body: { language } },
             );
           },
+        },
+        async resetStorefrontSchema(): Promise<Channel> {
+          return await fetch<Channel>(
+            `${CHANNEL_ENDPOINT}/${channelId}/resetStorefrontSchema`,
+            { method: 'POST' },
+          );
         },
       }),
     },

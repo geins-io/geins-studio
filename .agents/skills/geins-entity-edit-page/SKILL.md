@@ -58,7 +58,9 @@ if (!createMode.value) {
 
 ## Gotcha: snapshot timing
 
-If `parseEntityData` triggers async side effects that mutate `entityDataUpdate` (e.g. `form.setValues()` → `onFormValuesChange` → reactive watchers → async fetches like `fetchProducts()`), the default snapshot taken inside `parseAndSaveData` will be stale. Fix:
+`parseAndSaveData` saves the snapshot **after** `parseEntityData` completes and after a `nextTick()`, so synchronous Vue watchers triggered by `parseEntityData` (e.g. a watcher on a standalone ref that writes back to `entityDataUpdate`) are automatically included in the baseline. **No special handling needed for sync watchers.**
+
+If `parseEntityData` triggers **async** side effects that mutate `entityDataUpdate` (e.g. `form.setValues()` → `onFormValuesChange` → reactive watchers → async fetches like `fetchProducts()`), the single `nextTick` is not enough. Fix:
 
 ```ts
 // In onMounted:
@@ -74,6 +76,26 @@ await updateEntity(undefined, undefined, false)
 await nextTick()
 setOriginalSavedData()
 ```
+
+## Required: `<DialogUnsavedChanges>` in template
+
+Every `[id].vue` **must** include `<DialogUnsavedChanges>` at the top of `<template>`. Without it, `onBeforeRouteLeave` silently returns `false` (no dialog, no error) and the user is permanently stuck on the page — cannot navigate anywhere without a full browser refresh.
+
+```vue
+<template>
+  <DialogUnsavedChanges
+    v-model:open="unsavedChangesDialogOpen"
+    :entity-name="entityName"
+    :loading="loading"
+    @confirm="confirmLeave"
+  />
+  <ContentEditWrap>
+    ...
+  </ContentEditWrap>
+</template>
+```
+
+Destructure `unsavedChangesDialogOpen` and `confirmLeave` from `useEntityEdit`.
 
 ## Gotcha: onFormValuesChange completeness
 
@@ -143,6 +165,8 @@ dataList.push({
 - Create mode: submit form → auto-navigates to edit URL → data is pre-populated
 - Edit mode: reload page on existing entity → form is populated
 - Unsaved changes: indicator doesn't flicker on load; enables on changes; clears after save
+- Navigation: clicking any nav item or breadcrumb while on the edit page routes away correctly (no silent block)
+- Unsaved changes dialog: making a change then navigating away shows the confirmation dialog
 - Read-only/sent mode: no empty-value wipe on field unmount
 - Run `pnpm lint:check` and `pnpm typecheck`
 - Run `pnpm test --run` when tests exist for the changed code

@@ -88,22 +88,6 @@ describe('channelRepo', () => {
       });
     });
 
-    it('channel.activate() calls PUT /account/channel/:id/activate', async () => {
-      mockFetch.mockResolvedValue(null);
-      await api.channel.activate('123');
-      expect(mockFetch).toHaveBeenCalledWith('/account/channel/123/activate', {
-        method: 'PUT',
-      });
-    });
-
-    it('channel.deactivate() calls PUT /account/channel/:id/deactivate', async () => {
-      mockFetch.mockResolvedValue(null);
-      await api.channel.deactivate('123');
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/account/channel/123/deactivate',
-        { method: 'PUT' },
-      );
-    });
   });
 
   // ===========================================================================
@@ -124,20 +108,19 @@ describe('channelRepo', () => {
 
     it('attaches File values as separate parts', async () => {
       const file = new File(['logo'], 'logo.png', { type: 'image/png' });
-      // Cast to allow file in update data
-      const data = { name: 'updated', logoFile: file } as Record<
-        string,
-        unknown
-      >;
+      const data = buildChannelUpdate({
+        name: 'updated',
+        storefrontSettings: { logotype: file as unknown as string },
+      });
       mockFetch.mockResolvedValue(buildChannel());
-      await api.channel.update('123', data as never);
+      await api.channel.update('123', data);
 
       const formData: FormData = mockFetch.mock.calls[0][1].body;
-      // File should be a separate part
-      expect(formData.get('logoFile')).toBeInstanceOf(File);
-      // JSON part should not contain the file
+      // File should be a separate part keyed by storefrontSettings.{fieldKey}
+      expect(formData.get('storefrontSettings.logotype')).toBeInstanceOf(File);
+      // JSON part should have the field cleared to empty string
       const parsed = JSON.parse(formData.get('channel') as string);
-      expect(parsed.logoFile).toBeUndefined();
+      expect(parsed.storefrontSettings.logotype).toBe('');
       expect(parsed.name).toBe('updated');
     });
 
@@ -298,11 +281,6 @@ describe('channelRepo', () => {
       await expect(api.channel.create(buildChannelCreate())).rejects.toThrow(
         'Conflict',
       );
-    });
-
-    it('channel.activate propagates fetch errors', async () => {
-      mockFetch.mockRejectedValue(new Error('Forbidden'));
-      await expect(api.channel.activate('123')).rejects.toThrow('Forbidden');
     });
 
     it('market.list propagates fetch errors', async () => {
