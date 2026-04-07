@@ -67,7 +67,7 @@ export interface LoginCredentials {
 
 export interface AuthAccounts {
   accountKey: string;
-  displayName: string;
+  name: string;
   roles: string[];
 }
 
