@@ -246,12 +246,13 @@ export function useEntityEdit<
   ): Promise<void> => {
     entityDataUpdate.value = options.reshapeEntityData(entity);
 
-    if (setSavedData) {
-      setOriginalSavedData();
-    }
-
     if (options.parseEntityData) {
       await options.parseEntityData(entity);
+    }
+
+    if (setSavedData) {
+      await nextTick();
+      setOriginalSavedData();
     }
   };
 

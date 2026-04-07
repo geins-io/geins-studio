@@ -10,8 +10,12 @@ import type {
   ChannelCreate,
   ChannelUpdate,
   ChannelApiOptions,
+  StorefrontSchema,
+  StorefrontSettings,
 } from '#shared/types';
+import defaultStorefrontSchema from '@/assets/schemas/storefront-settings-default.json';
 import { useToast } from '@/components/ui/toast/use-toast';
+import { getDefaultSettings } from '@/utils/storefront';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -38,9 +42,7 @@ definePageMeta({
 // =====================================================================================
 const formSchema = toTypedSchema(
   z.object({
-    name: z
-      .string()
-      .min(1, t('entity_required', { entityName: 'name' })),
+    name: z.string().min(1, t('entity_required', { entityName: 'name' })),
     url: z.url(t('channels.invalid_url')),
     active: z.boolean(),
   }),
@@ -74,8 +76,19 @@ const tabs = [
 
 // Locked state — background processing guard for active toggle
 const isLocked = ref(false);
+const isResettingSchema = ref(false);
 
 const internalName = ref(''); // For displaying the non-editable internal name field
+
+// Storefront settings state
+const activeSchema = ref<StorefrontSchema>(
+  defaultStorefrontSchema as StorefrontSchema,
+);
+const storefrontSettings = ref<StorefrontSettings>(
+  getDefaultSettings(defaultStorefrontSchema as StorefrontSchema),
+);
+const schemaEditorOpen = ref(false);
+const schemaChanged = ref(false);
 
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
@@ -85,7 +98,6 @@ const {
   entityId,
   createMode,
   loading,
-  newEntityUrl,
   showSidebar,
   currentTab,
   entityDataCreate,
@@ -98,11 +110,19 @@ const {
   form,
   formTouched,
   hasUnsavedChanges,
+  unsavedChangesDialogOpen,
+  confirmLeave,
   validateOnChange,
   createEntity,
   updateEntity,
   parseAndSaveData,
-} = useEntityEdit<ChannelBase, Channel, ChannelCreate, ChannelUpdate, ChannelApiOptions>({
+} = useEntityEdit<
+  ChannelBase,
+  Channel,
+  ChannelCreate,
+  ChannelUpdate,
+  ChannelApiOptions
+>({
   repository: {
     get: channelApi.channel.get,
     create: channelApi.channel.create,
@@ -123,6 +143,14 @@ const {
     entityLiveStatus.value = entity.active;
     isLocked.value = entity.locked;
     internalName.value = entity.identifier;
+    activeSchema.value =
+      entity.storefrontSchema && Object.keys(entity.storefrontSchema).length > 0
+        ? entity.storefrontSchema
+        : (defaultStorefrontSchema as StorefrontSchema);
+    storefrontSettings.value = entity.storefrontSettings
+      ? { ...entity.storefrontSettings }
+      : getDefaultSettings(activeSchema.value);
+    schemaChanged.value = false;
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       name: entity.name,
@@ -134,11 +162,15 @@ const {
     name: formData.name,
     url: formData.url,
     active: formData.active,
+    storefrontSchema: activeSchema.value,
+    storefrontSettings: storefrontSettings.value,
   }),
   prepareUpdateData: (formData) => ({
     name: formData.name,
     url: formData.url,
     active: formData.active,
+    storefrontSettings: storefrontSettings.value,
+    ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
   onFormValuesChange: (values) => {
     const targetEntity = createMode.value ? entityDataCreate : entityDataUpdate;
@@ -150,6 +182,40 @@ const {
     };
   },
 });
+
+// =====================================================================================
+// STOREFRONT SETTINGS HANDLERS
+// =====================================================================================
+function handleSchemaApply(schema: StorefrontSchema) {
+  activeSchema.value = schema;
+  schemaChanged.value = true;
+}
+
+async function handleResetToDefault() {
+  if (!entityId.value) return;
+  isResettingSchema.value = true;
+  try {
+    await channelApi.channel.id(entityId.value).resetStorefrontSchema();
+    await refreshEntityData.value?.();
+    toast({ title: t('channels.reset_schema_success') });
+  } catch {
+    toast({ title: t('channels.reset_schema_error'), variant: 'negative' });
+  } finally {
+    isResettingSchema.value = false;
+  }
+}
+
+// Sync storefrontSettings into entityDataUpdate so useUnsavedChanges detects changes
+// (prepareUpdateData also reads storefrontSettings.value at save time)
+watch(
+  storefrontSettings,
+  (val) => {
+    if (!createMode.value) {
+      entityDataUpdate.value.storefrontSettings = val;
+    }
+  },
+  { deep: true },
+);
 
 // =====================================================================================
 // ERROR HANDLING SETUP
@@ -207,9 +273,7 @@ const summary = computed<DataItem[]>(() => {
   if (!createMode.value) {
     const channelData = entityData.value as Channel;
     if (channelData?.languages?.length) {
-      const displayValue = channelData.languages
-        .map((l) => l.name)
-        .join(', ');
+      const displayValue = channelData.languages.map((l) => l.name).join(', ');
       dataList.push({
         label: t('channels.languages_count'),
         value: channelData.languages.map((l) => l._id),
@@ -262,7 +326,10 @@ const { summaryProps } = useEntityEditSummary({
 if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<Channel>(
     entityFetchKey.value,
-    () => channelApi.channel.get(entityId.value, { fields: ['languages', 'markets'] }),
+    () =>
+      channelApi.channel.get(entityId.value, {
+        fields: ['languages', 'markets', 'storefrontSettings', 'storefrontSchema'],
+      }),
   );
   refreshEntityData.value = refresh;
   onMounted(async () => {
@@ -273,6 +340,12 @@ if (!createMode.value) {
 </script>
 
 <template>
+  <DialogUnsavedChanges
+    v-model:open="unsavedChangesDialogOpen"
+    :entity-name="entityName"
+    :loading="loading"
+    @confirm="confirmLeave"
+  />
   <ContentEditWrap>
     <template #header>
       <ContentHeader :title="entityPageTitle" :entity-name="entityName">
@@ -289,26 +362,11 @@ if (!createMode.value) {
             v-if="!createMode"
             icon="save"
             :loading="loading"
-            :disabled="!hasUnsavedChanges"
+            :disabled="!hasUnsavedChanges || loading"
             @click="handleSave"
           >
             {{ $t('save_entity', { entityName }) }}
           </ButtonIcon>
-          <DropdownMenu v-if="!createMode">
-            <DropdownMenuTrigger as-child>
-              <Button class="p-1" size="icon" variant="secondary">
-                <LucideMoreHorizontal class="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem as-child>
-                <NuxtLink :to="newEntityUrl">
-                  <LucidePlus class="mr-2 size-4" />
-                  <span>{{ $t('new_entity', { entityName }) }}</span>
-                </NuxtLink>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
@@ -339,13 +397,17 @@ if (!createMode.value) {
                       <FormMessage />
                     </FormItem>
                   </FormField>
-                  <div v-if="!createMode" class="space-y-2">
-                    <Label>{{ $t('channels.identifier') }}</Label>
-                    <Input :model-value="internalName" disabled />
-                    <p class="text-muted-foreground text-sm">
-                      {{ $t('channels.identifier_helper') }}
-                    </p>
-                  </div>
+                  <FormField v-if="!createMode" name="identifier">
+                    <FormItem>
+                      <FormLabel>{{ $t('channels.identifier') }}</FormLabel>
+                      <FormControl>
+                        <Input :model-value="internalName" disabled />
+                      </FormControl>
+                      <FormDescription>
+                        {{ $t('channels.identifier_helper') }}
+                      </FormDescription>
+                    </FormItem>
+                  </FormField>
                 </FormGrid>
                 <FormGrid design="1">
                   <FormField v-slot="{ componentField }" name="url">
@@ -413,12 +475,18 @@ if (!createMode.value) {
             v-if="currentTab === 4"
             :key="`tab-${currentTab}`"
           >
-            <!-- TODO: M2 -->
-            <ContentEditCard :title="$t('channels.tab_storefront_settings')">
-              <div class="text-muted-foreground text-sm">
-                {{ $t('channels.tab_placeholder') }}
-              </div>
-            </ContentEditCard>
+            <ChannelStorefrontSettings
+              v-model="storefrontSettings"
+              :schema="activeSchema"
+              :resetting="isResettingSchema"
+              @open-schema-editor="schemaEditorOpen = true"
+              @reset-to-default="handleResetToDefault"
+            />
+            <ChannelSchemaEditorSheet
+              v-model:open="schemaEditorOpen"
+              :schema="activeSchema"
+              @apply="handleSchemaApply"
+            />
           </ContentEditMainContent>
         </KeepAlive>
 

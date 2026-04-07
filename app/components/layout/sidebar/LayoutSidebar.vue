@@ -6,23 +6,6 @@ import {
   SIDEBAR_COOKIE_NAME,
   SIDEBAR_COOKIE_MAX_AGE,
 } from '@/components/ui/sidebar/utils';
-import {
-  LucideLayoutDashboard,
-  LucideChartLine,
-  LucideTag,
-  LucideBrush,
-  LucideUsers,
-  LucideWarehouse,
-  LucideLayers,
-  LucideWallet,
-  LucideBuilding2,
-  LucideImport,
-  LucideSettings,
-  LucideShieldCheck,
-  LucidePackage,
-  LucideStore,
-  LucideWorkflow,
-} from '#components';
 
 const { state, isMobile, setOpenMobile } = useSidebar();
 
@@ -40,25 +23,7 @@ const handleNavClick = () => {
 };
 
 const { t } = useI18n();
-
-// Icon component mapping
-const iconComponents = {
-  LayoutDashboard: LucideLayoutDashboard,
-  ChartLine: LucideChartLine,
-  Tag: LucideTag,
-  Brush: LucideBrush,
-  Users: LucideUsers,
-  Warehouse: LucideWarehouse,
-  Layers: LucideLayers,
-  Wallet: LucideWallet,
-  Building2: LucideBuilding2,
-  Import: LucideImport,
-  Settings: LucideSettings,
-  ShieldCheck: LucideShieldCheck,
-  Package: LucidePackage,
-  Store: LucideStore,
-  Workflow: LucideWorkflow,
-};
+const { resolveIcon } = useLucideIcon();
 
 // Group label translations keyed by navigation group
 const groupLabels = computed<Record<string, string>>(() => ({
@@ -72,9 +37,7 @@ const navigationMenu = computed(() => {
     .filter((item) => !item.hideFromMenu)
     .map((item) => ({
       ...item,
-      iconComponent: item.icon
-        ? iconComponents[item.icon as keyof typeof iconComponents]
-        : undefined,
+      iconComponent: resolveIcon(item.icon),
     }));
 });
 

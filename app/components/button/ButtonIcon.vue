@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { ConcreteComponent } from 'vue';
-
-type ButtonIcon =
+type ButtonIconAlias =
   | 'new'
   | 'save'
   | 'copy'
@@ -12,7 +10,7 @@ type ButtonIcon =
 
 const props = withDefaults(
   defineProps<{
-    icon: ButtonIcon;
+    icon: ButtonIconAlias | (string & {});
     href?: string;
   }>(),
   {
@@ -20,31 +18,21 @@ const props = withDefaults(
   },
 );
 
-let iconComponent: ConcreteComponent | string;
+const { resolveIcon } = useLucideIcon();
 
-switch (props.icon) {
-  case 'new':
-    iconComponent = resolveComponent('LucidePlus');
-    break;
-  case 'save':
-    iconComponent = resolveComponent('LucideSave');
-    break;
-  case 'copy':
-    iconComponent = resolveComponent('LucideCopy');
-    break;
-  case 'export':
-    iconComponent = resolveComponent('LucideFile');
-    break;
-  case 'settings':
-    iconComponent = resolveComponent('LucideSettings2');
-    break;
-  case 'send':
-    iconComponent = resolveComponent('LucideSend');
-    break;
-  case 'retry':
-    iconComponent = resolveComponent('LucideRotateCw');
-    break;
-}
+const aliasMap: Record<ButtonIconAlias, string> = {
+  new: 'Plus',
+  save: 'Save',
+  copy: 'Copy',
+  export: 'File',
+  settings: 'Settings2',
+  send: 'Send',
+  retry: 'RotateCw',
+};
+
+const iconComponent = computed(() =>
+  resolveIcon(aliasMap[props.icon as ButtonIconAlias] ?? props.icon),
+);
 
 const link = resolveComponent('NuxtLink');
 const elem = props.href ? link : 'div';
