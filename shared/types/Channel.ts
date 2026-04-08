@@ -162,6 +162,8 @@ export interface ChannelListItem extends ResponseEntity<ChannelBase> {
   defaultLanguage: string;
   defaultMarket: string;
   locked: boolean;
+  activePaymentCount: number;
+  paymentCount: number;
 }
 
 /**
