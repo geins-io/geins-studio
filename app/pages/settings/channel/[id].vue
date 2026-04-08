@@ -348,7 +348,7 @@ const summary = computed<DataItem[]>(() => {
   }
   if (entityData.value?.name) {
     dataList.push({
-      label: t('channels.name'),
+      label: t('name'),
       value: entityData.value.name,
     });
   }
@@ -369,7 +369,7 @@ const summary = computed<DataItem[]>(() => {
         .map((m) => `${m.country.name} (${m.currency._id})`)
         .join(', ');
       dataList.push({
-        label: t('channels.markets_count'),
+        label: t('market', 2),
         value: channelData.markets.map((m) => m._id),
         displayValue,
         displayType: DataItemDisplayType.Array,
@@ -479,7 +479,7 @@ if (!createMode.value) {
                 <FormGrid design="1+1">
                   <FormField v-slot="{ componentField }" name="name">
                     <FormItem>
-                      <FormLabel>{{ $t('channels.name') }}</FormLabel>
+                      <FormLabel>{{ $t('name') }}</FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" />
                       </FormControl>

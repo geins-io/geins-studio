@@ -91,9 +91,9 @@ onMounted(() => {
       url: { useValueAsUrl: true, external: true },
     },
     columnTitles: {
-      name: t('channels.name'),
+      name: t('name'),
       active: t('status'),
-      markets: t('channels.markets_count'),
+      markets: t('market', 2),
       languages: t('language', 2),
     },
     excludeColumns: [

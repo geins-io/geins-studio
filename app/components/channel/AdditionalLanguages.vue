@@ -129,17 +129,26 @@ const handleToggleActive = (
       </tbody>
     </table>
   </div>
-  <div v-else class="text-muted-foreground px-4 py-6 text-center text-sm">
-    {{ t('no_entity', { entityName: 'language' }, 2) }}
-  </div>
+  <Empty v-else class="gap-2 border-y p-0">
+    <EmptyMedia variant="icon" class="size-8">
+      <LucideLanguages class="size-5" />
+    </EmptyMedia>
+    <EmptyHeader>
+      <EmptyDescription>
+        {{ t('channels.additional_languages_empty') }}
+      </EmptyDescription>
+    </EmptyHeader>
+  </Empty>
 
   <!-- Add language dialog -->
   <Dialog v-model:open="addDialogOpen">
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>{{ t('channels.add_language') }}</DialogTitle>
+        <DialogTitle>
+          {{ t('add_entity', { entityName: 'language' }, 2) }}
+        </DialogTitle>
         <DialogDescription class="sr-only">
-          {{ t('channels.add_language') }}
+          {{ t('add_entity', { entityName: 'language' }, 2) }}
         </DialogDescription>
       </DialogHeader>
       <FormInputTagsSearch
@@ -170,7 +179,7 @@ const handleToggleActive = (
           {{ t('cancel') }}
         </Button>
         <Button :disabled="!selectedLanguageIds.length" @click="confirmAdd">
-          {{ t('continue') }}
+          {{ t('add') }}
         </Button>
       </DialogFooter>
     </DialogContent>
