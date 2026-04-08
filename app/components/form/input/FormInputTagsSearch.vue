@@ -99,6 +99,10 @@ const getName = (id: AcceptableValue): string => {
     ? getEntityNameById(String(id), dataSet.value) || ''
     : '';
 };
+
+const getItemFromDataSet = (id: string): T | undefined => {
+  return dataSet.value?.find((item) => item._id === id);
+};
 </script>
 <template>
   <Combobox v-model="model" v-model:open="open" :ignore-filter="true">
@@ -113,8 +117,10 @@ const getName = (id: AcceptableValue): string => {
         :display-value="getName"
       >
         <div class="flex flex-wrap items-center gap-2">
-          <TagsInputItem v-for="id in model" :key="id" :value="id">
-            <TagsInputItemText />
+          <TagsInputItem v-for="id in model" :key="id" :value="id" :class="{ 'pl-1.5': $slots.tag }">
+            <slot name="tag" :item="getItemFromDataSet(id)">
+              <TagsInputItemText />
+            </slot>
             <TagsInputItemDelete />
           </TagsInputItem>
         </div>
@@ -152,7 +158,9 @@ const getName = (id: AcceptableValue): string => {
             :value="item._id"
             @select.prevent="handleSelect"
           >
-            {{ item.displayName || item.name }}
+            <slot name="item" :item="item">
+              {{ item.displayName || item.name }}
+            </slot>
           </ComboboxItem>
         </ComboboxGroup>
         <ComboboxItem

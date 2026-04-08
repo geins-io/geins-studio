@@ -28,6 +28,8 @@ export function buildChannelListItem(
     defaultLanguage: 'en',
     defaultMarket: '1',
     locked: false,
+    activePaymentCount: 0,
+    paymentCount: 0,
     ...overrides,
   };
 }

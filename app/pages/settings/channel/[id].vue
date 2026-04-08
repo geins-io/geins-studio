@@ -10,6 +10,8 @@ import type {
   ChannelCreate,
   ChannelUpdate,
   ChannelApiOptions,
+  ChannelLanguageAssignment,
+  Language,
   StorefrontSchema,
   StorefrontSettings,
 } from '#shared/types';
@@ -28,7 +30,7 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
-const { channelApi } = useGeinsRepository();
+const { channelApi, globalApi } = useGeinsRepository();
 
 // =====================================================================================
 // PAGE META
@@ -89,6 +91,58 @@ const storefrontSettings = ref<StorefrontSettings>(
 );
 const schemaEditorOpen = ref(false);
 const schemaChanged = ref(false);
+
+// Language state
+const allLanguages = ref<Language[]>([]);
+const channelLanguages = ref<ChannelLanguageAssignment[]>([]);
+const defaultLanguageDialogOpen = ref(false);
+const selectedDefaultLanguageId = ref('');
+
+const defaultLanguage = computed(() => {
+  const firstId = channelLanguages.value[0]?._id;
+  if (!firstId) return undefined;
+  return allLanguages.value.find((l) => l._id === firstId);
+});
+
+const openDefaultLanguageDialog = () => {
+  selectedDefaultLanguageId.value = channelLanguages.value[0]?._id ?? '';
+  defaultLanguageDialogOpen.value = true;
+};
+
+const confirmDefaultLanguageChange = () => {
+  const newDefaultId = selectedDefaultLanguageId.value;
+  if (!newDefaultId) return;
+
+  const current = [...channelLanguages.value];
+  const idx = current.findIndex((l) => l._id === newDefaultId);
+
+  if (idx > 0) {
+    // Move selected to index 0, keep others in order
+    const [selected] = current.splice(idx, 1);
+    current.unshift(selected!);
+    channelLanguages.value = current;
+  } else if (idx === -1) {
+    // New language not in current list — add it at index 0
+    const newAssignment: ChannelLanguageAssignment = {
+      _id: newDefaultId,
+      _type: 'language',
+      active: true,
+    };
+    channelLanguages.value = [newAssignment, ...current];
+  }
+
+  defaultLanguageDialogOpen.value = false;
+};
+
+const handleAddLanguages = (newLangs: ChannelLanguageAssignment[]) => {
+  channelLanguages.value = [...channelLanguages.value, ...newLangs];
+};
+
+const handleUpdateLanguage = (updated: ChannelLanguageAssignment) => {
+  channelLanguages.value = channelLanguages.value.map((l) =>
+    l._id === updated._id ? { ...l, active: updated.active } : l,
+  );
+};
 
 // =====================================================================================
 // ENTITY EDIT COMPOSABLE
@@ -151,6 +205,12 @@ const {
       ? { ...entity.storefrontSettings }
       : getDefaultSettings(activeSchema.value);
     schemaChanged.value = false;
+    // Populate channel languages from the entity's ordered array
+    channelLanguages.value = (entity.languages || []).map((l) => ({
+      _id: l._id,
+      _type: l._type,
+      active: l.active,
+    }));
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       name: entity.name,
@@ -169,6 +229,7 @@ const {
     name: formData.name,
     url: formData.url,
     active: formData.active,
+    languages: channelLanguages.value,
     storefrontSettings: storefrontSettings.value,
     ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
@@ -217,6 +278,17 @@ watch(
   { deep: true },
 );
 
+// Sync channelLanguages into entityDataUpdate so useUnsavedChanges detects changes
+watch(
+  channelLanguages,
+  (val) => {
+    if (!createMode.value) {
+      entityDataUpdate.value.languages = val;
+    }
+  },
+  { deep: true },
+);
+
 // =====================================================================================
 // ERROR HANDLING SETUP
 // =====================================================================================
@@ -237,10 +309,20 @@ const handleCreateChannel = async () => {
 };
 
 const handleSave = async () => {
-  const result = await updateEntity(async () => {
-    validateOnChange.value = true;
-    return true;
-  });
+  const result = await updateEntity(
+    async () => {
+      validateOnChange.value = true;
+      return true;
+    },
+    {
+      fields: [
+        'languages',
+        'markets',
+        'storefrontSettings',
+        'storefrontSchema',
+      ],
+    },
+  );
 
   // Show locked toast if the response indicates background processing
   if (result && result.locked) {
@@ -266,7 +348,7 @@ const summary = computed<DataItem[]>(() => {
   }
   if (entityData.value?.name) {
     dataList.push({
-      label: t('channels.name'),
+      label: t('name'),
       value: entityData.value.name,
     });
   }
@@ -275,7 +357,7 @@ const summary = computed<DataItem[]>(() => {
     if (channelData?.languages?.length) {
       const displayValue = channelData.languages.map((l) => l.name).join(', ');
       dataList.push({
-        label: t('channels.languages_count'),
+        label: t('language', 2),
         value: channelData.languages.map((l) => l._id),
         displayValue,
         displayType: DataItemDisplayType.Array,
@@ -287,7 +369,7 @@ const summary = computed<DataItem[]>(() => {
         .map((m) => `${m.country.name} (${m.currency._id})`)
         .join(', ');
       dataList.push({
-        label: t('channels.markets_count'),
+        label: t('market', 2),
         value: channelData.markets.map((m) => m._id),
         displayValue,
         displayType: DataItemDisplayType.Array,
@@ -328,12 +410,19 @@ if (!createMode.value) {
     entityFetchKey.value,
     () =>
       channelApi.channel.get(entityId.value, {
-        fields: ['languages', 'markets', 'storefrontSettings', 'storefrontSchema'],
+        fields: [
+          'languages',
+          'markets',
+          'storefrontSettings',
+          'storefrontSchema',
+        ],
       }),
   );
   refreshEntityData.value = refresh;
   onMounted(async () => {
     const entity = handleFetchResult<Channel>(error.value, data.value);
+    const langs = await globalApi.language.list();
+    allLanguages.value = Array.isArray(langs) ? langs : [];
     await parseAndSaveData(entity);
   });
 }
@@ -390,7 +479,7 @@ if (!createMode.value) {
                 <FormGrid design="1+1">
                   <FormField v-slot="{ componentField }" name="name">
                     <FormItem>
-                      <FormLabel>{{ $t('channels.name') }}</FormLabel>
+                      <FormLabel>{{ $t('name') }}</FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" />
                       </FormControl>
@@ -425,6 +514,86 @@ if (!createMode.value) {
                 </FormGrid>
               </FormGridWrap>
             </ContentEditCard>
+
+            <!-- Languages card -->
+            <ContentEditCard v-if="!createMode" :title="$t('language', 2)">
+              <!-- Default language sub-section -->
+              <div>
+                <Item class="px-0">
+                  <ItemContent>
+                    <ItemTitle class="text-base font-bold">
+                      {{ $t('channels.default_language') }}
+                    </ItemTitle>
+                  </ItemContent>
+                  <ItemActions>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      @click="openDefaultLanguageDialog"
+                    >
+                      {{ $t('change') }}
+                    </Button>
+                  </ItemActions>
+                </Item>
+
+                <!-- Default language display row -->
+                <div class="border-b">
+                  <div class="border-b px-4 py-2 text-sm font-bold">
+                    {{ $t('language') }}
+                  </div>
+                  <div class="flex items-center gap-2.5 px-4 py-3">
+                    <ChannelLanguageIcon
+                      v-if="defaultLanguage"
+                      :language-id="defaultLanguage._id"
+                      :name="defaultLanguage.name"
+                    />
+                    <span v-else class="text-muted-foreground text-sm"
+                      >&mdash;</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div>
+                <!-- Additional languages -->
+                <ChannelAdditionalLanguages
+                  :all-languages="allLanguages"
+                  :channel-languages="channelLanguages"
+                  @add="handleAddLanguages"
+                  @update="handleUpdateLanguage"
+                />
+              </div>
+            </ContentEditCard>
+
+            <!-- Change default language dialog -->
+            <Dialog v-model:open="defaultLanguageDialogOpen">
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {{ $t('channels.change_default_language') }}
+                  </DialogTitle>
+                  <DialogDescription class="sr-only">
+                    {{ $t('channels.change_default_language') }}
+                  </DialogDescription>
+                </DialogHeader>
+                <FormInputLanguageSelect
+                  v-model="selectedDefaultLanguageId"
+                  :data-set="allLanguages"
+                  show-flags
+                  disable-teleport
+                />
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    @click="defaultLanguageDialogOpen = false"
+                  >
+                    {{ $t('cancel') }}
+                  </Button>
+                  <Button @click="confirmDefaultLanguageChange">
+                    {{ $t('continue') }}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </ContentEditMainContent>
         </KeepAlive>
         <!-- Tab 1: Markets -->

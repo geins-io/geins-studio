@@ -278,6 +278,8 @@ return {
 
 ### Overriding base methods (like product)
 
+When overriding a CRUD method from the factory spread, the override **MUST preserve the full signature** of the original — including the `options` parameter. Dropping `options` silently breaks callers that pass `queryOptions` (e.g. `useEntityEdit` passing `fields` for post-save re-fetch).
+
 ```ts
 return {
   ...productRepo,
@@ -288,6 +290,16 @@ return {
       method: 'POST',
       body: { ...batchQueryMatchAll.value },
       query: buildQueryObject(options),  // ALWAYS use buildQueryObject
+    });
+  },
+
+  // Override update() — MUST accept and forward options
+  async update(id: string, data: MyEntityUpdate, options?: MyEntityApiOptions): Promise<MyEntity> {
+    // ...custom logic (e.g. FormData for file uploads)...
+    return await fetch<MyEntity>(`${ENDPOINT}/${id}`, {
+      method: 'PATCH',
+      body: customBody,
+      query: buildQueryObject(options),  // NEVER drop this — callers depend on it
     });
   },
 };
@@ -342,3 +354,4 @@ async send(id: string, data: StatusTransitionRequest): Promise<void> {
 - [ ] New shared types are exported from `shared/types/index.ts`
 - [ ] Non-standard list endpoints use a custom `list()` / `query()` method instead of forcing `entityListRepo`
 - [ ] No duplicated logic that the factory already provides
+- [ ] **Overridden CRUD methods preserve the full factory signature** — especially the `options` parameter, forwarded via `buildQueryObject(options)`

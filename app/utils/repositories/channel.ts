@@ -9,6 +9,7 @@ import type {
   ChannelMailType,
   ChannelMailSettings,
 } from '#shared/types';
+import { buildQueryObject } from '#shared/utils/api-query';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/account';
@@ -34,7 +35,7 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     channel: {
       ...channelRepo,
 
-      async update(id: string, data: ChannelUpdate): Promise<Channel> {
+      async update(id: string, data: ChannelUpdate, options?: ChannelApiOptions): Promise<Channel> {
         const fileEntries = Object.entries(
           data.storefrontSettings ?? {},
         ).filter((entry): entry is [string, File] => entry[1] instanceof File);
@@ -61,6 +62,7 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return await fetch<Channel>(`${CHANNEL_ENDPOINT}/${id}`, {
           method: 'PATCH',
           body: formData,
+          query: buildQueryObject(options),
         });
       },
 

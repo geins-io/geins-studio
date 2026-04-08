@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type {
-  ChannelListItem,
   ChannelList,
   ColumnOptions,
+  ChannelListItem,
   StringKeyOf,
 } from '#shared/types';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
@@ -96,10 +96,10 @@ onMounted(() => {
       url: { useValueAsUrl: true, external: true },
     },
     columnTitles: {
-      name: t('channels.name'),
+      name: t('name'),
       active: t('status'),
-      markets: t('channels.markets_count'),
-      languages: t('channels.languages_count'),
+      markets: t('market', 2),
+      languages: t('language', 2),
     },
     excludeColumns: [
       'identifier',
@@ -109,6 +109,8 @@ onMounted(() => {
       'languageCount',
       'marketCount',
       'locked',
+      'activePaymentCount',
+      'paymentCount',
     ],
   };
 
