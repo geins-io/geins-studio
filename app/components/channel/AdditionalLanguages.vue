@@ -66,36 +66,12 @@ const confirmAdd = () => {
   selectedLanguageIds.value = [];
 };
 
-// Edit sheet state
-const editSheetOpen = ref(false);
-const editingLanguage = ref<{
-  _id: string;
-  _type: string;
-  name: string;
-  active: boolean;
-} | null>(null);
-const editActive = ref(true);
-
-const openEditSheet = (row: {
-  _id: string;
-  _type: string;
-  name: string;
-  active: boolean;
-}) => {
-  editingLanguage.value = row;
-  editActive.value = row.active;
-  editSheetOpen.value = true;
-};
-
-const confirmEdit = () => {
-  if (!editingLanguage.value) return;
+const handleToggleActive = (row: { _id: string; _type: string; active: boolean }, value: boolean) => {
   emit('update', {
-    _id: editingLanguage.value._id,
-    _type: editingLanguage.value._type,
-    active: editActive.value,
+    _id: row._id,
+    _type: row._type,
+    active: value,
   });
-  editSheetOpen.value = false;
-  editingLanguage.value = null;
 };
 </script>
 
@@ -129,7 +105,6 @@ const confirmEdit = () => {
           <th class="px-4 py-2 text-left text-sm font-bold">
             {{ t('status') }}
           </th>
-          <th class="w-12" />
         </tr>
       </thead>
       <tbody>
@@ -142,12 +117,10 @@ const confirmEdit = () => {
             <ChannelLanguageIcon :language-id="row._id" :name="row.name" />
           </td>
           <td class="px-4 py-3">
-            <StatusBadge :status="row.active" />
-          </td>
-          <td class="px-4 py-3 text-right">
-            <Button variant="ghost" size="icon-xs" @click="openEditSheet(row)">
-              <LucideSquarePen class="size-4" />
-            </Button>
+            <Switch
+              :checked="row.active"
+              @update:checked="handleToggleActive(row, $event)"
+            />
           </td>
         </tr>
       </tbody>
@@ -200,31 +173,4 @@ const confirmEdit = () => {
     </DialogContent>
   </Dialog>
 
-  <!-- Edit language sheet -->
-  <Sheet :open="editSheetOpen" @update:open="editSheetOpen = $event">
-    <SheetContent>
-      <SheetHeader>
-        <SheetTitle>{{ t('channels.edit_language') }}</SheetTitle>
-      </SheetHeader>
-      <SheetBody v-if="editingLanguage" class="flex flex-col gap-6">
-        <ChannelLanguageIcon
-          :language-id="editingLanguage._id"
-          :name="editingLanguage.name"
-          size="md"
-        />
-        <div class="flex items-center justify-between">
-          <Label>{{ t('status') }}</Label>
-          <Switch v-model:checked="editActive" />
-        </div>
-      </SheetBody>
-      <SheetFooter>
-        <Button variant="outline" @click="editSheetOpen = false">
-          {{ t('cancel') }}
-        </Button>
-        <Button @click="confirmEdit">
-          {{ t('continue') }}
-        </Button>
-      </SheetFooter>
-    </SheetContent>
-  </Sheet>
 </template>
