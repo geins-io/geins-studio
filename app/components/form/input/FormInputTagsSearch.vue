@@ -117,7 +117,7 @@ const getItemFromDataSet = (id: string): T | undefined => {
         :display-value="getName"
       >
         <div class="flex flex-wrap items-center gap-2">
-          <TagsInputItem v-for="id in model" :key="id" :value="id">
+          <TagsInputItem v-for="id in model" :key="id" :value="id" :class="{ 'pl-1.5': $slots.tag }">
             <slot name="tag" :item="getItemFromDataSet(id)">
               <TagsInputItemText />
             </slot>

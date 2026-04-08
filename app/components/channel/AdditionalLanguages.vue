@@ -32,8 +32,8 @@ const tableRows = computed(() => {
 });
 
 // Available languages for add dialog (not already assigned)
-const assignedIds = computed(() =>
-  new Set(props.channelLanguages.map((l) => l._id)),
+const assignedIds = computed(
+  () => new Set(props.channelLanguages.map((l) => l._id)),
 );
 
 const availableLanguages = computed(() => {
@@ -55,11 +55,12 @@ const openAddDialog = () => {
 };
 
 const confirmAdd = () => {
-  const newAssignments: ChannelLanguageAssignment[] = selectedLanguageIds.value.map((id) => ({
-    _id: id,
-    _type: 'language',
-    active: true,
-  }));
+  const newAssignments: ChannelLanguageAssignment[] =
+    selectedLanguageIds.value.map((id) => ({
+      _id: id,
+      _type: 'language',
+      active: true,
+    }));
   emit('add', newAssignments);
   addDialogOpen.value = false;
   selectedLanguageIds.value = [];
@@ -67,10 +68,20 @@ const confirmAdd = () => {
 
 // Edit sheet state
 const editSheetOpen = ref(false);
-const editingLanguage = ref<{ _id: string; _type: string; name: string; active: boolean } | null>(null);
+const editingLanguage = ref<{
+  _id: string;
+  _type: string;
+  name: string;
+  active: boolean;
+} | null>(null);
 const editActive = ref(true);
 
-const openEditSheet = (row: { _id: string; _type: string; name: string; active: boolean }) => {
+const openEditSheet = (row: {
+  _id: string;
+  _type: string;
+  name: string;
+  active: boolean;
+}) => {
   editingLanguage.value = row;
   editActive.value = row.active;
   editSheetOpen.value = true;
@@ -92,7 +103,7 @@ const confirmEdit = () => {
   <!-- Additional languages sub-section -->
   <Item class="px-0 pt-4">
     <ItemContent>
-      <ItemTitle class="text-base font-medium">
+      <ItemTitle class="text-base font-bold">
         {{ t('channels.additional_languages') }}
       </ItemTitle>
       <ItemDescription>
@@ -100,7 +111,7 @@ const confirmEdit = () => {
       </ItemDescription>
     </ItemContent>
     <ItemActions>
-      <Button variant="secondary" size="sm" @click="openAddDialog">
+      <Button variant="outline" size="sm" @click="openAddDialog">
         <LucidePlus class="mr-1 size-3.5" />
         {{ t('add') }}
       </Button>
@@ -108,14 +119,14 @@ const confirmEdit = () => {
   </Item>
 
   <!-- Additional languages table -->
-  <div v-if="tableRows.length" class="border-t">
+  <div v-if="tableRows.length">
     <table class="w-full">
       <thead>
         <tr class="border-b">
-          <th class="px-4 py-2 text-left text-sm font-medium">
+          <th class="px-4 py-2 text-left text-sm font-bold">
             {{ t('language') }}
           </th>
-          <th class="px-4 py-2 text-left text-sm font-medium">
+          <th class="px-4 py-2 text-left text-sm font-bold">
             {{ t('status') }}
           </th>
           <th class="w-12" />
@@ -134,11 +145,7 @@ const confirmEdit = () => {
             <StatusBadge :status="row.active" />
           </td>
           <td class="px-4 py-3 text-right">
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              @click="openEditSheet(row)"
-            >
+            <Button variant="ghost" size="icon-xs" @click="openEditSheet(row)">
               <LucideSquarePen class="size-4" />
             </Button>
           </td>
@@ -146,8 +153,8 @@ const confirmEdit = () => {
       </tbody>
     </table>
   </div>
-  <div v-else class="text-muted-foreground border-t px-4 py-6 text-center text-sm">
-    {{ t('no_entity', { entityName: t('language') }, 2) }}
+  <div v-else class="text-muted-foreground px-4 py-6 text-center text-sm">
+    {{ t('no_entity', { entityName: 'language' }, 2) }}
   </div>
 
   <!-- Add language dialog -->
@@ -155,6 +162,9 @@ const confirmEdit = () => {
     <DialogContent>
       <DialogHeader>
         <DialogTitle>{{ t('channels.add_language') }}</DialogTitle>
+        <DialogDescription class="sr-only">
+          {{ t('channels.add_language') }}
+        </DialogDescription>
       </DialogHeader>
       <FormInputTagsSearch
         v-model="selectedLanguageIds"
