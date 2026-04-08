@@ -568,9 +568,12 @@ if (!createMode.value) {
             <Dialog v-model:open="defaultLanguageDialogOpen">
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{{
-                    $t('channels.change_default_language')
-                  }}</DialogTitle>
+                  <DialogTitle>
+                    {{ $t('channels.change_default_language') }}
+                  </DialogTitle>
+                  <DialogDescription class="sr-only">
+                    {{ $t('channels.change_default_language') }}
+                  </DialogDescription>
                 </DialogHeader>
                 <FormInputLanguageSelect
                   v-model="selectedDefaultLanguageId"

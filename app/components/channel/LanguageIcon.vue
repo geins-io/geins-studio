@@ -19,7 +19,7 @@ withDefaults(
       :class="[
         flagClass(languageToCountryCode(languageId)),
         size === 'sm' ? 'size-4.5' : 'size-5',
-        'border bg-contain bg-center bg-no-repeat',
+        'rounded-full border bg-contain bg-center bg-no-repeat',
       ]"
     />
     <span v-if="name" :class="cn(size === 'sm' ? 'text-sm' : 'text-base')">{{

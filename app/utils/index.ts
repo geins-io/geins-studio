@@ -50,9 +50,9 @@ export function fullName(
  * @param countryCode — ISO 3166-1 alpha-2 country code (e.g. "se", "GB")
  * @param round — render as a circle (default true); false renders the standard 4:3 ratio
  */
-export function flagClass(countryCode: string, round = true): string {
+export function flagClass(countryCode: string, square = true): string {
   const code = countryCode.toLowerCase();
-  return round ? `fib fis fi-${code} rounded-full` : `fi fi-${code}`;
+  return square ? `fib fis fi-${code}` : `fib fi-${code}`;
 }
 
 /**
