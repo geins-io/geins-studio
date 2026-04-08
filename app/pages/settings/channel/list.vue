@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import type {
-  ChannelListItem,
-  ChannelList,
-  ColumnOptions,
-  StringKeyOf,
-} from '#shared/types';
+import type { ChannelList, ColumnOptions, StringKeyOf } from '#shared/types';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = ChannelListItem;
@@ -109,6 +104,8 @@ onMounted(() => {
       'languageCount',
       'marketCount',
       'locked',
+      'activePaymentCount',
+      'paymentCount',
     ],
   };
 

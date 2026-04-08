@@ -309,10 +309,20 @@ const handleCreateChannel = async () => {
 };
 
 const handleSave = async () => {
-  const result = await updateEntity(async () => {
-    validateOnChange.value = true;
-    return true;
-  });
+  const result = await updateEntity(
+    async () => {
+      validateOnChange.value = true;
+      return true;
+    },
+    {
+      fields: [
+        'languages',
+        'markets',
+        'storefrontSettings',
+        'storefrontSchema',
+      ],
+    },
+  );
 
   // Show locked toast if the response indicates background processing
   if (result && result.locked) {
@@ -536,7 +546,6 @@ if (!createMode.value) {
                       v-if="defaultLanguage"
                       :language-id="defaultLanguage._id"
                       :name="defaultLanguage.name"
-                      size="md"
                     />
                     <span v-else class="text-muted-foreground text-sm"
                       >&mdash;</span
@@ -544,14 +553,15 @@ if (!createMode.value) {
                   </div>
                 </div>
               </div>
-
-              <!-- Additional languages -->
-              <ChannelAdditionalLanguages
-                :all-languages="allLanguages"
-                :channel-languages="channelLanguages"
-                @add="handleAddLanguages"
-                @update="handleUpdateLanguage"
-              />
+              <div>
+                <!-- Additional languages -->
+                <ChannelAdditionalLanguages
+                  :all-languages="allLanguages"
+                  :channel-languages="channelLanguages"
+                  @add="handleAddLanguages"
+                  @update="handleUpdateLanguage"
+                />
+              </div>
             </ContentEditCard>
 
             <!-- Change default language dialog -->

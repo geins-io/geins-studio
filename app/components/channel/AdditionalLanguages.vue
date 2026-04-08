@@ -66,7 +66,10 @@ const confirmAdd = () => {
   selectedLanguageIds.value = [];
 };
 
-const handleToggleActive = (row: { _id: string; _type: string; active: boolean }, value: boolean) => {
+const handleToggleActive = (
+  row: { _id: string; _type: string; active: boolean },
+  value: boolean,
+) => {
   emit('update', {
     _id: row._id,
     _type: row._type,
@@ -102,8 +105,8 @@ const handleToggleActive = (row: { _id: string; _type: string; active: boolean }
           <th class="px-4 py-2 text-left text-sm font-bold">
             {{ t('language') }}
           </th>
-          <th class="px-4 py-2 text-left text-sm font-bold">
-            {{ t('status') }}
+          <th class="px-6 py-2 text-right text-sm font-bold">
+            {{ t('active') }}
           </th>
         </tr>
       </thead>
@@ -116,10 +119,10 @@ const handleToggleActive = (row: { _id: string; _type: string; active: boolean }
           <td class="px-4 py-3">
             <ChannelLanguageIcon :language-id="row._id" :name="row.name" />
           </td>
-          <td class="px-4 py-3">
+          <td class="px-6 py-3 text-right">
             <Switch
-              :checked="row.active"
-              @update:checked="handleToggleActive(row, $event)"
+              :model-value="row.active"
+              @update:model-value="handleToggleActive(row, $event)"
             />
           </td>
         </tr>
@@ -172,5 +175,4 @@ const handleToggleActive = (row: { _id: string; _type: string; active: boolean }
       </DialogFooter>
     </DialogContent>
   </Dialog>
-
 </template>
