@@ -11,7 +11,9 @@ import type {
   ChannelUpdate,
   ChannelApiOptions,
   ChannelLanguageAssignment,
+  ChannelMarketAssignment,
   Language,
+  Market,
   StorefrontSchema,
   StorefrontSettings,
 } from '#shared/types';
@@ -98,6 +100,12 @@ const channelLanguages = ref<ChannelLanguageAssignment[]>([]);
 const defaultLanguageDialogOpen = ref(false);
 const selectedDefaultLanguageId = ref('');
 
+// Market state
+const allMarkets = ref<Market[]>([]);
+const channelMarkets = ref<Market[]>([]);
+const defaultMarketDialogOpen = ref(false);
+const selectedDefaultMarketId = ref('');
+
 const defaultLanguage = computed(() => {
   const firstId = channelLanguages.value[0]?._id;
   if (!firstId) return undefined;
@@ -141,6 +149,50 @@ const handleAddLanguages = (newLangs: ChannelLanguageAssignment[]) => {
 const handleUpdateLanguage = (updated: ChannelLanguageAssignment) => {
   channelLanguages.value = channelLanguages.value.map((l) =>
     l._id === updated._id ? { ...l, active: updated.active } : l,
+  );
+};
+
+// Market computed & handlers
+const defaultMarket = computed(() => channelMarkets.value[0]);
+
+const openDefaultMarketDialog = () => {
+  selectedDefaultMarketId.value = channelMarkets.value[0]?._id ?? '';
+  defaultMarketDialogOpen.value = true;
+};
+
+const confirmDefaultMarketChange = () => {
+  const newDefaultId = selectedDefaultMarketId.value;
+  if (!newDefaultId) return;
+
+  const current = [...channelMarkets.value];
+  const idx = current.findIndex((m) => m._id === newDefaultId);
+
+  if (idx > 0) {
+    const [selected] = current.splice(idx, 1);
+    current.unshift(selected!);
+    channelMarkets.value = current;
+  }
+
+  defaultMarketDialogOpen.value = false;
+};
+
+const handleAddMarkets = (newMarketAssignments: ChannelMarketAssignment[]) => {
+  const newMarkets = newMarketAssignments
+    .map((a) => allMarkets.value.find((m) => m._id === a._id))
+    .filter((m): m is Market => !!m)
+    .map((m) => ({ ...m, active: true }));
+  channelMarkets.value = [...channelMarkets.value, ...newMarkets];
+};
+
+const handleUpdateMarket = (updated: ChannelMarketAssignment) => {
+  channelMarkets.value = channelMarkets.value.map((m) =>
+    m._id === updated._id ? { ...m, active: updated.active } : m,
+  );
+};
+
+const handleRemoveMarket = (marketId: string) => {
+  channelMarkets.value = channelMarkets.value.filter(
+    (m) => m._id !== marketId,
   );
 };
 
@@ -211,6 +263,8 @@ const {
       _type: l._type,
       active: l.active,
     }));
+    // Populate channel markets from the entity's ordered array
+    channelMarkets.value = entity.markets || [];
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       name: entity.name,
@@ -230,6 +284,11 @@ const {
     url: formData.url,
     active: formData.active,
     languages: channelLanguages.value,
+    markets: channelMarkets.value.map((m) => ({
+      _id: m._id,
+      _type: m._type,
+      active: m.active,
+    })),
     storefrontSettings: storefrontSettings.value,
     ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
@@ -284,6 +343,21 @@ watch(
   (val) => {
     if (!createMode.value) {
       entityDataUpdate.value.languages = val;
+    }
+  },
+  { deep: true },
+);
+
+// Sync channelMarkets into entityDataUpdate so useUnsavedChanges detects changes
+watch(
+  channelMarkets,
+  (val) => {
+    if (!createMode.value) {
+      entityDataUpdate.value.markets = val.map((m) => ({
+        _id: m._id,
+        _type: m._type,
+        active: m.active,
+      }));
     }
   },
   { deep: true },
@@ -421,8 +495,12 @@ if (!createMode.value) {
   refreshEntityData.value = refresh;
   onMounted(async () => {
     const entity = handleFetchResult<Channel>(error.value, data.value);
-    const langs = await globalApi.language.list();
+    const [langs, markets] = await Promise.all([
+      globalApi.language.list(),
+      channelApi.market.list(),
+    ]);
     allLanguages.value = Array.isArray(langs) ? langs : [];
+    allMarkets.value = Array.isArray(markets) ? markets : [];
     await parseAndSaveData(entity);
   });
 }
@@ -602,12 +680,131 @@ if (!createMode.value) {
             v-if="currentTab === 1"
             :key="`tab-${currentTab}`"
           >
-            <!-- TODO: M3 -->
             <ContentEditCard :title="$t('channels.tab_markets')">
-              <div class="text-muted-foreground text-sm">
-                {{ $t('channels.tab_placeholder') }}
+              <!-- Default market sub-section -->
+              <div>
+                <Item class="px-0">
+                  <ItemContent>
+                    <ItemTitle class="text-base font-bold">
+                      {{ $t('channels.default_market') }}
+                    </ItemTitle>
+                  </ItemContent>
+                  <ItemActions>
+                    <Button
+                      v-if="channelMarkets.length > 1"
+                      variant="outline"
+                      size="sm"
+                      @click="openDefaultMarketDialog"
+                    >
+                      {{ $t('change') }}
+                    </Button>
+                  </ItemActions>
+                </Item>
+
+                <!-- Default market display row -->
+                <div class="border-b">
+                  <div class="border-b px-4 py-2 text-sm font-bold">
+                    {{ $t('country') }}
+                  </div>
+                  <div v-if="defaultMarket" class="px-4 py-3">
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <p class="text-muted-foreground mb-1 text-xs font-medium">
+                          {{ $t('country') }}
+                        </p>
+                        <span class="inline-flex items-center gap-2">
+                          <div
+                            :class="[
+                              flagClass(defaultMarket.country._id),
+                              'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
+                            ]"
+                          />
+                          <span class="text-sm">{{ defaultMarket.country.name }}</span>
+                        </span>
+                      </div>
+                      <div>
+                        <p class="text-muted-foreground mb-1 text-xs font-medium">
+                          {{ $t('channels.market_currency') }}
+                        </p>
+                        <p class="text-sm">{{ defaultMarket.currency._id }}</p>
+                      </div>
+                    </div>
+                    <div class="mt-3 grid grid-cols-2 gap-4">
+                      <div>
+                        <p class="text-muted-foreground mb-1 text-xs font-medium">
+                          {{ $t('channels.market_group') }}
+                        </p>
+                        <p class="text-sm">{{ defaultMarket.group ?? '—' }}</p>
+                      </div>
+                      <div>
+                        <p class="text-muted-foreground mb-1 text-xs font-medium">
+                          {{ $t('status') }}
+                        </p>
+                        <StatusBadge :status="defaultMarket.active ? 'active' : 'inactive'" />
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="flex items-center gap-2.5 px-4 py-3">
+                    <span class="text-muted-foreground text-sm">&mdash;</span>
+                  </div>
+                </div>
               </div>
+
+              <!-- Additional markets -->
+              <ChannelAdditionalMarkets
+                :all-markets="allMarkets"
+                :channel-markets="channelMarkets"
+                @add="handleAddMarkets"
+                @update="handleUpdateMarket"
+                @remove="handleRemoveMarket"
+              />
             </ContentEditCard>
+
+            <!-- Change default market dialog -->
+            <Dialog v-model:open="defaultMarketDialogOpen">
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {{ $t('channels.change_default_market') }}
+                  </DialogTitle>
+                  <DialogDescription class="sr-only">
+                    {{ $t('channels.change_default_market') }}
+                  </DialogDescription>
+                </DialogHeader>
+                <RadioGroup
+                  :model-value="selectedDefaultMarketId"
+                  @update:model-value="selectedDefaultMarketId = $event"
+                >
+                  <div
+                    v-for="market in channelMarkets"
+                    :key="market._id"
+                    class="flex items-center gap-3 py-2"
+                  >
+                    <RadioGroupItem :id="`market-${market._id}`" :value="market._id" />
+                    <Label :for="`market-${market._id}`" class="flex items-center gap-2 font-normal">
+                      <div
+                        :class="[
+                          flagClass(market.country._id),
+                          'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
+                        ]"
+                      />
+                      {{ market.country.name }} ({{ market.currency._id }})
+                    </Label>
+                  </div>
+                </RadioGroup>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    @click="defaultMarketDialogOpen = false"
+                  >
+                    {{ $t('cancel') }}
+                  </Button>
+                  <Button @click="confirmDefaultMarketChange">
+                    {{ $t('continue') }}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </ContentEditMainContent>
         </KeepAlive>
         <!-- Tab 2: Payments -->
