@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import type { Market, ChannelMarketAssignment } from '#shared/types';
+import type { Market, ChannelMarketAssignment, FlagText } from '#shared/types';
+import type { Row } from '@tanstack/vue-table';
 
 const { t } = useI18n();
+const { resolveIcon } = useLucideIcon();
+const emptyIcon = resolveIcon('Globe') ?? undefined;
 
 const props = defineProps<{
   allMarkets: Market[];
@@ -26,7 +29,7 @@ const assignedMarketIds = computed(() =>
 const activatingMarkets = ref(new Set<string>());
 const isActivating = (id: string) => activatingMarkets.value.has(id);
 
-const handleToggleActive = (market: Market, value: boolean) => {
+const handleToggleActive = (market: MarketRow, value: boolean) => {
   // UX guardrail: disable switch briefly
   activatingMarkets.value.add(market._id);
   setTimeout(() => {
@@ -58,6 +61,71 @@ const confirmRemove = () => {
   removeDialogOpen.value = false;
 };
 
+// Table row type
+interface MarketRow {
+  _id: string;
+  country: FlagText;
+  currency: string;
+  group: string;
+  active: boolean;
+}
+
+// Table rows enriched from full market data
+const tableRows = computed<MarketRow[]>(() => {
+  return additionalMarkets.value.map((market) => ({
+    _id: market._id,
+    country: {
+      code: market.country?._id ?? '',
+      label: market.country?.name ?? market._id,
+    },
+    currency: market.currency?._id ?? '—',
+    group: market.group ?? '—',
+    active: market.active,
+  }));
+});
+
+const { getColumns, orderAndFilterColumns, addActionsColumn } =
+  useColumns<MarketRow>();
+
+const columns = computed(() => {
+  let cols = getColumns(tableRows.value, {
+    excludeColumns: ['_id'],
+    columnTypes: {
+      country: 'flag',
+      active: 'switch',
+    },
+    columnTitles: {
+      country: t('country'),
+      currency: t('channels.market_currency'),
+      group: t('channels.market_group'),
+      active: t('active'),
+    },
+    columnCellProps: {
+      active: {
+        onChange: (row: Row<MarketRow>) => (value: boolean) => {
+          handleToggleActive(row.original, value);
+        },
+        disabled: (row: Row<MarketRow>) => isActivating(row.original._id),
+      },
+    },
+    sortable: false,
+  });
+  cols = orderAndFilterColumns(cols, [
+    'country',
+    'currency',
+    'group',
+    'active',
+  ]);
+  cols = addActionsColumn(
+    cols,
+    {
+      onDelete: (item: MarketRow) => openRemoveDialog(item._id),
+    },
+    'delete',
+  );
+  return cols;
+});
+
 // Add dialog state
 const addDialogOpen = ref(false);
 </script>
@@ -82,87 +150,21 @@ const addDialogOpen = ref(false);
   </Item>
 
   <!-- Additional markets table -->
-  <div v-if="additionalMarkets.length">
-    <table class="w-full">
-      <thead>
-        <tr class="border-b">
-          <th class="px-4 py-2 text-left text-sm font-bold">
-            {{ t('country') }}
-          </th>
-          <th class="px-4 py-2 text-left text-sm font-bold">
-            {{ t('channels.market_currency') }}
-          </th>
-          <th class="px-4 py-2 text-left text-sm font-bold">
-            {{ t('channels.market_group') }}
-          </th>
-          <th class="px-4 py-2 text-right text-sm font-bold">
-            {{ t('active') }}
-          </th>
-          <th class="w-10" />
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="market in additionalMarkets"
-          :key="market._id"
-          class="border-b last:border-b-0"
-        >
-          <td class="px-4 py-3">
-            <span class="inline-flex items-center gap-2">
-              <div
-                v-if="market.country?._id"
-                :class="[
-                  flagClass(market.country._id),
-                  'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
-                ]"
-              />
-              <span class="text-sm">{{ market.country?.name ?? market._id }}</span>
-            </span>
-          </td>
-          <td class="px-4 py-3 text-sm">
-            {{ market.currency?._id ?? '—' }}
-          </td>
-          <td class="text-muted-foreground px-4 py-3 text-sm">
-            {{ market.group ?? '—' }}
-          </td>
-          <td class="px-4 py-3 text-right">
-            <Switch
-              :model-value="market.active"
-              :disabled="isActivating(market._id)"
-              @update:model-value="handleToggleActive(market, $event)"
-            />
-          </td>
-          <td class="px-2 py-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              class="size-8"
-              @click="openRemoveDialog(market._id)"
-            >
-              <LucideTrash2 class="text-muted-foreground size-4" />
-            </Button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <!-- Activating notice -->
-    <div
-      v-if="activatingMarkets.size"
-      class="text-muted-foreground border-t px-4 py-2 text-xs"
-    >
-      {{ t('channels.activating_market_notice') }}
-    </div>
+  <TableView
+    :columns="columns"
+    :data="tableRows"
+    :mode="TableMode.Minimal"
+    entity-name="market"
+    :empty-text="t('channels.additional_markets_empty')"
+    :empty-icon="emptyIcon"
+  />
+  <!-- Activating notice -->
+  <div
+    v-if="activatingMarkets.size"
+    class="text-muted-foreground border-t px-4 py-2 text-xs"
+  >
+    {{ t('channels.activating_market_notice') }}
   </div>
-  <Empty v-else class="gap-2 border-y p-0">
-    <EmptyMedia variant="icon" class="size-8">
-      <LucideGlobe class="size-5" />
-    </EmptyMedia>
-    <EmptyHeader>
-      <EmptyDescription>
-        {{ t('channels.additional_markets_empty') }}
-      </EmptyDescription>
-    </EmptyHeader>
-  </Empty>
 
   <!-- Remove market confirmation dialog -->
   <AlertDialog v-model:open="removeDialogOpen">

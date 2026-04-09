@@ -19,7 +19,10 @@ const selectedIds = ref<string[]>([]);
 const marketOptions = computed(() =>
   props.allMarkets
     .filter((m) => !props.assignedMarketIds.includes(m._id))
-    .map((m) => ({ _id: m._id, name: `${m.country?.name ?? m._id} (${m.currency?._id ?? ''})` })),
+    .map((m) => ({
+      _id: m._id,
+      name: `${m.country?.name ?? m._id} (${m.currency?._id ?? ''})`,
+    })),
 );
 
 // O(1) country code lookup by market _id
@@ -31,8 +34,7 @@ const marketCountryCodeMap = computed(() => {
   return map;
 });
 
-const getCountryCode = (id: string) =>
-  marketCountryCodeMap.value.get(id) ?? '';
+const getCountryCode = (id: string) => marketCountryCodeMap.value.get(id) ?? '';
 
 const confirmAdd = () => {
   const newAssignments: ChannelMarketAssignment[] = selectedIds.value.map(

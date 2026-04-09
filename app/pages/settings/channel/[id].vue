@@ -279,8 +279,14 @@ const {
     name: formData.name,
     url: formData.url,
     active: formData.active,
-    languages: channelLanguages.value.map((l) => ({ _id: l._id, active: l.active })),
-    markets: channelMarkets.value.map((m) => ({ _id: m._id, active: m.active })),
+    languages: channelLanguages.value.map((l) => ({
+      _id: l._id,
+      active: l.active,
+    })),
+    markets: channelMarkets.value.map((m) => ({
+      _id: m._id,
+      active: m.active,
+    })),
     storefrontSettings: storefrontSettings.value,
     ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
@@ -334,7 +340,10 @@ watch(
   channelLanguages,
   (val) => {
     if (!createMode.value) {
-      entityDataUpdate.value.languages = val.map((l) => ({ _id: l._id, active: l.active }));
+      entityDataUpdate.value.languages = val.map((l) => ({
+        _id: l._id,
+        active: l.active,
+      }));
     }
   },
   { deep: true },
@@ -421,7 +430,10 @@ const summary = computed<DataItem[]>(() => {
     const channelData: Channel = entityData.value;
     if (channelData?.languages?.length) {
       const displayValue = channelData.languages
-        .map((l) => allLanguages.value.find((al) => al._id === l._id)?.name ?? l._id)
+        .map(
+          (l) =>
+            allLanguages.value.find((al) => al._id === l._id)?.name ?? l._id,
+        )
         .join(', ');
       dataList.push({
         label: t('language', 2),
@@ -435,7 +447,9 @@ const summary = computed<DataItem[]>(() => {
       const displayValue = channelData.markets
         .map((m) => {
           const full = allMarkets.value.find((am) => am._id === m._id);
-          return full ? `${full.country?.name ?? m._id} (${full.currency?._id ?? ''})` : m._id;
+          return full
+            ? `${full.country?.name ?? m._id} (${full.currency?._id ?? ''})`
+            : m._id;
         })
         .join(', ');
       dataList.push({
@@ -612,10 +626,10 @@ if (!createMode.value) {
 
                 <!-- Default language display row -->
                 <div class="border-b">
-                  <div class="border-b px-4 py-2 text-sm font-bold">
+                  <div class="border-b px-4 py-2 text-xs font-semibold">
                     {{ $t('language') }}
                   </div>
-                  <div class="flex items-center gap-2.5 px-4 py-3">
+                  <div class="flex items-center gap-2.5 px-4 py-5">
                     <ChannelLanguageIcon
                       v-if="defaultLanguage"
                       :language-id="defaultLanguage._id"
@@ -678,88 +692,11 @@ if (!createMode.value) {
           >
             <ContentEditCard :title="$t('channels.tab_markets')">
               <!-- Default market sub-section -->
-              <div>
-                <Item class="px-0">
-                  <ItemContent>
-                    <ItemTitle class="text-base font-bold">
-                      {{ $t('channels.default_market') }}
-                    </ItemTitle>
-                  </ItemContent>
-                  <ItemActions>
-                    <Button
-                      v-if="channelMarkets.length > 1"
-                      variant="outline"
-                      size="sm"
-                      @click="openDefaultMarketDialog"
-                    >
-                      {{ $t('change') }}
-                    </Button>
-                  </ItemActions>
-                </Item>
-
-                <!-- Default market display row -->
-                <div class="border-b">
-                  <div class="border-b px-4 py-2 text-sm font-bold">
-                    {{ $t('country') }}
-                  </div>
-                  <div v-if="defaultMarket" class="px-4 py-3">
-                    <div class="grid grid-cols-2 gap-4">
-                      <div>
-                        <p
-                          class="text-muted-foreground mb-1 text-xs font-medium"
-                        >
-                          {{ $t('country') }}
-                        </p>
-                        <span class="inline-flex items-center gap-2">
-                          <div
-                            v-if="defaultMarket.country?._id"
-                            :class="[
-                              flagClass(defaultMarket.country._id),
-                              'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
-                            ]"
-                          />
-                          <span class="text-sm">{{
-                            defaultMarket.country?.name ?? defaultMarket._id
-                          }}</span>
-                        </span>
-                      </div>
-                      <div>
-                        <p
-                          class="text-muted-foreground mb-1 text-xs font-medium"
-                        >
-                          {{ $t('channels.market_currency') }}
-                        </p>
-                        <p class="text-sm">
-                          {{ defaultMarket.currency?._id ?? '—' }}
-                        </p>
-                      </div>
-                    </div>
-                    <div class="mt-3 grid grid-cols-2 gap-4">
-                      <div>
-                        <p
-                          class="text-muted-foreground mb-1 text-xs font-medium"
-                        >
-                          {{ $t('channels.market_group') }}
-                        </p>
-                        <p class="text-sm">{{ defaultMarket.group ?? '—' }}</p>
-                      </div>
-                      <div>
-                        <p
-                          class="text-muted-foreground mb-1 text-xs font-medium"
-                        >
-                          {{ $t('status') }}
-                        </p>
-                        <StatusBadge
-                          :status="defaultMarket.active ? 'active' : 'inactive'"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div v-else class="flex items-center gap-2.5 px-4 py-3">
-                    <span class="text-muted-foreground text-sm">&mdash;</span>
-                  </div>
-                </div>
-              </div>
+              <ChannelDefaultMarket
+                :default-market="defaultMarket"
+                :can-change="channelMarkets.length > 1"
+                @change="openDefaultMarketDialog"
+              />
 
               <!-- Additional markets -->
               <ChannelAdditionalMarkets

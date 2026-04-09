@@ -1,7 +1,14 @@
 <script setup lang="ts">
-import type { ChannelLanguageAssignment, Language } from '#shared/types';
+import type {
+  ChannelLanguageAssignment,
+  FlagText,
+  Language,
+} from '#shared/types';
+import type { Row } from '@tanstack/vue-table';
 
 const { t } = useI18n();
+const { resolveIcon } = useLucideIcon();
+const emptyIcon = resolveIcon('Languages') ?? undefined;
 
 const props = defineProps<{
   allLanguages: Language[];
@@ -18,16 +25,51 @@ const additionalLanguages = computed(() => {
   return props.channelLanguages.slice(1);
 });
 
+interface LanguageRow {
+  _id: string;
+  language: FlagText;
+  active: boolean;
+}
+
 // Table rows enriched with name from allLanguages
-const tableRows = computed(() => {
+const tableRows = computed<LanguageRow[]>(() => {
   return additionalLanguages.value.map((lang) => {
     const full = props.allLanguages.find((l) => l._id === lang._id);
     return {
       _id: lang._id,
-      name: full?.name || lang._id,
+      language: {
+        code: languageToCountryCode(lang._id),
+        label: full?.name || lang._id,
+      },
       active: lang.active,
     };
   });
+});
+
+const { getColumns, orderAndFilterColumns } = useColumns<LanguageRow>();
+
+const columns = computed(() => {
+  let cols = getColumns(tableRows.value, {
+    excludeColumns: ['_id'],
+    columnTypes: {
+      language: 'flag',
+      active: 'switch',
+    },
+    columnTitles: {
+      language: t('language'),
+      active: t('active'),
+    },
+    columnCellProps: {
+      active: {
+        onChange: (row: Row<LanguageRow>) => (value: boolean) => {
+          emit('update', { _id: row.original._id, active: value });
+        },
+      },
+    },
+    sortable: false,
+  });
+  cols = orderAndFilterColumns(cols, ['language', 'active']);
+  return cols;
 });
 
 // Available languages for add dialog (not already assigned)
@@ -63,16 +105,6 @@ const confirmAdd = () => {
   addDialogOpen.value = false;
   selectedLanguageIds.value = [];
 };
-
-const handleToggleActive = (
-  row: { _id: string; active: boolean },
-  value: boolean,
-) => {
-  emit('update', {
-    _id: row._id,
-    active: value,
-  });
-};
 </script>
 
 <template>
@@ -95,47 +127,14 @@ const handleToggleActive = (
   </Item>
 
   <!-- Additional languages table -->
-  <div v-if="tableRows.length">
-    <table class="w-full">
-      <thead>
-        <tr class="border-b">
-          <th class="px-4 py-2 text-left text-sm font-bold">
-            {{ t('language') }}
-          </th>
-          <th class="px-6 py-2 text-right text-sm font-bold">
-            {{ t('active') }}
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="row in tableRows"
-          :key="row._id"
-          class="border-b last:border-b-0"
-        >
-          <td class="px-4 py-3">
-            <ChannelLanguageIcon :language-id="row._id" :name="row.name" />
-          </td>
-          <td class="px-6 py-3 text-right">
-            <Switch
-              :model-value="row.active"
-              @update:model-value="handleToggleActive(row, $event)"
-            />
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <Empty v-else class="gap-2 border-y p-0">
-    <EmptyMedia variant="icon" class="size-8">
-      <LucideLanguages class="size-5" />
-    </EmptyMedia>
-    <EmptyHeader>
-      <EmptyDescription>
-        {{ t('channels.additional_languages_empty') }}
-      </EmptyDescription>
-    </EmptyHeader>
-  </Empty>
+  <TableView
+    :columns="columns"
+    :data="tableRows"
+    :mode="TableMode.Minimal"
+    entity-name="language"
+    :empty-text="t('channels.additional_languages_empty')"
+    :empty-icon="emptyIcon"
+  />
 
   <!-- Add language dialog -->
   <Dialog v-model:open="addDialogOpen">

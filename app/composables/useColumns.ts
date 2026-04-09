@@ -16,6 +16,8 @@ import {
   TableCellEditable,
   TableCellCurrency,
   TableCellProduct,
+  TableCellFlag,
+  TableCellSwitch,
   Button,
   LucideChevronRight,
   LucideExternalLink,
@@ -82,7 +84,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
 
   // BASIC HEADER STYLE
   const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
-  const minimalHeaderTextStyle = 'text-xs font-medium normal-case';
+  const minimalHeaderTextStyle = 'text-xs font-semibold normal-case';
   const getBasicHeaderStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
 
@@ -423,9 +425,12 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               return h('div', { class: getBasicCellStyle(table) }, text);
             }
 
-            const iconEl = h(iconComponent as ReturnType<typeof defineComponent>, {
-              class: iconClass,
-            });
+            const iconEl = h(
+              iconComponent as ReturnType<typeof defineComponent>,
+              {
+                class: iconClass,
+              },
+            );
 
             const text = String(row.getValue(key) ?? '');
             const hasText = text.length > 0 && text !== 'undefined';
@@ -441,7 +446,8 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             if (iconConfig.url && iconConfig.idField) {
               const original = row.original as Record<string, unknown>;
               const idValue = String(
-                original[iconConfig.idField] ?? row.getValue(iconConfig.idField),
+                original[iconConfig.idField] ??
+                  row.getValue(iconConfig.idField),
               );
               const fullUrl = iconConfig.url.replace('{id}', idValue);
               return h(
@@ -451,7 +457,8 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
                   NuxtLink,
                   {
                     to: fullUrl,
-                    class: 'flex items-center gap-1.5 hover:text-foreground transition-colors',
+                    class:
+                      'flex items-center gap-1.5 hover:text-foreground transition-colors',
                   },
                   { default: () => children },
                 ),
@@ -491,7 +498,6 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               // Fallback to plain text if no URL resolved or value is a placeholder
               return h('div', { class: getBasicCellStyle(table) }, text);
             }
-
 
             const displayText =
               text.length > maxTextLength
@@ -695,6 +701,36 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
           columnSize = { size: 134, minSize: 134, maxSize: 134 };
           break;
         }
+        case 'flag':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value: FlagText = row.getValue(key);
+            return h(TableCellFlag, {
+              class: getBasicCellStyle(table),
+              ...value,
+              ...cellProps,
+            });
+          };
+          break;
+        case 'switch':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value: boolean = row.getValue(key);
+            return h(
+              'div',
+              { class: getBasicCellStyle(table) },
+              h(TableCellSwitch, {
+                value,
+                onChange: (
+                  cellProps?.onChange as
+                    | ((row: Row<T>) => (value: boolean) => void)
+                    | undefined
+                )?.(row),
+                disabled: (
+                  cellProps?.disabled as ((row: Row<T>) => boolean) | undefined
+                )?.(row),
+              }),
+            );
+          };
+          break;
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);

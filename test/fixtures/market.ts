@@ -25,6 +25,7 @@ export function buildChannelMarket(overrides?: Partial<Market>): Market {
     defaultLanguage: 'en',
     group: 'nordic',
     active: true,
+    standardVatRate: 0.25,
     ...overrides,
   };
 }

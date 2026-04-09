@@ -35,7 +35,11 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     channel: {
       ...channelRepo,
 
-      async update(id: string, data: ChannelUpdate, options?: ChannelApiOptions): Promise<Channel> {
+      async update(
+        id: string,
+        data: ChannelUpdate,
+        options?: ChannelApiOptions,
+      ): Promise<Channel> {
         const fileEntries = Object.entries(
           data.storefrontSettings ?? {},
         ).filter((entry): entry is [string, File] => entry[1] instanceof File);

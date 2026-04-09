@@ -35,16 +35,24 @@ export interface Currency extends EntityBase {
   conversionRate: number;
 }
 
-export interface Market extends EntityBase {
-  channelId: number;
+export interface MarketBase extends EntityBase {
   country: Country;
   currency: Currency;
+  active: boolean;
+  standardVatRate: number;
+}
+
+/**
+ * Market attached to a channel (GET /account/channel/{id}/market/list).
+ * Includes channel-specific fields: routing, language settings, and grouping.
+ */
+export interface Market extends MarketBase {
+  channelId: number;
   virtual: boolean;
   attributes: string[];
   allowedLanguages: string[];
   defaultLanguage: string;
   group?: string;
-  active: boolean;
 }
 
 // =============================================================================
