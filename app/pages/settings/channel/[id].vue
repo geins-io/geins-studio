@@ -440,7 +440,7 @@ const summary = computed<DataItem[]>(() => {
     }
     if (channelData?.markets?.length) {
       const displayValue = channelData.markets
-        .map((m) => `${m.country.name} (${m.currency._id})`)
+        .map((m) => `${m.country?.name ?? m._id} (${m.currency?._id ?? ''})`)
         .join(', ');
       dataList.push({
         label: t('market', 2),
