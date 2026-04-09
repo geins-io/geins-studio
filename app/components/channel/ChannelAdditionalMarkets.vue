@@ -37,7 +37,6 @@ const handleToggleActive = (market: Market, value: boolean) => {
 
   emit('update', {
     _id: market._id,
-    _type: market._type,
     active: value,
   });
 };

@@ -24,7 +24,6 @@ const tableRows = computed(() => {
     const full = props.allLanguages.find((l) => l._id === lang._id);
     return {
       _id: lang._id,
-      _type: lang._type,
       name: full?.name || lang._id,
       active: lang.active,
     };
@@ -58,7 +57,6 @@ const confirmAdd = () => {
   const newAssignments: ChannelLanguageAssignment[] =
     selectedLanguageIds.value.map((id) => ({
       _id: id,
-      _type: 'language',
       active: true,
     }));
   emit('add', newAssignments);
@@ -67,12 +65,11 @@ const confirmAdd = () => {
 };
 
 const handleToggleActive = (
-  row: { _id: string; _type: string; active: boolean },
+  row: { _id: string; active: boolean },
   value: boolean,
 ) => {
   emit('update', {
     _id: row._id,
-    _type: row._type,
     active: value,
   });
 };

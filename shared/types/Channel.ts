@@ -97,21 +97,21 @@ export interface ChannelMailSettings {
 /**
  * Language assignment for channel updates (ordered; first = default).
  */
-export interface ChannelLanguageAssignment extends EntityBase {
+export interface ChannelLanguageAssignment extends Omit<EntityBase, '_type'> {
   active: boolean;
 }
 
 /**
  * Market assignment for channel updates (ordered; first = default).
  */
-export interface ChannelMarketAssignment extends EntityBase {
+export interface ChannelMarketAssignment extends Omit<EntityBase, '_type'> {
   active: boolean;
 }
 
 /**
  * Payment method assignment for channel updates.
  */
-export interface ChannelPaymentMethodAssignment extends EntityBase {
+export interface ChannelPaymentMethodAssignment extends Omit<EntityBase, '_type'> {
   active: boolean;
 }
 

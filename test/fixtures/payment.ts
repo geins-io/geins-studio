@@ -25,7 +25,6 @@ export function buildChannelPaymentMethodAssignment(
 ): ChannelPaymentMethodAssignment {
   return {
     _id: nextId('payment'),
-    _type: 'paymentMethod',
     active: true,
     ...overrides,
   };

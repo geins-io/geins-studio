@@ -34,7 +34,6 @@ export function buildChannelMarketAssignment(
 ): ChannelMarketAssignment {
   return {
     _id: nextId('market'),
-    _type: 'market',
     active: true,
     ...overrides,
   };

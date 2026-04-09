@@ -133,7 +133,6 @@ const confirmDefaultLanguageChange = () => {
     // New language not in current list — add it at index 0
     const newAssignment: ChannelLanguageAssignment = {
       _id: newDefaultId,
-      _type: 'language',
       active: true,
     };
     channelLanguages.value = [newAssignment, ...current];
@@ -258,7 +257,6 @@ const {
     // Populate channel languages from the entity's ordered array
     channelLanguages.value = (entity.languages || []).map((l) => ({
       _id: l._id,
-      _type: l._type,
       active: l.active,
     }));
     // Populate channel markets from the entity's ordered array
@@ -281,12 +279,8 @@ const {
     name: formData.name,
     url: formData.url,
     active: formData.active,
-    languages: channelLanguages.value,
-    markets: channelMarkets.value.map((m) => ({
-      _id: m._id,
-      _type: m._type,
-      active: m.active,
-    })),
+    languages: channelLanguages.value.map((l) => ({ _id: l._id, active: l.active })),
+    markets: channelMarkets.value.map((m) => ({ _id: m._id, active: m.active })),
     storefrontSettings: storefrontSettings.value,
     ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
@@ -340,7 +334,7 @@ watch(
   channelLanguages,
   (val) => {
     if (!createMode.value) {
-      entityDataUpdate.value.languages = val;
+      entityDataUpdate.value.languages = val.map((l) => ({ _id: l._id, active: l.active }));
     }
   },
   { deep: true },
@@ -353,7 +347,6 @@ watch(
     if (!createMode.value) {
       entityDataUpdate.value.markets = val.map((m) => ({
         _id: m._id,
-        _type: m._type,
         active: m.active,
       }));
     }
@@ -427,7 +420,9 @@ const summary = computed<DataItem[]>(() => {
   if (!createMode.value) {
     const channelData: Channel = entityData.value;
     if (channelData?.languages?.length) {
-      const displayValue = channelData.languages.map((l) => l.name).join(', ');
+      const displayValue = channelData.languages
+        .map((l) => allLanguages.value.find((al) => al._id === l._id)?.name ?? l._id)
+        .join(', ');
       dataList.push({
         label: t('language', 2),
         value: channelData.languages.map((l) => l._id),
@@ -438,7 +433,10 @@ const summary = computed<DataItem[]>(() => {
     }
     if (channelData?.markets?.length) {
       const displayValue = channelData.markets
-        .map((m) => `${m.country?.name ?? m._id} (${m.currency?._id ?? ''})`)
+        .map((m) => {
+          const full = allMarkets.value.find((am) => am._id === m._id);
+          return full ? `${full.country?.name ?? m._id} (${full.currency?._id ?? ''})` : m._id;
+        })
         .join(', ');
       dataList.push({
         label: t('market', 2),
