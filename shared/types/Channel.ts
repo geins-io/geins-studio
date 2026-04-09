@@ -119,7 +119,10 @@ export interface ChannelMarketAssignment extends Omit<EntityBase, '_type'> {
 /**
  * Payment method assignment for channel updates.
  */
-export interface ChannelPaymentMethodAssignment extends Omit<EntityBase, '_type'> {
+export interface ChannelPaymentMethodAssignment extends Omit<
+  EntityBase,
+  '_type'
+> {
   active: boolean;
 }
 
