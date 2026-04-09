@@ -191,9 +191,7 @@ const handleUpdateMarket = (updated: ChannelMarketAssignment) => {
 };
 
 const handleRemoveMarket = (marketId: string) => {
-  channelMarkets.value = channelMarkets.value.filter(
-    (m) => m._id !== marketId,
-  );
+  channelMarkets.value = channelMarkets.value.filter((m) => m._id !== marketId);
 };
 
 // =====================================================================================
@@ -427,7 +425,7 @@ const summary = computed<DataItem[]>(() => {
     });
   }
   if (!createMode.value) {
-    const channelData = entityData.value as Channel;
+    const channelData: Channel = entityData.value;
     if (channelData?.languages?.length) {
       const displayValue = channelData.languages.map((l) => l.name).join(', ');
       dataList.push({
@@ -709,7 +707,9 @@ if (!createMode.value) {
                   <div v-if="defaultMarket" class="px-4 py-3">
                     <div class="grid grid-cols-2 gap-4">
                       <div>
-                        <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        <p
+                          class="text-muted-foreground mb-1 text-xs font-medium"
+                        >
                           {{ $t('country') }}
                         </p>
                         <span class="inline-flex items-center gap-2">
@@ -720,28 +720,40 @@ if (!createMode.value) {
                               'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
                             ]"
                           />
-                          <span class="text-sm">{{ defaultMarket.country?.name ?? defaultMarket._id }}</span>
+                          <span class="text-sm">{{
+                            defaultMarket.country?.name ?? defaultMarket._id
+                          }}</span>
                         </span>
                       </div>
                       <div>
-                        <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        <p
+                          class="text-muted-foreground mb-1 text-xs font-medium"
+                        >
                           {{ $t('channels.market_currency') }}
                         </p>
-                        <p class="text-sm">{{ defaultMarket.currency?._id ?? '—' }}</p>
+                        <p class="text-sm">
+                          {{ defaultMarket.currency?._id ?? '—' }}
+                        </p>
                       </div>
                     </div>
                     <div class="mt-3 grid grid-cols-2 gap-4">
                       <div>
-                        <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        <p
+                          class="text-muted-foreground mb-1 text-xs font-medium"
+                        >
                           {{ $t('channels.market_group') }}
                         </p>
                         <p class="text-sm">{{ defaultMarket.group ?? '—' }}</p>
                       </div>
                       <div>
-                        <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        <p
+                          class="text-muted-foreground mb-1 text-xs font-medium"
+                        >
                           {{ $t('status') }}
                         </p>
-                        <StatusBadge :status="defaultMarket.active ? 'active' : 'inactive'" />
+                        <StatusBadge
+                          :status="defaultMarket.active ? 'active' : 'inactive'"
+                        />
                       </div>
                     </div>
                   </div>
@@ -781,8 +793,14 @@ if (!createMode.value) {
                     :key="market._id"
                     class="flex items-center gap-3 py-2"
                   >
-                    <RadioGroupItem :id="`market-${market._id}`" :value="market._id" />
-                    <Label :for="`market-${market._id}`" class="flex items-center gap-2 font-normal">
+                    <RadioGroupItem
+                      :id="`market-${market._id}`"
+                      :value="market._id"
+                    />
+                    <Label
+                      :for="`market-${market._id}`"
+                      class="flex items-center gap-2 font-normal"
+                    >
                       <div
                         v-if="market.country?._id"
                         :class="[
@@ -790,7 +808,9 @@ if (!createMode.value) {
                           'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
                         ]"
                       />
-                      {{ market.country?.name ?? market._id }} ({{ market.currency?._id ?? '' }})
+                      {{ market.country?.name ?? market._id }} ({{
+                        market.currency?._id ?? ''
+                      }})
                     </Label>
                   </div>
                 </RadioGroup>
