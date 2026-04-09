@@ -111,16 +111,17 @@ const addDialogOpen = ref(false);
           <td class="px-4 py-3">
             <span class="inline-flex items-center gap-2">
               <div
+                v-if="market.country?._id"
                 :class="[
                   flagClass(market.country._id),
                   'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
                 ]"
               />
-              <span class="text-sm">{{ market.country.name }}</span>
+              <span class="text-sm">{{ market.country?.name ?? market._id }}</span>
             </span>
           </td>
           <td class="px-4 py-3 text-sm">
-            {{ market.currency._id }}
+            {{ market.currency?._id ?? '—' }}
           </td>
           <td class="text-muted-foreground px-4 py-3 text-sm">
             {{ market.group ?? '—' }}

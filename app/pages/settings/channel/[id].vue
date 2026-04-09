@@ -714,19 +714,20 @@ if (!createMode.value) {
                         </p>
                         <span class="inline-flex items-center gap-2">
                           <div
+                            v-if="defaultMarket.country?._id"
                             :class="[
                               flagClass(defaultMarket.country._id),
                               'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
                             ]"
                           />
-                          <span class="text-sm">{{ defaultMarket.country.name }}</span>
+                          <span class="text-sm">{{ defaultMarket.country?.name ?? defaultMarket._id }}</span>
                         </span>
                       </div>
                       <div>
                         <p class="text-muted-foreground mb-1 text-xs font-medium">
                           {{ $t('channels.market_currency') }}
                         </p>
-                        <p class="text-sm">{{ defaultMarket.currency._id }}</p>
+                        <p class="text-sm">{{ defaultMarket.currency?._id ?? '—' }}</p>
                       </div>
                     </div>
                     <div class="mt-3 grid grid-cols-2 gap-4">
@@ -783,12 +784,13 @@ if (!createMode.value) {
                     <RadioGroupItem :id="`market-${market._id}`" :value="market._id" />
                     <Label :for="`market-${market._id}`" class="flex items-center gap-2 font-normal">
                       <div
+                        v-if="market.country?._id"
                         :class="[
                           flagClass(market.country._id),
                           'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
                         ]"
                       />
-                      {{ market.country.name }} ({{ market.currency._id }})
+                      {{ market.country?.name ?? market._id }} ({{ market.currency?._id ?? '' }})
                     </Label>
                   </div>
                 </RadioGroup>

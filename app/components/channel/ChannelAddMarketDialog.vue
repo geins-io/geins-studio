@@ -19,14 +19,14 @@ const selectedIds = ref<string[]>([]);
 const marketOptions = computed(() =>
   props.allMarkets
     .filter((m) => !props.assignedMarketIds.includes(m._id))
-    .map((m) => ({ _id: m._id, name: m.country.name })),
+    .map((m) => ({ _id: m._id, name: m.country?.name ?? m._id })),
 );
 
 // O(1) country code lookup by market _id
 const marketCountryCodeMap = computed(() => {
   const map = new Map<string, string>();
   for (const m of props.allMarkets) {
-    map.set(m._id, m.country._id);
+    map.set(m._id, m.country?._id ?? '');
   }
   return map;
 });
