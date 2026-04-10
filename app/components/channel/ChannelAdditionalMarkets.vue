@@ -101,33 +101,37 @@ const addDialogOpen = ref(false);
 </script>
 
 <template>
-  <!-- Additional markets sub-section -->
-  <Item class="px-0 pt-4">
-    <ItemContent>
-      <ItemTitle class="text-base font-bold">
-        {{ t('channels.additional_markets') }}
-      </ItemTitle>
-      <ItemDescription>
-        {{ t('channels.additional_markets_description') }}
-      </ItemDescription>
-    </ItemContent>
-    <ItemActions>
-      <Button variant="outline" size="sm" @click="addDialogOpen = true">
-        <LucidePlus class="mr-1 size-3.5" />
-        {{ t('add') }}
-      </Button>
-    </ItemActions>
-  </Item>
+  <div>
+    <!-- Additional markets sub-section -->
+    <Item class="px-0 pt-4">
+      <ItemContent>
+        <ItemTitle class="text-base font-bold">
+          {{ t('channels.additional_markets') }}
+        </ItemTitle>
+        <ItemDescription>
+          {{ t('channels.additional_markets_description') }}
+        </ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <Button variant="outline" size="sm" @click="addDialogOpen = true">
+          <LucidePlus class="mr-1 size-3.5" />
+          {{ t('add') }}
+        </Button>
+      </ItemActions>
+    </Item>
 
-  <!-- Additional markets table -->
-  <TableView
-    :columns="columns"
-    :data="tableRows"
-    :mode="TableMode.Minimal"
-    entity-name="market"
-    :empty-text="t('channels.additional_markets_empty')"
-    :empty-icon="emptyIcon"
-  />
+    <!-- Additional markets table -->
+    <div :class="cn('border-b', tableRows.length === 0 ? 'border-t' : '')">
+      <TableView
+        :columns="columns"
+        :data="tableRows"
+        :mode="TableMode.Minimal"
+        entity-name="market"
+        :empty-text="t('channels.additional_markets_empty')"
+        :empty-icon="emptyIcon"
+      />
+    </div>
+  </div>
   <!-- Remove market confirmation dialog -->
   <AlertDialog v-model:open="removeDialogOpen">
     <AlertDialogContent>

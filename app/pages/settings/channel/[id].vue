@@ -673,17 +673,15 @@ if (!createMode.value) {
                   </div>
                 </div>
               </div>
-              <div>
-                <!-- Additional languages -->
-                <ChannelAdditionalLanguages
-                  :all-languages="allLanguages"
-                  :channel-languages="channelLanguages"
-                  :default-language-id="defaultLanguageId"
-                  @add="handleAddLanguages"
-                  @update="handleUpdateLanguage"
-                  @remove="handleRemoveLanguage"
-                />
-              </div>
+              <!-- Additional languages -->
+              <ChannelAdditionalLanguages
+                :all-languages="allLanguages"
+                :channel-languages="channelLanguages"
+                :default-language-id="defaultLanguageId"
+                @add="handleAddLanguages"
+                @update="handleUpdateLanguage"
+                @remove="handleRemoveLanguage"
+              />
             </ContentEditCard>
 
             <!-- Change default language dialog -->

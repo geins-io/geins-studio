@@ -24,7 +24,9 @@ const emit = defineEmits<{
 
 // Additional languages (everything except the default)
 const additionalLanguages = computed(() => {
-  return props.channelLanguages.filter((l) => l._id !== props.defaultLanguageId);
+  return props.channelLanguages.filter(
+    (l) => l._id !== props.defaultLanguageId,
+  );
 });
 
 interface LanguageRow {
@@ -135,34 +137,36 @@ const confirmAdd = () => {
 </script>
 
 <template>
-  <!-- Additional languages sub-section -->
-  <Item class="px-0 pt-4">
-    <ItemContent>
-      <ItemTitle class="text-base font-bold">
-        {{ t('channels.additional_languages') }}
-      </ItemTitle>
-      <ItemDescription>
-        {{ t('channels.additional_languages_description') }}
-      </ItemDescription>
-    </ItemContent>
-    <ItemActions>
-      <Button variant="outline" size="sm" @click="openAddDialog">
-        <LucidePlus class="mr-1 size-3.5" />
-        {{ t('add') }}
-      </Button>
-    </ItemActions>
-  </Item>
-
-  <!-- Additional languages table -->
-  <TableView
-    :columns="columns"
-    :data="tableRows"
-    :mode="TableMode.Minimal"
-    entity-name="language"
-    :empty-text="t('channels.additional_languages_empty')"
-    :empty-icon="emptyIcon"
-  />
-
+  <div>
+    <!-- Additional languages sub-section -->
+    <Item class="px-0 pt-4">
+      <ItemContent>
+        <ItemTitle class="text-base font-bold">
+          {{ t('channels.additional_languages') }}
+        </ItemTitle>
+        <ItemDescription>
+          {{ t('channels.additional_languages_description') }}
+        </ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <Button variant="outline" size="sm" @click="openAddDialog">
+          <LucidePlus class="mr-1 size-3.5" />
+          {{ t('add') }}
+        </Button>
+      </ItemActions>
+    </Item>
+    <div :class="cn('border-b', tableRows.length === 0 ? 'border-t' : '')">
+      <!-- Additional languages table -->
+      <TableView
+        :columns="columns"
+        :data="tableRows"
+        :mode="TableMode.Minimal"
+        entity-name="language"
+        :empty-text="t('channels.additional_languages_empty')"
+        :empty-icon="emptyIcon"
+      />
+    </div>
+  </div>
   <!-- Remove language confirmation dialog -->
   <AlertDialog v-model:open="removeDialogOpen">
     <AlertDialogContent>

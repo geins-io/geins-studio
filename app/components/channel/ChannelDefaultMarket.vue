@@ -58,14 +58,15 @@ const columns = computed(() => {
         </Button>
       </ItemActions>
     </Item>
-
-    <TableView
-      :columns="columns"
-      :data="tableRows"
-      :mode="TableMode.Minimal"
-      entity-name="market"
-      :empty-text="t('channels.additional_markets_empty')"
-      :empty-icon="emptyIcon"
-    />
+    <div :class="cn('border-b', tableRows.length === 0 ? 'border-t' : '')">
+      <TableView
+        :columns="columns"
+        :data="tableRows"
+        :mode="TableMode.Minimal"
+        entity-name="market"
+        :empty-text="t('channels.additional_markets_empty')"
+        :empty-icon="emptyIcon"
+      />
+    </div>
   </div>
 </template>
