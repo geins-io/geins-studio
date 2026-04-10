@@ -2,20 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { buildChannelListItem } from '../../../../../test/fixtures/channel';
 import { mountWithContext } from '../../../../../test/helpers/mount';
 
-const channelApi = {
-  channel: {
-    list: vi.fn(),
-  },
-};
+const mockChannels = [buildChannelListItem()];
 
-vi.mock('#app/composables/useGeinsRepository', () => ({
-  useGeinsRepository: () => ({ channelApi }),
+vi.mock('#app/stores/account', () => ({
+  useAccountStore: () => ({
+    channels: mockChannels,
+    refreshChannels: vi.fn(),
+  }),
 }));
 
 describe('settings/channel/list', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    channelApi.channel.list.mockResolvedValue([buildChannelListItem()]);
   });
 
   it('renders without crashing', async () => {

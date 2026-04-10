@@ -11,7 +11,10 @@ import type {
   ChannelUpdate,
   ChannelApiOptions,
   ChannelLanguageAssignment,
+  ChannelMarket,
+  ChannelMarketAssignment,
   Language,
+  Market,
   StorefrontSchema,
   StorefrontSettings,
 } from '#shared/types';
@@ -30,7 +33,8 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
-const { channelApi, globalApi } = useGeinsRepository();
+const { accountApi } = useGeinsRepository();
+const accountStore = useAccountStore();
 
 // =====================================================================================
 // PAGE META
@@ -98,20 +102,30 @@ const channelLanguages = ref<ChannelLanguageAssignment[]>([]);
 const defaultLanguageDialogOpen = ref(false);
 const selectedDefaultLanguageId = ref('');
 
+// Market state
+const allMarkets = ref<Market[]>([]);
+const channelMarkets = ref<ChannelMarket[]>([]);
+const defaultMarketDialogOpen = ref(false);
+const selectedDefaultMarketId = ref('');
+
+const defaultLanguageId = ref('');
+const defaultMarketId = ref('');
+
 const defaultLanguage = computed(() => {
-  const firstId = channelLanguages.value[0]?._id;
-  if (!firstId) return undefined;
-  return allLanguages.value.find((l) => l._id === firstId);
+  if (!defaultLanguageId.value) return undefined;
+  return allLanguages.value.find((l) => l._id === defaultLanguageId.value);
 });
 
 const openDefaultLanguageDialog = () => {
-  selectedDefaultLanguageId.value = channelLanguages.value[0]?._id ?? '';
+  selectedDefaultLanguageId.value = defaultLanguageId.value;
   defaultLanguageDialogOpen.value = true;
 };
 
 const confirmDefaultLanguageChange = () => {
   const newDefaultId = selectedDefaultLanguageId.value;
   if (!newDefaultId) return;
+
+  defaultLanguageId.value = newDefaultId;
 
   const current = [...channelLanguages.value];
   const idx = current.findIndex((l) => l._id === newDefaultId);
@@ -125,7 +139,6 @@ const confirmDefaultLanguageChange = () => {
     // New language not in current list — add it at index 0
     const newAssignment: ChannelLanguageAssignment = {
       _id: newDefaultId,
-      _type: 'language',
       active: true,
     };
     channelLanguages.value = [newAssignment, ...current];
@@ -142,6 +155,68 @@ const handleUpdateLanguage = (updated: ChannelLanguageAssignment) => {
   channelLanguages.value = channelLanguages.value.map((l) =>
     l._id === updated._id ? { ...l, active: updated.active } : l,
   );
+};
+
+const handleRemoveLanguage = (languageId: string) => {
+  channelLanguages.value = channelLanguages.value.filter(
+    (l) => l._id !== languageId,
+  );
+};
+
+// Market computed & handlers
+const defaultMarket = computed(() => {
+  return channelMarkets.value.find((m) => m._id === defaultMarketId.value);
+});
+
+const openDefaultMarketDialog = () => {
+  selectedDefaultMarketId.value = defaultMarketId.value;
+  defaultMarketDialogOpen.value = true;
+};
+
+const confirmDefaultMarketChange = () => {
+  const newDefaultId = selectedDefaultMarketId.value;
+  if (!newDefaultId) return;
+
+  defaultMarketId.value = newDefaultId;
+
+  const current = [...channelMarkets.value];
+  const idx = current.findIndex((m) => m._id === newDefaultId);
+
+  if (idx > 0) {
+    const [selected] = current.splice(idx, 1);
+    current.unshift(selected!);
+    channelMarkets.value = current;
+  }
+
+  defaultMarketDialogOpen.value = false;
+};
+
+const handleAddMarkets = (newMarketAssignments: ChannelMarketAssignment[]) => {
+  const newMarkets = newMarketAssignments
+    .map((a) => allMarkets.value.find((m) => m._id === a._id))
+    .filter((m): m is Market => !!m)
+    .map(
+      (m): ChannelMarket => ({
+        ...m,
+        active: true,
+        channelId: 0,
+        virtual: false,
+        attributes: [],
+        allowedLanguages: [],
+        defaultLanguage: '',
+      }),
+    );
+  channelMarkets.value = [...channelMarkets.value, ...newMarkets];
+};
+
+const handleUpdateMarket = (updated: ChannelMarketAssignment) => {
+  channelMarkets.value = channelMarkets.value.map((m) =>
+    m._id === updated._id ? { ...m, active: updated.active } : m,
+  );
+};
+
+const handleRemoveMarket = (marketId: string) => {
+  channelMarkets.value = channelMarkets.value.filter((m) => m._id !== marketId);
 };
 
 // =====================================================================================
@@ -178,9 +253,9 @@ const {
   ChannelApiOptions
 >({
   repository: {
-    get: channelApi.channel.get,
-    create: channelApi.channel.create,
-    update: channelApi.channel.update,
+    get: accountApi.channel.get,
+    create: accountApi.channel.create,
+    update: accountApi.channel.update,
   },
   validationSchema: formSchema,
   initialEntityData: initialCreateData,
@@ -205,12 +280,16 @@ const {
       ? { ...entity.storefrontSettings }
       : getDefaultSettings(activeSchema.value);
     schemaChanged.value = false;
+    // Set explicit default IDs from the API response
+    defaultLanguageId.value = entity.defaultLanguage ?? '';
+    defaultMarketId.value = entity.defaultMarket ?? '';
     // Populate channel languages from the entity's ordered array
     channelLanguages.value = (entity.languages || []).map((l) => ({
       _id: l._id,
-      _type: l._type,
       active: l.active,
     }));
+    // Populate channel markets from the entity's ordered array
+    channelMarkets.value = entity.markets || [];
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       name: entity.name,
@@ -229,7 +308,16 @@ const {
     name: formData.name,
     url: formData.url,
     active: formData.active,
-    languages: channelLanguages.value,
+    languages: channelLanguages.value.map((l) => ({
+      _id: l._id,
+      active: l.active,
+    })),
+    markets: channelMarkets.value
+      .filter((m) => !m.virtual)
+      .map((m) => ({
+        _id: m._id,
+        active: m.active,
+      })),
     storefrontSettings: storefrontSettings.value,
     ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
@@ -256,7 +344,7 @@ async function handleResetToDefault() {
   if (!entityId.value) return;
   isResettingSchema.value = true;
   try {
-    await channelApi.channel.id(entityId.value).resetStorefrontSchema();
+    await accountApi.channel.id(entityId.value).resetStorefrontSchema();
     await refreshEntityData.value?.();
     toast({ title: t('channels.reset_schema_success') });
   } catch {
@@ -283,7 +371,24 @@ watch(
   channelLanguages,
   (val) => {
     if (!createMode.value) {
-      entityDataUpdate.value.languages = val;
+      entityDataUpdate.value.languages = val.map((l) => ({
+        _id: l._id,
+        active: l.active,
+      }));
+    }
+  },
+  { deep: true },
+);
+
+// Sync channelMarkets into entityDataUpdate so useUnsavedChanges detects changes
+watch(
+  channelMarkets,
+  (val) => {
+    if (!createMode.value) {
+      entityDataUpdate.value.markets = val.map((m) => ({
+        _id: m._id,
+        active: m.active,
+      }));
     }
   },
   { deep: true },
@@ -332,6 +437,11 @@ const handleSave = async () => {
       variant: 'default',
     });
   }
+
+  // Refresh the store so sidebar / list page reflect changes
+  if (result) {
+    await accountStore.refreshChannels();
+  }
 };
 
 // =====================================================================================
@@ -353,9 +463,14 @@ const summary = computed<DataItem[]>(() => {
     });
   }
   if (!createMode.value) {
-    const channelData = entityData.value as Channel;
+    const channelData: Channel = entityData.value;
     if (channelData?.languages?.length) {
-      const displayValue = channelData.languages.map((l) => l.name).join(', ');
+      const displayValue = channelData.languages
+        .map(
+          (l) =>
+            allLanguages.value.find((al) => al._id === l._id)?.name ?? l._id,
+        )
+        .join(', ');
       dataList.push({
         label: t('language', 2),
         value: channelData.languages.map((l) => l._id),
@@ -366,7 +481,12 @@ const summary = computed<DataItem[]>(() => {
     }
     if (channelData?.markets?.length) {
       const displayValue = channelData.markets
-        .map((m) => `${m.country.name} (${m.currency._id})`)
+        .map((m) => {
+          const full = allMarkets.value.find((am) => am._id === m._id);
+          return full
+            ? `${full.country?.name ?? m._id} (${full.currency?._id ?? ''})`
+            : m._id;
+        })
         .join(', ');
       dataList.push({
         label: t('market', 2),
@@ -409,7 +529,7 @@ if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<Channel>(
     entityFetchKey.value,
     () =>
-      channelApi.channel.get(entityId.value, {
+      accountApi.channel.get(entityId.value, {
         fields: [
           'languages',
           'markets',
@@ -421,8 +541,8 @@ if (!createMode.value) {
   refreshEntityData.value = refresh;
   onMounted(async () => {
     const entity = handleFetchResult<Channel>(error.value, data.value);
-    const langs = await globalApi.language.list();
-    allLanguages.value = Array.isArray(langs) ? langs : [];
+    allLanguages.value = accountStore.languages;
+    allMarkets.value = await accountStore.ensureMarkets();
     await parseAndSaveData(entity);
   });
 }
@@ -538,10 +658,10 @@ if (!createMode.value) {
 
                 <!-- Default language display row -->
                 <div class="border-b">
-                  <div class="border-b px-4 py-2 text-sm font-bold">
+                  <div class="border-b px-4 py-2 text-xs font-semibold">
                     {{ $t('language') }}
                   </div>
-                  <div class="flex items-center gap-2.5 px-4 py-3">
+                  <div class="flex items-center gap-2.5 px-4 py-5">
                     <ChannelLanguageIcon
                       v-if="defaultLanguage"
                       :language-id="defaultLanguage._id"
@@ -553,15 +673,15 @@ if (!createMode.value) {
                   </div>
                 </div>
               </div>
-              <div>
-                <!-- Additional languages -->
-                <ChannelAdditionalLanguages
-                  :all-languages="allLanguages"
-                  :channel-languages="channelLanguages"
-                  @add="handleAddLanguages"
-                  @update="handleUpdateLanguage"
-                />
-              </div>
+              <!-- Additional languages -->
+              <ChannelAdditionalLanguages
+                :all-languages="allLanguages"
+                :channel-languages="channelLanguages"
+                :default-language-id="defaultLanguageId"
+                @add="handleAddLanguages"
+                @update="handleUpdateLanguage"
+                @remove="handleRemoveLanguage"
+              />
             </ContentEditCard>
 
             <!-- Change default language dialog -->
@@ -602,12 +722,54 @@ if (!createMode.value) {
             v-if="currentTab === 1"
             :key="`tab-${currentTab}`"
           >
-            <!-- TODO: M3 -->
             <ContentEditCard :title="$t('channels.tab_markets')">
-              <div class="text-muted-foreground text-sm">
-                {{ $t('channels.tab_placeholder') }}
-              </div>
+              <!-- Default market sub-section -->
+              <ChannelDefaultMarket
+                :default-market="defaultMarket"
+                :can-change="channelMarkets.length > 1"
+                @change="openDefaultMarketDialog"
+              />
+
+              <!-- Additional markets -->
+              <ChannelAdditionalMarkets
+                :all-markets="allMarkets"
+                :channel-markets="channelMarkets"
+                :default-market-id="defaultMarketId"
+                @add="handleAddMarkets"
+                @update="handleUpdateMarket"
+                @remove="handleRemoveMarket"
+              />
             </ContentEditCard>
+
+            <!-- Change default market dialog -->
+            <Dialog v-model:open="defaultMarketDialogOpen">
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {{ $t('channels.change_default_market') }}
+                  </DialogTitle>
+                  <DialogDescription class="sr-only">
+                    {{ $t('channels.change_default_market') }}
+                  </DialogDescription>
+                </DialogHeader>
+                <FormInputMarketSelect
+                  v-model="selectedDefaultMarketId"
+                  :data-set="channelMarkets"
+                  disable-teleport
+                />
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    @click="defaultMarketDialogOpen = false"
+                  >
+                    {{ $t('cancel') }}
+                  </Button>
+                  <Button @click="confirmDefaultMarketChange">
+                    {{ $t('continue') }}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </ContentEditMainContent>
         </KeepAlive>
         <!-- Tab 2: Payments -->
