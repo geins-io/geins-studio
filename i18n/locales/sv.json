@@ -651,7 +651,6 @@
     "market_vat_rate": "Momssats",
     "market_vat": "Moms",
     "market_group": "Grupp",
-    "add_market": "Lägg till marknad",
     "select_markets_placeholder": "Sök marknader...",
     "no_markets_available": "Alla marknader är redan tilldelade",
     "remove_language": "Ta bort språk",
