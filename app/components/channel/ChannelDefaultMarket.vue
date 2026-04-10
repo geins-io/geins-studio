@@ -18,7 +18,7 @@ interface DefaultMarketRow {
   _id: string;
   country: FlagText;
   currency: string;
-  group: string;
+  vatRate: number;
   status: boolean;
 }
 
@@ -33,7 +33,7 @@ const tableRows = computed<DefaultMarketRow[]>(() => {
         label: m.country?.name ?? m._id,
       },
       currency: m.currency?._id ?? '—',
-      group: m.group ?? '—',
+      vatRate: m.standardVatRate ?? '—',
       status: m.active,
     },
   ];
@@ -51,6 +51,7 @@ const columns = computed(() => {
     columnTitles: {
       country: t('country'),
       currency: t('channels.market_currency'),
+      vatRate: t('channels.market_vat_rate'),
       group: t('channels.market_group'),
       status: t('status'),
     },
@@ -59,6 +60,7 @@ const columns = computed(() => {
   cols = orderAndFilterColumns(cols, [
     'country',
     'currency',
+    'vatRate',
     'group',
     'status',
   ]);

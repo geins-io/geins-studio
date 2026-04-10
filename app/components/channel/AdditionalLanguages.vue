@@ -13,16 +13,18 @@ const emptyIcon = resolveIcon('Languages') ?? undefined;
 const props = defineProps<{
   allLanguages: Language[];
   channelLanguages: ChannelLanguageAssignment[];
+  defaultLanguageId: string;
 }>();
 
 const emit = defineEmits<{
   add: [languages: ChannelLanguageAssignment[]];
   update: [language: ChannelLanguageAssignment];
+  remove: [languageId: string];
 }>();
 
-// Additional languages (everything except index 0 = default)
+// Additional languages (everything except the default)
 const additionalLanguages = computed(() => {
-  return props.channelLanguages.slice(1);
+  return props.channelLanguages.filter((l) => l._id !== props.defaultLanguageId);
 });
 
 interface LanguageRow {
@@ -46,7 +48,25 @@ const tableRows = computed<LanguageRow[]>(() => {
   });
 });
 
-const { getColumns, orderAndFilterColumns } = useColumns<LanguageRow>();
+// Remove language confirmation
+const languagePendingRemoval = ref<string | null>(null);
+const removeDialogOpen = ref(false);
+
+const openRemoveDialog = (languageId: string) => {
+  languagePendingRemoval.value = languageId;
+  removeDialogOpen.value = true;
+};
+
+const confirmRemove = () => {
+  if (languagePendingRemoval.value) {
+    emit('remove', languagePendingRemoval.value);
+  }
+  languagePendingRemoval.value = null;
+  removeDialogOpen.value = false;
+};
+
+const { getColumns, orderAndFilterColumns, addActionsColumn } =
+  useColumns<LanguageRow>();
 
 const columns = computed(() => {
   let cols = getColumns(tableRows.value, {
@@ -69,6 +89,13 @@ const columns = computed(() => {
     sortable: false,
   });
   cols = orderAndFilterColumns(cols, ['language', 'active']);
+  cols = addActionsColumn(
+    cols,
+    {
+      onDelete: (item: LanguageRow) => openRemoveDialog(item._id),
+    },
+    'delete',
+  );
   return cols;
 });
 
@@ -135,6 +162,27 @@ const confirmAdd = () => {
     :empty-text="t('channels.additional_languages_empty')"
     :empty-icon="emptyIcon"
   />
+
+  <!-- Remove language confirmation dialog -->
+  <AlertDialog v-model:open="removeDialogOpen">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>{{ t('channels.remove_language') }}</AlertDialogTitle>
+        <AlertDialogDescription>
+          {{ t('channels.remove_language_description') }}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>{{ t('cancel') }}</AlertDialogCancel>
+        <AlertDialogAction
+          class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          @click="confirmRemove"
+        >
+          {{ t('remove') }}
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 
   <!-- Add language dialog -->
   <Dialog v-model:open="addDialogOpen">

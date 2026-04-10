@@ -107,20 +107,24 @@ const channelMarkets = ref<ChannelMarket[]>([]);
 const defaultMarketDialogOpen = ref(false);
 const selectedDefaultMarketId = ref('');
 
+const defaultLanguageId = ref('');
+const defaultMarketId = ref('');
+
 const defaultLanguage = computed(() => {
-  const firstId = channelLanguages.value[0]?._id;
-  if (!firstId) return undefined;
-  return allLanguages.value.find((l) => l._id === firstId);
+  if (!defaultLanguageId.value) return undefined;
+  return allLanguages.value.find((l) => l._id === defaultLanguageId.value);
 });
 
 const openDefaultLanguageDialog = () => {
-  selectedDefaultLanguageId.value = channelLanguages.value[0]?._id ?? '';
+  selectedDefaultLanguageId.value = defaultLanguageId.value;
   defaultLanguageDialogOpen.value = true;
 };
 
 const confirmDefaultLanguageChange = () => {
   const newDefaultId = selectedDefaultLanguageId.value;
   if (!newDefaultId) return;
+
+  defaultLanguageId.value = newDefaultId;
 
   const current = [...channelLanguages.value];
   const idx = current.findIndex((l) => l._id === newDefaultId);
@@ -152,17 +156,27 @@ const handleUpdateLanguage = (updated: ChannelLanguageAssignment) => {
   );
 };
 
+const handleRemoveLanguage = (languageId: string) => {
+  channelLanguages.value = channelLanguages.value.filter(
+    (l) => l._id !== languageId,
+  );
+};
+
 // Market computed & handlers
-const defaultMarket = computed(() => channelMarkets.value[0]);
+const defaultMarket = computed(() => {
+  return channelMarkets.value.find((m) => m._id === defaultMarketId.value);
+});
 
 const openDefaultMarketDialog = () => {
-  selectedDefaultMarketId.value = channelMarkets.value[0]?._id ?? '';
+  selectedDefaultMarketId.value = defaultMarketId.value;
   defaultMarketDialogOpen.value = true;
 };
 
 const confirmDefaultMarketChange = () => {
   const newDefaultId = selectedDefaultMarketId.value;
   if (!newDefaultId) return;
+
+  defaultMarketId.value = newDefaultId;
 
   const current = [...channelMarkets.value];
   const idx = current.findIndex((m) => m._id === newDefaultId);
@@ -180,15 +194,17 @@ const handleAddMarkets = (newMarketAssignments: ChannelMarketAssignment[]) => {
   const newMarkets = newMarketAssignments
     .map((a) => allMarkets.value.find((m) => m._id === a._id))
     .filter((m): m is Market => !!m)
-    .map((m): ChannelMarket => ({
-      ...m,
-      active: true,
-      channelId: 0,
-      virtual: false,
-      attributes: [],
-      allowedLanguages: [],
-      defaultLanguage: '',
-    }));
+    .map(
+      (m): ChannelMarket => ({
+        ...m,
+        active: true,
+        channelId: 0,
+        virtual: false,
+        attributes: [],
+        allowedLanguages: [],
+        defaultLanguage: '',
+      }),
+    );
   channelMarkets.value = [...channelMarkets.value, ...newMarkets];
 };
 
@@ -263,6 +279,9 @@ const {
       ? { ...entity.storefrontSettings }
       : getDefaultSettings(activeSchema.value);
     schemaChanged.value = false;
+    // Set explicit default IDs from the API response
+    defaultLanguageId.value = entity.defaultLanguage ?? '';
+    defaultMarketId.value = entity.defaultMarket ?? '';
     // Populate channel languages from the entity's ordered array
     channelLanguages.value = (entity.languages || []).map((l) => ({
       _id: l._id,
@@ -292,10 +311,12 @@ const {
       _id: l._id,
       active: l.active,
     })),
-    markets: channelMarkets.value.map((m) => ({
-      _id: m._id,
-      active: m.active,
-    })),
+    markets: channelMarkets.value
+      .filter((m) => m._id !== 'EU-EUR')
+      .map((m) => ({
+        _id: m._id,
+        active: m.active,
+      })),
     storefrontSettings: storefrontSettings.value,
     ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
@@ -655,8 +676,10 @@ if (!createMode.value) {
                 <ChannelAdditionalLanguages
                   :all-languages="allLanguages"
                   :channel-languages="channelLanguages"
+                  :default-language-id="defaultLanguageId"
                   @add="handleAddLanguages"
                   @update="handleUpdateLanguage"
+                  @remove="handleRemoveLanguage"
                 />
               </div>
             </ContentEditCard>
@@ -711,6 +734,7 @@ if (!createMode.value) {
               <ChannelAdditionalMarkets
                 :all-markets="allMarkets"
                 :channel-markets="channelMarkets"
+                :default-market-id="defaultMarketId"
                 @add="handleAddMarkets"
                 @update="handleUpdateMarket"
                 @remove="handleRemoveMarket"

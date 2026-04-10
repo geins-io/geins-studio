@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { Market, ChannelMarket, ChannelMarketAssignment, FlagText } from '#shared/types';
+import type {
+  Market,
+  ChannelMarket,
+  ChannelMarketAssignment,
+  FlagText,
+} from '#shared/types';
 import type { Row } from '@tanstack/vue-table';
 
 const { t } = useI18n();
@@ -9,6 +14,7 @@ const emptyIcon = resolveIcon('Globe') ?? undefined;
 const props = defineProps<{
   allMarkets: Market[];
   channelMarkets: ChannelMarket[];
+  defaultMarketId: string;
 }>();
 
 const emit = defineEmits<{
@@ -17,8 +23,10 @@ const emit = defineEmits<{
   remove: [marketId: string];
 }>();
 
-// Additional markets (everything except index 0 = default)
-const additionalMarkets = computed(() => props.channelMarkets.slice(1));
+// Additional markets (everything except the default)
+const additionalMarkets = computed(() =>
+  props.channelMarkets.filter((m) => m._id !== props.defaultMarketId),
+);
 
 // IDs already assigned to this channel
 const assignedMarketIds = computed(() =>
@@ -66,7 +74,7 @@ interface MarketRow {
   _id: string;
   country: FlagText;
   currency: string;
-  group: string;
+  vatRate: number;
   active: boolean;
 }
 
@@ -79,13 +87,12 @@ const tableRows = computed<MarketRow[]>(() => {
       label: market.country?.name ?? market._id,
     },
     currency: market.currency?._id ?? '—',
-    group: market.group ?? '—',
+    vatRate: market.standardVatRate ?? '—',
     active: market.active,
   }));
 });
 
-const { getColumns, orderAndFilterColumns, addActionsColumn } =
-  useColumns<MarketRow>();
+const { getColumns, addActionsColumn } = useColumns<MarketRow>();
 
 const columns = computed(() => {
   let cols = getColumns(tableRows.value, {
@@ -97,6 +104,7 @@ const columns = computed(() => {
     columnTitles: {
       country: t('country'),
       currency: t('channels.market_currency'),
+      vatRate: t('channels.market_vat_rate'),
       group: t('channels.market_group'),
       active: t('active'),
     },
@@ -110,12 +118,6 @@ const columns = computed(() => {
     },
     sortable: false,
   });
-  cols = orderAndFilterColumns(cols, [
-    'country',
-    'currency',
-    'group',
-    'active',
-  ]);
   cols = addActionsColumn(
     cols,
     {
