@@ -640,6 +640,22 @@
     "reset_schema_confirm_title": "Återställ till standard",
     "reset_schema_confirm_description": "Det här återställer butiksschemat till systemets standard. Alla anpassade ändringar går förlorade. Fortsätta?",
     "reset_schema_success": "Butiksschemat återställdes till standard",
-    "reset_schema_error": "Det gick inte att återställa butiksschemat"
+    "reset_schema_error": "Det gick inte att återställa butiksschemat",
+    "default_market": "Standardmarknad",
+    "change_default_market": "Ändra standardmarknad",
+    "additional_markets": "Ytterligare marknader",
+    "additional_markets_description": "Ytterligare marknader för denna kanal.",
+    "additional_markets_empty": "Inga ytterligare marknader",
+    "no_markets_assigned": "Inga marknader tilldelade",
+    "market_currency": "Valuta",
+    "market_vat_rate": "Momssats",
+    "market_vat": "Moms",
+    "market_group": "Grupp",
+    "select_markets_placeholder": "Sök marknader...",
+    "no_markets_available": "Alla marknader är redan tilldelade",
+    "remove_language": "Ta bort språk",
+    "remove_language_description": "Är du säker på att du vill ta bort detta språk från kanalen? Ändringen träder i kraft när du sparar.",
+    "remove_market": "Ta bort marknad",
+    "remove_market_description": "Är du säker på att du vill ta bort denna marknad från kanalen? Ändringen träder i kraft när du sparar."
   }
 }

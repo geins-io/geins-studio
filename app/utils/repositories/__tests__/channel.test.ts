@@ -11,7 +11,7 @@ import {
   buildMailType,
   resetIdCounter,
 } from '../../../../test/fixtures';
-import { channelRepo } from '../channel';
+import { accountRepo } from '../account';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockFetch: any = vi.fn();
@@ -21,8 +21,8 @@ beforeEach(() => {
   resetIdCounter();
 });
 
-describe('channelRepo', () => {
-  const api = channelRepo(mockFetch);
+describe('accountRepo', () => {
+  const api = accountRepo(mockFetch);
 
   // ===========================================================================
   // Channel CRUD
@@ -85,6 +85,7 @@ describe('channelRepo', () => {
       expect(mockFetch).toHaveBeenCalledWith('/account/channel/123', {
         method: 'PATCH',
         body: expect.any(FormData),
+        query: undefined,
       });
     });
 

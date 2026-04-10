@@ -173,3 +173,8 @@ export interface Price {
   currency: string;
   placeholder?: string;
 }
+
+export interface FlagText {
+  code: string;
+  label: string;
+}

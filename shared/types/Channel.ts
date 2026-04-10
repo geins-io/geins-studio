@@ -4,6 +4,7 @@ import type {
   UpdateEntity,
   ResponseEntity,
   EntityBase,
+  FlagText,
   Tooltip,
 } from './Global';
 import type { StorefrontSchema, StorefrontSettings } from './Storefront';
@@ -36,15 +37,34 @@ export interface Currency extends EntityBase {
 }
 
 export interface Market extends EntityBase {
-  channelId: number;
   country: Country;
   currency: Currency;
+  active: boolean;
+  standardVatRate: number;
+}
+
+/**
+ * Table row shape for market tables (default & additional markets).
+ */
+export interface ChannelMarketRow {
+  _id: string;
+  country: FlagText;
+  currency: string;
+  vatRate: number | string;
+  active: boolean;
+}
+
+/**
+ * Market attached to a channel (GET /account/channel/{id}/market/list).
+ * Extends the base Market with channel-specific fields: routing, language settings, and grouping.
+ */
+export interface ChannelMarket extends Market {
+  channelId: number;
   virtual: boolean;
   attributes: string[];
   allowedLanguages: string[];
   defaultLanguage: string;
   group?: string;
-  active: boolean;
 }
 
 // =============================================================================
@@ -97,21 +117,24 @@ export interface ChannelMailSettings {
 /**
  * Language assignment for channel updates (ordered; first = default).
  */
-export interface ChannelLanguageAssignment extends EntityBase {
+export interface ChannelLanguageAssignment extends Omit<EntityBase, '_type'> {
   active: boolean;
 }
 
 /**
  * Market assignment for channel updates (ordered; first = default).
  */
-export interface ChannelMarketAssignment extends EntityBase {
+export interface ChannelMarketAssignment extends Omit<EntityBase, '_type'> {
   active: boolean;
 }
 
 /**
  * Payment method assignment for channel updates.
  */
-export interface ChannelPaymentMethodAssignment extends EntityBase {
+export interface ChannelPaymentMethodAssignment extends Omit<
+  EntityBase,
+  '_type'
+> {
   active: boolean;
 }
 
@@ -155,7 +178,7 @@ export interface ChannelUpdate extends UpdateEntity<ChannelBase> {
 export interface ChannelListItem extends ResponseEntity<ChannelBase> {
   identifier: string;
   channelType: ChannelType;
-  markets: Market[];
+  markets: ChannelMarket[];
   languages: Language[];
   languageCount: number;
   marketCount: number;

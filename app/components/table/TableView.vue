@@ -509,7 +509,7 @@ const hasSearchableColumns = computed(() => {
     "
   >
     <Table :style="maxHeight ? { maxHeight } : {}">
-      <TableHeader>
+      <TableHeader v-if="table.getRowModel().rows?.length">
         <TableRow
           v-for="headerGroup in table.getHeaderGroups()"
           :key="headerGroup.id"

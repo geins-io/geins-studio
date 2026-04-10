@@ -34,6 +34,8 @@ export type ColumnType =
   | 'status'
   | 'tooltip'
   | 'product'
+  | 'flag'
+  | 'switch'
   | `editable-${EditableColumnType}`;
 
 export type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;

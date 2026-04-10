@@ -8,14 +8,15 @@ import { vi } from 'vitest';
  *
  * Usage:
  * ```ts
- * const { useGeinsRepository, channelApi } = vi.hoisted(() => createMockRepository());
+ * const { useGeinsRepository, accountApi } = vi.hoisted(() => createMockRepository());
  * vi.mock('#app/composables/useGeinsRepository', () => ({ useGeinsRepository }));
  *
- * channelApi.channel.get.mockResolvedValue(buildChannel());
+ * accountApi.channel.get.mockResolvedValue(buildChannel());
  * ```
  */
 export function createMockRepository() {
-  const channelApi = {
+  const accountApi = {
+    account: { get: vi.fn() },
     channel: {
       list: vi.fn(),
       get: vi.fn(),
@@ -31,10 +32,12 @@ export function createMockRepository() {
           updateTexts: vi.fn(),
           preview: vi.fn(),
         },
+        resetStorefrontSchema: vi.fn(),
       })),
     },
-    market: { list: vi.fn() },
+    currency: { list: vi.fn() },
     language: { list: vi.fn(), get: vi.fn() },
+    market: { list: vi.fn() },
     payment: { list: vi.fn() },
   };
 
@@ -83,27 +86,18 @@ export function createMockRepository() {
     },
   };
 
-  const globalApi = {
-    account: { get: vi.fn() },
-    channel: { list: vi.fn() },
-    currency: { list: vi.fn() },
-    language: { list: vi.fn() },
-  };
-
   const useGeinsRepository = vi.fn(() => ({
-    channelApi,
+    accountApi,
     orderApi,
     customerApi,
     productApi,
-    globalApi,
   }));
 
   return {
     useGeinsRepository,
-    channelApi,
+    accountApi,
     orderApi,
     customerApi,
     productApi,
-    globalApi,
   };
 }

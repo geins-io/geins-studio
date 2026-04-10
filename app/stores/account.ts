@@ -1,14 +1,24 @@
 import { defineStore } from 'pinia';
-import type { Account, ChannelListItem, Currency, Language } from '#shared/types';
+import type {
+  Account,
+  ChannelListItem,
+  Currency,
+  Language,
+  Market,
+} from '#shared/types';
 
 /**
  * Account store — manages the current merchant account context.
  *
- * State: account details, channels, currencies, languages, and user-selected
+ * State: account details, channels, currencies, languages, markets, and user-selected
  * preferences (persisted in cookies with `geins-` prefix).
  *
  * Initialization: call `init()` after authentication. The `geins-global.ts` plugin
  * handles this automatically when `isAuthenticated` changes.
+ *
+ * This is the authoritative cache for account-scoped list data. Consumers should
+ * read from the store instead of fetching directly. Use the refresh actions
+ * (`refreshChannels`, `refreshMarkets`, etc.) after mutations.
  *
  * @example
  * ```ts
@@ -19,7 +29,7 @@ import type { Account, ChannelListItem, Currency, Language } from '#shared/types
  */
 export const useAccountStore = defineStore('account', () => {
   const { geinsLogWarn } = useGeinsLog('store/account.ts');
-  const { globalApi } = useGeinsRepository();
+  const { accountApi } = useGeinsRepository();
   const { fallback } = useRuntimeConfig().public;
 
   // STATE
@@ -27,6 +37,8 @@ export const useAccountStore = defineStore('account', () => {
   const channels = ref<ChannelListItem[]>([]);
   const currencies = ref<Currency[]>([]);
   const languages = ref<Language[]>([]);
+  const markets = ref<Market[]>([]);
+  const marketsLoaded = ref(false);
   const ready = ref(false);
   const currentChannelId = useCookie<string>('geins-channel', {
     default: () => fallback.channel.toString(),
@@ -40,26 +52,43 @@ export const useAccountStore = defineStore('account', () => {
 
   // ACTIONS
   async function fetchAccount(): Promise<Account> {
-    const data = await globalApi.account.get();
+    const data = await accountApi.account.get();
     account.value = data;
     return data;
   }
   async function fetchChannels(): Promise<ChannelListItem[]> {
-    const data = await globalApi.channel.list({ fields: ['languages', 'markets'] });
+    const data = await accountApi.channel.list({
+      fields: ['languages', 'markets'],
+    });
     channels.value = data;
     return data;
   }
   async function fetchCurrencies(): Promise<Currency[]> {
-    const data = await globalApi.currency.list();
+    const data = await accountApi.currency.list();
     currencies.value = data;
     return data;
   }
   async function fetchLanguages(): Promise<Language[]> {
-    const data = await globalApi.language.list();
+    const data = await accountApi.language.list();
     languages.value = data;
     return data;
   }
+  async function fetchMarkets(): Promise<Market[]> {
+    const data = await accountApi.market.list();
+    markets.value = Array.isArray(data) ? data : [];
+    marketsLoaded.value = true;
+    return markets.value;
+  }
+  /**
+   * Fetch markets only if not already loaded. Safe to call multiple times.
+   * Markets are only needed when adding markets to a channel — not on app init.
+   */
+  async function ensureMarkets(): Promise<Market[]> {
+    if (marketsLoaded.value) return markets.value;
+    return fetchMarkets();
+  }
   async function init(): Promise<void> {
+    const callNames = ['account', 'channels', 'currencies', 'languages'];
     const results = await Promise.allSettled([
       fetchAccount(),
       fetchChannels(),
@@ -73,22 +102,7 @@ export const useAccountStore = defineStore('account', () => {
 
     results.forEach((result, index) => {
       if (result.status === 'rejected' || !result.value) {
-        let callName = '';
-        switch (index) {
-          case 0:
-            callName = 'account';
-            break;
-          case 1:
-            callName = 'channels';
-            break;
-          case 2:
-            callName = 'currencies';
-            break;
-          case 3:
-            callName = 'languages';
-            break;
-        }
-        geinsLogWarn(`error fetching ${callName}:`, result);
+        geinsLogWarn(`error fetching ${callNames[index]}:`, result);
       }
     });
 
@@ -98,11 +112,17 @@ export const useAccountStore = defineStore('account', () => {
     }
   }
 
+  // Granular refresh actions for use after mutations
+  const refreshChannels = fetchChannels;
+  const refreshMarkets = fetchMarkets; // forces a re-fetch regardless of cache
+  const refreshLanguages = fetchLanguages;
+
   function reset(): void {
     account.value = undefined;
     channels.value = [];
     currencies.value = [];
     languages.value = [];
+    markets.value = [];
     ready.value = false;
   }
 
@@ -199,8 +219,13 @@ export const useAccountStore = defineStore('account', () => {
     fetchChannels,
     fetchCurrencies,
     fetchLanguages,
+    fetchMarkets,
+    ensureMarkets,
     init,
     reset,
+    refreshChannels,
+    refreshMarkets,
+    refreshLanguages,
     getChannelNameById,
     getCountryNameById,
     getMarketNameById,
@@ -209,5 +234,6 @@ export const useAccountStore = defineStore('account', () => {
     currentChannel,
     currentCountries,
     currentCurrencies,
+    markets,
   };
 });

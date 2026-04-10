@@ -18,7 +18,6 @@ export function buildChannelLanguageAssignment(
 ): ChannelLanguageAssignment {
   return {
     _id: nextId('lang'),
-    _type: 'language',
     active: true,
     ...overrides,
   };
