@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { Market, FlagText } from '#shared/types';
+import type { ChannelMarket, FlagText } from '#shared/types';
 
 const { t } = useI18n();
 const { resolveIcon } = useLucideIcon();
 const emptyIcon = resolveIcon('Globe') ?? undefined;
 
 const props = defineProps<{
-  defaultMarket: Market | undefined;
+  defaultMarket: ChannelMarket | undefined;
   canChange: boolean;
 }>();
 

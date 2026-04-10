@@ -4,6 +4,7 @@ import type {
   ChannelUpdate,
   ChannelApiOptions,
   Market,
+  ChannelMarket,
   Language,
   ChannelPaymentMethod,
   ChannelMailType,
@@ -75,8 +76,8 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
        */
       id: (channelId: string) => ({
         market: {
-          async list(): Promise<Market[]> {
-            return await fetch<Market[]>(
+          async list(): Promise<ChannelMarket[]> {
+            return await fetch<ChannelMarket[]>(
               `${CHANNEL_ENDPOINT}/${channelId}/market/list`,
             );
           },

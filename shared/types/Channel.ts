@@ -35,7 +35,7 @@ export interface Currency extends EntityBase {
   conversionRate: number;
 }
 
-export interface MarketBase extends EntityBase {
+export interface Market extends EntityBase {
   country: Country;
   currency: Currency;
   active: boolean;
@@ -44,9 +44,9 @@ export interface MarketBase extends EntityBase {
 
 /**
  * Market attached to a channel (GET /account/channel/{id}/market/list).
- * Includes channel-specific fields: routing, language settings, and grouping.
+ * Extends the base Market with channel-specific fields: routing, language settings, and grouping.
  */
-export interface Market extends MarketBase {
+export interface ChannelMarket extends Market {
   channelId: number;
   virtual: boolean;
   attributes: string[];
@@ -166,7 +166,7 @@ export interface ChannelUpdate extends UpdateEntity<ChannelBase> {
 export interface ChannelListItem extends ResponseEntity<ChannelBase> {
   identifier: string;
   channelType: ChannelType;
-  markets: Market[];
+  markets: ChannelMarket[];
   languages: Language[];
   languageCount: number;
   marketCount: number;

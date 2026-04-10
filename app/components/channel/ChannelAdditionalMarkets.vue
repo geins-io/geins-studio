@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Market, ChannelMarketAssignment, FlagText } from '#shared/types';
+import type { Market, ChannelMarket, ChannelMarketAssignment, FlagText } from '#shared/types';
 import type { Row } from '@tanstack/vue-table';
 
 const { t } = useI18n();
@@ -8,7 +8,7 @@ const emptyIcon = resolveIcon('Globe') ?? undefined;
 
 const props = defineProps<{
   allMarkets: Market[];
-  channelMarkets: Market[];
+  channelMarkets: ChannelMarket[];
 }>();
 
 const emit = defineEmits<{

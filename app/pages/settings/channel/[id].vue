@@ -11,6 +11,7 @@ import type {
   ChannelUpdate,
   ChannelApiOptions,
   ChannelLanguageAssignment,
+  ChannelMarket,
   ChannelMarketAssignment,
   Language,
   Market,
@@ -102,7 +103,7 @@ const selectedDefaultLanguageId = ref('');
 
 // Market state
 const allMarkets = ref<Market[]>([]);
-const channelMarkets = ref<Market[]>([]);
+const channelMarkets = ref<ChannelMarket[]>([]);
 const defaultMarketDialogOpen = ref(false);
 const selectedDefaultMarketId = ref('');
 
@@ -179,7 +180,15 @@ const handleAddMarkets = (newMarketAssignments: ChannelMarketAssignment[]) => {
   const newMarkets = newMarketAssignments
     .map((a) => allMarkets.value.find((m) => m._id === a._id))
     .filter((m): m is Market => !!m)
-    .map((m) => ({ ...m, active: true }));
+    .map((m): ChannelMarket => ({
+      ...m,
+      active: true,
+      channelId: 0,
+      virtual: false,
+      attributes: [],
+      allowedLanguages: [],
+      defaultLanguage: '',
+    }));
   channelMarkets.value = [...channelMarkets.value, ...newMarkets];
 };
 
