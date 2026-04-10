@@ -167,11 +167,7 @@ const handleKeyDown = () => {
         </ComboboxEmpty>
 
         <ComboboxGroup class="max-h-75 overflow-auto">
-          <ComboboxItem
-            v-for="item in markets"
-            :key="item.value"
-            :value="item"
-          >
+          <ComboboxItem v-for="item in markets" :key="item.value" :value="item">
             <div
               v-if="item.countryCode"
               :class="[
