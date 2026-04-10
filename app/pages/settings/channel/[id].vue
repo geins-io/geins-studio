@@ -13,6 +13,7 @@ import type {
   ChannelLanguageAssignment,
   ChannelMarket,
   ChannelMarketAssignment,
+  ChannelPaymentMethod,
   Language,
   Market,
   StorefrontSchema,
@@ -110,6 +111,9 @@ const selectedDefaultMarketId = ref('');
 
 const defaultLanguageId = ref('');
 const defaultMarketId = ref('');
+
+// Payment state
+const channelPayments = ref<ChannelPaymentMethod[]>([]);
 
 const defaultLanguage = computed(() => {
   if (!defaultLanguageId.value) return undefined;
@@ -290,6 +294,8 @@ const {
     }));
     // Populate channel markets from the entity's ordered array
     channelMarkets.value = entity.markets || [];
+    // Populate channel payment methods
+    channelPayments.value = entity.paymentMethods ?? [];
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       name: entity.name,
@@ -318,6 +324,10 @@ const {
         _id: m._id,
         active: m.active,
       })),
+    paymentMethods: channelPayments.value.map((p) => ({
+      _id: p._id,
+      active: p.active,
+    })),
     storefrontSettings: storefrontSettings.value,
     ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
@@ -394,6 +404,20 @@ watch(
   { deep: true },
 );
 
+// Sync channelPayments into entityDataUpdate so useUnsavedChanges detects changes
+watch(
+  channelPayments,
+  (val) => {
+    if (!createMode.value) {
+      entityDataUpdate.value.paymentMethods = val.map((p) => ({
+        _id: p._id,
+        active: p.active,
+      }));
+    }
+  },
+  { deep: true },
+);
+
 // =====================================================================================
 // ERROR HANDLING SETUP
 // =====================================================================================
@@ -422,8 +446,7 @@ const handleSave = async () => {
     {
       fields: [
         'languages',
-        'markets',
-        'storefrontSettings',
+        'markets',        'paymentMethods',        'storefrontSettings',
         'storefrontSchema',
       ],
     },
@@ -533,6 +556,7 @@ if (!createMode.value) {
         fields: [
           'languages',
           'markets',
+          'paymentMethods',
           'storefrontSettings',
           'storefrontSchema',
         ],
@@ -778,12 +802,10 @@ if (!createMode.value) {
             v-if="currentTab === 2"
             :key="`tab-${currentTab}`"
           >
-            <!-- TODO: M4 -->
-            <ContentEditCard :title="$t('channels.tab_payments')">
-              <div class="text-muted-foreground text-sm">
-                {{ $t('channels.tab_placeholder') }}
-              </div>
-            </ContentEditCard>
+            <ChannelPaymentsTab
+              v-model:payments="channelPayments"
+              :loading="loading"
+            />
           </ContentEditMainContent>
         </KeepAlive>
         <!-- Tab 3: Mails -->

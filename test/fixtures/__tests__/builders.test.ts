@@ -200,9 +200,9 @@ describe('buildChannelPaymentMethod', () => {
     expect(pm._id).toBeDefined();
     expect(pm._type).toBe('paymentMethod');
     expect(pm.name).toBeDefined();
+    expect(pm.identifier).toBeDefined();
     expect(Array.isArray(pm.markets)).toBe(true);
     expect(Array.isArray(pm.customerTypes)).toBe(true);
-    expect(Array.isArray(pm.customerGroups)).toBe(true);
     expect(typeof pm.active).toBe('boolean');
   });
 });
