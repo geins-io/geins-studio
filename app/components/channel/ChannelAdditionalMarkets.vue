@@ -33,19 +33,7 @@ const assignedMarketIds = computed(() =>
   props.channelMarkets.map((m) => m._id),
 );
 
-// UX guardrail: track activating markets with a cooldown
-const activatingMarkets = ref(new Set<string>());
-const isActivating = (id: string) => activatingMarkets.value.has(id);
-
 const handleToggleActive = (market: ChannelMarketRow, value: boolean) => {
-  // UX guardrail: disable switch briefly
-  activatingMarkets.value.add(market._id);
-  setTimeout(() => {
-    activatingMarkets.value = new Set(
-      [...activatingMarkets.value].filter((id) => id !== market._id),
-    );
-  }, 3000);
-
   emit('update', {
     _id: market._id,
     active: value,
@@ -94,8 +82,6 @@ const columns = computed(() => {
         onChange: (row: Row<ChannelMarketRow>) => (value: boolean) => {
           handleToggleActive(row.original, value);
         },
-        disabled: (row: Row<ChannelMarketRow>) =>
-          isActivating(row.original._id),
       },
     },
     sortable: false,
@@ -142,14 +128,6 @@ const addDialogOpen = ref(false);
     :empty-text="t('channels.additional_markets_empty')"
     :empty-icon="emptyIcon"
   />
-  <!-- Activating notice -->
-  <div
-    v-if="activatingMarkets.size"
-    class="text-muted-foreground border-t px-4 py-2 text-xs"
-  >
-    {{ t('channels.activating_market_notice') }}
-  </div>
-
   <!-- Remove market confirmation dialog -->
   <AlertDialog v-model:open="removeDialogOpen">
     <AlertDialogContent>

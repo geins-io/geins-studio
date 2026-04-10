@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia';
-import type { Account, ChannelListItem, Currency, Language, Market } from '#shared/types';
+import type {
+  Account,
+  ChannelListItem,
+  Currency,
+  Language,
+  Market,
+} from '#shared/types';
 
 /**
  * Account store — manages the current merchant account context.
@@ -50,7 +56,9 @@ export const useAccountStore = defineStore('account', () => {
     return data;
   }
   async function fetchChannels(): Promise<ChannelListItem[]> {
-    const data = await accountApi.channel.list({ fields: ['languages', 'markets'] });
+    const data = await accountApi.channel.list({
+      fields: ['languages', 'markets'],
+    });
     channels.value = data;
     return data;
   }

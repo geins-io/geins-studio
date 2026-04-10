@@ -661,7 +661,6 @@
     "remove_language": "Remove language",
     "remove_language_description": "Are you sure you want to remove this language from the channel? This change will take effect when you save.",
     "remove_market": "Remove market",
-    "remove_market_description": "Are you sure you want to remove this market from the channel? This change will take effect when you save.",
-    "activating_market_notice": "Activating a market triggers background processing. This may take a moment."
+    "remove_market_description": "Are you sure you want to remove this market from the channel? This change will take effect when you save."
   }
 }
