@@ -660,6 +660,9 @@
     "remove_language": "Remove language",
     "remove_language_description": "Are you sure you want to remove this language from the channel? This change will take effect when you save.",
     "remove_market": "Remove market",
-    "remove_market_description": "Are you sure you want to remove this market from the channel? This change will take effect when you save."
+    "remove_market_description": "Are you sure you want to remove this market from the channel? This change will take effect when you save.",
+    "no_payment_methods": "No payment methods available for this channel.",
+    "payment_markets_count": "Markets: {count}",
+    "payment_customer_types_count": "Customer types: {count}"
   }
 }

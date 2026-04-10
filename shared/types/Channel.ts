@@ -76,10 +76,10 @@ export interface ChannelMarket extends Market {
  */
 export type ChannelPaymentMethod = ResponseEntity<{
   name: string;
+  identifier: string;
   icon?: string;
   markets: string[];
   customerTypes: string[];
-  customerGroups: string[];
   active: boolean;
 }>;
 
@@ -223,6 +223,7 @@ export type ChannelFieldsFilter =
   | 'default'
   | 'languages'
   | 'markets'
+  | 'paymentMethods'
   | 'storefrontSettings'
   | 'storefrontSchema';
 

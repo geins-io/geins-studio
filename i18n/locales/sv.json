@@ -656,6 +656,9 @@
     "remove_language": "Ta bort språk",
     "remove_language_description": "Är du säker på att du vill ta bort detta språk från kanalen? Ändringen träder i kraft när du sparar.",
     "remove_market": "Ta bort marknad",
-    "remove_market_description": "Är du säker på att du vill ta bort denna marknad från kanalen? Ändringen träder i kraft när du sparar."
+    "remove_market_description": "Är du säker på att du vill ta bort denna marknad från kanalen? Ändringen träder i kraft när du sparar.",
+    "no_payment_methods": "Inga betalningsmetoder tillgängliga för denna kanal.",
+    "payment_markets_count": "Marknader: {count}",
+    "payment_customer_types_count": "Kundtyper: {count}"
   }
 }

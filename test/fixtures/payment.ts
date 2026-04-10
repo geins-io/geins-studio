@@ -11,10 +11,9 @@ export function buildChannelPaymentMethod(
     _id: nextId('payment'),
     _type: 'paymentMethod',
     name: 'Invoice',
-    icon: 'invoice-icon',
+    identifier: 'invoice',
     markets: ['SE'],
     customerTypes: ['b2b'],
-    customerGroups: ['wholesale'],
     active: true,
     ...overrides,
   };
