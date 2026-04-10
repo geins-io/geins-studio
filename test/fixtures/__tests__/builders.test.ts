@@ -156,7 +156,7 @@ describe('buildChannelLanguageAssignment', () => {
   it('produces a valid assignment shape', () => {
     const assignment = buildChannelLanguageAssignment();
     expect(assignment._id).toBeDefined();
-    expect(assignment._type).toBe('language');
+    expect(assignment).not.toHaveProperty('_type');
     expect(typeof assignment.active).toBe('boolean');
   });
 });
@@ -189,7 +189,7 @@ describe('buildChannelMarketAssignment', () => {
   it('produces a valid assignment shape', () => {
     const assignment = buildChannelMarketAssignment();
     expect(assignment._id).toBeDefined();
-    expect(assignment._type).toBe('market');
+    expect(assignment).not.toHaveProperty('_type');
     expect(typeof assignment.active).toBe('boolean');
   });
 });
@@ -211,7 +211,7 @@ describe('buildChannelPaymentMethodAssignment', () => {
   it('produces a valid assignment shape', () => {
     const assignment = buildChannelPaymentMethodAssignment();
     expect(assignment._id).toBeDefined();
-    expect(assignment._type).toBe('paymentMethod');
+    expect(assignment).not.toHaveProperty('_type');
     expect(typeof assignment.active).toBe('boolean');
   });
 });

@@ -33,7 +33,8 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // =====================================================================================
 // API & REPOSITORY SETUP
 // =====================================================================================
-const { channelApi, globalApi } = useGeinsRepository();
+const { accountApi } = useGeinsRepository();
+const accountStore = useAccountStore();
 
 // =====================================================================================
 // PAGE META
@@ -252,9 +253,9 @@ const {
   ChannelApiOptions
 >({
   repository: {
-    get: channelApi.channel.get,
-    create: channelApi.channel.create,
-    update: channelApi.channel.update,
+    get: accountApi.channel.get,
+    create: accountApi.channel.create,
+    update: accountApi.channel.update,
   },
   validationSchema: formSchema,
   initialEntityData: initialCreateData,
@@ -343,7 +344,7 @@ async function handleResetToDefault() {
   if (!entityId.value) return;
   isResettingSchema.value = true;
   try {
-    await channelApi.channel.id(entityId.value).resetStorefrontSchema();
+    await accountApi.channel.id(entityId.value).resetStorefrontSchema();
     await refreshEntityData.value?.();
     toast({ title: t('channels.reset_schema_success') });
   } catch {
@@ -436,6 +437,11 @@ const handleSave = async () => {
       variant: 'default',
     });
   }
+
+  // Refresh the store so sidebar / list page reflect changes
+  if (result) {
+    await accountStore.refreshChannels();
+  }
 };
 
 // =====================================================================================
@@ -523,7 +529,7 @@ if (!createMode.value) {
   const { data, error, refresh } = await useAsyncData<Channel>(
     entityFetchKey.value,
     () =>
-      channelApi.channel.get(entityId.value, {
+      accountApi.channel.get(entityId.value, {
         fields: [
           'languages',
           'markets',
@@ -535,12 +541,8 @@ if (!createMode.value) {
   refreshEntityData.value = refresh;
   onMounted(async () => {
     const entity = handleFetchResult<Channel>(error.value, data.value);
-    const [langs, markets] = await Promise.all([
-      globalApi.language.list(),
-      channelApi.market.list(),
-    ]);
-    allLanguages.value = Array.isArray(langs) ? langs : [];
-    allMarkets.value = Array.isArray(markets) ? markets : [];
+    allLanguages.value = accountStore.languages;
+    allMarkets.value = await accountStore.ensureMarkets();
     await parseAndSaveData(entity);
   });
 }

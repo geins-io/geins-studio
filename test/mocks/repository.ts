@@ -15,7 +15,8 @@ import { vi } from 'vitest';
  * ```
  */
 export function createMockRepository() {
-  const channelApi = {
+  const accountApi = {
+    account: { get: vi.fn() },
     channel: {
       list: vi.fn(),
       get: vi.fn(),
@@ -31,10 +32,12 @@ export function createMockRepository() {
           updateTexts: vi.fn(),
           preview: vi.fn(),
         },
+        resetStorefrontSchema: vi.fn(),
       })),
     },
-    market: { list: vi.fn() },
+    currency: { list: vi.fn() },
     language: { list: vi.fn(), get: vi.fn() },
+    market: { list: vi.fn() },
     payment: { list: vi.fn() },
   };
 
@@ -91,7 +94,7 @@ export function createMockRepository() {
   };
 
   const useGeinsRepository = vi.fn(() => ({
-    channelApi,
+    accountApi,
     orderApi,
     customerApi,
     productApi,
@@ -100,7 +103,7 @@ export function createMockRepository() {
 
   return {
     useGeinsRepository,
-    channelApi,
+    accountApi,
     orderApi,
     customerApi,
     productApi,

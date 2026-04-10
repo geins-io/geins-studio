@@ -19,7 +19,7 @@ The repository files are organized in the `app/utils/repositories/` directory an
 The easiest way to access repositories is through the [`useGeinsRepository`](../composables/useGeinsRepository.md) composable, which provides pre-configured instances with the Geins API client automatically injected.
 
 ```ts
-const { productApi, globalApi, userApi } = useGeinsRepository();
+const { productApi, accountApi, userApi } = useGeinsRepository();
 
 // Get a single product
 const product = await productApi.get('product-id');

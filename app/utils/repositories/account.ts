@@ -1,14 +1,17 @@
 import type {
+  Account,
   Channel,
   ChannelCreate,
   ChannelUpdate,
   ChannelApiOptions,
-  Market,
+  ChannelListItem,
   ChannelMarket,
-  Language,
   ChannelPaymentMethod,
   ChannelMailType,
   ChannelMailSettings,
+  Currency,
+  Market,
+  Language,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
@@ -17,15 +20,16 @@ const BASE_ENDPOINT = '/account';
 const CHANNEL_ENDPOINT = `${BASE_ENDPOINT}/channel`;
 
 /**
- * Repository for managing channel operations.
+ * Unified repository for all account-scoped endpoints.
  *
- * Provides full CRUD for channels and sub-resources scoped to a specific channel (markets, payments, mail).
+ * Owns every `/account/...` endpoint: account details, channel CRUD with
+ * scoped sub-resources, and global list data (currencies, languages, markets).
  *
- * File uploads (storefront logos etc.) use uploadStorefrontFiles() — a separate
- * multipart method where each file part's name matches its dot-notation schema path.
+ * File uploads (storefront logos etc.) use the custom `channel.update()` —
+ * a multipart method where each file part's name matches its dot-notation schema path.
  */
-export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const channelRepo = repo.entity<
+export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
+  const channelEntityRepo = repo.entity<
     Channel,
     ChannelCreate,
     ChannelUpdate,
@@ -33,8 +37,20 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   >(CHANNEL_ENDPOINT, fetch);
 
   return {
+    account: {
+      async get(): Promise<Account> {
+        return await fetch<Account>(BASE_ENDPOINT);
+      },
+    },
+
     channel: {
-      ...channelRepo,
+      ...channelEntityRepo,
+
+      async list(options?: ChannelApiOptions): Promise<ChannelListItem[]> {
+        return await fetch<ChannelListItem[]>(`${CHANNEL_ENDPOINT}/list`, {
+          query: buildQueryObject(options),
+        });
+      },
 
       async update(
         id: string,
@@ -45,9 +61,6 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           data.storefrontSettings ?? {},
         ).filter((entry): entry is [string, File] => entry[1] instanceof File);
 
-        // File part name must be the full JSON path: "storefrontSettings.{fieldKey}"
-        // The field must also exist in the JSON payload's storefrontSettings as "" so
-        // the backend knows where to write the blob URL back.
         const formData = new FormData();
         const settingsPayload: Record<string, unknown> = {
           ...(data.storefrontSettings ?? {}),
@@ -129,12 +142,12 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       }),
     },
 
-    // Top-level sub-resources (not scoped to a channel)
-    market: {
-      async list(): Promise<Market[]> {
-        return await fetch<Market[]>(`${BASE_ENDPOINT}/market/list`);
+    currency: {
+      async list(): Promise<Currency[]> {
+        return await fetch<Currency[]>(`${BASE_ENDPOINT}/currency/list`);
       },
     },
+
     language: {
       async list(): Promise<Language[]> {
         return await fetch<Language[]>(`${BASE_ENDPOINT}/language/list`);
@@ -143,6 +156,13 @@ export function channelRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return await fetch<Language>(`${BASE_ENDPOINT}/language/${id}`);
       },
     },
+
+    market: {
+      async list(): Promise<Market[]> {
+        return await fetch<Market[]>(`${BASE_ENDPOINT}/market/list`);
+      },
+    },
+
     payment: {
       async list(): Promise<ChannelPaymentMethod[]> {
         return await fetch<ChannelPaymentMethod[]>(

@@ -19,7 +19,8 @@ definePageMeta({
 });
 
 // GLOBAL SETUP
-const { channelApi } = useGeinsRepository();
+const accountStore = useAccountStore();
+const { channels } = storeToRefs(accountStore);
 const dataList = ref<EntityList[]>([]);
 const entityName = 'channel';
 const entityIdentifier = '{id}';
@@ -57,23 +58,17 @@ const mapToListData = (list: Entity[]): EntityList[] => {
   });
 };
 
-// FETCH DATA FOR ENTITY
-const { data, error, refresh } = await useAsyncData<Entity[]>(
-  'settings-channels-list',
-  () => channelApi.channel.list({ fields: ['languages', 'markets'] }),
-);
+// FETCH DATA FOR ENTITY — read from account store (authoritative cache)
+const refresh = async () => {
+  await accountStore.refreshChannels();
+};
 
 const { getColumns, addActionsColumn } = useColumns<EntityList>();
 
 onMounted(() => {
   watch(
-    [data, error],
-    ([newData, newError]) => {
-      if (newError) {
-        fetchError.value = true;
-        dataList.value = [];
-        return;
-      }
+    channels,
+    (newData) => {
       fetchError.value = false;
       if (newData) {
         dataList.value = mapToListData(newData);

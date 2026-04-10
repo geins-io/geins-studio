@@ -121,7 +121,7 @@ i18n/locales/           # en.json, sv.json
 
 All API calls flow through typed repository factories → `$geinsApi` → Nitro proxy → Geins Management API.
 
-Access via `useGeinsRepository()`: `orderApi.quotation`, `customerApi.company`, `productApi`, `globalApi`.
+Access via `useGeinsRepository()`: `orderApi.quotation`, `customerApi.company`, `productApi`, `accountApi`.
 
 Factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `entityRepo` (full CRUD). Nitro proxy (`server/api/[...].ts`) is a transparent passthrough — adds auth headers, no response transformation.
 
