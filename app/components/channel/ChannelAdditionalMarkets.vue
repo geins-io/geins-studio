@@ -3,7 +3,7 @@ import type {
   Market,
   ChannelMarket,
   ChannelMarketAssignment,
-  FlagText,
+  ChannelMarketRow,
 } from '#shared/types';
 import type { Row } from '@tanstack/vue-table';
 
@@ -37,7 +37,7 @@ const assignedMarketIds = computed(() =>
 const activatingMarkets = ref(new Set<string>());
 const isActivating = (id: string) => activatingMarkets.value.has(id);
 
-const handleToggleActive = (market: MarketRow, value: boolean) => {
+const handleToggleActive = (market: ChannelMarketRow, value: boolean) => {
   // UX guardrail: disable switch briefly
   activatingMarkets.value.add(market._id);
   setTimeout(() => {
@@ -69,30 +69,14 @@ const confirmRemove = () => {
   removeDialogOpen.value = false;
 };
 
-// Table row type
-interface MarketRow {
-  _id: string;
-  country: FlagText;
-  currency: string;
-  vatRate: number;
-  active: boolean;
-}
+const { toMarketRows, getBaseColumnTitles } = useMarketTable();
 
 // Table rows enriched from full market data
-const tableRows = computed<MarketRow[]>(() => {
-  return additionalMarkets.value.map((market) => ({
-    _id: market._id,
-    country: {
-      code: market.country?._id ?? '',
-      label: market.country?.name ?? market._id,
-    },
-    currency: market.currency?._id ?? '—',
-    vatRate: market.standardVatRate ?? '—',
-    active: market.active,
-  }));
+const tableRows = computed<ChannelMarketRow[]>(() => {
+  return toMarketRows(additionalMarkets.value);
 });
 
-const { getColumns, addActionsColumn } = useColumns<MarketRow>();
+const { getColumns, addActionsColumn } = useColumns<ChannelMarketRow>();
 
 const columns = computed(() => {
   let cols = getColumns(tableRows.value, {
@@ -102,18 +86,16 @@ const columns = computed(() => {
       active: 'switch',
     },
     columnTitles: {
-      country: t('country'),
-      currency: t('channels.market_currency'),
-      vatRate: t('channels.market_vat_rate'),
-      group: t('channels.market_group'),
+      ...getBaseColumnTitles(),
       active: t('active'),
     },
     columnCellProps: {
       active: {
-        onChange: (row: Row<MarketRow>) => (value: boolean) => {
+        onChange: (row: Row<ChannelMarketRow>) => (value: boolean) => {
           handleToggleActive(row.original, value);
         },
-        disabled: (row: Row<MarketRow>) => isActivating(row.original._id),
+        disabled: (row: Row<ChannelMarketRow>) =>
+          isActivating(row.original._id),
       },
     },
     sortable: false,
@@ -121,7 +103,7 @@ const columns = computed(() => {
   cols = addActionsColumn(
     cols,
     {
-      onDelete: (item: MarketRow) => openRemoveDialog(item._id),
+      onDelete: (item: ChannelMarketRow) => openRemoveDialog(item._id),
     },
     'delete',
   );

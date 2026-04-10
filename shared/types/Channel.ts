@@ -4,6 +4,7 @@ import type {
   UpdateEntity,
   ResponseEntity,
   EntityBase,
+  FlagText,
   Tooltip,
 } from './Global';
 import type { StorefrontSchema, StorefrontSettings } from './Storefront';
@@ -40,6 +41,17 @@ export interface Market extends EntityBase {
   currency: Currency;
   active: boolean;
   standardVatRate: number;
+}
+
+/**
+ * Table row shape for market tables (default & additional markets).
+ */
+export interface ChannelMarketRow {
+  _id: string;
+  country: FlagText;
+  currency: string;
+  vatRate: number | string;
+  active: boolean;
 }
 
 /**

@@ -312,7 +312,7 @@ const {
       active: l.active,
     })),
     markets: channelMarkets.value
-      .filter((m) => m._id !== 'EU-EUR')
+      .filter((m) => !m.virtual)
       .map((m) => ({
         _id: m._id,
         active: m.active,

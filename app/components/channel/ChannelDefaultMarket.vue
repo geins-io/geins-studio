@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChannelMarket, FlagText } from '#shared/types';
+import type { ChannelMarket, ChannelMarketRow } from '#shared/types';
 
 const { t } = useI18n();
 const { resolveIcon } = useLucideIcon();
@@ -14,57 +14,28 @@ const emit = defineEmits<{
   change: [];
 }>();
 
-interface DefaultMarketRow {
-  _id: string;
-  country: FlagText;
-  currency: string;
-  vatRate: number;
-  status: boolean;
-}
+const { toMarketRows, getBaseColumnTitles } = useMarketTable();
 
-const tableRows = computed<DefaultMarketRow[]>(() => {
+const tableRows = computed<ChannelMarketRow[]>(() => {
   if (!props.defaultMarket) return [];
-  const m = props.defaultMarket;
-  return [
-    {
-      _id: m._id,
-      country: {
-        code: m.country?._id ?? '',
-        label: m.country?.name ?? m._id,
-      },
-      currency: m.currency?._id ?? '—',
-      vatRate: m.standardVatRate ?? '—',
-      status: m.active,
-    },
-  ];
+  return toMarketRows([props.defaultMarket]);
 });
 
-const { getColumns, orderAndFilterColumns } = useColumns<DefaultMarketRow>();
+const { getColumns } = useColumns<ChannelMarketRow>();
 
 const columns = computed(() => {
-  let cols = getColumns(tableRows.value, {
+  return getColumns(tableRows.value, {
     excludeColumns: ['_id'],
     columnTypes: {
       country: 'flag',
-      status: 'status',
+      active: 'status',
     },
     columnTitles: {
-      country: t('country'),
-      currency: t('channels.market_currency'),
-      vatRate: t('channels.market_vat_rate'),
-      group: t('channels.market_group'),
-      status: t('status'),
+      ...getBaseColumnTitles(),
+      active: t('status'),
     },
     sortable: false,
   });
-  cols = orderAndFilterColumns(cols, [
-    'country',
-    'currency',
-    'vatRate',
-    'group',
-    'status',
-  ]);
-  return cols;
 });
 </script>
 
