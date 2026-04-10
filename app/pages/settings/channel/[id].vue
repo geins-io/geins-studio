@@ -719,36 +719,11 @@ if (!createMode.value) {
                     {{ $t('channels.change_default_market') }}
                   </DialogDescription>
                 </DialogHeader>
-                <RadioGroup
-                  :model-value="selectedDefaultMarketId"
-                  @update:model-value="selectedDefaultMarketId = $event"
-                >
-                  <div
-                    v-for="market in channelMarkets"
-                    :key="market._id"
-                    class="flex items-center gap-3 py-2"
-                  >
-                    <RadioGroupItem
-                      :id="`market-${market._id}`"
-                      :value="market._id"
-                    />
-                    <Label
-                      :for="`market-${market._id}`"
-                      class="flex items-center gap-2 font-normal"
-                    >
-                      <div
-                        v-if="market.country?._id"
-                        :class="[
-                          flagClass(market.country._id),
-                          'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
-                        ]"
-                      />
-                      {{ market.country?.name ?? market._id }} ({{
-                        market.currency?._id ?? ''
-                      }})
-                    </Label>
-                  </div>
-                </RadioGroup>
+                <FormInputMarketSelect
+                  v-model="selectedDefaultMarketId"
+                  :data-set="channelMarkets"
+                  disable-teleport
+                />
                 <DialogFooter>
                   <Button
                     variant="outline"
