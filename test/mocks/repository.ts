@@ -8,10 +8,10 @@ import { vi } from 'vitest';
  *
  * Usage:
  * ```ts
- * const { useGeinsRepository, channelApi } = vi.hoisted(() => createMockRepository());
+ * const { useGeinsRepository, accountApi } = vi.hoisted(() => createMockRepository());
  * vi.mock('#app/composables/useGeinsRepository', () => ({ useGeinsRepository }));
  *
- * channelApi.channel.get.mockResolvedValue(buildChannel());
+ * accountApi.channel.get.mockResolvedValue(buildChannel());
  * ```
  */
 export function createMockRepository() {
@@ -86,19 +86,11 @@ export function createMockRepository() {
     },
   };
 
-  const globalApi = {
-    account: { get: vi.fn() },
-    channel: { list: vi.fn() },
-    currency: { list: vi.fn() },
-    language: { list: vi.fn() },
-  };
-
   const useGeinsRepository = vi.fn(() => ({
     accountApi,
     orderApi,
     customerApi,
     productApi,
-    globalApi,
   }));
 
   return {
@@ -107,6 +99,5 @@ export function createMockRepository() {
     orderApi,
     customerApi,
     productApi,
-    globalApi,
   };
 }

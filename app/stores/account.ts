@@ -38,6 +38,7 @@ export const useAccountStore = defineStore('account', () => {
   const currencies = ref<Currency[]>([]);
   const languages = ref<Language[]>([]);
   const markets = ref<Market[]>([]);
+  const marketsLoaded = ref(false);
   const ready = ref(false);
   const currentChannelId = useCookie<string>('geins-channel', {
     default: () => fallback.channel.toString(),
@@ -75,6 +76,7 @@ export const useAccountStore = defineStore('account', () => {
   async function fetchMarkets(): Promise<Market[]> {
     const data = await accountApi.market.list();
     markets.value = Array.isArray(data) ? data : [];
+    marketsLoaded.value = true;
     return markets.value;
   }
   /**
@@ -82,7 +84,7 @@ export const useAccountStore = defineStore('account', () => {
    * Markets are only needed when adding markets to a channel — not on app init.
    */
   async function ensureMarkets(): Promise<Market[]> {
-    if (markets.value.length > 0) return markets.value;
+    if (marketsLoaded.value) return markets.value;
     return fetchMarkets();
   }
   async function init(): Promise<void> {

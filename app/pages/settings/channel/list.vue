@@ -60,7 +60,19 @@ const mapToListData = (list: Entity[]): EntityList[] => {
 
 // FETCH DATA FOR ENTITY — read from account store (authoritative cache)
 const refresh = async () => {
-  await accountStore.refreshChannels();
+  loading.value = true;
+  fetchError.value = false;
+
+  try {
+    await accountStore.refreshChannels();
+  }
+  catch (error) {
+    fetchError.value = true;
+    throw error;
+  }
+  finally {
+    loading.value = false;
+  }
 };
 
 const { getColumns, addActionsColumn } = useColumns<EntityList>();

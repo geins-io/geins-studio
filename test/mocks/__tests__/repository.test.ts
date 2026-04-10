@@ -10,7 +10,6 @@ describe('createMockRepository', () => {
     expect(mock.orderApi).toBeDefined();
     expect(mock.customerApi).toBeDefined();
     expect(mock.productApi).toBeDefined();
-    expect(mock.globalApi).toBeDefined();
   });
 
   it('useGeinsRepository returns all API objects when called', () => {
@@ -20,7 +19,6 @@ describe('createMockRepository', () => {
     expect(result.orderApi).toBe(mock.orderApi);
     expect(result.customerApi).toBe(mock.customerApi);
     expect(result.productApi).toBe(mock.productApi);
-    expect(result.globalApi).toBe(mock.globalApi);
   });
 
   it('accountApi.channel.get is a callable mock function', () => {
@@ -76,8 +74,7 @@ describe('createMockRepository', () => {
   });
 
   it('other APIs have expected minimal stubs', () => {
-    const { orderApi, customerApi, productApi, globalApi } =
-      createMockRepository();
+    const { orderApi, customerApi, productApi } = createMockRepository();
 
     // orderApi
     expect(vi.isMockFunction(orderApi.quotation.get)).toBe(true);
@@ -90,11 +87,5 @@ describe('createMockRepository', () => {
     // productApi
     expect(vi.isMockFunction(productApi.get)).toBe(true);
     expect(vi.isMockFunction(productApi.list)).toBe(true);
-
-    // globalApi
-    expect(vi.isMockFunction(globalApi.account.get)).toBe(true);
-    expect(vi.isMockFunction(globalApi.channel.list)).toBe(true);
-    expect(vi.isMockFunction(globalApi.currency.list)).toBe(true);
-    expect(vi.isMockFunction(globalApi.language.list)).toBe(true);
   });
 });
