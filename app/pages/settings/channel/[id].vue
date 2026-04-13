@@ -446,7 +446,9 @@ const handleSave = async () => {
     {
       fields: [
         'languages',
-        'markets',        'paymentMethods',        'storefrontSettings',
+        'markets',
+        'paymentMethods',
+        'storefrontSettings',
         'storefrontSchema',
       ],
     },
@@ -804,6 +806,7 @@ if (!createMode.value) {
           >
             <ChannelPaymentsTab
               v-model:payments="channelPayments"
+              :all-markets="allMarkets"
               :loading="loading"
             />
           </ContentEditMainContent>
