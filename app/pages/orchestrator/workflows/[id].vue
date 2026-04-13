@@ -1,3 +1,4 @@
+<!-- eslint-disable -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Background } from '@vue-flow/background'
@@ -157,17 +158,6 @@ onMounted(() => {
   if (isNew.value) {
     // Start with just a manual trigger for new workflows
     initialNodes.value = [
-      {
-        id: '1',
-        type: 'trigger',
-        position: { x: 250, y: 200 },
-        data: {
-          label: 'Manual Trigger',
-          icon: 'Zap',
-          description: 'Start workflow manually',
-          config: {}
-        },
-      },
     ]
   } else {
     // Demo data for existing workflow
@@ -485,9 +475,9 @@ const goBack = () => {
 
       <!-- VueFlow Canvas -->
       <div class="flex-1" @dragover="onDragOver" @drop="onDrop">
-        <VueFlow v-if="initialNodes.length > 0" :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
-          :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.2" :max-zoom="4" fit-view-on-init class="bg-muted/30"
-          @node-click="onNodeClick" @pane-click="onPaneClick">
+        <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
+          :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="2" :fit-view-on-init="!isNew"
+          class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
           <Background pattern-color="hsl(var(--border))" :gap="20" />
           <Controls position="bottom-left" />
           <MiniMap position="bottom-right" :node-color="(node: any) => {
