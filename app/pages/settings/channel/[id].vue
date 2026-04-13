@@ -14,6 +14,8 @@ import type {
   ChannelMarket,
   ChannelMarketAssignment,
   ChannelPaymentMethod,
+  ChannelMailSettings,
+  ChannelMailType,
   Language,
   Market,
   StorefrontSchema,
@@ -114,6 +116,10 @@ const defaultMarketId = ref('');
 
 // Payment state
 const channelPayments = ref<ChannelPaymentMethod[]>([]);
+
+// Mails state
+const channelMailSettings = ref<ChannelMailSettings | null>(null);
+const channelMailTypes = ref<ChannelMailType[]>([]);
 
 const defaultLanguage = computed(() => {
   if (!defaultLanguageId.value) return undefined;
@@ -296,6 +302,9 @@ const {
     channelMarkets.value = entity.markets || [];
     // Populate channel payment methods
     channelPayments.value = entity.paymentMethods ?? [];
+    // Populate channel mail settings and mail types
+    channelMailSettings.value = entity.mailSettings ?? null;
+    channelMailTypes.value = entity.mailTypes ?? [];
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       name: entity.name,
@@ -821,12 +830,11 @@ if (!createMode.value) {
             v-if="currentTab === 3"
             :key="`tab-${currentTab}`"
           >
-            <!-- TODO: M5 -->
-            <ContentEditCard :title="$t('channels.tab_mails')">
-              <div class="text-muted-foreground text-sm">
-                {{ $t('channels.tab_placeholder') }}
-              </div>
-            </ContentEditCard>
+            <ChannelMailsTab
+              :mail-settings="channelMailSettings"
+              :mail-types="channelMailTypes"
+              :loading="loading"
+            />
           </ContentEditMainContent>
         </KeepAlive>
         <!-- Tab 4: Storefront settings -->
