@@ -8,7 +8,7 @@ import {
   buildChannelMarket,
   buildChannelPaymentMethod,
   buildChannelUpdate,
-  buildMailType,
+  buildMailTextsResponse,
   resetIdCounter,
 } from '../../../../test/fixtures';
 import { accountRepo } from '../account';
@@ -217,8 +217,8 @@ describe('accountRepo', () => {
   // ===========================================================================
   describe('mail endpoints', () => {
     it('channel.id().mail.getTexts() calls GET with language query', async () => {
-      const mailType = buildMailType();
-      mockFetch.mockResolvedValue(mailType);
+      const texts = buildMailTextsResponse({ language: 'sv' });
+      mockFetch.mockResolvedValue(texts);
       const result = await api.channel
         .id('123')
         .mail.getTexts('OrderConfirmation', 'sv');
@@ -226,13 +226,16 @@ describe('accountRepo', () => {
         '/account/channel/123/mail/OrderConfirmation',
         { query: { language: 'sv' } },
       );
-      expect(result).toEqual(mailType);
+      expect(result).toEqual(texts);
     });
 
     it('channel.id().mail.updateTexts() calls PATCH with body', async () => {
-      const mailType = buildMailType();
-      const updateData = { displayName: 'Updated Store' };
-      mockFetch.mockResolvedValue(mailType);
+      const texts = buildMailTextsResponse({ language: 'sv' });
+      const updateData = {
+        language: 'sv',
+        texts: { SUBJECT: 'Din orderbekräftelse' },
+      };
+      mockFetch.mockResolvedValue(texts);
       const result = await api.channel
         .id('123')
         .mail.updateTexts('OrderConfirmation', updateData);
@@ -240,12 +243,14 @@ describe('accountRepo', () => {
         '/account/channel/123/mail/OrderConfirmation',
         { method: 'PATCH', body: updateData },
       );
-      expect(result).toEqual(mailType);
+      expect(result).toEqual(texts);
     });
 
     it('channel.id().mail.preview() calls POST with language body', async () => {
-      mockFetch.mockResolvedValue({ html: '<p>preview</p>' });
-      await api.channel.id('123').mail.preview('OrderConfirmation', 'sv');
+      mockFetch.mockResolvedValue('<p>preview</p>');
+      await api.channel
+        .id('123')
+        .mail.preview('OrderConfirmation', { language: 'sv' });
       expect(mockFetch).toHaveBeenCalledWith(
         '/account/channel/123/mail/OrderConfirmation/preview',
         { method: 'POST', body: { language: 'sv' } },

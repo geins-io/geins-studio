@@ -450,6 +450,8 @@ const handleSave = async () => {
         'paymentMethods',
         'storefrontSettings',
         'storefrontSchema',
+        'mailSettings',
+        'mailTypes',
       ],
     },
   );
@@ -561,6 +563,8 @@ if (!createMode.value) {
           'paymentMethods',
           'storefrontSettings',
           'storefrontSchema',
+          'mailSettings',
+          'mailTypes',
         ],
       }),
   );

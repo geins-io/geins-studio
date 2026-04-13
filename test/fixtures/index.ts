@@ -14,4 +14,9 @@ export {
   buildChannelPaymentMethod,
   buildChannelPaymentMethodAssignment,
 } from './payment';
-export { buildMailSettings, buildMailType } from './mail';
+export {
+  buildMailSettings,
+  buildMailType,
+  buildMailTextEntry,
+  buildMailTextsResponse,
+} from './mail';

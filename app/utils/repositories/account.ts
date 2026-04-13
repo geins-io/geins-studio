@@ -7,11 +7,13 @@ import type {
   ChannelListItem,
   ChannelMarket,
   ChannelPaymentMethod,
-  ChannelMailType,
-  ChannelMailSettings,
   Currency,
   Market,
   Language,
+  MailTypeId,
+  MailTextsResponse,
+  MailTextsUpdateRequest,
+  MailPreviewRequest,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
@@ -109,27 +111,34 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         },
         mail: {
           async getTexts(
-            mailType: string,
+            mailType: MailTypeId,
             language: string,
-          ): Promise<ChannelMailType> {
-            return await fetch<ChannelMailType>(
+          ): Promise<MailTextsResponse> {
+            return await fetch<MailTextsResponse>(
               `${CHANNEL_ENDPOINT}/${channelId}/mail/${mailType}`,
               { query: { language } },
             );
           },
           async updateTexts(
-            mailType: string,
-            data: Partial<ChannelMailSettings>,
-          ): Promise<ChannelMailType> {
-            return await fetch<ChannelMailType>(
+            mailType: MailTypeId,
+            data: MailTextsUpdateRequest,
+          ): Promise<MailTextsResponse> {
+            return await fetch<MailTextsResponse>(
               `${CHANNEL_ENDPOINT}/${channelId}/mail/${mailType}`,
               { method: 'PATCH', body: data },
             );
           },
-          async preview(mailType: string, language: string): Promise<unknown> {
-            return await fetch<unknown>(
+          /**
+           * Preview endpoint returns rendered HTML as `text/html` — caller
+           * receives the raw HTML string to inject into a sandboxed iframe.
+           */
+          async preview(
+            mailType: MailTypeId,
+            data: MailPreviewRequest,
+          ): Promise<string> {
+            return await fetch<string>(
               `${CHANNEL_ENDPOINT}/${channelId}/mail/${mailType}/preview`,
-              { method: 'POST', body: { language } },
+              { method: 'POST', body: data },
             );
           },
         },
