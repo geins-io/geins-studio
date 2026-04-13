@@ -385,7 +385,7 @@ const runWorkflow = async () => {
 }
 
 const goBack = () => {
-  router.push('/workflows/list')
+  router.push('/orchestrator/workflows')
 }
 </script>
 
