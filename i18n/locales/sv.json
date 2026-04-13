@@ -342,6 +342,7 @@
     "success_rate_30d": "Framgångsfrekvens (30d)",
     "events": {
       "order": {
+        "activate": "Order aktiverad",
         "created": "Order skapad",
         "update": "Order uppdaterad",
         "cancelled": "Order annullerad",

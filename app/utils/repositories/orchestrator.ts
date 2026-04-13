@@ -65,8 +65,9 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
     workflow: {
       async list(): Promise<WorkflowSummary[]> {
-        const res = await fetch<{ workflows: WorkflowSummary[] }>(WORKFLOW_ENDPOINT);
-        return res?.workflows ?? [];
+        const res = await fetch<WorkflowSummary[] | { workflows?: WorkflowSummary[]; items?: WorkflowSummary[] }>(WORKFLOW_ENDPOINT);
+        if (Array.isArray(res)) return res;
+        return res?.workflows ?? res?.items ?? [];
       },
 
       async get(id: string): Promise<WorkflowDefinition> {
@@ -253,8 +254,9 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
 
       async list(): Promise<WorkflowMetrics[]> {
-        const res = await fetch<WorkflowMetricsListResponse>(METRICS_ENDPOINT);
-        return res?.workflows ?? [];
+        const res = await fetch<WorkflowMetrics[] | (WorkflowMetricsListResponse & { items?: WorkflowMetrics[] })>(METRICS_ENDPOINT);
+        if (Array.isArray(res)) return res;
+        return res?.workflows ?? res?.items ?? [];
       },
 
       async getAggregate(): Promise<AggregateMetrics> {

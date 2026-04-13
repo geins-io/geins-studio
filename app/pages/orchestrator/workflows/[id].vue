@@ -41,6 +41,9 @@ import {
   Plus,
   GripVertical,
   Search,
+  PanelRightClose,
+  PanelRightOpen,
+  RefreshCw,
 } from 'lucide-vue-next'
 import {
   Sheet,
@@ -56,6 +59,10 @@ import ConditionNode from '~/components/workflow/ConditionNode.vue'
 import DelayNode from '~/components/workflow/DelayNode.vue'
 import LoopNode from '~/components/workflow/LoopNode.vue'
 import TriggerNode from '~/components/workflow/TriggerNode.vue'
+
+definePageMeta({
+  pageType: 'list',
+})
 
 const route = useRoute()
 const router = useRouter()
@@ -248,6 +255,8 @@ const selectedNode = ref<any>(null)
 
 const onNodeClick = (event: any) => {
   selectedNode.value = event.node
+  activeTab.value = 'properties'
+  isSidebarOpen.value = true
 }
 
 const onPaneClick = () => {
@@ -327,6 +336,16 @@ const workflowDescription = ref('')
 const isRunning = ref(false)
 const isSaving = ref(false)
 const activeTab = ref<'properties' | 'executions'>('properties')
+const isSidebarOpen = ref(true)
+const executionsLoaded = ref(false)
+
+const openExecutionsTab = () => {
+  activeTab.value = 'executions'
+  if (!executionsLoaded.value && !isNew.value) {
+    executionsLoaded.value = true
+    loadExecutions()
+  }
+}
 
 // Execution history (real data from API)
 const { orchestratorApi } = useGeinsRepository()
@@ -358,12 +377,12 @@ const mapStatus = (status: string | undefined): 'success' | 'failed' | 'running'
   return s || 'unknown'
 }
 
-const { data: executionsRaw, pending: executionsLoading, refresh: refreshExecutions } = await useAsyncData(
+const { data: executionsRaw, pending: executionsLoading, execute: loadExecutions, refresh: refreshExecutions } = useLazyAsyncData(
   () => `workflow-executions-${workflowId.value}`,
   () => isNew.value
     ? Promise.resolve([])
     : orchestratorApi.execution.list({ workflowId: workflowId.value }),
-  { watch: [workflowId], default: () => [] },
+  { immediate: false, default: () => [] },
 )
 
 const executions = computed(() =>
@@ -415,7 +434,7 @@ const goBack = () => {
 </script>
 
 <template>
-  <div class="-m-6 flex h-[calc(100vh-3.5rem)]">
+  <div class="-m-6 flex h-[calc(100vh-3.5rem)] shrink-0">
     <!-- Main Canvas -->
     <div class="flex flex-1 flex-col">
       <!-- Toolbar -->
@@ -505,6 +524,11 @@ const goBack = () => {
             <Play class="h-4 w-4" :class="{ 'animate-pulse': isRunning }" />
             {{ isRunning ? 'Running...' : 'Run' }}
           </Button>
+          <button class="hover:bg-accent ml-1 rounded-md p-2" :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'"
+            @click="isSidebarOpen = !isSidebarOpen">
+            <PanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
+            <PanelRightOpen v-else class="h-4 w-4" />
+          </button>
         </div>
       </div>
 
@@ -527,7 +551,10 @@ const goBack = () => {
     </div>
 
     <!-- Right Sidebar: Properties / Executions -->
-    <div class="bg-background w-80 overflow-y-auto border-l">
+    <div
+      class="bg-background shrink-0 overflow-hidden border-l transition-[width] duration-200 ease-in-out"
+      :class="isSidebarOpen ? 'w-80' : 'w-0 border-l-0'">
+      <div class="h-full w-80 overflow-y-auto" style="scrollbar-gutter: stable;">
       <!-- Tabs -->
       <div class="flex border-b">
         <button class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
@@ -538,7 +565,7 @@ const goBack = () => {
         </button>
         <button class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
           :class="activeTab === 'executions' ? 'border-b-2 border-primary text-foreground' : 'text-muted-foreground hover:text-foreground'"
-          @click="activeTab = 'executions'">
+          @click="openExecutionsTab">
           <History class="mr-2 inline h-4 w-4" />
           Executions
         </button>
@@ -743,9 +770,31 @@ const goBack = () => {
 
       <!-- Executions Tab -->
       <div v-if="activeTab === 'executions'" class="p-4">
-        <div v-if="executionsLoading && executions.length === 0"
-          class="text-muted-foreground py-8 text-center text-sm">
-          Loading executions...
+        <div class="mb-3 flex items-center justify-between">
+          <span class="text-muted-foreground text-xs">
+            {{ executions.length }} execution{{ executions.length === 1 ? '' : 's' }}
+          </span>
+          <button
+            class="hover:bg-accent text-muted-foreground flex items-center gap-1.5 rounded-md px-2 py-1 text-xs disabled:opacity-50"
+            :disabled="executionsLoading"
+            title="Refresh executions"
+            @click="refreshExecutions()">
+            <RefreshCw class="h-3.5 w-3.5" :class="{ 'animate-spin': executionsLoading }" />
+            Refresh
+          </button>
+        </div>
+        <div v-if="executionsLoading && executions.length === 0" class="space-y-3">
+          <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
+            <div class="mb-2 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <Skeleton class="h-2 w-2 rounded-full" />
+                <Skeleton class="h-4 w-16" />
+              </div>
+              <Skeleton class="h-3 w-10" />
+            </div>
+            <Skeleton class="mb-1 h-3 w-40" />
+            <Skeleton class="h-3 w-24" />
+          </div>
         </div>
         <div v-else class="space-y-3">
           <NuxtLink v-for="execution in executions" :key="execution.id"
@@ -777,6 +826,7 @@ const goBack = () => {
             No executions yet
           </div>
         </div>
+      </div>
       </div>
     </div>
   </div>

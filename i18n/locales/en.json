@@ -346,6 +346,7 @@
     "success_rate_30d": "Success rate (30d)",
     "events": {
       "order": {
+        "activate": "Order activated",
         "created": "Order created",
         "update": "Order updated",
         "cancelled": "Order cancelled",
