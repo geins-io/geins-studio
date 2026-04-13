@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChannelMailSettings, ChannelMailType } from '#shared/types';
+import type { MailLayoutStagedFiles } from './ChannelMailLayoutTab.vue';
 
 withDefaults(
   defineProps<{
@@ -19,6 +20,13 @@ const generalFields = defineModel<Partial<ChannelMailSettings>>(
   'generalFields',
   { required: true },
 );
+const layoutFields = defineModel<Partial<ChannelMailSettings>>(
+  'layoutFields',
+  { required: true },
+);
+const layoutFiles = defineModel<MailLayoutStagedFiles>('layoutFiles', {
+  default: () => ({}),
+});
 
 const { t } = useI18n();
 </script>
@@ -48,7 +56,10 @@ const { t } = useI18n();
         <ChannelMailGeneralTab v-model="generalFields" />
       </TabsContent>
       <TabsContent value="layout">
-        <!-- filled by STU-118 -->
+        <ChannelMailLayoutTab
+          v-model="layoutFields"
+          v-model:staged-files="layoutFiles"
+        />
       </TabsContent>
     </Tabs>
   </ContentEditCard>

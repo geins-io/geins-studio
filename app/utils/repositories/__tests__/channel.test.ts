@@ -125,6 +125,40 @@ describe('accountRepo', () => {
       expect(parsed.name).toBe('updated');
     });
 
+    it('attaches mailSettings File values as parts named mailSettings.{field}', async () => {
+      const logo = new File(['logo'], 'logo.png', { type: 'image/png' });
+      const header = new File(['header'], 'header.png', { type: 'image/png' });
+      const data = buildChannelUpdate({
+        mailSettings: { logoUrl: logo, headerImgUrl: header },
+      });
+      mockFetch.mockResolvedValue(buildChannel());
+      await api.channel.update('123', data);
+
+      const formData: FormData = mockFetch.mock.calls[0][1].body;
+      expect(formData.get('mailSettings.logoUrl')).toBeInstanceOf(File);
+      expect(formData.get('mailSettings.headerImgUrl')).toBeInstanceOf(File);
+      const parsed = JSON.parse(formData.get('channel') as string);
+      expect(parsed.mailSettings.logoUrl).toBe('');
+      expect(parsed.mailSettings.headerImgUrl).toBe('');
+    });
+
+    it('leaves mailSettings string values untouched in the JSON part', async () => {
+      const data = buildChannelUpdate({
+        mailSettings: {
+          logoUrl: 'https://cdn/existing-logo.png',
+          displayName: 'Store',
+        },
+      });
+      mockFetch.mockResolvedValue(buildChannel());
+      await api.channel.update('123', data);
+
+      const formData: FormData = mockFetch.mock.calls[0][1].body;
+      expect(formData.get('mailSettings.logoUrl')).toBeNull();
+      const parsed = JSON.parse(formData.get('channel') as string);
+      expect(parsed.mailSettings.logoUrl).toBe('https://cdn/existing-logo.png');
+      expect(parsed.mailSettings.displayName).toBe('Store');
+    });
+
     it('non-file fields are serialized into the "channel" JSON part', async () => {
       const data = buildChannelUpdate({
         name: 'Test Name',

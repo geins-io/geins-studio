@@ -161,9 +161,10 @@ export interface ChannelMailSettings {
   fontSizeLarge?: string | null;
   lineHeight?: string | null;
   borderRadius?: string | null;
-  // Images (upload via multipart with `mailSettings.logoUrl` / `mailSettings.headerImgUrl` parts)
-  logoUrl?: string | null;
-  headerImgUrl?: string | null;
+  // Images — string on read, File when staged for multipart upload via
+  // `mailSettings.logoUrl` / `mailSettings.headerImgUrl` parts.
+  logoUrl?: string | File | null;
+  headerImgUrl?: string | File | null;
   // Product display
   prodImgSize?: string | null;
   showBrand?: boolean | null;

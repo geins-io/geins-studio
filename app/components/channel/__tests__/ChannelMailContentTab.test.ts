@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildMailType } from '../../../../test/fixtures';
 import { mountWithContext } from '../../../../test/helpers';
-import ChannelMailContentTab from '../ChannelMailContentTab.vue';
 import ChannelMailContentRow from '../ChannelMailContentRow.vue';
+import ChannelMailContentTab from '../ChannelMailContentTab.vue';
 
 describe('ChannelMailContentTab', () => {
   it('renders one row per mail type grouped by category', async () => {

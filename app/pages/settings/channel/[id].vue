@@ -136,14 +136,46 @@ const MAIL_GENERAL_KEYS = [
   'orderConfirmationExternalSource',
 ] as const satisfies readonly (keyof ChannelMailSettings)[];
 
-const mailGeneralFields = ref<Partial<ChannelMailSettings>>({});
+const MAIL_LAYOUT_KEYS = [
+  'backgroundColor',
+  'bodyColor',
+  'secondBodyColor',
+  'headerColor',
+  'footerColor',
+  'footerTextColor',
+  'textColor',
+  'saleTextColor',
+  'notIncludedTextColor',
+  'previouslyShippedTextColor',
+  'backOrderedTextColor',
+  'buttonColor',
+  'buttonTextColor',
+  'fontFamily',
+  'fontUrl',
+  'fontSizeSmall',
+  'fontSizeMedium',
+  'fontSizeLarge',
+  'lineHeight',
+  'borderRadius',
+  'logoUrl',
+  'headerImgUrl',
+  'prodImgSize',
+  'showBrand',
+  'productParameters',
+  'hideArticleNumber',
+] as const satisfies readonly (keyof ChannelMailSettings)[];
 
-function pickMailGeneral(
+const mailGeneralFields = ref<Partial<ChannelMailSettings>>({});
+const mailLayoutFields = ref<Partial<ChannelMailSettings>>({});
+const mailLayoutFiles = ref<{ logoUrl?: File; headerImgUrl?: File }>({});
+
+function pickMailKeys(
   settings: ChannelMailSettings | null,
+  keys: readonly (keyof ChannelMailSettings)[],
 ): Partial<ChannelMailSettings> {
   if (!settings) return {};
   const picked: Partial<ChannelMailSettings> = {};
-  for (const key of MAIL_GENERAL_KEYS) {
+  for (const key of keys) {
     const value = settings[key];
     if (value !== undefined) {
       (picked as Record<string, unknown>)[key] = value;
@@ -344,7 +376,15 @@ const {
     // Populate channel mail settings and mail types
     channelMailSettings.value = entity.mailSettings ?? null;
     channelMailTypes.value = entity.mailTypes ?? [];
-    mailGeneralFields.value = pickMailGeneral(entity.mailSettings ?? null);
+    mailGeneralFields.value = pickMailKeys(
+      entity.mailSettings ?? null,
+      MAIL_GENERAL_KEYS,
+    );
+    mailLayoutFields.value = pickMailKeys(
+      entity.mailSettings ?? null,
+      MAIL_LAYOUT_KEYS,
+    );
+    mailLayoutFiles.value = {};
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       name: entity.name,
@@ -482,6 +522,35 @@ watch(
   { deep: true },
 );
 
+// Merge Layout-tab mail fields into entityDataUpdate.mailSettings.
+watch(
+  mailLayoutFields,
+  (fields) => {
+    if (createMode.value) return;
+    entityDataUpdate.value.mailSettings = {
+      ...entityDataUpdate.value.mailSettings,
+      ...fields,
+    };
+  },
+  { deep: true },
+);
+
+// Staged files flip hasUnsavedChanges and end up in the multipart PATCH —
+// `channel.update()` scans `mailSettings` for File values and turns them
+// into multipart parts named `mailSettings.<key>`.
+watch(
+  mailLayoutFiles,
+  (files) => {
+    if (createMode.value) return;
+    entityDataUpdate.value.mailSettings = {
+      ...entityDataUpdate.value.mailSettings,
+      ...(files.logoUrl ? { logoUrl: files.logoUrl } : {}),
+      ...(files.headerImgUrl ? { headerImgUrl: files.headerImgUrl } : {}),
+    };
+  },
+  { deep: true },
+);
+
 // =====================================================================================
 // ERROR HANDLING SETUP
 // =====================================================================================
@@ -531,6 +600,9 @@ const handleSave = async () => {
 
   // Refresh the store so sidebar / list page reflect changes
   if (result) {
+    // Clear staged mail layout uploads — server response will have the new
+    // URLs on channelMailSettings.
+    mailLayoutFiles.value = {};
     await accountStore.refreshChannels();
   }
 };
@@ -887,6 +959,8 @@ if (!createMode.value) {
           >
             <ChannelMailsTab
               v-model:general-fields="mailGeneralFields"
+              v-model:layout-fields="mailLayoutFields"
+              v-model:layout-files="mailLayoutFiles"
               :mail-types="channelMailTypes"
               :loading="loading"
               @edit-mail-type="handleEditMailType"
