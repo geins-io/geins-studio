@@ -7,8 +7,6 @@ import {
   type StorefrontFont,
 } from '@/utils/storefrontFonts';
 
-defineOptions({ name: 'ChannelSchemaFieldFont' });
-
 const model = defineModel<string>();
 
 // Lazy-load font preview CSS when component mounts
