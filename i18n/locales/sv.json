@@ -9,6 +9,7 @@
   "user": "Användare | Användare",
   "channel": "Försäljningskanal | Försäljningskanaler",
   "market": "Marknad | Marknader",
+  "customer_type": "Kundtyp | Kundtyper",
   "language": "Språk | Språk",
   "country": "Land | Länder",
   "stock": "Lager | Lager",
@@ -37,6 +38,7 @@
   "account": "Konto | Konton",
   "message": "Meddelande | Meddelanden",
   "changelog_entry": "Ändringsloggpost | Ändringsloggposter",
+  "payment_method": "Betalningsmetod | Betalningsmetoder",
   "new_entity_url_alias": "ny",
   "list_entity_url_alias": "lista",
   "entity_id": "@:{entityName}-ID",
@@ -657,8 +659,6 @@
     "remove_language_description": "Är du säker på att du vill ta bort detta språk från kanalen? Ändringen träder i kraft när du sparar.",
     "remove_market": "Ta bort marknad",
     "remove_market_description": "Är du säker på att du vill ta bort denna marknad från kanalen? Ändringen träder i kraft när du sparar.",
-    "no_payment_methods": "Inga betalningsmetoder tillgängliga för denna kanal.",
-    "payment_markets_count": "Marknader: {count}",
-    "payment_customer_types_count": "Kundtyper: {count}"
+    "no_payment_methods": "Inga betalningsmetoder tillgängliga för denna kanal."
   }
 }
