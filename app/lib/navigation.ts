@@ -72,14 +72,18 @@ export const getNavigation = (
             children: [
               {
                 label: t('navigation.overview'),
-                href: '/orchestrator/workflows',
+                href: '/orchestrator',
               },
               {
                 label: t('navigation.workflows'),
                 href: '/orchestrator/workflows',
                 childPattern: '/orchestrator/workflows/:id',
               },
-              
+              {
+                label: t('navigation.executions'),
+                href: '/orchestrator/executions',
+              },
+
             ],
           } as NavigationItem,
         ]

@@ -305,7 +305,8 @@
     "channels": "Channels",
     "workflows": "Workflows",
     "orchestrator": "Orchestrator",
-    "overview": "Overview"
+    "overview": "Overview",
+    "executions": "Executions"
   },
   "workflows": {
     "total": "Total Workflows",
@@ -358,6 +359,17 @@
   },
   "orchestrator": {
     "description": "Overview of your workflows' health, performance, and executions."
+  },
+  "executions": {
+    "description": "View execution history and monitor workflow runs.",
+    "workflow_name": "Workflow",
+    "workflow_id": "Workflow ID",
+    "start_time": "Started",
+    "end_time": "Ended",
+    "duration": "Duration",
+    "errors": "Errors",
+    "nodes": "Nodes",
+    "test_run": "Test run"
   },
   "account_profile": {
     "login_credentials": "Login credentials",

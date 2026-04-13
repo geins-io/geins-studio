@@ -155,18 +155,40 @@ export interface WorkflowValidationError {
 
 // -- Executions -------------------------------------------------------------
 
+export interface ExecutionNodeExecution {
+  nodeId: string;
+  nodeName?: string;
+  nodeType: string;
+  activityName?: string | null;
+  status: string;
+  startTime?: string;
+  endTime?: string;
+  durationMs?: number;
+  retryCount?: number;
+  retryErrors?: string[] | null;
+  executionOrder?: number;
+  input?: Record<string, unknown> | null;
+  output?: Record<string, unknown> | null;
+}
+
 export interface ExecutionLog {
-  _id: string;
-  _type: string;
-  instanceId: string;
+  id: string;
   workflowId: string;
   workflowName: string;
-  status: ExecutionStatus;
-  startedAt: string;
-  completedAt?: string;
+  group?: string;
+  status: string;
+  startTime: string;
+  endTime?: string;
   durationMs?: number;
+  childExecutionIds?: string[] | null;
+  cascadeCancellation?: boolean;
+  idempotencyKey?: string | null;
+  replayOf?: string | null;
+  errors?: string[] | null;
+  errorCount?: number;
+  isTestRun?: boolean;
+  nodeExecutions?: ExecutionNodeExecution[] | null;
   startedBy?: string;
-  error?: string;
 }
 
 export interface ExecutionNodeResult {
@@ -184,7 +206,6 @@ export interface ExecutionNodeResult {
 
 export interface ExecutionDetails extends ExecutionLog {
   workflowVersion: number;
-  idempotencyKey?: string;
   parameters?: Record<string, unknown>;
   nodeResults: ExecutionNodeResult[];
   availableActions: string[];
@@ -269,6 +290,7 @@ export interface ListExecutionLogsOptions {
   startTime?: string;
   endTime?: string;
   limit?: number;
+  workflowId?: string;
 }
 
 export interface ListWorkflowExecutionsOptions {

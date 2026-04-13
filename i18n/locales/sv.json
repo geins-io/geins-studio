@@ -305,7 +305,8 @@
     "channels": "Kanaler",
     "workflows": "Arbetsflöden",
     "orchestrator": "Orkestrator",
-    "overview": "Översikt"
+    "overview": "Översikt",
+    "executions": "Körningar"
   },
   "workflows": {
     "total": "Totalt antal arbetsflöden",
@@ -354,6 +355,17 @@
   },
   "orchestrator": {
     "description": "Översikt över dina arbetsflödens hälsa, prestanda och körningar."
+  },
+  "executions": {
+    "description": "Visa körningshistorik och övervaka arbetsflödeskörningar.",
+    "workflow_name": "Arbetsflöde",
+    "workflow_id": "Arbetsflödes-ID",
+    "start_time": "Startad",
+    "end_time": "Avslutad",
+    "duration": "Varaktighet",
+    "errors": "Fel",
+    "nodes": "Noder",
+    "test_run": "Testkörning"
   },
   "account_profile": {
     "login_credentials": "Inloggningsuppgifter",

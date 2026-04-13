@@ -35,6 +35,24 @@ import type {
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE = '/orchestrator';
+
+function toCamelKey(key: string): string {
+  return key.charAt(0).toLowerCase() + key.slice(1);
+}
+
+function normalizeKeys<T>(value: unknown): T {
+  if (Array.isArray(value)) {
+    return value.map((v) => normalizeKeys(v)) as unknown as T;
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[toCamelKey(k)] = normalizeKeys(v);
+    }
+    return out as T;
+  }
+  return value as T;
+}
 const WORKFLOW_ENDPOINT = `${BASE}/workflows`;
 const EXECUTION_ENDPOINT = `${BASE}/executions`;
 const METRICS_ENDPOINT = `${BASE}/workflows/metrics`;
@@ -86,6 +104,10 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             body: data,
           },
         );
+      },
+
+      async listExecutions(id: string, options?: ListExecutionLogsOptions): Promise<ExecutionLog[]> {
+        return await fetch<ExecutionLog[]>(`${WORKFLOW_ENDPOINT}/${id}/logs`, { query: options });
       },
     },
 
@@ -179,13 +201,23 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         );
       },
 
-      async listLogs(
+      async list(
         options?: ListExecutionLogsOptions,
       ): Promise<ExecutionLog[]> {
-        return await fetch<ExecutionLog[]>(
-          `${EXECUTION_ENDPOINT}/logs`,
-          { query: options },
-        );
+        const url = options?.workflowId
+          ? `${WORKFLOW_ENDPOINT}/${options.workflowId}/logs`
+          : `${EXECUTION_ENDPOINT}/logs`;
+
+        const res = await fetch<unknown>(url, { query: options });
+
+        const raw = Array.isArray(res)
+          ? res
+          : (res as { logs?: unknown[]; executions?: unknown[]; items?: unknown[] })?.logs
+            ?? (res as { executions?: unknown[] })?.executions
+            ?? (res as { items?: unknown[] })?.items
+            ?? [];
+
+        return normalizeKeys<ExecutionLog[]>(raw);
       },
 
       async get(executionId: string): Promise<ExecutionDetails> {

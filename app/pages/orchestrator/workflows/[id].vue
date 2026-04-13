@@ -328,14 +328,54 @@ const isRunning = ref(false)
 const isSaving = ref(false)
 const activeTab = ref<'properties' | 'executions'>('properties')
 
-// Mock execution history
-const executions = ref([
-  { id: '1', status: 'success', startedAt: '2025-01-31 10:30:00', duration: '1.2s', trigger: 'Webhook' },
-  { id: '2', status: 'success', startedAt: '2025-01-31 10:15:00', duration: '0.8s', trigger: 'Webhook' },
-  { id: '3', status: 'failed', startedAt: '2025-01-31 09:45:00', duration: '2.1s', trigger: 'Webhook', error: 'HTTP 500 from external API' },
-  { id: '4', status: 'success', startedAt: '2025-01-31 09:30:00', duration: '1.5s', trigger: 'Webhook' },
-  { id: '5', status: 'success', startedAt: '2025-01-31 09:00:00', duration: '0.9s', trigger: 'Manual' },
-])
+// Execution history (real data from API)
+const { orchestratorApi } = useGeinsRepository()
+
+const pad = (n: number, len = 2) => String(n).padStart(len, '0')
+
+const formatStartedAt = (iso: string | undefined): string => {
+  if (!iso) return '–'
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`
+}
+
+const formatDuration = (ms: number | undefined): string => {
+  if (ms === undefined || ms === null) return '–'
+  if (ms < 1000) return `${ms}ms`
+  const seconds = ms / 1000
+  if (seconds < 60) return `${seconds.toFixed(1)}s`
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = Math.round(seconds % 60)
+  return `${minutes}m ${remainingSeconds}s`
+}
+
+const mapStatus = (status: string | undefined): 'success' | 'failed' | 'running' | string => {
+  const s = (status ?? '').toLowerCase()
+  if (s === 'completed') return 'success'
+  if (s === 'failed' || s === 'timedout' || s === 'canceled' || s === 'cancelled') return 'failed'
+  if (s === 'running' || s === 'pending' || s === 'suspended') return 'running'
+  return s || 'unknown'
+}
+
+const { data: executionsRaw, pending: executionsLoading, refresh: refreshExecutions } = await useAsyncData(
+  () => `workflow-executions-${workflowId.value}`,
+  () => isNew.value
+    ? Promise.resolve([])
+    : orchestratorApi.execution.list({ workflowId: workflowId.value }),
+  { watch: [workflowId], default: () => [] },
+)
+
+const executions = computed(() =>
+  (executionsRaw.value ?? []).map((e: any) => ({
+    id: e.id,
+    status: mapStatus(e.status),
+    startedAt: formatStartedAt(e.startTime),
+    duration: formatDuration(e.durationMs),
+    trigger: e.startedBy || (e.isTestRun ? 'Test run' : 'Scheduled'),
+    error: Array.isArray(e.errors) && e.errors.length > 0 ? e.errors[0] : undefined,
+  })),
+)
 
 const saveWorkflow = async () => {
   isSaving.value = true
@@ -358,20 +398,15 @@ const saveWorkflow = async () => {
 }
 
 const runWorkflow = async () => {
+  if (isNew.value) return
   isRunning.value = true
-  await new Promise(resolve => setTimeout(resolve, 2000))
-
-  // Add new execution to history
-  executions.value.unshift({
-    id: Date.now().toString(),
-    status: Math.random() > 0.2 ? 'success' : 'failed',
-    startedAt: new Date().toLocaleString(),
-    duration: `${(Math.random() * 2 + 0.5).toFixed(1)}s`,
-    trigger: 'Manual',
-    error: undefined,
-  })
-
-  isRunning.value = false
+  try {
+    await orchestratorApi.execution.start(workflowId.value)
+    await refreshExecutions()
+  }
+  finally {
+    isRunning.value = false
+  }
 }
 
 const goBack = () => {
@@ -708,9 +743,14 @@ const goBack = () => {
 
       <!-- Executions Tab -->
       <div v-if="activeTab === 'executions'" class="p-4">
-        <div class="space-y-3">
-          <div v-for="execution in executions" :key="execution.id"
-            class="hover:bg-muted/50 cursor-pointer rounded-lg border p-3 transition-colors">
+        <div v-if="executionsLoading && executions.length === 0"
+          class="text-muted-foreground py-8 text-center text-sm">
+          Loading executions...
+        </div>
+        <div v-else class="space-y-3">
+          <NuxtLink v-for="execution in executions" :key="execution.id"
+            :to="`/orchestrator/executions/${execution.id}`"
+            class="hover:bg-muted/50 block cursor-pointer rounded-lg border p-3 transition-colors">
             <div class="mb-1 flex items-center justify-between">
               <div class="flex items-center gap-2">
                 <div class="h-2 w-2 rounded-full" :class="{
@@ -722,7 +762,7 @@ const goBack = () => {
               </div>
               <span class="text-muted-foreground text-xs">{{ execution.duration }}</span>
             </div>
-            <div class="text-muted-foreground text-xs">
+            <div class="text-muted-foreground font-mono text-xs">
               {{ execution.startedAt }}
             </div>
             <div class="text-muted-foreground text-xs">
@@ -731,7 +771,7 @@ const goBack = () => {
             <div v-if="execution.error" class="mt-2 rounded bg-red-500/10 px-2 py-1 text-xs text-red-500">
               {{ execution.error }}
             </div>
-          </div>
+          </NuxtLink>
 
           <div v-if="executions.length === 0" class="text-muted-foreground py-8 text-center text-sm">
             No executions yet
