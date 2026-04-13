@@ -683,6 +683,8 @@
     "mail_load_texts_error": "Kunde inte ladda mejltexter",
     "mail_save_error": "Kunde inte spara mejltexter",
     "mail_no_texts": "Inga textnycklar tillgängliga för den här mallen.",
+    "mail_preview_refresh": "Uppdatera förhandsgranskning",
+    "mail_preview_error": "Kunde inte ladda förhandsgranskning",
     "identifier_helper": "Genereras automatiskt från namnet vid skapande.",
     "url_helper": "Att ändra URL:en bryter befintliga länkar.",
     "invalid_url": "Ange en giltig URL",

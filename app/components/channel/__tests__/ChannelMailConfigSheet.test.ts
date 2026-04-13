@@ -104,6 +104,51 @@ describe('ChannelMailConfigSheet', () => {
     });
   });
 
+  it('does not call mail.preview when the sheet opens on the Edit tab', async () => {
+    mailApi.getTexts.mockResolvedValue({
+      mailType: 'OrderConfirmation',
+      language: 'en',
+      texts: [],
+    });
+    await mountWithContext(ChannelMailConfigSheet, {
+      props: baseProps as Record<string, unknown>,
+    });
+    await flush();
+    expect(mailApi.preview).not.toHaveBeenCalled();
+  });
+
+  it('calls mail.preview when the user activates the Preview tab', async () => {
+    mailApi.getTexts.mockResolvedValue({
+      mailType: 'OrderConfirmation',
+      language: 'en',
+      texts: [],
+    });
+    mailApi.preview.mockResolvedValue('<p>preview</p>');
+
+    await mountWithContext(ChannelMailConfigSheet, {
+      props: baseProps as Record<string, unknown>,
+    });
+    await flush();
+
+    const previewTrigger = Array.from(
+      document.body.querySelectorAll('[data-slot="tabs-trigger"]'),
+    ).find((b) => b.textContent?.includes('preview_tab'));
+    (previewTrigger as HTMLElement).dispatchEvent(
+      new MouseEvent('mousedown', { bubbles: true, button: 0 }),
+    );
+    (previewTrigger as HTMLElement).dispatchEvent(
+      new MouseEvent('mouseup', { bubbles: true, button: 0 }),
+    );
+    (previewTrigger as HTMLElement).click();
+    await flush();
+    await flush();
+
+    expect(mailApi.preview).toHaveBeenCalledWith('OrderConfirmation', {
+      language: 'en',
+    });
+  });
+
+
   it('restore-to-default sends an empty string for every overridden key', async () => {
     mailApi.getTexts.mockResolvedValue({
       mailType: 'OrderConfirmation',

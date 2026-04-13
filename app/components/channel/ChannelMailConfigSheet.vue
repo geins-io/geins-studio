@@ -33,6 +33,13 @@ const localOverrides = ref<Record<string, string>>({});
 const loading = ref(false);
 const saving = ref(false);
 
+// Preview tab state — lazy: only fetched the first time the tab is shown
+// or when the user explicitly refreshes / changes language.
+const previewHtml = ref('');
+const previewLoading = ref(false);
+const previewError = ref(false);
+const previewLoaded = ref(false);
+
 watch(
   () => props.defaultLanguage,
   (lang) => {
@@ -66,14 +73,47 @@ watch(
     if (isOpen && type) {
       activeTab.value = 'edit';
       selectedLanguage.value = props.defaultLanguage;
+      previewLoaded.value = false;
+      previewHtml.value = '';
+      previewError.value = false;
       fetchTexts();
     }
   },
   { immediate: true },
 );
 
+async function fetchPreview() {
+  if (!props.mailType || !props.channelId) return;
+  previewLoading.value = true;
+  previewError.value = false;
+  try {
+    previewHtml.value = await accountApi.channel
+      .id(props.channelId)
+      .mail.preview(props.mailType.type, { language: selectedLanguage.value });
+  } catch {
+    previewError.value = true;
+  } finally {
+    previewLoading.value = false;
+  }
+}
+
+watch(activeTab, async (tab) => {
+  if (tab === 'preview' && !previewLoaded.value) {
+    await fetchPreview();
+    previewLoaded.value = true;
+  }
+});
+
+async function refreshPreview() {
+  previewLoaded.value = false;
+  await fetchPreview();
+  previewLoaded.value = true;
+}
+
 watch(selectedLanguage, (val, prev) => {
-  if (val !== prev && open.value) fetchTexts();
+  if (val === prev || !open.value) return;
+  fetchTexts();
+  if (activeTab.value === 'preview') fetchPreview();
 });
 
 function prettifyKey(key: string): string {
@@ -272,9 +312,47 @@ const categoryLabel = computed(() => {
           </SheetFooter>
         </TabsContent>
 
-        <!-- Preview tab — filled by STU-122 -->
+        <!-- Preview tab -->
         <TabsContent value="preview" class="flex min-h-0 flex-1 flex-col">
-          <SheetBody />
+          <SheetBody class="flex flex-col gap-3">
+            <div class="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                :disabled="previewLoading"
+                @click="refreshPreview"
+              >
+                <LucideRefreshCw class="mr-2 size-4" />
+                {{ t('channels.mail_preview_refresh') }}
+              </Button>
+            </div>
+
+            <Skeleton
+              v-if="previewLoading"
+              class="w-full rounded-md"
+              style="height: 600px"
+            />
+
+            <div
+              v-else-if="previewError"
+              class="text-destructive flex flex-col items-center gap-2 py-8"
+            >
+              <LucideAlertCircle class="size-6" />
+              <p class="text-sm">{{ t('channels.mail_preview_error') }}</p>
+              <Button variant="outline" size="sm" @click="fetchPreview">
+                {{ t('retry') }}
+              </Button>
+            </div>
+
+            <iframe
+              v-else
+              :srcdoc="previewHtml"
+              sandbox=""
+              class="w-full rounded-md border"
+              style="height: 600px"
+              :title="t('channels.mail_preview_tab')"
+            />
+          </SheetBody>
         </TabsContent>
       </Tabs>
     </SheetContent>

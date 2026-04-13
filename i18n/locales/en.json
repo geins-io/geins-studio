@@ -687,6 +687,8 @@
     "mail_load_texts_error": "Failed to load mail texts",
     "mail_save_error": "Failed to save mail texts",
     "mail_no_texts": "No text keys available for this template.",
+    "mail_preview_refresh": "Refresh preview",
+    "mail_preview_error": "Failed to load mail preview",
     "identifier_helper": "Generated automatically from the name on creation.",
     "url_helper": "Changing the URL will break existing links.",
     "invalid_url": "Please enter a valid URL",
