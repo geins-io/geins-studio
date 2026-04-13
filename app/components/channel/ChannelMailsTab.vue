@@ -3,7 +3,6 @@ import type { ChannelMailSettings, ChannelMailType } from '#shared/types';
 
 withDefaults(
   defineProps<{
-    mailSettings: ChannelMailSettings | null;
     mailTypes: ChannelMailType[];
     loading?: boolean;
   }>(),
@@ -12,16 +11,20 @@ withDefaults(
   },
 );
 
+const emit = defineEmits<{
+  'edit-mail-type': [mailType: ChannelMailType];
+}>();
+
+const generalFields = defineModel<Partial<ChannelMailSettings>>(
+  'generalFields',
+  { required: true },
+);
+
 const { t } = useI18n();
 </script>
 
 <template>
   <ContentEditCard :title="t('channels.tab_mails')">
-    <template #header-action>
-      <Button variant="ghost" size="icon" disabled>
-        <LucideSettings class="size-4" />
-      </Button>
-    </template>
     <Tabs default-value="mail-content">
       <TabsList>
         <TabsTrigger value="mail-content">
@@ -35,10 +38,14 @@ const { t } = useI18n();
         </TabsTrigger>
       </TabsList>
       <TabsContent value="mail-content">
-        <!-- filled by STU-112 -->
+        <ChannelMailContentTab
+          :mail-types="mailTypes"
+          :loading="loading"
+          @edit="emit('edit-mail-type', $event)"
+        />
       </TabsContent>
       <TabsContent value="general">
-        <!-- filled by STU-119 -->
+        <ChannelMailGeneralTab v-model="generalFields" />
       </TabsContent>
       <TabsContent value="layout">
         <!-- filled by STU-118 -->

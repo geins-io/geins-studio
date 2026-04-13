@@ -121,6 +121,45 @@ const channelPayments = ref<ChannelPaymentMethod[]>([]);
 const channelMailSettings = ref<ChannelMailSettings | null>(null);
 const channelMailTypes = ref<ChannelMailType[]>([]);
 
+// Keys owned by the General sub-tab (STU-119). Layout sub-tab (STU-118) owns
+// the rest. Both merge into the same flat `mailSettings` object.
+const MAIL_GENERAL_KEYS = [
+  'displayName',
+  'fromEmailAddress',
+  'disabled',
+  'locale',
+  'loginUrl',
+  'passwordResetUrl',
+  'orderConfirmationBCCEmail',
+  'externalSourceVerificationTag',
+  'emailReplyToCustomer',
+  'orderConfirmationExternalSource',
+] as const satisfies readonly (keyof ChannelMailSettings)[];
+
+const mailGeneralFields = ref<Partial<ChannelMailSettings>>({});
+
+function pickMailGeneral(
+  settings: ChannelMailSettings | null,
+): Partial<ChannelMailSettings> {
+  if (!settings) return {};
+  const picked: Partial<ChannelMailSettings> = {};
+  for (const key of MAIL_GENERAL_KEYS) {
+    const value = settings[key];
+    if (value !== undefined) {
+      (picked as Record<string, unknown>)[key] = value;
+    }
+  }
+  return picked;
+}
+
+// Active mail type — used by STU-120 to open the configuration sheet.
+const activeMailType = ref<ChannelMailType | null>(null);
+
+function handleEditMailType(mailType: ChannelMailType) {
+  activeMailType.value = mailType;
+  // STU-120 opens the ChannelMailConfigSheet here.
+}
+
 const defaultLanguage = computed(() => {
   if (!defaultLanguageId.value) return undefined;
   return allLanguages.value.find((l) => l._id === defaultLanguageId.value);
@@ -305,6 +344,7 @@ const {
     // Populate channel mail settings and mail types
     channelMailSettings.value = entity.mailSettings ?? null;
     channelMailTypes.value = entity.mailTypes ?? [];
+    mailGeneralFields.value = pickMailGeneral(entity.mailSettings ?? null);
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       name: entity.name,
@@ -423,6 +463,21 @@ watch(
         active: p.active,
       }));
     }
+  },
+  { deep: true },
+);
+
+// Merge General-tab mail fields into entityDataUpdate.mailSettings so
+// useUnsavedChanges detects changes. Spread pattern — must not clobber
+// Layout-tab fields (STU-118).
+watch(
+  mailGeneralFields,
+  (fields) => {
+    if (createMode.value) return;
+    entityDataUpdate.value.mailSettings = {
+      ...entityDataUpdate.value.mailSettings,
+      ...fields,
+    };
   },
   { deep: true },
 );
@@ -831,9 +886,10 @@ if (!createMode.value) {
             :key="`tab-${currentTab}`"
           >
             <ChannelMailsTab
-              :mail-settings="channelMailSettings"
+              v-model:general-fields="mailGeneralFields"
               :mail-types="channelMailTypes"
               :loading="loading"
+              @edit-mail-type="handleEditMailType"
             />
           </ContentEditMainContent>
         </KeepAlive>

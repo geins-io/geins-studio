@@ -7,7 +7,7 @@ describe('ChannelMailsTab', () => {
   it('renders the three sub-tab triggers', async () => {
     const component = await mountWithContext(ChannelMailsTab, {
       props: {
-        mailSettings: buildMailSettings(),
+        generalFields: buildMailSettings(),
         mailTypes: [buildMailType()],
       },
     });
@@ -15,10 +15,10 @@ describe('ChannelMailsTab', () => {
     expect(triggers).toHaveLength(3);
   });
 
-  it('renders without crashing when mailSettings is null and mailTypes is empty', async () => {
+  it('renders without crashing when generalFields is empty and mailTypes is empty', async () => {
     const component = await mountWithContext(ChannelMailsTab, {
       props: {
-        mailSettings: null,
+        generalFields: {},
         mailTypes: [],
       },
     });
