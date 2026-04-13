@@ -184,12 +184,10 @@ function pickMailKeys(
   return picked;
 }
 
-// Active mail type — used by STU-120 to open the configuration sheet.
-const activeMailType = ref<ChannelMailType | null>(null);
-
-function handleEditMailType(mailType: ChannelMailType) {
-  activeMailType.value = mailType;
-  // STU-120 opens the ChannelMailConfigSheet here.
+async function handleMailSaved() {
+  // A mail template text override was saved from the config sheet — refresh
+  // the channel data so the `hasOverrides` indicator on rows stays in sync.
+  await refreshEntityData.value?.();
 }
 
 const defaultLanguage = computed(() => {
@@ -963,7 +961,10 @@ if (!createMode.value) {
               v-model:layout-files="mailLayoutFiles"
               :mail-types="channelMailTypes"
               :loading="loading"
-              @edit-mail-type="handleEditMailType"
+              :channel-id="entityId ?? ''"
+              :languages="allLanguages"
+              :default-language="defaultLanguageId"
+              @mail-saved="handleMailSaved"
             />
           </ContentEditMainContent>
         </KeepAlive>

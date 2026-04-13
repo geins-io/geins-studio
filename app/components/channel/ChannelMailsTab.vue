@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import type { ChannelMailSettings, ChannelMailType } from '#shared/types';
+import type {
+  ChannelMailSettings,
+  ChannelMailType,
+  Language,
+} from '#shared/types';
 import type { MailLayoutStagedFiles } from './ChannelMailLayoutTab.vue';
 
 withDefaults(
   defineProps<{
     mailTypes: ChannelMailType[];
     loading?: boolean;
+    channelId: string;
+    languages: Language[];
+    defaultLanguage: string;
   }>(),
   {
     loading: false,
@@ -13,7 +20,7 @@ withDefaults(
 );
 
 const emit = defineEmits<{
-  'edit-mail-type': [mailType: ChannelMailType];
+  'mail-saved': [];
 }>();
 
 const generalFields = defineModel<Partial<ChannelMailSettings>>(
@@ -29,6 +36,18 @@ const layoutFiles = defineModel<MailLayoutStagedFiles>('layoutFiles', {
 });
 
 const { t } = useI18n();
+
+const sheetOpen = ref(false);
+const activeMailType = ref<ChannelMailType | null>(null);
+
+function handleEditMailType(mailType: ChannelMailType) {
+  activeMailType.value = mailType;
+  sheetOpen.value = true;
+}
+
+function handleSaved() {
+  emit('mail-saved');
+}
 </script>
 
 <template>
@@ -49,7 +68,7 @@ const { t } = useI18n();
         <ChannelMailContentTab
           :mail-types="mailTypes"
           :loading="loading"
-          @edit="emit('edit-mail-type', $event)"
+          @edit="handleEditMailType"
         />
       </TabsContent>
       <TabsContent value="general">
@@ -63,4 +82,13 @@ const { t } = useI18n();
       </TabsContent>
     </Tabs>
   </ContentEditCard>
+
+  <ChannelMailConfigSheet
+    v-model:open="sheetOpen"
+    :channel-id="channelId"
+    :mail-type="activeMailType"
+    :languages="languages"
+    :default-language="defaultLanguage"
+    @saved="handleSaved"
+  />
 </template>
