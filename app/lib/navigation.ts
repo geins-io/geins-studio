@@ -66,19 +66,20 @@ export const getNavigation = (
       ? [
           {
             label: t('navigation.orchestrator'),
-            href: '/orchestrator/overview',
+            href: '/orchestrator',
             icon: 'Workflow',
             group: 'workspace',
             children: [
               {
                 label: t('navigation.overview'),
-                href: '/orchestrator/overview',
+                href: '/orchestrator/workflows',
               },
               {
                 label: t('navigation.workflows'),
                 href: '/orchestrator/workflows',
                 childPattern: '/orchestrator/workflows/:id',
               },
+              
             ],
           } as NavigationItem,
         ]
