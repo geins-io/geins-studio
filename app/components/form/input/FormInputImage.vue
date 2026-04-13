@@ -1,6 +1,4 @@
 <script setup lang="ts">
-defineOptions({ name: 'ChannelSchemaFieldImage' });
-
 const props = defineProps<{
   modelValue?: string | File | null;
   disabled?: boolean;
@@ -13,7 +11,6 @@ const emit = defineEmits<{
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFileName = ref<string | null>(null);
 const localPreviewUrl = ref<string | null>(null);
-const isDragging = ref(false);
 
 const previewUrl = computed(() => {
   if (localPreviewUrl.value) return localPreviewUrl.value;
@@ -73,6 +70,8 @@ function onDragOver() {
 function onDragLeave() {
   isDragging.value = false;
 }
+
+const isDragging = ref(false);
 
 onBeforeUnmount(() => {
   if (localPreviewUrl.value) URL.revokeObjectURL(localPreviewUrl.value);

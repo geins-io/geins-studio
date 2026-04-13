@@ -123,7 +123,7 @@ function isVisible(field: SchemaField): boolean {
   <!-- font -->
   <div v-else-if="field.type === 'font'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
-    <ChannelSchemaFieldFont
+    <FormInputFont
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       @update:model-value="updateValue(field.key, $event)"
     />
@@ -135,7 +135,7 @@ function isVisible(field: SchemaField): boolean {
   <!-- color -->
   <div v-else-if="field.type === 'color'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
-    <ChannelSchemaFieldColor
+    <FormInputColor
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       :label="field.label"
       @update:model-value="updateValue(field.key, $event)"
@@ -148,7 +148,7 @@ function isVisible(field: SchemaField): boolean {
   <!-- image -->
   <div v-else-if="field.type === 'image'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
-    <ChannelSchemaFieldImage
+    <FormInputImage
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       :disabled="field.disabled"
       @update:model-value="updateValue(field.key, $event)"
@@ -161,7 +161,7 @@ function isVisible(field: SchemaField): boolean {
   <!-- radio-cards -->
   <div v-else-if="field.type === 'radio-cards'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
-    <ChannelSchemaFieldRadioCards
+    <FormInputRadioCards
       :options="field.options ?? []"
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       @update:model-value="updateValue(field.key, $event)"
