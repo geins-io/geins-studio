@@ -5,7 +5,7 @@ import ChannelMailContentRow from '../ChannelMailContentRow.vue';
 import ChannelMailContentTab from '../ChannelMailContentTab.vue';
 
 describe('ChannelMailContentTab', () => {
-  it('renders one row per mail type grouped by category', async () => {
+  it('renders one row per mail type in a flat list', async () => {
     const mailTypes = [
       buildMailType({ type: 'OrderConfirmation', category: 'Order' }),
       buildMailType({
