@@ -306,7 +306,8 @@
     "workflows": "Workflows",
     "orchestrator": "Orchestrator",
     "overview": "Overview",
-    "executions": "Executions"
+    "executions": "Executions",
+    "variables": "Variables"
   },
   "workflows": {
     "total": "Total Workflows",
@@ -372,6 +373,13 @@
     "errors": "Errors",
     "nodes": "Nodes",
     "test_run": "Test run"
+  },
+  "variables": {
+    "description": "Shared values available to all workflows — use for API keys, credentials, and environment configuration.",
+    "key": "Key",
+    "value": "Value",
+    "description_col": "Description",
+    "secret": "Secret"
   },
   "account_profile": {
     "login_credentials": "Login credentials",

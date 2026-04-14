@@ -7,6 +7,8 @@ import type {
   ExecutionLog,
   ExecutionDetails,
   ExecutionDetailsResponse,
+  BulkEnableDisableRequest,
+  BulkWorkflowOperationResponse,
   ReplayChain,
   ConcurrencyState,
   StartWorkflowRequest,
@@ -110,6 +112,34 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
       async listExecutions(id: string, options?: ListExecutionLogsOptions): Promise<ExecutionLog[]> {
         return await fetch<ExecutionLog[]>(`${WORKFLOW_ENDPOINT}/${id}/logs`, { query: options });
+      },
+
+      async enable(id: string): Promise<void> {
+        await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}/enable`, { method: 'POST' });
+      },
+
+      async disable(id: string): Promise<void> {
+        await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}/disable`, { method: 'POST' });
+      },
+
+      async bulkEnable(workflowIds: string[]): Promise<BulkWorkflowOperationResponse> {
+        const raw = await fetch<unknown>(`${WORKFLOW_ENDPOINT}/bulk-enable`, {
+          method: 'POST',
+          body: { workflowIds } satisfies BulkEnableDisableRequest,
+        });
+        const { geinsLog } = useGeinsLog('orchestratorRepo.bulkEnable');
+        geinsLog('raw response', raw);
+        return normalizeKeys<BulkWorkflowOperationResponse>(raw);
+      },
+
+      async bulkDisable(workflowIds: string[]): Promise<BulkWorkflowOperationResponse> {
+        const raw = await fetch<unknown>(`${WORKFLOW_ENDPOINT}/bulk-disable`, {
+          method: 'POST',
+          body: { workflowIds } satisfies BulkEnableDisableRequest,
+        });
+        const { geinsLog } = useGeinsLog('orchestratorRepo.bulkDisable');
+        geinsLog('raw response', raw);
+        return normalizeKeys<BulkWorkflowOperationResponse>(raw);
       },
     },
 
@@ -319,22 +349,30 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
     variable: {
       async list(): Promise<WorkflowVariable[]> {
-        return await fetch<WorkflowVariable[]>(VARIABLE_ENDPOINT);
+        const res = await fetch<unknown>(VARIABLE_ENDPOINT);
+        const raw = Array.isArray(res)
+          ? res
+          : (res as { variables?: unknown[]; items?: unknown[] })?.variables
+            ?? (res as { items?: unknown[] })?.items
+            ?? [];
+        return normalizeKeys<WorkflowVariable[]>(raw);
       },
 
       async get(key: string): Promise<WorkflowVariable> {
-        return await fetch<WorkflowVariable>(`${VARIABLE_ENDPOINT}/${key}`);
+        const raw = await fetch<unknown>(`${VARIABLE_ENDPOINT}/${encodeURIComponent(key)}`);
+        return normalizeKeys<WorkflowVariable>(raw);
       },
 
       async save(data: SaveVariableRequest): Promise<WorkflowVariable> {
-        return await fetch<WorkflowVariable>(VARIABLE_ENDPOINT, {
+        const raw = await fetch<unknown>(VARIABLE_ENDPOINT, {
           method: 'POST',
           body: data,
         });
+        return normalizeKeys<WorkflowVariable>(raw);
       },
 
       async delete(key: string): Promise<void> {
-        await fetch<null>(`${VARIABLE_ENDPOINT}/${key}`, {
+        await fetch<null>(`${VARIABLE_ENDPOINT}/${encodeURIComponent(key)}`, {
           method: 'DELETE',
         });
       },

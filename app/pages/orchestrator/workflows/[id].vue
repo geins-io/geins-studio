@@ -15,7 +15,6 @@ import '@vue-flow/minimap/dist/style.css'
 import {
   Play,
   Save,
-  ArrowLeft,
   Zap,
   Mail,
   MessageSquare,
@@ -428,9 +427,6 @@ const runWorkflow = async () => {
   }
 }
 
-const goBack = () => {
-  router.push('/orchestrator/workflows/list')
-}
 </script>
 
 <template>
@@ -440,9 +436,6 @@ const goBack = () => {
       <!-- Toolbar -->
       <div class="bg-background flex items-center justify-between border-b px-4 py-2">
         <div class="flex items-center gap-4">
-          <button class="hover:bg-accent rounded-md p-2" @click="goBack">
-            <ArrowLeft class="h-4 w-4" />
-          </button>
           <div>
             <input v-model="workflowName" type="text"
               class="focus:ring-ring rounded bg-transparent px-2 py-1 text-lg font-semibold focus:ring-2 focus:outline-none" />
@@ -452,69 +445,6 @@ const goBack = () => {
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <!-- Add Node Button with Sheet -->
-          <Sheet v-model:open="isNodePaletteOpen">
-            <SheetTrigger as-child>
-              <Button variant="outline" size="sm">
-                <Plus class="h-4 w-4" />
-                Add Node
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" width="medium">
-              <SheetHeader>
-                <SheetTitle>Add Node</SheetTitle>
-                <SheetDescription>
-                  Drag a node to the canvas or click to add at center
-                </SheetDescription>
-              </SheetHeader>
-              <SheetBody class="p-0">
-                <!-- Search -->
-                <div class="bg-background sticky top-0 border-b p-4">
-                  <div class="relative">
-                    <Search class="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                    <input v-model="nodeSearchQuery" type="text" placeholder="Search nodes..."
-                      class="bg-background focus:ring-ring w-full rounded-md border px-9 py-2 text-sm focus:ring-2 focus:outline-none" />
-                  </div>
-                </div>
-
-                <!-- Node Categories -->
-                <div class="space-y-6 p-4">
-                  <div v-for="category in filteredNodeTemplates" :key="category.category">
-                    <div class="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
-                      {{ category.category }}
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                      <div v-for="item in category.items" :key="item.id" draggable="true"
-                        class="hover:bg-accent hover:border-accent-foreground/20 group flex cursor-grab items-center gap-3 rounded-lg border px-3 py-3 transition-all"
-                        @dragstart="(e) => onDragStart(e, item, category.type)"
-                        @click="quickAddNode(item, category.type)">
-                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg" :class="{
-                          'bg-green-500/10 text-green-500': category.type === 'trigger',
-                          'bg-blue-500/10 text-blue-500': category.type === 'action',
-                          'bg-yellow-500/10 text-yellow-500': category.type === 'condition',
-                          'bg-purple-500/10 text-purple-500': category.type === 'loop',
-                          'bg-orange-500/10 text-orange-500': category.type === 'delay',
-                        }">
-                          <component :is="item.icon" class="h-5 w-5" />
-                        </div>
-                        <div class="min-w-0 flex-1">
-                          <div class="truncate text-sm font-medium">{{ item.label }}</div>
-                          <div class="text-muted-foreground truncate text-xs">{{ item.description }}</div>
-                        </div>
-                        <GripVertical
-                          class="text-muted-foreground h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Empty state -->
-                  <div v-if="filteredNodeTemplates.length === 0" class="text-muted-foreground py-8 text-center">
-                    No nodes match your search
-                  </div>
-                </div>
-              </SheetBody>
-            </SheetContent>
-          </Sheet>
 
           <Button variant="outline" size="sm" :disabled="isSaving" @click="saveWorkflow">
             <Save class="h-4 w-4" />

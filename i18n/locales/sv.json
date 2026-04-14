@@ -306,7 +306,8 @@
     "workflows": "Arbetsflöden",
     "orchestrator": "Orkestrator",
     "overview": "Översikt",
-    "executions": "Körningar"
+    "executions": "Körningar",
+    "variables": "Variabler"
   },
   "workflows": {
     "total": "Totalt antal arbetsflöden",
@@ -368,6 +369,13 @@
     "errors": "Fel",
     "nodes": "Noder",
     "test_run": "Testkörning"
+  },
+  "variables": {
+    "description": "Delade värden tillgängliga för alla arbetsflöden — använd för API-nycklar, behörigheter och miljökonfiguration.",
+    "key": "Nyckel",
+    "value": "Värde",
+    "description_col": "Beskrivning",
+    "secret": "Hemlig"
   },
   "account_profile": {
     "login_credentials": "Inloggningsuppgifter",

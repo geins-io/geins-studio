@@ -267,6 +267,19 @@ export interface StartWorkflowRequest {
   startedBy?: string;
 }
 
+export interface BulkEnableDisableRequest {
+  workflowIds: string[];
+}
+
+export interface BulkWorkflowOperationResponse {
+  totalProcessed: number;
+  successful: number;
+  failed: number;
+  successfulWorkflowIds: string[];
+  failedWorkflowIds: string[];
+  errors?: Record<string, string>;
+}
+
 export interface StartWorkflowResponse {
   success?: boolean;
   status?: string;

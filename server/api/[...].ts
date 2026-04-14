@@ -62,6 +62,12 @@ export default defineEventHandler(async (event) => {
     return proxyRequest(event, fetchUrl, { headers: apiHeaders });
   }
 
+  // Stream endpoints (e.g. /orchestrator/executions/:id/stream) need to be
+  // piped through without buffering so the client gets incremental chunks.
+  if (targetUrl.endsWith('/stream')) {
+    return proxyRequest(event, fetchUrl, { headers: apiHeaders });
+  }
+
   let body;
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
     body = await readBody(event);

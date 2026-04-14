@@ -4,6 +4,7 @@ import type {
   AggregateMetrics,
   HealthStatus,
 } from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
 import { Avatar, AvatarFallback } from '~/components/ui/avatar';
 import {
   Card,
@@ -29,6 +30,7 @@ interface WorkflowGroupCard {
   executionsTotal: number;
   successRate: number;
   workflowIds: string[];
+  toggleableWorkflowIds: string[];
   allEnabled: boolean;
   isStandalone: boolean;
 }
@@ -41,20 +43,44 @@ definePageMeta({
 
 // ─── Global Setup ──────────────────────────────────────────────────
 const { orchestratorApi } = useGeinsRepository();
+const { toast } = useToast();
+const { geinsLog } = useGeinsLog('pages/orchestrator/index.vue');
 const loading = ref(true);
 const fetchError = ref(false);
 const groups = ref<WorkflowGroupCard[]>([]);
 
 // ─── Fetch Data ────────────────────────────────────────────────────
-const { data: metrics, error: metricsError, refresh } = await useAsyncData<WorkflowMetrics[]>(
+const { data: rawMetrics, error: metricsError, refresh } = await useAsyncData<WorkflowMetrics[]>(
   'overview-workflows-metrics',
   () => orchestratorApi.metrics.list(),
+  { getCachedData: () => undefined },
 );
 
-const { data: aggregate } = await useAsyncData<AggregateMetrics>(
+const { data: aggregate, refresh: refreshAggregate } = await useAsyncData<AggregateMetrics>(
   'overview-workflows-aggregate',
   () => orchestratorApi.metrics.getAggregate(),
+  { getCachedData: () => undefined },
 );
+
+// Workflow id → expected enabled value for toggles we've applied locally.
+// The server's metrics endpoint is cached and may return stale `enabled`
+// values for a while after a bulk enable/disable, so we overlay our
+// pending overrides on top of every fetched metrics response.
+const enabledOverrides = ref<Map<string, boolean>>(new Map());
+
+const metrics = computed<WorkflowMetrics[]>(() => {
+  const list = rawMetrics.value ?? [];
+  if (enabledOverrides.value.size === 0) return list;
+  return list.map((m) =>
+    enabledOverrides.value.has(m.id)
+      ? { ...m, enabled: enabledOverrides.value.get(m.id)! }
+      : m,
+  );
+});
+
+const reloadCards = async () => {
+  await Promise.all([refresh(), refreshAggregate()]);
+};
 
 // ─── Helpers ───────────────────────────────────────────────────────
 const getInitials = (name: string): string => {
@@ -128,13 +154,17 @@ const mapToGroups = (metricsList: WorkflowMetrics[]): WorkflowGroupCard[] => {
     const totalExec = items.reduce((sum, m) => sum + (m.metrics24h?.totalExecutions ?? 0), 0);
     const successRate = totalExec > 0 ? Math.round((totalSuccess / totalExec) * 100) : 100;
     const healths: HealthStatus[] = items.map(m => normalizeHealth(m.status?.health));
-    const enabledItems = items.filter(m => m.enabled);
-    const allEnabled = enabledItems.length === items.length;
+    // Only scheduled + event-triggered workflows have an enable/disable toggle.
+    // OnDemand workflows are always active and the bulk API rejects them.
+    const toggleableItems = items.filter(m => m.type !== 'onDemand');
+    const enabledItems = toggleableItems.filter(m => m.enabled);
+    const allEnabled = toggleableItems.length > 0 && enabledItems.length === toggleableItems.length;
     const lastUpdated = items.reduce((latest, m) => {
       const d = m.updatedAt || m.createdAt || m.lastMetricsUpdate || '';
       return d > latest ? d : latest;
     }, '');
     const workflowIds = items.map(m => m.id);
+    const toggleableWorkflowIds = toggleableItems.map(m => m.id);
     const slug = name.toLowerCase().replace(/\s+/g, '-');
 
     return {
@@ -151,6 +181,7 @@ const mapToGroups = (metricsList: WorkflowMetrics[]): WorkflowGroupCard[] => {
       executionsTotal: totalExecutions,
       successRate,
       workflowIds,
+      toggleableWorkflowIds,
       allEnabled,
       isStandalone: standalone,
     };
@@ -188,24 +219,105 @@ const stats = computed(() => {
 const togglingGroup = ref<string | null>(null);
 
 const toggleGroup = async (group: WorkflowGroupCard, enable: boolean) => {
+  const ids = group.toggleableWorkflowIds;
+  if (!ids?.length) return;
   togglingGroup.value = group.id;
+
+  const label = enable ? 'Enable' : 'Disable';
+  const verb = enable ? 'enabled' : 'disabled';
+
   try {
-    for (const wfId of group.workflowIds) {
-      const wf = await orchestratorApi.workflow.get(wfId);
-      await orchestratorApi.workflow.update(wfId, {
-        ...wf,
-        enabled: enable,
+    geinsLog(`${label} request →`, {
+      group: group.name,
+      workflowIds: ids,
+    });
+    const result = enable
+      ? await orchestratorApi.workflow.bulkEnable(ids)
+      : await orchestratorApi.workflow.bulkDisable(ids);
+    geinsLog(`${label} response ←`, result);
+
+    // Record optimistic overrides. The computed `metrics` layers these on
+    // top of the cached server response so later refreshes can't overwrite
+    // the flip until the server's metrics cache catches up.
+    if (result.successfulWorkflowIds?.length) {
+      const next = new Map(enabledOverrides.value);
+      for (const id of result.successfulWorkflowIds) {
+        next.set(id, enable);
+      }
+      enabledOverrides.value = next;
+    }
+
+    if (result.failed === 0) {
+      toast({
+        title: `${label} succeeded`,
+        description: `${result.successful} workflow${result.successful === 1 ? '' : 's'} ${verb} in "${group.name}".`,
       });
     }
-    await refresh();
+    else {
+      // Map failed ids back to their display names so the user knows
+      // exactly what the API refused.
+      const nameById = new Map(
+        (metrics.value ?? []).map((m) => [m.id, m.name] as const),
+      );
+      const failedNames = (result.failedWorkflowIds ?? []).map(
+        (id) => nameById.get(id) ?? id,
+      );
+      const firstFailId = result.failedWorkflowIds?.[0];
+      const firstFailError = firstFailId && result.errors
+        ? result.errors[firstFailId]
+        : undefined;
+
+      if (result.successful === 0) {
+        toast({
+          title: `${label} failed`,
+          description: [
+            firstFailError,
+            failedNames.length > 0 ? `Failed: ${failedNames.join(', ')}` : null,
+          ].filter(Boolean).join(' — ')
+            || `Could not ${label.toLowerCase()} workflows in "${group.name}".`,
+          variant: 'negative',
+        });
+      }
+      else {
+        toast({
+          title: `${label} partially applied`,
+          description: [
+            `${result.successful} ${verb}, ${result.failed} failed in "${group.name}".`,
+            failedNames.length > 0 ? `Failed: ${failedNames.join(', ')}` : null,
+            firstFailError ? `Reason: ${firstFailError}` : null,
+          ].filter(Boolean).join(' '),
+          variant: 'warning',
+        });
+      }
+    }
   }
-  catch {
-    // TODO: toast error
+  catch (err) {
+    toast({
+      title: `${label} failed`,
+      description: err instanceof Error ? err.message : String(err),
+      variant: 'negative',
+    });
   }
   finally {
+    await reloadCards();
     togglingGroup.value = null;
   }
 };
+
+// Clear overrides once the raw server response agrees with them — so
+// the UI converges cleanly once the metrics cache catches up.
+watch(rawMetrics, (list) => {
+  if (!Array.isArray(list) || enabledOverrides.value.size === 0) return;
+  const next = new Map(enabledOverrides.value);
+  let changed = false;
+  for (const m of list) {
+    if (next.has(m.id) && next.get(m.id) === m.enabled) {
+      next.delete(m.id);
+      changed = true;
+    }
+  }
+  if (changed) enabledOverrides.value = next;
+});
 
 // ─── Populate Groups ───────────────────────────────────────────────
 watchEffect(() => {
@@ -362,7 +474,12 @@ v-for="group in groups" :key="group.id"
               <span class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">Active
                 Workflows</span>
               <span class="text-sm font-semibold">
-                {{ group.enabledCount }}/{{ group.workflowCount }}
+                <template v-if="group.toggleableWorkflowIds.length > 0">
+                  {{ group.enabledCount }}/{{ group.toggleableWorkflowIds.length }}
+                </template>
+                <template v-else>
+                  {{ group.workflowCount }}
+                </template>
               </span>
             </div>
             <!-- LAST SYNC -->
@@ -422,15 +539,15 @@ class="text-sm font-semibold"
                 </Button>
               </NuxtLink>
             </div>
-            <div class="flex items-center gap-1.5">
+            <div v-if="group.toggleableWorkflowIds.length > 0" class="flex items-center gap-1.5">
               <Button
-v-if="group.allEnabled" variant="outline" size="sm" class="h-7 text-xs"
+                v-if="group.allEnabled" variant="outline" size="sm" class="h-7 text-xs"
                 :disabled="togglingGroup === group.id" @click="toggleGroup(group, false)">
                 <LucidePause class="mr-1 h-3 w-3" />
                 {{ $t('workflows.pause') }}
               </Button>
               <Button
-v-else variant="default" size="sm" class="h-7 text-xs" :disabled="togglingGroup === group.id"
+                v-else variant="default" size="sm" class="h-7 text-xs" :disabled="togglingGroup === group.id"
                 @click="toggleGroup(group, true)">
                 <LucidePlay class="mr-1 h-3 w-3" />
                 {{ $t('workflows.enable') }}
