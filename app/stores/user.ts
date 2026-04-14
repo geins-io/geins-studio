@@ -64,7 +64,7 @@ export const useUserStore = defineStore('user', () => {
     const account = userAccounts.value.find(
       (acc) => acc.accountKey === session.value?.accountKey,
     );
-    return account ? account.name : '';
+    return account ? account.displayName : '';
   });
 
   const hasMultipleAccounts = computed(() => {
