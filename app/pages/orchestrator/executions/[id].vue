@@ -1,4 +1,11 @@
 <script setup lang="ts">
+import { useToast } from '@/components/ui/toast/use-toast';
+import type { Component } from 'vue';
+import type {
+  ExecutionDetailsResponse,
+  ExecutionLog,
+  ExecutionNodeExecution,
+} from '#shared/types';
 import {
   LucideCircleCheck,
   LucideCircleX,
@@ -15,100 +22,57 @@ import {
   LucideChevronDown,
   LucideTrash2,
 } from '#components';
-import type { Component } from 'vue';
-import { useToast } from '@/components/ui/toast/use-toast';
-
-definePageMeta({
-  pageType: 'list',
-});
 
 const route = useRoute();
+const { orchestratorApi } = useGeinsRepository();
+const breadcrumbsStore = useBreadcrumbsStore();
 
 const executionId = computed(() => route.params.id as string);
 
-// ─── Mock Data (replace with real repository call) ─────────────────
-interface NodeExecution {
-  nodeId: string;
-  nodeName: string;
-  nodeType: string;
-  activityName: string | null;
-  status: string;
-  startTime: string;
-  endTime: string;
-  durationMs: number;
-  retryCount: number;
-  retryErrors: string[] | null;
-  executionOrder: number;
-  input: Record<string, unknown> | null;
-  output: Record<string, unknown> | null;
-}
+// ─── Fetch real data ──────────────────────────────────────────────
+const { data: details, pending, error, refresh } = await useAsyncData(
+  () => `execution-${executionId.value}`,
+  () => orchestratorApi.execution.get(executionId.value),
+  { watch: [executionId] },
+);
 
-interface ExecutionDetail {
-  id: string;
-  workflowId: string;
-  workflowName: string;
-  group: string;
-  status: string;
-  startTime: string;
-  endTime: string | null;
-  durationMs: number;
-  childExecutionIds: string[] | null;
-  cascadeCancellation: boolean;
-  idempotencyKey: string | null;
-  replayOf: string | null;
-  errors: string[] | null;
-  errorCount: number;
-  isTestRun: boolean;
-  nodeExecutions: NodeExecution[];
-}
+const execution = computed<ExecutionLog | null>(() => details.value?.execution ?? null);
+const nodeExecutions = computed<ExecutionNodeExecution[]>(() => execution.value?.nodeExecutions ?? []);
+const isRunning = computed(() => execution.value?.status?.toLowerCase() === 'running');
 
-interface ExecutionDetailsResponse {
-  execution: ExecutionDetail;
-  orchestrationStatus: string;
-  canCancel: boolean;
-  canPause: boolean;
-  canReplay: boolean;
-}
+// Breadcrumb title
+watch(execution, (exec) => {
+  if (exec?.workflowName) {
+    breadcrumbsStore.setCurrentTitle(exec.workflowName);
+  }
+}, { immediate: true });
 
-const mockData: ExecutionDetailsResponse = {
-  execution: {
-    id: 'sub-sched-9b532611-36af-4215-a108-4da6d37886d8-20260413084500-9efab11892e35c68bd06091c0aacd0c4',
-    workflowId: '359d6d54-8fbc-4285-95bc-743685514d8d',
-    workflowName: 'Monitor Incremental Order Sync',
-    group: 'Monitor ERP Sync',
-    status: 'completed',
-    startTime: '2026-04-13T08:46:45.2089808Z',
-    endTime: '2026-04-13T08:46:46.7399042Z',
-    durationMs: 1530,
-    childExecutionIds: null,
-    cascadeCancellation: true,
-    idempotencyKey: null,
-    replayOf: null,
-    errors: null,
-    errorCount: 0,
-    isTestRun: false,
-    nodeExecutions: [
-      { nodeId: 'authenticate', nodeName: 'Authenticate with Monitor', nodeType: 'action', activityName: 'MonitorSessionAction', status: 'completed', startTime: '2026-04-13T08:46:45.3877928Z', endTime: '2026-04-13T08:46:45.9806118Z', durationMs: 592, retryCount: 0, retryErrors: null, executionOrder: 0, input: null, output: null },
-      { nodeId: 'fetch-countries', nodeName: 'Fetch Countries', nodeType: 'action', activityName: 'HttpRequestAction', status: 'completed', startTime: '2026-04-13T08:46:45.9806118Z', endTime: '2026-04-13T08:46:46.1223153Z', durationMs: 141, retryCount: 0, retryErrors: null, executionOrder: 1, input: null, output: null },
-      { nodeId: 'fetch-currencies', nodeName: 'Fetch Currencies', nodeType: 'action', activityName: 'HttpRequestAction', status: 'completed', startTime: '2026-04-13T08:46:46.1223153Z', endTime: '2026-04-13T08:46:46.2537594Z', durationMs: 131, retryCount: 0, retryErrors: null, executionOrder: 2, input: null, output: null },
-      { nodeId: 'fetch-vat-rates', nodeName: 'Fetch VAT Rates', nodeType: 'action', activityName: 'HttpRequestAction', status: 'completed', startTime: '2026-04-13T08:46:46.2537594Z', endTime: '2026-04-13T08:46:46.372087Z', durationMs: 118, retryCount: 0, retryErrors: null, executionOrder: 3, input: null, output: null },
-      { nodeId: 'load-watermark', nodeName: 'Load Watermark', nodeType: 'action', activityName: 'ReadDocumentAction', status: 'completed', startTime: '2026-04-13T08:46:46.372087Z', endTime: '2026-04-13T08:46:46.463058Z', durationMs: 90, retryCount: 0, retryErrors: null, executionOrder: 4, input: null, output: null },
-      { nodeId: 'check-watermark-exists', nodeName: 'Check Watermark Exists', nodeType: 'condition', activityName: null, status: 'completed', startTime: '2026-04-13T08:46:46.463058Z', endTime: '2026-04-13T08:46:46.7399042Z', durationMs: 276, retryCount: 0, retryErrors: null, executionOrder: 5, input: null, output: null },
-      { nodeId: 'init-pagination', nodeName: 'Initialize Pagination', nodeType: 'action', activityName: 'TransformAction', status: 'completed', startTime: '2026-04-13T08:46:46.463058Z', endTime: '2026-04-13T08:46:46.532791Z', durationMs: 69, retryCount: 0, retryErrors: null, executionOrder: 6, input: null, output: null },
-      { nodeId: 'fetch-changes', nodeName: 'Fetch Order Changes', nodeType: 'action', activityName: 'HttpRequestAction', status: 'completed', startTime: '2026-04-13T08:46:46.532791Z', endTime: '2026-04-13T08:46:46.6477453Z', durationMs: 114, retryCount: 0, retryErrors: null, executionOrder: 7, input: null, output: null },
-      { nodeId: 'check-has-changes', nodeName: 'Check Has Changes', nodeType: 'condition', activityName: null, status: 'completed', startTime: '2026-04-13T08:46:46.6477453Z', endTime: '2026-04-13T08:46:46.7399042Z', durationMs: 92, retryCount: 0, retryErrors: null, executionOrder: 8, input: null, output: null },
-      { nodeId: 'done', nodeName: 'Sync Complete', nodeType: 'action', activityName: 'TransformAction', status: 'completed', startTime: '2026-04-13T08:46:46.6477453Z', endTime: '2026-04-13T08:46:46.7399042Z', durationMs: 92, retryCount: 0, retryErrors: null, executionOrder: 9, input: null, output: null },
-    ],
-  },
-  orchestrationStatus: 'Completed',
-  canCancel: false,
-  canPause: false,
-  canReplay: true,
-};
+// Live ticking clock while execution is running
+const now = ref(Date.now());
+let tickTimer: ReturnType<typeof setInterval> | null = null;
 
-const details = ref<ExecutionDetailsResponse>(mockData);
-const execution = computed(() => details.value.execution);
-const isRunning = computed(() => execution.value.status?.toLowerCase() === 'running');
+watch(isRunning, (running) => {
+  if (running && !tickTimer) {
+    now.value = Date.now();
+    tickTimer = setInterval(() => { now.value = Date.now(); }, 1000);
+  }
+  else if (!running && tickTimer) {
+    clearInterval(tickTimer);
+    tickTimer = null;
+  }
+}, { immediate: true });
+
+onBeforeUnmount(() => {
+  if (tickTimer) clearInterval(tickTimer);
+});
+
+const liveDurationMs = computed(() => {
+  if (!execution.value) return null;
+  if (isRunning.value && execution.value.startTime) {
+    return now.value - new Date(execution.value.startTime).getTime();
+  }
+  return execution.value.durationMs ?? null;
+});
 
 // ─── Formatters ────────────────────────────────────────────────────
 const pad = (n: number, len = 2) => String(n).padStart(len, '0');
@@ -118,6 +82,11 @@ const formatTime = (iso: string | null | undefined): string => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
+};
+
+const shortenId = (id: string, head = 12, tail = 8): string => {
+  if (!id || id.length <= head + tail + 1) return id;
+  return `${id.slice(0, head)}…${id.slice(-tail)}`;
 };
 
 const formatDuration = (ms: number | null | undefined): string => {
@@ -146,18 +115,23 @@ const resolveStatusIcon = (status: string) => {
 };
 
 // ─── Node timeline bars ────────────────────────────────────────────
-const timelineStart = computed(() => new Date(execution.value.startTime).getTime());
+const timelineStart = computed(() => {
+  const start = execution.value?.startTime;
+  return start ? new Date(start).getTime() : 0;
+});
 const timelineEnd = computed(() => {
+  if (!execution.value) return timelineStart.value;
   if (execution.value.endTime) return new Date(execution.value.endTime).getTime();
-  const last = execution.value.nodeExecutions.reduce((acc, n) => {
+  const last = nodeExecutions.value.reduce((acc, n) => {
     const t = n.endTime ? new Date(n.endTime).getTime() : 0;
     return t > acc ? t : acc;
   }, 0);
-  return last || timelineStart.value + execution.value.durationMs;
+  return last || timelineStart.value + (execution.value.durationMs ?? 0);
 });
 const timelineSpan = computed(() => Math.max(1, timelineEnd.value - timelineStart.value));
 
-const nodeBarStyle = (node: NodeExecution) => {
+const nodeBarStyle = (node: ExecutionNodeExecution) => {
+  if (!node.startTime) return { left: '0%', width: '0%' };
   const start = new Date(node.startTime).getTime() - timelineStart.value;
   const end = (node.endTime ? new Date(node.endTime).getTime() : timelineEnd.value) - timelineStart.value;
   const left = (start / timelineSpan.value) * 100;
@@ -165,11 +139,40 @@ const nodeBarStyle = (node: NodeExecution) => {
   return { left: `${left}%`, width: `${width}%` };
 };
 
-// ─── Selected node ─────────────────────────────────────────────────
-const selectedNode = ref<NodeExecution | null>(null);
+// ─── Expanded nodes (multi-select) ─────────────────────────────────
+const expandedNodeIds = ref<Set<string>>(new Set());
 
-// ─── Actions (mock handlers) ───────────────────────────────────────
+const isNodeExpanded = (nodeId: string) => expandedNodeIds.value.has(nodeId);
+
+const toggleNodeExpanded = (nodeId: string) => {
+  const next = new Set(expandedNodeIds.value);
+  if (next.has(nodeId)) next.delete(nodeId);
+  else next.add(nodeId);
+  expandedNodeIds.value = next;
+};
+
+// ─── Actions ───────────────────────────────────────────────────────
 const { toast } = useToast();
+const actionPending = ref(false);
+
+const runAction = async (label: string, fn: () => Promise<unknown>) => {
+  actionPending.value = true;
+  try {
+    await fn();
+    await refresh();
+    toast({ title: `${label} successful` });
+  }
+  catch (err) {
+    toast({
+      title: `${label} failed`,
+      description: err instanceof Error ? err.message : String(err),
+      variant: 'negative',
+    });
+  }
+  finally {
+    actionPending.value = false;
+  }
+};
 
 const actions = computed(() => [
   {
@@ -177,32 +180,32 @@ const actions = computed(() => [
     label: 'Cancel',
     icon: LucideSquare,
     variant: 'destructive' as const,
-    disabled: !details.value.canCancel,
-    handler: () => toast({ title: 'Cancel requested', description: 'Mock action — hook up repository' }),
+    disabled: !details.value?.canCancel || actionPending.value,
+    handler: () => runAction('Cancel', () => orchestratorApi.execution.cancel(executionId.value)),
   },
   {
     id: 'pause',
     label: 'Pause',
     icon: LucidePause,
     variant: 'outline' as const,
-    disabled: !details.value.canPause,
-    handler: () => toast({ title: 'Pause requested', description: 'Mock action — hook up repository' }),
+    disabled: !details.value?.canPause || actionPending.value,
+    handler: () => runAction('Pause', () => orchestratorApi.execution.pause(executionId.value)),
   },
   {
     id: 'replay',
     label: 'Replay',
     icon: LucideRepeat,
     variant: 'default' as const,
-    disabled: !details.value.canReplay,
-    handler: () => toast({ title: 'Replay requested', description: 'Mock action — hook up repository' }),
+    disabled: !details.value?.canReplay || actionPending.value,
+    handler: () => runAction('Replay', () => orchestratorApi.execution.replay(executionId.value)),
   },
   {
     id: 'refresh',
     label: 'Refresh',
     icon: LucideRefreshCw,
     variant: 'ghost' as const,
-    disabled: false,
-    handler: () => toast({ title: 'Refreshed', description: 'Mock refresh — hook up repository' }),
+    disabled: pending.value,
+    handler: () => refresh(),
   },
 ]);
 
@@ -222,30 +225,31 @@ let logCounter = 0;
 const seedLogs = () => {
   consoleLines.value = [];
   logCounter = 0;
-  for (const node of execution.value.nodeExecutions) {
+  for (const node of nodeExecutions.value) {
     consoleLines.value.push({
       id: ++logCounter,
       timestamp: formatTime(node.startTime),
       level: 'info',
       source: node.nodeId,
-      message: `▶ ${node.nodeName} started${node.activityName ? ` (${node.activityName})` : ''}`,
+      message: `▶ ${node.nodeName ?? node.nodeId} started${node.activityName ? ` (${node.activityName})` : ''}`,
     });
-    if (node.status === 'completed') {
+    const status = node.status?.toLowerCase();
+    if (status === 'completed') {
       consoleLines.value.push({
         id: ++logCounter,
         timestamp: formatTime(node.endTime),
         level: 'info',
         source: node.nodeId,
-        message: `✔ ${node.nodeName} completed in ${formatDuration(node.durationMs)}`,
+        message: `✔ ${node.nodeName ?? node.nodeId} completed in ${formatDuration(node.durationMs)}`,
       });
     }
-    else if (node.status === 'failed') {
+    else if (status === 'failed') {
       consoleLines.value.push({
         id: ++logCounter,
         timestamp: formatTime(node.endTime),
         level: 'error',
         source: node.nodeId,
-        message: `✖ ${node.nodeName} failed`,
+        message: `✖ ${node.nodeName ?? node.nodeId} failed`,
       });
     }
   }
@@ -259,7 +263,7 @@ const scrollConsoleToBottom = () => {
   });
 };
 
-seedLogs();
+watch(execution, () => seedLogs(), { immediate: true });
 
 // Mock live streaming when execution is in 'running' state
 let streamTimer: ReturnType<typeof setInterval> | null = null;
@@ -298,38 +302,55 @@ const clearConsole = () => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col gap-4">
+  <div v-if="error" class="text-destructive rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm">
+    Failed to load execution: {{ error.message ?? 'Unknown error' }}
+  </div>
+  <div v-else-if="!execution" class="text-muted-foreground py-12 text-center text-sm">
+    Loading execution…
+  </div>
+  <div v-else class="flex flex-col gap-4">
     <ContentHeader :title="execution.workflowName" :description="execution.id">
       <template #title>
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-2">
-            <component :is="resolveStatusIcon(execution.status).icon"
-              :class="['h-5 w-5', resolveStatusIcon(execution.status).class]" />
             <h1 class="text-xl font-semibold">
               {{ execution.workflowName }}
             </h1>
+            <component :is="resolveStatusIcon(execution.status).icon"
+              :class="['h-5 w-5', resolveStatusIcon(execution.status).class]" />
             <span v-if="execution.isTestRun"
               class="rounded bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600">
               Test run
             </span>
           </div>
-          <div class="text-muted-foreground font-mono text-xs">
-            {{ execution.id }}
+          <div class="text-muted-foreground font-mono text-xs" :title="execution.id">
+            {{ shortenId(execution.id) }}
           </div>
-          <div class="text-muted-foreground flex items-center gap-2 text-xs">
+          <div class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
             <NuxtLink :to="`/orchestrator/workflows/${execution.workflowId}`" class="hover:text-foreground underline">
-              {{ execution.group || 'Workflow' }}
+              {{ execution.workflowName || 'Workflow' }}
             </NuxtLink>
+            <span v-if="execution.group">•</span>
+            <span v-if="execution.group">{{ execution.group }}</span>
             <span>•</span>
-            <span>Status: <span class="text-foreground font-medium capitalize">{{ details.orchestrationStatus }}</span></span>
+            <span>Status: <span class="text-foreground font-medium capitalize">{{ details?.orchestrationStatus ?? execution.status }}</span></span>
+            <template v-if="execution.triggerType">
+              <span>•</span>
+              <span>Trigger: <span class="text-foreground font-medium">{{ execution.triggerType }}{{ execution.eventName ? ` (${execution.eventName})` : '' }}</span></span>
+            </template>
+            <template v-if="execution.startedBy">
+              <span>•</span>
+              <span>By: <span class="text-foreground font-medium">{{ execution.startedBy }}</span></span>
+            </template>
           </div>
         </div>
       </template>
       <ContentActionBar>
         <Button v-for="action in actions" :key="action.id" :variant="action.variant" size="sm"
           :disabled="action.disabled" @click="action.handler">
-          <component :is="action.icon" class="h-4 w-4" />
+
           {{ action.label }}
+          <component :is="action.icon" class="ml-2 h-4 w-4" />
         </Button>
       </ContentActionBar>
     </ContentHeader>
@@ -353,42 +374,63 @@ const clearConsole = () => {
         </div>
       </div>
       <div class="rounded-lg border p-3">
-        <div class="text-muted-foreground text-xs">
+        <div class="text-muted-foreground flex items-center gap-1.5 text-xs">
           Duration
+          <span v-if="isRunning" class="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" title="Live" />
         </div>
-        <div class="font-mono text-sm">
-          {{ formatDuration(execution.durationMs) }}
+        <div class="font-mono text-sm tabular-nums">
+          {{ formatDuration(liveDurationMs) }}
         </div>
       </div>
       <div class="rounded-lg border p-3">
         <div class="text-muted-foreground text-xs">
           Errors
         </div>
-        <div class="font-mono text-sm" :class="execution.errorCount > 0 ? 'text-destructive' : ''">
-          {{ execution.errorCount }}
+        <div class="font-mono text-sm" :class="(execution.errorCount ?? 0) > 0 ? 'text-destructive' : ''">
+          {{ execution.errorCount ?? 0 }}
+        </div>
+      </div>
+      <div v-if="execution.totalNodes != null" class="rounded-lg border p-3">
+        <div class="text-muted-foreground text-xs">
+          Nodes
+        </div>
+        <div class="font-mono text-sm">
+          {{ execution.completedNodes ?? 0 }} / {{ execution.totalNodes }}
+          <span v-if="execution.failedNodes" class="text-destructive">({{ execution.failedNodes }} failed)</span>
+        </div>
+      </div>
+      <div v-if="execution.workflowVersion != null" class="rounded-lg border p-3">
+        <div class="text-muted-foreground text-xs">
+          Version
+        </div>
+        <div class="font-mono text-sm">
+          v{{ execution.workflowVersion }}
         </div>
       </div>
     </div>
 
     <!-- Main content: nodes + console -->
-    <div class="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-3">
+    <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
       <!-- Node executions timeline -->
-      <div class="flex min-h-0 flex-col overflow-hidden rounded-lg border lg:col-span-1">
+      <div class="flex flex-col rounded-lg border lg:col-span-1">
         <div class="flex items-center justify-between border-b px-4 py-2">
           <h2 class="text-sm font-medium">
             Node Executions
           </h2>
           <span class="text-muted-foreground text-xs">
-            {{ execution.nodeExecutions.length }} nodes
+            {{ nodeExecutions.length }} nodes
           </span>
         </div>
-        <div class="flex-1 overflow-y-auto">
-          <div v-for="node in execution.nodeExecutions" :key="node.nodeId"
-            class="hover:bg-muted/50 border-b px-4 py-3 transition-colors"
-            :class="{ 'bg-muted/50': selectedNode?.nodeId === node.nodeId }">
-            <button class="w-full text-left" @click="selectedNode = selectedNode?.nodeId === node.nodeId ? null : node">
+        <div v-if="nodeExecutions.length === 0" class="text-muted-foreground p-4 text-center text-sm">
+          No node executions
+        </div>
+        <div v-else>
+          <div v-for="node in nodeExecutions" :key="node.nodeId"
+            class="hover:bg-muted/50 border-b px-4 py-3 transition-colors">
+            <button class="w-full cursor-pointer text-left focus:outline-none focus-visible:outline-none"
+              @click="toggleNodeExpanded(node.nodeId)">
               <div class="flex items-center gap-3">
-                <component :is="selectedNode?.nodeId === node.nodeId ? LucideChevronDown : LucideChevronRight"
+                <component :is="isNodeExpanded(node.nodeId) ? LucideChevronDown : LucideChevronRight"
                   class="text-muted-foreground h-4 w-4 shrink-0" />
                 <component :is="resolveStatusIcon(node.status).icon"
                   :class="['h-4 w-4 shrink-0', resolveStatusIcon(node.status).class]" />
@@ -396,7 +438,7 @@ const clearConsole = () => {
                   #{{ node.executionOrder }}
                 </span>
                 <span class="flex-1 truncate text-sm font-medium">{{ node.nodeName }}</span>
-                <span class="text-muted-foreground rounded bg-muted px-1.5 py-0.5 text-xs">
+                <span class="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-xs">
                   {{ node.nodeType }}
                 </span>
                 <span class="text-muted-foreground w-16 text-right font-mono text-xs">
@@ -406,63 +448,88 @@ const clearConsole = () => {
 
               <!-- Timeline bar -->
               <div class="bg-muted relative mt-2 ml-7 h-1.5 overflow-hidden rounded">
-                <div class="absolute top-0 h-full rounded" :style="nodeBarStyle(node)"
-                  :class="{
-                    'bg-green-500': node.status === 'completed',
-                    'bg-destructive': node.status === 'failed',
-                    'bg-blue-500': node.status === 'running',
-                    'bg-muted-foreground': node.status === 'canceled' || node.status === 'cancelled',
-                  }" />
+                <div class="absolute top-0 h-full rounded" :style="nodeBarStyle(node)" :class="{
+                  'bg-green-500': node.status === 'completed',
+                  'bg-destructive': node.status === 'failed',
+                  'bg-blue-500': node.status === 'running',
+                  'bg-muted-foreground': node.status === 'canceled' || node.status === 'cancelled',
+                }" />
               </div>
             </button>
 
             <!-- Expanded details -->
-            <div v-if="selectedNode?.nodeId === node.nodeId" class="mt-3 ml-7 space-y-2 text-xs">
-              <div class="grid grid-cols-2 gap-2">
+            <div v-if="isNodeExpanded(node.nodeId)" class="mt-3 ml-7 space-y-3 text-xs">
+              <dl class="space-y-1.5">
                 <div>
-                  <div class="text-muted-foreground">
+                  <dt class="text-muted-foreground">
+                    Node ID
+                  </dt>
+                  <dd class="font-mono select-all">
+                    {{ node.nodeId }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-muted-foreground">
                     Activity
-                  </div>
-                  <div class="font-mono">
+                  </dt>
+                  <dd class="font-mono select-all">
                     {{ node.activityName ?? '–' }}
-                  </div>
+                  </dd>
                 </div>
                 <div>
-                  <div class="text-muted-foreground">
+                  <dt class="text-muted-foreground">
+                    Status
+                  </dt>
+                  <dd class="font-mono select-all capitalize">
+                    {{ node.status }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-muted-foreground">
                     Retries
-                  </div>
-                  <div class="font-mono">
-                    {{ node.retryCount }}
-                  </div>
+                  </dt>
+                  <dd class="font-mono select-all">
+                    {{ node.retryCount ?? 0 }}
+                  </dd>
                 </div>
                 <div>
-                  <div class="text-muted-foreground">
+                  <dt class="text-muted-foreground">
                     Started
-                  </div>
-                  <div class="font-mono">
+                  </dt>
+                  <dd class="font-mono select-all">
                     {{ formatTime(node.startTime) }}
-                  </div>
+                  </dd>
                 </div>
                 <div>
-                  <div class="text-muted-foreground">
+                  <dt class="text-muted-foreground">
                     Ended
-                  </div>
-                  <div class="font-mono">
+                  </dt>
+                  <dd class="font-mono select-all">
                     {{ formatTime(node.endTime) }}
-                  </div>
+                  </dd>
                 </div>
-              </div>
+                <div>
+                  <dt class="text-muted-foreground">
+                    Duration
+                  </dt>
+                  <dd class="font-mono select-all">
+                    {{ formatDuration(node.durationMs) }}
+                  </dd>
+                </div>
+              </dl>
               <div v-if="node.input">
                 <div class="text-muted-foreground mb-1">
                   Input
                 </div>
-                <pre class="bg-muted max-h-40 overflow-auto rounded p-2 font-mono text-xs">{{ JSON.stringify(node.input, null, 2) }}</pre>
+                <pre class="bg-muted max-h-40 overflow-auto rounded p-2 font-mono text-xs">{{ JSON.stringify(node.input,
+                  null, 2) }}</pre>
               </div>
               <div v-if="node.output">
                 <div class="text-muted-foreground mb-1">
                   Output
                 </div>
-                <pre class="bg-muted max-h-40 overflow-auto rounded p-2 font-mono text-xs">{{ JSON.stringify(node.output, null, 2) }}</pre>
+                <pre class="bg-muted max-h-40 overflow-auto rounded p-2 font-mono text-xs">{{ JSON.stringify(node.output,
+                  null, 2) }}</pre>
               </div>
             </div>
           </div>
@@ -470,11 +537,11 @@ const clearConsole = () => {
       </div>
 
       <!-- Live console -->
-      <div class="flex min-h-0 flex-col overflow-hidden rounded-lg border bg-zinc-950 text-zinc-100 lg:col-span-2">
+      <div
+        class="sticky top-4 flex h-[70vh] flex-col overflow-hidden rounded-lg border bg-zinc-950 text-zinc-100 lg:col-span-2">
         <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
           <div class="flex items-center gap-2">
-            <div class="h-2 w-2 rounded-full"
-              :class="isRunning ? 'animate-pulse bg-green-400' : 'bg-zinc-600'" />
+            <div class="h-2 w-2 rounded-full" :class="isRunning ? 'animate-pulse bg-green-400' : 'bg-zinc-600'" />
             <h2 class="text-sm font-medium text-zinc-200">
               {{ isRunning ? 'Live console' : 'Console log' }}
             </h2>
