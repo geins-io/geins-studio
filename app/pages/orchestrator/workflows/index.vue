@@ -246,9 +246,9 @@ onMounted(() => {
     linkColumns: {
       name: { url: '/orchestrator/workflows/{id}', idField: 'id' },
       executionsTotal: { url: '/orchestrator/executions?id={id}', idField: 'id' },
-      executions24h: { url: '/orchestrator/executions?id={id}', idField: 'id' },
-      executions7d: { url: '/orchestrator/executions?id={id}', idField: 'id' },
-      executions30d: { url: '/orchestrator/executions?id={id}', idField: 'id' },
+      executions24h: { url: '/orchestrator/executions?id={id}&period=24h', idField: 'id' },
+      executions7d: { url: '/orchestrator/executions?id={id}&period=7d', idField: 'id' },
+      executions30d: { url: '/orchestrator/executions?id={id}&period=30d', idField: 'id' },
     },
     iconColumns: {
       triggerSummary: { resolveIcon: resolveTriggerIcon },
@@ -277,6 +277,8 @@ onMounted(() => {
     },
     excludeColumns: [],
   };
+
+
 
   columns.value = getColumns(dataList.value, columnOptions);
   loading.value = false;
