@@ -500,10 +500,16 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               return h('div', { class: getBasicCellStyle(table) }, text);
             }
 
-            const displayText =
-              text.length > maxTextLength
-                ? text.slice(0, maxTextLength) + '...'
-                : text;
+            // Per-column max length override, fall back to the shared one
+            const effectiveMaxLength = linkConfig?.maxTextLength ?? maxTextLength;
+            // Head + tail ellipsis for long values (e.g. IDs) — "abc…xyz"
+            const shortenWithEllipsis = (val: string, max: number) => {
+              if (val.length <= max) return val;
+              const tail = Math.max(4, Math.floor(max / 3));
+              const head = Math.max(1, max - tail - 1);
+              return `${val.slice(0, head)}…${val.slice(-tail)}`;
+            };
+            const displayText = shortenWithEllipsis(text, effectiveMaxLength);
 
             const linkClass = isExternal ? 'external-link-text' : 'link-text';
 
@@ -530,13 +536,13 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
                   { default: () => displayText },
                 );
 
-            if (text.length > maxTextLength) {
+            if (text.length > effectiveMaxLength) {
               return h(
                 TableCellLongText,
                 {
                   text,
                   className: getBasicCellStyle(table),
-                  maxTextLength,
+                  maxTextLength: effectiveMaxLength,
                 },
                 { default: () => link },
               );

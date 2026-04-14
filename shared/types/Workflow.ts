@@ -215,6 +215,7 @@ export interface ExecutionDetailsResponse {
   orchestrationStatus: string | null;
   canCancel: boolean;
   canPause: boolean;
+  canResume?: boolean;
   canReplay: boolean;
 }
 
@@ -267,7 +268,12 @@ export interface StartWorkflowRequest {
 }
 
 export interface StartWorkflowResponse {
-  instanceId: string;
+  success?: boolean;
+  status?: string;
+  executionId?: string;
+  newExecutionId?: string;
+  message?: string;
+  instanceId?: string;
 }
 
 export interface CancelExecutionRequest {

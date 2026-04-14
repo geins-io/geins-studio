@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useToast } from '@/components/ui/toast/use-toast';
-import type { Component } from 'vue';
 import type {
   ExecutionDetailsResponse,
   ExecutionLog,
   ExecutionNodeExecution,
 } from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
+import type { Component } from 'vue';
 import {
   LucideCircleCheck,
   LucideCircleX,
@@ -21,6 +21,9 @@ import {
   LucideChevronDown,
   LucideTrash2,
   LucideMoreHorizontal,
+  LucideCirclePlay,
+  LucideCopy,
+  LucideCheck,
 } from '#components';
 
 const route = useRoute();
@@ -30,15 +33,34 @@ const breadcrumbsStore = useBreadcrumbsStore();
 const executionId = computed(() => route.params.id as string);
 
 // ─── Fetch real data ──────────────────────────────────────────────
+// Cache completed/terminal executions (they don't change), but always refetch
+// running/pending/queued ones so the user sees live progress.
+const VOLATILE_STATUSES = new Set(['running', 'pending', 'queued', 'suspended', 'paused']);
+
 const { data: details, pending, error, refresh } = await useAsyncData(
   () => `execution-${executionId.value}`,
   () => orchestratorApi.execution.get(executionId.value),
-  { watch: [executionId] },
+  {
+    watch: [executionId],
+    getCachedData: (key, nuxtApp) => {
+      const cached = nuxtApp.payload.data[key] as ExecutionDetailsResponse | undefined;
+      if (!cached?.execution) return undefined;
+      const status = cached.execution.status?.toLowerCase() ?? '';
+      return VOLATILE_STATUSES.has(status) ? undefined : cached;
+    },
+  },
 );
 
 const execution = computed<ExecutionLog | null>(() => details.value?.execution ?? null);
 const nodeExecutions = computed<ExecutionNodeExecution[]>(() => execution.value?.nodeExecutions ?? []);
 const isRunning = computed(() => execution.value?.status?.toLowerCase() === 'running');
+
+// Fallback: derive canResume from status when API doesn't return it
+const canResume = computed(() => {
+  if (details.value?.canResume != null) return details.value.canResume;
+  const s = execution.value?.status?.toLowerCase();
+  return s === 'suspended' || s === 'paused';
+});
 
 // Breadcrumb title
 watch(execution, (exec) => {
@@ -174,6 +196,49 @@ const runAction = async (label: string, fn: () => Promise<unknown>) => {
   }
 };
 
+const copiedId = ref(false);
+let copiedTimer: ReturnType<typeof setTimeout> | null = null;
+
+const copyExecutionId = async () => {
+  if (!execution.value?.id) return;
+  try {
+    await navigator.clipboard.writeText(execution.value.id);
+    copiedId.value = true;
+    if (copiedTimer) clearTimeout(copiedTimer);
+    copiedTimer = setTimeout(() => { copiedId.value = false; }, 1500);
+  }
+  catch (err) {
+    toast({
+      title: 'Copy failed',
+      description: err instanceof Error ? err.message : String(err),
+      variant: 'negative',
+    });
+  }
+};
+
+const handleReplay = async () => {
+  actionPending.value = true;
+  try {
+    const res = await orchestratorApi.execution.replay(executionId.value);
+    const newId = res?.newExecutionId ?? res?.executionId ?? res?.instanceId;
+    if (!newId) {
+      throw new Error(res?.message ?? 'Replay did not return a new execution id');
+    }
+    toast({ title: 'Replay started', description: res?.message ?? `New execution: ${newId}` });
+    await navigateTo(`/orchestrator/executions/${newId}`);
+  }
+  catch (err) {
+    toast({
+      title: 'Replay failed',
+      description: err instanceof Error ? err.message : String(err),
+      variant: 'negative',
+    });
+  }
+  finally {
+    actionPending.value = false;
+  }
+};
+
 
 // ─── Live console (mock streaming) ─────────────────────────────────
 interface LogLine {
@@ -268,7 +333,7 @@ const clearConsole = () => {
 </script>
 
 <template>
-  <div v-if="error" class="text-destructive rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm">
+  <div v-if="error" class="text-destructive border-destructive/30 bg-destructive/5 rounded-lg border p-4 text-sm">
     Failed to load execution: {{ error.message ?? 'Unknown error' }}
   </div>
   <div v-else-if="!execution" class="text-muted-foreground py-12 text-center text-sm">
@@ -289,8 +354,12 @@ const clearConsole = () => {
               Test run
             </span>
           </div>
-          <div class="text-muted-foreground font-mono text-xs" :title="execution.id">
-            {{ shortenId(execution.id) }}
+          <div class="text-muted-foreground flex items-center gap-1.5 font-mono text-xs">
+            <span :title="execution.id">{{ shortenId(execution.id) }}</span>
+            <button class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
+              :title="copiedId ? 'Copied!' : 'Copy execution ID'" @click="copyExecutionId">
+              <component :is="copiedId ? LucideCheck : LucideCopy" class="h-3 w-3" />
+            </button>
           </div>
           <div class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
             <NuxtLink :to="`/orchestrator/workflows/${execution.workflowId}`" class="hover:text-foreground underline">
@@ -299,10 +368,12 @@ const clearConsole = () => {
             <span v-if="execution.group">•</span>
             <span v-if="execution.group">{{ execution.group }}</span>
             <span>•</span>
-            <span>Status: <span class="text-foreground font-medium capitalize">{{ details?.orchestrationStatus ?? execution.status }}</span></span>
+            <span>Status: <span class="text-foreground font-medium capitalize">{{ details?.orchestrationStatus ??
+              execution.status }}</span></span>
             <template v-if="execution.triggerType">
               <span>•</span>
-              <span>Trigger: <span class="text-foreground font-medium">{{ execution.triggerType }}{{ execution.eventName ? ` (${execution.eventName})` : '' }}</span></span>
+              <span>Trigger: <span class="text-foreground font-medium">{{ execution.triggerType }}{{ execution.eventName
+                ? ` (${execution.eventName})` : '' }}</span></span>
             </template>
             <template v-if="execution.startedBy">
               <span>•</span>
@@ -312,10 +383,7 @@ const clearConsole = () => {
         </div>
       </template>
       <ContentActionBar>
-        <ButtonIcon
-          icon="retry"
-          :disabled="!details?.canReplay || actionPending"
-          @click="runAction('Replay', () => orchestratorApi.execution.replay(executionId))">
+        <ButtonIcon icon="retry" :disabled="!details?.canReplay || actionPending" @click="handleReplay">
           Replay
         </ButtonIcon>
         <DropdownMenu>
@@ -325,17 +393,20 @@ const clearConsole = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem
-              :disabled="!details?.canCancel || actionPending"
+            <DropdownMenuItem :disabled="!details?.canCancel || actionPending"
               @click="runAction('Cancel', () => orchestratorApi.execution.cancel(executionId))">
               <LucideSquare class="mr-2 size-4" />
               <span>Cancel</span>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              :disabled="!details?.canPause || actionPending"
+            <DropdownMenuItem :disabled="!details?.canPause || actionPending"
               @click="runAction('Pause', () => orchestratorApi.execution.pause(executionId))">
               <LucidePause class="mr-2 size-4" />
               <span>Pause</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem :disabled="!canResume || actionPending"
+              @click="runAction('Resume', () => orchestratorApi.execution.resume(executionId))">
+              <LucideCirclePlay class="mr-2 size-4" />
+              <span>Resume</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem :disabled="pending" @click="refresh()">
@@ -472,7 +543,7 @@ const clearConsole = () => {
                   <dt class="text-muted-foreground">
                     Status
                   </dt>
-                  <dd class="font-mono select-all capitalize">
+                  <dd class="font-mono capitalize select-all">
                     {{ node.status }}
                   </dd>
                 </div>

@@ -76,7 +76,22 @@ export default defineEventHandler(async (event) => {
 
     return response;
   } catch (error) {
-    geinsLogError('error connecting to the api:', error);
+    const fe = error as {
+      name?: string;
+      message?: string;
+      statusCode?: number;
+      statusMessage?: string;
+      data?: unknown;
+    };
+    geinsLogError('error connecting to the api:', {
+      url: fetchUrl,
+      method: event.method,
+      name: fe.name,
+      message: fe.message,
+      statusCode: fe.statusCode,
+      statusMessage: fe.statusMessage,
+      data: fe.data,
+    });
     return error;
   }
 });

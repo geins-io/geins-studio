@@ -49,6 +49,8 @@ export interface LinkColumnConfig<T> {
   useValueAsUrl?: boolean;
   /** Render as an external link (opens in new tab, shows external icon) */
   external?: boolean;
+  /** Override the shared maxTextLength for this column only */
+  maxTextLength?: number;
 }
 
 export interface IconColumnConfig<T> {

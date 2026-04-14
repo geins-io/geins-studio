@@ -36,7 +36,7 @@ export interface ExecutionListItem {
 type Entity = ExecutionLog;
 type EntityList = ExecutionListItem;
 
-const scope = 'pages/orchestrator/executions.vue';
+const scope = 'pages/orchestrator/executions/list.vue';
 const { t } = useI18n();
 
 definePageMeta({
@@ -46,6 +46,7 @@ definePageMeta({
 // ─── Global Setup ──────────────────────────────────────────────────
 const route = useRoute();
 const { orchestratorApi } = useGeinsRepository();
+const breadcrumbsStore = useBreadcrumbsStore();
 const allData = ref<EntityList[]>([]);
 const entityName = 'execution';
 const loading = ref(true);
@@ -100,7 +101,11 @@ const { data: executions, error: executionError, refresh } = await useAsyncData<
     ...(workflowIdFilter.value ? { workflowId: workflowIdFilter.value } : {}),
     ...(periodRange.value ?? {}),
   }),
-  { watch: [workflowIdFilter, periodFilter] },
+  {
+    watch: [workflowIdFilter, periodFilter],
+    // Opt out of Nuxt payload cache — always fetch fresh on mount
+    getCachedData: () => undefined,
+  },
 );
 
 const filteredWorkflowName = computed(() => {
@@ -138,6 +143,15 @@ const activeFilters = computed<ActiveFilter[]>(() => {
 
 const hasFilters = computed(() => activeFilters.value.length > 0);
 const filterLabel = computed(() => activeFilters.value.map((f) => f.label).join(' · '));
+
+// Sync breadcrumb title with active filters (replace last segment on list page)
+watch([hasFilters, filterLabel], () => {
+  const base = t('navigation.executions');
+  breadcrumbsStore.setCurrentTitle(
+    hasFilters.value ? `${base} — ${filterLabel.value}` : base,
+    true,
+  );
+}, { immediate: true });
 
 // ─── Helpers ───────────────────────────────────────────────────────
 const formatDuration = (ms: number | undefined): string => {
@@ -181,8 +195,8 @@ const mapToListData = (
       groupSlug: groupName ? groupName.toLowerCase().replace(/\s+/g, '-') : null,
       status: e.status?.toLowerCase() ?? 'unknown',
       startTime: formatTime(e.startTime),
-      endTime: formatTime(e.endTime),
-      durationFormatted: formatDuration(e.durationMs),
+      endTime: formatTime(e.endTime ?? undefined),
+      durationFormatted: formatDuration(e.durationMs ?? undefined),
       durationMs: e.durationMs ?? 0,
       errorCount: e.errorCount ?? 0,
       nodeCount: e.nodeExecutions?.length ?? 0,
@@ -203,7 +217,7 @@ const dataList = computed(() => {
 });
 
 const clearFilter = () => {
-  navigateTo('/orchestrator/executions');
+  navigateTo('/orchestrator/executions/list');
 };
 
 const FILTER_QUERY_KEY: Record<ActiveFilter['type'], string> = {
@@ -215,7 +229,7 @@ const FILTER_QUERY_KEY: Record<ActiveFilter['type'], string> = {
 
 const removeFilter = (type: ActiveFilter['type']) => {
   const { [FILTER_QUERY_KEY[type]]: _, ...rest } = route.query;
-  navigateTo({ path: '/orchestrator/executions', query: rest });
+  navigateTo({ path: '/orchestrator/executions/list', query: rest });
 };
 
 // ─── Live polling for new executions ───────────────────────────────
@@ -300,7 +314,11 @@ onMounted(() => {
       status: 'icon',
     },
     linkColumns: {
-      id: { url: '/orchestrator/executions/{id}', idField: 'id' },
+      id: {
+        url: '/orchestrator/executions/{id}',
+        idField: 'id',
+        maxTextLength: 24,
+      },
       workflowName: { url: '/orchestrator/workflows/{id}', idField: 'workflowId' },
     },
     iconColumns: {

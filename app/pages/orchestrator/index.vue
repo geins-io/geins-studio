@@ -405,13 +405,13 @@ class="text-sm font-semibold"
           <div class="mt-3 flex items-center justify-between">
             <div class="flex items-center gap-1">
               <NuxtLink
-                :to="{ path: '/orchestrator/workflows', query: group.isStandalone ? { name: group.name } : { group: group.id } }">
+                :to="{ path: '/orchestrator/workflows/list', query: group.isStandalone ? { name: group.name } : { group: group.id } }">
                 <Button variant="outline" size="icon" class="h-7 w-7" title="Workflows">
                   <LucideWorkflow class="h-3.5 w-3.5" />
                 </Button>
               </NuxtLink>
               <NuxtLink
-                :to="{ path: '/orchestrator/executions', query: group.isStandalone ? { name: group.name } : { group: group.id } }">
+                :to="{ path: '/orchestrator/executions/list', query: group.isStandalone ? { name: group.name } : { group: group.id } }">
                 <Button variant="outline" size="icon" class="h-7 w-7" title="Executions">
                   <LucideHistory class="h-3.5 w-3.5" />
                 </Button>
