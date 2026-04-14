@@ -17,10 +17,10 @@ import {
   LucideCircleAlert,
   LucideRefreshCw,
   LucideSquare,
-  LucideRepeat,
   LucideChevronRight,
   LucideChevronDown,
   LucideTrash2,
+  LucideMoreHorizontal,
 } from '#components';
 
 const route = useRoute();
@@ -174,40 +174,6 @@ const runAction = async (label: string, fn: () => Promise<unknown>) => {
   }
 };
 
-const actions = computed(() => [
-  {
-    id: 'cancel',
-    label: 'Cancel',
-    icon: LucideSquare,
-    variant: 'destructive' as const,
-    disabled: !details.value?.canCancel || actionPending.value,
-    handler: () => runAction('Cancel', () => orchestratorApi.execution.cancel(executionId.value)),
-  },
-  {
-    id: 'pause',
-    label: 'Pause',
-    icon: LucidePause,
-    variant: 'outline' as const,
-    disabled: !details.value?.canPause || actionPending.value,
-    handler: () => runAction('Pause', () => orchestratorApi.execution.pause(executionId.value)),
-  },
-  {
-    id: 'replay',
-    label: 'Replay',
-    icon: LucideRepeat,
-    variant: 'default' as const,
-    disabled: !details.value?.canReplay || actionPending.value,
-    handler: () => runAction('Replay', () => orchestratorApi.execution.replay(executionId.value)),
-  },
-  {
-    id: 'refresh',
-    label: 'Refresh',
-    icon: LucideRefreshCw,
-    variant: 'ghost' as const,
-    disabled: pending.value,
-    handler: () => refresh(),
-  },
-]);
 
 // ─── Live console (mock streaming) ─────────────────────────────────
 interface LogLine {
@@ -346,12 +312,38 @@ const clearConsole = () => {
         </div>
       </template>
       <ContentActionBar>
-        <Button v-for="action in actions" :key="action.id" :variant="action.variant" size="sm"
-          :disabled="action.disabled" @click="action.handler">
-
-          {{ action.label }}
-          <component :is="action.icon" class="ml-2 h-4 w-4" />
-        </Button>
+        <ButtonIcon
+          icon="retry"
+          :disabled="!details?.canReplay || actionPending"
+          @click="runAction('Replay', () => orchestratorApi.execution.replay(executionId))">
+          Replay
+        </ButtonIcon>
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button size="icon" variant="secondary">
+              <LucideMoreHorizontal class="size-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem
+              :disabled="!details?.canCancel || actionPending"
+              @click="runAction('Cancel', () => orchestratorApi.execution.cancel(executionId))">
+              <LucideSquare class="mr-2 size-4" />
+              <span>Cancel</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              :disabled="!details?.canPause || actionPending"
+              @click="runAction('Pause', () => orchestratorApi.execution.pause(executionId))">
+              <LucidePause class="mr-2 size-4" />
+              <span>Pause</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem :disabled="pending" @click="refresh()">
+              <LucideRefreshCw class="mr-2 size-4" />
+              <span>Refresh</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </ContentActionBar>
     </ContentHeader>
 
