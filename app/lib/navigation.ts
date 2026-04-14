@@ -84,6 +84,11 @@ export const getNavigation = (
                 href: '/orchestrator/executions/list',
                 childPattern: '/orchestrator/executions/:id',
               },
+              {
+                label: t('navigation.variables'),
+                href: '/orchestrator/variables/list',
+                childPattern: '/orchestrator/variables/:id',
+              },
 
             ],
           } as NavigationItem,

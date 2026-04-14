@@ -296,26 +296,124 @@ const scrollConsoleToBottom = () => {
 
 watch(execution, () => seedLogs(), { immediate: true });
 
-// Mock live streaming when execution is in 'running' state
-let streamTimer: ReturnType<typeof setInterval> | null = null;
-const startLiveStream = () => {
-  if (streamTimer) return;
-  streamTimer = setInterval(() => {
+// ─── Live streaming (real) ─────────────────────────────────────────
+// Reads /api/orchestrator/executions/:id/stream as a chunked text stream
+// and appends each line to the console. Runs only while status === running.
+const { accessToken, accountKey } = useGeinsAuth();
+let streamController: AbortController | null = null;
+
+const detectLevel = (line: string): LogLine['level'] => {
+  const l = line.toLowerCase();
+  if (l.includes('error') || l.includes('failed') || l.includes('✖')) return 'error';
+  if (l.includes('warn')) return 'warn';
+  if (l.includes('debug') || l.startsWith('tick')) return 'debug';
+  return 'info';
+};
+
+const appendStreamLine = (raw: string) => {
+  const line = raw.replace(/\r$/, '');
+  if (!line) return;
+
+  // Try to parse as JSON line: { timestamp, level, source, message }
+  let timestamp = formatTime(new Date().toISOString());
+  let level: LogLine['level'] = detectLevel(line);
+  let source = 'stream';
+  let message = line;
+
+  if (line.startsWith('{') && line.endsWith('}')) {
+    try {
+      const obj = JSON.parse(line) as Record<string, unknown>;
+      if (typeof obj.message === 'string') message = obj.message;
+      if (typeof obj.source === 'string') source = obj.source;
+      else if (typeof obj.nodeId === 'string') source = obj.nodeId;
+      if (typeof obj.timestamp === 'string') timestamp = formatTime(obj.timestamp);
+      else if (typeof obj.time === 'string') timestamp = formatTime(obj.time);
+      const lvl = String(obj.level ?? '').toLowerCase();
+      if (lvl === 'info' || lvl === 'warn' || lvl === 'error' || lvl === 'debug') {
+        level = lvl;
+      }
+    }
+    catch {
+      // keep raw line
+    }
+  }
+
+  consoleLines.value.push({
+    id: ++logCounter,
+    timestamp,
+    level,
+    source,
+    message,
+  });
+  scrollConsoleToBottom();
+};
+
+const startLiveStream = async () => {
+  if (streamController || !executionId.value) return;
+
+  const controller = new AbortController();
+  streamController = controller;
+
+  try {
+    const res = await fetch(
+      `/api/orchestrator/executions/${encodeURIComponent(executionId.value)}/stream`,
+      {
+        signal: controller.signal,
+        headers: {
+          ...(accessToken.value ? { 'x-access-token': accessToken.value } : {}),
+          ...(accountKey.value ? { 'x-account-key': accountKey.value } : {}),
+        },
+      },
+    );
+
+    if (!res.ok || !res.body) {
+      appendStreamLine(`Stream unavailable: HTTP ${res.status}`);
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    // Mark the stream as connected in the console
     consoleLines.value.push({
       id: ++logCounter,
       timestamp: formatTime(new Date().toISOString()),
-      level: 'debug',
-      source: 'runtime',
-      message: `tick #${logCounter} — heartbeat from orchestrator`,
+      level: 'info',
+      source: 'stream',
+      message: '● Connected to live stream',
     });
     scrollConsoleToBottom();
-  }, 1500);
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let newlineIdx;
+      while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, newlineIdx);
+        buffer = buffer.slice(newlineIdx + 1);
+        if (line.trim()) appendStreamLine(line);
+      }
+    }
+
+    // Flush any trailing content
+    if (buffer.trim()) appendStreamLine(buffer);
+  }
+  catch (err) {
+    if ((err as Error).name !== 'AbortError') {
+      appendStreamLine(`Stream error: ${(err as Error).message}`);
+    }
+  }
+  finally {
+    if (streamController === controller) streamController = null;
+  }
 };
 
 const stopLiveStream = () => {
-  if (streamTimer) {
-    clearInterval(streamTimer);
-    streamTimer = null;
+  if (streamController) {
+    streamController.abort();
+    streamController = null;
   }
 };
 
