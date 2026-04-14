@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Background } from '@vue-flow/background'
-import { Controls } from '@vue-flow/controls'
+import { Controls, ControlButton } from '@vue-flow/controls'
 import { VueFlow, useVueFlow, Position } from '@vue-flow/core'
 import { MiniMap } from '@vue-flow/minimap'
 import '@vue-flow/core/dist/style.css'
@@ -43,6 +43,12 @@ import {
   PanelRightClose,
   PanelRightOpen,
   RefreshCw,
+  Map as MapIcon,
+  MoreHorizontal,
+  Trash,
+  Copy,
+  Power,
+  PowerOff,
 } from 'lucide-vue-next'
 import {
   Sheet,
@@ -53,6 +59,7 @@ import {
   SheetDescription,
   SheetBody,
 } from '~/components/ui/sheet'
+import { useToast } from '@/components/ui/toast/use-toast'
 import ActionNode from '~/components/workflow/ActionNode.vue'
 import ConditionNode from '~/components/workflow/ConditionNode.vue'
 import DelayNode from '~/components/workflow/DelayNode.vue'
@@ -65,6 +72,7 @@ definePageMeta({
 
 const route = useRoute()
 const router = useRouter()
+const breadcrumbsStore = useBreadcrumbsStore()
 
 const workflowId = computed(() => route.params.id as string)
 const isNew = computed(() => workflowId.value === 'new')
@@ -331,11 +339,17 @@ const deleteSelectedNode = () => {
 
 // Workflow metadata
 const workflowName = ref(isNew.value ? 'New Workflow' : 'My Workflow')
+
+// Sync breadcrumb title with workflow name
+watch([isNew, workflowName], ([newFlag, name]) => {
+  breadcrumbsStore.setCurrentTitle(newFlag ? 'New workflow' : (name || 'Workflow'))
+}, { immediate: true })
 const workflowDescription = ref('')
 const isRunning = ref(false)
 const isSaving = ref(false)
 const activeTab = ref<'properties' | 'executions'>('properties')
-const isSidebarOpen = ref(true)
+const isSidebarOpen = ref(false)
+const showMinimap = ref(false)
 const executionsLoaded = ref(false)
 
 const openExecutionsTab = () => {
@@ -427,13 +441,94 @@ const runWorkflow = async () => {
   }
 }
 
+// ─── Current workflow (for enable/disable + duplicate) ────────────
+const { toast } = useToast()
+const entityName = 'workflow'
+
+const { data: currentWorkflow, refresh: refreshCurrentWorkflow } = await useAsyncData(
+  () => `workflow-${workflowId.value}`,
+  () => (isNew.value ? Promise.resolve(null) : orchestratorApi.workflow.get(workflowId.value)),
+  { watch: [workflowId], getCachedData: () => undefined },
+)
+
+const isEnabled = computed(() => currentWorkflow.value?.enabled ?? false)
+const menuBusy = ref(false)
+
+// ─── Enable / Disable ─────────────────────────────────────────────
+const handleToggleEnabled = async () => {
+  if (isNew.value || !currentWorkflow.value) return
+  menuBusy.value = true
+  try {
+    if (currentWorkflow.value.enabled) {
+      await orchestratorApi.workflow.disable(workflowId.value)
+      toast({ title: 'Workflow disabled' })
+    }
+    else {
+      await orchestratorApi.workflow.enable(workflowId.value)
+      toast({ title: 'Workflow enabled' })
+    }
+    await refreshCurrentWorkflow()
+  }
+  catch (err) {
+    toast({
+      title: 'Toggle failed',
+      description: err instanceof Error ? err.message : String(err),
+      variant: 'negative',
+    })
+  }
+  finally {
+    menuBusy.value = false
+  }
+}
+
+// ─── Duplicate ─────────────────────────────────────────────────────
+const handleDuplicate = async () => {
+  if (isNew.value || !currentWorkflow.value) return
+  menuBusy.value = true
+  try {
+    const src = currentWorkflow.value
+    const copy = await orchestratorApi.workflow.create({
+      ...src,
+      name: `${src.name} (copy)`,
+      enabled: false,
+    })
+    toast({ title: 'Workflow duplicated', description: `Created "${copy.name}".` })
+    await navigateTo(`/orchestrator/workflows/${copy.id}`)
+  }
+  catch (err) {
+    toast({
+      title: 'Duplicate failed',
+      description: err instanceof Error ? err.message : String(err),
+      variant: 'negative',
+    })
+  }
+  finally {
+    menuBusy.value = false
+  }
+}
+
+// ─── Delete ────────────────────────────────────────────────────────
+const deleteWorkflowEntity = async (): Promise<boolean> => {
+  if (isNew.value) return false
+  try {
+    await orchestratorApi.workflow.delete(workflowId.value)
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
+const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
+  useDeleteDialog(deleteWorkflowEntity, '/orchestrator/workflows/list')
+
 </script>
 
 <template>
   <div class="-m-6 flex h-[calc(100vh-3.5rem)] shrink-0">
     <!-- Main Canvas -->
     <div class="flex flex-1 flex-col">
-      <!-- Toolbar -->
+      <!-- Toolbar (name + save) -->
       <div class="bg-background flex items-center justify-between border-b px-4 py-2">
         <div class="flex items-center gap-4">
           <div>
@@ -445,31 +540,52 @@ const runWorkflow = async () => {
           </div>
         </div>
         <div class="flex items-center gap-2">
-
-          <Button variant="outline" size="sm" :disabled="isSaving" @click="saveWorkflow">
-            <Save class="h-4 w-4" />
-            {{ isSaving ? 'Saving...' : 'Save' }}
-          </Button>
-          <Button size="sm" :disabled="isRunning" @click="runWorkflow">
-            <Play class="h-4 w-4" :class="{ 'animate-pulse': isRunning }" />
-            {{ isRunning ? 'Running...' : 'Run' }}
-          </Button>
-          <button class="hover:bg-accent ml-1 rounded-md p-2" :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'"
-            @click="isSidebarOpen = !isSidebarOpen">
-            <PanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
-            <PanelRightOpen v-else class="h-4 w-4" />
-          </button>
+          <ButtonIcon icon="save" :disabled="isSaving" @click="saveWorkflow">
+            {{ isSaving ? 'Saving…' : $t('save_entity', { entityName }) }}
+          </ButtonIcon>
+          <DropdownMenu v-if="!isNew">
+            <DropdownMenuTrigger as-child>
+              <Button size="icon" variant="secondary">
+                <MoreHorizontal class="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem as-child>
+                <NuxtLink to="/orchestrator/workflows/new">
+                  <Plus class="mr-2 size-4" />
+                  <span>{{ $t('new_entity', { entityName }) }}</span>
+                </NuxtLink>
+              </DropdownMenuItem>
+              <DropdownMenuItem :disabled="menuBusy || !currentWorkflow" @click="handleDuplicate">
+                <Copy class="mr-2 size-4" />
+                <span>Duplicate</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem :disabled="menuBusy || !currentWorkflow" @click="handleToggleEnabled">
+                <component :is="isEnabled ? PowerOff : Power" class="mr-2 size-4" />
+                <span>{{ isEnabled ? 'Disable' : 'Enable' }}</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem @click="openDeleteDialog">
+                <Trash class="mr-2 size-4" />
+                <span>{{ $t('delete_entity', { entityName }) }}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       <!-- VueFlow Canvas -->
-      <div class="flex-1" @dragover="onDragOver" @drop="onDrop">
+      <div class="relative flex-1" @dragover="onDragOver" @drop="onDrop">
         <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
           :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="2" :fit-view-on-init="!isNew"
           class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
           <Background pattern-color="hsl(var(--border))" :gap="20" />
-          <Controls position="bottom-left" />
-          <MiniMap position="bottom-right" :node-color="(node: any) => {
+          <Controls position="bottom-left">
+            <ControlButton :title="showMinimap ? 'Hide minimap' : 'Show minimap'" @click="showMinimap = !showMinimap">
+              <MapIcon class="h-4 w-4" />
+            </ControlButton>
+          </Controls>
+          <MiniMap v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
             if (node.type === 'trigger') return 'hsl(142 76% 36%)'
             if (node.type === 'condition') return 'hsl(48 96% 53%)'
             if (node.type === 'loop') return 'hsl(280 67% 60%)'
@@ -477,6 +593,24 @@ const runWorkflow = async () => {
             return 'hsl(217 91% 60%)'
           }" />
         </VueFlow>
+
+        <!-- Floating top-right action column -->
+        <div class="pointer-events-none absolute top-4 right-4 z-10 flex flex-col gap-2">
+          <button
+            class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm disabled:opacity-50"
+            :disabled="isRunning"
+            :title="isRunning ? 'Running…' : 'Run workflow'"
+            @click="runWorkflow">
+            <Play class="h-4 w-4" :class="{ 'animate-pulse': isRunning }" />
+          </button>
+          <button
+            class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
+            :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'"
+            @click="isSidebarOpen = !isSidebarOpen">
+            <PanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
+            <PanelRightOpen v-else class="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
 
@@ -759,6 +893,12 @@ const runWorkflow = async () => {
       </div>
       </div>
     </div>
+
+    <DialogDelete
+      v-model:open="deleteDialogOpen"
+      :entity-name="entityName"
+      :loading="deleting"
+      @confirm="confirmDelete" />
   </div>
 </template>
 
