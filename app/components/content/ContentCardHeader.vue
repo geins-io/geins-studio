@@ -1,15 +1,19 @@
 <script lang="ts" setup>
+import ItemDescription from '../ui/item/ItemDescription.vue';
+
 const props = withDefaults(
   defineProps<{
     title: string;
     description?: string;
     icon?: string;
+    mediaVariant?: 'icon' | 'image';
     size?: 'lg' | 'md' | 'sm';
     headingLevel?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
   }>(),
   {
     size: 'lg',
     headingLevel: 'h2',
+    mediaVariant: 'icon',
   },
 );
 
@@ -34,25 +38,31 @@ switch (props.size) {
 }
 </script>
 <template>
-  <div :class="cn('text-left', icon || $slots.icon ? 'flex gap-4' : '')">
-    <div
+  <Item :class="cn('p-0 text-left', icon || $slots.icon ? 'flex gap-4' : '')">
+    <ItemMedia
       v-if="icon || $slots.icon"
-      class="flex size-8 shrink-0 items-center justify-center"
+      class="size-9"
+      :variant="mediaVariant"
     >
       <slot name="icon">
-        <component :is="resolveIcon(icon!)" class="size-8" :stroke-width="1" />
+        <component :is="resolveIcon(icon!)" class="size-5" />
       </slot>
-    </div>
-    <div>
-      <component :is="headingLevel" :class="cn('font-semibold', headerClasses)">
-        {{ title }}
-      </component>
-      <p
+    </ItemMedia>
+    <ItemContent>
+      <ItemTitle as-child>
+        <component
+          :is="headingLevel"
+          :class="cn('font-semibold', headerClasses)"
+        >
+          {{ title }}
+        </component>
+      </ItemTitle>
+      <ItemDescription
         v-if="description"
         :class="cn('text-muted-foreground', descriptionClasses)"
       >
         {{ description }}
-      </p>
-    </div>
-  </div>
+      </ItemDescription>
+    </ItemContent>
+  </Item>
 </template>

@@ -29,6 +29,7 @@ const emit = defineEmits<{
         :title="option.label"
         :description="option.description"
         :icon="option.type === 'color' ? undefined : option.icon"
+        :media-variant="option.type === 'color' ? 'image' : 'icon'"
         size="sm"
       >
         <template v-if="option.type === 'color'" #icon>
