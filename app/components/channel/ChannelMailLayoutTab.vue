@@ -97,6 +97,7 @@ function handleFontFamily(value: string) {
               :model-value="model.logoUrl ?? ''"
               @update:model-value="handleFile('logoUrl', $event)"
             />
+            <FormInputDescription>{{ t('channels.mail_logo_hint') }}</FormInputDescription>
           </div>
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_header_image') }}</Label>
@@ -104,6 +105,7 @@ function handleFontFamily(value: string) {
               :model-value="model.headerImgUrl ?? ''"
               @update:model-value="handleFile('headerImgUrl', $event)"
             />
+            <FormInputDescription>{{ t('channels.mail_header_image_hint') }}</FormInputDescription>
           </div>
         </FormGrid>
       </FormGridWrap>
@@ -186,36 +188,36 @@ function handleFontFamily(value: string) {
         <FormGrid design="1+1+1">
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_font_size_small') }}</Label>
-            <Input
+            <FormInputPixel
               :model-value="model.fontSizeSmall ?? ''"
               placeholder="12px"
-              @update:model-value="update('fontSizeSmall', String($event))"
+              @update:model-value="update('fontSizeSmall', $event)"
             />
           </div>
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_font_size_medium') }}</Label>
-            <Input
+            <FormInputPixel
               :model-value="model.fontSizeMedium ?? ''"
               placeholder="14px"
-              @update:model-value="update('fontSizeMedium', String($event))"
+              @update:model-value="update('fontSizeMedium', $event)"
             />
           </div>
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_font_size_large') }}</Label>
-            <Input
+            <FormInputPixel
               :model-value="model.fontSizeLarge ?? ''"
               placeholder="18px"
-              @update:model-value="update('fontSizeLarge', String($event))"
+              @update:model-value="update('fontSizeLarge', $event)"
             />
           </div>
         </FormGrid>
         <FormGrid design="1">
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_line_height') }}</Label>
-            <Input
+            <FormInputPixel
               :model-value="model.lineHeight ?? ''"
-              placeholder="1.4"
-              @update:model-value="update('lineHeight', String($event))"
+              placeholder="22px"
+              @update:model-value="update('lineHeight', $event)"
             />
           </div>
         </FormGrid>
@@ -229,18 +231,18 @@ function handleFontFamily(value: string) {
         <FormGrid design="1+1">
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_border_radius') }}</Label>
-            <Input
+            <FormInputPixel
               :model-value="model.borderRadius ?? ''"
               placeholder="4px"
-              @update:model-value="update('borderRadius', String($event))"
+              @update:model-value="update('borderRadius', $event)"
             />
           </div>
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_prod_img_size') }}</Label>
-            <Input
+            <FormInputPixel
               :model-value="model.prodImgSize ?? ''"
               placeholder="80px"
-              @update:model-value="update('prodImgSize', String($event))"
+              @update:model-value="update('prodImgSize', $event)"
             />
           </div>
         </FormGrid>
