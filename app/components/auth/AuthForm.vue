@@ -505,7 +505,7 @@ const backToLogin = () => {
                 @click="$emit('set-account', account.accountKey)"
               >
                 <BrandLogoSymbol class="mr-auto size-4" :font-controlled="false" />
-                <span class="mr-auto">{{ account.name }}</span>
+                <span class="mr-auto">{{ account.displayName }}</span>
               </Button>
             </li>
             <li
