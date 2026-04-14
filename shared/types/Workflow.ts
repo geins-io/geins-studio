@@ -178,17 +178,44 @@ export interface ExecutionLog {
   group?: string;
   status: string;
   startTime: string;
-  endTime?: string;
-  durationMs?: number;
+  endTime?: string | null;
+  durationMs?: number | null;
+  totalNodes?: number;
+  completedNodes?: number;
+  failedNodes?: number;
+  skippedNodes?: number;
+  isScheduled?: boolean;
+  triggerType?: string | null;
+  startedBy?: string | null;
+  cronExpression?: string | null;
+  eventName?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  workflowVersion?: string | number;
+  tags?: string[] | null;
   childExecutionIds?: string[] | null;
   cascadeCancellation?: boolean;
   idempotencyKey?: string | null;
   replayOf?: string | null;
+  replayedBy?: string | null;
+  replayedAt?: string | null;
+  pauseReason?: string | null;
+  pausedBy?: string | null;
+  pausedAt?: string | null;
+  cancelledBy?: string | null;
+  cancellationReason?: string | null;
   errors?: string[] | null;
   errorCount?: number;
   isTestRun?: boolean;
   nodeExecutions?: ExecutionNodeExecution[] | null;
-  startedBy?: string;
+}
+
+export interface ExecutionDetailsResponse {
+  execution: ExecutionLog;
+  orchestrationStatus: string | null;
+  canCancel: boolean;
+  canPause: boolean;
+  canReplay: boolean;
 }
 
 export interface ExecutionNodeResult {

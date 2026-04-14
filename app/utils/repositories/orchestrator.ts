@@ -6,6 +6,7 @@ import type {
   ValidateWorkflowResult,
   ExecutionLog,
   ExecutionDetails,
+  ExecutionDetailsResponse,
   ReplayChain,
   ConcurrencyState,
   StartWorkflowRequest,
@@ -221,10 +222,9 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return normalizeKeys<ExecutionLog[]>(raw);
       },
 
-      async get(executionId: string): Promise<ExecutionDetails> {
-        return await fetch<ExecutionDetails>(
-          `${EXECUTION_ENDPOINT}/${executionId}`,
-        );
+      async get(executionId: string): Promise<ExecutionDetailsResponse> {
+        const raw = await fetch<unknown>(`${EXECUTION_ENDPOINT}/${executionId}`);
+        return normalizeKeys<ExecutionDetailsResponse>(raw);
       },
 
       async getReplayChain(executionId: string): Promise<ReplayChain> {
