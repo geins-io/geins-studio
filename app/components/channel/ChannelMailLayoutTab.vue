@@ -239,10 +239,10 @@ function handleFontFamily(value: string) {
           </div>
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_prod_img_size') }}</Label>
-            <FormInputPixel
+            <Input
               :model-value="model.prodImgSize ?? ''"
-              placeholder="80px"
-              @update:model-value="update('prodImgSize', $event)"
+              placeholder="200f200"
+              @update:model-value="update('prodImgSize', String($event))"
             />
           </div>
         </FormGrid>
