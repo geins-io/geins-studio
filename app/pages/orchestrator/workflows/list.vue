@@ -184,7 +184,7 @@ const dataList = computed(() => {
 });
 
 const clearGroupFilter = () => {
-  navigateTo('/orchestrator/workflows');
+  navigateTo('/orchestrator/workflows/list');
 };
 
 // ─── Table Columns ─────────────────────────────────────────────────

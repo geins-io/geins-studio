@@ -172,13 +172,14 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         executionId: string,
         data?: ReplayExecutionRequest,
       ): Promise<StartWorkflowResponse> {
-        return await fetch<StartWorkflowResponse>(
+        const raw = await fetch<unknown>(
           `${EXECUTION_ENDPOINT}/${executionId}/replay`,
           {
             method: 'POST',
             body: data ?? {},
           },
         );
+        return normalizeKeys<StartWorkflowResponse>(raw);
       },
 
       async bulkCancel(data: BulkCancelRequest): Promise<BulkCancelResponse> {
