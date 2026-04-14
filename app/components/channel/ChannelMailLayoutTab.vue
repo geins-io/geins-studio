@@ -76,7 +76,7 @@ function colorLabel(
   <div class="flex flex-col gap-8 pt-2">
     <!-- Images -->
     <section class="flex flex-col gap-3">
-      <ContentCardHeader :title="t('channels.mail_images')" size="md" />
+      <ContentCardHeader :title="t('channels.mail_images')" :description="t('channels.mail_images_desc')" icon="Images" size="md" />
       <FormGridWrap>
         <FormGrid design="1+1">
           <div class="space-y-1.5">
@@ -99,24 +99,47 @@ function colorLabel(
 
     <!-- Colors -->
     <section class="flex flex-col gap-3">
-      <ContentCardHeader :title="t('channels.mail_colors')" size="md" />
+      <ContentCardHeader :title="t('channels.mail_colors')" :description="t('channels.mail_colors_desc')" icon="Palette" size="md" />
       <FormGridWrap>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div
-            v-for="key in [
-              ...backgroundColorKeys,
-              ...textColorKeys,
-              ...buttonColorKeys,
-            ]"
-            :key="key"
-            class="space-y-1.5"
-          >
-            <Label>{{ colorLabel(key) }}</Label>
-            <FormInputColor
-              :model-value="(model[key] as string) ?? ''"
-              :label="colorLabel(key)"
-              @update:model-value="update(key, $event)"
-            />
+        <div class="flex flex-col gap-6">
+          <div class="flex flex-col gap-3">
+            <h4 class="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{{ t('channels.mail_color_group_backgrounds') }}</h4>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div v-for="key in backgroundColorKeys" :key="key" class="space-y-1.5">
+                <Label>{{ colorLabel(key) }}</Label>
+                <FormInputColor
+                  :model-value="(model[key] as string) ?? ''"
+                  :label="colorLabel(key)"
+                  @update:model-value="update(key, $event)"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-3">
+            <h4 class="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{{ t('channels.mail_color_group_text') }}</h4>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div v-for="key in textColorKeys" :key="key" class="space-y-1.5">
+                <Label>{{ colorLabel(key) }}</Label>
+                <FormInputColor
+                  :model-value="(model[key] as string) ?? ''"
+                  :label="colorLabel(key)"
+                  @update:model-value="update(key, $event)"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col gap-3">
+            <h4 class="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{{ t('channels.mail_color_group_buttons') }}</h4>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div v-for="key in buttonColorKeys" :key="key" class="space-y-1.5">
+                <Label>{{ colorLabel(key) }}</Label>
+                <FormInputColor
+                  :model-value="(model[key] as string) ?? ''"
+                  :label="colorLabel(key)"
+                  @update:model-value="update(key, $event)"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </FormGridWrap>
@@ -124,7 +147,7 @@ function colorLabel(
 
     <!-- Typography -->
     <section class="flex flex-col gap-3">
-      <ContentCardHeader :title="t('channels.mail_typography')" size="md" />
+      <ContentCardHeader :title="t('channels.mail_typography')" :description="t('channels.mail_typography_desc')" icon="FileType2" size="md" />
       <FormGridWrap>
         <FormGrid design="1+1">
           <div class="space-y-1.5">
@@ -184,7 +207,7 @@ function colorLabel(
 
     <!-- Shape -->
     <section class="flex flex-col gap-3">
-      <ContentCardHeader :title="t('channels.mail_shape')" size="md" />
+      <ContentCardHeader :title="t('channels.mail_shape')" :description="t('channels.mail_shape_desc')" icon="RoundCorner" size="md" />
       <FormGridWrap>
         <FormGrid design="1+1">
           <div class="space-y-1.5">
@@ -209,7 +232,7 @@ function colorLabel(
 
     <!-- Product display -->
     <section class="flex flex-col gap-3">
-      <ContentCardHeader :title="t('channels.mail_product_display')" size="md" />
+      <ContentCardHeader :title="t('channels.mail_product_display')" :description="t('channels.mail_product_display_desc')" icon="Package" size="md" />
       <div class="flex flex-col gap-3">
         <Item variant="outline" class="rounded-lg p-3">
           <ItemContent>
