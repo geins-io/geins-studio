@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChannelMailSettings } from '#shared/types';
+import { fontToGoogleUrl } from '@/utils/storefrontFonts';
 
 export type MailLayoutStagedFiles = {
   logoUrl?: File;
@@ -69,6 +70,17 @@ function colorLabel(
     buttonTextColor: 'button_text',
   };
   return t(`channels.mail_color_${map[key]}`);
+}
+
+const isCuratedFont = computed(() => fontToGoogleUrl(model.value.fontFamily ?? '') !== null);
+
+function handleFontFamily(value: string) {
+  const autoUrl = fontToGoogleUrl(value);
+  if (autoUrl) {
+    model.value = { ...model.value, fontFamily: value, fontUrl: autoUrl };
+  } else {
+    update('fontFamily', value);
+  }
 }
 </script>
 
@@ -154,7 +166,7 @@ function colorLabel(
             <Label>{{ t('channels.mail_font_family') }}</Label>
             <FormInputFont
               :model-value="model.fontFamily ?? ''"
-              @update:model-value="update('fontFamily', $event)"
+              @update:model-value="handleFontFamily($event ?? '')"
             />
           </div>
           <div class="space-y-1.5">
@@ -162,8 +174,13 @@ function colorLabel(
             <Input
               :model-value="model.fontUrl ?? ''"
               type="url"
+              :readonly="isCuratedFont"
+              :class="isCuratedFont ? 'text-muted-foreground' : ''"
               @update:model-value="update('fontUrl', String($event))"
             />
+            <FormInputDescription v-if="isCuratedFont">
+              {{ t('channels.mail_font_url_auto') }}
+            </FormInputDescription>
           </div>
         </FormGrid>
         <FormGrid design="1+1+1">

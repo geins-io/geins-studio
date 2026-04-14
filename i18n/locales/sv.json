@@ -663,6 +663,7 @@
     "mail_color_button_text": "Knapptextfärg",
     "mail_font_family": "Typsnitt",
     "mail_font_url": "Typsnitts-URL",
+    "mail_font_url_auto": "Genereras automatiskt från typsnittsval.",
     "mail_font_size_small": "Liten textstorlek",
     "mail_font_size_medium": "Mellan textstorlek",
     "mail_font_size_large": "Stor textstorlek",

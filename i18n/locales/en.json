@@ -667,6 +667,7 @@
     "mail_color_button_text": "Button text color",
     "mail_font_family": "Font family",
     "mail_font_url": "Font URL",
+    "mail_font_url_auto": "Auto-generated from font selection.",
     "mail_font_size_small": "Font size small",
     "mail_font_size_medium": "Font size medium",
     "mail_font_size_large": "Font size large",
