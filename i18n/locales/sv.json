@@ -359,6 +359,7 @@
   },
   "executions": {
     "description": "Visa körningshistorik och övervaka arbetsflödeskörningar.",
+    "id": "Körnings-ID",
     "workflow_name": "Arbetsflöde",
     "workflow_id": "Arbetsflödes-ID",
     "start_time": "Startad",

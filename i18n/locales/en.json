@@ -363,6 +363,7 @@
   },
   "executions": {
     "description": "View execution history and monitor workflow runs.",
+    "id": "Execution ID",
     "workflow_name": "Workflow",
     "workflow_id": "Workflow ID",
     "start_time": "Started",

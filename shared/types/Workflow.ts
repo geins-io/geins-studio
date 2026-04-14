@@ -287,8 +287,8 @@ export interface BulkReplayFailedResponse {
 
 export interface ListExecutionLogsOptions {
   status?: ExecutionStatus;
-  startTime?: string;
-  endTime?: string;
+  startedAfter?: string;
+  startedBefore?: string;
   limit?: number;
   workflowId?: string;
 }
