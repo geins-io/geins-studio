@@ -73,6 +73,14 @@ function onDragLeave() {
 
 const isDragging = ref(false);
 
+function onImageError() {
+  if (localPreviewUrl.value) {
+    URL.revokeObjectURL(localPreviewUrl.value);
+  }
+  localPreviewUrl.value = null;
+  selectedFileName.value = null;
+}
+
 onBeforeUnmount(() => {
   if (localPreviewUrl.value) URL.revokeObjectURL(localPreviewUrl.value);
 });
@@ -97,7 +105,7 @@ onBeforeUnmount(() => {
     <!-- Uploaded state -->
     <template v-if="hasImage">
       <ItemMedia variant="image" class="size-12 border">
-        <img :src="previewUrl!" alt="logotype" />
+        <img :src="previewUrl!" alt="logotype" @error="onImageError" />
       </ItemMedia>
       <ItemContent>
         <ItemTitle>{{ displayName }}</ItemTitle>
