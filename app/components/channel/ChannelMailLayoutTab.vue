@@ -50,9 +50,7 @@ const textColorKeys = [
 
 const buttonColorKeys = ['buttonColor', 'buttonTextColor'] as const;
 
-function colorLabel(
-  key: keyof ChannelMailSettings,
-): string {
+function colorLabel(key: keyof ChannelMailSettings): string {
   // Map CSS-case key -> snake_case i18n suffix.
   const map: Record<string, string> = {
     backgroundColor: 'background',
@@ -72,7 +70,9 @@ function colorLabel(
   return t(`channels.mail_color_${map[key]}`);
 }
 
-const isCuratedFont = computed(() => fontToGoogleUrl(model.value.fontFamily ?? '') !== null);
+const isCuratedFont = computed(
+  () => fontToGoogleUrl(model.value.fontFamily ?? '') !== null,
+);
 
 function handleFontFamily(value: string) {
   const autoUrl = fontToGoogleUrl(value);
@@ -88,7 +88,12 @@ function handleFontFamily(value: string) {
   <div class="flex flex-col gap-8 pt-2">
     <!-- Images -->
     <section class="flex flex-col gap-3">
-      <ContentCardHeader :title="t('channels.mail_images')" :description="t('channels.mail_images_desc')" icon="Images" size="md" />
+      <ContentCardHeader
+        :title="t('channels.mail_images')"
+        :description="t('channels.mail_images_desc')"
+        icon="Images"
+        size="md"
+      />
       <FormGridWrap>
         <FormGrid design="1+1">
           <div class="space-y-1.5">
@@ -97,7 +102,9 @@ function handleFontFamily(value: string) {
               :model-value="model.logoUrl ?? ''"
               @update:model-value="handleFile('logoUrl', $event)"
             />
-            <FormInputDescription>{{ t('channels.mail_logo_hint') }}</FormInputDescription>
+            <FormInputDescription>{{
+              t('channels.mail_logo_hint')
+            }}</FormInputDescription>
           </div>
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_header_image') }}</Label>
@@ -105,7 +112,9 @@ function handleFontFamily(value: string) {
               :model-value="model.headerImgUrl ?? ''"
               @update:model-value="handleFile('headerImgUrl', $event)"
             />
-            <FormInputDescription>{{ t('channels.mail_header_image_hint') }}</FormInputDescription>
+            <FormInputDescription>{{
+              t('channels.mail_header_image_hint')
+            }}</FormInputDescription>
           </div>
         </FormGrid>
       </FormGridWrap>
@@ -113,13 +122,26 @@ function handleFontFamily(value: string) {
 
     <!-- Colors -->
     <section class="flex flex-col gap-3">
-      <ContentCardHeader :title="t('channels.mail_colors')" :description="t('channels.mail_colors_desc')" icon="Palette" size="md" />
+      <ContentCardHeader
+        :title="t('channels.mail_colors')"
+        :description="t('channels.mail_colors_desc')"
+        icon="Palette"
+        size="md"
+      />
       <FormGridWrap>
         <div class="flex flex-col gap-6">
           <div class="flex flex-col gap-3">
-            <h4 class="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{{ t('channels.mail_color_group_backgrounds') }}</h4>
+            <h4
+              class="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+            >
+              {{ t('channels.mail_color_group_backgrounds') }}
+            </h4>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div v-for="key in backgroundColorKeys" :key="key" class="space-y-1.5">
+              <div
+                v-for="key in backgroundColorKeys"
+                :key="key"
+                class="space-y-1.5"
+              >
                 <Label>{{ colorLabel(key) }}</Label>
                 <FormInputColor
                   :model-value="(model[key] as string) ?? ''"
@@ -130,7 +152,11 @@ function handleFontFamily(value: string) {
             </div>
           </div>
           <div class="flex flex-col gap-3">
-            <h4 class="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{{ t('channels.mail_color_group_text') }}</h4>
+            <h4
+              class="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+            >
+              {{ t('channels.mail_color_group_text') }}
+            </h4>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div v-for="key in textColorKeys" :key="key" class="space-y-1.5">
                 <Label>{{ colorLabel(key) }}</Label>
@@ -143,9 +169,17 @@ function handleFontFamily(value: string) {
             </div>
           </div>
           <div class="flex flex-col gap-3">
-            <h4 class="text-muted-foreground text-xs font-semibold tracking-wide uppercase">{{ t('channels.mail_color_group_buttons') }}</h4>
+            <h4
+              class="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+            >
+              {{ t('channels.mail_color_group_buttons') }}
+            </h4>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div v-for="key in buttonColorKeys" :key="key" class="space-y-1.5">
+              <div
+                v-for="key in buttonColorKeys"
+                :key="key"
+                class="space-y-1.5"
+              >
                 <Label>{{ colorLabel(key) }}</Label>
                 <FormInputColor
                   :model-value="(model[key] as string) ?? ''"
@@ -161,7 +195,12 @@ function handleFontFamily(value: string) {
 
     <!-- Typography -->
     <section class="flex flex-col gap-3">
-      <ContentCardHeader :title="t('channels.mail_typography')" :description="t('channels.mail_typography_desc')" icon="FileType2" size="md" />
+      <ContentCardHeader
+        :title="t('channels.mail_typography')"
+        :description="t('channels.mail_typography_desc')"
+        icon="FileType2"
+        size="md"
+      />
       <FormGridWrap>
         <FormGrid design="1+1">
           <div class="space-y-1.5">
@@ -226,7 +265,12 @@ function handleFontFamily(value: string) {
 
     <!-- Shape -->
     <section class="flex flex-col gap-3">
-      <ContentCardHeader :title="t('channels.mail_shape')" :description="t('channels.mail_shape_desc')" icon="RoundCorner" size="md" />
+      <ContentCardHeader
+        :title="t('channels.mail_shape')"
+        :description="t('channels.mail_shape_desc')"
+        icon="RoundCorner"
+        size="md"
+      />
       <FormGridWrap>
         <FormGrid design="1+1">
           <div class="space-y-1.5">
@@ -251,7 +295,12 @@ function handleFontFamily(value: string) {
 
     <!-- Product display -->
     <section class="flex flex-col gap-3">
-      <ContentCardHeader :title="t('channels.mail_product_display')" :description="t('channels.mail_product_display_desc')" icon="Package" size="md" />
+      <ContentCardHeader
+        :title="t('channels.mail_product_display')"
+        :description="t('channels.mail_product_display_desc')"
+        icon="Package"
+        size="md"
+      />
       <div class="flex flex-col gap-3">
         <Item variant="outline" class="rounded-lg p-3">
           <ItemContent>
