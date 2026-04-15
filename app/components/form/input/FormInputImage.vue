@@ -71,14 +71,17 @@ function onDragLeave() {
   isDragging.value = false;
 }
 
+const { handleImageError } = useGeinsImage();
+
 const isDragging = ref(false);
 
-function onImageError() {
+function onImageError(event: Event) {
   if (localPreviewUrl.value) {
     URL.revokeObjectURL(localPreviewUrl.value);
+    localPreviewUrl.value = null;
+    selectedFileName.value = null;
   }
-  localPreviewUrl.value = null;
-  selectedFileName.value = null;
+  handleImageError(event);
 }
 
 onBeforeUnmount(() => {

@@ -34,18 +34,13 @@ const iconName = computed(() => mailTypeIconMap[props.mailType.type] ?? 'Mail');
 </script>
 
 <template>
-  <div class="flex items-center gap-4 px-4 py-3">
-    <Item class="min-w-0 flex-1 gap-4 p-0 text-left">
-      <ItemMedia variant="icon" class="size-9">
-        <component :is="resolveIcon(iconName)" class="size-5" />
-      </ItemMedia>
-      <ItemContent>
-        <ItemTitle class="text-sm font-medium">{{ mailType.name }}</ItemTitle>
-        <ItemDescription class="text-muted-foreground text-xs">
-          {{ t(`channels.mail_desc_${mailType.type}`) }}
-        </ItemDescription>
-      </ItemContent>
-    </Item>
+  <div class="flex items-center gap-4 px-4 py-4">
+    <ContentCardHeader
+      :title="mailType.name"
+      :description="t(`channels.mail_desc_${mailType.type}`)"
+      :icon="iconName"
+      size="sm"
+    />
     <span
       v-if="mailType.hasOverrides"
       class="bg-primary inline-block size-1.5 shrink-0 rounded-full"
@@ -54,12 +49,13 @@ const iconName = computed(() => mailTypeIconMap[props.mailType.type] ?? 'Mail');
       <span class="sr-only">{{ t('channels.mail_overridden_indicator') }}</span>
     </span>
     <Button
-      variant="ghost"
-      size="icon"
+      variant="outline"
+      class="ml-auto size-6 p-1 sm:size-7"
+      size="xs"
       :aria-label="t('channels.edit_mail_type', { name: mailType.name })"
       @click="emit('edit', mailType)"
     >
-      <LucidePencil class="size-4" />
+      <LucideEdit class="size-3.5" />
     </Button>
   </div>
 </template>

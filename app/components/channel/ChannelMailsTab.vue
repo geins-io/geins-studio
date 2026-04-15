@@ -27,10 +27,9 @@ const generalFields = defineModel<Partial<ChannelMailSettings>>(
   'generalFields',
   { required: true },
 );
-const layoutFields = defineModel<Partial<ChannelMailSettings>>(
-  'layoutFields',
-  { required: true },
-);
+const layoutFields = defineModel<Partial<ChannelMailSettings>>('layoutFields', {
+  required: true,
+});
 const layoutFiles = defineModel<MailLayoutStagedFiles>('layoutFiles', {
   default: () => ({}),
 });
@@ -52,18 +51,21 @@ function handleSaved() {
 
 <template>
   <ContentEditCard :title="t('channels.tab_mails')">
-    <Tabs default-value="mail-content">
+    <Tabs default-value="general">
       <TabsList>
-        <TabsTrigger value="mail-content">
-          {{ t('channels.mail_content') }}
-        </TabsTrigger>
         <TabsTrigger value="general">
           {{ t('channels.mail_general') }}
+        </TabsTrigger>
+        <TabsTrigger value="mail-content">
+          {{ t('channels.mail_content') }}
         </TabsTrigger>
         <TabsTrigger value="layout">
           {{ t('channels.mail_layout') }}
         </TabsTrigger>
       </TabsList>
+      <TabsContent value="general">
+        <ChannelMailGeneralTab v-model="generalFields" />
+      </TabsContent>
       <TabsContent value="mail-content">
         <ChannelMailContentTab
           :mail-types="mailTypes"
@@ -71,9 +73,7 @@ function handleSaved() {
           @edit="handleEditMailType"
         />
       </TabsContent>
-      <TabsContent value="general">
-        <ChannelMailGeneralTab v-model="generalFields" />
-      </TabsContent>
+
       <TabsContent value="layout">
         <ChannelMailLayoutTab
           v-model="layoutFields"
