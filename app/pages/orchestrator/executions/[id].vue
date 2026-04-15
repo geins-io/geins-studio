@@ -3,6 +3,7 @@ import type {
   ExecutionDetailsResponse,
   ExecutionLog,
   ExecutionNodeExecution,
+  LiveConsoleLine,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { Component } from 'vue';
@@ -19,7 +20,6 @@ import {
   LucideSquare,
   LucideChevronRight,
   LucideChevronDown,
-  LucideTrash2,
   LucideMoreHorizontal,
   LucideCirclePlay,
   LucideCopy,
@@ -240,25 +240,26 @@ const handleReplay = async () => {
 };
 
 
-// ─── Live console (mock streaming) ─────────────────────────────────
-interface LogLine {
-  id: number;
-  timestamp: string;
-  level: 'info' | 'warn' | 'error' | 'debug';
-  source: string;
-  message: string;
-}
+// ─── Live console ──────────────────────────────────────────────────
+const { accessToken, accountKey } = useGeinsAuth();
 
-const consoleLines = ref<LogLine[]>([]);
-const consoleContainer = ref<HTMLElement | null>(null);
-let logCounter = 0;
+const consoleStreamUrl = computed(() =>
+  executionId.value
+    ? `/api/orchestrator/executions/${encodeURIComponent(executionId.value)}/stream`
+    : null,
+);
 
-const seedLogs = () => {
-  consoleLines.value = [];
-  logCounter = 0;
+const consoleStreamHeaders = computed<Record<string, string>>(() => ({
+  ...(accessToken.value ? { 'x-access-token': accessToken.value } : {}),
+  ...(accountKey.value ? { 'x-account-key': accountKey.value } : {}),
+}));
+
+const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
+  const lines: LiveConsoleLine[] = [];
+  let id = 0;
   for (const node of nodeExecutions.value) {
-    consoleLines.value.push({
-      id: ++logCounter,
+    lines.push({
+      id: ++id,
       timestamp: formatTime(node.startTime),
       level: 'info',
       source: node.nodeId,
@@ -266,8 +267,8 @@ const seedLogs = () => {
     });
     const status = node.status?.toLowerCase();
     if (status === 'completed') {
-      consoleLines.value.push({
-        id: ++logCounter,
+      lines.push({
+        id: ++id,
         timestamp: formatTime(node.endTime),
         level: 'info',
         source: node.nodeId,
@@ -275,8 +276,8 @@ const seedLogs = () => {
       });
     }
     else if (status === 'failed') {
-      consoleLines.value.push({
-        id: ++logCounter,
+      lines.push({
+        id: ++id,
         timestamp: formatTime(node.endTime),
         level: 'error',
         source: node.nodeId,
@@ -284,149 +285,8 @@ const seedLogs = () => {
       });
     }
   }
-};
-
-const scrollConsoleToBottom = () => {
-  nextTick(() => {
-    if (consoleContainer.value) {
-      consoleContainer.value.scrollTop = consoleContainer.value.scrollHeight;
-    }
-  });
-};
-
-watch(execution, () => seedLogs(), { immediate: true });
-
-// ─── Live streaming (real) ─────────────────────────────────────────
-// Reads /api/orchestrator/executions/:id/stream as a chunked text stream
-// and appends each line to the console. Runs only while status === running.
-const { accessToken, accountKey } = useGeinsAuth();
-let streamController: AbortController | null = null;
-
-const detectLevel = (line: string): LogLine['level'] => {
-  const l = line.toLowerCase();
-  if (l.includes('error') || l.includes('failed') || l.includes('✖')) return 'error';
-  if (l.includes('warn')) return 'warn';
-  if (l.includes('debug') || l.startsWith('tick')) return 'debug';
-  return 'info';
-};
-
-const appendStreamLine = (raw: string) => {
-  const line = raw.replace(/\r$/, '');
-  if (!line) return;
-
-  // Try to parse as JSON line: { timestamp, level, source, message }
-  let timestamp = formatTime(new Date().toISOString());
-  let level: LogLine['level'] = detectLevel(line);
-  let source = 'stream';
-  let message = line;
-
-  if (line.startsWith('{') && line.endsWith('}')) {
-    try {
-      const obj = JSON.parse(line) as Record<string, unknown>;
-      if (typeof obj.message === 'string') message = obj.message;
-      if (typeof obj.source === 'string') source = obj.source;
-      else if (typeof obj.nodeId === 'string') source = obj.nodeId;
-      if (typeof obj.timestamp === 'string') timestamp = formatTime(obj.timestamp);
-      else if (typeof obj.time === 'string') timestamp = formatTime(obj.time);
-      const lvl = String(obj.level ?? '').toLowerCase();
-      if (lvl === 'info' || lvl === 'warn' || lvl === 'error' || lvl === 'debug') {
-        level = lvl;
-      }
-    }
-    catch {
-      // keep raw line
-    }
-  }
-
-  consoleLines.value.push({
-    id: ++logCounter,
-    timestamp,
-    level,
-    source,
-    message,
-  });
-  scrollConsoleToBottom();
-};
-
-const startLiveStream = async () => {
-  if (streamController || !executionId.value) return;
-
-  const controller = new AbortController();
-  streamController = controller;
-
-  try {
-    const res = await fetch(
-      `/api/orchestrator/executions/${encodeURIComponent(executionId.value)}/stream`,
-      {
-        signal: controller.signal,
-        headers: {
-          ...(accessToken.value ? { 'x-access-token': accessToken.value } : {}),
-          ...(accountKey.value ? { 'x-account-key': accountKey.value } : {}),
-        },
-      },
-    );
-
-    if (!res.ok || !res.body) {
-      appendStreamLine(`Stream unavailable: HTTP ${res.status}`);
-      return;
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    // Mark the stream as connected in the console
-    consoleLines.value.push({
-      id: ++logCounter,
-      timestamp: formatTime(new Date().toISOString()),
-      level: 'info',
-      source: 'stream',
-      message: '● Connected to live stream',
-    });
-    scrollConsoleToBottom();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      let newlineIdx;
-      while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-        const line = buffer.slice(0, newlineIdx);
-        buffer = buffer.slice(newlineIdx + 1);
-        if (line.trim()) appendStreamLine(line);
-      }
-    }
-
-    // Flush any trailing content
-    if (buffer.trim()) appendStreamLine(buffer);
-  }
-  catch (err) {
-    if ((err as Error).name !== 'AbortError') {
-      appendStreamLine(`Stream error: ${(err as Error).message}`);
-    }
-  }
-  finally {
-    if (streamController === controller) streamController = null;
-  }
-};
-
-const stopLiveStream = () => {
-  if (streamController) {
-    streamController.abort();
-    streamController = null;
-  }
-};
-
-watch(isRunning, (running) => {
-  if (running) startLiveStream();
-  else stopLiveStream();
-}, { immediate: true });
-
-onBeforeUnmount(stopLiveStream);
-
-const clearConsole = () => {
-  consoleLines.value = [];
-};
+  return lines;
+});
 
 </script>
 
@@ -698,42 +558,13 @@ const clearConsole = () => {
       </div>
 
       <!-- Live console -->
-      <div
-        class="sticky top-4 flex h-[70vh] flex-col overflow-hidden rounded-lg border bg-zinc-950 text-zinc-100 lg:col-span-2">
-        <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-          <div class="flex items-center gap-2">
-            <div class="h-2 w-2 rounded-full" :class="isRunning ? 'animate-pulse bg-green-400' : 'bg-zinc-600'" />
-            <h2 class="text-sm font-medium text-zinc-200">
-              {{ isRunning ? 'Live console' : 'Console log' }}
-            </h2>
-            <span class="text-xs text-zinc-500">
-              {{ consoleLines.length }} lines
-            </span>
-          </div>
-          <button class="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200" title="Clear console"
-            @click="clearConsole">
-            <LucideTrash2 class="h-3.5 w-3.5" />
-          </button>
-        </div>
-        <div ref="consoleContainer" class="flex-1 overflow-y-auto p-3 font-mono text-xs leading-relaxed">
-          <div v-if="consoleLines.length === 0" class="text-zinc-600">
-            No output
-          </div>
-          <div v-for="line in consoleLines" :key="line.id" class="flex gap-2">
-            <span class="shrink-0 text-zinc-600">{{ line.timestamp }}</span>
-            <span class="w-10 shrink-0 uppercase" :class="{
-              'text-zinc-500': line.level === 'debug',
-              'text-blue-400': line.level === 'info',
-              'text-yellow-400': line.level === 'warn',
-              'text-red-400': line.level === 'error',
-            }">
-              {{ line.level }}
-            </span>
-            <span class="w-32 shrink-0 truncate text-zinc-500">{{ line.source }}</span>
-            <span class="flex-1 break-all text-zinc-200">{{ line.message }}</span>
-          </div>
-        </div>
-      </div>
+      <OrchestratorLiveConsole
+        class="sticky top-4 h-[70vh] lg:col-span-2"
+        :stream-url="consoleStreamUrl"
+        :active="isRunning"
+        :seed-lines="consoleSeedLines"
+        :request-headers="consoleStreamHeaders"
+      />
     </div>
   </div>
 </template>

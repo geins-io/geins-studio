@@ -25,6 +25,7 @@ export interface ExecutionListItem {
   groupSlug: string | null;
   status: string;
   startTime: string;
+  startTimeIso: string | null;
   endTime: string;
   durationFormatted: string;
   durationMs: number;
@@ -195,6 +196,7 @@ const mapToListData = (
       groupSlug: groupName ? groupName.toLowerCase().replace(/\s+/g, '-') : null,
       status: e.status?.toLowerCase() ?? 'unknown',
       startTime: formatTime(e.startTime),
+      startTimeIso: e.startTime ?? null,
       endTime: formatTime(e.endTime ?? undefined),
       durationFormatted: formatDuration(e.durationMs ?? undefined),
       durationMs: e.durationMs ?? 0,
@@ -205,15 +207,45 @@ const mapToListData = (
   });
 };
 
+// ─── Live ticking clock for running executions ────────────────────
+const now = ref(Date.now());
+let tickTimer: ReturnType<typeof setInterval> | null = null;
+
+const hasRunning = computed(() => allData.value.some((item) => item.status === 'running'));
+
+watch(hasRunning, (running) => {
+  if (running && !tickTimer) {
+    now.value = Date.now();
+    tickTimer = setInterval(() => { now.value = Date.now(); }, 1000);
+  }
+  else if (!running && tickTimer) {
+    clearInterval(tickTimer);
+    tickTimer = null;
+  }
+}, { immediate: true });
+
+const applyLiveDuration = (item: EntityList): EntityList => {
+  if (item.status !== 'running' || !item.startTimeIso) return item;
+  const started = new Date(item.startTimeIso).getTime();
+  if (Number.isNaN(started)) return item;
+  const liveMs = now.value - started;
+  return {
+    ...item,
+    durationMs: liveMs,
+    durationFormatted: formatDuration(liveMs),
+  };
+};
+
 // ─── Filtered Data (applies group or name filter) ──────────────────
 const dataList = computed(() => {
+  let list = allData.value;
   if (groupFilter.value) {
-    return allData.value.filter((item) => item.groupSlug === groupFilter.value);
+    list = list.filter((item) => item.groupSlug === groupFilter.value);
   }
-  if (nameFilter.value) {
-    return allData.value.filter((item) => item.workflowName === nameFilter.value);
+  else if (nameFilter.value) {
+    list = list.filter((item) => item.workflowName === nameFilter.value);
   }
-  return allData.value;
+  return list.map(applyLiveDuration);
 });
 
 const clearFilter = () => {
@@ -349,11 +381,14 @@ onMounted(() => {
   startPolling();
 });
 
-onBeforeUnmount(stopPolling);
+onBeforeUnmount(() => {
+  stopPolling();
+  if (tickTimer) clearInterval(tickTimer);
+});
 
 // ─── Column Visibility ────────────────────────────────────────────
 const { getVisibilityState } = useTable<EntityList>();
-const hiddenColumns: StringKeyOf<EntityList>[] = ['groupSlug', 'workflowId', 'isTestRun', 'endTime'];
+const hiddenColumns: StringKeyOf<EntityList>[] = ['groupSlug', 'workflowId', 'isTestRun', 'endTime', 'startTimeIso'];
 visibilityState.value = getVisibilityState(hiddenColumns);
 
 // SET UP SEARCHABLE FIELDS
