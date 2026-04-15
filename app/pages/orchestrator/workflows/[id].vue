@@ -525,7 +525,7 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
 </script>
 
 <template>
-  <div class="-m-6 flex h-[calc(100vh-3.5rem)] shrink-0">
+  <div class="-m-3 @2xl:-m-8 flex h-[calc(100vh-3.5rem)] shrink-0">
     <!-- Main Canvas -->
     <div class="flex flex-1 flex-col">
       <!-- Toolbar (name + save) -->

@@ -803,3 +803,12 @@ export type WorkflowExecutionFieldsFilter =
   | 'logs';
 export type WorkflowExecutionApiOptions =
   ApiOptions<WorkflowExecutionFieldsFilter>;
+
+
+export interface LiveConsoleLine {
+  id: number;
+  timestamp: string;
+  level: 'info' | 'warn' | 'error' | 'debug';
+  source: string;
+  message: string;
+}
