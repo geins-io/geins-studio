@@ -13,6 +13,7 @@ withDefaults(
     channelId: string;
     languages: Language[];
     defaultLanguage: string;
+    storefrontUrl?: string;
   }>(),
   {
     loading: false,
@@ -64,7 +65,10 @@ function handleSaved() {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="general">
-        <ChannelMailGeneralTab v-model="generalFields" />
+        <ChannelMailGeneralTab
+          v-model="generalFields"
+          :storefront-url="storefrontUrl"
+        />
       </TabsContent>
       <TabsContent value="mail-content">
         <ChannelMailContentTab

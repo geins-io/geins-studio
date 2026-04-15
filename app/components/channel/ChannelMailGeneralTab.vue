@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { ChannelMailSettings } from '#shared/types';
 
+const props = defineProps<{
+  storefrontUrl?: string;
+}>();
+
 const model = defineModel<Partial<ChannelMailSettings>>({ required: true });
 
 const { t } = useI18n();
@@ -13,6 +17,15 @@ function update<K extends keyof ChannelMailSettings>(
 ) {
   model.value = { ...model.value, [key]: value };
 }
+
+const STOREFRONT_URL_PLACEHOLDER = 'https://your-channel.com';
+
+// Strip a trailing `/` from the storefront URL so the addon composes cleanly
+// with a slug value that already starts with `/` (the user types it).
+const storefrontUrlDisplay = computed(() => {
+  const raw = props.storefrontUrl?.trim();
+  return (raw || STOREFRONT_URL_PLACEHOLDER).replace(/\/+$/, '');
+});
 </script>
 
 <template>
@@ -53,20 +66,32 @@ function update<K extends keyof ChannelMailSettings>(
 
       <FormGrid design="1+1">
         <div class="space-y-1.5">
-          <Label>{{ t('channels.mail_login_url') }}</Label>
-          <Input
-            :model-value="model.loginUrl ?? ''"
-            type="url"
-            @update:model-value="update('loginUrl', String($event))"
-          />
+          <Label>{{ t('channels.mail_login_slug') }}</Label>
+          <InputGroup>
+            <InputGroupAddon align="inline-start">
+              <InputGroupText class="text-muted-foreground text-xs">
+                {{ storefrontUrlDisplay }}
+              </InputGroupText>
+            </InputGroupAddon>
+            <InputGroupInput
+              :model-value="model.loginUrl ?? ''"
+              @update:model-value="update('loginUrl', String($event))"
+            />
+          </InputGroup>
         </div>
         <div class="space-y-1.5">
-          <Label>{{ t('channels.mail_password_reset_url') }}</Label>
-          <Input
-            :model-value="model.passwordResetUrl ?? ''"
-            type="url"
-            @update:model-value="update('passwordResetUrl', String($event))"
-          />
+          <Label>{{ t('channels.mail_password_reset_slug') }}</Label>
+          <InputGroup>
+            <InputGroupAddon align="inline-start">
+              <InputGroupText class="text-muted-foreground text-xs">
+                {{ storefrontUrlDisplay }}
+              </InputGroupText>
+            </InputGroupAddon>
+            <InputGroupInput
+              :model-value="model.passwordResetUrl ?? ''"
+              @update:model-value="update('passwordResetUrl', String($event))"
+            />
+          </InputGroup>
         </div>
       </FormGrid>
 

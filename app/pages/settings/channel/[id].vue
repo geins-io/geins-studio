@@ -970,6 +970,7 @@ if (!createMode.value) {
               :channel-id="entityId ?? ''"
               :languages="channelActiveLanguages"
               :default-language="defaultLanguageId"
+              :storefront-url="entityDataUpdate?.url ?? ''"
               @mail-saved="handleMailSaved"
             />
           </ContentEditMainContent>
