@@ -51,6 +51,7 @@ import {
   Power,
   PowerOff,
   GitCommit,
+  Braces,
 } from 'lucide-vue-next'
 import {
   Sheet,
@@ -351,7 +352,32 @@ watch([isNew, workflowName], ([newFlag, name]) => {
 }, { immediate: true })
 const isRunning = ref(false)
 const isSaving = ref(false)
-const activeTab = ref<'properties' | 'executions' | 'history'>('properties')
+const activeTab = ref<'properties' | 'executions' | 'history' | 'add-node' | 'inputs'>('properties')
+
+const openAddNodeTab = () => {
+  isSidebarOpen.value = true
+  activeTab.value = 'add-node'
+}
+
+const openInputsTab = () => {
+  isSidebarOpen.value = true
+  activeTab.value = 'inputs'
+}
+
+const workflowInputs = computed(() => {
+  const raw = (currentWorkflow.value as any)?.input
+  return Array.isArray(raw) ? raw : []
+})
+
+const workflowInputsByCategory = computed(() => {
+  const groups: Record<string, any[]> = {}
+  for (const input of workflowInputs.value) {
+    const cat = input.category || 'general'
+    if (!groups[cat]) groups[cat] = []
+    groups[cat].push(input)
+  }
+  return Object.entries(groups).map(([category, items]) => ({ category, items }))
+})
 const isSidebarOpen = ref(false)
 const showMinimap = ref(false)
 const executionsLoaded = ref(false)
@@ -618,18 +644,16 @@ const copyWorkflowId = async () => {
 </script>
 
 <template>
-  <div class="-m-3 @2xl:-m-8 flex h-[calc(100vh-3.5rem)] shrink-0">
-    <!-- Main Canvas -->
-    <div class="flex flex-1 flex-col">
-      <!-- Toolbar (name + save) -->
-      <div class="bg-background flex items-center justify-between border-b px-4 py-2">
-        <div class="flex items-center gap-4">
-          <div class="flex flex-col gap-1">
+  <div class="-m-3 @2xl:-m-8 flex h-[calc(100vh-3.5rem)] shrink-0 flex-col">
+    <!-- Toolbar (name + save) — full width, sits above right sidebar -->
+    <div class="bg-background flex items-center justify-between border-b px-4 py-2">
+        <div class="flex min-w-0 flex-1 items-center gap-4">
+          <div class="flex min-w-0 flex-1 flex-col gap-1">
             <input v-model="workflowName" type="text"
-              class="focus:ring-ring w-[28rem] max-w-full rounded bg-transparent px-2 py-1 text-lg font-semibold focus:ring-2 focus:outline-none" />
+              class="focus:ring-ring w-full max-w-[28rem] min-w-0 rounded bg-transparent px-2 py-1 text-lg font-semibold focus:ring-2 focus:outline-none" />
             <input v-model="workflowDescription" type="text"
               :placeholder="isNew ? 'Add a description…' : 'No description'"
-              class="focus:ring-ring text-muted-foreground placeholder:text-muted-foreground/60 w-[48rem] max-w-full rounded bg-transparent px-2 py-0.5 text-sm focus:ring-2 focus:outline-none" />
+              class="focus:ring-ring text-muted-foreground placeholder:text-muted-foreground/60 w-full max-w-[36rem] min-w-0 rounded bg-transparent px-2 py-0.5 text-sm focus:ring-2 focus:outline-none" />
             <div class="text-muted-foreground flex items-center gap-1.5 px-2 font-mono text-xs">
               <template v-if="isNew">
                 New Workflow
@@ -693,6 +717,10 @@ const copyWorkflowId = async () => {
         </div>
       </div>
 
+    <!-- Body row: canvas column + right sidebar -->
+    <div class="flex min-h-0 flex-1">
+      <!-- Main Canvas column -->
+      <div class="flex min-w-0 flex-1 flex-col">
       <!-- VueFlow Canvas -->
       <div class="relative flex-1" @dragover="onDragOver" @drop="onDrop">
         <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
@@ -724,6 +752,18 @@ const copyWorkflowId = async () => {
           </button>
           <button
             class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
+            title="Workflow inputs"
+            @click="openInputsTab">
+            <Braces class="h-4 w-4" />
+          </button>
+          <button
+            class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
+            title="Add node"
+            @click="openAddNodeTab">
+            <Plus class="h-4 w-4" />
+          </button>
+          <button
+            class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
             :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'"
             @click="isSidebarOpen = !isSidebarOpen">
             <PanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
@@ -742,7 +782,7 @@ const copyWorkflowId = async () => {
       :class="isSidebarOpen ? 'w-80' : 'w-0 border-l-0'">
       <div class="h-full w-80 overflow-y-auto" style="scrollbar-gutter: stable;">
       <!-- Tabs -->
-      <div class="flex border-b">
+      <div v-if="activeTab !== 'add-node' && activeTab !== 'inputs'" class="flex border-b">
         <button class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
           :class="activeTab === 'properties' ? 'border-b-2 border-primary text-foreground' : 'text-muted-foreground hover:text-foreground'"
           @click="activeTab = 'properties'">
@@ -1070,7 +1110,80 @@ const copyWorkflowId = async () => {
           </div>
         </div>
       </div>
+
+      <!-- Inputs Tab -->
+      <div v-if="activeTab === 'inputs'" class="p-4">
+        <div class="mb-3 flex items-center justify-between">
+          <h3 class="flex items-center gap-2 text-sm font-medium">
+            <Braces class="text-muted-foreground h-4 w-4" />
+            Workflow inputs
+          </h3>
+          <span class="text-muted-foreground text-xs">{{ workflowInputs.length }}</span>
+        </div>
+        <div class="space-y-4">
+          <div v-for="group in workflowInputsByCategory" :key="group.category">
+            <div class="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+              {{ group.category }}
+            </div>
+            <div class="space-y-2">
+              <div v-for="input in group.items" :key="input.name"
+                class="rounded-md border p-2.5">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-mono text-sm font-medium">{{ input.name }}</span>
+                  <div class="flex shrink-0 items-center gap-1">
+                    <span class="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-[10px]">{{ input.type }}</span>
+                    <span v-if="input.required" class="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] text-red-500">required</span>
+                  </div>
+                </div>
+                <div v-if="input.description" class="text-muted-foreground mt-1 text-xs">
+                  {{ input.description }}
+                </div>
+                <div v-if="input.defaultValue !== undefined && input.defaultValue !== null && input.defaultValue !== ''"
+                  class="text-muted-foreground mt-1 font-mono text-[11px]">
+                  default: <span class="text-foreground">{{ JSON.stringify(input.defaultValue) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-if="workflowInputs.length === 0" class="text-muted-foreground py-8 text-center text-sm">
+            This workflow has no inputs
+          </div>
+        </div>
       </div>
+
+      <!-- Add Node Tab -->
+      <div v-if="activeTab === 'add-node'" class="p-4">
+        <div class="relative mb-3">
+          <Search class="text-muted-foreground pointer-events-none absolute top-2.5 left-2 h-4 w-4" />
+          <input v-model="nodeSearchQuery" type="text" placeholder="Search nodes…"
+            class="bg-background focus:ring-ring w-full rounded-md border py-1.5 pr-2 pl-8 text-sm focus:ring-2 focus:outline-none" />
+        </div>
+        <div class="space-y-4">
+          <div v-for="category in filteredNodeTemplates" :key="category.category">
+            <div class="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+              {{ category.category }}
+            </div>
+            <div class="space-y-1.5">
+              <button v-for="item in category.items" :key="item.id"
+                class="hover:bg-muted/50 flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors"
+                draggable="true"
+                @dragstart="(e) => onDragStart(e, item, category.type)"
+                @click="quickAddNode(item, category.type)">
+                <component :is="item.icon" class="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                <div class="min-w-0 flex-1">
+                  <div class="text-sm font-medium">{{ item.label }}</div>
+                  <div class="text-muted-foreground truncate text-xs">{{ item.description }}</div>
+                </div>
+              </button>
+            </div>
+          </div>
+          <div v-if="filteredNodeTemplates.length === 0" class="text-muted-foreground py-8 text-center text-sm">
+            No nodes match your search
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
     </div>
 
     <DialogDelete
