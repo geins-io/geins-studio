@@ -142,6 +142,17 @@ if (!createMode.value) {
 - **VeeValidate field unmount**: When switching from form-mode to read-only mode, VeeValidate unregisters fields and clears values. Guard with `if (sentMode.value) return;` in `onFormValuesChange`. Read display data from `entityData` (not `form.values`) in read-only mode
 - **Reactive refresh**: Pages calling `refreshEntityData` after status transitions need `watch(data, async (newData) => { await parseAndSaveData(newData, false); await nextTick(); setOriginalSavedData(); })` in the `if (!createMode.value)` block
 
+### Live & Async Primitives
+
+Use the shared primitives instead of hand-rolling `setInterval` / `Date.now()` loops in a page or component:
+
+- **`useLiveClock(active, intervalMs?)`** → `{ now }`. Reactive `now` ref that ticks only while `active` (boolean / getter) is true. Auto-stops on unmount. Use for live duration cells.
+- **`usePollWhile(active, fn, intervalMs)`** — run `fn` on an interval while `active` is true. Swallows tick errors via `useGeinsLog`. Use to poll `refresh()` on a running entity detail page, or to pull new rows into a list page.
+- **`useExecutionStatus()`** → `{ resolveStatusIcon }`. Single source of truth for orchestrator execution status → Lucide icon + color class. Case-insensitive; returns a fallback alert icon for unknown values.
+- **`formatTimestamp(iso)`** / **`formatDuration(ms)`** from `#shared/utils/time` — fixed-format log timestamps (`YYYY-MM-DD HH:mm:ss.SSS`) and compact durations (`123ms` / `12.34s` / `1m 23s`). Use these for any execution/log/console UI. `useDate()` is still the right choice for locale-aware absolute dates elsewhere.
+
+Rule of thumb: if a page needs to react to something changing over time (duration cells, polling a running execution, live status badges), reach for these composables before adding a local interval. They centralize start/stop/cleanup so pages stay declarative.
+
 ### Adding a New Entity (Checklist)
 
 1. **Types** → `shared/types/{Entity}.ts` — Define `{Entity}Base`, `{Entity}Create`, `{Entity}Update`, and `{Entity}` (response type)
