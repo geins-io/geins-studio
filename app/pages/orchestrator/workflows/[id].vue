@@ -826,7 +826,7 @@ const copyWorkflowId = async () => {
                       </div>
                       <div class="mt-1 flex items-center gap-1.5">
                         <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">{{ item.type
-                          }}</span>
+                        }}</span>
                       </div>
                       <div v-if="item.description" class="text-muted-foreground mt-1.5 text-xs">
                         {{ item.description }}
@@ -857,7 +857,7 @@ const copyWorkflowId = async () => {
         <div v-if="currentTab === 0" class="min-h-0 flex-1 overflow-y-auto">
           <div class="mx-auto max-w-4xl px-3 py-6 @2xl:px-8">
             <ContentEditMainContent>
-              <ContentEditCard title="Metadata"
+              <ContentEditCard title="General"
                 description="Name, description, group, and tags used to organize this workflow.">
                 <FormGridWrap>
                   <div v-if="!isNew" class="grid grid-cols-[14rem_1fr] items-start gap-4">

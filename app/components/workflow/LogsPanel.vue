@@ -1,10 +1,20 @@
 <script setup lang="ts">
-import { ChevronDown, ChevronUp, ExternalLink, PanelBottomClose } from 'lucide-vue-next'
+import { CheckCircle2, ChevronDown, ChevronUp, CircleAlert, ExternalLink, Loader2, PanelBottomClose, Trash2 } from 'lucide-vue-next'
 import { ref, computed, onBeforeUnmount, watch, nextTick } from 'vue'
+
+type NodeEvent = {
+  seq: number
+  nodeId: string
+  status: string
+  startTime?: string
+  endTime?: string
+}
 
 const props = defineProps<{
   executionId?: string | null
 }>()
+
+const { orchestratorApi } = useGeinsRepository()
 
 const STORAGE_KEY_HEIGHT = 'workflow.logsPanel.height'
 const MIN_HEIGHT = 160
@@ -28,6 +38,152 @@ watch(height, (v) => {
 function toggle() {
   isOpen.value = !isOpen.value
 }
+
+// --- Live execution tracking (poll execution details) ---
+const events = ref<NodeEvent[]>([])
+const streamStatus = ref<'idle' | 'connecting' | 'live' | 'done' | 'error'>('idle')
+const streamError = ref<string | null>(null)
+const executionStatus = ref<string | null>(null)
+let pollTimer: ReturnType<typeof setTimeout> | null = null
+let activeExecutionId: string | null = null
+const POLL_INTERVAL_MS = 800
+const TERMINAL_STATUSES = new Set(['completed', 'failed', 'canceled', 'cancelled', 'timedout'])
+
+const eventsSorted = computed(() =>
+  [...events.value].sort((a, b) => a.seq - b.seq),
+)
+
+const runningCount = computed(
+  () => events.value.filter(e => statusKind(e.status) === 'running').length,
+)
+
+function statusKind(status: string): 'running' | 'success' | 'error' | 'other' {
+  const s = (status || '').toLowerCase()
+  if (s === 'completed' || s === 'success' || s === 'succeeded') return 'success'
+  if (s === 'failed' || s === 'error' || s === 'timedout' || s === 'canceled' || s === 'cancelled') return 'error'
+  if (s === 'running' || s === 'started' || s === 'pending' || s === 'active') return 'running'
+  return 'other'
+}
+
+function formatEventTime(iso?: string): string {
+  if (!iso) return '–'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleTimeString(undefined, { hour12: false }) + '.'
+    + String(d.getMilliseconds()).padStart(3, '0')
+}
+
+function formatDuration(start?: string, end?: string): string {
+  if (!start || !end) return '–'
+  const s = new Date(start).getTime()
+  const e = new Date(end).getTime()
+  if (Number.isNaN(s) || Number.isNaN(e)) return '–'
+  const ms = e - s
+  if (ms < 1000) return `${ms}ms`
+  return `${(ms / 1000).toFixed(2)}s`
+}
+
+function upsertEvent(raw: Record<string, unknown>) {
+  const seq = typeof raw.seq === 'number' ? raw.seq : -1
+  const nodeId = typeof raw.nodeId === 'string' ? raw.nodeId : ''
+  const status = typeof raw.status === 'string' ? raw.status : 'unknown'
+  if (!nodeId) return
+  const startTime = typeof raw.startTime === 'string' ? raw.startTime : undefined
+  const endTime = typeof raw.endTime === 'string' ? raw.endTime : undefined
+  // Merge by seq if present, else by nodeId+startTime
+  const key = seq >= 0 ? `seq:${seq}` : `node:${nodeId}:${startTime ?? ''}`
+  const idx = events.value.findIndex(e =>
+    (e.seq >= 0 && `seq:${e.seq}` === key)
+    || (e.seq < 0 && `node:${e.nodeId}:${e.startTime ?? ''}` === key),
+  )
+  const next: NodeEvent = { seq, nodeId, status, startTime, endTime }
+  if (idx >= 0) events.value[idx] = { ...events.value[idx], ...next }
+  else events.value.push(next)
+}
+
+async function pollOnce(execId: string): Promise<boolean> {
+  try {
+    const details = await orchestratorApi.execution.get(execId) as any
+    // normalizeKeys wraps the response; node data lives on details.execution.nodeExecutions
+    // and the orchestration status can be either at the top or on the inner execution.
+    const inner = details?.execution ?? details
+    const statusStr = String(
+      details?.orchestrationStatus
+      ?? inner?.status
+      ?? details?.status
+      ?? '',
+    ).toLowerCase()
+    executionStatus.value = statusStr
+    const nodes: any[] = Array.isArray(inner?.nodeExecutions)
+      ? inner.nodeExecutions
+      : Array.isArray(details?.nodeExecutions)
+        ? details.nodeExecutions
+        : []
+    for (const [idx, n] of nodes.entries()) {
+      upsertEvent({
+        nodeId: n.nodeId,
+        status: n.status,
+        seq: typeof n.executionOrder === 'number' ? n.executionOrder : idx,
+        startTime: n.startTime,
+        endTime: n.endTime,
+      })
+    }
+    return TERMINAL_STATUSES.has(statusStr)
+  }
+  catch (err) {
+    streamStatus.value = 'error'
+    streamError.value = (err as Error).message
+    return true
+  }
+}
+
+async function startStream(execId: string) {
+  stopStream()
+  events.value = []
+  streamError.value = null
+  executionStatus.value = null
+  activeExecutionId = execId
+  streamStatus.value = 'connecting'
+
+  // First poll immediately so we can flip to 'live' as soon as any data is seen.
+  const finished = await pollOnce(execId)
+  if (activeExecutionId !== execId) return
+  streamStatus.value = finished ? 'done' : 'live'
+  if (finished) return
+
+  const tick = async () => {
+    if (activeExecutionId !== execId) return
+    const done = await pollOnce(execId)
+    if (activeExecutionId !== execId) return
+    if (done) {
+      streamStatus.value = 'done'
+      pollTimer = null
+      return
+    }
+    pollTimer = setTimeout(tick, POLL_INTERVAL_MS)
+  }
+  pollTimer = setTimeout(tick, POLL_INTERVAL_MS)
+}
+
+function stopStream() {
+  activeExecutionId = null
+  if (pollTimer) {
+    clearTimeout(pollTimer)
+    pollTimer = null
+  }
+}
+
+function clearEvents() {
+  events.value = []
+}
+
+watch(
+  () => props.executionId,
+  (execId) => {
+    if (execId) startStream(execId)
+    else stopStream()
+  },
+)
 
 defineExpose({
   open: () => {
@@ -133,6 +289,7 @@ function dockBack() {
 onBeforeUnmount(() => {
   popWindow?.close()
   window.removeEventListener('pointermove', onResizeMove)
+  stopStream()
 })
 
 const bodyStyle = computed(() => ({
@@ -186,14 +343,79 @@ const bodyStyle = computed(() => ({
         Logs panel is open in another window
       </div>
       <Teleport v-else :to="popoutContainer ?? undefined" :disabled="!isPoppedOut">
-        <div class="bg-background flex h-full flex-col overflow-auto">
+        <div class="bg-background flex h-full flex-col overflow-hidden">
           <slot>
-            <div class="text-muted-foreground flex h-full flex-col items-center justify-center gap-1 p-6 text-sm">
-              <div v-if="props.executionId">
-                Watching execution
-                <code class="bg-muted text-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-xs">{{ props.executionId }}</code>
+            <!-- Live stream toolbar -->
+            <div class="bg-muted/30 flex h-9 shrink-0 items-center justify-between border-b px-3 text-xs">
+              <div class="flex items-center gap-2">
+                <template v-if="props.executionId">
+                  <Loader2 v-if="streamStatus === 'connecting' || streamStatus === 'live'" class="h-3 w-3 animate-spin" />
+                  <CheckCircle2 v-else-if="streamStatus === 'done'" class="h-3 w-3 text-green-500" />
+                  <CircleAlert v-else-if="streamStatus === 'error'" class="text-destructive h-3 w-3" />
+                  <span class="text-muted-foreground">
+                    <template v-if="streamStatus === 'connecting'">Connecting…</template>
+                    <template v-else-if="streamStatus === 'live'">Live · {{ events.length }} events{{ runningCount ? ` · ${runningCount} running` : '' }}</template>
+                    <template v-else-if="streamStatus === 'done'">Completed · {{ events.length }} events</template>
+                    <template v-else-if="streamStatus === 'error'">Stream error: {{ streamError }}</template>
+                    <template v-else>Idle</template>
+                  </span>
+                  <code class="bg-muted text-muted-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px]">
+                    {{ props.executionId }}
+                  </code>
+                </template>
+                <template v-else>
+                  <span class="text-muted-foreground">Run a workflow to see live events</span>
+                </template>
               </div>
-              <div v-else>Logs panel — run a workflow to see logs.</div>
+              <button v-if="events.length"
+                class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-6 items-center gap-1 rounded px-1.5"
+                title="Clear events" @click="clearEvents">
+                <Trash2 class="h-3 w-3" />
+                Clear
+              </button>
+            </div>
+            <div class="min-h-0 flex-1 overflow-auto">
+              <div v-if="events.length === 0" class="text-muted-foreground flex h-full items-center justify-center p-6 text-xs">
+                {{ props.executionId ? 'Waiting for node events…' : 'No execution running' }}
+              </div>
+              <table v-else class="w-full text-xs">
+                <thead class="bg-muted/50 sticky top-0">
+                  <tr class="text-muted-foreground text-left">
+                    <th class="w-12 px-3 py-1.5 font-medium">#</th>
+                    <th class="px-3 py-1.5 font-medium">Node</th>
+                    <th class="w-24 px-3 py-1.5 font-medium">Status</th>
+                    <th class="w-32 px-3 py-1.5 font-medium">Started</th>
+                    <th class="w-24 px-3 py-1.5 font-medium">Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`"
+                    class="hover:bg-muted/30 border-b last:border-b-0">
+                    <td class="text-muted-foreground px-3 py-1 font-mono">{{ event.seq >= 0 ? event.seq : '–' }}</td>
+                    <td class="px-3 py-1 font-mono">{{ event.nodeId }}</td>
+                    <td class="px-3 py-1">
+                      <span class="inline-flex items-center gap-1"
+                        :class="{
+                          'text-green-600 dark:text-green-500': statusKind(event.status) === 'success',
+                          'text-red-600 dark:text-red-500': statusKind(event.status) === 'error',
+                          'text-blue-600 dark:text-blue-400': statusKind(event.status) === 'running',
+                          'text-muted-foreground': statusKind(event.status) === 'other',
+                        }">
+                        <span class="h-1.5 w-1.5 rounded-full"
+                          :class="{
+                            'bg-green-500': statusKind(event.status) === 'success',
+                            'bg-red-500': statusKind(event.status) === 'error',
+                            'animate-pulse bg-blue-500': statusKind(event.status) === 'running',
+                            'bg-muted-foreground': statusKind(event.status) === 'other',
+                          }" />
+                        {{ event.status }}
+                      </span>
+                    </td>
+                    <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatEventTime(event.startTime) }}</td>
+                    <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatDuration(event.startTime, event.endTime) }}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </slot>
         </div>
@@ -204,12 +426,79 @@ const bodyStyle = computed(() => ({
     <Teleport v-if="isPoppedOut && popoutContainer" :to="popoutContainer">
       <div class="bg-background flex h-full flex-col overflow-auto">
         <slot>
-          <div class="text-muted-foreground flex h-full flex-col items-center justify-center gap-1 p-6 text-sm">
-            <div v-if="props.executionId">
-              Watching execution
-              <code class="bg-muted text-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-xs">{{ props.executionId }}</code>
+          <!-- Live stream toolbar -->
+          <div class="bg-muted/30 flex h-9 shrink-0 items-center justify-between border-b px-3 text-xs">
+            <div class="flex items-center gap-2">
+              <template v-if="props.executionId">
+                <Loader2 v-if="streamStatus === 'connecting' || streamStatus === 'live'" class="h-3 w-3 animate-spin" />
+                <CheckCircle2 v-else-if="streamStatus === 'done'" class="h-3 w-3 text-green-500" />
+                <CircleAlert v-else-if="streamStatus === 'error'" class="text-destructive h-3 w-3" />
+                <span class="text-muted-foreground">
+                  <template v-if="streamStatus === 'connecting'">Connecting…</template>
+                  <template v-else-if="streamStatus === 'live'">Live · {{ events.length }} events{{ runningCount ? ` · ${runningCount} running` : '' }}</template>
+                  <template v-else-if="streamStatus === 'done'">Completed · {{ events.length }} events</template>
+                  <template v-else-if="streamStatus === 'error'">Stream error: {{ streamError }}</template>
+                  <template v-else>Idle</template>
+                </span>
+                <code class="bg-muted text-muted-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px]">
+                  {{ props.executionId }}
+                </code>
+              </template>
+              <template v-else>
+                <span class="text-muted-foreground">Run a workflow to see live events</span>
+              </template>
             </div>
-            <div v-else>Logs panel — run a workflow to see logs.</div>
+            <button v-if="events.length"
+              class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-6 items-center gap-1 rounded px-1.5"
+              title="Clear events" @click="clearEvents">
+              <Trash2 class="h-3 w-3" />
+              Clear
+            </button>
+          </div>
+
+          <!-- Events list -->
+          <div class="min-h-0 flex-1 overflow-auto">
+            <div v-if="events.length === 0" class="text-muted-foreground flex h-full items-center justify-center p-6 text-xs">
+              {{ props.executionId ? 'Waiting for node events…' : 'No execution running' }}
+            </div>
+            <table v-else class="w-full text-xs">
+              <thead class="bg-muted/50 sticky top-0">
+                <tr class="text-muted-foreground text-left">
+                  <th class="w-12 px-3 py-1.5 font-medium">#</th>
+                  <th class="px-3 py-1.5 font-medium">Node</th>
+                  <th class="w-24 px-3 py-1.5 font-medium">Status</th>
+                  <th class="w-32 px-3 py-1.5 font-medium">Started</th>
+                  <th class="w-24 px-3 py-1.5 font-medium">Duration</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`"
+                  class="hover:bg-muted/30 border-b last:border-b-0">
+                  <td class="text-muted-foreground px-3 py-1 font-mono">{{ event.seq >= 0 ? event.seq : '–' }}</td>
+                  <td class="px-3 py-1 font-mono">{{ event.nodeId }}</td>
+                  <td class="px-3 py-1">
+                    <span class="inline-flex items-center gap-1"
+                      :class="{
+                        'text-green-600 dark:text-green-500': statusKind(event.status) === 'success',
+                        'text-red-600 dark:text-red-500': statusKind(event.status) === 'error',
+                        'text-blue-600 dark:text-blue-400': statusKind(event.status) === 'running',
+                        'text-muted-foreground': statusKind(event.status) === 'other',
+                      }">
+                      <span class="h-1.5 w-1.5 rounded-full"
+                        :class="{
+                          'bg-green-500': statusKind(event.status) === 'success',
+                          'bg-red-500': statusKind(event.status) === 'error',
+                          'animate-pulse bg-blue-500': statusKind(event.status) === 'running',
+                          'bg-muted-foreground': statusKind(event.status) === 'other',
+                        }" />
+                      {{ event.status }}
+                    </span>
+                  </td>
+                  <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatEventTime(event.startTime) }}</td>
+                  <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatDuration(event.startTime, event.endTime) }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </slot>
       </div>
