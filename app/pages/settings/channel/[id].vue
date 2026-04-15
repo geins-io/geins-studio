@@ -195,6 +195,15 @@ const defaultLanguage = computed(() => {
   return allLanguages.value.find((l) => l._id === defaultLanguageId.value);
 });
 
+// Languages that are both assigned to this channel and active — the mail
+// template editor only supports editing texts for these.
+const channelActiveLanguages = computed<Language[]>(() => {
+  const activeIds = new Set(
+    channelLanguages.value.filter((l) => l.active).map((l) => l._id),
+  );
+  return allLanguages.value.filter((l) => activeIds.has(l._id));
+});
+
 const openDefaultLanguageDialog = () => {
   selectedDefaultLanguageId.value = defaultLanguageId.value;
   defaultLanguageDialogOpen.value = true;
@@ -962,7 +971,7 @@ if (!createMode.value) {
               :mail-types="channelMailTypes"
               :loading="loading"
               :channel-id="entityId ?? ''"
-              :languages="allLanguages"
+              :languages="channelActiveLanguages"
               :default-language="defaultLanguageId"
               @mail-saved="handleMailSaved"
             />

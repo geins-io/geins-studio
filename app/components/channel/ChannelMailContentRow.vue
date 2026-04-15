@@ -10,7 +10,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { resolveIcon } = useLucideIcon();
 
 const mailTypeIconMap: Record<MailTypeId, string> = {
   OrderConfirmation: 'MailPlus',

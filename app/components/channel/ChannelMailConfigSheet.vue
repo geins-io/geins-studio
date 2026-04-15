@@ -30,6 +30,7 @@ const activeTab = ref<'edit' | 'preview'>('edit');
 const selectedLanguage = ref(props.defaultLanguage);
 const textEntries = ref<MailTextEntry[]>([]);
 const localOverrides = ref<Record<string, string>>({});
+const initialValues = ref<Record<string, string>>({});
 const loading = ref(false);
 const saving = ref(false);
 
@@ -55,13 +56,21 @@ async function fetchTexts() {
       .id(props.channelId)
       .mail.getTexts(props.mailType.type, selectedLanguage.value);
     textEntries.value = result.texts;
-    localOverrides.value = Object.fromEntries(
-      result.texts.map((e) => [e.key, e.overrideValue ?? '']),
+    // Seed the editor with the effective current text so users see and edit
+    // the default directly. API returns overrideValue as "" when unset (not
+    // null), so use `||` rather than `??` to fall through empty overrides.
+    // Track the seeded value per key so we only submit fields the user
+    // actually changed.
+    const seeded = Object.fromEntries(
+      result.texts.map((e) => [e.key, e.overrideValue || e.defaultValue || '']),
     );
+    localOverrides.value = { ...seeded };
+    initialValues.value = { ...seeded };
   } catch {
     await showErrorToast(t('channels.mail_load_texts_error'));
     textEntries.value = [];
     localOverrides.value = {};
+    initialValues.value = {};
   } finally {
     loading.value = false;
   }
@@ -129,7 +138,7 @@ function buildChangedTexts(): Record<string, string> {
   const texts: Record<string, string> = {};
   for (const entry of textEntries.value) {
     const current = localOverrides.value[entry.key] ?? '';
-    const initial = entry.overrideValue ?? '';
+    const initial = initialValues.value[entry.key] ?? '';
     if (current !== initial) texts[entry.key] = current;
   }
   return texts;
@@ -198,7 +207,7 @@ const categoryLabel = computed(() => {
 
 <template>
   <Sheet :open="open" @update:open="emit('update:open', $event)">
-    <SheetContent side="right" class="sm:max-w-2xl">
+    <SheetContent side="right" width="medium">
       <SheetHeader>
         <SheetTitle class="flex items-center gap-2">
           <span>{{ mailType?.name }}</span>
@@ -208,49 +217,42 @@ const categoryLabel = computed(() => {
           {{ mailType?.name }}
         </SheetDescription>
       </SheetHeader>
+      <SheetBody class="flex flex-col gap-4">
+        <Tabs v-model="activeTab">
+          <div class="bg-card sticky top-0 z-10 pb-3">
+            <TabsList class="">
+              <TabsTrigger value="edit">
+                {{ t('channels.mail_edit_tab') }}
+              </TabsTrigger>
+              <TabsTrigger value="preview">
+                {{ t('channels.mail_preview_tab') }}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-      <Tabs v-model="activeTab" class="flex min-h-0 flex-1 flex-col">
-        <TabsList class="mx-4">
-          <TabsTrigger value="edit">
-            {{ t('channels.mail_edit_tab') }}
-          </TabsTrigger>
-          <TabsTrigger value="preview">
-            {{ t('channels.mail_preview_tab') }}
-          </TabsTrigger>
-        </TabsList>
-
-        <!-- Edit tab -->
-        <TabsContent
-          value="edit"
-          class="flex min-h-0 flex-1 flex-col overflow-hidden"
-        >
-          <SheetBody class="flex flex-col gap-4">
+          <!-- Edit tab -->
+          <TabsContent
+            value="edit"
+            class="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden"
+          >
             <div class="space-y-1.5">
               <Label>{{ t('channels.mail_select_language') }}</Label>
-              <Select v-model="selectedLanguage">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem
-                    v-for="lang in languages"
-                    :key="lang._id"
-                    :value="lang._id"
-                  >
-                    <ChannelLanguageIcon
-                      :language-id="lang._id"
-                      :name="lang.name"
-                    />
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <FormInputLanguageSelect
+                v-model="selectedLanguage"
+                :data-set="languages"
+                show-flags
+                disable-teleport
+              />
             </div>
 
             <div v-if="loading" class="flex flex-col gap-3">
               <Skeleton v-for="i in 4" :key="i" class="h-24 w-full" />
             </div>
 
-            <div v-else-if="!textEntries.length" class="text-muted-foreground text-sm">
+            <div
+              v-else-if="!textEntries.length"
+              class="text-muted-foreground text-sm"
+            >
               {{ t('channels.mail_no_texts') }}
             </div>
 
@@ -261,21 +263,13 @@ const categoryLabel = computed(() => {
                 class="flex flex-col gap-1.5"
               >
                 <div class="flex items-center justify-between gap-2">
-                  <div class="flex flex-col">
-                    <span class="text-sm font-medium">
-                      {{ prettifyKey(entry.key) }}
-                    </span>
-                    <span
-                      class="text-muted-foreground font-mono text-xs"
-                    >{{ entry.key }}</span>
-                  </div>
+                  <Label>{{ prettifyKey(entry.key) }}</Label>
                   <Badge v-if="entry.isOverridden" variant="secondary">
                     {{ t('channels.mail_text_overridden') }}
                   </Badge>
                 </div>
                 <Textarea
                   :model-value="localOverrides[entry.key] ?? ''"
-                  :placeholder="entry.defaultValue"
                   rows="3"
                   @update:model-value="
                     localOverrides[entry.key] = String($event)
@@ -286,35 +280,13 @@ const categoryLabel = computed(() => {
                 </FormInputDescription>
               </div>
             </div>
-          </SheetBody>
+          </TabsContent>
 
-          <SheetFooter class="flex-col gap-2 sm:flex-row sm:justify-between">
-            <Button
-              variant="destructive"
-              size="sm"
-              :disabled="loading || saving"
-              @click="handleRestoreDefaults"
-            >
-              {{ t('channels.mail_restore_defaults') }}
-            </Button>
-            <div class="flex items-center gap-2">
-              <Button
-                variant="outline"
-                :disabled="saving"
-                @click="handleCancel"
-              >
-                {{ t('cancel') }}
-              </Button>
-              <Button :loading="saving" :disabled="loading" @click="handleSave">
-                {{ t('save') }}
-              </Button>
-            </div>
-          </SheetFooter>
-        </TabsContent>
-
-        <!-- Preview tab -->
-        <TabsContent value="preview" class="flex min-h-0 flex-1 flex-col">
-          <SheetBody class="flex flex-col gap-3">
+          <!-- Preview tab -->
+          <TabsContent
+            value="preview"
+            class="flex min-h-0 flex-1 flex-col gap-4"
+          >
             <div class="flex justify-end">
               <Button
                 variant="outline"
@@ -330,7 +302,7 @@ const categoryLabel = computed(() => {
             <Skeleton
               v-if="previewLoading"
               class="w-full rounded-md"
-              style="height: 600px"
+              style="height: 750px"
             />
 
             <div
@@ -349,12 +321,29 @@ const categoryLabel = computed(() => {
               :srcdoc="previewHtml"
               sandbox=""
               class="w-full rounded-md border"
-              style="height: 600px"
+              style="height: 750px"
               :title="t('channels.mail_preview_tab')"
             />
-          </SheetBody>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </SheetBody>
+      <SheetFooter class="flex-col gap-2 sm:flex-row sm:justify-between">
+        <Button variant="outline" :disabled="saving" @click="handleCancel">
+          {{ t('cancel') }}
+        </Button>
+        <div class="flex items-center gap-2">
+          <Button
+            variant="outline"
+            :disabled="loading || saving"
+            @click="handleRestoreDefaults"
+          >
+            {{ t('channels.mail_restore_defaults') }}
+          </Button>
+          <Button :loading="saving" :disabled="loading" @click="handleSave">
+            {{ t('save') }}
+          </Button>
+        </div>
+      </SheetFooter>
     </SheetContent>
   </Sheet>
 </template>
