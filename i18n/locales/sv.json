@@ -623,7 +623,7 @@
     "mail_general": "Allmänt",
     "mail_layout": "Layoutalternativ",
     "mail_disabled_toggle": "Inaktivera alla transaktionsmejl",
-    "mail_disabled_helper": "När aktiverat skickar den här kanalen inga transaktionsmejl.",
+    "mail_disabled_helper": "Om dessa inaktiveras skickar den här kanalen inga transaktionsmejl.",
     "mail_display_name": "Visningsnamn",
     "mail_from_email": "Avsändaradress",
     "mail_login_slug": "Inloggningsväg",

@@ -627,7 +627,7 @@
     "mail_general": "General",
     "mail_layout": "Layout options",
     "mail_disabled_toggle": "Disable all transaction mails",
-    "mail_disabled_helper": "When enabled, this channel will not send any transaction emails.",
+    "mail_disabled_helper": "When disabled, this channel will not send any transaction emails.",
     "mail_display_name": "Display name",
     "mail_from_email": "From email address",
     "mail_login_slug": "Login slug",
