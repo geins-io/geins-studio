@@ -46,7 +46,7 @@ const storefrontUrlDisplay = computed(() => {
       </ItemActions>
     </Item>
 
-    <FormGridWrap>
+    <FormGridWrap v-if="!model.disabled">
       <FormGrid design="1+1">
         <div class="space-y-1.5">
           <Label>{{ t('channels.mail_display_name') }}</Label>
@@ -112,6 +112,7 @@ const storefrontUrlDisplay = computed(() => {
 
     <!-- Advanced collapsible -->
     <ContentSwitch
+      v-if="!model.disabled"
       v-model:checked="advancedOpen"
       :label="t('channels.mail_advanced')"
     >

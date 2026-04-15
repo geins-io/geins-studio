@@ -39,6 +39,18 @@ const { t } = useI18n();
 
 const sheetOpen = ref(false);
 const activeMailType = ref<ChannelMailType | null>(null);
+const activeTab = ref<'general' | 'mail-content' | 'layout'>('general');
+
+// When the master "disable all transaction emails" toggle flips on while the
+// user is on a now-disabled sub-tab, snap them back to General.
+watch(
+  () => generalFields.value?.disabled,
+  (disabled) => {
+    if (disabled && activeTab.value !== 'general') {
+      activeTab.value = 'general';
+    }
+  },
+);
 
 function handleEditMailType(mailType: ChannelMailType) {
   activeMailType.value = mailType;
@@ -52,15 +64,21 @@ function handleSaved() {
 
 <template>
   <ContentEditCard :title="t('channels.tab_mails')">
-    <Tabs default-value="general">
+    <Tabs v-model="activeTab">
       <TabsList>
         <TabsTrigger value="general">
           {{ t('channels.mail_general') }}
         </TabsTrigger>
-        <TabsTrigger value="mail-content">
+        <TabsTrigger
+          value="mail-content"
+          :disabled="generalFields?.disabled ?? false"
+        >
           {{ t('channels.mail_content') }}
         </TabsTrigger>
-        <TabsTrigger value="layout">
+        <TabsTrigger
+          value="layout"
+          :disabled="generalFields?.disabled ?? false"
+        >
           {{ t('channels.mail_layout') }}
         </TabsTrigger>
       </TabsList>
