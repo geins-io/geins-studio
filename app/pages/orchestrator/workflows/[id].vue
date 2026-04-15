@@ -65,6 +65,7 @@ import ConditionNode from '~/components/workflow/ConditionNode.vue'
 import DelayNode from '~/components/workflow/DelayNode.vue'
 import LoopNode from '~/components/workflow/LoopNode.vue'
 import TriggerNode from '~/components/workflow/TriggerNode.vue'
+import LogsPanel from '~/components/workflow/LogsPanel.vue'
 
 definePageMeta({
   pageType: 'list',
@@ -73,6 +74,7 @@ definePageMeta({
 const route = useRoute()
 const router = useRouter()
 const breadcrumbsStore = useBreadcrumbsStore()
+const { geinsLogError } = useGeinsLog('workflow-editor')
 
 const workflowId = computed(() => route.params.id as string)
 const isNew = computed(() => workflowId.value === 'new')
@@ -429,12 +431,36 @@ const saveWorkflow = async () => {
   }
 }
 
+const lastExecutionId = ref<string | null>(null)
+const logsPanelRef = ref<{ open: () => void, close: () => void, toggle: () => void } | null>(null)
+
 const runWorkflow = async () => {
-  if (isNew.value) return
+  if (isNew.value) {
+    toast({
+      title: 'Save the workflow first',
+      description: 'New workflows must be saved before they can be executed.',
+    })
+    return
+  }
   isRunning.value = true
   try {
-    await orchestratorApi.execution.start(workflowId.value)
+    const res = await orchestratorApi.execution.start(workflowId.value)
+    const execId = res?.executionId ?? res?.newExecutionId ?? null
+    lastExecutionId.value = execId
+    logsPanelRef.value?.open()
+    toast({
+      title: 'Execution started',
+      description: execId ? `ID: ${execId}` : res?.message ?? 'Workflow is running.',
+    })
     await refreshExecutions()
+  }
+  catch (err) {
+    geinsLogError('Failed to start execution', err)
+    toast({
+      title: 'Failed to start execution',
+      description: err instanceof Error ? err.message : 'Unknown error',
+      variant: 'negative',
+    })
   }
   finally {
     isRunning.value = false
@@ -598,8 +624,8 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
         <div class="pointer-events-none absolute top-4 right-4 z-10 flex flex-col gap-2">
           <button
             class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm disabled:opacity-50"
-            :disabled="isRunning"
-            :title="isRunning ? 'Running…' : 'Run workflow'"
+            :disabled="isRunning || isNew"
+            :title="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'"
             @click="runWorkflow">
             <Play class="h-4 w-4" :class="{ 'animate-pulse': isRunning }" />
           </button>
@@ -612,6 +638,9 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
           </button>
         </div>
       </div>
+
+      <!-- Bottom Logs Panel -->
+      <LogsPanel ref="logsPanelRef" :execution-id="lastExecutionId" />
     </div>
 
     <!-- Right Sidebar: Properties / Executions -->
