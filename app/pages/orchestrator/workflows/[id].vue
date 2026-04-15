@@ -14,6 +14,7 @@ import '@vue-flow/minimap/dist/style.css'
 
 import {
   Play,
+  Pause,
   Save,
   Zap,
   Mail,
@@ -729,8 +730,8 @@ const copyWorkflowId = async () => {
                 <span>Duplicate</span>
               </DropdownMenuItem>
               <DropdownMenuItem :disabled="menuBusy || !currentWorkflow" @click="handleToggleEnabled">
-                <component :is="isEnabled ? LucidePowerOff : LucidePower" class="mr-2 size-4" />
-                <span>{{ isEnabled ? 'Disable' : 'Enable' }}</span>
+                <component :is="isEnabled ? Pause : Play" class="mr-2 size-4" />
+                <span>{{ isEnabled ? 'Pause' : 'Start' }}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem @click="openDeleteDialog">
@@ -773,10 +774,10 @@ const copyWorkflowId = async () => {
           <!-- Floating top-right action column -->
           <div class="pointer-events-none absolute top-4 right-3 z-10 flex flex-col gap-2 @2xl:right-8">
             <button
-              class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm disabled:opacity-50"
-              :disabled="isRunning || isNew"
-              :title="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'" @click="runWorkflow">
-              <Play class="h-4 w-4" :class="{ 'animate-pulse': isRunning }" />
+              class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
+              :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'" @click="isSidebarOpen = !isSidebarOpen">
+              <PanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
+              <PanelRightOpen v-else class="h-4 w-4" />
             </button>
             <button
               class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
@@ -784,11 +785,13 @@ const copyWorkflowId = async () => {
               <Plus class="h-4 w-4" />
             </button>
             <button
-              class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
-              :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'" @click="isSidebarOpen = !isSidebarOpen">
-              <PanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
-              <PanelRightOpen v-else class="h-4 w-4" />
+              class="bg-background pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border bg-red-500 shadow-sm hover:bg-red-800 disabled:opacity-50"
+              :disabled="isRunning || isNew"
+              :title="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'" @click="runWorkflow">
+              <Play class="h-4 w-4 text-white" :class="{ 'animate-pulse': isRunning }" />
             </button>
+
+
           </div>
         </div>
 
@@ -805,7 +808,7 @@ const copyWorkflowId = async () => {
                 :title="group.category"
                 :description="`${group.items.length} input${group.items.length === 1 ? '' : 's'}`">
                 <template #header-action>
-                  <Button variant="secondary" size="sm" @click="() => {}">
+                  <Button variant="secondary" size="sm" @click="() => { }">
                     <Plus class="mr-2 h-3.5 w-3.5" />
                     Add input
                   </Button>
@@ -823,7 +826,7 @@ const copyWorkflowId = async () => {
                       </div>
                       <div class="mt-1 flex items-center gap-1.5">
                         <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">{{ item.type
-                        }}</span>
+                          }}</span>
                       </div>
                       <div v-if="item.description" class="text-muted-foreground mt-1.5 text-xs">
                         {{ item.description }}
@@ -841,7 +844,8 @@ const copyWorkflowId = async () => {
                   </div>
                 </FormGridWrap>
               </ContentEditCard>
-              <Button variant="outline" class="mt-2 w-full border-dashed py-6 text-muted-foreground hover:text-foreground" @click="() => {}">
+              <Button variant="outline"
+                class="text-muted-foreground hover:text-foreground mt-2 w-full border-dashed py-6" @click="() => { }">
                 <Plus class="mr-2 h-4 w-4" />
                 Add group
               </Button>
@@ -875,7 +879,7 @@ const copyWorkflowId = async () => {
 
                   <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
                     <Label class="pt-2">Description</Label>
-                    <Input v-model="workflowDescription" placeholder="Describe what this workflow does…" />
+                    <Textarea v-model="workflowDescription" rows="3" placeholder="Describe what this workflow does…" />
                   </div>
                   <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
                     <Label class="pt-2">Group</Label>
