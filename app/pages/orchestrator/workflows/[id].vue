@@ -44,12 +44,8 @@ import {
   PanelRightOpen,
   RefreshCw,
   Map as MapIcon,
-  MoreHorizontal,
-  Trash,
   Copy,
   Check,
-  Power,
-  PowerOff,
   GitCommit,
   Braces,
 } from 'lucide-vue-next'
@@ -345,6 +341,7 @@ const deleteSelectedNode = () => {
 // Workflow metadata
 const workflowName = ref(isNew.value ? 'New Workflow' : '')
 const workflowDescription = ref('')
+const workflowTags = ref<string[]>([])
 
 // Sync breadcrumb title with workflow name
 watch([isNew, workflowName], ([newFlag, name]) => {
@@ -352,52 +349,49 @@ watch([isNew, workflowName], ([newFlag, name]) => {
 }, { immediate: true })
 const isRunning = ref(false)
 const isSaving = ref(false)
-const activeTab = ref<'properties' | 'executions' | 'history' | 'add-node' | 'inputs'>('properties')
+// Right sidebar tabs (only for node editing now)
+const activeTab = ref<'properties' | 'add-node'>('properties')
 
 const openAddNodeTab = () => {
   isSidebarOpen.value = true
   activeTab.value = 'add-node'
 }
 
-const openInputsTab = () => {
-  isSidebarOpen.value = true
-  activeTab.value = 'inputs'
-}
+// Main area tabs (top-level content switcher)
+const mainTabs = ['General', 'Builder', 'Inputs', 'Executions', 'History']
+const currentTab = ref(0)
 
-const workflowInputs = computed(() => {
-  const raw = (currentWorkflow.value as any)?.input
-  return Array.isArray(raw) ? raw : []
-})
-
-const workflowInputsByCategory = computed(() => {
-  const groups: Record<string, any[]> = {}
-  for (const input of workflowInputs.value) {
-    const cat = input.category || 'general'
-    if (!groups[cat]) groups[cat] = []
-    groups[cat].push(input)
+// Lazy-load list data when the corresponding tab is first opened.
+watch(currentTab, (v) => {
+  if (isNew.value) return
+  if (v === 3 && !executionsLoaded.value) {
+    executionsLoaded.value = true
+    loadExecutions()
   }
-  return Object.entries(groups).map(([category, items]) => ({ category, items }))
+  if (v === 4 && !historyLoaded.value) {
+    historyLoaded.value = true
+    loadHistory()
+  }
 })
+
+// Editable state for the Inputs tab — seeded from the workflow definition.
+// (Populated after `currentWorkflow` is declared via watchers below.)
+const inputValues = ref<Record<string, unknown>>({})
+// Editable state for the Settings tab.
+const settingsValues = ref<Record<string, unknown>>({})
+
+const prettyLabel = (name: string): string =>
+  name
+    .replace(/[-_]/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .map(w => (w[0]?.toUpperCase() ?? '') + w.slice(1))
+    .join(' ')
+
 const isSidebarOpen = ref(false)
 const showMinimap = ref(false)
 const executionsLoaded = ref(false)
 const historyLoaded = ref(false)
-
-const openExecutionsTab = () => {
-  activeTab.value = 'executions'
-  if (!executionsLoaded.value && !isNew.value) {
-    executionsLoaded.value = true
-    loadExecutions()
-  }
-}
-
-const openHistoryTab = () => {
-  activeTab.value = 'history'
-  if (!historyLoaded.value && !isNew.value) {
-    historyLoaded.value = true
-    loadHistory()
-  }
-}
 
 // Execution history (real data from API)
 const { orchestratorApi } = useGeinsRepository()
@@ -552,9 +546,34 @@ watch(
     if (!wf || isNew.value) return
     workflowName.value = wf.name ?? ''
     workflowDescription.value = wf.description ?? ''
+    workflowTags.value = Array.isArray((wf as any)?.tags) ? [...(wf as any).tags] : []
+    const raw = Array.isArray((wf as any)?.input) ? (wf as any).input : []
+    const values: Record<string, unknown> = {}
+    for (const i of raw) values[i.name] = i.defaultValue
+    inputValues.value = values
+    settingsValues.value = { ...((wf as any)?.settings ?? {}) }
   },
   { immediate: true },
 )
+
+const workflowInputs = computed<any[]>(() => {
+  const raw = (currentWorkflow.value as any)?.input
+  return Array.isArray(raw) ? raw : []
+})
+
+const workflowInputsByCategory = computed(() => {
+  const order: string[] = []
+  const groups: Record<string, any[]> = {}
+  for (const input of workflowInputs.value) {
+    const cat = input.category || 'general'
+    if (!groups[cat]) {
+      groups[cat] = []
+      order.push(cat)
+    }
+    groups[cat]!.push(input)
+  }
+  return order.map(category => ({ category, items: groups[category]! }))
+})
 
 // ─── Enable / Disable ─────────────────────────────────────────────
 const handleToggleEnabled = async () => {
@@ -624,6 +643,46 @@ const deleteWorkflowEntity = async (): Promise<boolean> => {
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
   useDeleteDialog(deleteWorkflowEntity, '/orchestrator/workflows/list')
 
+const isSavingConfig = ref(false)
+const saveWorkflowConfig = async () => {
+  if (isNew.value || !currentWorkflow.value) return
+  isSavingConfig.value = true
+  try {
+    const wf = currentWorkflow.value as any
+    const mergedInputs = workflowInputs.value.map((i: any) => ({
+      ...i,
+      defaultValue: inputValues.value[i.name],
+    }))
+    await orchestratorApi.workflow.update(workflowId.value, {
+      name: wf.name,
+      description: wf.description,
+      tags: wf.tags,
+      type: wf.type,
+      enabled: wf.enabled,
+      cronExpression: wf.cronExpression,
+      eventName: wf.eventName,
+      nodes: wf.nodes,
+      connections: wf.connections,
+      ui: wf.ui,
+      input: mergedInputs,
+      settings: settingsValues.value,
+    })
+    await refreshCurrentWorkflow()
+    toast({ title: 'Configuration saved' })
+  }
+  catch (err) {
+    geinsLogError('Failed to save workflow configuration', err)
+    toast({
+      title: 'Failed to save',
+      description: err instanceof Error ? err.message : 'Unknown error',
+      variant: 'negative',
+    })
+  }
+  finally {
+    isSavingConfig.value = false
+  }
+}
+
 const shortenId = (id: string, head = 12, tail = 8): string => {
   if (!id || id.length <= head + tail + 1) return id
   return `${id.slice(0, head)}…${id.slice(-tail)}`
@@ -644,552 +703,601 @@ const copyWorkflowId = async () => {
 </script>
 
 <template>
-  <div class="-m-3 @2xl:-m-8 flex h-[calc(100vh-3.5rem)] shrink-0 flex-col">
-    <!-- Toolbar (name + save) — full width, sits above right sidebar -->
-    <div class="bg-background flex items-center justify-between border-b px-4 py-2">
-        <div class="flex min-w-0 flex-1 items-center gap-4">
-          <div class="flex min-w-0 flex-1 flex-col gap-1">
-            <input v-model="workflowName" type="text"
-              class="focus:ring-ring w-full max-w-[28rem] min-w-0 rounded bg-transparent px-2 py-1 text-lg font-semibold focus:ring-2 focus:outline-none" />
-            <input v-model="workflowDescription" type="text"
-              :placeholder="isNew ? 'Add a description…' : 'No description'"
-              class="focus:ring-ring text-muted-foreground placeholder:text-muted-foreground/60 w-full max-w-[36rem] min-w-0 rounded bg-transparent px-2 py-0.5 text-sm focus:ring-2 focus:outline-none" />
-            <div class="text-muted-foreground flex items-center gap-1.5 px-2 font-mono text-xs">
-              <template v-if="isNew">
-                New Workflow
-              </template>
-              <template v-else>
-                <span>ID:</span>
-                <span :title="workflowId">{{ shortenId(workflowId) }}</span>
-                <button class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
-                  :title="copiedId ? 'Copied!' : 'Copy workflow ID'" @click="copyWorkflowId">
-                  <component :is="copiedId ? Check : Copy" class="h-3 w-3" />
-                </button>
-                <template v-if="currentWorkflow?.group">
-                  <span>•</span>
-                  <span>Group: <span class="text-foreground font-medium">{{ currentWorkflow.group }}</span></span>
-                </template>
-                <template v-if="currentWorkflow?.tags?.length">
-                  <span>•</span>
-                  <div class="flex flex-wrap items-center gap-1">
-                    <Badge v-for="tag in currentWorkflow.tags" :key="tag" variant="secondary"
-                      class="font-sans text-[10px] font-normal">
-                      {{ tag }}
-                    </Badge>
-                  </div>
-                </template>
-              </template>
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <ButtonIcon icon="save" :disabled="isSaving" @click="saveWorkflow">
-            {{ isSaving ? 'Saving…' : $t('save_entity', { entityName }) }}
-          </ButtonIcon>
+  <div class="-mx-3 -mb-12 flex h-[calc(100vh-3.5rem-1rem)] shrink-0 flex-col @2xl:-mx-8 @2xl:-mb-14">
+    <!-- ContentHeader: title + actions + tabs (standard entity-page layout) -->
+    <div class="px-3 @2xl:px-8">
+      <ContentHeader :title="isNew ? 'New workflow' : (workflowName || 'Workflow')" :entity-name="entityName">
+        <ContentActionBar>
+          <ButtonIcon icon="save" :loading="isSaving" :disabled="isSaving" @click="saveWorkflow">{{ $t('save_entity', {
+            entityName
+          }) }}</ButtonIcon>
           <DropdownMenu v-if="!isNew">
             <DropdownMenuTrigger as-child>
               <Button size="icon" variant="secondary">
-                <MoreHorizontal class="size-3.5" />
+                <LucideMoreHorizontal class="size-3.5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem as-child>
                 <NuxtLink to="/orchestrator/workflows/new">
-                  <Plus class="mr-2 size-4" />
+                  <LucidePlus class="mr-2 size-4" />
                   <span>{{ $t('new_entity', { entityName }) }}</span>
                 </NuxtLink>
               </DropdownMenuItem>
               <DropdownMenuItem :disabled="menuBusy || !currentWorkflow" @click="handleDuplicate">
-                <Copy class="mr-2 size-4" />
+                <LucideCopy class="mr-2 size-4" />
                 <span>Duplicate</span>
               </DropdownMenuItem>
               <DropdownMenuItem :disabled="menuBusy || !currentWorkflow" @click="handleToggleEnabled">
-                <component :is="isEnabled ? PowerOff : Power" class="mr-2 size-4" />
+                <component :is="isEnabled ? LucidePowerOff : LucidePower" class="mr-2 size-4" />
                 <span>{{ isEnabled ? 'Disable' : 'Enable' }}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem @click="openDeleteDialog">
-                <Trash class="mr-2 size-4" />
+                <LucideTrash class="mr-2 size-4" />
                 <span>{{ $t('delete_entity', { entityName }) }}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-      </div>
-
-    <!-- Body row: canvas column + right sidebar -->
-    <div class="flex min-h-0 flex-1">
-      <!-- Main Canvas column -->
-      <div class="flex min-w-0 flex-1 flex-col">
-      <!-- VueFlow Canvas -->
-      <div class="relative flex-1" @dragover="onDragOver" @drop="onDrop">
-        <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
-          :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="2" :fit-view-on-init="!isNew"
-          class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
-          <Background pattern-color="hsl(var(--border))" :gap="20" />
-          <Controls position="bottom-left">
-            <ControlButton :title="showMinimap ? 'Hide minimap' : 'Show minimap'" @click="showMinimap = !showMinimap">
-              <MapIcon class="h-4 w-4" />
-            </ControlButton>
-          </Controls>
-          <MiniMap v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
-            if (node.type === 'trigger') return 'hsl(142 76% 36%)'
-            if (node.type === 'condition') return 'hsl(48 96% 53%)'
-            if (node.type === 'loop') return 'hsl(280 67% 60%)'
-            if (node.type === 'delay') return 'hsl(25 95% 53%)'
-            return 'hsl(217 91% 60%)'
-          }" />
-        </VueFlow>
-
-        <!-- Floating top-right action column -->
-        <div class="pointer-events-none absolute top-4 right-4 z-10 flex flex-col gap-2">
-          <button
-            class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm disabled:opacity-50"
-            :disabled="isRunning || isNew"
-            :title="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'"
-            @click="runWorkflow">
-            <Play class="h-4 w-4" :class="{ 'animate-pulse': isRunning }" />
-          </button>
-          <button
-            class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
-            title="Workflow inputs"
-            @click="openInputsTab">
-            <Braces class="h-4 w-4" />
-          </button>
-          <button
-            class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
-            title="Add node"
-            @click="openAddNodeTab">
-            <Plus class="h-4 w-4" />
-          </button>
-          <button
-            class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
-            :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'"
-            @click="isSidebarOpen = !isSidebarOpen">
-            <PanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
-            <PanelRightOpen v-else class="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Bottom Logs Panel -->
-      <LogsPanel ref="logsPanelRef" :execution-id="lastExecutionId" />
+        </ContentActionBar>
+        <template #tabs>
+          <ContentEditTabs v-model:current-tab="currentTab" :tabs="mainTabs" />
+        </template>
+      </ContentHeader>
     </div>
 
-    <!-- Right Sidebar: Properties / Executions -->
-    <div
-      class="bg-background shrink-0 overflow-hidden border-l transition-[width] duration-200 ease-in-out"
-      :class="isSidebarOpen ? 'w-80' : 'w-0 border-l-0'">
-      <div class="h-full w-80 overflow-y-auto" style="scrollbar-gutter: stable;">
-      <!-- Tabs -->
-      <div v-if="activeTab !== 'add-node' && activeTab !== 'inputs'" class="flex border-b">
-        <button class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
-          :class="activeTab === 'properties' ? 'border-b-2 border-primary text-foreground' : 'text-muted-foreground hover:text-foreground'"
-          @click="activeTab = 'properties'">
-          <Settings class="mr-2 inline h-4 w-4" />
-          Properties
-        </button>
-        <button class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
-          :class="activeTab === 'executions' ? 'border-b-2 border-primary text-foreground' : 'text-muted-foreground hover:text-foreground'"
-          @click="openExecutionsTab">
-          <History class="mr-2 inline h-4 w-4" />
-          Executions
-        </button>
-        <button class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
-          :class="activeTab === 'history' ? 'border-b-2 border-primary text-foreground' : 'text-muted-foreground hover:text-foreground'"
-          :disabled="isNew"
-          :title="isNew ? 'Save workflow to view history' : 'Workflow version history'"
-          @click="openHistoryTab">
-          <GitCommit class="mr-2 inline h-4 w-4" />
-          History
-        </button>
-      </div>
+    <!-- Body row: main column + right sidebar -->
+    <div class="flex min-h-0 flex-1" :class="{ '-mt-4': currentTab === 1 }">
+      <!-- Main column -->
+      <div class="flex min-w-0 flex-1 flex-col">
+        <!-- Builder tab (VueFlow) -->
+        <div v-show="currentTab === 1" class="relative flex-1" @dragover="onDragOver" @drop="onDrop">
+          <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
+            :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="2" :fit-view-on-init="!isNew"
+            class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
+            <Background pattern-color="hsl(var(--border))" :gap="20" />
+            <Controls position="bottom-left">
+              <ControlButton :title="showMinimap ? 'Hide minimap' : 'Show minimap'" @click="showMinimap = !showMinimap">
+                <MapIcon class="h-4 w-4" />
+              </ControlButton>
+            </Controls>
+            <MiniMap v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
+              if (node.type === 'trigger') return 'hsl(142 76% 36%)'
+              if (node.type === 'condition') return 'hsl(48 96% 53%)'
+              if (node.type === 'loop') return 'hsl(280 67% 60%)'
+              if (node.type === 'delay') return 'hsl(25 95% 53%)'
+              return 'hsl(217 91% 60%)'
+            }" />
+          </VueFlow>
 
-      <!-- Properties Tab -->
-      <div v-if="activeTab === 'properties'" class="p-4">
-        <div v-if="selectedNode" class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="font-medium">Node Settings</h3>
-            <button class="hover:bg-destructive/10 text-destructive rounded p-1.5" title="Delete node"
-              @click="deleteSelectedNode">
-              <Trash2 class="h-4 w-4" />
+          <!-- Floating top-right action column -->
+          <div class="pointer-events-none absolute top-4 right-3 z-10 flex flex-col gap-2 @2xl:right-8">
+            <button
+              class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm disabled:opacity-50"
+              :disabled="isRunning || isNew"
+              :title="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'" @click="runWorkflow">
+              <Play class="h-4 w-4" :class="{ 'animate-pulse': isRunning }" />
+            </button>
+            <button
+              class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
+              title="Add node" @click="openAddNodeTab">
+              <Plus class="h-4 w-4" />
+            </button>
+            <button
+              class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
+              :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'" @click="isSidebarOpen = !isSidebarOpen">
+              <PanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
+              <PanelRightOpen v-else class="h-4 w-4" />
             </button>
           </div>
+        </div>
 
-          <div class="space-y-2">
-            <label class="text-sm font-medium">Name</label>
-            <input v-model="selectedNode.data.label" type="text"
-              class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+        <!-- Inputs tab -->
+        <div v-if="currentTab === 2" class="min-h-0 flex-1 overflow-y-auto">
+          <div class="mx-auto max-w-4xl px-3 py-6 @2xl:px-8">
+            <ContentEditMainContent>
+              <ContentEditCard v-if="workflowInputs.length === 0" title="Inputs">
+                <div class="text-muted-foreground py-12 text-center text-sm">
+                  This workflow has no inputs
+                </div>
+              </ContentEditCard>
+              <ContentEditCard v-for="group in workflowInputsByCategory" v-else :key="group.category"
+                :title="group.category"
+                :description="`${group.items.length} input${group.items.length === 1 ? '' : 's'}`">
+                <template #header-action>
+                  <Button variant="secondary" size="sm" @click="() => {}">
+                    <Plus class="mr-2 h-3.5 w-3.5" />
+                    Add input
+                  </Button>
+                </template>
+                <FormGridWrap>
+                  <div v-for="item in group.items" :key="item.name"
+                    class="grid grid-cols-[20rem_1fr] items-start gap-4 border-b py-3 last:border-b-0">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-sm font-medium">{{ prettyLabel(item.name) }}</span>
+                        <span v-if="item.required" class="text-destructive text-sm">*</span>
+                      </div>
+                      <div class="text-muted-foreground mt-0.5 font-mono text-[11px] break-all">
+                        {{ item.name }}
+                      </div>
+                      <div class="mt-1 flex items-center gap-1.5">
+                        <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">{{ item.type
+                        }}</span>
+                      </div>
+                      <div v-if="item.description" class="text-muted-foreground mt-1.5 text-xs">
+                        {{ item.description }}
+                      </div>
+                    </div>
+                    <div class="flex min-w-0 items-start">
+                      <Switch v-if="item.type === 'boolean'" :model-value="!!inputValues[item.name]"
+                        @update:model-value="(v: boolean) => (inputValues[item.name] = v)" />
+                      <Input v-else-if="item.type === 'number'" type="number"
+                        :model-value="inputValues[item.name] as any"
+                        @update:model-value="(v) => (inputValues[item.name] = v === '' ? null : Number(v))" />
+                      <Input v-else :model-value="inputValues[item.name] == null ? '' : String(inputValues[item.name])"
+                        @update:model-value="(v) => (inputValues[item.name] = v)" />
+                    </div>
+                  </div>
+                </FormGridWrap>
+              </ContentEditCard>
+              <Button variant="outline" class="mt-2 w-full border-dashed py-6 text-muted-foreground hover:text-foreground" @click="() => {}">
+                <Plus class="mr-2 h-4 w-4" />
+                Add group
+              </Button>
+            </ContentEditMainContent>
           </div>
+        </div>
 
-          <div class="space-y-2">
-            <label class="text-sm font-medium">Description</label>
-            <textarea v-model="selectedNode.data.description" rows="2"
-              class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+        <!-- General tab -->
+        <div v-if="currentTab === 0" class="min-h-0 flex-1 overflow-y-auto">
+          <div class="mx-auto max-w-4xl px-3 py-6 @2xl:px-8">
+            <ContentEditMainContent>
+              <ContentEditCard title="Metadata"
+                description="Name, description, group, and tags used to organize this workflow.">
+                <FormGridWrap>
+                  <div v-if="!isNew" class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">ID</Label>
+                    <div class="flex min-w-0 items-center gap-1.5">
+                      <code class="bg-muted text-foreground truncate rounded px-2 py-1 font-mono text-xs"
+                        :title="workflowId">{{ workflowId }}</code>
+                      <button
+                        class="hover:bg-muted text-muted-foreground hover:text-foreground flex h-7 w-7 shrink-0 items-center justify-center rounded"
+                        :title="copiedId ? 'Copied!' : 'Copy workflow ID'" @click="copyWorkflowId">
+                        <component :is="copiedId ? Check : Copy" class="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Name</Label>
+                    <Input v-model="workflowName" placeholder="Workflow name" />
+                  </div>
+
+                  <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Description</Label>
+                    <Input v-model="workflowDescription" placeholder="Describe what this workflow does…" />
+                  </div>
+                  <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Group</Label>
+                    <Input :model-value="(currentWorkflow as any)?.group ?? ''" placeholder="e.g. Monitor ERP Sync"
+                      @update:model-value="(v) => { if (currentWorkflow) (currentWorkflow as any).group = v }" />
+                  </div>
+                  <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Tags</Label>
+                    <TagsInput v-model="workflowTags" class="min-h-10 flex-wrap">
+                      <TagsInputItem v-for="tag in workflowTags" :key="tag" :value="tag">
+                        <TagsInputItemText />
+                        <TagsInputItemDelete />
+                      </TagsInputItem>
+                      <TagsInputInput placeholder="Add tag…" />
+                    </TagsInput>
+                  </div>
+                </FormGridWrap>
+              </ContentEditCard>
+
+              <ContentEditCard title="Runtime" description="Timeout, concurrency, logging, and error handling.">
+                <FormGridWrap>
+                  <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Timeout</Label>
+                    <Input :model-value="(settingsValues.timeout as any) ?? ''" placeholder="00:10:00"
+                      @update:model-value="(v) => (settingsValues.timeout = v)" />
+                  </div>
+                  <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Max concurrency</Label>
+                    <Input v-model.number="settingsValues.maxConcurrency as any" type="number" min="1" />
+                  </div>
+                  <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Execution log retention (days)</Label>
+                    <Input v-model.number="settingsValues.executionLogRetentionDays as any" type="number" min="0"
+                      placeholder="Keep indefinitely" />
+                  </div>
+                  <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Log verbosity</Label>
+                    <Select v-model="settingsValues.logVerbosity as any">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="minimal">Minimal</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="detailed">Detailed</SelectItem>
+                        <SelectItem value="debug">Debug</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Timeout behaviour</Label>
+                    <Select v-model="settingsValues.timeoutBehavior as any">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fail">Fail</SelectItem>
+                        <SelectItem value="continue">Continue</SelectItem>
+                        <SelectItem value="cancel">Cancel</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Error handling</Label>
+                    <Select v-model="settingsValues.errorHandlingStrategy as any">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="failFast">Fail fast</SelectItem>
+                        <SelectItem value="continue">Continue on error</SelectItem>
+                        <SelectItem value="retry">Retry</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </FormGridWrap>
+              </ContentEditCard>
+
+              <ContentEditCard v-if="settingsValues.retryPolicy || settingsValues.rateLimit" title="Advanced"
+                description="Retry and rate-limit policies.">
+                <FormGridWrap>
+                  <div v-if="settingsValues.retryPolicy" class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Retry policy</Label>
+                    <pre class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs">{{
+                      JSON.stringify(settingsValues.retryPolicy, null, 2) }}</pre>
+                  </div>
+                  <div v-if="settingsValues.rateLimit" class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Rate limit</Label>
+                    <pre class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs">{{
+                      JSON.stringify(settingsValues.rateLimit, null, 2) }}</pre>
+                  </div>
+                </FormGridWrap>
+              </ContentEditCard>
+            </ContentEditMainContent>
           </div>
+        </div>
 
-          <div class="space-y-2">
-            <label class="text-sm font-medium">Type</label>
-            <div class="text-muted-foreground bg-muted rounded-md px-3 py-2 text-sm capitalize">
-              {{ selectedNode.type }}
-            </div>
-          </div>
-
-          <!-- Trigger-specific config -->
-          <template v-if="selectedNode.type === 'trigger'">
-            <div class="border-t pt-4">
-              <h4 class="mb-3 text-sm font-medium">Trigger Settings</h4>
-              <div class="space-y-3">
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Webhook Path</label>
-                  <input v-model="selectedNode.data.config.path" type="text" placeholder="/webhook"
-                    class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">HTTP Method</label>
-                  <select v-model="selectedNode.data.config.method"
-                    class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                    <option value="GET">GET</option>
-                    <option value="POST">POST</option>
-                    <option value="PUT">PUT</option>
-                    <option value="DELETE">DELETE</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <!-- Condition-specific config -->
-          <template v-if="selectedNode.type === 'condition'">
-            <div class="border-t pt-4">
-              <h4 class="mb-3 text-sm font-medium">Condition Settings</h4>
-              <div class="space-y-3">
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Field</label>
-                  <input v-model="selectedNode.data.config.field" type="text" placeholder="data.status"
-                    class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Operator</label>
-                  <select v-model="selectedNode.data.config.operator"
-                    class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                    <option value="equals">Equals</option>
-                    <option value="not_equals">Not Equals</option>
-                    <option value="contains">Contains</option>
-                    <option value="greater_than">Greater Than</option>
-                    <option value="less_than">Less Than</option>
-                    <option value="is_empty">Is Empty</option>
-                    <option value="is_not_empty">Is Not Empty</option>
-                  </select>
-                </div>
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Value</label>
-                  <input v-model="selectedNode.data.config.value" type="text" placeholder="active"
-                    class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <!-- Loop-specific config -->
-          <template v-if="selectedNode.type === 'loop'">
-            <div class="border-t pt-4">
-              <h4 class="mb-3 text-sm font-medium">Loop Settings</h4>
-              <div class="space-y-3">
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Items Field</label>
-                  <input v-model="selectedNode.data.config.itemsField" type="text" placeholder="data.items"
-                    class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Batch Size</label>
-                  <input v-model="selectedNode.data.config.batchSize" type="number" placeholder="1"
-                    class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <!-- Delay-specific config -->
-          <template v-if="selectedNode.type === 'delay'">
-            <div class="border-t pt-4">
-              <h4 class="mb-3 text-sm font-medium">Delay Settings</h4>
-              <div class="space-y-3">
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Duration</label>
-                  <div class="flex gap-2">
-                    <input v-model="selectedNode.data.config.duration" type="number" placeholder="5"
-                      class="bg-background focus:ring-ring flex-1 rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                    <select v-model="selectedNode.data.config.unit"
-                      class="bg-background focus:ring-ring rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                      <option value="seconds">Seconds</option>
-                      <option value="minutes">Minutes</option>
-                      <option value="hours">Hours</option>
-                      <option value="days">Days</option>
-                    </select>
+        <!-- Executions tab -->
+        <div v-if="currentTab === 3" class="min-h-0 flex-1 overflow-y-auto">
+          <div class="mx-auto max-w-4xl px-3 py-6 @2xl:px-8">
+            <ContentEditMainContent>
+              <ContentEditCard title="Executions" :description="`(${executions.length})`">
+                <template #header-action>
+                  <Button variant="secondary" size="sm" :disabled="executionsLoading" @click="refreshExecutions()">
+                    <RefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': executionsLoading }" />
+                    Refresh
+                  </Button>
+                </template>
+                <div v-if="executionsLoading && executions.length === 0" class="space-y-3">
+                  <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
+                    <Skeleton class="mb-2 h-4 w-32" />
+                    <Skeleton class="h-3 w-48" />
                   </div>
                 </div>
-              </div>
-            </div>
-          </template>
-
-          <!-- Action-specific config (Email) -->
-          <template v-if="selectedNode.type === 'action' && selectedNode.data.icon === 'Mail'">
-            <div class="border-t pt-4">
-              <h4 class="mb-3 text-sm font-medium">Email Settings</h4>
-              <div class="space-y-3">
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">To</label>
-                  <input v-model="selectedNode.data.config.to" type="email" placeholder="user@example.com"
-                    class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Subject</label>
-                  <input v-model="selectedNode.data.config.subject" type="text" placeholder="Email subject"
-                    class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Body</label>
-                  <textarea v-model="selectedNode.data.config.body" rows="4" placeholder="Email body..."
-                    class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <!-- Action-specific config (HTTP) -->
-          <template v-if="selectedNode.type === 'action' && selectedNode.data.icon === 'Globe'">
-            <div class="border-t pt-4">
-              <h4 class="mb-3 text-sm font-medium">HTTP Request Settings</h4>
-              <div class="space-y-3">
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">URL</label>
-                  <input v-model="selectedNode.data.config.url" type="url"
-                    placeholder="https://api.example.com/endpoint"
-                    class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Method</label>
-                  <select v-model="selectedNode.data.config.method"
-                    class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                    <option value="GET">GET</option>
-                    <option value="POST">POST</option>
-                    <option value="PUT">PUT</option>
-                    <option value="PATCH">PATCH</option>
-                    <option value="DELETE">DELETE</option>
-                  </select>
-                </div>
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Headers (JSON)</label>
-                  <textarea v-model="selectedNode.data.config.headers" rows="2"
-                    placeholder='{"Authorization": "Bearer ..."}'
-                    class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none" />
-                </div>
-                <div class="space-y-2">
-                  <label class="text-muted-foreground text-sm">Body (JSON)</label>
-                  <textarea v-model="selectedNode.data.config.body" rows="4" placeholder='{"key": "value"}'
-                    class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none" />
-                </div>
-              </div>
-            </div>
-          </template>
-        </div>
-
-        <div v-else class="flex h-40 flex-col items-center justify-center text-center">
-          <div class="text-muted-foreground text-sm">
-            Click on a node to view and edit its properties
-          </div>
-        </div>
-      </div>
-
-      <!-- Executions Tab -->
-      <div v-if="activeTab === 'executions'" class="p-4">
-        <div class="mb-3 flex items-center justify-between">
-          <span class="text-muted-foreground text-xs">
-            {{ executions.length }} execution{{ executions.length === 1 ? '' : 's' }}
-          </span>
-          <button
-            class="hover:bg-accent text-muted-foreground flex items-center gap-1.5 rounded-md px-2 py-1 text-xs disabled:opacity-50"
-            :disabled="executionsLoading"
-            title="Refresh executions"
-            @click="refreshExecutions()">
-            <RefreshCw class="h-3.5 w-3.5" :class="{ 'animate-spin': executionsLoading }" />
-            Refresh
-          </button>
-        </div>
-        <div v-if="executionsLoading && executions.length === 0" class="space-y-3">
-          <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
-            <div class="mb-2 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <Skeleton class="h-2 w-2 rounded-full" />
-                <Skeleton class="h-4 w-16" />
-              </div>
-              <Skeleton class="h-3 w-10" />
-            </div>
-            <Skeleton class="mb-1 h-3 w-40" />
-            <Skeleton class="h-3 w-24" />
-          </div>
-        </div>
-        <div v-else class="space-y-3">
-          <NuxtLink v-for="execution in executions" :key="execution.id"
-            :to="`/orchestrator/executions/${execution.id}`"
-            class="hover:bg-muted/50 block cursor-pointer rounded-lg border p-3 transition-colors">
-            <div class="mb-1 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="h-2 w-2 rounded-full" :class="{
-                  'bg-green-500': execution.status === 'success',
-                  'bg-red-500': execution.status === 'failed',
-                  'animate-pulse bg-yellow-500': execution.status === 'running',
-                }" />
-                <span class="text-sm font-medium capitalize">{{ execution.status }}</span>
-              </div>
-              <span class="text-muted-foreground text-xs">{{ execution.duration }}</span>
-            </div>
-            <div class="text-muted-foreground font-mono text-xs">
-              {{ execution.startedAt }}
-            </div>
-            <div class="text-muted-foreground text-xs">
-              Trigger: {{ execution.trigger }}
-            </div>
-            <div v-if="execution.error" class="mt-2 rounded bg-red-500/10 px-2 py-1 text-xs text-red-500">
-              {{ execution.error }}
-            </div>
-          </NuxtLink>
-
-          <div v-if="executions.length === 0" class="text-muted-foreground py-8 text-center text-sm">
-            No executions yet
-          </div>
-        </div>
-      </div>
-
-      <!-- History Tab -->
-      <div v-if="activeTab === 'history'" class="p-4">
-        <div class="mb-3 flex items-center justify-between">
-          <span class="text-muted-foreground text-xs">
-            {{ historyVersions.length }} version{{ historyVersions.length === 1 ? '' : 's' }}
-          </span>
-          <button
-            class="hover:bg-accent text-muted-foreground flex items-center gap-1.5 rounded-md px-2 py-1 text-xs disabled:opacity-50"
-            :disabled="historyLoading"
-            title="Refresh history"
-            @click="refreshHistory()">
-            <RefreshCw class="h-3.5 w-3.5" :class="{ 'animate-spin': historyLoading }" />
-            Refresh
-          </button>
-        </div>
-        <div v-if="historyLoading && historyVersions.length === 0" class="space-y-3">
-          <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
-            <div class="mb-2 flex items-center justify-between">
-              <Skeleton class="h-4 w-16" />
-              <Skeleton class="h-3 w-20" />
-            </div>
-            <Skeleton class="mb-1 h-3 w-40" />
-            <Skeleton class="h-3 w-24" />
-          </div>
-        </div>
-        <div v-else class="space-y-3">
-          <div v-for="entry in historyVersions" :key="entry.version"
-            class="rounded-lg border p-3">
-            <div class="mb-1 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <GitCommit class="text-muted-foreground h-3.5 w-3.5" />
-                <span class="text-sm font-medium">v{{ entry.version }}</span>
-              </div>
-              <span v-if="entry.createdBy" class="text-muted-foreground text-xs">{{ entry.createdBy }}</span>
-            </div>
-            <div class="text-muted-foreground font-mono text-xs">
-              {{ entry.createdAt }}
-            </div>
-            <div v-if="entry.description" class="text-muted-foreground mt-1 text-xs">
-              {{ entry.description }}
-            </div>
-          </div>
-
-          <div v-if="historyVersions.length === 0" class="text-muted-foreground py-8 text-center text-sm">
-            No version history
-          </div>
-        </div>
-      </div>
-
-      <!-- Inputs Tab -->
-      <div v-if="activeTab === 'inputs'" class="p-4">
-        <div class="mb-3 flex items-center justify-between">
-          <h3 class="flex items-center gap-2 text-sm font-medium">
-            <Braces class="text-muted-foreground h-4 w-4" />
-            Workflow inputs
-          </h3>
-          <span class="text-muted-foreground text-xs">{{ workflowInputs.length }}</span>
-        </div>
-        <div class="space-y-4">
-          <div v-for="group in workflowInputsByCategory" :key="group.category">
-            <div class="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-              {{ group.category }}
-            </div>
-            <div class="space-y-2">
-              <div v-for="input in group.items" :key="input.name"
-                class="rounded-md border p-2.5">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="font-mono text-sm font-medium">{{ input.name }}</span>
-                  <div class="flex shrink-0 items-center gap-1">
-                    <span class="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-[10px]">{{ input.type }}</span>
-                    <span v-if="input.required" class="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] text-red-500">required</span>
+                <div v-else class="space-y-2">
+                  <NuxtLink v-for="execution in executions" :key="execution.id"
+                    :to="`/orchestrator/executions/${execution.id}`"
+                    class="hover:bg-muted/50 grid grid-cols-[6rem_1fr_10rem_8rem] items-center gap-4 rounded-lg border p-3 transition-colors">
+                    <div class="flex items-center gap-2">
+                      <div class="h-2 w-2 rounded-full" :class="{
+                        'bg-green-500': execution.status === 'success',
+                        'bg-red-500': execution.status === 'failed',
+                        'animate-pulse bg-yellow-500': execution.status === 'running',
+                      }" />
+                      <span class="text-sm font-medium capitalize">{{ execution.status }}</span>
+                    </div>
+                    <div class="text-muted-foreground truncate font-mono text-xs">{{ execution.startedAt }}</div>
+                    <div class="text-muted-foreground truncate text-xs">Trigger: {{ execution.trigger }}</div>
+                    <div class="text-muted-foreground text-right font-mono text-xs">{{ execution.duration }}</div>
+                  </NuxtLink>
+                  <div v-if="executions.length === 0" class="text-muted-foreground py-12 text-center text-sm">
+                    No executions yet
                   </div>
                 </div>
-                <div v-if="input.description" class="text-muted-foreground mt-1 text-xs">
-                  {{ input.description }}
+              </ContentEditCard>
+            </ContentEditMainContent>
+          </div>
+        </div>
+
+        <!-- History tab -->
+        <div v-if="currentTab === 4" class="min-h-0 flex-1 overflow-y-auto">
+          <div class="mx-auto max-w-4xl px-3 py-6 @2xl:px-8">
+            <ContentEditMainContent>
+              <ContentEditCard title="Version history" :description="`(${historyVersions.length})`">
+                <template #header-action>
+                  <Button variant="secondary" size="sm" :disabled="historyLoading" @click="refreshHistory()">
+                    <RefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': historyLoading }" />
+                    Refresh
+                  </Button>
+                </template>
+                <div v-if="historyLoading && historyVersions.length === 0" class="space-y-3">
+                  <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
+                    <Skeleton class="mb-2 h-4 w-16" />
+                    <Skeleton class="h-3 w-48" />
+                  </div>
                 </div>
-                <div v-if="input.defaultValue !== undefined && input.defaultValue !== null && input.defaultValue !== ''"
-                  class="text-muted-foreground mt-1 font-mono text-[11px]">
-                  default: <span class="text-foreground">{{ JSON.stringify(input.defaultValue) }}</span>
+                <div v-else class="space-y-2">
+                  <div v-for="entry in historyVersions" :key="entry.version"
+                    class="grid grid-cols-[6rem_1fr_12rem] items-center gap-4 rounded-lg border p-3">
+                    <div class="flex items-center gap-2">
+                      <GitCommit class="text-muted-foreground h-3.5 w-3.5" />
+                      <span class="text-sm font-medium">v{{ entry.version }}</span>
+                    </div>
+                    <div class="text-muted-foreground truncate text-xs">{{ entry.description || '—' }}</div>
+                    <div class="text-muted-foreground text-right font-mono text-xs">{{ entry.createdAt }}</div>
+                  </div>
+                  <div v-if="historyVersions.length === 0" class="text-muted-foreground py-12 text-center text-sm">
+                    No version history
+                  </div>
                 </div>
+              </ContentEditCard>
+            </ContentEditMainContent>
+          </div>
+        </div>
+
+        <!-- Bottom Logs Panel (only on Builder tab) -->
+        <LogsPanel v-if="currentTab === 1" ref="logsPanelRef" :execution-id="lastExecutionId" />
+      </div>
+
+      <!-- Right Sidebar: only on Builder tab -->
+      <div v-if="currentTab === 1"
+        class="bg-background shrink-0 overflow-hidden border-l transition-[width] duration-200 ease-in-out"
+        :class="isSidebarOpen ? 'w-80' : 'w-0 border-l-0'">
+        <div class="h-full w-80 overflow-y-auto" style="scrollbar-gutter: stable;">
+          <!-- Right sidebar header (only for Properties now; Add Node hides this) -->
+          <div v-if="activeTab === 'properties'" class="flex items-center gap-2 border-b px-4 py-3">
+            <Settings class="h-4 w-4" />
+            <span class="text-sm font-medium">Node properties</span>
+          </div>
+
+          <!-- Properties Tab -->
+          <div v-if="activeTab === 'properties'" class="p-4">
+            <div v-if="selectedNode" class="space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="font-medium">Node Settings</h3>
+                <button class="hover:bg-destructive/10 text-destructive rounded p-1.5" title="Delete node"
+                  @click="deleteSelectedNode">
+                  <Trash2 class="h-4 w-4" />
+                </button>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium">Name</label>
+                <input v-model="selectedNode.data.label" type="text"
+                  class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium">Description</label>
+                <textarea v-model="selectedNode.data.description" rows="2"
+                  class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium">Type</label>
+                <div class="text-muted-foreground bg-muted rounded-md px-3 py-2 text-sm capitalize">
+                  {{ selectedNode.type }}
+                </div>
+              </div>
+
+              <!-- Trigger-specific config -->
+              <template v-if="selectedNode.type === 'trigger'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">Trigger Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Webhook Path</label>
+                      <input v-model="selectedNode.data.config.path" type="text" placeholder="/webhook"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">HTTP Method</label>
+                      <select v-model="selectedNode.data.config.method"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Condition-specific config -->
+              <template v-if="selectedNode.type === 'condition'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">Condition Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Field</label>
+                      <input v-model="selectedNode.data.config.field" type="text" placeholder="data.status"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Operator</label>
+                      <select v-model="selectedNode.data.config.operator"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
+                        <option value="equals">Equals</option>
+                        <option value="not_equals">Not Equals</option>
+                        <option value="contains">Contains</option>
+                        <option value="greater_than">Greater Than</option>
+                        <option value="less_than">Less Than</option>
+                        <option value="is_empty">Is Empty</option>
+                        <option value="is_not_empty">Is Not Empty</option>
+                      </select>
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Value</label>
+                      <input v-model="selectedNode.data.config.value" type="text" placeholder="active"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Loop-specific config -->
+              <template v-if="selectedNode.type === 'loop'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">Loop Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Items Field</label>
+                      <input v-model="selectedNode.data.config.itemsField" type="text" placeholder="data.items"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Batch Size</label>
+                      <input v-model="selectedNode.data.config.batchSize" type="number" placeholder="1"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Delay-specific config -->
+              <template v-if="selectedNode.type === 'delay'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">Delay Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Duration</label>
+                      <div class="flex gap-2">
+                        <input v-model="selectedNode.data.config.duration" type="number" placeholder="5"
+                          class="bg-background focus:ring-ring flex-1 rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                        <select v-model="selectedNode.data.config.unit"
+                          class="bg-background focus:ring-ring rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
+                          <option value="seconds">Seconds</option>
+                          <option value="minutes">Minutes</option>
+                          <option value="hours">Hours</option>
+                          <option value="days">Days</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Action-specific config (Email) -->
+              <template v-if="selectedNode.type === 'action' && selectedNode.data.icon === 'Mail'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">Email Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">To</label>
+                      <input v-model="selectedNode.data.config.to" type="email" placeholder="user@example.com"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Subject</label>
+                      <input v-model="selectedNode.data.config.subject" type="text" placeholder="Email subject"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Body</label>
+                      <textarea v-model="selectedNode.data.config.body" rows="4" placeholder="Email body..."
+                        class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Action-specific config (HTTP) -->
+              <template v-if="selectedNode.type === 'action' && selectedNode.data.icon === 'Globe'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">HTTP Request Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">URL</label>
+                      <input v-model="selectedNode.data.config.url" type="url"
+                        placeholder="https://api.example.com/endpoint"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Method</label>
+                      <select v-model="selectedNode.data.config.method"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="DELETE">DELETE</option>
+                      </select>
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Headers (JSON)</label>
+                      <textarea v-model="selectedNode.data.config.headers" rows="2"
+                        placeholder='{"Authorization": "Bearer ..."}'
+                        class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Body (JSON)</label>
+                      <textarea v-model="selectedNode.data.config.body" rows="4" placeholder='{"key": "value"}'
+                        class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <div v-else class="flex h-40 flex-col items-center justify-center text-center">
+              <div class="text-muted-foreground text-sm">
+                Click on a node to view and edit its properties
               </div>
             </div>
           </div>
-          <div v-if="workflowInputs.length === 0" class="text-muted-foreground py-8 text-center text-sm">
-            This workflow has no inputs
-          </div>
-        </div>
-      </div>
 
-      <!-- Add Node Tab -->
-      <div v-if="activeTab === 'add-node'" class="p-4">
-        <div class="relative mb-3">
-          <Search class="text-muted-foreground pointer-events-none absolute top-2.5 left-2 h-4 w-4" />
-          <input v-model="nodeSearchQuery" type="text" placeholder="Search nodes…"
-            class="bg-background focus:ring-ring w-full rounded-md border py-1.5 pr-2 pl-8 text-sm focus:ring-2 focus:outline-none" />
-        </div>
-        <div class="space-y-4">
-          <div v-for="category in filteredNodeTemplates" :key="category.category">
-            <div class="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-              {{ category.category }}
+          <!-- Add Node Tab -->
+          <div v-if="activeTab === 'add-node'" class="p-4">
+            <div class="relative mb-3">
+              <Search class="text-muted-foreground pointer-events-none absolute top-2.5 left-2 h-4 w-4" />
+              <input v-model="nodeSearchQuery" type="text" placeholder="Search nodes…"
+                class="bg-background focus:ring-ring w-full rounded-md border py-1.5 pr-2 pl-8 text-sm focus:ring-2 focus:outline-none" />
             </div>
-            <div class="space-y-1.5">
-              <button v-for="item in category.items" :key="item.id"
-                class="hover:bg-muted/50 flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors"
-                draggable="true"
-                @dragstart="(e) => onDragStart(e, item, category.type)"
-                @click="quickAddNode(item, category.type)">
-                <component :is="item.icon" class="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-                <div class="min-w-0 flex-1">
-                  <div class="text-sm font-medium">{{ item.label }}</div>
-                  <div class="text-muted-foreground truncate text-xs">{{ item.description }}</div>
+            <div class="space-y-4">
+              <div v-for="category in filteredNodeTemplates" :key="category.category">
+                <div class="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+                  {{ category.category }}
                 </div>
-              </button>
+                <div class="space-y-1.5">
+                  <button v-for="item in category.items" :key="item.id"
+                    class="hover:bg-muted/50 flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors"
+                    draggable="true" @dragstart="(e) => onDragStart(e, item, category.type)"
+                    @click="quickAddNode(item, category.type)">
+                    <component :is="item.icon" class="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                    <div class="min-w-0 flex-1">
+                      <div class="text-sm font-medium">{{ item.label }}</div>
+                      <div class="text-muted-foreground truncate text-xs">{{ item.description }}</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <div v-if="filteredNodeTemplates.length === 0" class="text-muted-foreground py-8 text-center text-sm">
+                No nodes match your search
+              </div>
             </div>
-          </div>
-          <div v-if="filteredNodeTemplates.length === 0" class="text-muted-foreground py-8 text-center text-sm">
-            No nodes match your search
           </div>
         </div>
       </div>
-      </div>
-    </div>
     </div>
 
-    <DialogDelete
-      v-model:open="deleteDialogOpen"
-      :entity-name="entityName"
-      :loading="deleting"
+    <DialogDelete v-model:open="deleteDialogOpen" :entity-name="entityName" :loading="deleting"
       @confirm="confirmDelete" />
   </div>
 </template>
