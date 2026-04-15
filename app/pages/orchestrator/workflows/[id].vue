@@ -47,8 +47,10 @@ import {
   MoreHorizontal,
   Trash,
   Copy,
+  Check,
   Power,
   PowerOff,
+  GitCommit,
 } from 'lucide-vue-next'
 import {
   Sheet,
@@ -340,25 +342,34 @@ const deleteSelectedNode = () => {
 }
 
 // Workflow metadata
-const workflowName = ref(isNew.value ? 'New Workflow' : 'My Workflow')
+const workflowName = ref(isNew.value ? 'New Workflow' : '')
+const workflowDescription = ref('')
 
 // Sync breadcrumb title with workflow name
 watch([isNew, workflowName], ([newFlag, name]) => {
   breadcrumbsStore.setCurrentTitle(newFlag ? 'New workflow' : (name || 'Workflow'))
 }, { immediate: true })
-const workflowDescription = ref('')
 const isRunning = ref(false)
 const isSaving = ref(false)
-const activeTab = ref<'properties' | 'executions'>('properties')
+const activeTab = ref<'properties' | 'executions' | 'history'>('properties')
 const isSidebarOpen = ref(false)
 const showMinimap = ref(false)
 const executionsLoaded = ref(false)
+const historyLoaded = ref(false)
 
 const openExecutionsTab = () => {
   activeTab.value = 'executions'
   if (!executionsLoaded.value && !isNew.value) {
     executionsLoaded.value = true
     loadExecutions()
+  }
+}
+
+const openHistoryTab = () => {
+  activeTab.value = 'history'
+  if (!historyLoaded.value && !isNew.value) {
+    historyLoaded.value = true
+    loadHistory()
   }
 }
 
@@ -410,6 +421,34 @@ const executions = computed(() =>
     error: Array.isArray(e.errors) && e.errors.length > 0 ? e.errors[0] : undefined,
   })),
 )
+
+// Workflow version history
+const { data: historyRaw, pending: historyLoading, execute: loadHistory, refresh: refreshHistory } = useLazyAsyncData(
+  () => `workflow-history-${workflowId.value}`,
+  () => isNew.value
+    ? Promise.resolve({ workflowId: '', versions: [] })
+    : orchestratorApi.version.getHistory(workflowId.value),
+  { immediate: false, default: () => ({ workflowId: '', versions: [] }) },
+)
+
+const historyVersions = computed(() => {
+  const raw = historyRaw.value as any
+  const list: any[] = Array.isArray(raw?.items)
+    ? raw.items
+    : Array.isArray(raw?.versions)
+      ? raw.versions
+      : Array.isArray(raw)
+        ? raw
+        : []
+  return list
+    .map((v: any) => ({
+      version: v.version ?? v.Version,
+      createdAt: formatStartedAt(v.archivedAt ?? v.createdAt ?? v.CreatedAt),
+      createdBy: v.archivedBy || v.createdBy || v.CreatedBy || null,
+      description: v.description ?? v.Description ?? null,
+    }))
+    .sort((a, b) => (b.version ?? 0) - (a.version ?? 0))
+})
 
 const saveWorkflow = async () => {
   isSaving.value = true
@@ -480,6 +519,17 @@ const { data: currentWorkflow, refresh: refreshCurrentWorkflow } = await useAsyn
 const isEnabled = computed(() => currentWorkflow.value?.enabled ?? false)
 const menuBusy = ref(false)
 
+// Sync workflow data into editable fields when it loads (or refreshes).
+watch(
+  currentWorkflow,
+  (wf) => {
+    if (!wf || isNew.value) return
+    workflowName.value = wf.name ?? ''
+    workflowDescription.value = wf.description ?? ''
+  },
+  { immediate: true },
+)
+
 // ─── Enable / Disable ─────────────────────────────────────────────
 const handleToggleEnabled = async () => {
   if (isNew.value || !currentWorkflow.value) return
@@ -548,6 +598,23 @@ const deleteWorkflowEntity = async (): Promise<boolean> => {
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
   useDeleteDialog(deleteWorkflowEntity, '/orchestrator/workflows/list')
 
+const shortenId = (id: string, head = 12, tail = 8): string => {
+  if (!id || id.length <= head + tail + 1) return id
+  return `${id.slice(0, head)}…${id.slice(-tail)}`
+}
+
+const copiedId = ref(false)
+const copyWorkflowId = async () => {
+  try {
+    await navigator.clipboard.writeText(workflowId.value)
+    copiedId.value = true
+    setTimeout(() => (copiedId.value = false), 1500)
+  }
+  catch (err) {
+    geinsLogError('Failed to copy workflow ID', err)
+  }
+}
+
 </script>
 
 <template>
@@ -557,11 +624,37 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
       <!-- Toolbar (name + save) -->
       <div class="bg-background flex items-center justify-between border-b px-4 py-2">
         <div class="flex items-center gap-4">
-          <div>
+          <div class="flex flex-col gap-1">
             <input v-model="workflowName" type="text"
-              class="focus:ring-ring rounded bg-transparent px-2 py-1 text-lg font-semibold focus:ring-2 focus:outline-none" />
-            <div class="text-muted-foreground px-2 text-xs">
-              {{ isNew ? 'New Workflow' : `ID: ${workflowId}` }}
+              class="focus:ring-ring w-[28rem] max-w-full rounded bg-transparent px-2 py-1 text-lg font-semibold focus:ring-2 focus:outline-none" />
+            <input v-model="workflowDescription" type="text"
+              :placeholder="isNew ? 'Add a description…' : 'No description'"
+              class="focus:ring-ring text-muted-foreground placeholder:text-muted-foreground/60 w-[48rem] max-w-full rounded bg-transparent px-2 py-0.5 text-sm focus:ring-2 focus:outline-none" />
+            <div class="text-muted-foreground flex items-center gap-1.5 px-2 font-mono text-xs">
+              <template v-if="isNew">
+                New Workflow
+              </template>
+              <template v-else>
+                <span>ID:</span>
+                <span :title="workflowId">{{ shortenId(workflowId) }}</span>
+                <button class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
+                  :title="copiedId ? 'Copied!' : 'Copy workflow ID'" @click="copyWorkflowId">
+                  <component :is="copiedId ? Check : Copy" class="h-3 w-3" />
+                </button>
+                <template v-if="currentWorkflow?.group">
+                  <span>•</span>
+                  <span>Group: <span class="text-foreground font-medium">{{ currentWorkflow.group }}</span></span>
+                </template>
+                <template v-if="currentWorkflow?.tags?.length">
+                  <span>•</span>
+                  <div class="flex flex-wrap items-center gap-1">
+                    <Badge v-for="tag in currentWorkflow.tags" :key="tag" variant="secondary"
+                      class="font-sans text-[10px] font-normal">
+                      {{ tag }}
+                    </Badge>
+                  </div>
+                </template>
+              </template>
             </div>
           </div>
         </div>
@@ -661,6 +754,14 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
           @click="openExecutionsTab">
           <History class="mr-2 inline h-4 w-4" />
           Executions
+        </button>
+        <button class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
+          :class="activeTab === 'history' ? 'border-b-2 border-primary text-foreground' : 'text-muted-foreground hover:text-foreground'"
+          :disabled="isNew"
+          :title="isNew ? 'Save workflow to view history' : 'Workflow version history'"
+          @click="openHistoryTab">
+          <GitCommit class="mr-2 inline h-4 w-4" />
+          History
         </button>
       </div>
 
@@ -917,6 +1018,55 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
 
           <div v-if="executions.length === 0" class="text-muted-foreground py-8 text-center text-sm">
             No executions yet
+          </div>
+        </div>
+      </div>
+
+      <!-- History Tab -->
+      <div v-if="activeTab === 'history'" class="p-4">
+        <div class="mb-3 flex items-center justify-between">
+          <span class="text-muted-foreground text-xs">
+            {{ historyVersions.length }} version{{ historyVersions.length === 1 ? '' : 's' }}
+          </span>
+          <button
+            class="hover:bg-accent text-muted-foreground flex items-center gap-1.5 rounded-md px-2 py-1 text-xs disabled:opacity-50"
+            :disabled="historyLoading"
+            title="Refresh history"
+            @click="refreshHistory()">
+            <RefreshCw class="h-3.5 w-3.5" :class="{ 'animate-spin': historyLoading }" />
+            Refresh
+          </button>
+        </div>
+        <div v-if="historyLoading && historyVersions.length === 0" class="space-y-3">
+          <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
+            <div class="mb-2 flex items-center justify-between">
+              <Skeleton class="h-4 w-16" />
+              <Skeleton class="h-3 w-20" />
+            </div>
+            <Skeleton class="mb-1 h-3 w-40" />
+            <Skeleton class="h-3 w-24" />
+          </div>
+        </div>
+        <div v-else class="space-y-3">
+          <div v-for="entry in historyVersions" :key="entry.version"
+            class="rounded-lg border p-3">
+            <div class="mb-1 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <GitCommit class="text-muted-foreground h-3.5 w-3.5" />
+                <span class="text-sm font-medium">v{{ entry.version }}</span>
+              </div>
+              <span v-if="entry.createdBy" class="text-muted-foreground text-xs">{{ entry.createdBy }}</span>
+            </div>
+            <div class="text-muted-foreground font-mono text-xs">
+              {{ entry.createdAt }}
+            </div>
+            <div v-if="entry.description" class="text-muted-foreground mt-1 text-xs">
+              {{ entry.description }}
+            </div>
+          </div>
+
+          <div v-if="historyVersions.length === 0" class="text-muted-foreground py-8 text-center text-sm">
+            No version history
           </div>
         </div>
       </div>

@@ -5,17 +5,10 @@ import type {
   ExecutionNodeExecution,
   LiveConsoleLine,
 } from '#shared/types';
+import { formatDuration, formatTimestamp } from '#shared/utils/time';
 import { useToast } from '@/components/ui/toast/use-toast';
-import type { Component } from 'vue';
 import {
-  LucideCircleCheck,
-  LucideCircleX,
-  LucideLoader,
-  LucideBan,
-  LucideTimer,
   LucidePause,
-  LucidePlay,
-  LucideCircleAlert,
   LucideRefreshCw,
   LucideSquare,
   LucideMoreHorizontal,
@@ -67,37 +60,9 @@ watch(execution, (exec) => {
   }
 }, { immediate: true });
 
-// Live ticking clock while execution is running
-const now = ref(Date.now());
-let tickTimer: ReturnType<typeof setInterval> | null = null;
-
-// Poll execution details while running so node state updates live
-const POLL_INTERVAL_MS = 3000;
-let pollTimer: ReturnType<typeof setInterval> | null = null;
-
-watch(isRunning, (running) => {
-  if (running && !tickTimer) {
-    now.value = Date.now();
-    tickTimer = setInterval(() => { now.value = Date.now(); }, 1000);
-  }
-  else if (!running && tickTimer) {
-    clearInterval(tickTimer);
-    tickTimer = null;
-  }
-
-  if (running && !pollTimer) {
-    pollTimer = setInterval(() => { refresh(); }, POLL_INTERVAL_MS);
-  }
-  else if (!running && pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
-}, { immediate: true });
-
-onBeforeUnmount(() => {
-  if (tickTimer) clearInterval(tickTimer);
-  if (pollTimer) clearInterval(pollTimer);
-});
+// Live ticking clock + polling while execution is running
+const { now } = useLiveClock(isRunning);
+usePollWhile(isRunning, () => refresh(), 3000);
 
 const liveDurationMs = computed(() => {
   if (!execution.value) return null;
@@ -107,44 +72,11 @@ const liveDurationMs = computed(() => {
   return execution.value.durationMs ?? null;
 });
 
-// ─── Formatters ────────────────────────────────────────────────────
-const pad = (n: number, len = 2) => String(n).padStart(len, '0');
-
-const formatTime = (iso: string | null | undefined): string => {
-  if (!iso) return '–';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
-};
+const { resolveStatusIcon } = useExecutionStatus();
 
 const shortenId = (id: string, head = 12, tail = 8): string => {
   if (!id || id.length <= head + tail + 1) return id;
   return `${id.slice(0, head)}…${id.slice(-tail)}`;
-};
-
-const formatDuration = (ms: number | null | undefined): string => {
-  if (ms == null) return '–';
-  if (ms < 1000) return `${ms}ms`;
-  const s = ms / 1000;
-  if (s < 60) return `${s.toFixed(2)}s`;
-  const m = Math.floor(s / 60);
-  return `${m}m ${Math.round(s % 60)}s`;
-};
-
-// ─── Status icon/color map ─────────────────────────────────────────
-const statusIconMap: Record<string, { icon: Component; class: string }> = {
-  completed: { icon: LucideCircleCheck, class: 'text-green-500' },
-  running: { icon: LucideLoader, class: 'text-blue-500 animate-spin' },
-  failed: { icon: LucideCircleX, class: 'text-destructive' },
-  canceled: { icon: LucideBan, class: 'text-muted-foreground' },
-  cancelled: { icon: LucideBan, class: 'text-muted-foreground' },
-  timedout: { icon: LucideTimer, class: 'text-yellow-500' },
-  suspended: { icon: LucidePause, class: 'text-yellow-500' },
-  pending: { icon: LucidePlay, class: 'text-muted-foreground' },
-};
-
-const resolveStatusIcon = (status: string) => {
-  return statusIconMap[status?.toLowerCase()] ?? { icon: LucideCircleAlert, class: 'text-muted-foreground' };
 };
 
 // ─── Node timeline range (passed to NodeExecutions) ───────────────
@@ -248,7 +180,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
   for (const node of nodeExecutions.value) {
     lines.push({
       id: ++id,
-      timestamp: formatTime(node.startTime),
+      timestamp: formatTimestamp(node.startTime),
       level: 'info',
       source: node.nodeId,
       message: `▶ ${node.nodeName ?? node.nodeId} started${node.activityName ? ` (${node.activityName})` : ''}`,
@@ -257,7 +189,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
     if (status === 'completed') {
       lines.push({
         id: ++id,
-        timestamp: formatTime(node.endTime),
+        timestamp: formatTimestamp(node.endTime),
         level: 'info',
         source: node.nodeId,
         message: `✔ ${node.nodeName ?? node.nodeId} completed in ${formatDuration(node.durationMs)}`,
@@ -266,7 +198,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
     else if (status === 'failed') {
       lines.push({
         id: ++id,
-        timestamp: formatTime(node.endTime),
+        timestamp: formatTimestamp(node.endTime),
         level: 'error',
         source: node.nodeId,
         message: `✖ ${node.nodeName ?? node.nodeId} failed`,
@@ -371,7 +303,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
           Started
         </div>
         <div class="font-mono text-sm">
-          {{ formatTime(execution.startTime) }}
+          {{ formatTimestamp(execution.startTime) }}
         </div>
       </div>
       <div class="rounded-lg border p-3">
@@ -379,7 +311,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
           Ended
         </div>
         <div class="font-mono text-sm">
-          {{ formatTime(execution.endTime) }}
+          {{ formatTimestamp(execution.endTime) }}
         </div>
       </div>
       <div class="rounded-lg border p-3">

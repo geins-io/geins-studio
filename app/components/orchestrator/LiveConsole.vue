@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LiveConsoleLine } from '#shared/types';
+import { formatTimestamp } from '#shared/utils/time';
 import { LucideTrash2 } from '#components';
 
 interface Props {
@@ -32,13 +33,6 @@ const consoleLines = computed<LiveConsoleLine[]>(() => {
   return [...seed, ...streamLines.value];
 });
 
-const pad = (n: number, len = 2) => String(n).padStart(len, '0');
-const formatTime = (iso: string): string => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
-};
-
 const scrollToBottom = () => {
   nextTick(() => {
     if (consoleContainer.value) {
@@ -66,7 +60,7 @@ const appendStreamLine = (raw: string) => {
   const line = raw.replace(/\r$/, '');
   if (!line) return;
 
-  let timestamp = formatTime(new Date().toISOString());
+  let timestamp = formatTimestamp(new Date().toISOString());
   let level: LiveConsoleLine['level'] = detectLevel(line);
   let source = 'stream';
   let message = line;
@@ -77,8 +71,8 @@ const appendStreamLine = (raw: string) => {
       if (typeof obj.message === 'string') message = obj.message;
       if (typeof obj.source === 'string') source = obj.source;
       else if (typeof obj.nodeId === 'string') source = obj.nodeId;
-      if (typeof obj.timestamp === 'string') timestamp = formatTime(obj.timestamp);
-      else if (typeof obj.time === 'string') timestamp = formatTime(obj.time);
+      if (typeof obj.timestamp === 'string') timestamp = formatTimestamp(obj.timestamp);
+      else if (typeof obj.time === 'string') timestamp = formatTimestamp(obj.time);
       const lvl = String(obj.level ?? '').toLowerCase();
       if (lvl === 'info' || lvl === 'warn' || lvl === 'error' || lvl === 'debug') {
         level = lvl;
@@ -113,7 +107,7 @@ const startLiveStream = async () => {
   waitingTimer = setTimeout(() => {
     if (!streamOpened) {
       pushStream({
-        timestamp: formatTime(new Date().toISOString()),
+        timestamp: formatTimestamp(new Date().toISOString()),
         level: 'debug',
         source: 'stream',
         message: '… Waiting for stream (upstream has not flushed any data yet)',
@@ -132,7 +126,7 @@ const startLiveStream = async () => {
 
     if (!res.ok || !res.body) {
       pushStream({
-        timestamp: formatTime(new Date().toISOString()),
+        timestamp: formatTimestamp(new Date().toISOString()),
         level: 'error',
         source: 'stream',
         message: `Stream unavailable: HTTP ${res.status}`,
@@ -145,7 +139,7 @@ const startLiveStream = async () => {
     let buffer = '';
 
     pushStream({
-      timestamp: formatTime(new Date().toISOString()),
+      timestamp: formatTimestamp(new Date().toISOString()),
       level: 'info',
       source: 'stream',
       message: '● Connected to live stream',

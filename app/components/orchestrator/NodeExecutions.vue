@@ -1,15 +1,7 @@
 <script setup lang="ts">
 import type { ExecutionNodeExecution } from '#shared/types';
-import type { Component } from 'vue';
+import { formatDuration, formatTimestamp } from '#shared/utils/time';
 import {
-  LucideCircleCheck,
-  LucideCircleX,
-  LucideLoader,
-  LucideBan,
-  LucideTimer,
-  LucidePause,
-  LucidePlay,
-  LucideCircleAlert,
   LucideChevronRight,
   LucideChevronDown,
 } from '#components';
@@ -25,39 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
   timelineEnd: null,
 });
 
-const pad = (n: number, len = 2) => String(n).padStart(len, '0');
-
-const formatTime = (iso: string | null | undefined): string => {
-  if (!iso) return '–';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`;
-};
-
-const formatDuration = (ms: number | null | undefined): string => {
-  if (ms == null) return '–';
-  if (ms < 1000) return `${ms}ms`;
-  const s = ms / 1000;
-  if (s < 60) return `${s.toFixed(2)}s`;
-  const m = Math.floor(s / 60);
-  return `${m}m ${Math.round(s % 60)}s`;
-};
-
-const statusIconMap: Record<string, { icon: Component; class: string }> = {
-  completed: { icon: LucideCircleCheck, class: 'text-green-500' },
-  running: { icon: LucideLoader, class: 'text-blue-500 animate-spin' },
-  failed: { icon: LucideCircleX, class: 'text-destructive' },
-  canceled: { icon: LucideBan, class: 'text-muted-foreground' },
-  cancelled: { icon: LucideBan, class: 'text-muted-foreground' },
-  timedout: { icon: LucideTimer, class: 'text-yellow-500' },
-  suspended: { icon: LucidePause, class: 'text-yellow-500' },
-  pending: { icon: LucidePlay, class: 'text-muted-foreground' },
-};
-
-const resolveStatusIcon = (status: string | null | undefined) => {
-  return statusIconMap[status?.toLowerCase() ?? '']
-    ?? { icon: LucideCircleAlert, class: 'text-muted-foreground' };
-};
+const { resolveStatusIcon } = useExecutionStatus();
 
 const derivedStart = computed(() => {
   if (props.timelineStart != null) return props.timelineStart;
@@ -195,7 +155,7 @@ const toggleNodeExpanded = (nodeId: string) => {
                 Started
               </dt>
               <dd class="font-mono select-all">
-                {{ formatTime(node.startTime) }}
+                {{ formatTimestamp(node.startTime) }}
               </dd>
             </div>
             <div>
@@ -203,7 +163,7 @@ const toggleNodeExpanded = (nodeId: string) => {
                 Ended
               </dt>
               <dd class="font-mono select-all">
-                {{ formatTime(node.endTime) }}
+                {{ formatTimestamp(node.endTime) }}
               </dd>
             </div>
             <div>

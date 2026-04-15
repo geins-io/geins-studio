@@ -4,18 +4,8 @@ import type {
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
+import { formatDuration, formatTimestamp } from '#shared/utils/time';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
-import type { Component } from 'vue';
-import {
-  LucidePlay,
-  LucideCircleCheck,
-  LucideCircleAlert,
-  LucideCircleX,
-  LucideLoader,
-  LucideBan,
-  LucideTimer,
-  LucidePause,
-} from '#components';
 
 export interface ExecutionListItem {
   id: string;
@@ -154,33 +144,6 @@ watch([hasFilters, filterLabel], () => {
   );
 }, { immediate: true });
 
-// ─── Helpers ───────────────────────────────────────────────────────
-const formatDuration = (ms: number | undefined): string => {
-  if (ms === undefined || ms === null) return '–';
-  if (ms < 1000) return `${ms}ms`;
-  const seconds = ms / 1000;
-  if (seconds < 60) return `${seconds.toFixed(1)}s`;
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.round(seconds % 60);
-  return `${minutes}m ${remainingSeconds}s`;
-};
-
-const pad = (n: number, len = 2): string => String(n).padStart(len, '0');
-
-const formatTime = (iso: string | undefined): string => {
-  if (!iso) return '–';
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const yyyy = date.getFullYear();
-  const mm = pad(date.getMonth() + 1);
-  const dd = pad(date.getDate());
-  const hh = pad(date.getHours());
-  const mi = pad(date.getMinutes());
-  const ss = pad(date.getSeconds());
-  const ms = pad(date.getMilliseconds(), 3);
-  return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}.${ms}`;
-};
-
 // ─── Data Mapping ──────────────────────────────────────────────────
 const mapToListData = (
   list: ExecutionLog[],
@@ -195,9 +158,9 @@ const mapToListData = (
       group: groupName,
       groupSlug: groupName ? groupName.toLowerCase().replace(/\s+/g, '-') : null,
       status: e.status?.toLowerCase() ?? 'unknown',
-      startTime: formatTime(e.startTime),
+      startTime: formatTimestamp(e.startTime),
       startTimeIso: e.startTime ?? null,
-      endTime: formatTime(e.endTime ?? undefined),
+      endTime: formatTimestamp(e.endTime ?? undefined),
       durationFormatted: formatDuration(e.durationMs ?? undefined),
       durationMs: e.durationMs ?? 0,
       errorCount: e.errorCount ?? 0,
@@ -208,21 +171,8 @@ const mapToListData = (
 };
 
 // ─── Live ticking clock for running executions ────────────────────
-const now = ref(Date.now());
-let tickTimer: ReturnType<typeof setInterval> | null = null;
-
 const hasRunning = computed(() => allData.value.some((item) => item.status === 'running'));
-
-watch(hasRunning, (running) => {
-  if (running && !tickTimer) {
-    now.value = Date.now();
-    tickTimer = setInterval(() => { now.value = Date.now(); }, 1000);
-  }
-  else if (!running && tickTimer) {
-    clearInterval(tickTimer);
-    tickTimer = null;
-  }
-}, { immediate: true });
+const { now } = useLiveClock(hasRunning);
 
 const applyLiveDuration = (item: EntityList): EntityList => {
   if (item.status !== 'running' || !item.startTimeIso) return item;
@@ -323,21 +273,8 @@ onMounted(() => {
     { immediate: true },
   );
 
-  const statusIconMap: Record<string, { icon: Component; class: string }> = {
-    completed: { icon: LucideCircleCheck, class: 'text-green-500' },
-    running: { icon: LucideLoader, class: 'text-blue-500 animate-spin' },
-    failed: { icon: LucideCircleX, class: 'text-destructive' },
-    canceled: { icon: LucideBan, class: 'text-muted-foreground' },
-    cancelled: { icon: LucideBan, class: 'text-muted-foreground' },
-    timedout: { icon: LucideTimer, class: 'text-yellow-500' },
-    suspended: { icon: LucidePause, class: 'text-yellow-500' },
-    pending: { icon: LucidePlay, class: 'text-muted-foreground' },
-  };
-
-  const resolveStatusIcon = (row: EntityList) => {
-    const status = row.status?.toLowerCase() || 'unknown';
-    return statusIconMap[status] ?? { icon: LucideCircleAlert, class: 'text-muted-foreground' };
-  };
+  const { resolveStatusIcon: resolveByStatus } = useExecutionStatus();
+  const resolveStatusIcon = (row: EntityList) => resolveByStatus(row.status);
 
   const columnOptions: ColumnOptions<EntityList> = {
     columnTypes: {
@@ -381,10 +318,7 @@ onMounted(() => {
   startPolling();
 });
 
-onBeforeUnmount(() => {
-  stopPolling();
-  if (tickTimer) clearInterval(tickTimer);
-});
+onBeforeUnmount(stopPolling);
 
 // ─── Column Visibility ────────────────────────────────────────────
 const { getVisibilityState } = useTable<EntityList>();
