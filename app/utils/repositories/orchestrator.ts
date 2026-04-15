@@ -150,13 +150,27 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         workflowId: string,
         data?: StartWorkflowRequest,
       ): Promise<StartWorkflowResponse> {
-        return await fetch<StartWorkflowResponse>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/execute`,
-          {
-            method: 'GET',
-            body: data ?? {},
-          },
+        // Backend requires GET with no body. Any start parameters go on the query string.
+        const query = data
+          ? '?' + new URLSearchParams(
+            Object.entries(data).flatMap(([k, v]) =>
+              v === undefined ? [] : [[k, typeof v === 'string' ? v : JSON.stringify(v)]],
+            ),
+          ).toString()
+          : '';
+        const raw = await fetch<Record<string, unknown>>(
+          `${WORKFLOW_ENDPOINT}/${workflowId}/execute${query}`,
+          { method: 'GET' },
         );
+        // API returns PascalCase fields; normalize to the camelCase response type.
+        return {
+          success: raw.Status === 'accepted' || raw.success === true,
+          status: (raw.Status ?? raw.status) as string | undefined,
+          executionId: (raw.ExecutionId ?? raw.executionId) as string | undefined,
+          newExecutionId: (raw.NewExecutionId ?? raw.newExecutionId) as string | undefined,
+          message: (raw.Message ?? raw.message) as string | undefined,
+          instanceId: (raw.InstanceId ?? raw.instanceId) as string | undefined,
+        };
       },
 
       async cancel(

@@ -20,9 +20,17 @@ const props = withDefaults(defineProps<Props>(), {
   requestHeaders: () => ({}),
 });
 
-const consoleLines = ref<LiveConsoleLine[]>([]);
+// Seed lines come from the parent (derived from upstream state) and may be
+// replaced wholesale when the parent refetches. Stream lines are appended
+// from the live fetch reader and must be preserved across seed updates.
+const streamLines = ref<LiveConsoleLine[]>([]);
 const consoleContainer = ref<HTMLElement | null>(null);
-let logCounter = 0;
+let streamCounter = 0;
+
+const consoleLines = computed<LiveConsoleLine[]>(() => {
+  const seed = props.seedLines.map((line, i) => ({ ...line, id: i + 1 }));
+  return [...seed, ...streamLines.value];
+});
 
 const pad = (n: number, len = 2) => String(n).padStart(len, '0');
 const formatTime = (iso: string): string => {
@@ -39,16 +47,12 @@ const scrollToBottom = () => {
   });
 };
 
-const seed = () => {
-  logCounter = 0;
-  consoleLines.value = props.seedLines.map((line) => ({
-    ...line,
-    id: ++logCounter,
-  }));
+const pushStream = (line: Omit<LiveConsoleLine, 'id'>) => {
+  streamLines.value.push({ ...line, id: ++streamCounter });
   scrollToBottom();
 };
 
-watch(() => props.seedLines, seed, { immediate: true });
+watch(() => props.seedLines, scrollToBottom, { immediate: true });
 
 const detectLevel = (line: string): LiveConsoleLine['level'] => {
   const l = line.toLowerCase();
@@ -85,23 +89,37 @@ const appendStreamLine = (raw: string) => {
     }
   }
 
-  consoleLines.value.push({
-    id: ++logCounter,
-    timestamp,
-    level,
-    source,
-    message,
-  });
-  scrollToBottom();
+  pushStream({ timestamp, level, source, message });
 };
 
 let streamController: AbortController | null = null;
+let waitingTimer: ReturnType<typeof setTimeout> | null = null;
+let streamOpened = false;
+
+const clearWaitingTimer = () => {
+  if (waitingTimer) {
+    clearTimeout(waitingTimer);
+    waitingTimer = null;
+  }
+};
 
 const startLiveStream = async () => {
   if (streamController || !props.streamUrl) return;
 
   const controller = new AbortController();
   streamController = controller;
+  streamOpened = false;
+
+  waitingTimer = setTimeout(() => {
+    if (!streamOpened) {
+      pushStream({
+        timestamp: formatTime(new Date().toISOString()),
+        level: 'debug',
+        source: 'stream',
+        message: '… Waiting for stream (upstream has not flushed any data yet)',
+      });
+    }
+  }, 3000);
 
   try {
     const res = await fetch(props.streamUrl, {
@@ -109,8 +127,16 @@ const startLiveStream = async () => {
       headers: props.requestHeaders,
     });
 
+    streamOpened = true;
+    clearWaitingTimer();
+
     if (!res.ok || !res.body) {
-      appendStreamLine(`Stream unavailable: HTTP ${res.status}`);
+      pushStream({
+        timestamp: formatTime(new Date().toISOString()),
+        level: 'error',
+        source: 'stream',
+        message: `Stream unavailable: HTTP ${res.status}`,
+      });
       return;
     }
 
@@ -118,14 +144,12 @@ const startLiveStream = async () => {
     const decoder = new TextDecoder();
     let buffer = '';
 
-    consoleLines.value.push({
-      id: ++logCounter,
+    pushStream({
       timestamp: formatTime(new Date().toISOString()),
       level: 'info',
       source: 'stream',
       message: '● Connected to live stream',
     });
-    scrollToBottom();
 
     while (true) {
       const { done, value } = await reader.read();
@@ -152,6 +176,8 @@ const startLiveStream = async () => {
 };
 
 const stopLiveStream = () => {
+  clearWaitingTimer();
+  streamOpened = false;
   if (streamController) {
     streamController.abort();
     streamController = null;
@@ -170,8 +196,8 @@ watch(
 onBeforeUnmount(stopLiveStream);
 
 const clearConsole = () => {
-  consoleLines.value = [];
-  logCounter = 0;
+  streamLines.value = [];
+  streamCounter = 0;
 };
 </script>
 
