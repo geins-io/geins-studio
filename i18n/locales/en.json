@@ -716,7 +716,6 @@
     "mail_desc_ProductSizeAvailable": "Sent when a requested size is available",
     "mail_desc_ProductMonitorNotification": "Sent when a monitored product is back in stock",
     "identifier_helper": "Generated automatically from the name on creation.",
-    "url_helper": "Changing the URL will break existing links.",
     "invalid_url": "Please enter a valid URL",
     "card_details": "Channel details",
     "locked_toast": "Channel update is being processed in the background. This may take a moment.",

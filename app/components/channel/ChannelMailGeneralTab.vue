@@ -44,10 +44,9 @@ function update<K extends keyof ChannelMailSettings>(
         </div>
         <div class="space-y-1.5">
           <Label>{{ t('channels.mail_from_email') }}</Label>
-          <Input
+          <FormInputLocked
             :model-value="model.fromEmailAddress ?? ''"
             type="email"
-            @update:model-value="update('fromEmailAddress', String($event))"
           />
         </div>
       </FormGrid>

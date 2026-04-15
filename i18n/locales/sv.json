@@ -712,7 +712,6 @@
     "mail_desc_ProductSizeAvailable": "Skickas när en efterfrågad storlek finns tillgänglig",
     "mail_desc_ProductMonitorNotification": "Skickas när en bevakad produkt åter finns i lager",
     "identifier_helper": "Genereras automatiskt från namnet vid skapande.",
-    "url_helper": "Att ändra URL:en bryter befintliga länkar.",
     "invalid_url": "Ange en giltig URL",
     "card_details": "Kanaldetaljer",
     "locked_toast": "Kanaluppdateringen bearbetas i bakgrunden. Det kan ta en stund.",

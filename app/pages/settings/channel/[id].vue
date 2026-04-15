@@ -796,11 +796,8 @@ if (!createMode.value) {
                     <FormItem>
                       <FormLabel>{{ $t('channels.url') }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="url" />
+                        <FormInputLocked v-bind="componentField" type="url" />
                       </FormControl>
-                      <FormDescription>
-                        {{ $t('channels.url_helper') }}
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   </FormField>
