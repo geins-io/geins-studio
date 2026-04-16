@@ -173,23 +173,7 @@ export default defineConfig({
         items: [
           { text: 'Feedback system', link: '/guides/ui/feedback-system' },
           { text: 'Testing', link: '/guides/testing' },
-          // {
-          //   text: 'Working with Data Tables',
-          //   link: '/guides/data-tables/',
-          //   items: [
-          //     { text: 'Composables', link: '/guides/data-tables/composables' },
-          //     { text: 'Components', link: '/guides/data-tables/components' },
-          //   ],
-          // },
-
-          // {
-          //   text: 'Working with the UI',
-          //   link: '/guides/ui/',
-          //   items: [
-          //     { text: 'Feedback system', link: '/guides/ui/feedback-system' },
-          //   ],
-          // },
-          //{ text: 'Working with the API', link: '/guides/api' },
+          { text: 'Forms', link: '/guides/forms' },
         ],
       },
     ],
