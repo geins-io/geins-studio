@@ -1,9 +1,7 @@
-<!-- eslint-disable -->
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
 import { Background } from '@vue-flow/background'
 import { Controls, ControlButton } from '@vue-flow/controls'
-import { VueFlow, useVueFlow, Position } from '@vue-flow/core'
+import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { MiniMap } from '@vue-flow/minimap'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
@@ -11,56 +9,6 @@ import '@vue-flow/controls/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
 import cronstrue from 'cronstrue'
 import 'cronstrue/locales/sv'
-
-
-
-import {
-  Play,
-  Pause,
-  Save,
-  Zap,
-  Mail,
-  MessageSquare,
-  GitBranch,
-  Database,
-  Globe,
-  Clock,
-  Webhook,
-  FileText,
-  Repeat,
-  Timer,
-  Code,
-  Filter,
-  Merge,
-  Split,
-  Bell,
-  Send,
-  Download,
-  Upload,
-  Trash2,
-  Settings,
-  History,
-  Plus,
-  GripVertical,
-  Search,
-  PanelRightClose,
-  PanelRightOpen,
-  RefreshCw,
-  Map as MapIcon,
-  Copy,
-  Check,
-  GitCommit,
-  Braces,
-} from 'lucide-vue-next'
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetBody,
-} from '~/components/ui/sheet'
 import { useToast } from '@/components/ui/toast/use-toast'
 import ActionNode from '~/components/workflow/ActionNode.vue'
 import ConditionNode from '~/components/workflow/ConditionNode.vue'
@@ -74,7 +22,6 @@ definePageMeta({
 })
 
 const route = useRoute()
-const router = useRouter()
 const breadcrumbsStore = useBreadcrumbsStore()
 const { geinsLogError } = useGeinsLog('workflow-editor')
 
@@ -260,8 +207,6 @@ const {
   addNodes,
   removeNodes,
   project,
-  getNodes,
-  getEdges,
 } = useVueFlow()
 
 // Handle new connections
@@ -338,13 +283,13 @@ const deleteSelectedNode = () => {
 const workflowName = ref(isNew.value ? 'New Workflow' : '')
 const workflowDescription = ref('')
 const workflowTags = ref<string[]>([])
+const workflowActive = ref(false)
 
 // Sync breadcrumb title with workflow name
 watch([isNew, workflowName], ([newFlag, name]) => {
   breadcrumbsStore.setCurrentTitle(newFlag ? 'New workflow' : (name || 'Workflow'))
 }, { immediate: true })
 const isRunning = ref(false)
-const isSaving = ref(false)
 // Right sidebar tabs (only for node editing now)
 const activeTab = ref<'properties' | 'add-node'>('properties')
 
@@ -384,7 +329,7 @@ const triggerEventAction = ref('')
 const triggerEventSubEntity = ref('')
 const triggerDescription = ref('')
 
-const { locale } = useI18n()
+const { t, locale } = useI18n()
 const cronDescription = computed(() => {
   const expr = triggerCron.value.trim()
   if (!expr) return ''
@@ -515,26 +460,6 @@ const historyVersions = computed(() => {
     .sort((a, b) => (b.version ?? 0) - (a.version ?? 0))
 })
 
-const saveWorkflow = async () => {
-  isSaving.value = true
-  const workflow = {
-    id: isNew.value ? Date.now().toString() : workflowId.value,
-    name: workflowName.value,
-    description: workflowDescription.value,
-    nodes: getNodes.value,
-    edges: getEdges.value,
-  }
-  console.log('Saving workflow:', workflow)
-
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 500))
-  isSaving.value = false
-
-  if (isNew.value) {
-    router.replace(`/workflows/${workflow.id}`)
-  }
-}
-
 const lastExecutionId = ref<string | null>(null)
 const logsPanelRef = ref<{ open: () => void, close: () => void, toggle: () => void } | null>(null)
 
@@ -571,6 +496,37 @@ const runWorkflow = async () => {
   }
 }
 
+// Pre-compute i18n labels before `await` — after an await, Vue loses the
+// active component instance so `t()` silently fails in post-await computeds.
+const idLabel = t('entity_id', { entityName: 'workflow' })
+
+// ─── Unsaved changes tracking ────────────────────────────────────
+// Must be declared BEFORE `await useAsyncData` — after an await, Vue loses
+// the active component instance so composables that register route guards
+// (onBeforeRouteLeave) would silently fail.
+const editableState = computed(() => ({
+  active: workflowActive.value,
+  name: workflowName.value,
+  description: workflowDescription.value,
+  tags: workflowTags.value,
+  triggerType: triggerType.value,
+  triggerCron: triggerCron.value,
+  triggerEventEntity: triggerEventEntity.value,
+  triggerEventAction: triggerEventAction.value,
+  triggerEventSubEntity: triggerEventSubEntity.value,
+  triggerDescription: triggerDescription.value,
+  inputs: inputValues.value,
+  settings: settingsValues.value,
+}) as Record<string, unknown>)
+
+const originalEditableState = ref('')
+
+const { hasUnsavedChanges, unsavedChangesDialogOpen, confirmLeave } = useUnsavedChanges(
+  editableState,
+  originalEditableState,
+  isNew,
+)
+
 // ─── Current workflow (for enable/disable + duplicate) ────────────
 const { toast } = useToast()
 const entityName = 'workflow'
@@ -589,6 +545,7 @@ watch(
   currentWorkflow,
   (wf) => {
     if (!wf || isNew.value) return
+    workflowActive.value = wf.enabled ?? false
     workflowName.value = wf.name ?? ''
     workflowDescription.value = wf.description ?? ''
     workflowTags.value = Array.isArray((wf as any)?.tags) ? [...(wf as any).tags] : []
@@ -608,6 +565,16 @@ watch(
   { immediate: true },
 )
 
+// Snapshot the original state once workflow data loads so unsaved changes
+// can be detected. Uses nextTick to allow all watchers to propagate first.
+watch(currentWorkflow, () => {
+  if (currentWorkflow.value && !isNew.value) {
+    nextTick(() => {
+      originalEditableState.value = JSON.stringify(editableState.value)
+    })
+  }
+}, { immediate: true })
+
 const workflowInputs = computed<any[]>(() => {
   const raw = (currentWorkflow.value as any)?.input
   return Array.isArray(raw) ? raw : []
@@ -626,33 +593,6 @@ const workflowInputsByCategory = computed(() => {
   }
   return order.map(category => ({ category, items: groups[category]! }))
 })
-
-// ─── Enable / Disable ─────────────────────────────────────────────
-const handleToggleEnabled = async () => {
-  if (isNew.value || !currentWorkflow.value) return
-  menuBusy.value = true
-  try {
-    if (currentWorkflow.value.enabled) {
-      await orchestratorApi.workflow.disable(workflowId.value)
-      toast({ title: 'Workflow disabled' })
-    }
-    else {
-      await orchestratorApi.workflow.enable(workflowId.value)
-      toast({ title: 'Workflow enabled' })
-    }
-    await refreshCurrentWorkflow()
-  }
-  catch (err) {
-    toast({
-      title: 'Toggle failed',
-      description: err instanceof Error ? err.message : String(err),
-      variant: 'negative',
-    })
-  }
-  finally {
-    menuBusy.value = false
-  }
-}
 
 // ─── Duplicate ─────────────────────────────────────────────────────
 const handleDuplicate = async () => {
@@ -705,12 +645,21 @@ const saveWorkflowConfig = async () => {
       ...i,
       defaultValue: inputValues.value[i.name],
     }))
+    // Handle enable/disable via dedicated endpoints if changed
+    if (workflowActive.value !== isEnabled.value) {
+      if (workflowActive.value) {
+        await orchestratorApi.workflow.enable(workflowId.value)
+      }
+      else {
+        await orchestratorApi.workflow.disable(workflowId.value)
+      }
+    }
     await orchestratorApi.workflow.update(workflowId.value, {
       name: wf.name,
       description: wf.description,
       tags: wf.tags,
       type: triggerType.value as typeof wf.type,
-      enabled: wf.enabled,
+      enabled: workflowActive.value,
       cronExpression: triggerType.value === 'Scheduled' ? triggerCron.value : undefined,
       eventName: triggerType.value === 'Event' ? triggerEventEntity.value : undefined,
       nodes: wf.nodes,
@@ -735,23 +684,6 @@ const saveWorkflowConfig = async () => {
   }
 }
 
-const shortenId = (id: string, head = 12, tail = 8): string => {
-  if (!id || id.length <= head + tail + 1) return id
-  return `${id.slice(0, head)}…${id.slice(-tail)}`
-}
-
-const copiedId = ref(false)
-const copyWorkflowId = async () => {
-  try {
-    await navigator.clipboard.writeText(workflowId.value)
-    copiedId.value = true
-    setTimeout(() => (copiedId.value = false), 1500)
-  }
-  catch (err) {
-    geinsLogError('Failed to copy workflow ID', err)
-  }
-}
-
 // ─── Sidebar summary ─────────────────────────────────────────────
 const showSidebar = ref(true)
 
@@ -763,7 +695,9 @@ const triggerDisplayName = computed(() => {
 const summary = computed<DataItem[]>(() => {
   const items: DataItem[] = []
   if (!isNew.value) {
-    items.push({ label: 'ID', value: workflowId.value })
+    const id = workflowId.value
+    const short = id.length > 13 ? `${id.slice(0, 8)}…${id.slice(-4)}` : id
+    items.push({ label: idLabel, value: id, displayValue: short, displayType: 'copy' as const })
   }
   if (workflowName.value) {
     items.push({ label: 'Name', value: workflowName.value })
@@ -803,16 +737,23 @@ const settingsSummary = computed<DataItem[]>(() => {
   return items
 })
 
+
 </script>
 
 <template>
+  <DialogUnsavedChanges
+    v-model:open="unsavedChangesDialogOpen"
+    :entity-name="entityName"
+    :loading="isSavingConfig"
+    @confirm="confirmLeave"
+  />
   <div class="-mx-3 -mb-12 flex h-[calc(100vh-3.5rem-1rem)] shrink-0 flex-col @2xl:-mx-8 @2xl:-mb-14">
     <!-- ContentHeader: title + actions + tabs (standard entity-page layout) -->
     <div>
       <ContentHeader class="px-3 @2xl:px-8" :title="isNew ? 'New workflow' : (workflowName || 'Workflow')"
         :entity-name="entityName">
         <ContentActionBar>
-          <ButtonIcon icon="save" :loading="isSaving" :disabled="isSaving" @click="saveWorkflow">{{ $t('save_entity', {
+          <ButtonIcon icon="save" :loading="isSavingConfig" :disabled="isSavingConfig || !hasUnsavedChanges" @click="saveWorkflowConfig">{{ $t('save_entity', {
             entityName
           }) }}</ButtonIcon>
           <DropdownMenu v-if="!isNew">
@@ -832,9 +773,10 @@ const settingsSummary = computed<DataItem[]>(() => {
                 <LucideCopy class="mr-2 size-4" />
                 <span>Duplicate</span>
               </DropdownMenuItem>
-              <DropdownMenuItem :disabled="menuBusy || !currentWorkflow" @click="handleToggleEnabled">
-                <component :is="isEnabled ? Pause : Play" class="mr-2 size-4" />
-                <span>{{ isEnabled ? 'Pause' : 'Start' }}</span>
+              <DropdownMenuItem :disabled="!currentWorkflow" @click="workflowActive = !workflowActive">
+                <LucidePause v-if="workflowActive" class="mr-2 size-4" />
+                <LucidePlay v-else class="mr-2 size-4" />
+                <span>{{ workflowActive ? 'Pause' : 'Start' }}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem @click="openDeleteDialog">
@@ -846,6 +788,9 @@ const settingsSummary = computed<DataItem[]>(() => {
         </ContentActionBar>
         <template #tabs>
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="mainTabs" />
+        </template>
+        <template v-if="!isNew" #changes>
+          <ContentEditHasChanges :changes="hasUnsavedChanges" />
         </template>
       </ContentHeader>
     </div>
@@ -1078,8 +1023,15 @@ const settingsSummary = computed<DataItem[]>(() => {
               </ContentEditMainContent>
 
               <template #sidebar>
-                <ContentEditSummary :summary="summary" :settings-summary="settingsSummary" :entity-name="entityName"
-                  :show-active-status="false" :status="isEnabled ? 'active' : 'inactive'" />
+                <ContentEditSummary
+                  v-model:active="workflowActive"
+                  :summary="summary"
+                  :settings-summary="settingsSummary"
+                  :entity-name="entityName"
+                  :entity-live-status="isEnabled"
+                  :create-mode="isNew"
+                  :status="isEnabled ? 'active' : 'inactive'"
+                />
               </template>
             </ContentEditMain>
           </div>
@@ -1093,7 +1045,7 @@ const settingsSummary = computed<DataItem[]>(() => {
             <Background pattern-color="hsl(var(--border))" :gap="20" />
             <Controls position="bottom-left">
               <ControlButton :title="showMinimap ? 'Hide minimap' : 'Show minimap'" @click="showMinimap = !showMinimap">
-                <MapIcon class="h-4 w-4" />
+                <LucideMap class="h-4 w-4" />
               </ControlButton>
             </Controls>
             <MiniMap v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
@@ -1110,19 +1062,19 @@ const settingsSummary = computed<DataItem[]>(() => {
             <button
               class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
               :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'" @click="isSidebarOpen = !isSidebarOpen">
-              <PanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
-              <PanelRightOpen v-else class="h-4 w-4" />
+              <LucidePanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
+              <LucidePanelRightOpen v-else class="h-4 w-4" />
             </button>
             <button
               class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
               title="Add node" @click="openAddNodeTab">
-              <Plus class="h-4 w-4" />
+              <LucidePlus class="h-4 w-4" />
             </button>
             <button
               class="bg-background pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border bg-red-500 shadow-sm hover:bg-red-800 disabled:opacity-50"
               :disabled="isRunning || isNew"
               :title="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'" @click="runWorkflow">
-              <Play class="h-4 w-4 text-white" :class="{ 'animate-pulse': isRunning }" />
+              <LucidePlay class="h-4 w-4 text-white" :class="{ 'animate-pulse': isRunning }" />
             </button>
 
 
@@ -1143,7 +1095,7 @@ const settingsSummary = computed<DataItem[]>(() => {
                 :description="`${group.items.length} input${group.items.length === 1 ? '' : 's'}`">
                 <template #header-action>
                   <Button variant="secondary" size="sm" @click="() => { }">
-                    <Plus class="mr-2 h-3.5 w-3.5" />
+                    <LucidePlus class="mr-2 h-3.5 w-3.5" />
                     Add input
                   </Button>
                 </template>
@@ -1180,7 +1132,7 @@ const settingsSummary = computed<DataItem[]>(() => {
               </ContentEditCard>
               <Button variant="outline"
                 class="text-muted-foreground hover:text-foreground mt-2 w-full border-dashed py-6" @click="() => { }">
-                <Plus class="mr-2 h-4 w-4" />
+                <LucidePlus class="mr-2 h-4 w-4" />
                 Add group
               </Button>
             </ContentEditMainContent>
@@ -1196,7 +1148,7 @@ const settingsSummary = computed<DataItem[]>(() => {
               <ContentEditCard title="Executions" :description="`(${executions.length})`">
                 <template #header-action>
                   <Button variant="secondary" size="sm" :disabled="executionsLoading" @click="refreshExecutions()">
-                    <RefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': executionsLoading }" />
+                    <LucideRefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': executionsLoading }" />
                     Refresh
                   </Button>
                 </template>
@@ -1238,7 +1190,7 @@ const settingsSummary = computed<DataItem[]>(() => {
               <ContentEditCard title="Version history" :description="`(${historyVersions.length})`">
                 <template #header-action>
                   <Button variant="secondary" size="sm" :disabled="historyLoading" @click="refreshHistory()">
-                    <RefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': historyLoading }" />
+                    <LucideRefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': historyLoading }" />
                     Refresh
                   </Button>
                 </template>
@@ -1252,7 +1204,7 @@ const settingsSummary = computed<DataItem[]>(() => {
                   <div v-for="entry in historyVersions" :key="entry.version"
                     class="grid grid-cols-[6rem_1fr_12rem] items-center gap-4 rounded-lg border p-3">
                     <div class="flex items-center gap-2">
-                      <GitCommit class="text-muted-foreground h-3.5 w-3.5" />
+                      <LucideGitCommit class="text-muted-foreground h-3.5 w-3.5" />
                       <span class="text-sm font-medium">v{{ entry.version }}</span>
                     </div>
                     <div class="text-muted-foreground truncate text-xs">{{ entry.description || '—' }}</div>
@@ -1278,7 +1230,7 @@ const settingsSummary = computed<DataItem[]>(() => {
         <div class="h-full w-80 overflow-y-auto" style="scrollbar-gutter: stable;">
           <!-- Right sidebar header (only for Properties now; Add Node hides this) -->
           <div v-if="activeTab === 'properties'" class="flex items-center gap-2 border-b px-4 py-3">
-            <Settings class="h-4 w-4" />
+            <LucideSettings class="h-4 w-4" />
             <span class="text-sm font-medium">Node properties</span>
           </div>
 
@@ -1289,7 +1241,7 @@ const settingsSummary = computed<DataItem[]>(() => {
                 <h3 class="font-medium">Node Settings</h3>
                 <button class="hover:bg-destructive/10 text-destructive rounded p-1.5" title="Delete node"
                   @click="deleteSelectedNode">
-                  <Trash2 class="h-4 w-4" />
+                  <LucideTrash2 class="h-4 w-4" />
                 </button>
               </div>
 
@@ -1482,7 +1434,7 @@ const settingsSummary = computed<DataItem[]>(() => {
           <!-- Add Node Tab -->
           <div v-if="activeTab === 'add-node'" class="p-4">
             <div class="relative mb-3">
-              <Search class="text-muted-foreground pointer-events-none absolute top-2.5 left-2 h-4 w-4" />
+              <LucideSearch class="text-muted-foreground pointer-events-none absolute top-2.5 left-2 h-4 w-4" />
               <input v-model="nodeSearchQuery" type="text" placeholder="Search actions…"
                 class="bg-background focus:ring-ring w-full rounded-md border py-1.5 pr-2 pl-8 text-sm focus:ring-2 focus:outline-none" />
             </div>
@@ -1499,7 +1451,7 @@ const settingsSummary = computed<DataItem[]>(() => {
                   <button v-for="item in section.items" :key="item.id"
                     class="hover:bg-muted/50 flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors"
                     draggable="true" @dragstart="(e) => onDragStart(e, item)" @click="quickAddNode(item)">
-                    <Play class="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                    <LucidePlay class="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                     <div class="min-w-0 flex-1">
                       <div class="text-sm font-medium">{{ item.label }}</div>
                       <div v-if="item.actionName" class="text-muted-foreground font-mono text-[10px]">
