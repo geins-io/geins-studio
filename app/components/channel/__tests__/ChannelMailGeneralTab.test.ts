@@ -40,6 +40,6 @@ describe('ChannelMailGeneralTab', () => {
     await component.vm.$nextTick();
     expect(switches[1]!.attributes('data-state')).toBe('checked');
     const labels = component.findAll('label').map((l) => l.text());
-    expect(labels).toContain('channels.mail_locale');
+    expect(labels).toContain('channels.mail_login_slug');
   });
 });

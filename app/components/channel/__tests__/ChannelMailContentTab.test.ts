@@ -54,8 +54,6 @@ describe('ChannelMailContentTab', () => {
     const component = await mountWithContext(ChannelMailContentTab, {
       props: { mailTypes: [buildMailType({ hasOverrides: true })] },
     });
-    expect(
-      component.find('[title="channels.mail_overridden_indicator"]').exists(),
-    ).toBe(true);
+    expect(component.text()).toContain('channels.mail_text_overridden');
   });
 });
