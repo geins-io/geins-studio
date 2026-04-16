@@ -9,6 +9,8 @@ import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
+import cronstrue from 'cronstrue'
+import 'cronstrue/locales/sv'
 
 
 
@@ -90,7 +92,7 @@ const nodeTypes = {
 
 // ─── Editor manifest — real node palette, action schemas, etc. ──────
 const manifestStore = useWorkflowManifest()
-const { actions: manifestActions, nodeTypes: manifestNodeTypes } = manifestStore
+const { actions: manifestActions, nodeTypes: manifestNodeTypes, triggerTypes: manifestTriggerTypes, eventEntities: manifestEventEntities } = manifestStore
 
 type PaletteItem = {
   // VueFlow node type this item should create
@@ -374,6 +376,55 @@ const inputValues = ref<Record<string, unknown>>({})
 // Editable state for the Settings tab.
 const settingsValues = ref<Record<string, unknown>>({})
 
+// ─── Trigger state ────────────────────────────────────────────────
+const triggerType = ref('OnDemand')
+const triggerCron = ref('')
+const triggerEventEntity = ref('')
+const triggerEventAction = ref('')
+const triggerEventSubEntity = ref('')
+const triggerDescription = ref('')
+
+const { locale } = useI18n()
+const cronDescription = computed(() => {
+  const expr = triggerCron.value.trim()
+  if (!expr) return ''
+  try {
+    return cronstrue.toString(expr, { locale: locale.value, use24HourTimeFormat: true })
+  }
+  catch {
+    return ''
+  }
+})
+const cronError = computed(() => {
+  const expr = triggerCron.value.trim()
+  if (!expr) return ''
+  try {
+    cronstrue.toString(expr)
+    return ''
+  }
+  catch (err) {
+    return err instanceof Error ? err.message : 'Invalid cron expression'
+  }
+})
+
+// Available actions for the currently selected event entity.
+const availableEventActions = computed(() => {
+  if (!triggerEventEntity.value) return []
+  const entity = manifestEventEntities.value.find(
+    e => e.name === triggerEventEntity.value,
+  )
+  return entity?.actions ?? []
+})
+
+// Available sub-entities for the currently selected event entity.
+const availableSubEntities = computed(() => {
+  if (!triggerEventEntity.value) return []
+  const entity = manifestEventEntities.value.find(
+    e => e.name === triggerEventEntity.value,
+  )
+  return entity?.subEntities ?? []
+})
+
 const prettyLabel = (name: string): string =>
   name
     .replace(/[-_]/g, ' ')
@@ -546,6 +597,13 @@ watch(
     for (const i of raw) values[i.name] = i.defaultValue
     inputValues.value = values
     settingsValues.value = { ...((wf as any)?.settings ?? {}) }
+    // Sync trigger fields
+    triggerType.value = wf.type ?? 'OnDemand'
+    triggerCron.value = wf.cronExpression ?? ''
+    triggerEventEntity.value = (wf as any).eventEntity ?? ''
+    triggerEventAction.value = (wf as any).eventAction ?? ''
+    triggerEventSubEntity.value = (wf as any).eventSubEntity ?? ''
+    triggerDescription.value = (wf as any).triggerDescription ?? ''
   },
   { immediate: true },
 )
@@ -651,10 +709,10 @@ const saveWorkflowConfig = async () => {
       name: wf.name,
       description: wf.description,
       tags: wf.tags,
-      type: wf.type,
+      type: triggerType.value as typeof wf.type,
       enabled: wf.enabled,
-      cronExpression: wf.cronExpression,
-      eventName: wf.eventName,
+      cronExpression: triggerType.value === 'Scheduled' ? triggerCron.value : undefined,
+      eventName: triggerType.value === 'Event' ? triggerEventEntity.value : undefined,
       nodes: wf.nodes,
       connections: wf.connections,
       ui: wf.ui,
@@ -699,8 +757,8 @@ const copyWorkflowId = async () => {
 <template>
   <div class="-mx-3 -mb-12 flex h-[calc(100vh-3.5rem-1rem)] shrink-0 flex-col @2xl:-mx-8 @2xl:-mb-14">
     <!-- ContentHeader: title + actions + tabs (standard entity-page layout) -->
-    <div class="px-3 @2xl:px-8">
-      <ContentHeader :title="isNew ? 'New workflow' : (workflowName || 'Workflow')" :entity-name="entityName">
+    <div>
+      <ContentHeader class="px-3 @2xl:px-8" :title="isNew ? 'New workflow' : (workflowName || 'Workflow')" :entity-name="entityName">
         <ContentActionBar>
           <ButtonIcon icon="save" :loading="isSaving" :disabled="isSaving" @click="saveWorkflow">{{ $t('save_entity', {
             entityName
@@ -889,6 +947,93 @@ const copyWorkflowId = async () => {
                       <TagsInputInput placeholder="Add tag…" />
                     </TagsInput>
                   </div>
+                </FormGridWrap>
+              </ContentEditCard>
+
+              <ContentEditCard title="Trigger" description="How and when this workflow starts.">
+                <FormGridWrap>
+                  <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                    <Label class="pt-2">Type</Label>
+                    <Select v-model="triggerType">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select trigger type…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem v-for="tt in manifestTriggerTypes" :key="tt.type" :value="tt.type">
+                          {{ tt.displayName }}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <!-- On Demand info -->
+                  <div v-if="triggerType === 'OnDemand'" class="text-muted-foreground col-span-full text-sm">
+                    Triggered manually via API call. No additional configuration needed.
+                  </div>
+
+                  <!-- Scheduled config -->
+                  <template v-if="triggerType === 'Scheduled'">
+                    <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                      <Label class="pt-2">Cron expression</Label>
+                      <div class="space-y-1.5">
+                        <Input v-model="triggerCron" placeholder="0 * * * * *" :class="{ 'border-destructive': cronError }" />
+                        <p v-if="cronError" class="text-destructive text-xs">{{ cronError }}</p>
+                        <p v-else-if="cronDescription" class="text-muted-foreground text-xs">{{ cronDescription }}</p>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Event config -->
+                  <template v-if="triggerType === 'Event'">
+                    <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                      <Label class="pt-2">Entity</Label>
+                      <Select v-model="triggerEventEntity">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select entity…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="*">* (any)</SelectItem>
+                          <SelectItem v-for="entity in manifestEventEntities" :key="entity.name" :value="entity.name">
+                            {{ entity.displayName }}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                      <Label class="pt-2">Action</Label>
+                      <Select v-model="triggerEventAction">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select action…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="*">* (any)</SelectItem>
+                          <SelectItem v-for="a in availableEventActions" :key="a.name" :value="a.name">
+                            {{ a.displayName }}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div v-if="availableSubEntities.length > 0" class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                      <Label class="pt-2">Sub-entity</Label>
+                      <Select v-model="triggerEventSubEntity">
+                        <SelectTrigger>
+                          <SelectValue placeholder="None" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="*">* (any)</SelectItem>
+                          <SelectItem value="!">! (absent only)</SelectItem>
+                          <SelectItem v-for="sub in availableSubEntities" :key="sub" :value="sub">
+                            {{ sub }}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div class="grid grid-cols-[14rem_1fr] items-start gap-4">
+                      <Label class="pt-2">Description</Label>
+                      <Input v-model="triggerDescription" placeholder="e.g. When an order is updated" />
+                    </div>
+                  </template>
                 </FormGridWrap>
               </ContentEditCard>
 

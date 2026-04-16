@@ -1,6 +1,7 @@
 import type {
   EditorManifest,
   ManifestActionCategory,
+  ManifestEventEntity,
   ManifestNodeType,
   ManifestTriggerType,
   WorkflowAction,
@@ -67,6 +68,10 @@ export function useWorkflowManifest() {
     () => (manifest.value?.triggerTypes as ManifestTriggerType[] | undefined) ?? [],
   )
 
+  const eventEntities = computed<ManifestEventEntity[]>(
+    () => (manifest.value?.eventEntities as ManifestEventEntity[] | undefined) ?? [],
+  )
+
   const actionCategories = computed<ManifestActionCategory[]>(
     () => (manifest.value?.actionCategories as ManifestActionCategory[] | undefined) ?? [],
   )
@@ -107,6 +112,7 @@ export function useWorkflowManifest() {
     nodeTypes,
     actions,
     triggerTypes,
+    eventEntities,
     actionCategories,
     actionsByName,
     actionsByCategory,
