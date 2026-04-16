@@ -24,8 +24,8 @@ const mailTypeIconMap: Record<MailTypeId, string> = {
   CustomerUnregistered: 'UserRoundMinus',
   CustomerMessageNotification: 'MessageSquare',
   CustomerPasswordReset: 'KeyRound',
-  ProductTellAFriend: 'Forward',
-  ProductSizeAvailable: 'Ruler',
+  ProductTellAFriend: 'Share',
+  ProductSizeAvailable: 'Tag',
   ProductMonitorNotification: 'BellRing',
 };
 
@@ -33,7 +33,7 @@ const iconName = computed(() => mailTypeIconMap[props.mailType.type] ?? 'Mail');
 </script>
 
 <template>
-  <div class="flex items-center gap-4 px-4 py-4">
+  <div class="flex items-center gap-4 px-0 py-4">
     <ContentCardHeader
       :title="mailType.name"
       :description="t(`channels.mail_desc_${mailType.type}`)"

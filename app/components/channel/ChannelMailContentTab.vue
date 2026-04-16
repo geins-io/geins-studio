@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { ChannelMailType } from '#shared/types';
+import type { ChannelMailType, MailCategory } from '#shared/types';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     mailTypes: ChannelMailType[];
     loading?: boolean;
@@ -14,6 +14,21 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
+
+const categoryConfig: { key: MailCategory; icon: string }[] = [
+  { key: 'Order', icon: 'ShoppingCart' },
+  { key: 'Customer', icon: 'Users' },
+  { key: 'Product', icon: 'Package' },
+];
+
+const groupedMailTypes = computed(() =>
+  categoryConfig
+    .map((cat) => ({
+      ...cat,
+      items: props.mailTypes.filter((m) => m.category === cat.key),
+    }))
+    .filter((g) => g.items.length > 0),
+);
 </script>
 
 <template>
@@ -33,14 +48,22 @@ const { t } = useI18n();
       </EmptyHeader>
     </Empty>
 
-    <!-- Flat list -->
-    <div v-else class="divide-y border-y">
-      <ChannelMailContentRow
-        v-for="mailType in mailTypes"
-        :key="mailType.type"
-        :mail-type="mailType"
-        @edit="emit('edit', $event)"
-      />
+    <!-- Grouped by category -->
+    <div v-else class="flex flex-col gap-6">
+      <section v-for="group in groupedMailTypes" :key="group.key">
+        <ContentCardHeader
+          :title="t(`channels.mail_category_${group.key.toLowerCase()}`)"
+          size="sm"
+        />
+        <div class="mt-2 divide-y border-y">
+          <ChannelMailContentRow
+            v-for="mailType in group.items"
+            :key="mailType.type"
+            :mail-type="mailType"
+            @edit="emit('edit', $event)"
+          />
+        </div>
+      </section>
     </div>
   </div>
 </template>

@@ -65,7 +65,7 @@ function handleSaved() {
 <template>
   <ContentEditCard :title="t('channels.tab_mails')">
     <Tabs v-model="activeTab">
-      <TabsList>
+      <TabsList class="mb-2">
         <TabsTrigger value="general">
           {{ t('channels.mail_general') }}
         </TabsTrigger>
