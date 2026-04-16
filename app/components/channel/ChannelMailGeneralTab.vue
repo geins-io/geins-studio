@@ -127,48 +127,6 @@ const storefrontUrlDisplay = computed(() => {
               </InputGroup>
             </div>
           </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1.5">
-              <Label>{{ t('channels.mail_locale') }}</Label>
-              <Input
-                :model-value="model.locale ?? ''"
-                :placeholder="t('channels.mail_locale_helper')"
-                @update:model-value="update('locale', String($event))"
-              />
-            </div>
-            <div class="space-y-1.5">
-              <Label>{{ t('channels.mail_external_source_tag') }}</Label>
-              <Input
-                :model-value="model.externalSourceVerificationTag ?? ''"
-                @update:model-value="
-                  update('externalSourceVerificationTag', String($event))
-                "
-              />
-            </div>
-          </div>
-
-          <div class="space-y-1.5">
-            <Label>{{ t('channels.mail_external_source') }}</Label>
-            <Input
-              :model-value="model.orderConfirmationExternalSource ?? ''"
-              @update:model-value="
-                update('orderConfirmationExternalSource', String($event))
-              "
-            />
-          </div>
-
-          <Item variant="outline" class="rounded-lg p-3">
-            <ItemContent>
-              <ItemTitle>{{ t('channels.mail_reply_to_customer') }}</ItemTitle>
-            </ItemContent>
-            <ItemActions>
-              <Switch
-                :model-value="model.emailReplyToCustomer ?? false"
-                @update:model-value="update('emailReplyToCustomer', $event)"
-              />
-            </ItemActions>
-          </Item>
         </div>
       </ContentSwitch>
     </ContentSection>

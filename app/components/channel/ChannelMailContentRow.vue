@@ -40,12 +40,7 @@ const iconName = computed(() => mailTypeIconMap[props.mailType.type] ?? 'Mail');
       :icon="iconName"
       size="sm"
     />
-    <Badge
-      v-if="mailType.hasOverrides"
-      variant="warning-light"
-      class="ml-auto"
-      :title="t('channels.mail_overridden_indicator')"
-    >
+    <Badge v-if="mailType.hasOverrides" variant="warning-light" class="ml-auto">
       {{ t('channels.mail_text_overridden') }}
     </Badge>
     <Button
