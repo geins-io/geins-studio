@@ -14,7 +14,7 @@ withDefaults(
 </script>
 
 <template>
-  <ContentCard>
+  <ContentCard class="@2xl:p-5">
     <div class="space-y-4">
       <ContentCardHeader
         :title="title"

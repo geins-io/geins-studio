@@ -193,7 +193,7 @@ function handleFontFamily(value: string) {
     <ContentSection
       :title="t('channels.mail_typography')"
       :description="t('channels.mail_typography_desc')"
-      icon="FileType2"
+      icon="FileTypeCorner"
     >
       <FormGridWrap>
         <FormGrid design="1+1">
@@ -218,7 +218,7 @@ function handleFontFamily(value: string) {
             </FormInputDescription>
           </div>
         </FormGrid>
-        <FormGrid design="1+1+1">
+        <FormGrid design="1+1+1+1">
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_font_size_small') }}</Label>
             <FormInputPixel
@@ -243,8 +243,6 @@ function handleFontFamily(value: string) {
               @update:model-value="update('fontSizeLarge', $event)"
             />
           </div>
-        </FormGrid>
-        <FormGrid design="1">
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_line_height') }}</Label>
             <FormInputPixel
@@ -261,7 +259,7 @@ function handleFontFamily(value: string) {
     <ContentSection
       :title="t('channels.mail_shape')"
       :description="t('channels.mail_shape_desc')"
-      icon="RoundCorner"
+      icon="Shapes"
     >
       <FormGridWrap>
         <FormGrid design="1+1">
