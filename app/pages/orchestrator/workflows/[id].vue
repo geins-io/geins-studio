@@ -88,78 +88,86 @@ const nodeTypes = {
   delay: DelayNode,
 }
 
-const nodeTemplates = [
-  {
-    type: 'trigger', category: 'Triggers', items: [
-      { id: 'webhook', label: 'Webhook', icon: Webhook, description: 'Trigger on HTTP request' },
-      { id: 'schedule', label: 'Schedule', icon: Clock, description: 'Trigger on cron schedule' },
-      { id: 'manual', label: 'Manual', icon: Zap, description: 'Trigger manually' },
-      { id: 'email_received', label: 'Email Received', icon: Mail, description: 'Trigger on email' },
-    ]
-  },
-  {
-    type: 'action', category: 'Actions', items: [
-      { id: 'http', label: 'HTTP Request', icon: Globe, description: 'Make HTTP/API request' },
-      { id: 'email', label: 'Send Email', icon: Mail, description: 'Send an email' },
-      { id: 'slack', label: 'Slack', icon: MessageSquare, description: 'Send Slack message' },
-      { id: 'discord', label: 'Discord', icon: MessageSquare, description: 'Send Discord message' },
-      { id: 'database', label: 'Database Query', icon: Database, description: 'Query database' },
-      { id: 'notification', label: 'Push Notification', icon: Bell, description: 'Send push notification' },
-      { id: 'sms', label: 'Send SMS', icon: Send, description: 'Send SMS message' },
-    ]
-  },
-  {
-    type: 'action', category: 'Data', items: [
-      { id: 'transform', label: 'Transform', icon: FileText, description: 'Transform data' },
-      { id: 'code', label: 'Code', icon: Code, description: 'Run custom code' },
-      { id: 'filter', label: 'Filter', icon: Filter, description: 'Filter data items' },
-      { id: 'merge', label: 'Merge', icon: Merge, description: 'Merge data streams' },
-      { id: 'split', label: 'Split', icon: Split, description: 'Split into batches' },
-      { id: 'aggregate', label: 'Aggregate', icon: Database, description: 'Aggregate data' },
-    ]
-  },
-  {
-    type: 'action', category: 'Files', items: [
-      { id: 'read_file', label: 'Read File', icon: Download, description: 'Read file contents' },
-      { id: 'write_file', label: 'Write File', icon: Upload, description: 'Write to file' },
-      { id: 'ftp', label: 'FTP', icon: Upload, description: 'FTP upload/download' },
-      { id: 's3', label: 'S3 Storage', icon: Database, description: 'AWS S3 operations' },
-    ]
-  },
-  {
-    type: 'condition', category: 'Logic', items: [
-      { id: 'if', label: 'IF Condition', icon: GitBranch, description: 'Branch based on condition' },
-      { id: 'switch', label: 'Switch', icon: GitBranch, description: 'Multiple branches' },
-    ]
-  },
-  {
-    type: 'loop', category: 'Flow Control', items: [
-      { id: 'loop', label: 'Loop', icon: Repeat, description: 'Iterate over items' },
-      { id: 'while', label: 'While Loop', icon: Repeat, description: 'Loop while condition true' },
-    ]
-  },
-  {
-    type: 'delay', category: 'Timing', items: [
-      { id: 'delay', label: 'Delay', icon: Timer, description: 'Wait for duration' },
-      { id: 'wait_until', label: 'Wait Until', icon: Clock, description: 'Wait until time' },
-    ]
-  },
-]
+// ─── Editor manifest — real node palette, action schemas, etc. ──────
+const manifestStore = useWorkflowManifest()
+const { actions: manifestActions, nodeTypes: manifestNodeTypes } = manifestStore
+
+type PaletteItem = {
+  // VueFlow node type this item should create
+  nodeType: string
+  // Stable id for keying in the template
+  id: string
+  // Display label
+  label: string
+  // Secondary line shown under the label
+  description?: string
+  // For action items: the backend `actionName` that goes into the node's config
+  actionName?: string
+}
+
+type PaletteSection = {
+  category: string
+  items: PaletteItem[]
+}
+
+// Node types that are NOT actions — structural flow-control nodes. Triggers
+// are workflow-level metadata, not nodes, so they are excluded.
+const STRUCTURAL_NODE_TYPES = new Set(['condition', 'iterator', 'delay', 'workflow'])
+
+const paletteSections = computed<PaletteSection[]>(() => {
+  const sections: PaletteSection[] = []
+
+  // Actions, grouped by their manifest category (alphabetical category order).
+  const byCategory = new Map<string, PaletteItem[]>()
+  for (const a of manifestActions.value) {
+    const item: PaletteItem = {
+      nodeType: 'action',
+      id: a.name,
+      label: a.displayName || a.name,
+      description: a.description,
+      actionName: a.name,
+    }
+    const list = byCategory.get(a.category)
+    if (list) list.push(item)
+    else byCategory.set(a.category, [item])
+  }
+  const sortedCategories = [...byCategory.keys()].sort()
+  for (const category of sortedCategories) {
+    sections.push({ category, items: byCategory.get(category)! })
+  }
+
+  // Structural flow-control nodes (condition, iterator, delay, workflow).
+  const structural: PaletteItem[] = []
+  for (const nt of manifestNodeTypes.value) {
+    if (!STRUCTURAL_NODE_TYPES.has(nt.type)) continue
+    structural.push({
+      nodeType: nt.type,
+      id: nt.type,
+      label: nt.displayName || nt.type,
+      description: nt.description,
+    })
+  }
+  if (structural.length) sections.push({ category: 'Flow control', items: structural })
+
+  return sections
+})
 
 // Search filter for nodes
 const nodeSearchQuery = ref('')
-const filteredNodeTemplates = computed(() => {
-  if (!nodeSearchQuery.value) return nodeTemplates
-  const query = nodeSearchQuery.value.toLowerCase()
-  return nodeTemplates
-    .map(category => ({
-      ...category,
-      items: category.items.filter(
-        item => item.label.toLowerCase().includes(query) ||
-          item.description.toLowerCase().includes(query)
-      )
+const filteredNodeTemplates = computed<PaletteSection[]>(() => {
+  const q = nodeSearchQuery.value.trim().toLowerCase()
+  if (!q) return paletteSections.value
+  return paletteSections.value
+    .map(section => ({
+      ...section,
+      items: section.items.filter(
+        item =>
+          item.label.toLowerCase().includes(q)
+          || (item.description ?? '').toLowerCase().includes(q)
+          || (item.actionName ?? '').toLowerCase().includes(q),
+      ),
     }))
-    .filter(category => category.items.length > 0)
+    .filter(section => section.items.length > 0)
 })
 
 // Sheet open state
@@ -273,9 +281,9 @@ const onPaneClick = () => {
 }
 
 // Drag and drop from palette
-const onDragStart = (event: DragEvent, template: any, nodeType: string) => {
+const onDragStart = (event: DragEvent, item: PaletteItem) => {
   if (event.dataTransfer) {
-    event.dataTransfer.setData('application/vueflow', JSON.stringify({ ...template, nodeType }))
+    event.dataTransfer.setData('application/vueflow', JSON.stringify(item))
     event.dataTransfer.effectAllowed = 'move'
   }
 }
@@ -287,47 +295,32 @@ const onDragOver = (event: DragEvent) => {
   }
 }
 
+const buildNewNode = (item: PaletteItem, position: { x: number, y: number }) => ({
+  id: `${item.id}-${Date.now()}`,
+  type: item.nodeType,
+  position,
+  data: {
+    label: item.label,
+    description: item.description,
+    actionName: item.actionName,
+    subtype: item.nodeType === 'action' ? undefined : item.id,
+    config: {},
+  },
+})
+
 const onDrop = (event: DragEvent) => {
   const data = event.dataTransfer?.getData('application/vueflow')
   if (!data) return
-
-  const template = JSON.parse(data)
+  const item = JSON.parse(data) as PaletteItem
   const position = project({ x: event.clientX - 100, y: event.clientY - 100 })
-
-  const newNode = {
-    id: `${Date.now()}`,
-    type: template.nodeType,
-    position,
-    data: {
-      label: template.label,
-      icon: template.icon?.name || template.id,
-      description: template.description,
-      config: {},
-    },
-  }
-
-  addNodes([newNode])
+  addNodes([buildNewNode(item, position)])
   isNodePaletteOpen.value = false
 }
 
 // Quick add node (click instead of drag)
-const quickAddNode = (template: any, nodeType: string) => {
-  // Add node at a reasonable position (center-ish of viewport)
+const quickAddNode = (item: PaletteItem) => {
   const position = project({ x: 400, y: 300 })
-
-  const newNode = {
-    id: `${Date.now()}`,
-    type: nodeType,
-    position,
-    data: {
-      label: template.label,
-      icon: template.icon?.name || template.id,
-      description: template.description,
-      config: {},
-    },
-  }
-
-  addNodes([newNode])
+  addNodes([buildNewNode(item, position)])
   isNodePaletteOpen.value = false
 }
 
@@ -1271,28 +1264,38 @@ const copyWorkflowId = async () => {
           <div v-if="activeTab === 'add-node'" class="p-4">
             <div class="relative mb-3">
               <Search class="text-muted-foreground pointer-events-none absolute top-2.5 left-2 h-4 w-4" />
-              <input v-model="nodeSearchQuery" type="text" placeholder="Search nodes…"
+              <input v-model="nodeSearchQuery" type="text" placeholder="Search actions…"
                 class="bg-background focus:ring-ring w-full rounded-md border py-1.5 pr-2 pl-8 text-sm focus:ring-2 focus:outline-none" />
             </div>
-            <div class="space-y-4">
-              <div v-for="category in filteredNodeTemplates" :key="category.category">
+            <div v-if="manifestStore.loading.value && paletteSections.length === 0" class="text-muted-foreground py-8 text-center text-sm">
+              Loading node types…
+            </div>
+            <div v-else class="space-y-4">
+              <div v-for="section in filteredNodeTemplates" :key="section.category">
                 <div class="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-                  {{ category.category }}
+                  {{ section.category }}
                 </div>
                 <div class="space-y-1.5">
-                  <button v-for="item in category.items" :key="item.id"
+                  <button v-for="item in section.items" :key="item.id"
                     class="hover:bg-muted/50 flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors"
-                    draggable="true" @dragstart="(e) => onDragStart(e, item, category.type)"
-                    @click="quickAddNode(item, category.type)">
-                    <component :is="item.icon" class="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                    draggable="true"
+                    @dragstart="(e) => onDragStart(e, item)"
+                    @click="quickAddNode(item)">
+                    <Play class="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
                     <div class="min-w-0 flex-1">
                       <div class="text-sm font-medium">{{ item.label }}</div>
-                      <div class="text-muted-foreground truncate text-xs">{{ item.description }}</div>
+                      <div v-if="item.actionName" class="text-muted-foreground font-mono text-[10px]">
+                        {{ item.actionName }}
+                      </div>
+                      <div v-if="item.description" class="text-muted-foreground line-clamp-2 text-xs">
+                        {{ item.description }}
+                      </div>
                     </div>
                   </button>
                 </div>
               </div>
-              <div v-if="filteredNodeTemplates.length === 0" class="text-muted-foreground py-8 text-center text-sm">
+              <div v-if="filteredNodeTemplates.length === 0 && !manifestStore.loading.value"
+                class="text-muted-foreground py-8 text-center text-sm">
                 No nodes match your search
               </div>
             </div>
