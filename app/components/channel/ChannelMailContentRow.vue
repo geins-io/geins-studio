@@ -40,16 +40,14 @@ const iconName = computed(() => mailTypeIconMap[props.mailType.type] ?? 'Mail');
       :icon="iconName"
       size="sm"
     />
-    <span
-      v-if="mailType.hasOverrides"
-      class="bg-primary inline-block size-1.5 shrink-0 rounded-full"
-      :title="t('channels.mail_overridden_indicator')"
-    >
-      <span class="sr-only">{{ t('channels.mail_overridden_indicator') }}</span>
-    </span>
+    <Badge v-if="mailType.hasOverrides" variant="warning-light" class="ml-auto">
+      {{ t('channels.mail_text_overridden') }}
+    </Badge>
     <Button
       variant="outline"
-      class="ml-auto size-6 p-1 sm:size-7"
+      :class="
+        cn('size-6 p-1 sm:size-7', mailType.hasOverrides ? 'ml-4' : 'ml-auto')
+      "
       size="xs"
       :aria-label="t('channels.edit_mail_type', { name: mailType.name })"
       @click="emit('edit', mailType)"

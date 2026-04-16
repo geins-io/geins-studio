@@ -264,7 +264,12 @@ const categoryLabel = computed(() => {
               >
                 <div class="flex items-center justify-between gap-2">
                   <Label>{{ prettifyKey(entry.key) }}</Label>
-                  <Badge v-if="entry.isOverridden" variant="secondary">
+                  <Badge
+                    v-if="entry.isOverridden"
+                    variant="warning-light"
+                    size="sm"
+                    class="mr-0.5 mb-0.5"
+                  >
                     {{ t('channels.mail_text_overridden') }}
                   </Badge>
                 </div>

@@ -206,7 +206,7 @@ function handleFontFamily(value: string) {
           </div>
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_font_url') }}</Label>
-            <Input
+            <FormInputLocked
               :model-value="model.fontUrl ?? ''"
               type="url"
               :readonly="isCuratedFont"

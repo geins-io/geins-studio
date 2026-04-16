@@ -5,6 +5,7 @@ import type { HTMLAttributes } from 'vue';
 
 const props = defineProps<{
   class?: HTMLAttributes['class'];
+  inputClass?: HTMLAttributes['class'];
 }>();
 </script>
 
@@ -17,5 +18,6 @@ const props = defineProps<{
         props.class,
       )
     "
+    :input-class="inputClass"
   />
 </template>

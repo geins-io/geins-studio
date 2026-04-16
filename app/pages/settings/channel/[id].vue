@@ -425,6 +425,12 @@ const {
       active: p.active,
     })),
     storefrontSettings: storefrontSettings.value,
+    mailSettings: {
+      ...mailGeneralFields.value,
+      ...mailLayoutFields.value,
+      ...(mailLayoutFiles.value.logoUrl ? { logoUrl: mailLayoutFiles.value.logoUrl } : {}),
+      ...(mailLayoutFiles.value.headerImgUrl ? { headerImgUrl: mailLayoutFiles.value.headerImgUrl } : {}),
+    },
     ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
   onFormValuesChange: (values) => {
