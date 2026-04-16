@@ -87,13 +87,11 @@ function handleFontFamily(value: string) {
 <template>
   <div class="flex flex-col gap-8 pt-2">
     <!-- Images -->
-    <section class="flex flex-col gap-3">
-      <ContentCardHeader
-        :title="t('channels.mail_images')"
-        :description="t('channels.mail_images_desc')"
-        icon="Images"
-        size="md"
-      />
+    <ContentSection
+      :title="t('channels.mail_images')"
+      :description="t('channels.mail_images_desc')"
+      icon="Images"
+    >
       <FormGridWrap>
         <FormGrid design="1+1">
           <div class="space-y-1.5">
@@ -118,16 +116,14 @@ function handleFontFamily(value: string) {
           </div>
         </FormGrid>
       </FormGridWrap>
-    </section>
+    </ContentSection>
 
     <!-- Colors -->
-    <section class="flex flex-col gap-3">
-      <ContentCardHeader
-        :title="t('channels.mail_colors')"
-        :description="t('channels.mail_colors_desc')"
-        icon="Palette"
-        size="md"
-      />
+    <ContentSection
+      :title="t('channels.mail_colors')"
+      :description="t('channels.mail_colors_desc')"
+      icon="Palette"
+    >
       <FormGridWrap>
         <div class="flex flex-col gap-6">
           <div class="flex flex-col gap-3">
@@ -191,16 +187,14 @@ function handleFontFamily(value: string) {
           </div>
         </div>
       </FormGridWrap>
-    </section>
+    </ContentSection>
 
     <!-- Typography -->
-    <section class="flex flex-col gap-3">
-      <ContentCardHeader
-        :title="t('channels.mail_typography')"
-        :description="t('channels.mail_typography_desc')"
-        icon="FileType2"
-        size="md"
-      />
+    <ContentSection
+      :title="t('channels.mail_typography')"
+      :description="t('channels.mail_typography_desc')"
+      icon="FileType2"
+    >
       <FormGridWrap>
         <FormGrid design="1+1">
           <div class="space-y-1.5">
@@ -261,16 +255,14 @@ function handleFontFamily(value: string) {
           </div>
         </FormGrid>
       </FormGridWrap>
-    </section>
+    </ContentSection>
 
     <!-- Shape -->
-    <section class="flex flex-col gap-3">
-      <ContentCardHeader
-        :title="t('channels.mail_shape')"
-        :description="t('channels.mail_shape_desc')"
-        icon="RoundCorner"
-        size="md"
-      />
+    <ContentSection
+      :title="t('channels.mail_shape')"
+      :description="t('channels.mail_shape_desc')"
+      icon="RoundCorner"
+    >
       <FormGridWrap>
         <FormGrid design="1+1">
           <div class="space-y-1.5">
@@ -291,16 +283,14 @@ function handleFontFamily(value: string) {
           </div>
         </FormGrid>
       </FormGridWrap>
-    </section>
+    </ContentSection>
 
     <!-- Product display -->
-    <section class="flex flex-col gap-3">
-      <ContentCardHeader
-        :title="t('channels.mail_product_display')"
-        :description="t('channels.mail_product_display_desc')"
-        icon="Package"
-        size="md"
-      />
+    <ContentSection
+      :title="t('channels.mail_product_display')"
+      :description="t('channels.mail_product_display_desc')"
+      icon="Package"
+    >
       <div class="flex flex-col gap-3">
         <Item variant="outline" class="rounded-lg p-3">
           <ItemContent>
@@ -335,6 +325,6 @@ function handleFontFamily(value: string) {
           </FormInputDescription>
         </div>
       </div>
-    </section>
+    </ContentSection>
   </div>
 </template>
