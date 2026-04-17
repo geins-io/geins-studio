@@ -297,7 +297,7 @@ const runWorkflow = async () => {
 </script>
 
 <template>
-  <div class="relative flex min-h-0 flex-1 flex-col">
+  <div class="relative flex h-[calc(100vh-14rem)] flex-col">
     <div class="relative flex-1" @dragover="onDragOver" @drop="onDrop">
       <VueFlow
 :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
