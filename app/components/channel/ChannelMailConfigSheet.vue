@@ -126,6 +126,9 @@ watch(selectedLanguage, (val, prev) => {
 });
 
 const allTextKeys = computed(() => textEntries.value.map((e) => e.key));
+const hasOverrides = computed(() =>
+  textEntries.value.some((e) => e.isOverridden),
+);
 
 function buildChangedTexts(): Record<string, string> {
   const texts: Record<string, string> = {};
@@ -212,15 +215,19 @@ const categoryLabel = computed(() => {
       </SheetHeader>
       <SheetBody class="flex flex-col gap-4">
         <Tabs v-model="activeTab">
-          <div class="bg-card sticky top-0 z-10 pb-3">
+          <div class="bg-card sticky top-0 z-10 flex items-center gap-3 pb-3">
             <TabsList class="">
-              <TabsTrigger value="edit">
+              <TabsTrigger value="edit" class="flex items-center gap-1.5">
                 {{ t('channels.mail_edit_tab') }}
               </TabsTrigger>
-              <TabsTrigger value="preview">
+              <TabsTrigger value="preview" class="flex items-center gap-1.5">
                 {{ t('channels.mail_preview_tab') }}
               </TabsTrigger>
             </TabsList>
+            <LucideLoaderCircle
+              v-if="loading || previewLoading"
+              class="size-5 animate-spin"
+            />
           </div>
 
           <!-- Edit tab -->
@@ -238,8 +245,11 @@ const categoryLabel = computed(() => {
               />
             </div>
 
-            <div v-if="loading" class="flex flex-col gap-3">
-              <Skeleton v-for="i in 4" :key="i" class="h-24 w-full" />
+            <div v-if="loading" class="flex flex-col gap-4">
+              <div v-for="i in 4" :key="i" class="flex flex-col gap-1.5">
+                <Skeleton class="h-4 w-28" />
+                <Skeleton class="h-20 w-full" />
+              </div>
             </div>
 
             <div
@@ -303,16 +313,26 @@ const categoryLabel = computed(() => {
               style="height: 750px"
             />
 
-            <div
-              v-else-if="previewError"
-              class="text-destructive flex flex-col items-center gap-2 py-8"
-            >
-              <LucideAlertCircle class="size-6" />
-              <p class="text-sm">{{ t('channels.mail_preview_error') }}</p>
-              <Button variant="outline" size="sm" @click="fetchPreview">
-                {{ t('retry') }}
-              </Button>
-            </div>
+            <Empty v-else-if="previewError">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <LucideAlertCircle class="size-5" />
+                </EmptyMedia>
+                <EmptyTitle>{{ t('channels.mail_preview_error') }}</EmptyTitle>
+                <EmptyDescription>
+                  {{ t('channels.mail_preview_error_description') }}
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <ButtonIcon
+                  icon="retry"
+                  variant="secondary"
+                  @click="fetchPreview"
+                >
+                  {{ $t('retry') }}
+                </ButtonIcon>
+              </EmptyContent>
+            </Empty>
 
             <iframe
               v-else
@@ -331,6 +351,7 @@ const categoryLabel = computed(() => {
         </Button>
         <div class="flex items-center gap-2">
           <Button
+            v-if="hasOverrides"
             variant="outline"
             :disabled="loading || saving"
             @click="handleRestoreDefaults"
