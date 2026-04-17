@@ -209,9 +209,6 @@ function handleFontFamily(value: string) {
             <FormInputLocked
               :model-value="model.fontUrl ?? ''"
               type="url"
-              :readonly="isCuratedFont"
-              :class="isCuratedFont ? 'text-muted-foreground' : ''"
-              @update:model-value="update('fontUrl', String($event))"
             />
             <FormInputDescription v-if="isCuratedFont">
               {{ t('channels.mail_font_url_auto') }}

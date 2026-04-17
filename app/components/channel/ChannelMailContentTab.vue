@@ -15,10 +15,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const categoryConfig: { key: MailCategory; icon: string }[] = [
-  { key: 'Order', icon: 'ShoppingCart' },
-  { key: 'Customer', icon: 'Users' },
-  { key: 'Product', icon: 'Package' },
+const categoryConfig: { key: MailCategory }[] = [
+  { key: 'Order' },
+  { key: 'Customer' },
+  { key: 'Product' },
 ];
 
 const groupedMailTypes = computed(() =>

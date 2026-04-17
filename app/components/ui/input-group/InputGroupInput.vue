@@ -18,6 +18,6 @@ const props = defineProps<{
         props.class,
       )
     "
-    :input-class="inputClass"
+    :input-class="props.inputClass"
   />
 </template>
