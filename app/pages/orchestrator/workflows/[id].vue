@@ -13,9 +13,9 @@ import { useToast } from '@/components/ui/toast/use-toast'
 import ActionNode from '~/components/workflow/ActionNode.vue'
 import ConditionNode from '~/components/workflow/ConditionNode.vue'
 import DelayNode from '~/components/workflow/DelayNode.vue'
+import LogsPanel from '~/components/workflow/LogsPanel.vue'
 import LoopNode from '~/components/workflow/LoopNode.vue'
 import TriggerNode from '~/components/workflow/TriggerNode.vue'
-import LogsPanel from '~/components/workflow/LogsPanel.vue'
 
 definePageMeta({
   pageType: 'list',
@@ -706,7 +706,15 @@ const summary = computed<DataItem[]>(() => {
   if (group) {
     items.push({ label: 'Group', value: group })
   }
-  items.push({ label: 'Trigger', value: triggerDisplayName.value })
+  if (workflowTags.value.length) {
+    items.push({ label: 'Tags', value: workflowTags.value })
+  }
+  return items
+})
+
+const triggerSummary = computed<DataItem[]>(() => {
+  const items: DataItem[] = []
+  items.push({ label: 'Type', value: triggerDisplayName.value })
   if (triggerType.value === 'Scheduled' && triggerCron.value && cronDescription.value) {
     items.push({ label: 'Schedule', value: cronDescription.value })
   }
@@ -716,9 +724,6 @@ const summary = computed<DataItem[]>(() => {
       ? (availableEventActions.value.find(a => a.name === triggerEventAction.value)?.displayName ?? triggerEventAction.value)
       : ''
     items.push({ label: 'Event', value: actionLabel ? `${entityLabel} / ${actionLabel}` : entityLabel })
-  }
-  if (workflowTags.value.length) {
-    items.push({ label: 'Tags', value: workflowTags.value })
   }
   return items
 })
@@ -741,21 +746,18 @@ const settingsSummary = computed<DataItem[]>(() => {
 </script>
 
 <template>
-  <DialogUnsavedChanges
-    v-model:open="unsavedChangesDialogOpen"
-    :entity-name="entityName"
-    :loading="isSavingConfig"
-    @confirm="confirmLeave"
-  />
+  <DialogUnsavedChanges v-model:open="unsavedChangesDialogOpen" :entity-name="entityName" :loading="isSavingConfig"
+    @confirm="confirmLeave" />
   <div class="-mx-3 -mb-12 flex h-[calc(100vh-3.5rem-1rem)] shrink-0 flex-col @2xl:-mx-8 @2xl:-mb-14">
     <!-- ContentHeader: title + actions + tabs (standard entity-page layout) -->
     <div>
       <ContentHeader class="px-3 @2xl:px-8" :title="isNew ? 'New workflow' : (workflowName || 'Workflow')"
         :entity-name="entityName">
         <ContentActionBar>
-          <ButtonIcon icon="save" :loading="isSavingConfig" :disabled="isSavingConfig || !hasUnsavedChanges" @click="saveWorkflowConfig">{{ $t('save_entity', {
-            entityName
-          }) }}</ButtonIcon>
+          <ButtonIcon icon="save" :loading="isSavingConfig" :disabled="isSavingConfig || !hasUnsavedChanges"
+            @click="saveWorkflowConfig">{{ $t('save_entity', {
+              entityName
+            }) }}</ButtonIcon>
           <DropdownMenu v-if="!isNew">
             <DropdownMenuTrigger as-child>
               <Button size="icon" variant="secondary">
@@ -938,7 +940,8 @@ const settingsSummary = computed<DataItem[]>(() => {
                   </FormGridWrap>
                 </ContentEditCard>
 
-                <ContentEditCard title="Runtime" description="Timeout, concurrency, logging, and error handling.">
+                <ContentEditCard title="Runtime Settings"
+                  description="Timeout, concurrency, logging, and error handling.">
                   <FormGridWrap>
                     <FormGrid>
                       <FormItem>
@@ -1023,15 +1026,14 @@ const settingsSummary = computed<DataItem[]>(() => {
               </ContentEditMainContent>
 
               <template #sidebar>
-                <ContentEditSummary
-                  v-model:active="workflowActive"
-                  :summary="summary"
-                  :settings-summary="settingsSummary"
-                  :entity-name="entityName"
-                  :entity-live-status="isEnabled"
-                  :create-mode="isNew"
-                  :status="isEnabled ? 'active' : 'inactive'"
-                />
+                <ContentEditSummary v-model:active="workflowActive" :summary="summary" :entity-name="entityName"
+                  :entity-live-status="isEnabled" :create-mode="isNew" :status="isEnabled ? 'active' : 'inactive'">
+                  <template #after-summary>
+                    <ContentDataList v-if="triggerSummary.length" :data-list="triggerSummary" label="Trigger" />
+                    <ContentDataList v-if="settingsSummary.length" :data-list="settingsSummary"
+                      label="Runtime settings" />
+                  </template>
+                </ContentEditSummary>
               </template>
             </ContentEditMain>
           </div>
@@ -1112,7 +1114,7 @@ const settingsSummary = computed<DataItem[]>(() => {
                       </div>
                       <div class="mt-1 flex items-center gap-1.5">
                         <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">{{ item.type
-                          }}</span>
+                        }}</span>
                       </div>
                       <div v-if="item.description" class="text-muted-foreground mt-1.5 text-xs">
                         {{ item.description }}
