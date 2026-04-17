@@ -132,7 +132,7 @@ function handleFontFamily(value: string) {
             >
               {{ t('channels.mail_color_group_backgrounds') }}
             </h4>
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormGrid design="1+1+1">
               <div
                 v-for="key in backgroundColorKeys"
                 :key="key"
@@ -145,7 +145,7 @@ function handleFontFamily(value: string) {
                   @update:model-value="update(key, $event)"
                 />
               </div>
-            </div>
+            </FormGrid>
           </div>
           <div class="flex flex-col gap-3">
             <h4
@@ -153,7 +153,7 @@ function handleFontFamily(value: string) {
             >
               {{ t('channels.mail_color_group_text') }}
             </h4>
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormGrid design="1+1+1">
               <div v-for="key in textColorKeys" :key="key" class="space-y-1.5">
                 <Label>{{ colorLabel(key) }}</Label>
                 <FormInputColor
@@ -162,7 +162,7 @@ function handleFontFamily(value: string) {
                   @update:model-value="update(key, $event)"
                 />
               </div>
-            </div>
+            </FormGrid>
           </div>
           <div class="flex flex-col gap-3">
             <h4
@@ -170,7 +170,7 @@ function handleFontFamily(value: string) {
             >
               {{ t('channels.mail_color_group_buttons') }}
             </h4>
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <FormGrid design="1+1+1">
               <div
                 v-for="key in buttonColorKeys"
                 :key="key"
@@ -183,7 +183,7 @@ function handleFontFamily(value: string) {
                   @update:model-value="update(key, $event)"
                 />
               </div>
-            </div>
+            </FormGrid>
           </div>
         </div>
       </FormGridWrap>
@@ -206,10 +206,7 @@ function handleFontFamily(value: string) {
           </div>
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_font_url') }}</Label>
-            <FormInputLocked
-              :model-value="model.fontUrl ?? ''"
-              type="url"
-            />
+            <FormInputLocked :model-value="model.fontUrl ?? ''" type="url" />
             <FormInputDescription v-if="isCuratedFont">
               {{ t('channels.mail_font_url_auto') }}
             </FormInputDescription>

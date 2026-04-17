@@ -92,18 +92,23 @@ const storefrontUrlDisplay = computed(() => {
         :label="t('channels.mail_advanced')"
         :description="t('channels.mail_advanced_desc')"
       >
-        <div class="space-y-4 pt-4">
-          <div class="grid grid-cols-2 gap-4">
+        <FormGridWrap>
+          <div
+            class="grid grid-cols-2 gap-4 @max-3xl/form-grid:grid-cols-1 @max-3xl/form-grid:*:col-span-1 @max-xl/form-grid:gap-3 @3xl/form-grid:gap-6"
+          >
             <div class="space-y-1.5">
               <Label>{{ t('channels.mail_login_slug') }}</Label>
               <InputGroup>
-                <InputGroupAddon align="inline-start">
-                  <InputGroupText class="text-muted-foreground text-xs">
+                <InputGroupAddon align="inline-start" class="min-w-0 shrink">
+                  <InputGroupText
+                    class="text-muted-foreground truncate text-xs"
+                  >
                     {{ storefrontUrlDisplay }}
                   </InputGroupText>
                 </InputGroupAddon>
                 <InputGroupInput
                   input-class="pl-0.5!"
+                  class="shrink-0"
                   :model-value="model.loginUrl ?? ''"
                   @update:model-value="update('loginUrl', String($event))"
                 />
@@ -112,13 +117,16 @@ const storefrontUrlDisplay = computed(() => {
             <div class="space-y-1.5">
               <Label>{{ t('channels.mail_password_reset_slug') }}</Label>
               <InputGroup>
-                <InputGroupAddon align="inline-start">
-                  <InputGroupText class="text-muted-foreground text-xs">
+                <InputGroupAddon align="inline-start" class="min-w-0 shrink">
+                  <InputGroupText
+                    class="text-muted-foreground truncate text-xs"
+                  >
                     {{ storefrontUrlDisplay }}
                   </InputGroupText>
                 </InputGroupAddon>
                 <InputGroupInput
                   input-class="pl-0.5!"
+                  class="shrink-0"
                   :model-value="model.passwordResetUrl ?? ''"
                   @update:model-value="
                     update('passwordResetUrl', String($event))
@@ -127,7 +135,7 @@ const storefrontUrlDisplay = computed(() => {
               </InputGroup>
             </div>
           </div>
-        </div>
+        </FormGridWrap>
       </ContentSwitch>
     </ContentSection>
   </div>

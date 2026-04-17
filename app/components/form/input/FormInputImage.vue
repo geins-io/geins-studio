@@ -111,7 +111,7 @@ onBeforeUnmount(() => {
         <img :src="previewUrl!" alt="logotype" @error="onImageError" />
       </ItemMedia>
       <ItemContent>
-        <ItemTitle>{{ displayName }}</ItemTitle>
+        <ItemTitle class="break-all">{{ displayName }}</ItemTitle>
         <ItemDescription>{{ t('image_upload_replace') }}</ItemDescription>
       </ItemContent>
     </template>

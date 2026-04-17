@@ -232,7 +232,7 @@ Located in `app/components/form/`. These two components handle all form field la
 
 ### FormGrid
 
-Single prop: `design` (defaults to `'1+1+1'`). Uses a 12-column Tailwind grid with nth-child selectors.
+Single prop: `design` (defaults to `'1+1+1'`). Uses a 12-column Tailwind grid with repeating column patterns — children beyond one row automatically wrap and receive the same column sizing.
 
 | Design      | Columns | Span Distribution | Use Case                                     |
 | ----------- | ------- | ----------------- | -------------------------------------------- |
@@ -288,11 +288,12 @@ Single prop: `design` (defaults to `'1+1+1'`). Uses a 12-column Tailwind grid wi
 <form @submit.prevent>
   <ContentEditCard>           ← Card container (title, description, step info)
     <FormGridWrap>            ← Container query context
-      <FormGrid design="..."> ← Grid row
+      <FormGrid design="..."> ← Grid (repeats pattern across rows)
         <FormField>           ← Individual fields (one per grid cell)
         <FormField>
+        <FormField>           ← Extra children wrap to next row automatically
       </FormGrid>
-      <FormGrid design="..."> ← Another row
+      <FormGrid design="..."> ← Use separate FormGrid for different column layout
         <FormField>
       </FormGrid>
     </FormGridWrap>
