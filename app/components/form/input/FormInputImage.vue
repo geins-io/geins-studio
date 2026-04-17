@@ -71,7 +71,18 @@ function onDragLeave() {
   isDragging.value = false;
 }
 
+const { handleImageError } = useGeinsImage();
+
 const isDragging = ref(false);
+
+function onImageError(event: Event) {
+  if (localPreviewUrl.value) {
+    URL.revokeObjectURL(localPreviewUrl.value);
+    localPreviewUrl.value = null;
+    selectedFileName.value = null;
+  }
+  handleImageError(event);
+}
 
 onBeforeUnmount(() => {
   if (localPreviewUrl.value) URL.revokeObjectURL(localPreviewUrl.value);
@@ -97,10 +108,10 @@ onBeforeUnmount(() => {
     <!-- Uploaded state -->
     <template v-if="hasImage">
       <ItemMedia variant="image" class="size-12 border">
-        <img :src="previewUrl!" alt="logotype" />
+        <img :src="previewUrl!" alt="logotype" @error="onImageError" />
       </ItemMedia>
       <ItemContent>
-        <ItemTitle>{{ displayName }}</ItemTitle>
+        <ItemTitle class="break-all">{{ displayName }}</ItemTitle>
         <ItemDescription>{{ t('image_upload_replace') }}</ItemDescription>
       </ItemContent>
     </template>

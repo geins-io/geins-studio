@@ -1,0 +1,142 @@
+<script setup lang="ts">
+import type { ChannelMailSettings } from '#shared/types';
+
+const props = defineProps<{
+  storefrontUrl?: string;
+}>();
+
+const model = defineModel<Partial<ChannelMailSettings>>({ required: true });
+
+const { t } = useI18n();
+
+const advancedOpen = ref(false);
+
+function update<K extends keyof ChannelMailSettings>(
+  key: K,
+  value: ChannelMailSettings[K],
+) {
+  model.value = { ...model.value, [key]: value };
+}
+
+const STOREFRONT_URL_PLACEHOLDER = 'https://your-channel.com';
+
+// Strip a trailing `/` from the storefront URL so the addon composes cleanly
+// with a slug value that already starts with `/` (the user types it).
+const storefrontUrlDisplay = computed(() => {
+  const raw = props.storefrontUrl?.trim();
+  return (raw || STOREFRONT_URL_PLACEHOLDER).replace(/\/+$/, '');
+});
+</script>
+
+<template>
+  <div class="flex flex-col gap-6 pt-2">
+    <ContentSection
+      :title="t('general')"
+      :description="t('channels.mail_general_desc')"
+    >
+      <!-- Master disable toggle -->
+      <Item variant="outline" class="rounded-lg p-3">
+        <ItemContent>
+          <ItemTitle>{{ t('channels.mail_disabled_toggle') }}</ItemTitle>
+          <ItemDescription>
+            {{ t('channels.mail_disabled_helper') }}
+          </ItemDescription>
+        </ItemContent>
+        <ItemActions>
+          <Switch
+            :model-value="model.disabled ?? false"
+            @update:model-value="update('disabled', $event)"
+          />
+        </ItemActions>
+      </Item>
+
+      <FormGridWrap v-if="!model.disabled">
+        <FormGrid design="1+1">
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_display_name') }}</Label>
+            <Input
+              :model-value="model.displayName ?? ''"
+              @update:model-value="update('displayName', String($event))"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_from_email') }}</Label>
+            <FormInputLocked
+              :model-value="model.fromEmailAddress ?? ''"
+              type="email"
+            />
+          </div>
+        </FormGrid>
+
+        <FormGrid design="1">
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_bcc_email') }}</Label>
+            <Input
+              :model-value="model.orderConfirmationBCCEmail ?? ''"
+              type="email"
+              @update:model-value="
+                update('orderConfirmationBCCEmail', String($event))
+              "
+            />
+            <FormInputDescription>{{
+              t('channels.mail_bcc_email_description')
+            }}</FormInputDescription>
+          </div>
+        </FormGrid>
+      </FormGridWrap>
+
+      <!-- Advanced collapsible -->
+      <ContentSwitch
+        v-if="!model.disabled"
+        v-model:checked="advancedOpen"
+        :label="t('channels.mail_advanced')"
+        :description="t('channels.mail_advanced_desc')"
+      >
+        <FormGridWrap>
+          <div
+            class="grid grid-cols-2 gap-4 @max-3xl/form-grid:grid-cols-1 @max-3xl/form-grid:*:col-span-1 @max-xl/form-grid:gap-3 @3xl/form-grid:gap-6"
+          >
+            <div class="space-y-1.5">
+              <Label>{{ t('channels.mail_login_slug') }}</Label>
+              <InputGroup>
+                <InputGroupAddon align="inline-start" class="min-w-0 shrink">
+                  <InputGroupText
+                    class="text-muted-foreground truncate text-xs"
+                  >
+                    {{ storefrontUrlDisplay }}
+                  </InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  input-class="pl-0.5!"
+                  class="shrink-0"
+                  :model-value="model.loginUrl ?? ''"
+                  @update:model-value="update('loginUrl', String($event))"
+                />
+              </InputGroup>
+            </div>
+            <div class="space-y-1.5">
+              <Label>{{ t('channels.mail_password_reset_slug') }}</Label>
+              <InputGroup>
+                <InputGroupAddon align="inline-start" class="min-w-0 shrink">
+                  <InputGroupText
+                    class="text-muted-foreground truncate text-xs"
+                  >
+                    {{ storefrontUrlDisplay }}
+                  </InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  input-class="pl-0.5!"
+                  class="shrink-0"
+                  :model-value="model.passwordResetUrl ?? ''"
+                  @update:model-value="
+                    update('passwordResetUrl', String($event))
+                  "
+                />
+              </InputGroup>
+            </div>
+          </div>
+        </FormGridWrap>
+      </ContentSwitch>
+    </ContentSection>
+  </div>
+</template>

@@ -12,6 +12,7 @@ const props = withDefaults(
     defaultValue?: string | number;
     modelValue?: string | number;
     class?: HTMLAttributes['class'];
+    inputClass?: HTMLAttributes['class'];
     valid?: boolean;
     feedback?: string;
     description?: string;
@@ -95,6 +96,7 @@ const isFileInput = computed(() => attributes.type === 'file');
                 ? 'rounded-r-lg py-1 pr-3 pl-2'
                 : 'rounded-r-lg py-1 pr-3 pl-3'
               : 'rounded-lg px-2 py-1 sm:px-3',
+          props.inputClass,
         )
       "
       v-bind="inputAttrs"

@@ -7,11 +7,13 @@ import type {
   ChannelListItem,
   ChannelMarket,
   ChannelPaymentMethod,
-  ChannelMailType,
-  ChannelMailSettings,
   Currency,
   Market,
   Language,
+  MailTypeId,
+  MailTextsResponse,
+  MailTextsUpdateRequest,
+  MailPreviewRequest,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
@@ -57,23 +59,43 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         data: ChannelUpdate,
         options?: ChannelApiOptions,
       ): Promise<Channel> {
-        const fileEntries = Object.entries(
-          data.storefrontSettings ?? {},
-        ).filter((entry): entry is [string, File] => entry[1] instanceof File);
-
         const formData = new FormData();
-        const settingsPayload: Record<string, unknown> = {
-          ...(data.storefrontSettings ?? {}),
-        };
 
-        for (const [key, file] of fileEntries) {
-          formData.append(`storefrontSettings.${key}`, file, file.name);
-          settingsPayload[key] = '';
+        // Scan a settings object for File values; append each as a multipart
+        // part keyed `<prefix>.<fieldName>` and blank the matching value in
+        // the JSON payload so the API substitutes it with the uploaded blob.
+        function extractFiles<T extends Record<string, unknown> | undefined>(
+          settings: T,
+          prefix: string,
+        ): Record<string, unknown> | undefined {
+          if (!settings) return settings;
+          const sanitized: Record<string, unknown> = { ...settings };
+          for (const [key, value] of Object.entries(settings)) {
+            if (value instanceof File) {
+              formData.append(`${prefix}.${key}`, value, value.name);
+              sanitized[key] = '';
+            }
+          }
+          return sanitized;
         }
+
+        const storefrontSettings = extractFiles(
+          data.storefrontSettings as Record<string, unknown> | undefined,
+          'storefrontSettings',
+        );
+        const mailSettings = extractFiles(
+          data.mailSettings as Record<string, unknown> | undefined,
+          'mailSettings',
+        );
 
         const jsonPayload: ChannelUpdate = {
           ...data,
-          storefrontSettings: settingsPayload,
+          ...(storefrontSettings !== undefined
+            ? { storefrontSettings: storefrontSettings as ChannelUpdate['storefrontSettings'] }
+            : {}),
+          ...(mailSettings !== undefined
+            ? { mailSettings: mailSettings as ChannelUpdate['mailSettings'] }
+            : {}),
         };
         formData.append('channel', JSON.stringify(jsonPayload));
 
@@ -109,27 +131,34 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         },
         mail: {
           async getTexts(
-            mailType: string,
+            mailType: MailTypeId,
             language: string,
-          ): Promise<ChannelMailType> {
-            return await fetch<ChannelMailType>(
+          ): Promise<MailTextsResponse> {
+            return await fetch<MailTextsResponse>(
               `${CHANNEL_ENDPOINT}/${channelId}/mail/${mailType}`,
               { query: { language } },
             );
           },
           async updateTexts(
-            mailType: string,
-            data: Partial<ChannelMailSettings>,
-          ): Promise<ChannelMailType> {
-            return await fetch<ChannelMailType>(
+            mailType: MailTypeId,
+            data: MailTextsUpdateRequest,
+          ): Promise<MailTextsResponse> {
+            return await fetch<MailTextsResponse>(
               `${CHANNEL_ENDPOINT}/${channelId}/mail/${mailType}`,
               { method: 'PATCH', body: data },
             );
           },
-          async preview(mailType: string, language: string): Promise<unknown> {
-            return await fetch<unknown>(
+          /**
+           * Preview endpoint returns rendered HTML as `text/html` — caller
+           * receives the raw HTML string to inject into a sandboxed iframe.
+           */
+          async preview(
+            mailType: MailTypeId,
+            data: MailPreviewRequest,
+          ): Promise<string> {
+            return await fetch<string>(
               `${CHANNEL_ENDPOINT}/${channelId}/mail/${mailType}/preview`,
-              { method: 'POST', body: { language } },
+              { method: 'POST', body: data },
             );
           },
         },

@@ -6,6 +6,7 @@ import {
   generateInternalId,
   flagClass,
   languageToCountryCode,
+  prettifyLangKey,
 } from '../index';
 
 describe('cn', () => {
@@ -100,6 +101,43 @@ describe('flagClass', () => {
 
   it('lowercases the country code', () => {
     expect(flagClass('US')).toBe('fib fis fi-us');
+  });
+});
+
+describe('prettifyLangKey', () => {
+  const keys = [
+    'ORDER_PREPARED_SUBJECT',
+    'ORDER_PREPARED_TITLE',
+    'ORDER_PREPARED_INBOX_PREVIEW',
+    'ORDER_PREPARED_MESSAGE_PARTIAL',
+  ];
+
+  it('strips common prefix and sentence-cases the remainder', () => {
+    expect(prettifyLangKey('ORDER_PREPARED_SUBJECT', keys)).toBe('Subject');
+    expect(prettifyLangKey('ORDER_PREPARED_TITLE', keys)).toBe('Title');
+    expect(prettifyLangKey('ORDER_PREPARED_INBOX_PREVIEW', keys)).toBe('Inbox preview');
+    expect(prettifyLangKey('ORDER_PREPARED_MESSAGE_PARTIAL', keys)).toBe('Message partial');
+  });
+
+  it('falls back to full prettified key for a single key', () => {
+    expect(prettifyLangKey('ORDER_PREPARED_SUBJECT', ['ORDER_PREPARED_SUBJECT'])).toBe(
+      'Order prepared subject',
+    );
+  });
+
+  it('falls back to full prettified key for empty allKeys', () => {
+    expect(prettifyLangKey('ORDER_PREPARED_SUBJECT', [])).toBe('Order prepared subject');
+  });
+
+  it('handles keys with no common prefix', () => {
+    const mixed = ['FOO_BAR', 'BAZ_QUX'];
+    expect(prettifyLangKey('FOO_BAR', mixed)).toBe('Foo bar');
+    expect(prettifyLangKey('BAZ_QUX', mixed)).toBe('Baz qux');
+  });
+
+  it('partial common prefix — only shared segments stripped', () => {
+    const partial = ['ORDER_SUBJECT', 'ORDER_TITLE', 'CUSTOMER_NAME'];
+    expect(prettifyLangKey('ORDER_SUBJECT', partial)).toBe('Order subject');
   });
 });
 

@@ -1,19 +1,23 @@
 <script setup lang="ts">
-import { Input } from '@/components/ui/input'
-import { cn } from '@/utils/index'
-import type { HTMLAttributes } from "vue"
+import { Input } from '@/components/ui/input';
+import { cn } from '@/utils/index';
+import type { HTMLAttributes } from 'vue';
 
 const props = defineProps<{
-  class?: HTMLAttributes["class"]
-}>()
+  class?: HTMLAttributes['class'];
+  inputClass?: HTMLAttributes['class'];
+}>();
 </script>
 
 <template>
   <Input
     data-slot="input-group-control"
-    :class="cn(
-      'flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent',
-      props.class,
-    )"
+    :class="
+      cn(
+        'h-full! flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent',
+        props.class,
+      )
+    "
+    :input-class="props.inputClass"
   />
 </template>

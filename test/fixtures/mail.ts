@@ -1,5 +1,9 @@
-import type { ChannelMailSettings, ChannelMailType } from '#shared/types';
-import { nextId } from './ids';
+import type {
+  ChannelMailSettings,
+  ChannelMailType,
+  MailTextEntry,
+  MailTextsResponse,
+} from '#shared/types';
 
 export function buildMailSettings(
   overrides?: Partial<ChannelMailSettings>,
@@ -11,7 +15,6 @@ export function buildMailSettings(
     passwordResetUrl: 'https://test.com/reset',
     orderConfirmationBCCEmail: 'orders@test.com',
     logoUrl: 'https://test.com/logo.png',
-    primaryColor: '#000000',
     backgroundColor: '#ffffff',
     fontFamily: 'Arial',
     ...overrides,
@@ -22,11 +25,33 @@ export function buildMailType(
   overrides?: Partial<ChannelMailType>,
 ): ChannelMailType {
   return {
-    _id: nextId('mail-type'),
-    _type: 'mailType',
-    typeId: 1,
-    name: 'OrderConfirmation',
-    active: true,
+    type: 'OrderConfirmation',
+    name: 'Order Confirmation',
+    category: 'Order',
+    hasOverrides: false,
+    ...overrides,
+  };
+}
+
+export function buildMailTextEntry(
+  overrides?: Partial<MailTextEntry>,
+): MailTextEntry {
+  return {
+    key: 'SUBJECT',
+    defaultValue: 'Your order confirmation',
+    overrideValue: null,
+    isOverridden: false,
+    ...overrides,
+  };
+}
+
+export function buildMailTextsResponse(
+  overrides?: Partial<MailTextsResponse>,
+): MailTextsResponse {
+  return {
+    mailType: 'OrderConfirmation',
+    language: 'en',
+    texts: [buildMailTextEntry()],
     ...overrides,
   };
 }

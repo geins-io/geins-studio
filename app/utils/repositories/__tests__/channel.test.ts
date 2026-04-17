@@ -8,7 +8,7 @@ import {
   buildChannelMarket,
   buildChannelPaymentMethod,
   buildChannelUpdate,
-  buildMailType,
+  buildMailTextsResponse,
   resetIdCounter,
 } from '../../../../test/fixtures';
 import { accountRepo } from '../account';
@@ -125,6 +125,40 @@ describe('accountRepo', () => {
       expect(parsed.name).toBe('updated');
     });
 
+    it('attaches mailSettings File values as parts named mailSettings.{field}', async () => {
+      const logo = new File(['logo'], 'logo.png', { type: 'image/png' });
+      const header = new File(['header'], 'header.png', { type: 'image/png' });
+      const data = buildChannelUpdate({
+        mailSettings: { logoUrl: logo, headerImgUrl: header },
+      });
+      mockFetch.mockResolvedValue(buildChannel());
+      await api.channel.update('123', data);
+
+      const formData: FormData = mockFetch.mock.calls[0][1].body;
+      expect(formData.get('mailSettings.logoUrl')).toBeInstanceOf(File);
+      expect(formData.get('mailSettings.headerImgUrl')).toBeInstanceOf(File);
+      const parsed = JSON.parse(formData.get('channel') as string);
+      expect(parsed.mailSettings.logoUrl).toBe('');
+      expect(parsed.mailSettings.headerImgUrl).toBe('');
+    });
+
+    it('leaves mailSettings string values untouched in the JSON part', async () => {
+      const data = buildChannelUpdate({
+        mailSettings: {
+          logoUrl: 'https://cdn/existing-logo.png',
+          displayName: 'Store',
+        },
+      });
+      mockFetch.mockResolvedValue(buildChannel());
+      await api.channel.update('123', data);
+
+      const formData: FormData = mockFetch.mock.calls[0][1].body;
+      expect(formData.get('mailSettings.logoUrl')).toBeNull();
+      const parsed = JSON.parse(formData.get('channel') as string);
+      expect(parsed.mailSettings.logoUrl).toBe('https://cdn/existing-logo.png');
+      expect(parsed.mailSettings.displayName).toBe('Store');
+    });
+
     it('non-file fields are serialized into the "channel" JSON part', async () => {
       const data = buildChannelUpdate({
         name: 'Test Name',
@@ -217,8 +251,8 @@ describe('accountRepo', () => {
   // ===========================================================================
   describe('mail endpoints', () => {
     it('channel.id().mail.getTexts() calls GET with language query', async () => {
-      const mailType = buildMailType();
-      mockFetch.mockResolvedValue(mailType);
+      const texts = buildMailTextsResponse({ language: 'sv' });
+      mockFetch.mockResolvedValue(texts);
       const result = await api.channel
         .id('123')
         .mail.getTexts('OrderConfirmation', 'sv');
@@ -226,13 +260,16 @@ describe('accountRepo', () => {
         '/account/channel/123/mail/OrderConfirmation',
         { query: { language: 'sv' } },
       );
-      expect(result).toEqual(mailType);
+      expect(result).toEqual(texts);
     });
 
     it('channel.id().mail.updateTexts() calls PATCH with body', async () => {
-      const mailType = buildMailType();
-      const updateData = { displayName: 'Updated Store' };
-      mockFetch.mockResolvedValue(mailType);
+      const texts = buildMailTextsResponse({ language: 'sv' });
+      const updateData = {
+        language: 'sv',
+        texts: { SUBJECT: 'Din orderbekräftelse' },
+      };
+      mockFetch.mockResolvedValue(texts);
       const result = await api.channel
         .id('123')
         .mail.updateTexts('OrderConfirmation', updateData);
@@ -240,12 +277,14 @@ describe('accountRepo', () => {
         '/account/channel/123/mail/OrderConfirmation',
         { method: 'PATCH', body: updateData },
       );
-      expect(result).toEqual(mailType);
+      expect(result).toEqual(texts);
     });
 
     it('channel.id().mail.preview() calls POST with language body', async () => {
-      mockFetch.mockResolvedValue({ html: '<p>preview</p>' });
-      await api.channel.id('123').mail.preview('OrderConfirmation', 'sv');
+      mockFetch.mockResolvedValue('<p>preview</p>');
+      await api.channel
+        .id('123')
+        .mail.preview('OrderConfirmation', { language: 'sv' });
       expect(mockFetch).toHaveBeenCalledWith(
         '/account/channel/123/mail/OrderConfirmation/preview',
         { method: 'POST', body: { language: 'sv' } },

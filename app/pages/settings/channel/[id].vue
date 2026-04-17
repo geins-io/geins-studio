@@ -14,6 +14,8 @@ import type {
   ChannelMarket,
   ChannelMarketAssignment,
   ChannelPaymentMethod,
+  ChannelMailSettings,
+  ChannelMailType,
   Language,
   Market,
   StorefrontSchema,
@@ -115,9 +117,91 @@ const defaultMarketId = ref('');
 // Payment state
 const channelPayments = ref<ChannelPaymentMethod[]>([]);
 
+// Mails state
+const channelMailSettings = ref<ChannelMailSettings | null>(null);
+const channelMailTypes = ref<ChannelMailType[]>([]);
+
+// Keys owned by the General sub-tab (STU-119). Layout sub-tab (STU-118) owns
+// the rest. Both merge into the same flat `mailSettings` object.
+const MAIL_GENERAL_KEYS = [
+  'displayName',
+  'fromEmailAddress',
+  'disabled',
+  'locale',
+  'loginUrl',
+  'passwordResetUrl',
+  'orderConfirmationBCCEmail',
+  'externalSourceVerificationTag',
+  'emailReplyToCustomer',
+  'orderConfirmationExternalSource',
+] as const satisfies readonly (keyof ChannelMailSettings)[];
+
+const MAIL_LAYOUT_KEYS = [
+  'backgroundColor',
+  'bodyColor',
+  'secondBodyColor',
+  'headerColor',
+  'footerColor',
+  'footerTextColor',
+  'textColor',
+  'saleTextColor',
+  'notIncludedTextColor',
+  'previouslyShippedTextColor',
+  'backOrderedTextColor',
+  'buttonColor',
+  'buttonTextColor',
+  'fontFamily',
+  'fontUrl',
+  'fontSizeSmall',
+  'fontSizeMedium',
+  'fontSizeLarge',
+  'lineHeight',
+  'borderRadius',
+  'logoUrl',
+  'headerImgUrl',
+  'prodImgSize',
+  'showBrand',
+  'productParameters',
+  'hideArticleNumber',
+] as const satisfies readonly (keyof ChannelMailSettings)[];
+
+const mailGeneralFields = ref<Partial<ChannelMailSettings>>({});
+const mailLayoutFields = ref<Partial<ChannelMailSettings>>({});
+const mailLayoutFiles = ref<{ logoUrl?: File; headerImgUrl?: File }>({});
+
+function pickMailKeys(
+  settings: ChannelMailSettings | null,
+  keys: readonly (keyof ChannelMailSettings)[],
+): Partial<ChannelMailSettings> {
+  if (!settings) return {};
+  const picked: Partial<ChannelMailSettings> = {};
+  for (const key of keys) {
+    const value = settings[key];
+    if (value !== undefined) {
+      (picked as Record<string, unknown>)[key] = value;
+    }
+  }
+  return picked;
+}
+
+async function handleMailSaved() {
+  // A mail template text override was saved from the config sheet — refresh
+  // the channel data so the `hasOverrides` indicator on rows stays in sync.
+  await refreshEntityData.value?.();
+}
+
 const defaultLanguage = computed(() => {
   if (!defaultLanguageId.value) return undefined;
   return allLanguages.value.find((l) => l._id === defaultLanguageId.value);
+});
+
+// Languages that are both assigned to this channel and active — the mail
+// template editor only supports editing texts for these.
+const channelActiveLanguages = computed<Language[]>(() => {
+  const activeIds = new Set(
+    channelLanguages.value.filter((l) => l.active).map((l) => l._id),
+  );
+  return allLanguages.value.filter((l) => activeIds.has(l._id));
 });
 
 const openDefaultLanguageDialog = () => {
@@ -296,6 +380,18 @@ const {
     channelMarkets.value = entity.markets || [];
     // Populate channel payment methods
     channelPayments.value = entity.paymentMethods ?? [];
+    // Populate channel mail settings and mail types
+    channelMailSettings.value = entity.mailSettings ?? null;
+    channelMailTypes.value = entity.mailTypes ?? [];
+    mailGeneralFields.value = pickMailKeys(
+      entity.mailSettings ?? null,
+      MAIL_GENERAL_KEYS,
+    );
+    mailLayoutFields.value = pickMailKeys(
+      entity.mailSettings ?? null,
+      MAIL_LAYOUT_KEYS,
+    );
+    mailLayoutFiles.value = {};
     breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       name: entity.name,
@@ -329,6 +425,12 @@ const {
       active: p.active,
     })),
     storefrontSettings: storefrontSettings.value,
+    mailSettings: {
+      ...mailGeneralFields.value,
+      ...mailLayoutFields.value,
+      ...(mailLayoutFiles.value.logoUrl ? { logoUrl: mailLayoutFiles.value.logoUrl } : {}),
+      ...(mailLayoutFiles.value.headerImgUrl ? { headerImgUrl: mailLayoutFiles.value.headerImgUrl } : {}),
+    },
     ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
   onFormValuesChange: (values) => {
@@ -418,6 +520,50 @@ watch(
   { deep: true },
 );
 
+// Merge General-tab mail fields into entityDataUpdate.mailSettings so
+// useUnsavedChanges detects changes. Spread pattern — must not clobber
+// Layout-tab fields (STU-118).
+watch(
+  mailGeneralFields,
+  (fields) => {
+    if (createMode.value) return;
+    entityDataUpdate.value.mailSettings = {
+      ...entityDataUpdate.value.mailSettings,
+      ...fields,
+    };
+  },
+  { deep: true },
+);
+
+// Merge Layout-tab mail fields into entityDataUpdate.mailSettings.
+watch(
+  mailLayoutFields,
+  (fields) => {
+    if (createMode.value) return;
+    entityDataUpdate.value.mailSettings = {
+      ...entityDataUpdate.value.mailSettings,
+      ...fields,
+    };
+  },
+  { deep: true },
+);
+
+// Staged files flip hasUnsavedChanges and end up in the multipart PATCH —
+// `channel.update()` scans `mailSettings` for File values and turns them
+// into multipart parts named `mailSettings.<key>`.
+watch(
+  mailLayoutFiles,
+  (files) => {
+    if (createMode.value) return;
+    entityDataUpdate.value.mailSettings = {
+      ...entityDataUpdate.value.mailSettings,
+      ...(files.logoUrl ? { logoUrl: files.logoUrl } : {}),
+      ...(files.headerImgUrl ? { headerImgUrl: files.headerImgUrl } : {}),
+    };
+  },
+  { deep: true },
+);
+
 // =====================================================================================
 // ERROR HANDLING SETUP
 // =====================================================================================
@@ -450,6 +596,8 @@ const handleSave = async () => {
         'paymentMethods',
         'storefrontSettings',
         'storefrontSchema',
+        'mailSettings',
+        'mailTypes',
       ],
     },
   );
@@ -465,6 +613,9 @@ const handleSave = async () => {
 
   // Refresh the store so sidebar / list page reflect changes
   if (result) {
+    // Clear staged mail layout uploads — server response will have the new
+    // URLs on channelMailSettings.
+    mailLayoutFiles.value = {};
     await accountStore.refreshChannels();
   }
 };
@@ -561,6 +712,8 @@ if (!createMode.value) {
           'paymentMethods',
           'storefrontSettings',
           'storefrontSchema',
+          'mailSettings',
+          'mailTypes',
         ],
       }),
   );
@@ -649,11 +802,8 @@ if (!createMode.value) {
                     <FormItem>
                       <FormLabel>{{ $t('channels.url') }}</FormLabel>
                       <FormControl>
-                        <Input v-bind="componentField" type="url" />
+                        <FormInputLocked v-bind="componentField" type="url" />
                       </FormControl>
-                      <FormDescription>
-                        {{ $t('channels.url_helper') }}
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   </FormField>
@@ -817,12 +967,18 @@ if (!createMode.value) {
             v-if="currentTab === 3"
             :key="`tab-${currentTab}`"
           >
-            <!-- TODO: M5 -->
-            <ContentEditCard :title="$t('channels.tab_mails')">
-              <div class="text-muted-foreground text-sm">
-                {{ $t('channels.tab_placeholder') }}
-              </div>
-            </ContentEditCard>
+            <ChannelMailsTab
+              v-model:general-fields="mailGeneralFields"
+              v-model:layout-fields="mailLayoutFields"
+              v-model:layout-files="mailLayoutFiles"
+              :mail-types="channelMailTypes"
+              :loading="loading"
+              :channel-id="entityId ?? ''"
+              :languages="channelActiveLanguages"
+              :default-language="defaultLanguageId"
+              :storefront-url="entityDataUpdate?.url ?? ''"
+              @mail-saved="handleMailSaved"
+            />
           </ContentEditMainContent>
         </KeepAlive>
         <!-- Tab 4: Storefront settings -->
