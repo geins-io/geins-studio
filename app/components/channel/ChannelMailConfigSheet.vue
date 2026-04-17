@@ -125,14 +125,7 @@ watch(selectedLanguage, (val, prev) => {
   if (activeTab.value === 'preview') fetchPreview();
 });
 
-function prettifyKey(key: string): string {
-  return key
-    .toLowerCase()
-    .split('_')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-}
+const allTextKeys = computed(() => textEntries.value.map((e) => e.key));
 
 function buildChangedTexts(): Record<string, string> {
   const texts: Record<string, string> = {};
@@ -263,7 +256,7 @@ const categoryLabel = computed(() => {
                 class="flex flex-col gap-1.5"
               >
                 <div class="flex items-center justify-between gap-2">
-                  <Label>{{ prettifyKey(entry.key) }}</Label>
+                  <Label>{{ prettifyLangKey(entry.key, allTextKeys) }}</Label>
                   <Badge
                     v-if="entry.isOverridden"
                     variant="warning-light"
