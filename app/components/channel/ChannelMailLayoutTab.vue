@@ -1,0 +1,322 @@
+<script setup lang="ts">
+import type { ChannelMailSettings } from '#shared/types';
+import { fontToGoogleUrl } from '@/utils/storefrontFonts';
+
+export type MailLayoutStagedFiles = {
+  logoUrl?: File;
+  headerImgUrl?: File;
+};
+
+const model = defineModel<Partial<ChannelMailSettings>>({ required: true });
+const stagedFiles = defineModel<MailLayoutStagedFiles>('stagedFiles', {
+  default: () => ({}),
+});
+
+const { t } = useI18n();
+
+function update<K extends keyof ChannelMailSettings>(
+  key: K,
+  value: ChannelMailSettings[K],
+) {
+  model.value = { ...model.value, [key]: value };
+}
+
+function handleFile(key: 'logoUrl' | 'headerImgUrl', file: File | null) {
+  const { logoUrl, headerImgUrl } = stagedFiles.value;
+  const current = { logoUrl, headerImgUrl };
+  current[key] = file ?? undefined;
+  stagedFiles.value = {
+    ...(current.logoUrl ? { logoUrl: current.logoUrl } : {}),
+    ...(current.headerImgUrl ? { headerImgUrl: current.headerImgUrl } : {}),
+  };
+}
+
+const backgroundColorKeys = [
+  'backgroundColor',
+  'bodyColor',
+  'secondBodyColor',
+  'headerColor',
+  'footerColor',
+] as const;
+
+const textColorKeys = [
+  'textColor',
+  'footerTextColor',
+  'saleTextColor',
+  'notIncludedTextColor',
+  'previouslyShippedTextColor',
+  'backOrderedTextColor',
+] as const;
+
+const buttonColorKeys = ['buttonColor', 'buttonTextColor'] as const;
+
+function colorLabel(key: keyof ChannelMailSettings): string {
+  // Map CSS-case key -> snake_case i18n suffix.
+  const map: Record<string, string> = {
+    backgroundColor: 'background',
+    bodyColor: 'body',
+    secondBodyColor: 'second_body',
+    headerColor: 'header',
+    footerColor: 'footer',
+    textColor: 'text',
+    footerTextColor: 'footer_text',
+    saleTextColor: 'sale_text',
+    notIncludedTextColor: 'not_included_text',
+    previouslyShippedTextColor: 'previously_shipped_text',
+    backOrderedTextColor: 'back_ordered_text',
+    buttonColor: 'button',
+    buttonTextColor: 'button_text',
+  };
+  return t(`channels.mail_color_${map[key]}`);
+}
+
+const isCuratedFont = computed(
+  () => fontToGoogleUrl(model.value.fontFamily ?? '') !== null,
+);
+
+function handleFontFamily(value: string) {
+  const autoUrl = fontToGoogleUrl(value);
+  if (autoUrl) {
+    model.value = { ...model.value, fontFamily: value, fontUrl: autoUrl };
+  } else {
+    update('fontFamily', value);
+  }
+}
+</script>
+
+<template>
+  <div class="flex flex-col gap-8 pt-2">
+    <!-- Images -->
+    <ContentSection
+      :title="t('channels.mail_images')"
+      :description="t('channels.mail_images_desc')"
+      icon="Images"
+    >
+      <FormGridWrap>
+        <FormGrid design="1+1">
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_logo') }}</Label>
+            <FormInputImage
+              :model-value="model.logoUrl ?? ''"
+              @update:model-value="handleFile('logoUrl', $event)"
+            />
+            <FormInputDescription>{{
+              t('channels.mail_logo_hint')
+            }}</FormInputDescription>
+          </div>
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_header_image') }}</Label>
+            <FormInputImage
+              :model-value="model.headerImgUrl ?? ''"
+              @update:model-value="handleFile('headerImgUrl', $event)"
+            />
+            <FormInputDescription>{{
+              t('channels.mail_header_image_hint')
+            }}</FormInputDescription>
+          </div>
+        </FormGrid>
+      </FormGridWrap>
+    </ContentSection>
+
+    <!-- Colors -->
+    <ContentSection
+      :title="t('channels.mail_colors')"
+      :description="t('channels.mail_colors_desc')"
+      icon="Palette"
+    >
+      <FormGridWrap>
+        <div class="flex flex-col gap-6">
+          <div class="flex flex-col gap-3">
+            <h4
+              class="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+            >
+              {{ t('channels.mail_color_group_backgrounds') }}
+            </h4>
+            <FormGrid design="1+1+1">
+              <div
+                v-for="key in backgroundColorKeys"
+                :key="key"
+                class="space-y-1.5"
+              >
+                <Label>{{ colorLabel(key) }}</Label>
+                <FormInputColor
+                  :model-value="(model[key] as string) ?? ''"
+                  :label="colorLabel(key)"
+                  @update:model-value="update(key, $event)"
+                />
+              </div>
+            </FormGrid>
+          </div>
+          <div class="flex flex-col gap-3">
+            <h4
+              class="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+            >
+              {{ t('channels.mail_color_group_text') }}
+            </h4>
+            <FormGrid design="1+1+1">
+              <div v-for="key in textColorKeys" :key="key" class="space-y-1.5">
+                <Label>{{ colorLabel(key) }}</Label>
+                <FormInputColor
+                  :model-value="(model[key] as string) ?? ''"
+                  :label="colorLabel(key)"
+                  @update:model-value="update(key, $event)"
+                />
+              </div>
+            </FormGrid>
+          </div>
+          <div class="flex flex-col gap-3">
+            <h4
+              class="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+            >
+              {{ t('channels.mail_color_group_buttons') }}
+            </h4>
+            <FormGrid design="1+1+1">
+              <div
+                v-for="key in buttonColorKeys"
+                :key="key"
+                class="space-y-1.5"
+              >
+                <Label>{{ colorLabel(key) }}</Label>
+                <FormInputColor
+                  :model-value="(model[key] as string) ?? ''"
+                  :label="colorLabel(key)"
+                  @update:model-value="update(key, $event)"
+                />
+              </div>
+            </FormGrid>
+          </div>
+        </div>
+      </FormGridWrap>
+    </ContentSection>
+
+    <!-- Typography -->
+    <ContentSection
+      :title="t('channels.mail_typography')"
+      :description="t('channels.mail_typography_desc')"
+      icon="FileTypeCorner"
+    >
+      <FormGridWrap>
+        <FormGrid design="1+1">
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_font_family') }}</Label>
+            <FormInputFont
+              :model-value="model.fontFamily ?? ''"
+              @update:model-value="handleFontFamily($event ?? '')"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_font_url') }}</Label>
+            <FormInputLocked :model-value="model.fontUrl ?? ''" type="url" />
+            <FormInputDescription v-if="isCuratedFont">
+              {{ t('channels.mail_font_url_auto') }}
+            </FormInputDescription>
+          </div>
+        </FormGrid>
+        <FormGrid design="1+1+1+1">
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_font_size_small') }}</Label>
+            <FormInputPixel
+              :model-value="model.fontSizeSmall ?? ''"
+              placeholder="12px"
+              @update:model-value="update('fontSizeSmall', $event)"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_font_size_medium') }}</Label>
+            <FormInputPixel
+              :model-value="model.fontSizeMedium ?? ''"
+              placeholder="14px"
+              @update:model-value="update('fontSizeMedium', $event)"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_font_size_large') }}</Label>
+            <FormInputPixel
+              :model-value="model.fontSizeLarge ?? ''"
+              placeholder="18px"
+              @update:model-value="update('fontSizeLarge', $event)"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_line_height') }}</Label>
+            <FormInputPixel
+              :model-value="model.lineHeight ?? ''"
+              placeholder="22px"
+              @update:model-value="update('lineHeight', $event)"
+            />
+          </div>
+        </FormGrid>
+      </FormGridWrap>
+    </ContentSection>
+
+    <!-- Shape -->
+    <ContentSection
+      :title="t('channels.mail_shape')"
+      :description="t('channels.mail_shape_desc')"
+      icon="Shapes"
+    >
+      <FormGridWrap>
+        <FormGrid design="1+1">
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_border_radius') }}</Label>
+            <FormInputPixel
+              :model-value="model.borderRadius ?? ''"
+              placeholder="4px"
+              @update:model-value="update('borderRadius', $event)"
+            />
+          </div>
+          <div class="space-y-1.5">
+            <Label>{{ t('channels.mail_prod_img_size') }}</Label>
+            <Input
+              :model-value="model.prodImgSize ?? ''"
+              placeholder="200f200"
+              @update:model-value="update('prodImgSize', String($event))"
+            />
+          </div>
+        </FormGrid>
+      </FormGridWrap>
+    </ContentSection>
+
+    <!-- Product display -->
+    <ContentSection
+      :title="t('channels.mail_product_display')"
+      :description="t('channels.mail_product_display_desc')"
+      icon="Package"
+    >
+      <div class="flex flex-col gap-3">
+        <Item variant="outline" class="rounded-lg p-3">
+          <ItemContent>
+            <ItemTitle>{{ t('channels.mail_show_brand') }}</ItemTitle>
+          </ItemContent>
+          <ItemActions>
+            <Switch
+              :model-value="model.showBrand ?? false"
+              @update:model-value="update('showBrand', $event)"
+            />
+          </ItemActions>
+        </Item>
+        <Item variant="outline" class="rounded-lg p-3">
+          <ItemContent>
+            <ItemTitle>{{ t('channels.mail_hide_article_number') }}</ItemTitle>
+          </ItemContent>
+          <ItemActions>
+            <Switch
+              :model-value="model.hideArticleNumber ?? false"
+              @update:model-value="update('hideArticleNumber', $event)"
+            />
+          </ItemActions>
+        </Item>
+        <div class="space-y-1.5">
+          <Label>{{ t('channels.mail_product_parameters') }}</Label>
+          <Input
+            :model-value="model.productParameters ?? ''"
+            @update:model-value="update('productParameters', String($event))"
+          />
+          <FormInputDescription>
+            {{ t('channels.mail_product_parameters_helper') }}
+          </FormInputDescription>
+        </div>
+      </div>
+    </ContentSection>
+  </div>
+</template>

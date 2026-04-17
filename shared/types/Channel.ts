@@ -84,30 +84,122 @@ export type ChannelPaymentMethod = ResponseEntity<{
 }>;
 
 /**
- * Mail template entry for a channel.
+ * Discriminator for mail templates. Matches the `type` field returned by
+ * the channel detail endpoint (`mailTypes[].type`) and is used as the
+ * `{mailType}` path segment on mail text/preview endpoints.
+ *
+ * NOTE: OpenAPI enum documents these as camelCase but the list endpoint
+ * observed to return PascalCase — treating PascalCase as truth.
  */
-export type ChannelMailType = ResponseEntity<{
-  typeId: number;
-  name: string;
-  active: boolean;
-}>;
+export type MailTypeId =
+  | 'OrderConfirmation'
+  | 'OrderProcessing'
+  | 'OrderDelivered'
+  | 'OrderCancelled'
+  | 'OrderRowRemoved'
+  | 'OrderRowReturned'
+  | 'CustomerWishlist'
+  | 'CustomerRefunded'
+  | 'CustomerRegistered'
+  | 'CustomerUnregistered'
+  | 'CustomerMessageNotification'
+  | 'CustomerPasswordReset'
+  | 'ProductTellAFriend'
+  | 'ProductSizeAvailable'
+  | 'ProductMonitorNotification';
+
+export type MailCategory = 'Order' | 'Customer' | 'Product';
 
 /**
- * General and layout settings for channel email templates.
+ * Mail template metadata for a channel (from `mailTypes` field on channel
+ * detail response). Plain object — API does not expose `_id`/`_type` for
+ * this sub-resource, so this is not a `ResponseEntity`.
+ */
+export interface ChannelMailType {
+  type: MailTypeId;
+  name: string;
+  category: MailCategory;
+  hasOverrides: boolean;
+}
+
+/**
+ * General + layout settings for a channel's email templates.
+ * Flat shape matching `account_request_updateChannelMailSettings`.
+ * All fields optional; API allows null to clear.
  */
 export interface ChannelMailSettings {
-  displayName: string;
-  fromEmailAddress: string;
-  loginUrl: string;
-  passwordResetUrl: string;
-  orderConfirmationBCCEmail?: string;
-  logoUrl?: string;
-  logoSecondaryUrl?: string;
-  primaryColor?: string;
-  secondaryColor?: string;
-  backgroundColor?: string;
-  fontFamily?: string;
-  fontUrl?: string;
+  // General
+  displayName?: string | null;
+  fromEmailAddress?: string | null;
+  disabled?: boolean | null;
+  locale?: string | null;
+  loginUrl?: string | null;
+  passwordResetUrl?: string | null;
+  orderConfirmationBCCEmail?: string | null;
+  externalSourceVerificationTag?: string | null;
+  emailReplyToCustomer?: boolean | null;
+  orderConfirmationExternalSource?: string | null;
+  // Colors
+  backgroundColor?: string | null;
+  bodyColor?: string | null;
+  secondBodyColor?: string | null;
+  headerColor?: string | null;
+  footerColor?: string | null;
+  footerTextColor?: string | null;
+  textColor?: string | null;
+  saleTextColor?: string | null;
+  notIncludedTextColor?: string | null;
+  previouslyShippedTextColor?: string | null;
+  backOrderedTextColor?: string | null;
+  buttonColor?: string | null;
+  buttonTextColor?: string | null;
+  // Typography
+  fontFamily?: string | null;
+  fontUrl?: string | null;
+  fontSizeSmall?: string | null;
+  fontSizeMedium?: string | null;
+  fontSizeLarge?: string | null;
+  lineHeight?: string | null;
+  borderRadius?: string | null;
+  // Images — string on read, File when staged for multipart upload via
+  // `mailSettings.logoUrl` / `mailSettings.headerImgUrl` parts.
+  logoUrl?: string | File | null;
+  headerImgUrl?: string | File | null;
+  // Product display
+  prodImgSize?: string | null;
+  showBrand?: boolean | null;
+  productParameters?: string | null;
+  hideArticleNumber?: boolean | null;
+}
+
+/**
+ * Mail text override editing — dedicated endpoints outside the channel PATCH surface.
+ * `GET/PATCH /account/channel/{id}/mail/{mailType}` and `POST .../preview`.
+ */
+export interface MailTextEntry {
+  key: string;
+  defaultValue: string;
+  overrideValue: string | null;
+  isOverridden: boolean;
+}
+
+export interface MailTextsResponse {
+  mailType: MailTypeId;
+  language: string;
+  texts: MailTextEntry[];
+}
+
+/**
+ * PATCH body. `texts` is a flat map of `{ [key]: overrideValue }`.
+ * Empty string values revert to default. Omitted keys are untouched.
+ */
+export interface MailTextsUpdateRequest {
+  language: string;
+  texts: Record<string, string>;
+}
+
+export interface MailPreviewRequest {
+  language: string;
 }
 
 // =============================================================================
@@ -225,6 +317,8 @@ export type ChannelFieldsFilter =
   | 'markets'
   | 'paymentMethods'
   | 'storefrontSettings'
-  | 'storefrontSchema';
+  | 'storefrontSchema'
+  | 'mailSettings'
+  | 'mailTypes';
 
 export type ChannelApiOptions = ApiOptions<ChannelFieldsFilter>;

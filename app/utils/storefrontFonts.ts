@@ -57,6 +57,17 @@ export const storefrontFontsCssUrl = (() => {
   return `https://fonts.googleapis.com/css2?${families}&text=${text}&display=swap`;
 })();
 
+/**
+ * Generate a full Google Fonts CSS URL for a given font family.
+ * Returns `null` if the font is not in the curated list.
+ */
+export function fontToGoogleUrl(fontFamily: string): string | null {
+  const match = storefrontFonts.find((f) => f.value === fontFamily);
+  if (!match) return null;
+  const family = match.value.replace(/ /g, '+');
+  return `https://fonts.googleapis.com/css2?family=${family}&display=swap`;
+}
+
 /** Get the CSS fallback stack for a font category */
 export function fontFallback(category: StorefrontFont['category']): string {
   switch (category) {
