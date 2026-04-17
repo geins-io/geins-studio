@@ -367,7 +367,8 @@ const bodyStyle = computed(() => ({
                   <span class="text-muted-foreground">Run a workflow to see live events</span>
                 </template>
               </div>
-              <button v-if="events.length"
+              <button
+v-if="events.length"
                 class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-6 items-center gap-1 rounded px-1.5"
                 title="Clear events" @click="clearEvents">
                 <Trash2 class="h-3 w-3" />
@@ -389,19 +390,22 @@ const bodyStyle = computed(() => ({
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`"
+                  <tr
+v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`"
                     class="hover:bg-muted/30 border-b last:border-b-0">
                     <td class="text-muted-foreground px-3 py-1 font-mono">{{ event.seq >= 0 ? event.seq : '–' }}</td>
                     <td class="px-3 py-1 font-mono">{{ event.nodeId }}</td>
                     <td class="px-3 py-1">
-                      <span class="inline-flex items-center gap-1"
+                      <span
+class="inline-flex items-center gap-1"
                         :class="{
                           'text-green-600 dark:text-green-500': statusKind(event.status) === 'success',
                           'text-red-600 dark:text-red-500': statusKind(event.status) === 'error',
                           'text-blue-600 dark:text-blue-400': statusKind(event.status) === 'running',
                           'text-muted-foreground': statusKind(event.status) === 'other',
                         }">
-                        <span class="h-1.5 w-1.5 rounded-full"
+                        <span
+class="h-1.5 w-1.5 rounded-full"
                           :class="{
                             'bg-green-500': statusKind(event.status) === 'success',
                             'bg-red-500': statusKind(event.status) === 'error',
@@ -448,7 +452,8 @@ const bodyStyle = computed(() => ({
                 <span class="text-muted-foreground">Run a workflow to see live events</span>
               </template>
             </div>
-            <button v-if="events.length"
+            <button
+v-if="events.length"
               class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-6 items-center gap-1 rounded px-1.5"
               title="Clear events" @click="clearEvents">
               <Trash2 class="h-3 w-3" />
@@ -472,19 +477,22 @@ const bodyStyle = computed(() => ({
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`"
+                <tr
+v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`"
                   class="hover:bg-muted/30 border-b last:border-b-0">
                   <td class="text-muted-foreground px-3 py-1 font-mono">{{ event.seq >= 0 ? event.seq : '–' }}</td>
                   <td class="px-3 py-1 font-mono">{{ event.nodeId }}</td>
                   <td class="px-3 py-1">
-                    <span class="inline-flex items-center gap-1"
+                    <span
+class="inline-flex items-center gap-1"
                       :class="{
                         'text-green-600 dark:text-green-500': statusKind(event.status) === 'success',
                         'text-red-600 dark:text-red-500': statusKind(event.status) === 'error',
                         'text-blue-600 dark:text-blue-400': statusKind(event.status) === 'running',
                         'text-muted-foreground': statusKind(event.status) === 'other',
                       }">
-                      <span class="h-1.5 w-1.5 rounded-full"
+                      <span
+class="h-1.5 w-1.5 rounded-full"
                         :class="{
                           'bg-green-500': statusKind(event.status) === 'success',
                           'bg-red-500': statusKind(event.status) === 'error',

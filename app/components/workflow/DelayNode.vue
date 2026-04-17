@@ -28,14 +28,14 @@ const durationDisplay = computed(() => {
 
 <template>
   <div
-    class="px-4 py-3 rounded-lg border-2 bg-background shadow-md min-w-[180px] transition-all"
+    class="bg-background min-w-[180px] rounded-lg border-2 px-4 py-3 shadow-md transition-all"
     :class="selected ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-orange-500/50'"
   >
     <!-- Input handle -->
     <Handle
       type="target"
       :position="Position.Left"
-      class="!w-3 !h-3 !bg-orange-500 !border-2 !border-background"
+      class="!border-background !h-3 !w-3 !border-2 !bg-orange-500"
     />
 
     <div class="flex items-center gap-3">
@@ -43,13 +43,13 @@ const durationDisplay = computed(() => {
         <component :is="IconComponent" class="h-5 w-5" />
       </div>
       <div>
-        <div class="text-xs font-medium text-orange-500 uppercase tracking-wider">Delay</div>
+        <div class="text-xs font-medium tracking-wider text-orange-500 uppercase">Delay</div>
         <div class="font-semibold">{{ data.label }}</div>
       </div>
     </div>
 
     <!-- Delay config preview -->
-    <div v-if="durationDisplay" class="mt-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
+    <div v-if="durationDisplay" class="text-muted-foreground bg-muted/50 mt-2 rounded px-2 py-1 text-xs">
       Wait: {{ durationDisplay }}
     </div>
     
@@ -57,7 +57,7 @@ const durationDisplay = computed(() => {
     <Handle
       type="source"
       :position="Position.Right"
-      class="!w-3 !h-3 !bg-orange-500 !border-2 !border-background"
+      class="!border-background !h-3 !w-3 !border-2 !bg-orange-500"
     />
   </div>
 </template>

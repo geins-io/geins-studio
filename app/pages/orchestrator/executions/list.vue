@@ -330,7 +330,8 @@ const searchableFields: Array<keyof EntityList> = ['workflowName', 'group', 'sta
 </script>
 
 <template>
-  <ContentHeader :title="hasFilters ? `${$t('navigation.executions')} — ${filterLabel}` : $t('navigation.executions')"
+  <ContentHeader
+:title="hasFilters ? `${$t('navigation.executions')} — ${filterLabel}` : $t('navigation.executions')"
     :description="$t('executions.description')" />
 
   <!-- Active Filter Banner -->
@@ -338,11 +339,13 @@ const searchableFields: Array<keyof EntityList> = ['workflowName', 'group', 'sta
     <div class="flex flex-wrap items-center gap-2 text-sm">
       <LucideFilter class="text-muted-foreground h-4 w-4" />
       <span class="text-muted-foreground">Filtered by:</span>
-      <span v-for="f in activeFilters" :key="f.type"
+      <span
+v-for="f in activeFilters" :key="f.type"
         class="bg-background inline-flex items-center gap-1 rounded-full border py-0.5 pr-1 pl-2 text-xs">
         <span class="text-muted-foreground">{{ f.type }}:</span>
         <span class="font-medium">{{ f.label }}</span>
-        <button class="hover:bg-muted text-muted-foreground hover:text-foreground ml-0.5 rounded-full p-0.5"
+        <button
+class="hover:bg-muted text-muted-foreground hover:text-foreground ml-0.5 rounded-full p-0.5"
           :title="`Remove ${f.type} filter`" @click="removeFilter(f.type)">
           <LucideX class="h-3 w-3" />
         </button>
@@ -355,7 +358,8 @@ const searchableFields: Array<keyof EntityList> = ['workflowName', 'group', 'sta
   </div>
 
   <NuxtErrorBoundary>
-    <TableView :loading="loading" :entity-name="entityName" :columns="columns" :data="dataList"
+    <TableView
+:loading="loading" :entity-name="entityName" :columns="columns" :data="dataList"
       :init-visibility-state="visibilityState" :searchable-fields="searchableFields" :error="fetchError"
       :on-retry="refresh" />
   </NuxtErrorBoundary>
