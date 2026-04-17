@@ -23,7 +23,7 @@ const IconComponent = computed(() => iconMap[props.data.icon] || Zap)
 
 <template>
   <div
-    class="px-4 py-3 rounded-lg border-2 bg-background shadow-md min-w-[180px] transition-all"
+    class="bg-background min-w-[180px] rounded-lg border-2 px-4 py-3 shadow-md transition-all"
     :class="selected ? 'border-green-500 ring-2 ring-green-500/20' : 'border-green-500/50'"
   >
     <div class="flex items-center gap-3">
@@ -31,7 +31,7 @@ const IconComponent = computed(() => iconMap[props.data.icon] || Zap)
         <component :is="IconComponent" class="h-5 w-5" />
       </div>
       <div>
-        <div class="text-xs font-medium text-green-500 uppercase tracking-wider">Trigger</div>
+        <div class="text-xs font-medium tracking-wider text-green-500 uppercase">Trigger</div>
         <div class="font-semibold">{{ data.label }}</div>
       </div>
     </div>
@@ -40,7 +40,7 @@ const IconComponent = computed(() => iconMap[props.data.icon] || Zap)
     <Handle
       type="source"
       :position="Position.Right"
-      class="!w-3 !h-3 !bg-green-500 !border-2 !border-background"
+      class="!border-background !h-3 !w-3 !border-2 !bg-green-500"
     />
   </div>
 </template>

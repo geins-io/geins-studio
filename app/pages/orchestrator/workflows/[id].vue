@@ -1,21 +1,11 @@
 <script setup lang="ts">
-import { Background } from '@vue-flow/background'
-import { Controls, ControlButton } from '@vue-flow/controls'
-import { VueFlow, useVueFlow } from '@vue-flow/core'
-import { MiniMap } from '@vue-flow/minimap'
-import '@vue-flow/core/dist/style.css'
-import '@vue-flow/core/dist/theme-default.css'
-import '@vue-flow/controls/dist/style.css'
-import '@vue-flow/minimap/dist/style.css'
+import { toTypedSchema } from '@vee-validate/zod'
 import cronstrue from 'cronstrue'
+import { useForm } from 'vee-validate'
+import * as z from 'zod'
 import 'cronstrue/locales/sv'
+import { DataItemDisplayType } from '#shared/types'
 import { useToast } from '@/components/ui/toast/use-toast'
-import ActionNode from '~/components/workflow/ActionNode.vue'
-import ConditionNode from '~/components/workflow/ConditionNode.vue'
-import DelayNode from '~/components/workflow/DelayNode.vue'
-import LogsPanel from '~/components/workflow/LogsPanel.vue'
-import LoopNode from '~/components/workflow/LoopNode.vue'
-import TriggerNode from '~/components/workflow/TriggerNode.vue'
 
 definePageMeta({
   pageType: 'list',
@@ -24,281 +14,107 @@ definePageMeta({
 const route = useRoute()
 const breadcrumbsStore = useBreadcrumbsStore()
 const { geinsLogError } = useGeinsLog('workflow-editor')
+const { t, locale } = useI18n()
+const { toast } = useToast()
+const { orchestratorApi } = useGeinsRepository()
 
 const workflowId = computed(() => route.params.id as string)
 const isNew = computed(() => workflowId.value === 'new')
+const entityName = 'workflow'
 
-// Node types available in the palette
-const nodeTypes = {
-  trigger: TriggerNode,
-  action: ActionNode,
-  condition: ConditionNode,
-  loop: LoopNode,
-  delay: DelayNode,
-}
-
-// ─── Editor manifest — real node palette, action schemas, etc. ──────
+// ─── Editor manifest — trigger types + event entities for General tab ──
 const manifestStore = useWorkflowManifest()
-const { actions: manifestActions, nodeTypes: manifestNodeTypes, triggerTypes: manifestTriggerTypes, eventEntities: manifestEventEntities } = manifestStore
+const { triggerTypes: manifestTriggerTypes, eventEntities: manifestEventEntities } = manifestStore
 
-type PaletteItem = {
-  // VueFlow node type this item should create
-  nodeType: string
-  // Stable id for keying in the template
-  id: string
-  // Display label
-  label: string
-  // Secondary line shown under the label
-  description?: string
-  // For action items: the backend `actionName` that goes into the node's config
-  actionName?: string
+// ─── Form validation schema ────────────────────────────────────────
+const formSchema = toTypedSchema(
+  z.object({
+    details: z.object({
+      name: z.string().min(1, { message: t('form.field_required') }),
+      description: z.string().optional(),
+      group: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+    }),
+    trigger: z.object({
+      type: z.enum(['OnDemand', 'Scheduled', 'Event']),
+      cron: z.string().optional(),
+      eventEntity: z.string().optional(),
+      eventAction: z.string().optional(),
+      eventSubEntity: z.string().optional(),
+      description: z.string().optional(),
+    }),
+    settings: z.object({
+      timeout: z.string().optional(),
+      maxConcurrency: z.number().optional(),
+      executionLogRetentionDays: z.number().optional(),
+      logVerbosity: z.string().optional(),
+      timeoutBehavior: z.string().optional(),
+      errorHandlingStrategy: z.string().optional(),
+    }),
+  }),
+)
+
+type WorkflowFormValues = {
+  details: { name: string, description: string, group: string, tags: string[] }
+  trigger: { type: 'OnDemand' | 'Scheduled' | 'Event', cron: string, eventEntity: string, eventAction: string, eventSubEntity: string, description: string }
+  settings: Record<string, unknown>
 }
 
-type PaletteSection = {
-  category: string
-  items: PaletteItem[]
-}
-
-// Node types that are NOT actions — structural flow-control nodes. Triggers
-// are workflow-level metadata, not nodes, so they are excluded.
-const STRUCTURAL_NODE_TYPES = new Set(['condition', 'iterator', 'delay', 'workflow'])
-
-const paletteSections = computed<PaletteSection[]>(() => {
-  const sections: PaletteSection[] = []
-
-  // Actions, grouped by their manifest category (alphabetical category order).
-  const byCategory = new Map<string, PaletteItem[]>()
-  for (const a of manifestActions.value) {
-    const item: PaletteItem = {
-      nodeType: 'action',
-      id: a.name,
-      label: a.displayName || a.name,
-      description: a.description,
-      actionName: a.name,
-    }
-    const list = byCategory.get(a.category)
-    if (list) list.push(item)
-    else byCategory.set(a.category, [item])
-  }
-  const sortedCategories = [...byCategory.keys()].sort()
-  for (const category of sortedCategories) {
-    sections.push({ category, items: byCategory.get(category)! })
-  }
-
-  // Structural flow-control nodes (condition, iterator, delay, workflow).
-  const structural: PaletteItem[] = []
-  for (const nt of manifestNodeTypes.value) {
-    if (!STRUCTURAL_NODE_TYPES.has(nt.type)) continue
-    structural.push({
-      nodeType: nt.type,
-      id: nt.type,
-      label: nt.displayName || nt.type,
-      description: nt.description,
-    })
-  }
-  if (structural.length) sections.push({ category: 'Flow control', items: structural })
-
-  return sections
-})
-
-// Search filter for nodes
-const nodeSearchQuery = ref('')
-const filteredNodeTemplates = computed<PaletteSection[]>(() => {
-  const q = nodeSearchQuery.value.trim().toLowerCase()
-  if (!q) return paletteSections.value
-  return paletteSections.value
-    .map(section => ({
-      ...section,
-      items: section.items.filter(
-        item =>
-          item.label.toLowerCase().includes(q)
-          || (item.description ?? '').toLowerCase().includes(q)
-          || (item.actionName ?? '').toLowerCase().includes(q),
-      ),
-    }))
-    .filter(section => section.items.length > 0)
-})
-
-// Sheet open state
-const isNodePaletteOpen = ref(false)
-
-// Initial nodes and edges (empty for new, loaded for existing)
-const initialNodes = ref<any[]>([])
-const initialEdges = ref<any[]>([])
-
-// Load workflow data
-onMounted(() => {
-  if (isNew.value) {
-    // Start with just a manual trigger for new workflows
-    initialNodes.value = [
-    ]
-  } else {
-    // Demo data for existing workflow
-    initialNodes.value = [
-      {
-        id: '1',
-        type: 'trigger',
-        position: { x: 100, y: 200 },
-        data: {
-          label: 'Webhook',
-          icon: 'Webhook',
-          description: 'Trigger on HTTP request',
-          config: { method: 'POST', path: '/webhook' }
-        },
-      },
-      {
-        id: '2',
-        type: 'action',
-        position: { x: 400, y: 150 },
-        data: {
-          label: 'Transform Data',
-          icon: 'FileText',
-          description: 'Transform incoming data',
-          config: {}
-        },
-      },
-      {
-        id: '3',
-        type: 'condition',
-        position: { x: 700, y: 200 },
-        data: {
-          label: 'Check Status',
-          icon: 'GitBranch',
-          description: 'Branch on status',
-          config: { field: 'status', operator: 'equals', value: 'active' }
-        },
-      },
-      {
-        id: '4',
-        type: 'action',
-        position: { x: 1000, y: 100 },
-        data: {
-          label: 'Send Email',
-          icon: 'Mail',
-          description: 'Notify user',
-          config: { to: '', subject: '', body: '' }
-        },
-      },
-      {
-        id: '5',
-        type: 'action',
-        position: { x: 1000, y: 300 },
-        data: {
-          label: 'Log Error',
-          icon: 'Database',
-          description: 'Log to database',
-          config: {}
-        },
-      },
-    ]
-
-    initialEdges.value = [
-      { id: 'e1-2', source: '1', target: '2', animated: true },
-      { id: 'e2-3', source: '2', target: '3' },
-      { id: 'e3-4', source: '3', target: '4', sourceHandle: 'true', label: 'Yes' },
-      { id: 'e3-5', source: '3', target: '5', sourceHandle: 'false', label: 'No' },
-    ]
-  }
-})
-
-const {
-  onConnect,
-  addEdges,
-  addNodes,
-  removeNodes,
-  project,
-} = useVueFlow()
-
-// Handle new connections
-onConnect((params) => {
-  addEdges([{ ...params, animated: false }])
-})
-
-// Selected node for properties panel
-const selectedNode = ref<any>(null)
-
-const onNodeClick = (event: any) => {
-  selectedNode.value = event.node
-  activeTab.value = 'properties'
-  isSidebarOpen.value = true
-}
-
-const onPaneClick = () => {
-  selectedNode.value = null
-}
-
-// Drag and drop from palette
-const onDragStart = (event: DragEvent, item: PaletteItem) => {
-  if (event.dataTransfer) {
-    event.dataTransfer.setData('application/vueflow', JSON.stringify(item))
-    event.dataTransfer.effectAllowed = 'move'
-  }
-}
-
-const onDragOver = (event: DragEvent) => {
-  event.preventDefault()
-  if (event.dataTransfer) {
-    event.dataTransfer.dropEffect = 'move'
-  }
-}
-
-const buildNewNode = (item: PaletteItem, position: { x: number, y: number }) => ({
-  id: `${item.id}-${Date.now()}`,
-  type: item.nodeType,
-  position,
-  data: {
-    label: item.label,
-    description: item.description,
-    actionName: item.actionName,
-    subtype: item.nodeType === 'action' ? undefined : item.id,
-    config: {},
+// `keepValuesOnUnmount` prevents vee-validate from wiping field values when the
+// FormField components unmount on tab switch — without it `editableState`
+// would diff from the snapshot and the unsaved-changes dialog would fire
+// every time the user changes tab.
+const form = useForm<WorkflowFormValues>({
+  validationSchema: formSchema,
+  keepValuesOnUnmount: true,
+  initialValues: {
+    details: {
+      name: isNew.value ? 'New Workflow' : '',
+      description: '',
+      group: '',
+      tags: [],
+    },
+    trigger: {
+      type: 'OnDemand',
+      cron: '',
+      eventEntity: '',
+      eventAction: '',
+      eventSubEntity: '',
+      description: '',
+    },
+    settings: {},
   },
 })
 
-const onDrop = (event: DragEvent) => {
-  const data = event.dataTransfer?.getData('application/vueflow')
-  if (!data) return
-  const item = JSON.parse(data) as PaletteItem
-  const position = project({ x: event.clientX - 100, y: event.clientY - 100 })
-  addNodes([buildNewNode(item, position)])
-  isNodePaletteOpen.value = false
-}
+// Enables re-validation on every field change after a failed save attempt — so
+// error messages track fixes in real time instead of persisting until next save.
+const validateOnChange = ref(false)
+watch(
+  () => form.values,
+  async () => {
+    if (validateOnChange.value) await form.validate()
+  },
+  { deep: true },
+)
 
-// Quick add node (click instead of drag)
-const quickAddNode = (item: PaletteItem) => {
-  const position = project({ x: 400, y: 300 })
-  addNodes([buildNewNode(item, position)])
-  isNodePaletteOpen.value = false
-}
+// Top-level bindings to form values. Keep reactivity narrow so other computeds
+// and the template don't need to dig through form.values repeatedly.
+const triggerTypeValue = computed(() => form.values.trigger?.type ?? 'OnDemand')
+const triggerCronValue = computed(() => form.values.trigger?.cron ?? '')
+const triggerEventEntity = computed(() => form.values.trigger?.eventEntity ?? '')
+const triggerEventAction = computed(() => form.values.trigger?.eventAction ?? '')
+const workflowNameValue = computed(() => form.values.details?.name ?? '')
 
-// Delete selected node
-const deleteSelectedNode = () => {
-  if (selectedNode.value) {
-    removeNodes([selectedNode.value.id])
-    selectedNode.value = null
-  }
-}
-
-// Workflow metadata
-const workflowName = ref(isNew.value ? 'New Workflow' : '')
-const workflowDescription = ref('')
-const workflowTags = ref<string[]>([])
+// ─── Non-form reactive state ───────────────────────────────────────
 const workflowActive = ref(false)
+const inputValues = ref<Record<string, unknown>>({})
 
-// Sync breadcrumb title with workflow name
-watch([isNew, workflowName], ([newFlag, name]) => {
+// Sync breadcrumb title with workflow name.
+watch([isNew, workflowNameValue], ([newFlag, name]) => {
   breadcrumbsStore.setCurrentTitle(newFlag ? 'New workflow' : (name || 'Workflow'))
 }, { immediate: true })
-const isRunning = ref(false)
-// Right sidebar tabs (only for node editing now)
-const activeTab = ref<'properties' | 'add-node'>('properties')
 
-const openAddNodeTab = () => {
-  isSidebarOpen.value = true
-  activeTab.value = 'add-node'
-}
-
-// Main area tabs (top-level content switcher)
+// Main area tabs (top-level content switcher).
 const mainTabs = ['General', 'Builder', 'Inputs', 'Executions', 'History']
 const currentTab = ref(0)
 
@@ -315,23 +131,9 @@ watch(currentTab, (v) => {
   }
 })
 
-// Editable state for the Inputs tab — seeded from the workflow definition.
-// (Populated after `currentWorkflow` is declared via watchers below.)
-const inputValues = ref<Record<string, unknown>>({})
-// Editable state for the Settings tab.
-const settingsValues = ref<Record<string, unknown>>({})
-
-// ─── Trigger state ────────────────────────────────────────────────
-const triggerType = ref('OnDemand')
-const triggerCron = ref('')
-const triggerEventEntity = ref('')
-const triggerEventAction = ref('')
-const triggerEventSubEntity = ref('')
-const triggerDescription = ref('')
-
-const { t, locale } = useI18n()
+// ─── Trigger & cron helpers ────────────────────────────────────────
 const cronDescription = computed(() => {
-  const expr = triggerCron.value.trim()
+  const expr = triggerCronValue.value.trim()
   if (!expr) return ''
   try {
     return cronstrue.toString(expr, { locale: locale.value, use24HourTimeFormat: true })
@@ -340,8 +142,9 @@ const cronDescription = computed(() => {
     return ''
   }
 })
+
 const cronError = computed(() => {
-  const expr = triggerCron.value.trim()
+  const expr = triggerCronValue.value.trim()
   if (!expr) return ''
   try {
     cronstrue.toString(expr)
@@ -352,21 +155,15 @@ const cronError = computed(() => {
   }
 })
 
-// Available actions for the currently selected event entity.
 const availableEventActions = computed(() => {
   if (!triggerEventEntity.value) return []
-  const entity = manifestEventEntities.value.find(
-    e => e.name === triggerEventEntity.value,
-  )
+  const entity = manifestEventEntities.value.find(e => e.name === triggerEventEntity.value)
   return entity?.actions ?? []
 })
 
-// Available sub-entities for the currently selected event entity.
 const availableSubEntities = computed(() => {
   if (!triggerEventEntity.value) return []
-  const entity = manifestEventEntities.value.find(
-    e => e.name === triggerEventEntity.value,
-  )
+  const entity = manifestEventEntities.value.find(e => e.name === triggerEventEntity.value)
   return entity?.subEntities ?? []
 })
 
@@ -378,14 +175,10 @@ const prettyLabel = (name: string): string =>
     .map(w => (w[0]?.toUpperCase() ?? '') + w.slice(1))
     .join(' ')
 
-const isSidebarOpen = ref(false)
-const showMinimap = ref(false)
 const executionsLoaded = ref(false)
 const historyLoaded = ref(false)
 
-// Execution history (real data from API)
-const { orchestratorApi } = useGeinsRepository()
-
+// ─── Executions + history lazy fetches ─────────────────────────────
 const pad = (n: number, len = 2) => String(n).padStart(len, '0')
 
 const formatStartedAt = (iso: string | undefined): string => {
@@ -432,7 +225,6 @@ const executions = computed(() =>
   })),
 )
 
-// Workflow version history
 const { data: historyRaw, pending: historyLoading, execute: loadHistory, refresh: refreshHistory } = useLazyAsyncData(
   () => `workflow-history-${workflowId.value}`,
   () => isNew.value
@@ -460,42 +252,6 @@ const historyVersions = computed(() => {
     .sort((a, b) => (b.version ?? 0) - (a.version ?? 0))
 })
 
-const lastExecutionId = ref<string | null>(null)
-const logsPanelRef = ref<{ open: () => void, close: () => void, toggle: () => void } | null>(null)
-
-const runWorkflow = async () => {
-  if (isNew.value) {
-    toast({
-      title: 'Save the workflow first',
-      description: 'New workflows must be saved before they can be executed.',
-    })
-    return
-  }
-  isRunning.value = true
-  try {
-    const res = await orchestratorApi.execution.start(workflowId.value)
-    const execId = res?.executionId ?? res?.newExecutionId ?? null
-    lastExecutionId.value = execId
-    logsPanelRef.value?.open()
-    toast({
-      title: 'Execution started',
-      description: execId ? `ID: ${execId}` : res?.message ?? 'Workflow is running.',
-    })
-    await refreshExecutions()
-  }
-  catch (err) {
-    geinsLogError('Failed to start execution', err)
-    toast({
-      title: 'Failed to start execution',
-      description: err instanceof Error ? err.message : 'Unknown error',
-      variant: 'negative',
-    })
-  }
-  finally {
-    isRunning.value = false
-  }
-}
-
 // Pre-compute i18n labels before `await` — after an await, Vue loses the
 // active component instance so `t()` silently fails in post-await computeds.
 const idLabel = t('entity_id', { entityName: 'workflow' })
@@ -506,17 +262,8 @@ const idLabel = t('entity_id', { entityName: 'workflow' })
 // (onBeforeRouteLeave) would silently fail.
 const editableState = computed(() => ({
   active: workflowActive.value,
-  name: workflowName.value,
-  description: workflowDescription.value,
-  tags: workflowTags.value,
-  triggerType: triggerType.value,
-  triggerCron: triggerCron.value,
-  triggerEventEntity: triggerEventEntity.value,
-  triggerEventAction: triggerEventAction.value,
-  triggerEventSubEntity: triggerEventSubEntity.value,
-  triggerDescription: triggerDescription.value,
+  ...form.values,
   inputs: inputValues.value,
-  settings: settingsValues.value,
 }) as Record<string, unknown>)
 
 const originalEditableState = ref('')
@@ -528,9 +275,6 @@ const { hasUnsavedChanges, unsavedChangesDialogOpen, confirmLeave } = useUnsaved
 )
 
 // ─── Current workflow (for enable/disable + duplicate) ────────────
-const { toast } = useToast()
-const entityName = 'workflow'
-
 const { data: currentWorkflow, refresh: refreshCurrentWorkflow } = await useAsyncData(
   () => `workflow-${workflowId.value}`,
   () => (isNew.value ? Promise.resolve(null) : orchestratorApi.workflow.get(workflowId.value)),
@@ -540,27 +284,33 @@ const { data: currentWorkflow, refresh: refreshCurrentWorkflow } = await useAsyn
 const isEnabled = computed(() => currentWorkflow.value?.enabled ?? false)
 const menuBusy = ref(false)
 
-// Sync workflow data into editable fields when it loads (or refreshes).
+// Sync workflow data into form values + non-form refs when it loads (or refreshes).
 watch(
   currentWorkflow,
   (wf) => {
     if (!wf || isNew.value) return
     workflowActive.value = wf.enabled ?? false
-    workflowName.value = wf.name ?? ''
-    workflowDescription.value = wf.description ?? ''
-    workflowTags.value = Array.isArray((wf as any)?.tags) ? [...(wf as any).tags] : []
-    const raw = Array.isArray((wf as any)?.input) ? (wf as any).input : []
-    const values: Record<string, unknown> = {}
-    for (const i of raw) values[i.name] = i.defaultValue
-    inputValues.value = values
-    settingsValues.value = { ...((wf as any)?.settings ?? {}) }
-    // Sync trigger fields
-    triggerType.value = wf.type ?? 'OnDemand'
-    triggerCron.value = wf.cronExpression ?? ''
-    triggerEventEntity.value = (wf as any).eventEntity ?? ''
-    triggerEventAction.value = (wf as any).eventAction ?? ''
-    triggerEventSubEntity.value = (wf as any).eventSubEntity ?? ''
-    triggerDescription.value = (wf as any).triggerDescription ?? ''
+    const rawInputs = Array.isArray((wf as any)?.input) ? (wf as any).input : []
+    const inputs: Record<string, unknown> = {}
+    for (const i of rawInputs) inputs[i.name] = i.defaultValue
+    inputValues.value = inputs
+    form.setValues({
+      details: {
+        name: wf.name ?? '',
+        description: wf.description ?? '',
+        group: (wf as any).group ?? '',
+        tags: Array.isArray((wf as any)?.tags) ? [...(wf as any).tags] : [],
+      },
+      trigger: {
+        type: (wf.type ?? 'OnDemand') as WorkflowFormValues['trigger']['type'],
+        cron: wf.cronExpression ?? '',
+        eventEntity: (wf as any).eventEntity ?? '',
+        eventAction: (wf as any).eventAction ?? '',
+        eventSubEntity: (wf as any).eventSubEntity ?? '',
+        description: (wf as any).triggerDescription ?? '',
+      },
+      settings: { ...((wf as any)?.settings ?? {}) },
+    })
   },
   { immediate: true },
 )
@@ -636,16 +386,62 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
   useDeleteDialog(deleteWorkflowEntity, '/orchestrator/workflows/list')
 
 const isSavingConfig = ref(false)
-const saveWorkflowConfig = async () => {
+
+// ─── Create ────────────────────────────────────────────────────────
+const handleCreate = async () => {
+  const { valid } = await form.validate()
+  if (!valid) {
+    validateOnChange.value = true
+    return
+  }
+  validateOnChange.value = false
+  isSavingConfig.value = true
+  try {
+    const values = form.values
+    const created = await orchestratorApi.workflow.create({
+      name: values.details.name,
+      description: values.details.description || undefined,
+      tags: values.details.tags,
+      type: values.trigger.type as any,
+      enabled: false,
+      cronExpression: values.trigger.type === 'Scheduled' ? values.trigger.cron : undefined,
+      eventName: values.trigger.type === 'Event' ? values.trigger.eventEntity : undefined,
+    })
+    // Snapshot so the route guard doesn't block navigation to the new page.
+    originalEditableState.value = JSON.stringify(editableState.value)
+    toast({ title: 'Workflow created', description: `Created "${created.name}".` })
+    await navigateTo(`/orchestrator/workflows/${created.id}`)
+  }
+  catch (err) {
+    geinsLogError('Failed to create workflow', err)
+    toast({
+      title: 'Failed to create',
+      description: err instanceof Error ? err.message : 'Unknown error',
+      variant: 'negative',
+    })
+  }
+  finally {
+    isSavingConfig.value = false
+  }
+}
+
+// ─── Save ──────────────────────────────────────────────────────────
+const handleSave = async () => {
   if (isNew.value || !currentWorkflow.value) return
+  const { valid } = await form.validate()
+  if (!valid) {
+    validateOnChange.value = true
+    return
+  }
+  validateOnChange.value = false
   isSavingConfig.value = true
   try {
     const wf = currentWorkflow.value as any
+    const values = form.values
     const mergedInputs = workflowInputs.value.map((i: any) => ({
       ...i,
       defaultValue: inputValues.value[i.name],
     }))
-    // Handle enable/disable via dedicated endpoints if changed
     if (workflowActive.value !== isEnabled.value) {
       if (workflowActive.value) {
         await orchestratorApi.workflow.enable(workflowId.value)
@@ -655,18 +451,18 @@ const saveWorkflowConfig = async () => {
       }
     }
     await orchestratorApi.workflow.update(workflowId.value, {
-      name: wf.name,
-      description: wf.description,
-      tags: wf.tags,
-      type: triggerType.value as typeof wf.type,
+      name: values.details.name,
+      description: values.details.description || undefined,
+      tags: values.details.tags,
+      type: values.trigger.type as any,
       enabled: workflowActive.value,
-      cronExpression: triggerType.value === 'Scheduled' ? triggerCron.value : undefined,
-      eventName: triggerType.value === 'Event' ? triggerEventEntity.value : undefined,
+      cronExpression: values.trigger.type === 'Scheduled' ? values.trigger.cron : undefined,
+      eventName: values.trigger.type === 'Event' ? values.trigger.eventEntity : undefined,
       nodes: wf.nodes,
       connections: wf.connections,
       ui: wf.ui,
       input: mergedInputs,
-      settings: settingsValues.value,
+      settings: values.settings,
     })
     await refreshCurrentWorkflow()
     toast({ title: 'Configuration saved' })
@@ -688,8 +484,8 @@ const saveWorkflowConfig = async () => {
 const showSidebar = ref(true)
 
 const triggerDisplayName = computed(() => {
-  const tt = manifestTriggerTypes.value.find(t => t.type === triggerType.value)
-  return tt?.displayName ?? triggerType.value
+  const tt = manifestTriggerTypes.value.find(t => (t.type as string) === triggerTypeValue.value)
+  return tt?.displayName ?? triggerTypeValue.value
 })
 
 const summary = computed<DataItem[]>(() => {
@@ -697,17 +493,18 @@ const summary = computed<DataItem[]>(() => {
   if (!isNew.value) {
     const id = workflowId.value
     const short = id.length > 13 ? `${id.slice(0, 8)}…${id.slice(-4)}` : id
-    items.push({ label: idLabel, value: id, displayValue: short, displayType: 'copy' as const })
+    items.push({ label: idLabel, value: id, displayValue: short, displayType: DataItemDisplayType.Copy })
   }
-  if (workflowName.value) {
-    items.push({ label: 'Name', value: workflowName.value })
+  if (workflowNameValue.value) {
+    items.push({ label: 'Name', value: workflowNameValue.value })
   }
-  const group = (currentWorkflow.value as any)?.group
+  const group = form.values.details?.group
   if (group) {
     items.push({ label: 'Group', value: group })
   }
-  if (workflowTags.value.length) {
-    items.push({ label: 'Tags', value: workflowTags.value })
+  const tags = form.values.details?.tags ?? []
+  if (tags.length) {
+    items.push({ label: 'Tags', value: tags })
   }
   return items
 })
@@ -715,10 +512,10 @@ const summary = computed<DataItem[]>(() => {
 const triggerSummary = computed<DataItem[]>(() => {
   const items: DataItem[] = []
   items.push({ label: 'Type', value: triggerDisplayName.value })
-  if (triggerType.value === 'Scheduled' && triggerCron.value && cronDescription.value) {
+  if (triggerTypeValue.value === 'Scheduled' && triggerCronValue.value && cronDescription.value) {
     items.push({ label: 'Schedule', value: cronDescription.value })
   }
-  if (triggerType.value === 'Event' && triggerEventEntity.value) {
+  if (triggerTypeValue.value === 'Event' && triggerEventEntity.value) {
     const entityLabel = manifestEventEntities.value.find(e => e.name === triggerEventEntity.value)?.displayName ?? triggerEventEntity.value
     const actionLabel = triggerEventAction.value
       ? (availableEventActions.value.find(a => a.name === triggerEventAction.value)?.displayName ?? triggerEventAction.value)
@@ -728,117 +525,147 @@ const triggerSummary = computed<DataItem[]>(() => {
   return items
 })
 
+const settingsValuesView = computed(() => form.values.settings ?? {})
+
 const settingsSummary = computed<DataItem[]>(() => {
   const items: DataItem[] = []
-  if (settingsValues.value.timeout) {
-    items.push({ label: 'Timeout', value: String(settingsValues.value.timeout) })
-  }
-  if (settingsValues.value.logVerbosity) {
-    items.push({ label: 'Log verbosity', value: String(settingsValues.value.logVerbosity) })
-  }
-  if (settingsValues.value.errorHandlingStrategy) {
-    items.push({ label: 'Error handling', value: String(settingsValues.value.errorHandlingStrategy) })
-  }
+  const s = settingsValuesView.value
+  if (s.timeout) items.push({ label: 'Timeout', value: String(s.timeout) })
+  if (s.logVerbosity) items.push({ label: 'Log verbosity', value: String(s.logVerbosity) })
+  if (s.errorHandlingStrategy) items.push({ label: 'Error handling', value: String(s.errorHandlingStrategy) })
   return items
 })
 
-
+const { summaryProps } = useEntityEditSummary({
+  createMode: isNew,
+  formTouched: hasUnsavedChanges,
+  summary,
+  settingsSummary,
+  entityName,
+  entityLiveStatus: isEnabled,
+  status: computed(() => (isEnabled.value ? 'active' : 'inactive')),
+})
 </script>
 
 <template>
-  <DialogUnsavedChanges v-model:open="unsavedChangesDialogOpen" :entity-name="entityName" :loading="isSavingConfig"
+  <DialogUnsavedChanges
+v-model:open="unsavedChangesDialogOpen" :entity-name="entityName" :loading="isSavingConfig"
     @confirm="confirmLeave" />
+  <DialogDelete v-model:open="deleteDialogOpen" :entity-name="entityName" :loading="deleting" @confirm="confirmDelete" />
+
   <div class="-mx-3 -mb-12 flex h-[calc(100vh-3.5rem-1rem)] shrink-0 flex-col @2xl:-mx-8 @2xl:-mb-14">
-    <!-- ContentHeader: title + actions + tabs (standard entity-page layout) -->
-    <div>
-      <ContentHeader class="px-3 @2xl:px-8" :title="isNew ? 'New workflow' : (workflowName || 'Workflow')"
-        :entity-name="entityName">
-        <ContentActionBar>
-          <ButtonIcon icon="save" :loading="isSavingConfig" :disabled="isSavingConfig || !hasUnsavedChanges"
-            @click="saveWorkflowConfig">{{ $t('save_entity', {
-              entityName
-            }) }}</ButtonIcon>
-          <DropdownMenu v-if="!isNew">
-            <DropdownMenuTrigger as-child>
-              <Button size="icon" variant="secondary">
-                <LucideMoreHorizontal class="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem as-child>
-                <NuxtLink to="/orchestrator/workflows/new">
-                  <LucidePlus class="mr-2 size-4" />
-                  <span>{{ $t('new_entity', { entityName }) }}</span>
-                </NuxtLink>
-              </DropdownMenuItem>
-              <DropdownMenuItem :disabled="menuBusy || !currentWorkflow" @click="handleDuplicate">
-                <LucideCopy class="mr-2 size-4" />
-                <span>Duplicate</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem :disabled="!currentWorkflow" @click="workflowActive = !workflowActive">
-                <LucidePause v-if="workflowActive" class="mr-2 size-4" />
-                <LucidePlay v-else class="mr-2 size-4" />
-                <span>{{ workflowActive ? 'Pause' : 'Start' }}</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem @click="openDeleteDialog">
-                <LucideTrash class="mr-2 size-4" />
-                <span>{{ $t('delete_entity', { entityName }) }}</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </ContentActionBar>
-        <template #tabs>
-          <ContentEditTabs v-model:current-tab="currentTab" :tabs="mainTabs" />
-        </template>
-        <template v-if="!isNew" #changes>
-          <ContentEditHasChanges :changes="hasUnsavedChanges" />
-        </template>
-      </ContentHeader>
-    </div>
+    <ContentHeader
+class="px-3 @2xl:px-8" :title="isNew ? 'New workflow' : (workflowNameValue || 'Workflow')"
+      :entity-name="entityName">
+      <ContentActionBar>
+        <ButtonIcon
+v-if="!isNew" icon="save" :loading="isSavingConfig"
+          :disabled="isSavingConfig || !hasUnsavedChanges" @click="handleSave">
+          {{ $t('save_entity', { entityName }) }}
+        </ButtonIcon>
+        <DropdownMenu v-if="!isNew">
+          <DropdownMenuTrigger as-child>
+            <Button size="icon" variant="secondary">
+              <LucideMoreHorizontal class="size-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem as-child>
+              <NuxtLink to="/orchestrator/workflows/new">
+                <LucidePlus class="mr-2 size-4" />
+                <span>{{ $t('new_entity', { entityName }) }}</span>
+              </NuxtLink>
+            </DropdownMenuItem>
+            <DropdownMenuItem :disabled="menuBusy || !currentWorkflow" @click="handleDuplicate">
+              <LucideCopy class="mr-2 size-4" />
+              <span>Duplicate</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem :disabled="!currentWorkflow" @click="workflowActive = !workflowActive">
+              <LucidePause v-if="workflowActive" class="mr-2 size-4" />
+              <LucidePlay v-else class="mr-2 size-4" />
+              <span>{{ workflowActive ? 'Pause' : 'Start' }}</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem @click="openDeleteDialog">
+              <LucideTrash class="mr-2 size-4" />
+              <span>{{ $t('delete_entity', { entityName }) }}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </ContentActionBar>
+      <template v-if="!isNew" #tabs>
+        <ContentEditTabs v-model:current-tab="currentTab" :tabs="mainTabs" />
+      </template>
+      <template v-if="!isNew" #changes>
+        <ContentEditHasChanges :changes="hasUnsavedChanges" />
+      </template>
+    </ContentHeader>
 
-    <!-- Body row: main column + right sidebar -->
-    <div class="flex min-h-0 flex-1" :class="{ '-mt-4': currentTab === 1 }">
-      <!-- Main column -->
-      <div class="flex min-w-0 flex-1 flex-col">
-
-        <!-- General tab -->
-        <div v-if="currentTab === 0" class="min-h-0 flex-1 overflow-y-auto">
+    <form class="flex min-h-0 flex-1 flex-col" :class="{ '-mt-4': currentTab === 1 }" @submit.prevent>
+      <!-- General tab -->
+      <KeepAlive>
+        <div v-if="currentTab === 0" :key="`tab-${currentTab}`" class="min-h-0 flex-1 overflow-y-auto">
           <div class="px-3 py-6 @2xl:px-8">
             <ContentEditMain :show-sidebar="showSidebar">
               <ContentEditMainContent>
-                <ContentEditCard title="General"
+                <ContentEditCard
+title="General"
                   description="Name, description, group, and tags used to organize this workflow.">
                   <FormGridWrap>
                     <FormGrid design="1+1">
-                      <FormItem>
-                        <Label>Name</Label>
-                        <Input v-model="workflowName" placeholder="Workflow name" />
-                      </FormItem>
-                      <FormItem>
-                        <Label>Group</Label>
-                        <Input :model-value="(currentWorkflow as any)?.group ?? ''" placeholder="e.g. Monitor ERP Sync"
-                          @update:model-value="(v) => { if (currentWorkflow) (currentWorkflow as any).group = v }" />
-                      </FormItem>
+                      <FormField v-slot="{ componentField }" name="details.name">
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input v-bind="componentField" placeholder="Workflow name" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
+                      <FormField v-slot="{ componentField }" name="details.group">
+                        <FormItem>
+                          <FormLabel :optional="true">Group</FormLabel>
+                          <FormControl>
+                            <Input v-bind="componentField" placeholder="e.g. Monitor ERP Sync" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
                     </FormGrid>
                     <FormGrid design="1">
-                      <FormItem>
-                        <Label>Description</Label>
-                        <Textarea v-model="workflowDescription" rows="3"
-                          placeholder="Describe what this workflow does…" />
-                      </FormItem>
+                      <FormField v-slot="{ componentField }" name="details.description">
+                        <FormItem>
+                          <FormLabel :optional="true">Description</FormLabel>
+                          <FormControl>
+                            <Textarea
+v-bind="componentField" rows="3"
+                              placeholder="Describe what this workflow does…" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
                     </FormGrid>
                     <FormGrid design="1">
-                      <FormItem>
-                        <Label>Tags</Label>
-                        <TagsInput v-model="workflowTags" class="min-h-10 flex-wrap">
-                          <TagsInputItem v-for="tag in workflowTags" :key="tag" :value="tag">
-                            <TagsInputItemText />
-                            <TagsInputItemDelete />
-                          </TagsInputItem>
-                          <TagsInputInput placeholder="Add tag…" />
-                        </TagsInput>
-                      </FormItem>
+                      <FormField v-slot="{ componentField }" name="details.tags">
+                        <FormItem>
+                          <FormLabel :optional="true">Tags</FormLabel>
+                          <FormControl>
+                            <TagsInput
+:model-value="(componentField.modelValue as string[]) || []"
+                              class="min-h-10 flex-wrap"
+                              @update:model-value="componentField['onUpdate:modelValue']">
+                              <TagsInputItem
+v-for="tag in ((componentField.modelValue as string[]) || [])" :key="tag"
+                                :value="tag">
+                                <TagsInputItemText />
+                                <TagsInputItemDelete />
+                              </TagsInputItem>
+                              <TagsInputInput placeholder="Add tag…" />
+                            </TagsInput>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
                     </FormGrid>
                   </FormGridWrap>
                 </ContentEditCard>
@@ -846,245 +673,276 @@ const settingsSummary = computed<DataItem[]>(() => {
                 <ContentEditCard title="Trigger" description="How and when this workflow starts.">
                   <FormGridWrap>
                     <FormGrid design="1">
-                      <FormItem>
-                        <Label>Type</Label>
-                        <Select v-model="triggerType">
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select trigger type…" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem v-for="tt in manifestTriggerTypes" :key="tt.type" :value="tt.type">
-                              {{ tt.displayName }}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
+                      <FormField v-slot="{ componentField }" name="trigger.type">
+                        <FormItem>
+                          <FormLabel>Type</FormLabel>
+                          <FormControl>
+                            <Select v-bind="componentField">
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select trigger type…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem v-for="tt in manifestTriggerTypes" :key="tt.type" :value="tt.type">
+                                  {{ tt.displayName }}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
                     </FormGrid>
 
-                    <!-- On Demand info -->
-                    <div v-if="triggerType === 'OnDemand'" class="text-muted-foreground text-sm">
+                    <div v-if="triggerTypeValue === 'OnDemand'" class="text-muted-foreground text-sm">
                       Triggered manually via API call. No additional configuration needed.
                     </div>
 
-                    <!-- Scheduled config -->
-                    <template v-if="triggerType === 'Scheduled'">
+                    <template v-if="triggerTypeValue === 'Scheduled'">
                       <FormGrid design="1">
-                        <FormItem>
-                          <Label>Cron expression</Label>
-                          <Input v-model="triggerCron" placeholder="0 * * * * *"
-                            :class="{ 'border-destructive': cronError }" />
-                          <p v-if="cronError" class="text-destructive text-xs">{{ cronError }}</p>
-                          <p v-else-if="cronDescription" class="text-muted-foreground text-xs">{{ cronDescription }}</p>
-                        </FormItem>
+                        <FormField v-slot="{ componentField }" name="trigger.cron">
+                          <FormItem>
+                            <FormLabel>Cron expression</FormLabel>
+                            <FormControl>
+                              <Input
+v-bind="componentField" placeholder="0 * * * * *"
+                                :class="{ 'border-destructive': cronError }" />
+                            </FormControl>
+                            <p v-if="cronError" class="text-destructive text-xs">{{ cronError }}</p>
+                            <p v-else-if="cronDescription" class="text-muted-foreground text-xs">{{ cronDescription }}
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        </FormField>
                       </FormGrid>
                     </template>
 
-                    <!-- Event config -->
-                    <template v-if="triggerType === 'Event'">
+                    <template v-if="triggerTypeValue === 'Event'">
                       <FormGrid design="1+1">
-                        <FormItem>
-                          <Label>Entity</Label>
-                          <Select v-model="triggerEventEntity">
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select entity…" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="*">* (any)</SelectItem>
-                              <SelectItem v-for="entity in manifestEventEntities" :key="entity.name"
-                                :value="entity.name">
-                                {{ entity.displayName }}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                        <FormItem>
-                          <Label>Action</Label>
-                          <Select v-model="triggerEventAction">
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select action…" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="*">* (any)</SelectItem>
-                              <SelectItem v-for="a in availableEventActions" :key="a.name" :value="a.name">
-                                {{ a.displayName }}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
+                        <FormField v-slot="{ componentField }" name="trigger.eventEntity">
+                          <FormItem>
+                            <FormLabel>Entity</FormLabel>
+                            <FormControl>
+                              <Select v-bind="componentField">
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select entity…" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="*">* (any)</SelectItem>
+                                  <SelectItem
+v-for="entity in manifestEventEntities" :key="entity.name"
+                                    :value="entity.name">
+                                    {{ entity.displayName }}
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        </FormField>
+                        <FormField v-slot="{ componentField }" name="trigger.eventAction">
+                          <FormItem>
+                            <FormLabel>Action</FormLabel>
+                            <FormControl>
+                              <Select v-bind="componentField">
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select action…" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="*">* (any)</SelectItem>
+                                  <SelectItem v-for="a in availableEventActions" :key="a.name" :value="a.name">
+                                    {{ a.displayName }}
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        </FormField>
                       </FormGrid>
                       <FormGrid v-if="availableSubEntities.length > 0" design="1+1">
-                        <FormItem>
-                          <Label>Sub-entity</Label>
-                          <Select v-model="triggerEventSubEntity">
-                            <SelectTrigger>
-                              <SelectValue placeholder="None" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">None</SelectItem>
-                              <SelectItem value="*">* (any)</SelectItem>
-                              <SelectItem value="!">! (absent only)</SelectItem>
-                              <SelectItem v-for="sub in availableSubEntities" :key="sub" :value="sub">
-                                {{ sub }}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
+                        <FormField v-slot="{ componentField }" name="trigger.eventSubEntity">
+                          <FormItem>
+                            <FormLabel :optional="true">Sub-entity</FormLabel>
+                            <FormControl>
+                              <Select v-bind="componentField">
+                                <SelectTrigger>
+                                  <SelectValue placeholder="None" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">None</SelectItem>
+                                  <SelectItem value="*">* (any)</SelectItem>
+                                  <SelectItem value="!">! (absent only)</SelectItem>
+                                  <SelectItem v-for="sub in availableSubEntities" :key="sub" :value="sub">
+                                    {{ sub }}
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        </FormField>
                       </FormGrid>
                       <FormGrid design="1">
-                        <FormItem>
-                          <Label>Description</Label>
-                          <Input v-model="triggerDescription" placeholder="e.g. When an order is updated" />
-                        </FormItem>
+                        <FormField v-slot="{ componentField }" name="trigger.description">
+                          <FormItem>
+                            <FormLabel :optional="true">Description</FormLabel>
+                            <FormControl>
+                              <Input v-bind="componentField" placeholder="e.g. When an order is updated" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        </FormField>
                       </FormGrid>
                     </template>
                   </FormGridWrap>
                 </ContentEditCard>
 
-                <ContentEditCard title="Runtime Settings"
+                <ContentEditCard
+v-if="!isNew" title="Runtime Settings"
                   description="Timeout, concurrency, logging, and error handling.">
                   <FormGridWrap>
                     <FormGrid>
-                      <FormItem>
-                        <Label>Timeout</Label>
-                        <Input :model-value="(settingsValues.timeout as any) ?? ''" placeholder="00:10:00"
-                          @update:model-value="(v) => (settingsValues.timeout = v)" />
-                      </FormItem>
-                      <FormItem>
-                        <Label>Max concurrency</Label>
-                        <Input v-model.number="settingsValues.maxConcurrency as any" type="number" min="1" />
-                      </FormItem>
-                      <FormItem>
-                        <Label>Log retention (days)</Label>
-                        <Input v-model.number="settingsValues.executionLogRetentionDays as any" type="number" min="0"
-                          placeholder="Keep indefinitely" />
-                      </FormItem>
+                      <FormField v-slot="{ componentField }" name="settings.timeout">
+                        <FormItem>
+                          <FormLabel :optional="true">Timeout</FormLabel>
+                          <FormControl>
+                            <Input v-bind="componentField" placeholder="00:10:00" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
+                      <FormField v-slot="{ componentField }" name="settings.maxConcurrency">
+                        <FormItem>
+                          <FormLabel :optional="true">Max concurrency</FormLabel>
+                          <FormControl>
+                            <Input v-bind="componentField" type="number" min="1" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
+                      <FormField v-slot="{ componentField }" name="settings.executionLogRetentionDays">
+                        <FormItem>
+                          <FormLabel :optional="true">Log retention (days)</FormLabel>
+                          <FormControl>
+                            <Input v-bind="componentField" type="number" min="0" placeholder="Keep indefinitely" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
                     </FormGrid>
                     <FormGrid design="1+1+1">
-                      <FormItem>
-                        <Label>Log verbosity</Label>
-                        <Select v-model="settingsValues.logVerbosity as any">
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select…" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="minimal">Minimal</SelectItem>
-                            <SelectItem value="normal">Normal</SelectItem>
-                            <SelectItem value="detailed">Detailed</SelectItem>
-                            <SelectItem value="debug">Debug</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <FormField v-slot="{ componentField }" name="settings.logVerbosity">
+                        <FormItem>
+                          <FormLabel :optional="true">Log verbosity</FormLabel>
+                          <FormControl>
+                            <Select v-bind="componentField">
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="minimal">Minimal</SelectItem>
+                                <SelectItem value="normal">Normal</SelectItem>
+                                <SelectItem value="detailed">Detailed</SelectItem>
+                                <SelectItem value="debug">Debug</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
+                      <FormField v-slot="{ componentField }" name="settings.timeoutBehavior">
+                        <FormItem>
+                          <FormLabel :optional="true">Timeout behaviour</FormLabel>
+                          <FormControl>
+                            <Select v-bind="componentField">
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="fail">Fail</SelectItem>
+                                <SelectItem value="continue">Continue</SelectItem>
+                                <SelectItem value="cancel">Cancel</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
+                      <FormField v-slot="{ componentField }" name="settings.errorHandlingStrategy">
+                        <FormItem>
+                          <FormLabel :optional="true">Error handling</FormLabel>
+                          <FormControl>
+                            <Select v-bind="componentField">
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="failFast">Fail fast</SelectItem>
+                                <SelectItem value="continue">Continue on error</SelectItem>
+                                <SelectItem value="retry">Retry</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
+                    </FormGrid>
+                  </FormGridWrap>
+                </ContentEditCard>
+
+                <ContentEditCard
+                  v-if="!isNew && ((settingsValuesView as any).retryPolicy || (settingsValuesView as any).rateLimit)"
+                  title="Advanced" description="Retry and rate-limit policies.">
+                  <FormGridWrap>
+                    <FormGrid design="1+1">
+                      <FormItem v-if="(settingsValuesView as any).retryPolicy">
+                        <Label>Retry policy</Label>
+                        <pre class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs">{{
+                          JSON.stringify((settingsValuesView as any).retryPolicy, null, 2)
+                        }}</pre>
                       </FormItem>
-                      <FormItem>
-                        <Label>Timeout behaviour</Label>
-                        <Select v-model="settingsValues.timeoutBehavior as any">
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select…" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="fail">Fail</SelectItem>
-                            <SelectItem value="continue">Continue</SelectItem>
-                            <SelectItem value="cancel">Cancel</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                      <FormItem>
-                        <Label>Error handling</Label>
-                        <Select v-model="settingsValues.errorHandlingStrategy as any">
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select…" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="failFast">Fail fast</SelectItem>
-                            <SelectItem value="continue">Continue on error</SelectItem>
-                            <SelectItem value="retry">Retry</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <FormItem v-if="(settingsValuesView as any).rateLimit">
+                        <Label>Rate limit</Label>
+                        <pre class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs">{{
+                          JSON.stringify((settingsValuesView as any).rateLimit, null, 2)
+                        }}</pre>
                       </FormItem>
                     </FormGrid>
                   </FormGridWrap>
                 </ContentEditCard>
 
-                <ContentEditCard v-if="settingsValues.retryPolicy || settingsValues.rateLimit" title="Advanced"
-                  description="Retry and rate-limit policies.">
-                  <FormGridWrap>
-                    <FormGrid design="1+1">
-                      <FormItem v-if="settingsValues.retryPolicy">
-                        <Label>Retry policy</Label>
-                        <pre class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs">{{
-                          JSON.stringify(settingsValues.retryPolicy, null, 2)
-                        }}</pre>
-                      </FormItem>
-                      <FormItem v-if="settingsValues.rateLimit">
-                        <Label>Rate limit</Label>
-                        <pre class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs">{{
-                          JSON.stringify(settingsValues.rateLimit, null, 2)
-                        }}</pre>
-                      </FormItem>
-                    </FormGrid>
-                  </FormGridWrap>
-                </ContentEditCard>
+                <div v-if="isNew" class="flex flex-row justify-end gap-4">
+                  <Button variant="secondary" as-child>
+                    <NuxtLink to="/orchestrator/workflows/list">{{ $t('cancel') }}</NuxtLink>
+                  </Button>
+                  <Button :loading="isSavingConfig" @click="handleCreate">
+                    {{ $t('create_entity', { entityName }) }}
+                  </Button>
+                </div>
               </ContentEditMainContent>
 
               <template #sidebar>
-                <ContentEditSummary v-model:active="workflowActive" :summary="summary" :entity-name="entityName"
-                  :entity-live-status="isEnabled" :create-mode="isNew" :status="isEnabled ? 'active' : 'inactive'">
+                <ContentEditSummary v-model:active="workflowActive" v-bind="summaryProps">
                   <template #after-summary>
                     <ContentDataList v-if="triggerSummary.length" :data-list="triggerSummary" label="Trigger" />
-                    <ContentDataList v-if="settingsSummary.length" :data-list="settingsSummary"
-                      label="Runtime settings" />
                   </template>
                 </ContentEditSummary>
               </template>
             </ContentEditMain>
           </div>
         </div>
+      </KeepAlive>
 
-        <!-- Builder tab (VueFlow) -->
-        <div v-show="currentTab === 1" class="relative flex-1" @dragover="onDragOver" @drop="onDrop">
-          <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
-            :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="2" :fit-view-on-init="!isNew"
-            class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
-            <Background pattern-color="hsl(var(--border))" :gap="20" />
-            <Controls position="bottom-left">
-              <ControlButton :title="showMinimap ? 'Hide minimap' : 'Show minimap'" @click="showMinimap = !showMinimap">
-                <LucideMap class="h-4 w-4" />
-              </ControlButton>
-            </Controls>
-            <MiniMap v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
-              if (node.type === 'trigger') return 'hsl(142 76% 36%)'
-              if (node.type === 'condition') return 'hsl(48 96% 53%)'
-              if (node.type === 'loop') return 'hsl(280 67% 60%)'
-              if (node.type === 'delay') return 'hsl(25 95% 53%)'
-              return 'hsl(217 91% 60%)'
-            }" />
-          </VueFlow>
+      <!-- Builder tab (VueFlow) — full-bleed canvas -->
+      <KeepAlive>
+        <WorkflowBuilder
+v-if="currentTab === 1" :key="`tab-${currentTab}`" :workflow-id="workflowId" :is-new="isNew"
+          @executed="refreshExecutions" />
+      </KeepAlive>
 
-          <!-- Floating top-right action column -->
-          <div class="pointer-events-none absolute top-4 right-3 z-10 flex flex-col gap-2 @2xl:right-8">
-            <button
-              class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
-              :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'" @click="isSidebarOpen = !isSidebarOpen">
-              <LucidePanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
-              <LucidePanelRightOpen v-else class="h-4 w-4" />
-            </button>
-            <button
-              class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
-              title="Add node" @click="openAddNodeTab">
-              <LucidePlus class="h-4 w-4" />
-            </button>
-            <button
-              class="bg-background pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border bg-red-500 shadow-sm hover:bg-red-800 disabled:opacity-50"
-              :disabled="isRunning || isNew"
-              :title="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'" @click="runWorkflow">
-              <LucidePlay class="h-4 w-4 text-white" :class="{ 'animate-pulse': isRunning }" />
-            </button>
-
-
-          </div>
-        </div>
-
-        <!-- Inputs tab -->
-        <div v-if="currentTab === 2" class="min-h-0 flex-1 overflow-y-auto">
+      <!-- Inputs tab -->
+      <KeepAlive>
+        <div v-if="currentTab === 2" :key="`tab-${currentTab}`" class="min-h-0 flex-1 overflow-y-auto">
           <div class="mx-auto max-w-4xl px-3 py-6 @2xl:px-8">
             <ContentEditMainContent>
               <ContentEditCard v-if="workflowInputs.length === 0" title="Inputs">
@@ -1092,7 +950,8 @@ const settingsSummary = computed<DataItem[]>(() => {
                   This workflow has no inputs
                 </div>
               </ContentEditCard>
-              <ContentEditCard v-for="group in workflowInputsByCategory" v-else :key="group.category"
+              <ContentEditCard
+v-for="group in workflowInputsByCategory" v-else :key="group.category"
                 :title="group.category"
                 :description="`${group.items.length} input${group.items.length === 1 ? '' : 's'}`">
                 <template #header-action>
@@ -1102,7 +961,8 @@ const settingsSummary = computed<DataItem[]>(() => {
                   </Button>
                 </template>
                 <FormGridWrap>
-                  <div v-for="item in group.items" :key="item.name"
+                  <div
+v-for="item in group.items" :key="item.name"
                     class="grid grid-cols-[20rem_1fr] items-start gap-4 border-b py-3 last:border-b-0">
                     <div class="min-w-0">
                       <div class="flex items-center gap-1.5">
@@ -1114,25 +974,29 @@ const settingsSummary = computed<DataItem[]>(() => {
                       </div>
                       <div class="mt-1 flex items-center gap-1.5">
                         <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">{{ item.type
-                        }}</span>
+                          }}</span>
                       </div>
                       <div v-if="item.description" class="text-muted-foreground mt-1.5 text-xs">
                         {{ item.description }}
                       </div>
                     </div>
                     <div class="flex min-w-0 items-start">
-                      <Switch v-if="item.type === 'boolean'" :model-value="!!inputValues[item.name]"
+                      <Switch
+v-if="item.type === 'boolean'" :model-value="!!inputValues[item.name]"
                         @update:model-value="(v: boolean) => (inputValues[item.name] = v)" />
-                      <Input v-else-if="item.type === 'number'" type="number"
+                      <Input
+v-else-if="item.type === 'number'" type="number"
                         :model-value="inputValues[item.name] as any"
                         @update:model-value="(v) => (inputValues[item.name] = v === '' ? null : Number(v))" />
-                      <Input v-else :model-value="inputValues[item.name] == null ? '' : String(inputValues[item.name])"
+                      <Input
+v-else :model-value="inputValues[item.name] == null ? '' : String(inputValues[item.name])"
                         @update:model-value="(v) => (inputValues[item.name] = v)" />
                     </div>
                   </div>
                 </FormGridWrap>
               </ContentEditCard>
-              <Button variant="outline"
+              <Button
+variant="outline"
                 class="text-muted-foreground hover:text-foreground mt-2 w-full border-dashed py-6" @click="() => { }">
                 <LucidePlus class="mr-2 h-4 w-4" />
                 Add group
@@ -1140,11 +1004,11 @@ const settingsSummary = computed<DataItem[]>(() => {
             </ContentEditMainContent>
           </div>
         </div>
+      </KeepAlive>
 
-
-
-        <!-- Executions tab -->
-        <div v-if="currentTab === 3" class="min-h-0 flex-1 overflow-y-auto">
+      <!-- Executions tab -->
+      <KeepAlive>
+        <div v-if="currentTab === 3" :key="`tab-${currentTab}`" class="min-h-0 flex-1 overflow-y-auto">
           <div class="mx-auto max-w-4xl px-3 py-6 @2xl:px-8">
             <ContentEditMainContent>
               <ContentEditCard title="Executions" :description="`(${executions.length})`">
@@ -1161,11 +1025,13 @@ const settingsSummary = computed<DataItem[]>(() => {
                   </div>
                 </div>
                 <div v-else class="space-y-2">
-                  <NuxtLink v-for="execution in executions" :key="execution.id"
+                  <NuxtLink
+v-for="execution in executions" :key="execution.id"
                     :to="`/orchestrator/executions/${execution.id}`"
                     class="hover:bg-muted/50 grid grid-cols-[6rem_1fr_10rem_8rem] items-center gap-4 rounded-lg border p-3 transition-colors">
                     <div class="flex items-center gap-2">
-                      <div class="h-2 w-2 rounded-full" :class="{
+                      <div
+class="h-2 w-2 rounded-full" :class="{
                         'bg-green-500': execution.status === 'success',
                         'bg-red-500': execution.status === 'failed',
                         'animate-pulse bg-yellow-500': execution.status === 'running',
@@ -1184,9 +1050,11 @@ const settingsSummary = computed<DataItem[]>(() => {
             </ContentEditMainContent>
           </div>
         </div>
+      </KeepAlive>
 
-        <!-- History tab -->
-        <div v-if="currentTab === 4" class="min-h-0 flex-1 overflow-y-auto">
+      <!-- History tab -->
+      <KeepAlive>
+        <div v-if="currentTab === 4" :key="`tab-${currentTab}`" class="min-h-0 flex-1 overflow-y-auto">
           <div class="mx-auto max-w-4xl px-3 py-6 @2xl:px-8">
             <ContentEditMainContent>
               <ContentEditCard title="Version history" :description="`(${historyVersions.length})`">
@@ -1203,7 +1071,8 @@ const settingsSummary = computed<DataItem[]>(() => {
                   </div>
                 </div>
                 <div v-else class="space-y-2">
-                  <div v-for="entry in historyVersions" :key="entry.version"
+                  <div
+v-for="entry in historyVersions" :key="entry.version"
                     class="grid grid-cols-[6rem_1fr_12rem] items-center gap-4 rounded-lg border p-3">
                     <div class="flex items-center gap-2">
                       <LucideGitCommit class="text-muted-foreground h-3.5 w-3.5" />
@@ -1220,297 +1089,7 @@ const settingsSummary = computed<DataItem[]>(() => {
             </ContentEditMainContent>
           </div>
         </div>
-
-        <!-- Bottom Logs Panel (only on Builder tab) -->
-        <LogsPanel v-if="currentTab === 1" ref="logsPanelRef" :execution-id="lastExecutionId" />
-      </div>
-
-      <!-- Right Sidebar: only on Builder tab -->
-      <div v-if="currentTab === 1"
-        class="bg-background shrink-0 overflow-hidden border-l transition-[width] duration-200 ease-in-out"
-        :class="isSidebarOpen ? 'w-80' : 'w-0 border-l-0'">
-        <div class="h-full w-80 overflow-y-auto" style="scrollbar-gutter: stable;">
-          <!-- Right sidebar header (only for Properties now; Add Node hides this) -->
-          <div v-if="activeTab === 'properties'" class="flex items-center gap-2 border-b px-4 py-3">
-            <LucideSettings class="h-4 w-4" />
-            <span class="text-sm font-medium">Node properties</span>
-          </div>
-
-          <!-- Properties Tab -->
-          <div v-if="activeTab === 'properties'" class="p-4">
-            <div v-if="selectedNode" class="space-y-4">
-              <div class="flex items-center justify-between">
-                <h3 class="font-medium">Node Settings</h3>
-                <button class="hover:bg-destructive/10 text-destructive rounded p-1.5" title="Delete node"
-                  @click="deleteSelectedNode">
-                  <LucideTrash2 class="h-4 w-4" />
-                </button>
-              </div>
-
-              <div class="space-y-2">
-                <label class="text-sm font-medium">Name</label>
-                <input v-model="selectedNode.data.label" type="text"
-                  class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-              </div>
-
-              <div class="space-y-2">
-                <label class="text-sm font-medium">Description</label>
-                <textarea v-model="selectedNode.data.description" rows="2"
-                  class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-              </div>
-
-              <div class="space-y-2">
-                <label class="text-sm font-medium">Type</label>
-                <div class="text-muted-foreground bg-muted rounded-md px-3 py-2 text-sm capitalize">
-                  {{ selectedNode.type }}
-                </div>
-              </div>
-
-              <!-- Trigger-specific config -->
-              <template v-if="selectedNode.type === 'trigger'">
-                <div class="border-t pt-4">
-                  <h4 class="mb-3 text-sm font-medium">Trigger Settings</h4>
-                  <div class="space-y-3">
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Webhook Path</label>
-                      <input v-model="selectedNode.data.config.path" type="text" placeholder="/webhook"
-                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">HTTP Method</label>
-                      <select v-model="selectedNode.data.config.method"
-                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                        <option value="GET">GET</option>
-                        <option value="POST">POST</option>
-                        <option value="PUT">PUT</option>
-                        <option value="DELETE">DELETE</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </template>
-
-              <!-- Condition-specific config -->
-              <template v-if="selectedNode.type === 'condition'">
-                <div class="border-t pt-4">
-                  <h4 class="mb-3 text-sm font-medium">Condition Settings</h4>
-                  <div class="space-y-3">
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Field</label>
-                      <input v-model="selectedNode.data.config.field" type="text" placeholder="data.status"
-                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Operator</label>
-                      <select v-model="selectedNode.data.config.operator"
-                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                        <option value="equals">Equals</option>
-                        <option value="not_equals">Not Equals</option>
-                        <option value="contains">Contains</option>
-                        <option value="greater_than">Greater Than</option>
-                        <option value="less_than">Less Than</option>
-                        <option value="is_empty">Is Empty</option>
-                        <option value="is_not_empty">Is Not Empty</option>
-                      </select>
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Value</label>
-                      <input v-model="selectedNode.data.config.value" type="text" placeholder="active"
-                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                    </div>
-                  </div>
-                </div>
-              </template>
-
-              <!-- Loop-specific config -->
-              <template v-if="selectedNode.type === 'loop'">
-                <div class="border-t pt-4">
-                  <h4 class="mb-3 text-sm font-medium">Loop Settings</h4>
-                  <div class="space-y-3">
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Items Field</label>
-                      <input v-model="selectedNode.data.config.itemsField" type="text" placeholder="data.items"
-                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Batch Size</label>
-                      <input v-model="selectedNode.data.config.batchSize" type="number" placeholder="1"
-                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                    </div>
-                  </div>
-                </div>
-              </template>
-
-              <!-- Delay-specific config -->
-              <template v-if="selectedNode.type === 'delay'">
-                <div class="border-t pt-4">
-                  <h4 class="mb-3 text-sm font-medium">Delay Settings</h4>
-                  <div class="space-y-3">
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Duration</label>
-                      <div class="flex gap-2">
-                        <input v-model="selectedNode.data.config.duration" type="number" placeholder="5"
-                          class="bg-background focus:ring-ring flex-1 rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                        <select v-model="selectedNode.data.config.unit"
-                          class="bg-background focus:ring-ring rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                          <option value="seconds">Seconds</option>
-                          <option value="minutes">Minutes</option>
-                          <option value="hours">Hours</option>
-                          <option value="days">Days</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </template>
-
-              <!-- Action-specific config (Email) -->
-              <template v-if="selectedNode.type === 'action' && selectedNode.data.icon === 'Mail'">
-                <div class="border-t pt-4">
-                  <h4 class="mb-3 text-sm font-medium">Email Settings</h4>
-                  <div class="space-y-3">
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">To</label>
-                      <input v-model="selectedNode.data.config.to" type="email" placeholder="user@example.com"
-                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Subject</label>
-                      <input v-model="selectedNode.data.config.subject" type="text" placeholder="Email subject"
-                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Body</label>
-                      <textarea v-model="selectedNode.data.config.body" rows="4" placeholder="Email body..."
-                        class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                    </div>
-                  </div>
-                </div>
-              </template>
-
-              <!-- Action-specific config (HTTP) -->
-              <template v-if="selectedNode.type === 'action' && selectedNode.data.icon === 'Globe'">
-                <div class="border-t pt-4">
-                  <h4 class="mb-3 text-sm font-medium">HTTP Request Settings</h4>
-                  <div class="space-y-3">
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">URL</label>
-                      <input v-model="selectedNode.data.config.url" type="url"
-                        placeholder="https://api.example.com/endpoint"
-                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Method</label>
-                      <select v-model="selectedNode.data.config.method"
-                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                        <option value="GET">GET</option>
-                        <option value="POST">POST</option>
-                        <option value="PUT">PUT</option>
-                        <option value="PATCH">PATCH</option>
-                        <option value="DELETE">DELETE</option>
-                      </select>
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Headers (JSON)</label>
-                      <textarea v-model="selectedNode.data.config.headers" rows="2"
-                        placeholder='{"Authorization": "Bearer ..."}'
-                        class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none" />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-muted-foreground text-sm">Body (JSON)</label>
-                      <textarea v-model="selectedNode.data.config.body" rows="4" placeholder='{"key": "value"}'
-                        class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none" />
-                    </div>
-                  </div>
-                </div>
-              </template>
-            </div>
-
-            <div v-else class="flex h-40 flex-col items-center justify-center text-center">
-              <div class="text-muted-foreground text-sm">
-                Click on a node to view and edit its properties
-              </div>
-            </div>
-          </div>
-
-          <!-- Add Node Tab -->
-          <div v-if="activeTab === 'add-node'" class="p-4">
-            <div class="relative mb-3">
-              <LucideSearch class="text-muted-foreground pointer-events-none absolute top-2.5 left-2 h-4 w-4" />
-              <input v-model="nodeSearchQuery" type="text" placeholder="Search actions…"
-                class="bg-background focus:ring-ring w-full rounded-md border py-1.5 pr-2 pl-8 text-sm focus:ring-2 focus:outline-none" />
-            </div>
-            <div v-if="manifestStore.loading.value && paletteSections.length === 0"
-              class="text-muted-foreground py-8 text-center text-sm">
-              Loading node types…
-            </div>
-            <div v-else class="space-y-4">
-              <div v-for="section in filteredNodeTemplates" :key="section.category">
-                <div class="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-                  {{ section.category }}
-                </div>
-                <div class="space-y-1.5">
-                  <button v-for="item in section.items" :key="item.id"
-                    class="hover:bg-muted/50 flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors"
-                    draggable="true" @dragstart="(e) => onDragStart(e, item)" @click="quickAddNode(item)">
-                    <LucidePlay class="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-                    <div class="min-w-0 flex-1">
-                      <div class="text-sm font-medium">{{ item.label }}</div>
-                      <div v-if="item.actionName" class="text-muted-foreground font-mono text-[10px]">
-                        {{ item.actionName }}
-                      </div>
-                      <div v-if="item.description" class="text-muted-foreground line-clamp-2 text-xs">
-                        {{ item.description }}
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-              <div v-if="filteredNodeTemplates.length === 0 && !manifestStore.loading.value"
-                class="text-muted-foreground py-8 text-center text-sm">
-                No nodes match your search
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <DialogDelete v-model:open="deleteDialogOpen" :entity-name="entityName" :loading="deleting"
-      @confirm="confirmDelete" />
+      </KeepAlive>
+    </form>
   </div>
 </template>
-
-<style>
-/* VueFlow dark mode overrides */
-.dark .vue-flow__edge-path {
-  stroke: hsl(240 3.7% 45%);
-}
-
-.dark .vue-flow__edge.selected .vue-flow__edge-path {
-  stroke: hsl(217 91% 60%);
-}
-
-.dark .vue-flow__controls {
-  background: hsl(240 10% 3.9%);
-  border-color: hsl(240 3.7% 15.9%);
-}
-
-.dark .vue-flow__controls-button {
-  background: hsl(240 10% 3.9%);
-  border-color: hsl(240 3.7% 15.9%);
-  color: hsl(0 0% 98%);
-}
-
-.dark .vue-flow__controls-button:hover {
-  background: hsl(240 3.7% 15.9%);
-}
-
-.dark .vue-flow__minimap {
-  background: hsl(240 10% 3.9%);
-}
-
-.vue-flow__edge-text {
-  font-size: 10px;
-}
-</style>

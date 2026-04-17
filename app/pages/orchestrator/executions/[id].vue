@@ -225,16 +225,19 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
             <h1 class="text-xl font-semibold">
               {{ execution.workflowName }}
             </h1>
-            <component :is="resolveStatusIcon(execution.status).icon"
+            <component
+:is="resolveStatusIcon(execution.status).icon"
               :class="['h-5 w-5', resolveStatusIcon(execution.status).class]" />
-            <span v-if="execution.isTestRun"
+            <span
+v-if="execution.isTestRun"
               class="rounded bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600">
               Test run
             </span>
           </div>
           <div class="text-muted-foreground flex items-center gap-1.5 font-mono text-xs">
             <span :title="execution.id">{{ shortenId(execution.id) }}</span>
-            <button class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
+            <button
+class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
               :title="copiedId ? 'Copied!' : 'Copy execution ID'" @click="copyExecutionId">
               <component :is="copiedId ? LucideCheck : LucideCopy" class="h-3 w-3" />
             </button>
@@ -271,17 +274,20 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem :disabled="!details?.canCancel || actionPending"
+            <DropdownMenuItem
+:disabled="!details?.canCancel || actionPending"
               @click="runAction('Cancel', () => orchestratorApi.execution.cancel(executionId))">
               <LucideSquare class="mr-2 size-4" />
               <span>Cancel</span>
             </DropdownMenuItem>
-            <DropdownMenuItem :disabled="!details?.canPause || actionPending"
+            <DropdownMenuItem
+:disabled="!details?.canPause || actionPending"
               @click="runAction('Pause', () => orchestratorApi.execution.pause(executionId))">
               <LucidePause class="mr-2 size-4" />
               <span>Pause</span>
             </DropdownMenuItem>
-            <DropdownMenuItem :disabled="!canResume || actionPending"
+            <DropdownMenuItem
+:disabled="!canResume || actionPending"
               @click="runAction('Resume', () => orchestratorApi.execution.resume(executionId))">
               <LucideCirclePlay class="mr-2 size-4" />
               <span>Resume</span>

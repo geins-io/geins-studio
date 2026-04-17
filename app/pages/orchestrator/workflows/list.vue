@@ -294,7 +294,8 @@ const searchableFields: Array<keyof EntityList> = ['name', 'type', 'health', 'st
 </script>
 
 <template>
-  <ContentHeader :title="activeFilter ? groupLabel : $t('navigation.workflows')"
+  <ContentHeader
+:title="activeFilter ? groupLabel : $t('navigation.workflows')"
     :description="$t('workflows.description')">
     <ContentActionBar>
       <ButtonIcon icon="new" href="/orchestrator/workflows/new">
@@ -317,7 +318,8 @@ const searchableFields: Array<keyof EntityList> = ['name', 'type', 'health', 'st
   </div>
 
   <NuxtErrorBoundary>
-    <TableView :loading="loading" :entity-name="entityName" :columns="columns" :data="dataList"
+    <TableView
+:loading="loading" :entity-name="entityName" :columns="columns" :data="dataList"
       :init-visibility-state="visibilityState" :searchable-fields="searchableFields" :error="fetchError"
       :on-retry="refresh">
       <template #empty-actions>
