@@ -8,7 +8,7 @@ import { DataItemDisplayType } from '#shared/types'
 import { useToast } from '@/components/ui/toast/use-toast'
 
 definePageMeta({
-  pageType: 'list',
+  layout: 'default',
 })
 
 const route = useRoute()
@@ -481,7 +481,9 @@ const handleSave = async () => {
 }
 
 // ─── Sidebar summary ─────────────────────────────────────────────
-const showSidebar = ref(true)
+// Only show the summary sidebar on the General tab (like company/price-list pattern).
+// On other tabs the sidebar collapses into a floating toggle icon via ContentEditMain.
+const showSidebar = computed(() => currentTab.value === 0 && !isNew.value)
 
 const triggerDisplayName = computed(() => {
   const tt = manifestTriggerTypes.value.find(t => (t.type as string) === triggerTypeValue.value)
@@ -551,139 +553,203 @@ const { summaryProps } = useEntityEditSummary({
   <DialogUnsavedChanges
 v-model:open="unsavedChangesDialogOpen" :entity-name="entityName" :loading="isSavingConfig"
     @confirm="confirmLeave" />
-  <DialogDelete v-model:open="deleteDialogOpen" :entity-name="entityName" :loading="deleting" @confirm="confirmDelete" />
+  <DialogDelete
+v-model:open="deleteDialogOpen" :entity-name="entityName" :loading="deleting"
+    @confirm="confirmDelete" />
 
-  <div class="-mx-3 -mb-12 flex h-[calc(100vh-3.5rem-1rem)] shrink-0 flex-col @2xl:-mx-8 @2xl:-mb-14">
-    <ContentHeader
-class="px-3 @2xl:px-8" :title="isNew ? 'New workflow' : (workflowNameValue || 'Workflow')"
-      :entity-name="entityName">
-      <ContentActionBar>
-        <ButtonIcon
+  <ContentEditWrap>
+    <template #header>
+      <ContentHeader :title="isNew ? 'New workflow' : (workflowNameValue || 'Workflow')" :entity-name="entityName">
+        <ContentActionBar>
+          <ButtonIcon
 v-if="!isNew" icon="save" :loading="isSavingConfig"
-          :disabled="isSavingConfig || !hasUnsavedChanges" @click="handleSave">
-          {{ $t('save_entity', { entityName }) }}
-        </ButtonIcon>
-        <DropdownMenu v-if="!isNew">
-          <DropdownMenuTrigger as-child>
-            <Button size="icon" variant="secondary">
-              <LucideMoreHorizontal class="size-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem as-child>
-              <NuxtLink to="/orchestrator/workflows/new">
-                <LucidePlus class="mr-2 size-4" />
-                <span>{{ $t('new_entity', { entityName }) }}</span>
-              </NuxtLink>
-            </DropdownMenuItem>
-            <DropdownMenuItem :disabled="menuBusy || !currentWorkflow" @click="handleDuplicate">
-              <LucideCopy class="mr-2 size-4" />
-              <span>Duplicate</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem :disabled="!currentWorkflow" @click="workflowActive = !workflowActive">
-              <LucidePause v-if="workflowActive" class="mr-2 size-4" />
-              <LucidePlay v-else class="mr-2 size-4" />
-              <span>{{ workflowActive ? 'Pause' : 'Start' }}</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem @click="openDeleteDialog">
-              <LucideTrash class="mr-2 size-4" />
-              <span>{{ $t('delete_entity', { entityName }) }}</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </ContentActionBar>
-      <template v-if="!isNew" #tabs>
-        <ContentEditTabs v-model:current-tab="currentTab" :tabs="mainTabs" />
-      </template>
-      <template v-if="!isNew" #changes>
-        <ContentEditHasChanges :changes="hasUnsavedChanges" />
-      </template>
-    </ContentHeader>
+            :disabled="isSavingConfig || !hasUnsavedChanges" @click="handleSave">
+            {{ $t('save_entity', { entityName }) }}
+          </ButtonIcon>
+          <DropdownMenu v-if="!isNew">
+            <DropdownMenuTrigger as-child>
+              <Button size="icon" variant="secondary">
+                <LucideMoreHorizontal class="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem as-child>
+                <NuxtLink to="/orchestrator/workflows/new">
+                  <LucidePlus class="mr-2 size-4" />
+                  <span>{{ $t('new_entity', { entityName }) }}</span>
+                </NuxtLink>
+              </DropdownMenuItem>
+              <DropdownMenuItem :disabled="menuBusy || !currentWorkflow" @click="handleDuplicate">
+                <LucideCopy class="mr-2 size-4" />
+                <span>Duplicate</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem :disabled="!currentWorkflow" @click="workflowActive = !workflowActive">
+                <LucidePause v-if="workflowActive" class="mr-2 size-4" />
+                <LucidePlay v-else class="mr-2 size-4" />
+                <span>{{ workflowActive ? 'Pause' : 'Start' }}</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem @click="openDeleteDialog">
+                <LucideTrash class="mr-2 size-4" />
+                <span>{{ $t('delete_entity', { entityName }) }}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </ContentActionBar>
+        <template v-if="!isNew" #tabs>
+          <ContentEditTabs v-model:current-tab="currentTab" :tabs="mainTabs" />
+        </template>
+        <template v-if="!isNew" #changes>
+          <ContentEditHasChanges :changes="hasUnsavedChanges" />
+        </template>
+      </ContentHeader>
+    </template>
 
-    <form class="flex min-h-0 flex-1 flex-col" :class="{ '-mt-4': currentTab === 1 }" @submit.prevent>
-      <!-- General tab -->
-      <KeepAlive>
-        <div v-if="currentTab === 0" :key="`tab-${currentTab}`" class="min-h-0 flex-1 overflow-y-auto">
-          <div class="px-3 py-6 @2xl:px-8">
-            <ContentEditMain :show-sidebar="showSidebar">
-              <ContentEditMainContent>
-                <ContentEditCard
+    <form @submit.prevent>
+      <ContentEditMain :show-sidebar="showSidebar">
+        <!-- General tab -->
+        <KeepAlive>
+          <ContentEditMainContent v-if="currentTab === 0" :key="`tab-${currentTab}`">
+              <ContentEditCard
 title="General"
-                  description="Name, description, group, and tags used to organize this workflow.">
-                  <FormGridWrap>
-                    <FormGrid design="1+1">
-                      <FormField v-slot="{ componentField }" name="details.name">
-                        <FormItem>
-                          <FormLabel>Name</FormLabel>
-                          <FormControl>
-                            <Input v-bind="componentField" placeholder="Workflow name" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      </FormField>
-                      <FormField v-slot="{ componentField }" name="details.group">
-                        <FormItem>
-                          <FormLabel :optional="true">Group</FormLabel>
-                          <FormControl>
-                            <Input v-bind="componentField" placeholder="e.g. Monitor ERP Sync" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      </FormField>
-                    </FormGrid>
-                    <FormGrid design="1">
-                      <FormField v-slot="{ componentField }" name="details.description">
-                        <FormItem>
-                          <FormLabel :optional="true">Description</FormLabel>
-                          <FormControl>
-                            <Textarea
-v-bind="componentField" rows="3"
-                              placeholder="Describe what this workflow does…" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      </FormField>
-                    </FormGrid>
-                    <FormGrid design="1">
-                      <FormField v-slot="{ componentField }" name="details.tags">
-                        <FormItem>
-                          <FormLabel :optional="true">Tags</FormLabel>
-                          <FormControl>
-                            <TagsInput
+                description="Name, description, group, and tags used to organize this workflow.">
+                <FormGridWrap>
+                  <FormGrid design="1+1">
+                    <FormField v-slot="{ componentField }" name="details.name">
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input v-bind="componentField" placeholder="Workflow name" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField v-slot="{ componentField }" name="details.group">
+                      <FormItem>
+                        <FormLabel :optional="true">Group</FormLabel>
+                        <FormControl>
+                          <Input v-bind="componentField" placeholder="e.g. Monitor ERP Sync" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                  <FormGrid design="1">
+                    <FormField v-slot="{ componentField }" name="details.description">
+                      <FormItem>
+                        <FormLabel :optional="true">Description</FormLabel>
+                        <FormControl>
+                          <Textarea v-bind="componentField" rows="3" placeholder="Describe what this workflow does…" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                  <FormGrid design="1">
+                    <FormField v-slot="{ componentField }" name="details.tags">
+                      <FormItem>
+                        <FormLabel :optional="true">Tags</FormLabel>
+                        <FormControl>
+                          <TagsInput
 :model-value="(componentField.modelValue as string[]) || []"
-                              class="min-h-10 flex-wrap"
-                              @update:model-value="componentField['onUpdate:modelValue']">
-                              <TagsInputItem
+                            class="min-h-10 flex-wrap" @update:model-value="componentField['onUpdate:modelValue']">
+                            <TagsInputItem
 v-for="tag in ((componentField.modelValue as string[]) || [])" :key="tag"
-                                :value="tag">
-                                <TagsInputItemText />
-                                <TagsInputItemDelete />
-                              </TagsInputItem>
-                              <TagsInputInput placeholder="Add tag…" />
-                            </TagsInput>
+                              :value="tag">
+                              <TagsInputItemText />
+                              <TagsInputItemDelete />
+                            </TagsInputItem>
+                            <TagsInputInput placeholder="Add tag…" />
+                          </TagsInput>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                </FormGridWrap>
+              </ContentEditCard>
+
+              <ContentEditCard title="Trigger" description="How and when this workflow starts.">
+                <FormGridWrap>
+                  <FormGrid design="1">
+                    <FormField v-slot="{ componentField }" name="trigger.type">
+                      <FormItem>
+                        <FormLabel>Type</FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField">
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select trigger type…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem v-for="tt in manifestTriggerTypes" :key="tt.type" :value="tt.type">
+                                {{ tt.displayName }}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+
+                  <div v-if="triggerTypeValue === 'OnDemand'" class="text-muted-foreground text-sm">
+                    Triggered manually via API call. No additional configuration needed.
+                  </div>
+
+                  <template v-if="triggerTypeValue === 'Scheduled'">
+                    <FormGrid design="1">
+                      <FormField v-slot="{ componentField }" name="trigger.cron">
+                        <FormItem>
+                          <FormLabel>Cron expression</FormLabel>
+                          <FormControl>
+                            <Input
+v-bind="componentField" placeholder="0 * * * * *"
+                              :class="{ 'border-destructive': cronError }" />
                           </FormControl>
+                          <p v-if="cronError" class="text-destructive text-xs">{{ cronError }}</p>
+                          <p v-else-if="cronDescription" class="text-muted-foreground text-xs">{{ cronDescription }}
+                          </p>
                           <FormMessage />
                         </FormItem>
                       </FormField>
                     </FormGrid>
-                  </FormGridWrap>
-                </ContentEditCard>
+                  </template>
 
-                <ContentEditCard title="Trigger" description="How and when this workflow starts.">
-                  <FormGridWrap>
-                    <FormGrid design="1">
-                      <FormField v-slot="{ componentField }" name="trigger.type">
+                  <template v-if="triggerTypeValue === 'Event'">
+                    <FormGrid design="1+1">
+                      <FormField v-slot="{ componentField }" name="trigger.eventEntity">
                         <FormItem>
-                          <FormLabel>Type</FormLabel>
+                          <FormLabel>Entity</FormLabel>
                           <FormControl>
                             <Select v-bind="componentField">
                               <SelectTrigger>
-                                <SelectValue placeholder="Select trigger type…" />
+                                <SelectValue placeholder="Select entity…" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem v-for="tt in manifestTriggerTypes" :key="tt.type" :value="tt.type">
-                                  {{ tt.displayName }}
+                                <SelectItem value="*">* (any)</SelectItem>
+                                <SelectItem
+v-for="entity in manifestEventEntities" :key="entity.name"
+                                  :value="entity.name">
+                                  {{ entity.displayName }}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
+                      <FormField v-slot="{ componentField }" name="trigger.eventAction">
+                        <FormItem>
+                          <FormLabel>Action</FormLabel>
+                          <FormControl>
+                            <Select v-bind="componentField">
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select action…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="*">* (any)</SelectItem>
+                                <SelectItem v-for="a in availableEventActions" :key="a.name" :value="a.name">
+                                  {{ a.displayName }}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -692,194 +758,22 @@ v-for="tag in ((componentField.modelValue as string[]) || [])" :key="tag"
                         </FormItem>
                       </FormField>
                     </FormGrid>
-
-                    <div v-if="triggerTypeValue === 'OnDemand'" class="text-muted-foreground text-sm">
-                      Triggered manually via API call. No additional configuration needed.
-                    </div>
-
-                    <template v-if="triggerTypeValue === 'Scheduled'">
-                      <FormGrid design="1">
-                        <FormField v-slot="{ componentField }" name="trigger.cron">
-                          <FormItem>
-                            <FormLabel>Cron expression</FormLabel>
-                            <FormControl>
-                              <Input
-v-bind="componentField" placeholder="0 * * * * *"
-                                :class="{ 'border-destructive': cronError }" />
-                            </FormControl>
-                            <p v-if="cronError" class="text-destructive text-xs">{{ cronError }}</p>
-                            <p v-else-if="cronDescription" class="text-muted-foreground text-xs">{{ cronDescription }}
-                            </p>
-                            <FormMessage />
-                          </FormItem>
-                        </FormField>
-                      </FormGrid>
-                    </template>
-
-                    <template v-if="triggerTypeValue === 'Event'">
-                      <FormGrid design="1+1">
-                        <FormField v-slot="{ componentField }" name="trigger.eventEntity">
-                          <FormItem>
-                            <FormLabel>Entity</FormLabel>
-                            <FormControl>
-                              <Select v-bind="componentField">
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select entity…" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="*">* (any)</SelectItem>
-                                  <SelectItem
-v-for="entity in manifestEventEntities" :key="entity.name"
-                                    :value="entity.name">
-                                    {{ entity.displayName }}
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        </FormField>
-                        <FormField v-slot="{ componentField }" name="trigger.eventAction">
-                          <FormItem>
-                            <FormLabel>Action</FormLabel>
-                            <FormControl>
-                              <Select v-bind="componentField">
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select action…" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="*">* (any)</SelectItem>
-                                  <SelectItem v-for="a in availableEventActions" :key="a.name" :value="a.name">
-                                    {{ a.displayName }}
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        </FormField>
-                      </FormGrid>
-                      <FormGrid v-if="availableSubEntities.length > 0" design="1+1">
-                        <FormField v-slot="{ componentField }" name="trigger.eventSubEntity">
-                          <FormItem>
-                            <FormLabel :optional="true">Sub-entity</FormLabel>
-                            <FormControl>
-                              <Select v-bind="componentField">
-                                <SelectTrigger>
-                                  <SelectValue placeholder="None" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="">None</SelectItem>
-                                  <SelectItem value="*">* (any)</SelectItem>
-                                  <SelectItem value="!">! (absent only)</SelectItem>
-                                  <SelectItem v-for="sub in availableSubEntities" :key="sub" :value="sub">
-                                    {{ sub }}
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        </FormField>
-                      </FormGrid>
-                      <FormGrid design="1">
-                        <FormField v-slot="{ componentField }" name="trigger.description">
-                          <FormItem>
-                            <FormLabel :optional="true">Description</FormLabel>
-                            <FormControl>
-                              <Input v-bind="componentField" placeholder="e.g. When an order is updated" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        </FormField>
-                      </FormGrid>
-                    </template>
-                  </FormGridWrap>
-                </ContentEditCard>
-
-                <ContentEditCard
-v-if="!isNew" title="Runtime Settings"
-                  description="Timeout, concurrency, logging, and error handling.">
-                  <FormGridWrap>
-                    <FormGrid>
-                      <FormField v-slot="{ componentField }" name="settings.timeout">
+                    <FormGrid v-if="availableSubEntities.length > 0" design="1+1">
+                      <FormField v-slot="{ componentField }" name="trigger.eventSubEntity">
                         <FormItem>
-                          <FormLabel :optional="true">Timeout</FormLabel>
-                          <FormControl>
-                            <Input v-bind="componentField" placeholder="00:10:00" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      </FormField>
-                      <FormField v-slot="{ componentField }" name="settings.maxConcurrency">
-                        <FormItem>
-                          <FormLabel :optional="true">Max concurrency</FormLabel>
-                          <FormControl>
-                            <Input v-bind="componentField" type="number" min="1" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      </FormField>
-                      <FormField v-slot="{ componentField }" name="settings.executionLogRetentionDays">
-                        <FormItem>
-                          <FormLabel :optional="true">Log retention (days)</FormLabel>
-                          <FormControl>
-                            <Input v-bind="componentField" type="number" min="0" placeholder="Keep indefinitely" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      </FormField>
-                    </FormGrid>
-                    <FormGrid design="1+1+1">
-                      <FormField v-slot="{ componentField }" name="settings.logVerbosity">
-                        <FormItem>
-                          <FormLabel :optional="true">Log verbosity</FormLabel>
+                          <FormLabel :optional="true">Sub-entity</FormLabel>
                           <FormControl>
                             <Select v-bind="componentField">
                               <SelectTrigger>
-                                <SelectValue placeholder="Select…" />
+                                <SelectValue placeholder="None" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="minimal">Minimal</SelectItem>
-                                <SelectItem value="normal">Normal</SelectItem>
-                                <SelectItem value="detailed">Detailed</SelectItem>
-                                <SelectItem value="debug">Debug</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      </FormField>
-                      <FormField v-slot="{ componentField }" name="settings.timeoutBehavior">
-                        <FormItem>
-                          <FormLabel :optional="true">Timeout behaviour</FormLabel>
-                          <FormControl>
-                            <Select v-bind="componentField">
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select…" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="fail">Fail</SelectItem>
-                                <SelectItem value="continue">Continue</SelectItem>
-                                <SelectItem value="cancel">Cancel</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      </FormField>
-                      <FormField v-slot="{ componentField }" name="settings.errorHandlingStrategy">
-                        <FormItem>
-                          <FormLabel :optional="true">Error handling</FormLabel>
-                          <FormControl>
-                            <Select v-bind="componentField">
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select…" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="failFast">Fail fast</SelectItem>
-                                <SelectItem value="continue">Continue on error</SelectItem>
-                                <SelectItem value="retry">Retry</SelectItem>
+                                <SelectItem value="">None</SelectItem>
+                                <SelectItem value="*">* (any)</SelectItem>
+                                <SelectItem value="!">! (absent only)</SelectItem>
+                                <SelectItem v-for="sub in availableSubEntities" :key="sub" :value="sub">
+                                  {{ sub }}
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </FormControl>
@@ -887,209 +781,299 @@ v-if="!isNew" title="Runtime Settings"
                         </FormItem>
                       </FormField>
                     </FormGrid>
-                  </FormGridWrap>
-                </ContentEditCard>
-
-                <ContentEditCard
-                  v-if="!isNew && ((settingsValuesView as any).retryPolicy || (settingsValuesView as any).rateLimit)"
-                  title="Advanced" description="Retry and rate-limit policies.">
-                  <FormGridWrap>
-                    <FormGrid design="1+1">
-                      <FormItem v-if="(settingsValuesView as any).retryPolicy">
-                        <Label>Retry policy</Label>
-                        <pre class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs">{{
-                          JSON.stringify((settingsValuesView as any).retryPolicy, null, 2)
-                        }}</pre>
-                      </FormItem>
-                      <FormItem v-if="(settingsValuesView as any).rateLimit">
-                        <Label>Rate limit</Label>
-                        <pre class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs">{{
-                          JSON.stringify((settingsValuesView as any).rateLimit, null, 2)
-                        }}</pre>
-                      </FormItem>
+                    <FormGrid design="1">
+                      <FormField v-slot="{ componentField }" name="trigger.description">
+                        <FormItem>
+                          <FormLabel :optional="true">Description</FormLabel>
+                          <FormControl>
+                            <Input v-bind="componentField" placeholder="e.g. When an order is updated" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      </FormField>
                     </FormGrid>
-                  </FormGridWrap>
-                </ContentEditCard>
-
-                <div v-if="isNew" class="flex flex-row justify-end gap-4">
-                  <Button variant="secondary" as-child>
-                    <NuxtLink to="/orchestrator/workflows/list">{{ $t('cancel') }}</NuxtLink>
-                  </Button>
-                  <Button :loading="isSavingConfig" @click="handleCreate">
-                    {{ $t('create_entity', { entityName }) }}
-                  </Button>
-                </div>
-              </ContentEditMainContent>
-
-              <template #sidebar>
-                <ContentEditSummary v-model:active="workflowActive" v-bind="summaryProps">
-                  <template #after-summary>
-                    <ContentDataList v-if="triggerSummary.length" :data-list="triggerSummary" label="Trigger" />
                   </template>
-                </ContentEditSummary>
-              </template>
-            </ContentEditMain>
-          </div>
-        </div>
-      </KeepAlive>
-
-      <!-- Builder tab (VueFlow) — full-bleed canvas -->
-      <KeepAlive>
-        <WorkflowBuilder
-v-if="currentTab === 1" :key="`tab-${currentTab}`" :workflow-id="workflowId" :is-new="isNew"
-          @executed="refreshExecutions" />
-      </KeepAlive>
-
-      <!-- Inputs tab -->
-      <KeepAlive>
-        <div v-if="currentTab === 2" :key="`tab-${currentTab}`" class="min-h-0 flex-1 overflow-y-auto">
-          <div class="mx-auto max-w-4xl px-3 py-6 @2xl:px-8">
-            <ContentEditMainContent>
-              <ContentEditCard v-if="workflowInputs.length === 0" title="Inputs">
-                <div class="text-muted-foreground py-12 text-center text-sm">
-                  This workflow has no inputs
-                </div>
-              </ContentEditCard>
-              <ContentEditCard
-v-for="group in workflowInputsByCategory" v-else :key="group.category"
-                :title="group.category"
-                :description="`${group.items.length} input${group.items.length === 1 ? '' : 's'}`">
-                <template #header-action>
-                  <Button variant="secondary" size="sm" @click="() => { }">
-                    <LucidePlus class="mr-2 h-3.5 w-3.5" />
-                    Add input
-                  </Button>
-                </template>
-                <FormGridWrap>
-                  <div
-v-for="item in group.items" :key="item.name"
-                    class="grid grid-cols-[20rem_1fr] items-start gap-4 border-b py-3 last:border-b-0">
-                    <div class="min-w-0">
-                      <div class="flex items-center gap-1.5">
-                        <span class="text-sm font-medium">{{ prettyLabel(item.name) }}</span>
-                        <span v-if="item.required" class="text-destructive text-sm">*</span>
-                      </div>
-                      <div class="text-muted-foreground mt-0.5 font-mono text-[11px] break-all">
-                        {{ item.name }}
-                      </div>
-                      <div class="mt-1 flex items-center gap-1.5">
-                        <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">{{ item.type
-                          }}</span>
-                      </div>
-                      <div v-if="item.description" class="text-muted-foreground mt-1.5 text-xs">
-                        {{ item.description }}
-                      </div>
-                    </div>
-                    <div class="flex min-w-0 items-start">
-                      <Switch
-v-if="item.type === 'boolean'" :model-value="!!inputValues[item.name]"
-                        @update:model-value="(v: boolean) => (inputValues[item.name] = v)" />
-                      <Input
-v-else-if="item.type === 'number'" type="number"
-                        :model-value="inputValues[item.name] as any"
-                        @update:model-value="(v) => (inputValues[item.name] = v === '' ? null : Number(v))" />
-                      <Input
-v-else :model-value="inputValues[item.name] == null ? '' : String(inputValues[item.name])"
-                        @update:model-value="(v) => (inputValues[item.name] = v)" />
-                    </div>
-                  </div>
                 </FormGridWrap>
               </ContentEditCard>
-              <Button
-variant="outline"
-                class="text-muted-foreground hover:text-foreground mt-2 w-full border-dashed py-6" @click="() => { }">
-                <LucidePlus class="mr-2 h-4 w-4" />
-                Add group
-              </Button>
-            </ContentEditMainContent>
-          </div>
-        </div>
-      </KeepAlive>
 
-      <!-- Executions tab -->
-      <KeepAlive>
-        <div v-if="currentTab === 3" :key="`tab-${currentTab}`" class="min-h-0 flex-1 overflow-y-auto">
-          <div class="mx-auto max-w-4xl px-3 py-6 @2xl:px-8">
-            <ContentEditMainContent>
-              <ContentEditCard title="Executions" :description="`(${executions.length})`">
-                <template #header-action>
-                  <Button variant="secondary" size="sm" :disabled="executionsLoading" @click="refreshExecutions()">
-                    <LucideRefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': executionsLoading }" />
-                    Refresh
-                  </Button>
-                </template>
-                <div v-if="executionsLoading && executions.length === 0" class="space-y-3">
-                  <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
-                    <Skeleton class="mb-2 h-4 w-32" />
-                    <Skeleton class="h-3 w-48" />
+              <ContentEditCard
+v-if="!isNew" title="Runtime Settings"
+                description="Timeout, concurrency, logging, and error handling.">
+                <FormGridWrap>
+                  <FormGrid>
+                    <FormField v-slot="{ componentField }" name="settings.timeout">
+                      <FormItem>
+                        <FormLabel :optional="true">Timeout</FormLabel>
+                        <FormControl>
+                          <Input v-bind="componentField" placeholder="00:10:00" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField v-slot="{ componentField }" name="settings.maxConcurrency">
+                      <FormItem>
+                        <FormLabel :optional="true">Max concurrency</FormLabel>
+                        <FormControl>
+                          <Input v-bind="componentField" type="number" min="1" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField v-slot="{ componentField }" name="settings.executionLogRetentionDays">
+                      <FormItem>
+                        <FormLabel :optional="true">Log retention (days)</FormLabel>
+                        <FormControl>
+                          <Input v-bind="componentField" type="number" min="0" placeholder="Keep indefinitely" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                  <FormGrid design="1+1+1">
+                    <FormField v-slot="{ componentField }" name="settings.logVerbosity">
+                      <FormItem>
+                        <FormLabel :optional="true">Log verbosity</FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField">
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="minimal">Minimal</SelectItem>
+                              <SelectItem value="normal">Normal</SelectItem>
+                              <SelectItem value="detailed">Detailed</SelectItem>
+                              <SelectItem value="debug">Debug</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField v-slot="{ componentField }" name="settings.timeoutBehavior">
+                      <FormItem>
+                        <FormLabel :optional="true">Timeout behaviour</FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField">
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="fail">Fail</SelectItem>
+                              <SelectItem value="continue">Continue</SelectItem>
+                              <SelectItem value="cancel">Cancel</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField v-slot="{ componentField }" name="settings.errorHandlingStrategy">
+                      <FormItem>
+                        <FormLabel :optional="true">Error handling</FormLabel>
+                        <FormControl>
+                          <Select v-bind="componentField">
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="failFast">Fail fast</SelectItem>
+                              <SelectItem value="continue">Continue on error</SelectItem>
+                              <SelectItem value="retry">Retry</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                </FormGridWrap>
+              </ContentEditCard>
+
+              <ContentEditCard
+                v-if="!isNew && ((settingsValuesView as any).retryPolicy || (settingsValuesView as any).rateLimit)"
+                title="Advanced" description="Retry and rate-limit policies.">
+                <FormGridWrap>
+                  <FormGrid design="1+1">
+                    <FormItem v-if="(settingsValuesView as any).retryPolicy">
+                      <Label>Retry policy</Label>
+                      <pre class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs">{{
+                        JSON.stringify((settingsValuesView as any).retryPolicy, null, 2)
+                      }}</pre>
+                    </FormItem>
+                    <FormItem v-if="(settingsValuesView as any).rateLimit">
+                      <Label>Rate limit</Label>
+                      <pre class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs">{{
+                        JSON.stringify((settingsValuesView as any).rateLimit, null, 2)
+                      }}</pre>
+                    </FormItem>
+                  </FormGrid>
+                </FormGridWrap>
+              </ContentEditCard>
+
+          <div v-if="isNew" class="flex flex-row justify-end gap-4">
+            <Button variant="secondary" as-child>
+              <NuxtLink to="/orchestrator/workflows/list">{{ $t('cancel') }}</NuxtLink>
+            </Button>
+            <Button :loading="isSavingConfig" @click="handleCreate">
+              {{ $t('create_entity', { entityName }) }}
+            </Button>
+          </div>
+          </ContentEditMainContent>
+        </KeepAlive>
+
+        <!-- Builder tab (VueFlow) — full-bleed canvas -->
+        <KeepAlive>
+          <WorkflowBuilder
+v-if="currentTab === 1" :key="`tab-${currentTab}`" :workflow-id="workflowId" :is-new="isNew"
+            @executed="refreshExecutions" />
+        </KeepAlive>
+
+        <!-- Inputs tab -->
+        <KeepAlive>
+          <ContentEditMainContent v-if="currentTab === 2" :key="`tab-${currentTab}`">
+            <ContentEditCard v-if="workflowInputs.length === 0" title="Inputs">
+              <div class="text-muted-foreground py-12 text-center text-sm">
+                This workflow has no inputs
+              </div>
+            </ContentEditCard>
+            <ContentEditCard
+v-for="group in workflowInputsByCategory" v-else :key="group.category"
+              :title="group.category"
+              :description="`${group.items.length} input${group.items.length === 1 ? '' : 's'}`">
+              <template #header-action>
+                <Button variant="secondary" size="sm" @click="() => { }">
+                  <LucidePlus class="mr-2 h-3.5 w-3.5" />
+                  Add input
+                </Button>
+              </template>
+              <FormGridWrap>
+                <div
+v-for="item in group.items" :key="item.name"
+                  class="grid grid-cols-[20rem_1fr] items-start gap-4 border-b py-3 last:border-b-0">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-sm font-medium">{{ prettyLabel(item.name) }}</span>
+                      <span v-if="item.required" class="text-destructive text-sm">*</span>
+                    </div>
+                    <div class="text-muted-foreground mt-0.5 font-mono text-[11px] break-all">
+                      {{ item.name }}
+                    </div>
+                    <div class="mt-1 flex items-center gap-1.5">
+                      <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">{{ item.type
+                      }}</span>
+                    </div>
+                    <div v-if="item.description" class="text-muted-foreground mt-1.5 text-xs">
+                      {{ item.description }}
+                    </div>
+                  </div>
+                  <div class="flex min-w-0 items-start">
+                    <Switch
+v-if="item.type === 'boolean'" :model-value="!!inputValues[item.name]"
+                      @update:model-value="(v: boolean) => (inputValues[item.name] = v)" />
+                    <Input
+v-else-if="item.type === 'number'" type="number" :model-value="inputValues[item.name] as any"
+                      @update:model-value="(v) => (inputValues[item.name] = v === '' ? null : Number(v))" />
+                    <Input
+v-else :model-value="inputValues[item.name] == null ? '' : String(inputValues[item.name])"
+                      @update:model-value="(v) => (inputValues[item.name] = v)" />
                   </div>
                 </div>
-                <div v-else class="space-y-2">
-                  <NuxtLink
+              </FormGridWrap>
+            </ContentEditCard>
+            <Button
+variant="outline" class="text-muted-foreground hover:text-foreground mt-2 w-full border-dashed py-6"
+              @click="() => { }">
+              <LucidePlus class="mr-2 h-4 w-4" />
+              Add group
+            </Button>
+          </ContentEditMainContent>
+        </KeepAlive>
+
+        <!-- Executions tab -->
+        <KeepAlive>
+          <ContentEditMainContent v-if="currentTab === 3" :key="`tab-${currentTab}`">
+            <ContentEditCard title="Executions" :description="`(${executions.length})`">
+              <template #header-action>
+                <Button variant="secondary" size="sm" :disabled="executionsLoading" @click="refreshExecutions()">
+                  <LucideRefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': executionsLoading }" />
+                  Refresh
+                </Button>
+              </template>
+              <div v-if="executionsLoading && executions.length === 0" class="space-y-3">
+                <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
+                  <Skeleton class="mb-2 h-4 w-32" />
+                  <Skeleton class="h-3 w-48" />
+                </div>
+              </div>
+              <div v-else class="space-y-2">
+                <NuxtLink
 v-for="execution in executions" :key="execution.id"
-                    :to="`/orchestrator/executions/${execution.id}`"
-                    class="hover:bg-muted/50 grid grid-cols-[6rem_1fr_10rem_8rem] items-center gap-4 rounded-lg border p-3 transition-colors">
-                    <div class="flex items-center gap-2">
-                      <div
+                  :to="`/orchestrator/executions/${execution.id}`"
+                  class="hover:bg-muted/50 grid grid-cols-[6rem_1fr_10rem_8rem] items-center gap-4 rounded-lg border p-3 transition-colors">
+                  <div class="flex items-center gap-2">
+                    <div
 class="h-2 w-2 rounded-full" :class="{
-                        'bg-green-500': execution.status === 'success',
-                        'bg-red-500': execution.status === 'failed',
-                        'animate-pulse bg-yellow-500': execution.status === 'running',
-                      }" />
-                      <span class="text-sm font-medium capitalize">{{ execution.status }}</span>
-                    </div>
-                    <div class="text-muted-foreground truncate font-mono text-xs">{{ execution.startedAt }}</div>
-                    <div class="text-muted-foreground truncate text-xs">Trigger: {{ execution.trigger }}</div>
-                    <div class="text-muted-foreground text-right font-mono text-xs">{{ execution.duration }}</div>
-                  </NuxtLink>
-                  <div v-if="executions.length === 0" class="text-muted-foreground py-12 text-center text-sm">
-                    No executions yet
+                      'bg-green-500': execution.status === 'success',
+                      'bg-red-500': execution.status === 'failed',
+                      'animate-pulse bg-yellow-500': execution.status === 'running',
+                    }" />
+                    <span class="text-sm font-medium capitalize">{{ execution.status }}</span>
                   </div>
+                  <div class="text-muted-foreground truncate font-mono text-xs">{{ execution.startedAt }}</div>
+                  <div class="text-muted-foreground truncate text-xs">Trigger: {{ execution.trigger }}</div>
+                  <div class="text-muted-foreground text-right font-mono text-xs">{{ execution.duration }}</div>
+                </NuxtLink>
+                <div v-if="executions.length === 0" class="text-muted-foreground py-12 text-center text-sm">
+                  No executions yet
                 </div>
-              </ContentEditCard>
-            </ContentEditMainContent>
-          </div>
-        </div>
-      </KeepAlive>
+              </div>
+            </ContentEditCard>
+          </ContentEditMainContent>
+        </KeepAlive>
 
-      <!-- History tab -->
-      <KeepAlive>
-        <div v-if="currentTab === 4" :key="`tab-${currentTab}`" class="min-h-0 flex-1 overflow-y-auto">
-          <div class="mx-auto max-w-4xl px-3 py-6 @2xl:px-8">
-            <ContentEditMainContent>
-              <ContentEditCard title="Version history" :description="`(${historyVersions.length})`">
-                <template #header-action>
-                  <Button variant="secondary" size="sm" :disabled="historyLoading" @click="refreshHistory()">
-                    <LucideRefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': historyLoading }" />
-                    Refresh
-                  </Button>
-                </template>
-                <div v-if="historyLoading && historyVersions.length === 0" class="space-y-3">
-                  <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
-                    <Skeleton class="mb-2 h-4 w-16" />
-                    <Skeleton class="h-3 w-48" />
-                  </div>
+        <!-- History tab -->
+        <KeepAlive>
+          <ContentEditMainContent v-if="currentTab === 4" :key="`tab-${currentTab}`">
+            <ContentEditCard title="Version history" :description="`(${historyVersions.length})`">
+              <template #header-action>
+                <Button variant="secondary" size="sm" :disabled="historyLoading" @click="refreshHistory()">
+                  <LucideRefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': historyLoading }" />
+                  Refresh
+                </Button>
+              </template>
+              <div v-if="historyLoading && historyVersions.length === 0" class="space-y-3">
+                <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
+                  <Skeleton class="mb-2 h-4 w-16" />
+                  <Skeleton class="h-3 w-48" />
                 </div>
-                <div v-else class="space-y-2">
-                  <div
+              </div>
+              <div v-else class="space-y-2">
+                <div
 v-for="entry in historyVersions" :key="entry.version"
-                    class="grid grid-cols-[6rem_1fr_12rem] items-center gap-4 rounded-lg border p-3">
-                    <div class="flex items-center gap-2">
-                      <LucideGitCommit class="text-muted-foreground h-3.5 w-3.5" />
-                      <span class="text-sm font-medium">v{{ entry.version }}</span>
-                    </div>
-                    <div class="text-muted-foreground truncate text-xs">{{ entry.description || '—' }}</div>
-                    <div class="text-muted-foreground text-right font-mono text-xs">{{ entry.createdAt }}</div>
+                  class="grid grid-cols-[6rem_1fr_12rem] items-center gap-4 rounded-lg border p-3">
+                  <div class="flex items-center gap-2">
+                    <LucideGitCommit class="text-muted-foreground h-3.5 w-3.5" />
+                    <span class="text-sm font-medium">v{{ entry.version }}</span>
                   </div>
-                  <div v-if="historyVersions.length === 0" class="text-muted-foreground py-12 text-center text-sm">
-                    No version history
-                  </div>
+                  <div class="text-muted-foreground truncate text-xs">{{ entry.description || '—' }}</div>
+                  <div class="text-muted-foreground text-right font-mono text-xs">{{ entry.createdAt }}</div>
                 </div>
-              </ContentEditCard>
-            </ContentEditMainContent>
-          </div>
-        </div>
-      </KeepAlive>
+                <div v-if="historyVersions.length === 0" class="text-muted-foreground py-12 text-center text-sm">
+                  No version history
+                </div>
+              </div>
+            </ContentEditCard>
+          </ContentEditMainContent>
+        </KeepAlive>
+
+        <template #sidebar>
+          <ContentEditSummary v-model:active="workflowActive" v-bind="summaryProps">
+            <template #after-summary>
+              <ContentDataList v-if="triggerSummary.length" :data-list="triggerSummary" label="Trigger" />
+            </template>
+          </ContentEditSummary>
+        </template>
+      </ContentEditMain>
     </form>
-  </div>
+  </ContentEditWrap>
 </template>
