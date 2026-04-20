@@ -1078,7 +1078,8 @@ v-for="entry in historyVersions" :key="entry.version"
        `-mt-4` closes the gap left by ContentHeader's `mb-4` so the canvas
        starts right under the tabs. -->
   <KeepAlive>
-    <WorkflowBuilder v-if="currentTab === 1" :key="`tab-${currentTab}`" class="-mx-3 -mt-4 @2xl:-mx-8"
+    <WorkflowBuilder
+v-if="currentTab === 1" :key="`tab-${currentTab}`" class="-mx-3 -mt-4 @2xl:-mx-8"
       :workflow-id="workflowId" :is-new="isNew" @executed="refreshExecutions" />
   </KeepAlive>
 </template>
