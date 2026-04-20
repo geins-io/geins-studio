@@ -319,7 +319,9 @@ v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
         }" />
       </VueFlow>
 
-      <div class="pointer-events-none absolute top-4 right-3 z-10 flex flex-col gap-2 @2xl:right-8">
+      <div
+        class="pointer-events-none absolute top-4 z-10 flex flex-col gap-2 transition-[right] duration-200 ease-in-out"
+        :class="isSidebarOpen ? 'right-[21rem] @2xl:right-[21.5rem]' : 'right-3 @2xl:right-8'">
         <button
           class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
           :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'" @click="isSidebarOpen = !isSidebarOpen">
@@ -637,5 +639,11 @@ v-if="filteredNodeTemplates.length === 0 && !manifestStore.loading.value"
 
 .vue-flow__edge-text {
   font-size: 10px;
+}
+
+/* Inset the bottom-left Controls panel so the buttons don't sit flush
+   against the canvas edge. */
+.vue-flow__panel.left {
+  margin-left: 1rem;
 }
 </style>
