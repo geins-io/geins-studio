@@ -190,14 +190,13 @@ onConnect((params) => {
 })
 
 const selectedNode = ref<any>(null)
-const isSidebarOpen = ref(false)
+const isAddNodeOpen = ref(false)
 const showMinimap = ref(false)
-const activeTab = ref<'properties' | 'add-node'>('properties')
 
+// Selecting a node auto-opens the bottom properties panel; clicking the pane
+// clears the selection and hides it.
 const onNodeClick = (event: any) => {
   selectedNode.value = event.node
-  activeTab.value = 'properties'
-  isSidebarOpen.value = true
 }
 
 const onPaneClick = () => {
@@ -237,13 +236,13 @@ const onDrop = (event: DragEvent) => {
   const item = JSON.parse(data) as PaletteItem
   const position = project({ x: event.clientX - 100, y: event.clientY - 100 })
   addNodes([buildNewNode(item, position)])
-  isSidebarOpen.value = false
+  isAddNodeOpen.value = false
 }
 
 const quickAddNode = (item: PaletteItem) => {
   const position = project({ x: 400, y: 300 })
   addNodes([buildNewNode(item, position)])
-  isSidebarOpen.value = false
+  isAddNodeOpen.value = false
 }
 
 const deleteSelectedNode = () => {
@@ -251,11 +250,6 @@ const deleteSelectedNode = () => {
     removeNodes([selectedNode.value.id])
     selectedNode.value = null
   }
-}
-
-const openAddNodeTab = () => {
-  isSidebarOpen.value = true
-  activeTab.value = 'add-node'
 }
 
 const isRunning = ref(false)
@@ -298,314 +292,295 @@ const runWorkflow = async () => {
 
 <template>
   <div class="relative flex h-[calc(100vh-14rem)] flex-col">
-    <div class="relative flex-1" @dragover="onDragOver" @drop="onDrop">
-      <VueFlow
-:nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
-        :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="2" :fit-view-on-init="!isNew"
-        class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
-        <Background pattern-color="hsl(var(--border))" :gap="20" />
-        <Controls position="bottom-left">
-          <ControlButton :title="showMinimap ? 'Hide minimap' : 'Show minimap'" @click="showMinimap = !showMinimap">
-            <LucideMap class="h-4 w-4" />
-          </ControlButton>
-        </Controls>
-        <MiniMap
-v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
-          if (node.type === 'trigger') return 'hsl(142 76% 36%)'
-          if (node.type === 'condition') return 'hsl(48 96% 53%)'
-          if (node.type === 'loop') return 'hsl(280 67% 60%)'
-          if (node.type === 'delay') return 'hsl(25 95% 53%)'
-          return 'hsl(217 91% 60%)'
-        }" />
-      </VueFlow>
+    <!-- Row: canvas column (VueFlow + properties panel) + add-node sidebar -->
+    <div class="relative flex min-h-0 flex-1">
+      <!-- Canvas column -->
+      <div class="relative flex min-w-0 flex-1 flex-col">
+        <div class="relative flex-1" @dragover="onDragOver" @drop="onDrop">
+          <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
+            :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="2" :fit-view-on-init="!isNew"
+            class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
+            <Background pattern-color="hsl(var(--border))" :gap="20" />
+            <Controls position="bottom-left">
+              <ControlButton :title="showMinimap ? 'Hide minimap' : 'Show minimap'" @click="showMinimap = !showMinimap">
+                <LucideMap class="h-4 w-4" />
+              </ControlButton>
+            </Controls>
+            <MiniMap v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
+              if (node.type === 'trigger') return 'hsl(142 76% 36%)'
+              if (node.type === 'condition') return 'hsl(48 96% 53%)'
+              if (node.type === 'loop') return 'hsl(280 67% 60%)'
+              if (node.type === 'delay') return 'hsl(25 95% 53%)'
+              return 'hsl(217 91% 60%)'
+            }" />
+          </VueFlow>
 
-      <div
-        class="pointer-events-none absolute top-4 z-10 flex flex-col gap-2 transition-[right] duration-200 ease-in-out"
-        :class="isSidebarOpen ? 'right-[21rem] @2xl:right-[21.5rem]' : 'right-3 @2xl:right-8'">
-        <button
-          class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
-          :title="isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'" @click="isSidebarOpen = !isSidebarOpen">
-          <LucidePanelRightClose v-if="isSidebarOpen" class="h-4 w-4" />
-          <LucidePanelRightOpen v-else class="h-4 w-4" />
-        </button>
-        <button
-          class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
-          title="Add node" @click="openAddNodeTab">
-          <LucidePlus class="h-4 w-4" />
-        </button>
-        <button
-          class="bg-background pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border bg-red-500 shadow-sm hover:bg-red-800 disabled:opacity-50"
-          :disabled="isRunning || isNew"
-          :title="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'" @click="runWorkflow">
-          <LucidePlay class="h-4 w-4 text-white" :class="{ 'animate-pulse': isRunning }" />
-        </button>
-      </div>
-    </div>
-
-    <LogsPanel ref="logsPanelRef" :execution-id="lastExecutionId" />
-
-    <div
-class="bg-background absolute inset-y-0 right-0 overflow-hidden border-l transition-[width] duration-200 ease-in-out"
-      :class="isSidebarOpen ? 'w-80' : 'w-0 border-l-0'">
-      <div class="h-full w-80 overflow-y-auto" style="scrollbar-gutter: stable;">
-        <div v-if="activeTab === 'properties'" class="flex items-center gap-2 border-b px-4 py-3">
-          <LucideSettings class="h-4 w-4" />
-          <span class="text-sm font-medium">Node properties</span>
+          <div class="pointer-events-none absolute top-4 right-3 z-10 flex flex-col gap-2 @2xl:right-8">
+            <button
+              class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
+              :title="isAddNodeOpen ? 'Close add node' : 'Add node'" @click="isAddNodeOpen = !isAddNodeOpen">
+              <LucidePlus class="h-4 w-4" />
+            </button>
+            <button
+              class="bg-background pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border bg-red-500 shadow-sm hover:bg-red-800 disabled:opacity-50"
+              :disabled="isRunning || isNew"
+              :title="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'" @click="runWorkflow">
+              <LucidePlay class="h-4 w-4 text-white" :class="{ 'animate-pulse': isRunning }" />
+            </button>
+          </div>
         </div>
 
-        <div v-if="activeTab === 'properties'" class="p-4">
-          <div v-if="selectedNode" class="space-y-4">
-            <div class="flex items-center justify-between">
-              <h3 class="font-medium">Node Settings</h3>
-              <button
-class="hover:bg-destructive/10 text-destructive rounded p-1.5" title="Delete node"
-                @click="deleteSelectedNode">
-                <LucideTrash2 class="h-4 w-4" />
-              </button>
-            </div>
-
-            <div class="space-y-2">
-              <label class="text-sm font-medium">Name</label>
-              <input
-v-model="selectedNode.data.label" type="text"
-                class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-            </div>
-
-            <div class="space-y-2">
-              <label class="text-sm font-medium">Description</label>
-              <textarea
-v-model="selectedNode.data.description" rows="2"
-                class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-            </div>
-
-            <div class="space-y-2">
-              <label class="text-sm font-medium">Type</label>
-              <div class="text-muted-foreground bg-muted rounded-md px-3 py-2 text-sm capitalize">
-                {{ selectedNode.type }}
+        <!-- Node properties panel — sits below the VueFlow canvas, spans the
+             full canvas column width. Auto-shows when a node is selected. -->
+        <div class="bg-background overflow-hidden border-t transition-[height] duration-200 ease-in-out"
+          :class="selectedNode ? 'h-80' : 'h-0 border-t-0'">
+          <div class="h-80 overflow-y-auto" style="scrollbar-gutter: stable;">
+            <div class="flex items-center justify-between gap-2 border-b px-4 py-3">
+              <div class="flex items-center gap-2">
+                <LucideSettings class="h-4 w-4" />
+                <span class="text-sm font-medium">Node properties</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <button v-if="selectedNode" class="hover:bg-destructive/10 text-destructive rounded p-1.5"
+                  title="Delete node" @click="deleteSelectedNode">
+                  <LucideTrash2 class="h-4 w-4" />
+                </button>
+                <button class="hover:bg-accent rounded p-1.5" title="Close" @click="selectedNode = null">
+                  <LucideX class="h-4 w-4" />
+                </button>
               </div>
             </div>
 
-            <template v-if="selectedNode.type === 'trigger'">
-              <div class="border-t pt-4">
-                <h4 class="mb-3 text-sm font-medium">Trigger Settings</h4>
-                <div class="space-y-3">
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Webhook Path</label>
-                    <input
-v-model="selectedNode.data.config.path" type="text" placeholder="/webhook"
-                      class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">HTTP Method</label>
-                    <select
-v-model="selectedNode.data.config.method"
-                      class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                      <option value="GET">GET</option>
-                      <option value="POST">POST</option>
-                      <option value="PUT">PUT</option>
-                      <option value="DELETE">DELETE</option>
-                    </select>
-                  </div>
+            <div v-if="selectedNode" class="space-y-4 p-4">
+              <div class="space-y-2">
+                <label class="text-sm font-medium">Name</label>
+                <input v-model="selectedNode.data.label" type="text"
+                  class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium">Description</label>
+                <textarea v-model="selectedNode.data.description" rows="2"
+                  class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-sm font-medium">Type</label>
+                <div class="text-muted-foreground bg-muted rounded-md px-3 py-2 text-sm capitalize">
+                  {{ selectedNode.type }}
                 </div>
               </div>
-            </template>
 
-            <template v-if="selectedNode.type === 'condition'">
-              <div class="border-t pt-4">
-                <h4 class="mb-3 text-sm font-medium">Condition Settings</h4>
-                <div class="space-y-3">
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Field</label>
-                    <input
-v-model="selectedNode.data.config.field" type="text" placeholder="data.status"
-                      class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Operator</label>
-                    <select
-v-model="selectedNode.data.config.operator"
-                      class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                      <option value="equals">Equals</option>
-                      <option value="not_equals">Not Equals</option>
-                      <option value="contains">Contains</option>
-                      <option value="greater_than">Greater Than</option>
-                      <option value="less_than">Less Than</option>
-                      <option value="is_empty">Is Empty</option>
-                      <option value="is_not_empty">Is Not Empty</option>
-                    </select>
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Value</label>
-                    <input
-v-model="selectedNode.data.config.value" type="text" placeholder="active"
-                      class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                  </div>
-                </div>
-              </div>
-            </template>
-
-            <template v-if="selectedNode.type === 'loop'">
-              <div class="border-t pt-4">
-                <h4 class="mb-3 text-sm font-medium">Loop Settings</h4>
-                <div class="space-y-3">
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Items Field</label>
-                    <input
-v-model="selectedNode.data.config.itemsField" type="text" placeholder="data.items"
-                      class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Batch Size</label>
-                    <input
-v-model="selectedNode.data.config.batchSize" type="number" placeholder="1"
-                      class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                  </div>
-                </div>
-              </div>
-            </template>
-
-            <template v-if="selectedNode.type === 'delay'">
-              <div class="border-t pt-4">
-                <h4 class="mb-3 text-sm font-medium">Delay Settings</h4>
-                <div class="space-y-3">
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Duration</label>
-                    <div class="flex gap-2">
-                      <input
-v-model="selectedNode.data.config.duration" type="number" placeholder="5"
-                        class="bg-background focus:ring-ring flex-1 rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                      <select
-v-model="selectedNode.data.config.unit"
-                        class="bg-background focus:ring-ring rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                        <option value="seconds">Seconds</option>
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
-                        <option value="days">Days</option>
+              <template v-if="selectedNode.type === 'trigger'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">Trigger Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Webhook Path</label>
+                      <input v-model="selectedNode.data.config.path" type="text" placeholder="/webhook"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">HTTP Method</label>
+                      <select v-model="selectedNode.data.config.method"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
                       </select>
                     </div>
                   </div>
                 </div>
-              </div>
-            </template>
+              </template>
 
-            <template v-if="selectedNode.type === 'action' && selectedNode.data.icon === 'Mail'">
-              <div class="border-t pt-4">
-                <h4 class="mb-3 text-sm font-medium">Email Settings</h4>
-                <div class="space-y-3">
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">To</label>
-                    <input
-v-model="selectedNode.data.config.to" type="email" placeholder="user@example.com"
-                      class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Subject</label>
-                    <input
-v-model="selectedNode.data.config.subject" type="text" placeholder="Email subject"
-                      class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Body</label>
-                    <textarea
-v-model="selectedNode.data.config.body" rows="4" placeholder="Email body..."
-                      class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+              <template v-if="selectedNode.type === 'condition'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">Condition Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Field</label>
+                      <input v-model="selectedNode.data.config.field" type="text" placeholder="data.status"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Operator</label>
+                      <select v-model="selectedNode.data.config.operator"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
+                        <option value="equals">Equals</option>
+                        <option value="not_equals">Not Equals</option>
+                        <option value="contains">Contains</option>
+                        <option value="greater_than">Greater Than</option>
+                        <option value="less_than">Less Than</option>
+                        <option value="is_empty">Is Empty</option>
+                        <option value="is_not_empty">Is Not Empty</option>
+                      </select>
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Value</label>
+                      <input v-model="selectedNode.data.config.value" type="text" placeholder="active"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </template>
+              </template>
 
-            <template v-if="selectedNode.type === 'action' && selectedNode.data.icon === 'Globe'">
-              <div class="border-t pt-4">
-                <h4 class="mb-3 text-sm font-medium">HTTP Request Settings</h4>
-                <div class="space-y-3">
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">URL</label>
-                    <input
-v-model="selectedNode.data.config.url" type="url"
-                      placeholder="https://api.example.com/endpoint"
-                      class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Method</label>
-                    <select
-v-model="selectedNode.data.config.method"
-                      class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                      <option value="GET">GET</option>
-                      <option value="POST">POST</option>
-                      <option value="PUT">PUT</option>
-                      <option value="PATCH">PATCH</option>
-                      <option value="DELETE">DELETE</option>
-                    </select>
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Headers (JSON)</label>
-                    <textarea
-v-model="selectedNode.data.config.headers" rows="2"
-                      placeholder='{"Authorization": "Bearer ..."}'
-                      class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none" />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-muted-foreground text-sm">Body (JSON)</label>
-                    <textarea
-v-model="selectedNode.data.config.body" rows="4" placeholder='{"key": "value"}'
-                      class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none" />
+              <template v-if="selectedNode.type === 'loop'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">Loop Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Items Field</label>
+                      <input v-model="selectedNode.data.config.itemsField" type="text" placeholder="data.items"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Batch Size</label>
+                      <input v-model="selectedNode.data.config.batchSize" type="number" placeholder="1"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </template>
-          </div>
+              </template>
 
-          <div v-else class="flex h-40 flex-col items-center justify-center text-center">
-            <div class="text-muted-foreground text-sm">
-              Click on a node to view and edit its properties
+              <template v-if="selectedNode.type === 'delay'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">Delay Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Duration</label>
+                      <div class="flex gap-2">
+                        <input v-model="selectedNode.data.config.duration" type="number" placeholder="5"
+                          class="bg-background focus:ring-ring flex-1 rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                        <select v-model="selectedNode.data.config.unit"
+                          class="bg-background focus:ring-ring rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
+                          <option value="seconds">Seconds</option>
+                          <option value="minutes">Minutes</option>
+                          <option value="hours">Hours</option>
+                          <option value="days">Days</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <template v-if="selectedNode.type === 'action' && selectedNode.data.icon === 'Mail'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">Email Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">To</label>
+                      <input v-model="selectedNode.data.config.to" type="email" placeholder="user@example.com"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Subject</label>
+                      <input v-model="selectedNode.data.config.subject" type="text" placeholder="Email subject"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Body</label>
+                      <textarea v-model="selectedNode.data.config.body" rows="4" placeholder="Email body..."
+                        class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <template v-if="selectedNode.type === 'action' && selectedNode.data.icon === 'Globe'">
+                <div class="border-t pt-4">
+                  <h4 class="mb-3 text-sm font-medium">HTTP Request Settings</h4>
+                  <div class="space-y-3">
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">URL</label>
+                      <input v-model="selectedNode.data.config.url" type="url"
+                        placeholder="https://api.example.com/endpoint"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Method</label>
+                      <select v-model="selectedNode.data.config.method"
+                        class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="DELETE">DELETE</option>
+                      </select>
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Headers (JSON)</label>
+                      <textarea v-model="selectedNode.data.config.headers" rows="2"
+                        placeholder='{"Authorization": "Bearer ..."}'
+                        class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                      <label class="text-muted-foreground text-sm">Body (JSON)</label>
+                      <textarea v-model="selectedNode.data.config.body" rows="4" placeholder='{"key": "value"}'
+                        class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none" />
+                    </div>
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
         </div>
+      </div>
 
-        <div v-if="activeTab === 'add-node'" class="p-4">
-          <div class="relative mb-3">
-            <LucideSearch class="text-muted-foreground pointer-events-none absolute top-2.5 left-2 h-4 w-4" />
-            <input
-v-model="nodeSearchQuery" type="text" placeholder="Search actions…"
-              class="bg-background focus:ring-ring w-full rounded-md border py-1.5 pr-2 pl-8 text-sm focus:ring-2 focus:outline-none" />
+      <!-- Add-node sidebar (right, canvas-height) -->
+      <div class="bg-background overflow-hidden border-l transition-[width] duration-200 ease-in-out"
+        :class="isAddNodeOpen ? 'w-80' : 'w-0 border-l-0'">
+        <div class="h-full w-80 overflow-y-auto" style="scrollbar-gutter: stable;">
+          <div class="flex items-center justify-between gap-2 border-b px-4 py-3">
+            <span class="text-sm font-medium">Add node</span>
+            <button class="hover:bg-accent rounded p-1.5" title="Close" @click="isAddNodeOpen = false">
+              <LucideX class="h-4 w-4" />
+            </button>
           </div>
-          <div
-v-if="manifestStore.loading.value && paletteSections.length === 0"
-            class="text-muted-foreground py-8 text-center text-sm">
-            Loading node types…
-          </div>
-          <div v-else class="space-y-4">
-            <div v-for="section in filteredNodeTemplates" :key="section.category">
-              <div class="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
-                {{ section.category }}
-              </div>
-              <div class="space-y-1.5">
-                <button
-v-for="item in section.items" :key="item.id"
-                  class="hover:bg-muted/50 flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors"
-                  draggable="true" @dragstart="(e) => onDragStart(e, item)" @click="quickAddNode(item)">
-                  <LucidePlay class="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
-                  <div class="min-w-0 flex-1">
-                    <div class="text-sm font-medium">{{ item.label }}</div>
-                    <div v-if="item.actionName" class="text-muted-foreground font-mono text-[10px]">
-                      {{ item.actionName }}
-                    </div>
-                    <div v-if="item.description" class="text-muted-foreground line-clamp-2 text-xs">
-                      {{ item.description }}
-                    </div>
-                  </div>
-                </button>
-              </div>
+          <div class="p-4">
+            <div class="relative mb-3">
+              <LucideSearch class="text-muted-foreground pointer-events-none absolute top-2.5 left-2 h-4 w-4" />
+              <input v-model="nodeSearchQuery" type="text" placeholder="Search actions…"
+                class="bg-background focus:ring-ring w-full rounded-md border py-1.5 pr-2 pl-8 text-sm focus:ring-2 focus:outline-none" />
             </div>
-            <div
-v-if="filteredNodeTemplates.length === 0 && !manifestStore.loading.value"
+            <div v-if="manifestStore.loading.value && paletteSections.length === 0"
               class="text-muted-foreground py-8 text-center text-sm">
-              No nodes match your search
+              Loading node types…
+            </div>
+            <div v-else class="space-y-4">
+              <div v-for="section in filteredNodeTemplates" :key="section.category">
+                <div class="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+                  {{ section.category }}
+                </div>
+                <div class="space-y-1.5">
+                  <button v-for="item in section.items" :key="item.id"
+                    class="hover:bg-muted/50 flex w-full items-start gap-2 rounded-md border p-2 text-left transition-colors"
+                    draggable="true" @dragstart="(e) => onDragStart(e, item)" @click="quickAddNode(item)">
+                    <LucidePlay class="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+                    <div class="min-w-0 flex-1">
+                      <div class="text-sm font-medium">{{ item.label }}</div>
+                      <div v-if="item.actionName" class="text-muted-foreground font-mono text-[10px]">
+                        {{ item.actionName }}
+                      </div>
+                      <div v-if="item.description" class="text-muted-foreground line-clamp-2 text-xs">
+                        {{ item.description }}
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <div v-if="filteredNodeTemplates.length === 0 && !manifestStore.loading.value"
+                class="text-muted-foreground py-8 text-center text-sm">
+                No nodes match your search
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <LogsPanel ref="logsPanelRef" :execution-id="lastExecutionId" />
   </div>
 </template>
 
