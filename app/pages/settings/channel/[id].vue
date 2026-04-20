@@ -51,9 +51,26 @@ definePageMeta({
 // =====================================================================================
 const formSchema = toTypedSchema(
   z.object({
-    name: z.string().min(1, t('entity_required', { entityName: 'name' })),
-    url: z.url(t('channels.invalid_url')),
+    name: z
+      .string()
+      .min(1, t('entity_required', { entityName: 'name' }))
+      .max(50, t('channels.validation_name_max_length')),
+    url: z.url(t('channels.invalid_url')).optional().or(z.literal('')),
     active: z.boolean(),
+    mail: z
+      .object({
+        disabled: z.boolean(),
+        displayName: z.string(),
+        orderConfirmationBCCEmail: z
+          .email(t('channels.validation_email_format'))
+          .or(z.literal('')),
+        loginUrl: z.string(),
+        passwordResetUrl: z.string(),
+      })
+      .refine((d) => d.disabled === true || d.displayName.trim().length > 0, {
+        message: t('channels.validation_mail_display_name_required'),
+        path: ['displayName'],
+      }),
   }),
 );
 
@@ -75,13 +92,23 @@ const initialUpdateData: ChannelUpdate = {
 // =====================================================================================
 // UI STATE MANAGEMENT
 // =====================================================================================
-const tabs = [
-  t('channels.tab_general'),
-  t('channels.tab_markets'),
-  t('channels.tab_payments'),
-  t('channels.tab_mails'),
-  t('channels.tab_storefront_settings'),
-];
+// Per-tab error indicators (STU-125). Derived from VeeValidate form errors —
+// show a red dot on the tab that owns the invalid field. Tabs not covered by
+// the schema (Markets, Payments, Storefront settings) never show a dot.
+const tabs = computed(() => {
+  const errors = form.errors.value;
+  const mailHasError = Object.keys(errors).some((k) => k.startsWith('mail.'));
+  return [
+    {
+      label: t('channels.tab_general'),
+      error: !!(errors.name || errors.url),
+    },
+    { label: t('channels.tab_markets') },
+    { label: t('channels.tab_payments') },
+    { label: t('channels.tab_mails'), error: mailHasError },
+    { label: t('channels.tab_storefront_settings') },
+  ];
+});
 
 // Locked state — background processing guard for active toggle
 const isLocked = ref(false);
@@ -121,21 +148,9 @@ const channelPayments = ref<ChannelPaymentMethod[]>([]);
 const channelMailSettings = ref<ChannelMailSettings | null>(null);
 const channelMailTypes = ref<ChannelMailType[]>([]);
 
-// Keys owned by the General sub-tab (STU-119). Layout sub-tab (STU-118) owns
-// the rest. Both merge into the same flat `mailSettings` object.
-const MAIL_GENERAL_KEYS = [
-  'displayName',
-  'fromEmailAddress',
-  'disabled',
-  'locale',
-  'loginUrl',
-  'passwordResetUrl',
-  'orderConfirmationBCCEmail',
-  'externalSourceVerificationTag',
-  'emailReplyToCustomer',
-  'orderConfirmationExternalSource',
-] as const satisfies readonly (keyof ChannelMailSettings)[];
-
+// Keys owned by the Layout sub-tab (STU-118). General-tab editable fields live
+// in the VeeValidate form state under `mail.*` (STU-125). Read-only mail
+// metadata round-trips via `channelMailSettings`.
 const MAIL_LAYOUT_KEYS = [
   'backgroundColor',
   'bodyColor',
@@ -165,7 +180,6 @@ const MAIL_LAYOUT_KEYS = [
   'hideArticleNumber',
 ] as const satisfies readonly (keyof ChannelMailSettings)[];
 
-const mailGeneralFields = ref<Partial<ChannelMailSettings>>({});
 const mailLayoutFields = ref<Partial<ChannelMailSettings>>({});
 const mailLayoutFiles = ref<{ logoUrl?: File; headerImgUrl?: File }>({});
 
@@ -348,11 +362,22 @@ const {
   validationSchema: formSchema,
   initialEntityData: initialCreateData,
   initialUpdateData,
-  getInitialFormValues: (entityData) => ({
-    name: entityData.name || '',
-    url: entityData.url || '',
-    active: entityData.active ?? false,
-  }),
+  getInitialFormValues: (entityData) => {
+    const existing =
+      'mailSettings' in entityData ? entityData.mailSettings : undefined;
+    return {
+      name: entityData.name || '',
+      url: entityData.url || '',
+      active: entityData.active ?? false,
+      mail: {
+        disabled: existing?.disabled ?? false,
+        displayName: existing?.displayName ?? '',
+        orderConfirmationBCCEmail: existing?.orderConfirmationBCCEmail ?? '',
+        loginUrl: existing?.loginUrl ?? '',
+        passwordResetUrl: existing?.passwordResetUrl ?? '',
+      },
+    };
+  },
   reshapeEntityData: (entityData) => ({
     ...entityData,
   }),
@@ -383,20 +408,23 @@ const {
     // Populate channel mail settings and mail types
     channelMailSettings.value = entity.mailSettings ?? null;
     channelMailTypes.value = entity.mailTypes ?? [];
-    mailGeneralFields.value = pickMailKeys(
-      entity.mailSettings ?? null,
-      MAIL_GENERAL_KEYS,
-    );
     mailLayoutFields.value = pickMailKeys(
       entity.mailSettings ?? null,
       MAIL_LAYOUT_KEYS,
     );
     mailLayoutFiles.value = {};
-    breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
     form.setValues({
       name: entity.name,
       url: entity.url,
       active: entity.active,
+      mail: {
+        disabled: entity.mailSettings?.disabled ?? false,
+        displayName: entity.mailSettings?.displayName ?? '',
+        orderConfirmationBCCEmail:
+          entity.mailSettings?.orderConfirmationBCCEmail ?? '',
+        loginUrl: entity.mailSettings?.loginUrl ?? '',
+        passwordResetUrl: entity.mailSettings?.passwordResetUrl ?? '',
+      },
     });
   },
   prepareCreateData: (formData) => ({
@@ -426,10 +454,23 @@ const {
     })),
     storefrontSettings: storefrontSettings.value,
     mailSettings: {
-      ...mailGeneralFields.value,
+      // Round-trip read-only mail metadata (fromEmailAddress, locale, etc.)
+      // — the BE sends these on GET and expects them preserved on PATCH.
+      ...(channelMailSettings.value ?? {}),
+      // Editable general-tab fields — source of truth is the VeeValidate form.
+      disabled: formData.mail?.disabled ?? false,
+      displayName: formData.mail?.displayName ?? '',
+      orderConfirmationBCCEmail: formData.mail?.orderConfirmationBCCEmail ?? '',
+      loginUrl: formData.mail?.loginUrl ?? '',
+      passwordResetUrl: formData.mail?.passwordResetUrl ?? '',
+      // Layout-tab fields (STU-118).
       ...mailLayoutFields.value,
-      ...(mailLayoutFiles.value.logoUrl ? { logoUrl: mailLayoutFiles.value.logoUrl } : {}),
-      ...(mailLayoutFiles.value.headerImgUrl ? { headerImgUrl: mailLayoutFiles.value.headerImgUrl } : {}),
+      ...(mailLayoutFiles.value.logoUrl
+        ? { logoUrl: mailLayoutFiles.value.logoUrl }
+        : {}),
+      ...(mailLayoutFiles.value.headerImgUrl
+        ? { headerImgUrl: mailLayoutFiles.value.headerImgUrl }
+        : {}),
     },
     ...(schemaChanged.value ? { storefrontSchema: activeSchema.value } : {}),
   }),
@@ -465,6 +506,14 @@ async function handleResetToDefault() {
     isResettingSchema.value = false;
   }
 }
+
+// Reflect the entity page title into the breadcrumb store for both create and
+// edit modes (STU-109). `entityPageTitle` derives "New channel" in create mode
+// and the channel `name` in edit mode — a `watchEffect` keeps both in sync
+// without needing separate hooks per mode.
+watchEffect(() => {
+  breadcrumbsStore.setCurrentTitle(entityPageTitle.value);
+});
 
 // Sync storefrontSettings into entityDataUpdate so useUnsavedChanges detects changes
 // (prepareUpdateData also reads storefrontSettings.value at save time)
@@ -520,16 +569,20 @@ watch(
   { deep: true },
 );
 
-// Merge General-tab mail fields into entityDataUpdate.mailSettings so
-// useUnsavedChanges detects changes. Spread pattern — must not clobber
+// Merge General-tab mail form fields (mail.*) into entityDataUpdate.mailSettings
+// so useUnsavedChanges detects changes. Spread pattern — must not clobber
 // Layout-tab fields (STU-118).
 watch(
-  mailGeneralFields,
-  (fields) => {
-    if (createMode.value) return;
+  () => form.values.mail,
+  (mail) => {
+    if (createMode.value || !mail) return;
     entityDataUpdate.value.mailSettings = {
       ...entityDataUpdate.value.mailSettings,
-      ...fields,
+      disabled: mail.disabled ?? false,
+      displayName: mail.displayName ?? '',
+      orderConfirmationBCCEmail: mail.orderConfirmationBCCEmail ?? '',
+      loginUrl: mail.loginUrl ?? '',
+      passwordResetUrl: mail.passwordResetUrl ?? '',
     };
   },
   { deep: true },
@@ -578,16 +631,18 @@ const { handleFetchResult } = usePageError({
 // =====================================================================================
 const handleCreateChannel = async () => {
   await createEntity(async () => {
+    const { valid } = await form.validate();
     validateOnChange.value = true;
-    return true;
+    return valid;
   });
 };
 
 const handleSave = async () => {
   const result = await updateEntity(
     async () => {
+      const { valid } = await form.validate();
       validateOnChange.value = true;
-      return true;
+      return valid;
     },
     {
       fields: [
@@ -789,7 +844,7 @@ if (!createMode.value) {
                     <FormItem>
                       <FormLabel>{{ $t('channels.identifier') }}</FormLabel>
                       <FormControl>
-                        <Input :model-value="internalName" disabled />
+                        <FormInputLocked :model-value="internalName" />
                       </FormControl>
                       <FormDescription>
                         {{ $t('channels.identifier_helper') }}
@@ -968,7 +1023,6 @@ if (!createMode.value) {
             :key="`tab-${currentTab}`"
           >
             <ChannelMailsTab
-              v-model:general-fields="mailGeneralFields"
               v-model:layout-fields="mailLayoutFields"
               v-model:layout-files="mailLayoutFiles"
               :mail-types="channelMailTypes"
@@ -977,6 +1031,7 @@ if (!createMode.value) {
               :languages="channelActiveLanguages"
               :default-language="defaultLanguageId"
               :storefront-url="entityDataUpdate?.url ?? ''"
+              :mail-from-email="channelMailSettings?.fromEmailAddress ?? ''"
               @mail-saved="handleMailSaved"
             />
           </ContentEditMainContent>
