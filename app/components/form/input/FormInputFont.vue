@@ -46,7 +46,8 @@ const handleFocus = (event: FocusEvent) => {
     isComingFromSearchInput.value = false;
     return;
   }
-  if (event.relatedTarget && event.relatedTarget === event.currentTarget) return;
+  if (event.relatedTarget && event.relatedTarget === event.currentTarget)
+    return;
   if (!wasOpenBeforeClick.value) open.value = true;
   wasOpenBeforeClick.value = false;
 };

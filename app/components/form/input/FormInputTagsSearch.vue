@@ -105,7 +105,12 @@ const getItemFromDataSet = (id: string): T | undefined => {
 };
 </script>
 <template>
-  <Combobox v-model="model" v-model:open="open" :ignore-filter="true" class="relative">
+  <Combobox
+    v-model="model"
+    v-model:open="open"
+    :ignore-filter="true"
+    class="relative"
+  >
     <ComboboxAnchor as-child>
       <TagsInput
         v-model="model"
@@ -117,7 +122,12 @@ const getItemFromDataSet = (id: string): T | undefined => {
         :display-value="getName"
       >
         <div class="flex flex-wrap items-center gap-2">
-          <TagsInputItem v-for="id in model" :key="id" :value="id" :class="{ 'pl-1.5': $slots.tag }">
+          <TagsInputItem
+            v-for="id in model"
+            :key="id"
+            :value="id"
+            :class="{ 'pl-1.5': $slots.tag }"
+          >
             <slot name="tag" :item="getItemFromDataSet(id)">
               <TagsInputItemText />
             </slot>
