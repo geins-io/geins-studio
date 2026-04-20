@@ -482,8 +482,10 @@ const handleSave = async () => {
 
 // ─── Sidebar summary ─────────────────────────────────────────────
 // Only show the summary sidebar on the General tab (like company/price-list pattern).
-// On other tabs the sidebar collapses into a floating toggle icon via ContentEditMain.
-const showSidebar = computed(() => currentTab.value === 0 && !isNew.value)
+// On smaller viewports (hasReducedSpace) or other tabs, the sidebar collapses into
+// a floating toggle icon via ContentEditMain.
+const { hasReducedSpace } = useLayout()
+const showSidebar = computed(() => !hasReducedSpace.value && currentTab.value === 0 && !isNew.value)
 
 const triggerDisplayName = computed(() => {
   const tt = manifestTriggerTypes.value.find(t => (t.type as string) === triggerTypeValue.value)
@@ -605,7 +607,7 @@ v-if="!isNew" icon="save" :loading="isSavingConfig"
       </ContentHeader>
     </template>
 
-    <form @submit.prevent>
+    <form v-if="currentTab !== 1" @submit.prevent>
       <ContentEditMain :show-sidebar="showSidebar">
         <!-- General tab -->
         <KeepAlive>
@@ -921,13 +923,6 @@ v-if="!isNew" title="Runtime Settings"
           </ContentEditMainContent>
         </KeepAlive>
 
-        <!-- Builder tab (VueFlow) — full-bleed canvas -->
-        <KeepAlive>
-          <WorkflowBuilder
-v-if="currentTab === 1" :key="`tab-${currentTab}`" :workflow-id="workflowId" :is-new="isNew"
-            @executed="refreshExecutions" />
-        </KeepAlive>
-
         <!-- Inputs tab -->
         <KeepAlive>
           <ContentEditMainContent v-if="currentTab === 2" :key="`tab-${currentTab}`">
@@ -1076,4 +1071,14 @@ v-for="entry in historyVersions" :key="entry.version"
       </ContentEditMain>
     </form>
   </ContentEditWrap>
+
+  <!-- Builder tab: rendered outside ContentEditWrap so it escapes the
+       `container` max-width. `-mx-3 @2xl:-mx-8` also escapes the default
+       layout's padding so the VueFlow canvas fills the available width.
+       `-mt-4` closes the gap left by ContentHeader's `mb-4` so the canvas
+       starts right under the tabs. -->
+  <KeepAlive>
+    <WorkflowBuilder v-if="currentTab === 1" :key="`tab-${currentTab}`" class="-mx-3 -mt-4 @2xl:-mx-8"
+      :workflow-id="workflowId" :is-new="isNew" @executed="refreshExecutions" />
+  </KeepAlive>
 </template>
