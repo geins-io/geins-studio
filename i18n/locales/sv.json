@@ -40,6 +40,7 @@
   "changelog_entry": "Ändringsloggpost | Ändringsloggposter",
   "payment_method": "Betalningsmetod | Betalningsmetoder",
   "mail": "Mail | Mail",
+  "payment": "Betalning | Betalningar",
   "new_entity_url_alias": "ny",
   "list_entity_url_alias": "lista",
   "entity_id": "@:{entityName}-ID",
@@ -601,6 +602,7 @@
   "channels": {
     "identifier": "Internt namn",
     "url": "Butiksadress",
+    "visit_url": "Besök URL",
     "default_language": "Standardspråk",
     "change_default_language": "Ändra standardspråk",
     "additional_languages": "Ytterligare språk",

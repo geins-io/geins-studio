@@ -4,22 +4,23 @@
 // =====================================================================================
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
-import type {
-  ChannelBase,
-  Channel,
-  ChannelCreate,
-  ChannelUpdate,
-  ChannelApiOptions,
-  ChannelLanguageAssignment,
-  ChannelMarket,
-  ChannelMarketAssignment,
-  ChannelPaymentMethod,
-  ChannelMailSettings,
-  ChannelMailType,
-  Language,
-  Market,
-  StorefrontSchema,
-  StorefrontSettings,
+import {
+  DataItemDisplayType,
+  type ChannelBase,
+  type Channel,
+  type ChannelCreate,
+  type ChannelUpdate,
+  type ChannelApiOptions,
+  type ChannelLanguageAssignment,
+  type ChannelMarket,
+  type ChannelMarketAssignment,
+  type ChannelPaymentMethod,
+  type ChannelMailSettings,
+  type ChannelMailType,
+  type Language,
+  type Market,
+  type StorefrontSchema,
+  type StorefrontSettings,
 } from '#shared/types';
 import defaultStorefrontSchema from '@/assets/schemas/storefront-settings-default.json';
 import { useToast } from '@/components/ui/toast/use-toast';
@@ -693,6 +694,16 @@ const summary = computed<DataItem[]>(() => {
       value: entityData.value.name,
     });
   }
+  if (entityData.value?.url) {
+    dataList.push({
+      label: t('channels.url'),
+      value: entityData.value.url,
+      displayValue: t('channels.visit_url'),
+      displayType: DataItemDisplayType.Link,
+      href: entityData.value.url,
+      target: '_blank',
+    });
+  }
   if (!createMode.value) {
     const channelData: Channel = entityData.value;
     if (channelData?.languages?.length) {
@@ -727,16 +738,23 @@ const summary = computed<DataItem[]>(() => {
         entityName: 'market',
       });
     }
-    // First active payment method
-    const firstPayment = channelData?.paymentMethods?.find((p) => p.active);
-    dataList.push({
-      label: t('channels.tab_payments'),
-      value: firstPayment?.name ?? '-',
-    });
+    if (channelPayments.value?.length) {
+      const activePayments = channelPayments.value.filter((p) => p.active);
+      if (activePayments.length) {
+        const displayValue = activePayments.map((p) => p.name).join(', ');
+        dataList.push({
+          label: t('channels.tab_payments'),
+          value: activePayments.map((p) => p._id),
+          displayValue,
+          displayType: DataItemDisplayType.Array,
+          entityName: 'payment_method',
+        });
+      }
+    }
     // Mail settings status
     dataList.push({
       label: t('channels.transaction_mails'),
-      value: channelData?.mailSettings ? t('active') : t('inactive'),
+      value: channelData?.mailSettings?.disabled ? t('inactive') : t('active'),
     });
   }
   return dataList;

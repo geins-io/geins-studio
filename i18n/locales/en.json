@@ -38,6 +38,7 @@
   "account": "Account | Accounts",
   "message": "Message | Messages",
   "mail": "Mail | Mails",
+  "payment": "Payment | Payments",
   "changelog_entry": "Changelog entry | Changelog entries",
   "payment_method": "Payment method | Payment methods",
   "new_entity_url_alias": "new",
@@ -605,6 +606,7 @@
   "channels": {
     "identifier": "Internal name",
     "url": "Storefront URL",
+    "visit_url": "Visit URL",
     "default_language": "Default language",
     "change_default_language": "Change default language",
     "additional_languages": "Additional languages",

@@ -79,7 +79,7 @@ const handleKeyDown = () => {
 </script>
 
 <template>
-  <Combobox v-model="choice" v-model:open="open" by="value">
+  <Combobox v-model="choice" v-model:open="open" by="value" class="relative">
     <ComboboxAnchor
       as-child
       class="bg-input data-[state=open]:border-primary flex h-10 w-full items-center justify-between rounded-lg border px-3 py-1 text-sm transition-colors"

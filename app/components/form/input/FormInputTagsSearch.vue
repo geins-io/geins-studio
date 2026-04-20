@@ -105,7 +105,7 @@ const getItemFromDataSet = (id: string): T | undefined => {
 };
 </script>
 <template>
-  <Combobox v-model="model" v-model:open="open" :ignore-filter="true">
+  <Combobox v-model="model" v-model:open="open" :ignore-filter="true" class="relative">
     <ComboboxAnchor as-child>
       <TagsInput
         v-model="model"
