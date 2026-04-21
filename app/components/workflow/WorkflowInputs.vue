@@ -49,6 +49,16 @@ const setInputValue = (name: string, value: unknown) => {
   emit('update:inputValues', { ...props.inputValues, [name]: value })
 }
 
+// Helpers hoist union-typed casts out of the template — otherwise the
+// template parser sees `string | number` and flags the `|` as a deprecated
+// Vue 2 filter (vue/no-deprecated-filter).
+const numberInputValue = (name: string): string | number | undefined => {
+  const v = props.inputValues[name]
+  if (v === null || v === undefined) return undefined
+  if (typeof v === 'number' || typeof v === 'string') return v
+  return String(v)
+}
+
 // ─── Add input dialog ──────────────────────────────────────────────
 const addInputDialogOpen = ref(false)
 const addInputCategory = ref('')
@@ -182,7 +192,7 @@ const confirmAddGroup = () => {
         </div>
         <FormGrid v-for="item in group.items" :key="item.name" design="1">
           <div class="space-y-1.5">
-            <div class="flex items-start justify-between gap-3">
+            <div class="flex items-end justify-between gap-3">
               <div class="min-w-0 space-y-0.5">
                 <Label :for="`inp-${item.name}`" class="flex flex-wrap items-center gap-1.5">
                   <span>{{ prettyLabel(item.name) }}</span>
@@ -204,7 +214,7 @@ const confirmAddGroup = () => {
             <Switch v-if="item.type === 'boolean'" :id="`inp-${item.name}`" :model-value="!!inputValues[item.name]"
               @update:model-value="(v: boolean) => setInputValue(item.name, v)" />
             <Input v-else-if="item.type === 'number'" :id="`inp-${item.name}`" type="number"
-              :model-value="inputValues[item.name] as string | number | undefined"
+              :model-value="numberInputValue(item.name)"
               @update:model-value="(v) => setInputValue(item.name, v === '' ? null : Number(v))" />
             <Input v-else :id="`inp-${item.name}`"
               :model-value="inputValues[item.name] == null ? '' : String(inputValues[item.name])"
