@@ -577,6 +577,41 @@ const handleCreate = async () => {
   }
 }
 
+// The form uses PascalCase trigger types (matching the manifest) but the
+// Management API stores them camelCase — normalize at the API boundary.
+const toApiWorkflowType = (
+  t: WorkflowFormValues['trigger']['type'],
+): 'onDemand' | 'scheduled' | 'event' => {
+  if (t === 'Scheduled') return 'scheduled'
+  if (t === 'Event') return 'event'
+  return 'onDemand'
+}
+
+// Build the trigger configuration expected by the API. Scheduled/event types
+// require this object (WF010 / WF013), onDemand doesn't.
+const buildTriggerConfig = (
+  apiType: 'onDemand' | 'scheduled' | 'event',
+  trigger: WorkflowFormValues['trigger'],
+) => {
+  if (apiType === 'scheduled') {
+    return {
+      enabled: true,
+      cronExpression: trigger.cron || '',
+      description: trigger.description || '',
+    }
+  }
+  if (apiType === 'event') {
+    return {
+      enabled: true,
+      entity: trigger.eventEntity || '',
+      action: trigger.eventAction || '',
+      subEntity: trigger.eventSubEntity || '',
+      description: trigger.description || '',
+    }
+  }
+  return undefined
+}
+
 // ─── Save ──────────────────────────────────────────────────────────
 const handleSave = async () => {
   if (isNew.value || !currentWorkflow.value) return
@@ -594,6 +629,8 @@ const handleSave = async () => {
       ...i,
       defaultValue: inputValues.value[i.name],
     }))
+    const apiType = toApiWorkflowType(values.trigger.type)
+    const trigger = buildTriggerConfig(apiType, values.trigger)
     if (workflowActive.value !== isEnabled.value) {
       if (workflowActive.value) {
         await orchestratorApi.workflow.enable(workflowId.value)
@@ -606,15 +643,16 @@ const handleSave = async () => {
       name: values.details.name,
       description: values.details.description || undefined,
       tags: values.details.tags,
-      type: values.trigger.type as any,
+      type: apiType,
       enabled: workflowActive.value,
-      cronExpression: values.trigger.type === 'Scheduled' ? values.trigger.cron : undefined,
-      eventName: values.trigger.type === 'Event' ? values.trigger.eventEntity : undefined,
+      cronExpression: apiType === 'scheduled' ? values.trigger.cron : undefined,
+      eventName: apiType === 'event' ? values.trigger.eventEntity : undefined,
       nodes: wf.nodes,
       connections: wf.connections,
       ui: wf.ui,
       input: mergedInputs,
       settings: values.settings,
+      trigger,
     })
     await refreshCurrentWorkflow()
     toast({ title: 'Configuration saved' })
@@ -720,54 +758,62 @@ v-model:open="deleteDialogOpen" :entity-name="entityName" :loading="deleting"
           Add an input to the "{{ addInputCategory }}" group. It will be saved with the workflow.
         </DialogDescription>
       </DialogHeader>
-      <form class="space-y-4" @submit.prevent="confirmAddInput">
-        <div class="grid grid-cols-2 gap-3">
-          <div class="space-y-1.5">
-            <Label for="new-input-name">Name</Label>
-            <Input id="new-input-name" v-model="newInput.name" placeholder="e.g. batchSize" autofocus />
-          </div>
-          <div class="space-y-1.5">
-            <Label for="new-input-type">Type</Label>
-            <Select v-model="newInput.type">
-              <SelectTrigger id="new-input-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="string">string</SelectItem>
-                <SelectItem value="number">number</SelectItem>
-                <SelectItem value="boolean">boolean</SelectItem>
-                <SelectItem value="object">object</SelectItem>
-                <SelectItem value="array">array</SelectItem>
-                <SelectItem value="date">date</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div class="space-y-1.5">
-          <Label for="new-input-description">Description</Label>
-          <Input id="new-input-description" v-model="newInput.description" placeholder="What this input is used for" />
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="space-y-1.5">
-            <Label for="new-input-default">Default value</Label>
-            <Switch v-if="newInput.type === 'boolean'" id="new-input-default"
-              :model-value="newInput.defaultValue === 'true'"
-              @update:model-value="(v: boolean) => (newInput.defaultValue = v ? 'true' : 'false')" />
-            <Input v-else id="new-input-default" :model-value="newInput.defaultValue"
-              :type="newInput.type === 'number' ? 'number' : 'text'"
-              @update:model-value="(v) => (newInput.defaultValue = String(v ?? ''))" />
-          </div>
-          <div class="space-y-1.5">
-            <Label for="new-input-required">Required</Label>
-            <div class="flex h-9 items-center gap-2">
-              <Switch id="new-input-required" v-model="newInput.required" />
-              <span class="text-muted-foreground text-sm">
-                {{ newInput.required ? 'Required' : 'Optional' }}
-              </span>
+      <form @submit.prevent="confirmAddInput">
+        <FormGridWrap>
+          <FormGrid design="1+1">
+            <div class="space-y-1.5">
+              <Label for="new-input-name">Name</Label>
+              <Input id="new-input-name" v-model="newInput.name" placeholder="e.g. batchSize" autofocus />
             </div>
-          </div>
-        </div>
-        <p v-if="addInputError" class="text-destructive text-sm">{{ addInputError }}</p>
+            <div class="space-y-1.5">
+              <Label for="new-input-type">Type</Label>
+              <Select v-model="newInput.type">
+                <SelectTrigger id="new-input-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="string">string</SelectItem>
+                  <SelectItem value="number">number</SelectItem>
+                  <SelectItem value="boolean">boolean</SelectItem>
+                  <SelectItem value="object">object</SelectItem>
+                  <SelectItem value="array">array</SelectItem>
+                  <SelectItem value="date">date</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </FormGrid>
+          <FormGrid design="1">
+            <div class="space-y-1.5">
+              <Label for="new-input-description">Description</Label>
+              <Input
+id="new-input-description" v-model="newInput.description"
+                placeholder="What this input is used for" />
+            </div>
+          </FormGrid>
+          <FormGrid design="1+1">
+            <div class="space-y-1.5">
+              <Label for="new-input-default">Default value</Label>
+              <Switch
+v-if="newInput.type === 'boolean'" id="new-input-default"
+                :model-value="newInput.defaultValue === 'true'"
+                @update:model-value="(v: boolean) => (newInput.defaultValue = v ? 'true' : 'false')" />
+              <Input
+v-else id="new-input-default" :model-value="newInput.defaultValue"
+                :type="newInput.type === 'number' ? 'number' : 'text'"
+                @update:model-value="(v) => (newInput.defaultValue = String(v ?? ''))" />
+            </div>
+            <div class="space-y-1.5">
+              <Label for="new-input-required">Required</Label>
+              <div class="flex h-9 items-center gap-2">
+                <Switch id="new-input-required" v-model="newInput.required" />
+                <span class="text-muted-foreground text-sm">
+                  {{ newInput.required ? 'Required' : 'Optional' }}
+                </span>
+              </div>
+            </div>
+          </FormGrid>
+          <p v-if="addInputError" class="text-destructive text-sm">{{ addInputError }}</p>
+        </FormGridWrap>
       </form>
       <DialogFooter>
         <Button variant="secondary" @click="addInputDialogOpen = false">{{ $t('cancel') }}</Button>
@@ -785,12 +831,16 @@ v-model:open="deleteDialogOpen" :entity-name="entityName" :loading="deleting"
           Groups organize related inputs. The group persists once you add at least one input to it and save.
         </DialogDescription>
       </DialogHeader>
-      <form class="space-y-2" @submit.prevent="confirmAddGroup">
-        <div class="space-y-1.5">
-          <Label for="new-group-name">Name</Label>
-          <Input id="new-group-name" v-model="newGroupName" placeholder="e.g. Filters" autofocus />
-        </div>
-        <p v-if="addGroupError" class="text-destructive text-sm">{{ addGroupError }}</p>
+      <form @submit.prevent="confirmAddGroup">
+        <FormGridWrap>
+          <FormGrid design="1">
+            <div class="space-y-1.5">
+              <Label for="new-group-name">Name</Label>
+              <Input id="new-group-name" v-model="newGroupName" placeholder="e.g. Filters" autofocus />
+            </div>
+          </FormGrid>
+          <p v-if="addGroupError" class="text-destructive text-sm">{{ addGroupError }}</p>
+        </FormGridWrap>
       </form>
       <DialogFooter>
         <Button variant="secondary" @click="addGroupDialogOpen = false">{{ $t('cancel') }}</Button>
@@ -1189,42 +1239,42 @@ v-for="group in workflowInputsByCategory" v-else :key="group.category"
                 <div v-if="group.items.length === 0" class="text-muted-foreground py-6 text-center text-sm">
                   No inputs in this group yet.
                 </div>
-                <div
-v-for="item in group.items" :key="item.name"
-                  class="grid grid-cols-[20rem_1fr_2rem] items-start gap-4 border-b py-3 last:border-b-0">
-                  <div class="min-w-0">
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-sm font-medium">{{ prettyLabel(item.name) }}</span>
-                      <span v-if="item.required" class="text-destructive text-sm">*</span>
+                <FormGrid v-for="item in group.items" :key="item.name" design="1">
+                  <div class="space-y-1.5">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0 space-y-0.5">
+                        <Label :for="`inp-${item.name}`" class="flex flex-wrap items-center gap-1.5">
+                          <span>{{ prettyLabel(item.name) }}</span>
+                          <span v-if="item.required" class="text-destructive">*</span>
+                          <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
+                            {{ item.type }}
+                          </span>
+                          <span class="text-muted-foreground font-mono text-[11px]">{{ item.name }}</span>
+                        </Label>
+                        <p v-if="item.description" class="text-muted-foreground text-xs">
+                          {{ item.description }}
+                        </p>
+                      </div>
+                      <Button
+variant="ghost" size="icon" class="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
+                        :aria-label="`Remove ${item.name}`" @click="removeInput(item.name)">
+                        <LucideTrash class="h-4 w-4" />
+                      </Button>
                     </div>
-                    <div class="text-muted-foreground mt-0.5 font-mono text-[11px] break-all">
-                      {{ item.name }}
-                    </div>
-                    <div class="mt-1 flex items-center gap-1.5">
-                      <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]">{{ item.type
-                      }}</span>
-                    </div>
-                    <div v-if="item.description" class="text-muted-foreground mt-1.5 text-xs">
-                      {{ item.description }}
-                    </div>
-                  </div>
-                  <div class="flex min-w-0 items-start">
                     <Switch
-v-if="item.type === 'boolean'" :model-value="!!inputValues[item.name]"
+v-if="item.type === 'boolean'" :id="`inp-${item.name}`"
+                      :model-value="!!inputValues[item.name]"
                       @update:model-value="(v: boolean) => (inputValues[item.name] = v)" />
                     <Input
-v-else-if="item.type === 'number'" type="number" :model-value="inputValues[item.name] as any"
+v-else-if="item.type === 'number'" :id="`inp-${item.name}`" type="number"
+                      :model-value="inputValues[item.name] as any"
                       @update:model-value="(v) => (inputValues[item.name] = v === '' ? null : Number(v))" />
                     <Input
-v-else :model-value="inputValues[item.name] == null ? '' : String(inputValues[item.name])"
+v-else :id="`inp-${item.name}`"
+                      :model-value="inputValues[item.name] == null ? '' : String(inputValues[item.name])"
                       @update:model-value="(v) => (inputValues[item.name] = v)" />
                   </div>
-                  <Button
-variant="ghost" size="icon" class="text-muted-foreground hover:text-destructive h-8 w-8"
-                    :aria-label="`Remove ${item.name}`" @click="removeInput(item.name)">
-                    <LucideTrash class="h-4 w-4" />
-                  </Button>
-                </div>
+                </FormGrid>
               </FormGridWrap>
             </ContentEditCard>
             <Button
