@@ -234,7 +234,7 @@ describe('buildMailSettings', () => {
 describe('buildMailType', () => {
   it('produces a valid mail type object', () => {
     const mailType = buildMailType();
-    expect(mailType._id).toBe('OrderConfirmation');
+    expect(mailType._id).toBe('orderConfirmation');
     expect(mailType.name).toBeDefined();
     expect(mailType.category).toBe('Order');
     expect(typeof mailType.hasOverrides).toBe('boolean');
