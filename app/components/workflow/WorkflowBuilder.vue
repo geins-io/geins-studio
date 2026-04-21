@@ -13,6 +13,7 @@ import WorkflowSidebarAddNode from './sidebars/WorkflowSidebarAddNode.vue'
 import WorkflowSidebarNodeProperties from './sidebars/WorkflowSidebarNodeProperties.vue'
 import WorkflowNode from './WorkflowNode.vue'
 import type { PaletteItem } from './palette-types'
+import { tidyUpLayout } from './tidy-layout'
 
 
 const props = defineProps<{
@@ -145,7 +146,7 @@ onMounted(() => {
   ]
 })
 
-const { onConnect, addEdges, addNodes, removeNodes, project, findNode } = useVueFlow()
+const { onConnect, addEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView } = useVueFlow()
 
 // After init, VueFlow owns the node store — mutate the trigger node's data
 // in place so reactivity picks up workflow changes (e.g. after a save).
@@ -213,6 +214,15 @@ const handleAddFromPalette = (item: PaletteItem) => {
   const position = project({ x: 400, y: 300 })
   addNodes([buildNewNode(item, position)])
   isAddNodeOpen.value = false
+}
+
+// Auto-arrange nodes left-to-right with dagre (same approach as n8n). We
+// wait a tick after setNodes before fitView so VueFlow has committed the
+// new positions before it tries to frame them.
+const tidyUp = async () => {
+  setNodes(tidyUpLayout(nodes.value, edges.value))
+  await nextTick()
+  fitView({ padding: 0.2 })
 }
 
 const deleteSelectedNode = () => {
@@ -307,6 +317,9 @@ const runWorkflow = async () => {
             class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
             <Background pattern-color="hsl(var(--border))" :gap="20" />
             <Controls position="bottom-left">
+              <ControlButton title="Tidy up layout" @click="tidyUp">
+                <LucideWandSparkles class="h-4 w-4" />
+              </ControlButton>
               <ControlButton :title="showMinimap ? 'Hide minimap' : 'Show minimap'" @click="showMinimap = !showMinimap">
                 <LucideMap class="h-4 w-4" />
               </ControlButton>
