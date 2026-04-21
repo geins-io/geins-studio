@@ -1,4 +1,4 @@
-// Shared types for the workflow node palette — used by WorkflowAddNodeSidebar
+// Shared types for the workflow node palette — used by WorkflowSidebarAddNode
 // (produces items) and WorkflowBuilder (consumes items when placing nodes).
 
 export type PaletteItem = {

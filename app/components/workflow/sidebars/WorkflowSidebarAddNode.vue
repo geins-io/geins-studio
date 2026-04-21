@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PaletteItem, PaletteSection } from './palette-types'
+import type { PaletteItem, PaletteSection } from '../palette-types'
 
 // Right-side add-node sidebar. Shows the manifest's actions + flow-control
 // node types grouped by category, with a search field. Parent controls the

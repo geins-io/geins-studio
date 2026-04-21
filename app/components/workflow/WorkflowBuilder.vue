@@ -8,13 +8,11 @@ import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
 import { useToast } from '@/components/ui/toast/use-toast'
+import WorkflowPanelLogs from './panels/WorkflowPanelLogs.vue'
+import WorkflowSidebarAddNode from './sidebars/WorkflowSidebarAddNode.vue'
+import WorkflowSidebarNodeProperties from './sidebars/WorkflowSidebarNodeProperties.vue'
+import WorkflowNode from './WorkflowNode.vue'
 import type { PaletteItem } from './palette-types'
-import ActionNode from '~/components/workflow/ActionNode.vue'
-import ConditionNode from '~/components/workflow/ConditionNode.vue'
-import DelayNode from '~/components/workflow/DelayNode.vue'
-import LogsPanel from '~/components/workflow/LogsPanel.vue'
-import LoopNode from '~/components/workflow/LoopNode.vue'
-import TriggerNode from '~/components/workflow/TriggerNode.vue'
 
 
 const props = defineProps<{
@@ -30,35 +28,69 @@ const { orchestratorApi } = useGeinsRepository()
 const { geinsLogError } = useGeinsLog('workflow-builder')
 const { toast } = useToast()
 
+// All node types are routed through the same dispatcher so the canvas host
+// doesn't need to know about individual node implementations. WorkflowNode
+// reads the `type` prop VueFlow forwards and renders the matching component.
 const nodeTypes = {
-  trigger: TriggerNode,
-  action: ActionNode,
-  condition: ConditionNode,
-  loop: LoopNode,
-  delay: DelayNode,
+  trigger: WorkflowNode,
+  action: WorkflowNode,
+  condition: WorkflowNode,
+  loop: WorkflowNode,
+  delay: WorkflowNode,
 } as unknown as NodeTypesObject
+
+const TRIGGER_NODE_ID = 'trigger'
+
+// Shares the cache key with the parent page (pages/orchestrator/workflows/[id].vue),
+// so Nuxt returns the already-fetched workflow instead of re-requesting.
+const { data: currentWorkflow } = useAsyncData(
+  () => `workflow-${props.workflowId}`,
+  () => (props.isNew ? Promise.resolve(null) : orchestratorApi.workflow.get(props.workflowId)),
+  { watch: [() => props.workflowId] },
+)
+
+// The trigger is workflow-level metadata — derive the node's display data
+// from the workflow object so the canvas reflects the configured trigger
+// type (Schedule / Event / Manual) without needing the user to edit a node.
+type WorkflowTriggerShape = {
+  type?: string
+  cronExpression?: string
+  eventEntity?: string
+  eventAction?: string
+  eventName?: string
+  triggerDescription?: string
+}
+const triggerNodeData = computed(() => {
+  const wf = currentWorkflow.value as WorkflowTriggerShape | null
+  return {
+    triggerType: wf?.type ?? 'onDemand',
+    cronExpression: wf?.cronExpression ?? '',
+    eventEntity: wf?.eventEntity ?? '',
+    eventAction: wf?.eventAction ?? '',
+    eventName: wf?.eventName ?? '',
+    description: wf?.triggerDescription ?? '',
+  }
+})
+
+const buildTriggerNode = () => ({
+  id: TRIGGER_NODE_ID,
+  type: 'trigger',
+  position: { x: 100, y: 200 },
+  data: { ...triggerNodeData.value },
+  deletable: false,
+})
 
 const initialNodes = ref<any[]>([])
 const initialEdges = ref<any[]>([])
 
 onMounted(() => {
   if (props.isNew) {
-    initialNodes.value = []
+    initialNodes.value = [buildTriggerNode()]
     return
   }
   // Demo data until the builder reads real node/connection data from the workflow.
   initialNodes.value = [
-    {
-      id: '1',
-      type: 'trigger',
-      position: { x: 100, y: 200 },
-      data: {
-        label: 'Webhook',
-        icon: 'Webhook',
-        description: 'Trigger on HTTP request',
-        config: { method: 'POST', path: '/webhook' },
-      },
-    },
+    buildTriggerNode(),
     {
       id: '2',
       type: 'action',
@@ -106,14 +138,25 @@ onMounted(() => {
   ]
 
   initialEdges.value = [
-    { id: 'e1-2', source: '1', target: '2', animated: true },
+    { id: 'e-trigger-2', source: TRIGGER_NODE_ID, target: '2', animated: true },
     { id: 'e2-3', source: '2', target: '3' },
     { id: 'e3-4', source: '3', target: '4', sourceHandle: 'true', label: 'Yes' },
     { id: 'e3-5', source: '3', target: '5', sourceHandle: 'false', label: 'No' },
   ]
 })
 
-const { onConnect, addEdges, addNodes, removeNodes, project } = useVueFlow()
+const { onConnect, addEdges, addNodes, removeNodes, project, findNode } = useVueFlow()
+
+// After init, VueFlow owns the node store — mutate the trigger node's data
+// in place so reactivity picks up workflow changes (e.g. after a save).
+watch(
+  triggerNodeData,
+  (d) => {
+    const node = findNode(TRIGGER_NODE_ID)
+    if (node) Object.assign(node.data, d)
+  },
+  { deep: true },
+)
 
 onConnect((params) => {
   addEdges([{ ...params, animated: false }])
@@ -173,15 +216,21 @@ const handleAddFromPalette = (item: PaletteItem) => {
 }
 
 const deleteSelectedNode = () => {
-  if (selectedNode.value) {
-    removeNodes([selectedNode.value.id])
-    selectedNode.value = null
+  if (!selectedNode.value) return
+  if (selectedNode.value.id === TRIGGER_NODE_ID) {
+    toast({
+      title: 'Trigger cannot be deleted',
+      description: 'Change the trigger type in the General tab.',
+    })
+    return
   }
+  removeNodes([selectedNode.value.id])
+  selectedNode.value = null
 }
 
 const isRunning = ref(false)
 const lastExecutionId = ref<string | null>(null)
-const logsPanelRef = ref<{ open: () => void, close: () => void, toggle: () => void } | null>(null)
+const workflowPanelLogsRef = ref<{ open: () => void, close: () => void, toggle: () => void } | null>(null)
 
 // Terminal execution statuses — when the current execution reaches any of
 // these, `isRunning` flips back to false. Everything else (Running / Pending
@@ -227,7 +276,7 @@ const runWorkflow = async () => {
     // Only now mark as running — the polling composable will flip it back
     // to false once the execution reaches a terminal status.
     isRunning.value = true
-    logsPanelRef.value?.open()
+    workflowPanelLogsRef.value?.open()
     toast({
       title: 'Execution started',
       description: execId ? `ID: ${execId}` : res?.message ?? 'Workflow is running.',
@@ -287,15 +336,15 @@ const runWorkflow = async () => {
             </button>
           </div>
 
-          <WorkflowNodePropertiesSidebar :node="selectedNode" @close="selectedNode = null"
+          <WorkflowSidebarNodeProperties :node="selectedNode" @close="selectedNode = null"
             @delete="deleteSelectedNode" />
         </div>
       </div>
 
-      <WorkflowAddNodeSidebar v-model:open="isAddNodeOpen" @add="handleAddFromPalette" />
+      <WorkflowSidebarAddNode v-model:open="isAddNodeOpen" @add="handleAddFromPalette" />
     </div>
 
-    <LogsPanel ref="logsPanelRef" :execution-id="lastExecutionId" />
+    <WorkflowPanelLogs ref="workflowPanelLogsRef" :execution-id="lastExecutionId" />
   </div>
 </template>
 
