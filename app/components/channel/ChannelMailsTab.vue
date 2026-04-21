@@ -85,7 +85,7 @@ function handleSaved() {
           {{ t('channels.mail_layout') }}
         </TabsTrigger>
       </TabsList>
-      <TabsContent value="general">
+      <TabsContent value="general" force-mount class="data-[state=inactive]:hidden">
         <ChannelMailGeneralTab
           :storefront-url="storefrontUrl"
           :from-email="mailFromEmail"

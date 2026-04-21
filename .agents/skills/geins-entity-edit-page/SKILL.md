@@ -116,6 +116,23 @@ function onFormValuesChange(values) {
 
 In sent mode, read display values from `entityData` (populated by `reshapeEntityData`), not from `form.values`.
 
+## Gotcha: FormFields inside sub-tabs must use `force-mount` + hidden class
+
+When a form has sub-tabs (e.g. shadcn-vue `Tabs`/`TabsContent` inside a tab panel) and any sub-tab contains `<FormField>` components, **switching sub-tabs unmounts those fields**. VeeValidate unregisters them and clears their values from form state — saving from another sub-tab then sees those fields as empty/invalid, silently blocking the PATCH.
+
+Fix: add `force-mount` and `class="data-[state=inactive]:hidden"` to every `TabsContent` that contains `FormField`s. The `force-mount` keeps the DOM alive; the CSS class hides it using Reka UI's `data-state` attribute:
+
+```vue
+<TabsContent value="general" force-mount class="data-[state=inactive]:hidden">
+  <ChannelMailGeneralTab />  <!-- contains FormFields for mail.* -->
+</TabsContent>
+<TabsContent value="mail-content">
+  <!-- no FormFields here, normal mount/unmount is fine -->
+</TabsContent>
+```
+
+The same rule applies to top-level page tabs that use `KeepAlive` + `v-if` — but those already stay mounted via `KeepAlive`. For Reka UI `TabsContent`, use `force-mount` + `data-[state=inactive]:hidden` instead.
+
 ## Gotcha: reactive refresh after status transitions
 
 `refresh()` from `useAsyncData` updates `data.value` but `parseAndSaveData` is only called inside `onMounted`. If the page calls `refreshEntityData` after a status transition, add a watcher inside the `if (!createMode.value)` block:
