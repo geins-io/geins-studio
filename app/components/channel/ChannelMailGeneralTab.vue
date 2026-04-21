@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useFieldValue } from 'vee-validate';
+
 const props = defineProps<{
   storefrontUrl?: string;
   fromEmail?: string;
@@ -53,120 +55,106 @@ const storefrontUrlDisplay = computed(() => {
            when the user toggles the master disable flag. -->
       <FormGridWrap v-show="!mailDisabled">
         <FormGrid design="1+1">
-            <FormField
-              v-slot="{ componentField }"
-              name="mail.displayName"
-            >
-              <FormItem>
-                <FormLabel>{{ t('channels.mail_display_name') }}</FormLabel>
-                <FormControl>
-                  <Input v-bind="componentField" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
+          <FormField v-slot="{ componentField }" name="mail.displayName">
             <FormItem>
-              <FormLabel>{{ t('channels.mail_from_email') }}</FormLabel>
+              <FormLabel>{{ t('channels.mail_display_name') }}</FormLabel>
               <FormControl>
-                <FormInputLocked
-                  :model-value="fromEmail ?? ''"
-                  type="email"
-                />
+                <Input v-bind="componentField" />
               </FormControl>
+              <FormMessage />
             </FormItem>
-          </FormGrid>
+          </FormField>
+          <div class="flex flex-col gap-2">
+            <Label>{{ t('channels.mail_from_email') }}</Label>
+            <FormInputLocked :model-value="fromEmail ?? ''" type="email" />
+          </div>
+        </FormGrid>
 
-          <FormGrid design="1">
-            <FormField
-              v-slot="{ componentField }"
-              name="mail.orderConfirmationBCCEmail"
-            >
-              <FormItem>
-                <FormLabel>{{ t('channels.mail_bcc_email') }}</FormLabel>
-                <FormControl>
-                  <Input v-bind="componentField" type="email" />
-                </FormControl>
-                <FormDescription>
-                  {{ t('channels.mail_bcc_email_description') }}
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-          </FormGrid>
-        </FormGridWrap>
+        <FormGrid design="1">
+          <FormField
+            v-slot="{ componentField }"
+            name="mail.orderConfirmationBCCEmail"
+          >
+            <FormItem>
+              <FormLabel>{{ t('channels.mail_bcc_email') }}</FormLabel>
+              <FormControl>
+                <Input v-bind="componentField" type="email" />
+              </FormControl>
+              <FormDescription>
+                {{ t('channels.mail_bcc_email_description') }}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+        </FormGrid>
+      </FormGridWrap>
 
       <!-- Advanced collapsible -->
       <ContentSwitch
-          v-show="!mailDisabled"
-          v-model:checked="advancedOpen"
-          :label="t('channels.mail_advanced')"
-          :description="t('channels.mail_advanced_desc')"
-        >
-          <FormGridWrap>
-            <div
-              class="grid grid-cols-2 gap-4 @max-3xl/form-grid:grid-cols-1 @max-3xl/form-grid:*:col-span-1 @max-xl/form-grid:gap-3 @3xl/form-grid:gap-6"
-            >
-              <FormField
-                v-slot="{ componentField }"
-                name="mail.loginUrl"
-              >
-                <FormItem>
-                  <FormLabel>{{ t('channels.mail_login_slug') }}</FormLabel>
-                  <FormControl>
-                    <InputGroup>
-                      <InputGroupAddon
-                        align="inline-start"
-                        class="min-w-0 shrink"
+        v-show="!mailDisabled"
+        v-model:checked="advancedOpen"
+        :label="t('channels.mail_advanced')"
+        :description="t('channels.mail_advanced_desc')"
+      >
+        <FormGridWrap>
+          <div
+            class="grid grid-cols-2 gap-4 @max-3xl/form-grid:grid-cols-1 @max-3xl/form-grid:*:col-span-1 @max-xl/form-grid:gap-3 @3xl/form-grid:gap-6"
+          >
+            <FormField v-slot="{ componentField }" name="mail.loginUrl">
+              <FormItem>
+                <FormLabel>{{ t('channels.mail_login_slug') }}</FormLabel>
+                <FormControl>
+                  <InputGroup>
+                    <InputGroupAddon
+                      align="inline-start"
+                      class="min-w-0 shrink"
+                    >
+                      <InputGroupText
+                        class="text-muted-foreground truncate text-xs"
                       >
-                        <InputGroupText
-                          class="text-muted-foreground truncate text-xs"
-                        >
-                          {{ storefrontUrlDisplay }}
-                        </InputGroupText>
-                      </InputGroupAddon>
-                      <InputGroupInput
-                        v-bind="componentField"
-                        input-class="pl-0.5!"
-                        class="shrink-0"
-                      />
-                    </InputGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-              <FormField
-                v-slot="{ componentField }"
-                name="mail.passwordResetUrl"
-              >
-                <FormItem>
-                  <FormLabel>
-                    {{ t('channels.mail_password_reset_slug') }}
-                  </FormLabel>
-                  <FormControl>
-                    <InputGroup>
-                      <InputGroupAddon
-                        align="inline-start"
-                        class="min-w-0 shrink"
+                        {{ storefrontUrlDisplay }}
+                      </InputGroupText>
+                    </InputGroupAddon>
+                    <InputGroupInput
+                      v-bind="componentField"
+                      input-class="pl-0.5!"
+                      class="shrink-0"
+                    />
+                  </InputGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+            <FormField v-slot="{ componentField }" name="mail.passwordResetUrl">
+              <FormItem>
+                <FormLabel>
+                  {{ t('channels.mail_password_reset_slug') }}
+                </FormLabel>
+                <FormControl>
+                  <InputGroup>
+                    <InputGroupAddon
+                      align="inline-start"
+                      class="min-w-0 shrink"
+                    >
+                      <InputGroupText
+                        class="text-muted-foreground truncate text-xs"
                       >
-                        <InputGroupText
-                          class="text-muted-foreground truncate text-xs"
-                        >
-                          {{ storefrontUrlDisplay }}
-                        </InputGroupText>
-                      </InputGroupAddon>
-                      <InputGroupInput
-                        v-bind="componentField"
-                        input-class="pl-0.5!"
-                        class="shrink-0"
-                      />
-                    </InputGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </div>
-          </FormGridWrap>
-        </ContentSwitch>
+                        {{ storefrontUrlDisplay }}
+                      </InputGroupText>
+                    </InputGroupAddon>
+                    <InputGroupInput
+                      v-bind="componentField"
+                      input-class="pl-0.5!"
+                      class="shrink-0"
+                    />
+                  </InputGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+          </div>
+        </FormGridWrap>
+      </ContentSwitch>
     </ContentSection>
   </div>
 </template>
