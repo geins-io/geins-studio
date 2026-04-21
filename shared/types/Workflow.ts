@@ -30,12 +30,12 @@ export type HealthStatus =
 export type ConnectionType = 'sequential' | 'conditional' | 'parallel';
 
 export type WorkflowNodeType =
-  | 'Action'
-  | 'Condition'
-  | 'Iterator'
-  | 'Delay'
-  | 'Trigger'
-  | 'Workflow';
+  | 'action'
+  | 'condition'
+  | 'iterator'
+  | 'delay'
+  | 'trigger'
+  | 'workflow';
 
 // -- Workflow Definition ----------------------------------------------------
 
@@ -48,6 +48,26 @@ export interface WorkflowTrigger {
   subEntity?: string;
   eventFilters?: Record<string, unknown>;
   timeWindow?: string;
+}
+
+/**
+ * Trigger configuration payload as stored/accepted by the Management API.
+ *
+ * Required on create/update for `scheduled` and `event` workflows:
+ * - scheduled → `cronExpression`
+ * - event → `entity` + `action`
+ */
+export interface WorkflowTriggerConfig {
+  enabled?: boolean;
+  cronExpression?: string;
+  entity?: string;
+  action?: string;
+  subEntity?: string;
+  description?: string;
+  startTime?: string | null;
+  endTime?: string | null;
+  eventFilters?: Record<string, unknown> | null;
+  inputParameters?: Record<string, unknown> | null;
 }
 
 export interface WorkflowNodeConnection {
@@ -77,6 +97,8 @@ export interface WorkflowInput {
   required?: boolean;
   defaultValue?: unknown;
   description?: string;
+  /** Used to group inputs in the editor — empty/undefined falls back to `general`. */
+  category?: string;
 }
 
 export interface WorkflowSettings {
@@ -136,6 +158,8 @@ export interface CreateWorkflowRequest {
   connections?: WorkflowNodeConnection[];
   settings?: WorkflowSettings;
   ui?: WorkflowUiMetadata;
+  /** Required for `scheduled` and `event` workflow types. */
+  trigger?: WorkflowTriggerConfig;
 }
 
 export interface UpdateWorkflowRequest extends CreateWorkflowRequest {
@@ -560,15 +584,11 @@ export interface ManifestTriggerType {
   description?: string;
 }
 
-export interface ManifestEventEntityAction {
-  name: string;
-  displayName: string;
-}
-
 export interface ManifestEventEntity {
   name: string;
   displayName: string;
-  actions: ManifestEventEntityAction[];
+  /** Action names as returned by the manifest (e.g. `['create', 'update', 'activate']`). */
+  actions: string[];
   subEntities?: string[];
 }
 
