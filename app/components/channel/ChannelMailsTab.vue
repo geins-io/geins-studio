@@ -24,9 +24,7 @@ withDefaults(
 
 const emit = defineEmits<{
   'mail-saved': [];
-  'update:mail-type-active': [
-    payload: { _id: string; active: boolean },
-  ];
+  'update:mail-type-active': [payload: { _id: string; active: boolean }];
 }>();
 
 const layoutFields = defineModel<Partial<ChannelMailSettings>>('layoutFields', {
@@ -72,20 +70,18 @@ function handleSaved() {
         <TabsTrigger value="general">
           {{ t('channels.mail_general') }}
         </TabsTrigger>
-        <TabsTrigger
-          value="mail-content"
-          :disabled="mailDisabled ?? false"
-        >
+        <TabsTrigger value="mail-content" :disabled="mailDisabled ?? false">
           {{ t('channels.mail_content') }}
         </TabsTrigger>
-        <TabsTrigger
-          value="layout"
-          :disabled="mailDisabled ?? false"
-        >
+        <TabsTrigger value="layout" :disabled="mailDisabled ?? false">
           {{ t('channels.mail_layout') }}
         </TabsTrigger>
       </TabsList>
-      <TabsContent value="general" force-mount class="data-[state=inactive]:hidden">
+      <TabsContent
+        value="general"
+        force-mount
+        class="data-[state=inactive]:hidden"
+      >
         <ChannelMailGeneralTab
           :storefront-url="storefrontUrl"
           :from-email="mailFromEmail"

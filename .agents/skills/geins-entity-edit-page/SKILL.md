@@ -19,6 +19,7 @@ Read `CLAUDE.md` → "Page Patterns - Entity Edit Page" for the full reference. 
 ## Orientation
 
 `useEntityEdit` provides:
+
 - `form` — VeeValidate form instance
 - `entityData` / `entityDataUpdate` — response data and update payload refs
 - `createMode` — `ref<boolean>`, set once at component creation from `route.params.id`
@@ -30,6 +31,7 @@ Read `CLAUDE.md` → "Page Patterns - Entity Edit Page" for the full reference. 
 - `entityFetchKey` — computed unique key for `useAsyncData`
 
 Key callbacks you implement:
+
 - `parseEntityData(entity)` — map API response fields into form values
 - `prepareCreateData()` / `prepareUpdateData()` — map form → POST/PATCH body
 - `onFormValuesChange(values)` — keep `entityDataUpdate` in sync as the form changes
@@ -64,17 +66,18 @@ If `parseEntityData` triggers **async** side effects that mutate `entityDataUpda
 
 ```ts
 // In onMounted:
-await parseAndSaveData(entity, false)   // skip automatic snapshot
-await fetchSomethingAsync()             // await all async side effects
-await nextTick()
-setOriginalSavedData()                  // capture the settled state
+await parseAndSaveData(entity, false); // skip automatic snapshot
+await fetchSomethingAsync(); // await all async side effects
+await nextTick();
+setOriginalSavedData(); // capture the settled state
 ```
 
 Apply the same pattern to save handlers when `updateEntity` internally calls `parseAndSaveData`:
+
 ```ts
-await updateEntity(undefined, undefined, false)
-await nextTick()
-setOriginalSavedData()
+await updateEntity(undefined, undefined, false);
+await nextTick();
+setOriginalSavedData();
 ```
 
 ## Required: `<DialogUnsavedChanges>` in template
@@ -89,9 +92,7 @@ Every `[id].vue` **must** include `<DialogUnsavedChanges>` at the top of `<templ
     :loading="loading"
     @confirm="confirmLeave"
   />
-  <ContentEditWrap>
-    ...
-  </ContentEditWrap>
+  <ContentEditWrap> ... </ContentEditWrap>
 </template>
 ```
 
@@ -109,7 +110,7 @@ When a page switches from form-mode to read-only (e.g. draft → sent status), V
 
 ```ts
 function onFormValuesChange(values) {
-  if (sentMode.value) return   // guard against VeeValidate clearing unmounted fields
+  if (sentMode.value) return; // guard against VeeValidate clearing unmounted fields
   // ...map fields into entityDataUpdate
 }
 ```
@@ -139,10 +140,10 @@ The same rule applies to top-level page tabs that use `KeepAlive` + `v-if` — b
 
 ```ts
 watch(data, async (newData) => {
-  await parseAndSaveData(newData, false)
-  await nextTick()
-  setOriginalSavedData()
-})
+  await parseAndSaveData(newData, false);
+  await nextTick();
+  setOriginalSavedData();
+});
 ```
 
 The watch fires only on subsequent changes, so it doesn't interfere with the initial `onMounted` flow.
