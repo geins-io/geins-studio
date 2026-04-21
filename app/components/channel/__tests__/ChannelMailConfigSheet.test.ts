@@ -47,7 +47,8 @@ async function flush() {
 describe('ChannelMailConfigSheet', () => {
   it('fetches texts when opened', async () => {
     mailApi.getTexts.mockResolvedValue({
-      mailType: 'OrderConfirmation',
+      _id: 'orderConfirmation',
+      _type: 'MailTexts',
       language: 'en',
       texts: [buildMailTextEntry()],
     });
@@ -55,12 +56,13 @@ describe('ChannelMailConfigSheet', () => {
       props: baseProps as Record<string, unknown>,
     });
     await flush();
-    expect(mailApi.getTexts).toHaveBeenCalledWith('OrderConfirmation', 'en');
+    expect(mailApi.getTexts).toHaveBeenCalledWith('orderConfirmation', 'en');
   });
 
   it('save payload includes only changed keys plus language', async () => {
     mailApi.getTexts.mockResolvedValue({
-      mailType: 'OrderConfirmation',
+      _id: 'orderConfirmation',
+      _type: 'MailTexts',
       language: 'en',
       texts: [
         buildMailTextEntry({
@@ -76,7 +78,8 @@ describe('ChannelMailConfigSheet', () => {
       ],
     });
     mailApi.updateTexts.mockResolvedValue({
-      mailType: 'OrderConfirmation',
+      _id: 'orderConfirmation',
+      _type: 'MailTexts',
       language: 'en',
       texts: [],
     });
@@ -98,7 +101,7 @@ describe('ChannelMailConfigSheet', () => {
     saveBtn!.click();
     await flush();
 
-    expect(mailApi.updateTexts).toHaveBeenCalledWith('OrderConfirmation', {
+    expect(mailApi.updateTexts).toHaveBeenCalledWith('orderConfirmation', {
       language: 'en',
       texts: { SUBJECT: 'New' },
     });
@@ -106,7 +109,8 @@ describe('ChannelMailConfigSheet', () => {
 
   it('does not call mail.preview when the sheet opens on the Edit tab', async () => {
     mailApi.getTexts.mockResolvedValue({
-      mailType: 'OrderConfirmation',
+      _id: 'orderConfirmation',
+      _type: 'MailTexts',
       language: 'en',
       texts: [],
     });
@@ -119,7 +123,8 @@ describe('ChannelMailConfigSheet', () => {
 
   it('calls mail.preview when the user activates the Preview tab', async () => {
     mailApi.getTexts.mockResolvedValue({
-      mailType: 'OrderConfirmation',
+      _id: 'orderConfirmation',
+      _type: 'MailTexts',
       language: 'en',
       texts: [],
     });
@@ -143,15 +148,14 @@ describe('ChannelMailConfigSheet', () => {
     await flush();
     await flush();
 
-    expect(mailApi.preview).toHaveBeenCalledWith('OrderConfirmation', {
-      language: 'en',
-    });
+    expect(mailApi.preview).toHaveBeenCalledWith('orderConfirmation', 'en');
   });
 
 
   it('restore-to-default sends an empty string for every overridden key', async () => {
     mailApi.getTexts.mockResolvedValue({
-      mailType: 'OrderConfirmation',
+      _id: 'orderConfirmation',
+      _type: 'MailTexts',
       language: 'en',
       texts: [
         buildMailTextEntry({
@@ -167,7 +171,8 @@ describe('ChannelMailConfigSheet', () => {
       ],
     });
     mailApi.updateTexts.mockResolvedValue({
-      mailType: 'OrderConfirmation',
+      _id: 'orderConfirmation',
+      _type: 'MailTexts',
       language: 'en',
       texts: [],
     });

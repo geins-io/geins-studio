@@ -83,44 +83,18 @@ export type ChannelPaymentMethod = ResponseEntity<{
   active: boolean;
 }>;
 
-/**
- * Discriminator for mail templates. Matches the `type` field returned by
- * the channel detail endpoint (`mailTypes[].type`) and is used as the
- * `{mailType}` path segment on mail text/preview endpoints.
- *
- * NOTE: OpenAPI enum documents these as camelCase but the list endpoint
- * observed to return PascalCase — treating PascalCase as truth.
- */
-export type MailTypeId =
-  | 'OrderConfirmation'
-  | 'OrderProcessing'
-  | 'OrderDelivered'
-  | 'OrderCancelled'
-  | 'OrderRowRemoved'
-  | 'OrderRowReturned'
-  | 'CustomerWishlist'
-  | 'CustomerRefunded'
-  | 'CustomerRegistered'
-  | 'CustomerUnregistered'
-  | 'CustomerMessageNotification'
-  | 'CustomerPasswordReset'
-  | 'ProductTellAFriend'
-  | 'ProductSizeAvailable'
-  | 'ProductMonitorNotification';
-
 export type MailCategory = 'Order' | 'Customer' | 'Product';
 
 /**
  * Mail template metadata for a channel (from `mailTypes` field on channel
- * detail response). Plain object — API does not expose `_id`/`_type` for
- * this sub-resource, so this is not a `ResponseEntity`.
+ * detail response).
  */
-export interface ChannelMailType {
-  type: MailTypeId;
+export type ChannelMailType = ResponseEntity<{
   name: string;
   category: MailCategory;
   hasOverrides: boolean;
-}
+  active: boolean;
+}>;
 
 /**
  * General + layout settings for a channel's email templates.
@@ -181,13 +155,13 @@ export interface MailTextEntry {
   defaultValue: string;
   overrideValue: string | null;
   isOverridden: boolean;
+  variables?: string[];
 }
 
-export interface MailTextsResponse {
-  mailType: MailTypeId;
+export type MailTextsResponse = ResponseEntity<{
   language: string;
   texts: MailTextEntry[];
-}
+}>;
 
 /**
  * PATCH body. `texts` is a flat map of `{ [key]: overrideValue }`.
@@ -198,9 +172,7 @@ export interface MailTextsUpdateRequest {
   texts: Record<string, string>;
 }
 
-export interface MailPreviewRequest {
-  language: string;
-}
+
 
 // =============================================================================
 // Assignment Types (Write / PATCH)
@@ -227,6 +199,14 @@ export interface ChannelPaymentMethodAssignment extends Omit<
   EntityBase,
   '_type'
 > {
+  active: boolean;
+}
+
+/**
+ * Mail type assignment for channel updates. `_id` values are camelCase strings
+ * (e.g. `orderConfirmation`) matching the API's enum values.
+ */
+export interface ChannelMailTypeAssignment extends Omit<EntityBase, '_type'> {
   active: boolean;
 }
 
@@ -258,6 +238,7 @@ export interface ChannelUpdate extends UpdateEntity<ChannelBase> {
   languages?: ChannelLanguageAssignment[];
   markets?: ChannelMarketAssignment[];
   paymentMethods?: ChannelPaymentMethodAssignment[];
+  mailTypes?: ChannelMailTypeAssignment[];
   mailSettings?: Partial<ChannelMailSettings>;
   storefrontSettings?: StorefrontSettings;
   storefrontSchema?: StorefrontSchema;

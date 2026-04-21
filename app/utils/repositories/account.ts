@@ -10,10 +10,8 @@ import type {
   Currency,
   Market,
   Language,
-  MailTypeId,
   MailTextsResponse,
   MailTextsUpdateRequest,
-  MailPreviewRequest,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
@@ -131,7 +129,7 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         },
         mail: {
           async getTexts(
-            mailType: MailTypeId,
+            mailType: string,
             language: string,
           ): Promise<MailTextsResponse> {
             return await fetch<MailTextsResponse>(
@@ -140,7 +138,7 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             );
           },
           async updateTexts(
-            mailType: MailTypeId,
+            mailType: string,
             data: MailTextsUpdateRequest,
           ): Promise<MailTextsResponse> {
             return await fetch<MailTextsResponse>(
@@ -153,12 +151,12 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
            * receives the raw HTML string to inject into a sandboxed iframe.
            */
           async preview(
-            mailType: MailTypeId,
-            data: MailPreviewRequest,
+            mailType: string,
+            language: string,
           ): Promise<string> {
             return await fetch<string>(
               `${CHANNEL_ENDPOINT}/${channelId}/mail/${mailType}/preview`,
-              { method: 'POST', body: data },
+              { method: 'POST', query: { language } },
             );
           },
         },

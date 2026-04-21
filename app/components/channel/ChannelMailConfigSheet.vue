@@ -33,6 +33,7 @@ const localOverrides = ref<Record<string, string>>({});
 const initialValues = ref<Record<string, string>>({});
 const loading = ref(false);
 const saving = ref(false);
+const textsError = ref(false);
 
 // Preview tab state — lazy: only fetched the first time the tab is shown
 // or when the user explicitly refreshes / changes language.
@@ -51,10 +52,11 @@ watch(
 async function fetchTexts() {
   if (!props.mailType || !props.channelId) return;
   loading.value = true;
+  textsError.value = false;
   try {
     const result = await accountApi.channel
       .id(props.channelId)
-      .mail.getTexts(props.mailType.type, selectedLanguage.value);
+      .mail.getTexts(props.mailType._id, selectedLanguage.value);
     textEntries.value = result.texts;
     // Seed the editor with the effective current text so users see and edit
     // the default directly. API returns overrideValue as "" when unset (not
@@ -67,6 +69,7 @@ async function fetchTexts() {
     localOverrides.value = { ...seeded };
     initialValues.value = { ...seeded };
   } catch {
+    textsError.value = true;
     await showErrorToast(t('channels.mail_load_texts_error'));
     textEntries.value = [];
     localOverrides.value = {};
@@ -77,7 +80,7 @@ async function fetchTexts() {
 }
 
 watch(
-  [() => open.value, () => props.mailType?.type],
+  [() => open.value, () => props.mailType?._id],
   ([isOpen, type]) => {
     if (isOpen && type) {
       activeTab.value = 'edit';
@@ -98,7 +101,7 @@ async function fetchPreview() {
   try {
     previewHtml.value = await accountApi.channel
       .id(props.channelId)
-      .mail.preview(props.mailType.type, { language: selectedLanguage.value });
+      .mail.preview(props.mailType._id, selectedLanguage.value);
   } catch {
     previewError.value = true;
   } finally {
@@ -113,16 +116,17 @@ watch(activeTab, async (tab) => {
   }
 });
 
-async function refreshPreview() {
-  previewLoaded.value = false;
-  await fetchPreview();
-  previewLoaded.value = true;
-}
-
 watch(selectedLanguage, (val, prev) => {
   if (val === prev || !open.value) return;
   fetchTexts();
-  if (activeTab.value === 'preview') fetchPreview();
+  // Preview is shared state — if it was already loaded (or is currently
+  // visible), reload for the new language; otherwise invalidate so it
+  // refetches the next time the user switches to it.
+  if (activeTab.value === 'preview' || previewLoaded.value) {
+    fetchPreview();
+  } else {
+    previewLoaded.value = false;
+  }
 });
 
 const allTextKeys = computed(() => textEntries.value.map((e) => e.key));
@@ -150,13 +154,20 @@ async function handleSave() {
     };
     await accountApi.channel
       .id(props.channelId)
-      .mail.updateTexts(props.mailType.type, payload);
+      .mail.updateTexts(props.mailType._id, payload);
     toast({
       title: t('channels.mail_save_success'),
       variant: 'positive',
     });
     emit('saved');
     await fetchTexts();
+    // Always reload the preview after a save so the saved live version is
+    // fresh the next time the preview tab is shown.
+    if (activeTab.value === 'preview' || previewLoaded.value) {
+      await fetchPreview();
+    } else {
+      previewLoaded.value = false;
+    }
   } catch {
     await showErrorToast(t('channels.mail_save_error'));
   } finally {
@@ -174,7 +185,7 @@ async function handleRestoreDefaults() {
     }
     await accountApi.channel
       .id(props.channelId)
-      .mail.updateTexts(props.mailType.type, {
+      .mail.updateTexts(props.mailType._id, {
         language: selectedLanguage.value,
         texts,
       });
@@ -184,6 +195,11 @@ async function handleRestoreDefaults() {
     });
     emit('saved');
     await fetchTexts();
+    if (activeTab.value === 'preview' || previewLoaded.value) {
+      await fetchPreview();
+    } else {
+      previewLoaded.value = false;
+    }
   } catch {
     await showErrorToast(t('channels.mail_save_error'));
   } finally {
@@ -252,12 +268,40 @@ const categoryLabel = computed(() => {
               </div>
             </div>
 
-            <div
-              v-else-if="!textEntries.length"
-              class="text-muted-foreground text-sm"
-            >
-              {{ t('channels.mail_no_texts') }}
-            </div>
+            <Empty v-else-if="textsError">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <LucideAlertCircle class="size-5" />
+                </EmptyMedia>
+                <EmptyTitle>
+                  {{ t('channels.mail_load_texts_error_title') }}
+                </EmptyTitle>
+                <EmptyDescription>
+                  {{ t('channels.mail_load_texts_error_description') }}
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <ButtonIcon
+                  icon="retry"
+                  variant="secondary"
+                  @click="fetchTexts"
+                >
+                  {{ $t('retry') }}
+                </ButtonIcon>
+              </EmptyContent>
+            </Empty>
+
+            <Empty v-else-if="!textEntries.length">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <LucideFileText class="size-5" />
+                </EmptyMedia>
+                <EmptyTitle>{{ t('channels.mail_no_texts') }}</EmptyTitle>
+                <EmptyDescription>
+                  {{ t('channels.mail_no_texts_description') }}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
 
             <div v-else class="flex flex-col gap-4">
               <div
@@ -283,8 +327,19 @@ const categoryLabel = computed(() => {
                     localOverrides[entry.key] = String($event)
                   "
                 />
-                <FormInputDescription>
+                <FormInputDescription v-if="entry.variables?.length">
                   {{ t('channels.mail_template_variables_hint') }}
+                  <template
+                    v-for="(variable, idx) in entry.variables"
+                    :key="variable"
+                  >
+                    <code class="bg-muted rounded px-1 py-0.5 text-xs">{{
+                      '{' + variable + '}'
+                    }}</code
+                    ><span v-if="idx < (entry.variables?.length ?? 0) - 1"
+                      >,
+                    </span>
+                  </template>
                 </FormInputDescription>
               </div>
             </div>
@@ -295,17 +350,22 @@ const categoryLabel = computed(() => {
             value="preview"
             class="flex min-h-0 flex-1 flex-col gap-4"
           >
-            <div class="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                :disabled="previewLoading"
-                @click="refreshPreview"
-              >
-                <LucideRefreshCw class="mr-2 size-4" />
-                {{ t('channels.mail_preview_refresh') }}
-              </Button>
+            <div class="space-y-1.5">
+              <Label>{{ t('channels.mail_select_language') }}</Label>
+              <FormInputLanguageSelect
+                v-model="selectedLanguage"
+                :data-set="languages"
+                show-flags
+                disable-teleport
+              />
             </div>
+
+            <Feedback type="info">
+              <template #title>{{ t('channels.mail_preview_tab') }}</template>
+              <template #description>
+                {{ t('channels.mail_preview_live_notice') }}
+              </template>
+            </Feedback>
 
             <Skeleton
               v-if="previewLoading"
