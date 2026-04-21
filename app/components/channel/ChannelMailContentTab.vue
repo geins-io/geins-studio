@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChannelMailType, MailCategory, MailTypeId } from '#shared/types';
+import type { ChannelMailType, MailCategory } from '#shared/types';
 
 const props = withDefaults(
   defineProps<{
@@ -11,7 +11,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   edit: [mailType: ChannelMailType];
-  'update:active': [payload: { _id: MailTypeId; active: boolean }];
+  'update:active': [payload: { _id: string; active: boolean }];
 }>();
 
 const { t } = useI18n();

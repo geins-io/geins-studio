@@ -4,7 +4,6 @@ import type {
   ChannelMailSettings,
   ChannelMailType,
   Language,
-  MailTypeId,
 } from '#shared/types';
 import type { MailLayoutStagedFiles } from './ChannelMailLayoutTab.vue';
 
@@ -26,7 +25,7 @@ withDefaults(
 const emit = defineEmits<{
   'mail-saved': [];
   'update:mail-type-active': [
-    payload: { _id: MailTypeId; active: boolean },
+    payload: { _id: string; active: boolean },
   ];
 }>();
 

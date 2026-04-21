@@ -17,7 +17,6 @@ import {
   type ChannelPaymentMethod,
   type ChannelMailSettings,
   type ChannelMailType,
-  type MailTypeId,
   type Language,
   type Market,
   type StorefrontSchema,
@@ -219,7 +218,7 @@ async function handleMailSaved() {
 }
 
 function handleToggleMailTypeActive(payload: {
-  _id: MailTypeId;
+  _id: string;
   active: boolean;
 }) {
   channelMailTypes.value = channelMailTypes.value.map((m) =>

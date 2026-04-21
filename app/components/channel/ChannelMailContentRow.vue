@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChannelMailType, MailTypeId } from '#shared/types';
+import type { ChannelMailType } from '#shared/types';
 
 const props = defineProps<{
   mailType: ChannelMailType;
@@ -7,27 +7,27 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   edit: [mailType: ChannelMailType];
-  'update:active': [payload: { _id: MailTypeId; active: boolean }];
+  'update:active': [payload: { _id: string; active: boolean }];
 }>();
 
 const { t } = useI18n();
 
-const mailTypeIconMap: Record<MailTypeId, string> = {
-  OrderConfirmation: 'MailPlus',
-  OrderProcessing: 'PackageSearch',
-  OrderDelivered: 'MailCheck',
-  OrderCancelled: 'MailX',
-  OrderRowRemoved: 'ListX',
-  OrderRowReturned: 'ListRestart',
-  CustomerWishlist: 'Heart',
-  CustomerRefunded: 'HandCoins',
-  CustomerRegistered: 'UserRoundPlus',
-  CustomerUnregistered: 'UserRoundMinus',
-  CustomerMessageNotification: 'MessageSquare',
-  CustomerPasswordReset: 'KeyRound',
-  ProductTellAFriend: 'Share',
-  ProductSizeAvailable: 'Tag',
-  ProductMonitorNotification: 'BellRing',
+const mailTypeIconMap: Record<string, string> = {
+  orderConfirmation: 'MailPlus',
+  orderProcessing: 'PackageSearch',
+  orderDelivered: 'MailCheck',
+  orderCancelled: 'MailX',
+  orderRowRemoved: 'ListX',
+  orderRowReturned: 'ListRestart',
+  customerWishlist: 'Heart',
+  customerRefunded: 'HandCoins',
+  customerRegistered: 'UserRoundPlus',
+  customerUnregistered: 'UserRoundMinus',
+  customerMessageNotification: 'MessageSquare',
+  customerPasswordReset: 'KeyRound',
+  productTellAFriend: 'Share',
+  productSizeAvailable: 'Tag',
+  productMonitorNotification: 'BellRing',
 };
 
 const iconName = computed(() => mailTypeIconMap[props.mailType._id] ?? 'Mail');

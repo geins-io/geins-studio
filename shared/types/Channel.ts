@@ -83,31 +83,6 @@ export type ChannelPaymentMethod = ResponseEntity<{
   active: boolean;
 }>;
 
-/**
- * Discriminator for mail templates. Matches the `_id` field returned by
- * the channel detail endpoint (`mailTypes[]._id`) and is used as the
- * `{mailType}` path segment on mail text/preview endpoints.
- *
- * NOTE: OpenAPI enum documents these as camelCase but the list endpoint
- * observed to return PascalCase — treating PascalCase as truth.
- */
-export type MailTypeId =
-  | 'OrderConfirmation'
-  | 'OrderProcessing'
-  | 'OrderDelivered'
-  | 'OrderCancelled'
-  | 'OrderRowRemoved'
-  | 'OrderRowReturned'
-  | 'CustomerWishlist'
-  | 'CustomerRefunded'
-  | 'CustomerRegistered'
-  | 'CustomerUnregistered'
-  | 'CustomerMessageNotification'
-  | 'CustomerPasswordReset'
-  | 'ProductTellAFriend'
-  | 'ProductSizeAvailable'
-  | 'ProductMonitorNotification';
-
 export type MailCategory = 'Order' | 'Customer' | 'Product';
 
 /**
@@ -119,7 +94,7 @@ export type ChannelMailType = ResponseEntity<{
   category: MailCategory;
   hasOverrides: boolean;
   active: boolean;
-}> & { _id: MailTypeId };
+}>;
 
 /**
  * General + layout settings for a channel's email templates.
@@ -186,7 +161,7 @@ export interface MailTextEntry {
 export type MailTextsResponse = ResponseEntity<{
   language: string;
   texts: MailTextEntry[];
-}> & { _id: MailTypeId };
+}>;
 
 /**
  * PATCH body. `texts` is a flat map of `{ [key]: overrideValue }`.
@@ -197,9 +172,7 @@ export interface MailTextsUpdateRequest {
   texts: Record<string, string>;
 }
 
-export interface MailPreviewRequest {
-  language: string;
-}
+
 
 // =============================================================================
 // Assignment Types (Write / PATCH)
@@ -230,8 +203,8 @@ export interface ChannelPaymentMethodAssignment extends Omit<
 }
 
 /**
- * Mail type assignment for channel updates. `_id` values match `MailTypeId`
- * but kept as `string` to align with other assignment shapes.
+ * Mail type assignment for channel updates. `_id` values are camelCase strings
+ * (e.g. `orderConfirmation`) matching the API's enum values.
  */
 export interface ChannelMailTypeAssignment extends Omit<EntityBase, '_type'> {
   active: boolean;

@@ -148,9 +148,7 @@ describe('ChannelMailConfigSheet', () => {
     await flush();
     await flush();
 
-    expect(mailApi.preview).toHaveBeenCalledWith('OrderConfirmation', {
-      language: 'en',
-    });
+    expect(mailApi.preview).toHaveBeenCalledWith('OrderConfirmation', 'en');
   });
 
 

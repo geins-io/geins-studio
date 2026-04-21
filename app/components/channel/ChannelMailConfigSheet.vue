@@ -101,7 +101,7 @@ async function fetchPreview() {
   try {
     previewHtml.value = await accountApi.channel
       .id(props.channelId)
-      .mail.preview(props.mailType._id, { language: selectedLanguage.value });
+      .mail.preview(props.mailType._id, selectedLanguage.value);
   } catch {
     previewError.value = true;
   } finally {
