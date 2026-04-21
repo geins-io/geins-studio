@@ -230,79 +230,101 @@ const confirmAddGroup = () => {
     </Button>
   </ContentEditMainContent>
 
-  <!-- Add input dialog -->
-  <Dialog v-model:open="addInputDialogOpen">
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Add input</DialogTitle>
-        <DialogDescription>
+  <!-- Add input sheet — matches the Add buyer pattern in CompanyBuyerPanel -->
+  <Sheet v-model:open="addInputDialogOpen">
+    <SheetContent width="medium">
+      <SheetHeader>
+        <SheetTitle>Add input</SheetTitle>
+        <SheetDescription>
           Add an input to the "{{ addInputCategory }}" group. It will be saved with the workflow.
-        </DialogDescription>
-      </DialogHeader>
-      <form @submit.prevent="confirmAddInput">
-        <FormGridWrap>
-          <FormGrid design="1+1">
-            <div class="space-y-1.5">
-              <Label for="new-input-name">Name</Label>
-              <Input id="new-input-name" v-model="newInput.name" placeholder="e.g. batchSize" autofocus />
-            </div>
-            <div class="space-y-1.5">
-              <Label for="new-input-type">Type</Label>
-              <Select v-model="newInput.type">
-                <SelectTrigger id="new-input-type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="string">string</SelectItem>
-                  <SelectItem value="number">number</SelectItem>
-                  <SelectItem value="boolean">boolean</SelectItem>
-                  <SelectItem value="object">object</SelectItem>
-                  <SelectItem value="array">array</SelectItem>
-                  <SelectItem value="date">date</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </FormGrid>
-          <FormGrid design="1">
-            <div class="space-y-1.5">
-              <Label for="new-input-description">Description</Label>
-              <Input id="new-input-description" v-model="newInput.description"
-                placeholder="What this input is used for" />
-            </div>
-          </FormGrid>
-          <FormGrid design="1+1">
-            <div class="space-y-1.5">
-              <Label for="new-input-default">Default value</Label>
-              <div v-if="newInput.type === 'boolean'" class="flex h-9 items-center gap-2">
-                <Switch id="new-input-default" :model-value="newInput.defaultValue === 'true'"
+        </SheetDescription>
+      </SheetHeader>
+      <SheetBody>
+        <form @submit.prevent="confirmAddInput">
+          <FormGridWrap>
+            <FormGrid design="1+1">
+              <div class="space-y-1.5">
+                <Label for="new-input-name">Name</Label>
+                <Input id="new-input-name" v-model="newInput.name" placeholder="e.g. batchSize" autofocus />
+              </div>
+              <div class="space-y-1.5">
+                <Label for="new-input-type">Type</Label>
+                <Select v-model="newInput.type">
+                  <SelectTrigger id="new-input-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="string">string</SelectItem>
+                    <SelectItem value="number">number</SelectItem>
+                    <SelectItem value="boolean">boolean</SelectItem>
+                    <SelectItem value="object">object</SelectItem>
+                    <SelectItem value="array">array</SelectItem>
+                    <SelectItem value="date">date</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </FormGrid>
+            <FormGrid design="1">
+              <div class="space-y-1.5">
+                <Label for="new-input-description">
+                  Description
+                  <span class="text-muted-foreground ml-1 text-xs font-normal">({{ t('form.optional') }})</span>
+                </Label>
+                <Input
+id="new-input-description" v-model="newInput.description"
+                  placeholder="What this input is used for" />
+              </div>
+            </FormGrid>
+            <FormGrid v-if="newInput.type !== 'boolean'" design="1">
+              <div class="space-y-1.5">
+                <Label for="new-input-default">
+                  Default value
+                  <span class="text-muted-foreground ml-1 text-xs font-normal">({{ t('form.optional') }})</span>
+                </Label>
+                <Input
+id="new-input-default" :model-value="newInput.defaultValue"
+                  :type="newInput.type === 'number' ? 'number' : 'text'"
+                  @update:model-value="(v) => (newInput.defaultValue = String(v ?? ''))" />
+              </div>
+            </FormGrid>
+            <FormGrid v-else design="1">
+              <div
+class="flex flex-row items-center justify-between gap-4 rounded-lg border p-4 text-sm"
+                data-slot="form-item">
+                <div class="text-left">
+                  <Label for="new-input-default" class="text-sm font-semibold">Default value</Label>
+                  <p class="text-muted-foreground mt-1 text-xs">
+                    Toggle the boolean default.
+                  </p>
+                </div>
+                <Switch
+id="new-input-default" :model-value="newInput.defaultValue === 'true'"
                   @update:model-value="(v: boolean) => (newInput.defaultValue = v ? 'true' : 'false')" />
-                <span class="text-muted-foreground text-sm">
-                  {{ newInput.defaultValue === 'true' ? 'True' : 'False' }}
-                </span>
               </div>
-              <Input v-else id="new-input-default" :model-value="newInput.defaultValue"
-                :type="newInput.type === 'number' ? 'number' : 'text'"
-                @update:model-value="(v) => (newInput.defaultValue = String(v ?? ''))" />
-            </div>
-            <div class="space-y-1.5">
-              <Label for="new-input-required">Required</Label>
-              <div class="flex h-9 items-center gap-2">
+            </FormGrid>
+            <FormGrid design="1">
+              <div
+class="flex flex-row items-center justify-between gap-4 rounded-lg border p-4 text-sm"
+                data-slot="form-item">
+                <div class="text-left">
+                  <Label for="new-input-required" class="text-sm font-semibold">Required</Label>
+                  <p class="text-muted-foreground mt-1 text-xs">
+                    Executions must provide a value for this input.
+                  </p>
+                </div>
                 <Switch id="new-input-required" v-model="newInput.required" />
-                <span class="text-muted-foreground text-sm">
-                  {{ newInput.required ? 'Required' : 'Optional' }}
-                </span>
               </div>
-            </div>
-          </FormGrid>
-          <p v-if="addInputError" class="text-destructive text-sm">{{ addInputError }}</p>
-        </FormGridWrap>
-      </form>
-      <DialogFooter>
-        <Button variant="secondary" @click="addInputDialogOpen = false">{{ t('cancel') }}</Button>
+            </FormGrid>
+            <p v-if="addInputError" class="text-destructive text-sm">{{ addInputError }}</p>
+          </FormGridWrap>
+        </form>
+      </SheetBody>
+      <SheetFooter>
+        <Button variant="outline" @click="addInputDialogOpen = false">{{ t('cancel') }}</Button>
         <Button @click="confirmAddInput">Add input</Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+      </SheetFooter>
+    </SheetContent>
+  </Sheet>
 
   <!-- Add group dialog -->
   <Dialog v-model:open="addGroupDialogOpen">
