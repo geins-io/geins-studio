@@ -5,6 +5,7 @@ import { useForm } from 'vee-validate'
 import * as z from 'zod'
 import 'cronstrue/locales/sv'
 import { DataItemDisplayType } from '#shared/types'
+import type { WorkflowInput } from '#shared/types'
 import { useToast } from '@/components/ui/toast/use-toast'
 
 definePageMeta({
@@ -43,13 +44,16 @@ const formSchema = toTypedSchema(
       eventSubEntity: z.string().optional(),
       description: z.string().optional(),
     }),
+    // `.nullish()` (not `.optional()`) because the Management API returns
+    // `null` — not `undefined` — for unset settings fields, and the watcher
+    // hydrates the form with those literal values.
     settings: z.object({
-      timeout: z.string().optional(),
-      maxConcurrency: z.number().optional(),
-      executionLogRetentionDays: z.number().optional(),
-      logVerbosity: z.string().optional(),
-      timeoutBehavior: z.string().optional(),
-      errorHandlingStrategy: z.string().optional(),
+      timeout: z.string().nullish(),
+      maxConcurrency: z.number().nullish(),
+      executionLogRetentionDays: z.number().nullish(),
+      logVerbosity: z.string().nullish(),
+      timeoutBehavior: z.string().nullish(),
+      errorHandlingStrategy: z.string().nullish(),
     }),
   }),
 )
@@ -108,6 +112,14 @@ const workflowNameValue = computed(() => form.values.details?.name ?? '')
 // ─── Non-form reactive state ───────────────────────────────────────
 const workflowActive = ref(false)
 const inputValues = ref<Record<string, unknown>>({})
+// Mutable copy of the workflow's input schema. Populated from the loaded
+// workflow and mutated by the Inputs tab — `handleSave` persists the array
+// back to the API on save.
+const workflowInputs = ref<WorkflowInput[]>([])
+// Categories added via "Add group" that don't yet contain any input. They
+// render as empty cards in the Inputs tab; once the user adds an input the
+// category persists naturally through `workflowInputs[].category`.
+const additionalInputGroups = ref<string[]>([])
 
 // Sync breadcrumb title with workflow name.
 watch([isNew, workflowNameValue], ([newFlag, name]) => {
@@ -264,6 +276,8 @@ const editableState = computed(() => ({
   active: workflowActive.value,
   ...form.values,
   inputs: inputValues.value,
+  inputDefinitions: workflowInputs.value,
+  inputGroups: additionalInputGroups.value,
 }) as Record<string, unknown>)
 
 const originalEditableState = ref('')
@@ -284,16 +298,33 @@ const { data: currentWorkflow, refresh: refreshCurrentWorkflow } = await useAsyn
 const isEnabled = computed(() => currentWorkflow.value?.enabled ?? false)
 const menuBusy = ref(false)
 
+// Map the API's lowercase workflow type to the form's PascalCase enum.
+const toFormWorkflowType = (
+  t: string | undefined,
+): WorkflowFormValues['trigger']['type'] => {
+  const lower = (t ?? '').toLowerCase()
+  if (lower === 'scheduled') return 'Scheduled'
+  if (lower === 'event') return 'Event'
+  return 'OnDemand'
+}
+
 // Sync workflow data into form values + non-form refs when it loads (or refreshes).
+// Trigger details live in the nested `trigger` object on the API response (not at
+// the top level) — read them from there so the General tab reflects the stored
+// configuration instead of showing the defaults.
 watch(
   currentWorkflow,
   (wf) => {
     if (!wf || isNew.value) return
     workflowActive.value = wf.enabled ?? false
-    const rawInputs = Array.isArray((wf as any)?.input) ? (wf as any).input : []
+    const rawInputs: WorkflowInput[] = Array.isArray((wf as any)?.input) ? (wf as any).input : []
+    // Deep copy so edits in the Inputs tab don't mutate the cached workflow.
+    workflowInputs.value = rawInputs.map(i => ({ ...i }))
+    additionalInputGroups.value = []
     const inputs: Record<string, unknown> = {}
     for (const i of rawInputs) inputs[i.name] = i.defaultValue
     inputValues.value = inputs
+    const triggerObj = ((wf as any)?.trigger ?? {}) as Record<string, unknown>
     form.setValues({
       details: {
         name: wf.name ?? '',
@@ -302,12 +333,12 @@ watch(
         tags: Array.isArray((wf as any)?.tags) ? [...(wf as any).tags] : [],
       },
       trigger: {
-        type: (wf.type ?? 'OnDemand') as WorkflowFormValues['trigger']['type'],
-        cron: wf.cronExpression ?? '',
-        eventEntity: (wf as any).eventEntity ?? '',
-        eventAction: (wf as any).eventAction ?? '',
-        eventSubEntity: (wf as any).eventSubEntity ?? '',
-        description: (wf as any).triggerDescription ?? '',
+        type: toFormWorkflowType(wf.type),
+        cron: (triggerObj.cronExpression as string | undefined) ?? wf.cronExpression ?? '',
+        eventEntity: (triggerObj.entity as string | undefined) ?? '',
+        eventAction: (triggerObj.action as string | undefined) ?? '',
+        eventSubEntity: (triggerObj.subEntity as string | undefined) ?? '',
+        description: (triggerObj.description as string | undefined) ?? '',
       },
       settings: { ...((wf as any)?.settings ?? {}) },
     })
@@ -325,14 +356,17 @@ watch(currentWorkflow, () => {
   }
 }, { immediate: true })
 
-const workflowInputs = computed<any[]>(() => {
-  const raw = (currentWorkflow.value as any)?.input
-  return Array.isArray(raw) ? raw : []
-})
-
 const workflowInputsByCategory = computed(() => {
   const order: string[] = []
-  const groups: Record<string, any[]> = {}
+  const groups: Record<string, WorkflowInput[]> = {}
+  // Seed with locally-added empty groups so they render before any input
+  // is assigned to them.
+  for (const cat of additionalInputGroups.value) {
+    if (!groups[cat]) {
+      groups[cat] = []
+      order.push(cat)
+    }
+  }
   for (const input of workflowInputs.value) {
     const cat = input.category || 'general'
     if (!groups[cat]) {
@@ -343,6 +377,111 @@ const workflowInputsByCategory = computed(() => {
   }
   return order.map(category => ({ category, items: groups[category]! }))
 })
+
+// ─── Inputs tab: add/delete handlers ───────────────────────────────
+const addInputDialogOpen = ref(false)
+const addInputCategory = ref('')
+const addInputError = ref('')
+const newInput = reactive<{
+  name: string
+  type: string
+  required: boolean
+  description: string
+  defaultValue: string
+}>({
+  name: '',
+  type: 'string',
+  required: false,
+  description: '',
+  defaultValue: '',
+})
+
+const openAddInput = (category: string) => {
+  addInputCategory.value = category
+  addInputError.value = ''
+  newInput.name = ''
+  newInput.type = 'string'
+  newInput.required = false
+  newInput.description = ''
+  newInput.defaultValue = ''
+  addInputDialogOpen.value = true
+}
+
+const coerceDefault = (raw: string, type: string): unknown => {
+  if (raw === '') return type === 'boolean' ? false : null
+  if (type === 'number') {
+    const n = Number(raw)
+    return Number.isNaN(n) ? null : n
+  }
+  if (type === 'boolean') return raw === 'true'
+  return raw
+}
+
+const confirmAddInput = () => {
+  const name = newInput.name.trim()
+  if (!name) {
+    addInputError.value = 'Name is required'
+    return
+  }
+  if (workflowInputs.value.some(i => i.name === name)) {
+    addInputError.value = 'An input with this name already exists'
+    return
+  }
+  const defaultValue = coerceDefault(newInput.defaultValue, newInput.type)
+  const category = addInputCategory.value && addInputCategory.value !== 'general'
+    ? addInputCategory.value
+    : undefined
+  workflowInputs.value.push({
+    name,
+    type: newInput.type,
+    required: newInput.required,
+    description: newInput.description || undefined,
+    defaultValue,
+    category,
+  })
+  inputValues.value = { ...inputValues.value, [name]: defaultValue }
+  // The group has its first input now — drop it from the local-only list.
+  if (category) {
+    additionalInputGroups.value = additionalInputGroups.value.filter(g => g !== category)
+  }
+  addInputDialogOpen.value = false
+}
+
+const removeInput = (name: string) => {
+  workflowInputs.value = workflowInputs.value.filter(i => i.name !== name)
+  const { [name]: _removed, ...rest } = inputValues.value
+  inputValues.value = rest
+}
+
+const addGroupDialogOpen = ref(false)
+const newGroupName = ref('')
+const addGroupError = ref('')
+
+const existingGroupNames = computed(() => {
+  const names = new Set<string>(additionalInputGroups.value)
+  for (const i of workflowInputs.value) names.add(i.category || 'general')
+  return names
+})
+
+const openAddGroup = () => {
+  newGroupName.value = ''
+  addGroupError.value = ''
+  addGroupDialogOpen.value = true
+}
+
+const confirmAddGroup = () => {
+  const name = newGroupName.value.trim()
+  if (!name) {
+    addGroupError.value = 'Group name is required'
+    return
+  }
+  if (existingGroupNames.value.has(name)) {
+    addGroupError.value = 'A group with this name already exists'
+    return
+  }
+  additionalInputGroups.value = [...additionalInputGroups.value, name]
+  addGroupDialogOpen.value = false
+}
 
 // ─── Duplicate ─────────────────────────────────────────────────────
 const handleDuplicate = async () => {
@@ -388,6 +527,10 @@ const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
 const isSavingConfig = ref(false)
 
 // ─── Create ────────────────────────────────────────────────────────
+// New workflows are always created as `onDemand` — the user configures the
+// trigger afterward on the loaded workflow's General tab. This keeps the
+// create form minimal (just a name) and avoids guiding users into committing
+// to a trigger shape they haven't built the nodes for yet.
 const handleCreate = async () => {
   const { valid } = await form.validate()
   if (!valid) {
@@ -402,10 +545,19 @@ const handleCreate = async () => {
       name: values.details.name,
       description: values.details.description || undefined,
       tags: values.details.tags,
-      type: values.trigger.type as any,
+      type: 'onDemand',
       enabled: false,
-      cronExpression: values.trigger.type === 'Scheduled' ? values.trigger.cron : undefined,
-      eventName: values.trigger.type === 'Event' ? values.trigger.eventEntity : undefined,
+      // The API requires at least one node (WF003). Seed with a placeholder
+      // action so the Builder tab has a starting point.
+      nodes: [
+        {
+          id: 'start',
+          type: 'action',
+          name: 'Start',
+          actionName: 'TransformAction',
+        },
+      ],
+      connections: [],
     })
     // Snapshot so the route guard doesn't block navigation to the new page.
     originalEditableState.value = JSON.stringify(editableState.value)
@@ -438,7 +590,7 @@ const handleSave = async () => {
   try {
     const wf = currentWorkflow.value as any
     const values = form.values
-    const mergedInputs = workflowInputs.value.map((i: any) => ({
+    const mergedInputs: WorkflowInput[] = workflowInputs.value.map(i => ({
       ...i,
       defaultValue: inputValues.value[i.name],
     }))
@@ -522,7 +674,7 @@ const triggerSummary = computed<DataItem[]>(() => {
   if (triggerTypeValue.value === 'Event' && triggerEventEntity.value) {
     const entityLabel = manifestEventEntities.value.find(e => e.name === triggerEventEntity.value)?.displayName ?? triggerEventEntity.value
     const actionLabel = triggerEventAction.value
-      ? (availableEventActions.value.find(a => a.name === triggerEventAction.value)?.displayName ?? triggerEventAction.value)
+      ? prettyLabel(triggerEventAction.value)
       : ''
     items.push({ label: 'Event', value: actionLabel ? `${entityLabel} / ${actionLabel}` : entityLabel })
   }
@@ -558,6 +710,94 @@ v-model:open="unsavedChangesDialogOpen" :entity-name="entityName" :loading="isSa
   <DialogDelete
 v-model:open="deleteDialogOpen" :entity-name="entityName" :loading="deleting"
     @confirm="confirmDelete" />
+
+  <!-- Add input dialog -->
+  <Dialog v-model:open="addInputDialogOpen">
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Add input</DialogTitle>
+        <DialogDescription>
+          Add an input to the "{{ addInputCategory }}" group. It will be saved with the workflow.
+        </DialogDescription>
+      </DialogHeader>
+      <form class="space-y-4" @submit.prevent="confirmAddInput">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5">
+            <Label for="new-input-name">Name</Label>
+            <Input id="new-input-name" v-model="newInput.name" placeholder="e.g. batchSize" autofocus />
+          </div>
+          <div class="space-y-1.5">
+            <Label for="new-input-type">Type</Label>
+            <Select v-model="newInput.type">
+              <SelectTrigger id="new-input-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="string">string</SelectItem>
+                <SelectItem value="number">number</SelectItem>
+                <SelectItem value="boolean">boolean</SelectItem>
+                <SelectItem value="object">object</SelectItem>
+                <SelectItem value="array">array</SelectItem>
+                <SelectItem value="date">date</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div class="space-y-1.5">
+          <Label for="new-input-description">Description</Label>
+          <Input id="new-input-description" v-model="newInput.description" placeholder="What this input is used for" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5">
+            <Label for="new-input-default">Default value</Label>
+            <Switch v-if="newInput.type === 'boolean'" id="new-input-default"
+              :model-value="newInput.defaultValue === 'true'"
+              @update:model-value="(v: boolean) => (newInput.defaultValue = v ? 'true' : 'false')" />
+            <Input v-else id="new-input-default" :model-value="newInput.defaultValue"
+              :type="newInput.type === 'number' ? 'number' : 'text'"
+              @update:model-value="(v) => (newInput.defaultValue = String(v ?? ''))" />
+          </div>
+          <div class="space-y-1.5">
+            <Label for="new-input-required">Required</Label>
+            <div class="flex h-9 items-center gap-2">
+              <Switch id="new-input-required" v-model="newInput.required" />
+              <span class="text-muted-foreground text-sm">
+                {{ newInput.required ? 'Required' : 'Optional' }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <p v-if="addInputError" class="text-destructive text-sm">{{ addInputError }}</p>
+      </form>
+      <DialogFooter>
+        <Button variant="secondary" @click="addInputDialogOpen = false">{{ $t('cancel') }}</Button>
+        <Button @click="confirmAddInput">Add input</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+
+  <!-- Add group dialog -->
+  <Dialog v-model:open="addGroupDialogOpen">
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Add group</DialogTitle>
+        <DialogDescription>
+          Groups organize related inputs. The group persists once you add at least one input to it and save.
+        </DialogDescription>
+      </DialogHeader>
+      <form class="space-y-2" @submit.prevent="confirmAddGroup">
+        <div class="space-y-1.5">
+          <Label for="new-group-name">Name</Label>
+          <Input id="new-group-name" v-model="newGroupName" placeholder="e.g. Filters" autofocus />
+        </div>
+        <p v-if="addGroupError" class="text-destructive text-sm">{{ addGroupError }}</p>
+      </form>
+      <DialogFooter>
+        <Button variant="secondary" @click="addGroupDialogOpen = false">{{ $t('cancel') }}</Button>
+        <Button @click="confirmAddGroup">Add group</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 
   <ContentEditWrap>
     <template #header>
@@ -671,7 +911,7 @@ v-for="tag in ((componentField.modelValue as string[]) || [])" :key="tag"
                 </FormGridWrap>
               </ContentEditCard>
 
-              <ContentEditCard title="Trigger" description="How and when this workflow starts.">
+              <ContentEditCard v-if="!isNew" title="Trigger" description="How and when this workflow starts.">
                 <FormGridWrap>
                   <FormGrid design="1">
                     <FormField v-slot="{ componentField }" name="trigger.type">
@@ -750,8 +990,8 @@ v-for="entity in manifestEventEntities" :key="entity.name"
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="*">* (any)</SelectItem>
-                                <SelectItem v-for="a in availableEventActions" :key="a.name" :value="a.name">
-                                  {{ a.displayName }}
+                                <SelectItem v-for="a in availableEventActions" :key="a" :value="a">
+                                  {{ prettyLabel(a) }}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -926,9 +1166,13 @@ v-if="!isNew" title="Runtime Settings"
         <!-- Inputs tab -->
         <KeepAlive>
           <ContentEditMainContent v-if="currentTab === 1" :key="`tab-${currentTab}`">
-            <ContentEditCard v-if="workflowInputs.length === 0" title="Inputs">
-              <div class="text-muted-foreground py-12 text-center text-sm">
-                This workflow has no inputs
+            <ContentEditCard v-if="workflowInputsByCategory.length === 0" title="Inputs">
+              <div class="text-muted-foreground flex flex-col items-center gap-3 py-12 text-center text-sm">
+                <span>This workflow has no inputs yet.</span>
+                <Button variant="secondary" size="sm" @click="openAddInput('general')">
+                  <LucidePlus class="mr-2 h-3.5 w-3.5" />
+                  Add your first input
+                </Button>
               </div>
             </ContentEditCard>
             <ContentEditCard
@@ -936,15 +1180,18 @@ v-for="group in workflowInputsByCategory" v-else :key="group.category"
               :title="group.category"
               :description="`${group.items.length} input${group.items.length === 1 ? '' : 's'}`">
               <template #header-action>
-                <Button variant="secondary" size="sm" @click="() => { }">
+                <Button variant="secondary" size="sm" @click="openAddInput(group.category)">
                   <LucidePlus class="mr-2 h-3.5 w-3.5" />
                   Add input
                 </Button>
               </template>
               <FormGridWrap>
+                <div v-if="group.items.length === 0" class="text-muted-foreground py-6 text-center text-sm">
+                  No inputs in this group yet.
+                </div>
                 <div
 v-for="item in group.items" :key="item.name"
-                  class="grid grid-cols-[20rem_1fr] items-start gap-4 border-b py-3 last:border-b-0">
+                  class="grid grid-cols-[20rem_1fr_2rem] items-start gap-4 border-b py-3 last:border-b-0">
                   <div class="min-w-0">
                     <div class="flex items-center gap-1.5">
                       <span class="text-sm font-medium">{{ prettyLabel(item.name) }}</span>
@@ -972,12 +1219,17 @@ v-else-if="item.type === 'number'" type="number" :model-value="inputValues[item.
 v-else :model-value="inputValues[item.name] == null ? '' : String(inputValues[item.name])"
                       @update:model-value="(v) => (inputValues[item.name] = v)" />
                   </div>
+                  <Button
+variant="ghost" size="icon" class="text-muted-foreground hover:text-destructive h-8 w-8"
+                    :aria-label="`Remove ${item.name}`" @click="removeInput(item.name)">
+                    <LucideTrash class="h-4 w-4" />
+                  </Button>
                 </div>
               </FormGridWrap>
             </ContentEditCard>
             <Button
 variant="outline" class="text-muted-foreground hover:text-foreground mt-2 w-full border-dashed py-6"
-              @click="() => { }">
+              @click="openAddGroup">
               <LucidePlus class="mr-2 h-4 w-4" />
               Add group
             </Button>
