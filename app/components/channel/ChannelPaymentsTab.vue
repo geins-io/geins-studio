@@ -27,14 +27,12 @@ function handleToggle(paymentId: string, active: boolean) {
 </script>
 
 <template>
-  <ContentEditCard :title="t('payment_method', 2)">
-    <!-- Loading state -->
-    <div v-if="loading" class="space-y-2 py-2">
-      <Skeleton v-for="i in 3" :key="i" class="h-12 w-full" />
-    </div>
-
+  <ContentEditCard
+    :title="t('payment_method', 2)"
+    :class="cn(loading && 'pointer-events-none opacity-50')"
+  >
     <!-- Empty state -->
-    <Empty v-else-if="!payments.length" class="border-y">
+    <Empty v-if="!payments.length" class="border-y">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <LucideCreditCard class="size-5" />

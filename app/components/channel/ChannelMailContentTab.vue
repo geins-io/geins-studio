@@ -33,14 +33,9 @@ const groupedMailTypes = computed(() =>
 </script>
 
 <template>
-  <div class="pt-2">
-    <!-- Loading state -->
-    <div v-if="loading" class="flex flex-col gap-2">
-      <Skeleton v-for="i in 3" :key="i" class="h-14 w-full rounded-md" />
-    </div>
-
+  <div :class="cn('pt-2', loading && 'pointer-events-none opacity-50')">
     <!-- Empty state -->
-    <Empty v-else-if="!mailTypes.length" class="border-y">
+    <Empty v-if="!mailTypes.length" class="border-y">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <LucideMail class="size-5" />
