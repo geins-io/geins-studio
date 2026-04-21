@@ -1,7 +1,18 @@
 <script setup lang="ts">
-const _props = defineProps<{
-  tabs: string[];
+export interface TabDescriptor {
+  label: string;
+  error?: boolean;
+}
+
+const props = defineProps<{
+  tabs: Array<string | TabDescriptor>;
 }>();
+
+const { t } = useI18n();
+
+const normalizedTabs = computed<TabDescriptor[]>(() =>
+  props.tabs.map((t) => (typeof t === 'string' ? { label: t } : t)),
+);
 
 const currentTab = defineModel<number>('currentTab');
 const setCurrentTab = (value: number) => {
@@ -62,18 +73,28 @@ watch(currentTab, async (value) => {
 <template>
   <nav class="w-full overflow-auto">
     <ul class="flex gap-2">
-      <li v-for="(tab, index) in tabs" :key="index">
+      <li v-for="(tab, index) in normalizedTabs" :key="index">
         <button
           type="button"
           :class="
             cn(
-              'text-muted-foreground border-b-4 border-transparent px-1.5 py-0.5 text-xs font-bold transition-colors duration-200 ease-in-out sm:px-3 sm:py-1.5 sm:text-sm',
+              'text-muted-foreground relative border-b-4 border-transparent px-1.5 py-0.5 text-xs font-bold transition-colors duration-200 ease-in-out sm:px-3 sm:py-1.5 sm:text-sm',
               `${currentTab === index ? 'border-foreground text-foreground' : ''}`,
             )
           "
           @click="setCurrentTab(index)"
         >
-          {{ tab }}
+          {{ tab.label }}
+          <span
+            aria-hidden="true"
+            :class="
+              cn(
+                'bg-destructive absolute top-0 right-0 size-1.5 rounded-full transition-opacity duration-150 ease-in-out',
+                tab.error ? 'opacity-100' : 'opacity-0',
+              )
+            "
+          />
+          <span v-if="tab.error" class="sr-only">{{ t('tab_has_errors') }}</span>
         </button>
       </li>
     </ul>

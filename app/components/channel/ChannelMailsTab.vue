@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useFieldValue } from 'vee-validate';
 import type {
   ChannelMailSettings,
   ChannelMailType,
@@ -14,6 +15,7 @@ withDefaults(
     languages: Language[];
     defaultLanguage: string;
     storefrontUrl?: string;
+    mailFromEmail?: string;
   }>(),
   {
     loading: false,
@@ -24,10 +26,6 @@ const emit = defineEmits<{
   'mail-saved': [];
 }>();
 
-const generalFields = defineModel<Partial<ChannelMailSettings>>(
-  'generalFields',
-  { required: true },
-);
 const layoutFields = defineModel<Partial<ChannelMailSettings>>('layoutFields', {
   required: true,
 });
@@ -41,16 +39,18 @@ const sheetOpen = ref(false);
 const activeMailType = ref<ChannelMailType | null>(null);
 const activeTab = ref<'general' | 'mail-content' | 'layout'>('general');
 
+// Read the master-disable flag directly from the parent VeeValidate form
+// (lifted to `mail.disabled` in STU-125). The field is registered on the
+// parent form scope and resolved by name.
+const mailDisabled = useFieldValue<boolean>('mail.disabled');
+
 // When the master "disable all transaction emails" toggle flips on while the
 // user is on a now-disabled sub-tab, snap them back to General.
-watch(
-  () => generalFields.value?.disabled,
-  (disabled) => {
-    if (disabled && activeTab.value !== 'general') {
-      activeTab.value = 'general';
-    }
-  },
-);
+watch(mailDisabled, (disabled) => {
+  if (disabled && activeTab.value !== 'general') {
+    activeTab.value = 'general';
+  }
+});
 
 function handleEditMailType(mailType: ChannelMailType) {
   activeMailType.value = mailType;
@@ -71,21 +71,21 @@ function handleSaved() {
         </TabsTrigger>
         <TabsTrigger
           value="mail-content"
-          :disabled="generalFields?.disabled ?? false"
+          :disabled="mailDisabled ?? false"
         >
           {{ t('channels.mail_content') }}
         </TabsTrigger>
         <TabsTrigger
           value="layout"
-          :disabled="generalFields?.disabled ?? false"
+          :disabled="mailDisabled ?? false"
         >
           {{ t('channels.mail_layout') }}
         </TabsTrigger>
       </TabsList>
       <TabsContent value="general">
         <ChannelMailGeneralTab
-          v-model="generalFields"
           :storefront-url="storefrontUrl"
+          :from-email="mailFromEmail"
         />
       </TabsContent>
       <TabsContent value="mail-content">
