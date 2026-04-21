@@ -30,6 +30,8 @@ const router = useRouter();
 const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog(scope);
+const { getEntityUrlFor } = useEntityUrl();
+const { formatDate } = useDate();
 const accountStore = useAccountStore();
 const productsStore = useProductsStore();
 const { products } = storeToRefs(productsStore);
@@ -576,12 +578,14 @@ const summary = computed<DataItem[]>(() => {
   }
 
   if (entityData.value?.channel) {
-    const displayValue = accountStore.getChannelNameById(
-      entityData.value.channel,
-    );
+    const channelId = entityData.value.channel;
+    const displayValue = accountStore.getChannelNameById(channelId);
     dataList.push({
       label: t('pricing.price_list_channel'),
       value: displayValue,
+      displayType: DataItemDisplayType.Link,
+      href: getEntityUrlFor('channel', 'settings', channelId),
+      target: '_blank',
     });
   }
 
@@ -604,12 +608,10 @@ const summary = computed<DataItem[]>(() => {
       : t('pricing.price_list_inc_vat'),
   });
 
-  if (!createMode.value) {
-    const date = new Date(entityData.value?.dateCreated || '');
-    const formatted = date.toLocaleDateString('sv-SE');
+  if (!createMode.value && entityData.value?.dateCreated) {
     dataList.push({
       label: t('created'),
-      value: formatted,
+      value: formatDate(entityData.value.dateCreated),
     });
   }
 
