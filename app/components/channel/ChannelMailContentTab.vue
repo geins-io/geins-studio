@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChannelMailType, MailCategory } from '#shared/types';
+import type { ChannelMailType, MailCategory, MailTypeId } from '#shared/types';
 
 const props = withDefaults(
   defineProps<{
@@ -11,6 +11,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   edit: [mailType: ChannelMailType];
+  'update:active': [payload: { _id: MailTypeId; active: boolean }];
 }>();
 
 const { t } = useI18n();
@@ -58,9 +59,10 @@ const groupedMailTypes = computed(() =>
         <div class="mt-2 divide-y border-y">
           <ChannelMailContentRow
             v-for="mailType in group.items"
-            :key="mailType.type"
+            :key="mailType._id"
             :mail-type="mailType"
             @edit="emit('edit', $event)"
+            @update:active="emit('update:active', $event)"
           />
         </div>
       </section>

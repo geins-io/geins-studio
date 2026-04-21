@@ -17,6 +17,7 @@ import {
   type ChannelPaymentMethod,
   type ChannelMailSettings,
   type ChannelMailType,
+  type MailTypeId,
   type Language,
   type Market,
   type StorefrontSchema,
@@ -201,8 +202,29 @@ function pickMailKeys(
 
 async function handleMailSaved() {
   // A mail template text override was saved from the config sheet — refresh
-  // the channel data so the `hasOverrides` indicator on rows stays in sync.
-  await refreshEntityData.value?.();
+  // only `mailTypes` so the `hasOverrides` indicator stays in sync without
+  // clobbering other unsaved edits. Only `hasOverrides` is merged; `active`
+  // stays local so an unsaved toggle is preserved.
+  if (!entityId.value) return;
+  const refreshed = await accountApi.channel.get(entityId.value, {
+    fields: ['mailTypes'],
+  });
+  const byId = new Map(
+    (refreshed.mailTypes ?? []).map((m) => [m._id, m]),
+  );
+  channelMailTypes.value = channelMailTypes.value.map((m) => {
+    const latest = byId.get(m._id);
+    return latest ? { ...m, hasOverrides: latest.hasOverrides } : m;
+  });
+}
+
+function handleToggleMailTypeActive(payload: {
+  _id: MailTypeId;
+  active: boolean;
+}) {
+  channelMailTypes.value = channelMailTypes.value.map((m) =>
+    m._id === payload._id ? { ...m, active: payload.active } : m,
+  );
 }
 
 const defaultLanguage = computed(() => {
@@ -453,6 +475,10 @@ const {
       _id: p._id,
       active: p.active,
     })),
+    mailTypes: channelMailTypes.value.map((m) => ({
+      _id: m._id,
+      active: m.active,
+    })),
     storefrontSettings: storefrontSettings.value,
     mailSettings: {
       // Round-trip read-only mail metadata (fromEmailAddress, locale, etc.)
@@ -564,6 +590,21 @@ watch(
       entityDataUpdate.value.paymentMethods = val.map((p) => ({
         _id: p._id,
         active: p.active,
+      }));
+    }
+  },
+  { deep: true },
+);
+
+// Sync channelMailTypes into entityDataUpdate so useUnsavedChanges detects
+// toggles of the per-type active switch.
+watch(
+  channelMailTypes,
+  (val) => {
+    if (!createMode.value) {
+      entityDataUpdate.value.mailTypes = val.map((m) => ({
+        _id: m._id,
+        active: m.active,
       }));
     }
   },
@@ -1051,6 +1092,7 @@ if (!createMode.value) {
               :storefront-url="entityDataUpdate?.url ?? ''"
               :mail-from-email="channelMailSettings?.fromEmailAddress ?? ''"
               @mail-saved="handleMailSaved"
+              @update:mail-type-active="handleToggleMailTypeActive"
             />
           </ContentEditMainContent>
         </KeepAlive>

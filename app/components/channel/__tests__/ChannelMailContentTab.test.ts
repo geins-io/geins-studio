@@ -7,14 +7,14 @@ import ChannelMailContentTab from '../ChannelMailContentTab.vue';
 describe('ChannelMailContentTab', () => {
   it('renders one row per mail type in a flat list', async () => {
     const mailTypes = [
-      buildMailType({ type: 'OrderConfirmation', category: 'Order' }),
+      buildMailType({ _id: 'OrderConfirmation', category: 'Order' }),
       buildMailType({
-        type: 'CustomerRegistered',
+        _id: 'CustomerRegistered',
         name: 'Customer Registered',
         category: 'Customer',
       }),
       buildMailType({
-        type: 'ProductTellAFriend',
+        _id: 'ProductTellAFriend',
         name: 'Tell a Friend',
         category: 'Product',
       }),
@@ -31,7 +31,8 @@ describe('ChannelMailContentTab', () => {
     const component = await mountWithContext(ChannelMailContentTab, {
       props: { mailTypes: [mailType] },
     });
-    await component.findComponent(ChannelMailContentRow).find('button').trigger('click');
+    const buttons = component.findComponent(ChannelMailContentRow).findAll('button');
+    await buttons[buttons.length - 1]!.trigger('click');
     expect(component.emitted('edit')).toBeTruthy();
     expect(component.emitted('edit')![0]).toEqual([mailType]);
   });

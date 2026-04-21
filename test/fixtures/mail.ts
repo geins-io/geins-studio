@@ -25,10 +25,12 @@ export function buildMailType(
   overrides?: Partial<ChannelMailType>,
 ): ChannelMailType {
   return {
-    type: 'OrderConfirmation',
+    _id: 'OrderConfirmation',
+    _type: 'ChannelMailType',
     name: 'Order Confirmation',
     category: 'Order',
     hasOverrides: false,
+    active: true,
     ...overrides,
   };
 }
@@ -49,7 +51,8 @@ export function buildMailTextsResponse(
   overrides?: Partial<MailTextsResponse>,
 ): MailTextsResponse {
   return {
-    mailType: 'OrderConfirmation',
+    _id: 'OrderConfirmation',
+    _type: 'MailTexts',
     language: 'en',
     texts: [buildMailTextEntry()],
     ...overrides,

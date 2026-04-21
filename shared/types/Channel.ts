@@ -84,8 +84,8 @@ export type ChannelPaymentMethod = ResponseEntity<{
 }>;
 
 /**
- * Discriminator for mail templates. Matches the `type` field returned by
- * the channel detail endpoint (`mailTypes[].type`) and is used as the
+ * Discriminator for mail templates. Matches the `_id` field returned by
+ * the channel detail endpoint (`mailTypes[]._id`) and is used as the
  * `{mailType}` path segment on mail text/preview endpoints.
  *
  * NOTE: OpenAPI enum documents these as camelCase but the list endpoint
@@ -112,15 +112,14 @@ export type MailCategory = 'Order' | 'Customer' | 'Product';
 
 /**
  * Mail template metadata for a channel (from `mailTypes` field on channel
- * detail response). Plain object — API does not expose `_id`/`_type` for
- * this sub-resource, so this is not a `ResponseEntity`.
+ * detail response).
  */
-export interface ChannelMailType {
-  type: MailTypeId;
+export type ChannelMailType = ResponseEntity<{
   name: string;
   category: MailCategory;
   hasOverrides: boolean;
-}
+  active: boolean;
+}> & { _id: MailTypeId };
 
 /**
  * General + layout settings for a channel's email templates.
@@ -181,13 +180,13 @@ export interface MailTextEntry {
   defaultValue: string;
   overrideValue: string | null;
   isOverridden: boolean;
+  variables?: string[];
 }
 
-export interface MailTextsResponse {
-  mailType: MailTypeId;
+export type MailTextsResponse = ResponseEntity<{
   language: string;
   texts: MailTextEntry[];
-}
+}> & { _id: MailTypeId };
 
 /**
  * PATCH body. `texts` is a flat map of `{ [key]: overrideValue }`.
@@ -230,6 +229,14 @@ export interface ChannelPaymentMethodAssignment extends Omit<
   active: boolean;
 }
 
+/**
+ * Mail type assignment for channel updates. `_id` values match `MailTypeId`
+ * but kept as `string` to align with other assignment shapes.
+ */
+export interface ChannelMailTypeAssignment extends Omit<EntityBase, '_type'> {
+  active: boolean;
+}
+
 // =============================================================================
 // Channel CRUD Types
 // =============================================================================
@@ -258,6 +265,7 @@ export interface ChannelUpdate extends UpdateEntity<ChannelBase> {
   languages?: ChannelLanguageAssignment[];
   markets?: ChannelMarketAssignment[];
   paymentMethods?: ChannelPaymentMethodAssignment[];
+  mailTypes?: ChannelMailTypeAssignment[];
   mailSettings?: Partial<ChannelMailSettings>;
   storefrontSettings?: StorefrontSettings;
   storefrontSchema?: StorefrontSchema;
