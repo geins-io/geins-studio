@@ -7,14 +7,14 @@ import ChannelMailContentTab from '../ChannelMailContentTab.vue';
 describe('ChannelMailContentTab', () => {
   it('renders one row per mail type in a flat list', async () => {
     const mailTypes = [
-      buildMailType({ type: 'OrderConfirmation', category: 'Order' }),
+      buildMailType({ _id: 'orderConfirmation', category: 'Order' }),
       buildMailType({
-        type: 'CustomerRegistered',
+        _id: 'customerRegistered',
         name: 'Customer Registered',
         category: 'Customer',
       }),
       buildMailType({
-        type: 'ProductTellAFriend',
+        _id: 'productTellAFriend',
         name: 'Tell a Friend',
         category: 'Product',
       }),
@@ -31,7 +31,8 @@ describe('ChannelMailContentTab', () => {
     const component = await mountWithContext(ChannelMailContentTab, {
       props: { mailTypes: [mailType] },
     });
-    await component.findComponent(ChannelMailContentRow).find('button').trigger('click');
+    const buttons = component.findComponent(ChannelMailContentRow).findAll('button');
+    await buttons[buttons.length - 1]!.trigger('click');
     expect(component.emitted('edit')).toBeTruthy();
     expect(component.emitted('edit')![0]).toEqual([mailType]);
   });
@@ -43,11 +44,12 @@ describe('ChannelMailContentTab', () => {
     expect(component.text()).toContain('channels.no_mail_types');
   });
 
-  it('renders three skeleton rows when loading', async () => {
+  it('applies reduced opacity when loading', async () => {
+    const mailTypes = [buildMailType()];
     const component = await mountWithContext(ChannelMailContentTab, {
-      props: { mailTypes: [], loading: true },
+      props: { mailTypes, loading: true },
     });
-    expect(component.findAll('[data-slot="skeleton"]')).toHaveLength(3);
+    expect(component.find('div').classes()).toContain('opacity-50');
   });
 
   it('shows the overridden indicator when hasOverrides is true', async () => {

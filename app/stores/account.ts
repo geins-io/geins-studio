@@ -136,7 +136,7 @@ export const useAccountStore = defineStore('account', () => {
 
   function getMarketNameById(id: string): string {
     const market = channels.value
-      .flatMap((channel) => channel.markets)
+      ?.flatMap((channel) => channel.markets)
       .find((market) => market._id === String(id));
     const country = market?.country.name || '';
     const currency = market?.currency._id || '';
