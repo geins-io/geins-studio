@@ -8,6 +8,9 @@ const { t } = useI18n();
 
 const advancedOpen = ref(false);
 
+// Read the current mail.disabled value without registering a second FormField
+const mailDisabled = useFieldValue<boolean>('mail.disabled');
+
 const STOREFRONT_URL_PLACEHOLDER = 'https://your-channel.com';
 
 // Strip a trailing `/` from the storefront URL so the addon composes cleanly
@@ -48,9 +51,8 @@ const storefrontUrlDisplay = computed(() => {
 
       <!-- Keep fields mounted via v-show so VeeValidate doesn't clear values
            when the user toggles the master disable flag. -->
-      <FormField v-slot="{ value }" name="mail.disabled">
-        <FormGridWrap v-show="!value">
-          <FormGrid design="1+1">
+      <FormGridWrap v-show="!mailDisabled">
+        <FormGrid design="1+1">
             <FormField
               v-slot="{ componentField }"
               name="mail.displayName"
@@ -93,9 +95,9 @@ const storefrontUrlDisplay = computed(() => {
           </FormGrid>
         </FormGridWrap>
 
-        <!-- Advanced collapsible -->
-        <ContentSwitch
-          v-show="!value"
+      <!-- Advanced collapsible -->
+      <ContentSwitch
+          v-show="!mailDisabled"
           v-model:checked="advancedOpen"
           :label="t('channels.mail_advanced')"
           :description="t('channels.mail_advanced_desc')"
@@ -165,7 +167,6 @@ const storefrontUrlDisplay = computed(() => {
             </div>
           </FormGridWrap>
         </ContentSwitch>
-      </FormField>
     </ContentSection>
   </div>
 </template>

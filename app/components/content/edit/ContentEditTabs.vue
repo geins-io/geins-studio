@@ -8,6 +8,8 @@ const props = defineProps<{
   tabs: Array<string | TabDescriptor>;
 }>();
 
+const { t } = useI18n();
+
 const normalizedTabs = computed<TabDescriptor[]>(() =>
   props.tabs.map((t) => (typeof t === 'string' ? { label: t } : t)),
 );
@@ -92,6 +94,7 @@ watch(currentTab, async (value) => {
               )
             "
           />
+          <span v-if="tab.error" class="sr-only">{{ t('tab_has_errors') }}</span>
         </button>
       </li>
     </ul>

@@ -153,6 +153,7 @@
   "delete": "Delete",
   "remove": "Remove",
   "status": "Status",
+  "tab_has_errors": "(has errors)",
   "general": "General",
   "settings": "Settings",
   "created": "Created",
