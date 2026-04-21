@@ -115,17 +115,17 @@ watch([isNew, workflowNameValue], ([newFlag, name]) => {
 }, { immediate: true })
 
 // Main area tabs (top-level content switcher).
-const mainTabs = ['General', 'Builder', 'Inputs', 'Executions', 'History']
+const mainTabs = ['General', 'Inputs', 'Builder', 'History', 'Executions']
 const currentTab = ref(0)
 
 // Lazy-load list data when the corresponding tab is first opened.
 watch(currentTab, (v) => {
   if (isNew.value) return
-  if (v === 3 && !executionsLoaded.value) {
+  if (v === 4 && !executionsLoaded.value) {
     executionsLoaded.value = true
     loadExecutions()
   }
-  if (v === 4 && !historyLoaded.value) {
+  if (v === 3 && !historyLoaded.value) {
     historyLoaded.value = true
     loadHistory()
   }
@@ -607,7 +607,7 @@ v-if="!isNew" icon="save" :loading="isSavingConfig"
       </ContentHeader>
     </template>
 
-    <form v-if="currentTab !== 1" @submit.prevent>
+    <form v-if="currentTab !== 2" @submit.prevent>
       <ContentEditMain :show-sidebar="showSidebar">
         <!-- General tab -->
         <KeepAlive>
@@ -925,7 +925,7 @@ v-if="!isNew" title="Runtime Settings"
 
         <!-- Inputs tab -->
         <KeepAlive>
-          <ContentEditMainContent v-if="currentTab === 2" :key="`tab-${currentTab}`">
+          <ContentEditMainContent v-if="currentTab === 1" :key="`tab-${currentTab}`">
             <ContentEditCard v-if="workflowInputs.length === 0" title="Inputs">
               <div class="text-muted-foreground py-12 text-center text-sm">
                 This workflow has no inputs
@@ -986,7 +986,7 @@ variant="outline" class="text-muted-foreground hover:text-foreground mt-2 w-full
 
         <!-- Executions tab -->
         <KeepAlive>
-          <ContentEditMainContent v-if="currentTab === 3" :key="`tab-${currentTab}`">
+          <ContentEditMainContent v-if="currentTab === 4" :key="`tab-${currentTab}`">
             <ContentEditCard title="Executions" :description="`(${executions.length})`">
               <template #header-action>
                 <Button variant="secondary" size="sm" :disabled="executionsLoading" @click="refreshExecutions()">
@@ -1028,7 +1028,7 @@ class="h-2 w-2 rounded-full" :class="{
 
         <!-- History tab -->
         <KeepAlive>
-          <ContentEditMainContent v-if="currentTab === 4" :key="`tab-${currentTab}`">
+          <ContentEditMainContent v-if="currentTab === 3" :key="`tab-${currentTab}`">
             <ContentEditCard title="Version history" :description="`(${historyVersions.length})`">
               <template #header-action>
                 <Button variant="secondary" size="sm" :disabled="historyLoading" @click="refreshHistory()">
@@ -1079,7 +1079,7 @@ v-for="entry in historyVersions" :key="entry.version"
        starts right under the tabs. -->
   <KeepAlive>
     <WorkflowBuilder
-v-if="currentTab === 1" :key="`tab-${currentTab}`" class="-mx-3 -mt-4 @2xl:-mx-8"
+v-if="currentTab === 2" :key="`tab-${currentTab}`" class="-mx-3 -mt-4 @2xl:-mx-8"
       :workflow-id="workflowId" :is-new="isNew" @executed="refreshExecutions" />
   </KeepAlive>
 </template>

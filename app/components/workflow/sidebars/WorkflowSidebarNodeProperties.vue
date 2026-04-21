@@ -36,17 +36,19 @@ const isOpen = computed(() => props.node !== null)
 
     <div class="flex-1 overflow-y-auto" style="scrollbar-gutter: stable;">
       <div v-if="node" class="space-y-4 p-4">
-        <div class="space-y-2">
-          <label class="text-sm font-medium">Name</label>
-          <input v-model="node.data.label" type="text"
-            class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-        </div>
+        <template v-if="node.type !== 'trigger'">
+          <div class="space-y-2">
+            <label class="text-sm font-medium">Name</label>
+            <input v-model="node.data.label" type="text"
+              class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+          </div>
 
-        <div class="space-y-2">
-          <label class="text-sm font-medium">Description</label>
-          <textarea v-model="node.data.description" rows="2"
-            class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
-        </div>
+          <div class="space-y-2">
+            <label class="text-sm font-medium">Description</label>
+            <textarea v-model="node.data.description" rows="2"
+              class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+          </div>
+        </template>
 
         <div class="space-y-2">
           <label class="text-sm font-medium">Type</label>
@@ -57,23 +59,25 @@ const isOpen = computed(() => props.node !== null)
 
         <template v-if="node.type === 'trigger'">
           <div class="border-t pt-4">
-            <h4 class="mb-3 text-sm font-medium">Trigger Settings</h4>
-            <div class="space-y-3">
-              <div class="space-y-2">
-                <label class="text-muted-foreground text-sm">Webhook Path</label>
-                <input v-model="node.data.config.path" type="text" placeholder="/webhook"
-                  class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none" />
+            <h4 class="mb-3 text-sm font-medium">Trigger</h4>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">Trigger type</span>
+                <span class="font-medium capitalize">{{ node.data.triggerType || 'onDemand' }}</span>
               </div>
-              <div class="space-y-2">
-                <label class="text-muted-foreground text-sm">HTTP Method</label>
-                <select v-model="node.data.config.method"
-                  class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none">
-                  <option value="GET">GET</option>
-                  <option value="POST">POST</option>
-                  <option value="PUT">PUT</option>
-                  <option value="DELETE">DELETE</option>
-                </select>
+              <div v-if="node.data.cronExpression" class="flex items-center justify-between gap-2">
+                <span class="text-muted-foreground">Cron</span>
+                <span class="font-mono text-xs">{{ node.data.cronExpression }}</span>
               </div>
+              <div v-if="node.data.eventEntity || node.data.eventName" class="flex items-center justify-between gap-2">
+                <span class="text-muted-foreground">Event</span>
+                <span class="font-medium">
+                  {{ node.data.eventEntity || node.data.eventName }}{{ node.data.eventAction ? ` / ${node.data.eventAction}` : '' }}
+                </span>
+              </div>
+              <p class="text-muted-foreground border-t pt-3 text-xs">
+                Trigger configuration is managed in the General tab.
+              </p>
             </div>
           </div>
         </template>
