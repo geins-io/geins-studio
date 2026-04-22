@@ -49,9 +49,9 @@ const columns = computed(() => {
       </ItemContent>
       <ItemActions>
         <Button
-          v-if="canChange"
           variant="outline"
           size="sm"
+          :disabled="!canChange"
           @click="emit('change')"
         >
           {{ t('change') }}

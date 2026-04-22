@@ -1015,7 +1015,7 @@ if (!createMode.value) {
               <!-- Default market sub-section -->
               <ChannelDefaultMarket
                 :default-market="defaultMarket"
-                :can-change="channelMarkets.length > 1"
+                :can-change="channelMarkets.length > 1 && !isLocked"
                 @change="openDefaultMarketDialog"
               />
 
@@ -1024,6 +1024,7 @@ if (!createMode.value) {
                 :all-markets="allMarkets"
                 :channel-markets="channelMarkets"
                 :default-market-id="defaultMarketId"
+                :disabled="isLocked"
                 @add="handleAddMarkets"
                 @update="handleUpdateMarket"
                 @remove="handleRemoveMarket"
