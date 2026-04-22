@@ -47,7 +47,7 @@ function handleToggle(paymentId: string, active: boolean) {
     </Empty>
 
     <!-- Payment rows -->
-    <div v-else class="divide-y border-y py-6">
+    <div v-else class="space-y-4 divide-y border-y py-6">
       <ChannelPaymentRow
         v-for="payment in payments"
         :key="payment._id"
