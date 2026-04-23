@@ -24,7 +24,7 @@ const isOpen = computed(() => props.node !== null)
         <span class="text-sm font-medium">Node properties</span>
       </div>
       <div class="flex items-center gap-1">
-        <button v-if="node" class="hover:bg-destructive/10 text-destructive rounded p-1.5"
+        <button v-if="node && node.type !== 'trigger'" class="hover:bg-destructive/10 text-destructive rounded p-1.5"
           title="Delete node" @click="emit('delete')">
           <LucideTrash2 class="h-4 w-4" />
         </button>

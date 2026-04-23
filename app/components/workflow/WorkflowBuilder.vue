@@ -27,7 +27,7 @@ const emit = defineEmits<{
 }>()
 
 const { orchestratorApi } = useGeinsRepository()
-const { geinsLogError } = useGeinsLog('workflow-builder')
+const { geinsLogInfo, geinsLogError } = useGeinsLog('workflow-builder')
 const { toast } = useToast()
 
 // All node types are routed through the same dispatcher so the canvas host
@@ -62,6 +62,12 @@ type WorkflowTriggerShape = {
   eventName?: string
   triggerDescription?: string
 }
+watch(
+  currentWorkflow,
+  wf => geinsLogInfo('workflow (api)', wf),
+  { immediate: true },
+)
+
 const triggerNodeData = computed(() => {
   const wf = currentWorkflow.value as WorkflowTriggerShape | null
   return {
@@ -164,6 +170,15 @@ onConnect((params) => {
   addEdges([{ ...params, animated: false }])
 })
 
+watch(
+  [nodes, edges],
+  ([n, e]) => {
+    geinsLogInfo('nodes', n)
+    geinsLogInfo('connections', e)
+  },
+  { deep: true, immediate: true },
+)
+
 const selectedNode = ref<any>(null)
 const isAddNodeOpen = ref(false)
 const showMinimap = ref(false)
@@ -217,7 +232,7 @@ const handleAddFromPalette = (item: PaletteItem) => {
   isAddNodeOpen.value = false
 }
 
-// Auto-arrange nodes left-to-right with dagre (same approach as n8n). We
+// Auto-arrange nodes left-to-right using dagre. We
 // wait a tick after setNodes before fitView so VueFlow has committed the
 // new positions before it tries to frame them.
 const tidyUp = async () => {
@@ -386,21 +401,15 @@ useKeybindings({
             <KeyboardShortcutTooltip :label="isAddNodeOpen ? 'Close add node' : 'Add node'" keys="n">
               <button
                 class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
-                @click="toggleAddNode"
-              >
+                @click="toggleAddNode">
                 <LucidePlus class="h-4 w-4" />
               </button>
             </KeyboardShortcutTooltip>
-            <KeyboardShortcutTooltip
-              :label="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'"
-              keys="mod+enter"
-            >
+            <KeyboardShortcutTooltip :label="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'"
+              keys="mod+enter">
               <button
                 class="bg-background pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border bg-red-500 shadow-sm hover:bg-red-800"
-                :class="{ 'cursor-not-allowed opacity-50': isNew }"
-                :disabled="isRunning || isNew"
-                @click="runWorkflow"
-              >
+                :class="{ 'cursor-not-allowed opacity-50': isNew }" :disabled="isRunning || isNew" @click="runWorkflow">
                 <LucideLoader2 v-if="isRunning" class="h-4 w-4 animate-spin text-white" />
                 <LucidePlay v-else class="h-4 w-4 text-white" />
               </button>
@@ -442,7 +451,7 @@ useKeybindings({
   padding: 0;
 }
 
-.vue-flow__controls-button > svg {
+.vue-flow__controls-button>svg {
   width: 1rem;
   height: 1rem;
   max-width: 1rem;
