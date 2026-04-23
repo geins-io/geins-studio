@@ -8,12 +8,13 @@ import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
 import { useToast } from '@/components/ui/toast/use-toast'
+import KeyboardShortcutTooltip from './KeyboardShortcutTooltip.vue'
 import WorkflowPanelLogs from './panels/WorkflowPanelLogs.vue'
 import WorkflowSidebarAddNode from './sidebars/WorkflowSidebarAddNode.vue'
 import WorkflowSidebarNodeProperties from './sidebars/WorkflowSidebarNodeProperties.vue'
+import { tidyUpLayout } from './tidy-layout'
 import WorkflowNode from './WorkflowNode.vue'
 import type { PaletteItem } from './palette-types'
-import { tidyUpLayout } from './tidy-layout'
 
 
 const props = defineProps<{
@@ -146,7 +147,7 @@ onMounted(() => {
   ]
 })
 
-const { onConnect, addEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView } = useVueFlow()
+const { onConnect, addEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut } = useVueFlow()
 
 // After init, VueFlow owns the node store — mutate the trigger node's data
 // in place so reactivity picks up workflow changes (e.g. after a save).
@@ -223,6 +224,14 @@ const tidyUp = async () => {
   setNodes(tidyUpLayout(nodes.value, edges.value))
   await nextTick()
   fitView({ padding: 0.2 })
+}
+
+const toggleAddNode = () => {
+  isAddNodeOpen.value = !isAddNodeOpen.value
+}
+
+const toggleMinimap = () => {
+  showMinimap.value = !showMinimap.value
 }
 
 const deleteSelectedNode = () => {
@@ -303,6 +312,24 @@ const runWorkflow = async () => {
     })
   }
 }
+
+// Canvas shortcuts. Kept at the bottom so every handler referenced here is
+// already declared above.
+useKeybindings({
+  // `+` and `-` match the produced character (via event.key), which works
+  // across keyboard layouts — US Shift+= and Nordic `+` both produce '+',
+  // while on Swedish the `+` key's physical code is 'Minus' so matching
+  // by code would mis-route it to zoom-out. We keep `=` as a US-friendly
+  // alias for zoom-in without needing shift.
+  '+': () => zoomIn(),
+  '=': () => zoomIn(),
+  '-': () => zoomOut(),
+  '1': () => fitView({ padding: 0.2 }),
+  'shift+alt+t': tidyUp,
+  'm': toggleMinimap,
+  'n': toggleAddNode,
+  'mod+enter': runWorkflow,
+})
 </script>
 
 <template>
@@ -316,13 +343,35 @@ const runWorkflow = async () => {
             :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="2" :fit-view-on-init="!isNew"
             class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
             <Background pattern-color="hsl(var(--border))" :gap="20" />
-            <Controls position="bottom-left">
-              <ControlButton title="Tidy up layout" @click="tidyUp">
-                <LucideWandSparkles class="h-4 w-4" />
-              </ControlButton>
-              <ControlButton :title="showMinimap ? 'Hide minimap' : 'Show minimap'" @click="showMinimap = !showMinimap">
-                <LucideMap class="h-4 w-4" />
-              </ControlButton>
+            <!-- `show-*="false"` hides VueFlow's built-in buttons so we can
+                 render our own and attach the shared KeyboardShortcutTooltip
+                 to each (the defaults use native title attributes only). -->
+            <Controls position="bottom-left" :show-zoom="false" :show-fit-view="false" :show-interactive="false">
+              <KeyboardShortcutTooltip label="Zoom in" keys="+">
+                <ControlButton @click="zoomIn()">
+                  <LucideZoomIn class="h-4 w-4" />
+                </ControlButton>
+              </KeyboardShortcutTooltip>
+              <KeyboardShortcutTooltip label="Zoom out" keys="-">
+                <ControlButton @click="zoomOut()">
+                  <LucideZoomOut class="h-4 w-4" />
+                </ControlButton>
+              </KeyboardShortcutTooltip>
+              <KeyboardShortcutTooltip label="Fit view" keys="1">
+                <ControlButton @click="fitView({ padding: 0.2 })">
+                  <LucideMaximize class="h-4 w-4" />
+                </ControlButton>
+              </KeyboardShortcutTooltip>
+              <KeyboardShortcutTooltip label="Tidy up" keys="shift+alt+t">
+                <ControlButton @click="tidyUp">
+                  <LucideWandSparkles class="h-4 w-4" />
+                </ControlButton>
+              </KeyboardShortcutTooltip>
+              <KeyboardShortcutTooltip :label="showMinimap ? 'Hide minimap' : 'Show minimap'" keys="m">
+                <ControlButton @click="toggleMinimap">
+                  <LucideMap class="h-4 w-4" />
+                </ControlButton>
+              </KeyboardShortcutTooltip>
             </Controls>
             <MiniMap v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
               if (node.type === 'trigger') return 'hsl(142 76% 36%)'
@@ -334,19 +383,28 @@ const runWorkflow = async () => {
           </VueFlow>
 
           <div class="pointer-events-none absolute top-4 right-3 z-10 flex flex-col gap-2 @2xl:right-8">
-            <button
-              class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
-              :title="isAddNodeOpen ? 'Close add node' : 'Add node'" @click="isAddNodeOpen = !isAddNodeOpen">
-              <LucidePlus class="h-4 w-4" />
-            </button>
-            <button
-              class="bg-background pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border bg-red-500 shadow-sm hover:bg-red-800"
-              :class="{ 'cursor-not-allowed opacity-50': isNew }"
-              :disabled="isRunning || isNew"
-              :title="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'" @click="runWorkflow">
-              <LucideLoader2 v-if="isRunning" class="h-4 w-4 animate-spin text-white" />
-              <LucidePlay v-else class="h-4 w-4 text-white" />
-            </button>
+            <KeyboardShortcutTooltip :label="isAddNodeOpen ? 'Close add node' : 'Add node'" keys="n">
+              <button
+                class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
+                @click="toggleAddNode"
+              >
+                <LucidePlus class="h-4 w-4" />
+              </button>
+            </KeyboardShortcutTooltip>
+            <KeyboardShortcutTooltip
+              :label="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'"
+              keys="mod+enter"
+            >
+              <button
+                class="bg-background pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border bg-red-500 shadow-sm hover:bg-red-800"
+                :class="{ 'cursor-not-allowed opacity-50': isNew }"
+                :disabled="isRunning || isNew"
+                @click="runWorkflow"
+              >
+                <LucideLoader2 v-if="isRunning" class="h-4 w-4 animate-spin text-white" />
+                <LucidePlay v-else class="h-4 w-4 text-white" />
+              </button>
+            </KeyboardShortcutTooltip>
           </div>
 
           <WorkflowSidebarNodeProperties :node="selectedNode" @close="selectedNode = null"
@@ -373,6 +431,22 @@ const runWorkflow = async () => {
 .dark .vue-flow__controls {
   background: hsl(240 10% 3.9%);
   border-color: hsl(240 3.7% 15.9%);
+}
+
+/* Match the top-right floating buttons (`h-9 w-9`). VueFlow's default
+   control buttons are ~27px; we expand them so both sides of the canvas
+   feel balanced. */
+.vue-flow__controls-button {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+}
+
+.vue-flow__controls-button > svg {
+  width: 1rem;
+  height: 1rem;
+  max-width: 1rem;
+  max-height: 1rem;
 }
 
 .dark .vue-flow__controls-button {
