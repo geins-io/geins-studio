@@ -3,8 +3,13 @@ const props = defineProps<{
   label: string;
   description?: string;
   disabled?: boolean;
+  disabledTooltip?: string;
   icon?: string;
 }>();
+
+const showTooltip = computed(
+  () => !!props.disabled && !!props.disabledTooltip,
+);
 
 const checked = defineModel<boolean>('checked');
 
@@ -45,7 +50,17 @@ const hasSlotContent = computed(() => !!slots.default);
         </ItemDescription>
       </ItemContent>
       <ItemActions>
-        <Switch v-model="checked" :disabled="props.disabled" />
+        <TooltipProvider v-if="showTooltip">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <span tabindex="0">
+                <Switch v-model="checked" :disabled="props.disabled" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{{ disabledTooltip }}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <Switch v-else v-model="checked" :disabled="props.disabled" />
       </ItemActions>
     </Item>
     <transition

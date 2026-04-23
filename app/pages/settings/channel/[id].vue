@@ -208,19 +208,14 @@ async function handleMailSaved() {
   const refreshed = await accountApi.channel.get(entityId.value, {
     fields: ['mailTypes'],
   });
-  const byId = new Map(
-    (refreshed.mailTypes ?? []).map((m) => [m._id, m]),
-  );
+  const byId = new Map((refreshed.mailTypes ?? []).map((m) => [m._id, m]));
   channelMailTypes.value = channelMailTypes.value.map((m) => {
     const latest = byId.get(m._id);
     return latest ? { ...m, hasOverrides: latest.hasOverrides } : m;
   });
 }
 
-function handleToggleMailTypeActive(payload: {
-  _id: string;
-  active: boolean;
-}) {
+function handleToggleMailTypeActive(payload: { _id: string; active: boolean }) {
   channelMailTypes.value = channelMailTypes.value.map((m) =>
     m._id === payload._id ? { ...m, active: payload.active } : m,
   );
@@ -701,10 +696,6 @@ const handleSave = async () => {
   // Show locked toast if the response indicates background processing
   if (result && result.locked) {
     isLocked.value = true;
-    toast({
-      title: t('channels.locked_toast'),
-      variant: 'default',
-    });
   }
 
   // Refresh the store so sidebar / list page reflect changes
@@ -1012,6 +1003,12 @@ if (!createMode.value) {
             :key="`tab-${currentTab}`"
           >
             <ContentEditCard :title="$t('channels.tab_markets')">
+              <Feedback v-if="isLocked" type="info">
+                <template #title>{{ $t('channels.locked_title') }}</template>
+                <template #description>
+                  {{ $t('channels.locked_description') }}
+                </template>
+              </Feedback>
               <!-- Default market sub-section -->
               <ChannelDefaultMarket
                 :default-market="defaultMarket"
@@ -1122,6 +1119,9 @@ if (!createMode.value) {
             v-model:active="entityDataUpdate.active"
             v-bind="summaryProps"
             :disabled="isLocked"
+            :disabled-tooltip="
+              isLocked ? $t('channels.locked_tooltip') : undefined
+            "
           />
         </template>
       </ContentEditMain>
