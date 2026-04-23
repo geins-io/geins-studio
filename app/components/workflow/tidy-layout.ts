@@ -1,7 +1,7 @@
 import dagre from '@dagrejs/dagre'
 import type { Edge, GraphNode, Node } from '@vue-flow/core'
 
-// Mirrors n8n's canvas layout parameters (GRID_SIZE=16, ranksep=8*grid, nodesep=6*grid).
+// layout parameters (GRID_SIZE=16, ranksep=8*grid, nodesep=6*grid).
 // `LR` lays nodes out left-to-right, matching the workflow's source → target flow.
 const RANKDIR = 'LR'
 const RANKSEP = 128
