@@ -130,18 +130,8 @@ watch([isNew, workflowNameValue], ([newFlag, name]) => {
 const mainTabs = ['General', 'Inputs', 'Builder', 'History', 'Executions']
 const currentTab = ref(0)
 
-// Lazy-load list data when the corresponding tab is first opened.
-watch(currentTab, (v) => {
-  if (isNew.value) return
-  if (v === 4 && !executionsLoaded.value) {
-    executionsLoaded.value = true
-    loadExecutions()
-  }
-  if (v === 3 && !historyLoaded.value) {
-    historyLoaded.value = true
-    loadHistory()
-  }
-})
+const executionsRef = ref<{ refresh: () => void } | null>(null)
+const refreshExecutions = () => executionsRef.value?.refresh()
 
 // ─── Trigger & cron helpers ────────────────────────────────────────
 const cronDescription = computed(() => {
@@ -186,83 +176,6 @@ const prettyLabel = (name: string): string =>
     .split(/\s+/)
     .map(w => (w[0]?.toUpperCase() ?? '') + w.slice(1))
     .join(' ')
-
-const executionsLoaded = ref(false)
-const historyLoaded = ref(false)
-
-// ─── Executions + history lazy fetches ─────────────────────────────
-const pad = (n: number, len = 2) => String(n).padStart(len, '0')
-
-const formatStartedAt = (iso: string | undefined): string => {
-  if (!iso) return '–'
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return iso
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`
-}
-
-const formatDuration = (ms: number | undefined): string => {
-  if (ms === undefined || ms === null) return '–'
-  if (ms < 1000) return `${ms}ms`
-  const seconds = ms / 1000
-  if (seconds < 60) return `${seconds.toFixed(1)}s`
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = Math.round(seconds % 60)
-  return `${minutes}m ${remainingSeconds}s`
-}
-
-const mapStatus = (status: string | undefined): 'success' | 'failed' | 'running' | string => {
-  const s = (status ?? '').toLowerCase()
-  if (s === 'completed') return 'success'
-  if (s === 'failed' || s === 'timedout' || s === 'canceled' || s === 'cancelled') return 'failed'
-  if (s === 'running' || s === 'pending' || s === 'suspended') return 'running'
-  return s || 'unknown'
-}
-
-const { data: executionsRaw, pending: executionsLoading, execute: loadExecutions, refresh: refreshExecutions } = useLazyAsyncData(
-  () => `workflow-executions-${workflowId.value}`,
-  () => isNew.value
-    ? Promise.resolve([])
-    : orchestratorApi.execution.list({ workflowId: workflowId.value }),
-  { immediate: false, default: () => [] },
-)
-
-const executions = computed(() =>
-  (executionsRaw.value ?? []).map((e: any) => ({
-    id: e.id,
-    status: mapStatus(e.status),
-    startedAt: formatStartedAt(e.startTime),
-    duration: formatDuration(e.durationMs),
-    trigger: e.startedBy || (e.isTestRun ? 'Test run' : 'Scheduled'),
-    error: Array.isArray(e.errors) && e.errors.length > 0 ? e.errors[0] : undefined,
-  })),
-)
-
-const { data: historyRaw, pending: historyLoading, execute: loadHistory, refresh: refreshHistory } = useLazyAsyncData(
-  () => `workflow-history-${workflowId.value}`,
-  () => isNew.value
-    ? Promise.resolve({ workflowId: '', versions: [] })
-    : orchestratorApi.version.getHistory(workflowId.value),
-  { immediate: false, default: () => ({ workflowId: '', versions: [] }) },
-)
-
-const historyVersions = computed(() => {
-  const raw = historyRaw.value as any
-  const list: any[] = Array.isArray(raw?.items)
-    ? raw.items
-    : Array.isArray(raw?.versions)
-      ? raw.versions
-      : Array.isArray(raw)
-        ? raw
-        : []
-  return list
-    .map((v: any) => ({
-      version: v.version ?? v.Version,
-      createdAt: formatStartedAt(v.archivedAt ?? v.createdAt ?? v.CreatedAt),
-      createdBy: v.archivedBy || v.createdBy || v.CreatedBy || null,
-      description: v.description ?? v.Description ?? null,
-    }))
-    .sort((a, b) => (b.version ?? 0) - (a.version ?? 0))
-})
 
 // Pre-compute i18n labels before `await` — after an await, Vue loses the
 // active component instance so `t()` silently fails in post-await computeds.
@@ -998,79 +911,17 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
 
         <!-- Executions tab -->
         <KeepAlive>
-          <ContentEditMainContent v-if="currentTab === 4" :key="`tab-${currentTab}`">
-            <ContentEditCard title="Executions" :description="`(${executions.length})`">
-              <template #header-action>
-                <Button variant="secondary" size="sm" :disabled="executionsLoading" @click="refreshExecutions()">
-                  <LucideRefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': executionsLoading }" />
-                  Refresh
-                </Button>
-              </template>
-              <div v-if="executionsLoading && executions.length === 0" class="space-y-3">
-                <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
-                  <Skeleton class="mb-2 h-4 w-32" />
-                  <Skeleton class="h-3 w-48" />
-                </div>
-              </div>
-              <div v-else class="space-y-2">
-                <NuxtLink
-v-for="execution in executions" :key="execution.id"
-                  :to="`/orchestrator/executions/${execution.id}`"
-                  class="hover:bg-muted/50 grid grid-cols-[6rem_1fr_10rem_8rem] items-center gap-4 rounded-lg border p-3 transition-colors">
-                  <div class="flex items-center gap-2">
-                    <div
-class="h-2 w-2 rounded-full" :class="{
-                      'bg-green-500': execution.status === 'success',
-                      'bg-red-500': execution.status === 'failed',
-                      'animate-pulse bg-yellow-500': execution.status === 'running',
-                    }" />
-                    <span class="text-sm font-medium capitalize">{{ execution.status }}</span>
-                  </div>
-                  <div class="text-muted-foreground truncate font-mono text-xs">{{ execution.startedAt }}</div>
-                  <div class="text-muted-foreground truncate text-xs">Trigger: {{ execution.trigger }}</div>
-                  <div class="text-muted-foreground text-right font-mono text-xs">{{ execution.duration }}</div>
-                </NuxtLink>
-                <div v-if="executions.length === 0" class="text-muted-foreground py-12 text-center text-sm">
-                  No executions yet
-                </div>
-              </div>
-            </ContentEditCard>
-          </ContentEditMainContent>
+          <WorkflowExecutions
+            v-if="currentTab === 4" :key="`tab-${currentTab}`"
+            ref="executionsRef"
+            :workflow-id="workflowId" :is-new="isNew" />
         </KeepAlive>
 
         <!-- History tab -->
         <KeepAlive>
-          <ContentEditMainContent v-if="currentTab === 3" :key="`tab-${currentTab}`">
-            <ContentEditCard title="Version history" :description="`(${historyVersions.length})`">
-              <template #header-action>
-                <Button variant="secondary" size="sm" :disabled="historyLoading" @click="refreshHistory()">
-                  <LucideRefreshCw class="mr-2 h-3.5 w-3.5" :class="{ 'animate-spin': historyLoading }" />
-                  Refresh
-                </Button>
-              </template>
-              <div v-if="historyLoading && historyVersions.length === 0" class="space-y-3">
-                <div v-for="n in 5" :key="n" class="rounded-lg border p-3">
-                  <Skeleton class="mb-2 h-4 w-16" />
-                  <Skeleton class="h-3 w-48" />
-                </div>
-              </div>
-              <div v-else class="space-y-2">
-                <div
-v-for="entry in historyVersions" :key="entry.version"
-                  class="grid grid-cols-[6rem_1fr_12rem] items-center gap-4 rounded-lg border p-3">
-                  <div class="flex items-center gap-2">
-                    <LucideGitCommit class="text-muted-foreground h-3.5 w-3.5" />
-                    <span class="text-sm font-medium">v{{ entry.version }}</span>
-                  </div>
-                  <div class="text-muted-foreground truncate text-xs">{{ entry.description || '—' }}</div>
-                  <div class="text-muted-foreground text-right font-mono text-xs">{{ entry.createdAt }}</div>
-                </div>
-                <div v-if="historyVersions.length === 0" class="text-muted-foreground py-12 text-center text-sm">
-                  No version history
-                </div>
-              </div>
-            </ContentEditCard>
-          </ContentEditMainContent>
+          <WorkflowHistory
+            v-if="currentTab === 3" :key="`tab-${currentTab}`"
+            :workflow-id="workflowId" :is-new="isNew" />
         </KeepAlive>
 
         <template #sidebar>
