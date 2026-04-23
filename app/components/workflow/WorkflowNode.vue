@@ -4,11 +4,11 @@
 // ./nodes. Centralizing the type→component mapping keeps the canvas host
 // (WorkflowBuilder) decoupled from individual node implementations — adding
 // a new node type only requires a new file in ./nodes plus an entry below.
-import WorkflowNodeAction from './nodes/WorkflowNodeAction.vue'
-import WorkflowNodeCondition from './nodes/WorkflowNodeCondition.vue'
-import WorkflowNodeDelay from './nodes/WorkflowNodeDelay.vue'
-import WorkflowNodeLoop from './nodes/WorkflowNodeLoop.vue'
-import WorkflowNodeTrigger from './nodes/WorkflowNodeTrigger.vue'
+import WorkflowNodeAction from './node/WorkflowNodeAction.vue'
+import WorkflowNodeCondition from './node/WorkflowNodeCondition.vue'
+import WorkflowNodeDelay from './node/WorkflowNodeDelay.vue'
+import WorkflowNodeLoop from './node/WorkflowNodeLoop.vue'
+import WorkflowNodeTrigger from './node/WorkflowNodeTrigger.vue'
 import type { Component } from 'vue'
 
 defineOptions({ inheritAttrs: false })
