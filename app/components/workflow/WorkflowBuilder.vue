@@ -24,11 +24,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   executed: []
+  change: []
 }>()
 
 const { orchestratorApi } = useGeinsRepository()
 const { geinsLogInfo, geinsLogError } = useGeinsLog('workflow-builder')
 const { toast } = useToast()
+const { toCanvas, toApi } = useWorkflowCanvas()
 
 // All node types are routed through the same dispatcher so the canvas host
 // doesn't need to know about individual node implementations. WorkflowNode
@@ -96,64 +98,49 @@ onMounted(() => {
     initialNodes.value = [buildTriggerNode()]
     return
   }
-  // Demo data until the builder reads real node/connection data from the workflow.
-  initialNodes.value = [
-    buildTriggerNode(),
-    {
-      id: '2',
-      type: 'action',
-      position: { x: 400, y: 150 },
-      data: {
-        label: 'Transform Data',
-        icon: 'FileText',
-        description: 'Transform incoming data',
-        config: {},
-      },
-    },
-    {
-      id: '3',
-      type: 'condition',
-      position: { x: 700, y: 200 },
-      data: {
-        label: 'Check Status',
-        icon: 'GitBranch',
-        description: 'Branch on status',
-        config: { field: 'status', operator: 'equals', value: 'active' },
-      },
-    },
-    {
-      id: '4',
-      type: 'action',
-      position: { x: 1000, y: 100 },
-      data: {
-        label: 'Send Email',
-        icon: 'Mail',
-        description: 'Notify user',
-        config: { to: '', subject: '', body: '' },
-      },
-    },
-    {
-      id: '5',
-      type: 'action',
-      position: { x: 1000, y: 300 },
-      data: {
-        label: 'Log Error',
-        icon: 'Database',
-        description: 'Log to database',
-        config: {},
-      },
-    },
-  ]
+  const { nodes: canvasNodes, edges: canvasEdges } = toCanvas(currentWorkflow.value as any)
+  // If the API payload omits a trigger node, prepend our derived one so the
+  // canvas always has a trigger to anchor downstream nodes to.
+  const existingTrigger = canvasNodes.find(n => n.type === 'trigger')
+  const triggerId = existingTrigger?.id ?? TRIGGER_NODE_ID
+  const finalNodes = existingTrigger ? canvasNodes : [buildTriggerNode(), ...canvasNodes]
 
-  initialEdges.value = [
-    { id: 'e-trigger-2', source: TRIGGER_NODE_ID, target: '2', animated: true },
-    { id: 'e2-3', source: '2', target: '3' },
-    { id: 'e3-4', source: '3', target: '4', sourceHandle: 'true', label: 'Yes' },
-    { id: 'e3-5', source: '3', target: '5', sourceHandle: 'false', label: 'No' },
-  ]
+  // Auto-wire orphans: any non-trigger node without an incoming edge gets a
+  // synthetic edge from the trigger so the canvas never shows disconnected
+  // islands. `data.synthetic = true` lets `toApi` strip them on save.
+  const nodesWithIncoming = new Set(canvasEdges.map(e => e.target))
+  const finalEdges = [...canvasEdges]
+  let syntheticIndex = 0
+  for (const n of finalNodes) {
+    if (n.id === triggerId) continue
+    if (nodesWithIncoming.has(n.id)) continue
+    finalEdges.push({
+      id: `e-${triggerId}-${n.id}-auto-${syntheticIndex++}`,
+      source: triggerId,
+      target: n.id,
+      animated: true,
+      data: { type: 'sequential', synthetic: true },
+    })
+  }
+
+  initialNodes.value = finalNodes
+  initialEdges.value = finalEdges
+  geinsLogInfo('loaded workflow — nodes', finalNodes)
+  geinsLogInfo('loaded workflow — edges', finalEdges)
 })
 
-const { onConnect, addEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut } = useVueFlow()
+const { onConnect, onPaneReady, addEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut, getViewport } = useVueFlow()
+
+// Cap the canvas zoom at whatever level we land on after the initial
+// fit-view. Users have said anything closer than that is "too zoomed in";
+// locking max-zoom to the fit level keeps the canvas from ever going past
+// the width-fitted state. Starts at a sane default until onPaneReady fires.
+const maxZoom = ref(1)
+onPaneReady(() => {
+  const z = getViewport().zoom
+  maxZoom.value = z
+  geinsLogInfo('initial zoom captured as max-zoom', z)
+})
 
 // After init, VueFlow owns the node store — mutate the trigger node's data
 // in place so reactivity picks up workflow changes (e.g. after a save).
@@ -170,14 +157,30 @@ onConnect((params) => {
   addEdges([{ ...params, animated: false }])
 })
 
+// `canvasReady` flips to true one tick after VueFlow has swallowed the
+// initial nodes/edges. Without this guard the first reactive firing of the
+// watcher (seeding the canvas from the API) would incorrectly mark the
+// workflow dirty before the user has touched anything.
+const canvasReady = ref(false)
+onMounted(() => {
+  nextTick(() => { canvasReady.value = true })
+})
+
 watch(
   [nodes, edges],
   ([n, e]) => {
     geinsLogInfo('nodes', n)
     geinsLogInfo('connections', e)
+    if (canvasReady.value) emit('change')
   },
   { deep: true, immediate: true },
 )
+
+// Snapshot current canvas state as API-shaped `{ nodes, connections }` for
+// the parent page to persist on save.
+defineExpose({
+  getGraph: () => toApi({ nodes: nodes.value, edges: edges.value }),
+})
 
 const selectedNode = ref<any>(null)
 const isAddNodeOpen = ref(false)
@@ -355,7 +358,7 @@ useKeybindings({
       <div class="relative flex min-w-0 flex-1 flex-col">
         <div class="relative flex-1 overflow-hidden" @dragover="onDragOver" @drop="onDrop">
           <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
-            :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="2" :fit-view-on-init="!isNew"
+            :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="maxZoom" :fit-view-on-init="!isNew"
             class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
             <Background pattern-color="hsl(var(--border))" :gap="20" />
             <!-- `show-*="false"` hides VueFlow's built-in buttons so we can

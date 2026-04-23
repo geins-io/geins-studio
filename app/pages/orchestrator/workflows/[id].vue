@@ -14,7 +14,7 @@ definePageMeta({
 
 const route = useRoute()
 const breadcrumbsStore = useBreadcrumbsStore()
-const { geinsLogError } = useGeinsLog('workflow-editor')
+const { geinsLogInfo, geinsLogError } = useGeinsLog('workflow-editor')
 const { t, locale } = useI18n()
 const { toast } = useToast()
 const { orchestratorApi } = useGeinsRepository()
@@ -133,6 +133,13 @@ const currentTab = ref(0)
 const executionsRef = ref<{ refresh: () => void } | null>(null)
 const refreshExecutions = () => executionsRef.value?.refresh()
 
+// Template ref to the Builder so handleSave can pull the current canvas
+// graph (nodes + connections with position ui) instead of persisting the
+// stale cached `wf.nodes` / `wf.connections`.
+const builderRef = ref<{
+  getGraph: () => { nodes: unknown[], connections: unknown[] }
+} | null>(null)
+
 // ─── Trigger & cron helpers ────────────────────────────────────────
 const cronDescription = computed(() => {
   const expr = triggerCronValue.value.trim()
@@ -185,12 +192,19 @@ const idLabel = t('entity_id', { entityName: 'workflow' })
 // Must be declared BEFORE `await useAsyncData` — after an await, Vue loses
 // the active component instance so composables that register route guards
 // (onBeforeRouteLeave) would silently fail.
+// Incremented by the Builder tab whenever the canvas (nodes/edges, positions,
+// labels) mutates. Included in `editableState` so the existing unsaved-changes
+// diff treats canvas edits as a dirty state — no bespoke tracking required.
+const builderChangeCount = ref(0)
+const onBuilderChange = () => { builderChangeCount.value++ }
+
 const editableState = computed(() => ({
   active: workflowActive.value,
   ...form.values,
   inputs: inputValues.value,
   inputDefinitions: workflowInputs.value,
   inputGroups: additionalInputGroups.value,
+  builderChanges: builderChangeCount.value,
 }) as Record<string, unknown>)
 
 const originalEditableState = ref('')
@@ -425,7 +439,11 @@ const handleSave = async () => {
         await orchestratorApi.workflow.disable(workflowId.value)
       }
     }
-    await orchestratorApi.workflow.update(workflowId.value, {
+    // If the Builder tab has been mounted, prefer its live canvas graph so
+    // node position edits (ui.position) are persisted. Otherwise fall back to
+    // the cached workflow's nodes/connections.
+    const graph = builderRef.value?.getGraph?.()
+    const payload = {
       name: values.details.name,
       description: values.details.description || undefined,
       tags: values.details.tags,
@@ -433,14 +451,17 @@ const handleSave = async () => {
       enabled: workflowActive.value,
       cronExpression: apiType === 'scheduled' ? values.trigger.cron : undefined,
       eventName: apiType === 'event' ? values.trigger.eventEntity : undefined,
-      nodes: wf.nodes,
-      connections: wf.connections,
+      nodes: graph?.nodes ?? wf.nodes,
+      connections: graph?.connections ?? wf.connections,
       ui: wf.ui,
       input: mergedInputs,
       settings: values.settings,
       trigger,
-    })
+    }
+    geinsLogInfo('workflow.update payload', payload)
+    await orchestratorApi.workflow.update(workflowId.value, payload)
     await refreshCurrentWorkflow()
+    builderChangeCount.value = 0
     toast({ title: 'Configuration saved' })
   }
   catch (err) {
@@ -942,7 +963,9 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
        starts right under the tabs. -->
   <KeepAlive>
     <WorkflowBuilder
-v-if="currentTab === 2" :key="`tab-${currentTab}`" class="-mx-3 -mt-4 @2xl:-mx-8"
-      :workflow-id="workflowId" :is-new="isNew" @executed="refreshExecutions" />
+v-if="currentTab === 2" :key="`tab-${currentTab}`" ref="builderRef" class="-mx-3 -mt-4 @2xl:-mx-8"
+      :workflow-id="workflowId" :is-new="isNew"
+      @executed="refreshExecutions"
+      @change="onBuilderChange" />
   </KeepAlive>
 </template>

@@ -17,7 +17,7 @@ import { useRuntimeConfig } from '#imports';
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
-  const { geinsLog, geinsLogError } = log('server/api/[...].ts');
+  const { geinsLog, geinsLogInfo, geinsLogError } = log('server/api/[...].ts');
 
   const headers = getHeaders(event);
   const token = headers['x-access-token'];
@@ -71,6 +71,7 @@ export default defineEventHandler(async (event) => {
   let body;
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
     body = await readBody(event);
+    geinsLogInfo(`${event.method} ${fetchUrl} body:`, body);
   }
 
   try {
