@@ -693,7 +693,7 @@ const handleSave = async () => {
     },
   );
 
-  // Show locked toast if the response indicates background processing
+  // Mark the channel as locked so the in-page locked feedback/tooltip is shown
   if (result && result.locked) {
     isLocked.value = true;
   }
