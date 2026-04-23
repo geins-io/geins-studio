@@ -730,6 +730,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               }),
             );
           };
+          columnSize = { size: 80, minSize: 80, maxSize: 80 };
           break;
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {

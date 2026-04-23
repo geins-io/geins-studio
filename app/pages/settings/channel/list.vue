@@ -20,7 +20,6 @@ definePageMeta({
 
 // GLOBAL SETUP
 const accountStore = useAccountStore();
-const { channels } = storeToRefs(accountStore);
 const dataList = ref<EntityList[]>([]);
 const entityName = 'channel';
 const entityIdentifier = '{id}';
@@ -58,37 +57,22 @@ const mapToListData = (list: Entity[]): EntityList[] => {
   });
 };
 
-// FETCH DATA FOR ENTITY — read from account store (authoritative cache)
-const refresh = async () => {
-  loading.value = true;
-  fetchError.value = false;
-
-  try {
-    await accountStore.refreshChannels();
-  }
-  catch (error) {
-    fetchError.value = true;
-    throw error;
-  }
-  finally {
-    loading.value = false;
-  }
-};
+// FETCH DATA FOR ENTITY — read from account store cache, fetch if empty.
+// Using useAsyncData (same pattern as other list pages) avoids the deep-
+// reactive coupling that happens when the page watches the store ref directly.
+const { data, error, refresh } = await useAsyncData<Entity[]>(
+  'settings-channel-list',
+  async () => {
+    if (accountStore.channels.length > 0) {
+      return toRaw(accountStore.channels);
+    }
+    return accountStore.refreshChannels();
+  },
+);
 
 const { getColumns, addActionsColumn } = useColumns<EntityList>();
 
 onMounted(() => {
-  watch(
-    channels,
-    (newData) => {
-      fetchError.value = false;
-      if (newData) {
-        dataList.value = mapToListData(newData);
-      }
-    },
-    { immediate: true },
-  );
-
   // SET UP COLUMN OPTIONS FOR ENTITY
   const columnOptions: ColumnOptions<EntityList> = {
     columnTypes: {
@@ -120,6 +104,22 @@ onMounted(() => {
       'paymentCount',
     ],
   };
+
+  watch(
+    [data, error],
+    ([newData, newError]) => {
+      if (newError) {
+        fetchError.value = true;
+        dataList.value = [];
+        return;
+      }
+      fetchError.value = false;
+      if (newData) {
+        dataList.value = mapToListData(newData);
+      }
+    },
+    { immediate: true },
+  );
 
   // GET AND SET COLUMNS
   columns.value = getColumns(dataList.value, columnOptions);
