@@ -11,11 +11,17 @@ const { t } = useI18n();
 const { resolveIcon } = useLucideIcon();
 const emptyIcon = resolveIcon('Globe') ?? undefined;
 
-const props = defineProps<{
-  allMarkets: Market[];
-  channelMarkets: ChannelMarket[];
-  defaultMarketId: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    allMarkets: Market[];
+    channelMarkets: ChannelMarket[];
+    defaultMarketId: string;
+    disabled?: boolean;
+  }>(),
+  {
+    disabled: false,
+  },
+);
 
 const emit = defineEmits<{
   add: [markets: ChannelMarketAssignment[]];
@@ -82,6 +88,7 @@ const columns = computed(() => {
         onChange: (row: Row<ChannelMarketRow>) => (value: boolean) => {
           handleToggleActive(row.original, value);
         },
+        disabled: () => props.disabled,
       },
     },
     sortable: false,
@@ -90,6 +97,7 @@ const columns = computed(() => {
     cols,
     {
       onDelete: (item: ChannelMarketRow) => openRemoveDialog(item._id),
+      disabled: props.disabled,
     },
     'delete',
   );
@@ -113,7 +121,12 @@ const addDialogOpen = ref(false);
         </ItemDescription>
       </ItemContent>
       <ItemActions>
-        <Button variant="outline" size="sm" @click="addDialogOpen = true">
+        <Button
+          variant="outline"
+          size="sm"
+          :disabled="disabled"
+          @click="addDialogOpen = true"
+        >
           <LucidePlus class="mr-1 size-3.5" />
           {{ t('add') }}
         </Button>
