@@ -12,6 +12,7 @@ const props = withDefaults(
     entityLiveStatus?: boolean;
     showActiveStatus?: boolean;
     disabled?: boolean;
+    disabledTooltip?: string;
     status?: StatusBadgeStatus;
   }>(),
   {
@@ -23,6 +24,7 @@ const props = withDefaults(
     entityLiveStatus: false,
     showActiveStatus: true,
     disabled: false,
+    disabledTooltip: undefined,
     status: undefined,
   },
 );
@@ -83,6 +85,7 @@ const activeDescription = computed(() => {
       :label="active ? $t('active') : $t('inactive')"
       :description="activeDescription"
       :disabled="props.disabled"
+      :disabled-tooltip="disabledTooltip"
     />
     <slot name="before-summary" />
     <ContentDataList v-if="summary.length" :data-list="summary" />

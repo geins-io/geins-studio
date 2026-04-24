@@ -1,7 +1,13 @@
 <script setup lang="ts" generic="T">
-const _props = defineProps<{
-  rowData: T;
-}>();
+withDefaults(
+  defineProps<{
+    rowData: T;
+    disabled?: boolean;
+  }>(),
+  {
+    disabled: false,
+  },
+);
 
 const _emit = defineEmits({
   delete: (rowData): T => rowData,
@@ -13,6 +19,7 @@ const _emit = defineEmits({
       class="hover:text-negative size-6 p-1 sm:size-7"
       size="xs"
       variant="outline"
+      :disabled="disabled"
       @click="$emit('delete', rowData)"
     >
       <LucideX class="size-3.5" />
