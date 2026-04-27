@@ -578,7 +578,7 @@ v-model:open="deleteDialogOpen" :entity-name="entityName" :loading="deleting"
 
   <ContentEditWrap>
     <template #header>
-      <ContentHeader :title="isNew ? 'New workflow' : (workflowNameValue || 'Workflow')" :entity-name="entityName">
+      <ContentHeader :class="{ 'builder-active': viewMode === 'builder' }" :title="isNew ? 'New workflow' : (workflowNameValue || 'Workflow')" :entity-name="entityName">
         <ContentActionBar>
           <ContentViewModeSwitch v-if="!isNew" v-model="viewMode" :modes="viewModes" />
           <ButtonIcon
@@ -990,3 +990,9 @@ v-if="viewMode === 'builder'" :key="viewMode" ref="builderRef" class="-mx-3 -mt-
       @change="onBuilderChange" />
   </KeepAlive>
 </template>
+
+<style scoped>
+.builder-active :deep(.content-header) {
+  border-bottom-color: transparent;
+}
+</style>
