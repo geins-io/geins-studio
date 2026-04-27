@@ -49,6 +49,20 @@ function isVisible(field: SchemaField): boolean {
     </FormInputDescription>
   </div>
 
+  <!-- textarea -->
+  <div v-else-if="field.type === 'textarea'" class="space-y-1.5">
+    <Label>{{ field.label }}</Label>
+    <Textarea
+      :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
+      :placeholder="field.placeholder"
+      :disabled="field.disabled"
+      @update:model-value="updateValue(field.key, $event)"
+    />
+    <FormInputDescription v-if="field.description">
+      {{ field.description }}
+    </FormInputDescription>
+  </div>
+
   <!-- number -->
   <div v-else-if="field.type === 'number'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
@@ -233,24 +247,58 @@ function isVisible(field: SchemaField): boolean {
     </div>
   </div>
 
-  <!-- group -->
+  <!-- boolean-choice -->
   <ContentSwitch
-    v-else-if="field.type === 'group'"
+    v-else-if="field.type === 'boolean-choice' && field.choice"
     :label="field.label"
     :description="field.description"
     :icon="field.icon"
-    :checked="(getSettingValue(modelValue, field.key) as boolean) ?? false"
-    @update:checked="updateValue(field.key, $event)"
+    :checked="
+      (getSettingValue(modelValue, `${field.key}.enabled`) as boolean) ?? false
+    "
+    @update:checked="updateValue(`${field.key}.enabled`, $event)"
   >
-    <div v-if="field.children" class="space-y-4 border-t pt-4">
-      <template v-for="child in field.children" :key="child.key">
-        <ChannelSchemaField
-          v-if="isVisible(child)"
-          :field="child"
-          :model-value="modelValue"
-          @update:model-value="$emit('update:modelValue', $event)"
-        />
-      </template>
+    <div class="space-y-2 border-t pt-4">
+      <Label v-if="field.choice.label">{{ field.choice.label }}</Label>
+      <FormInputRadioCards
+        v-if="field.choice.type === 'radio-cards'"
+        :options="field.choice.options"
+        :model-value="
+          (getSettingValue(
+            modelValue,
+            `${field.key}.${field.choice.key}`,
+          ) as string) ?? ''
+        "
+        @update:model-value="
+          updateValue(`${field.key}.${field.choice.key}`, $event)
+        "
+      />
+      <RadioGroup
+        v-else
+        :model-value="
+          (getSettingValue(
+            modelValue,
+            `${field.key}.${field.choice.key}`,
+          ) as string) ?? ''
+        "
+        @update:model-value="
+          updateValue(`${field.key}.${field.choice.key}`, $event)
+        "
+      >
+        <div
+          v-for="option in field.choice.options"
+          :key="option.value"
+          class="flex items-center gap-3"
+        >
+          <RadioGroupItem
+            :id="`${field.key}-${option.value}`"
+            :value="option.value"
+          />
+          <Label :for="`${field.key}-${option.value}`" class="font-medium">
+            {{ option.label }}
+          </Label>
+        </div>
+      </RadioGroup>
     </div>
   </ContentSwitch>
 </template>

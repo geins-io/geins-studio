@@ -42,6 +42,9 @@ export interface SchemaField {
   pattern?: string;
   placeholder?: string;
 
+  // boolean-choice
+  choice?: BooleanChoiceConfig;
+
   // Grouping
   children?: SchemaField[];
 
@@ -57,16 +60,25 @@ export interface SchemaField {
 
 export type SchemaFieldType =
   | 'string'
+  | 'textarea'
   | 'number'
   | 'boolean'
+  | 'boolean-choice'
   | 'select'
   | 'font'
   | 'color'
   | 'image'
   | 'radio-cards'
   | 'radio'
-  | 'group'
   | 'sub-section';
+
+/** Inner choice descriptor for `boolean-choice` fields. Reveals when `enabled === true`. */
+export interface BooleanChoiceConfig {
+  key: string;
+  label?: string;
+  type: 'radio' | 'radio-cards';
+  options: SchemaFieldOption[];
+}
 
 export interface SchemaFieldOption {
   value: string;

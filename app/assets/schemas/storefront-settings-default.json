@@ -8,7 +8,7 @@
         "description": "Choose if you want your storefront to enable direct purchases of your products, or work as a product catalogue",
         "fields": [
           {
-            "key": "storefrontMode",
+            "key": "mode",
             "type": "radio-cards",
             "label": "Storefront mode",
             "default": "commerce",
@@ -30,43 +30,61 @@
         ]
       },
       {
-        "key": "defaultSettings",
-        "title": "Default settings",
-        "description": "Base settings used globally unless otherwise configured.",
+        "key": "accessRequirements",
+        "title": "Access requirements",
+        "description": "Define which actions require login. These settings are global and may be overridden by roles or permissions.",
+        "icon": "UserLock",
         "fields": [
           {
-            "key": "accessRequirements",
-            "type": "group",
-            "label": "Access requirements",
-            "description": "Define which actions require login. These settings are global and may be overridden by roles or permissions.",
-            "icon": "UserLock",
-            "default": true,
-            "children": [
-              {
-                "key": "accessRequirements.priceVisibility",
-                "type": "boolean",
-                "label": "Price visibility",
-                "description": "Prices are visible only to logged-in users.",
-                "icon": "DollarSign",
-                "default": true
-              },
-              {
-                "key": "accessRequirements.orderPlacement",
-                "type": "boolean",
-                "label": "Order placement",
-                "description": "Orders can only be placed by logged-in users.",
-                "icon": "ShoppingCart",
-                "default": true
-              },
-              {
-                "key": "accessRequirements.stockStatus",
-                "type": "boolean",
-                "label": "Stock status",
-                "description": "Products stock levels are visible only to logged-in users.",
-                "icon": "ChartColumn",
-                "default": false
-              }
-            ]
+            "key": "features.priceVisibility",
+            "type": "boolean-choice",
+            "label": "Price visibility",
+            "description": "Controls whether prices are shown on the storefront.",
+            "icon": "DollarSign",
+            "default": { "enabled": true, "access": "authenticated" },
+            "choice": {
+              "key": "access",
+              "label": "Who can see prices",
+              "type": "radio",
+              "options": [
+                { "value": "authenticated", "label": "Authenticated users only" },
+                { "value": "all", "label": "All users" }
+              ]
+            }
+          },
+          {
+            "key": "features.orderPlacement",
+            "type": "boolean-choice",
+            "label": "Order placement",
+            "description": "Controls whether orders can be placed from the storefront.",
+            "icon": "ShoppingCart",
+            "default": { "enabled": true, "access": "authenticated" },
+            "choice": {
+              "key": "access",
+              "label": "Who can place orders",
+              "type": "radio",
+              "options": [
+                { "value": "authenticated", "label": "Authenticated users only" },
+                { "value": "all", "label": "All users" }
+              ]
+            }
+          },
+          {
+            "key": "features.stockStatus",
+            "type": "boolean-choice",
+            "label": "Stock status",
+            "description": "Controls whether stock levels are visible on the storefront.",
+            "icon": "ChartColumn",
+            "default": { "enabled": false, "access": "authenticated" },
+            "choice": {
+              "key": "access",
+              "label": "Who can see stock levels",
+              "type": "radio",
+              "options": [
+                { "value": "authenticated", "label": "Authenticated users only" },
+                { "value": "all", "label": "All users" }
+              ]
+            }
           }
         ]
       }
@@ -76,15 +94,21 @@
     "label": "Layout options",
     "sections": [
       {
-        "key": "logotype",
-        "title": "Logotype",
-        "description": "Choose between rounded or square corners for interface elements.",
+        "key": "branding",
+        "title": "Branding",
+        "description": "Upload your logo and favicon.",
         "icon": "Image",
         "fields": [
           {
-            "key": "logotype",
+            "key": "branding.logoUrl",
             "type": "image",
             "label": "Logotype",
+            "columns": 2
+          },
+          {
+            "key": "branding.faviconUrl",
+            "type": "image",
+            "label": "Favicon",
             "columns": 2
           }
         ]
@@ -96,7 +120,7 @@
         "icon": "SquareArrowUpRight",
         "fields": [
           {
-            "key": "borderRadius",
+            "key": "theme.radius",
             "type": "radio-cards",
             "label": "Corner style",
             "default": "0",
@@ -124,7 +148,7 @@
         "icon": "FileTypeCorner",
         "fields": [
           {
-            "key": "fonts.headings",
+            "key": "theme.typography.headingFontFamily",
             "type": "font",
             "label": "Headings",
             "description": "Used for selected heading elements used on pages and content",
@@ -133,7 +157,7 @@
             "columns": 2
           },
           {
-            "key": "fonts.body",
+            "key": "theme.typography.fontFamily",
             "type": "font",
             "label": "Body text",
             "description": "Applied to body text, descriptions, and supporting content.",
@@ -162,14 +186,14 @@
                 "label": "General buttons",
                 "children": [
                   {
-                    "key": "themeColors.buttons.general.background",
+                    "key": "theme.colors.buttonBackground",
                     "type": "color",
                     "label": "Background",
                     "columns": 2,
                     "default": "#0E7490"
                   },
                   {
-                    "key": "themeColors.buttons.general.text",
+                    "key": "theme.colors.buttonText",
                     "type": "color",
                     "label": "Text",
                     "columns": 2,
@@ -183,14 +207,14 @@
                 "label": "Purchase buttons",
                 "children": [
                   {
-                    "key": "themeColors.buttons.purchase.background",
+                    "key": "theme.colors.buttonPurchaseBackground",
                     "type": "color",
                     "label": "Background",
                     "columns": 2,
                     "default": "#0E7490"
                   },
                   {
-                    "key": "themeColors.buttons.purchase.text",
+                    "key": "theme.colors.buttonPurchaseText",
                     "type": "color",
                     "label": "Text",
                     "columns": 2,
@@ -207,13 +231,13 @@
             "description": "Set background and text colors for selected interface elements.",
             "children": [
               {
-                "key": "themeColors.siteBackground.color",
+                "key": "theme.colors.siteBackground",
                 "type": "radio-cards",
                 "label": "Site background",
-                "default": "#ffffff",
+                "default": "#FFFFFF",
                 "options": [
                   {
-                    "value": "#ffffff",
+                    "value": "#FFFFFF",
                     "label": "White",
                     "type": "color",
                     "description": "The background of your storefront will be white"
@@ -235,13 +259,13 @@
             "description": "Set background and text colors for selected interface elements.",
             "children": [
               {
-                "key": "themeColors.navBarBackground.color",
+                "key": "theme.colors.navBarBackground",
                 "type": "radio-cards",
                 "label": "Navigation bar background",
                 "default": "#F5F5F5",
                 "options": [
                   {
-                    "value": "#ffffff",
+                    "value": "#FFFFFF",
                     "label": "White",
                     "type": "color",
                     "description": "The background of your navigation bar will be white"
@@ -263,14 +287,14 @@
             "description": "Set background and text colors for selected interface elements.",
             "children": [
               {
-                "key": "themeColors.topBar.background",
+                "key": "theme.colors.topBarBackground",
                 "type": "color",
                 "label": "Background",
                 "columns": 4,
                 "default": "#0E7490"
               },
               {
-                "key": "themeColors.topBar.text",
+                "key": "theme.colors.topBarText",
                 "type": "color",
                 "label": "Text",
                 "columns": 4,
@@ -285,18 +309,165 @@
             "description": "Set background and text colors for selected interface elements.",
             "children": [
               {
-                "key": "themeColors.footer.background",
+                "key": "theme.colors.footerBackground",
                 "type": "color",
                 "label": "Background",
                 "columns": 4,
                 "default": "#F5F5F5"
               },
               {
-                "key": "themeColors.footer.text",
+                "key": "theme.colors.footerText",
                 "type": "color",
                 "label": "Text",
                 "columns": 4,
                 "default": "#0A0A0A"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "seo": {
+    "label": "SEO",
+    "sections": [
+      {
+        "key": "seoAndAnalytics",
+        "title": "SEO & analytics",
+        "description": "Default metadata, robots policy, and analytics identifiers used across the storefront.",
+        "icon": "Search",
+        "fields": [
+          {
+            "key": "seo.defaultTitle",
+            "type": "string",
+            "label": "Default title",
+            "description": "Used when a page does not provide its own title.",
+            "default": "",
+            "columns": 2
+          },
+          {
+            "key": "seo.titleTemplate",
+            "type": "string",
+            "label": "Title template",
+            "description": "Pattern applied to page titles, e.g. \"%s | My Store\".",
+            "placeholder": "%s | My Store",
+            "default": "",
+            "columns": 2
+          },
+          {
+            "key": "seo.defaultDescription",
+            "type": "textarea",
+            "label": "Default description",
+            "description": "Recommended max ~160 characters. Used as the meta description fallback.",
+            "default": ""
+          },
+          {
+            "key": "seo.defaultKeywords",
+            "type": "string",
+            "label": "Default keywords",
+            "description": "Comma-separated list of fallback meta keywords.",
+            "default": ""
+          },
+          {
+            "key": "seo.robots",
+            "type": "radio",
+            "label": "Robots policy",
+            "description": "Controls the default `robots` meta tag value across the storefront.",
+            "default": "index, follow",
+            "options": [
+              { "value": "index, follow", "label": "Index, follow" },
+              { "value": "noindex, nofollow", "label": "No index, no follow" }
+            ]
+          },
+          {
+            "key": "seo.googleAnalyticsId",
+            "type": "string",
+            "label": "Google Analytics ID",
+            "placeholder": "G-XXXXXXXXXX",
+            "default": "",
+            "columns": 2
+          },
+          {
+            "key": "seo.googleTagManagerId",
+            "type": "string",
+            "label": "Google Tag Manager ID",
+            "placeholder": "GTM-XXXXXX",
+            "default": "",
+            "columns": 2
+          },
+          {
+            "key": "seo.verification",
+            "type": "string",
+            "label": "Search console verification",
+            "description": "Verification token (e.g. Google Search Console meta value).",
+            "default": ""
+          }
+        ]
+      }
+    ]
+  },
+  "contact": {
+    "label": "Contact",
+    "sections": [
+      {
+        "key": "contact",
+        "title": "Contact details",
+        "description": "Public contact information shown on the storefront.",
+        "icon": "Phone",
+        "fields": [
+          {
+            "key": "contactDetails",
+            "type": "sub-section",
+            "label": "Contact details",
+            "children": [
+              {
+                "key": "contact.email",
+                "type": "string",
+                "label": "Email",
+                "placeholder": "hello@example.com",
+                "default": "",
+                "columns": 2
+              },
+              {
+                "key": "contact.phone",
+                "type": "string",
+                "label": "Phone",
+                "placeholder": "+46 …",
+                "default": "",
+                "columns": 2
+              }
+            ]
+          },
+          {
+            "key": "contactAddress",
+            "type": "sub-section",
+            "label": "Address",
+            "children": [
+              {
+                "key": "contact.address.street",
+                "type": "string",
+                "label": "Street",
+                "default": ""
+              },
+              {
+                "key": "contact.address.postalCode",
+                "type": "string",
+                "label": "Postal code",
+                "default": "",
+                "columns": 2
+              },
+              {
+                "key": "contact.address.city",
+                "type": "string",
+                "label": "City",
+                "default": "",
+                "columns": 2
+              },
+              {
+                "key": "contact.address.country",
+                "type": "string",
+                "label": "Country",
+                "default": ""
               }
             ]
           }

@@ -2,7 +2,7 @@
 
 The Storefront Settings tab in a channel is entirely driven by a **JSON schema**. The schema defines what tabs, sections, and fields appear in the UI — no code changes are needed to customize it.
 
-Geins ships a **default schema** with two tabs: _Base settings_ and _Layout options_. Merchants building custom storefronts can replace it with their own schema to get a completely different editor.
+Geins ships a **default schema** with four tabs: _Base settings_, _Layout options_, _SEO_, and _Contact_. Merchants building custom storefronts can replace it with their own schema to get a completely different editor.
 
 ---
 
@@ -14,7 +14,7 @@ Schema (JSON)                     UI
 Top-level key                 →   Sub-tab (e.g. "Base settings")
   sections[]                  →     Section card
     fields[]                  →       Form fields inside the card
-      children[] (optional)   →         Nested fields / group toggles
+      children[] (optional)   →         Nested fields / sub-sections
 ```
 
 ### Top-level structure
@@ -25,14 +25,13 @@ Top-level key                 →   Sub-tab (e.g. "Base settings")
     "label": "Base settings",
     "sections": [ ... ]
   },
-  "layoutOptions": {
-    "label": "Layout options",
-    "sections": [ ... ]
-  }
+  "layoutOptions": { "label": "Layout options", "sections": [ ... ] },
+  "seo":           { "label": "SEO",            "sections": [ ... ] },
+  "contact":       { "label": "Contact",        "sections": [ ... ] }
 }
 ```
 
-Each key becomes a sub-tab. The `label` is what users see in the tab bar.
+Each key becomes a sub-tab. The `label` is what users see in the tab bar. **Tab keys are purely a UI concern** — they do NOT correspond to top-level keys in the persisted settings object.
 
 ---
 
@@ -50,10 +49,10 @@ A section groups related fields under a heading.
 }
 ```
 
-| Property      | Required | Description                                         |
-| ------------- | -------- | --------------------------------------------------- |
-| `key`         | Yes      | Unique identifier (used as the settings key prefix) |
-| `title`       | Yes      | Heading shown at the top of the section card        |
+| Property      | Required | Description                                                              |
+| ------------- | -------- | ------------------------------------------------------------------------ |
+| `key`         | Yes      | Unique layout identifier for the section card. Not part of the data shape. |
+| `title`       | Yes      | Heading shown at the top of the section card                             |
 | `description` | No       | Subtitle shown below the heading                    |
 | `icon`        | No       | Lucide icon name shown next to the section title    |
 | `fields`      | Yes      | Array of field definitions (see below)              |
@@ -68,7 +67,7 @@ Renders a set of card-style radio buttons. Each option shows an icon, label, and
 
 ```json
 {
-  "key": "storefrontMode",
+  "key": "mode",
   "type": "radio-cards",
   "label": "Storefront mode",
   "default": "commerce",
@@ -105,13 +104,13 @@ Renders a set of card-style radio buttons. Each option shows an icon, label, and
 
 ```json
 {
-  "key": "themeColors.siteBackground.color",
+  "key": "theme.colors.siteBackground",
   "type": "radio-cards",
   "label": "Site background",
-  "default": "#ffffff",
+  "default": "#FFFFFF",
   "options": [
     {
-      "value": "#ffffff",
+      "value": "#FFFFFF",
       "label": "White",
       "type": "color",
       "description": "The background of your storefront will be white"
@@ -134,25 +133,16 @@ Renders a standard vertical list of radio buttons. Simpler than `radio-cards` �
 
 ```json
 {
-  "key": "layoutMode",
+  "key": "seo.robots",
   "type": "radio",
-  "label": "Layout mode",
-  "default": "grid",
+  "label": "Robots policy",
+  "default": "index, follow",
   "options": [
-    { "value": "grid", "label": "Grid" },
-    { "value": "list", "label": "List" }
+    { "value": "index, follow", "label": "Index, follow" },
+    { "value": "noindex, nofollow", "label": "No index, no follow" }
   ]
 }
 ```
-
-**Renders as:** A vertical stack of radio button + label rows.
-
-**Option properties:**
-
-| Property | Description                                   |
-| -------- | --------------------------------------------- |
-| `value`  | The stored value when this option is selected |
-| `label`  | Option label shown next to the radio button   |
 
 ---
 
@@ -162,61 +152,51 @@ Renders a toggle switch.
 
 ```json
 {
-  "key": "accessRequirements.priceVisibility",
+  "key": "feature.someToggle",
   "type": "boolean",
-  "label": "Price visibility",
-  "description": "Prices are visible only to logged-in users.",
-  "icon": "DollarSign",
+  "label": "Some toggle",
+  "description": "Optional description.",
+  "icon": "ToggleLeft",
   "default": true
 }
 ```
 
-**Renders as:** A labeled row with a toggle on the right. The description appears as a subtitle.
+**Renders as:** A labeled row with a toggle on the right.
 
 ---
 
-### `group`
+### `boolean-choice`
 
-A toggle that acts as a parent for a set of nested boolean fields. When the group toggle is off, the children are visually dimmed/disabled.
+A toggle that, when enabled, reveals a secondary choice (radio buttons or radio cards). Generic "switch + revealed choice" pattern. Always stores `{ enabled: boolean, [choiceKey]: value }` at the field's path.
 
 ```json
 {
-  "key": "accessRequirements",
-  "type": "group",
-  "label": "Access requirements",
-  "description": "Define which actions require login.",
-  "icon": "UserLock",
-  "default": true,
-  "children": [
-    {
-      "key": "accessRequirements.priceVisibility",
-      "type": "boolean",
-      "label": "Price visibility",
-      "description": "Prices are visible only to logged-in users.",
-      "icon": "DollarSign",
-      "default": true
-    },
-    {
-      "key": "accessRequirements.orderPlacement",
-      "type": "boolean",
-      "label": "Order placement",
-      "description": "Orders can only be placed by logged-in users.",
-      "icon": "ShoppingCart",
-      "default": true
-    },
-    {
-      "key": "accessRequirements.stockStatus",
-      "type": "boolean",
-      "label": "Stock status",
-      "description": "Stock levels are visible only to logged-in users.",
-      "icon": "ChartColumn",
-      "default": false
-    }
-  ]
+  "key": "features.priceVisibility",
+  "type": "boolean-choice",
+  "label": "Price visibility",
+  "description": "Controls whether prices are shown on the storefront.",
+  "icon": "DollarSign",
+  "default": { "enabled": true, "access": "authenticated" },
+  "choice": {
+    "key": "access",
+    "label": "Who can see prices",
+    "type": "radio",
+    "options": [
+      { "value": "authenticated", "label": "Authenticated users only" },
+      { "value": "all", "label": "All users" }
+    ]
+  }
 }
 ```
 
-**Renders as:** A toggle row at the top followed by indented child toggles.
+| `choice` property | Description                                                                  |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `key`             | Inner property name (e.g. `access` → produces `features.priceVisibility.access`) |
+| `label`           | Optional label shown above the revealed choice                               |
+| `type`            | `radio` or `radio-cards` — delegates to the matching renderer                |
+| `options`         | Choice options (`SchemaFieldOption[]`)                                       |
+
+**Renders as:** A `ContentSwitch` with a master `Switch`; flipping it on reveals the inner choice with an animated transition.
 
 ---
 
@@ -226,15 +206,13 @@ Renders a color picker input.
 
 ```json
 {
-  "key": "themeColors.primary",
+  "key": "theme.colors.buttonBackground",
   "type": "color",
-  "label": "Primary color",
+  "label": "Background",
   "columns": 4,
-  "default": "#171717"
+  "default": "#0E7490"
 }
 ```
-
-**Renders as:** A color swatch button that opens a color picker overlay.
 
 ---
 
@@ -244,17 +222,15 @@ Renders a font picker (searchable select populated with Google Fonts).
 
 ```json
 {
-  "key": "fonts.headings",
+  "key": "theme.typography.headingFontFamily",
   "type": "font",
   "label": "Headings",
   "description": "Used for heading elements on pages and content.",
   "placeholder": "Geist (template default)",
-  "default": "Geist",
+  "default": "Hanuman",
   "columns": 2
 }
 ```
-
-**Renders as:** A searchable dropdown. The selected font name is previewed in that font.
 
 ---
 
@@ -264,18 +240,44 @@ Renders an image upload input with a square preview thumbnail.
 
 ```json
 {
-  "key": "logotype",
+  "key": "branding.logoUrl",
   "type": "image",
   "label": "Logotype",
   "columns": 2
 }
 ```
 
-| Property  | Description                                         |
-| --------- | --------------------------------------------------- |
-| `columns` | Grid width (out of 4). `2` = half width, `4` = full |
+---
 
-**Renders as:** A square preview thumbnail (showing the current image or a placeholder) with a "Choose file" button alongside it. Only accepts image files (`image/*`).
+### `string`
+
+Renders a single-line text input.
+
+```json
+{
+  "key": "seo.defaultTitle",
+  "type": "string",
+  "label": "Default title",
+  "placeholder": "My Store",
+  "default": ""
+}
+```
+
+---
+
+### `textarea`
+
+Renders a multi-line text input. Use for free-text content longer than a single line, e.g. SEO meta descriptions.
+
+```json
+{
+  "key": "seo.defaultDescription",
+  "type": "textarea",
+  "label": "Default description",
+  "description": "Recommended max ~160 characters.",
+  "default": ""
+}
+```
 
 ---
 
@@ -297,13 +299,13 @@ A layout container for grouping related fields visually. Does not produce a valu
       "label": "General buttons",
       "children": [
         {
-          "key": "themeColors.buttons.general.background",
+          "key": "theme.colors.buttonBackground",
           "type": "color",
           "label": "Background",
           "columns": 2
         },
         {
-          "key": "themeColors.buttons.general.text",
+          "key": "theme.colors.buttonText",
           "type": "color",
           "label": "Text",
           "columns": 2
@@ -314,88 +316,134 @@ A layout container for grouping related fields visually. Does not produce a valu
 }
 ```
 
-**Renders as:** A labeled sub-group with its children laid out in a grid.
+`sub-section` `key` values are layout-only and do not need to match the data shape — only leaf field `key`s map to stored values.
 
 ---
 
 ## Common field properties
 
-| Property      | Type   | Description                                                            |
-| ------------- | ------ | ---------------------------------------------------------------------- |
-| `key`         | string | Dot-notation path used to store the value (e.g. `themeColors.primary`) |
-| `type`        | string | Field type (see above)                                                 |
-| `label`       | string | Field label shown to the user                                          |
-| `description` | string | Subtitle / helper text below the label                                 |
-| `icon`        | string | Lucide icon name shown next to the label                               |
-| `default`     | any    | Default value applied when no override is set                          |
-| `columns`     | number | Grid column span (1–4). Controls the field's width                     |
-| `children`    | array  | Nested fields (used by `group` and `sub-section`)                      |
+| Property      | Type   | Description                                                                  |
+| ------------- | ------ | ---------------------------------------------------------------------------- |
+| `key`         | string | Deep dot-notation path used to store the value (e.g. `theme.colors.buttonBackground`) |
+| `type`        | string | Field type (see above)                                                       |
+| `label`       | string | Field label shown to the user                                                |
+| `description` | string | Subtitle / helper text below the label                                       |
+| `icon`        | string | Lucide icon name shown next to the label                                     |
+| `default`     | any    | Default value applied when no override is set                                |
+| `columns`     | number | Grid column span (1–4). Controls the field's width                           |
+| `children`    | array  | Nested fields (used by `sub-section`)                                        |
+| `choice`      | object | Inner choice descriptor (used by `boolean-choice`)                           |
 
 ---
 
 ## Settings storage
 
-Settings are stored as a flat key→value object using the dot-notation `key` from each field:
+Settings are stored as a **nested object**. Each field's `key` is a deep dot-notation path that walks into the nested shape.
 
 ```json
 {
-  "storefrontMode": "commerce",
-  "accessRequirements": true,
-  "accessRequirements.priceVisibility": true,
-  "accessRequirements.orderPlacement": true,
-  "accessRequirements.stockStatus": false,
-  "logotype": "",
-  "borderRadius": "0",
-  "fonts.headings": "Hanuman",
-  "fonts.body": "Geist",
-  "themeColors.buttons.general.background": "#0E7490",
-  "themeColors.buttons.general.text": "#FFFFFF",
-  "themeColors.buttons.purchase.background": "#0E7490",
-  "themeColors.buttons.purchase.text": "#FFFFFF",
-  "themeColors.siteBackground.color": "#ffffff",
-  "themeColors.navBarBackground.color": "#F5F5F5",
-  "themeColors.topBar.background": "#0E7490",
-  "themeColors.topBar.text": "#FFFFFF",
-  "themeColors.footer.background": "#F5F5F5",
-  "themeColors.footer.text": "#0A0A0A"
+  "mode": "commerce",
+  "theme": {
+    "colors": {
+      "buttonBackground": "#0E7490",
+      "buttonText": "#FFFFFF",
+      "buttonPurchaseBackground": "#0E7490",
+      "buttonPurchaseText": "#FFFFFF",
+      "siteBackground": "#FFFFFF",
+      "navBarBackground": "#F5F5F5",
+      "topBarBackground": "#0E7490",
+      "topBarText": "#FFFFFF",
+      "footerBackground": "#F5F5F5",
+      "footerText": "#0A0A0A"
+    },
+    "radius": "0",
+    "typography": {
+      "fontFamily": "Geist",
+      "headingFontFamily": "Hanuman"
+    }
+  },
+  "branding": { "logoUrl": "", "faviconUrl": "" },
+  "features": {
+    "priceVisibility": { "enabled": true, "access": "authenticated" },
+    "orderPlacement":  { "enabled": true, "access": "authenticated" },
+    "stockStatus":     { "enabled": false, "access": "authenticated" }
+  },
+  "seo": {
+    "defaultTitle": "", "titleTemplate": "", "defaultDescription": "",
+    "defaultKeywords": "", "robots": "index, follow",
+    "googleAnalyticsId": "", "googleTagManagerId": "", "verification": ""
+  },
+  "contact": {
+    "email": "", "phone": "",
+    "address": { "street": "", "city": "", "postalCode": "", "country": "" }
+  }
 }
 ```
 
-The backend treats both the schema and the settings as opaque JSON — it stores and returns them without interpretation. The frontend is responsible for mapping dot-notation keys to nested structure.
+The backend treats both the schema and the settings as opaque JSON — it stores and returns them without interpretation. The frontend's `getSettingValue` / `setSettingValue` helpers in `app/utils/storefront.ts` walk the deep paths.
+
+### File uploads (multipart)
+
+When a field of type `image` has a `File` value at save time, the channel update repository extracts it into a multipart part named with the field's full deep path (e.g. `storefrontSettings.branding.logoUrl`) and substitutes an empty string in the JSON payload. The walker recurses into nested objects, so file paths can live anywhere in the shape.
 
 ---
 
 ## Default schema reference
 
-The default Geins schema covers two tabs:
+The default Geins schema covers four tabs:
 
 ### Base settings
 
-| Section             | Field                                | Type        | Default    |
-| ------------------- | ------------------------------------ | ----------- | ---------- |
-| Storefront mode     | `storefrontMode`                     | radio-cards | `commerce` |
-| Access requirements | `accessRequirements.priceVisibility` | boolean     | `true`     |
-| Access requirements | `accessRequirements.orderPlacement`  | boolean     | `true`     |
-| Access requirements | `accessRequirements.stockStatus`     | boolean     | `false`    |
+| Section             | Field                       | Type           | Default                                          |
+| ------------------- | --------------------------- | -------------- | ------------------------------------------------ |
+| Storefront mode     | `mode`                      | radio-cards    | `commerce`                                       |
+| Access requirements | `features.priceVisibility`  | boolean-choice | `{ enabled: true, access: "authenticated" }`     |
+| Access requirements | `features.orderPlacement`   | boolean-choice | `{ enabled: true, access: "authenticated" }`     |
+| Access requirements | `features.stockStatus`      | boolean-choice | `{ enabled: false, access: "authenticated" }`    |
 
 ### Layout options
 
-| Section       | Field                                     | Type        | Default   |
-| ------------- | ----------------------------------------- | ----------- | --------- |
-| Logotype      | `logotype`                                | image       | —         |
-| Corner style  | `borderRadius`                            | radio-cards | `0`       |
-| Font settings | `fonts.headings`                          | font        | `Hanuman` |
-| Font settings | `fonts.body`                              | font        | `Geist`   |
-| Theme colors  | `themeColors.buttons.general.background`  | color       | `#0E7490` |
-| Theme colors  | `themeColors.buttons.general.text`        | color       | `#FFFFFF` |
-| Theme colors  | `themeColors.buttons.purchase.background` | color       | `#0E7490` |
-| Theme colors  | `themeColors.buttons.purchase.text`       | color       | `#FFFFFF` |
-| Theme colors  | `themeColors.siteBackground.color`        | radio-cards | `#ffffff` |
-| Theme colors  | `themeColors.navBarBackground.color`      | radio-cards | `#F5F5F5` |
-| Theme colors  | `themeColors.topBar.background`           | color       | `#0E7490` |
-| Theme colors  | `themeColors.topBar.text`                 | color       | `#FFFFFF` |
-| Theme colors  | `themeColors.footer.background`           | color       | `#F5F5F5` |
-| Theme colors  | `themeColors.footer.text`                 | color       | `#0A0A0A` |
+| Section       | Field                                  | Type        | Default   |
+| ------------- | -------------------------------------- | ----------- | --------- |
+| Branding      | `branding.logoUrl`                     | image       | —         |
+| Branding      | `branding.faviconUrl`                  | image       | —         |
+| Corner style  | `theme.radius`                         | radio-cards | `0`       |
+| Font settings | `theme.typography.headingFontFamily`   | font        | `Hanuman` |
+| Font settings | `theme.typography.fontFamily`          | font        | `Geist`   |
+| Theme colors  | `theme.colors.buttonBackground`        | color       | `#0E7490` |
+| Theme colors  | `theme.colors.buttonText`              | color       | `#FFFFFF` |
+| Theme colors  | `theme.colors.buttonPurchaseBackground`| color       | `#0E7490` |
+| Theme colors  | `theme.colors.buttonPurchaseText`      | color       | `#FFFFFF` |
+| Theme colors  | `theme.colors.siteBackground`          | radio-cards | `#FFFFFF` |
+| Theme colors  | `theme.colors.navBarBackground`        | radio-cards | `#F5F5F5` |
+| Theme colors  | `theme.colors.topBarBackground`        | color       | `#0E7490` |
+| Theme colors  | `theme.colors.topBarText`              | color       | `#FFFFFF` |
+| Theme colors  | `theme.colors.footerBackground`        | color       | `#F5F5F5` |
+| Theme colors  | `theme.colors.footerText`              | color       | `#0A0A0A` |
+
+### SEO
+
+| Section          | Field                       | Type     | Default          |
+| ---------------- | --------------------------- | -------- | ---------------- |
+| SEO & analytics  | `seo.defaultTitle`          | string   | `""`             |
+| SEO & analytics  | `seo.titleTemplate`         | string   | `""`             |
+| SEO & analytics  | `seo.defaultDescription`    | textarea | `""`             |
+| SEO & analytics  | `seo.defaultKeywords`       | string   | `""`             |
+| SEO & analytics  | `seo.robots`                | radio    | `index, follow`  |
+| SEO & analytics  | `seo.googleAnalyticsId`     | string   | `""`             |
+| SEO & analytics  | `seo.googleTagManagerId`    | string   | `""`             |
+| SEO & analytics  | `seo.verification`          | string   | `""`             |
+
+### Contact
+
+| Section          | Field                       | Type     | Default |
+| ---------------- | --------------------------- | -------- | ------- |
+| Contact details  | `contact.email`             | string   | `""`    |
+| Contact details  | `contact.phone`             | string   | `""`    |
+| Contact details  | `contact.address.street`    | string   | `""`    |
+| Contact details  | `contact.address.postalCode`| string   | `""`    |
+| Contact details  | `contact.address.city`      | string   | `""`    |
+| Contact details  | `contact.address.country`   | string   | `""`    |
 
 ---
 

@@ -5,18 +5,20 @@ import type {
 } from '#shared/types';
 
 /**
- * Walks every field in every section of every tab and collects `default` values
- * into a flat settings object. Used when creating a new channel or resetting to defaults.
+ * Settings are stored as a nested object. Field `key` values are deep
+ * dot-notation paths (e.g. `theme.colors.buttonBackground`).
  */
+
+/** Walk every field and materialize defaults into a nested settings object. */
 export function getDefaultSettings(
   schema: StorefrontSchema,
 ): StorefrontSettings {
-  const settings: StorefrontSettings = {};
+  let settings: StorefrontSettings = {};
 
   function collectDefaults(fields: SchemaField[]) {
     for (const field of fields) {
       if (field.default !== undefined) {
-        settings[field.key] = field.default;
+        settings = setSettingValue(settings, field.key, field.default);
       }
       if (field.children) {
         collectDefaults(field.children);
@@ -69,19 +71,45 @@ export function gridClass(cols: number, gap = 'gap-6'): string | undefined {
   return `${gridClassMap[cols]} ${gap}`;
 }
 
-/** Read a flat dot-notation key from the settings object */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  );
+}
+
+/** Read a deep dot-notation path. Returns `undefined` on any missing segment. */
 export function getSettingValue(
   settings: StorefrontSettings,
   key: string,
 ): unknown {
-  return settings[key];
+  const segments = key.split('.');
+  let current: unknown = settings;
+  for (const segment of segments) {
+    if (!isPlainObject(current)) return undefined;
+    current = current[segment];
+  }
+  return current;
 }
 
-/** Immutable update — returns a new settings object with the key set to value */
+/** Immutable deep set — clones along the path, leaves untouched branches shared. */
 export function setSettingValue(
   settings: StorefrontSettings,
   key: string,
   value: unknown,
 ): StorefrontSettings {
-  return { ...settings, [key]: value };
+  const segments = key.split('.');
+  const root: Record<string, unknown> = { ...settings };
+  let cursor: Record<string, unknown> = root;
+  for (let i = 0; i < segments.length - 1; i++) {
+    const segment = segments[i]!;
+    const existing = cursor[segment];
+    const next = isPlainObject(existing) ? { ...existing } : {};
+    cursor[segment] = next;
+    cursor = next;
+  }
+  cursor[segments[segments.length - 1]!] = value;
+  return root;
 }

@@ -32,6 +32,7 @@ import { getDefaultSettings } from '@/utils/storefront';
 const scope = 'pages/settings/channel/[id].vue';
 const { t } = useI18n();
 const { toast } = useToast();
+const { geinsLog } = useGeinsLog(scope);
 const breadcrumbsStore = useBreadcrumbsStore();
 
 // =====================================================================================
@@ -409,6 +410,29 @@ const {
     storefrontSettings.value = entity.storefrontSettings
       ? { ...entity.storefrontSettings }
       : getDefaultSettings(activeSchema.value);
+
+    // TODO: remove before release — dev-only safety net for legacy flat-shape
+    // storefrontSettings persisted before the M2 nested-storage refactor.
+    if (import.meta.dev && entity.storefrontSettings) {
+      const allowedTopLevel = [
+        'mode',
+        'theme',
+        'branding',
+        'features',
+        'seo',
+        'contact',
+      ];
+      const hasLegacyKey = Object.keys(entity.storefrontSettings).some(
+        (key) => !allowedTopLevel.includes(key),
+      );
+      if (hasLegacyKey) {
+        geinsLog(
+          'Legacy flat-shape storefrontSettings detected — resetting to nested defaults (dev only)',
+        );
+        storefrontSettings.value = getDefaultSettings(activeSchema.value);
+      }
+    }
+
     schemaChanged.value = false;
     // Set explicit default IDs from the API response
     defaultLanguageId.value = entity.defaultLanguage ?? '';
