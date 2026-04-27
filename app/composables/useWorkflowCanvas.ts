@@ -1,8 +1,8 @@
 import type { Edge, Node } from '@vue-flow/core'
-import type { ConnectionType, Workflow, WorkflowNode, WorkflowNodeConnection } from '#shared/types'
+import type { ConnectionType, WorkflowDefinition, WorkflowNode, WorkflowNodeConnection } from '#shared/types'
 
 interface WorkflowCanvasReturnType {
-  toCanvas: (wf: Pick<Workflow, 'nodes' | 'connections'> | null | undefined) => {
+  toCanvas: (wf: Pick<WorkflowDefinition, 'nodes' | 'connections'> | null | undefined) => {
     nodes: Node[]
     edges: Edge[]
   }
@@ -64,7 +64,7 @@ const toCanvasEdge = (c: WorkflowNodeConnection & WithUi, index: number): Edge =
     target: target ?? '',
     sourceHandle,
     label: c.label,
-    animated: c.type === 'sequential',
+    animated: false,
     data: { type: c.type, ui: c.ui ?? {} },
   }
 }

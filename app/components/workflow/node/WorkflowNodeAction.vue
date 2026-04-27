@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
-import { Globe, Mail, MessageSquare, Database, FileText, Zap } from 'lucide-vue-next'
 
 const props = defineProps<{
   data: {
@@ -12,16 +11,9 @@ const props = defineProps<{
   selected?: boolean
 }>()
 
-const iconMap: Record<string, any> = {
-  Globe,
-  Mail,
-  MessageSquare,
-  Database,
-  FileText,
-  Zap,
-}
+const { resolveIcon } = useLucideIcon()
 
-const IconComponent = computed(() => iconMap[props.data.icon] || Zap)
+const IconComponent = computed(() => resolveIcon(props.data.icon) || resolveIcon('Zap'))
 </script>
 
 <template>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
-import { Timer, Clock } from 'lucide-vue-next'
 
 const props = defineProps<{
   data: {
@@ -12,12 +11,9 @@ const props = defineProps<{
   selected?: boolean
 }>()
 
-const iconMap: Record<string, any> = {
-  Timer,
-  Clock,
-}
+const { resolveIcon } = useLucideIcon()
 
-const IconComponent = computed(() => iconMap[props.data.icon] || Timer)
+const IconComponent = computed(() => resolveIcon(props.data.icon) || resolveIcon('Timer'))
 
 const durationDisplay = computed(() => {
   if (!props.data.config?.duration) return null

@@ -354,6 +354,11 @@
         "returned": "Order returnerad",
         "paid": "Order paid",
         "unpaid": "Order unpaid"
+      },
+      "product": {
+        "update": {
+          "price": "Produktpris uppdaterat"
+        }
       }
     }
   },

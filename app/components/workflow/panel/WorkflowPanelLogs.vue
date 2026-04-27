@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { CheckCircle2, ChevronDown, ChevronUp, CircleAlert, ExternalLink, Loader2, PanelBottomClose, Trash2 } from 'lucide-vue-next'
 import { ref, computed, onBeforeUnmount, watch, nextTick } from 'vue'
 
 type NodeEvent = {
@@ -29,6 +28,7 @@ function readNumber(key: string, fallback: number) {
 }
 
 const isOpen = ref(false)
+const hasBeenOpened = ref(false)
 const height = ref(readNumber(STORAGE_KEY_HEIGHT, DEFAULT_HEIGHT))
 
 watch(height, (v) => {
@@ -187,6 +187,7 @@ watch(
 
 defineExpose({
   open: () => {
+    hasBeenOpened.value = true
     isOpen.value = true
   },
   close: () => {
@@ -304,7 +305,8 @@ const bodyStyle = computed(() => ({
       class="flex h-9 shrink-0 cursor-pointer items-center justify-between border-b px-3 select-none"
       @click="toggle">
       <div class="flex items-center gap-2">
-        <component :is="isOpen ? ChevronDown : ChevronUp" class="text-muted-foreground size-4" />
+        <LucideChevronDown v-if="isOpen" class="text-muted-foreground size-4" />
+        <LucideChevronUp v-else class="text-muted-foreground size-4" />
         <span class="text-sm font-medium">Logs</span>
         <span v-if="isPoppedOut" class="text-muted-foreground text-xs">(popped out)</span>
       </div>
@@ -314,14 +316,14 @@ const bodyStyle = computed(() => ({
           class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded"
           title="Open in new window"
           @click="popOut">
-          <ExternalLink class="size-3.5" />
+          <LucideExternalLink class="size-3.5" />
         </button>
         <button
           v-else
           class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded"
           title="Dock back"
           @click="dockBack">
-          <PanelBottomClose class="size-3.5" />
+          <LucidePanelBottomClose class="size-3.5" />
         </button>
       </div>
     </div>
@@ -339,7 +341,7 @@ const bodyStyle = computed(() => ({
       <div
         v-if="isPoppedOut"
         class="text-muted-foreground flex h-full items-center justify-center gap-2 p-6 text-sm">
-        <ExternalLink class="size-4" />
+        <LucideExternalLink class="size-4" />
         Logs panel is open in another window
       </div>
       <Teleport v-else :to="popoutContainer ?? undefined" :disabled="!isPoppedOut">
@@ -349,9 +351,9 @@ const bodyStyle = computed(() => ({
             <div class="bg-muted/30 flex h-9 shrink-0 items-center justify-between border-b px-3 text-xs">
               <div class="flex items-center gap-2">
                 <template v-if="props.executionId">
-                  <Loader2 v-if="streamStatus === 'connecting' || streamStatus === 'live'" class="h-3 w-3 animate-spin" />
-                  <CheckCircle2 v-else-if="streamStatus === 'done'" class="h-3 w-3 text-green-500" />
-                  <CircleAlert v-else-if="streamStatus === 'error'" class="text-destructive h-3 w-3" />
+                  <LucideLoader2 v-if="streamStatus === 'connecting' || streamStatus === 'live'" class="h-3 w-3 animate-spin" />
+                  <LucideCheckCircle2 v-else-if="streamStatus === 'done'" class="h-3 w-3 text-green-500" />
+                  <LucideCircleAlert v-else-if="streamStatus === 'error'" class="text-destructive h-3 w-3" />
                   <span class="text-muted-foreground">
                     <template v-if="streamStatus === 'connecting'">Connecting…</template>
                     <template v-else-if="streamStatus === 'live'">Live · {{ events.length }} events{{ runningCount ? ` · ${runningCount} running` : '' }}</template>
@@ -371,7 +373,7 @@ const bodyStyle = computed(() => ({
 v-if="events.length"
                 class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-6 items-center gap-1 rounded px-1.5"
                 title="Clear events" @click="clearEvents">
-                <Trash2 class="h-3 w-3" />
+                <LucideTrash2 class="h-3 w-3" />
                 Clear
               </button>
             </div>
@@ -434,9 +436,9 @@ class="h-1.5 w-1.5 rounded-full"
           <div class="bg-muted/30 flex h-9 shrink-0 items-center justify-between border-b px-3 text-xs">
             <div class="flex items-center gap-2">
               <template v-if="props.executionId">
-                <Loader2 v-if="streamStatus === 'connecting' || streamStatus === 'live'" class="h-3 w-3 animate-spin" />
-                <CheckCircle2 v-else-if="streamStatus === 'done'" class="h-3 w-3 text-green-500" />
-                <CircleAlert v-else-if="streamStatus === 'error'" class="text-destructive h-3 w-3" />
+                <LucideLoader2 v-if="streamStatus === 'connecting' || streamStatus === 'live'" class="h-3 w-3 animate-spin" />
+                <LucideCheckCircle2 v-else-if="streamStatus === 'done'" class="h-3 w-3 text-green-500" />
+                <LucideCircleAlert v-else-if="streamStatus === 'error'" class="text-destructive h-3 w-3" />
                 <span class="text-muted-foreground">
                   <template v-if="streamStatus === 'connecting'">Connecting…</template>
                   <template v-else-if="streamStatus === 'live'">Live · {{ events.length }} events{{ runningCount ? ` · ${runningCount} running` : '' }}</template>
@@ -456,7 +458,7 @@ class="h-1.5 w-1.5 rounded-full"
 v-if="events.length"
               class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-6 items-center gap-1 rounded px-1.5"
               title="Clear events" @click="clearEvents">
-              <Trash2 class="h-3 w-3" />
+              <LucideTrash2 class="h-3 w-3" />
               Clear
             </button>
           </div>
