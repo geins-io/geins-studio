@@ -59,9 +59,20 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       ): Promise<Channel> {
         const formData = new FormData();
 
-        // Scan a settings object for File values; append each as a multipart
-        // part keyed `<prefix>.<fieldName>` and blank the matching value in
-        // the JSON payload so the API substitutes it with the uploaded blob.
+        // Walk a settings object recursively for File values; append each as a
+        // multipart part keyed by its deep dot-notation path
+        // (e.g. `storefrontSettings.branding.logoUrl`) and blank the matching
+        // value in the JSON payload so the API substitutes it with the blob.
+        function isPlainObject(v: unknown): v is Record<string, unknown> {
+          return (
+            typeof v === 'object' &&
+            v !== null &&
+            !Array.isArray(v) &&
+            !(v instanceof File) &&
+            Object.getPrototypeOf(v) === Object.prototype
+          );
+        }
+
         function extractFiles<T extends Record<string, unknown> | undefined>(
           settings: T,
           prefix: string,
@@ -69,9 +80,12 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           if (!settings) return settings;
           const sanitized: Record<string, unknown> = { ...settings };
           for (const [key, value] of Object.entries(settings)) {
+            const partName = `${prefix}.${key}`;
             if (value instanceof File) {
-              formData.append(`${prefix}.${key}`, value, value.name);
+              formData.append(partName, value, value.name);
               sanitized[key] = '';
+            } else if (isPlainObject(value)) {
+              sanitized[key] = extractFiles(value, partName);
             }
           }
           return sanitized;

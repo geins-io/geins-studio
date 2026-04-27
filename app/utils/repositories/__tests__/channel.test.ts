@@ -107,7 +107,7 @@ describe('accountRepo', () => {
       expect(parsed.name).toBe('updated');
     });
 
-    it('attaches File values as separate parts', async () => {
+    it('attaches top-level File values as separate parts', async () => {
       const file = new File(['logo'], 'logo.png', { type: 'image/png' });
       const data = buildChannelUpdate({
         name: 'updated',
@@ -123,6 +123,35 @@ describe('accountRepo', () => {
       const parsed = JSON.parse(formData.get('channel') as string);
       expect(parsed.storefrontSettings.logotype).toBe('');
       expect(parsed.name).toBe('updated');
+    });
+
+    it('attaches nested File values with their full deep path', async () => {
+      const logo = new File(['logo'], 'logo.png', { type: 'image/png' });
+      const favicon = new File(['fav'], 'fav.png', { type: 'image/png' });
+      const data = buildChannelUpdate({
+        storefrontSettings: {
+          branding: {
+            logoUrl: logo as unknown as string,
+            faviconUrl: favicon as unknown as string,
+          },
+          theme: { radius: '0' },
+        },
+      });
+      mockFetch.mockResolvedValue(buildChannel());
+      await api.channel.update('123', data);
+
+      const formData: FormData = mockFetch.mock.calls[0][1].body;
+      expect(
+        formData.get('storefrontSettings.branding.logoUrl'),
+      ).toBeInstanceOf(File);
+      expect(
+        formData.get('storefrontSettings.branding.faviconUrl'),
+      ).toBeInstanceOf(File);
+      const parsed = JSON.parse(formData.get('channel') as string);
+      expect(parsed.storefrontSettings.branding.logoUrl).toBe('');
+      expect(parsed.storefrontSettings.branding.faviconUrl).toBe('');
+      // Untouched siblings remain in the JSON payload
+      expect(parsed.storefrontSettings.theme.radius).toBe('0');
     });
 
     it('attaches mailSettings File values as parts named mailSettings.{field}', async () => {

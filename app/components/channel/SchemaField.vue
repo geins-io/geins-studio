@@ -31,7 +31,6 @@ function isVisible(field: SchemaField): boolean {
     field.visibleWhen.equals
   );
 }
-
 </script>
 
 <template>
@@ -39,6 +38,20 @@ function isVisible(field: SchemaField): boolean {
   <div v-if="field.type === 'string'" class="space-y-1.5">
     <Label>{{ field.label }}</Label>
     <Input
+      :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
+      :placeholder="field.placeholder"
+      :disabled="field.disabled"
+      @update:model-value="updateValue(field.key, $event)"
+    />
+    <FormInputDescription v-if="field.description">
+      {{ field.description }}
+    </FormInputDescription>
+  </div>
+
+  <!-- textarea -->
+  <div v-else-if="field.type === 'textarea'" class="space-y-1.5">
+    <Label>{{ field.label }}</Label>
+    <Textarea
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       :placeholder="field.placeholder"
       :disabled="field.disabled"
@@ -151,11 +164,12 @@ function isVisible(field: SchemaField): boolean {
     <FormInputImage
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       :disabled="field.disabled"
+      :accept="field.accept"
+      :max-size-m-b="field.maxSizeMB"
+      :description="field.description"
+      :label="field.label"
       @update:model-value="updateValue(field.key, $event)"
     />
-    <FormInputDescription v-if="field.description">
-      {{ field.description }}
-    </FormInputDescription>
   </div>
 
   <!-- radio-cards -->
@@ -170,8 +184,13 @@ function isVisible(field: SchemaField): boolean {
 
   <!-- radio -->
   <div v-else-if="field.type === 'radio'" class="space-y-1.5">
+    <Label>{{ field.label }}</Label>
     <RadioGroup
-      :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
+      :model-value="
+        (getSettingValue(modelValue, field.key) as string) ??
+        (field.default as string) ??
+        ''
+      "
       @update:model-value="updateValue(field.key, $event)"
     >
       <div
@@ -188,6 +207,9 @@ function isVisible(field: SchemaField): boolean {
         </Label>
       </div>
     </RadioGroup>
+    <FormInputDescription v-if="field.description" class="pl-0">
+      {{ field.description }}
+    </FormInputDescription>
   </div>
 
   <!-- sub-section -->
@@ -233,24 +255,72 @@ function isVisible(field: SchemaField): boolean {
     </div>
   </div>
 
-  <!-- group -->
+  <!-- boolean-choice -->
   <ContentSwitch
-    v-else-if="field.type === 'group'"
+    v-else-if="field.type === 'boolean-choice' && field.choice"
     :label="field.label"
     :description="field.description"
     :icon="field.icon"
-    :checked="(getSettingValue(modelValue, field.key) as boolean) ?? false"
-    @update:checked="updateValue(field.key, $event)"
+    :disabled="field.disabled"
+    :checked="
+      (getSettingValue(modelValue, `${field.key}.enabled`) as boolean) ??
+      (field.default as { enabled?: boolean } | undefined)?.enabled ??
+      false
+    "
+    @update:checked="updateValue(`${field.key}.enabled`, $event)"
   >
-    <div v-if="field.children" class="space-y-4 border-t pt-4">
-      <template v-for="child in field.children" :key="child.key">
-        <ChannelSchemaField
-          v-if="isVisible(child)"
-          :field="child"
-          :model-value="modelValue"
-          @update:model-value="$emit('update:modelValue', $event)"
-        />
-      </template>
+    <div
+      class="space-y-2 border-t pt-4"
+      :class="field.disabled && 'pointer-events-none opacity-50'"
+    >
+      <Label v-if="field.choice.label">{{ field.choice.label }}</Label>
+      <FormInputRadioCards
+        v-if="field.choice.type === 'radio-cards'"
+        :options="field.choice.options"
+        :model-value="
+          (getSettingValue(
+            modelValue,
+            `${field.key}.${field.choice.key}`,
+          ) as string) ??
+          (field.default as Record<string, string> | undefined)?.[
+            field.choice.key
+          ] ??
+          ''
+        "
+        @update:model-value="
+          updateValue(`${field.key}.${field.choice.key}`, $event)
+        "
+      />
+      <RadioGroup
+        v-else
+        :model-value="
+          (getSettingValue(
+            modelValue,
+            `${field.key}.${field.choice.key}`,
+          ) as string) ??
+          (field.default as Record<string, string> | undefined)?.[
+            field.choice.key
+          ] ??
+          ''
+        "
+        @update:model-value="
+          updateValue(`${field.key}.${field.choice.key}`, $event)
+        "
+      >
+        <div
+          v-for="option in field.choice.options"
+          :key="option.value"
+          class="flex items-center gap-3"
+        >
+          <RadioGroupItem
+            :id="`${field.key}-${option.value}`"
+            :value="option.value"
+          />
+          <Label :for="`${field.key}-${option.value}`" class="font-medium">
+            {{ option.label }}
+          </Label>
+        </div>
+      </RadioGroup>
     </div>
   </ContentSwitch>
 </template>
