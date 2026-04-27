@@ -138,6 +138,7 @@ const refreshExecutions = () => executionsRef.value?.refresh()
 // stale cached `wf.nodes` / `wf.connections`.
 const builderRef = ref<{
   getGraph: () => { nodes: unknown[], connections: unknown[] }
+  getUi: () => Record<string, unknown>
 } | null>(null)
 
 // ─── Trigger & cron helpers ────────────────────────────────────────
@@ -443,6 +444,7 @@ const handleSave = async () => {
     // node position edits (ui.position) are persisted. Otherwise fall back to
     // the cached workflow's nodes/connections.
     const graph = builderRef.value?.getGraph?.()
+    const builderUi = builderRef.value?.getUi?.()
     const payload = {
       name: values.details.name,
       description: values.details.description || undefined,
@@ -453,7 +455,9 @@ const handleSave = async () => {
       eventName: apiType === 'event' ? values.trigger.eventEntity : undefined,
       nodes: graph?.nodes ?? wf.nodes,
       connections: graph?.connections ?? wf.connections,
-      ui: wf.ui,
+      // Merge existing ui with builder-provided keys (triggerPosition, viewport)
+      // so canvas-only state persists without clobbering unrelated `ui` fields.
+      ui: { ...(wf.ui ?? {}), ...(builderUi ?? {}) },
       input: mergedInputs,
       settings: values.settings,
       trigger,
@@ -461,14 +465,21 @@ const handleSave = async () => {
     geinsLogInfo('workflow.update payload', payload)
     await orchestratorApi.workflow.update(workflowId.value, payload)
     await refreshCurrentWorkflow()
-    builderChangeCount.value = 0
+    // Refreshing currentWorkflow re-fires the trigger-node data watcher in the
+    // Builder, which bumps `builderChangeCount` *after* save. Wait two ticks
+    // for that churn to flush, then snapshot editableState as the new
+    // baseline so the unsaved-changes diff lines up.
+    await nextTick()
+    await nextTick()
+    originalEditableState.value = JSON.stringify(editableState.value)
     toast({ title: 'Configuration saved' })
   }
-  catch (err) {
+  catch (err: unknown) {
     geinsLogError('Failed to save workflow configuration', err)
+    const errData = (err as { data?: { data?: { title?: string, detail?: string } } })?.data?.data
     toast({
-      title: 'Failed to save',
-      description: err instanceof Error ? err.message : 'Unknown error',
+      title: errData?.title || 'Failed to save',
+      description: errData?.detail || (err instanceof Error ? err.message : 'Unknown error'),
       variant: 'negative',
     })
   }

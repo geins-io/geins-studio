@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
-import { GitBranch } from 'lucide-vue-next'
 
 const props = defineProps<{
   data: {
@@ -27,7 +26,7 @@ const props = defineProps<{
 
     <div class="flex items-center gap-3">
       <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-500/10 text-yellow-500">
-        <GitBranch class="h-5 w-5" />
+        <LucideGitBranch class="h-5 w-5" />
       </div>
       <div>
         <div class="text-xs font-medium tracking-wider text-yellow-500 uppercase">Condition</div>

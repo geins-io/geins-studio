@@ -7,14 +7,13 @@ import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
+import type { PaletteItem } from '#shared/types'
 import { useToast } from '@/components/ui/toast/use-toast'
 import KeyboardShortcutTooltip from './KeyboardShortcutTooltip.vue'
 import WorkflowPanelLogs from './panel/WorkflowPanelLogs.vue'
 import WorkflowSidebarAddNode from './sidebar/WorkflowSidebarAddNode.vue'
 import WorkflowSidebarNodeProperties from './sidebar/WorkflowSidebarNodeProperties.vue'
-import { tidyUpLayout } from './tidy-layout'
 import WorkflowNode from './WorkflowNode.vue'
-import type { PaletteItem } from './palette-types'
 
 
 const props = defineProps<{
@@ -64,12 +63,6 @@ type WorkflowTriggerShape = {
   eventName?: string
   triggerDescription?: string
 }
-watch(
-  currentWorkflow,
-  wf => geinsLogInfo('workflow (api)', wf),
-  { immediate: true },
-)
-
 const triggerNodeData = computed(() => {
   const wf = currentWorkflow.value as WorkflowTriggerShape | null
   return {
@@ -82,10 +75,22 @@ const triggerNodeData = computed(() => {
   }
 })
 
+// Stored canvas metadata on the workflow — position of the trigger node and
+// the last viewport (zoom + pan). Persisted under the workflow's top-level
+// `ui` field since the trigger node itself isn't part of `workflow.nodes[]`.
+type WorkflowCanvasUi = {
+  triggerPosition?: { x: number, y: number }
+  viewport?: { x: number, y: number, zoom: number }
+  [key: string]: unknown
+}
+const savedCanvasUi = computed<WorkflowCanvasUi>(() =>
+  ((currentWorkflow.value as { ui?: WorkflowCanvasUi } | null)?.ui ?? {}),
+)
+
 const buildTriggerNode = () => ({
   id: TRIGGER_NODE_ID,
   type: 'trigger',
-  position: { x: 100, y: 200 },
+  position: savedCanvasUi.value.triggerPosition ?? { x: 100, y: 200 },
   data: { ...triggerNodeData.value },
   deletable: false,
 })
@@ -118,28 +123,24 @@ onMounted(() => {
       id: `e-${triggerId}-${n.id}-auto-${syntheticIndex++}`,
       source: triggerId,
       target: n.id,
-      animated: true,
+      animated: false,
       data: { type: 'sequential', synthetic: true },
     })
   }
 
   initialNodes.value = finalNodes
   initialEdges.value = finalEdges
-  geinsLogInfo('loaded workflow — nodes', finalNodes)
-  geinsLogInfo('loaded workflow — edges', finalEdges)
 })
 
-const { onConnect, onPaneReady, addEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut, getViewport } = useVueFlow()
+const { onConnect, onPaneReady, addEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut, getViewport, setViewport } = useVueFlow()
 
-// Cap the canvas zoom at whatever level we land on after the initial
-// fit-view. Users have said anything closer than that is "too zoomed in";
-// locking max-zoom to the fit level keeps the canvas from ever going past
-// the width-fitted state. Starts at a sane default until onPaneReady fires.
-const maxZoom = ref(1)
+const maxZoom = ref(1.5)
 onPaneReady(() => {
-  const z = getViewport().zoom
-  maxZoom.value = z
-  geinsLogInfo('initial zoom captured as max-zoom', z)
+  const savedVp = savedCanvasUi.value.viewport
+  if (savedVp) setViewport(savedVp)
+  // Wait one more tick so any reconciliation that happens during/after the
+  // initial fitView has flushed before we start listening for user edits.
+  nextTick(() => { canvasReady.value = true })
 })
 
 // After init, VueFlow owns the node store — mutate the trigger node's data
@@ -157,29 +158,41 @@ onConnect((params) => {
   addEdges([{ ...params, animated: false }])
 })
 
-// `canvasReady` flips to true one tick after VueFlow has swallowed the
-// initial nodes/edges. Without this guard the first reactive firing of the
-// watcher (seeding the canvas from the API) would incorrectly mark the
-// workflow dirty before the user has touched anything.
+// `canvasReady` flips to true after VueFlow has settled its initial layout
+// (fit-view + handle measurement + any post-init node/edge reconciliation).
+// Earlier we used onMounted+nextTick, but VueFlow keeps mutating nodes after
+// that — so the deep watcher below was emitting `change` for work the user
+// never did, flagging the workflow dirty the moment the Builder tab opened.
+// onPaneReady fires once the viewport has stabilized, which is the real "ok
+// to listen for user edits now" signal.
 const canvasReady = ref(false)
-onMounted(() => {
-  nextTick(() => { canvasReady.value = true })
-})
 
 watch(
   [nodes, edges],
-  ([n, e]) => {
-    geinsLogInfo('nodes', n)
-    geinsLogInfo('connections', e)
+  () => {
     if (canvasReady.value) emit('change')
   },
-  { deep: true, immediate: true },
+  { deep: true },
 )
 
 // Snapshot current canvas state as API-shaped `{ nodes, connections }` for
-// the parent page to persist on save.
+// the parent page to persist on save. `getUi()` returns the workflow-level
+// `ui` blob — trigger position + current viewport — since the trigger node
+// isn't saved in `workflow.nodes[]`.
 defineExpose({
   getGraph: () => toApi({ nodes: nodes.value, edges: edges.value }),
+  getUi: (): WorkflowCanvasUi => {
+    const triggerNode = findNode(TRIGGER_NODE_ID)
+      ?? nodes.value.find(n => n.type === 'trigger')
+    const vp = getViewport()
+    return {
+      ...savedCanvasUi.value,
+      triggerPosition: triggerNode
+        ? { x: triggerNode.position.x, y: triggerNode.position.y }
+        : savedCanvasUi.value.triggerPosition,
+      viewport: { x: vp.x, y: vp.y, zoom: vp.zoom },
+    }
+  },
 })
 
 const selectedNode = ref<any>(null)
@@ -195,6 +208,11 @@ const onNodeClick = (event: any) => {
 const onPaneClick = () => {
   selectedNode.value = null
 }
+
+const selectedNodeExecution = computed(() => {
+  if (!selectedNode.value) return null
+  return lastNodeExecutions.value.get(selectedNode.value.id) ?? null
+})
 
 const onDragOver = (event: DragEvent) => {
   event.preventDefault()
@@ -281,6 +299,10 @@ const TERMINAL_STATUSES = new Set([
   'terminated',
 ])
 
+// Node execution data from the last run — keyed by nodeId so the properties
+// sidebar can show per-node input/output like n8n.
+const lastNodeExecutions = ref<Map<string, { input?: Record<string, unknown> | null, output?: Record<string, unknown> | null, status?: string }>>(new Map())
+
 // Poll the current execution's status while `isRunning` is true so the Run
 // button keeps its running visual as long as the workflow is actually
 // executing in the backend (not just while the start API call is in flight).
@@ -289,7 +311,20 @@ usePollWhile(
   async () => {
     if (!lastExecutionId.value) return
     const res = await orchestratorApi.execution.get(lastExecutionId.value)
-    const status = (res?.execution?.status ?? '').toLowerCase()
+    const exec = (res as Record<string, unknown>)?.execution as Record<string, unknown> | undefined
+    const nodeExecs = (exec?.nodeExecutions ?? (res as Record<string, unknown>)?.nodeExecutions) as Array<Record<string, unknown>> | undefined
+    if (Array.isArray(nodeExecs)) {
+      const map = new Map<string, { input?: Record<string, unknown> | null, output?: Record<string, unknown> | null, status?: string }>()
+      for (const n of nodeExecs) {
+        map.set(n.nodeId as string, {
+          input: n.input as Record<string, unknown> | null | undefined,
+          output: n.output as Record<string, unknown> | null | undefined,
+          status: n.status as string | undefined,
+        })
+      }
+      lastNodeExecutions.value = map
+    }
+    const status = (exec?.status as string ?? '').toLowerCase()
     if (TERMINAL_STATUSES.has(status)) {
       isRunning.value = false
       emit('executed')
@@ -419,8 +454,8 @@ useKeybindings({
             </KeyboardShortcutTooltip>
           </div>
 
-          <WorkflowSidebarNodeProperties :node="selectedNode" @close="selectedNode = null"
-            @delete="deleteSelectedNode" />
+          <WorkflowSidebarNodeProperties :node="selectedNode" :node-execution="selectedNodeExecution"
+            @close="selectedNode = null" @delete="deleteSelectedNode" />
         </div>
       </div>
 

@@ -355,7 +355,15 @@
         "shipped": "Order shipped",
         "returned": "Order returned",
         "paid": "Order paid",
-        "unpaid": "Order unpaid"
+        "unpaid": "Order unpaid",
+        "complete": {
+          "*": "Order completed (any)"
+        }
+      },
+      "product": {
+        "update": {
+          "price": "Product price updated"
+        }
       }
     }
   },

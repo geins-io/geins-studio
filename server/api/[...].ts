@@ -1,4 +1,5 @@
 import {
+  createError,
   defineEventHandler,
   readBody,
   proxyRequest,
@@ -99,6 +100,10 @@ export default defineEventHandler(async (event) => {
       statusMessage: fe.statusMessage,
       data: fe.data,
     });
-    return error;
+    throw createError({
+      statusCode: fe.statusCode || 500,
+      statusMessage: fe.statusMessage || 'Internal Server Error',
+      data: fe.data,
+    });
   }
 });
