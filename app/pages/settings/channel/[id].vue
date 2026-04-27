@@ -535,6 +535,7 @@ const {
 // =====================================================================================
 function handleSchemaApply(schema: StorefrontSchema) {
   activeSchema.value = schema;
+  storefrontSettings.value = getDefaultSettings(schema);
   schemaChanged.value = true;
 }
 

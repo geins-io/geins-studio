@@ -31,7 +31,6 @@ function isVisible(field: SchemaField): boolean {
     field.visibleWhen.equals
   );
 }
-
 </script>
 
 <template>
@@ -184,8 +183,13 @@ function isVisible(field: SchemaField): boolean {
 
   <!-- radio -->
   <div v-else-if="field.type === 'radio'" class="space-y-1.5">
+    <Label>{{ field.label }}</Label>
     <RadioGroup
-      :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
+      :model-value="
+        (getSettingValue(modelValue, field.key) as string) ??
+        (field.default as string) ??
+        ''
+      "
       @update:model-value="updateValue(field.key, $event)"
     >
       <div
@@ -202,6 +206,9 @@ function isVisible(field: SchemaField): boolean {
         </Label>
       </div>
     </RadioGroup>
+    <FormInputDescription v-if="field.description" class="pl-0">
+      {{ field.description }}
+    </FormInputDescription>
   </div>
 
   <!-- sub-section -->
@@ -254,7 +261,9 @@ function isVisible(field: SchemaField): boolean {
     :description="field.description"
     :icon="field.icon"
     :checked="
-      (getSettingValue(modelValue, `${field.key}.enabled`) as boolean) ?? false
+      (getSettingValue(modelValue, `${field.key}.enabled`) as boolean) ??
+      (field.default as { enabled?: boolean } | undefined)?.enabled ??
+      false
     "
     @update:checked="updateValue(`${field.key}.enabled`, $event)"
   >
@@ -267,7 +276,11 @@ function isVisible(field: SchemaField): boolean {
           (getSettingValue(
             modelValue,
             `${field.key}.${field.choice.key}`,
-          ) as string) ?? ''
+          ) as string) ??
+          (field.default as Record<string, string> | undefined)?.[
+            field.choice.key
+          ] ??
+          ''
         "
         @update:model-value="
           updateValue(`${field.key}.${field.choice.key}`, $event)
@@ -279,7 +292,11 @@ function isVisible(field: SchemaField): boolean {
           (getSettingValue(
             modelValue,
             `${field.key}.${field.choice.key}`,
-          ) as string) ?? ''
+          ) as string) ??
+          (field.default as Record<string, string> | undefined)?.[
+            field.choice.key
+          ] ??
+          ''
         "
         @update:model-value="
           updateValue(`${field.key}.${field.choice.key}`, $event)
