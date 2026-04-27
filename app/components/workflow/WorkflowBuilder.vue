@@ -386,7 +386,7 @@ useKeybindings({
 </script>
 
 <template>
-  <div class="relative flex h-[calc(100vh-14rem)] flex-col">
+  <div class="relative flex h-[calc(100vh-11rem)] flex-col">
     <!-- Row: canvas column (VueFlow + properties panel) + add-node sidebar -->
     <div class="relative flex min-h-0 flex-1">
       <!-- Canvas column -->
