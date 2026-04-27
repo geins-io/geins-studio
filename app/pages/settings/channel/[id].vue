@@ -409,6 +409,7 @@ const {
     storefrontSettings.value = entity.storefrontSettings
       ? { ...entity.storefrontSettings }
       : getDefaultSettings(activeSchema.value);
+
     schemaChanged.value = false;
     // Set explicit default IDs from the API response
     defaultLanguageId.value = entity.defaultLanguage ?? '';
@@ -511,6 +512,7 @@ const {
 // =====================================================================================
 function handleSchemaApply(schema: StorefrontSchema) {
   activeSchema.value = schema;
+  storefrontSettings.value = getDefaultSettings(schema);
   schemaChanged.value = true;
 }
 
