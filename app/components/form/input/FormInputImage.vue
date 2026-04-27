@@ -5,6 +5,7 @@ const props = defineProps<{
   accept?: string;
   maxSizeMB?: number;
   description?: string;
+  label?: string;
 }>();
 
 const emit = defineEmits<{
@@ -29,6 +30,9 @@ function fileMatchesAccept(file: File): boolean {
   return tokens.some((token) => {
     if (!token) return false;
     if (token.startsWith('.')) return name.endsWith(token);
+    // When the browser cannot determine the MIME type, accept the file if any
+    // token is a wildcard MIME category (e.g. "image/*").
+    if (!type) return token.endsWith('/*');
     if (token.endsWith('/*')) return type.startsWith(token.slice(0, -1));
     return type === token;
   });
@@ -154,7 +158,7 @@ onBeforeUnmount(() => {
     <!-- Uploaded state -->
     <template v-if="hasImage">
       <ItemMedia variant="image" class="size-12 border">
-        <img :src="previewUrl!" alt="logotype" @error="onImageError" />
+        <img :src="previewUrl!" :alt="label ?? ''" @error="onImageError" />
       </ItemMedia>
       <ItemContent>
         <ItemTitle class="break-all">{{ displayName }}</ItemTitle>

@@ -167,6 +167,7 @@ function isVisible(field: SchemaField): boolean {
       :accept="field.accept"
       :max-size-m-b="field.maxSizeMB"
       :description="field.description"
+      :label="field.label"
       @update:model-value="updateValue(field.key, $event)"
     />
   </div>
@@ -260,6 +261,7 @@ function isVisible(field: SchemaField): boolean {
     :label="field.label"
     :description="field.description"
     :icon="field.icon"
+    :disabled="field.disabled"
     :checked="
       (getSettingValue(modelValue, `${field.key}.enabled`) as boolean) ??
       (field.default as { enabled?: boolean } | undefined)?.enabled ??
@@ -267,7 +269,10 @@ function isVisible(field: SchemaField): boolean {
     "
     @update:checked="updateValue(`${field.key}.enabled`, $event)"
   >
-    <div class="space-y-2 border-t pt-4">
+    <div
+      class="space-y-2 border-t pt-4"
+      :class="field.disabled && 'pointer-events-none opacity-50'"
+    >
       <Label v-if="field.choice.label">{{ field.choice.label }}</Label>
       <FormInputRadioCards
         v-if="field.choice.type === 'radio-cards'"

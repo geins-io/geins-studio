@@ -152,7 +152,7 @@ Renders a toggle switch.
 
 ```json
 {
-  "key": "feature.someToggle",
+  "key": "features.someToggle",
   "type": "boolean",
   "label": "Some toggle",
   "description": "Optional description.",
