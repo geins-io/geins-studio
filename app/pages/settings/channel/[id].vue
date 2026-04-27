@@ -29,10 +29,8 @@ import { getDefaultSettings } from '@/utils/storefront';
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
-const scope = 'pages/settings/channel/[id].vue';
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLog } = useGeinsLog(scope);
 const breadcrumbsStore = useBreadcrumbsStore();
 
 // =====================================================================================
