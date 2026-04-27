@@ -45,6 +45,10 @@ export interface SchemaField {
   // boolean-choice
   choice?: BooleanChoiceConfig;
 
+  // image
+  accept?: string;
+  maxSizeMB?: number;
+
   // Grouping
   children?: SchemaField[];
 

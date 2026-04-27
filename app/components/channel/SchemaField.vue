@@ -164,11 +164,11 @@ function isVisible(field: SchemaField): boolean {
     <FormInputImage
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       :disabled="field.disabled"
+      :accept="field.accept"
+      :max-size-m-b="field.maxSizeMB"
+      :description="field.description"
       @update:model-value="updateValue(field.key, $event)"
     />
-    <FormInputDescription v-if="field.description">
-      {{ field.description }}
-    </FormInputDescription>
   </div>
 
   <!-- radio-cards -->

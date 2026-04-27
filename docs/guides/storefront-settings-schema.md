@@ -243,9 +243,18 @@ Renders an image upload input with a square preview thumbnail.
   "key": "branding.logoUrl",
   "type": "image",
   "label": "Logotype",
+  "description": "PNG, JPEG, SVG, or WebP. Maximum file size: 5 MB.",
+  "accept": "image/png,image/jpeg,image/svg+xml,image/webp",
+  "maxSizeMB": 5,
   "columns": 2
 }
 ```
+
+| Property      | Type   | Description                                                                                                                                                    |
+| ------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `description` | string | Free-text hint shown inside the empty-state of the upload card. Use this to communicate constraints (size, accepted formats, intent) — nothing auto-generated. |
+| `accept`      | string | Standard HTML `accept` value (comma-separated MIME types and/or extensions, e.g. `".ico,image/x-icon"` or `"image/png,image/svg+xml"`). Defaults to `image/*`.   |
+| `maxSizeMB`   | number | Maximum file size in megabytes. Files exceeding the limit are rejected with a toast. Not auto-rendered — describe it in `description` if you want it visible.   |
 
 ---
 

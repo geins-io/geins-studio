@@ -103,12 +103,18 @@
             "key": "branding.logoUrl",
             "type": "image",
             "label": "Logotype",
+            "description": "PNG, JPEG, SVG, or WebP. Maximum file size: 5 MB.",
+            "accept": "image/png,image/jpeg,image/svg+xml,image/webp",
+            "maxSizeMB": 5,
             "columns": 2
           },
           {
             "key": "branding.faviconUrl",
             "type": "image",
             "label": "Favicon",
+            "description": "Only .ico files accepted. Maximum file size: 1 MB.",
+            "accept": ".ico,image/x-icon,image/vnd.microsoft.icon",
+            "maxSizeMB": 1,
             "columns": 2
           }
         ]
