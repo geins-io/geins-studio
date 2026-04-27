@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { type Component } from 'vue'
 import { toTypedSchema } from '@vee-validate/zod'
 import cronstrue from 'cronstrue'
 import { useForm } from 'vee-validate'
@@ -126,8 +127,15 @@ watch([isNew, workflowNameValue], ([newFlag, name]) => {
   breadcrumbsStore.setCurrentTitle(newFlag ? 'New workflow' : (name || 'Workflow'))
 }, { immediate: true })
 
-// Main area tabs (top-level content switcher).
-const mainTabs = ['General', 'Inputs', 'Builder', 'History', 'Executions']
+// View mode switcher (top-level: Settings vs Builder).
+const viewMode = ref<'settings' | 'builder'>('settings')
+const viewModes = [
+  { key: 'settings', label: 'Settings', icon: resolveComponent('LucideSettings') },
+  { key: 'builder', label: 'Builder', icon: resolveComponent('LucideWorkflow') },
+] as Array<{ key: string, label: string, icon: Component }>
+
+// Sub-tabs within Settings mode.
+const mainTabs = ['General', 'Inputs', 'History', 'Executions']
 const currentTab = ref(0)
 
 const executionsRef = ref<{ refresh: () => void } | null>(null)
@@ -493,7 +501,7 @@ const handleSave = async () => {
 // On smaller viewports (hasReducedSpace) or other tabs, the sidebar collapses into
 // a floating toggle icon via ContentEditMain.
 const { hasReducedSpace } = useLayout()
-const showSidebar = computed(() => !hasReducedSpace.value && currentTab.value === 0 && !isNew.value)
+const showSidebar = computed(() => !hasReducedSpace.value && viewMode.value === 'settings' && currentTab.value === 0 && !isNew.value)
 
 const triggerDisplayName = computed(() => {
   const tt = manifestTriggerTypes.value.find(t => (t.type as string) === triggerTypeValue.value)
@@ -572,6 +580,7 @@ v-model:open="deleteDialogOpen" :entity-name="entityName" :loading="deleting"
     <template #header>
       <ContentHeader :title="isNew ? 'New workflow' : (workflowNameValue || 'Workflow')" :entity-name="entityName">
         <ContentActionBar>
+          <ContentViewModeSwitch v-if="!isNew" v-model="viewMode" :modes="viewModes" />
           <ButtonIcon
 v-if="!isNew" icon="save" :loading="isSavingConfig"
             :disabled="isSavingConfig || !hasUnsavedChanges" @click="handleSave">
@@ -608,7 +617,8 @@ v-if="!isNew" icon="save" :loading="isSavingConfig"
           </DropdownMenu>
         </ContentActionBar>
         <template v-if="!isNew" #tabs>
-          <ContentEditTabs v-model:current-tab="currentTab" :tabs="mainTabs" />
+          <ContentEditTabs v-if="viewMode === 'settings'" v-model:current-tab="currentTab" :tabs="mainTabs" />
+          <div v-else class="h-[30px]" />
         </template>
         <template v-if="!isNew" #changes>
           <ContentEditHasChanges :changes="hasUnsavedChanges" />
@@ -616,7 +626,7 @@ v-if="!isNew" icon="save" :loading="isSavingConfig"
       </ContentHeader>
     </template>
 
-    <form v-if="currentTab !== 2" @submit.prevent>
+    <form v-if="viewMode === 'settings'" @submit.prevent>
       <ContentEditMain :show-sidebar="showSidebar">
         <!-- General tab -->
         <KeepAlive>
@@ -944,7 +954,7 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
         <!-- Executions tab -->
         <KeepAlive>
           <WorkflowExecutions
-            v-if="currentTab === 4" :key="`tab-${currentTab}`"
+            v-if="currentTab === 3" :key="`tab-${currentTab}`"
             ref="executionsRef"
             :workflow-id="workflowId" :is-new="isNew" />
         </KeepAlive>
@@ -952,7 +962,7 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
         <!-- History tab -->
         <KeepAlive>
           <WorkflowHistory
-            v-if="currentTab === 3" :key="`tab-${currentTab}`"
+            v-if="currentTab === 2" :key="`tab-${currentTab}`"
             :workflow-id="workflowId" :is-new="isNew" />
         </KeepAlive>
 
@@ -967,14 +977,14 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
     </form>
   </ContentEditWrap>
 
-  <!-- Builder tab: rendered outside ContentEditWrap so it escapes the
+  <!-- Builder mode: rendered outside ContentEditWrap so it escapes the
        `container` max-width. `-mx-3 @2xl:-mx-8` also escapes the default
        layout's padding so the VueFlow canvas fills the available width.
        `-mt-4` closes the gap left by ContentHeader's `mb-4` so the canvas
        starts right under the tabs. -->
   <KeepAlive>
     <WorkflowBuilder
-v-if="currentTab === 2" :key="`tab-${currentTab}`" ref="builderRef" class="-mx-3 -mt-4 @2xl:-mx-8"
+v-if="viewMode === 'builder'" :key="viewMode" ref="builderRef" class="-mx-3 -mt-4 -mb-12 @2xl:-mx-8 @2xl:-mb-14"
       :workflow-id="workflowId" :is-new="isNew"
       @executed="refreshExecutions"
       @change="onBuilderChange" />
