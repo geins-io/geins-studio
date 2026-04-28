@@ -82,6 +82,14 @@ export default defineEventHandler(async (event) => {
       headers: apiHeaders,
     });
 
+    if (targetUrl.includes('workflow')) {
+      console.log('[WORKFLOW DEBUG]', event.method, fetchUrl);
+      console.log(
+        '[WORKFLOW DEBUG] response:',
+        JSON.stringify(response, null, 2),
+      );
+    }
+
     return response;
   } catch (error) {
     const fe = error as {
