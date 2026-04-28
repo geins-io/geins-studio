@@ -439,28 +439,6 @@ const hasExecutionOutput = computed(() => props.nodeExecution?.output != null)
           />
         </div>
         <div class="flex-1 overflow-y-auto p-3" style="scrollbar-gutter: stable;">
-          <!-- Output schema from manifest (action nodes) -->
-          <div v-if="actionOutputFields.length" class="mb-3 space-y-1">
-            <h4 class="text-muted-foreground mb-1.5 text-[10px] font-medium uppercase tracking-wider">Schema</h4>
-            <div
-              v-for="field in actionOutputFields"
-              :key="field.name"
-              class="flex items-center justify-between rounded px-1.5 py-1 text-xs"
-            >
-              <span class="font-mono text-[11px] font-medium">{{ field.name }}</span>
-              <span class="text-muted-foreground font-mono text-[10px]">{{ field.type }}</span>
-            </div>
-            <div v-if="actionOutputFields.some(f => f.description)" class="mt-1 space-y-0.5">
-              <div
-                v-for="field in actionOutputFields.filter(f => f.description)"
-                :key="field.name"
-                class="text-muted-foreground text-[10px]"
-              >
-                <span class="font-mono font-medium">{{ field.name }}</span>: {{ field.description }}
-              </div>
-            </div>
-          </div>
-
           <!-- Execution output data -->
           <template v-if="hasExecutionOutput">
             <h4 class="text-muted-foreground mb-1.5 text-[10px] font-medium uppercase tracking-wider">Run data</h4>
