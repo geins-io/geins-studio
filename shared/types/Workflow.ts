@@ -463,6 +463,14 @@ export interface WorkflowVersionEntry {
   createdAt: string;
   createdBy?: string;
   description?: string;
+  archivedAt?: string;
+  archivedBy?: string;
+  definitionHash?: string;
+  definition?: {
+    nodes?: unknown[];
+    connections?: unknown[];
+    [key: string]: unknown;
+  };
 }
 
 export interface WorkflowHistory {
