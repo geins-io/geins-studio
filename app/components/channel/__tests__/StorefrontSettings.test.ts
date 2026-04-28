@@ -37,12 +37,13 @@ describe('ChannelStorefrontSettings', () => {
     expect(previewBtn!.find('.animate-spin').exists()).toBe(true);
   });
 
-  it('disables preview button when disabled prop is true', async () => {
+  it('does not emit preview when disabled prop is true', async () => {
     const component = await mountWithContext(ChannelStorefrontSettings, {
       props: { ...baseProps, disabled: true },
     });
     const previewBtn = findPreviewButton(component);
     expect(previewBtn).toBeDefined();
-    expect(previewBtn!.attributes('disabled')).toBeDefined();
+    await previewBtn!.trigger('click');
+    expect(component.emitted('preview')).toBeFalsy();
   });
 });
