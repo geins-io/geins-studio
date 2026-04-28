@@ -229,8 +229,8 @@ const categoryLabel = computed(() => {
           {{ mailType?.name }}
         </SheetDescription>
       </SheetHeader>
-      <SheetBody class="flex flex-col gap-4">
-        <Tabs v-model="activeTab">
+      <SheetBody class="flex h-full flex-col gap-4">
+        <Tabs v-model="activeTab" class="h-full">
           <div class="bg-card sticky top-0 z-10 flex items-center gap-3 pb-3">
             <TabsList class="">
               <TabsTrigger value="edit" class="flex items-center gap-1.5">
@@ -249,7 +249,7 @@ const categoryLabel = computed(() => {
           <!-- Edit tab -->
           <TabsContent
             value="edit"
-            class="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden"
+            class="flex min-h-[93%] flex-1 flex-col gap-4 overflow-hidden"
           >
             <div class="space-y-1.5">
               <Label>{{ t('channels.mail_select_language') }}</Label>

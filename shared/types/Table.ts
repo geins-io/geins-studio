@@ -79,6 +79,7 @@ declare module '@tanstack/vue-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
     title?: string;
     type: ColumnType;
+    skipInactiveDim?: boolean;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData extends RowData> {
