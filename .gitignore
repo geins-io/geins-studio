@@ -40,3 +40,4 @@ repomix.config.json
 docs/.vitepress/dist
 docs/.vitepress/cache
 
+package-lock.json
