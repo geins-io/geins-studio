@@ -110,26 +110,8 @@ onMounted(() => {
   const triggerId = existingTrigger?.id ?? TRIGGER_NODE_ID
   const finalNodes = existingTrigger ? canvasNodes : [buildTriggerNode(), ...canvasNodes]
 
-  // Auto-wire orphans: any non-trigger node without an incoming edge gets a
-  // synthetic edge from the trigger so the canvas never shows disconnected
-  // islands. `data.synthetic = true` lets `toApi` strip them on save.
-  const nodesWithIncoming = new Set(canvasEdges.map(e => e.target))
-  const finalEdges = [...canvasEdges]
-  let syntheticIndex = 0
-  for (const n of finalNodes) {
-    if (n.id === triggerId) continue
-    if (nodesWithIncoming.has(n.id)) continue
-    finalEdges.push({
-      id: `e-${triggerId}-${n.id}-auto-${syntheticIndex++}`,
-      source: triggerId,
-      target: n.id,
-      animated: false,
-      data: { type: 'sequential', synthetic: true },
-    })
-  }
-
   initialNodes.value = finalNodes
-  initialEdges.value = finalEdges
+  initialEdges.value = canvasEdges
 })
 
 const { onConnect, onPaneReady, addEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut, getViewport, setViewport } = useVueFlow()
@@ -137,9 +119,12 @@ const { onConnect, onPaneReady, addEdges, addNodes, removeNodes, project, findNo
 const maxZoom = ref(1.5)
 onPaneReady(() => {
   const savedVp = savedCanvasUi.value.viewport
-  if (savedVp) setViewport(savedVp)
-  // Wait one more tick so any reconciliation that happens during/after the
-  // initial fitView has flushed before we start listening for user edits.
+  if (savedVp) {
+    setViewport(savedVp)
+  }
+  else if (!props.isNew) {
+    fitView({ padding: 0.4, maxZoom: 0.85 })
+  }
   nextTick(() => { canvasReady.value = true })
 })
 
@@ -199,9 +184,18 @@ const selectedNode = ref<any>(null)
 const isAddNodeOpen = ref(false)
 const showMinimap = ref(false)
 
+const pendingConnection = ref<{ sourceId: string, sourceHandle?: string } | null>(null)
+
+const onHandlePlusClick = (sourceNodeId: string, sourceHandleId?: string) => {
+  pendingConnection.value = { sourceId: sourceNodeId, sourceHandle: sourceHandleId }
+  isAddNodeOpen.value = true
+}
+provide('onHandlePlusClick', onHandlePlusClick)
+
 // Selecting a node auto-opens the bottom properties panel; clicking the pane
 // clears the selection and hides it.
 const onNodeClick = (event: any) => {
+  if (event.node.type === 'trigger') return
   selectedNode.value = event.node
 }
 
@@ -219,6 +213,20 @@ const onDragOver = (event: DragEvent) => {
   if (event.dataTransfer) {
     event.dataTransfer.dropEffect = 'move'
   }
+}
+
+const NODE_OVERLAP_MARGIN = 60
+const avoidTriggerNode = (pos: { x: number, y: number }): { x: number, y: number } => {
+  const trigger = findNode(TRIGGER_NODE_ID)
+  if (!trigger) return pos
+  const tw = (trigger.dimensions?.width ?? 230) + NODE_OVERLAP_MARGIN
+  const th = (trigger.dimensions?.height ?? 60) + NODE_OVERLAP_MARGIN
+  const dx = pos.x - trigger.position.x
+  const dy = pos.y - trigger.position.y
+  if (dx > -tw && dx < tw && dy > -th && dy < th) {
+    return { x: trigger.position.x + tw, y: pos.y }
+  }
+  return pos
 }
 
 const buildNewNode = (item: PaletteItem, position: { x: number, y: number }) => ({
@@ -241,15 +249,35 @@ const onDrop = (event: DragEvent) => {
   const data = event.dataTransfer?.getData('application/vueflow')
   if (!data) return
   const item = JSON.parse(data) as PaletteItem
-  const position = project({ x: event.clientX - 100, y: event.clientY - 100 })
+  const position = avoidTriggerNode(project({ x: event.clientX - 100, y: event.clientY - 100 }))
   addNodes([buildNewNode(item, position)])
   isAddNodeOpen.value = false
 }
 
-// Click-to-add from the palette: place at a default viewport position.
+// Click-to-add from the palette: place next to the source node if triggered
+// from a handle "+", otherwise at a default viewport position.
 const handleAddFromPalette = (item: PaletteItem) => {
-  const position = project({ x: 400, y: 300 })
-  addNodes([buildNewNode(item, position)])
+  const pending = pendingConnection.value
+  const sourceNode = pending ? findNode(pending.sourceId) : null
+
+  const position = sourceNode
+    ? { x: sourceNode.position.x + (sourceNode.dimensions?.width ?? 200) + 100, y: sourceNode.position.y }
+    : avoidTriggerNode(project({ x: 400, y: 300 }))
+
+  const newNode = buildNewNode(item, position)
+  addNodes([newNode])
+
+  if (pending) {
+    addEdges([{
+      id: `e-${pending.sourceId}-${newNode.id}-${Date.now()}`,
+      source: pending.sourceId,
+      sourceHandle: pending.sourceHandle,
+      target: newNode.id,
+      animated: false,
+    }])
+    pendingConnection.value = null
+  }
+
   isAddNodeOpen.value = false
 }
 
@@ -265,6 +293,10 @@ const tidyUp = async () => {
 const toggleAddNode = () => {
   isAddNodeOpen.value = !isAddNodeOpen.value
 }
+
+watch(isAddNodeOpen, (open) => {
+  if (!open) pendingConnection.value = null
+})
 
 const toggleMinimap = () => {
   showMinimap.value = !showMinimap.value
@@ -393,7 +425,7 @@ useKeybindings({
       <div class="relative flex min-w-0 flex-1 flex-col">
         <div class="relative flex-1 overflow-hidden" @dragover="onDragOver" @drop="onDrop">
           <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
-            :default-viewport="{ zoom: 1, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="maxZoom" :fit-view-on-init="!isNew"
+            :default-viewport="{ zoom: 0.8, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="maxZoom"
             class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
             <Background pattern-color="hsl(var(--border))" :gap="20" />
             <!-- `show-*="false"` hides VueFlow's built-in buttons so we can

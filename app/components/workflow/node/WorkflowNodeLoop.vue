@@ -41,21 +41,17 @@ const props = defineProps<{
     </div>
     
     <!-- Loop body output handle -->
-    <Handle
-      id="loop"
-      type="source"
-      :position="Position.Right"
+    <WorkflowHandlePlus
+      handle-id="loop"
       :style="{ top: '30%' }"
-      class="!border-background !h-3 !w-3 !border-2 !bg-purple-500"
+      handle-class="!border-background !h-3 !w-3 !border-2 !bg-purple-500"
     />
-    
+
     <!-- Done output handle -->
-    <Handle
-      id="done"
-      type="source"
-      :position="Position.Right"
+    <WorkflowHandlePlus
+      handle-id="done"
       :style="{ top: '70%' }"
-      class="!border-background !h-3 !w-3 !border-2 !bg-gray-400"
+      handle-class="!border-background !h-3 !w-3 !border-2 !bg-gray-400"
     />
 
     <!-- Labels for handles -->
