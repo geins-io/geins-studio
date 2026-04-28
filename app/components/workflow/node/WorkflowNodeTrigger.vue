@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
 import cronstrue from 'cronstrue'
 import 'cronstrue/locales/sv'
 import { LucideClock, LucideMousePointerClick, LucideWebhook, LucideZap } from '#components'
@@ -96,10 +95,8 @@ const subtitle = computed(() => {
       </div>
     </div>
 
-    <Handle
-      type="source"
-      :position="Position.Right"
-      class="!border-background !h-3 !w-3 !border-2 !bg-green-500"
+    <WorkflowHandlePlus
+      handle-class="!border-background !h-3 !w-3 !border-2 !bg-green-500"
     />
   </div>
 </template>

@@ -39,10 +39,8 @@ const IconComponent = computed(() => resolveIcon(props.data.icon) || resolveIcon
     </div>
     
     <!-- Output handle -->
-    <Handle
-      type="source"
-      :position="Position.Right"
-      class="!border-background !h-3 !w-3 !border-2 !bg-blue-500"
+    <WorkflowHandlePlus
+      handle-class="!border-background !h-3 !w-3 !border-2 !bg-blue-500"
     />
   </div>
 </template>

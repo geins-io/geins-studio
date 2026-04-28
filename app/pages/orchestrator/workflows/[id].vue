@@ -20,6 +20,11 @@ const { t, locale } = useI18n()
 const { toast } = useToast()
 const { orchestratorApi } = useGeinsRepository()
 
+function extractApiError(err: unknown): { title?: string; detail?: string } | undefined {
+  const e = err as { originalError?: { data?: { title?: string; detail?: string } } }
+  return e?.originalError?.data ?? undefined
+}
+
 const workflowId = computed(() => route.params.id as string)
 const isNew = computed(() => workflowId.value === 'new')
 const entityName = 'workflow'
@@ -306,10 +311,11 @@ const handleDuplicate = async () => {
     toast({ title: 'Workflow duplicated', description: `Created "${copy.name}".` })
     await navigateTo(`/orchestrator/workflows/${copy.id}`)
   }
-  catch (err) {
+  catch (err: unknown) {
+    const apiBody = extractApiError(err)
     toast({
-      title: 'Duplicate failed',
-      description: err instanceof Error ? err.message : String(err),
+      title: apiBody?.title || 'Duplicate failed',
+      description: apiBody?.detail || (err as { message?: string })?.message || 'Unknown error',
       variant: 'negative',
     })
   }
@@ -373,11 +379,12 @@ const handleCreate = async () => {
     toast({ title: 'Workflow created', description: `Created "${created.name}".` })
     await navigateTo(`/orchestrator/workflows/${created.id}`)
   }
-  catch (err) {
+  catch (err: unknown) {
     geinsLogError('Failed to create workflow', err)
+    const apiBody = extractApiError(err)
     toast({
-      title: 'Failed to create',
-      description: err instanceof Error ? err.message : 'Unknown error',
+      title: apiBody?.title || 'Failed to create',
+      description: apiBody?.detail || (err as { message?: string })?.message || 'Unknown error',
       variant: 'negative',
     })
   }
@@ -484,10 +491,10 @@ const handleSave = async () => {
   }
   catch (err: unknown) {
     geinsLogError('Failed to save workflow configuration', err)
-    const errData = (err as { data?: { data?: { title?: string, detail?: string } } })?.data?.data
+    const apiBody = extractApiError(err)
     toast({
-      title: errData?.title || 'Failed to save',
-      description: errData?.detail || (err instanceof Error ? err.message : 'Unknown error'),
+      title: apiBody?.title || 'Failed to save',
+      description: apiBody?.detail || (err as { message?: string })?.message || 'Unknown error',
       variant: 'negative',
     })
   }

@@ -40,21 +40,17 @@ const props = defineProps<{
     </div>
     
     <!-- True output handle -->
-    <Handle
-      id="true"
-      type="source"
-      :position="Position.Right"
+    <WorkflowHandlePlus
+      handle-id="true"
       :style="{ top: '30%' }"
-      class="!border-background !h-3 !w-3 !border-2 !bg-green-500"
+      handle-class="!border-background !h-3 !w-3 !border-2 !bg-green-500"
     />
-    
+
     <!-- False output handle -->
-    <Handle
-      id="false"
-      type="source"
-      :position="Position.Right"
+    <WorkflowHandlePlus
+      handle-id="false"
       :style="{ top: '70%' }"
-      class="!border-background !h-3 !w-3 !border-2 !bg-red-500"
+      handle-class="!border-background !h-3 !w-3 !border-2 !bg-red-500"
     />
 
     <!-- Labels for handles -->
