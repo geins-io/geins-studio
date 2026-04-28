@@ -729,6 +729,7 @@
     "change_schema": "Ändra JSON-schema",
     "preview_storefront": "Förhandsgranska",
     "preview_storefront_coming_soon": "Kommer snart",
+    "preview_error": "Kunde inte öppna förhandsgranskning. Försök igen.",
     "schema_editor_title": "JSON-schemaredigerare",
     "schema_editor_description": "Redigera det JSON-schema som styr formuläret för butikinställningar. Ändringar träder i kraft när du klickar på Tillämpa.",
     "schema_editor_apply": "Tillämpa",

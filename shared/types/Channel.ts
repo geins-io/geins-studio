@@ -172,8 +172,6 @@ export interface MailTextsUpdateRequest {
   texts: Record<string, string>;
 }
 
-
-
 // =============================================================================
 // Assignment Types (Write / PATCH)
 // =============================================================================
@@ -241,6 +239,7 @@ export interface ChannelUpdate extends UpdateEntity<ChannelBase> {
   mailTypes?: ChannelMailTypeAssignment[];
   mailSettings?: Partial<ChannelMailSettings>;
   storefrontSettings?: StorefrontSettings;
+  storefrontSettingsPreview?: StorefrontSettings;
   storefrontSchema?: StorefrontSchema;
 }
 
@@ -284,6 +283,7 @@ export interface Channel extends ChannelListItem {
   mailSettings: ChannelMailSettings;
   mailTypes: ChannelMailType[];
   storefrontSettings: StorefrontSettings;
+  storefrontSettingsPreview?: StorefrontSettings;
   storefrontSchema: StorefrontSchema;
 }
 

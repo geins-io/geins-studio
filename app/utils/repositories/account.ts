@@ -95,6 +95,10 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           data.storefrontSettings as Record<string, unknown> | undefined,
           'storefrontSettings',
         );
+        const storefrontSettingsPreview = extractFiles(
+          data.storefrontSettingsPreview as Record<string, unknown> | undefined,
+          'storefrontSettingsPreview',
+        );
         const mailSettings = extractFiles(
           data.mailSettings as Record<string, unknown> | undefined,
           'mailSettings',
@@ -103,7 +107,16 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         const jsonPayload: ChannelUpdate = {
           ...data,
           ...(storefrontSettings !== undefined
-            ? { storefrontSettings: storefrontSettings as ChannelUpdate['storefrontSettings'] }
+            ? {
+                storefrontSettings:
+                  storefrontSettings as ChannelUpdate['storefrontSettings'],
+              }
+            : {}),
+          ...(storefrontSettingsPreview !== undefined
+            ? {
+                storefrontSettingsPreview:
+                  storefrontSettingsPreview as ChannelUpdate['storefrontSettingsPreview'],
+              }
             : {}),
           ...(mailSettings !== undefined
             ? { mailSettings: mailSettings as ChannelUpdate['mailSettings'] }
@@ -164,10 +177,7 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
            * Preview endpoint returns rendered HTML as `text/html` — caller
            * receives the raw HTML string to inject into a sandboxed iframe.
            */
-          async preview(
-            mailType: string,
-            language: string,
-          ): Promise<string> {
+          async preview(mailType: string, language: string): Promise<string> {
             return await fetch<string>(
               `${CHANNEL_ENDPOINT}/${channelId}/mail/${mailType}/preview`,
               { method: 'POST', query: { language } },

@@ -13,6 +13,7 @@ const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
       !error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`
     "
     :aria-invalid="!!error"
+    class="bg-input dark:bg-input"
   >
     <slot />
   </Slot>

@@ -733,6 +733,7 @@
     "change_schema": "Edit settings JSON",
     "preview_storefront": "Preview",
     "preview_storefront_coming_soon": "Coming soon",
+    "preview_error": "Failed to open preview. Please try again.",
     "schema_editor_title": "Settings JSON editor",
     "schema_editor_description": "Edit the raw JSON schema that drives the storefront settings form. Changes take effect when you click Apply.",
     "schema_editor_apply": "Apply",
