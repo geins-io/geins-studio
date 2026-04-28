@@ -6,12 +6,15 @@ const props = defineProps<{
   schema: StorefrontSchema;
   modelValue: StorefrontSettings;
   resetting?: boolean;
+  previewing?: boolean;
+  disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
   'update:modelValue': [value: StorefrontSettings];
   'open-schema-editor': [];
   'reset-to-default': [];
+  preview: [];
 }>();
 
 const { t } = useI18n();
@@ -48,19 +51,15 @@ function onSettingsUpdate(value: StorefrontSettings) {
   <ContentEditCard :title="t('channels.storefront_settings')">
     <template #header-action>
       <div class="flex items-center gap-2">
-        <TooltipProvider :delay-duration="100">
-          <Tooltip>
-            <TooltipTrigger>
-              <Button variant="outline" disabled>
-                <LucideScanEye class="mr-2 size-4" />
-                {{ t('channels.preview_storefront') }}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {{ t('channels.preview_storefront_coming_soon') }}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Button
+          variant="secondary"
+          :loading="props.previewing"
+          :disabled="props.disabled"
+          @click="emit('preview')"
+        >
+          <LucideScanEye class="mr-2 size-4" />
+          {{ t('channels.preview_storefront') }}
+        </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
