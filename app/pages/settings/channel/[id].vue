@@ -533,23 +533,20 @@ async function handleResetToDefault() {
 
 async function handlePreview() {
   if (createMode.value || !entityId.value) return;
-  // Open a blank tab synchronously so browsers treat it as user-initiated
-  // and don't block it as a popup.
-  const previewWindow = window.open('', '_blank', 'noopener,noreferrer');
   isLoadingPreview.value = true;
   try {
     await accountApi.channel.update(entityId.value, {
       storefrontSettingsPreview: storefrontSettings.value,
     });
     const url = entityData.value?.url;
-    if (!url) throw new Error('missing-url');
+    if (!url) {
+      toast({ title: t('channels.preview_error'), variant: 'negative' });
+      return;
+    }
     const u = new URL(url);
     u.searchParams.set('preview', '1');
-    if (previewWindow) {
-      previewWindow.location.href = u.toString();
-    }
+    window.open(u.toString(), '_blank', 'noopener,noreferrer');
   } catch {
-    previewWindow?.close();
     toast({ title: t('channels.preview_error'), variant: 'negative' });
   } finally {
     isLoadingPreview.value = false;
