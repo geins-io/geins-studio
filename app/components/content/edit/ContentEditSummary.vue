@@ -23,7 +23,6 @@ const props = withDefaults(
     settingsSummary: () => [],
     entityLiveStatus: false,
     showActiveStatus: true,
-    status: undefined,
     disabled: false,
     disabledTooltip: undefined,
     status: undefined,
