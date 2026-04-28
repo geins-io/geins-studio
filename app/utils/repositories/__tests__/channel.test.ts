@@ -88,7 +88,6 @@ describe('accountRepo', () => {
         query: undefined,
       });
     });
-
   });
 
   // ===========================================================================
@@ -311,9 +310,7 @@ describe('accountRepo', () => {
 
     it('channel.id().mail.preview() calls POST with language query param', async () => {
       mockFetch.mockResolvedValue('<p>preview</p>');
-      await api.channel
-        .id('123')
-        .mail.preview('orderConfirmation', 'sv');
+      await api.channel.id('123').mail.preview('orderConfirmation', 'sv');
       expect(mockFetch).toHaveBeenCalledWith(
         '/account/channel/123/mail/orderConfirmation/preview',
         { method: 'POST', query: { language: 'sv' } },

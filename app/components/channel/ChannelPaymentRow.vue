@@ -60,7 +60,10 @@ const customerTypesTooltip = computed(() =>
 
 <template>
   <Item variant="outline">
-    <ItemMedia variant="image" class="h-10 w-18">
+    <ItemMedia
+      variant="image"
+      :class="cn(!payment.active && 'opacity-50', 'h-10 w-18')"
+    >
       <component
         :is="logoComponent"
         v-if="logoComponent"
@@ -68,7 +71,7 @@ const customerTypesTooltip = computed(() =>
       />
       <LucideImageOff v-else class="text-muted-foreground size-4" />
     </ItemMedia>
-    <ItemContent>
+    <ItemContent :class="cn(!payment.active && 'opacity-50')">
       <ItemTitle>{{ payment.name }}</ItemTitle>
       <ItemDescription>
         <span class="inline-flex items-center gap-1.5">

@@ -1,10 +1,7 @@
 /* eslint-disable import/order, import/first */
 import { mockNuxtImport } from '@nuxt/test-utils/runtime';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  buildMailType,
-  buildMailTextEntry,
-} from '../../../../test/fixtures';
+import { buildMailType, buildMailTextEntry } from '../../../../test/fixtures';
 import { mountWithContext } from '../../../../test/helpers';
 
 const { mailApi } = vi.hoisted(() => ({
@@ -151,7 +148,6 @@ describe('ChannelMailConfigSheet', () => {
     expect(mailApi.preview).toHaveBeenCalledWith('orderConfirmation', 'en');
   });
 
-
   it('restore-to-default sends an empty string for every overridden key', async () => {
     mailApi.getTexts.mockResolvedValue({
       _id: 'orderConfirmation',
@@ -183,8 +179,8 @@ describe('ChannelMailConfigSheet', () => {
     await flush();
 
     const buttons = Array.from(document.body.querySelectorAll('button'));
-    const restoreBtn = buttons.find(
-      (b) => b.textContent?.includes('restore_defaults'),
+    const restoreBtn = buttons.find((b) =>
+      b.textContent?.includes('restore_defaults'),
     );
     restoreBtn!.click();
     await flush();

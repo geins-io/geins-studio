@@ -40,6 +40,7 @@ const iconName = computed(() => mailTypeIconMap[props.mailType._id] ?? 'Mail');
       :description="t(`channels.mail_desc_${mailType._id}`)"
       :icon="iconName"
       size="sm"
+      :class="cn(!mailType.active && 'opacity-50')"
     />
     <Badge v-if="mailType.hasOverrides" variant="warning-light" class="ml-auto">
       {{ t('channels.mail_text_overridden') }}
@@ -47,7 +48,9 @@ const iconName = computed(() => mailTypeIconMap[props.mailType._id] ?? 'Mail');
     <Switch
       :model-value="mailType.active"
       :class="mailType.hasOverrides ? 'ml-4' : 'ml-auto'"
-      :aria-label="t('channels.toggle_mail_type_active', { name: mailType.name })"
+      :aria-label="
+        t('channels.toggle_mail_type_active', { name: mailType.name })
+      "
       @update:model-value="
         emit('update:active', { _id: mailType._id, active: $event })
       "
