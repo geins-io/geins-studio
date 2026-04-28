@@ -19,9 +19,7 @@ async function triggerChannelRefresh(
   apiBase: string,
   apiHeaders: Record<string, string | undefined>,
 ) {
-  const { geinsLogInfo, geinsLogError } = log(
-    'server/api/[...].ts:STU-216',
-  );
+  const { geinsLogInfo, geinsLogError } = log('server/api/[...].ts:STU-216');
   let url: string | undefined;
   try {
     const channel = await $fetch<Record<string, unknown>>(
