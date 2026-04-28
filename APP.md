@@ -204,6 +204,7 @@ Components in `app/components/` are classified as **domain** or **infrastructure
 - **Table modes**: `TableMode` enum — `Advanced` (list pages), `Simple` (nested), `Minimal` (edit page inline tables). Mode via `table.options.meta.mode`. Minimal: no borders/pagination/sorting/pinning/hover, taller rows (`h-[68px]`). All overrides use scoped CSS on `.table-view--minimal`.
 - **TableView**: Wraps TanStack's `useVueTable` with mode-aware features. Styling per mode via CSS classes — never modify `app/components/ui/table/` primitives.
 - **TableView error state**: `error` (boolean) + `onRetry` (callback) props show inline error with retry button.
+- **Inactive row dimming**: `dimInactiveRows` prop (default `false`). When `true`, cells in rows where `row.original.active === false` get `opacity-50`. Opt individual columns out via `meta: { skipInactiveDim: true }` in the column def — `useColumns` sets this automatically for `'switch'` type columns so the toggle stays full opacity.
 - **TablePagination**: At `app/components/table/TablePagination.vue`. `advanced` prop controls rows-per-page selector.
 - **Column type inference**: `useColumns.getColumns()` infers from field names (date → formatter, price → currency, image → thumbnail, product → product cell). Override via `columnTypes`.
 - **Editable columns**: Use `columnTypes` with `'editable-number'`, `'editable-string'`, `'editable-currency'`, `'editable-percentage'`.

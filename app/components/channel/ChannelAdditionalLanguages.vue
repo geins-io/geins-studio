@@ -161,6 +161,7 @@ const confirmAdd = () => {
         :columns="columns"
         :data="tableRows"
         :mode="TableMode.Minimal"
+        :dim-inactive-rows="true"
         entity-name="language"
         :empty-text="t('channels.additional_languages_empty')"
         :empty-icon="emptyIcon"

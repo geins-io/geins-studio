@@ -301,6 +301,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         sortableColumns?.[key] !== undefined ? sortableColumns[key] : sortable;
 
       let cellRenderer;
+      let skipInactiveDim = false;
       let headerRenderer = colSortable
         ? ({ table, column }: { table: Table<T>; column: Column<T> }) => {
             const mode = table?.options?.meta?.mode || TableMode.Advanced;
@@ -731,6 +732,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             );
           };
           columnSize = { size: 80, minSize: 80, maxSize: 80 };
+          skipInactiveDim = true;
           break;
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
@@ -774,7 +776,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         header: headerRenderer,
         cell: cellRenderer,
         enableSorting: sortable,
-        meta: { type: columnType, title: columnTitle },
+        meta: { type: columnType, title: columnTitle, skipInactiveDim },
         ...columnSize,
       });
     });
