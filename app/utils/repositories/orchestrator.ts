@@ -353,7 +353,7 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         to: number,
       ): Promise<VersionComparison> {
         return await fetch<VersionComparison>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/version/diff`,
+          `${WORKFLOW_ENDPOINT}/${workflowId}/versions/diff`,
           { query: { from, to } },
         );
       },
