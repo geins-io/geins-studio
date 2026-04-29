@@ -506,7 +506,8 @@ useKeybindings({
       <!-- Canvas column -->
       <div class="relative flex min-w-0 flex-1 flex-col">
         <div class="relative flex-1 overflow-hidden" @dragover="onDragOver" @drop="onDrop">
-          <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes" :edge-types="edgeTypes"
+          <VueFlow
+:nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes" :edge-types="edgeTypes"
             :default-viewport="{ zoom: 0.8, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="maxZoom"
             class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
             <Background pattern-color="hsl(var(--border))" :gap="20" />
@@ -540,7 +541,8 @@ useKeybindings({
                 </ControlButton>
               </KeyboardShortcutTooltip>
             </Controls>
-            <MiniMap v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
+            <MiniMap
+v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
               if (node.type === 'trigger') return 'hsl(142 76% 36%)'
               if (node.type === 'condition') return 'hsl(48 96% 53%)'
               if (node.type === 'iterator' || node.type === 'loop') return 'hsl(280 67% 60%)'
@@ -559,7 +561,8 @@ useKeybindings({
                 <LucidePlus class="h-4 w-4" />
               </button>
             </KeyboardShortcutTooltip>
-            <KeyboardShortcutTooltip :label="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'"
+            <KeyboardShortcutTooltip
+:label="isNew ? 'Save workflow to run' : isRunning ? 'Running…' : 'Run workflow'"
               keys="mod+enter">
               <button
                 class="bg-background pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border bg-red-500 shadow-sm hover:bg-red-800"
@@ -570,7 +573,8 @@ useKeybindings({
             </KeyboardShortcutTooltip>
           </div>
 
-          <WorkflowSidebarNodeProperties :node="selectedNode" :node-execution="selectedNodeExecution"
+          <WorkflowSidebarNodeProperties
+:node="selectedNode" :node-execution="selectedNodeExecution"
             @close="selectedNode = null" @delete="deleteSelectedNode" />
         </div>
       </div>

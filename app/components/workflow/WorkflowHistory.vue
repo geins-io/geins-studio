@@ -393,7 +393,7 @@ function truncateValue(val: unknown): string {
         >
           <!-- Row header (always visible) -->
           <button
-            class="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-muted/40"
+            class="hover:bg-muted/40 flex w-full items-center gap-3 p-3 text-left transition-colors"
             @click="toggleVersion(entry.version)"
           >
             <!-- Version badge -->
@@ -420,7 +420,8 @@ function truncateValue(val: unknown): string {
             <div v-if="entry.stats" class="hidden items-center gap-1.5 text-xs md:flex">
               <span class="text-muted-foreground/50">│</span>
               <LucideActivity class="text-muted-foreground h-3 w-3" />
-              <span class="tabular-nums" :class="{
+              <span
+class="tabular-nums" :class="{
                 'text-emerald-600 dark:text-emerald-400': entry.stats.successRate >= 90,
                 'text-amber-600 dark:text-amber-400': entry.stats.successRate >= 50 && entry.stats.successRate < 90,
                 'text-red-600 dark:text-red-400': entry.stats.successRate < 50,
@@ -457,8 +458,8 @@ function truncateValue(val: unknown): string {
             class="border-t px-4 py-3"
           >
             <!-- Execution stats detail panel -->
-            <div v-if="entry.stats" class="mb-3 rounded-md bg-muted/30 p-3">
-              <div class="text-muted-foreground mb-2 text-[11px] font-medium uppercase tracking-wider">Execution stats</div>
+            <div v-if="entry.stats" class="bg-muted/30 mb-3 rounded-md p-3">
+              <div class="text-muted-foreground mb-2 text-[11px] font-medium tracking-wider uppercase">Execution stats</div>
               <div class="grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-4">
                 <div>
                   <div class="text-muted-foreground text-[10px] uppercase">Runs</div>
@@ -466,7 +467,8 @@ function truncateValue(val: unknown): string {
                 </div>
                 <div>
                   <div class="text-muted-foreground text-[10px] uppercase">Success rate</div>
-                  <div class="text-sm font-medium tabular-nums" :class="{
+                  <div
+class="text-sm font-medium tabular-nums" :class="{
                     'text-emerald-600 dark:text-emerald-400': entry.stats.successRate >= 90,
                     'text-amber-600 dark:text-amber-400': entry.stats.successRate >= 50 && entry.stats.successRate < 90,
                     'text-red-600 dark:text-red-400': entry.stats.successRate < 50,
@@ -491,7 +493,7 @@ function truncateValue(val: unknown): string {
                 </div>
               </div>
             </div>
-            <div v-else class="text-muted-foreground mb-3 flex items-center gap-2 rounded-md bg-muted/30 p-3 text-xs">
+            <div v-else class="text-muted-foreground bg-muted/30 mb-3 flex items-center gap-2 rounded-md p-3 text-xs">
               <LucideActivity class="h-3.5 w-3.5" />
               No executions recorded for this version
             </div>
@@ -538,7 +540,7 @@ function truncateValue(val: unknown): string {
                   class="space-y-1"
                 >
                   <!-- Group header -->
-                  <div class="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider">
+                  <div class="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase">
                     <span>{{ group.label }}</span>
                     <span class="text-muted-foreground/50">({{ group.changes.length }})</span>
                   </div>
