@@ -18,7 +18,7 @@ const isValidTarget = computed(() => {
   if (!start) return false
   if (start.nodeId === nodeId) return false
   const alreadyConnected = edges.value.some(
-    e => e.source === start.nodeId && e.sourceHandle === start.handleId && e.target === nodeId,
+    e => e.source === start.nodeId && e.target === nodeId,
   )
   return !alreadyConnected
 })
