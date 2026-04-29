@@ -178,7 +178,8 @@ const confirmAddGroup = () => {
         </Button>
       </div>
     </ContentEditCard>
-    <ContentEditCard v-for="group in inputsByCategory" v-else :key="group.category" :title="group.category"
+    <ContentEditCard
+v-for="group in inputsByCategory" v-else :key="group.category" :title="group.category"
       :description="`${group.items.length} input${group.items.length === 1 ? '' : 's'}`">
       <template #header-action>
         <Button variant="secondary" size="sm" @click="openAddInput(group.category)">
@@ -206,24 +207,29 @@ const confirmAddGroup = () => {
                   {{ item.description }}
                 </p>
               </div>
-              <Button variant="ghost" size="icon" class="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
+              <Button
+variant="ghost" size="icon" class="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
                 :aria-label="`Remove ${item.name}`" @click="removeInput(item.name)">
                 <LucideTrash class="h-4 w-4" />
               </Button>
             </div>
-            <Switch v-if="item.type === 'boolean'" :id="`inp-${item.name}`" :model-value="!!inputValues[item.name]"
+            <Switch
+v-if="item.type === 'boolean'" :id="`inp-${item.name}`" :model-value="!!inputValues[item.name]"
               @update:model-value="(v: boolean) => setInputValue(item.name, v)" />
-            <Input v-else-if="item.type === 'number'" :id="`inp-${item.name}`" type="number"
+            <Input
+v-else-if="item.type === 'number'" :id="`inp-${item.name}`" type="number"
               :model-value="numberInputValue(item.name)"
               @update:model-value="(v) => setInputValue(item.name, v === '' ? null : Number(v))" />
-            <Input v-else :id="`inp-${item.name}`"
+            <Input
+v-else :id="`inp-${item.name}`"
               :model-value="inputValues[item.name] == null ? '' : String(inputValues[item.name])"
               @update:model-value="(v) => setInputValue(item.name, v)" />
           </div>
         </FormGrid>
       </FormGridWrap>
     </ContentEditCard>
-    <Button variant="outline" class="text-muted-foreground hover:text-foreground mt-2 w-full border-dashed py-6"
+    <Button
+variant="outline" class="text-muted-foreground hover:text-foreground mt-2 w-full border-dashed py-6"
       @click="openAddGroup">
       <LucidePlus class="mr-2 h-4 w-4" />
       Add group

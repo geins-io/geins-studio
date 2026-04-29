@@ -1,10 +1,10 @@
-import type { Edge, Node } from '@vue-flow/core';
 import type {
   ConnectionType,
   WorkflowDefinition,
   WorkflowNode,
   WorkflowNodeConnection,
 } from '#shared/types';
+import type { Edge, Node } from '@vue-flow/core';
 
 interface WorkflowCanvasReturnType {
   toCanvas: (

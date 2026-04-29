@@ -12,7 +12,8 @@ const { toggleSidebar } = useSidebar();
 </script>
 
 <template>
-  <Button data-sidebar="trigger" data-slot="sidebar-trigger" variant="ghost" size="icon"
+  <Button
+data-sidebar="trigger" data-slot="sidebar-trigger" variant="ghost" size="icon"
     :class="cn('h-7 w-7', props.class)" @click="toggleSidebar">
     <LucidePanelLeft />
     <span class="sr-only">sToggle Sidebar</span>

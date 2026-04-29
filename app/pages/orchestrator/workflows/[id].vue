@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type Component } from 'vue'
 import { toTypedSchema } from '@vee-validate/zod'
 import cronstrue from 'cronstrue'
 import { useForm } from 'vee-validate'
+import type { Component } from 'vue'
 import * as z from 'zod'
 import 'cronstrue/locales/sv'
 import { DataItemDisplayType } from '#shared/types'
