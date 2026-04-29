@@ -39,8 +39,11 @@ const nodeTypes = {
   trigger: WorkflowNode,
   action: WorkflowNode,
   condition: WorkflowNode,
+  iterator: WorkflowNode,
   loop: WorkflowNode,
   delay: WorkflowNode,
+  workflow: WorkflowNode,
+  paginator: WorkflowNode,
 } as unknown as NodeTypesObject
 
 const edgeTypes = {
@@ -540,8 +543,10 @@ useKeybindings({
             <MiniMap v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
               if (node.type === 'trigger') return 'hsl(142 76% 36%)'
               if (node.type === 'condition') return 'hsl(48 96% 53%)'
-              if (node.type === 'loop') return 'hsl(280 67% 60%)'
+              if (node.type === 'iterator' || node.type === 'loop') return 'hsl(280 67% 60%)'
               if (node.type === 'delay') return 'hsl(25 95% 53%)'
+              if (node.type === 'workflow') return 'hsl(172 66% 50%)'
+              if (node.type === 'paginator') return 'hsl(239 84% 67%)'
               return 'hsl(217 91% 60%)'
             }" />
           </VueFlow>

@@ -7,8 +7,10 @@
 import WorkflowNodeAction from './node/WorkflowNodeAction.vue'
 import WorkflowNodeCondition from './node/WorkflowNodeCondition.vue'
 import WorkflowNodeDelay from './node/WorkflowNodeDelay.vue'
-import WorkflowNodeLoop from './node/WorkflowNodeLoop.vue'
+import WorkflowNodeIterator from './node/WorkflowNodeIterator.vue'
+import WorkflowNodePaginator from './node/WorkflowNodePaginator.vue'
 import WorkflowNodeTrigger from './node/WorkflowNodeTrigger.vue'
+import WorkflowNodeWorkflow from './node/WorkflowNodeWorkflow.vue'
 import type { Component } from 'vue'
 
 defineOptions({ inheritAttrs: false })
@@ -21,8 +23,11 @@ const NODE_COMPONENTS: Record<string, Component> = {
   trigger: WorkflowNodeTrigger,
   action: WorkflowNodeAction,
   condition: WorkflowNodeCondition,
-  loop: WorkflowNodeLoop,
+  iterator: WorkflowNodeIterator,
+  loop: WorkflowNodeIterator,
   delay: WorkflowNodeDelay,
+  workflow: WorkflowNodeWorkflow,
+  paginator: WorkflowNodePaginator,
 }
 
 // Fall back to the action node so an unrecognized type still renders visibly
