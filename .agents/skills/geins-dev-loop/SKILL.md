@@ -37,6 +37,10 @@ App available at http://localhost:3000.
 - Never use `console.log` — use `useGeinsLog('scope')` scoped loggers.
 - Be mindful of performance implications (data fetching, state, rendering).
 
+## Troubleshooting
+
+- **`EMFILE: too many open files, watch` on `pnpm dev`**: A scratch dir at the repo root (e.g. `.temp/`, `.agents/`, `.mint/`) probably contains cloned repos with their own `node_modules` and is not in the watcher ignore lists. Raising `ulimit -n` and installing Watchman do **not** fix this — Vite/chokidar does not auto-detect Watchman. Add the dir to all three lists in `nuxt.config.ts`: top-level `ignore`, `vite.server.watch.ignored`, and `nitro.watchOptions.ignored`. See CLAUDE.md → "Code Conventions" → "Scratch dirs & dev watcher".
+
 ## When the user says task done
 
 - Update `CLAUDE.md` with new learnings (and remove stale info).
