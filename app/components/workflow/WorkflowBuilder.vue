@@ -233,9 +233,9 @@ const onEdgeDelete = (edgeId: string) => {
 }
 provide('onEdgeDelete', onEdgeDelete)
 
-// Selecting a node auto-opens the bottom properties panel; clicking the pane
-// clears the selection and hides it.
-const onNodeClick = (event: any) => {
+// Double-click a node to open the properties panel (like n8n);
+// single click just selects. Clicking the pane clears both.
+const onNodeDoubleClick = (event: any) => {
   if (event.node.type === 'trigger') return
   selectedNode.value = event.node
 }
@@ -509,7 +509,7 @@ useKeybindings({
           <VueFlow
 :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes" :edge-types="edgeTypes"
             :default-viewport="{ zoom: 0.8, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="maxZoom"
-            class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
+            class="bg-muted/30" @node-double-click="onNodeDoubleClick" @pane-click="onPaneClick">
             <Background pattern-color="hsl(var(--border))" :gap="20" />
             <!-- `show-*="false"` hides VueFlow's built-in buttons so we can
                  render our own and attach the shared KeyboardShortcutTooltip

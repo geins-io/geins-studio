@@ -35,8 +35,8 @@ const isValidTarget = computed(() => {
 
 <style scoped>
 .tear {
-  border-radius: 50% 50% 50% 0 !important;
-  transform: translate(-50%, -50%) rotate(45deg) !important;
+  border-radius: 0 50% 50% 50% !important;
+  transform: translate(-50%, -50%) rotate(-45deg) !important;
 }
 
 .pulse-handle {
