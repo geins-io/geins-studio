@@ -2,6 +2,8 @@
 import type { PaletteItem } from '#shared/types'
 import type { ManifestAction } from '@/composables/useWorkflowManifest'
 import type { Component } from 'vue'
+import LitiumSymbol from '~/assets/logos/litium-symbol.svg'
+import MonitorSymbol from '~/assets/logos/monitor-symbol.svg'
 
 // ─── Props / emits ─────────────────────────────────────────────────
 const open = defineModel<boolean>('open', { default: false })
@@ -50,6 +52,15 @@ const PROVIDER_ICON_DEFAULTS: Record<string, string> = {
   common: 'Settings',
 }
 
+const PROVIDER_LOGOS: Record<string, Component> = {
+  litium: LitiumSymbol,
+  monitor: MonitorSymbol,
+}
+
+function getProviderLogo(providerKey: string): Component | null {
+  return PROVIDER_LOGOS[providerKey] ?? null
+}
+
 function getProviderIcon(providerKey: string): Component | null {
   // Check if manifestActionCategories has a matching entry
   const cat = manifestActionCategories.value.find(c => c.name === providerKey)
@@ -91,6 +102,7 @@ type ProviderViewItem = {
   key: string
   label: string
   icon: Component | null
+  logo: Component | null
   count: number
 }
 
@@ -98,6 +110,7 @@ type NodeViewItem = {
   type: 'node'
   item: PaletteItem
   icon: Component | null
+  logo?: Component | null
   color: string
   category?: string
 }
@@ -108,6 +121,7 @@ interface ViewStack {
   id: string
   title: string
   icon?: Component | null
+  logo?: Component | null
   color?: string
   items: ViewItem[]
   hasSearch: boolean
@@ -197,6 +211,7 @@ function buildProvidersStack() {
       key: providerKey,
       label: getProviderDisplayName(providerKey),
       icon: getProviderIcon(providerKey),
+      logo: getProviderLogo(providerKey),
       count: providerActions.length,
     })
   }
@@ -212,7 +227,7 @@ function buildProvidersStack() {
 }
 
 // ─── Build a provider's actions panel ──────────────────────────────
-function buildActionsStack(providerKey: string, label: string, icon: Component | null) {
+function buildActionsStack(providerKey: string, label: string, icon: Component | null, logo?: Component | null) {
   const actions = actionsByProvider.value.get(providerKey) ?? []
 
   // Sort actions by category first, then by display name
@@ -232,6 +247,7 @@ function buildActionsStack(providerKey: string, label: string, icon: Component |
       actionName: a.name,
     },
     icon: icon,
+    logo,
     color: 'text-blue-500',
     category: a.category,
   }))
@@ -239,6 +255,7 @@ function buildActionsStack(providerKey: string, label: string, icon: Component |
   pushStack({
     title: label,
     icon,
+    logo,
     items,
     hasSearch: true,
   })
@@ -270,7 +287,7 @@ function onItemClick(viewItem: ViewItem) {
     }
   }
   else if (viewItem.type === 'provider') {
-    buildActionsStack(viewItem.key, viewItem.label, viewItem.icon)
+    buildActionsStack(viewItem.key, viewItem.label, viewItem.icon, viewItem.logo)
   }
   else if (viewItem.type === 'node') {
     emit('add', viewItem.item)
@@ -346,6 +363,7 @@ const globalSearchResults = computed<NodeViewItem[]>(() => {
         actionName: a.name,
       },
       icon: a.icon ? resolveIcon(a.icon) : resolveIcon('Zap'),
+      logo: getProviderLogo(getProviderFromName(a.name)),
       color: 'text-blue-500',
     }))
 })
@@ -450,8 +468,13 @@ function onSearchInput(value: string) {
               <LucideArrowLeft class="h-4 w-4" />
             </button>
             <component
+              :is="activeStack.logo"
+              v-if="activeStack.logo"
+              class="h-4 w-4 shrink-0 dark:invert"
+            />
+            <component
               :is="activeStack.icon"
-              v-if="activeStack.icon"
+              v-else-if="activeStack.icon"
               class="h-4 w-4 shrink-0"
               :class="activeStack.color"
             />
@@ -491,7 +514,13 @@ function onSearchInput(value: string) {
                   @click="onItemClick(viewItem)"
                 >
                   <component
+                    :is="viewItem.logo"
+                    v-if="viewItem.logo"
+                    class="mt-0.5 h-4 w-4 shrink-0 dark:invert"
+                  />
+                  <component
                     :is="viewItem.icon"
+                    v-else
                     class="mt-0.5 h-4 w-4 shrink-0"
                     :class="viewItem.color"
                   />
@@ -546,7 +575,12 @@ function onSearchInput(value: string) {
                     @click="onItemClick(viewItem)"
                   >
                     <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
-                      <component :is="viewItem.icon" class="text-muted-foreground h-5 w-5" />
+                      <component
+                        :is="viewItem.logo"
+                        v-if="viewItem.logo"
+                        class="h-5 w-5 dark:invert"
+                      />
+                      <component :is="viewItem.icon" v-else class="text-muted-foreground h-5 w-5" />
                     </div>
                     <div class="min-w-0 flex-1">
                       <div class="text-sm font-medium">{{ viewItem.label }}</div>
@@ -576,7 +610,13 @@ function onSearchInput(value: string) {
                     @click="onItemClick(viewItem)"
                   >
                     <component
+                      :is="viewItem.logo"
+                      v-if="viewItem.logo"
+                      class="h-4 w-4 shrink-0 dark:invert"
+                    />
+                    <component
                       :is="viewItem.icon"
+                      v-else
                       class="h-4 w-4 shrink-0"
                       :class="viewItem.color"
                     />
