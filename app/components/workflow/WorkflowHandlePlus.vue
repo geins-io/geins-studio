@@ -52,8 +52,8 @@ const onClick = (event: MouseEvent) => {
         @mouseenter="isHovered = true"
         @mouseleave="isHovered = false"
       >
-        <!-- Connecting line from handle dot to + button -->
-        <div class="bg-muted-foreground/40 h-[2px]" :style="{ width: `${lineLength}px` }" />
+        <!-- Connecting line from handle dot to + button (starts past handle edge) -->
+        <div class="bg-muted-foreground/40 ml-1 h-[2px]" :style="{ width: `${lineLength}px` }" />
         <!-- + button -->
         <div
           class="nodrag bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border shadow-sm transition-all hover:scale-110"
