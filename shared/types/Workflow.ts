@@ -35,7 +35,8 @@ export type WorkflowNodeType =
   | 'iterator'
   | 'delay'
   | 'trigger'
-  | 'workflow';
+  | 'workflow'
+  | 'paginator';
 
 // -- Workflow Definition ----------------------------------------------------
 
@@ -682,7 +683,8 @@ export interface WorkflowEntityExecutionBase {
   currentStepId?: string;
 }
 
-export type WorkflowEntityExecution = ResponseEntity<WorkflowEntityExecutionBase>;
+export type WorkflowEntityExecution =
+  ResponseEntity<WorkflowEntityExecutionBase>;
 
 export type WorkflowEntityExecutionStatus =
   | 'pending'
@@ -778,7 +780,8 @@ export interface WorkflowEntityVariableBase {
   workflowId?: string;
 }
 
-export type WorkflowEntityVariableCreate = CreateEntity<WorkflowEntityVariableBase>;
+export type WorkflowEntityVariableCreate =
+  CreateEntity<WorkflowEntityVariableBase>;
 export type WorkflowEntityVariable = ResponseEntity<WorkflowEntityVariableBase>;
 
 // ─── Entity Editor ─────────────────────────────────────────────────
@@ -831,7 +834,6 @@ export type WorkflowExecutionFieldsFilter =
   | 'logs';
 export type WorkflowExecutionApiOptions =
   ApiOptions<WorkflowExecutionFieldsFilter>;
-
 
 export interface LiveConsoleLine {
   id: number;
