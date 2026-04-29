@@ -11,7 +11,7 @@ const props = withDefaults(defineProps<{
 })
 
 const { id: nodeId } = useNode()
-const { edges } = useVueFlow()
+const { edges, connectionStartHandle } = useVueFlow()
 
 const onHandlePlusClick = inject<(sourceNodeId: string, sourceHandleId?: string) => void>('onHandlePlusClick')
 
@@ -21,13 +21,13 @@ const isConnected = computed(() =>
   ),
 )
 
-const buttonStyle = computed(() => {
-  const top = props.style?.top ?? '50%'
-  return { top }
-})
+const isConnecting = computed(() => connectionStartHandle.value !== null)
+
+const showPlus = computed(() => !isConnected.value && !isConnecting.value)
 
 const onClick = (event: MouseEvent) => {
   event.stopPropagation()
+  event.preventDefault()
   onHandlePlusClick?.(nodeId, props.handleId)
 }
 </script>
@@ -38,21 +38,18 @@ const onClick = (event: MouseEvent) => {
     type="source"
     :position="position"
     :style="style"
-    :class="handleClass"
-  />
-  <!-- Connecting line from handle to + button -->
-  <div
-    v-if="!isConnected"
-    class="absolute -right-[24px] h-[2px] w-[24px] -translate-y-1/2 bg-muted-foreground/40"
-    :style="buttonStyle"
-  />
-  <button
-    v-if="!isConnected"
-    class="nopan nodrag absolute right-0 flex h-6 w-6 -translate-y-1/2 translate-x-[calc(100%+16px)] items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-all hover:scale-110 hover:border-foreground/30 hover:text-foreground"
-    :style="buttonStyle"
-    @click="onClick"
-    @mousedown.stop
+    :class="[handleClass, '!overflow-visible']"
   >
-    <LucidePlus class="h-3 w-3" />
-  </button>
+    <template v-if="showPlus">
+      <!-- Connecting line from handle dot to + button -->
+      <div class="nodrag pointer-events-none absolute left-1/2 top-1/2 h-[2px] w-[24px] -translate-y-1/2 bg-muted-foreground/40" />
+      <!-- + button (inside Handle so drag starts a connection) -->
+      <div
+        class="nodrag absolute left-[calc(50%+24px)] top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-all hover:scale-110 hover:border-foreground/30 hover:text-foreground"
+        @click="onClick"
+      >
+        <LucidePlus class="h-3 w-3" />
+      </div>
+    </template>
+  </Handle>
 </template>

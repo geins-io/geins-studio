@@ -117,6 +117,7 @@ i18n/locales/           # en.json, sv.json
 - **Page titles**: `usePageTitle()` auto-derives from breadcrumbs. Entity pages get names via `setCurrentTitle`.
 - **Navigation items**: Workspace-group items MUST have a `children` array — without it, the sidebar renders a flat button instead of the collapsible parent/child style. Parent and child labels must be distinct (domain ≠ entity, e.g. "Orchestrator" > "Workflows") or breadcrumbs/page title will duplicate. Icon strings are resolved dynamically by `useLucideIcon()` (any PascalCase Lucide icon name works — no manual import map needed). Use `import.meta.dev` to gate dev-only nav items (Vite tree-shakes at build time).
 - **Toasts**: `useToast` from `@/components/ui/toast/use-toast` (explicit import). `useEntityEdit` handles CRUD toasts — only add toasts for extra actions (status transitions, copy, etc.).
+- **Scratch dirs & dev watcher**: `.temp/`, `.agents/`, `.mint/` are scratch/notes areas that may contain cloned repos with their own `node_modules`. They are gitignored, but Vite/Nitro do not read `.gitignore`. Any new scratch dir at the repo root MUST be added to `nuxt.config.ts` → `ignore`, `vite.server.watch.ignored`, and `nitro.watchOptions.ignored`. Otherwise `pnpm dev` will throw `EMFILE: too many open files, watch` from `FSWatcher` even with raised `ulimit -n`.
 
 ## API & Repositories
 
@@ -148,6 +149,10 @@ Factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `en
 - **Architecture & golden path**: [ARCHITECTURE.md](ARCHITECTURE.md)
 - **Domain docs**: [orders](docs/domains/orders.md) | [customers](docs/domains/customers.md) | [products](docs/domains/products.md) | [pricing](docs/domains/pricing.md) | [account-auth](docs/domains/account-auth.md)
 
+## Branch specific knowledge
+
+- **Branch**: `feat/orchestrator-ux` | **Knowledge**: [.temp/orchestrator.md](.temp/orchestrator.md)
+
 ## Decision Log
 
 **2025-01-15: Skills-based agent architecture**
@@ -158,3 +163,6 @@ Every entity detail/edit page uses the same composable. Prevents divergence in u
 
 **2025-02-25: Nested documentation hierarchy (ARCHITECTURE.md → APP.md → DOMAIN.md)**
 Clara Philosophy: each altitude is self-contained. Architecture for the 10,000ft view, APP.md for composition/routing, DOMAIN.md for business rules, CLAUDE.md as the AI entry point.
+
+**2026-04-29: Scratch dirs explicitly excluded from Vite/Nitro watchers**
+`.temp/` (and other scratch dirs) may contain cloned reference repos with full `node_modules` trees. Vite/chokidar's recursive watch blew past macOS file-descriptor limits with `EMFILE`, even at `ulimit -n 65536`. Fix is config-level, not env-level: ignore patterns in `nuxt.config.ts` (top-level `ignore`, `vite.server.watch.ignored`, `nitro.watchOptions.ignored`). Watchman is not enough — Vite/chokidar does not auto-detect it.
