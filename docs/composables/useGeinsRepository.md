@@ -37,11 +37,13 @@ try {
 
 The composable exposes the following repository instances, each with their own set of methods for interacting with the Geins API. Read more about all basic CRUD methods in [API Repositories](/concepts/api-repositories).
 
-### `globalApi`
+### `accountApi`
+
+Unified repository for all account-scoped endpoints: account details, channel CRUD with scoped sub-resources, and global list data (currencies, languages, markets).
 
 #### `account`
 
-`globalApi.account`
+`accountApi.account`
 
 ```ts
 function get(): Promise<Account>;
@@ -49,15 +51,34 @@ function get(): Promise<Account>;
 
 #### `channel`
 
-`globalApi.channel`
+`accountApi.channel`
+
+Full entity CRUD plus scoped sub-resources per channel.
 
 ```ts
-function list(): Promise<Channel[]>;
+function get(id: string, options?: ChannelApiOptions): Promise<Channel>;
+function list(options?: ChannelApiOptions): Promise<ChannelListItem[]>;
+function create(data: ChannelCreate, options?: ChannelApiOptions): Promise<Channel>;
+function update(id: string, data: ChannelUpdate, options?: ChannelApiOptions): Promise<Channel>;
+```
+
+##### `id(channelId: string)`
+
+`accountApi.channel.id(channelId)`
+
+```ts
+market.list(): Promise<ChannelMarket[]>;
+payment.list(): Promise<ChannelPaymentMethod[]>;
+payment.get(paymentId: string): Promise<ChannelPaymentMethod>;
+mail.getTexts(mailType: string, language: string): Promise<ChannelMailType>;
+mail.updateTexts(mailType: string, data: Partial<ChannelMailSettings>): Promise<ChannelMailType>;
+mail.preview(mailType: string, language: string): Promise<unknown>;
+resetStorefrontSchema(): Promise<Channel>;
 ```
 
 #### `currency`
 
-`globalApi.currency`
+`accountApi.currency`
 
 ```ts
 function list(): Promise<Currency[]>;
@@ -65,10 +86,27 @@ function list(): Promise<Currency[]>;
 
 #### `language`
 
-`globalApi.language`
+`accountApi.language`
 
 ```ts
 function list(): Promise<Language[]>;
+function get(id: string): Promise<Language>;
+```
+
+#### `market`
+
+`accountApi.market`
+
+```ts
+function list(): Promise<Market[]>;
+```
+
+#### `payment`
+
+`accountApi.payment`
+
+```ts
+function list(): Promise<ChannelPaymentMethod[]>;
 ```
 
 ### `orderApi`
@@ -266,7 +304,7 @@ The composable follows the repository pattern where each domain has its own repo
 function useGeinsRepository(): UseGeinsRepositoryReturnType;
 
 interface UseGeinsRepositoryReturnType {
-  globalApi: ReturnType<typeof repo.global>;
+  accountApi: ReturnType<typeof repo.account>;
   orderApi: ReturnType<typeof repo.order>;
   productApi: ReturnType<typeof repo.product>;
   userApi: ReturnType<typeof repo.user>;

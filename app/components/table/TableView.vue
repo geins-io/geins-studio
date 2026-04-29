@@ -53,6 +53,7 @@ const props = withDefaults(
     initVisibilityState?: VisibilityState;
     enableExpanding?: boolean;
     getSubRows?: (row: TData) => TData[] | undefined;
+    dimInactiveRows?: boolean;
   }>(),
   {
     entityName: 'row',
@@ -64,6 +65,7 @@ const props = withDefaults(
     showEmptyActions: true,
     mode: TableMode.Advanced,
     enableExpanding: false,
+    dimInactiveRows: false,
     pinnedState: () => ({
       left: ['select'],
       right: ['actions'],
@@ -509,7 +511,7 @@ const hasSearchableColumns = computed(() => {
     "
   >
     <Table :style="maxHeight ? { maxHeight } : {}">
-      <TableHeader>
+      <TableHeader v-if="table.getRowModel().rows?.length">
         <TableRow
           v-for="headerGroup in table.getHeaderGroups()"
           :key="headerGroup.id"
@@ -548,6 +550,12 @@ const hasSearchableColumns = computed(() => {
               :class="
                 cn(
                   `${getCellClasses(cell.column, false, row.index === table.getRowModel().rows.length - 1)}`,
+                  props.dimInactiveRows &&
+                    (row.original as Record<string, unknown>).active ===
+                      false &&
+                    !cell.column.columnDef.meta?.skipInactiveDim
+                    ? 'opacity-50'
+                    : '',
                 )
               "
               :style="pinnedStyles(cell.column)"

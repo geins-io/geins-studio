@@ -1,10 +1,19 @@
 <script setup lang="ts">
-const _props = defineProps<{
+const props = defineProps<{
   label: string;
   description?: string;
+  disabled?: boolean;
+  disabledTooltip?: string;
+  icon?: string;
 }>();
 
+const showTooltip = computed(
+  () => !!props.disabled && !!props.disabledTooltip,
+);
+
 const checked = defineModel<boolean>('checked');
+
+const { resolveIcon } = useLucideIcon();
 
 const beforeEnter = (el: Element) => {
   (el as HTMLElement).style.height = '0';
@@ -30,19 +39,30 @@ const hasSlotContent = computed(() => !!slots.default);
 </script>
 <template>
   <div class="rounded-lg border p-4 text-sm">
-    <div class="flex flex-row items-center justify-between gap-4">
-      <ContentCardHeader
-        v-auto-animate
-        :title="label"
-        :description="description"
-        size="sm"
-        heading-level="h4"
-        class="p-px"
-      />
-      <div>
-        <Switch v-model="checked" />
-      </div>
-    </div>
+    <Item class="p-0">
+      <ItemMedia v-if="icon" variant="icon">
+        <component :is="resolveIcon(icon)" class="text-muted-foreground" />
+      </ItemMedia>
+      <ItemContent>
+        <ItemTitle>{{ label }}</ItemTitle>
+        <ItemDescription v-if="description">
+          {{ description }}
+        </ItemDescription>
+      </ItemContent>
+      <ItemActions>
+        <TooltipProvider v-if="showTooltip">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <span tabindex="0">
+                <Switch v-model="checked" :disabled="props.disabled" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{{ disabledTooltip }}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <Switch v-else v-model="checked" :disabled="props.disabled" />
+      </ItemActions>
+    </Item>
     <transition
       v-if="hasSlotContent"
       @before-enter="beforeEnter"

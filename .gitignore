@@ -22,8 +22,13 @@ logs
 .fleet
 .idea
 .claude
+.projects
+.mcp.json
 repomix.config.json
 .windsurfrules
+
+# Test coverage
+/coverage
 
 # Local env files
 .env
@@ -35,3 +40,4 @@ repomix.config.json
 docs/.vitepress/dist
 docs/.vitepress/cache
 
+package-lock.json

@@ -12,6 +12,7 @@ const props = withDefaults(
     defaultValue?: string | number;
     modelValue?: string | number;
     class?: HTMLAttributes['class'];
+    inputClass?: HTMLAttributes['class'];
     valid?: boolean;
     feedback?: string;
     description?: string;
@@ -38,6 +39,7 @@ const inputAttrs = computed(() => {
   const { class: _, ...attrs } = attributes;
   return attrs;
 });
+const isFileInput = computed(() => attributes.type === 'file');
 </script>
 
 <template>
@@ -47,7 +49,7 @@ const inputAttrs = computed(() => {
         'bg-input relative h-10 w-full rounded-lg border',
         props.size === 'sm' ? 'h-7' : '',
         props.size === 'md' ? 'h-9' : '',
-        $slots.valueDescriptor ? 'flex items-center' : '',
+        $slots.valueDescriptor || isFileInput ? 'flex items-center' : '',
         'focus-within:border-primary focus-within:outline-hidden',
         props.class,
       )
@@ -85,13 +87,16 @@ const inputAttrs = computed(() => {
       v-model="modelValue"
       :class="
         cn(
-          `bg-input flex h-full w-full ${valid ? '' : 'outline-destructive outline-2 outline-offset-2 outline-solid'} placeholder:text-muted-foreground text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-semibold focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50`,
+          `bg-input flex w-full ${isFileInput ? '' : 'h-full'} ${valid ? '' : 'outline-destructive outline-2 outline-offset-2 outline-solid'} placeholder:text-muted-foreground text-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-semibold focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50`,
           props.size === 'sm' ? 'text-xs' : '',
-          $slots.valueDescriptor
-            ? props.size === 'sm'
-              ? 'rounded-r-lg py-1 pr-3 pl-2'
-              : 'rounded-r-lg py-1 pr-3 pl-3'
-            : 'rounded-lg px-2 py-1 sm:px-3',
+          isFileInput
+            ? 'cursor-pointer rounded-lg px-2 sm:px-3'
+            : $slots.valueDescriptor
+              ? props.size === 'sm'
+                ? 'rounded-r-lg py-1 pr-3 pl-2'
+                : 'rounded-r-lg py-1 pr-3 pl-3'
+              : 'rounded-lg px-2 py-1 sm:px-3',
+          props.inputClass,
         )
       "
       v-bind="inputAttrs"

@@ -20,7 +20,12 @@ export type StatusBadgeKnownStatus =
   | 'finalized'
   | 'canceled'
   | 'draft'
-  | 'expired';
+  | 'expired'
+  | 'healthy'
+  | 'degraded'
+  | 'unhealthy'
+  | 'idle'
+  | 'enabled';
 
 /**
  * StatusBadge accepts booleans (active/inactive), known statuses with
@@ -85,7 +90,7 @@ export interface NavigationItem {
   label: string;
   href: string;
   active?: boolean;
-  icon?: unknown;
+  icon?: string;
   children?: NavigationItem[];
   hideFromMenu?: boolean;
 
@@ -93,7 +98,7 @@ export interface NavigationItem {
   roles?: string[]; // e.g., ['admin', 'editor', 'viewer']
   permissions?: string[]; // e.g., ['customer.read', 'products.write']
 
-  group?: string; // Group items together (e.g., 'sales', 'content')
+  group?: string; // Group items together (e.g., 'workspace', 'settings')
 
   // Child page pattern - defines dynamic child routes
   // Example: '/customer/account/:id' matches /customer/account/123
@@ -167,4 +172,9 @@ export interface Price {
   price?: string;
   currency: string;
   placeholder?: string;
+}
+
+export interface FlagText {
+  code: string;
+  label: string;
 }

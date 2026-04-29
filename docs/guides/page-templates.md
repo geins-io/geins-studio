@@ -12,11 +12,11 @@ File: `app/pages/{domain}/{entity}/list.vue`
 import type { ColumnOptions, StringKeyOf } from '#shared/types';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 // Import your domain entity types
-import type { {Entity}Response } from '#shared/types';
+import type { {Entity} } from '#shared/types';
 
 // Define local aliases for readability
-type Entity = {Entity}Response;
-type EntityList = {Entity}Response; // May extend with computed display fields
+type Entity = {Entity};
+type EntityList = {Entity}; // May extend with computed display fields
 
 // === 2. SCOPE & COMPOSABLES ===
 const scope = '{entity}-list';
@@ -162,7 +162,7 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { z } from 'zod';
 import type {
   {Entity}Base,
-  {Entity}Response,
+  {Entity},
   {Entity}Create,
   {Entity}Update,
 } from '#shared/types';
@@ -236,7 +236,7 @@ const {
   createEntity,
   updateEntity,
   deleteEntity,
-} = useEntityEdit<{Entity}Base, {Entity}Response, {Entity}Create, {Entity}Update>({
+} = useEntityEdit<{Entity}Base, {Entity}, {Entity}Create, {Entity}Update>({
   repository: {domain}Api,
   validationSchema,
   initialEntityData: entityBase,

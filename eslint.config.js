@@ -4,6 +4,9 @@ import tailwind from 'eslint-plugin-tailwindcss';
 const { eslintPluginPrettierRecommended } = pkg;
 
 export default createConfigForNuxt()
+  .prepend({
+    ignores: ['.agents/**'],
+  })
   .append(eslintPluginPrettierRecommended)
   .append(tailwind.configs['flat/recommended'])
   .append({
@@ -47,6 +50,19 @@ export default createConfigForNuxt()
           ],
           'newlines-between': 'never',
           alphabetize: { order: 'asc', caseInsensitive: true },
+        },
+      ],
+    },
+  })
+  .append({
+    files: ['shared/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['@/*', '~/*', '~/app/*', '@/components/*', '@/composables/*', '@/utils/*'], message: 'shared/ must not import from app/ — dependency direction violation.' },
+          ],
         },
       ],
     },

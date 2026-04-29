@@ -16,8 +16,11 @@ import {
   TableCellEditable,
   TableCellCurrency,
   TableCellProduct,
+  TableCellFlag,
+  TableCellSwitch,
   Button,
   LucideChevronRight,
+  LucideExternalLink,
 } from '#components';
 
 interface UseColumnsReturnType<T> {
@@ -81,7 +84,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
 
   // BASIC HEADER STYLE
   const basicHeaderTextStyle = 'text-xs font-semibold uppercase';
-  const minimalHeaderTextStyle = 'text-xs font-medium normal-case';
+  const minimalHeaderTextStyle = 'text-xs font-semibold normal-case';
   const getBasicHeaderStyle = (table: Table<T>) => {
     const mode = table?.options?.meta?.mode || TableMode.Advanced;
 
@@ -298,6 +301,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         sortableColumns?.[key] !== undefined ? sortableColumns[key] : sortable;
 
       let cellRenderer;
+      let skipInactiveDim = false;
       let headerRenderer = colSortable
         ? ({ table, column }: { table: Table<T>; column: Column<T> }) => {
             const mode = table?.options?.meta?.mode || TableMode.Advanced;
@@ -396,46 +400,135 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             });
           columnSize = { size: 40, minSize: 40, maxSize: 40 };
           break;
-        case 'link':
+        case 'icon': {
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
-            const linkConfig = options.linkColumns?.[key];
-            let fullEditUrl: string | undefined;
+            const iconConfig = options.iconColumns?.[key];
+            if (!iconConfig) {
+              return h('div', { class: getBasicCellStyle(table) });
+            }
 
-            if (linkConfig) {
-              if (linkConfig.idField) {
-                // Internal link with ID replacement
-                const idValue = String(row.getValue(linkConfig.idField));
-                if (idValue) {
-                  fullEditUrl = linkConfig.url.replace('{id}', idValue);
+            // Resolve icon: static or per-row via resolveIcon()
+            let iconComponent = iconConfig.icon;
+            let iconClass = 'size-4 shrink-0 text-muted-foreground';
+
+            if (iconConfig.resolveIcon) {
+              const resolved = iconConfig.resolveIcon(row.original);
+              if (resolved) {
+                iconComponent = resolved.icon;
+                if (resolved.class) {
+                  iconClass = `size-4 shrink-0 ${resolved.class}`;
                 }
-              } else {
-                // External link
-                fullEditUrl = linkConfig.url;
               }
             }
 
-            const text = String(row.getValue(key));
-
-            if (!fullEditUrl) {
-              // Fallback to plain text if no URL configuration
+            if (!iconComponent) {
+              const text = String(row.getValue(key) ?? '');
               return h('div', { class: getBasicCellStyle(table) }, text);
             }
 
-            const link = h(
-              NuxtLink,
+            const iconEl = h(
+              iconComponent as ReturnType<typeof defineComponent>,
               {
-                to: fullEditUrl,
-                class: cn(
-                  'underline underline-offset-2 font-semibold text-link hover:text-muted-foreground',
-                ),
-              },
-              {
-                default: () =>
-                  text.length > maxTextLength
-                    ? text.slice(0, maxTextLength) + '...'
-                    : text,
+                class: iconClass,
               },
             );
+
+            const text = String(row.getValue(key) ?? '');
+            const hasText = text.length > 0 && text !== 'undefined';
+
+            const children = hasText
+              ? [iconEl, h('span', { class: 'truncate' }, text)]
+              : [iconEl];
+
+            const cellClass = hasText
+              ? cn(getBasicCellStyle(table), 'gap-1.5')
+              : cn(getBasicCellStyle(table), 'justify-center');
+
+            if (iconConfig.url && iconConfig.idField) {
+              const original = row.original as Record<string, unknown>;
+              const idValue = String(
+                original[iconConfig.idField] ??
+                  row.getValue(iconConfig.idField),
+              );
+              const fullUrl = iconConfig.url.replace('{id}', idValue);
+              return h(
+                'div',
+                { class: cellClass },
+                h(
+                  NuxtLink,
+                  {
+                    to: fullUrl,
+                    class:
+                      'flex items-center gap-1.5 hover:text-foreground transition-colors',
+                  },
+                  { default: () => children },
+                ),
+              );
+            }
+
+            return h('div', { class: cellClass }, children);
+          };
+          break;
+        }
+        case 'link':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const linkConfig = options.linkColumns?.[key];
+            const text = String(row.getValue(key));
+            let fullUrl: string | undefined;
+            let isExternal = false;
+
+            if (linkConfig) {
+              isExternal = !!linkConfig.external;
+
+              if (linkConfig.useValueAsUrl) {
+                // Use the cell value itself as the URL
+                fullUrl = text || undefined;
+              } else if (linkConfig.idField && linkConfig.url) {
+                // Internal link with ID replacement
+                const idValue = String(row.getValue(linkConfig.idField));
+                if (idValue) {
+                  fullUrl = linkConfig.url.replace('{id}', idValue);
+                }
+              } else if (linkConfig.url) {
+                // Static URL
+                fullUrl = linkConfig.url;
+              }
+            }
+
+            if (!fullUrl || text === '–' || text === '-') {
+              // Fallback to plain text if no URL resolved or value is a placeholder
+              return h('div', { class: getBasicCellStyle(table) }, text);
+            }
+
+            const displayText =
+              text.length > maxTextLength
+                ? text.slice(0, maxTextLength) + '...'
+                : text;
+
+            const linkClass = isExternal ? 'external-link-text' : 'link-text';
+
+            const link = isExternal
+              ? h(
+                  'a',
+                  {
+                    href: fullUrl,
+                    target: '_blank',
+                    rel: 'noopener noreferrer',
+                    class: linkClass,
+                  },
+                  [
+                    displayText,
+                    h(LucideExternalLink, {
+                      class:
+                        'inline-block ml-0.5 size-3 align-baseline opacity-60',
+                    }),
+                  ],
+                )
+              : h(
+                  NuxtLink,
+                  { to: fullUrl, class: linkClass },
+                  { default: () => displayText },
+                );
 
             if (text.length > maxTextLength) {
               return h(
@@ -609,6 +702,38 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
           columnSize = { size: 134, minSize: 134, maxSize: 134 };
           break;
         }
+        case 'flag':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value: FlagText = row.getValue(key);
+            return h(TableCellFlag, {
+              class: getBasicCellStyle(table),
+              ...value,
+              ...cellProps,
+            });
+          };
+          break;
+        case 'switch':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value: boolean = row.getValue(key);
+            return h(
+              'div',
+              { class: getBasicCellStyle(table) },
+              h(TableCellSwitch, {
+                value,
+                onChange: (
+                  cellProps?.onChange as
+                    | ((row: Row<T>) => (value: boolean) => void)
+                    | undefined
+                )?.(row),
+                disabled: (
+                  cellProps?.disabled as ((row: Row<T>) => boolean) | undefined
+                )?.(row),
+              }),
+            );
+          };
+          columnSize = { size: 80, minSize: 80, maxSize: 80 };
+          skipInactiveDim = true;
+          break;
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
             const value = row.getValue(key);
@@ -651,7 +776,7 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
         header: headerRenderer,
         cell: cellRenderer,
         enableSorting: sortable,
-        meta: { type: columnType, title: columnTitle },
+        meta: { type: columnType, title: columnTitle, skipInactiveDim },
         ...columnSize,
       });
     });

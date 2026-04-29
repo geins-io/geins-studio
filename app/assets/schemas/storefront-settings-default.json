@@ -1,0 +1,484 @@
+{
+  "baseSettings": {
+    "label": "Base settings",
+    "sections": [
+      {
+        "key": "storefrontMode",
+        "title": "Storefront mode",
+        "description": "Choose if you want your storefront to enable direct purchases of your products, or work as a product catalogue",
+        "fields": [
+          {
+            "key": "mode",
+            "type": "radio-cards",
+            "label": "Storefront mode",
+            "default": "commerce",
+            "options": [
+              {
+                "value": "commerce",
+                "label": "Commerce",
+                "description": "Enables visitors to purchase your products directly in the page. With buy buttons and checkout flow.",
+                "icon": "ShoppingCart"
+              },
+              {
+                "value": "catalogue",
+                "label": "Catalogue",
+                "description": "Shows all your products, but without commerce functionality such as buy buttons and checkout.",
+                "icon": "BookOpenText"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "accessRequirements",
+        "title": "Access requirements",
+        "description": "Define which actions require login. These settings are global and may be overridden by roles or permissions.",
+        "icon": "UserLock",
+        "fields": [
+          {
+            "key": "features.priceVisibility",
+            "type": "boolean-choice",
+            "label": "Price visibility",
+            "description": "Controls whether prices are shown on the storefront.",
+            "icon": "DollarSign",
+            "default": { "enabled": true, "access": "authenticated" },
+            "choice": {
+              "key": "access",
+              "label": "Who can see prices",
+              "type": "radio",
+              "options": [
+                { "value": "authenticated", "label": "Authenticated users only" },
+                { "value": "all", "label": "All users" }
+              ]
+            }
+          },
+          {
+            "key": "features.orderPlacement",
+            "type": "boolean-choice",
+            "label": "Order placement",
+            "description": "Controls whether orders can be placed from the storefront.",
+            "icon": "ShoppingCart",
+            "default": { "enabled": true, "access": "authenticated" },
+            "choice": {
+              "key": "access",
+              "label": "Who can place orders",
+              "type": "radio",
+              "options": [
+                { "value": "authenticated", "label": "Authenticated users only" },
+                { "value": "all", "label": "All users" }
+              ]
+            }
+          },
+          {
+            "key": "features.stockStatus",
+            "type": "boolean-choice",
+            "label": "Stock status",
+            "description": "Controls whether stock levels are visible on the storefront.",
+            "icon": "ChartColumn",
+            "default": { "enabled": false, "access": "authenticated" },
+            "choice": {
+              "key": "access",
+              "label": "Who can see stock levels",
+              "type": "radio",
+              "options": [
+                { "value": "authenticated", "label": "Authenticated users only" },
+                { "value": "all", "label": "All users" }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "layoutOptions": {
+    "label": "Layout options",
+    "sections": [
+      {
+        "key": "branding",
+        "title": "Branding",
+        "description": "Upload your logo and favicon.",
+        "icon": "Image",
+        "fields": [
+          {
+            "key": "branding.logoUrl",
+            "type": "image",
+            "label": "Logotype",
+            "description": "PNG, JPEG, SVG, or WebP. Maximum file size: 5 MB.",
+            "accept": "image/png,image/jpeg,image/svg+xml,image/webp",
+            "maxSizeMB": 5,
+            "columns": 2
+          },
+          {
+            "key": "branding.faviconUrl",
+            "type": "image",
+            "label": "Favicon",
+            "description": "Only .ico files accepted. Maximum file size: 1 MB.",
+            "accept": ".ico,image/x-icon,image/vnd.microsoft.icon",
+            "maxSizeMB": 1,
+            "columns": 2
+          }
+        ]
+      },
+      {
+        "key": "borderRadius",
+        "title": "Corner style",
+        "description": "Choose between rounded or square corners for interface elements.",
+        "icon": "SquareArrowUpRight",
+        "fields": [
+          {
+            "key": "theme.radius",
+            "type": "radio-cards",
+            "label": "Corner style",
+            "default": "0",
+            "options": [
+              {
+                "value": "0",
+                "label": "Square",
+                "description": "Gives interface elements square corners.",
+                "icon": "Square"
+              },
+              {
+                "value": "0.375rem",
+                "label": "Round",
+                "description": "Gives interface elements rounded corners.",
+                "icon": "SquareRoundCorner"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "key": "fonts",
+        "title": "Font settings",
+        "description": "Choose between rounded or square corners for interface elements.",
+        "icon": "FileTypeCorner",
+        "fields": [
+          {
+            "key": "theme.typography.headingFontFamily",
+            "type": "font",
+            "label": "Headings",
+            "description": "Used for selected heading elements used on pages and content",
+            "placeholder": "Geist (template default)",
+            "default": "Hanuman",
+            "columns": 2
+          },
+          {
+            "key": "theme.typography.fontFamily",
+            "type": "font",
+            "label": "Body text",
+            "description": "Applied to body text, descriptions, and supporting content.",
+            "placeholder": "Geist (template default)",
+            "default": "Geist",
+            "columns": 2
+          }
+        ]
+      },
+      {
+        "key": "themeColors",
+        "title": "Theme colors",
+        "description": "Set background and text colors for selected interface elements.",
+        "icon": "Palette",
+        "fields": [
+          {
+            "key": "themeColors.buttons",
+            "type": "sub-section",
+            "label": "Buttons",
+            "description": "Set background and text colors for selected interface elements.",
+            "columns": 2,
+            "children": [
+              {
+                "key": "themeColors.buttons.general",
+                "type": "sub-section",
+                "label": "General buttons",
+                "children": [
+                  {
+                    "key": "theme.colors.buttonBackground",
+                    "type": "color",
+                    "label": "Background",
+                    "columns": 2,
+                    "default": "#0E7490"
+                  },
+                  {
+                    "key": "theme.colors.buttonText",
+                    "type": "color",
+                    "label": "Text",
+                    "columns": 2,
+                    "default": "#FFFFFF"
+                  }
+                ]
+              },
+              {
+                "key": "themeColors.buttons.purchase",
+                "type": "sub-section",
+                "label": "Purchase buttons",
+                "children": [
+                  {
+                    "key": "theme.colors.buttonPurchaseBackground",
+                    "type": "color",
+                    "label": "Background",
+                    "columns": 2,
+                    "default": "#0E7490"
+                  },
+                  {
+                    "key": "theme.colors.buttonPurchaseText",
+                    "type": "color",
+                    "label": "Text",
+                    "columns": 2,
+                    "default": "#FFFFFF"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "key": "themeColors.siteBackground",
+            "type": "sub-section",
+            "label": "Site background",
+            "description": "Set background and text colors for selected interface elements.",
+            "children": [
+              {
+                "key": "theme.colors.siteBackground",
+                "type": "radio-cards",
+                "label": "Site background",
+                "default": "#FFFFFF",
+                "options": [
+                  {
+                    "value": "#FFFFFF",
+                    "label": "White",
+                    "type": "color",
+                    "description": "The background of your storefront will be white"
+                  },
+                  {
+                    "value": "#FAFAFA",
+                    "label": "Light gray",
+                    "type": "color",
+                    "description": "The background of your storefront will be light gray"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "key": "themeColors.navBarBackground",
+            "type": "sub-section",
+            "label": "Navigation bar background",
+            "description": "Set background and text colors for selected interface elements.",
+            "children": [
+              {
+                "key": "theme.colors.navBarBackground",
+                "type": "radio-cards",
+                "label": "Navigation bar background",
+                "default": "#F5F5F5",
+                "options": [
+                  {
+                    "value": "#FFFFFF",
+                    "label": "White",
+                    "type": "color",
+                    "description": "The background of your navigation bar will be white"
+                  },
+                  {
+                    "value": "#F5F5F5",
+                    "label": "Light gray",
+                    "type": "color",
+                    "description": "The background of your navigation bar will be light gray"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "key": "themeColors.topBar",
+            "type": "sub-section",
+            "label": "Site top bar",
+            "description": "Set background and text colors for selected interface elements.",
+            "children": [
+              {
+                "key": "theme.colors.topBarBackground",
+                "type": "color",
+                "label": "Background",
+                "columns": 4,
+                "default": "#0E7490"
+              },
+              {
+                "key": "theme.colors.topBarText",
+                "type": "color",
+                "label": "Text",
+                "columns": 4,
+                "default": "#FFFFFF"
+              }
+            ]
+          },
+          {
+            "key": "themeColors.footer",
+            "type": "sub-section",
+            "label": "Footer",
+            "description": "Set background and text colors for selected interface elements.",
+            "children": [
+              {
+                "key": "theme.colors.footerBackground",
+                "type": "color",
+                "label": "Background",
+                "columns": 4,
+                "default": "#F5F5F5"
+              },
+              {
+                "key": "theme.colors.footerText",
+                "type": "color",
+                "label": "Text",
+                "columns": 4,
+                "default": "#0A0A0A"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "seo": {
+    "label": "SEO",
+    "sections": [
+      {
+        "key": "seoAndAnalytics",
+        "title": "SEO & analytics",
+        "description": "Default metadata, robots policy, and analytics identifiers used across the storefront.",
+        "icon": "Search",
+        "fields": [
+          {
+            "key": "seo.defaultTitle",
+            "type": "string",
+            "label": "Default title",
+            "description": "Used when a page does not provide its own title.",
+            "default": "",
+            "columns": 2
+          },
+          {
+            "key": "seo.titleTemplate",
+            "type": "string",
+            "label": "Title template",
+            "description": "Pattern applied to page titles, e.g. \"%s | My Store\".",
+            "placeholder": "%s | My Store",
+            "default": "",
+            "columns": 2
+          },
+          {
+            "key": "seo.defaultDescription",
+            "type": "textarea",
+            "label": "Default description",
+            "description": "Recommended max ~160 characters. Used as the meta description fallback.",
+            "default": ""
+          },
+          {
+            "key": "seo.defaultKeywords",
+            "type": "string",
+            "label": "Default keywords",
+            "description": "Comma-separated list of fallback meta keywords.",
+            "default": ""
+          },
+          {
+            "key": "seo.robots",
+            "type": "radio",
+            "label": "Robots policy",
+            "description": "Controls the default `robots` meta tag value across the storefront.",
+            "default": "index, follow",
+            "options": [
+              { "value": "index, follow", "label": "Index, follow" },
+              { "value": "noindex, nofollow", "label": "No index, no follow" }
+            ]
+          },
+          {
+            "key": "seo.googleAnalyticsId",
+            "type": "string",
+            "label": "Google Analytics ID",
+            "placeholder": "G-XXXXXXXXXX",
+            "default": "",
+            "columns": 2
+          },
+          {
+            "key": "seo.googleTagManagerId",
+            "type": "string",
+            "label": "Google Tag Manager ID",
+            "placeholder": "GTM-XXXXXX",
+            "default": "",
+            "columns": 2
+          },
+          {
+            "key": "seo.verification",
+            "type": "string",
+            "label": "Search console verification",
+            "description": "Verification token (e.g. Google Search Console meta value).",
+            "default": ""
+          }
+        ]
+      }
+    ]
+  },
+  "contact": {
+    "label": "Contact",
+    "sections": [
+      {
+        "key": "contact",
+        "title": "Contact details",
+        "description": "Public contact information shown on the storefront.",
+        "icon": "Phone",
+        "fields": [
+          {
+            "key": "contactDetails",
+            "type": "sub-section",
+            "label": "Contact details",
+            "children": [
+              {
+                "key": "contact.email",
+                "type": "string",
+                "label": "Email",
+                "placeholder": "hello@example.com",
+                "default": "",
+                "columns": 2
+              },
+              {
+                "key": "contact.phone",
+                "type": "string",
+                "label": "Phone",
+                "placeholder": "+46 …",
+                "default": "",
+                "columns": 2
+              }
+            ]
+          },
+          {
+            "key": "contactAddress",
+            "type": "sub-section",
+            "label": "Address",
+            "children": [
+              {
+                "key": "contact.address.street",
+                "type": "string",
+                "label": "Street",
+                "default": ""
+              },
+              {
+                "key": "contact.address.postalCode",
+                "type": "string",
+                "label": "Postal code",
+                "default": "",
+                "columns": 2
+              },
+              {
+                "key": "contact.address.city",
+                "type": "string",
+                "label": "City",
+                "default": "",
+                "columns": 2
+              },
+              {
+                "key": "contact.address.country",
+                "type": "string",
+                "label": "Country",
+                "default": ""
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

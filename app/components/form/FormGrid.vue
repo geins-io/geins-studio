@@ -20,21 +20,21 @@ const props = withDefaults(
 const gridColsClass = computed(() => {
   switch (props.design) {
     case '1+1+2':
-      return 'grid-cols-12 [&>*:nth-child(1)]:col-span-3 [&>*:nth-child(2)]:col-span-3 [&>*:nth-child(3)]:col-span-6';
+      return 'grid-cols-12 [&>*:nth-child(3n+1)]:col-span-3 [&>*:nth-child(3n+2)]:col-span-3 [&>*:nth-child(3n)]:col-span-6';
     case '2+1+1':
-      return 'grid-cols-12 [&>*:nth-child(1)]:col-span-6 [&>*:nth-child(2)]:col-span-3 [&>*:nth-child(3)]:col-span-3';
+      return 'grid-cols-12 [&>*:nth-child(3n+1)]:col-span-6 [&>*:nth-child(3n+2)]:col-span-3 [&>*:nth-child(3n)]:col-span-3';
     case '2+2':
-      return 'grid-cols-12 [&>*:nth-child(1)]:col-span-6 [&>*:nth-child(2)]:col-span-6';
+      return 'grid-cols-12 [&>*]:col-span-6';
     case '1+1+1+1':
-      return 'grid-cols-12 [&>*:nth-child(1)]:col-span-3 [&>*:nth-child(2)]:col-span-3 [&>*:nth-child(3)]:col-span-3 [&>*:nth-child(4)]:col-span-3';
+      return 'grid-cols-12 [&>*]:col-span-3';
     case '1+1+1':
-      return 'grid-cols-12 [&>*:nth-child(1)]:col-span-4 [&>*:nth-child(2)]:col-span-4 [&>*:nth-child(3)]:col-span-4';
+      return 'grid-cols-12 [&>*]:col-span-4';
     case '1+2':
-      return 'grid-cols-12 [&>*:nth-child(1)]:col-span-4 [&>*:nth-child(2)]:col-span-8';
+      return 'grid-cols-12 [&>*:nth-child(2n+1)]:col-span-4 [&>*:nth-child(2n)]:col-span-8';
     case '2+1':
-      return 'grid-cols-12 [&>*:nth-child(1)]:col-span-8 [&>*:nth-child(2)]:col-span-4';
+      return 'grid-cols-12 [&>*:nth-child(2n+1)]:col-span-8 [&>*:nth-child(2n)]:col-span-4';
     case '1+1':
-      return 'grid-cols-12 [&>*:nth-child(1)]:col-span-6 [&>*:nth-child(2)]:col-span-6';
+      return 'grid-cols-12 [&>*]:col-span-6';
     default:
       return 'grid-cols-12 [&>*]:col-span-12';
   }

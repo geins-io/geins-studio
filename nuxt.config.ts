@@ -30,7 +30,14 @@ export default defineNuxtConfig({
     componentDir: './app/components/ui',
   },
 
-  css: ['~/assets/css/main.css'],
+  imports: {
+    dirs: [
+      'composables',
+      'composables/**',
+    ],
+  },
+
+  css: ['~/assets/css/main.css', 'flag-icons/css/flag-icons.min.css'],
 
   vite: {
     // @ts-expect-error Type conflict: @tailwindcss/vite uses vite 7 types, vitepress pulls in vite 5 types
@@ -94,6 +101,7 @@ export default defineNuxtConfig({
       baseUrl: getBaseUrl(),
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
+      featureOrchestrator: process.env.NUXT_PUBLIC_FEATURE_ORCHESTRATOR === 'true',
     },
     private: {
       authSecret: process.env.AUTH_SECRET,

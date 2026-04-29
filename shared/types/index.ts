@@ -1,7 +1,9 @@
 export * from './Account';
 export * from './Api';
 export * from './Auth';
+export * from './Channel';
 export * from './Global';
+export * from './Storefront';
 export * from './Order';
 export * from './Quotation';
 export * from './Table';
@@ -10,3 +12,4 @@ export * from './Product';
 export * from './Utils';
 export * from './Customer';
 export * from './Changelog';
+export * from './Workflow';

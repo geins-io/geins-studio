@@ -1,6 +1,7 @@
 import type { StringKeyOf } from './Global';
 import '@tanstack/vue-table';
 import type { RowData } from '@tanstack/vue-table';
+import type { Component } from 'vue';
 
 export type TableRowAction = 'edit' | 'copy' | 'delete';
 
@@ -23,6 +24,7 @@ export type ColumnType =
   | 'date'
   | 'number'
   | 'image'
+  | 'icon'
   | 'link'
   | 'select'
   | 'actions'
@@ -32,6 +34,8 @@ export type ColumnType =
   | 'status'
   | 'tooltip'
   | 'product'
+  | 'flag'
+  | 'switch'
   | `editable-${EditableColumnType}`;
 
 export type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
@@ -39,7 +43,20 @@ export type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
 export type ColumnKey<T> = keyof T | ColumnType;
 
 export interface LinkColumnConfig<T> {
-  url: string;
+  url?: string;
+  idField?: StringKeyOf<T>;
+  /** Use the cell value itself as the URL */
+  useValueAsUrl?: boolean;
+  /** Render as an external link (opens in new tab, shows external icon) */
+  external?: boolean;
+}
+
+export interface IconColumnConfig<T> {
+  /** Static icon for all rows */
+  icon?: Component;
+  /** Derive icon + optional CSS class from the row data */
+  resolveIcon?: (row: T) => { icon: Component; class?: string } | undefined;
+  url?: string;
   idField?: StringKeyOf<T>;
 }
 
@@ -53,6 +70,7 @@ export interface ColumnOptions<T> {
   includeColumns?: StringKeyOf<T>[];
   columnCellProps?: Partial<Record<StringKeyOf<T>, Record<string, unknown>>>;
   linkColumns?: Partial<Record<StringKeyOf<T>, LinkColumnConfig<T>>>;
+  iconColumns?: Partial<Record<StringKeyOf<T>, IconColumnConfig<T>>>;
   maxTextLength?: number;
 }
 
@@ -61,6 +79,7 @@ declare module '@tanstack/vue-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
     title?: string;
     type: ColumnType;
+    skipInactiveDim?: boolean;
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData extends RowData> {

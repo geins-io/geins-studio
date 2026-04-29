@@ -6,21 +6,6 @@ import {
   SIDEBAR_COOKIE_NAME,
   SIDEBAR_COOKIE_MAX_AGE,
 } from '@/components/ui/sidebar/utils';
-import {
-  LucideLayoutDashboard,
-  LucideChartLine,
-  LucideTag,
-  LucideBrush,
-  LucideUsers,
-  LucideWarehouse,
-  LucideLayers,
-  LucideWallet,
-  LucideBuilding2,
-  LucideImport,
-  LucideSettings,
-  LucideShieldCheck,
-  LucidePackage,
-} from '#components';
 
 const { state, isMobile, setOpenMobile } = useSidebar();
 
@@ -37,22 +22,14 @@ const handleNavClick = () => {
   }
 };
 
-// Icon component mapping
-const iconComponents = {
-  LayoutDashboard: LucideLayoutDashboard,
-  ChartLine: LucideChartLine,
-  Tag: LucideTag,
-  Brush: LucideBrush,
-  Users: LucideUsers,
-  Warehouse: LucideWarehouse,
-  Layers: LucideLayers,
-  Wallet: LucideWallet,
-  Building2: LucideBuilding2,
-  Import: LucideImport,
-  Settings: LucideSettings,
-  ShieldCheck: LucideShieldCheck,
-  Package: LucidePackage,
-};
+const { t } = useI18n();
+const { resolveIcon } = useLucideIcon();
+
+// Group label translations keyed by navigation group
+const groupLabels = computed<Record<string, string>>(() => ({
+  workspace: t('navigation.workspace'),
+  settings: t('navigation.settings'),
+}));
 
 // Process navigation items to include icon components
 const navigationMenu = computed(() => {
@@ -60,10 +37,21 @@ const navigationMenu = computed(() => {
     .filter((item) => !item.hideFromMenu)
     .map((item) => ({
       ...item,
-      iconComponent: item.icon
-        ? iconComponents[item.icon as keyof typeof iconComponents]
-        : undefined,
+      iconComponent: resolveIcon(item.icon),
     }));
+});
+
+// Group navigation items by their `group` property, preserving insertion order
+const groupedNavigation = computed(() => {
+  const groups = new Map<string, typeof navigationMenu.value>();
+  for (const item of navigationMenu.value) {
+    const key = item.group || 'workspace';
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key)!.push(item);
+  }
+  return groups;
 });
 
 const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
@@ -88,12 +76,17 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
 
     <!-- Main Navigation Content -->
     <SidebarContent>
-      <SidebarGroup>
-        <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+      <SidebarGroup
+        v-for="[groupKey, items] in groupedNavigation"
+        :key="groupKey"
+      >
+        <SidebarGroupLabel>{{
+          groupLabels[groupKey] ?? groupKey
+        }}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            <SidebarMenuItem v-for="item in navigationMenu" :key="item.label">
-              <!-- Item with children (collapsible) :default-open="isItemOpen(item)" -->
+            <SidebarMenuItem v-for="item in items" :key="item.label">
+              <!-- Item with children (collapsible) -->
               <Collapsible
                 v-if="item.children?.length"
                 :default-open="true"
@@ -101,7 +94,11 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
                 class="group/collapsible"
               >
                 <CollapsibleTrigger as-child>
-                  <SidebarMenuButton class="w-full" as-child>
+                  <SidebarMenuButton
+                    class="w-full"
+                    :tooltip="state === 'collapsed' ? item.label : undefined"
+                    as-child
+                  >
                     <NuxtLink
                       :to="
                         state === 'collapsed' && item.children?.length
