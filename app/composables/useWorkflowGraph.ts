@@ -75,7 +75,7 @@ export type FlowEdge = {
   };
 };
 
-const LEVEL_X = 320;
+const LEVEL_X = 400;
 const ROW_Y = 300;
 const KNOWN_VUEFLOW_TYPES = new Set([
   'trigger',

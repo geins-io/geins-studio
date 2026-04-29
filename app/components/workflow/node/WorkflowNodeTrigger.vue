@@ -77,7 +77,7 @@ const subtitle = computed(() => {
 <template>
   <div
     class="bg-background flex min-w-[230px] items-stretch overflow-hidden rounded-l-full rounded-r-xl border-2 pr-3 shadow-md transition-all"
-    :class="selected ? 'border-green-500 ring-2 ring-green-500/20' : 'border-green-500/50'"
+    :class="selected ? 'border-green-500 ring-[6px] ring-green-500/20' : 'border-green-500/50'"
   >
     <div class="flex w-14 shrink-0 items-center justify-center bg-green-500/10 text-green-600 dark:text-green-400">
       <component :is="IconComponent" class="h-6 w-6" />

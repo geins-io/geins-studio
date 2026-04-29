@@ -19,10 +19,10 @@ const workflowName = computed(() => props.data.config?.workflowName || props.dat
 <template>
   <div
     class="bg-background min-w-[180px] rounded-lg border-2 px-4 py-3 shadow-md transition-all"
-    :class="selected ? 'border-teal-500 ring-2 ring-teal-500/20' : 'border-teal-500/50'"
+    :class="selected ? 'border-teal-500 ring-[6px] ring-teal-500/20' : 'border-teal-500/50'"
   >
     <!-- Input handle -->
-    <WorkflowHandleInput :style="{ top: '25%' }" handle-class="!border-background !h-[15px] !w-[15px] !border-2 !bg-teal-500" />
+    <WorkflowHandleInput handle-class="!border-background !h-[15px] !w-[15px] !border-2 !bg-teal-500" />
 
     <div class="flex items-center gap-3">
       <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-500/10 text-teal-500">
