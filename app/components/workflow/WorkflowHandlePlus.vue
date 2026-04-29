@@ -46,15 +46,15 @@ const onClick = (event: MouseEvent) => {
       <div
         v-if="!isConnected"
         v-show="isPlusVisible"
-        class="pointer-events-none absolute left-1/2 top-1/2 flex -translate-y-1/2 items-center"
+        class="pointer-events-none absolute top-1/2 left-1/2 flex -translate-y-1/2 items-center"
         @mouseenter="isHovered = true"
         @mouseleave="isHovered = false"
       >
         <!-- Connecting line from handle dot to + button -->
-        <div class="h-[2px] w-[24px] bg-muted-foreground/40" />
+        <div class="bg-muted-foreground/40 h-[2px] w-[24px]" />
         <!-- + button -->
         <div
-          class="nodrag pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-all hover:scale-110 hover:border-foreground/30 hover:text-foreground"
+          class="nodrag bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border shadow-sm transition-all hover:scale-110"
           @click="onClick"
         >
           <LucidePlus class="h-3 w-3" />
