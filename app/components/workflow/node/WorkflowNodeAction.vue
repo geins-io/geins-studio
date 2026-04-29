@@ -53,7 +53,7 @@ const IconComponent = computed(() => {
   <div class="bg-background flex min-h-[100px] min-w-[180px] items-center rounded-lg border-2 px-4 py-3 shadow-md transition-all"
     :class="selected ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-blue-500/50'">
     <!-- Input handle -->
-    <Handle type="target" :position="Position.Left" class="!border-background !h-3 !w-3 !border-2 !bg-blue-500" />
+    <Handle type="target" :position="Position.Left" :style="{ top: '25%' }" class="!border-background !h-[15px] !w-[15px] !border-2 !bg-blue-500" />
 
     <div class="flex items-center gap-3">
       <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">

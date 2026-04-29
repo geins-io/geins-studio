@@ -28,7 +28,7 @@ const iterateDisplay = computed(() => {
     class="bg-background flex min-h-[100px] min-w-[180px] items-center rounded-lg border-2 px-4 py-3 shadow-md transition-all"
     :class="selected ? 'border-purple-500 ring-2 ring-purple-500/20' : 'border-purple-500/50'">
     <!-- Input handle -->
-    <Handle type="target" :position="Position.Left" class="!border-background !h-3 !w-3 !border-2 !bg-purple-500" />
+    <Handle type="target" :position="Position.Left" :style="{ top: '25%' }" class="!border-background !h-[15px] !w-[15px] !border-2 !bg-purple-500" />
 
     <div class="flex items-center gap-3">
       <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
