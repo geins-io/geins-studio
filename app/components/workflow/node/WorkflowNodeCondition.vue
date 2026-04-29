@@ -21,7 +21,8 @@ const props = defineProps<{
     <Handle
       type="target"
       :position="Position.Left"
-      class="!border-background !h-3 !w-3 !border-2 !bg-yellow-500"
+      :style="{ top: '25%' }"
+      class="!border-background !h-[15px] !w-[15px] !border-2 !bg-yellow-500"
     />
 
     <div class="flex items-center gap-3">
