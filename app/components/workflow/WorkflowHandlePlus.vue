@@ -43,7 +43,7 @@ const onClick = (event: MouseEvent) => {
   <!-- Connecting line from handle to + button -->
   <div
     v-if="!isConnected"
-    class="absolute right-0 h-px w-[22px] -translate-y-1/2 translate-x-[6px] bg-border"
+    class="absolute -right-[24px] h-[2px] w-[24px] -translate-y-1/2 bg-muted-foreground/40"
     :style="buttonStyle"
   />
   <button
