@@ -25,15 +25,10 @@ const iterateDisplay = computed(() => {
 
 <template>
   <div
-    class="bg-background min-w-[180px] rounded-lg border-2 px-4 py-3 shadow-md transition-all"
-    :class="selected ? 'border-purple-500 ring-2 ring-purple-500/20' : 'border-purple-500/50'"
-  >
+    class="bg-background flex min-h-[100px] min-w-[180px] items-center rounded-lg border-2 px-4 py-3 shadow-md transition-all"
+    :class="selected ? 'border-purple-500 ring-2 ring-purple-500/20' : 'border-purple-500/50'">
     <!-- Input handle -->
-    <Handle
-      type="target"
-      :position="Position.Left"
-      class="!border-background !h-3 !w-3 !border-2 !bg-purple-500"
-    />
+    <Handle type="target" :position="Position.Left" class="!border-background !h-3 !w-3 !border-2 !bg-purple-500" />
 
     <div class="flex items-center gap-3">
       <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
@@ -51,24 +46,18 @@ const iterateDisplay = computed(() => {
     </div>
 
     <!-- Loop body output handle -->
-    <WorkflowHandlePlus
-      handle-id="loop"
-      :style="{ top: '30%' }"
-      handle-class="!border-background !h-3 !w-3 !border-2 !bg-purple-500"
-    />
+    <WorkflowHandlePlus handle-id="loop" :style="{ top: '30%' }" :line-length="48"
+      handle-class="!border-background !h-3 !w-3 !border-2 !bg-purple-500" />
 
     <!-- Done output handle -->
-    <WorkflowHandlePlus
-      handle-id="done"
-      :style="{ top: '70%' }"
-      handle-class="!border-background !h-3 !w-3 !border-2 !bg-gray-400"
-    />
+    <WorkflowHandlePlus handle-id="done" :style="{ top: '70%' }" :line-length="48"
+      handle-class="!border-background !h-3 !w-3 !border-2 !bg-gray-400" />
 
     <!-- Labels for handles -->
-    <div class="absolute top-[25%] -right-1 translate-x-full px-1 text-[10px] font-medium text-purple-500">
+    <div class="absolute top-[25%] -right-1 translate-x-full px-3 text-[10px] font-medium text-purple-500">
       Each
     </div>
-    <div class="absolute top-[65%] -right-1 translate-x-full px-1 text-[10px] font-medium text-gray-400">
+    <div class="absolute top-[65%] -right-1 translate-x-full px-3 text-[10px] font-medium text-gray-400">
       Done
     </div>
   </div>

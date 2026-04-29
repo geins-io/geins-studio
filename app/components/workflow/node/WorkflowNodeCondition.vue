@@ -14,7 +14,7 @@ const props = defineProps<{
 
 <template>
   <div
-    class="bg-background min-w-[180px] rounded-lg border-2 px-4 py-3 shadow-md transition-all"
+    class="bg-background flex min-h-[100px] min-w-[180px] flex-col justify-center rounded-lg border-2 px-4 py-3 shadow-md transition-all"
     :class="selected ? 'border-yellow-500 ring-2 ring-yellow-500/20' : 'border-yellow-500/50'"
   >
     <!-- Input handle -->

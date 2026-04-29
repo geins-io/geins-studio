@@ -6,8 +6,10 @@ const props = withDefaults(defineProps<{
   position?: Position
   style?: Record<string, string>
   handleClass?: string
+  lineLength?: number
 }>(), {
   position: Position.Right,
+  lineLength: 24,
 })
 
 const { id: nodeId } = useNode()
@@ -51,7 +53,7 @@ const onClick = (event: MouseEvent) => {
         @mouseleave="isHovered = false"
       >
         <!-- Connecting line from handle dot to + button -->
-        <div class="bg-muted-foreground/40 h-[2px] w-[24px]" />
+        <div class="bg-muted-foreground/40 h-[2px]" :style="{ width: `${lineLength}px` }" />
         <!-- + button -->
         <div
           class="nodrag bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border shadow-sm transition-all hover:scale-110"
