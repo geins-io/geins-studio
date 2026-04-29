@@ -23,7 +23,9 @@ const isConnected = computed(() =>
 
 const isConnecting = computed(() => connectionStartHandle.value !== null)
 
-const showPlus = computed(() => !isConnected.value && !isConnecting.value)
+const isHovered = ref(false)
+
+const isPlusVisible = computed(() => !isConnecting.value || isHovered.value)
 
 const onClick = (event: MouseEvent) => {
   event.stopPropagation()
@@ -40,16 +42,38 @@ const onClick = (event: MouseEvent) => {
     :style="style"
     :class="[handleClass, '!overflow-visible']"
   >
-    <template v-if="showPlus">
-      <!-- Connecting line from handle dot to + button -->
-      <div class="nodrag pointer-events-none absolute left-1/2 top-1/2 h-[2px] w-[24px] -translate-y-1/2 bg-muted-foreground/40" />
-      <!-- + button (inside Handle so drag starts a connection) -->
+    <Transition name="handle-plus">
       <div
-        class="nodrag absolute left-[calc(50%+24px)] top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-all hover:scale-110 hover:border-foreground/30 hover:text-foreground"
-        @click="onClick"
+        v-if="!isConnected"
+        v-show="isPlusVisible"
+        class="pointer-events-none absolute left-1/2 top-1/2 flex -translate-y-1/2 items-center"
+        @mouseenter="isHovered = true"
+        @mouseleave="isHovered = false"
       >
-        <LucidePlus class="h-3 w-3" />
+        <!-- Connecting line from handle dot to + button -->
+        <div class="h-[2px] w-[24px] bg-muted-foreground/40" />
+        <!-- + button -->
+        <div
+          class="nodrag pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-all hover:scale-110 hover:border-foreground/30 hover:text-foreground"
+          @click="onClick"
+        >
+          <LucidePlus class="h-3 w-3" />
+        </div>
       </div>
-    </template>
+    </Transition>
   </Handle>
 </template>
+
+<style scoped>
+.handle-plus-enter-active,
+.handle-plus-leave-active {
+  transform-origin: left center;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.handle-plus-enter-from,
+.handle-plus-leave-to {
+  transform: translateY(-50%) scale(0);
+  opacity: 0;
+}
+</style>
