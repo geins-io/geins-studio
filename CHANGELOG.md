@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.4.0 - 2026-04-29
+
+This release introduces full Channel entity management (Self-Service for Channels) and major architectural upgrades across documentation and governance.
+
+### 🚀 Enhancements
+
+- Channels — list page, edit page, and navigation ([#193](https://github.com/geins-io/geins-studio/pull/193), [#194](https://github.com/geins-io/geins-studio/pull/194), [#196](https://github.com/geins-io/geins-studio/pull/196))
+- Channels — General tab with default & additional languages ([#210](https://github.com/geins-io/geins-studio/pull/210))
+- Channels — Markets tab with default market and inline active toggle ([#211](https://github.com/geins-io/geins-studio/pull/211), [#217](https://github.com/geins-io/geins-studio/pull/217))
+- Channels — Mails tab with content overrides, layout & live preview ([#214](https://github.com/geins-io/geins-studio/pull/214), [#216](https://github.com/geins-io/geins-studio/pull/216))
+- Channels — Storefront Settings with JSON schema editor, default schema, SEO & Contact tabs ([#208](https://github.com/geins-io/geins-studio/pull/208), [#218](https://github.com/geins-io/geins-studio/pull/218))
+
+### 🐛 Bug Fixes
+
+- Account and AuthAccounts types updated to match current API shape ([#209](https://github.com/geins-io/geins-studio/pull/209))
+
+### 🔄 Refactor
+
+- Rename Channel fields displayName → name, name → identifier ([#202](https://github.com/geins-io/geins-studio/pull/202))
+
+### 📖 Documentation
+
+- Consolidate documentation hierarchy — ARCHITECTURE.md, APP.md, DOMAIN.md ([#178](https://github.com/geins-io/geins-studio/pull/178), [#179](https://github.com/geins-io/geins-studio/pull/179), [#181](https://github.com/geins-io/geins-studio/pull/181))
+- Add forms guide for entity pages
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.3.2 - 2026-04-02
 
 ### 🐛 Bug Fixes
