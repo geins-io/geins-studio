@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Handle, Position } from '@vue-flow/core'
-
 const props = defineProps<{
   data: {
     label: string
@@ -18,12 +16,7 @@ const props = defineProps<{
     :class="selected ? 'border-yellow-500 ring-2 ring-yellow-500/20' : 'border-yellow-500/50'"
   >
     <!-- Input handle -->
-    <Handle
-      type="target"
-      :position="Position.Left"
-      :style="{ top: '25%' }"
-      class="!border-background !h-[15px] !w-[15px] !border-2 !bg-yellow-500"
-    />
+    <WorkflowHandleInput :style="{ top: '25%' }" handle-class="!border-background !h-[15px] !w-[15px] !border-2 !bg-yellow-500" />
 
     <div class="flex items-center gap-3">
       <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-500/10 text-yellow-500">
