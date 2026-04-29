@@ -9,10 +9,18 @@ import {
 
 defineOptions({ name: 'ChannelSchemaField' });
 
-const props = defineProps<{
-  field: SchemaField;
-  modelValue: StorefrontSettings;
-}>();
+const props = withDefaults(
+  defineProps<{
+    field: SchemaField;
+    modelValue: StorefrontSettings;
+    nested?: boolean;
+    isFirstSubSection?: boolean;
+  }>(),
+  {
+    nested: false,
+    isFirstSubSection: false,
+  },
+);
 
 const emit = defineEmits<{
   'update:modelValue': [value: StorefrontSettings];
@@ -213,14 +221,17 @@ function isVisible(field: SchemaField): boolean {
   </div>
 
   <!-- sub-section -->
-  <div v-else-if="field.type === 'sub-section'" class="space-y-3.5">
-    <div class="pt-2">
-      <ContentCardHeader
-        :title="field.label"
-        :description="field.description"
-        size="md"
-      />
-    </div>
+  <div
+    v-else-if="field.type === 'sub-section'"
+    class="space-y-3.5"
+    :class="!nested && !isFirstSubSection && 'mt-8 border-t pt-6'"
+  >
+    <ContentCardHeader
+      :title="field.label"
+      :description="field.description"
+      size="md"
+    />
+
     <!-- With columns: lay out children directly in grid -->
     <div
       v-if="field.children && field.columns && field.columns > 1"
@@ -231,6 +242,7 @@ function isVisible(field: SchemaField): boolean {
           v-if="isVisible(child)"
           :field="child"
           :model-value="modelValue"
+          nested
           @update:model-value="$emit('update:modelValue', $event)"
         />
       </template>
@@ -247,6 +259,7 @@ function isVisible(field: SchemaField): boolean {
               v-if="isVisible(child)"
               :field="child"
               :model-value="modelValue"
+              nested
               @update:model-value="$emit('update:modelValue', $event)"
             />
           </template>

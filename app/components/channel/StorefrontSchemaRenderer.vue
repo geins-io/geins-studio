@@ -34,6 +34,10 @@ defineEmits<{
             <ChannelSchemaField
               :field="field"
               :model-value="modelValue"
+              :is-first-sub-section="
+                field.key ===
+                section.fields.find((f) => f.type === 'sub-section')?.key
+              "
               @update:model-value="$emit('update:modelValue', $event)"
             />
           </template>
