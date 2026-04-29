@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Background } from '@vue-flow/background'
 import { Controls, ControlButton } from '@vue-flow/controls'
-import { VueFlow, useVueFlow, type NodeTypesObject } from '@vue-flow/core'
+import { VueFlow, useVueFlow, type NodeTypesObject, type EdgeTypesObject } from '@vue-flow/core'
 import { MiniMap } from '@vue-flow/minimap'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
@@ -13,6 +13,7 @@ import KeyboardShortcutTooltip from './KeyboardShortcutTooltip.vue'
 import WorkflowPanelLogs from './panel/WorkflowPanelLogs.vue'
 import WorkflowSidebarAddNode from './sidebar/WorkflowSidebarAddNode.vue'
 import WorkflowSidebarNodeProperties from './sidebar/WorkflowSidebarNodeProperties.vue'
+import WorkflowEdge from './WorkflowEdge.vue'
 import WorkflowNode from './WorkflowNode.vue'
 
 
@@ -41,6 +42,10 @@ const nodeTypes = {
   loop: WorkflowNode,
   delay: WorkflowNode,
 } as unknown as NodeTypesObject
+
+const edgeTypes = {
+  default: markRaw(WorkflowEdge),
+} as unknown as EdgeTypesObject
 
 const TRIGGER_NODE_ID = 'trigger'
 
@@ -110,11 +115,27 @@ onMounted(() => {
   const triggerId = existingTrigger?.id ?? TRIGGER_NODE_ID
   const finalNodes = existingTrigger ? canvasNodes : [buildTriggerNode(), ...canvasNodes]
 
+  // If we injected the trigger and there's at least one action node but no
+  // edge from the trigger, auto-connect trigger → first action node.
+  const finalEdges = [...canvasEdges]
+  if (!existingTrigger && canvasNodes.length > 0) {
+    const hasTriggerEdge = finalEdges.some(e => e.source === triggerId)
+    if (!hasTriggerEdge) {
+      const firstNode = canvasNodes[0]
+      finalEdges.push({
+        id: `${triggerId}-${firstNode.id}`,
+        source: triggerId,
+        target: firstNode.id,
+        animated: false,
+      })
+    }
+  }
+
   initialNodes.value = finalNodes
-  initialEdges.value = canvasEdges
+  initialEdges.value = finalEdges
 })
 
-const { onConnect, onPaneReady, addEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut, getViewport, setViewport } = useVueFlow()
+const { onConnect, onPaneReady, addEdges, removeEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut, getViewport, setViewport } = useVueFlow()
 
 const maxZoom = ref(1.5)
 onPaneReady(() => {
@@ -192,6 +213,23 @@ const onHandlePlusClick = (sourceNodeId: string, sourceHandleId?: string) => {
 }
 provide('onHandlePlusClick', onHandlePlusClick)
 
+const pendingEdgeInsert = ref<{ sourceId: string, sourceHandle?: string | null, targetId: string } | null>(null)
+
+const onEdgeAddNode = (edgeId: string, sourceNodeId: string, targetNodeId: string, sourceHandle?: string | null) => {
+  pendingEdgeInsert.value = { sourceId: sourceNodeId, sourceHandle, targetId: targetNodeId }
+  pendingConnection.value = { sourceId: sourceNodeId, sourceHandle: sourceHandle ?? undefined }
+  isAddNodeOpen.value = true
+}
+provide('onEdgeAddNode', onEdgeAddNode)
+
+const onEdgeDelete = (edgeId: string) => {
+  const edge = edges.value.find(e => e.id === edgeId)
+  if (edge) {
+    removeEdges([edge])
+  }
+}
+provide('onEdgeDelete', onEdgeDelete)
+
 // Selecting a node auto-opens the bottom properties panel; clicking the pane
 // clears the selection and hides it.
 const onNodeClick = (event: any) => {
@@ -255,19 +293,57 @@ const onDrop = (event: DragEvent) => {
 }
 
 // Click-to-add from the palette: place next to the source node if triggered
-// from a handle "+", otherwise at a default viewport position.
+// from a handle "+", otherwise at a default viewport position. When inserting
+// on an edge, the new node is placed between source and target, the old edge
+// is removed, and two new edges are created.
 const handleAddFromPalette = (item: PaletteItem) => {
   const pending = pendingConnection.value
+  const edgeInsert = pendingEdgeInsert.value
   const sourceNode = pending ? findNode(pending.sourceId) : null
+  const targetNode = edgeInsert ? findNode(edgeInsert.targetId) : null
 
-  const position = sourceNode
-    ? { x: sourceNode.position.x + (sourceNode.dimensions?.width ?? 200) + 100, y: sourceNode.position.y }
-    : avoidTriggerNode(project({ x: 400, y: 300 }))
+  let position: { x: number, y: number }
+  if (sourceNode && targetNode) {
+    position = {
+      x: (sourceNode.position.x + targetNode.position.x) / 2,
+      y: (sourceNode.position.y + targetNode.position.y) / 2,
+    }
+  }
+  else if (sourceNode) {
+    position = { x: sourceNode.position.x + (sourceNode.dimensions?.width ?? 200) + 100, y: sourceNode.position.y }
+  }
+  else {
+    position = avoidTriggerNode(project({ x: 400, y: 300 }))
+  }
 
   const newNode = buildNewNode(item, position)
   addNodes([newNode])
 
-  if (pending) {
+  if (edgeInsert) {
+    const oldEdge = edges.value.find(
+      e => e.source === edgeInsert.sourceId && e.target === edgeInsert.targetId,
+    )
+    if (oldEdge) removeEdges([oldEdge])
+
+    addEdges([
+      {
+        id: `e-${edgeInsert.sourceId}-${newNode.id}-${Date.now()}`,
+        source: edgeInsert.sourceId,
+        sourceHandle: edgeInsert.sourceHandle ?? undefined,
+        target: newNode.id,
+        animated: false,
+      },
+      {
+        id: `e-${newNode.id}-${edgeInsert.targetId}-${Date.now() + 1}`,
+        source: newNode.id,
+        target: edgeInsert.targetId,
+        animated: false,
+      },
+    ])
+    pendingEdgeInsert.value = null
+    pendingConnection.value = null
+  }
+  else if (pending) {
     addEdges([{
       id: `e-${pending.sourceId}-${newNode.id}-${Date.now()}`,
       source: pending.sourceId,
@@ -295,7 +371,10 @@ const toggleAddNode = () => {
 }
 
 watch(isAddNodeOpen, (open) => {
-  if (!open) pendingConnection.value = null
+  if (!open) {
+    pendingConnection.value = null
+    pendingEdgeInsert.value = null
+  }
 })
 
 const toggleMinimap = () => {
@@ -424,7 +503,7 @@ useKeybindings({
       <!-- Canvas column -->
       <div class="relative flex min-w-0 flex-1 flex-col">
         <div class="relative flex-1 overflow-hidden" @dragover="onDragOver" @drop="onDrop">
-          <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes"
+          <VueFlow :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes" :edge-types="edgeTypes"
             :default-viewport="{ zoom: 0.8, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="maxZoom"
             class="bg-muted/30" @node-click="onNodeClick" @pane-click="onPaneClick">
             <Background pattern-color="hsl(var(--border))" :gap="20" />
@@ -499,6 +578,10 @@ useKeybindings({
 </template>
 
 <style>
+.vue-flow__edge-path {
+  stroke-width: 2;
+}
+
 .dark .vue-flow__edge-path {
   stroke: hsl(240 3.7% 45%);
 }
@@ -540,6 +623,10 @@ useKeybindings({
 
 .dark .vue-flow__minimap {
   background: hsl(240 10% 3.9%);
+}
+
+.vue-flow__connection-path {
+  stroke-width: 2;
 }
 
 .vue-flow__edge-text {
