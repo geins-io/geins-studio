@@ -54,10 +54,10 @@ const props = defineProps<{
     />
 
     <!-- Labels for handles -->
-    <div class="absolute top-[25%] -right-1 translate-x-full px-1 text-[10px] font-medium text-green-500">
+    <div class="bg-background/80 absolute top-[25%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-green-500">
       Yes
     </div>
-    <div class="absolute top-[65%] -right-1 translate-x-full px-1 text-[10px] font-medium text-red-500">
+    <div class="bg-background/80 absolute top-[65%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-red-500">
       No
     </div>
   </div>
