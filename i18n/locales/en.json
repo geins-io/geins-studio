@@ -30,6 +30,8 @@
   "discount": "Discount | Discounts",
   "quotation": "Quotation | Quotations",
   "workflow": "Workflow | Workflows",
+  "input": "Input | Inputs",
+  "group": "Group | Groups",
   "communication": "Communication | Communications",
   "entity": "Entity | Entities",
   "sku": "SKU | SKUs",
