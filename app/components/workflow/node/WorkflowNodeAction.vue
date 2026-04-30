@@ -2,6 +2,8 @@
 import type { Component } from 'vue'
 import LitiumSymbol from '~/assets/logos/litium-symbol.svg'
 import MonitorSymbol from '~/assets/logos/monitor-symbol.svg'
+import WorkflowHandleInput from './handle/WorkflowHandleInput.vue'
+import WorkflowHandlePlus from './handle/WorkflowHandlePlus.vue'
 
 const PROVIDER_LOGOS: Record<string, Component> = {
   litium: LitiumSymbol,
