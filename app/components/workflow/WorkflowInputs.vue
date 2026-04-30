@@ -48,6 +48,22 @@ const inputsByCategory = computed(() => {
   return order.map(category => ({ category, items: groups[category]! }))
 })
 
+const searchQuery = ref('')
+
+const filteredInputsByCategory = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return inputsByCategory.value
+  return inputsByCategory.value
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item =>
+        item.name.toLowerCase().includes(q)
+        || prettyLabel(item.name).toLowerCase().includes(q),
+      ),
+    }))
+    .filter(group => group.items.length > 0)
+})
+
 // ─── Dynamic vee-validate form for input default values ────────────
 // Build a zod schema keyed by input name so each value field gets proper
 // FormField/FormItem/FormLabel/FormControl/FormDescription treatment.
@@ -192,6 +208,18 @@ const removeInput = (name: string) => {
   emit('update:inputValues', rest)
 }
 
+const removeGroup = (category: string) => {
+  emit('update:additionalGroups', props.additionalGroups.filter(g => g !== category))
+  const inCategory = (i: WorkflowInput) => (i.category || 'general') === category
+  emit('update:inputs', props.inputs.filter(i => !inCategory(i)))
+  const removedNames = new Set(props.inputs.filter(inCategory).map(i => i.name))
+  const nextValues: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(props.inputValues)) {
+    if (!removedNames.has(k)) nextValues[k] = v
+  }
+  emit('update:inputValues', nextValues)
+}
+
 // ─── Add group dialog ──────────────────────────────────────────────
 const addGroupDialogOpen = ref(false)
 const newGroupName = ref('')
@@ -226,6 +254,17 @@ const confirmAddGroup = () => {
 
 <template>
   <ContentEditMainContent>
+    <div v-if="inputsByCategory.length > 0" class="flex items-center justify-between gap-3">
+      <InputGroup class="max-w-xs shadow-none">
+        <InputGroupAddon align="inline-start">
+          <LucideSearch class="text-muted-foreground size-4" />
+        </InputGroupAddon>
+        <InputGroupInput v-model="searchQuery" placeholder="Search inputs…" />
+      </InputGroup>
+      <ButtonIcon icon="new" variant="outline" size="sm" @click="openAddGroup">
+        {{ t('add_entity', { entityName: 'group' }) }}
+      </ButtonIcon>
+    </div>
     <ContentEditCard v-if="inputsByCategory.length === 0" title="Inputs">
       <div class="text-muted-foreground flex flex-col items-center gap-3 py-12 text-center text-sm">
         <span>This workflow has no inputs yet.</span>
@@ -236,58 +275,74 @@ const confirmAddGroup = () => {
       </div>
     </ContentEditCard>
     <ContentEditCard
-v-for="group in inputsByCategory" v-else :key="group.category" :title="group.category"
-      :description="`${group.items.length} input${group.items.length === 1 ? '' : 's'}`">
+v-for="group in filteredInputsByCategory" v-else :key="group.category" :title="group.category"
+      :description="`${group.items.length} input${group.items.length === 1 ? '' : 's'}`"
+      collapsible :default-open="false">
       <template #header-action>
-        <Button variant="secondary" size="sm" @click="openAddInput(group.category)">
-          <LucidePlus class="mr-2 h-3.5 w-3.5" />
-          Add input
-        </Button>
-      </template>
-      <FormGridWrap>
-        <div v-if="group.items.length === 0" class="text-muted-foreground py-6 text-center text-sm">
-          No inputs in this group yet.
+        <div class="flex items-center gap-2">
+          <ButtonIcon icon="new" variant="outline" size="sm" @click="openAddInput(group.category)">
+            {{ $t('add_entity', { entityName: 'input' }) }}
+          </ButtonIcon>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button size="icon" variant="secondary">
+                <LucideMoreHorizontal class="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem @click="removeGroup(group.category)">
+                <LucideTrash class="mr-2 size-4" />
+                <span>Remove group</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <FormGrid v-for="item in group.items" :key="item.name" design="1">
-          <FormField v-slot="{ componentField }" :name="item.name">
-            <FormItem>
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <FormLabel :for="`inp-${item.name}`" class="flex items-center gap-1.5">
-                    {{ prettyLabel(item.name) }}
-                    <span v-if="item.required" class="text-destructive">*</span>
-                  </FormLabel>
-                  <div class="mt-0.5 flex flex-wrap items-center gap-1.5">
-                    <WorkflowDataType :type="item.type" display="long" />
-                    <span class="text-muted-foreground font-mono text-[11px]">{{ item.name }}</span>
-                  </div>
-                </div>
-                <Button
-variant="ghost" size="icon" class="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
-                  :aria-label="`Remove ${item.name}`" @click="removeInput(item.name)">
-                  <LucideTrash class="h-4 w-4" />
-                </Button>
+      </template>
+      <div v-if="group.items.length === 0" class="text-muted-foreground py-6 text-center text-sm">
+        No inputs in this group yet.
+      </div>
+      <div v-else class="divide-y border-y">
+        <FormField
+          v-for="item in group.items" :key="item.name"
+          v-slot="{ componentField }" :name="item.name">
+          <FormItem class="flex items-center gap-4 space-y-0! py-4">
+            <div class="min-w-0 flex-1">
+              <FormLabel :for="`inp-${item.name}`" class="flex items-center gap-1.5 text-sm font-semibold">
+                {{ prettyLabel(item.name) }}
+                <span v-if="item.required" class="text-destructive">*</span>
+              </FormLabel>
+              <FormDescription v-if="item.description" class="mt-1 pl-0 text-xs">
+                {{ item.description }}
+              </FormDescription>
+              <div class="mt-3 flex flex-wrap items-center gap-1.5">
+                <WorkflowDataType :type="item.type" display="long" />
+                <span class="text-muted-foreground font-mono text-[11px]">{{ item.name }}</span>
               </div>
+              <FormMessage />
+            </div>
+            <div class="shrink-0">
               <FormControl>
                 <Switch
-v-if="item.type === 'boolean'" :id="`inp-${item.name}`"
+                  v-if="item.type === 'boolean'" :id="`inp-${item.name}`"
                   :checked="componentField.modelValue" @update:checked="componentField['onUpdate:modelValue']" />
                 <Input
-v-else-if="item.type === 'number'" :id="`inp-${item.name}`" type="number" class="max-w-lg"
+                  v-else-if="item.type === 'number'" :id="`inp-${item.name}`" type="number" class="w-64"
                   :model-value="numberInputValue(item.name)"
                   @update:model-value="(v) => componentField['onUpdate:modelValue'](v === '' ? null : Number(v))" />
                 <Input
-v-else :id="`inp-${item.name}`" class="max-w-lg"
+                  v-else :id="`inp-${item.name}`" class="w-64"
                   v-bind="componentField" />
               </FormControl>
-              <FormDescription v-if="item.description">
-                {{ item.description }}
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-        </FormGrid>
-      </FormGridWrap>
+            </div>
+            <Button
+              variant="ghost" size="icon"
+              class="text-muted-foreground hover:text-destructive size-8 shrink-0"
+              :aria-label="`Remove ${item.name}`" @click="removeInput(item.name)">
+              <LucideTrash class="size-4" />
+            </Button>
+          </FormItem>
+        </FormField>
+      </div>
     </ContentEditCard>
     <Button
 variant="outline" class="text-muted-foreground hover:text-foreground mt-2 w-full border-dashed py-6"

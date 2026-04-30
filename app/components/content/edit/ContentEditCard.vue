@@ -8,6 +8,8 @@ const props = withDefaults(
     createMode?: boolean;
     description?: string;
     stepValid?: boolean;
+    collapsible?: boolean;
+    defaultOpen?: boolean;
   }>(),
   {
     step: 1,
@@ -17,6 +19,8 @@ const props = withDefaults(
     title: '',
     description: '',
     stepValid: true,
+    collapsible: false,
+    defaultOpen: true,
   },
 );
 
@@ -26,7 +30,7 @@ const stepTitle = computed(() => {
   return props.createMode ? `${props.step}. ${props.title}` : props.title;
 });
 
-const open = props.createMode ? props.step === props.currentStep : true;
+const open = props.createMode ? props.step === props.currentStep : props.defaultOpen;
 const isOpen = ref(open);
 
 if (props.createMode) {
@@ -67,11 +71,11 @@ const hasCreateView = computed(() => !!slots.create);
           cn(
             `flex w-full items-center justify-between p-4 @2xl:p-6`,
             `${futureStep && createMode ? 'pointer-events-none opacity-50' : ''}`,
-            (futureStep || !createMode) && 'cursor-default',
+            (futureStep || (!createMode && !collapsible)) && 'cursor-default',
             !createMode && 'gap-2 max-sm:flex-col max-sm:items-start',
           )
         "
-        :disabled="futureStep || !createMode"
+        :disabled="futureStep || (!createMode && !collapsible)"
       >
         <ContentCardHeader
           :title="stepTitle"
@@ -79,13 +83,18 @@ const hasCreateView = computed(() => !!slots.create);
           class="max-w-[650px]"
         />
 
-        <LucideChevronDown
-          v-if="createMode"
-          :class="
-            cn(`size-6 transition-transform ${isOpen ? 'rotate-180' : ''}`)
-          "
-        />
-        <slot name="header-action" />
+        <div class="flex shrink-0 items-center gap-2">
+          <div v-if="collapsible" @click.stop>
+            <slot name="header-action" />
+          </div>
+          <slot v-else name="header-action" />
+          <LucideChevronDown
+            v-if="createMode"
+            :class="
+              cn(`size-6 transition-transform ${isOpen ? 'rotate-180' : ''}`)
+            "
+          />
+        </div>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div
