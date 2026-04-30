@@ -45,11 +45,13 @@ const iterateDisplay = computed(() => {
     </div>
 
     <!-- Loop body output handle -->
-    <WorkflowHandlePlus handle-id="loop" :style="{ top: '30%' }" :line-length="56"
+    <WorkflowHandlePlus
+handle-id="loop" :style="{ top: '30%' }" :line-length="56"
       handle-class="!border-background !h-3 !w-3 !border-2 !bg-purple-500" />
 
     <!-- Done output handle -->
-    <WorkflowHandlePlus handle-id="done" :style="{ top: '70%' }" :line-length="56"
+    <WorkflowHandlePlus
+handle-id="done" :style="{ top: '70%' }" :line-length="56"
       handle-class="!border-background !h-3 !w-3 !border-2 !bg-gray-400" />
 
     <!-- Labels for handles -->

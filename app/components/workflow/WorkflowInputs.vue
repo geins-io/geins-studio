@@ -60,6 +60,7 @@ const numberInputValue = (name: string): string | number | undefined => {
 }
 
 // ─── Add input dialog ──────────────────────────────────────────────
+const INPUT_NAME_RE = /^[a-zA-Z][a-zA-Z0-9_-]*$/
 const addInputDialogOpen = ref(false)
 const addInputCategory = ref('')
 const addInputError = ref('')
@@ -89,19 +90,28 @@ const openAddInput = (category: string) => {
 }
 
 const coerceDefault = (raw: string, type: string): unknown => {
-  if (raw === '') return type === 'boolean' ? false : null
+  if (raw === '') return type === 'boolean' ? false : undefined
   if (type === 'number') {
     const n = Number(raw)
-    return Number.isNaN(n) ? null : n
+    return Number.isNaN(n) ? undefined : n
   }
   if (type === 'boolean') return raw === 'true'
   return raw
 }
 
+const inputNameValid = computed(() => {
+  const n = newInput.name.trim()
+  return n.length === 0 || INPUT_NAME_RE.test(n)
+})
+
 const confirmAddInput = () => {
   const name = newInput.name.trim()
   if (!name) {
     addInputError.value = 'Name is required'
+    return
+  }
+  if (!INPUT_NAME_RE.test(name)) {
+    addInputError.value = 'Name must start with a letter and contain only letters, digits, underscores, and dashes'
     return
   }
   if (props.inputs.some(i => i.name === name)) {
@@ -117,7 +127,7 @@ const confirmAddInput = () => {
     type: newInput.type,
     required: newInput.required,
     description: newInput.description || undefined,
-    defaultValue,
+    ...(defaultValue !== undefined && { defaultValue }),
     category,
   }
   emit('update:inputs', [...props.inputs, newDef])
@@ -198,9 +208,7 @@ v-for="group in inputsByCategory" v-else :key="group.category" :title="group.cat
                 <Label :for="`inp-${item.name}`" class="flex flex-wrap items-center gap-1.5">
                   <span>{{ prettyLabel(item.name) }}</span>
                   <span v-if="item.required" class="text-destructive">*</span>
-                  <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
-                    {{ item.type }}
-                  </span>
+                  <WorkflowDataType :type="item.type" display="long" />
                   <span class="text-muted-foreground font-mono text-[11px]">{{ item.name }}</span>
                 </Label>
                 <p v-if="item.description" class="text-muted-foreground text-xs">
@@ -251,7 +259,10 @@ variant="outline" class="text-muted-foreground hover:text-foreground mt-2 w-full
             <FormGrid design="1+1">
               <div class="space-y-1.5">
                 <Label for="new-input-name">Name</Label>
-                <Input id="new-input-name" v-model="newInput.name" placeholder="e.g. batchSize" autofocus />
+                <Input id="new-input-name" v-model="newInput.name" placeholder="e.g. batchSize" autofocus :class="{ 'border-destructive': newInput.name.trim() && !inputNameValid }" />
+                <p class="text-muted-foreground text-xs" :class="{ 'text-destructive': newInput.name.trim() && !inputNameValid }">
+                  Must start with a letter. Only letters, digits, underscores, and dashes.
+                </p>
               </div>
               <div class="space-y-1.5">
                 <Label for="new-input-type">Type</Label>
@@ -265,7 +276,6 @@ variant="outline" class="text-muted-foreground hover:text-foreground mt-2 w-full
                     <SelectItem value="boolean">boolean</SelectItem>
                     <SelectItem value="object">object</SelectItem>
                     <SelectItem value="array">array</SelectItem>
-                    <SelectItem value="date">date</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

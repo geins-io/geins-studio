@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { ManifestActionOutput } from '#shared/types'
 import type { ManifestAction } from '@/composables/useWorkflowManifest'
+import NodeSettingsHttpRequest from './NodeSettingsHttpRequest.vue'
+import type { Component } from 'vue'
+
+const ACTION_SETTINGS_COMPONENTS: Record<string, Component> = {
+  'net.httpRequest': NodeSettingsHttpRequest,
+}
 
 const props = defineProps<{
   nodeData: Record<string, unknown>
@@ -8,6 +14,11 @@ const props = defineProps<{
   manifestAction?: ManifestAction
   updateInput: (name: string, value: unknown) => void
 }>()
+
+const customComponent = computed(() => {
+  const name = props.nodeData.actionName as string | undefined
+  return name ? ACTION_SETTINGS_COMPONENTS[name] : undefined
+})
 
 const actionInputFields = computed(() => props.manifestAction?.input ?? [])
 const actionOutputFields = computed<ManifestActionOutput[]>(() => props.manifestAction?.output ?? [])
@@ -48,7 +59,18 @@ const isSelect = (field: { allowedValues?: unknown[] }): boolean =>
       </div>
     </div>
 
-    <div v-if="actionInputFields.length" class="space-y-3">
+    <!-- Action-specific settings component -->
+    <component
+      :is="customComponent"
+      v-if="customComponent"
+      :node-data="nodeData"
+      :node-input="nodeInput"
+      :manifest-action="manifestAction"
+      :update-input="updateInput"
+    />
+
+    <!-- Generic manifest-driven form (fallback) -->
+    <div v-else-if="actionInputFields.length" class="space-y-3">
       <div v-for="field in actionInputFields" :key="field.name" class="space-y-1">
         <label class="text-muted-foreground flex items-center gap-1 text-sm">
           {{ prettyLabel(field.name) }}
