@@ -72,10 +72,15 @@ export interface WorkflowTriggerConfig {
 }
 
 export interface WorkflowNodeConnection {
-  sourceNodeId: string;
-  targetNodeId: string;
+  /** Source node id. The Geins Management API uses `from` (not `sourceNodeId`). */
+  from: string;
+  /** Target node id. The Geins Management API uses `to` (not `targetNodeId`). */
+  to: string;
   type: ConnectionType;
+  /** Always serialised — empty string when no label is set. */
   label?: string;
+  /** Free-form editor metadata (positions, sourceHandle, etc.). `null` when unset. */
+  ui?: Record<string, unknown> | null;
 }
 
 export interface WorkflowNodeConfig {
@@ -168,7 +173,9 @@ export interface UpdateWorkflowRequest extends CreateWorkflowRequest {
 }
 
 export interface ValidateWorkflowResult {
-  valid: boolean;
+  valid?: boolean;
+  isValid?: boolean;
+  message?: string;
   errors?: WorkflowValidationError[];
 }
 

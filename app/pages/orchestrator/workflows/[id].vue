@@ -127,6 +127,17 @@ const workflowInputs = ref<WorkflowInput[]>([])
 // category persists naturally through `workflowInputs[].category`.
 const additionalInputGroups = ref<string[]>([])
 
+// Provide workflow inputs + variables to the builder's node properties sidebar
+// so the input pane can show available data sources without prop drilling.
+provide('workflowInputDefs', workflowInputs)
+
+const { data: workflowVariables } = useAsyncData(
+  'workflow-variables',
+  () => orchestratorApi.variable.list(),
+  { default: () => [] as { key: string, value: string, description?: string, isSecret: boolean }[] },
+)
+provide('workflowVariables', workflowVariables)
+
 // Sync breadcrumb title with workflow name.
 watch([isNew, workflowNameValue], ([newFlag, name]) => {
   breadcrumbsStore.setCurrentTitle(newFlag ? 'New workflow' : (name || 'Workflow'))
@@ -362,17 +373,6 @@ const handleCreate = async () => {
       tags: values.details.tags,
       type: 'onDemand',
       enabled: false,
-      // The API requires at least one node (WF003). Seed with a placeholder
-      // action so the Builder tab has a starting point.
-      nodes: [
-        {
-          id: 'start',
-          type: 'action',
-          name: 'Start',
-          actionName: 'TransformAction',
-        },
-      ],
-      connections: [],
     })
     // Snapshot so the route guard doesn't block navigation to the new page.
     originalEditableState.value = JSON.stringify(editableState.value)
@@ -441,10 +441,13 @@ const handleSave = async () => {
   try {
     const wf = currentWorkflow.value as any
     const values = form.values
-    const mergedInputs: WorkflowInput[] = workflowInputs.value.map(i => ({
-      ...i,
-      defaultValue: inputValues.value[i.name],
-    }))
+    const mergedInputs: WorkflowInput[] = workflowInputs.value.map((i) => {
+      const val = inputValues.value[i.name]
+      return {
+        ...i,
+        ...(val != null && { defaultValue: val }),
+      }
+    })
     const apiType = toApiWorkflowType(values.trigger.type)
     const trigger = buildTriggerConfig(apiType, values.trigger)
     if (workflowActive.value !== isEnabled.value) {
@@ -477,7 +480,8 @@ const handleSave = async () => {
       settings: values.settings,
       trigger,
     }
-    geinsLogInfo('workflow.update payload', payload)
+    geinsLogInfo('Save workflow — full payload (object):', payload)
+    geinsLogInfo('Save workflow — full payload (JSON):\n' + JSON.stringify(payload, null, 2))
     await orchestratorApi.workflow.update(workflowId.value, payload)
     await refreshCurrentWorkflow()
     // Refreshing currentWorkflow re-fires the trigger-node data watcher in the
@@ -500,6 +504,69 @@ const handleSave = async () => {
   }
   finally {
     isSavingConfig.value = false
+  }
+}
+
+// ─── Validate ─────────────────────────────────────────────────────
+const isValidating = ref(false)
+const validationResult = ref<{ valid: boolean, message?: string, errors?: { message: string, nodeId?: string, field?: string }[] } | null>(null)
+
+const handleValidate = async () => {
+  if (isNew.value || !currentWorkflow.value) return
+  isValidating.value = true
+  validationResult.value = null
+  try {
+    const wf = currentWorkflow.value as any
+    const values = form.values
+    const apiType = toApiWorkflowType(values.trigger.type)
+    const trigger = buildTriggerConfig(apiType, values.trigger)
+    const graph = builderRef.value?.getGraph?.()
+    const result = await orchestratorApi.workflow.validate({
+      name: values.details.name,
+      description: values.details.description || undefined,
+      tags: values.details.tags,
+      type: apiType,
+      enabled: workflowActive.value,
+      cronExpression: apiType === 'scheduled' ? values.trigger.cron : undefined,
+      eventName: apiType === 'event' ? values.trigger.eventEntity : undefined,
+      nodes: graph?.nodes ?? wf.nodes,
+      connections: graph?.connections ?? wf.connections,
+      input: workflowInputs.value,
+      settings: values.settings,
+      trigger,
+    })
+    const isValid = result.isValid ?? result.valid ?? false
+    validationResult.value = {
+      valid: isValid,
+      message: result.message,
+      errors: result.errors,
+    }
+    if (isValid) {
+      toast({ title: 'Validation passed', description: result.message || 'Workflow configuration is valid.' })
+    }
+    else {
+      toast({
+        title: 'Validation failed',
+        description: result.message || `${result.errors?.length ?? 0} issue(s) found.`,
+        variant: 'negative',
+      })
+    }
+  }
+  catch (err: unknown) {
+    geinsLogError('Failed to validate workflow', err)
+    const apiBody = extractApiError(err)
+    validationResult.value = {
+      valid: false,
+      errors: [{ message: apiBody?.detail || (err as { message?: string })?.message || 'Validation request failed' }],
+    }
+    toast({
+      title: apiBody?.title || 'Validation error',
+      description: apiBody?.detail || (err as { message?: string })?.message || 'Unknown error',
+      variant: 'negative',
+    })
+  }
+  finally {
+    isValidating.value = false
   }
 }
 
@@ -977,6 +1044,31 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
           <ContentEditSummary v-model:active="workflowActive" v-bind="summaryProps">
             <template #after-summary>
               <ContentDataList v-if="triggerSummary.length" :data-list="triggerSummary" label="Trigger" />
+            </template>
+            <template #after-settings>
+              <Separator />
+              <div class="space-y-3">
+                <Button
+                  variant="outline" class="w-full" :disabled="isValidating"
+                  @click="handleValidate"
+                >
+                  <LucideShieldCheck class="mr-2 size-4" />
+                  {{ isValidating ? 'Validating…' : 'Validate workflow' }}
+                </Button>
+                <div v-if="validationResult" class="rounded-md border p-3 text-sm" :class="validationResult.valid ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950' : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'">
+                  <div class="flex items-center gap-2 font-medium" :class="validationResult.valid ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'">
+                    <LucideCircleCheck v-if="validationResult.valid" class="size-4" />
+                    <LucideCircleX v-else class="size-4" />
+                    {{ validationResult.valid ? (validationResult.message || 'Valid') : (validationResult.errors?.length ? `${validationResult.errors.length} issue(s)` : (validationResult.message || 'Invalid')) }}
+                  </div>
+                  <ul v-if="validationResult.errors?.length" class="mt-2 space-y-1 text-red-600 dark:text-red-400">
+                    <li v-for="(error, idx) in validationResult.errors" :key="idx" class="flex gap-1.5">
+                      <span class="mt-0.5 shrink-0">•</span>
+                      <span>{{ error.message }}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </template>
           </ContentEditSummary>
         </template>

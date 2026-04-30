@@ -50,7 +50,13 @@ const edgeTypes = {
   default: markRaw(WorkflowEdge),
 } as unknown as EdgeTypesObject
 
-const TRIGGER_NODE_ID = 'trigger'
+const TRIGGER_NODE_ID = 'TRIGGER'
+
+// Older workflows persisted the trigger's id in lowercase. We treat any
+// case variant of "trigger" as the same logical node so edges saved before
+// the constant was uppercased still resolve to the canvas trigger.
+const isLegacyTriggerRef = (id: string | undefined): boolean =>
+  typeof id === 'string' && id.toLowerCase() === 'trigger' && id !== TRIGGER_NODE_ID
 
 // Shares the cache key with the parent page (pages/orchestrator/workflows/[id].vue),
 // so Nuxt returns the already-fetched workflow instead of re-requesting.
@@ -115,12 +121,25 @@ onMounted(() => {
   // If the API payload omits a trigger node, prepend our derived one so the
   // canvas always has a trigger to anchor downstream nodes to.
   const existingTrigger = canvasNodes.find(n => n.type === 'trigger')
+  // Migrate any legacy lowercase trigger id on the existing node so it lines
+  // up with the new TRIGGER_NODE_ID and the edge migration below.
+  if (existingTrigger && isLegacyTriggerRef(existingTrigger.id)) {
+    existingTrigger.id = TRIGGER_NODE_ID
+  }
   const triggerId = existingTrigger?.id ?? TRIGGER_NODE_ID
   const finalNodes = existingTrigger ? canvasNodes : [buildTriggerNode(), ...canvasNodes]
 
+  // Remap legacy trigger references on edges before any further checks so a
+  // workflow saved with `sourceNodeId: "trigger"` still connects to the new
+  // canvas trigger node (id `TRIGGER`).
+  const finalEdges = canvasEdges.map(e => ({
+    ...e,
+    source: isLegacyTriggerRef(e.source) ? TRIGGER_NODE_ID : e.source,
+    target: isLegacyTriggerRef(e.target) ? TRIGGER_NODE_ID : e.target,
+  }))
+
   // If we injected the trigger and there's at least one action node but no
   // edge from the trigger, auto-connect trigger → first action node.
-  const finalEdges = [...canvasEdges]
   if (!existingTrigger && canvasNodes.length > 0) {
     const hasTriggerEdge = finalEdges.some(e => e.source === triggerId)
     if (!hasTriggerEdge) {
@@ -480,6 +499,58 @@ const runWorkflow = async () => {
   }
 }
 
+// ─── Validate ─────────────────────────────────────────────────────
+const isValidating = ref(false)
+
+const validateWorkflow = async () => {
+  if (props.isNew) {
+    toast({
+      title: 'Save the workflow first',
+      description: 'New workflows must be saved before they can be validated.',
+    })
+    return
+  }
+  isValidating.value = true
+  try {
+    const wf = currentWorkflow.value as Record<string, unknown> | null
+    const { nodes: apiNodes, connections: apiConnections } = toApi({ nodes: nodes.value, edges: edges.value })
+    const result = await orchestratorApi.workflow.validate({
+      name: (wf?.name as string) ?? '',
+      type: (wf?.type as string) ?? 'onDemand',
+      enabled: (wf?.enabled as boolean) ?? false,
+      nodes: apiNodes,
+      connections: apiConnections,
+      settings: (wf?.settings as Record<string, unknown>) ?? undefined,
+      trigger: (wf?.trigger as Record<string, unknown>) ?? undefined,
+    })
+    const isValid = result.isValid ?? result.valid ?? false
+    if (isValid) {
+      toast({ title: 'Validation passed', description: result.message || 'Workflow is valid.' })
+    }
+    else {
+      const errors = result.errors ?? []
+      toast({
+        title: 'Validation failed',
+        description: result.message || `${errors.length} issue(s) found.`,
+        variant: 'negative',
+      })
+    }
+  }
+  catch (err) {
+    geinsLogError('Failed to validate workflow', err)
+    const e = err as { originalError?: { data?: { title?: string, detail?: string } } }
+    const apiBody = e?.originalError?.data
+    toast({
+      title: apiBody?.title || 'Validation error',
+      description: apiBody?.detail || (err instanceof Error ? err.message : 'Unknown error'),
+      variant: 'negative',
+    })
+  }
+  finally {
+    isValidating.value = false
+  }
+}
+
 // Canvas shortcuts. Kept at the bottom so every handler referenced here is
 // already declared above.
 useKeybindings({
@@ -559,6 +630,14 @@ v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
                 class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
                 @click="toggleAddNode">
                 <LucidePlus class="h-4 w-4" />
+              </button>
+            </KeyboardShortcutTooltip>
+            <KeyboardShortcutTooltip :label="isNew ? 'Save workflow to validate' : isValidating ? 'Validating…' : 'Validate workflow'" keys="">
+              <button
+                class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
+                :class="{ 'cursor-not-allowed opacity-50': isNew }" :disabled="isValidating || isNew" @click="validateWorkflow">
+                <LucideLoader2 v-if="isValidating" class="h-4 w-4 animate-spin" />
+                <LucideShieldCheck v-else class="h-4 w-4" />
               </button>
             </KeyboardShortcutTooltip>
             <KeyboardShortcutTooltip

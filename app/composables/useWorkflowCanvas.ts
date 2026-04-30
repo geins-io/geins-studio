@@ -64,10 +64,7 @@ const readEndpoints = (
     | undefined,
 });
 
-const toCanvasEdge = (
-  c: WorkflowNodeConnection & WithUi,
-  index: number,
-): Edge => {
+const toCanvasEdge = (c: WorkflowNodeConnection, index: number): Edge => {
   const { source, target } = readEndpoints(
     c as unknown as Record<string, unknown>,
   );
@@ -122,25 +119,31 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
     connections: edges.map((e) => {
       const storedType = (e.data as { type?: ConnectionType } | undefined)
         ?.type;
-      const existingUi = (e.data as { ui?: NodeUi } | undefined)?.ui ?? {};
+      const existingUi = (e.data as { ui?: NodeUi } | undefined)?.ui;
       const type: ConnectionType =
         storedType ??
         (e.sourceHandle === 'true' || e.sourceHandle === 'false'
           ? 'conditional'
           : 'sequential');
+      // Conditional edges carry the branch name on `sourceHandle`. Fall back to
+      // it so the API stores which branch this edge represents.
       const label =
         typeof e.label === 'string' && e.label
           ? e.label
           : type === 'conditional'
-            ? (e.sourceHandle ?? undefined)
-            : undefined;
+            ? (e.sourceHandle ?? '')
+            : '';
+      // The API expects `null` (not `{}`) when no editor metadata is attached;
+      // only emit an object once at least one ui key exists.
+      const ui =
+        existingUi && Object.keys(existingUi).length > 0 ? existingUi : null;
       return {
-        sourceNodeId: e.source,
-        targetNodeId: e.target,
-        type,
+        from: e.source,
+        to: e.target,
         label,
-        ui: existingUi,
-      } as WorkflowNodeConnection & WithUi;
+        type,
+        ui,
+      } as WorkflowNodeConnection;
     }),
   });
 
