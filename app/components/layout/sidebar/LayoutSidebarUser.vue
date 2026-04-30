@@ -92,7 +92,7 @@ const setNewAccount = async (accountKey: string) => {
                   @click="setNewAccount(account.accountKey)"
                 >
                   <span class="pr-2">
-                    {{ account.displayName }}
+                    {{ account.name }}
                   </span>
                   <LucideCheck
                     v-if="account.accountKey === session?.accountKey"
