@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import WorkflowHandleInput from './handle/WorkflowHandleInput.vue'
+import WorkflowHandlePlus from './handle/WorkflowHandlePlus.vue'
 const props = defineProps<{
   data: {
     label: string

@@ -2,6 +2,7 @@
 import cronstrue from 'cronstrue'
 import 'cronstrue/locales/sv'
 import { LucideClock, LucideMousePointerClick, LucideWebhook, LucideZap } from '#components'
+import WorkflowHandlePlus from './handle/WorkflowHandlePlus.vue'
 
 // Trigger node renders the workflow's configured trigger (scheduled / event /
 // onDemand / webhook). The trigger itself is workflow-level metadata — the

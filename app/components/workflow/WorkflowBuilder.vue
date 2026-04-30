@@ -9,12 +9,12 @@ import '@vue-flow/controls/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
 import type { PaletteItem } from '#shared/types'
 import { useToast } from '@/components/ui/toast/use-toast'
-import KeyboardShortcutTooltip from './KeyboardShortcutTooltip.vue'
+import KeyboardShortcutTooltip from './shared/KeyboardShortcutTooltip.vue'
 import WorkflowPanelLogs from './panel/WorkflowPanelLogs.vue'
 import WorkflowSidebarAddNode from './sidebar/WorkflowSidebarAddNode.vue'
 import WorkflowSidebarNodeProperties from './sidebar/WorkflowSidebarNodeProperties.vue'
-import WorkflowEdge from './WorkflowEdge.vue'
-import WorkflowNode from './WorkflowNode.vue'
+import WorkflowEdge from './edge/WorkflowEdge.vue'
+import WorkflowNode from './node/WorkflowNode.vue'
 
 
 const props = defineProps<{
