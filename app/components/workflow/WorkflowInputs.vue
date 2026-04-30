@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
+import * as z from 'zod'
 import type { WorkflowInput } from '#shared/types'
 
 const props = defineProps<{
@@ -45,9 +48,53 @@ const inputsByCategory = computed(() => {
   return order.map(category => ({ category, items: groups[category]! }))
 })
 
-const setInputValue = (name: string, value: unknown) => {
-  emit('update:inputValues', { ...props.inputValues, [name]: value })
-}
+// ─── Dynamic vee-validate form for input default values ────────────
+// Build a zod schema keyed by input name so each value field gets proper
+// FormField/FormItem/FormLabel/FormControl/FormDescription treatment.
+const inputSchema = computed(() => {
+  const shape: Record<string, z.ZodTypeAny> = {}
+  for (const input of props.inputs) {
+    if (input.type === 'boolean') {
+      shape[input.name] = z.boolean().default(false)
+    }
+    else if (input.type === 'number') {
+      shape[input.name] = z.number().nullish()
+    }
+    else {
+      shape[input.name] = z.string().nullish()
+    }
+  }
+  return toTypedSchema(z.object(shape))
+})
+
+const inputForm = useForm({
+  validationSchema: inputSchema,
+  keepValuesOnUnmount: true,
+})
+
+// Sync prop values → form whenever inputValues change from parent.
+watch(
+  () => props.inputValues,
+  (vals) => {
+    inputForm.setValues({ ...vals })
+  },
+  { immediate: true, deep: true },
+)
+
+// Emit changes back to parent when form values change.
+watch(
+  () => inputForm.values,
+  (vals) => {
+    // Shallow compare to avoid infinite loop — only emit when actually different.
+    const current = props.inputValues
+    const changed = Object.keys(vals).some(k => vals[k] !== current[k])
+      || Object.keys(current).some(k => !(k in vals))
+    if (changed) {
+      emit('update:inputValues', { ...vals })
+    }
+  },
+  { deep: true },
+)
 
 // Helpers hoist union-typed casts out of the template — otherwise the
 // template parser sees `string | number` and flags the `|` as a deprecated
@@ -202,37 +249,43 @@ v-for="group in inputsByCategory" v-else :key="group.category" :title="group.cat
           No inputs in this group yet.
         </div>
         <FormGrid v-for="item in group.items" :key="item.name" design="1">
-          <div class="space-y-1.5">
-            <div class="flex items-end justify-between gap-3">
-              <div class="min-w-0 space-y-0.5">
-                <Label :for="`inp-${item.name}`" class="flex flex-wrap items-center gap-1.5">
-                  <span>{{ prettyLabel(item.name) }}</span>
-                  <span v-if="item.required" class="text-destructive">*</span>
-                  <WorkflowDataType :type="item.type" display="long" />
-                  <span class="text-muted-foreground font-mono text-[11px]">{{ item.name }}</span>
-                </Label>
-                <p v-if="item.description" class="text-muted-foreground text-xs">
-                  {{ item.description }}
-                </p>
-              </div>
-              <Button
+          <FormField v-slot="{ componentField }" :name="item.name">
+            <FormItem>
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <FormLabel :for="`inp-${item.name}`" class="flex items-center gap-1.5">
+                    {{ prettyLabel(item.name) }}
+                    <span v-if="item.required" class="text-destructive">*</span>
+                  </FormLabel>
+                  <div class="mt-0.5 flex flex-wrap items-center gap-1.5">
+                    <WorkflowDataType :type="item.type" display="long" />
+                    <span class="text-muted-foreground font-mono text-[11px]">{{ item.name }}</span>
+                  </div>
+                </div>
+                <Button
 variant="ghost" size="icon" class="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
-                :aria-label="`Remove ${item.name}`" @click="removeInput(item.name)">
-                <LucideTrash class="h-4 w-4" />
-              </Button>
-            </div>
-            <Switch
-v-if="item.type === 'boolean'" :id="`inp-${item.name}`" :model-value="!!inputValues[item.name]"
-              @update:model-value="(v: boolean) => setInputValue(item.name, v)" />
-            <Input
-v-else-if="item.type === 'number'" :id="`inp-${item.name}`" type="number"
-              :model-value="numberInputValue(item.name)"
-              @update:model-value="(v) => setInputValue(item.name, v === '' ? null : Number(v))" />
-            <Input
-v-else :id="`inp-${item.name}`"
-              :model-value="inputValues[item.name] == null ? '' : String(inputValues[item.name])"
-              @update:model-value="(v) => setInputValue(item.name, v)" />
-          </div>
+                  :aria-label="`Remove ${item.name}`" @click="removeInput(item.name)">
+                  <LucideTrash class="h-4 w-4" />
+                </Button>
+              </div>
+              <FormControl>
+                <Switch
+v-if="item.type === 'boolean'" :id="`inp-${item.name}`"
+                  :checked="componentField.modelValue" @update:checked="componentField['onUpdate:modelValue']" />
+                <Input
+v-else-if="item.type === 'number'" :id="`inp-${item.name}`" type="number" class="max-w-lg"
+                  :model-value="numberInputValue(item.name)"
+                  @update:model-value="(v) => componentField['onUpdate:modelValue'](v === '' ? null : Number(v))" />
+                <Input
+v-else :id="`inp-${item.name}`" class="max-w-lg"
+                  v-bind="componentField" />
+              </FormControl>
+              <FormDescription v-if="item.description">
+                {{ item.description }}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          </FormField>
         </FormGrid>
       </FormGridWrap>
     </ContentEditCard>
@@ -308,8 +361,7 @@ id="new-input-default" :model-value="newInput.defaultValue"
 class="flex flex-row items-center justify-between gap-4 rounded-lg border p-4 text-sm"
                 data-slot="form-item">
                 <div class="text-left">
-                  <Label for="new-input-default" class="text-sm font-semibold">Default value</Label>
-                  <p class="text-muted-foreground mt-1 text-xs">
+                  <p class="text-muted-foreground text-xs">
                     Toggle the boolean default.
                   </p>
                 </div>
