@@ -55,6 +55,7 @@ export default defineConfig({
       },
       {
         text: 'Composables',
+        collapsed: true,
         items: [
           {
             text: 'API ',
@@ -155,6 +156,203 @@ export default defineConfig({
                 text: 'useWholesaleOrders',
                 link: '/composables/useWholesaleOrders.md',
               },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Components',
+        collapsed: true,
+        items: [
+          {
+            text: 'shadcn-vue primitives',
+            link: '/components/shadcn-vue.md',
+          },
+          {
+            text: 'Buttons',
+            items: [
+              {
+                text: 'ButtonExport',
+                link: '/components/button/ButtonExport.md',
+              },
+              { text: 'ButtonIcon', link: '/components/button/ButtonIcon.md' },
+            ],
+          },
+          {
+            text: 'Dialogs',
+            items: [
+              {
+                text: 'DialogDelete',
+                link: '/components/dialog/DialogDelete.md',
+              },
+              {
+                text: 'DialogStatusTransition',
+                link: '/components/dialog/DialogStatusTransition.md',
+              },
+              {
+                text: 'DialogUnsavedChanges',
+                link: '/components/dialog/DialogUnsavedChanges.md',
+              },
+            ],
+          },
+          {
+            text: 'Form layout',
+            items: [
+              { text: 'FormGrid', link: '/components/form/FormGrid.md' },
+              {
+                text: 'FormGridWrap',
+                link: '/components/form/FormGridWrap.md',
+              },
+              {
+                text: 'FormItemSwitch',
+                link: '/components/form/item/FormItemSwitch.md',
+              },
+            ],
+          },
+          {
+            text: 'Form inputs',
+            items: [
+              {
+                text: 'FormInputChannels',
+                link: '/components/form/input/FormInputChannels.md',
+              },
+              {
+                text: 'FormInputColor',
+                link: '/components/form/input/FormInputColor.md',
+              },
+              {
+                text: 'FormInputCountrySelect',
+                link: '/components/form/input/FormInputCountrySelect.md',
+              },
+              {
+                text: 'FormInputDate',
+                link: '/components/form/input/FormInputDate.md',
+              },
+              {
+                text: 'FormInputDescription',
+                link: '/components/form/input/FormInputDescription.md',
+              },
+              {
+                text: 'FormInputFont',
+                link: '/components/form/input/FormInputFont.md',
+              },
+              {
+                text: 'FormInputImage',
+                link: '/components/form/input/FormInputImage.md',
+              },
+              {
+                text: 'FormInputLanguageSelect',
+                link: '/components/form/input/FormInputLanguageSelect.md',
+              },
+              {
+                text: 'FormInputLocked',
+                link: '/components/form/input/FormInputLocked.md',
+              },
+              {
+                text: 'FormInputMarketSelect',
+                link: '/components/form/input/FormInputMarketSelect.md',
+              },
+              {
+                text: 'FormInputPixel',
+                link: '/components/form/input/FormInputPixel.md',
+              },
+              {
+                text: 'FormInputRadioCards',
+                link: '/components/form/input/FormInputRadioCards.md',
+              },
+              {
+                text: 'FormInputSelectSearch',
+                link: '/components/form/input/FormInputSelectSearch.md',
+              },
+              {
+                text: 'FormInputTagsSearch',
+                link: '/components/form/input/FormInputTagsSearch.md',
+              },
+            ],
+          },
+          {
+            text: 'Tables',
+            items: [
+              {
+                text: 'TableColumnToggle',
+                link: '/components/table/TableColumnToggle.md',
+              },
+              {
+                text: 'TablePagination',
+                link: '/components/table/TablePagination.md',
+              },
+              { text: 'TableView', link: '/components/table/TableView.md' },
+              {
+                text: 'TableHeaderSort',
+                link: '/components/table/header/TableHeaderSort.md',
+              },
+            ],
+          },
+          {
+            text: 'Table cells',
+            items: [
+              {
+                text: 'TableCellActions',
+                link: '/components/table/cell/TableCellActions.md',
+              },
+              {
+                text: 'TableCellBoolean',
+                link: '/components/table/cell/TableCellBoolean.md',
+              },
+              {
+                text: 'TableCellChannels',
+                link: '/components/table/cell/TableCellChannels.md',
+              },
+              {
+                text: 'TableCellCurrency',
+                link: '/components/table/cell/TableCellCurrency.md',
+              },
+              {
+                text: 'TableCellDelete',
+                link: '/components/table/cell/TableCellDelete.md',
+              },
+              {
+                text: 'TableCellEdit',
+                link: '/components/table/cell/TableCellEdit.md',
+              },
+              {
+                text: 'TableCellEditable',
+                link: '/components/table/cell/TableCellEditable.md',
+              },
+              {
+                text: 'TableCellFlag',
+                link: '/components/table/cell/TableCellFlag.md',
+              },
+              {
+                text: 'TableCellLongText',
+                link: '/components/table/cell/TableCellLongText.md',
+              },
+              {
+                text: 'TableCellProduct',
+                link: '/components/table/cell/TableCellProduct.md',
+              },
+              {
+                text: 'TableCellStatus',
+                link: '/components/table/cell/TableCellStatus.md',
+              },
+              {
+                text: 'TableCellSwitch',
+                link: '/components/table/cell/TableCellSwitch.md',
+              },
+              {
+                text: 'TableCellTags',
+                link: '/components/table/cell/TableCellTags.md',
+              },
+              {
+                text: 'TableCellTooltip',
+                link: '/components/table/cell/TableCellTooltip.md',
+              },
+            ],
+          },
+          {
+            text: 'Other',
+            items: [
+              { text: 'StatusBadge', link: '/components/StatusBadge.md' },
             ],
           },
         ],
