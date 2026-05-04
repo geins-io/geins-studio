@@ -252,5 +252,4 @@ breadcrumbsStore.setBreadcrumbs([{ label: 'Custom', href: '/custom' }]);
 ## Related
 
 - [Breadcrumbs Store](/stores/breadcrumbs)
-- [Navigation Config](/lib/navigation)
 - [User Store](/stores/user) (for role/permission checks)
