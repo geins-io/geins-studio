@@ -355,9 +355,11 @@ const bodyStyle = computed(() => ({
                     <template v-else-if="streamStatus === 'error'">Stream error: {{ streamError }}</template>
                     <template v-else>Idle</template>
                   </span>
-                  <code class="bg-muted text-muted-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px]">
-                    {{ props.executionId }}
-                  </code>
+                  <NuxtLink
+                    :to="`/orchestrator/executions/${props.executionId}`"
+                    target="_blank"
+                    class="bg-muted text-muted-foreground hover:text-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px] underline-offset-2 hover:underline"
+                  >{{ props.executionId }}</NuxtLink>
                 </template>
                 <template v-else>
                   <span class="text-muted-foreground">Run a workflow to see live events</span>
