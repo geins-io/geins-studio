@@ -1102,9 +1102,11 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
     <WorkflowBuilder
 v-if="viewMode === 'builder'" :key="viewMode" ref="builderRef" class="-mx-3 -mt-4 -mb-12 @2xl:-mx-8 @2xl:-mb-14"
       :workflow-id="workflowId" :is-new="isNew" :is-dirty="hasConfigChanges"
+      :log-verbosity="form.values.settings?.logVerbosity"
       @executed="refreshExecutions"
       @change="onBuilderChange"
-      @save-and-run="saveAndRun" />
+      @save-and-run="saveAndRun"
+      @update:log-verbosity="form.setFieldValue('settings.logVerbosity', $event)" />
   </KeepAlive>
 </template>
 
