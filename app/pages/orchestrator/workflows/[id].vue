@@ -6,8 +6,9 @@ import type { Component } from 'vue'
 import * as z from 'zod'
 import 'cronstrue/locales/sv'
 import { DataItemDisplayType } from '#shared/types'
-import type { WorkflowInput } from '#shared/types'
+import type { WorkflowInput, WorkflowNode } from '#shared/types'
 import { useToast } from '@/components/ui/toast/use-toast'
+import { sanitizeWorkflowNodes } from '@/composables/useWorkflowCanvas'
 
 definePageMeta({
   layout: 'default',
@@ -471,7 +472,7 @@ const handleSave = async () => {
       enabled: workflowActive.value,
       cronExpression: apiType === 'scheduled' ? values.trigger.cron : undefined,
       eventName: apiType === 'event' ? values.trigger.eventEntity : undefined,
-      nodes: graph?.nodes ?? wf.nodes,
+      nodes: sanitizeWorkflowNodes((graph?.nodes ?? wf.nodes) as WorkflowNode[]),
       connections: graph?.connections ?? wf.connections,
       // Merge existing ui with builder-provided keys (triggerPosition, viewport)
       // so canvas-only state persists without clobbering unrelated `ui` fields.
@@ -529,7 +530,7 @@ const handleValidate = async () => {
       enabled: workflowActive.value,
       cronExpression: apiType === 'scheduled' ? values.trigger.cron : undefined,
       eventName: apiType === 'event' ? values.trigger.eventEntity : undefined,
-      nodes: graph?.nodes ?? wf.nodes,
+      nodes: sanitizeWorkflowNodes((graph?.nodes ?? wf.nodes) as WorkflowNode[]),
       connections: graph?.connections ?? wf.connections,
       input: workflowInputs.value,
       settings: values.settings,

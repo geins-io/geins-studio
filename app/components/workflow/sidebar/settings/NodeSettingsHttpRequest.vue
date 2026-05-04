@@ -247,64 +247,69 @@ const methodColor = computed(() => {
           <LucideChevronRight class="h-3.5 w-3.5 transition-transform" :class="{ 'rotate-90': showBody }" />
           Body
         </span>
-        <span v-if="!needsBody" class="text-muted-foreground text-[10px]">{{ method }} typically has no body</span>
+        <span v-if="!needsBody" class="text-muted-foreground text-[10px]">No body</span>
       </button>
       <div v-if="showBody" class="mt-2 space-y-2">
-        <div class="flex gap-1">
-          <button
-            class="rounded-md px-2 py-1 text-xs font-medium"
-            :class="bodyMode === 'json' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'"
-            @click="bodyMode = 'json'"
-          >
-            JSON
-          </button>
-          <button
-            class="rounded-md px-2 py-1 text-xs font-medium"
-            :class="bodyMode === 'keypair' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'"
-            @click="bodyMode = 'keypair'"
-          >
-            Key-Value
-          </button>
-        </div>
-
-        <!-- JSON mode -->
-        <div v-if="bodyMode === 'json'">
-          <textarea
-            v-model="bodyJson"
-            rows="6"
-            placeholder='{ "key": "value" }'
-            class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-xs leading-relaxed focus:ring-2 focus:outline-none"
-            @blur="commitBodyJson()"
-          />
-        </div>
-
-        <!-- Key-value mode -->
-        <div v-else class="space-y-2">
-          <div v-for="(pair, i) in bodyPairs" :key="i" class="flex items-center gap-1">
-            <input
-              v-model="pair.key"
-              placeholder="Key"
-              class="bg-background focus:ring-ring min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
-              @blur="commitBodyPairs()"
-            />
-            <input
-              v-model="pair.value"
-              placeholder="Value"
-              class="bg-background focus:ring-ring min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
-              @blur="commitBodyPairs()"
-            />
-            <button class="hover:bg-muted shrink-0 rounded p-1" @click="removeBodyRow(i)">
-              <LucideX class="text-muted-foreground h-3 w-3" />
+        <p v-if="!needsBody" class="text-muted-foreground text-xs">
+          {{ method }} requests do not have a body
+        </p>
+        <template v-else>
+          <div class="flex gap-1">
+            <button
+              class="rounded-md px-2 py-1 text-xs font-medium"
+              :class="bodyMode === 'json' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'"
+              @click="bodyMode = 'json'"
+            >
+              JSON
+            </button>
+            <button
+              class="rounded-md px-2 py-1 text-xs font-medium"
+              :class="bodyMode === 'keypair' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'"
+              @click="bodyMode = 'keypair'"
+            >
+              Key-Value
             </button>
           </div>
-          <button
-            class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-            @click="addBodyRow"
-          >
-            <LucidePlus class="h-3 w-3" />
-            Add field
-          </button>
-        </div>
+
+          <!-- JSON mode -->
+          <div v-if="bodyMode === 'json'">
+            <textarea
+              v-model="bodyJson"
+              rows="6"
+              placeholder='{ "key": "value" }'
+              class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-xs leading-relaxed focus:ring-2 focus:outline-none"
+              @blur="commitBodyJson()"
+            />
+          </div>
+
+          <!-- Key-value mode -->
+          <div v-else class="space-y-2">
+            <div v-for="(pair, i) in bodyPairs" :key="i" class="flex items-center gap-1">
+              <input
+                v-model="pair.key"
+                placeholder="Key"
+                class="bg-background focus:ring-ring min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
+                @blur="commitBodyPairs()"
+              />
+              <input
+                v-model="pair.value"
+                placeholder="Value"
+                class="bg-background focus:ring-ring min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
+                @blur="commitBodyPairs()"
+              />
+              <button class="hover:bg-muted shrink-0 rounded p-1" @click="removeBodyRow(i)">
+                <LucideX class="text-muted-foreground h-3 w-3" />
+              </button>
+            </div>
+            <button
+              class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+              @click="addBodyRow"
+            >
+              <LucidePlus class="h-3 w-3" />
+              Add field
+            </button>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -337,12 +342,7 @@ const methodColor = computed(() => {
             <label class="text-xs font-medium">Throw on error</label>
             <p class="text-muted-foreground text-[10px]">Fail the node on HTTP errors</p>
           </div>
-          <input
-            type="checkbox"
-            :checked="throwOnError"
-            class="rounded border"
-            @change="throwOnError = ($event.target as HTMLInputElement).checked"
-          />
+          <Switch :checked="throwOnError" @update:checked="(v: boolean) => throwOnError = v" />
         </div>
 
         <!-- Expected status codes -->

@@ -32,6 +32,38 @@ const DEFAULT_X_STEP = 300;
 type NodeUi = { position?: { x: number; y: number }; [key: string]: unknown };
 type WithUi = { ui?: NodeUi };
 
+const HTTP_NO_BODY_METHODS = new Set(['GET', 'DELETE']);
+
+const sanitizeNodeInput = (
+  nodeType: string,
+  input: Record<string, unknown>,
+): Record<string, unknown> => {
+  if (
+    (nodeType === 'httpRequest' || nodeType === 'net.httpRequest') &&
+    HTTP_NO_BODY_METHODS.has(String(input.method ?? 'GET'))
+  ) {
+    const { body: _, ...rest } = input;
+    return rest;
+  }
+  return input;
+};
+
+export const sanitizeWorkflowNodes = <
+  T extends {
+    type?: string;
+    actionName?: string;
+    input?: Record<string, unknown>;
+  },
+>(
+  nodes: T[],
+): T[] =>
+  nodes.map((n) => {
+    const nodeType = n.actionName ?? n.type ?? '';
+    if (!n.input) return n;
+    const sanitized = sanitizeNodeInput(nodeType, n.input);
+    return sanitized === n.input ? n : ({ ...n, input: sanitized } as T);
+  });
+
 const readPosition = (node: WorkflowNode & WithUi, index: number) =>
   node.ui?.position ??
   node.position ?? { x: DEFAULT_X + index * DEFAULT_X_STEP, y: DEFAULT_Y };
@@ -109,7 +141,10 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
           name: (n.data?.label as string | undefined) ?? n.id,
           actionName: n.data?.actionName as string | undefined,
           config: (n.data?.config as Record<string, unknown> | undefined) ?? {},
-          input: (n.data?.input as Record<string, unknown> | undefined) ?? {},
+          input: sanitizeNodeInput(
+            (n.data?.actionName as string) ?? (n.type as string),
+            (n.data?.input as Record<string, unknown> | undefined) ?? {},
+          ),
           position,
           // Persist position on the API-native `ui` field so the canvas can
           // restore it on next load (and any unrelated ui keys round-trip).
