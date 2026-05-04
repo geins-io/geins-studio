@@ -20,11 +20,13 @@ import WorkflowNode from './node/WorkflowNode.vue'
 const props = defineProps<{
   workflowId: string
   isNew: boolean
+  isDirty?: boolean
 }>()
 
 const emit = defineEmits<{
   executed: []
   change: []
+  'save-and-run': []
 }>()
 
 const { orchestratorApi } = useGeinsRepository()
@@ -218,25 +220,7 @@ watch(canvasSnapshot, () => {
   if (canvasReady.value) emit('change')
 })
 
-// Snapshot current canvas state as API-shaped `{ nodes, connections }` for
-// the parent page to persist on save. `getUi()` returns the workflow-level
-// `ui` blob — trigger position + current viewport — since the trigger node
-// isn't saved in `workflow.nodes[]`.
-defineExpose({
-  getGraph: () => toApi({ nodes: nodes.value, edges: edges.value }),
-  getUi: (): WorkflowCanvasUi => {
-    const triggerNode = findNode(TRIGGER_NODE_ID)
-      ?? nodes.value.find(n => n.type === 'trigger')
-    const vp = getViewport()
-    return {
-      ...savedCanvasUi.value,
-      triggerPosition: triggerNode
-        ? { x: triggerNode.position.x, y: triggerNode.position.y }
-        : savedCanvasUi.value.triggerPosition,
-      viewport: { x: vp.x, y: vp.y, zoom: vp.zoom },
-    }
-  },
-})
+
 
 const selectedNode = ref<any>(null)
 const isAddNodeOpen = ref(false)
@@ -481,20 +465,13 @@ usePollWhile(
   2000,
 )
 
-const runWorkflow = async () => {
-  if (props.isNew) {
-    toast({
-      title: 'Save the workflow first',
-      description: 'New workflows must be saved before they can be executed.',
-    })
-    return
-  }
+const showDirtyRunDialog = ref(false)
+
+const startExecution = async () => {
   try {
     const res = await orchestratorApi.execution.start(props.workflowId)
     const execId = res?.executionId ?? res?.newExecutionId ?? null
     lastExecutionId.value = execId
-    // Only now mark as running — the polling composable will flip it back
-    // to false once the execution reaches a terminal status.
     isRunning.value = true
     workflowPanelLogsRef.value?.open()
     toast({
@@ -513,6 +490,49 @@ const runWorkflow = async () => {
     })
   }
 }
+
+const runWorkflow = async () => {
+  if (props.isNew) {
+    toast({
+      title: 'Save the workflow first',
+      description: 'New workflows must be saved before they can be executed.',
+    })
+    return
+  }
+  if (props.isDirty) {
+    showDirtyRunDialog.value = true
+    return
+  }
+  await startExecution()
+}
+
+const handleSaveAndRun = () => {
+  showDirtyRunDialog.value = false
+  emit('save-and-run')
+}
+
+const handleRunWithoutSaving = async () => {
+  showDirtyRunDialog.value = false
+  await startExecution()
+}
+
+// ─── Expose ──────────────────────────────────────────────────────
+defineExpose({
+  getGraph: () => toApi({ nodes: nodes.value, edges: edges.value }),
+  startExecution,
+  getUi: (): WorkflowCanvasUi => {
+    const triggerNode = findNode(TRIGGER_NODE_ID)
+      ?? nodes.value.find(n => n.type === 'trigger')
+    const vp = getViewport()
+    return {
+      ...savedCanvasUi.value,
+      triggerPosition: triggerNode
+        ? { x: triggerNode.position.x, y: triggerNode.position.y }
+        : savedCanvasUi.value.triggerPosition,
+      viewport: { x: vp.x, y: vp.y, zoom: vp.zoom },
+    }
+  },
+})
 
 // ─── Validate ─────────────────────────────────────────────────────
 const isValidating = ref(false)
@@ -677,6 +697,22 @@ v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
     </div>
 
     <WorkflowPanelLogs ref="workflowPanelLogsRef" :execution-id="lastExecutionId" />
+
+    <AlertDialog v-model:open="showDirtyRunDialog">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
+          <AlertDialogDescription>
+            This workflow has unsaved changes. Would you like to save before running?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <Button variant="outline" @click="handleRunWithoutSaving">Run without saving</Button>
+          <Button @click="handleSaveAndRun">Save & Run</Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>
 

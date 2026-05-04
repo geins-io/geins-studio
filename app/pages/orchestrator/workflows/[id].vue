@@ -164,6 +164,7 @@ const refreshExecutions = () => executionsRef.value?.refresh()
 const builderRef = ref<{
   getGraph: () => { nodes: unknown[], connections: unknown[] }
   getUi: () => Record<string, unknown>
+  startExecution: () => Promise<void>
 } | null>(null)
 
 // ─── Trigger & cron helpers ────────────────────────────────────────
@@ -505,6 +506,13 @@ const handleSave = async () => {
   }
   finally {
     isSavingConfig.value = false
+  }
+}
+
+const saveAndRun = async () => {
+  await handleSave()
+  if (!hasUnsavedChanges.value) {
+    await builderRef.value?.startExecution()
   }
 }
 
@@ -1085,9 +1093,10 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
   <KeepAlive>
     <WorkflowBuilder
 v-if="viewMode === 'builder'" :key="viewMode" ref="builderRef" class="-mx-3 -mt-4 -mb-12 @2xl:-mx-8 @2xl:-mb-14"
-      :workflow-id="workflowId" :is-new="isNew"
+      :workflow-id="workflowId" :is-new="isNew" :is-dirty="hasUnsavedChanges"
       @executed="refreshExecutions"
-      @change="onBuilderChange" />
+      @change="onBuilderChange"
+      @save-and-run="saveAndRun" />
   </KeepAlive>
 </template>
 
