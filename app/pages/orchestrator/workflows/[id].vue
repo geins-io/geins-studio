@@ -954,7 +954,6 @@ v-if="!isNew" title="Runtime Settings"
                               <SelectItem value="minimal">Minimal</SelectItem>
                               <SelectItem value="normal">Normal</SelectItem>
                               <SelectItem value="detailed">Detailed</SelectItem>
-                              <SelectItem value="debug">Debug</SelectItem>
                             </SelectContent>
                           </Select>
                         </FormControl>
