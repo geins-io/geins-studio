@@ -21,12 +21,14 @@ const props = defineProps<{
   workflowId: string
   isNew: boolean
   isDirty?: boolean
+  logVerbosity?: string | null
 }>()
 
 const emit = defineEmits<{
   executed: []
   change: []
   'save-and-run': []
+  'update:logVerbosity': [value: string]
 }>()
 
 const { orchestratorApi } = useGeinsRepository()
@@ -696,7 +698,7 @@ v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
       <WorkflowSidebarAddNode v-model:open="isAddNodeOpen" @add="handleAddFromPalette" />
     </div>
 
-    <WorkflowPanelLogs ref="workflowPanelLogsRef" :execution-id="lastExecutionId" />
+    <WorkflowPanelLogs ref="workflowPanelLogsRef" :execution-id="lastExecutionId" :log-verbosity="props.logVerbosity" @update:log-verbosity="emit('update:logVerbosity', $event)" />
 
     <AlertDialog v-model:open="showDirtyRunDialog">
       <AlertDialogContent>
