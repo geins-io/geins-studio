@@ -691,7 +691,7 @@ v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
 
           <WorkflowSidebarNodeProperties
 :node="selectedNode" :node-execution="selectedNodeExecution"
-            @close="selectedNode = null" @delete="deleteSelectedNode" />
+            @close="selectedNode = null" />
         </div>
       </div>
 
