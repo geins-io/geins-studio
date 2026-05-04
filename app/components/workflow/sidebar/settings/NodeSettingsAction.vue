@@ -48,6 +48,8 @@ const isTextarea = (field: { editorHint?: string, type: string }): boolean =>
 
 const isSelect = (field: { allowedValues?: unknown[] }): boolean =>
   Array.isArray(field.allowedValues) && field.allowedValues.length > 0
+
+const showOutput = ref(false)
 </script>
 
 <template>
@@ -128,15 +130,25 @@ const isSelect = (field: { allowedValues?: unknown[] }): boolean =>
 
     <!-- Output schema -->
     <div v-if="actionOutputFields.length" class="mt-4 border-t pt-4">
-      <h4 class="mb-3 text-sm font-medium">Output Schema</h4>
-      <div class="space-y-1">
-        <div
-          v-for="field in actionOutputFields"
-          :key="field.name"
-          class="flex items-center justify-between rounded px-2 py-1.5 text-xs"
-        >
-          <span class="font-mono font-medium">{{ field.name }}</span>
-          <span class="text-muted-foreground font-mono">{{ field.type }}</span>
+      <button
+        class="flex w-full items-center gap-1.5 text-sm font-medium"
+        @click="showOutput = !showOutput"
+      >
+        <LucideChevronRight class="h-3.5 w-3.5 transition-transform" :class="{ 'rotate-90': showOutput }" />
+        Output Schema
+      </button>
+      <div v-if="showOutput" class="mt-3 space-y-3">
+        <div v-for="field in actionOutputFields" :key="field.name" class="space-y-1">
+          <label class="text-muted-foreground flex items-center gap-1 text-sm">
+            {{ prettyLabel(field.name) }}
+            <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">{{ field.type }}</span>
+          </label>
+          <p v-if="field.description" class="text-muted-foreground text-xs">
+            {{ field.description }}
+          </p>
+          <div class="bg-muted text-muted-foreground rounded-md border px-3 py-2 font-mono text-sm">
+            {{ field.name }}
+          </div>
         </div>
       </div>
     </div>
