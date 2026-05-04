@@ -872,7 +872,7 @@ if (!createMode.value) {
               <FormGridWrap>
                 <FormGrid design="1">
                   <FormField v-slot="{ value, handleChange }" name="vat.exVat">
-                    <FormInputSwitch
+                    <FormItemSwitch
                       :label="$t('pricing.price_list_enter_prices_ex_vat')"
                       :description="
                         $t('pricing.price_list_enter_prices_ex_vat_description')
@@ -981,7 +981,7 @@ if (!createMode.value) {
                     v-slot="{ value, handleChange }"
                     name="default.forced"
                   >
-                    <FormInputSwitch
+                    <FormItemSwitch
                       :label="$t('pricing.price_list_forced')"
                       :description="
                         $t('pricing.price_list_override_prices_description')
@@ -996,7 +996,7 @@ if (!createMode.value) {
                     v-slot="{ value, handleChange }"
                     name="default.autoAddProducts"
                   >
-                    <FormInputSwitch
+                    <FormItemSwitch
                       :label="$t('pricing.price_list_auto_add_products')"
                       :description="
                         $t('pricing.price_list_auto_add_products_description')
