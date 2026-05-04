@@ -242,6 +242,14 @@ const { hasUnsavedChanges, unsavedChangesDialogOpen, confirmLeave } = useUnsaved
   isNew,
 )
 
+const hasConfigChanges = computed(() => {
+  if (!hasUnsavedChanges.value) return false
+  const { builderChanges: _a, ...current } = editableState.value
+  const original = JSON.parse(originalEditableState.value || '{}')
+  const { builderChanges: _b, ...saved } = original
+  return JSON.stringify(current) !== JSON.stringify(saved)
+})
+
 // ─── Current workflow (for enable/disable + duplicate) ────────────
 const { data: currentWorkflow, refresh: refreshCurrentWorkflow } = await useAsyncData(
   () => `workflow-${workflowId.value}`,
@@ -1093,7 +1101,7 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
   <KeepAlive>
     <WorkflowBuilder
 v-if="viewMode === 'builder'" :key="viewMode" ref="builderRef" class="-mx-3 -mt-4 -mb-12 @2xl:-mx-8 @2xl:-mb-14"
-      :workflow-id="workflowId" :is-new="isNew" :is-dirty="hasUnsavedChanges"
+      :workflow-id="workflowId" :is-new="isNew" :is-dirty="hasConfigChanges"
       @executed="refreshExecutions"
       @change="onBuilderChange"
       @save-and-run="saveAndRun" />
