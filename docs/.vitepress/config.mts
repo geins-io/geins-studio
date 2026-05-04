@@ -350,6 +350,112 @@ export default defineConfig({
             ],
           },
           {
+            text: 'Selector',
+            items: [
+              {
+                text: 'Selector',
+                link: '/components/selector/Selector.md',
+              },
+              {
+                text: 'SelectorHeader',
+                link: '/components/selector/SelectorHeader.md',
+              },
+              {
+                text: 'SelectorLinkingWord',
+                link: '/components/selector/SelectorLinkingWord.md',
+              },
+              {
+                text: 'SelectorPanel',
+                link: '/components/selector/SelectorPanel.md',
+              },
+              {
+                text: 'SelectorQuickAdd',
+                link: '/components/selector/SelectorQuickAdd.md',
+              },
+              {
+                text: 'SelectorSelection',
+                link: '/components/selector/SelectorSelection.md',
+              },
+              {
+                text: 'SelectorTag',
+                link: '/components/selector/SelectorTag.md',
+              },
+              {
+                text: 'SelectorTagLink',
+                link: '/components/selector/SelectorTagLink.md',
+              },
+              {
+                text: 'SelectorTags',
+                link: '/components/selector/SelectorTags.md',
+              },
+            ],
+          },
+          {
+            text: 'Content',
+            items: [
+              {
+                text: 'ContentActionBar',
+                link: '/components/content/ContentActionBar.md',
+              },
+              {
+                text: 'ContentAddressDisplay',
+                link: '/components/content/ContentAddressDisplay.md',
+              },
+              {
+                text: 'ContentAddressForm',
+                link: '/components/content/ContentAddressForm.md',
+              },
+              {
+                text: 'ContentCard',
+                link: '/components/content/ContentCard.md',
+              },
+              {
+                text: 'ContentCardHeader',
+                link: '/components/content/ContentCardHeader.md',
+              },
+              {
+                text: 'ContentDataList',
+                link: '/components/content/ContentDataList.md',
+              },
+              {
+                text: 'ContentHeader',
+                link: '/components/content/ContentHeader.md',
+              },
+              {
+                text: 'ContentHeading',
+                link: '/components/content/ContentHeading.md',
+              },
+              {
+                text: 'ContentLinkCard',
+                link: '/components/content/ContentLinkCard.md',
+              },
+              {
+                text: 'ContentPriceSummary',
+                link: '/components/content/ContentPriceSummary.md',
+              },
+              {
+                text: 'ContentSection',
+                link: '/components/content/ContentSection.md',
+              },
+              {
+                text: 'ContentSwitch',
+                link: '/components/content/ContentSwitch.md',
+              },
+              {
+                text: 'ContentTitleBlock',
+                link: '/components/content/ContentTitleBlock.md',
+              },
+              {
+                text: 'ContentTextCopy',
+                link: '/components/content/text/ContentTextCopy.md',
+              },
+              {
+                text: 'ContentTextTooltip',
+                link: '/components/content/text/ContentTextTooltip.md',
+              },
+            ],
+          },
+          {
             text: 'Other',
             items: [
               { text: 'StatusBadge', link: '/components/StatusBadge.md' },
