@@ -43,6 +43,37 @@ const nodeIcon = computed(() => {
 })
 
 const nodeLabel = computed(() => (nodeData.value.label as string) || manifestNodeType.value?.displayName || 'Node properties')
+
+const isEditingLabel = ref(false)
+const editLabelText = ref('')
+const labelInput = ref<HTMLInputElement>()
+const labelMeasure = ref<HTMLSpanElement>()
+
+const labelWidth = computed(() => {
+  const text = isEditingLabel.value ? editLabelText.value : nodeLabel.value
+  return text || 'Node'
+})
+
+const startEditLabel = () => {
+  editLabelText.value = nodeLabel.value
+  isEditingLabel.value = true
+  nextTick(() => {
+    labelInput.value?.focus()
+    labelInput.value?.select()
+  })
+}
+
+const commitLabel = () => {
+  const trimmed = editLabelText.value.trim()
+  if (trimmed && trimmed !== nodeLabel.value) {
+    nodeData.value.label = trimmed
+  }
+  isEditingLabel.value = false
+}
+
+const cancelEditLabel = () => {
+  isEditingLabel.value = false
+}
 </script>
 
 <template>
@@ -51,10 +82,26 @@ const nodeLabel = computed(() => (nodeData.value.label as string) || manifestNod
     :class="isOpen ? 'translate-x-0' : 'translate-x-full'">
     <!-- Header — full width, icon + name left, actions right -->
     <div class="flex items-center justify-between gap-2 border-b px-4 py-3">
-      <div class="flex items-center gap-2">
+      <div class="flex min-w-0 flex-1 items-center gap-2">
         <component :is="nodeIcon" v-if="nodeIcon" class="h-4 w-4 shrink-0" />
         <LucideSettings v-else class="h-4 w-4 shrink-0" />
-        <span class="truncate text-sm font-medium">{{ nodeLabel }}</span>
+        <div class="group relative inline-grid min-w-0 items-center text-sm font-medium">
+          <span ref="labelMeasure" class="invisible col-start-1 row-start-1 whitespace-pre px-1">{{ labelWidth }}</span>
+          <input
+            v-if="isEditingLabel"
+            ref="labelInput"
+            v-model="editLabelText"
+            class="col-start-1 row-start-1 min-w-0 rounded bg-transparent px-1 text-sm font-medium outline-none ring-1 ring-primary"
+            @blur="commitLabel"
+            @keydown.enter="($event.target as HTMLInputElement).blur()"
+            @keydown.escape.prevent="cancelEditLabel"
+          />
+          <span
+            v-else
+            class="col-start-1 row-start-1 cursor-text truncate rounded px-1 group-hover:ring-1 group-hover:ring-border"
+            @click="startEditLabel"
+          >{{ nodeLabel }}</span>
+        </div>
         <span v-if="nodeExecution?.status" class="rounded px-1.5 py-0.5 text-[10px] font-medium capitalize" :class="{
           'bg-green-500/10 text-green-600 dark:text-green-400': nodeExecution.status === 'completed' || nodeExecution.status === 'succeeded',
           'bg-red-500/10 text-red-600 dark:text-red-400': nodeExecution.status === 'failed',
