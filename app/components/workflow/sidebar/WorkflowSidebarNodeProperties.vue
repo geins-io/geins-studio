@@ -17,7 +17,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  delete: []
 }>()
 
 const isOpen = computed(() => props.node !== null)
@@ -111,15 +110,9 @@ const cancelEditLabel = () => {
           {{ nodeExecution.status }}
         </span>
       </div>
-      <div class="flex items-center gap-1">
-        <button v-if="node && !isTriggerNode" class="hover:bg-destructive/10 text-destructive rounded p-1.5"
-          title="Delete node" @click="emit('delete')">
-          <LucideTrash2 class="h-4 w-4" />
-        </button>
-        <button class="hover:bg-accent rounded p-1.5" title="Close" @click="emit('close')">
-          <LucideX class="h-4 w-4" />
-        </button>
-      </div>
+      <button class="text-muted-foreground hover:text-foreground hover:bg-accent rounded-md p-1.5 transition-colors" title="Close" @click="emit('close')">
+        <LucideX class="h-4 w-4" />
+      </button>
     </div>
 
     <!-- 3-column body (trigger nodes show only center) -->
