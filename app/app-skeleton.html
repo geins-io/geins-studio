@@ -186,56 +186,69 @@
   .auth-footer {
     height: 40px;
   }
+  /* Grid Layout: 4x4 dots (9px squares with 3px gaps) */
   .loader {
-    width: 55px;
-    aspect-ratio: 1;
-    --g1: conic-gradient(
-      from 90deg at 3px 3px,
-      var(--foreground) 90deg,
-      var(--foreground) 0
-    );
-    --g2: conic-gradient(
-      from -90deg at 22px 22px,
-      var(--foreground) 90deg,
-      var(--foreground) 0
-    );
-    background:
-      var(--g1), var(--g1), var(--g1), var(--g2), var(--g2), var(--g2);
-    background-size: 25px 25px;
-    background-repeat: no-repeat;
-    animation: l7 1.5s infinite;
+    display: grid;
+    grid-template-columns: repeat(4, 9px);
+    grid-template-rows: repeat(4, 9px);
+    gap: 3px;
   }
-  @keyframes l7 {
-    0% {
-      background-position:
-        0 0,
-        0 100%,
-        100% 100%;
+
+  /* Dot Styling: 1.5px border radius using var(--foreground) */
+  .loader span {
+    background: var(--foreground);
+    border-radius: 1.5px;
+    animation: gemini-pulse 2s ease-in-out infinite;
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  /* Diagonal Wave Animation: (row + col) * 0.1s delay */
+  .loader span:nth-child(1)  { animation-delay: 0.0s; } /* 0,0 */
+  .loader span:nth-child(2)  { animation-delay: 0.1s; } /* 0,1 */
+  .loader span:nth-child(3)  { animation-delay: 0.2s; } /* 0,2 */
+  .loader span:nth-child(4)  { animation-delay: 0.3s; } /* 0,3 */
+  .loader span:nth-child(5)  { animation-delay: 0.1s; } /* 1,0 */
+  .loader span:nth-child(6)  { animation-delay: 0.2s; } /* 1,1 */
+  .loader span:nth-child(7)  { animation-delay: 0.3s; } /* 1,2 */
+  .loader span:nth-child(8)  { animation-delay: 0.4s; } /* 1,3 */
+  .loader span:nth-child(9)  { animation-delay: 0.2s; } /* 2,0 */
+  .loader span:nth-child(10) { animation-delay: 0.3s; } /* 2,1 */
+  .loader span:nth-child(11) { animation-delay: 0.4s; } /* 2,2 */
+  .loader span:nth-child(12) { animation-delay: 0.5s; } /* 2,3 */
+  .loader span:nth-child(13) { animation-delay: 0.3s; } /* 3,0 */
+  .loader span:nth-child(14) { animation-delay: 0.4s; } /* 3,1 */
+  .loader span:nth-child(15) { animation-delay: 0.5s; } /* 3,2 */
+  .loader span:nth-child(16) { animation-delay: 0.6s; } /* 3,3 */
+
+  @keyframes gemini-pulse {
+    0%, 100% {
+      opacity: 0;
+      transform: scale(0.4);
     }
-    25% {
-      background-position:
-        100% 0,
-        0 100%,
-        100% 100%;
+    25%, 55% {
+      opacity: 1;
+      transform: scale(1);
     }
-    50% {
-      background-position:
-        100% 0,
-        0 0,
-        100% 100%;
-    }
-    75% {
-      background-position:
-        100% 0,
-        0 0,
-        0 100%;
-    }
-    100% {
-      background-position:
-        100% 100%,
-        0 0,
-        0 100%;
-    }
+  }
+
+  /* Feedback Component Container */
+  .loader-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+  }
+
+  .loader-text {
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.875rem;
+    color: var(--foreground);
+    opacity: 0.7;
+    height: 1.25rem;
+    text-align: center;
+    transition: opacity 0.3s ease-in-out;
   }
 </style>
 <script type="text/javascript">
@@ -303,7 +316,15 @@
 
       <!-- Page Content Skeleton -->
       <div class="content">
-        <div class="loader"></div>
+        <div class="loader-wrapper">
+          <div class="loader">
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="loader-text">Consulting the digital oracle...</div>
+        </div>
       </div>
     </div>
   </div>
@@ -326,7 +347,15 @@
         Geins Studio
       </div>
       <div class="auth-card">
-        <div class="loader"></div>
+        <div class="loader-wrapper">
+          <div class="loader">
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div class="loader-text">Consulting the digital oracle...</div>
+        </div>
       </div>
       <div class="auth-footer"></div>
     </div>
@@ -347,4 +376,51 @@
 
   const idToShow = sidebarCollapsed ? 'logo-small' : 'logo-full';
   document.querySelector(`#${idToShow}`).classList.remove('hidden');
+
+  const phrases = [
+    "Consulting the digital oracle...",
+    "Connecting to AGI...",
+    "Optimizing neural pathways...",
+    "Calibrating heuristic engines...",
+    "Reticulating splines...",
+    "Bending space-time...",
+    "Synthesizing collective intelligence...",
+    "Normalizing power levels...",
+    "Buffering the matrix...",
+    "Compiling reality...",
+    "Defragmenting the soul...",
+    "Parsing the infinite...",
+    "Generating witty phrases...",
+    "Warming up the GPUs...",
+    "Loading logic gates...",
+    "Aligning the stars...",
+    "Calculating the meaning of life...",
+    "Distilling pure thought...",
+    "Reconfiguring the flux capacitor...",
+    "Polishing the silicon...",
+    "Decrypting the universe...",
+    "Synchronizing with the mainframe...",
+    "Fine-tuning the parameters...",
+    "Dreaming of electric sheep...",
+    "Harnessing the singularity...",
+    "Bridging the uncanny valley...",
+    "Mapping the latent space...",
+    "Training the tensors...",
+    "Compiling consciousness...",
+    "Finalizing the epiphany..."
+  ];
+
+  let phraseIndex = 0;
+  const loaderTexts = document.querySelectorAll('.loader-text');
+
+  setInterval(() => {
+    phraseIndex = (phraseIndex + 1) % phrases.length;
+    loaderTexts.forEach(el => {
+      el.style.opacity = '0';
+      setTimeout(() => {
+        el.innerText = phrases[phraseIndex];
+        el.style.opacity = '0.7';
+      }, 300);
+    });
+  }, 2500);
 </script>
