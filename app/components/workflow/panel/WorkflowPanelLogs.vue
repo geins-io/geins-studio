@@ -68,6 +68,11 @@ const runningCount = computed(
   () => events.value.filter(e => statusKind(e.status) === 'running').length,
 )
 
+const showVerbosityHint = computed(() => {
+  const failed = executionStatus.value === 'failed' || executionStatus.value === 'error'
+  return failed && props.logVerbosity !== 'detailed'
+})
+
 function statusKind(status: string): 'running' | 'success' | 'error' | 'other' {
   const s = (status || '').toLowerCase()
   if (s === 'completed' || s === 'success' || s === 'succeeded') return 'success'
@@ -371,6 +376,9 @@ const bodyStyle = computed(() => ({
                     target="_blank"
                     class="bg-muted text-muted-foreground hover:text-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px] underline-offset-2 hover:underline"
                   >{{ props.executionId }}</NuxtLink>
+                  <button v-if="showVerbosityHint" class="text-amber-600 hover:text-amber-500 dark:text-amber-500 dark:hover:text-amber-400 text-[10px]" @click="emit('update:logVerbosity', 'detailed')">
+                    Switch to Detailed for more info
+                  </button>
                 </template>
                 <template v-else>
                   <span class="text-muted-foreground">Run a workflow to see live events</span>
@@ -474,6 +482,9 @@ class="h-1.5 w-1.5 rounded-full"
                   target="_blank"
                   class="bg-muted text-muted-foreground hover:text-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px] underline-offset-2 hover:underline"
                 >{{ props.executionId }}</NuxtLink>
+                <button v-if="showVerbosityHint" class="text-amber-600 hover:text-amber-500 dark:text-amber-500 dark:hover:text-amber-400 text-[10px]" @click="emit('update:logVerbosity', 'detailed')">
+                  Switch to Detailed for more info
+                </button>
               </template>
               <template v-else>
                 <span class="text-muted-foreground">Run a workflow to see live events</span>
