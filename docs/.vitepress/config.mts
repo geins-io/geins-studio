@@ -55,6 +55,7 @@ export default defineConfig({
       },
       {
         text: 'Composables',
+        collapsed: true,
         items: [
           {
             text: 'API ',
@@ -161,6 +162,7 @@ export default defineConfig({
       },
       {
         text: 'Components',
+        collapsed: true,
         items: [
           {
             text: 'shadcn-vue primitives',
