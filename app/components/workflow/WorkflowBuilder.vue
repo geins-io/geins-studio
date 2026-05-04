@@ -195,13 +195,28 @@ onConnect((params) => {
 // to listen for user edits now" signal.
 const canvasReady = ref(false)
 
-watch(
-  [nodes, edges],
-  () => {
-    if (canvasReady.value) emit('change')
-  },
-  { deep: true },
-)
+const canvasSnapshot = computed(() => {
+  const n = nodes.value.map(node => ({
+    id: node.id,
+    type: node.type,
+    position: { x: node.position.x, y: node.position.y },
+    data: node.data,
+  }))
+  const e = edges.value.map(edge => ({
+    id: edge.id,
+    source: edge.source,
+    target: edge.target,
+    sourceHandle: edge.sourceHandle,
+    targetHandle: edge.targetHandle,
+    label: edge.label,
+    data: edge.data,
+  }))
+  return JSON.stringify({ n, e })
+})
+
+watch(canvasSnapshot, () => {
+  if (canvasReady.value) emit('change')
+})
 
 // Snapshot current canvas state as API-shaped `{ nodes, connections }` for
 // the parent page to persist on save. `getUi()` returns the workflow-level
