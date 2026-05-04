@@ -27,7 +27,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Step 5: Build and Deploy to Azure
+      # Step 5: Build docs with pnpm (Oryx cannot install pnpm lockfile)
+      - name: Build docs
+        run: pnpm docs:build
+
+      # Step 6: Deploy prebuilt dist to Azure
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -35,8 +39,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          app_location: "/" # App source code path
-          app_build_command: "pnpm docs:build"
-          output_location: "docs/.vitepress/dist" # Built app content directory - optional
-          ###### End of Repository/Build Configurations ######
+          app_location: "docs/.vitepress/dist"
+          output_location: ""
+          skip_app_build: true
+          skip_api_build: true
