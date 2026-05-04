@@ -44,13 +44,13 @@ const nodeInput = computed(() => (props.nodeData.input ?? {}) as Record<string, 
 const settingsComponent = computed(() => SETTINGS_COMPONENTS[props.nodeType])
 
 const updateConfig = (name: string, value: unknown) => {
-  const config = nodeConfig.value
-  config[name] = value
+  if (!props.nodeData.config) props.nodeData.config = {}
+  ;(props.nodeData.config as Record<string, unknown>)[name] = value
 }
 
 const updateInput = (name: string, value: unknown) => {
-  const input = nodeInput.value
-  input[name] = value
+  if (!props.nodeData.input) props.nodeData.input = {}
+  ;(props.nodeData.input as Record<string, unknown>)[name] = value
 }
 
 const prettyLabel = (name: string): string =>
@@ -157,14 +157,6 @@ const onSettingsDrop = (event: DragEvent) => {
     </div>
 
     <div class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
-      <!-- Node type badge -->
-      <div class="mb-4 space-y-2">
-        <label class="text-sm font-medium">Type</label>
-        <div class="text-muted-foreground bg-muted rounded-md px-3 py-2 text-sm capitalize">
-          {{ manifestNodeType?.displayName ?? nodeType }}
-        </div>
-      </div>
-
       <!-- Per-node-type settings component -->
       <component
         :is="settingsComponent"

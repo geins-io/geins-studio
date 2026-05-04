@@ -253,6 +253,40 @@ const onEdgeDelete = (edgeId: string) => {
 }
 provide('onEdgeDelete', onEdgeDelete)
 
+const onNodeDelete = (nodeId: string) => {
+  if (nodeId === TRIGGER_NODE_ID) {
+    toast({
+      title: 'Trigger cannot be deleted',
+      description: 'Change the trigger type in the General tab.',
+    })
+    return
+  }
+  removeNodes([nodeId])
+  if (selectedNode.value?.id === nodeId) selectedNode.value = null
+}
+provide('onNodeDelete', onNodeDelete)
+
+const onNodeCopy = (nodeId: string) => {
+  const source = findNode(nodeId)
+  if (!source) return
+  const position = { x: source.position.x + (source.dimensions?.width ?? 200) + 60, y: source.position.y }
+  const newNode = {
+    id: `${nodeId.split('-')[0]}-${Date.now()}`,
+    type: source.type,
+    position,
+    data: JSON.parse(JSON.stringify(source.data)),
+  }
+  addNodes([newNode])
+}
+provide('onNodeCopy', onNodeCopy)
+
+const onNodeOpenSettings = (nodeId: string) => {
+  const node = findNode(nodeId)
+  if (!node || node.type === 'trigger') return
+  selectedNode.value = node
+}
+provide('onNodeOpenSettings', onNodeOpenSettings)
+
 // Double-click a node to open the properties panel (like n8n);
 // single click just selects. Clicking the pane clears both.
 const onNodeDoubleClick = (event: any) => {
@@ -402,19 +436,6 @@ watch(isAddNodeOpen, (open) => {
 
 const toggleMinimap = () => {
   showMinimap.value = !showMinimap.value
-}
-
-const deleteSelectedNode = () => {
-  if (!selectedNode.value) return
-  if (selectedNode.value.id === TRIGGER_NODE_ID) {
-    toast({
-      title: 'Trigger cannot be deleted',
-      description: 'Change the trigger type in the General tab.',
-    })
-    return
-  }
-  removeNodes([selectedNode.value.id])
-  selectedNode.value = null
 }
 
 const isRunning = ref(false)
