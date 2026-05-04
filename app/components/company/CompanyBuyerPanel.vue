@@ -337,7 +337,7 @@ const existingCustomerName = computed(() => {
             </FormGrid>
             <FormGrid design="1">
               <FormField v-slot="{ value, handleChange }" name="active">
-                <FormItemSwitch
+                <FormInputSwitch
                   :label="$t('active')"
                   :description="$t('toggle_active_state')"
                   :model-value="value"
@@ -391,7 +391,7 @@ const existingCustomerName = computed(() => {
                   <FormItem>
                     <FormLabel>{{ $t('customers.product_access') }}</FormLabel>
                     <FormControl>
-                      <FormItemSwitch
+                      <FormInputSwitch
                         :label="
                           $t('customers.buyers_restrict_to_price_lists_label')
                         "
