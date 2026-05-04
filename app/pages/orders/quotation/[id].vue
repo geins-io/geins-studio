@@ -2431,7 +2431,7 @@ definePageMeta({
                       v-slot="{ value, handleChange }"
                       name="details.requireConfirmation"
                     >
-                      <FormInputSwitch
+                      <FormItemSwitch
                         :model-value="value"
                         :label="$t('orders.require_confirmation')"
                         :description="
@@ -2447,7 +2447,7 @@ definePageMeta({
                             @update:require-confirmation="handleChange"
                           />
                         </template>
-                      </FormInputSwitch>
+                      </FormItemSwitch>
                     </FormField>
                   </FormGrid>
                 </FormGridWrap>
