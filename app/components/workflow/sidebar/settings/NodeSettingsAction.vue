@@ -54,13 +54,6 @@ const showOutput = ref(false)
 
 <template>
   <div>
-    <div v-if="nodeData.actionName" class="mb-4 space-y-2">
-      <label class="text-sm font-medium">Action</label>
-      <div class="text-muted-foreground bg-muted rounded-md px-3 py-2 font-mono text-xs">
-        {{ nodeData.actionName }}
-      </div>
-    </div>
-
     <!-- Action-specific settings component -->
     <component
       :is="customComponent"

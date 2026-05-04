@@ -11,12 +11,15 @@ import WorkflowNodeIterator from './WorkflowNodeIterator.vue'
 import WorkflowNodePaginator from './WorkflowNodePaginator.vue'
 import WorkflowNodeTrigger from './WorkflowNodeTrigger.vue'
 import WorkflowNodeWorkflow from './WorkflowNodeWorkflow.vue'
+import WorkflowNodeToolbar from './WorkflowNodeToolbar.vue'
 import type { Component } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 
 const props = defineProps<{
   type: string
+  id: string
+  selected?: boolean
 }>()
 
 const NODE_COMPONENTS: Record<string, Component> = {
@@ -36,5 +39,12 @@ const componentForType = computed(() => NODE_COMPONENTS[props.type] ?? WorkflowN
 </script>
 
 <template>
-  <component :is="componentForType" v-bind="$attrs" />
+  <div class="relative">
+    <WorkflowNodeToolbar
+      v-if="props.type !== 'trigger'"
+      :node-id="props.id"
+      :visible="!!props.selected"
+    />
+    <component :is="componentForType" v-bind="$attrs" :selected="props.selected" />
+  </div>
 </template>
