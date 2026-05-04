@@ -305,8 +305,9 @@ const bodyStyle = computed(() => ({
       class="flex h-9 shrink-0 cursor-pointer items-center justify-between border-b px-3 select-none"
       @click="toggle">
       <div class="flex items-center gap-2">
-        <LucideChevronDown v-if="isOpen" class="text-muted-foreground size-4" />
-        <LucideChevronUp v-else class="text-muted-foreground size-4" />
+        <LucideChevronDown v-if="isOpen && !isPoppedOut" class="text-muted-foreground size-4" />
+        <LucideChevronUp v-else-if="!isPoppedOut" class="text-muted-foreground size-4" />
+        <LucideExternalLink v-else class="text-muted-foreground size-4" />
         <span class="text-sm font-medium">Logs</span>
         <span v-if="isPoppedOut" class="text-muted-foreground text-xs">(popped out)</span>
       </div>
@@ -328,23 +329,16 @@ const bodyStyle = computed(() => ({
       </div>
     </div>
 
-    <!-- Inline body: visible when open. Shows a stub when popped out, otherwise hosts the content. -->
+    <!-- Inline body: visible when open and not popped out. -->
     <div
-      v-if="isOpen"
+      v-if="isOpen && !isPoppedOut"
       class="bg-background relative shrink-0"
       :style="bodyStyle">
       <div
-        v-if="!isPoppedOut"
         class="hover:bg-primary/40 absolute inset-x-0 -top-0.5 z-10 h-1 cursor-ns-resize"
         :class="{ 'bg-primary/40': isResizing }"
         @pointerdown="onResizeStart" />
-      <div
-        v-if="isPoppedOut"
-        class="text-muted-foreground flex h-full items-center justify-center gap-2 p-6 text-sm">
-        <LucideExternalLink class="size-4" />
-        Logs panel is open in another window
-      </div>
-      <Teleport v-else :to="popoutContainer ?? undefined" :disabled="!isPoppedOut">
+      <Teleport :to="popoutContainer ?? undefined" :disabled="!isPoppedOut">
         <div class="bg-background flex h-full flex-col overflow-hidden">
           <slot>
             <!-- Live stream toolbar -->
