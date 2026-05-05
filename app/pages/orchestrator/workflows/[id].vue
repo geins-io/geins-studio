@@ -219,11 +219,12 @@ const idLabel = t('entity_id', { entityName: 'workflow' })
 // Must be declared BEFORE `await useAsyncData` — after an await, Vue loses
 // the active component instance so composables that register route guards
 // (onBeforeRouteLeave) would silently fail.
-// Incremented by the Builder tab whenever the canvas (nodes/edges, positions,
-// labels) mutates. Included in `editableState` so the existing unsaved-changes
-// diff treats canvas edits as a dirty state — no bespoke tracking required.
+// Execution-affecting changes: node/edge additions, deletions, config edits.
+// UI-only changes: node positions, viewport pan/zoom — don't affect execution.
 const builderChangeCount = ref(0)
+const builderUiChangeCount = ref(0)
 const onBuilderChange = () => { builderChangeCount.value++ }
+const onBuilderUiChange = () => { builderUiChangeCount.value++ }
 
 const editableState = computed(() => ({
   active: workflowActive.value,
@@ -232,6 +233,7 @@ const editableState = computed(() => ({
   inputDefinitions: workflowInputs.value,
   inputGroups: additionalInputGroups.value,
   builderChanges: builderChangeCount.value,
+  builderUiChanges: builderUiChangeCount.value,
 }) as Record<string, unknown>)
 
 const originalEditableState = ref('')
@@ -242,11 +244,11 @@ const { hasUnsavedChanges, unsavedChangesDialogOpen, confirmLeave } = useUnsaved
   isNew,
 )
 
-const hasConfigChanges = computed(() => {
+const hasExecutionChanges = computed(() => {
   if (!hasUnsavedChanges.value) return false
-  const { builderChanges: _a, ...current } = editableState.value
+  const { builderUiChanges: _a, ...current } = editableState.value
   const original = JSON.parse(originalEditableState.value || '{}')
-  const { builderChanges: _b, ...saved } = original
+  const { builderUiChanges: _b, ...saved } = original
   return JSON.stringify(current) !== JSON.stringify(saved)
 })
 
@@ -1100,10 +1102,11 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
   <KeepAlive>
     <WorkflowBuilder
 v-if="viewMode === 'builder'" :key="viewMode" ref="builderRef" class="-mx-3 -mt-4 -mb-12 @2xl:-mx-8 @2xl:-mb-14"
-      :workflow-id="workflowId" :is-new="isNew" :is-dirty="hasConfigChanges"
+      :workflow-id="workflowId" :is-new="isNew" :is-dirty="hasExecutionChanges"
       :log-verbosity="form.values.settings?.logVerbosity"
       @executed="refreshExecutions"
       @change="onBuilderChange"
+      @change:ui="onBuilderUiChange"
       @save-and-run="saveAndRun"
       @update:log-verbosity="form.setFieldValue('settings.logVerbosity', $event)" />
   </KeepAlive>

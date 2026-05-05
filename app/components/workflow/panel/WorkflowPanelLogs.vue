@@ -376,7 +376,8 @@ const bodyStyle = computed(() => ({
                     target="_blank"
                     class="bg-muted text-muted-foreground hover:text-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px] underline-offset-2 hover:underline"
                   >{{ props.executionId }}</NuxtLink>
-                  <button v-if="showVerbosityHint" class="text-amber-600 hover:text-amber-500 dark:text-amber-500 dark:hover:text-amber-400 text-[10px]" @click="emit('update:logVerbosity', 'detailed')">
+                  <button v-if="showVerbosityHint" class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-600 transition-colors hover:bg-amber-500/25 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300" @click="emit('update:logVerbosity', 'detailed')">
+                    <LucideInfo class="h-3 w-3" />
                     Switch to Detailed for more info
                   </button>
                 </template>
@@ -394,6 +395,8 @@ const bodyStyle = computed(() => ({
                       props.logVerbosity === level.key
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground',
+                      showVerbosityHint && level.key === 'detailed' && props.logVerbosity !== 'detailed'
+                        && 'animate-pulse text-amber-600 dark:text-amber-400',
                     )"
                     @click="emit('update:logVerbosity', level.key)">
                     {{ level.label }}

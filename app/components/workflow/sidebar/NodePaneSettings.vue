@@ -43,14 +43,18 @@ const nodeInput = computed(() => (props.nodeData.input ?? {}) as Record<string, 
 
 const settingsComponent = computed(() => SETTINGS_COMPONENTS[props.nodeType])
 
+const onNodeSettingsChange = inject<() => void>('onNodeSettingsChange', () => {})
+
 const updateConfig = (name: string, value: unknown) => {
   if (!props.nodeData.config) props.nodeData.config = {}
   ;(props.nodeData.config as Record<string, unknown>)[name] = value
+  onNodeSettingsChange()
 }
 
 const updateInput = (name: string, value: unknown) => {
   if (!props.nodeData.input) props.nodeData.input = {}
   ;(props.nodeData.input as Record<string, unknown>)[name] = value
+  onNodeSettingsChange()
 }
 
 const prettyLabel = (name: string): string =>

@@ -11,6 +11,9 @@ importers:
       '@codemirror/lang-json':
         specifier: ^6.0.2
         version: 6.0.2
+      '@codemirror/state':
+        specifier: ^6.6.0
+        version: 6.6.0
       '@dagrejs/dagre':
         specifier: ^3.0.0
         version: 3.0.0

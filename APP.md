@@ -179,6 +179,7 @@ Components in `app/components/` are classified as **domain** or **infrastructure
 | `dialog/`                                               | Infrastructure   | Delete, unsaved changes, status transitions |
 | `selector/`                                             | Infrastructure   | Reusable entity selection pattern           |
 | `layout/`, `sidebar/`, `button/`, `error/`, `feedback/` | Infrastructure   | App shell and utilities                     |
+| `shared/`                                               | Infrastructure   | Cross-domain reusable components (JsonCodeEditor) |
 | `company/`                                              | **Customers**    | CompanyBuyerPanel                           |
 | `price-list/`                                           | **Pricing**      | PriceMode, Rules, VolumePricing             |
 | `quotation/`                                            | **Orders**       | Changelog, Communications, Messages         |
@@ -201,6 +202,10 @@ Components in `app/components/` are classified as **domain** or **infrastructure
 - `ButtonGroup` / `ButtonGroupSeparator` / `ButtonGroupText` — Groups buttons with shared border radius. Supports `orientation` and nesting.
 - `ContentEditTabs` — Tab navigation. Accepts `string[]` or `(string | { label: string; badge?: number })[]`.
 - `ContentPriceSummary` — Price summary rows. Props: `total` (`QuotationTotal`), `currency`, `editMode?`. Uses `defineModel` for two-way binding and emits `blur`.
+
+### Shared Components
+
+- `SharedJsonCodeEditor` — CodeMirror 6 JSON editor/viewer with app theme integration. Props: `modelValue` (v-model), `readonly` (display-only), `lineNumbers` (default `true`), `lineWrapping` (default `false`). Uses `basicSetup` when line numbers are enabled, `minimalSetup` otherwise. Themed with CSS custom properties to match light/dark mode.
 
 ### Display Patterns in Edit Pages
 
