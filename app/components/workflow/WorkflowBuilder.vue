@@ -27,6 +27,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   executed: []
   change: []
+  'change:ui': []
   'save-and-run': []
   'update:logVerbosity': [value: string]
 }>()
@@ -199,11 +200,10 @@ onConnect((params) => {
 // to listen for user edits now" signal.
 const canvasReady = ref(false)
 
-const canvasSnapshot = computed(() => {
+const executionSnapshot = computed(() => {
   const n = nodes.value.map(node => ({
     id: node.id,
     type: node.type,
-    position: { x: node.position.x, y: node.position.y },
     data: node.data,
   }))
   const e = edges.value.map(edge => ({
@@ -218,11 +218,27 @@ const canvasSnapshot = computed(() => {
   return JSON.stringify({ n, e })
 })
 
-watch(canvasSnapshot, () => {
+const uiSnapshot = computed(() => {
+  const positions = nodes.value.map(node => ({
+    id: node.id,
+    x: node.position.x,
+    y: node.position.y,
+  }))
+  return JSON.stringify(positions)
+})
+
+watch(executionSnapshot, () => {
   if (canvasReady.value) emit('change')
 })
 
+watch(uiSnapshot, () => {
+  if (canvasReady.value) emit('change:ui')
+})
 
+const onNodeSettingsChange = () => {
+  if (canvasReady.value) emit('change')
+}
+provide('onNodeSettingsChange', onNodeSettingsChange)
 
 const selectedNode = ref<any>(null)
 const isAddNodeOpen = ref(false)

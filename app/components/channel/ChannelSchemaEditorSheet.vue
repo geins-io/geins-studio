@@ -70,7 +70,7 @@ function handleApply() {
             t('channels.schema_editor_warning_description')
           }}</template>
         </Feedback>
-        <LazyChannelJsonCodeEditor
+        <LazySharedJsonCodeEditor
           v-model="editorContent"
           class="min-h-0 flex-1"
         />

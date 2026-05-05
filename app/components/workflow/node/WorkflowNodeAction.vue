@@ -41,6 +41,11 @@ const PROVIDER_ICON_DEFAULTS: Record<string, string> = {
 const manifestStore = useWorkflowManifest()
 const { actionCategories: manifestActionCategories } = manifestStore
 
+const actionDisplayName = computed(() => {
+  const action = manifestStore.getAction(props.data.actionName)
+  return action?.displayName ?? ''
+})
+
 const providerLogo = computed(() => PROVIDER_LOGOS[providerKey.value] ?? null)
 const IconComponent = computed(() => {
   const key = providerKey.value
@@ -65,6 +70,7 @@ class="bg-background flex min-h-[100px] min-w-[180px] items-center rounded-lg bo
       <div>
         <div class="text-xs font-medium tracking-wider text-blue-500 uppercase">Action</div>
         <div class="font-semibold">{{ data.label }}</div>
+        <div v-if="actionDisplayName" class="text-muted-foreground truncate text-xs leading-tight">{{ actionDisplayName }}</div>
       </div>
     </div>
 

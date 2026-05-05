@@ -342,7 +342,7 @@ const methodColor = computed(() => {
             <label class="text-xs font-medium">Throw on error</label>
             <p class="text-muted-foreground text-[10px]">Fail the node on HTTP errors</p>
           </div>
-          <Switch :checked="throwOnError" @update:checked="(v: boolean) => throwOnError = v" />
+          <Switch v-model="throwOnError" />
         </div>
 
         <!-- Expected status codes -->
