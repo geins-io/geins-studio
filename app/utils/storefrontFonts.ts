@@ -13,6 +13,7 @@ export const storefrontFonts: StorefrontFont[] = [
   { label: 'Work Sans', value: 'Work Sans', category: 'sans-serif' },
   { label: 'Outfit', value: 'Outfit', category: 'sans-serif' },
   { label: 'Space Grotesk', value: 'Space Grotesk', category: 'sans-serif' },
+  { label: 'Spline Sans', value: 'Spline Sans', category: 'sans-serif' },
 
   // Classic sans
   { label: 'Roboto', value: 'Roboto', category: 'sans-serif' },
