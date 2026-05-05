@@ -16,6 +16,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:logVerbosity': [value: string]
+  'select:node': [nodeId: string]
 }>()
 
 const verbosityLevels = [
@@ -428,7 +429,8 @@ const bodyStyle = computed(() => ({
                 <tbody>
                   <tr
 v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`"
-                    class="hover:bg-muted/30 border-b last:border-b-0">
+                    class="hover:bg-muted/30 cursor-pointer border-b last:border-b-0"
+                    @click="emit('select:node', event.nodeId)">
                     <td class="text-muted-foreground px-3 py-1 font-mono">{{ event.seq >= 0 ? event.seq : '–' }}</td>
                     <td class="px-3 py-1 font-mono">{{ event.nodeId }}</td>
                     <td class="px-3 py-1">

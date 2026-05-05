@@ -162,7 +162,7 @@ onMounted(() => {
   initialEdges.value = finalEdges
 })
 
-const { onConnect, onPaneReady, addEdges, removeEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut, getViewport, setViewport } = useVueFlow()
+const { onConnect, onPaneReady, addEdges, removeEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut, getViewport, setViewport, addSelectedNodes, removeSelectedNodes } = useVueFlow()
 
 const maxZoom = ref(1.5)
 onPaneReady(() => {
@@ -312,6 +312,13 @@ const onNodeDoubleClick = (event: any) => {
 
 const onPaneClick = () => {
   selectedNode.value = null
+}
+
+const onLogNodeSelect = (nodeId: string) => {
+  const node = findNode(nodeId)
+  if (!node) return
+  removeSelectedNodes(nodes.value)
+  addSelectedNodes([node])
 }
 
 const selectedNodeExecution = computed(() => {
@@ -735,7 +742,7 @@ v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
       <WorkflowSidebarAddNode v-model:open="isAddNodeOpen" @add="handleAddFromPalette" />
     </div>
 
-    <WorkflowPanelLogs ref="workflowPanelLogsRef" :execution-id="lastExecutionId" :log-verbosity="props.logVerbosity" @update:log-verbosity="emit('update:logVerbosity', $event)" />
+    <WorkflowPanelLogs ref="workflowPanelLogsRef" :execution-id="lastExecutionId" :log-verbosity="props.logVerbosity" @update:log-verbosity="emit('update:logVerbosity', $event)" @select:node="onLogNodeSelect" />
 
     <AlertDialog v-model:open="showDirtyRunDialog">
       <AlertDialogContent>
