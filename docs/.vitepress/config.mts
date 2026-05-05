@@ -456,6 +456,52 @@ export default defineConfig({
             ],
           },
           {
+            text: 'Layout',
+            items: [
+              {
+                text: 'LayoutHeader',
+                link: '/components/layout/LayoutHeader.md',
+              },
+              {
+                text: 'LayoutSidebar',
+                link: '/components/layout/sidebar/LayoutSidebar.md',
+              },
+              {
+                text: 'LayoutSidebarUser',
+                link: '/components/layout/sidebar/LayoutSidebarUser.md',
+              },
+            ],
+          },
+          {
+            text: 'Sidebar nav',
+            items: [
+              {
+                text: 'SidebarNav',
+                link: '/components/sidebar/SidebarNav.md',
+              },
+              {
+                text: 'SidebarNavItem',
+                link: '/components/sidebar/SidebarNavItem.md',
+              },
+            ],
+          },
+          {
+            text: 'Errors',
+            items: [
+              { text: '404', link: '/components/error/404.md' },
+              { text: '500', link: '/components/error/500.md' },
+            ],
+          },
+          {
+            text: 'Feedback',
+            items: [
+              {
+                text: 'Feedback',
+                link: '/components/feedback/Feedback.md',
+              },
+            ],
+          },
+          {
             text: 'Other',
             items: [
               { text: 'StatusBadge', link: '/components/StatusBadge.md' },
