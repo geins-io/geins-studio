@@ -17,20 +17,24 @@ npx shadcn-vue@latest add <component>
 
 | Primitive | Upstream docs | Used in (Geins components) |
 | --- | --- | --- |
+| `Alert` | [shadcn-vue.com/docs/components/alert](https://www.shadcn-vue.com/docs/components/alert) | [Feedback](/components/feedback/Feedback) |
 | `AlertDialog` | [shadcn-vue.com/docs/components/alert-dialog](https://www.shadcn-vue.com/docs/components/alert-dialog) | [DialogDelete](/components/dialog/DialogDelete), [DialogStatusTransition](/components/dialog/DialogStatusTransition), [DialogUnsavedChanges](/components/dialog/DialogUnsavedChanges) |
+| `Avatar` | [shadcn-vue.com/docs/components/avatar](https://www.shadcn-vue.com/docs/components/avatar) | [LayoutSidebarUser](/components/layout/sidebar/LayoutSidebarUser) |
 | `Badge` | [shadcn-vue.com/docs/components/badge](https://www.shadcn-vue.com/docs/components/badge) | [StatusBadge](/components/StatusBadge) |
 | `Button` | [shadcn-vue.com/docs/components/button](https://www.shadcn-vue.com/docs/components/button) | [ButtonIcon](/components/button/ButtonIcon), most edit/list pages |
+| `Breadcrumb` | [shadcn-vue.com/docs/components/breadcrumb](https://www.shadcn-vue.com/docs/components/breadcrumb) | [LayoutHeader](/components/layout/LayoutHeader) |
 | `Checkbox` | [shadcn-vue.com/docs/components/checkbox](https://www.shadcn-vue.com/docs/components/checkbox) | [TableColumnToggle](/components/table/TableColumnToggle) |
+| `Collapsible` | [shadcn-vue.com/docs/components/collapsible](https://www.shadcn-vue.com/docs/components/collapsible) | [LayoutSidebar](/components/layout/sidebar/LayoutSidebar) |
 | `Dialog` | [shadcn-vue.com/docs/components/dialog](https://www.shadcn-vue.com/docs/components/dialog) | composition primitives, settings sheets |
-| `DropdownMenu` | [shadcn-vue.com/docs/components/dropdown-menu](https://www.shadcn-vue.com/docs/components/dropdown-menu) | [ButtonExport](/components/button/ButtonExport) |
-| `Empty` | [shadcn-vue.com/docs/components/empty](https://www.shadcn-vue.com/docs/components/empty) | [TableView](/components/table/TableView) |
+| `DropdownMenu` | [shadcn-vue.com/docs/components/dropdown-menu](https://www.shadcn-vue.com/docs/components/dropdown-menu) | [ButtonExport](/components/button/ButtonExport), [LayoutSidebarUser](/components/layout/sidebar/LayoutSidebarUser) |
+| `Empty` | [shadcn-vue.com/docs/components/empty](https://www.shadcn-vue.com/docs/components/empty) | [TableView](/components/table/TableView), [404](/components/error/404), [500](/components/error/500) |
 | `Form` (`FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`) | [shadcn-vue.com/docs/components/form](https://www.shadcn-vue.com/docs/components/form) | All form pages, [FormItemSwitch](/components/form/item/FormItemSwitch) |
 | `Input` | [shadcn-vue.com/docs/components/input](https://www.shadcn-vue.com/docs/components/input) | [TableView](/components/table/TableView) search, form inputs |
 | `Label` | [shadcn-vue.com/docs/components/label](https://www.shadcn-vue.com/docs/components/label) | [DialogStatusTransition](/components/dialog/DialogStatusTransition) |
 | `Popover` | [shadcn-vue.com/docs/components/popover](https://www.shadcn-vue.com/docs/components/popover) | search/select fields |
 | `Select` | [shadcn-vue.com/docs/components/select](https://www.shadcn-vue.com/docs/components/select) | [TablePagination](/components/table/TablePagination) |
 | `Sheet` | [shadcn-vue.com/docs/components/sheet](https://www.shadcn-vue.com/docs/components/sheet) | [TableColumnToggle](/components/table/TableColumnToggle), `ChannelMailConfigSheet`, `SchemaEditorSheet` |
-| `Sidebar` | [shadcn-vue.com/docs/components/sidebar](https://www.shadcn-vue.com/docs/components/sidebar) | layout sidebar |
+| `Sidebar` | [shadcn-vue.com/docs/components/sidebar](https://www.shadcn-vue.com/docs/components/sidebar) | [LayoutSidebar](/components/layout/sidebar/LayoutSidebar) |
 | `Switch` | [shadcn-vue.com/docs/components/switch](https://www.shadcn-vue.com/docs/components/switch) | [FormItemSwitch](/components/form/item/FormItemSwitch) |
 | `Table` (`TableHeader`, `TableRow`, `TableCell`, `TableHead`, `TableBody`) | [shadcn-vue.com/docs/components/table](https://www.shadcn-vue.com/docs/components/table) | [TableView](/components/table/TableView) |
 | `Tabs` (`TabsList`, `TabsTrigger`, `TabsContent`) | [shadcn-vue.com/docs/components/tabs](https://www.shadcn-vue.com/docs/components/tabs) | edit pages, [DialogStatusTransition](/components/dialog/DialogStatusTransition) |
