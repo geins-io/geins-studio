@@ -502,6 +502,217 @@ export default defineConfig({
             ],
           },
           {
+            text: 'Auth',
+            items: [
+              { text: 'AuthForm', link: '/components/auth/AuthForm.md' },
+            ],
+          },
+          {
+            text: 'Channel — Markets',
+            items: [
+              {
+                text: 'ChannelAddMarketDialog',
+                link: '/components/channel/ChannelAddMarketDialog.md',
+              },
+              {
+                text: 'ChannelAdditionalLanguages',
+                link: '/components/channel/ChannelAdditionalLanguages.md',
+              },
+              {
+                text: 'ChannelAdditionalMarkets',
+                link: '/components/channel/ChannelAdditionalMarkets.md',
+              },
+              {
+                text: 'ChannelDefaultMarket',
+                link: '/components/channel/ChannelDefaultMarket.md',
+              },
+              {
+                text: 'LanguageIcon',
+                link: '/components/channel/LanguageIcon.md',
+              },
+            ],
+          },
+          {
+            text: 'Channel — Mail',
+            items: [
+              {
+                text: 'ChannelMailsTab',
+                link: '/components/channel/ChannelMailsTab.md',
+              },
+              {
+                text: 'ChannelMailGeneralTab',
+                link: '/components/channel/ChannelMailGeneralTab.md',
+              },
+              {
+                text: 'ChannelMailContentTab',
+                link: '/components/channel/ChannelMailContentTab.md',
+              },
+              {
+                text: 'ChannelMailLayoutTab',
+                link: '/components/channel/ChannelMailLayoutTab.md',
+              },
+              {
+                text: 'ChannelMailContentRow',
+                link: '/components/channel/ChannelMailContentRow.md',
+              },
+              {
+                text: 'ChannelMailConfigSheet',
+                link: '/components/channel/ChannelMailConfigSheet.md',
+              },
+            ],
+          },
+          {
+            text: 'Channel — Payments',
+            items: [
+              {
+                text: 'ChannelPaymentsTab',
+                link: '/components/channel/ChannelPaymentsTab.md',
+              },
+              {
+                text: 'ChannelPaymentRow',
+                link: '/components/channel/ChannelPaymentRow.md',
+              },
+            ],
+          },
+          {
+            text: 'Channel — Storefront',
+            items: [
+              {
+                text: 'StorefrontSettings',
+                link: '/components/channel/StorefrontSettings.md',
+              },
+              {
+                text: 'StorefrontSchemaRenderer',
+                link: '/components/channel/StorefrontSchemaRenderer.md',
+              },
+              {
+                text: 'SchemaField',
+                link: '/components/channel/SchemaField.md',
+              },
+              {
+                text: 'SchemaEditorSheet',
+                link: '/components/channel/SchemaEditorSheet.md',
+              },
+              {
+                text: 'JsonCodeEditor',
+                link: '/components/channel/JsonCodeEditor.md',
+              },
+            ],
+          },
+          {
+            text: 'Company',
+            items: [
+              {
+                text: 'CompanyBuyerPanel',
+                link: '/components/company/CompanyBuyerPanel.md',
+              },
+            ],
+          },
+          {
+            text: 'Content — Edit',
+            items: [
+              {
+                text: 'ContentEditWrap',
+                link: '/components/content/edit/ContentEditWrap.md',
+              },
+              {
+                text: 'ContentEditMain',
+                link: '/components/content/edit/ContentEditMain.md',
+              },
+              {
+                text: 'ContentEditMainContent',
+                link: '/components/content/edit/ContentEditMainContent.md',
+              },
+              {
+                text: 'ContentEditCard',
+                link: '/components/content/edit/ContentEditCard.md',
+              },
+              {
+                text: 'ContentEditTabs',
+                link: '/components/content/edit/ContentEditTabs.md',
+              },
+              {
+                text: 'ContentEditSummary',
+                link: '/components/content/edit/ContentEditSummary.md',
+              },
+              {
+                text: 'ContentEditAddressPanel',
+                link: '/components/content/edit/ContentEditAddressPanel.md',
+              },
+              {
+                text: 'ContentEditCustomerPanel',
+                link: '/components/content/edit/ContentEditCustomerPanel.md',
+              },
+              {
+                text: 'ContentEditHasChanges',
+                link: '/components/content/edit/ContentEditHasChanges.md',
+              },
+            ],
+          },
+          {
+            text: 'Content — Quotation',
+            items: [
+              {
+                text: 'ContentQuotationCustomerDisplay',
+                link: '/components/content/quotation/ContentQuotationCustomerDisplay.md',
+              },
+              {
+                text: 'ContentQuotationWorkflowInfo',
+                link: '/components/content/quotation/ContentQuotationWorkflowInfo.md',
+              },
+            ],
+          },
+          {
+            text: 'Price list',
+            items: [
+              {
+                text: 'PriceListRulesWrapper',
+                link: '/components/price-list/PriceListRulesWrapper.md',
+              },
+              {
+                text: 'PriceListRules',
+                link: '/components/price-list/PriceListRules.md',
+              },
+              {
+                text: 'PriceListRule',
+                link: '/components/price-list/PriceListRule.md',
+              },
+              {
+                text: 'PriceListVolumePricingPanel',
+                link: '/components/price-list/PriceListVolumePricingPanel.md',
+              },
+              {
+                text: 'PriceListVolumePricingCell',
+                link: '/components/price-list/PriceListVolumePricingCell.md',
+              },
+              {
+                text: 'PriceListPriceModeCell',
+                link: '/components/price-list/PriceListPriceModeCell.md',
+              },
+            ],
+          },
+          {
+            text: 'Quotation',
+            items: [
+              {
+                text: 'QuotationCommunications',
+                link: '/components/quotation/QuotationCommunications.md',
+              },
+              {
+                text: 'QuotationMessageThread',
+                link: '/components/quotation/QuotationMessageThread.md',
+              },
+              {
+                text: 'QuotationMessageCompose',
+                link: '/components/quotation/QuotationMessageCompose.md',
+              },
+              {
+                text: 'QuotationChangelog',
+                link: '/components/quotation/QuotationChangelog.md',
+              },
+            ],
+          },
+          {
             text: 'Other',
             items: [
               { text: 'StatusBadge', link: '/components/StatusBadge.md' },
