@@ -12,19 +12,11 @@ type NodeEvent = {
 
 const props = defineProps<{
   executionId?: string | null
-  logVerbosity?: string | null
 }>()
 
 const emit = defineEmits<{
-  'update:logVerbosity': [value: string]
   'select:node': [nodeId: string]
 }>()
-
-const verbosityLevels = [
-  { key: 'minimal', label: 'Minimal' },
-  { key: 'normal', label: 'Normal' },
-  { key: 'detailed', label: 'Detailed' },
-]
 
 const { orchestratorApi } = useGeinsRepository()
 
@@ -70,10 +62,6 @@ const runningCount = computed(
   () => events.value.filter(e => statusKind(e.status) === 'running').length,
 )
 
-const showVerbosityHint = computed(() => {
-  const failed = executionStatus.value === 'failed' || executionStatus.value === 'error'
-  return failed && props.logVerbosity !== 'detailed'
-})
 
 function statusKind(status: string): 'running' | 'success' | 'error' | 'other' {
   const s = (status || '').toLowerCase()
@@ -409,32 +397,12 @@ const bodyStyle = computed(() => ({
                     target="_blank"
                     class="bg-muted text-muted-foreground hover:text-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px] underline-offset-2 hover:underline"
                   >{{ props.executionId }}</NuxtLink>
-                  <button v-if="showVerbosityHint" class="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-600 transition-colors hover:bg-amber-500/25 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300" @click="emit('update:logVerbosity', 'detailed')">
-                    <LucideInfo class="h-3 w-3" />
-                    Switch to Detailed for more info
-                  </button>
                 </template>
                 <template v-else>
                   <span class="text-muted-foreground">Run a workflow to see live events</span>
                 </template>
               </div>
               <div class="flex items-center gap-2">
-                <span class="text-muted-foreground text-[10px]">Log level</span>
-                <div class="bg-muted inline-flex items-center gap-0.5 rounded-md p-0.5">
-                  <button
-                    v-for="level in verbosityLevels" :key="level.key" type="button"
-                    :class="cn(
-                      'rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors',
-                      props.logVerbosity === level.key
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground',
-                      showVerbosityHint && level.key === 'detailed' && props.logVerbosity !== 'detailed'
-                        && 'animate-pulse text-amber-600 dark:text-amber-400',
-                    )"
-                    @click="emit('update:logVerbosity', level.key)">
-                    {{ level.label }}
-                  </button>
-                </div>
                 <button
                   v-if="events.length"
                   class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-6 items-center gap-1 rounded px-1.5"
@@ -530,28 +498,12 @@ const bodyStyle = computed(() => ({
                   target="_blank"
                   class="bg-muted text-muted-foreground hover:text-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px] underline-offset-2 hover:underline"
                 >{{ props.executionId }}</NuxtLink>
-                <button v-if="showVerbosityHint" class="text-[10px] text-amber-600 hover:text-amber-500 dark:text-amber-500 dark:hover:text-amber-400" @click="emit('update:logVerbosity', 'detailed')">
-                  Switch to Detailed for more info
-                </button>
               </template>
               <template v-else>
                 <span class="text-muted-foreground">Run a workflow to see live events</span>
               </template>
             </div>
             <div class="flex items-center gap-2">
-              <div class="bg-muted inline-flex items-center gap-0.5 rounded-md p-0.5">
-                <button
-                  v-for="level in verbosityLevels" :key="level.key" type="button"
-                  :class="cn(
-                    'rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors',
-                    props.logVerbosity === level.key
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )"
-                  @click="emit('update:logVerbosity', level.key)">
-                  {{ level.label }}
-                </button>
-              </div>
               <button
                 v-if="events.length"
                 class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-6 items-center gap-1 rounded px-1.5"

@@ -68,7 +68,10 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
     workflow: {
       async list(): Promise<WorkflowSummary[]> {
-        const res = await fetch<WorkflowSummary[] | { workflows?: WorkflowSummary[]; items?: WorkflowSummary[] }>(WORKFLOW_ENDPOINT);
+        const res = await fetch<
+          | WorkflowSummary[]
+          | { workflows?: WorkflowSummary[]; items?: WorkflowSummary[] }
+        >(WORKFLOW_ENDPOINT);
         if (Array.isArray(res)) return res;
         return res?.workflows ?? res?.items ?? [];
       },
@@ -100,7 +103,9 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         });
       },
 
-      async validate(data: CreateWorkflowRequest): Promise<ValidateWorkflowResult> {
+      async validate(
+        data: CreateWorkflowRequest,
+      ): Promise<ValidateWorkflowResult> {
         return await fetch<ValidateWorkflowResult>(
           `${WORKFLOW_ENDPOINT}/validate`,
           {
@@ -110,19 +115,30 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         );
       },
 
-      async listExecutions(id: string, options?: ListExecutionLogsOptions): Promise<ExecutionLog[]> {
-        return await fetch<ExecutionLog[]>(`${WORKFLOW_ENDPOINT}/${id}/logs`, { query: options });
+      async listExecutions(
+        id: string,
+        options?: ListExecutionLogsOptions,
+      ): Promise<ExecutionLog[]> {
+        return await fetch<ExecutionLog[]>(`${WORKFLOW_ENDPOINT}/${id}/logs`, {
+          query: options,
+        });
       },
 
       async enable(id: string): Promise<void> {
-        await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}/enable`, { method: 'POST' });
+        await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}/enable`, {
+          method: 'POST',
+        });
       },
 
       async disable(id: string): Promise<void> {
-        await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}/disable`, { method: 'POST' });
+        await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}/disable`, {
+          method: 'POST',
+        });
       },
 
-      async bulkEnable(workflowIds: string[]): Promise<BulkWorkflowOperationResponse> {
+      async bulkEnable(
+        workflowIds: string[],
+      ): Promise<BulkWorkflowOperationResponse> {
         const raw = await fetch<unknown>(`${WORKFLOW_ENDPOINT}/bulk-enable`, {
           method: 'POST',
           body: { workflowIds } satisfies BulkEnableDisableRequest,
@@ -132,7 +148,9 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return normalizeKeys<BulkWorkflowOperationResponse>(raw);
       },
 
-      async bulkDisable(workflowIds: string[]): Promise<BulkWorkflowOperationResponse> {
+      async bulkDisable(
+        workflowIds: string[],
+      ): Promise<BulkWorkflowOperationResponse> {
         const raw = await fetch<unknown>(`${WORKFLOW_ENDPOINT}/bulk-disable`, {
           method: 'POST',
           body: { workflowIds } satisfies BulkEnableDisableRequest,
@@ -152,11 +170,14 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       ): Promise<StartWorkflowResponse> {
         // Backend requires GET with no body. Any start parameters go on the query string.
         const query = data
-          ? '?' + new URLSearchParams(
-            Object.entries(data).flatMap(([k, v]) =>
-              v === undefined ? [] : [[k, typeof v === 'string' ? v : JSON.stringify(v)]],
-            ),
-          ).toString()
+          ? '?' +
+            new URLSearchParams(
+              Object.entries(data).flatMap(([k, v]) =>
+                v === undefined
+                  ? []
+                  : [[k, typeof v === 'string' ? v : JSON.stringify(v)]],
+              ),
+            ).toString()
           : '';
         const raw = await fetch<Record<string, unknown>>(
           `${WORKFLOW_ENDPOINT}/${workflowId}/execute${query}`,
@@ -166,8 +187,34 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return {
           success: raw.Status === 'accepted' || raw.success === true,
           status: (raw.Status ?? raw.status) as string | undefined,
-          executionId: (raw.ExecutionId ?? raw.executionId) as string | undefined,
-          newExecutionId: (raw.NewExecutionId ?? raw.newExecutionId) as string | undefined,
+          executionId: (raw.ExecutionId ?? raw.executionId) as
+            | string
+            | undefined,
+          newExecutionId: (raw.NewExecutionId ?? raw.newExecutionId) as
+            | string
+            | undefined,
+          message: (raw.Message ?? raw.message) as string | undefined,
+          instanceId: (raw.InstanceId ?? raw.instanceId) as string | undefined,
+        };
+      },
+
+      async testRun(
+        workflowId: string,
+        data?: StartWorkflowRequest,
+      ): Promise<StartWorkflowResponse> {
+        const raw = await fetch<Record<string, unknown>>(
+          `${WORKFLOW_ENDPOINT}/${workflowId}/test-run`,
+          { method: 'POST', body: data },
+        );
+        return {
+          success: raw.Status === 'accepted' || raw.success === true,
+          status: (raw.Status ?? raw.status) as string | undefined,
+          executionId: (raw.ExecutionId ?? raw.executionId) as
+            | string
+            | undefined,
+          newExecutionId: (raw.NewExecutionId ?? raw.newExecutionId) as
+            | string
+            | undefined,
           message: (raw.Message ?? raw.message) as string | undefined,
           instanceId: (raw.InstanceId ?? raw.instanceId) as string | undefined,
         };
@@ -177,39 +224,30 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         executionId: string,
         data?: CancelExecutionRequest,
       ): Promise<void> {
-        await fetch<null>(
-          `${EXECUTION_ENDPOINT}/${executionId}/cancel`,
-          {
-            method: 'POST',
-            body: data ?? {},
-          },
-        );
+        await fetch<null>(`${EXECUTION_ENDPOINT}/${executionId}/cancel`, {
+          method: 'POST',
+          body: data ?? {},
+        });
       },
 
       async pause(
         executionId: string,
         data?: PauseExecutionRequest,
       ): Promise<void> {
-        await fetch<null>(
-          `${EXECUTION_ENDPOINT}/${executionId}/pause`,
-          {
-            method: 'POST',
-            body: data ?? {},
-          },
-        );
+        await fetch<null>(`${EXECUTION_ENDPOINT}/${executionId}/pause`, {
+          method: 'POST',
+          body: data ?? {},
+        });
       },
 
       async resume(
         executionId: string,
         data?: ResumeExecutionRequest,
       ): Promise<void> {
-        await fetch<null>(
-          `${EXECUTION_ENDPOINT}/${executionId}/resume`,
-          {
-            method: 'POST',
-            body: data ?? {},
-          },
-        );
+        await fetch<null>(`${EXECUTION_ENDPOINT}/${executionId}/resume`, {
+          method: 'POST',
+          body: data ?? {},
+        });
       },
 
       async replay(
@@ -248,9 +286,7 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         );
       },
 
-      async list(
-        options?: ListExecutionLogsOptions,
-      ): Promise<ExecutionLog[]> {
+      async list(options?: ListExecutionLogsOptions): Promise<ExecutionLog[]> {
         const url = options?.workflowId
           ? `${WORKFLOW_ENDPOINT}/${options.workflowId}/logs`
           : `${EXECUTION_ENDPOINT}/logs`;
@@ -259,16 +295,24 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
         const raw = Array.isArray(res)
           ? res
-          : (res as { logs?: unknown[]; executions?: unknown[]; items?: unknown[] })?.logs
-            ?? (res as { executions?: unknown[] })?.executions
-            ?? (res as { items?: unknown[] })?.items
-            ?? [];
+          : ((
+              res as {
+                logs?: unknown[];
+                executions?: unknown[];
+                items?: unknown[];
+              }
+            )?.logs ??
+            (res as { executions?: unknown[] })?.executions ??
+            (res as { items?: unknown[] })?.items ??
+            []);
 
         return normalizeKeys<ExecutionLog[]>(raw);
       },
 
       async get(executionId: string): Promise<ExecutionDetailsResponse> {
-        const raw = await fetch<unknown>(`${EXECUTION_ENDPOINT}/${executionId}`);
+        const raw = await fetch<unknown>(
+          `${EXECUTION_ENDPOINT}/${executionId}`,
+        );
         return normalizeKeys<ExecutionDetailsResponse>(raw);
       },
 
@@ -299,7 +343,10 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
 
       async list(): Promise<WorkflowMetrics[]> {
-        const res = await fetch<WorkflowMetrics[] | (WorkflowMetricsListResponse & { items?: WorkflowMetrics[] })>(METRICS_ENDPOINT);
+        const res = await fetch<
+          | WorkflowMetrics[]
+          | (WorkflowMetricsListResponse & { items?: WorkflowMetrics[] })
+        >(METRICS_ENDPOINT);
         if (Array.isArray(res)) return res;
         return res?.workflows ?? res?.items ?? [];
       },
@@ -318,10 +365,9 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       async getErrorSummary(
         options?: ErrorSummaryOptions,
       ): Promise<ErrorSummary> {
-        return await fetch<ErrorSummary>(
-          `${EXECUTION_ENDPOINT}/errors`,
-          { query: options },
-        );
+        return await fetch<ErrorSummary>(`${EXECUTION_ENDPOINT}/errors`, {
+          query: options,
+        });
       },
     },
 
@@ -366,14 +412,16 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         const res = await fetch<unknown>(VARIABLE_ENDPOINT);
         const raw = Array.isArray(res)
           ? res
-          : (res as { variables?: unknown[]; items?: unknown[] })?.variables
-            ?? (res as { items?: unknown[] })?.items
-            ?? [];
+          : ((res as { variables?: unknown[]; items?: unknown[] })?.variables ??
+            (res as { items?: unknown[] })?.items ??
+            []);
         return normalizeKeys<WorkflowVariable[]>(raw);
       },
 
       async get(key: string): Promise<WorkflowVariable> {
-        const raw = await fetch<unknown>(`${VARIABLE_ENDPOINT}/${encodeURIComponent(key)}`);
+        const raw = await fetch<unknown>(
+          `${VARIABLE_ENDPOINT}/${encodeURIComponent(key)}`,
+        );
         return normalizeKeys<WorkflowVariable>(raw);
       },
 

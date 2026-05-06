@@ -21,7 +21,6 @@ const props = defineProps<{
   workflowId: string
   isNew: boolean
   isDirty?: boolean
-  logVerbosity?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -29,7 +28,6 @@ const emit = defineEmits<{
   change: []
   'change:ui': []
   'save-and-run': []
-  'update:logVerbosity': [value: string]
 }>()
 
 const { orchestratorApi } = useGeinsRepository()
@@ -482,8 +480,6 @@ const TERMINAL_STATUSES = new Set([
 type NodeExecData = { input?: Record<string, unknown> | null, output?: Record<string, unknown> | null, status?: string, error?: string | null }
 const lastNodeExecutions = ref<Map<string, NodeExecData>>(new Map())
 provide('lastNodeExecutions', lastNodeExecutions)
-provide('logVerbosity', toRef(props, 'logVerbosity'))
-provide('switchToDetailedLog', () => emit('update:logVerbosity', 'detailed'))
 
 // Poll the current execution's status while `isRunning` is true so the Run
 // button keeps its running visual as long as the workflow is actually
@@ -526,7 +522,7 @@ const showDirtyRunDialog = ref(false)
 
 const startExecution = async () => {
   try {
-    const res = await orchestratorApi.execution.start(props.workflowId)
+    const res = await orchestratorApi.execution.testRun(props.workflowId)
     const execId = res?.executionId ?? res?.newExecutionId ?? null
     lastExecutionId.value = execId
     isRunning.value = true
@@ -753,7 +749,7 @@ v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
       <WorkflowSidebarAddNode v-model:open="isAddNodeOpen" @add="handleAddFromPalette" />
     </div>
 
-    <WorkflowPanelLogs ref="workflowPanelLogsRef" :execution-id="lastExecutionId" :log-verbosity="props.logVerbosity" @update:log-verbosity="emit('update:logVerbosity', $event)" @select:node="onLogNodeSelect" />
+    <WorkflowPanelLogs ref="workflowPanelLogsRef" :execution-id="lastExecutionId" @select:node="onLogNodeSelect" />
 
     <AlertDialog v-model:open="showDirtyRunDialog">
       <AlertDialogContent>
