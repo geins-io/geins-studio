@@ -1,18 +1,15 @@
 <script setup lang="ts">
-// Single entry-point for workflow canvas nodes. VueFlow forwards the node's
-// `type` to this component, which dispatches to the matching component in
-// ./nodes. Centralizing the type→component mapping keeps the canvas host
-// (WorkflowBuilder) decoupled from individual node implementations — adding
-// a new node type only requires a new file in ./nodes plus an entry below.
 import WorkflowNodeAction from './WorkflowNodeAction.vue'
 import WorkflowNodeCondition from './WorkflowNodeCondition.vue'
 import WorkflowNodeDelay from './WorkflowNodeDelay.vue'
 import WorkflowNodeIterator from './WorkflowNodeIterator.vue'
 import WorkflowNodePaginator from './WorkflowNodePaginator.vue'
+import WorkflowNodeToolbar from './WorkflowNodeToolbar.vue'
 import WorkflowNodeTrigger from './WorkflowNodeTrigger.vue'
 import WorkflowNodeWorkflow from './WorkflowNodeWorkflow.vue'
-import WorkflowNodeToolbar from './WorkflowNodeToolbar.vue'
 import type { Component } from 'vue'
+
+type NodeExecData = { input?: Record<string, unknown> | null, output?: Record<string, unknown> | null, status?: string, error?: string | null }
 
 defineOptions({ inheritAttrs: false })
 
@@ -33,9 +30,10 @@ const NODE_COMPONENTS: Record<string, Component> = {
   paginator: WorkflowNodePaginator,
 }
 
-// Fall back to the action node so an unrecognized type still renders visibly
-// on the canvas instead of silently disappearing.
 const componentForType = computed(() => NODE_COMPONENTS[props.type] ?? WorkflowNodeAction)
+
+const lastNodeExecutions = inject<Ref<Map<string, NodeExecData>>>('lastNodeExecutions')
+const hasFailed = computed(() => lastNodeExecutions?.value?.get(props.id)?.status === 'failed')
 </script>
 
 <template>
@@ -45,6 +43,13 @@ const componentForType = computed(() => NODE_COMPONENTS[props.type] ?? WorkflowN
       :node-id="props.id"
       :visible="!!props.selected"
     />
+    <!-- Persistent failure badge visible even when node is not selected -->
+    <div
+      v-if="hasFailed"
+      class="bg-destructive text-destructive-foreground absolute -top-2 -right-2 z-40 flex h-5 w-5 items-center justify-center rounded-full shadow-sm"
+    >
+      <LucideTriangleAlert class="h-3 w-3" />
+    </div>
     <component :is="componentForType" v-bind="$attrs" :selected="props.selected" />
   </div>
 </template>
