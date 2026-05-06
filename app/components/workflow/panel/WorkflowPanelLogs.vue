@@ -7,6 +7,7 @@ type NodeEvent = {
   status: string
   startTime?: string
   endTime?: string
+  error?: string | null
 }
 
 const props = defineProps<{
@@ -107,13 +108,13 @@ function upsertEvent(raw: Record<string, unknown>) {
   if (!nodeId) return
   const startTime = typeof raw.startTime === 'string' ? raw.startTime : undefined
   const endTime = typeof raw.endTime === 'string' ? raw.endTime : undefined
-  // Merge by seq if present, else by nodeId+startTime
+  const error = typeof raw.error === 'string' ? raw.error : (typeof raw.errorMessage === 'string' ? raw.errorMessage : (typeof raw.message === 'string' ? raw.message : null))
   const key = seq >= 0 ? `seq:${seq}` : `node:${nodeId}:${startTime ?? ''}`
   const idx = events.value.findIndex(e =>
     (e.seq >= 0 && `seq:${e.seq}` === key)
     || (e.seq < 0 && `node:${e.nodeId}:${e.startTime ?? ''}` === key),
   )
-  const next: NodeEvent = { seq, nodeId, status, startTime, endTime }
+  const next: NodeEvent = { seq, nodeId, status, startTime, endTime, error }
   if (idx >= 0) events.value[idx] = { ...events.value[idx], ...next }
   else events.value.push(next)
 }
@@ -136,14 +137,45 @@ async function pollOnce(execId: string): Promise<boolean> {
       : Array.isArray(details?.nodeExecutions)
         ? details.nodeExecutions
         : []
+
+    // Build a nodeId→error lookup from nodeResults (if the API returns them)
+    const nodeResults: any[] = Array.isArray(inner?.nodeResults)
+      ? inner.nodeResults
+      : Array.isArray(details?.nodeResults)
+        ? details.nodeResults
+        : []
+    const nodeResultErrors = new Map<string, string>()
+    for (const nr of nodeResults) {
+      if (nr.error && nr.nodeId) nodeResultErrors.set(nr.nodeId as string, nr.error as string)
+    }
+
+    // Execution-level errors (fallback when per-node error is unavailable)
+    const execErrors: string[] = Array.isArray(inner?.errors) ? inner.errors : []
+
     for (const [idx, n] of nodes.entries()) {
+      const nodeError = n.error
+        ?? n.errorMessage
+        ?? n.message
+        ?? nodeResultErrors.get(n.nodeId)
+        ?? (Array.isArray(n.retryErrors) && n.retryErrors.length > 0 ? n.retryErrors[n.retryErrors.length - 1] : null)
+        ?? null
+
       upsertEvent({
         nodeId: n.nodeId,
         status: n.status,
         seq: typeof n.executionOrder === 'number' ? n.executionOrder : idx,
         startTime: n.startTime,
         endTime: n.endTime,
+        error: nodeError,
       })
+    }
+
+    // If we have execution-level errors but no per-node errors, attach to the first failed node
+    if (execErrors.length > 0) {
+      const failedEvent = events.value.find(e => statusKind(e.status) === 'error' && !e.error)
+      if (failedEvent) {
+        failedEvent.error = execErrors.join('\n')
+      }
     }
     return TERMINAL_STATUSES.has(statusStr)
   }
@@ -427,35 +459,46 @@ const bodyStyle = computed(() => ({
                   </tr>
                 </thead>
                 <tbody>
-                  <tr
-v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`"
-                    class="hover:bg-muted/30 cursor-pointer border-b last:border-b-0"
-                    @click="emit('select:node', event.nodeId)">
-                    <td class="text-muted-foreground px-3 py-1 font-mono">{{ event.seq >= 0 ? event.seq : '–' }}</td>
-                    <td class="px-3 py-1 font-mono">{{ event.nodeId }}</td>
-                    <td class="px-3 py-1">
-                      <span
-class="inline-flex items-center gap-1"
-                        :class="{
-                          'text-green-600 dark:text-green-500': statusKind(event.status) === 'success',
-                          'text-red-600 dark:text-red-500': statusKind(event.status) === 'error',
-                          'text-blue-600 dark:text-blue-400': statusKind(event.status) === 'running',
-                          'text-muted-foreground': statusKind(event.status) === 'other',
-                        }">
+                  <template v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`">
+                    <tr
+                      class="hover:bg-muted/30 cursor-pointer border-b last:border-b-0"
+                      :class="{ '!border-b-0': event.error && statusKind(event.status) === 'error' }"
+                      @click="emit('select:node', event.nodeId)">
+                      <td class="text-muted-foreground px-3 py-1 font-mono">{{ event.seq >= 0 ? event.seq : '–' }}</td>
+                      <td class="px-3 py-1 font-mono">{{ event.nodeId }}</td>
+                      <td class="px-3 py-1">
                         <span
-class="h-1.5 w-1.5 rounded-full"
+                          class="inline-flex items-center gap-1"
                           :class="{
-                            'bg-green-500': statusKind(event.status) === 'success',
-                            'bg-red-500': statusKind(event.status) === 'error',
-                            'animate-pulse bg-blue-500': statusKind(event.status) === 'running',
-                            'bg-muted-foreground': statusKind(event.status) === 'other',
-                          }" />
-                        {{ event.status }}
-                      </span>
-                    </td>
-                    <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatEventTime(event.startTime) }}</td>
-                    <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatDuration(event.startTime, event.endTime) }}</td>
-                  </tr>
+                            'text-green-600 dark:text-green-500': statusKind(event.status) === 'success',
+                            'text-red-600 dark:text-red-500': statusKind(event.status) === 'error',
+                            'text-blue-600 dark:text-blue-400': statusKind(event.status) === 'running',
+                            'text-muted-foreground': statusKind(event.status) === 'other',
+                          }">
+                          <span
+                            class="h-1.5 w-1.5 rounded-full"
+                            :class="{
+                              'bg-green-500': statusKind(event.status) === 'success',
+                              'bg-red-500': statusKind(event.status) === 'error',
+                              'animate-pulse bg-blue-500': statusKind(event.status) === 'running',
+                              'bg-muted-foreground': statusKind(event.status) === 'other',
+                            }" />
+                          {{ event.status }}
+                        </span>
+                      </td>
+                      <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatEventTime(event.startTime) }}</td>
+                      <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatDuration(event.startTime, event.endTime) }}</td>
+                    </tr>
+                    <tr v-if="event.error && statusKind(event.status) === 'error'" class="border-b last:border-b-0">
+                      <td />
+                      <td colspan="4" class="px-3 pt-0.5 pb-2">
+                        <div class="flex items-start gap-1.5 rounded bg-red-500/10 px-2.5 py-1.5 text-xs text-red-600 dark:text-red-400">
+                          <LucideTriangleAlert class="mt-0.5 h-3 w-3 shrink-0" />
+                          <span class="break-all whitespace-pre-wrap">{{ event.error }}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
                 </tbody>
               </table>
             </div>
@@ -487,7 +530,7 @@ class="h-1.5 w-1.5 rounded-full"
                   target="_blank"
                   class="bg-muted text-muted-foreground hover:text-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px] underline-offset-2 hover:underline"
                 >{{ props.executionId }}</NuxtLink>
-                <button v-if="showVerbosityHint" class="text-amber-600 hover:text-amber-500 dark:text-amber-500 dark:hover:text-amber-400 text-[10px]" @click="emit('update:logVerbosity', 'detailed')">
+                <button v-if="showVerbosityHint" class="text-[10px] text-amber-600 hover:text-amber-500 dark:text-amber-500 dark:hover:text-amber-400" @click="emit('update:logVerbosity', 'detailed')">
                   Switch to Detailed for more info
                 </button>
               </template>
@@ -535,34 +578,45 @@ class="h-1.5 w-1.5 rounded-full"
                 </tr>
               </thead>
               <tbody>
-                <tr
-v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`"
-                  class="hover:bg-muted/30 border-b last:border-b-0">
-                  <td class="text-muted-foreground px-3 py-1 font-mono">{{ event.seq >= 0 ? event.seq : '–' }}</td>
-                  <td class="px-3 py-1 font-mono">{{ event.nodeId }}</td>
-                  <td class="px-3 py-1">
-                    <span
-class="inline-flex items-center gap-1"
-                      :class="{
-                        'text-green-600 dark:text-green-500': statusKind(event.status) === 'success',
-                        'text-red-600 dark:text-red-500': statusKind(event.status) === 'error',
-                        'text-blue-600 dark:text-blue-400': statusKind(event.status) === 'running',
-                        'text-muted-foreground': statusKind(event.status) === 'other',
-                      }">
+                <template v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`">
+                  <tr
+                    class="hover:bg-muted/30 border-b last:border-b-0"
+                    :class="{ '!border-b-0': event.error && statusKind(event.status) === 'error' }">
+                    <td class="text-muted-foreground px-3 py-1 font-mono">{{ event.seq >= 0 ? event.seq : '–' }}</td>
+                    <td class="px-3 py-1 font-mono">{{ event.nodeId }}</td>
+                    <td class="px-3 py-1">
                       <span
-class="h-1.5 w-1.5 rounded-full"
+                        class="inline-flex items-center gap-1"
                         :class="{
-                          'bg-green-500': statusKind(event.status) === 'success',
-                          'bg-red-500': statusKind(event.status) === 'error',
-                          'animate-pulse bg-blue-500': statusKind(event.status) === 'running',
-                          'bg-muted-foreground': statusKind(event.status) === 'other',
-                        }" />
-                      {{ event.status }}
-                    </span>
-                  </td>
-                  <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatEventTime(event.startTime) }}</td>
-                  <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatDuration(event.startTime, event.endTime) }}</td>
-                </tr>
+                          'text-green-600 dark:text-green-500': statusKind(event.status) === 'success',
+                          'text-red-600 dark:text-red-500': statusKind(event.status) === 'error',
+                          'text-blue-600 dark:text-blue-400': statusKind(event.status) === 'running',
+                          'text-muted-foreground': statusKind(event.status) === 'other',
+                        }">
+                        <span
+                          class="h-1.5 w-1.5 rounded-full"
+                          :class="{
+                            'bg-green-500': statusKind(event.status) === 'success',
+                            'bg-red-500': statusKind(event.status) === 'error',
+                            'animate-pulse bg-blue-500': statusKind(event.status) === 'running',
+                            'bg-muted-foreground': statusKind(event.status) === 'other',
+                          }" />
+                        {{ event.status }}
+                      </span>
+                    </td>
+                    <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatEventTime(event.startTime) }}</td>
+                    <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatDuration(event.startTime, event.endTime) }}</td>
+                  </tr>
+                  <tr v-if="event.error && statusKind(event.status) === 'error'" class="border-b last:border-b-0">
+                    <td />
+                    <td colspan="4" class="px-3 pt-0.5 pb-2">
+                      <div class="flex items-start gap-1.5 rounded bg-red-500/10 px-2.5 py-1.5 text-xs text-red-600 dark:text-red-400">
+                        <LucideTriangleAlert class="mt-0.5 h-3 w-3 shrink-0" />
+                        <span class="break-all whitespace-pre-wrap">{{ event.error }}</span>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
               </tbody>
             </table>
           </div>
