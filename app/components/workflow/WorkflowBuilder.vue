@@ -479,7 +479,11 @@ const TERMINAL_STATUSES = new Set([
 
 // Node execution data from the last run — keyed by nodeId so the properties
 // sidebar can show per-node input/output like n8n.
-const lastNodeExecutions = ref<Map<string, { input?: Record<string, unknown> | null, output?: Record<string, unknown> | null, status?: string }>>(new Map())
+type NodeExecData = { input?: Record<string, unknown> | null, output?: Record<string, unknown> | null, status?: string, error?: string | null }
+const lastNodeExecutions = ref<Map<string, NodeExecData>>(new Map())
+provide('lastNodeExecutions', lastNodeExecutions)
+provide('logVerbosity', toRef(props, 'logVerbosity'))
+provide('switchToDetailedLog', () => emit('update:logVerbosity', 'detailed'))
 
 // Poll the current execution's status while `isRunning` is true so the Run
 // button keeps its running visual as long as the workflow is actually
@@ -488,21 +492,28 @@ usePollWhile(
   isRunning,
   async () => {
     if (!lastExecutionId.value) return
-    const res = await orchestratorApi.execution.get(lastExecutionId.value)
-    const exec = (res as Record<string, unknown>)?.execution as Record<string, unknown> | undefined
-    const nodeExecs = (exec?.nodeExecutions ?? (res as Record<string, unknown>)?.nodeExecutions) as Array<Record<string, unknown>> | undefined
-    if (Array.isArray(nodeExecs)) {
-      const map = new Map<string, { input?: Record<string, unknown> | null, output?: Record<string, unknown> | null, status?: string }>()
+    const details = await orchestratorApi.execution.get(lastExecutionId.value) as Record<string, unknown>
+    const inner = (details?.execution as Record<string, unknown>) ?? details
+    const nodeExecs = (
+      Array.isArray(inner?.nodeExecutions) ? inner.nodeExecutions
+      : Array.isArray(details?.nodeExecutions) ? details.nodeExecutions
+      : []
+    ) as Array<Record<string, unknown>>
+    if (nodeExecs.length > 0) {
+      const map = new Map<string, NodeExecData>()
       for (const n of nodeExecs) {
         map.set(n.nodeId as string, {
           input: n.input as Record<string, unknown> | null | undefined,
           output: n.output as Record<string, unknown> | null | undefined,
           status: n.status as string | undefined,
+          error: (n.error as string | null | undefined) ?? (n.errorMessage as string | null | undefined) ?? (n.message as string | null | undefined) ?? null,
         })
       }
       lastNodeExecutions.value = map
     }
-    const status = (exec?.status as string ?? '').toLowerCase()
+    const status = String(
+      details?.orchestrationStatus ?? inner?.status ?? details?.status ?? '',
+    ).toLowerCase()
     if (TERMINAL_STATUSES.has(status)) {
       isRunning.value = false
       emit('executed')
