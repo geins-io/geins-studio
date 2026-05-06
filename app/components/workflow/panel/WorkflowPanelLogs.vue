@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount, watch, nextTick } from 'vue'
+import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
 
 type NodeEvent = {
   seq: number
@@ -8,6 +9,8 @@ type NodeEvent = {
   startTime?: string
   endTime?: string
   error?: string | null
+  input?: Record<string, unknown> | null
+  output?: Record<string, unknown> | null
 }
 
 const props = defineProps<{
@@ -62,6 +65,23 @@ const runningCount = computed(
   () => events.value.filter(e => statusKind(e.status) === 'running').length,
 )
 
+const expandedNodeId = ref<string | null>(null)
+const expandedTab = ref<'input' | 'output'>('output')
+
+function toggleExpand(nodeId: string) {
+  expandedNodeId.value = expandedNodeId.value === nodeId ? null : nodeId
+  expandedTab.value = 'output'
+}
+
+function hasRunData(event: NodeEvent): boolean {
+  return event.input != null || event.output != null
+}
+
+function formatJson(data: unknown): string {
+  if (data == null) return '{}'
+  return JSON.stringify(data, null, 2)
+}
+
 
 function statusKind(status: string): 'running' | 'success' | 'error' | 'other' {
   const s = (status || '').toLowerCase()
@@ -97,12 +117,14 @@ function upsertEvent(raw: Record<string, unknown>) {
   const startTime = typeof raw.startTime === 'string' ? raw.startTime : undefined
   const endTime = typeof raw.endTime === 'string' ? raw.endTime : undefined
   const error = typeof raw.error === 'string' ? raw.error : (typeof raw.errorMessage === 'string' ? raw.errorMessage : (typeof raw.message === 'string' ? raw.message : null))
+  const input = (raw.input != null && typeof raw.input === 'object') ? raw.input as Record<string, unknown> : null
+  const output = (raw.output != null && typeof raw.output === 'object') ? raw.output as Record<string, unknown> : null
   const key = seq >= 0 ? `seq:${seq}` : `node:${nodeId}:${startTime ?? ''}`
   const idx = events.value.findIndex(e =>
     (e.seq >= 0 && `seq:${e.seq}` === key)
     || (e.seq < 0 && `node:${e.nodeId}:${e.startTime ?? ''}` === key),
   )
-  const next: NodeEvent = { seq, nodeId, status, startTime, endTime, error }
+  const next: NodeEvent = { seq, nodeId, status, startTime, endTime, error, input, output }
   if (idx >= 0) events.value[idx] = { ...events.value[idx], ...next }
   else events.value.push(next)
 }
@@ -155,6 +177,8 @@ async function pollOnce(execId: string): Promise<boolean> {
         startTime: n.startTime,
         endTime: n.endTime,
         error: nodeError,
+        input: n.input,
+        output: n.output,
       })
     }
 
@@ -430,10 +454,18 @@ const bodyStyle = computed(() => ({
                   <template v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`">
                     <tr
                       class="hover:bg-muted/30 cursor-pointer border-b last:border-b-0"
-                      :class="{ '!border-b-0': event.error && statusKind(event.status) === 'error' }"
-                      @click="emit('select:node', event.nodeId)">
+                      :class="{
+                        '!border-b-0': (event.error && statusKind(event.status) === 'error') || expandedNodeId === event.nodeId,
+                        'bg-muted/20': expandedNodeId === event.nodeId,
+                      }"
+                      @click="toggleExpand(event.nodeId); emit('select:node', event.nodeId)">
                       <td class="text-muted-foreground px-3 py-1 font-mono">{{ event.seq >= 0 ? event.seq : '–' }}</td>
-                      <td class="px-3 py-1 font-mono">{{ event.nodeId }}</td>
+                      <td class="px-3 py-1 font-mono">
+                        <span class="flex items-center gap-1">
+                          <LucideChevronRight v-if="hasRunData(event)" class="text-muted-foreground h-3 w-3 shrink-0 transition-transform" :class="{ 'rotate-90': expandedNodeId === event.nodeId }" />
+                          {{ event.nodeId }}
+                        </span>
+                      </td>
                       <td class="px-3 py-1">
                         <span
                           class="inline-flex items-center gap-1"
@@ -457,12 +489,51 @@ const bodyStyle = computed(() => ({
                       <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatEventTime(event.startTime) }}</td>
                       <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatDuration(event.startTime, event.endTime) }}</td>
                     </tr>
-                    <tr v-if="event.error && statusKind(event.status) === 'error'" class="border-b last:border-b-0">
+                    <tr v-if="event.error && statusKind(event.status) === 'error'" class="border-b last:border-b-0" :class="{ '!border-b-0': expandedNodeId === event.nodeId }">
                       <td />
                       <td colspan="4" class="px-3 pt-0.5 pb-2">
                         <div class="flex items-start gap-1.5 rounded bg-red-500/10 px-2.5 py-1.5 text-xs text-red-600 dark:text-red-400">
                           <LucideTriangleAlert class="mt-0.5 h-3 w-3 shrink-0" />
                           <span class="break-all whitespace-pre-wrap">{{ event.error }}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr v-if="expandedNodeId === event.nodeId && hasRunData(event)" class="border-b last:border-b-0">
+                      <td />
+                      <td colspan="4" class="px-3 pt-0.5 pb-2">
+                        <div class="bg-muted/30 flex flex-col overflow-hidden rounded border">
+                          <div class="flex items-center gap-0.5 border-b px-2 py-1">
+                            <button
+                              v-if="event.input != null"
+                              class="rounded px-2 py-0.5 text-[10px] font-medium transition-colors"
+                              :class="expandedTab === 'input' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                              @click.stop="expandedTab = 'input'">
+                              Input
+                            </button>
+                            <button
+                              v-if="event.output != null"
+                              class="rounded px-2 py-0.5 text-[10px] font-medium transition-colors"
+                              :class="expandedTab === 'output' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                              @click.stop="expandedTab = 'output'">
+                              Output
+                            </button>
+                          </div>
+                          <div class="h-48">
+                            <JsonCodeEditor
+                              v-if="expandedTab === 'input' && event.input != null"
+                              :model-value="formatJson(event.input)"
+                              :readonly="true"
+                              :line-numbers="false"
+                              :line-wrapping="true"
+                            />
+                            <JsonCodeEditor
+                              v-else-if="expandedTab === 'output' && event.output != null"
+                              :model-value="formatJson(event.output)"
+                              :readonly="true"
+                              :line-numbers="false"
+                              :line-wrapping="true"
+                            />
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -532,10 +603,19 @@ const bodyStyle = computed(() => ({
               <tbody>
                 <template v-for="event in eventsSorted" :key="`${event.seq}:${event.nodeId}`">
                   <tr
-                    class="hover:bg-muted/30 border-b last:border-b-0"
-                    :class="{ '!border-b-0': event.error && statusKind(event.status) === 'error' }">
+                    class="hover:bg-muted/30 cursor-pointer border-b last:border-b-0"
+                    :class="{
+                      '!border-b-0': (event.error && statusKind(event.status) === 'error') || expandedNodeId === event.nodeId,
+                      'bg-muted/20': expandedNodeId === event.nodeId,
+                    }"
+                    @click="toggleExpand(event.nodeId)">
                     <td class="text-muted-foreground px-3 py-1 font-mono">{{ event.seq >= 0 ? event.seq : '–' }}</td>
-                    <td class="px-3 py-1 font-mono">{{ event.nodeId }}</td>
+                    <td class="px-3 py-1 font-mono">
+                      <span class="flex items-center gap-1">
+                        <LucideChevronRight v-if="hasRunData(event)" class="text-muted-foreground h-3 w-3 shrink-0 transition-transform" :class="{ 'rotate-90': expandedNodeId === event.nodeId }" />
+                        {{ event.nodeId }}
+                      </span>
+                    </td>
                     <td class="px-3 py-1">
                       <span
                         class="inline-flex items-center gap-1"
@@ -559,12 +639,51 @@ const bodyStyle = computed(() => ({
                     <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatEventTime(event.startTime) }}</td>
                     <td class="text-muted-foreground px-3 py-1 font-mono">{{ formatDuration(event.startTime, event.endTime) }}</td>
                   </tr>
-                  <tr v-if="event.error && statusKind(event.status) === 'error'" class="border-b last:border-b-0">
+                  <tr v-if="event.error && statusKind(event.status) === 'error'" class="border-b last:border-b-0" :class="{ '!border-b-0': expandedNodeId === event.nodeId }">
                     <td />
                     <td colspan="4" class="px-3 pt-0.5 pb-2">
                       <div class="flex items-start gap-1.5 rounded bg-red-500/10 px-2.5 py-1.5 text-xs text-red-600 dark:text-red-400">
                         <LucideTriangleAlert class="mt-0.5 h-3 w-3 shrink-0" />
                         <span class="break-all whitespace-pre-wrap">{{ event.error }}</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr v-if="expandedNodeId === event.nodeId && hasRunData(event)" class="border-b last:border-b-0">
+                    <td />
+                    <td colspan="4" class="px-3 pt-0.5 pb-2">
+                      <div class="bg-muted/30 flex flex-col overflow-hidden rounded border">
+                        <div class="flex items-center gap-0.5 border-b px-2 py-1">
+                          <button
+                            v-if="event.input != null"
+                            class="rounded px-2 py-0.5 text-[10px] font-medium transition-colors"
+                            :class="expandedTab === 'input' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                            @click.stop="expandedTab = 'input'">
+                            Input
+                          </button>
+                          <button
+                            v-if="event.output != null"
+                            class="rounded px-2 py-0.5 text-[10px] font-medium transition-colors"
+                            :class="expandedTab === 'output' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+                            @click.stop="expandedTab = 'output'">
+                            Output
+                          </button>
+                        </div>
+                        <div class="h-48">
+                          <JsonCodeEditor
+                            v-if="expandedTab === 'input' && event.input != null"
+                            :model-value="formatJson(event.input)"
+                            :readonly="true"
+                            :line-numbers="false"
+                            :line-wrapping="true"
+                          />
+                          <JsonCodeEditor
+                            v-else-if="expandedTab === 'output' && event.output != null"
+                            :model-value="formatJson(event.output)"
+                            :readonly="true"
+                            :line-numbers="false"
+                            :line-wrapping="true"
+                          />
+                        </div>
                       </div>
                     </td>
                   </tr>
