@@ -88,10 +88,11 @@ const onDelete = () => {
       <button
         v-show="!isHovered || isCompact"
         class="bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground flex h-6 w-6 items-center justify-center rounded-full border shadow-sm transition-colors"
-        title="Edge actions"
+        :title="isCompact ? 'Add node' : 'Edge actions'"
         @click="onAdd"
       >
-        <LucideEllipsis class="h-3 w-3" />
+        <LucidePlus v-if="isCompact" class="h-3 w-3" />
+        <LucideEllipsis v-else class="h-3 w-3" />
       </button>
       <template v-if="isHovered && !isCompact">
         <button
