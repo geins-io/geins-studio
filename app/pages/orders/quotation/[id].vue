@@ -56,7 +56,7 @@ const userStore = useUserStore();
 // =====================================================================================
 const { orderApi, customerApi, productApi, changelogApi } =
   useGeinsRepository();
-const { currentCurrencies, channels } = storeToRefs(accountStore);
+const { channels } = storeToRefs(accountStore);
 const currentChannels = computed(() => channels.value);
 const { getFallbackSelection, transformProductsToSelectorEntities } =
   useSelector();
@@ -73,9 +73,12 @@ const formSchema = toTypedSchema(
         .min(1, t('entity_required', { entityName: 'company' })),
       ownerId: z.string().min(1, t('entity_required', { entityName: 'owner' })),
       buyerId: z.string().optional(),
-      currency: z
+      channelId: z
         .string()
-        .min(1, t('entity_required', { entityName: 'currency' })),
+        .min(1, t('entity_required', { entityName: 'channel' })),
+      marketId: z
+        .string()
+        .min(1, t('entity_required', { entityName: 'market' })),
       expirationDate: z.string().optional(),
       paymentTerms: z.string().optional(),
       requireConfirmation: z.boolean().optional(),
@@ -191,7 +194,8 @@ const getItemName = (item: QuotationItem) => {
 
 // Derived table rows from displayItems
 const quotationProductRows = computed<QuotationProductRow[]>(() => {
-  const currency = form.values.details?.currency || 'SEK';
+  const currency =
+    selectedCurrency.value || entityData.value?.currency || 'SEK';
   return displayItems.value.map((item) => {
     return {
       _id: item.skuId,
@@ -462,60 +466,87 @@ const currentBuyerName = computed(() => {
   return fullName(buyer);
 });
 
-// Available currencies based on company's channels
-const availableCurrencies = computed(() => {
+// Channels available to the selected company
+const availableChannels = computed(() => {
   if (!selectedCompany.value?.channels) return [];
-
-  const companyChannels = selectedCompany.value.channels;
-  const channelCurrencies = new Set<string>();
-
-  // Get all currencies from the company's channel markets
-  companyChannels.forEach((channelId) => {
-    const channel = currentChannels.value.find((ch) => ch._id === channelId);
-    if (channel?.markets) {
-      channel.markets.forEach((market) => {
-        if (market.currency?._id) {
-          channelCurrencies.add(market.currency._id);
-        }
-      });
-    }
-  });
-
-  // If no currencies found, return all available currencies
-  if (channelCurrencies.size === 0) return currentCurrencies.value;
-
-  return currentCurrencies.value.filter((curr) =>
-    channelCurrencies.has(curr._id),
+  return currentChannels.value.filter((ch) =>
+    selectedCompany.value!.channels!.includes(ch._id),
   );
 });
 
-// Get the default currency for a company based on its first channel's default market
-const getDefaultCurrencyForCompany = (
-  company: CustomerCompany | undefined,
-): string | undefined => {
-  if (!company?.channels?.length) return undefined;
-  for (const channelId of company.channels) {
-    const channel = currentChannels.value.find((ch) => ch._id === channelId);
-    if (!channel?.markets?.length) continue;
-    const defaultMarket = channel.markets.find(
-      (m) => m._id === String(channel.defaultMarket),
-    );
-    if (defaultMarket?.currency?._id) return defaultMarket.currency._id;
+// Selected channel resolved from form's channelId
+const selectedChannel = computed(() => {
+  const id = form.values.details?.channelId;
+  if (!id) return undefined;
+  return currentChannels.value.find((ch) => ch._id === id);
+});
+
+// Markets available on the selected channel
+const availableMarkets = computed(() => selectedChannel.value?.markets ?? []);
+
+// Selected market resolved from form's marketId (within selected channel)
+const selectedMarket = computed(() => {
+  const id = form.values.details?.marketId;
+  if (!id) return undefined;
+  return availableMarkets.value.find((m) => m._id === id);
+});
+
+// Currency derived from selected market (used by table rows / preview / display)
+const selectedCurrency = computed(
+  () => selectedMarket.value?.currency?._id ?? '',
+);
+
+// v-model bridge between form's marketId field and FormInputMarketSelect
+const marketIdModel = computed<string>({
+  get: () => form.values.details?.marketId ?? '',
+  set: (value) => form.setFieldValue('details.marketId', value ?? ''),
+});
+
+// Explicit computed for the market input's disabled state. Reading
+// form.values.details?.channelId directly in the template binding hit a
+// reactivity issue when the value transitioned from '' to a real id via
+// setFieldValue — wrapping it in a computed forces dep tracking.
+const isMarketDisabled = computed(() => !form.values.details?.channelId);
+
+// Display-side resolution that works in both create and sent/edit mode.
+// In sent mode VeeValidate may have cleared form values when fields unmounted,
+// so fall back to entityData.
+const displayChannelId = computed(
+  () => form.values.details?.channelId || entityData.value?.channelId || '',
+);
+const displayMarketId = computed(
+  () => form.values.details?.marketId || entityData.value?.marketId || '',
+);
+const displayChannel = computed(() =>
+  currentChannels.value.find((ch) => ch._id === displayChannelId.value),
+);
+const displayMarket = computed(() => {
+  const ch = displayChannel.value;
+  if (ch?.markets) {
+    const m = ch.markets.find((mk) => mk._id === displayMarketId.value);
+    if (m) return m;
+  }
+  // Fallback: search across all channels (covers cases where channel context was lost)
+  for (const channel of currentChannels.value) {
+    const m = channel.markets?.find((mk) => mk._id === displayMarketId.value);
+    if (m) return m;
   }
   return undefined;
-};
+});
+const displayMarketLabel = computed(() => {
+  const m = displayMarket.value;
+  if (!m) return '';
+  return `${m.country?.name ?? m._id} (${m.currency?._id ?? ''})`;
+});
 
-// Resolve channelId + marketId from selected company and currency
-const resolveChannelMarket = (currency: string | undefined) => {
-  if (!selectedCompany.value?.channels || !currency) return null;
-
-  for (const chId of selectedCompany.value.channels) {
-    const channel = currentChannels.value.find((ch) => ch._id === chId);
-    if (!channel?.markets) continue;
-    const market = channel.markets.find((m) => m.currency?._id === currency);
-    if (market) return { channelId: channel._id, marketId: market._id };
-  }
-  return null;
+// Default market id for a channel (its configured defaultMarket)
+const getDefaultMarketIdForChannel = (channelId: string): string => {
+  const channel = currentChannels.value.find((ch) => ch._id === channelId);
+  if (!channel?.markets?.length) return '';
+  const defaultMarket = channel.markets.find(
+    (m) => m._id === String(channel.defaultMarket),
+  );
+  return defaultMarket?._id ?? channel.markets[0]?._id ?? '';
 };
 
 // =====================================================================================
@@ -613,7 +644,8 @@ const {
       accountId: '',
       ownerId: '',
       buyerId: '',
-      currency: '',
+      channelId: '',
+      marketId: '',
       expirationDate: '',
       paymentTerms: 'Net 30',
       requireConfirmation: false,
@@ -673,7 +705,8 @@ const {
         accountId: companyId,
         ownerId,
         buyerId,
-        currency: quotation.currency || 'SEK',
+        channelId: quotation.channelId || '',
+        marketId: quotation.marketId || '',
         expirationDate: quotation.validTo || '',
         paymentTerms,
         requireConfirmation: quotation.settings?.requireConfirmation ?? false,
@@ -681,10 +714,9 @@ const {
     });
   },
   prepareCreateData: (formData) => {
-    const cm = resolveChannelMarket(formData.details.currency);
     return {
-      channelId: cm?.channelId || '',
-      marketId: cm?.marketId || '',
+      channelId: formData.details.channelId,
+      marketId: formData.details.marketId,
       name: formData.details.name,
       companyId: formData.details.accountId || undefined,
       ownerId: formData.details.ownerId || undefined,
@@ -718,10 +750,9 @@ const {
   }),
   onFormValuesChange: (values) => {
     if (createMode.value) {
-      const cm = resolveChannelMarket(values.details.currency);
       entityDataCreate.value = {
-        channelId: cm?.channelId || '',
-        marketId: cm?.marketId || '',
+        channelId: values.details.channelId,
+        marketId: values.details.marketId,
         name: values.details.name,
         companyId: values.details.accountId || undefined,
         ownerId: values.details.ownerId || undefined,
@@ -847,20 +878,44 @@ watch(
       form.setFieldValue('details.ownerId', '', false);
       form.setFieldValue('details.buyerId', '', false);
 
-      // Set currency to channel's default market currency, or first available
-      if (availableCurrencies.value.length > 0) {
-        const defaultCurrency = getDefaultCurrencyForCompany(company);
-        form.setFieldValue(
-          'details.currency',
-          defaultCurrency || availableCurrencies.value[0]?._id,
-        );
+      // Auto-pick the only channel when company has exactly one;
+      // otherwise clear so the user must choose explicitly.
+      // Read channel ids directly off the company to avoid relying on a
+      // computed that depends on selectedCompany — and write market in the
+      // same sync block so we don't race the channel-change watcher.
+      const companyChannelIds = company?.channels ?? [];
+      if (companyChannelIds.length === 1) {
+        const channelId = companyChannelIds[0]!;
+        const defaultMarketId = getDefaultMarketIdForChannel(channelId);
+        form.setFieldValue('details.channelId', channelId, false);
+        form.setFieldValue('details.marketId', defaultMarketId, false);
+      } else {
+        form.setFieldValue('details.channelId', '', false);
+        form.setFieldValue('details.marketId', '', false);
       }
     } else {
       selectedCompany.value = undefined;
       selectedAccountName.value = '';
       buyers.value = [];
       productsWithSkus.value = [];
+      form.setFieldValue('details.channelId', '', false);
+      form.setFieldValue('details.marketId', '', false);
     }
+  },
+);
+
+// When channel changes (create mode only), default the market to the channel's
+// default market and clear any incompatible market selection.
+watch(
+  () => form.values.details?.channelId,
+  (newChannelId) => {
+    if (!createMode.value) return;
+    if (!newChannelId) {
+      form.setFieldValue('details.marketId', '', false);
+      return;
+    }
+    const defaultMarketId = getDefaultMarketIdForChannel(newChannelId);
+    form.setFieldValue('details.marketId', defaultMarketId, false);
   },
 );
 
@@ -1204,8 +1259,8 @@ const sendBlockReasons = computed<string[]>(() => {
   if (!details?.paymentTerms) {
     reasons.push(t('orders.send_requires_terms'));
   }
-  if (!details?.currency) {
-    reasons.push(t('orders.send_requires_currency'));
+  if (!details?.marketId) {
+    reasons.push(t('orders.send_requires_market'));
   }
   if (quotationItems.value.length === 0) {
     reasons.push(t('orders.send_requires_products'));
@@ -1598,7 +1653,6 @@ const sentModeSkuColumns = computed<ColumnDef<QuotationProductRow>[]>(() => {
 // =====================================================================================
 const companySummary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
-  const formValues = form.values.details;
 
   if (selectedAccountName.value) {
     const companyId = selectedCompanyId.value;
@@ -1632,10 +1686,6 @@ const companySummary = computed<DataItem[]>(() => {
       value: currentBuyerName.value,
     });
   }
-  if (formValues?.currency) {
-    dataList.push({ label: t('currency'), value: formValues.currency });
-  }
-
   return dataList;
 });
 
@@ -1674,6 +1724,18 @@ const summary = computed<DataItem[]>(() => {
   }
   if (createMode.value && companySummary.value.length) {
     dataList.push(...companySummary.value);
+  }
+  if (availableChannels.value.length > 1 && displayChannel.value) {
+    dataList.push({
+      label: t('channel'),
+      value: displayChannel.value.name,
+    });
+  }
+  if (displayMarketLabel.value) {
+    dataList.push({
+      label: t('market'),
+      value: displayMarketLabel.value,
+    });
   }
   if (summaryExpirationDate) {
     dataList.push({
@@ -2053,7 +2115,7 @@ definePageMeta({
                       </FormItem>
                     </FormField>
                   </FormGrid>
-                  <FormGrid design="1+1+1">
+                  <FormGrid design="1+1">
                     <FormField
                       v-slot="{ componentField }"
                       name="details.ownerId"
@@ -2123,13 +2185,18 @@ definePageMeta({
                         <FormMessage />
                       </FormItem>
                     </FormField>
-
+                  </FormGrid>
+                  <FormGrid
+                    :design="availableChannels.length > 1 ? '1+1' : '1'"
+                  >
                     <FormField
+                      v-if="availableChannels.length > 1"
+                      key="details.channelId"
                       v-slot="{ componentField }"
-                      name="details.currency"
+                      name="details.channelId"
                     >
                       <FormItem>
-                        <FormLabel>{{ $t('currency') }}</FormLabel>
+                        <FormLabel>{{ $t('channel') }}</FormLabel>
                         <FormControl>
                           <Select
                             v-bind="componentField"
@@ -2138,22 +2205,36 @@ definePageMeta({
                             <SelectTrigger>
                               <SelectValue
                                 :placeholder="
-                                  $t('select_entity', {
-                                    entityName: 'currency',
-                                  })
+                                  $t('select_entity', { entityName: 'channel' })
                                 "
                               />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem
-                                v-for="currency in availableCurrencies"
-                                :key="currency._id"
-                                :value="currency._id"
+                                v-for="channel in availableChannels"
+                                :key="channel._id"
+                                :value="channel._id"
                               >
-                                {{ currency._id }}
+                                {{ channel.name }}
                               </SelectItem>
                             </SelectContent>
                           </Select>
+                        </FormControl>
+                        <FormDescription>
+                          {{ $t('form.cannot_be_changed') }}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField key="details.marketId" name="details.marketId">
+                      <FormItem>
+                        <FormLabel>{{ $t('market') }}</FormLabel>
+                        <FormControl>
+                          <FormInputMarketSelect
+                            v-model="marketIdModel"
+                            :data-set="availableMarkets"
+                            :disabled="isMarketDisabled"
+                          />
                         </FormControl>
                         <FormDescription>
                           {{ $t('form.cannot_be_changed') }}
@@ -2270,24 +2351,37 @@ definePageMeta({
                       </p>
                     </div>
                   </div>
-                  <div class="border-t pt-4">
-                    <div class="mb-1 flex items-center gap-1.5">
-                      <p class="text-muted-foreground text-xs font-medium">
-                        {{ $t('orders.require_confirmation') }}
+                  <div :class="cn('grid grid-cols-2 gap-4 border-t pt-4')">
+                    <div>
+                      <p class="text-muted-foreground mb-1 text-xs font-medium">
+                        {{ $t('market') }}
                       </p>
-                      <ContentQuotationWorkflowInfo
-                        :require-confirmation="
-                          entityData?.settings?.requireConfirmation
-                        "
-                      />
+                      <p class="text-sm">
+                        <Skeleton v-if="fetchingData" class="h-5 w-32" />
+                        <template v-else>
+                          {{ displayMarketLabel || '-' }}
+                        </template>
+                      </p>
                     </div>
-                    <p class="text-sm">
-                      {{
-                        entityData?.settings?.requireConfirmation
-                          ? $t('yes')
-                          : $t('no')
-                      }}
-                    </p>
+                    <div>
+                      <div class="mb-1 flex items-center gap-1.5">
+                        <p class="text-muted-foreground text-xs font-medium">
+                          {{ $t('orders.require_confirmation') }}
+                        </p>
+                        <ContentQuotationWorkflowInfo
+                          :require-confirmation="
+                            entityData?.settings?.requireConfirmation
+                          "
+                        />
+                      </div>
+                      <p class="text-sm">
+                        {{
+                          entityData?.settings?.requireConfirmation
+                            ? $t('yes')
+                            : $t('no')
+                        }}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </ContentEditCard>
@@ -2301,7 +2395,6 @@ definePageMeta({
                   :shipping-address="shippingAddress"
                   :buyer-name="currentBuyerName"
                   :owner-name="currentOwnerName"
-                  :currency="entityData?.currency"
                   :loading="fetchingData"
                 />
               </ContentEditCard>
@@ -2479,7 +2572,6 @@ definePageMeta({
                   :shipping-address="shippingAddress"
                   :buyer-name="currentBuyerName"
                   :owner-name="currentOwnerName"
-                  :currency="form.values.details?.currency"
                   :loading="fetchingData"
                 />
               </ContentEditCard>
@@ -2598,7 +2690,7 @@ definePageMeta({
                   class="mx-3"
                   edit-mode
                   :total="displayTotal"
-                  :currency="form.values.details?.currency || ''"
+                  :currency="selectedCurrency || entityData?.currency || ''"
                   @blur="debouncedCallPreview()"
                 />
               </template>
@@ -2679,9 +2771,7 @@ definePageMeta({
               <ContentPriceSummary
                 v-if="!createMode && displayTotal && displayItems.length"
                 :total="displayTotal"
-                :currency="
-                  entityData?.currency || form.values.details?.currency || ''
-                "
+                :currency="entityData?.currency || selectedCurrency || ''"
               />
             </template>
           </ContentEditSummary>
