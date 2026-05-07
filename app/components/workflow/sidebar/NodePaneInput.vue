@@ -24,6 +24,9 @@ const { nodes: vfNodes, edges: vfEdges } = useVueFlow()
 const workflowInputDefs = inject<Ref<WorkflowInput[]>>('workflowInputDefs', ref([]))
 const workflowVariables = inject<Ref<WorkflowVariable[]>>('workflowVariables', ref([]))
 
+type NodeExecData = { input?: Record<string, unknown> | null, output?: Record<string, unknown> | null, status?: string, error?: string | null }
+const lastNodeExecutions = inject<Ref<Map<string, NodeExecData>>>('lastNodeExecutions')
+
 const hasExecutionInput = computed(() => props.nodeExecution?.input != null)
 
 const formatJson = (value: unknown): string => {
@@ -121,6 +124,36 @@ watch(inputSearch, (v) => {
   inputPaneSections.value.add('inputs')
 })
 
+function runDataPreview(key: string): string | null {
+  const input = props.nodeExecution?.input
+  if (!input) return null
+  const val = input[key]
+  if (val === undefined) return null
+  if (val === null) return 'null'
+  if (typeof val === 'object') return JSON.stringify(val, null, 2)
+  return String(val)
+}
+
+function upstreamOutputPreview(nodeId: string, fieldName: string): string | null {
+  const exec = lastNodeExecutions?.value?.get(nodeId)
+  if (!exec?.output) return null
+  const val = exec.output[fieldName]
+  if (val === undefined) return null
+  if (val === null) return 'null'
+  if (typeof val === 'object') return JSON.stringify(val, null, 2)
+  return String(val)
+}
+
+function upstreamHasOutput(nodeId: string): boolean {
+  const exec = lastNodeExecutions?.value?.get(nodeId)
+  return exec?.status === 'Completed' && exec?.output != null
+}
+
+function truncatePreview(text: string, max = 200): string {
+  if (text.length <= max) return text
+  return text.slice(0, max) + '…'
+}
+
 const inferVarType = (v: { value: string, isSecret: boolean }): string => {
   if (v.isSecret) return 'secret'
   const val = v.value?.trim() ?? ''
@@ -187,22 +220,33 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
           <div v-if="filteredUpstreamNodes.length" class="space-y-2">
             <div v-for="upstream in filteredUpstreamNodes" :key="upstream.id">
               <div class="text-muted-foreground mb-1 flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase">
-                <LucideCircle class="h-2 w-2 fill-blue-500 text-blue-500" />
+                <LucideCircle v-if="!upstreamHasOutput(upstream.id)" class="h-2 w-2 fill-blue-500 text-blue-500" />
+                <LucideCheckCircle2 v-else class="h-2.5 w-2.5 text-green-500" />
                 {{ upstream.label }}
               </div>
               <div v-if="upstream.outputFields.length" class="space-y-0.5">
-                <button
-                  v-for="field in upstream.outputFields"
-                  :key="field.name"
-                  draggable="true"
-                  class="hover:bg-muted flex w-full cursor-grab items-center justify-between rounded px-1.5 py-1 text-left text-xs transition-colors active:cursor-grabbing"
-                  :title="`Drag or click to copy {{output.${upstream.id}.${field.name}}}`"
-                  @click="copyExpression(`{{output.${upstream.id}.${field.name}}}`)"
-                  @dragstart="onExpressionDragStart($event, `{{output.${upstream.id}.${field.name}}}`)"
-                >
-                  <span class="font-mono text-[11px]">{{ field.name }}</span>
-                  <WorkflowDataType :type="field.type" />
-                </button>
+                <TooltipProvider v-for="field in upstream.outputFields" :key="field.name">
+                  <Tooltip :disabled="!upstreamOutputPreview(upstream.id, field.name)">
+                    <TooltipTrigger as-child>
+                      <button
+                        draggable="true"
+                        class="hover:bg-muted flex w-full cursor-grab items-center justify-between rounded px-1.5 py-1 text-left text-xs transition-colors active:cursor-grabbing"
+                        :title="upstreamOutputPreview(upstream.id, field.name) ? undefined : `Drag or click to copy {{output.${upstream.id}.${field.name}}}`"
+                        @click="copyExpression(`{{output.${upstream.id}.${field.name}}}`)"
+                        @dragstart="onExpressionDragStart($event, `{{output.${upstream.id}.${field.name}}}`)"
+                      >
+                        <span class="font-mono text-[11px]">{{ field.name }}</span>
+                        <div class="flex items-center gap-1">
+                          <span v-if="upstreamOutputPreview(upstream.id, field.name)" class="h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+                          <WorkflowDataType :type="field.type" />
+                        </div>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" :side-offset="8" class="max-w-xs">
+                      <pre class="max-h-48 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px]">{{ truncatePreview(upstreamOutputPreview(upstream.id, field.name) ?? '') }}</pre>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               <div v-else class="text-muted-foreground px-1.5 py-1 text-[10px] italic">No output schema</div>
             </div>
@@ -225,19 +269,27 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
         </button>
         <div v-if="inputPaneSections.has('inputs')" class="px-3 pb-3">
           <div v-if="filteredInputDefs.length" class="space-y-0.5">
-            <button
-              v-for="inp in filteredInputDefs"
-              :key="inp.name"
-              draggable="true"
-              class="hover:bg-muted flex w-full cursor-grab items-center gap-1 rounded px-1.5 py-1 text-left text-xs transition-colors active:cursor-grabbing"
-              :title="`${inp.type}${inp.description ? ' — ' + inp.description : ''}\n{{input.${inp.name}}}`"
-              @click="copyExpression(`{{input.${inp.name}}}`)"
-              @dragstart="onExpressionDragStart($event, `{{input.${inp.name}}}`)"
-            >
-              <WorkflowDataType :type="inp.type" />
-              <span class="min-w-0 truncate font-mono text-[11px]">{{ inp.name }}</span>
-              <span v-if="inp.required" class="text-destructive text-[9px]">*</span>
-            </button>
+            <TooltipProvider v-for="inp in filteredInputDefs" :key="inp.name">
+              <Tooltip :disabled="!runDataPreview(inp.name)">
+                <TooltipTrigger as-child>
+                  <button
+                    draggable="true"
+                    class="hover:bg-muted flex w-full cursor-grab items-center gap-1 rounded px-1.5 py-1 text-left text-xs transition-colors active:cursor-grabbing"
+                    :title="runDataPreview(inp.name) ? undefined : `${inp.type}${inp.description ? ' — ' + inp.description : ''}\n{{input.${inp.name}}}`"
+                    @click="copyExpression(`{{input.${inp.name}}}`)"
+                    @dragstart="onExpressionDragStart($event, `{{input.${inp.name}}}`)"
+                  >
+                    <WorkflowDataType :type="inp.type" />
+                    <span class="min-w-0 truncate font-mono text-[11px]">{{ inp.name }}</span>
+                    <span v-if="inp.required" class="text-destructive text-[9px]">*</span>
+                    <span v-if="runDataPreview(inp.name)" class="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" :side-offset="8" class="max-w-xs">
+                  <pre class="max-h-48 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px]">{{ truncatePreview(runDataPreview(inp.name) ?? '') }}</pre>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <div v-else class="text-muted-foreground py-2 text-center text-[10px]">
             {{ inputSearchLower ? 'No matches' : 'No inputs defined' }}
@@ -257,18 +309,26 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
         </button>
         <div v-if="inputPaneSections.has('variables')" class="px-3 pb-3">
           <div v-if="filteredVariables.length" class="space-y-0.5">
-            <button
-              v-for="v in filteredVariables"
-              :key="v.key"
-              draggable="true"
-              class="hover:bg-muted flex w-full cursor-grab items-center gap-1 rounded px-1.5 py-1 text-left text-xs transition-colors active:cursor-grabbing"
-              :title="v.isSecret ? `{{vars.${v.key}}}` : `${v.value ?? ''}\n{{vars.${v.key}}}`"
-              @click="copyExpression(`{{vars.${v.key}}}`)"
-              @dragstart="onExpressionDragStart($event, `{{vars.${v.key}}}`)"
-            >
-              <WorkflowDataType :type="inferVarType(v)" />
-              <span class="min-w-0 truncate font-mono text-[11px]">{{ v.key }}</span>
-            </button>
+            <TooltipProvider v-for="v in filteredVariables" :key="v.key">
+              <Tooltip :disabled="!runDataPreview(v.key)">
+                <TooltipTrigger as-child>
+                  <button
+                    draggable="true"
+                    class="hover:bg-muted flex w-full cursor-grab items-center gap-1 rounded px-1.5 py-1 text-left text-xs transition-colors active:cursor-grabbing"
+                    :title="runDataPreview(v.key) ? undefined : (v.isSecret ? `{{vars.${v.key}}}` : `${v.value ?? ''}\n{{vars.${v.key}}}`)"
+                    @click="copyExpression(`{{vars.${v.key}}}`)"
+                    @dragstart="onExpressionDragStart($event, `{{vars.${v.key}}}`)"
+                  >
+                    <WorkflowDataType :type="inferVarType(v)" />
+                    <span class="min-w-0 truncate font-mono text-[11px]">{{ v.key }}</span>
+                    <span v-if="runDataPreview(v.key)" class="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" :side-offset="8" class="max-w-xs">
+                  <pre class="max-h-48 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px]">{{ truncatePreview(runDataPreview(v.key) ?? '') }}</pre>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <div v-else class="text-muted-foreground py-2 text-center text-[10px]">
             {{ inputSearchLower ? 'No matches' : 'No variables defined' }}
