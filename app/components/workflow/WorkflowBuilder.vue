@@ -297,6 +297,7 @@ provide('onNodeCopy', onNodeCopy)
 const onNodeOpenSettings = (nodeId: string) => {
   const node = findNode(nodeId)
   if (!node || node.type === 'trigger') return
+  isAddNodeOpen.value = false
   selectedNode.value = node
 }
 provide('onNodeOpenSettings', onNodeOpenSettings)
@@ -305,6 +306,7 @@ provide('onNodeOpenSettings', onNodeOpenSettings)
 // single click just selects. Clicking the pane clears both.
 const onNodeDoubleClick = (event: any) => {
   if (event.node.type === 'trigger') return
+  isAddNodeOpen.value = false
   selectedNode.value = event.node
 }
 
