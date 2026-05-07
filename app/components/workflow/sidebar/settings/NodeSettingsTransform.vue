@@ -19,12 +19,6 @@ function syncFromInput() {
 }
 syncFromInput()
 
-watch(() => props.nodeInput, (next) => {
-  const currentKeys = pairs.value.map(p => p.key).sort().join(',')
-  const nextKeys = Object.keys(next).sort().join(',')
-  if (currentKeys !== nextKeys) syncFromInput()
-}, { deep: true })
-
 function applyMapping(obj: Record<string, string>) {
   const currentKeys = new Set(Object.keys(props.nodeInput))
   const newKeys = new Set<string>()
@@ -159,7 +153,9 @@ function onJsonChange(text: string) {
             :model-value="pair.key"
             placeholder="Output field name"
             size="sm"
-            @update:model-value="pair.key = String($event); onPairUpdate()"
+            @update:model-value="pair.key = String($event)"
+            @blur="emitMapping()"
+            @keydown.enter="($event.target as HTMLInputElement).blur()"
           />
           <Input
             :model-value="pair.value"
