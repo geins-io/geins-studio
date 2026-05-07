@@ -2,10 +2,12 @@
 import type { ManifestAction } from '@/composables/useWorkflowManifest'
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
 import NodeSettingsHttpRequest from './NodeSettingsHttpRequest.vue'
+import NodeSettingsTransform from './NodeSettingsTransform.vue'
 import type { Component } from 'vue'
 
 const ACTION_SETTINGS_COMPONENTS: Record<string, Component> = {
   'net.httpRequest': NodeSettingsHttpRequest,
+  'transform.map': NodeSettingsTransform,
 }
 
 const props = defineProps<{
