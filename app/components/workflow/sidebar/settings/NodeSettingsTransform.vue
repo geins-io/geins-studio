@@ -116,13 +116,13 @@ function onJsonChange(text: string) {
 </script>
 
 <template>
-  <div class="space-y-4">
+  <!-- Fields mode -->
+  <div v-if="mode === 'fields'" class="space-y-4">
     <div>
       <div class="mb-2 flex items-center justify-between">
         <label class="text-sm font-medium">Mapping</label>
         <div class="flex items-center gap-2">
           <button
-            v-if="mode === 'fields'"
             type="button"
             class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
             @click="addPair"
@@ -133,16 +133,14 @@ function onJsonChange(text: string) {
           <div class="bg-muted flex rounded-md p-0.5">
             <button
               type="button"
-              class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors"
-              :class="mode === 'fields' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors bg-background text-foreground shadow-sm"
               @click="mode = 'fields'"
             >
               Fields
             </button>
             <button
               type="button"
-              class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors"
-              :class="mode === 'json' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+              class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors text-muted-foreground hover:text-foreground"
               @click="mode = 'json'"
             >
               JSON
@@ -154,64 +152,88 @@ function onJsonChange(text: string) {
         Define output fields and their values. Use expressions like <code class="bg-muted rounded px-1" v-text="'{{node.field}}'" /> to reference upstream data.
       </p>
 
-      <!-- Fields mode -->
-      <template v-if="mode === 'fields'">
-        <div class="space-y-2">
-          <div
-            v-for="(pair, index) in pairs"
-            :key="index"
-            class="flex items-start gap-1.5"
-          >
-            <div class="min-w-0 flex-1 space-y-1">
-              <Input
-                :model-value="pair.key"
-                placeholder="Output field name"
-                size="sm"
-                @update:model-value="pair.key = String($event); onPairUpdate()"
-              />
-              <Input
-                :model-value="pair.value"
-                placeholder="Value or {{ expression }}"
-                size="sm"
-                input-class="font-mono"
-                @update:model-value="pair.value = String($event); onPairUpdate()"
-              />
-            </div>
-            <button
-              type="button"
-              class="text-muted-foreground hover:text-destructive mt-1 shrink-0 p-1"
-              title="Remove field"
-              @click="removePair(index)"
-            >
-              <LucideX class="h-3.5 w-3.5" />
-            </button>
+      <div class="space-y-2">
+        <div
+          v-for="(pair, index) in pairs"
+          :key="index"
+          class="flex items-start gap-1.5"
+        >
+          <div class="min-w-0 flex-1 space-y-1">
+            <Input
+              :model-value="pair.key"
+              placeholder="Output field name"
+              size="sm"
+              @update:model-value="pair.key = String($event); onPairUpdate()"
+            />
+            <Input
+              :model-value="pair.value"
+              placeholder="Value or {{ expression }}"
+              size="sm"
+              input-class="font-mono"
+              @update:model-value="pair.value = String($event); onPairUpdate()"
+            />
           </div>
+          <button
+            type="button"
+            class="text-muted-foreground hover:text-destructive mt-1 shrink-0 p-1"
+            title="Remove field"
+            @click="removePair(index)"
+          >
+            <LucideX class="h-3.5 w-3.5" />
+          </button>
         </div>
+      </div>
 
-        <div v-if="pairs.some(p => p.key.trim())" class="mt-4 border-t pt-3">
-          <p class="text-muted-foreground mb-2 text-[10px] font-medium tracking-wider uppercase">Preview</p>
-          <pre class="bg-muted overflow-x-auto rounded-md border p-2 font-mono text-xs">{{ JSON.stringify(
-            Object.fromEntries(pairs.filter(p => p.key.trim()).map(p => [p.key, p.value])),
-            null,
-            2,
-          ) }}</pre>
-        </div>
-      </template>
+      <div v-if="pairs.some(p => p.key.trim())" class="mt-4 border-t pt-3">
+        <p class="text-muted-foreground mb-2 text-[10px] font-medium tracking-wider uppercase">Preview</p>
+        <pre class="bg-muted overflow-x-auto rounded-md border p-2 font-mono text-xs">{{ JSON.stringify(
+          Object.fromEntries(pairs.filter(p => p.key.trim()).map(p => [p.key, p.value])),
+          null,
+          2,
+        ) }}</pre>
+      </div>
+    </div>
+  </div>
 
-      <!-- JSON mode -->
-      <template v-else>
-        <div class="h-48">
-          <JsonCodeEditor
-            :model-value="jsonText"
-            :line-numbers="false"
-            :line-wrapping="true"
-            @update:model-value="onJsonChange"
-          />
-        </div>
-        <p v-if="jsonError" class="text-destructive mt-1 text-xs">
-          {{ jsonError }}
-        </p>
-      </template>
+  <!-- JSON mode — fills the entire pane -->
+  <div v-else class="absolute inset-0 flex flex-col">
+    <div class="flex items-center justify-between px-4 py-2">
+      <label class="text-sm font-medium">Mapping</label>
+      <div class="bg-muted flex rounded-md p-0.5">
+        <button
+          type="button"
+          class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors text-muted-foreground hover:text-foreground"
+          @click="mode = 'fields'"
+        >
+          Fields
+        </button>
+        <button
+          type="button"
+          class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors bg-background text-foreground shadow-sm"
+          @click="mode = 'json'"
+        >
+          JSON
+        </button>
+      </div>
+    </div>
+    <div
+      class="relative min-h-0 flex-1 transition-colors duration-200"
+      :class="jsonError ? 'border-2 border-amber-500/60' : 'border-t'"
+    >
+      <span
+        v-if="jsonError"
+        class="absolute top-2 right-2 z-10 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400"
+      >
+        {{ jsonError }}
+      </span>
+      <JsonCodeEditor
+        :model-value="jsonText"
+        :line-numbers="false"
+        :line-wrapping="true"
+        :expandable="true"
+        expand-title="Mapping JSON"
+        @update:model-value="onJsonChange"
+      />
     </div>
   </div>
 </template>

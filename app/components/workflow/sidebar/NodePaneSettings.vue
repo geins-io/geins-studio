@@ -185,7 +185,7 @@ const onSettingsDrop = (event: DragEvent) => {
     </div>
 
     <!-- Settings tab -->
-    <div v-show="activeTab === 'settings'" class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
+    <div v-show="activeTab === 'settings'" class="relative flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
       <!-- Per-node-type settings component -->
       <component
         :is="settingsComponent"

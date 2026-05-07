@@ -69,7 +69,7 @@ const isSelect = (field: { allowedValues?: unknown[] }): boolean =>
 </script>
 
 <template>
-  <div>
+  <div class="h-full">
     <!-- Action-specific settings component -->
     <component
       :is="customComponent"
