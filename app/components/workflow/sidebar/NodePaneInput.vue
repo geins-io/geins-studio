@@ -2,6 +2,7 @@
 import { useVueFlow } from '@vue-flow/core'
 import type { WorkflowInput, WorkflowVariable } from '#shared/types'
 import { useToast } from '@/components/ui/toast/use-toast'
+import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
 import WorkflowDataType from '../shared/WorkflowDataType.vue'
 import type { Ref } from 'vue'
 
@@ -26,7 +27,7 @@ const workflowVariables = inject<Ref<WorkflowVariable[]>>('workflowVariables', r
 const hasExecutionInput = computed(() => props.nodeExecution?.input != null)
 
 const formatJson = (value: unknown): string => {
-  if (value == null) return '–'
+  if (value == null) return '{}'
   if (typeof value === 'string') return value
   try {
     return JSON.stringify(value, null, 2)
@@ -278,7 +279,14 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
       <!-- Execution run data -->
       <div v-if="hasExecutionInput" class="p-3">
         <h4 class="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-wider uppercase">Run data</h4>
-        <pre class="bg-muted overflow-auto rounded-md p-2 font-mono text-[11px] leading-relaxed">{{ formatJson(nodeExecution?.input) }}</pre>
+        <div class="min-h-40">
+          <JsonCodeEditor
+            :model-value="formatJson(nodeExecution?.input)"
+            :readonly="true"
+            :line-numbers="false"
+            :line-wrapping="true"
+          />
+        </div>
       </div>
     </div>
   </div>
