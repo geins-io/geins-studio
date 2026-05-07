@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
+
 type NodeExecution = {
   input?: Record<string, unknown> | null
   output?: Record<string, unknown> | null
@@ -12,7 +14,7 @@ const props = defineProps<{
 const hasExecutionOutput = computed(() => props.nodeExecution?.output != null)
 
 const formatJson = (value: unknown): string => {
-  if (value == null) return '–'
+  if (value == null) return '{}'
   if (typeof value === 'string') return value
   try {
     return JSON.stringify(value, null, 2)
@@ -37,7 +39,14 @@ const formatJson = (value: unknown): string => {
       <!-- Execution output data -->
       <template v-if="hasExecutionOutput">
         <h4 class="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-wider uppercase">Run data</h4>
-        <pre class="bg-muted overflow-auto rounded-md p-2 font-mono text-[11px] leading-relaxed">{{ formatJson(nodeExecution?.output) }}</pre>
+        <div class="min-h-40 flex-1">
+          <JsonCodeEditor
+            :model-value="formatJson(nodeExecution?.output)"
+            :readonly="true"
+            :line-numbers="false"
+            :line-wrapping="true"
+          />
+        </div>
       </template>
       <div
         v-else

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
+
 const props = defineProps<{
   nodeData: Record<string, unknown>
   nodeInput: Record<string, unknown>
@@ -272,13 +274,12 @@ const methodColor = computed(() => {
           </div>
 
           <!-- JSON mode -->
-          <div v-if="bodyMode === 'json'">
-            <textarea
-              v-model="bodyJson"
-              rows="6"
-              placeholder='{ "key": "value" }'
-              class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-xs leading-relaxed focus:ring-2 focus:outline-none"
-              @blur="commitBodyJson()"
+          <div v-if="bodyMode === 'json'" class="h-40">
+            <JsonCodeEditor
+              :model-value="bodyJson"
+              :line-numbers="false"
+              :line-wrapping="true"
+              @update:model-value="bodyJson = $event; commitBodyJson()"
             />
           </div>
 
