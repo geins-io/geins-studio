@@ -5,6 +5,7 @@ import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
 type NodeEvent = {
   seq: number
   nodeId: string
+  nodeName?: string
   status: string
   startTime?: string
   endTime?: string
@@ -112,6 +113,7 @@ function formatDuration(start?: string, end?: string): string {
 function upsertEvent(raw: Record<string, unknown>) {
   const seq = typeof raw.seq === 'number' ? raw.seq : -1
   const nodeId = typeof raw.nodeId === 'string' ? raw.nodeId : ''
+  const nodeName = typeof raw.nodeName === 'string' ? raw.nodeName : undefined
   const status = typeof raw.status === 'string' ? raw.status : 'unknown'
   if (!nodeId) return
   const startTime = typeof raw.startTime === 'string' ? raw.startTime : undefined
@@ -124,7 +126,7 @@ function upsertEvent(raw: Record<string, unknown>) {
     (e.seq >= 0 && `seq:${e.seq}` === key)
     || (e.seq < 0 && `node:${e.nodeId}:${e.startTime ?? ''}` === key),
   )
-  const next: NodeEvent = { seq, nodeId, status, startTime, endTime, error, input, output }
+  const next: NodeEvent = { seq, nodeId, nodeName, status, startTime, endTime, error, input, output }
   if (idx >= 0) events.value[idx] = { ...events.value[idx], ...next }
   else events.value.push(next)
 }
@@ -172,6 +174,7 @@ async function pollOnce(execId: string): Promise<boolean> {
 
       upsertEvent({
         nodeId: n.nodeId,
+        nodeName: n.nodeName,
         status: n.status,
         seq: typeof n.executionOrder === 'number' ? n.executionOrder : idx,
         startTime: n.startTime,
@@ -463,7 +466,11 @@ const bodyStyle = computed(() => ({
                       <td class="px-3 py-1 font-mono">
                         <span class="flex items-center gap-1">
                           <LucideChevronRight v-if="hasRunData(event)" class="text-muted-foreground h-3 w-3 shrink-0 transition-transform" :class="{ 'rotate-90': expandedNodeId === event.nodeId }" />
-                          {{ event.nodeId }}
+                          <template v-if="event.nodeName">
+                            <span class="font-medium">{{ event.nodeName }}</span>
+                            <span class="bg-muted text-muted-foreground ml-1 rounded px-1 py-0.5 font-mono text-[9px]">{{ event.nodeId }}</span>
+                          </template>
+                          <template v-else>{{ event.nodeId }}</template>
                         </span>
                       </td>
                       <td class="px-3 py-1">
@@ -617,7 +624,11 @@ const bodyStyle = computed(() => ({
                     <td class="px-3 py-1 font-mono">
                       <span class="flex items-center gap-1">
                         <LucideChevronRight v-if="hasRunData(event)" class="text-muted-foreground h-3 w-3 shrink-0 transition-transform" :class="{ 'rotate-90': expandedNodeId === event.nodeId }" />
-                        {{ event.nodeId }}
+                        <template v-if="event.nodeName">
+                          <span class="font-medium">{{ event.nodeName }}</span>
+                          <span class="bg-muted text-muted-foreground ml-1 rounded px-1 py-0.5 font-mono text-[9px]">{{ event.nodeId }}</span>
+                        </template>
+                        <template v-else>{{ event.nodeId }}</template>
                       </span>
                     </td>
                     <td class="px-3 py-1">
