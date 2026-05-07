@@ -46,6 +46,7 @@ const formatJson = (value: unknown): string => {
             :line-numbers="false"
             :line-wrapping="true"
             :expandable="true"
+            expand-title="Output Run Data"
           />
         </div>
       </template>

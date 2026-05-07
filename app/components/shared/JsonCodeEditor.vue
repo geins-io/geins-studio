@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { json } from '@codemirror/lang-json';
-import { Compartment, EditorState } from '@codemirror/state';
+import { EditorState } from '@codemirror/state';
 import { EditorView, basicSetup, minimalSetup } from 'codemirror';
 
 const props = withDefaults(
@@ -10,12 +10,14 @@ const props = withDefaults(
     lineNumbers?: boolean;
     lineWrapping?: boolean;
     expandable?: boolean;
+    expandTitle?: string;
   }>(),
   {
     readonly: false,
     lineNumbers: true,
     lineWrapping: false,
     expandable: false,
+    expandTitle: 'JSON',
   },
 );
 
@@ -24,27 +26,40 @@ const emit = defineEmits<{
 }>();
 
 const containerRef = ref<HTMLElement | null>(null);
+const modalEditorRef = ref<HTMLElement | null>(null);
 let view: EditorView | null = null;
-const wrapCompartment = new Compartment();
+let modalView: EditorView | null = null;
 const isExpanded = ref(false);
-const expandedHeight = ref<number | null>(null);
+const copied = ref(false);
 
-function toggleExpand() {
-  if (!view) return;
-  isExpanded.value = !isExpanded.value;
-  if (isExpanded.value) {
-    view.dispatch({ effects: wrapCompartment.reconfigure([]) });
-    nextTick(() => {
-      if (!view) return;
-      expandedHeight.value = Math.max(view.contentDOM.scrollHeight + 8, 80);
+async function copyToClipboard() {
+  await navigator.clipboard.writeText(props.modelValue);
+  copied.value = true;
+  setTimeout(() => { copied.value = false; }, 1500);
+}
+
+function openModal() {
+  isExpanded.value = true;
+  nextTick(() => {
+    if (!modalEditorRef.value) return;
+    modalView = new EditorView({
+      doc: props.modelValue,
+      extensions: [
+        basicSetup,
+        json(),
+        appTheme,
+        EditorState.readOnly.of(true),
+        EditorView.editable.of(false),
+      ],
+      parent: modalEditorRef.value,
     });
-  }
-  else {
-    view.dispatch({
-      effects: wrapCompartment.reconfigure(props.lineWrapping ? [EditorView.lineWrapping] : []),
-    });
-    expandedHeight.value = null;
-  }
+  });
+}
+
+function closeModal() {
+  isExpanded.value = false;
+  modalView?.destroy();
+  modalView = null;
 }
 
 const appTheme = EditorView.theme({
@@ -104,8 +119,11 @@ onMounted(() => {
     props.lineNumbers ? basicSetup : minimalSetup,
     json(),
     appTheme,
-    wrapCompartment.of(props.lineWrapping ? [EditorView.lineWrapping] : []),
   ];
+
+  if (props.lineWrapping) {
+    extensions.push(EditorView.lineWrapping);
+  }
 
   if (props.readonly) {
     extensions.push(EditorState.readOnly.of(true), EditorView.editable.of(false));
@@ -130,6 +148,8 @@ onMounted(() => {
 onUnmounted(() => {
   view?.destroy();
   view = null;
+  modalView?.destroy();
+  modalView = null;
 });
 
 watch(
@@ -146,19 +166,59 @@ watch(
 </script>
 
 <template>
-  <div class="relative min-h-0 flex-1" :style="expandedHeight ? { height: `${expandedHeight}px` } : undefined">
+  <div class="relative min-h-0 flex-1">
     <div
       ref="containerRef"
       class="h-full overflow-hidden rounded-lg border"
     />
     <button
       v-if="props.expandable"
-      class="bg-background/80 text-muted-foreground hover:text-foreground absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded transition-colors"
-      :title="isExpanded ? 'Collapse' : 'Expand to fit'"
-      @click="toggleExpand"
+      class="text-muted-foreground hover:text-foreground absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded transition-colors"
+      title="Expand"
+      @click="openModal"
     >
-      <LucideMinimize2 v-if="isExpanded" class="h-3 w-3" />
-      <LucideMaximize2 v-else class="h-3 w-3" />
+      <LucideMaximize2 class="h-3 w-3" />
     </button>
+
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div v-if="isExpanded" class="fixed inset-0 z-[9999] flex items-center justify-center">
+          <div class="absolute inset-0 bg-black/50" @click="closeModal" />
+          <div class="bg-background relative z-10 flex h-[70vh] w-[80vw] max-w-5xl flex-col overflow-hidden rounded-xl border shadow-2xl">
+            <div class="flex items-center justify-between border-b px-4 py-2">
+              <span class="text-muted-foreground text-xs font-medium uppercase tracking-wider">{{ props.expandTitle }}</span>
+              <div class="flex items-center gap-1">
+                <button
+                  class="text-muted-foreground hover:text-foreground flex h-6 w-6 items-center justify-center rounded transition-colors"
+                  :title="copied ? 'Copied!' : 'Copy to clipboard'"
+                  @click="copyToClipboard"
+                >
+                  <LucideCheck v-if="copied" class="h-3.5 w-3.5 text-green-500" />
+                  <LucideCopy v-else class="h-3.5 w-3.5" />
+                </button>
+                <button
+                  class="text-muted-foreground hover:text-foreground flex h-6 w-6 items-center justify-center rounded transition-colors"
+                  @click="closeModal"
+                >
+                  <LucideX class="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div ref="modalEditorRef" class="min-h-0 flex-1 overflow-hidden" />
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
+
+<style scoped>
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+</style>

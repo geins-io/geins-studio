@@ -526,6 +526,7 @@ const bodyStyle = computed(() => ({
                               :line-numbers="false"
                               :line-wrapping="true"
                               :expandable="true"
+                              expand-title="Input Run Data"
                             />
                             <JsonCodeEditor
                               v-else-if="expandedTab === 'output' && event.output != null"
@@ -534,6 +535,7 @@ const bodyStyle = computed(() => ({
                               :line-numbers="false"
                               :line-wrapping="true"
                               :expandable="true"
+                              expand-title="Output Run Data"
                             />
                           </div>
                         </div>
@@ -677,6 +679,8 @@ const bodyStyle = computed(() => ({
                             :readonly="true"
                             :line-numbers="false"
                             :line-wrapping="true"
+                            :expandable="true"
+                            expand-title="Input Run Data"
                           />
                           <JsonCodeEditor
                             v-else-if="expandedTab === 'output' && event.output != null"
@@ -684,6 +688,8 @@ const bodyStyle = computed(() => ({
                             :readonly="true"
                             :line-numbers="false"
                             :line-wrapping="true"
+                            :expandable="true"
+                            expand-title="Output Run Data"
                           />
                         </div>
                       </div>

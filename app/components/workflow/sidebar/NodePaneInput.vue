@@ -286,6 +286,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
             :line-numbers="false"
             :line-wrapping="true"
             :expandable="true"
+            expand-title="Input Run Data"
           />
         </div>
       </div>
