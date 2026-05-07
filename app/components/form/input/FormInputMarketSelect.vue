@@ -41,9 +41,6 @@ const comboboxList = ref<HTMLElement | null>(null);
 const isComingFromSearchInput = ref(false);
 const wasOpenBeforeClick = ref(false);
 
-// choice is derived from the model — one-way reactive read. User selection
-// writes back via the setter, which becomes the single source of truth (model).
-// This avoids the dataSet/model write-back race that would clobber the model.
 const choice = computed<MarketDataItem | undefined>({
   get: () => findItem(model.value),
   set: (newChoice) => {

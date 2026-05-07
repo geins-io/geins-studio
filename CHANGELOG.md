@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.4.1 - 2026-05-07
+
+### 🐛 Bug Fixes
+
+- Fixed potential mismatch between channel and market on quotation creation
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.4.0 - 2026-04-29
 
 This release introduces full Channel entity management (Self-Service for Channels) and major architectural upgrades across documentation and governance.

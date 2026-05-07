@@ -502,15 +502,8 @@ const marketIdModel = computed<string>({
   set: (value) => form.setFieldValue('details.marketId', value ?? ''),
 });
 
-// Explicit computed for the market input's disabled state. Reading
-// form.values.details?.channelId directly in the template binding hit a
-// reactivity issue when the value transitioned from '' to a real id via
-// setFieldValue — wrapping it in a computed forces dep tracking.
 const isMarketDisabled = computed(() => !form.values.details?.channelId);
 
-// Display-side resolution that works in both create and sent/edit mode.
-// In sent mode VeeValidate may have cleared form values when fields unmounted,
-// so fall back to entityData.
 const displayChannelId = computed(
   () => form.values.details?.channelId || entityData.value?.channelId || '',
 );
@@ -2196,7 +2189,9 @@ definePageMeta({
                     </FormField>
                   </FormGrid>
                   <FormGrid
-                    :design="(selectedCompany?.channels?.length ?? 0) > 1 ? '1+1' : '1'"
+                    :design="
+                      (selectedCompany?.channels?.length ?? 0) > 1 ? '1+1' : '1'
+                    "
                   >
                     <FormField
                       v-if="(selectedCompany?.channels?.length ?? 0) > 1"
