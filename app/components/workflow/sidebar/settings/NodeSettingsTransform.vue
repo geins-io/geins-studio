@@ -117,82 +117,77 @@ function onJsonChange(text: string) {
 
 <template>
   <!-- Fields mode -->
-  <div v-if="mode === 'fields'" class="space-y-4">
-    <div>
-      <div class="mb-2 flex items-center justify-between">
-        <label class="text-sm font-medium">Mapping</label>
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-            @click="addPair"
-          >
-            <LucidePlus class="h-3 w-3" />
-            Add field
-          </button>
-          <div class="bg-muted flex rounded-md p-0.5">
-            <button
-              type="button"
-              class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors bg-background text-foreground shadow-sm"
-              @click="mode = 'fields'"
-            >
-              Fields
-            </button>
-            <button
-              type="button"
-              class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors text-muted-foreground hover:text-foreground"
-              @click="mode = 'json'"
-            >
-              JSON
-            </button>
-          </div>
-        </div>
-      </div>
-      <p class="text-muted-foreground mb-3 text-xs">
-        Define output fields and their values. Use expressions like <code class="bg-muted rounded px-1" v-text="'{{node.field}}'" /> to reference upstream data.
-      </p>
-
-      <div class="space-y-2">
-        <div
-          v-for="(pair, index) in pairs"
-          :key="index"
-          class="flex items-start gap-1.5"
+  <div v-if="mode === 'fields'">
+    <div class="mb-3 flex items-center justify-between">
+      <label class="text-sm font-medium">Mapping</label>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
+          @click="addPair"
         >
-          <div class="min-w-0 flex-1 space-y-1">
-            <Input
-              :model-value="pair.key"
-              placeholder="Output field name"
-              size="sm"
-              @update:model-value="pair.key = String($event); onPairUpdate()"
-            />
-            <Input
-              :model-value="pair.value"
-              placeholder="Value or {{ expression }}"
-              size="sm"
-              input-class="font-mono"
-              @update:model-value="pair.value = String($event); onPairUpdate()"
-            />
-          </div>
+          <LucidePlus class="h-3 w-3" />
+          Add field
+        </button>
+        <div class="bg-muted flex rounded-md p-0.5">
           <button
             type="button"
-            class="text-muted-foreground hover:text-destructive mt-1 shrink-0 p-1"
-            title="Remove field"
-            @click="removePair(index)"
+            class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors bg-background text-foreground shadow-sm"
+            @click="mode = 'fields'"
           >
-            <LucideX class="h-3.5 w-3.5" />
+            Fields
+          </button>
+          <button
+            type="button"
+            class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors text-muted-foreground hover:text-foreground"
+            @click="mode = 'json'"
+          >
+            JSON
           </button>
         </div>
-      </div>
-
-      <div v-if="pairs.some(p => p.key.trim())" class="mt-4 border-t pt-3">
-        <p class="text-muted-foreground mb-2 text-[10px] font-medium tracking-wider uppercase">Preview</p>
-        <pre class="bg-muted overflow-x-auto rounded-md border p-2 font-mono text-xs">{{ JSON.stringify(
-          Object.fromEntries(pairs.filter(p => p.key.trim()).map(p => [p.key, p.value])),
-          null,
-          2,
-        ) }}</pre>
       </div>
     </div>
+
+    <div class="divide-y border-y">
+      <div
+        v-for="(pair, index) in pairs"
+        :key="index"
+        class="flex items-start gap-2 py-3"
+      >
+        <div class="min-w-0 flex-1 space-y-1.5">
+          <Input
+            :model-value="pair.key"
+            placeholder="Output field name"
+            size="sm"
+            @update:model-value="pair.key = String($event); onPairUpdate()"
+          />
+          <Input
+            :model-value="pair.value"
+            placeholder="Value or {{ expression }}"
+            size="sm"
+            input-class="font-mono"
+            @update:model-value="pair.value = String($event); onPairUpdate()"
+          />
+        </div>
+        <button
+          type="button"
+          class="text-muted-foreground hover:text-destructive mt-1 shrink-0 p-1"
+          title="Remove field"
+          @click="removePair(index)"
+        >
+          <LucideTrash class="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="text-muted-foreground hover:text-foreground mt-3 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed py-2 text-xs transition-colors"
+      @click="addPair"
+    >
+      <LucidePlus class="h-3 w-3" />
+      Add field
+    </button>
   </div>
 
   <!-- JSON mode — fills the entire pane -->
