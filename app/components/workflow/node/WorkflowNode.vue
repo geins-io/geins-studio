@@ -33,7 +33,9 @@ const NODE_COMPONENTS: Record<string, Component> = {
 const componentForType = computed(() => NODE_COMPONENTS[props.type] ?? WorkflowNodeAction)
 
 const lastNodeExecutions = inject<Ref<Map<string, NodeExecData>>>('lastNodeExecutions')
-const hasFailed = computed(() => lastNodeExecutions?.value?.get(props.id)?.status === 'failed')
+const nodeExecStatus = computed(() => lastNodeExecutions?.value?.get(props.id)?.status?.toLowerCase())
+const hasFailed = computed(() => nodeExecStatus.value === 'failed')
+const hasSucceeded = computed(() => nodeExecStatus.value === 'completed')
 </script>
 
 <template>
@@ -43,12 +45,17 @@ const hasFailed = computed(() => lastNodeExecutions?.value?.get(props.id)?.statu
       :node-id="props.id"
       :visible="!!props.selected"
     />
-    <!-- Persistent failure badge visible even when node is not selected -->
     <div
       v-if="hasFailed"
       class="bg-destructive text-destructive-foreground absolute -top-2 -right-2 z-40 flex h-5 w-5 items-center justify-center rounded-full shadow-sm"
     >
       <LucideTriangleAlert class="h-3 w-3" />
+    </div>
+    <div
+      v-else-if="hasSucceeded"
+      class="absolute -top-2 -right-2 z-40 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white shadow-sm"
+    >
+      <LucideCheck class="h-3 w-3" />
     </div>
     <component :is="componentForType" v-bind="$attrs" :selected="props.selected" />
   </div>
