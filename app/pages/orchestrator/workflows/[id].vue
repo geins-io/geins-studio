@@ -50,6 +50,21 @@ const formSchema = toTypedSchema(
       eventAction: z.string().optional(),
       eventSubEntity: z.string().optional(),
       description: z.string().optional(),
+    }).superRefine((val, ctx) => {
+      if (val.type === 'Scheduled') {
+        const expr = (val.cron ?? '').trim()
+        if (!expr) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Cron expression is required for scheduled triggers', path: ['cron'] })
+          return
+        }
+        try { cronstrue.toString(expr) }
+        catch {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid cron expression', path: ['cron'] })
+        }
+      }
+      if (val.type === 'Event' && !val.eventEntity?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Event entity is required', path: ['eventEntity'] })
+      }
     }),
     // `.nullish()` (not `.optional()`) because the Management API returns
     // `null` — not `undefined` — for unset settings fields, and the watcher
@@ -446,6 +461,8 @@ const handleSave = async () => {
   const { valid } = await form.validate()
   if (!valid) {
     validateOnChange.value = true
+    viewMode.value = 'settings'
+    toast({ title: 'Validation failed', description: 'Please fix the errors before saving.', variant: 'negative' })
     return
   }
   validateOnChange.value = false
@@ -816,13 +833,9 @@ v-for="tag in ((componentField.modelValue as string[]) || [])" :key="tag"
                         <FormItem>
                           <FormLabel>Cron expression</FormLabel>
                           <FormControl>
-                            <Input
-v-bind="componentField" placeholder="0 * * * * *"
-                              :class="{ 'border-destructive': cronError }" />
+                            <Input v-bind="componentField" placeholder="0 * * * * *" />
                           </FormControl>
-                          <p v-if="cronError" class="text-destructive text-xs">{{ cronError }}</p>
-                          <p v-else-if="cronDescription" class="text-muted-foreground text-xs">{{ cronDescription }}
-                          </p>
+                          <p v-if="cronDescription" class="text-muted-foreground text-xs">{{ cronDescription }}</p>
                           <FormMessage />
                         </FormItem>
                       </FormField>
