@@ -80,6 +80,10 @@ const isTextarea = (field: { editorHint?: string, type: string }): boolean =>
   || field.type.toLowerCase() === 'object'
   || field.type.toLowerCase() === 'json'
 
+const activeTab = ref<'settings' | 'schema'>('settings')
+
+const outputFields = computed(() => manifestAction.value?.output ?? [])
+
 // ─── Drag expression drop handling ────────────────────────────────
 const DRAG_MIME = 'application/x-workflow-expression'
 
@@ -155,12 +159,33 @@ const onSettingsDrop = (event: DragEvent) => {
     @dragleave="onSettingsDragLeave"
     @drop="onSettingsDrop"
   >
-    <div class="flex items-center gap-1.5 border-b px-3 py-2">
-      <LucideSettings2 class="text-muted-foreground h-3.5 w-3.5" />
-      <span class="text-muted-foreground text-xs font-medium tracking-wide uppercase">Settings</span>
+    <div class="flex items-center border-b">
+      <button
+        type="button"
+        class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors"
+        :class="activeTab === 'settings'
+          ? 'text-foreground border-b-2 border-primary'
+          : 'text-muted-foreground hover:text-foreground'"
+        @click="activeTab = 'settings'"
+      >
+        <LucideSettings2 class="h-3.5 w-3.5" />
+        Settings
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors"
+        :class="activeTab === 'schema'
+          ? 'text-foreground border-b-2 border-primary'
+          : 'text-muted-foreground hover:text-foreground'"
+        @click="activeTab = 'schema'"
+      >
+        <LucideFileJson class="h-3.5 w-3.5" />
+        Output Schema
+      </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
+    <!-- Settings tab -->
+    <div v-show="activeTab === 'settings'" class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
       <!-- Per-node-type settings component -->
       <component
         :is="settingsComponent"
@@ -214,6 +239,37 @@ const onSettingsDrop = (event: DragEvent) => {
           </div>
         </div>
       </template>
+    </div>
+
+    <!-- Output Schema tab -->
+    <div v-show="activeTab === 'schema'" class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
+      <template v-if="outputFields.length">
+        <div class="space-y-2">
+          <div
+            v-for="field in outputFields"
+            :key="field.name"
+            class="bg-muted/50 flex items-start gap-3 rounded-md border px-3 py-2"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium">{{ field.name }}</span>
+                <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px] font-mono">{{ field.type }}</span>
+              </div>
+              <p v-if="field.description" class="text-muted-foreground mt-0.5 text-xs">{{ field.description }}</p>
+            </div>
+          </div>
+        </div>
+      </template>
+      <div
+        v-else
+        class="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center text-xs"
+      >
+        <LucideFileJson class="h-8 w-8 opacity-40" />
+        <div>
+          <p class="font-medium">No output schema</p>
+          <p class="mt-0.5 opacity-70">This node type does not define an output schema</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
