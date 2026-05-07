@@ -2194,6 +2194,7 @@ definePageMeta({
                       key="details.channelId"
                       v-slot="{ componentField }"
                       name="details.channelId"
+                      keep-value
                     >
                       <FormItem>
                         <FormLabel>{{ $t('channel') }}</FormLabel>
