@@ -560,7 +560,6 @@
     "send_requires_billing_address": "Välj en faktureringsadress",
     "send_requires_shipping_address": "Välj en leveransadress",
     "send_requires_terms": "Ange betalningsvillkor",
-    "send_requires_market": "Välj en marknad",
     "send_requires_products": "Lägg till minst en produkt",
     "send_requires_no_unsaved_changes": "Spara alla ändringar innan du skickar",
     "discount_type_percent": "Procent (%)",

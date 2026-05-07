@@ -919,6 +919,18 @@ watch(
   },
 );
 
+// When channels finish loading (accountStore.init races with company selection),
+// re-apply the default market if channelId is already set but marketId is empty.
+watch(currentChannels, (loaded) => {
+  if (!createMode.value || !loaded.length) return;
+  const channelId = form.values.details?.channelId;
+  if (!channelId || form.values.details?.marketId) return;
+  const defaultMarketId = getDefaultMarketIdForChannel(channelId);
+  if (defaultMarketId) {
+    form.setFieldValue('details.marketId', defaultMarketId, false);
+  }
+});
+
 // Sync expiration date toggle with form value
 watch(hasExpirationDate, (enabled) => {
   if (!enabled) {
@@ -1258,9 +1270,6 @@ const sendBlockReasons = computed<string[]>(() => {
   }
   if (!details?.paymentTerms) {
     reasons.push(t('orders.send_requires_terms'));
-  }
-  if (!details?.marketId) {
-    reasons.push(t('orders.send_requires_market'));
   }
   if (quotationItems.value.length === 0) {
     reasons.push(t('orders.send_requires_products'));
@@ -2187,10 +2196,10 @@ definePageMeta({
                     </FormField>
                   </FormGrid>
                   <FormGrid
-                    :design="availableChannels.length > 1 ? '1+1' : '1'"
+                    :design="(selectedCompany?.channels?.length ?? 0) > 1 ? '1+1' : '1'"
                   >
                     <FormField
-                      v-if="availableChannels.length > 1"
+                      v-if="(selectedCompany?.channels?.length ?? 0) > 1"
                       key="details.channelId"
                       v-slot="{ componentField }"
                       name="details.channelId"
