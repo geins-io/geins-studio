@@ -285,6 +285,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
             :readonly="true"
             :line-numbers="false"
             :line-wrapping="true"
+            :expandable="true"
           />
         </div>
       </div>

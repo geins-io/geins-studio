@@ -525,6 +525,7 @@ const bodyStyle = computed(() => ({
                               :readonly="true"
                               :line-numbers="false"
                               :line-wrapping="true"
+                              :expandable="true"
                             />
                             <JsonCodeEditor
                               v-else-if="expandedTab === 'output' && event.output != null"
@@ -532,6 +533,7 @@ const bodyStyle = computed(() => ({
                               :readonly="true"
                               :line-numbers="false"
                               :line-wrapping="true"
+                              :expandable="true"
                             />
                           </div>
                         </div>

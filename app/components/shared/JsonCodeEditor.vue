@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { json } from '@codemirror/lang-json';
-import { EditorState } from '@codemirror/state';
+import { Compartment, EditorState } from '@codemirror/state';
 import { EditorView, basicSetup, minimalSetup } from 'codemirror';
 
 const props = withDefaults(
@@ -9,11 +9,13 @@ const props = withDefaults(
     readonly?: boolean;
     lineNumbers?: boolean;
     lineWrapping?: boolean;
+    expandable?: boolean;
   }>(),
   {
     readonly: false,
     lineNumbers: true,
     lineWrapping: false,
+    expandable: false,
   },
 );
 
@@ -23,6 +25,27 @@ const emit = defineEmits<{
 
 const containerRef = ref<HTMLElement | null>(null);
 let view: EditorView | null = null;
+const wrapCompartment = new Compartment();
+const isExpanded = ref(false);
+const expandedHeight = ref<number | null>(null);
+
+function toggleExpand() {
+  if (!view) return;
+  isExpanded.value = !isExpanded.value;
+  if (isExpanded.value) {
+    view.dispatch({ effects: wrapCompartment.reconfigure([]) });
+    nextTick(() => {
+      if (!view) return;
+      expandedHeight.value = Math.max(view.contentDOM.scrollHeight + 8, 80);
+    });
+  }
+  else {
+    view.dispatch({
+      effects: wrapCompartment.reconfigure(props.lineWrapping ? [EditorView.lineWrapping] : []),
+    });
+    expandedHeight.value = null;
+  }
+}
 
 const appTheme = EditorView.theme({
   '&': {
@@ -81,6 +104,7 @@ onMounted(() => {
     props.lineNumbers ? basicSetup : minimalSetup,
     json(),
     appTheme,
+    wrapCompartment.of(props.lineWrapping ? [EditorView.lineWrapping] : []),
   ];
 
   if (props.readonly) {
@@ -94,10 +118,6 @@ onMounted(() => {
         }
       }),
     );
-  }
-
-  if (props.lineWrapping) {
-    extensions.push(EditorView.lineWrapping);
   }
 
   view = new EditorView({
@@ -126,8 +146,19 @@ watch(
 </script>
 
 <template>
-  <div
-    ref="containerRef"
-    class="min-h-0 flex-1 overflow-hidden rounded-lg border"
-  />
+  <div class="relative min-h-0 flex-1" :style="expandedHeight ? { height: `${expandedHeight}px` } : undefined">
+    <div
+      ref="containerRef"
+      class="h-full overflow-hidden rounded-lg border"
+    />
+    <button
+      v-if="props.expandable"
+      class="bg-background/80 text-muted-foreground hover:text-foreground absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded transition-colors"
+      :title="isExpanded ? 'Collapse' : 'Expand to fit'"
+      @click="toggleExpand"
+    >
+      <LucideMinimize2 v-if="isExpanded" class="h-3 w-3" />
+      <LucideMaximize2 v-else class="h-3 w-3" />
+    </button>
+  </div>
 </template>
