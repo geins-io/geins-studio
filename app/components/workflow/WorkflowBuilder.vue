@@ -7,7 +7,7 @@ import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
-import type { PaletteItem } from '#shared/types'
+import type { PaletteItem, WorkflowInput } from '#shared/types'
 import { useToast } from '@/components/ui/toast/use-toast'
 import KeyboardShortcutTooltip from './shared/KeyboardShortcutTooltip.vue'
 import WorkflowPanelLogs from './panel/WorkflowPanelLogs.vue'
@@ -522,9 +522,39 @@ usePollWhile(
 
 const showDirtyRunDialog = ref(false)
 
-const startExecution = async () => {
+// ─── Run with inputs ────────────────────────────────────────────
+const workflowInputDefs = inject<Ref<WorkflowInput[]>>('workflowInputDefs', ref([]))
+const showRunInputsSidebar = ref(false)
+const runInputValues = ref<Record<string, unknown>>({})
+
+function initRunInputValues() {
+  const values: Record<string, unknown> = {}
+  for (const input of workflowInputDefs.value) {
+    values[input.name] = input.defaultValue ?? ''
+  }
+  runInputValues.value = values
+}
+
+const openRunWithInputs = () => {
+  if (props.isNew) {
+    toast({
+      title: 'Save the workflow first',
+      description: 'New workflows must be saved before they can be executed.',
+    })
+    return
+  }
+  initRunInputValues()
+  showRunInputsSidebar.value = true
+}
+
+const executeWithInputs = async () => {
+  showRunInputsSidebar.value = false
+  await startExecution({ parameters: runInputValues.value })
+}
+
+const startExecution = async (data?: { parameters?: Record<string, unknown> }) => {
   try {
-    const res = await orchestratorApi.execution.testRun(props.workflowId)
+    const res = await orchestratorApi.execution.testRun(props.workflowId, data)
     const execId = res?.executionId ?? res?.newExecutionId ?? null
     lastExecutionId.value = execId
     isRunning.value = true
@@ -740,6 +770,15 @@ v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
                 <LucidePlay v-else class="h-4 w-4 text-white" />
               </button>
             </KeyboardShortcutTooltip>
+            <KeyboardShortcutTooltip
+              :label="isNew ? 'Save workflow to run' : 'Run with inputs'"
+              keys="">
+              <button
+                class="bg-background hover:bg-accent pointer-events-auto flex h-9 w-9 items-center justify-center rounded-md border shadow-sm"
+                :class="{ 'cursor-not-allowed opacity-50': isNew }" :disabled="isRunning || isNew" @click="openRunWithInputs">
+                <LucidePlayCircle class="h-4 w-4" />
+              </button>
+            </KeyboardShortcutTooltip>
           </div>
 
           <WorkflowSidebarNodeProperties
@@ -768,6 +807,61 @@ v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    <Sheet v-model:open="showRunInputsSidebar">
+      <SheetContent width="medium">
+        <SheetHeader>
+          <SheetTitle>Run with inputs</SheetTitle>
+          <SheetDescription>Set input values for this execution. Default values are pre-filled.</SheetDescription>
+        </SheetHeader>
+        <SheetBody>
+          <div v-if="workflowInputDefs.length === 0" class="text-muted-foreground py-8 text-center text-sm">
+            This workflow has no input variables defined.
+          </div>
+          <div v-else class="space-y-4">
+            <div v-for="input in workflowInputDefs" :key="input.name" class="space-y-1.5">
+              <label class="text-sm font-medium">
+                {{ input.name }}
+                <span v-if="input.required" class="text-destructive">*</span>
+              </label>
+              <p v-if="input.description" class="text-muted-foreground text-xs">{{ input.description }}</p>
+              <Textarea
+                v-if="input.type === 'object' || input.type === 'json'"
+                :model-value="typeof runInputValues[input.name] === 'string' ? runInputValues[input.name] as string : JSON.stringify(runInputValues[input.name], null, 2)"
+                rows="4"
+                class="font-mono text-xs"
+                @update:model-value="runInputValues[input.name] = $event"
+              />
+              <Input
+                v-else-if="input.type === 'number' || input.type === 'integer'"
+                type="number"
+                :model-value="runInputValues[input.name] as number"
+                @update:model-value="runInputValues[input.name] = Number($event)"
+              />
+              <div v-else-if="input.type === 'boolean'" class="flex items-center gap-2">
+                <Switch
+                  :checked="!!runInputValues[input.name]"
+                  @update:checked="runInputValues[input.name] = $event"
+                />
+                <span class="text-muted-foreground text-xs">{{ runInputValues[input.name] ? 'true' : 'false' }}</span>
+              </div>
+              <Input
+                v-else
+                :model-value="runInputValues[input.name] as string"
+                @update:model-value="runInputValues[input.name] = $event"
+              />
+            </div>
+          </div>
+        </SheetBody>
+        <SheetFooter>
+          <Button variant="outline" @click="showRunInputsSidebar = false">Cancel</Button>
+          <Button class="bg-red-500 hover:bg-red-800" @click="executeWithInputs">
+            <LucidePlay class="mr-1.5 h-3.5 w-3.5" />
+            Run workflow
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   </div>
 </template>
 
