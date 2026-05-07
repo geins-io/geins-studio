@@ -194,18 +194,6 @@ const cronDescription = computed(() => {
   }
 })
 
-const cronError = computed(() => {
-  const expr = triggerCronValue.value.trim()
-  if (!expr) return ''
-  try {
-    cronstrue.toString(expr)
-    return ''
-  }
-  catch (err) {
-    return err instanceof Error ? err.message : 'Invalid cron expression'
-  }
-})
-
 const availableEventActions = computed(() => {
   if (!triggerEventEntity.value) return []
   const entity = manifestEventEntities.value.find(e => e.name === triggerEventEntity.value)
@@ -831,11 +819,10 @@ v-for="tag in ((componentField.modelValue as string[]) || [])" :key="tag"
                     <FormGrid design="1">
                       <FormField v-slot="{ componentField }" name="trigger.cron">
                         <FormItem>
-                          <FormLabel>Cron expression</FormLabel>
+                          <FormLabel>Schedule</FormLabel>
                           <FormControl>
-                            <Input v-bind="componentField" placeholder="0 * * * * *" />
+                            <SharedCronBuilder v-bind="componentField" />
                           </FormControl>
-                          <p v-if="cronDescription" class="text-muted-foreground text-xs">{{ cronDescription }}</p>
                           <FormMessage />
                         </FormItem>
                       </FormField>
