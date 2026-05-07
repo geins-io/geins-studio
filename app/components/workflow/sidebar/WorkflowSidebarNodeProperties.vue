@@ -101,7 +101,8 @@ const cancelEditLabel = () => {
             @click="startEditLabel"
           >{{ nodeLabel }}</span>
         </div>
-        <span v-if="nodeExecution?.status" class="rounded px-1.5 py-0.5 text-[10px] font-medium capitalize" :class="{
+        <span v-if="!isTriggerNode && node?.id" class="bg-muted text-muted-foreground ml-1 shrink-0 rounded px-1 py-0.5 font-mono text-[9px]">{{ node.id }}</span>
+        <span v-if="nodeExecution?.status" class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium capitalize" :class="{
           'bg-green-500/10 text-green-600 dark:text-green-400': nodeExecution.status === 'completed' || nodeExecution.status === 'succeeded',
           'bg-red-500/10 text-red-600 dark:text-red-400': nodeExecution.status === 'failed',
           'bg-blue-500/10 text-blue-600 dark:text-blue-400': nodeExecution.status === 'running',
