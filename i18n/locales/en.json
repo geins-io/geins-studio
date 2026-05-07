@@ -564,7 +564,6 @@
     "send_requires_billing_address": "Select a billing address",
     "send_requires_shipping_address": "Select a shipping address",
     "send_requires_terms": "Set payment terms",
-    "send_requires_currency": "Select a currency",
     "send_requires_products": "Add at least one product",
     "send_requires_no_unsaved_changes": "Save all changes before sending",
     "discount_type_percent": "Percent (%)",

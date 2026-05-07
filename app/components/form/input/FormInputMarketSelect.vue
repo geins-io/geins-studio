@@ -10,10 +10,12 @@ const props = withDefaults(
   defineProps<{
     dataSet?: Market[];
     disableTeleport?: boolean;
+    disabled?: boolean;
   }>(),
   {
     dataSet: () => [],
     disableTeleport: false,
+    disabled: false,
   },
 );
 
@@ -32,8 +34,6 @@ const markets = computed<MarketDataItem[]>(() => {
 const findItem = (value: string | undefined) =>
   value ? markets.value.find((item) => item.value === value) : undefined;
 
-const choice = ref<MarketDataItem | undefined>(findItem(model.value));
-
 const open = ref(false);
 const trigger = ref<HTMLElement | null>(null);
 const searchInput = ref<HTMLElement | null>(null);
@@ -41,21 +41,17 @@ const comboboxList = ref<HTMLElement | null>(null);
 const isComingFromSearchInput = ref(false);
 const wasOpenBeforeClick = ref(false);
 
-watch(choice, (newChoice) => {
-  if (newChoice?.value === model.value) {
-    return;
-  }
-  model.value = newChoice?.value ?? '';
-  open.value = false;
-});
-
-watch([model, () => props.dataSet], ([newModelValue]) => {
-  if (choice.value?.value !== newModelValue) {
-    choice.value = findItem(newModelValue);
-  }
+const choice = computed<MarketDataItem | undefined>({
+  get: () => findItem(model.value),
+  set: (newChoice) => {
+    if (!newChoice) return;
+    model.value = newChoice.value;
+    open.value = false;
+  },
 });
 
 const handleFocus = async (event: FocusEvent) => {
+  if (props.disabled) return;
   if (isComingFromSearchInput.value) {
     isComingFromSearchInput.value = false;
     return;
@@ -95,27 +91,39 @@ const handleBlur = (event: FocusEvent) => {
 
 const handlePointerDown = (event: PointerEvent) => {
   event.preventDefault();
+  if (props.disabled) return;
   wasOpenBeforeClick.value = open.value;
   open.value = !open.value;
 };
 
 const handleKeyDown = () => {
+  if (props.disabled) return;
   wasOpenBeforeClick.value = open.value;
   open.value = !open.value;
 };
 </script>
 
 <template>
-  <Combobox v-model="choice" v-model:open="open" by="label" class="relative">
+  <Combobox
+    v-model="choice"
+    v-model:open="open"
+    :disabled="disabled"
+    by="label"
+    class="relative"
+  >
     <ComboboxAnchor
       as-child
-      class="bg-input data-[state=open]:border-primary flex h-10 w-full items-center justify-between rounded-lg border px-3 py-1 text-sm transition-colors"
+      :class="[
+        'bg-input data-[state=open]:border-primary flex h-10 w-full items-center justify-between rounded-lg border px-3 py-1 text-sm transition-colors',
+        disabled && 'cursor-not-allowed opacity-50',
+      ]"
     >
       <button
         ref="trigger"
         type="button"
         tabindex="0"
-        class="focus:border-primary focus-visible:border-primary w-full text-left focus-visible:ring-0 focus-visible:outline-hidden"
+        :disabled="disabled"
+        class="focus:border-primary focus-visible:border-primary w-full text-left focus-visible:ring-0 focus-visible:outline-hidden disabled:cursor-not-allowed"
         @focus.prevent="handleFocus"
         @pointerdown.prevent="handlePointerDown"
         @keydown.enter.prevent="handleKeyDown"

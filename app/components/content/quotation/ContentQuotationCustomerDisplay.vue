@@ -9,7 +9,6 @@ withDefaults(
     shippingAddress?: Address | null;
     buyerName?: string;
     ownerName?: string;
-    currency?: string;
     loading?: boolean;
   }>(),
   {
@@ -19,7 +18,6 @@ withDefaults(
     shippingAddress: null,
     buyerName: '',
     ownerName: '',
-    currency: '',
     loading: false,
   },
 );
@@ -102,17 +100,5 @@ withDefaults(
       </div>
     </div>
 
-    <!-- Currency -->
-    <div class="border-t pt-4">
-      <p class="text-muted-foreground mb-1 text-xs font-medium">
-        {{ $t('currency') }}
-      </p>
-      <p class="text-sm">
-        <Skeleton v-if="loading" class="h-5 w-32" />
-        <template v-else>
-          {{ currency || '-' }}
-        </template>
-      </p>
-    </div>
   </div>
 </template>
