@@ -100,7 +100,7 @@
 | selector/ | Infrastructure | Selector, SelectorPanel, SelectorHeader, SelectorTag, etc. |
 | layout/ | Infrastructure | LayoutHeader |
 | layout/sidebar/ | Infrastructure | LayoutSidebar, LayoutSidebarUser |
-| sidebar/ | Infrastructure | SidebarNav, SidebarNavItem |
+| layout/sidebar/ | Infrastructure | LayoutSidebar, LayoutSidebarUser, LayoutSidebarNav, LayoutSidebarNavItem |
 | button/ | Infrastructure | ButtonExport, ButtonIcon |
 | error/ | Infrastructure | 404.vue, 500.vue |
 | feedback/ | Infrastructure | Feedback.vue |

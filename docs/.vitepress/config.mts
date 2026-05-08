@@ -466,18 +466,13 @@ export default defineConfig({
                 text: 'LayoutSidebarUser',
                 link: '/components/layout/sidebar/LayoutSidebarUser.md',
               },
-            ],
-          },
-          {
-            text: 'Sidebar nav',
-            items: [
               {
-                text: 'SidebarNav',
-                link: '/components/sidebar/SidebarNav.md',
+                text: 'LayoutSidebarNav',
+                link: '/components/layout/sidebar/LayoutSidebarNav.md',
               },
               {
-                text: 'SidebarNavItem',
-                link: '/components/sidebar/SidebarNavItem.md',
+                text: 'LayoutSidebarNavItem',
+                link: '/components/layout/sidebar/LayoutSidebarNavItem.md',
               },
             ],
           },
