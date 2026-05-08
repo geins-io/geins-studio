@@ -1,6 +1,6 @@
-# `404`
+# `Error404`
 
-`404` is the standard not-found error page — used as the body of `error.vue` when Nuxt catches a 404. Renders an `Empty` primitive with "Go back" and "Home" actions.
+`Error404` is the standard not-found error page — used as the body of `error.vue` when Nuxt catches a 404. Renders an `Empty` primitive with "Go back" and "Home" actions.
 
 ## Features
 

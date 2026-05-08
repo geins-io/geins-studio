@@ -27,7 +27,7 @@ npx shadcn-vue@latest add <component>
 | `Collapsible` | [shadcn-vue.com/docs/components/collapsible](https://www.shadcn-vue.com/docs/components/collapsible) | [LayoutSidebar](/components/layout/sidebar/LayoutSidebar) |
 | `Dialog` | [shadcn-vue.com/docs/components/dialog](https://www.shadcn-vue.com/docs/components/dialog) | composition primitives, settings sheets |
 | `DropdownMenu` | [shadcn-vue.com/docs/components/dropdown-menu](https://www.shadcn-vue.com/docs/components/dropdown-menu) | [ButtonExport](/components/button/ButtonExport), [LayoutSidebarUser](/components/layout/sidebar/LayoutSidebarUser) |
-| `Empty` | [shadcn-vue.com/docs/components/empty](https://www.shadcn-vue.com/docs/components/empty) | [TableView](/components/table/TableView), [404](/components/error/404), [500](/components/error/500) |
+| `Empty` | [shadcn-vue.com/docs/components/empty](https://www.shadcn-vue.com/docs/components/empty) | [TableView](/components/table/TableView), [Error404](/components/Error404), [Error500](/components/Error500) |
 | `Form` (`FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`) | [shadcn-vue.com/docs/components/form](https://www.shadcn-vue.com/docs/components/form) | All form pages, [FormItemSwitch](/components/form/item/FormItemSwitch) |
 | `Input` | [shadcn-vue.com/docs/components/input](https://www.shadcn-vue.com/docs/components/input) | [TableView](/components/table/TableView) search, form inputs |
 | `Label` | [shadcn-vue.com/docs/components/label](https://www.shadcn-vue.com/docs/components/label) | [QuotationDialogStatusTransition](/components/quotation/QuotationDialogStatusTransition) |

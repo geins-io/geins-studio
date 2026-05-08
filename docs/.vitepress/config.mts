@@ -479,8 +479,8 @@ export default defineConfig({
           {
             text: 'Errors',
             items: [
-              { text: '404', link: '/components/error/404.md' },
-              { text: '500', link: '/components/error/500.md' },
+              { text: 'Error404', link: '/components/Error404.md' },
+              { text: 'Error500', link: '/components/Error500.md' },
             ],
           },
           {
