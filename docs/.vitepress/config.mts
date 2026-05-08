@@ -426,8 +426,8 @@ export default defineConfig({
                 link: '/components/content/ContentHeading.md',
               },
               {
-                text: 'ContentLinkCard',
-                link: '/components/content/ContentLinkCard.md',
+                text: 'ContentCardLinked',
+                link: '/components/content/ContentCardLinked.md',
               },
               {
                 text: 'ContentPriceSummary',
