@@ -164,6 +164,7 @@
   "created": "Created",
   "modified": "Modified",
   "created_by": "Created by",
+  "modified_by": "Modified by",
   "expiration_date": "Expiration date",
   "ref_number": "Ref number",
   "customer": "Customer | Customers",

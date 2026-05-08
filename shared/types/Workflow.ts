@@ -141,6 +141,8 @@ export interface WorkflowSummary {
   version: number;
   createdAt?: string;
   updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface WorkflowDefinition extends WorkflowSummary {

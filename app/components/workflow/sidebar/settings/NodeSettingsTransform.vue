@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
+import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue'
 
 const props = defineProps<{
   nodeData: Record<string, unknown>
@@ -115,14 +116,6 @@ function onJsonChange(text: string) {
     <div class="mb-3 flex items-center justify-between">
       <label class="text-sm font-medium">Mapping</label>
       <div class="flex items-center gap-2">
-        <button
-          type="button"
-          class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-          @click="addPair"
-        >
-          <LucidePlus class="h-3 w-3" />
-          Add field
-        </button>
         <div class="bg-muted flex rounded-md p-0.5">
           <button
             type="button"
@@ -157,11 +150,10 @@ function onJsonChange(text: string) {
             @blur="emitMapping()"
             @keydown.enter="($event.target as HTMLInputElement).blur()"
           />
-          <Input
+          <ExpressionInput
             :model-value="pair.value"
-            placeholder="Value or {{ expression }}"
+            placeholder="Value or expression"
             size="sm"
-            input-class="font-mono"
             @update:model-value="pair.value = String($event); onPairUpdate()"
           />
         </div>

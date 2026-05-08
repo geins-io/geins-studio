@@ -78,6 +78,14 @@ const toCanvasNode = (node: WorkflowNode & WithUi, index: number): Node => ({
     config: node.config ?? {},
     input: node.input ?? {},
     ui: node.ui ?? {},
+    conditions:
+      'conditions' in node
+        ? (node as { conditions: unknown }).conditions
+        : undefined,
+    defaultLabel:
+      'defaultLabel' in node
+        ? (node as { defaultLabel: unknown }).defaultLabel
+        : undefined,
   },
   ...(node.type === 'trigger' ? { deletable: false } : {}),
 });
@@ -149,6 +157,12 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
           // Persist position on the API-native `ui` field so the canvas can
           // restore it on next load (and any unrelated ui keys round-trip).
           ui: { ...existingUi, position },
+          ...(n.data?.conditions != null
+            ? { conditions: n.data.conditions }
+            : {}),
+          ...(n.data?.defaultLabel != null
+            ? { defaultLabel: n.data.defaultLabel }
+            : {}),
         } as WorkflowNode & WithUi;
       }),
     connections: edges.map((e) => {

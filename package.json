@@ -33,8 +33,10 @@
     "infra:validate:build": "bash infra/scripts/validate.sh --build-only"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.2",
     "@codemirror/lang-json": "^6.0.2",
     "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.42.1",
     "@dagrejs/dagre": "^3.0.0",
     "@formkit/auto-animate": "^0.9.0",
     "@internationalized/date": "^3.11.0",

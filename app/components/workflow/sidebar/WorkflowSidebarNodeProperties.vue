@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { useVueFlow } from '@vue-flow/core'
+import type { WorkflowInput, WorkflowVariable } from '#shared/types'
+import type { ExpressionCompletion } from '@/components/workflow/shared/ExpressionInput.vue'
 import type { ManifestAction } from '@/composables/useWorkflowManifest'
 import NodePaneInput from './NodePaneInput.vue'
 import NodePaneOutput from './NodePaneOutput.vue'
 import NodePaneSettings from './NodePaneSettings.vue'
+import type { Ref } from 'vue'
 
 type NodeExecution = {
   input?: Record<string, unknown> | null
@@ -23,6 +27,149 @@ const isOpen = computed(() => props.node !== null)
 
 const manifestStore = useWorkflowManifest()
 const { resolveIcon } = useLucideIcon()
+const { nodes: vfNodes, edges: vfEdges } = useVueFlow()
+
+const workflowInputDefs = inject<Ref<WorkflowInput[]>>('workflowInputDefs', ref([]))
+const workflowVariables = inject<Ref<WorkflowVariable[]>>('workflowVariables', ref([]))
+
+type NodeExecData = { input?: Record<string, unknown> | null, output?: Record<string, unknown> | null, status?: string }
+const lastNodeExecutions = inject<Ref<Map<string, NodeExecData>>>('lastNodeExecutions')
+
+function addObjectKeyCompletions(
+  items: ExpressionCompletion[],
+  obj: unknown,
+  pathPrefix: string,
+  section: string,
+  maxDepth = 2,
+  depth = 0,
+) {
+  if (depth >= maxDepth || typeof obj !== 'object' || obj === null || Array.isArray(obj)) return
+  for (const [k, v] of Object.entries(obj)) {
+    const fullPath = `${pathPrefix}.${k}`
+    const preview = v === null ? 'null'
+      : typeof v === 'object' ? (Array.isArray(v) ? `[${v.length}]` : `{${Object.keys(v).length}}`)
+        : String(v)
+    items.push({
+      expression: `{{${fullPath}}}`,
+      label: `${pathPrefix.slice(pathPrefix.lastIndexOf('.') + 1)}.${k}`,
+      detail: preview.length > 40 ? preview.slice(0, 40) + '…' : preview,
+      section,
+    })
+    addObjectKeyCompletions(items, v, fullPath, section, maxDepth, depth + 1)
+  }
+}
+
+const expressionCompletions = computed<ExpressionCompletion[]>(() => {
+  const nodeId = props.node?.id as string | undefined
+  if (!nodeId) return []
+
+  const items: ExpressionCompletion[] = []
+
+  const sourceIds = vfEdges.value
+    .filter(e => e.target === nodeId)
+    .map(e => e.source)
+  for (const srcId of sourceIds) {
+    const n = vfNodes.value.find(nd => nd.id === srcId)
+    if (!n) continue
+    const data = (n.data ?? {}) as Record<string, unknown>
+    const action = manifestStore.getAction(data.actionName as string | undefined)
+    const label = (data.label as string) || action?.displayName || n.id
+    const section = `output · ${label}`
+    const exec = lastNodeExecutions?.value?.get(srcId)
+
+    for (const field of (action?.output ?? [])) {
+      items.push({
+        expression: `{{output.${srcId}.${field.name}}}`,
+        label: field.name,
+        detail: `${label} · ${field.type}`,
+        section,
+      })
+      if (exec?.output) {
+        const val = exec.output[field.name]
+        addObjectKeyCompletions(items, val, `output.${srcId}.${field.name}`, section)
+      }
+    }
+  }
+
+  for (const inp of workflowInputDefs.value) {
+    items.push({
+      expression: `{{input.${inp.name}}}`,
+      label: inp.name,
+      detail: inp.type,
+      section: 'input',
+    })
+  }
+
+  for (const v of workflowVariables.value) {
+    items.push({
+      expression: `{{vars.${v.key}}}`,
+      label: v.key,
+      detail: v.isSecret ? 'secret' : (v.value ?? ''),
+      section: 'vars',
+    })
+  }
+
+  return items
+})
+
+provide('expressionCompletions', expressionCompletions)
+
+function drillPath(obj: Record<string, unknown>, segments: string[]): unknown {
+  let current: unknown = obj
+  for (const seg of segments) {
+    if (current === null || current === undefined || typeof current !== 'object') return undefined
+    current = (current as Record<string, unknown>)[seg]
+  }
+  return current
+}
+
+function resolveExpression(expr: string): string | null {
+  const match = expr.match(/^\{\{(\w+)\.(.+)\}\}$/)
+  if (!match) return null
+  const [, ns, path] = match
+
+  if (ns === 'output') {
+    const nodeId = props.node?.id as string | undefined
+    if (!nodeId) return null
+    const sourceIds = vfEdges.value
+      .filter(e => e.target === nodeId)
+      .map(e => e.source)
+    for (const srcId of sourceIds) {
+      if (!path.startsWith(srcId + '.')) continue
+      const fieldPath = path.slice(srcId.length + 1)
+      const exec = lastNodeExecutions?.value?.get(srcId)
+      if (!exec?.output) return null
+      const segments = fieldPath.split('.')
+      const val = drillPath(exec.output, segments)
+      if (val === undefined) return null
+      if (val === null) return 'null'
+      if (typeof val === 'object') return JSON.stringify(val)
+      return String(val)
+    }
+    return null
+  }
+
+  if (ns === 'input') {
+    const exec = lastNodeExecutions?.value?.get(props.node?.id as string)
+    if (!exec?.input) return null
+    const val = exec.input[path]
+    if (val === undefined) return null
+    if (val === null) return 'null'
+    if (typeof val === 'object') return JSON.stringify(val)
+    return String(val)
+  }
+
+  if (ns === 'vars') {
+    const v = workflowVariables.value.find(vr => vr.key === path)
+    if (!v) return null
+    if (v.isSecret) return '••••••'
+    return v.value ?? null
+  }
+
+  return null
+}
+
+provide('resolveExpression', resolveExpression)
 
 const nodeData = computed(() => (props.node?.data ?? {}) as Record<string, unknown>)
 const nodeType = computed(() => (props.node?.type ?? '') as string)

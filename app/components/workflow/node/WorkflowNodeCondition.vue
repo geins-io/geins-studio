@@ -1,15 +1,52 @@
 <script setup lang="ts">
 import WorkflowHandleInput from './handle/WorkflowHandleInput.vue'
 import WorkflowHandlePlus from './handle/WorkflowHandlePlus.vue'
+
+type ConditionEntry = { label: string, condition?: string, description?: string }
+
 const props = defineProps<{
   data: {
     label: string
     icon: string
     description: string
-    config: Record<string, any>
+    config: Record<string, unknown>
+    conditions?: ConditionEntry[]
+    defaultLabel?: string
   }
   selected?: boolean
 }>()
+
+const DEFAULT_BRANCHES = [
+  { id: 'true', label: 'Yes', isDefault: false },
+  { id: 'false', label: 'No', isDefault: true },
+]
+
+const branches = computed(() => {
+  const conds = props.data.conditions
+  if (!conds || conds.length === 0) return DEFAULT_BRANCHES
+
+  const items = conds.map(c => ({
+    id: c.label,
+    label: c.label,
+    isDefault: false,
+  }))
+
+  if (props.data.defaultLabel) {
+    items.push({
+      id: props.data.defaultLabel,
+      label: props.data.defaultLabel,
+      isDefault: true,
+    })
+  }
+
+  return items
+})
+
+const handlePositions = computed(() => {
+  const count = branches.value.length
+  if (count === 1) return [50]
+  return branches.value.map((_, i) => 25 + (i * 50) / (count - 1))
+})
 </script>
 
 <template>
@@ -34,27 +71,25 @@ const props = defineProps<{
     <div v-if="data.config?.field" class="text-muted-foreground bg-muted/50 mt-2 rounded px-2 py-1 text-xs">
       {{ data.config.field }} {{ data.config.operator }} "{{ data.config.value }}"
     </div>
-    
-    <!-- True output handle -->
+
+    <!-- Dynamic output handles -->
     <WorkflowHandlePlus
-      handle-id="true"
-      :style="{ top: '30%' }"
-      handle-class="!border-background !h-3 !w-3 !border-2 !bg-green-500"
+      v-for="(branch, i) in branches"
+      :key="branch.id"
+      :handle-id="branch.id"
+      :style="{ top: `${handlePositions[i]}%` }"
+      :handle-class="`!border-background !h-3 !w-3 !border-2 ${branch.isDefault ? '!bg-muted-foreground' : '!bg-green-500'}`"
     />
 
-    <!-- False output handle -->
-    <WorkflowHandlePlus
-      handle-id="false"
-      :style="{ top: '70%' }"
-      handle-class="!border-background !h-3 !w-3 !border-2 !bg-red-500"
-    />
-
-    <!-- Labels for handles -->
-    <div class="bg-background/80 absolute top-[25%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-green-500">
-      Yes
-    </div>
-    <div class="bg-background/80 absolute top-[65%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-red-500">
-      No
+    <!-- Dynamic handle labels -->
+    <div
+      v-for="(branch, i) in branches"
+      :key="`label-${branch.id}`"
+      class="bg-background/80 absolute -right-1 translate-x-full rounded px-1 text-[10px] font-medium"
+      :class="branch.isDefault ? 'text-muted-foreground' : 'text-green-600 dark:text-green-400'"
+      :style="{ top: `${(handlePositions[i] ?? 50) - 5}%` }"
+    >
+      {{ branch.label }}
     </div>
   </div>
 </template>
