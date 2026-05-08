@@ -80,7 +80,7 @@
 | company/ | Customers | CompanyBuyerPanel.vue |
 | price-list/ | Pricing | PriceListPriceModeCell, PriceListRule, PriceListRules, PriceListRulesWrapper, PriceListVolumePricingCell, PriceListVolumePricingPanel |
 | quotation/ | Orders | QuotationChangelog, QuotationCommunications, QuotationMessageCompose, QuotationMessageThread |
-| content/quotation/ | Orders | ContentQuotationCustomerDisplay, ContentQuotationWorkflowInfo |
+| quotation/ | Orders | QuotationCustomerDisplay, QuotationWorkflowInfo |
 
 ## `app/components/` (infrastructure)
 

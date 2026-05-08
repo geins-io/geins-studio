@@ -646,19 +646,6 @@ export default defineConfig({
             ],
           },
           {
-            text: 'Content — Quotation',
-            items: [
-              {
-                text: 'ContentQuotationCustomerDisplay',
-                link: '/components/content/quotation/ContentQuotationCustomerDisplay.md',
-              },
-              {
-                text: 'ContentQuotationWorkflowInfo',
-                link: '/components/content/quotation/ContentQuotationWorkflowInfo.md',
-              },
-            ],
-          },
-          {
             text: 'Price list',
             items: [
               {
@@ -693,6 +680,14 @@ export default defineConfig({
               {
                 text: 'QuotationDialogStatusTransition',
                 link: '/components/quotation/QuotationDialogStatusTransition.md',
+              },
+              {
+                text: 'QuotationCustomerDisplay',
+                link: '/components/quotation/QuotationCustomerDisplay.md',
+              },
+              {
+                text: 'QuotationWorkflowInfo',
+                link: '/components/quotation/QuotationWorkflowInfo.md',
               },
               {
                 text: 'QuotationCommunications',

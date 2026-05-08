@@ -1,6 +1,6 @@
-# `ContentQuotationWorkflowInfo`
+# `QuotationWorkflowInfo`
 
-`ContentQuotationWorkflowInfo` is the help button + sheet that explains the quotation status workflow — renders two side-by-side flow diagrams (default vs strict) with status badges, action arrows, and actor labels. In edit mode the user can pick which flow this quotation should follow by clicking a card.
+`QuotationWorkflowInfo` is the help button + sheet that explains the quotation status workflow — renders two side-by-side flow diagrams (default vs strict) with status badges, action arrows, and actor labels. In edit mode the user can pick which flow this quotation should follow by clicking a card.
 
 ## Features
 
@@ -17,7 +17,7 @@
 
 ```vue
 <template>
-  <ContentQuotationWorkflowInfo :require-confirmation="quotation.requireConfirmation" />
+  <QuotationWorkflowInfo :require-confirmation="quotation.requireConfirmation" />
 </template>
 ```
 
@@ -31,7 +31,7 @@
     @update:model-value="(v) => form.setFieldValue('requireConfirmation', v)"
   >
     <template #after-label>
-      <ContentQuotationWorkflowInfo
+      <QuotationWorkflowInfo
         v-model:require-confirmation="form.values.requireConfirmation"
         edit-mode
       />

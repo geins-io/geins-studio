@@ -2373,7 +2373,7 @@ definePageMeta({
                         <p class="text-muted-foreground text-xs font-medium">
                           {{ $t('orders.require_confirmation') }}
                         </p>
-                        <ContentQuotationWorkflowInfo
+                        <QuotationWorkflowInfo
                           :require-confirmation="
                             entityData?.settings?.requireConfirmation
                           "
@@ -2393,7 +2393,7 @@ definePageMeta({
 
               <!-- Card 2: Customer (read-only, no Change button) -->
               <ContentEditCard :create-mode="false" :title="$t('customer')">
-                <ContentQuotationCustomerDisplay
+                <QuotationCustomerDisplay
                   :company-name="selectedCompany?.name"
                   :vat-number="selectedCompany?.vatNumber"
                   :billing-address="billingAddress"
@@ -2539,7 +2539,7 @@ definePageMeta({
                         @update:model-value="handleChange"
                       >
                         <template #after-label>
-                          <ContentQuotationWorkflowInfo
+                          <QuotationWorkflowInfo
                             :require-confirmation="value"
                             edit-mode
                             @update:require-confirmation="handleChange"
@@ -2570,7 +2570,7 @@ definePageMeta({
                   </ContentEditCustomerPanel>
                 </template>
 
-                <ContentQuotationCustomerDisplay
+                <QuotationCustomerDisplay
                   :company-name="selectedCompany?.name"
                   :vat-number="selectedCompany?.vatNumber"
                   :billing-address="billingAddress"
