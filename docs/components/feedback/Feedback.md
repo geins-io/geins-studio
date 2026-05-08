@@ -60,7 +60,7 @@ The alert headline.
 
 ### `description`
 
-The alert body — supports markup (used by [`DialogStatusTransition`](/components/dialog/DialogStatusTransition) to render a bulleted block-reasons list).
+The alert body — supports markup (used by [`QuotationDialogStatusTransition`](/components/quotation/QuotationDialogStatusTransition) to render a bulleted block-reasons list).
 
 ### `actions`
 

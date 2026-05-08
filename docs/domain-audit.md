@@ -113,7 +113,7 @@
 | ContentEditCustomerPanel.vue | Orders | Quotation customer panel, but address/buyer patterns are reusable |
 | ContentEditAddressPanel.vue | Infrastructure | Address editing used by both Customers and Orders |
 | ContentAddressDisplay.vue | Infrastructure | Address display used by both Customers and Orders |
-| DialogStatusTransition.vue | Orders | Status transition dialog, currently quotation-only |
+| QuotationDialogStatusTransition.vue | Orders | Status transition dialog, quotation-specific |
 | TableCellProduct.vue | Products | Product display cell, used by Orders and Pricing too |
 | LayoutSidebarUser.vue | Account/Auth | User profile in sidebar, infrastructure-adjacent |
 

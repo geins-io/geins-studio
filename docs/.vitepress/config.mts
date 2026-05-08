@@ -186,10 +186,6 @@ export default defineConfig({
                 link: '/components/dialog/DialogDelete.md',
               },
               {
-                text: 'DialogStatusTransition',
-                link: '/components/dialog/DialogStatusTransition.md',
-              },
-              {
                 text: 'DialogUnsavedChanges',
                 link: '/components/dialog/DialogUnsavedChanges.md',
               },
@@ -694,6 +690,10 @@ export default defineConfig({
           {
             text: 'Quotation',
             items: [
+              {
+                text: 'QuotationDialogStatusTransition',
+                link: '/components/quotation/QuotationDialogStatusTransition.md',
+              },
               {
                 text: 'QuotationCommunications',
                 link: '/components/quotation/QuotationCommunications.md',

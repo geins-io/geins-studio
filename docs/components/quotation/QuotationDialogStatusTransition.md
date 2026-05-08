@@ -1,6 +1,6 @@
-# `DialogStatusTransition`
+# `QuotationDialogStatusTransition`
 
-`DialogStatusTransition` is the confirmation dialog for status transitions in the quotation lifecycle — send, accept, reject, cancel, expire, convert-to-order. It is **specific to the quotation flow** and is not used for other entities. Bundles message composition, an optional date picker, and block-reason warnings into a single primitive.
+`QuotationDialogStatusTransition` is the confirmation dialog for status transitions in the quotation lifecycle — send, accept, reject, cancel, expire, convert-to-order. It is **specific to the quotation flow** and is not used for other entities. Bundles message composition, an optional date picker, and block-reason warnings into a single primitive.
 
 ## Features
 
@@ -36,7 +36,7 @@ const onConfirm = async (
 </script>
 
 <template>
-  <DialogStatusTransition
+  <QuotationDialogStatusTransition
     v-model:open="open"
     :action="$t('orders.send')"
     :title="$t('orders.send_quotation_title')"
@@ -57,7 +57,7 @@ When the entity can't transition (missing fields, invalid state), pass `blockRea
 
 ```vue
 <template>
-  <DialogStatusTransition
+  <QuotationDialogStatusTransition
     v-model:open="open"
     :action="$t('orders.send')"
     :title="$t('orders.send_quotation_title')"
@@ -203,7 +203,7 @@ type TransitionIcon =
   | 'shopping-cart'
   | 'calendar-plus';
 
-interface DialogStatusTransitionProps {
+interface QuotationDialogStatusTransitionProps {
   action: string;
   title: string;
   description: string;

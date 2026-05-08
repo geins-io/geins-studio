@@ -1820,7 +1820,7 @@ definePageMeta({
     :loading="deleting"
     @confirm="confirmDelete"
   />
-  <DialogStatusTransition
+  <QuotationDialogStatusTransition
     v-if="transitionAction"
     v-model:open="transitionDialogOpen"
     :action="transitionAction.label"
