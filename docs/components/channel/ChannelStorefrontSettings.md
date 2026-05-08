@@ -1,6 +1,6 @@
 # `ChannelStorefrontSettings`
 
-`ChannelStorefrontSettings` is the **Storefront settings** card on a channel's edit page — schema-driven tabs, a Preview button, an action menu for changing or resetting the schema, and the destructive reset confirmation dialog. Each tab body is a [`StorefrontSchemaRenderer`](/components/channel/StorefrontSchemaRenderer).
+`ChannelStorefrontSettings` is the **Storefront settings** card on a channel's edit page — schema-driven tabs, a Preview button, an action menu for changing or resetting the schema, and the destructive reset confirmation dialog. Each tab body is a [`SchemaRenderer`](/components/SchemaRenderer).
 
 ## Features
 
@@ -50,7 +50,7 @@ Drives the tab list. Empty / missing schema falls back to the bundled default.
 modelValue: StorefrontSettings
 ```
 
-The settings object — passed through every tab to [`SchemaField`](/components/channel/SchemaField).
+The settings object — passed through every tab to [`SchemaFormField`](/components/SchemaFormField).
 
 ### `resetting`
 
@@ -100,5 +100,5 @@ Emitted when the user clicks Preview.
 
 - [`ContentEditCard`](/components/content/edit/ContentEditCard)
 - shadcn-vue [`Tabs`](/components/shadcn-vue), [`DropdownMenu`](/components/shadcn-vue), [`AlertDialog`](/components/shadcn-vue), `Button`
-- [`StorefrontSchemaRenderer`](/components/channel/StorefrontSchemaRenderer)
+- [`SchemaRenderer`](/components/SchemaRenderer)
 - [`useGeinsLog`](/composables/useGeinsLog) — logs a fallback notice when the prop schema is empty

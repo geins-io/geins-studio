@@ -8,7 +8,7 @@
   - **Global** (`disabled`) — rules inherited from the price list, read-only
   - **Product** — editable rules for this product
 - Live price-preview calls: every per-row change debounces a call to `productApi.priceList.id(...).previewPrice(...)` and writes the calculated `margin`, `discountPercent`, `price` back into the row
-- Save flow: validates each rule (quantity > 1, at least one numeric value) and converts to `PriceListProduct[]` via [`usePriceListProducts`](/composables/usePriceListProducts) — surfaces a [`Feedback`](/components/feedback/Feedback) banner when invalid
+- Save flow: validates each rule (quantity > 1, at least one numeric value) and converts to `PriceListProduct[]` via [`usePriceListProducts`](/composables/usePriceListProducts) — surfaces a [`Feedback`](/components/Feedback) banner when invalid
 - Cancel discards local changes; Save commits via the `save` event
 - Two-way `v-model:open` and `v-model:priceListProducts` so the parent's selected-products state stays in sync
 
@@ -129,6 +129,6 @@ The `SheetTrigger` content (typically a button).
 
 - shadcn-vue [`Sheet`](/components/shadcn-vue), `Button`
 - [`PriceListRules`](/components/price-list/PriceListRules) (in `all` mode)
-- [`ContentCardHeader`](/components/content/ContentCardHeader), [`Feedback`](/components/feedback/Feedback)
+- [`ContentCardHeader`](/components/content/ContentCardHeader), [`Feedback`](/components/Feedback)
 - [`usePriceListProducts`](/composables/usePriceListProducts) — `getPriceListProduct`, `getNewPriceListProducts`
 - [`useGeinsRepository`](/composables/useGeinsRepository) — `productApi.priceList.previewPrice`

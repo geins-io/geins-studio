@@ -221,5 +221,5 @@ interface QuotationDialogStatusTransitionProps {
 ## Dependencies
 
 - shadcn-vue [`AlertDialog`](/components/shadcn-vue), `Tabs`, `Textarea`, `Label`
-- `Feedback` for block-reason rendering — see `app/components/feedback/Feedback.vue`
+- `Feedback` for block-reason rendering — see `app/components/Feedback.vue`
 - `FormInputDate` for the optional date picker — see `app/components/form/input/FormInputDate.vue`

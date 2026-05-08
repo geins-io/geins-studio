@@ -967,7 +967,7 @@ if (!createMode.value) {
                     {{ $t('language') }}
                   </div>
                   <div class="flex items-center gap-2.5 px-4 py-5">
-                    <ChannelLanguageIcon
+                    <FlagIcon
                       v-if="defaultLanguage"
                       :language-id="defaultLanguage._id"
                       :name="defaultLanguage.name"

@@ -484,15 +484,6 @@ export default defineConfig({
             ],
           },
           {
-            text: 'Feedback',
-            items: [
-              {
-                text: 'Feedback',
-                link: '/components/feedback/Feedback.md',
-              },
-            ],
-          },
-          {
             text: 'Auth',
             items: [
               { text: 'AuthForm', link: '/components/auth/AuthForm.md' },
@@ -516,10 +507,6 @@ export default defineConfig({
               {
                 text: 'ChannelDefaultMarket',
                 link: '/components/channel/ChannelDefaultMarket.md',
-              },
-              {
-                text: 'LanguageIcon',
-                link: '/components/channel/LanguageIcon.md',
               },
             ],
           },
@@ -571,14 +558,6 @@ export default defineConfig({
               {
                 text: 'ChannelStorefrontSettings',
                 link: '/components/channel/ChannelStorefrontSettings.md',
-              },
-              {
-                text: 'StorefrontSchemaRenderer',
-                link: '/components/channel/StorefrontSchemaRenderer.md',
-              },
-              {
-                text: 'SchemaField',
-                link: '/components/channel/SchemaField.md',
               },
               {
                 text: 'ChannelSchemaEditorSheet',
@@ -703,8 +682,15 @@ export default defineConfig({
             ],
           },
           {
-            text: 'Other',
+            text: 'Global',
             items: [
+              { text: 'Feedback', link: '/components/Feedback.md' },
+              { text: 'FlagIcon', link: '/components/FlagIcon.md' },
+              { text: 'SchemaRenderer', link: '/components/SchemaRenderer.md' },
+              {
+                text: 'SchemaFormField',
+                link: '/components/SchemaFormField.md',
+              },
               { text: 'StatusBadge', link: '/components/StatusBadge.md' },
             ],
           },

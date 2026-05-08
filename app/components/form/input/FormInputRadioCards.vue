@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { SchemaFieldOption } from '#shared/types';
+import type { SchemaFormFieldOption } from '#shared/types';
 
 const props = defineProps<{
-  options: SchemaFieldOption[];
+  options: SchemaFormFieldOption[];
   modelValue?: string;
 }>();
 

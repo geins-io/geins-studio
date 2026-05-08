@@ -115,7 +115,7 @@ function onSettingsUpdate(value: StorefrontSettings) {
       </TabsList>
 
       <TabsContent v-for="key in tabKeys" :key="key" :value="key" class="mt-4">
-        <ChannelStorefrontSchemaRenderer
+        <SchemaRenderer
           :schema="activeSchema[key]!"
           :model-value="modelValue"
           @update:model-value="onSettingsUpdate"

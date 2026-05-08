@@ -1,6 +1,6 @@
-# `LanguageIcon`
+# `FlagIcon`
 
-`LanguageIcon` is a circular flag + optional name display for a language id — derives the country code from the language id, then renders the flag via the `flagClass` utility. Used wherever channel languages are displayed (selects, tables, mail config sheet).
+`FlagIcon` is a circular flag + optional name display for a language id — derives the country code from the language id, then renders the flag via the `flagClass` utility. Used wherever channel languages are displayed (selects, tables, mail config sheet).
 
 ## Features
 
@@ -12,13 +12,13 @@
 
 ```vue
 <template>
-  <ChannelLanguageIcon language-id="en-GB" name="English" />
-  <ChannelLanguageIcon language-id="sv-SE" size="md" />
+  <FlagIcon language-id="en-GB" name="English" />
+  <FlagIcon language-id="sv-SE" size="md" />
 </template>
 ```
 
 > [!NOTE]
-> The component lives at `app/components/channel/LanguageIcon.vue` so its auto-import name is `ChannelLanguageIcon`.
+> The component lives at `app/components/FlagIcon.vue` so its auto-import name is `FlagIcon`. The prop is still `languageId` (not `countryCode`) — the component resolves the country code internally.
 
 ## Props
 

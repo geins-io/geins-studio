@@ -118,7 +118,7 @@ const handleKeyDown = () => {
         @keydown.enter.prevent="handleKeyDown"
       >
         <span v-if="choice" class="inline-flex items-center">
-          <ChannelLanguageIcon
+          <FlagIcon
             v-if="showFlags"
             :language-id="choice.value"
             :name="choice.label"
@@ -169,7 +169,7 @@ const handleKeyDown = () => {
             :key="item.value"
             :value="item"
           >
-            <ChannelLanguageIcon
+            <FlagIcon
               v-if="showFlags"
               :language-id="item.value"
               :name="item.label"

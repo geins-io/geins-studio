@@ -109,5 +109,5 @@ The `SheetTrigger` content (typically a button).
 - shadcn-vue [`Sheet`](/components/shadcn-vue), `Form`, `Input`, `Button`
 - [`FormInputTagsSearch`](/components/form/input/FormInputTagsSearch) — pricelist multi-select
 - [`FormItemSwitch`](/components/form/item/FormItemSwitch), [`ContentSwitch`](/components/content/ContentSwitch), [`ContentCardHeader`](/components/content/ContentCardHeader)
-- [`Feedback`](/components/feedback/Feedback) — existing-customer banner
+- [`Feedback`](/components/Feedback) — existing-customer banner
 - [`useGeinsRepository`](/composables/useGeinsRepository) (`customerApi.company.buyer`, `customerApi.customer`)

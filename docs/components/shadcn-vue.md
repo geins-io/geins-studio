@@ -17,7 +17,7 @@ npx shadcn-vue@latest add <component>
 
 | Primitive | Upstream docs | Used in (Geins components) |
 | --- | --- | --- |
-| `Alert` | [shadcn-vue.com/docs/components/alert](https://www.shadcn-vue.com/docs/components/alert) | [Feedback](/components/feedback/Feedback) |
+| `Alert` | [shadcn-vue.com/docs/components/alert](https://www.shadcn-vue.com/docs/components/alert) | [Feedback](/components/Feedback) |
 | `AlertDialog` | [shadcn-vue.com/docs/components/alert-dialog](https://www.shadcn-vue.com/docs/components/alert-dialog) | [DialogDelete](/components/dialog/DialogDelete), [QuotationDialogStatusTransition](/components/quotation/QuotationDialogStatusTransition), [DialogUnsavedChanges](/components/dialog/DialogUnsavedChanges) |
 | `Avatar` | [shadcn-vue.com/docs/components/avatar](https://www.shadcn-vue.com/docs/components/avatar) | [LayoutSidebarUser](/components/layout/sidebar/LayoutSidebarUser) |
 | `Badge` | [shadcn-vue.com/docs/components/badge](https://www.shadcn-vue.com/docs/components/badge) | [StatusBadge](/components/StatusBadge) |

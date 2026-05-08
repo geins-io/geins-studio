@@ -207,7 +207,7 @@ const confirmAdd = () => {
         disable-teleport
       >
         <template #item="{ item }">
-          <ChannelLanguageIcon
+          <FlagIcon
             v-if="item"
             :language-id="item._id"
             :name="item.name"
@@ -215,7 +215,7 @@ const confirmAdd = () => {
           />
         </template>
         <template #tag="{ item }">
-          <ChannelLanguageIcon
+          <FlagIcon
             v-if="item"
             :language-id="item._id"
             :name="item.name"

@@ -5,7 +5,7 @@
 ## Features
 
 - Loads the schema as `JSON.stringify(schema, null, 2)` each time the sheet opens
-- Live validation — parses on every keystroke, surfaces a [`Feedback`](/components/feedback/Feedback) banner with one of:
+- Live validation — parses on every keystroke, surfaces a [`Feedback`](/components/Feedback) banner with one of:
   - "Invalid JSON" — parse error
   - "Invalid schema" — parses but isn't a non-empty object
 - Apply button is disabled while invalid
@@ -71,5 +71,5 @@ Emitted on Apply with the parsed schema.
 ## Dependencies
 
 - shadcn-vue [`Sheet`](/components/shadcn-vue), `Button`
-- [`Feedback`](/components/feedback/Feedback) — warning + invalid banners
+- [`Feedback`](/components/Feedback) — warning + invalid banners
 - [`JsonCodeEditor`](/components/channel/JsonCodeEditor) (lazy)
