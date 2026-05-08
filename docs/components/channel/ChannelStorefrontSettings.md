@@ -1,6 +1,6 @@
-# `StorefrontSettings`
+# `ChannelStorefrontSettings`
 
-`StorefrontSettings` is the **Storefront settings** card on a channel's edit page — schema-driven tabs, a Preview button, an action menu for changing or resetting the schema, and the destructive reset confirmation dialog. Each tab body is a [`StorefrontSchemaRenderer`](/components/channel/StorefrontSchemaRenderer).
+`ChannelStorefrontSettings` is the **Storefront settings** card on a channel's edit page — schema-driven tabs, a Preview button, an action menu for changing or resetting the schema, and the destructive reset confirmation dialog. Each tab body is a [`StorefrontSchemaRenderer`](/components/channel/StorefrontSchemaRenderer).
 
 ## Features
 
@@ -10,7 +10,7 @@
 - Header action area:
   - Preview button (with loading state) → emits `preview`
   - More-actions dropdown:
-    - "Change schema" → emits `open-schema-editor` (parent opens [`SchemaEditorSheet`](/components/channel/SchemaEditorSheet))
+    - "Change schema" → emits `open-schema-editor` (parent opens [`ChannelSchemaEditorSheet`](/components/channel/ChannelSchemaEditorSheet))
     - "Reset schema" → opens an `AlertDialog` confirmation; confirm emits `reset-to-default`
 - `disabled` blocks the preview button (used while another action is in flight)
 
@@ -86,7 +86,7 @@ Disables the Preview button.
 
 ### `open-schema-editor`
 
-Emitted when the user picks "Change schema" — parent typically opens [`SchemaEditorSheet`](/components/channel/SchemaEditorSheet).
+Emitted when the user picks "Change schema" — parent typically opens [`ChannelSchemaEditorSheet`](/components/channel/ChannelSchemaEditorSheet).
 
 ### `reset-to-default`
 

@@ -1,6 +1,6 @@
 # `JsonCodeEditor`
 
-`JsonCodeEditor` is the CodeMirror-backed JSON editor — used inside [`SchemaEditorSheet`](/components/channel/SchemaEditorSheet) for editing the storefront-settings schema. Themed with the app's CSS custom properties so it adapts to light/dark mode automatically.
+`JsonCodeEditor` is the CodeMirror-backed JSON editor — used inside [`ChannelSchemaEditorSheet`](/components/channel/ChannelSchemaEditorSheet) for editing the storefront-settings schema. Themed with the app's CSS custom properties so it adapts to light/dark mode automatically.
 
 ## Features
 
@@ -12,7 +12,7 @@
 
 ## Usage
 
-This is typically lazy-loaded as `LazyChannelJsonCodeEditor` inside [`SchemaEditorSheet`](/components/channel/SchemaEditorSheet). The component lives at `app/components/channel/JsonCodeEditor.vue` so its auto-import name is `ChannelJsonCodeEditor`.
+This is typically lazy-loaded as `LazyChannelJsonCodeEditor` inside [`ChannelSchemaEditorSheet`](/components/channel/ChannelSchemaEditorSheet). The component lives at `app/components/channel/JsonCodeEditor.vue` so its auto-import name is `ChannelJsonCodeEditor`.
 
 ```vue
 <script setup lang="ts">

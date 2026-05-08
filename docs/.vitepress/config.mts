@@ -578,8 +578,8 @@ export default defineConfig({
             text: 'Channel — Storefront',
             items: [
               {
-                text: 'StorefrontSettings',
-                link: '/components/channel/StorefrontSettings.md',
+                text: 'ChannelStorefrontSettings',
+                link: '/components/channel/ChannelStorefrontSettings.md',
               },
               {
                 text: 'StorefrontSchemaRenderer',
@@ -590,8 +590,8 @@ export default defineConfig({
                 link: '/components/channel/SchemaField.md',
               },
               {
-                text: 'SchemaEditorSheet',
-                link: '/components/channel/SchemaEditorSheet.md',
+                text: 'ChannelSchemaEditorSheet',
+                link: '/components/channel/ChannelSchemaEditorSheet.md',
               },
               {
                 text: 'JsonCodeEditor',

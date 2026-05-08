@@ -1,6 +1,6 @@
-# `SchemaEditorSheet`
+# `ChannelSchemaEditorSheet`
 
-`SchemaEditorSheet` is the sheet for editing the storefront-settings schema as raw JSON — opens with the current schema serialized into a [`JsonCodeEditor`](/components/channel/JsonCodeEditor), validates live, and applies the parsed schema back on confirm.
+`ChannelSchemaEditorSheet` is the sheet for editing the storefront-settings schema as raw JSON — opens with the current schema serialized into a [`JsonCodeEditor`](/components/channel/JsonCodeEditor), validates live, and applies the parsed schema back on confirm.
 
 ## Features
 

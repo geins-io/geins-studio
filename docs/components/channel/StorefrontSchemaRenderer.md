@@ -10,7 +10,7 @@
 
 ## Usage
 
-This is mounted inside [`StorefrontSettings`](/components/channel/StorefrontSettings) — one renderer per tab. Direct usage is rare:
+This is mounted inside [`ChannelStorefrontSettings`](/components/channel/ChannelStorefrontSettings) — one renderer per tab. Direct usage is rare:
 
 ```vue
 <template>
