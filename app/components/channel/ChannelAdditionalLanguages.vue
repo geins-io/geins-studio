@@ -209,7 +209,7 @@ const confirmAdd = () => {
         <template #item="{ item }">
           <FlagIcon
             v-if="item"
-            :language-id="item._id"
+            :country-code="languageToCountryCode(item._id)"
             :name="item.name"
             size="sm"
           />
@@ -217,7 +217,7 @@ const confirmAdd = () => {
         <template #tag="{ item }">
           <FlagIcon
             v-if="item"
-            :language-id="item._id"
+            :country-code="languageToCountryCode(item._id)"
             :name="item.name"
             size="sm"
           />

@@ -1,34 +1,40 @@
 # `FlagIcon`
 
-`FlagIcon` is a circular flag + optional name display for a language id — derives the country code from the language id, then renders the flag via the `flagClass` utility. Used wherever channel languages are displayed (selects, tables, mail config sheet).
+`FlagIcon` is a circular country flag + optional name display. Generic — takes an ISO 3166-1 alpha-2 country code (e.g. `gb`, `se`, `de`) and renders the flag via the `flagClass` utility. Used wherever a flag indicator is shown: language selects, market selects, mail config sheet, etc.
 
 ## Features
 
-- Resolves country code from language id via `languageToCountryCode`
+- Country-code-based — pass the code directly, no internal mapping
 - Two sizes: `sm` (default, gap-2, 4.5 size, text-sm) and `md` (gap-2.5, 5 size, text-base)
-- `name` is optional — omit to render just the flag
+- `name` is optional — omit to render just the bare flag div (no `<span>` wrapper)
 
 ## Usage
 
 ```vue
 <template>
-  <FlagIcon language-id="en-GB" name="English" />
-  <FlagIcon language-id="sv-SE" size="md" />
+  <!-- bare flag -->
+  <FlagIcon country-code="se" />
+
+  <!-- with label -->
+  <FlagIcon country-code="gb" name="United Kingdom" />
+
+  <!-- from a language code, use the helper -->
+  <FlagIcon :country-code="languageToCountryCode('sv')" name="Swedish" size="md" />
 </template>
 ```
 
 > [!NOTE]
-> The component lives at `app/components/FlagIcon.vue` so its auto-import name is `FlagIcon`. The prop is still `languageId` (not `countryCode`) — the component resolves the country code internally.
+> For language-shaped data, call the auto-imported `languageToCountryCode(langCode)` helper before passing the result into `FlagIcon`. Keeps the component domain-agnostic.
 
 ## Props
 
-### `languageId`
+### `countryCode`
 
 ```ts
-languageId: string
+countryCode: string
 ```
 
-Language id (e.g. `'en-GB'`, `'sv-SE'`). The country code is derived for the flag image.
+ISO 3166-1 alpha-2 country code. Case-insensitive — the `flagClass` utility lower-cases internally.
 
 ### `name`
 
@@ -36,7 +42,7 @@ Language id (e.g. `'en-GB'`, `'sv-SE'`). The country code is derived for the fla
 name?: string
 ```
 
-Optional label rendered next to the flag.
+Optional label rendered next to the flag. When omitted, the component renders the bare flag div (no wrapping `<span>`).
 
 ### `size`
 
@@ -49,4 +55,3 @@ size?: 'sm' | 'md'
 ## Dependencies
 
 - `flagClass` utility — Tailwind class for the flag background image
-- `languageToCountryCode` utility — language id → country code

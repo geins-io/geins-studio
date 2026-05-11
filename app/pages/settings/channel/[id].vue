@@ -969,7 +969,7 @@ if (!createMode.value) {
                   <div class="flex items-center gap-2.5 px-4 py-5">
                     <FlagIcon
                       v-if="defaultLanguage"
-                      :language-id="defaultLanguage._id"
+                      :country-code="languageToCountryCode(defaultLanguage._id)"
                       :name="defaultLanguage.name"
                     />
                     <span v-else class="text-muted-foreground text-sm"
