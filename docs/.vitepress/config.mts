@@ -170,6 +170,7 @@ export default defineConfig({
           },
           {
             text: 'Buttons',
+            collapsed: true,
             items: [
               {
                 text: 'ButtonExport',
@@ -180,6 +181,7 @@ export default defineConfig({
           },
           {
             text: 'Dialogs',
+            collapsed: true,
             items: [
               {
                 text: 'DialogDelete',
@@ -354,6 +356,7 @@ export default defineConfig({
           },
           {
             text: 'Selector',
+            collapsed: true,
             items: [
               {
                 text: 'Selector',
@@ -512,6 +515,7 @@ export default defineConfig({
           },
           {
             text: 'Layout',
+            collapsed: true,
             items: [
               {
                 text: 'LayoutHeader',
@@ -537,9 +541,8 @@ export default defineConfig({
           },
           {
             text: 'Auth',
-            items: [
-              { text: 'AuthForm', link: '/components/auth/AuthForm.md' },
-            ],
+            collapsed: true,
+            items: [{ text: 'AuthForm', link: '/components/auth/AuthForm.md' }],
           },
           {
             text: 'Channel',
@@ -619,16 +622,13 @@ export default defineConfig({
                     text: 'ChannelSchemaEditorSheet',
                     link: '/components/channel/ChannelSchemaEditorSheet.md',
                   },
-                  {
-                    text: 'JsonCodeEditor',
-                    link: '/components/channel/JsonCodeEditor.md',
-                  },
                 ],
               },
             ],
           },
           {
             text: 'Company',
+            collapsed: true,
             items: [
               {
                 text: 'CompanyBuyerPanel',
@@ -638,6 +638,7 @@ export default defineConfig({
           },
           {
             text: 'Price list',
+            collapsed: true,
             items: [
               {
                 text: 'PriceListRulesWrapper',
@@ -667,6 +668,7 @@ export default defineConfig({
           },
           {
             text: 'Quotation',
+            collapsed: true,
             items: [
               {
                 text: 'QuotationDialogStatusTransition',
@@ -706,6 +708,7 @@ export default defineConfig({
               { text: 'Error500', link: '/components/Error500.md' },
               { text: 'Feedback', link: '/components/Feedback.md' },
               { text: 'FlagIcon', link: '/components/FlagIcon.md' },
+              { text: 'JsonCodeEditor', link: '/components/JsonCodeEditor.md' },
               {
                 text: 'SchemaFormField',
                 link: '/components/SchemaFormField.md',

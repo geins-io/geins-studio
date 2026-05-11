@@ -1,6 +1,6 @@
 # `ChannelSchemaEditorSheet`
 
-`ChannelSchemaEditorSheet` is the sheet for editing the storefront-settings schema as raw JSON — opens with the current schema serialized into a [`JsonCodeEditor`](/components/channel/JsonCodeEditor), validates live, and applies the parsed schema back on confirm.
+`ChannelSchemaEditorSheet` is the sheet for editing the storefront-settings schema as raw JSON — opens with the current schema serialized into a [`JsonCodeEditor`](/components/JsonCodeEditor), validates live, and applies the parsed schema back on confirm.
 
 ## Features
 
@@ -10,7 +10,7 @@
   - "Invalid schema" — parses but isn't a non-empty object
 - Apply button is disabled while invalid
 - Warning banner at the top about destructive consequences of editing the schema directly
-- Lazy-loads the CodeMirror editor (`LazyChannelJsonCodeEditor`) — the editor bundle isn't pulled in until the sheet opens
+- Lazy-loads the CodeMirror editor (`LazyJsonCodeEditor`) — the editor bundle isn't pulled in until the sheet opens
 
 ## Usage
 
@@ -72,4 +72,4 @@ Emitted on Apply with the parsed schema.
 
 - shadcn-vue [`Sheet`](/components/shadcn-vue), `Button`
 - [`Feedback`](/components/Feedback) — warning + invalid banners
-- [`JsonCodeEditor`](/components/channel/JsonCodeEditor) (lazy)
+- [`JsonCodeEditor`](/components/JsonCodeEditor) (lazy)
