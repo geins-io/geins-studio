@@ -7,7 +7,7 @@
 - Filters the default language out of the table (managed separately on the channel)
 - Inline active toggle per row — emits `update` so the parent can persist
 - Delete action opens an `AlertDialog` confirmation; confirms emit `remove`
-- Add dialog uses [`FormInputTagsSearch`](/components/form/input/FormInputTagsSearch) over the languages not yet assigned, with [`ChannelLanguageIcon`](/components/channel/LanguageIcon) flags
+- Add dialog uses [`FormInputTagsSearch`](/components/form/input/FormInputTagsSearch) over the languages not yet assigned, with [`FlagIcon`](/components/FlagIcon) flags
 - Empty state with a `Languages` icon when there are no additional languages
 
 ## Usage
@@ -81,5 +81,5 @@ Emitted after the user confirms the remove dialog.
 
 - shadcn-vue `Item`, `ItemContent`, `ItemTitle`, `ItemDescription`, `ItemActions`, `Button`, [`Dialog`](/components/shadcn-vue), [`AlertDialog`](/components/shadcn-vue)
 - [`TableView`](/components/table/TableView) (in `Minimal` mode), [`useColumns`](/composables/useColumns)
-- [`FormInputTagsSearch`](/components/form/input/FormInputTagsSearch), `ChannelLanguageIcon`
+- [`FormInputTagsSearch`](/components/form/input/FormInputTagsSearch), [`FlagIcon`](/components/FlagIcon)
 - `languageToCountryCode` utility

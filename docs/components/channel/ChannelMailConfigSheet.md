@@ -84,7 +84,7 @@ Standard `defineModel` companion.
 ## Dependencies
 
 - shadcn-vue [`Sheet`](/components/shadcn-vue), [`Tabs`](/components/shadcn-vue), `Textarea`, `Label`, `Badge`, `Skeleton`, `Empty`, `Button`
-- [`FormInputLanguageSelect`](/components/form/input/FormInputLanguageSelect), [`FormInputDescription`](/components/form/input/FormInputDescription), [`Feedback`](/components/feedback/Feedback), [`ButtonIcon`](/components/button/ButtonIcon)
+- [`FormInputLanguageSelect`](/components/form/input/FormInputLanguageSelect), [`FormInputDescription`](/components/form/input/FormInputDescription), [`Feedback`](/components/Feedback), [`ButtonIcon`](/components/button/ButtonIcon)
 - [`useGeinsRepository`](/composables/useGeinsRepository) — `accountApi.channel.id(...).mail`
 - [`usePageError`](/composables/usePageError), `useToast`
 - `prettifyLangKey` utility

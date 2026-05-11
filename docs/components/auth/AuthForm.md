@@ -10,7 +10,7 @@
 - Built-in PIN input for the 6-digit MFA code (auto-submits on complete)
 - Account picker list when the user belongs to multiple accounts
 - Owns the password-reset request and reset flows internally — calls `userApi.password.beginRestore` and `userApi.password.restore` directly
-- Surfaces errors via [`Feedback`](/components/feedback/Feedback) with mode-specific titles and descriptions
+- Surfaces errors via [`Feedback`](/components/Feedback) with mode-specific titles and descriptions
 - "Back to login" button on every non-login mode
 
 ## Usage
@@ -138,5 +138,5 @@ Emitted by internal links/buttons (forgot password, back to login, internal erro
 ## Dependencies
 
 - shadcn-vue `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `Button`, `Input`, `PinInput`, `PinInputGroup`, `PinInputSlot`, `Form` family
-- [`Feedback`](/components/feedback/Feedback) — error/success banner
+- [`Feedback`](/components/Feedback) — error/success banner
 - vee-validate + zod, [`useGeinsRepository`](/composables/useGeinsRepository) (`userApi.password`), [`useGeinsLog`](/composables/useGeinsLog)

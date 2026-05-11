@@ -1,7 +1,7 @@
 import type {
   StorefrontSchema,
   StorefrontSettings,
-  SchemaField,
+  SchemaFormField,
 } from '#shared/types';
 
 /**
@@ -15,7 +15,7 @@ export function getDefaultSettings(
 ): StorefrontSettings {
   let settings: StorefrontSettings = {};
 
-  function collectDefaults(fields: SchemaField[]) {
+  function collectDefaults(fields: SchemaFormField[]) {
     for (const field of fields) {
       if (field.default !== undefined) {
         settings = setSettingValue(settings, field.key, field.default);
@@ -41,9 +41,9 @@ export function getDefaultSettings(
  * Sub-sections use `columns` for internal layout, not parent grid placement.
  */
 export function groupFieldsIntoRows(
-  fields: SchemaField[],
-): { columns: number; fields: SchemaField[] }[] {
-  const rows: { columns: number; fields: SchemaField[] }[] = [];
+  fields: SchemaFormField[],
+): { columns: number; fields: SchemaFormField[] }[] {
+  const rows: { columns: number; fields: SchemaFormField[] }[] = [];
 
   for (const field of fields) {
     const cols = field.type === 'sub-section' ? 1 : (field.columns ?? 1);

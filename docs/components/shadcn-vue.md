@@ -17,8 +17,8 @@ npx shadcn-vue@latest add <component>
 
 | Primitive | Upstream docs | Used in (Geins components) |
 | --- | --- | --- |
-| `Alert` | [shadcn-vue.com/docs/components/alert](https://www.shadcn-vue.com/docs/components/alert) | [Feedback](/components/feedback/Feedback) |
-| `AlertDialog` | [shadcn-vue.com/docs/components/alert-dialog](https://www.shadcn-vue.com/docs/components/alert-dialog) | [DialogDelete](/components/dialog/DialogDelete), [DialogStatusTransition](/components/dialog/DialogStatusTransition), [DialogUnsavedChanges](/components/dialog/DialogUnsavedChanges) |
+| `Alert` | [shadcn-vue.com/docs/components/alert](https://www.shadcn-vue.com/docs/components/alert) | [Feedback](/components/Feedback) |
+| `AlertDialog` | [shadcn-vue.com/docs/components/alert-dialog](https://www.shadcn-vue.com/docs/components/alert-dialog) | [DialogDelete](/components/dialog/DialogDelete), [QuotationDialogStatusTransition](/components/quotation/QuotationDialogStatusTransition), [DialogUnsavedChanges](/components/dialog/DialogUnsavedChanges) |
 | `Avatar` | [shadcn-vue.com/docs/components/avatar](https://www.shadcn-vue.com/docs/components/avatar) | [LayoutSidebarUser](/components/layout/sidebar/LayoutSidebarUser) |
 | `Badge` | [shadcn-vue.com/docs/components/badge](https://www.shadcn-vue.com/docs/components/badge) | [StatusBadge](/components/StatusBadge) |
 | `Button` | [shadcn-vue.com/docs/components/button](https://www.shadcn-vue.com/docs/components/button) | [ButtonIcon](/components/button/ButtonIcon), most edit/list pages |
@@ -27,18 +27,18 @@ npx shadcn-vue@latest add <component>
 | `Collapsible` | [shadcn-vue.com/docs/components/collapsible](https://www.shadcn-vue.com/docs/components/collapsible) | [LayoutSidebar](/components/layout/sidebar/LayoutSidebar) |
 | `Dialog` | [shadcn-vue.com/docs/components/dialog](https://www.shadcn-vue.com/docs/components/dialog) | composition primitives, settings sheets |
 | `DropdownMenu` | [shadcn-vue.com/docs/components/dropdown-menu](https://www.shadcn-vue.com/docs/components/dropdown-menu) | [ButtonExport](/components/button/ButtonExport), [LayoutSidebarUser](/components/layout/sidebar/LayoutSidebarUser) |
-| `Empty` | [shadcn-vue.com/docs/components/empty](https://www.shadcn-vue.com/docs/components/empty) | [TableView](/components/table/TableView), [404](/components/error/404), [500](/components/error/500) |
+| `Empty` | [shadcn-vue.com/docs/components/empty](https://www.shadcn-vue.com/docs/components/empty) | [TableView](/components/table/TableView), [Error404](/components/Error404), [Error500](/components/Error500) |
 | `Form` (`FormField`, `FormItem`, `FormLabel`, `FormControl`, `FormDescription`) | [shadcn-vue.com/docs/components/form](https://www.shadcn-vue.com/docs/components/form) | All form pages, [FormItemSwitch](/components/form/item/FormItemSwitch) |
 | `Input` | [shadcn-vue.com/docs/components/input](https://www.shadcn-vue.com/docs/components/input) | [TableView](/components/table/TableView) search, form inputs |
-| `Label` | [shadcn-vue.com/docs/components/label](https://www.shadcn-vue.com/docs/components/label) | [DialogStatusTransition](/components/dialog/DialogStatusTransition) |
+| `Label` | [shadcn-vue.com/docs/components/label](https://www.shadcn-vue.com/docs/components/label) | [QuotationDialogStatusTransition](/components/quotation/QuotationDialogStatusTransition) |
 | `Popover` | [shadcn-vue.com/docs/components/popover](https://www.shadcn-vue.com/docs/components/popover) | search/select fields |
 | `Select` | [shadcn-vue.com/docs/components/select](https://www.shadcn-vue.com/docs/components/select) | [TablePagination](/components/table/TablePagination) |
-| `Sheet` | [shadcn-vue.com/docs/components/sheet](https://www.shadcn-vue.com/docs/components/sheet) | [TableColumnToggle](/components/table/TableColumnToggle), `ChannelMailConfigSheet`, `SchemaEditorSheet` |
+| `Sheet` | [shadcn-vue.com/docs/components/sheet](https://www.shadcn-vue.com/docs/components/sheet) | [TableColumnToggle](/components/table/TableColumnToggle), `ChannelMailConfigSheet`, `ChannelSchemaEditorSheet` |
 | `Sidebar` | [shadcn-vue.com/docs/components/sidebar](https://www.shadcn-vue.com/docs/components/sidebar) | [LayoutSidebar](/components/layout/sidebar/LayoutSidebar) |
 | `Switch` | [shadcn-vue.com/docs/components/switch](https://www.shadcn-vue.com/docs/components/switch) | [FormItemSwitch](/components/form/item/FormItemSwitch) |
 | `Table` (`TableHeader`, `TableRow`, `TableCell`, `TableHead`, `TableBody`) | [shadcn-vue.com/docs/components/table](https://www.shadcn-vue.com/docs/components/table) | [TableView](/components/table/TableView) |
-| `Tabs` (`TabsList`, `TabsTrigger`, `TabsContent`) | [shadcn-vue.com/docs/components/tabs](https://www.shadcn-vue.com/docs/components/tabs) | edit pages, [DialogStatusTransition](/components/dialog/DialogStatusTransition) |
-| `Textarea` | [shadcn-vue.com/docs/components/textarea](https://www.shadcn-vue.com/docs/components/textarea) | [DialogStatusTransition](/components/dialog/DialogStatusTransition), description fields |
+| `Tabs` (`TabsList`, `TabsTrigger`, `TabsContent`) | [shadcn-vue.com/docs/components/tabs](https://www.shadcn-vue.com/docs/components/tabs) | edit pages, [QuotationDialogStatusTransition](/components/quotation/QuotationDialogStatusTransition) |
+| `Textarea` | [shadcn-vue.com/docs/components/textarea](https://www.shadcn-vue.com/docs/components/textarea) | [QuotationDialogStatusTransition](/components/quotation/QuotationDialogStatusTransition), description fields |
 | `Toast` (`useToast`) | [shadcn-vue.com/docs/components/toast](https://www.shadcn-vue.com/docs/components/toast) | imported via `@/components/ui/toast/use-toast` — `useEntityEdit` handles CRUD toasts |
 | `Tooltip` (`TooltipContent`, `TooltipTrigger`) | [shadcn-vue.com/docs/components/tooltip](https://www.shadcn-vue.com/docs/components/tooltip) | table cells, content components |
 

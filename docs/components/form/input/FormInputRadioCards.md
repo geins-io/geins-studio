@@ -15,10 +15,10 @@
 
 ```vue
 <script setup lang="ts">
-import type { SchemaFieldOption } from '#shared/types';
+import type { SchemaFormFieldOption } from '#shared/types';
 
 const layout = ref<string>('grid');
-const options: SchemaFieldOption[] = [
+const options: SchemaFormFieldOption[] = [
   { value: 'grid', label: 'Grid', description: 'Tile cards in a grid', icon: 'LayoutGrid' },
   { value: 'list', label: 'List', description: 'Stack cards vertically', icon: 'List' },
 ];
@@ -34,7 +34,7 @@ const options: SchemaFieldOption[] = [
 ### `options`
 
 ```ts
-options: SchemaFieldOption[]
+options: SchemaFormFieldOption[]
 ```
 
 Cards to render. Each option drives the card's title, description, icon, and (for `type === 'color'`) the color swatch.

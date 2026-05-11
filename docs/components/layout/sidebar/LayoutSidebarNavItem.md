@@ -1,6 +1,6 @@
-# `SidebarNavItem`
+# `LayoutSidebarNavItem`
 
-`SidebarNavItem` is the clickable item used inside [`SidebarNav`](/components/sidebar/SidebarNav) — typically the step picker for selector flows. Maps a `SelectorSelectionOptionsId` to a Lucide icon and emits `click` when activated.
+`LayoutSidebarNavItem` is the clickable item used inside [`LayoutSidebarNav`](/components/layout/sidebar/LayoutSidebarNav) — typically the step picker for selector flows. Maps a `SelectorSelectionOptionsId` to a Lucide icon and emits `click` when activated.
 
 ## Features
 
@@ -13,11 +13,11 @@
 
 ```vue
 <template>
-  <SidebarNav>
-    <SidebarNavItem id="product" :current="active === 'product'" @click="active = 'product'">
+  <LayoutSidebarNav>
+    <LayoutSidebarNavItem id="product" :current="active === 'product'" @click="active = 'product'">
       {{ $t('products') }}
-    </SidebarNavItem>
-  </SidebarNav>
+    </LayoutSidebarNavItem>
+  </LayoutSidebarNav>
 </template>
 ```
 
