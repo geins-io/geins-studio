@@ -33,7 +33,7 @@ npx shadcn-vue@latest add <component>
 | `Label` | [shadcn-vue.com/docs/components/label](https://www.shadcn-vue.com/docs/components/label) | [QuotationDialogStatusTransition](/components/quotation/QuotationDialogStatusTransition) |
 | `Popover` | [shadcn-vue.com/docs/components/popover](https://www.shadcn-vue.com/docs/components/popover) | search/select fields |
 | `Select` | [shadcn-vue.com/docs/components/select](https://www.shadcn-vue.com/docs/components/select) | [TablePagination](/components/table/TablePagination) |
-| `Sheet` | [shadcn-vue.com/docs/components/sheet](https://www.shadcn-vue.com/docs/components/sheet) | [TableColumnToggle](/components/table/TableColumnToggle), `ChannelMailConfigSheet`, `SchemaEditorSheet` |
+| `Sheet` | [shadcn-vue.com/docs/components/sheet](https://www.shadcn-vue.com/docs/components/sheet) | [TableColumnToggle](/components/table/TableColumnToggle), `ChannelMailConfigSheet`, `ChannelSchemaEditorSheet` |
 | `Sidebar` | [shadcn-vue.com/docs/components/sidebar](https://www.shadcn-vue.com/docs/components/sidebar) | [LayoutSidebar](/components/layout/sidebar/LayoutSidebar) |
 | `Switch` | [shadcn-vue.com/docs/components/switch](https://www.shadcn-vue.com/docs/components/switch) | [FormItemSwitch](/components/form/item/FormItemSwitch) |
 | `Table` (`TableHeader`, `TableRow`, `TableCell`, `TableHead`, `TableBody`) | [shadcn-vue.com/docs/components/table](https://www.shadcn-vue.com/docs/components/table) | [TableView](/components/table/TableView) |
