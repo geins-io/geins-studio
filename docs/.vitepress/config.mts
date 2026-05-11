@@ -170,6 +170,7 @@ export default defineConfig({
           },
           {
             text: 'Buttons',
+            collapsed: true,
             items: [
               {
                 text: 'ButtonExport',
@@ -180,14 +181,11 @@ export default defineConfig({
           },
           {
             text: 'Dialogs',
+            collapsed: true,
             items: [
               {
                 text: 'DialogDelete',
                 link: '/components/dialog/DialogDelete.md',
-              },
-              {
-                text: 'DialogStatusTransition',
-                link: '/components/dialog/DialogStatusTransition.md',
               },
               {
                 text: 'DialogUnsavedChanges',
@@ -196,83 +194,91 @@ export default defineConfig({
             ],
           },
           {
-            text: 'Form layout',
-            items: [
-              { text: 'FormGrid', link: '/components/form/FormGrid.md' },
-              {
-                text: 'FormGridWrap',
-                link: '/components/form/FormGridWrap.md',
-              },
-              {
-                text: 'FormItemSwitch',
-                link: '/components/form/item/FormItemSwitch.md',
-              },
-            ],
-          },
-          {
-            text: 'Form inputs',
+            text: 'Form',
+            collapsed: true,
             items: [
               {
-                text: 'FormInputChannels',
-                link: '/components/form/input/FormInputChannels.md',
+                text: 'Layout',
+                items: [
+                  { text: 'FormGrid', link: '/components/form/FormGrid.md' },
+                  {
+                    text: 'FormGridWrap',
+                    link: '/components/form/FormGridWrap.md',
+                  },
+                  {
+                    text: 'FormItemSwitch',
+                    link: '/components/form/item/FormItemSwitch.md',
+                  },
+                ],
               },
               {
-                text: 'FormInputColor',
-                link: '/components/form/input/FormInputColor.md',
-              },
-              {
-                text: 'FormInputCountrySelect',
-                link: '/components/form/input/FormInputCountrySelect.md',
-              },
-              {
-                text: 'FormInputDate',
-                link: '/components/form/input/FormInputDate.md',
-              },
-              {
-                text: 'FormInputDescription',
-                link: '/components/form/input/FormInputDescription.md',
-              },
-              {
-                text: 'FormInputFont',
-                link: '/components/form/input/FormInputFont.md',
-              },
-              {
-                text: 'FormInputImage',
-                link: '/components/form/input/FormInputImage.md',
-              },
-              {
-                text: 'FormInputLanguageSelect',
-                link: '/components/form/input/FormInputLanguageSelect.md',
-              },
-              {
-                text: 'FormInputLocked',
-                link: '/components/form/input/FormInputLocked.md',
-              },
-              {
-                text: 'FormInputMarketSelect',
-                link: '/components/form/input/FormInputMarketSelect.md',
-              },
-              {
-                text: 'FormInputPixel',
-                link: '/components/form/input/FormInputPixel.md',
-              },
-              {
-                text: 'FormInputRadioCards',
-                link: '/components/form/input/FormInputRadioCards.md',
-              },
-              {
-                text: 'FormInputSelectSearch',
-                link: '/components/form/input/FormInputSelectSearch.md',
-              },
-              {
-                text: 'FormInputTagsSearch',
-                link: '/components/form/input/FormInputTagsSearch.md',
+                text: 'Inputs',
+                items: [
+                  {
+                    text: 'FormInputChannels',
+                    link: '/components/form/input/FormInputChannels.md',
+                  },
+                  {
+                    text: 'FormInputColor',
+                    link: '/components/form/input/FormInputColor.md',
+                  },
+                  {
+                    text: 'FormInputCountrySelect',
+                    link: '/components/form/input/FormInputCountrySelect.md',
+                  },
+                  {
+                    text: 'FormInputDate',
+                    link: '/components/form/input/FormInputDate.md',
+                  },
+                  {
+                    text: 'FormInputDescription',
+                    link: '/components/form/input/FormInputDescription.md',
+                  },
+                  {
+                    text: 'FormInputFont',
+                    link: '/components/form/input/FormInputFont.md',
+                  },
+                  {
+                    text: 'FormInputImage',
+                    link: '/components/form/input/FormInputImage.md',
+                  },
+                  {
+                    text: 'FormInputLanguageSelect',
+                    link: '/components/form/input/FormInputLanguageSelect.md',
+                  },
+                  {
+                    text: 'FormInputLocked',
+                    link: '/components/form/input/FormInputLocked.md',
+                  },
+                  {
+                    text: 'FormInputMarketSelect',
+                    link: '/components/form/input/FormInputMarketSelect.md',
+                  },
+                  {
+                    text: 'FormInputPixel',
+                    link: '/components/form/input/FormInputPixel.md',
+                  },
+                  {
+                    text: 'FormInputRadioCards',
+                    link: '/components/form/input/FormInputRadioCards.md',
+                  },
+                  {
+                    text: 'FormInputSelectSearch',
+                    link: '/components/form/input/FormInputSelectSearch.md',
+                  },
+                  {
+                    text: 'FormInputTagsSearch',
+                    link: '/components/form/input/FormInputTagsSearch.md',
+                  },
+                ],
               },
             ],
           },
           {
             text: 'Tables',
+            collapsed: true,
             items: [
+              { text: 'TableView', link: '/components/table/TableView.md' },
               {
                 text: 'TableColumnToggle',
                 link: '/components/table/TableColumnToggle.md',
@@ -281,76 +287,76 @@ export default defineConfig({
                 text: 'TablePagination',
                 link: '/components/table/TablePagination.md',
               },
-              { text: 'TableView', link: '/components/table/TableView.md' },
               {
                 text: 'TableHeaderSort',
                 link: '/components/table/header/TableHeaderSort.md',
               },
-            ],
-          },
-          {
-            text: 'Table cells',
-            items: [
               {
-                text: 'TableCellActions',
-                link: '/components/table/cell/TableCellActions.md',
-              },
-              {
-                text: 'TableCellBoolean',
-                link: '/components/table/cell/TableCellBoolean.md',
-              },
-              {
-                text: 'TableCellChannels',
-                link: '/components/table/cell/TableCellChannels.md',
-              },
-              {
-                text: 'TableCellCurrency',
-                link: '/components/table/cell/TableCellCurrency.md',
-              },
-              {
-                text: 'TableCellDelete',
-                link: '/components/table/cell/TableCellDelete.md',
-              },
-              {
-                text: 'TableCellEdit',
-                link: '/components/table/cell/TableCellEdit.md',
-              },
-              {
-                text: 'TableCellEditable',
-                link: '/components/table/cell/TableCellEditable.md',
-              },
-              {
-                text: 'TableCellFlag',
-                link: '/components/table/cell/TableCellFlag.md',
-              },
-              {
-                text: 'TableCellLongText',
-                link: '/components/table/cell/TableCellLongText.md',
-              },
-              {
-                text: 'TableCellProduct',
-                link: '/components/table/cell/TableCellProduct.md',
-              },
-              {
-                text: 'TableCellStatus',
-                link: '/components/table/cell/TableCellStatus.md',
-              },
-              {
-                text: 'TableCellSwitch',
-                link: '/components/table/cell/TableCellSwitch.md',
-              },
-              {
-                text: 'TableCellTags',
-                link: '/components/table/cell/TableCellTags.md',
-              },
-              {
-                text: 'TableCellTooltip',
-                link: '/components/table/cell/TableCellTooltip.md',
+                text: 'Cells',
+                items: [
+                  {
+                    text: 'TableCellActions',
+                    link: '/components/table/cell/TableCellActions.md',
+                  },
+                  {
+                    text: 'TableCellBoolean',
+                    link: '/components/table/cell/TableCellBoolean.md',
+                  },
+                  {
+                    text: 'TableCellChannels',
+                    link: '/components/table/cell/TableCellChannels.md',
+                  },
+                  {
+                    text: 'TableCellCurrency',
+                    link: '/components/table/cell/TableCellCurrency.md',
+                  },
+                  {
+                    text: 'TableCellDelete',
+                    link: '/components/table/cell/TableCellDelete.md',
+                  },
+                  {
+                    text: 'TableCellEdit',
+                    link: '/components/table/cell/TableCellEdit.md',
+                  },
+                  {
+                    text: 'TableCellEditable',
+                    link: '/components/table/cell/TableCellEditable.md',
+                  },
+                  {
+                    text: 'TableCellFlag',
+                    link: '/components/table/cell/TableCellFlag.md',
+                  },
+                  {
+                    text: 'TableCellLongText',
+                    link: '/components/table/cell/TableCellLongText.md',
+                  },
+                  {
+                    text: 'TableCellProduct',
+                    link: '/components/table/cell/TableCellProduct.md',
+                  },
+                  {
+                    text: 'TableCellStatus',
+                    link: '/components/table/cell/TableCellStatus.md',
+                  },
+                  {
+                    text: 'TableCellSwitch',
+                    link: '/components/table/cell/TableCellSwitch.md',
+                  },
+                  {
+                    text: 'TableCellTags',
+                    link: '/components/table/cell/TableCellTags.md',
+                  },
+                  {
+                    text: 'TableCellTooltip',
+                    link: '/components/table/cell/TableCellTooltip.md',
+                  },
+                ],
               },
             ],
           },
           {
             text: 'Selector',
+            collapsed: true,
             items: [
               {
                 text: 'Selector',
@@ -392,6 +398,7 @@ export default defineConfig({
           },
           {
             text: 'Content',
+            collapsed: true,
             items: [
               {
                 text: 'ContentActionBar',
@@ -406,14 +413,6 @@ export default defineConfig({
                 link: '/components/content/ContentAddressForm.md',
               },
               {
-                text: 'ContentCard',
-                link: '/components/content/ContentCard.md',
-              },
-              {
-                text: 'ContentCardHeader',
-                link: '/components/content/ContentCardHeader.md',
-              },
-              {
                 text: 'ContentDataList',
                 link: '/components/content/ContentDataList.md',
               },
@@ -424,10 +423,6 @@ export default defineConfig({
               {
                 text: 'ContentHeading',
                 link: '/components/content/ContentHeading.md',
-              },
-              {
-                text: 'ContentLinkCard',
-                link: '/components/content/ContentLinkCard.md',
               },
               {
                 text: 'ContentPriceSummary',
@@ -446,17 +441,81 @@ export default defineConfig({
                 link: '/components/content/ContentTitleBlock.md',
               },
               {
-                text: 'ContentTextCopy',
-                link: '/components/content/text/ContentTextCopy.md',
+                text: 'Card',
+                items: [
+                  {
+                    text: 'ContentCard',
+                    link: '/components/content/ContentCard.md',
+                  },
+                  {
+                    text: 'ContentCardHeader',
+                    link: '/components/content/ContentCardHeader.md',
+                  },
+                  {
+                    text: 'ContentCardLinked',
+                    link: '/components/content/ContentCardLinked.md',
+                  },
+                ],
               },
               {
-                text: 'ContentTextTooltip',
-                link: '/components/content/text/ContentTextTooltip.md',
+                text: 'Text',
+                items: [
+                  {
+                    text: 'ContentTextCopy',
+                    link: '/components/content/text/ContentTextCopy.md',
+                  },
+                  {
+                    text: 'ContentTextTooltip',
+                    link: '/components/content/text/ContentTextTooltip.md',
+                  },
+                ],
+              },
+              {
+                text: 'Edit',
+                items: [
+                  {
+                    text: 'ContentEditWrap',
+                    link: '/components/content/edit/ContentEditWrap.md',
+                  },
+                  {
+                    text: 'ContentEditMain',
+                    link: '/components/content/edit/ContentEditMain.md',
+                  },
+                  {
+                    text: 'ContentEditMainContent',
+                    link: '/components/content/edit/ContentEditMainContent.md',
+                  },
+                  {
+                    text: 'ContentEditCard',
+                    link: '/components/content/edit/ContentEditCard.md',
+                  },
+                  {
+                    text: 'ContentEditTabs',
+                    link: '/components/content/edit/ContentEditTabs.md',
+                  },
+                  {
+                    text: 'ContentEditSummary',
+                    link: '/components/content/edit/ContentEditSummary.md',
+                  },
+                  {
+                    text: 'ContentEditAddressPanel',
+                    link: '/components/content/edit/ContentEditAddressPanel.md',
+                  },
+                  {
+                    text: 'ContentEditCustomerPanel',
+                    link: '/components/content/edit/ContentEditCustomerPanel.md',
+                  },
+                  {
+                    text: 'ContentEditHasChanges',
+                    link: '/components/content/edit/ContentEditHasChanges.md',
+                  },
+                ],
               },
             ],
           },
           {
             text: 'Layout',
+            collapsed: true,
             items: [
               {
                 text: 'LayoutHeader',
@@ -470,137 +529,106 @@ export default defineConfig({
                 text: 'LayoutSidebarUser',
                 link: '/components/layout/sidebar/LayoutSidebarUser.md',
               },
-            ],
-          },
-          {
-            text: 'Sidebar nav',
-            items: [
               {
-                text: 'SidebarNav',
-                link: '/components/sidebar/SidebarNav.md',
+                text: 'LayoutSidebarNav',
+                link: '/components/layout/sidebar/LayoutSidebarNav.md',
               },
               {
-                text: 'SidebarNavItem',
-                link: '/components/sidebar/SidebarNavItem.md',
-              },
-            ],
-          },
-          {
-            text: 'Errors',
-            items: [
-              { text: '404', link: '/components/error/404.md' },
-              { text: '500', link: '/components/error/500.md' },
-            ],
-          },
-          {
-            text: 'Feedback',
-            items: [
-              {
-                text: 'Feedback',
-                link: '/components/feedback/Feedback.md',
+                text: 'LayoutSidebarNavItem',
+                link: '/components/layout/sidebar/LayoutSidebarNavItem.md',
               },
             ],
           },
           {
             text: 'Auth',
-            items: [
-              { text: 'AuthForm', link: '/components/auth/AuthForm.md' },
-            ],
+            collapsed: true,
+            items: [{ text: 'AuthForm', link: '/components/auth/AuthForm.md' }],
           },
           {
-            text: 'Channel — Markets',
+            text: 'Channel',
+            collapsed: true,
             items: [
               {
-                text: 'ChannelAddMarketDialog',
-                link: '/components/channel/ChannelAddMarketDialog.md',
+                text: 'Markets',
+                items: [
+                  {
+                    text: 'ChannelAddMarketDialog',
+                    link: '/components/channel/ChannelAddMarketDialog.md',
+                  },
+                  {
+                    text: 'ChannelAdditionalLanguages',
+                    link: '/components/channel/ChannelAdditionalLanguages.md',
+                  },
+                  {
+                    text: 'ChannelAdditionalMarkets',
+                    link: '/components/channel/ChannelAdditionalMarkets.md',
+                  },
+                  {
+                    text: 'ChannelDefaultMarket',
+                    link: '/components/channel/ChannelDefaultMarket.md',
+                  },
+                ],
               },
               {
-                text: 'ChannelAdditionalLanguages',
-                link: '/components/channel/ChannelAdditionalLanguages.md',
+                text: 'Mail',
+                items: [
+                  {
+                    text: 'ChannelMailsTab',
+                    link: '/components/channel/ChannelMailsTab.md',
+                  },
+                  {
+                    text: 'ChannelMailGeneralTab',
+                    link: '/components/channel/ChannelMailGeneralTab.md',
+                  },
+                  {
+                    text: 'ChannelMailContentTab',
+                    link: '/components/channel/ChannelMailContentTab.md',
+                  },
+                  {
+                    text: 'ChannelMailLayoutTab',
+                    link: '/components/channel/ChannelMailLayoutTab.md',
+                  },
+                  {
+                    text: 'ChannelMailContentRow',
+                    link: '/components/channel/ChannelMailContentRow.md',
+                  },
+                  {
+                    text: 'ChannelMailConfigSheet',
+                    link: '/components/channel/ChannelMailConfigSheet.md',
+                  },
+                ],
               },
               {
-                text: 'ChannelAdditionalMarkets',
-                link: '/components/channel/ChannelAdditionalMarkets.md',
+                text: 'Payments',
+                items: [
+                  {
+                    text: 'ChannelPaymentsTab',
+                    link: '/components/channel/ChannelPaymentsTab.md',
+                  },
+                  {
+                    text: 'ChannelPaymentRow',
+                    link: '/components/channel/ChannelPaymentRow.md',
+                  },
+                ],
               },
               {
-                text: 'ChannelDefaultMarket',
-                link: '/components/channel/ChannelDefaultMarket.md',
-              },
-              {
-                text: 'LanguageIcon',
-                link: '/components/channel/LanguageIcon.md',
-              },
-            ],
-          },
-          {
-            text: 'Channel — Mail',
-            items: [
-              {
-                text: 'ChannelMailsTab',
-                link: '/components/channel/ChannelMailsTab.md',
-              },
-              {
-                text: 'ChannelMailGeneralTab',
-                link: '/components/channel/ChannelMailGeneralTab.md',
-              },
-              {
-                text: 'ChannelMailContentTab',
-                link: '/components/channel/ChannelMailContentTab.md',
-              },
-              {
-                text: 'ChannelMailLayoutTab',
-                link: '/components/channel/ChannelMailLayoutTab.md',
-              },
-              {
-                text: 'ChannelMailContentRow',
-                link: '/components/channel/ChannelMailContentRow.md',
-              },
-              {
-                text: 'ChannelMailConfigSheet',
-                link: '/components/channel/ChannelMailConfigSheet.md',
-              },
-            ],
-          },
-          {
-            text: 'Channel — Payments',
-            items: [
-              {
-                text: 'ChannelPaymentsTab',
-                link: '/components/channel/ChannelPaymentsTab.md',
-              },
-              {
-                text: 'ChannelPaymentRow',
-                link: '/components/channel/ChannelPaymentRow.md',
-              },
-            ],
-          },
-          {
-            text: 'Channel — Storefront',
-            items: [
-              {
-                text: 'StorefrontSettings',
-                link: '/components/channel/StorefrontSettings.md',
-              },
-              {
-                text: 'StorefrontSchemaRenderer',
-                link: '/components/channel/StorefrontSchemaRenderer.md',
-              },
-              {
-                text: 'SchemaField',
-                link: '/components/channel/SchemaField.md',
-              },
-              {
-                text: 'SchemaEditorSheet',
-                link: '/components/channel/SchemaEditorSheet.md',
-              },
-              {
-                text: 'JsonCodeEditor',
-                link: '/components/channel/JsonCodeEditor.md',
+                text: 'Storefront',
+                items: [
+                  {
+                    text: 'ChannelStorefrontSettings',
+                    link: '/components/channel/ChannelStorefrontSettings.md',
+                  },
+                  {
+                    text: 'ChannelSchemaEditorSheet',
+                    link: '/components/channel/ChannelSchemaEditorSheet.md',
+                  },
+                ],
               },
             ],
           },
           {
             text: 'Company',
+            collapsed: true,
             items: [
               {
                 text: 'CompanyBuyerPanel',
@@ -609,61 +637,8 @@ export default defineConfig({
             ],
           },
           {
-            text: 'Content — Edit',
-            items: [
-              {
-                text: 'ContentEditWrap',
-                link: '/components/content/edit/ContentEditWrap.md',
-              },
-              {
-                text: 'ContentEditMain',
-                link: '/components/content/edit/ContentEditMain.md',
-              },
-              {
-                text: 'ContentEditMainContent',
-                link: '/components/content/edit/ContentEditMainContent.md',
-              },
-              {
-                text: 'ContentEditCard',
-                link: '/components/content/edit/ContentEditCard.md',
-              },
-              {
-                text: 'ContentEditTabs',
-                link: '/components/content/edit/ContentEditTabs.md',
-              },
-              {
-                text: 'ContentEditSummary',
-                link: '/components/content/edit/ContentEditSummary.md',
-              },
-              {
-                text: 'ContentEditAddressPanel',
-                link: '/components/content/edit/ContentEditAddressPanel.md',
-              },
-              {
-                text: 'ContentEditCustomerPanel',
-                link: '/components/content/edit/ContentEditCustomerPanel.md',
-              },
-              {
-                text: 'ContentEditHasChanges',
-                link: '/components/content/edit/ContentEditHasChanges.md',
-              },
-            ],
-          },
-          {
-            text: 'Content — Quotation',
-            items: [
-              {
-                text: 'ContentQuotationCustomerDisplay',
-                link: '/components/content/quotation/ContentQuotationCustomerDisplay.md',
-              },
-              {
-                text: 'ContentQuotationWorkflowInfo',
-                link: '/components/content/quotation/ContentQuotationWorkflowInfo.md',
-              },
-            ],
-          },
-          {
             text: 'Price list',
+            collapsed: true,
             items: [
               {
                 text: 'PriceListRulesWrapper',
@@ -693,7 +668,20 @@ export default defineConfig({
           },
           {
             text: 'Quotation',
+            collapsed: true,
             items: [
+              {
+                text: 'QuotationDialogStatusTransition',
+                link: '/components/quotation/QuotationDialogStatusTransition.md',
+              },
+              {
+                text: 'QuotationCustomerDisplay',
+                link: '/components/quotation/QuotationCustomerDisplay.md',
+              },
+              {
+                text: 'QuotationWorkflowInfo',
+                link: '/components/quotation/QuotationWorkflowInfo.md',
+              },
               {
                 text: 'QuotationCommunications',
                 link: '/components/quotation/QuotationCommunications.md',
@@ -713,8 +701,19 @@ export default defineConfig({
             ],
           },
           {
-            text: 'Other',
+            text: 'Global',
+            collapsed: true,
             items: [
+              { text: 'Error404', link: '/components/Error404.md' },
+              { text: 'Error500', link: '/components/Error500.md' },
+              { text: 'Feedback', link: '/components/Feedback.md' },
+              { text: 'FlagIcon', link: '/components/FlagIcon.md' },
+              { text: 'JsonCodeEditor', link: '/components/JsonCodeEditor.md' },
+              {
+                text: 'SchemaFormField',
+                link: '/components/SchemaFormField.md',
+              },
+              { text: 'SchemaRenderer', link: '/components/SchemaRenderer.md' },
               { text: 'StatusBadge', link: '/components/StatusBadge.md' },
             ],
           },

@@ -118,9 +118,9 @@ const handleKeyDown = () => {
         @keydown.enter.prevent="handleKeyDown"
       >
         <span v-if="choice" class="inline-flex items-center">
-          <ChannelLanguageIcon
+          <FlagIcon
             v-if="showFlags"
-            :language-id="choice.value"
+            :country-code="languageToCountryCode(choice.value)"
             :name="choice.label"
           />
           <template v-else>{{ choice.label }}</template>
@@ -169,9 +169,9 @@ const handleKeyDown = () => {
             :key="item.value"
             :value="item"
           >
-            <ChannelLanguageIcon
+            <FlagIcon
               v-if="showFlags"
-              :language-id="item.value"
+              :country-code="languageToCountryCode(item.value)"
               :name="item.label"
             />
             <template v-else>{{ item.label }}</template>

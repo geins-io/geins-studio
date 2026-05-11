@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SchemaField, StorefrontSettings } from '#shared/types';
+import type { SchemaFormField, StorefrontSettings } from '#shared/types';
 import {
   getSettingValue,
   setSettingValue,
@@ -7,11 +7,11 @@ import {
   gridClass,
 } from '@/utils/storefront';
 
-defineOptions({ name: 'ChannelSchemaField' });
+defineOptions({ name: 'SchemaFormField' });
 
 const props = withDefaults(
   defineProps<{
-    field: SchemaField;
+    field: SchemaFormField;
     modelValue: StorefrontSettings;
     nested?: boolean;
     isFirstSubSection?: boolean;
@@ -32,7 +32,7 @@ function updateValue(key: string, value: unknown) {
   emit('update:modelValue', setSettingValue(props.modelValue, key, value));
 }
 
-function isVisible(field: SchemaField): boolean {
+function isVisible(field: SchemaFormField): boolean {
   if (!field.visibleWhen) return true;
   return (
     getSettingValue(props.modelValue, field.visibleWhen.field) ===
@@ -238,7 +238,7 @@ function isVisible(field: SchemaField): boolean {
       :class="gridClass(field.columns, 'gap-8')"
     >
       <template v-for="child in field.children" :key="child.key">
-        <ChannelSchemaField
+        <SchemaFormField
           v-if="isVisible(child)"
           :field="child"
           :model-value="modelValue"
@@ -255,7 +255,7 @@ function isVisible(field: SchemaField): boolean {
       >
         <div :class="row.columns > 1 ? gridClass(row.columns) : undefined">
           <template v-for="child in row.fields" :key="child.key">
-            <ChannelSchemaField
+            <SchemaFormField
               v-if="isVisible(child)"
               :field="child"
               :model-value="modelValue"

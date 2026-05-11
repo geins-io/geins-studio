@@ -6,11 +6,6 @@ defineProps<{
 </script>
 
 <template>
-  <span class="inline-flex items-center gap-2">
-    <div
-      v-if="code"
-      :class="[flagClass(code), 'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat']"
-    />
-    <span class="text-sm">{{ label }}</span>
-  </span>
+  <FlagIcon v-if="code" :country-code="code" :name="label" />
+  <span v-else class="text-sm">{{ label }}</span>
 </template>

@@ -194,7 +194,7 @@ A toggle that, when enabled, reveals a secondary choice (radio buttons or radio 
 | `key`             | Inner property name (e.g. `access` → produces `features.priceVisibility.access`) |
 | `label`           | Optional label shown above the revealed choice                               |
 | `type`            | `radio` or `radio-cards` — delegates to the matching renderer                |
-| `options`         | Choice options (`SchemaFieldOption[]`)                                       |
+| `options`         | Choice options (`SchemaFormFieldOption[]`)                                   |
 
 **Renders as:** A `ContentSwitch` with a master `Switch`; flipping it on reveals the inner choice with an animated transition.
 

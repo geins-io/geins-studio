@@ -1,11 +1,11 @@
 # `FormInputLanguageSelect`
 
-`FormInputLanguageSelect` is a single-value language picker — a combobox over a `Language[]` dataset with optional flag rendering via `ChannelLanguageIcon`.
+`FormInputLanguageSelect` is a single-value language picker — a combobox over a `Language[]` dataset with optional flag rendering via `FlagIcon`.
 
 ## Features
 
 - Searchable combobox with portaled dropdown
-- Optional flag display (`showFlags`) — renders `ChannelLanguageIcon` next to each option
+- Optional flag display (`showFlags`) — renders `FlagIcon` next to each option
 - Caller-supplied dataset (no implicit account-store binding — use the appropriate language list for your context)
 - `disableTeleport` escape hatch for dialogs/sheets
 
@@ -75,4 +75,4 @@ Selected language `_id`.
 ## Dependencies
 
 - reka-ui `Combobox`, `ComboboxPortal`
-- `ChannelLanguageIcon` (used when `showFlags` is on)
+- `FlagIcon` (used when `showFlags` is on)

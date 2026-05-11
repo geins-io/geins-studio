@@ -1,6 +1,6 @@
-# `SchemaField`
+# `SchemaFormField`
 
-`SchemaField` is the recursive renderer for a single field inside a storefront-settings schema — switches across ten field types and recurses into `sub-section` children. Component lives at `app/components/channel/SchemaField.vue` and registers with `name: 'ChannelSchemaField'` so it can self-recurse cleanly inside the template.
+`SchemaFormField` is the recursive renderer for a single field inside a schema-driven form — switches across ten field types and recurses into `sub-section` children. Component lives at `app/components/SchemaFormField.vue` and registers with `name: 'SchemaFormField'` so it can self-recurse cleanly inside the template.
 
 ## Features
 
@@ -23,11 +23,11 @@
 
 ## Usage
 
-This is recursive and called from [`StorefrontSchemaRenderer`](/components/channel/StorefrontSchemaRenderer). Direct usage is rare:
+This is recursive and called from [`SchemaRenderer`](/components/SchemaRenderer). Direct usage is rare:
 
 ```vue
 <template>
-  <ChannelSchemaField
+  <SchemaFormField
     :field="field"
     :model-value="settings"
     @update:model-value="settings = $event"
@@ -40,7 +40,7 @@ This is recursive and called from [`StorefrontSchemaRenderer`](/components/chann
 ### `field`
 
 ```ts
-field: SchemaField
+field: SchemaFormField
 ```
 
 The field descriptor. The `type` property switches the renderer.
