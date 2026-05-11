@@ -68,7 +68,20 @@ const handlePositions = computed(() => {
     </div>
 
     <!-- Condition preview -->
-    <div v-if="data.config?.field" class="text-muted-foreground bg-muted/50 mt-2 rounded px-2 py-1 text-xs">
+    <div v-if="data.conditions && data.conditions.length > 0" class="mt-2 space-y-0.5">
+      <div
+        v-for="cond in data.conditions.slice(0, 3)"
+        :key="cond.label"
+        class="flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px]"
+      >
+        <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
+        <span class="text-muted-foreground min-w-0 truncate font-mono">{{ cond.condition || cond.label }}</span>
+      </div>
+      <div v-if="data.conditions.length > 3" class="text-muted-foreground px-2 text-[10px] opacity-60">
+        +{{ data.conditions.length - 3 }} more
+      </div>
+    </div>
+    <div v-else-if="data.config?.field" class="bg-muted/50 text-muted-foreground mt-2 rounded px-2 py-1 text-xs">
       {{ data.config.field }} {{ data.config.operator }} "{{ data.config.value }}"
     </div>
 

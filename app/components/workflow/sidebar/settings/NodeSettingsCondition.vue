@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue'
+import type { ExpressionCompletion } from '@/components/workflow/shared/ExpressionInput.vue'
+import type { Ref } from 'vue'
 
 type ConditionEntry = { label: string, condition: string, description?: string }
 
@@ -41,11 +43,216 @@ function removeCondition(index: number) {
   updateConditions(updated)
 }
 
+function duplicateCondition(index: number) {
+  const source = conditions.value[index]
+  if (!source) return
+  const copy = { ...source, label: `${source.label} (copy)` }
+  const updated = [...conditions.value]
+  updated.splice(index + 1, 0, copy)
+  updateConditions(updated)
+}
+
 function updateConditionField(index: number, field: keyof ConditionEntry, value: string) {
   const updated = conditions.value.map((c, i) =>
     i === index ? { ...c, [field]: value } : c,
   )
   updateConditions(updated)
+}
+
+// ─── Builder mode per condition ──────────────────────────────────
+const OPERATORS = [
+  { value: '==', label: 'equals (==)' },
+  { value: '!=', label: 'not equals (!=)' },
+  { value: '>', label: 'greater than (>)' },
+  { value: '<', label: 'less than (<)' },
+  { value: '>=', label: 'greater or equal (>=)' },
+  { value: '<=', label: 'less or equal (<=)' },
+] as const
+
+const FUNCTIONS = [
+  { value: 'IsEmpty', label: 'is empty', template: 'IsEmpty({field})' },
+  { value: '!IsEmpty', label: 'is not empty', template: '!IsEmpty({field})' },
+  { value: 'Contains', label: 'contains', template: 'Contains({field}, \'{value}\')' },
+  { value: 'StartsWith', label: 'starts with', template: 'StartsWith({field}, \'{value}\')' },
+  { value: 'EndsWith', label: 'ends with', template: 'EndsWith({field}, \'{value}\')' },
+] as const
+
+type OperatorValue = typeof OPERATORS[number]['value']
+type FunctionValue = typeof FUNCTIONS[number]['value']
+
+interface BuilderClause {
+  field: string
+  operator: OperatorValue | FunctionValue
+  value: string
+}
+
+function parseExpression(expr: string): BuilderClause | null {
+  if (!expr.trim()) return null
+
+  for (const fn of FUNCTIONS) {
+    const negated = fn.value.startsWith('!')
+    const fnName = negated ? fn.value.slice(1) : fn.value
+    const pattern = negated
+      ? new RegExp(`^!${fnName}\\(([^,)]+)(?:,\\s*'([^']*)')?\\)$`)
+      : new RegExp(`^${fnName}\\(([^,)]+)(?:,\\s*'([^']*)')?\\)$`)
+    const m = expr.trim().match(pattern)
+    if (m) {
+      return { field: m[1].trim(), operator: fn.value, value: m[2] ?? '' }
+    }
+  }
+
+  const compMatch = expr.trim().match(/^(.+?)\s*(==|!=|>=|<=|>|<)\s*(.+)$/)
+  if (compMatch) {
+    let val = compMatch[3].trim()
+    if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"'))) {
+      val = val.slice(1, -1)
+    }
+    return { field: compMatch[1].trim(), operator: compMatch[2] as OperatorValue, value: val }
+  }
+
+  return null
+}
+
+function serializeClause(clause: BuilderClause): string {
+  const fn = FUNCTIONS.find(f => f.value === clause.operator)
+  if (fn) {
+    return fn.template.replace('{field}', clause.field).replace('{value}', clause.value)
+  }
+  const isNumeric = clause.value !== '' && !Number.isNaN(Number(clause.value))
+  const isBool = clause.value === 'true' || clause.value === 'false'
+  const isRef = clause.value.includes('.')
+  const val = (isNumeric || isBool || isRef) ? clause.value : `'${clause.value}'`
+  return `${clause.field} ${clause.operator} ${val}`
+}
+
+const conditionModes = ref<Record<number, 'builder' | 'expression'>>({})
+
+function getMode(index: number): 'builder' | 'expression' {
+  if (conditionModes.value[index]) return conditionModes.value[index]
+  const cond = conditions.value[index]
+  if (!cond || !cond.condition) return 'builder'
+  return parseExpression(cond.condition) ? 'builder' : 'expression'
+}
+
+function toggleMode(index: number) {
+  const current = getMode(index)
+  conditionModes.value[index] = current === 'builder' ? 'expression' : 'builder'
+}
+
+function getBuilderClause(index: number): BuilderClause {
+  const cond = conditions.value[index]
+  if (!cond?.condition) return { field: '', operator: '==', value: '' }
+  return parseExpression(cond.condition) ?? { field: '', operator: '==', value: '' }
+}
+
+function updateBuilderClause(index: number, patch: Partial<BuilderClause>) {
+  const current = getBuilderClause(index)
+  const updated = { ...current, ...patch }
+  const fn = FUNCTIONS.find(f => f.value === updated.operator)
+  const needsValue = fn ? fn.template.includes('{value}') : true
+  if (updated.field && (needsValue ? updated.value !== '' : true)) {
+    updateConditionField(index, 'condition', serializeClause(updated))
+  }
+  else if (updated.field && !needsValue) {
+    updateConditionField(index, 'condition', serializeClause(updated))
+  }
+}
+
+function operatorNeedsValue(op: string): boolean {
+  const fn = FUNCTIONS.find(f => f.value === op)
+  if (!fn) return true
+  return fn.template.includes('{value}')
+}
+
+// ─── Available fields from upstream completions ─────────────────
+const completions = inject<Ref<ExpressionCompletion[]>>('expressionCompletions', ref([]))
+
+const fieldOptions = computed(() => {
+  return completions.value.map(c => ({
+    value: c.expression.replace(/^\{\{|\}\}$/g, ''),
+    label: c.label,
+    detail: c.detail,
+    section: c.section,
+  }))
+})
+
+const groupedFields = computed(() => {
+  const groups = new Map<string, typeof fieldOptions.value>()
+  for (const f of fieldOptions.value) {
+    const section = f.section ?? 'other'
+    if (!groups.has(section)) groups.set(section, [])
+    groups.get(section)!.push(f)
+  }
+  return groups
+})
+
+// ─── Drag to reorder ──────────────────────────────────────────
+const dragIndex = ref<number | null>(null)
+const dragOverIndex = ref<number | null>(null)
+
+function onDragStart(index: number, event: DragEvent) {
+  dragIndex.value = index
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+function onDragOver(index: number, event: DragEvent) {
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+  dragOverIndex.value = index
+}
+
+function onDrop(index: number) {
+  const from = dragIndex.value
+  if (from === null || from === index) return
+  const updated = [...conditions.value]
+  const [moved] = updated.splice(from, 1)
+  updated.splice(index, 0, moved)
+  updateConditions(updated)
+  dragIndex.value = null
+  dragOverIndex.value = null
+}
+
+function onDragEnd() {
+  dragIndex.value = null
+  dragOverIndex.value = null
+}
+
+// ─── Quick-start templates ───────────────────────────────────────
+const TEMPLATES = [
+  { label: 'Check output status', condition: "output.nodeId.status == 'success'", description: 'Branch on a previous node result' },
+  { label: 'Compare input value', condition: 'input.amount > 100', description: 'Numeric comparison on workflow input' },
+  { label: 'Check if empty', condition: 'IsEmpty(output.nodeId.result)', description: 'Branch when a value is empty' },
+] as const
+
+function applyTemplate(tmpl: typeof TEMPLATES[number]) {
+  const updated = [...conditions.value, { label: '', condition: tmpl.condition, description: '' }]
+  updateConditions(updated)
+}
+
+// ─── Syntax reference toggle ─────────────────────────────────────
+const showReference = ref(false)
+
+// ─── Field search popover per condition ──────────────────────────
+const fieldSearch = ref('')
+const activeFieldPopover = ref<number | null>(null)
+
+const filteredFields = computed(() => {
+  const q = fieldSearch.value.toLowerCase()
+  if (!q) return fieldOptions.value
+  return fieldOptions.value.filter(f =>
+    f.value.toLowerCase().includes(q)
+    || f.label.toLowerCase().includes(q)
+    || (f.detail ?? '').toLowerCase().includes(q),
+  )
+})
+
+function selectField(index: number, fieldValue: string) {
+  updateBuilderClause(index, { field: fieldValue })
+  activeFieldPopover.value = null
+  fieldSearch.value = ''
 }
 </script>
 
@@ -65,76 +272,319 @@ function updateConditionField(index: number, field: keyof ConditionEntry, value:
         </button>
       </div>
 
-      <div v-if="conditions.length === 0" class="text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
-        No conditions defined. Add a condition to create a branch.
+      <!-- Empty state -->
+      <div v-if="conditions.length === 0" class="space-y-3">
+        <div class="text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
+          <LucideGitBranch class="mx-auto mb-2 h-6 w-6 opacity-40" />
+          <p class="font-medium">No conditions yet</p>
+          <p class="mt-1 opacity-70">Add a condition to create decision branches.</p>
+        </div>
+
+        <!-- Quick-start templates -->
+        <div class="space-y-1.5">
+          <p class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">Quick start</p>
+          <button
+            v-for="tmpl in TEMPLATES"
+            :key="tmpl.label"
+            type="button"
+            class="bg-muted/30 hover:bg-muted flex w-full items-start gap-2 rounded-md border border-dashed px-3 py-2 text-left transition-colors"
+            @click="applyTemplate(tmpl)"
+          >
+            <LucidePlus class="text-muted-foreground mt-0.5 h-3 w-3 shrink-0" />
+            <div>
+              <div class="text-xs font-medium">{{ tmpl.label }}</div>
+              <div class="text-muted-foreground mt-0.5 font-mono text-[10px]">{{ tmpl.condition }}</div>
+            </div>
+          </button>
+        </div>
       </div>
 
-      <div class="space-y-3">
+      <!-- Condition cards -->
+      <div class="space-y-2">
         <div
           v-for="(cond, i) in conditions"
           :key="i"
-          class="bg-muted/30 space-y-2 rounded-md border p-3"
+          class="group/card relative rounded-md border transition-all"
+          :class="[
+            dragOverIndex === i && dragIndex !== i ? 'border-primary border-dashed' : '',
+            dragIndex === i ? 'opacity-40' : '',
+          ]"
+          draggable="true"
+          @dragstart="onDragStart(i, $event)"
+          @dragover="onDragOver(i, $event)"
+          @drop="onDrop(i)"
+          @dragend="onDragEnd"
         >
-          <div class="flex items-start justify-between gap-2">
-            <div class="flex-1 space-y-2">
-              <div class="space-y-1">
-                <label class="text-muted-foreground text-xs">Label</label>
-                <Input
-                  :model-value="cond.label"
-                  placeholder="e.g. ok, found, valid"
-                  size="sm"
-                  @update:model-value="updateConditionField(i, 'label', String($event))"
-                />
-              </div>
-              <div class="space-y-1">
-                <label class="text-muted-foreground text-xs">Expression</label>
-                <ExpressionInput
-                  :model-value="cond.condition"
-                  placeholder="e.g. output.node.success == true"
-                  size="sm"
-                  @update:model-value="updateConditionField(i, 'condition', String($event))"
-                />
-              </div>
-              <div class="space-y-1">
-                <label class="text-muted-foreground text-xs">Description <span class="opacity-50">(optional)</span></label>
-                <Input
-                  :model-value="cond.description ?? ''"
-                  placeholder="What this branch means"
-                  size="sm"
-                  @update:model-value="updateConditionField(i, 'description', String($event))"
-                />
+          <!-- Card header: number badge + label + actions -->
+          <div class="flex items-center gap-2 px-3 pt-2.5 pb-1">
+            <!-- Drag handle + number badge -->
+            <div class="flex shrink-0 cursor-grab items-center gap-1.5 active:cursor-grabbing">
+              <LucideGripVertical class="text-muted-foreground/40 group-hover/card:text-muted-foreground h-3 w-3 transition-colors" />
+              <span class="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/15 text-[10px] font-bold text-green-600 dark:text-green-400">
+                {{ i + 1 }}
+              </span>
+            </div>
+
+            <!-- Label input -->
+            <Input
+              :model-value="cond.label"
+              placeholder="Branch label"
+              size="sm"
+              class="h-7 flex-1 border-none bg-transparent px-1 font-medium shadow-none focus-visible:ring-0"
+              @update:model-value="updateConditionField(i, 'label', String($event))"
+            />
+
+            <!-- Actions -->
+            <div class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/card:opacity-100 focus-within:opacity-100">
+              <!-- Mode toggle -->
+              <button
+                type="button"
+                class="rounded p-1 text-[10px] font-bold transition-colors"
+                :class="getMode(i) === 'expression'
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'"
+                :title="getMode(i) === 'expression' ? 'Switch to builder' : 'Switch to expression'"
+                @click="toggleMode(i)"
+              >
+                <LucideCode2 class="h-3 w-3" />
+              </button>
+              <button
+                type="button"
+                class="text-muted-foreground hover:text-foreground hover:bg-muted rounded p-1 transition-colors"
+                title="Duplicate"
+                @click="duplicateCondition(i)"
+              >
+                <LucideCopy class="h-3 w-3" />
+              </button>
+              <button
+                type="button"
+                class="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded p-1 transition-colors"
+                title="Remove"
+                @click="removeCondition(i)"
+              >
+                <LucideTrash2 class="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Condition body -->
+          <div class="px-3 pt-1 pb-3">
+            <!-- Builder mode -->
+            <div v-if="getMode(i) === 'builder'" class="space-y-1.5">
+              <!-- Field selector -->
+              <Popover :open="activeFieldPopover === i" @update:open="(val: boolean) => { if (!val) { activeFieldPopover = null; fieldSearch = '' } }">
+                <PopoverTrigger as-child>
+                  <button
+                    type="button"
+                    class="bg-muted/50 hover:bg-muted flex h-7 w-full items-center gap-1.5 rounded-md border px-2 text-left font-mono text-xs transition-colors"
+                    @click="activeFieldPopover = activeFieldPopover === i ? null : i"
+                  >
+                    <LucideVariable class="text-muted-foreground h-3 w-3 shrink-0" />
+                    <span v-if="getBuilderClause(i).field" class="min-w-0 flex-1 truncate">{{ getBuilderClause(i).field }}</span>
+                    <span v-else class="text-muted-foreground min-w-0 flex-1 truncate">Select field...</span>
+                    <LucideChevronsUpDown class="text-muted-foreground h-3 w-3 shrink-0 opacity-50" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent v-if="activeFieldPopover === i" class="w-72 p-0" align="start">
+                  <div class="border-b p-2">
+                    <Input
+                      v-model="fieldSearch"
+                      placeholder="Search fields..."
+                      size="sm"
+                      class="h-7"
+                    />
+                  </div>
+                  <div class="max-h-48 overflow-y-auto p-1">
+                    <template v-if="filteredFields.length > 0">
+                      <template v-for="[section, fields] in groupedFields" :key="section">
+                        <div
+                          v-if="fields.some(f => filteredFields.includes(f))"
+                          class="text-muted-foreground px-2 pt-2 pb-1 text-[10px] font-medium tracking-wider uppercase"
+                        >
+                          {{ section }}
+                        </div>
+                        <button
+                          v-for="f in fields.filter(f => filteredFields.includes(f))"
+                          :key="f.value"
+                          type="button"
+                          class="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs"
+                          @click="selectField(i, f.value)"
+                        >
+                          <span class="min-w-0 flex-1 truncate font-mono">{{ f.value }}</span>
+                          <span v-if="f.detail" class="text-muted-foreground shrink-0 truncate text-[10px]">{{ f.detail }}</span>
+                        </button>
+                      </template>
+                    </template>
+                    <div v-else class="text-muted-foreground px-2 py-4 text-center text-xs">
+                      <p>No matching fields</p>
+                      <p class="mt-1 opacity-60">Type a field path manually in expression mode</p>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <!-- Operator selector -->
+              <Select
+                :model-value="getBuilderClause(i).operator"
+                @update:model-value="updateBuilderClause(i, { operator: $event as OperatorValue })"
+              >
+                <SelectTrigger size="sm" class="h-7 font-mono text-xs">
+                  <SelectValue placeholder="Operator" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel class="text-[10px]">Comparison</SelectLabel>
+                    <SelectItem
+                      v-for="op in OPERATORS"
+                      :key="op.value"
+                      :value="op.value"
+                      class="font-mono text-xs"
+                    >
+                      {{ op.label }}
+                    </SelectItem>
+                  </SelectGroup>
+                  <SelectSeparator />
+                  <SelectGroup>
+                    <SelectLabel class="text-[10px]">Functions</SelectLabel>
+                    <SelectItem
+                      v-for="fn in FUNCTIONS"
+                      :key="fn.value"
+                      :value="fn.value"
+                      class="text-xs"
+                    >
+                      {{ fn.label }}
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+
+              <!-- Value input (hidden for unary operators) -->
+              <Input
+                v-if="operatorNeedsValue(getBuilderClause(i).operator)"
+                :model-value="getBuilderClause(i).value"
+                placeholder="Value"
+                size="sm"
+                class="h-7 font-mono text-xs"
+                @update:model-value="updateBuilderClause(i, { value: String($event) })"
+              />
+
+              <!-- Preview of generated expression -->
+              <div v-if="cond.condition" class="text-muted-foreground truncate px-0.5 font-mono text-[10px] leading-relaxed">
+                <span class="opacity-40">expr: </span>{{ cond.condition }}
               </div>
             </div>
-            <button
-              type="button"
-              class="text-muted-foreground hover:text-destructive mt-4 flex-shrink-0"
-              title="Remove condition"
-              @click="removeCondition(i)"
-            >
-              <LucideTrash2 class="h-3.5 w-3.5" />
-            </button>
+
+            <!-- Expression mode -->
+            <div v-else class="space-y-1.5">
+              <ExpressionInput
+                :model-value="cond.condition"
+                placeholder="e.g. output.node.status == 'active'"
+                size="sm"
+                @update:model-value="updateConditionField(i, 'condition', String($event))"
+              />
+            </div>
+
+            <!-- Description (collapsible) -->
+            <div class="mt-2">
+              <Input
+                :model-value="cond.description ?? ''"
+                placeholder="Description (optional)"
+                size="sm"
+                class="text-muted-foreground h-6 border-none bg-transparent px-0 text-[11px] italic shadow-none focus-visible:ring-0"
+                @update:model-value="updateConditionField(i, 'description', String($event))"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Add condition button (shown below existing conditions) -->
+        <button
+          v-if="conditions.length > 0"
+          type="button"
+          class="text-muted-foreground hover:text-foreground hover:border-foreground/20 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed py-1.5 text-xs transition-colors"
+          @click="addCondition"
+        >
+          <LucidePlus class="h-3 w-3" />
+          Add condition
+        </button>
+      </div>
+    </div>
+
+    <!-- Default / fallback branch -->
+    <div class="border-t pt-4">
+      <div class="flex items-center gap-2">
+        <span class="bg-muted-foreground/15 text-muted-foreground flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold">
+          *
+        </span>
+        <div class="flex-1 space-y-1">
+          <label class="text-sm font-medium">Default branch</label>
+          <p class="text-muted-foreground text-[11px]">Fallback when no condition matches.</p>
+        </div>
+      </div>
+      <Input
+        :model-value="defaultLabel"
+        placeholder="e.g. default, else, fallback"
+        size="sm"
+        class="mt-2"
+        @update:model-value="updateDefaultLabel(String($event))"
+      />
+    </div>
+
+    <!-- Expression reference (collapsible) -->
+    <div class="border-t pt-3">
+      <button
+        type="button"
+        class="text-muted-foreground hover:text-foreground flex w-full items-center gap-1.5 text-xs transition-colors"
+        @click="showReference = !showReference"
+      >
+        <LucideBookOpen class="h-3 w-3" />
+        Expression reference
+        <LucideChevronDown class="ml-auto h-3 w-3 transition-transform" :class="showReference ? 'rotate-180' : ''" />
+      </button>
+
+      <div v-if="showReference" class="text-muted-foreground mt-3 space-y-3 text-[11px]">
+        <div>
+          <p class="mb-1 font-medium">Evaluation order</p>
+          <p>Conditions evaluate top-to-bottom — first match wins. Use drag handles to reorder.</p>
+        </div>
+
+        <div>
+          <p class="mb-1 font-medium">Syntax</p>
+          <!-- eslint-disable-next-line vue/no-parsing-error -->
+          <p>Use <strong>bare paths</strong> (no <code class="bg-muted rounded px-1">{<!-- -->{&nbsp;}<!-- -->}</code> wrapping).</p>
+          <div class="bg-muted/50 mt-1.5 space-y-0.5 rounded-md px-2 py-1.5 font-mono text-[10px]">
+            <p>output.nodeId.status == 'active'</p>
+            <p>input.amount > 100</p>
+            <p>!IsEmpty(output.nodeId.email)</p>
+            <p>Contains(input.name, 'test')</p>
+          </div>
+        </div>
+
+        <div>
+          <p class="mb-1 font-medium">Operators</p>
+          <div class="bg-muted/50 grid grid-cols-3 gap-x-3 gap-y-0.5 rounded-md px-2 py-1.5 font-mono text-[10px]">
+            <span>== equals</span>
+            <span>!= not eq</span>
+            <span>&gt; greater</span>
+            <span>&lt; less</span>
+            <span>&gt;= gte</span>
+            <span>&lt;= lte</span>
+            <span>&amp;&amp; and</span>
+            <span>|| or</span>
+            <span>! not</span>
+          </div>
+        </div>
+
+        <div>
+          <p class="mb-1 font-medium">Functions</p>
+          <div class="bg-muted/50 space-y-0.5 rounded-md px-2 py-1.5 font-mono text-[10px]">
+            <p>IsEmpty(val), Contains(str, sub)</p>
+            <p>StartsWith(str, prefix)</p>
+            <p>EndsWith(str, suffix)</p>
+            <p>Len(str), Count(arr)</p>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Default label -->
-    <div class="border-t pt-4">
-      <div class="space-y-1">
-        <label class="text-sm font-medium">Default label</label>
-        <p class="text-muted-foreground text-xs">Fallback branch when no condition matches.</p>
-        <Input
-          :model-value="defaultLabel"
-          placeholder="e.g. default, error, fallback"
-          size="sm"
-          @update:model-value="updateDefaultLabel(String($event))"
-        />
-      </div>
-    </div>
-
-    <div class="text-muted-foreground border-t pt-3 text-xs">
-      <p>Conditions are evaluated in order — first match wins.</p>
-      <p class="mt-1">Expressions use NCalc syntax with <code class="bg-muted rounded px-1">output.nodeId.field</code> references.</p>
     </div>
   </div>
 </template>
