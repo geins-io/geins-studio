@@ -207,17 +207,17 @@ const confirmAdd = () => {
         disable-teleport
       >
         <template #item="{ item }">
-          <ChannelLanguageIcon
+          <FlagIcon
             v-if="item"
-            :language-id="item._id"
+            :country-code="languageToCountryCode(item._id)"
             :name="item.name"
             size="sm"
           />
         </template>
         <template #tag="{ item }">
-          <ChannelLanguageIcon
+          <FlagIcon
             v-if="item"
-            :language-id="item._id"
+            :country-code="languageToCountryCode(item._id)"
             :name="item.name"
             size="sm"
           />

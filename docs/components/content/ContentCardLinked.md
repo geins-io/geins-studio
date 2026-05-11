@@ -1,4 +1,4 @@
-# `ContentLinkCard`
+# `ContentCardLinked`
 
 A clickable card that navigates to an internal route. Displays a title and description via [`ContentCardHeader`](/components/content/ContentCardHeader) and an icon indicating whether the link leads to a list or a create form.
 
@@ -14,7 +14,7 @@ A clickable card that navigates to an internal route. Displays a title and descr
 
 ```vue
 <template>
-  <ContentLinkCard
+  <ContentCardLinked
     title="Orders"
     description="View and manage all orders"
     link="/orders/list"
@@ -27,7 +27,7 @@ A clickable card that navigates to an internal route. Displays a title and descr
 
 ```vue
 <template>
-  <ContentLinkCard
+  <ContentCardLinked
     title="New Customer"
     description="Create a new customer account"
     link="/customers/new"

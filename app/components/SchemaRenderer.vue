@@ -31,7 +31,7 @@ defineEmits<{
           "
         >
           <template v-for="field in row.fields" :key="field.key">
-            <ChannelSchemaField
+            <SchemaFormField
               :field="field"
               :model-value="modelValue"
               :is-first-sub-section="

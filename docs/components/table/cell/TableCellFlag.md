@@ -4,9 +4,8 @@
 
 ## Features
 
-- Circular flag image driven by the country code (via the `flagClass` utility)
-- Label text in standard cell styling
-- Empty `code` renders just the label
+- Thin wrapper around [`FlagIcon`](/components/FlagIcon) — same flag rendering as the rest of the app
+- Empty `code` renders just the label without a flag
 
 ## Usage
 
@@ -41,4 +40,4 @@ Visible label next to the flag.
 
 ## Dependencies
 
-- `flagClass` utility — produces the Tailwind class for the country flag background
+- [`FlagIcon`](/components/FlagIcon) — flag + label rendering

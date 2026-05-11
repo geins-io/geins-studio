@@ -1,6 +1,6 @@
-# `ContentQuotationCustomerDisplay`
+# `QuotationCustomerDisplay`
 
-`ContentQuotationCustomerDisplay` is the read-only customer summary block on a quotation — company name + VAT, billing + shipping addresses, buyer + owner, and currency, all in a 2-column grid with skeleton loading.
+`QuotationCustomerDisplay` is the read-only customer summary block on a quotation — company name + VAT, billing + shipping addresses, buyer + owner, and currency, all in a 2-column grid with skeleton loading.
 
 ## Features
 
@@ -13,7 +13,7 @@
 
 ```vue
 <template>
-  <ContentQuotationCustomerDisplay
+  <QuotationCustomerDisplay
     :company-name="quotation.company.name"
     :vat-number="quotation.company.vatNumber"
     :billing-address="quotation.billingAddress"

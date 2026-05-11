@@ -1,6 +1,6 @@
-# `500`
+# `Error500`
 
-`500` is the standard server-error page — used as the body of `error.vue` when Nuxt catches an unhandled error. Renders an `Empty` primitive with "Refresh" and "Home" actions and an optional collapsed error-details disclosure.
+`Error500` is the standard server-error page — used as the body of `error.vue` when Nuxt catches an unhandled error. Renders an `Empty` primitive with "Refresh" and "Home" actions and an optional collapsed error-details disclosure.
 
 ## Features
 
