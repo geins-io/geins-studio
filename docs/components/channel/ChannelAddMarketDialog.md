@@ -78,4 +78,4 @@ Emitted on confirm with the new assignments — each `{ _id, active: true }`.
 
 - shadcn-vue [`Dialog`](/components/shadcn-vue), `Button`
 - [`FormInputTagsSearch`](/components/form/input/FormInputTagsSearch) — the picker
-- `flagClass` utility for the country flags
+- [`FlagIcon`](/components/FlagIcon) — country flag + label in item/tag slots
