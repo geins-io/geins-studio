@@ -51,6 +51,7 @@ const props = withDefaults(
     error?: boolean;
     onRetry?: () => void;
     initVisibilityState?: VisibilityState;
+    initSortingState?: SortingState;
     enableExpanding?: boolean;
     getSubRows?: (row: TData) => TData[] | undefined;
     dimInactiveRows?: boolean;
@@ -95,7 +96,7 @@ const pinnedStateOverride = computed(() => {
 /**
  * Setup table state
  */
-const sorting = ref<SortingState>([]);
+const sorting = ref<SortingState>(props.initSortingState ?? []);
 const columnFilters = ref<ColumnFiltersState>([]);
 const globalFilter = ref('');
 const searchInput = ref(''); // Local search input for debouncing

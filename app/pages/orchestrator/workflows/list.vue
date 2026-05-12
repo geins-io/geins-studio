@@ -334,7 +334,7 @@ const searchableFields: Array<keyof EntityList> = ['name', 'type', 'health', 'st
   <NuxtErrorBoundary>
     <TableView
 :loading="loading" :entity-name="entityName" :columns="columns" :data="dataList"
-      :init-visibility-state="visibilityState" :searchable-fields="searchableFields" :error="fetchError"
+      :init-visibility-state="visibilityState" :init-sorting-state="[{ id: 'createdAt', desc: true }]" :searchable-fields="searchableFields" :error="fetchError"
       :on-retry="refresh">
       <template #empty-actions>
         <ButtonIcon icon="new" variant="secondary" @click="navigateTo('/orchestrator/workflows/new')">

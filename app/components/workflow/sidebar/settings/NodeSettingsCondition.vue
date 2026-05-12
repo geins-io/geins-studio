@@ -526,7 +526,7 @@ function getError(index: number, field: string): string | undefined {
                     <LucideChevronsUpDown class="text-muted-foreground h-3 w-3 shrink-0 opacity-50" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent v-if="activeFieldPopover === i" class="w-72 p-0" align="start">
+                <PopoverContent v-if="activeFieldPopover === i" class="w-[min(500px,calc(100vw-2rem))] p-0" align="start">
                   <div class="border-b p-2">
                     <Input
                       v-model="fieldSearch"
@@ -535,7 +535,7 @@ function getError(index: number, field: string): string | undefined {
                       class="h-7"
                     />
                   </div>
-                  <div class="max-h-48 overflow-y-auto p-1">
+                  <div class="max-h-72 overflow-y-auto p-1">
                     <template v-if="filteredFields.length > 0">
                       <template v-for="[section, fields] in groupedFields" :key="section">
                         <div
@@ -548,11 +548,11 @@ function getError(index: number, field: string): string | undefined {
                           v-for="f in fields.filter(f => filteredFields.includes(f))"
                           :key="f.value"
                           type="button"
-                          class="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs"
+                          class="hover:bg-accent flex w-full flex-col rounded-sm px-2 py-1.5 text-left text-xs"
                           @click="selectField(i, f.value)"
                         >
-                          <span class="min-w-0 flex-1 truncate font-mono">{{ f.value }}</span>
-                          <span v-if="f.detail" class="text-muted-foreground shrink-0 truncate text-[10px]">{{ f.detail }}</span>
+                          <span class="w-full break-all font-mono">{{ f.value }}</span>
+                          <span v-if="f.detail" class="text-muted-foreground text-[10px]">{{ f.detail }}</span>
                         </button>
                       </template>
                     </template>
