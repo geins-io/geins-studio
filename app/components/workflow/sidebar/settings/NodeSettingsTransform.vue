@@ -152,8 +152,9 @@ function onJsonChange(text: string) {
           />
           <ExpressionInput
             :model-value="pair.value"
-            placeholder="Value or expression"
+            placeholder="{{output.node-id.field}}"
             size="sm"
+            default-mode="expression"
             @update:model-value="pair.value = String($event); onPairUpdate()"
           />
         </div>

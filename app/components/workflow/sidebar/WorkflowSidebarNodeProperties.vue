@@ -40,10 +40,25 @@ function addObjectKeyCompletions(
   obj: unknown,
   pathPrefix: string,
   section: string,
-  maxDepth = 2,
+  maxDepth = 3,
   depth = 0,
 ) {
-  if (depth >= maxDepth || typeof obj !== 'object' || obj === null || Array.isArray(obj)) return
+  if (depth >= maxDepth || obj === null || obj === undefined) return
+
+  if (Array.isArray(obj)) {
+    items.push({
+      expression: `{{${pathPrefix}[0]}}`,
+      label: `${pathPrefix.slice(pathPrefix.lastIndexOf('.') + 1)}[0]`,
+      detail: `first of ${obj.length} items`,
+      section,
+    })
+    if (obj.length > 0) {
+      addObjectKeyCompletions(items, obj[0], `${pathPrefix}[0]`, section, maxDepth, depth + 1)
+    }
+    return
+  }
+
+  if (typeof obj !== 'object') return
   for (const [k, v] of Object.entries(obj)) {
     const fullPath = `${pathPrefix}.${k}`
     const preview = v === null ? 'null'
@@ -118,7 +133,15 @@ function drillPath(obj: Record<string, unknown>, segments: string[]): unknown {
   let current: unknown = obj
   for (const seg of segments) {
     if (current === null || current === undefined || typeof current !== 'object') return undefined
-    current = (current as Record<string, unknown>)[seg]
+    const bracketMatch = seg.match(/^(.+?)\[(\d+)\]$/)
+    if (bracketMatch) {
+      current = (current as Record<string, unknown>)[bracketMatch[1]]
+      if (!Array.isArray(current)) return undefined
+      current = (current as unknown[])[Number(bracketMatch[2])]
+    }
+    else {
+      current = (current as Record<string, unknown>)[seg]
+    }
   }
   return current
 }

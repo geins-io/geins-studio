@@ -16,10 +16,12 @@ const props = withDefaults(defineProps<{
   modelValue?: string
   placeholder?: string
   size?: 'default' | 'sm'
+  defaultMode?: 'fixed' | 'expression'
 }>(), {
   modelValue: '',
   placeholder: '',
   size: 'default',
+  defaultMode: 'fixed',
 })
 
 const emit = defineEmits<{
@@ -28,7 +30,7 @@ const emit = defineEmits<{
 
 const hasExpression = (val: string) => val.includes('{{')
 
-const mode = ref<'fixed' | 'expression'>(hasExpression(props.modelValue) ? 'expression' : 'fixed')
+const mode = ref<'fixed' | 'expression'>(hasExpression(props.modelValue) ? 'expression' : props.defaultMode)
 
 const editorContainer = ref<HTMLElement>()
 let view: EditorView | null = null
