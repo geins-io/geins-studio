@@ -215,13 +215,19 @@ const removeInputRow = (index: number) => {
                 <!-- Input parameters info -->
                 <div v-if="getWorkflowInputs(wf.id).length" class="mt-1 flex flex-wrap gap-1 pl-5">
                   <span
-                    v-for="inp in getWorkflowInputs(wf.id)"
+                    v-for="inp in getWorkflowInputs(wf.id).slice(0, 5)"
                     :key="inp.name"
                     class="bg-primary/10 text-primary inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px]"
                   >
                     {{ inp.name }}
                     <span class="opacity-50">{{ inp.type }}</span>
                     <span v-if="inp.required" class="text-destructive">*</span>
+                  </span>
+                  <span
+                    v-if="getWorkflowInputs(wf.id).length > 5"
+                    class="text-muted-foreground inline-flex items-center px-1 text-[10px]"
+                  >
+                    +{{ getWorkflowInputs(wf.id).length - 5 }} more
                   </span>
                 </div>
                 <span class="text-muted-foreground mt-0.5 pl-5 font-mono text-[10px]">{{ wf.id }}</span>
