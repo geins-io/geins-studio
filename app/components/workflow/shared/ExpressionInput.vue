@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { autocompletion, acceptCompletion, startCompletion, type CompletionContext, type CompletionResult } from '@codemirror/autocomplete'
 import { EditorState } from '@codemirror/state'
-import { keymap } from '@codemirror/view'
+import { keymap, tooltips } from '@codemirror/view'
 import { EditorView, minimalSetup } from 'codemirror'
 import type { ManifestExpressionFunction } from '#shared/types'
 import type { Ref } from 'vue'
@@ -72,10 +72,84 @@ function fnSignature(fn: ManifestExpressionFunction): string {
 }
 
 function insertFunction(fn: ManifestExpressionFunction) {
-  const template = `{{${fn.name}()}}`
+  const current = props.modelValue.trim()
+  let template: string
+  let cursorOffset: number
+
+  if (current && current.startsWith('{{') && current.endsWith('}}')) {
+    const inner = current.slice(2, -2).trim()
+    if (inner) {
+      template = `{{${fn.name}(${inner})}}`
+      cursorOffset = template.length - 3
+    }
+    else {
+      template = `{{${fn.name}()}}`
+      cursorOffset = template.length - 3
+    }
+  }
+  else {
+    template = `{{${fn.name}()}}`
+    cursorOffset = template.length - 3
+  }
+
   emit('update:modelValue', template)
   showFnRef.value = false
   if (mode.value !== 'expression') mode.value = 'expression'
+
+  nextTick(() => {
+    if (view) {
+      view.focus()
+      view.dispatch({ selection: { anchor: cursorOffset } })
+    }
+  })
+}
+
+// ─── Parameter hint bar ───────────────────────────────────────────
+const paramHint = ref<{
+  fn: ManifestExpressionFunction
+  paramIndex: number
+} | null>(null)
+
+function fnByName(name: string): ManifestExpressionFunction | undefined {
+  return expressionFunctions.value.find(
+    f => f.name.toLowerCase() === name.toLowerCase()
+      || f.aliases?.some(a => a.toLowerCase() === name.toLowerCase()),
+  )
+}
+
+function parseFunctionContext(doc: string, pos: number): { fnName: string, paramIndex: number } | null {
+  const before = doc.slice(0, pos)
+  const braceStart = before.lastIndexOf('{{')
+  if (braceStart === -1) return null
+  const afterBraces = before.slice(braceStart + 2)
+  if (afterBraces.includes('}}')) return null
+
+  const fnMatch = afterBraces.match(/^(\w+)\(/)
+  if (!fnMatch || !fnMatch[1]) return null
+
+  const insideParens = afterBraces.slice(fnMatch[0].length)
+  let depth = 0
+  let commaCount = 0
+  for (const ch of insideParens) {
+    if (ch === '(') depth++
+    else if (ch === ')') { if (depth > 0) depth--; else break }
+    else if (ch === ',' && depth === 0) commaCount++
+  }
+
+  return { fnName: fnMatch[1], paramIndex: commaCount }
+}
+
+function updateParamHint() {
+  if (!view) { paramHint.value = null; return }
+  const doc = view.state.doc.toString()
+  const pos = view.state.selection.main.head
+  const ctx = parseFunctionContext(doc, pos)
+  if (!ctx) { paramHint.value = null; return }
+
+  const fn = fnByName(ctx.fnName)
+  if (!fn || !fn.parameters?.length) { paramHint.value = null; return }
+
+  paramHint.value = { fn, paramIndex: ctx.paramIndex }
 }
 
 // ─── Expression preview ───────────────────────────────────────────
@@ -170,6 +244,82 @@ const expressionTheme = EditorView.theme({
   },
 })
 
+// ─── JsonPath helpers ─────────────────────────────────────────────
+
+function extractFunctionArgs(afterBraces: string): { fnName: string, args: string[] } | null {
+  const fnMatch = afterBraces.match(/^(\w+)\(/)
+  if (!fnMatch || !fnMatch[1]) return null
+
+  const rest = afterBraces.slice(fnMatch[0].length)
+  const args: string[] = []
+  let depth = 0
+  let current = ''
+  for (const ch of rest) {
+    if (ch === '(') { depth++; current += ch }
+    else if (ch === ')') {
+      if (depth > 0) { depth--; current += ch }
+      else break
+    }
+    else if (ch === ',' && depth === 0) {
+      args.push(current.trim())
+      current = ''
+    }
+    else { current += ch }
+  }
+  args.push(current.trim())
+  return { fnName: fnMatch[1], args }
+}
+
+function walkObjectForJsonPaths(
+  obj: unknown,
+  prefix: string,
+  results: { path: string, preview: string }[],
+  maxDepth = 4,
+  depth = 0,
+) {
+  if (depth >= maxDepth || obj === null || obj === undefined) return
+
+  if (Array.isArray(obj)) {
+    results.push({ path: `${prefix}[0]`, preview: `first of ${obj.length} items` })
+    results.push({ path: `${prefix}[*]`, preview: `all ${obj.length} items` })
+    if (obj.length > 0) {
+      walkObjectForJsonPaths(obj[0], `${prefix}[0]`, results, maxDepth, depth + 1)
+    }
+    return
+  }
+
+  if (typeof obj !== 'object') return
+  for (const [k, v] of Object.entries(obj)) {
+    const fullPath = `${prefix}.${k}`
+    const preview = v === null ? 'null'
+      : typeof v === 'object' ? (Array.isArray(v) ? `[${(v as unknown[]).length}]` : `{…}`)
+        : String(v)
+    results.push({ path: fullPath, preview: preview.length > 40 ? preview.slice(0, 40) + '…' : preview })
+    walkObjectForJsonPaths(v, fullPath, results, maxDepth, depth + 1)
+  }
+}
+
+function getJsonPathCompletions(afterBraces: string): { path: string, preview: string }[] | null {
+  const parsed = extractFunctionArgs(afterBraces)
+  if (!parsed) return null
+  if (parsed.fnName.toLowerCase() !== 'jsonpath') return null
+  if (parsed.args.length < 2) return null
+
+  const dataArg = parsed.args[0]
+  if (!dataArg) return null
+
+  const resolved = resolveExpression(`{{${dataArg}}}`)
+  if (!resolved) return null
+
+  let dataObj: unknown
+  try { dataObj = JSON.parse(resolved) } catch { return null }
+  if (typeof dataObj !== 'object' || dataObj === null) return null
+
+  const results: { path: string, preview: string }[] = []
+  walkObjectForJsonPaths(dataObj, '$', results)
+  return results
+}
+
 // ─── Autocomplete ─────────────────────────────────────────────────
 
 function isInsideFunctionParens(afterBraces: string): { insideFn: true, argText: string } | { insideFn: false } {
@@ -212,6 +362,26 @@ function expressionCompletion(context: CompletionContext): CompletionResult | nu
 
   if (parenCtx.insideFn) {
     const typed = parenCtx.argText
+
+    const jsonPaths = getJsonPathCompletions(afterBraces)
+    if (jsonPaths && jsonPaths.length > 0) {
+      const filtered = typed
+        ? jsonPaths.filter(jp => jp.path.toLowerCase().includes(typed.toLowerCase()))
+        : jsonPaths
+      if (filtered.length > 0) {
+        return {
+          from: pos - typed.length,
+          to: pos,
+          filter: false,
+          options: filtered.map(jp => ({
+            label: jp.path,
+            detail: jp.preview,
+            section: 'JSONPath',
+          })),
+        }
+      }
+    }
+
     const pathItems = items.filter(c => c.type !== 'function')
     const filtered = typed
       ? pathItems.filter(c =>
@@ -262,10 +432,10 @@ function expressionCompletion(context: CompletionContext): CompletionResult | nu
           displayLabel: c.label,
           detail: c.detail,
           section: c.section,
-          apply: (view: EditorView, _completion: unknown, fnFrom: number, fnTo: number) => {
+          apply: (editorView: EditorView, _completion: unknown, fnFrom: number, fnTo: number) => {
             const insert = `{{${c.expression})}}`
             const cursorPos = fnFrom + insert.length - 3
-            view.dispatch({
+            editorView.dispatch({
               changes: { from: fnFrom, to: fnTo, insert },
               selection: { anchor: cursorPos },
             })
@@ -291,6 +461,7 @@ function mountEditor() {
     extensions: [
       minimalSetup,
       expressionTheme,
+      tooltips({ parent: document.body }),
       EditorView.lineWrapping,
       EditorState.transactionFilter.of(tr => {
         if (tr.newDoc.lines > 1) return []
@@ -308,19 +479,25 @@ function mountEditor() {
           const d = update.state.doc.toString()
           const p = update.state.selection.main.head
           const b = d.slice(0, p)
-          if (b.endsWith('{{')) {
+          if (b.endsWith('{{') || b.endsWith(',') || b.endsWith(', ')) {
             startCompletion(update.view)
           }
+        }
+        if (update.selectionSet || update.docChanged) {
+          updateParamHint()
         }
       }),
     ],
     parent: editorContainer.value,
   })
+
+  updateParamHint()
 }
 
 function destroyEditor() {
   view?.destroy()
   view = null
+  paramHint.value = null
 }
 
 watch(mode, (next) => {
@@ -378,11 +555,35 @@ function onFixedInput(val: string | number) {
         class="flex items-center rounded-md border bg-emerald-500/5 transition-colors"
         :class="[
           size === 'sm' ? 'min-h-8 px-2.5 py-1 text-xs' : 'min-h-9 px-3 py-1.5 text-sm',
-          truncatedPreview ? 'rounded-b-none' : '',
+          truncatedPreview || paramHint ? 'rounded-b-none' : '',
         ]"
       >
         <div ref="editorContainer" class="min-w-0 flex-1" />
       </div>
+
+      <!-- Parameter hint bar -->
+      <div
+        v-if="paramHint"
+        class="flex items-center gap-1 border border-t-0 bg-emerald-500/5 px-2.5 py-1 font-mono text-[10px] leading-tight"
+        :class="truncatedPreview ? '' : 'rounded-b-md'"
+      >
+        <span class="text-emerald-600 dark:text-emerald-400">{{ paramHint.fn.name }}</span>
+        <span class="text-muted-foreground">(</span>
+        <template v-for="(param, i) in paramHint.fn.parameters" :key="param.name">
+          <span v-if="i > 0" class="text-muted-foreground">,&nbsp;</span>
+          <span
+            :class="i === paramHint.paramIndex
+              ? 'rounded bg-emerald-500/20 px-1 font-semibold text-foreground'
+              : 'text-muted-foreground'"
+          >
+            {{ param.name }}<span class="opacity-60">: {{ param.type }}</span>
+          </span>
+        </template>
+        <span class="text-muted-foreground">)</span>
+        <span class="text-muted-foreground ml-auto">→ {{ paramHint.fn.returnType ?? '?' }}</span>
+      </div>
+
+      <!-- Resolved preview -->
       <div
         v-if="truncatedPreview"
         class="text-muted-foreground truncate rounded-b-md border border-t-0 bg-emerald-500/5 px-2.5 py-1 font-mono text-[10px] leading-tight"
@@ -442,7 +643,7 @@ function onFixedInput(val: string | number) {
             >
               <div class="flex items-center justify-between gap-2">
                 <code class="text-xs font-semibold">{{ fn.name }}</code>
-                <span class="bg-muted text-muted-foreground rounded px-1 py-0.5 text-[9px] font-mono">→ {{ fn.returnType ?? '?' }}</span>
+                <span class="bg-muted text-muted-foreground rounded px-1 py-0.5 font-mono text-[9px]">→ {{ fn.returnType ?? '?' }}</span>
               </div>
               <div class="mt-0.5 font-mono text-[10px] text-emerald-600 dark:text-emerald-400">
                 {{ fnSignature(fn) }}
