@@ -39,14 +39,14 @@ function getConditionColor(index: number): number {
   return conditionColors.value[index] ?? index % BRANCH_COLORS.length
 }
 
-const DEFAULT_BRANCHES = [
-  { id: 'true', label: 'Yes', isDefault: false, colorIndex: 0 },
-  { id: 'false', label: 'No', isDefault: true, colorIndex: -1 },
-]
+const hasConditions = computed(() => {
+  const conds = props.data.conditions
+  return Array.isArray(conds) && conds.length > 0
+})
 
 const branches = computed(() => {
   const conds = props.data.conditions
-  if (!conds || conds.length === 0) return DEFAULT_BRANCHES
+  if (!conds || conds.length === 0) return []
 
   const items = conds.map((c, i) => ({
     id: c.label,
@@ -67,19 +67,22 @@ const branches = computed(() => {
   return items
 })
 
-const HANDLE_SPACING_PX = 28
-const HANDLE_MARGIN_PCT = 12
+const HANDLE_SPACING_PX = 36
+const MIN_CONTENT_HEIGHT = 100
+
+const nodeMinHeight = computed(() => {
+  const count = branches.value.length
+  const neededForHandles = (count - 1) * HANDLE_SPACING_PX
+  return Math.max(MIN_CONTENT_HEIGHT, neededForHandles + MIN_CONTENT_HEIGHT)
+})
 
 const handlePositions = computed(() => {
   const count = branches.value.length
   if (count === 1) return [50]
-  const range = 100 - HANDLE_MARGIN_PCT * 2
-  return branches.value.map((_, i) => HANDLE_MARGIN_PCT + (i * range) / (count - 1))
-})
-
-const nodeMinHeight = computed(() => {
-  const count = branches.value.length
-  return Math.max(100, count * HANDLE_SPACING_PX + 40)
+  const totalSpan = (count - 1) * HANDLE_SPACING_PX
+  const height = nodeMinHeight.value
+  const startY = (height - totalSpan) / 2
+  return branches.value.map((_, i) => ((startY + i * HANDLE_SPACING_PX) / height) * 100)
 })
 
 const labelRefs = ref<HTMLElement[]>([])
@@ -100,7 +103,7 @@ onMounted(() => nextTick(measureLabels))
   <div
     class="bg-background flex min-w-[180px] flex-col justify-center rounded-lg border-2 px-4 py-3 shadow-md transition-all"
     :class="selected ? 'border-yellow-500 ring-[6px] ring-yellow-500/20' : 'border-yellow-500/50'"
-    :style="{ minHeight: `${nodeMinHeight}px` }"
+    :style="hasConditions ? { minHeight: `${nodeMinHeight}px` } : {}"
   >
     <!-- Input handle -->
     <WorkflowHandleInput handle-class="!border-background !h-[15px] !w-[15px] !border-2 !bg-yellow-500" />
@@ -116,43 +119,50 @@ onMounted(() => nextTick(measureLabels))
     </div>
 
     <!-- Condition preview -->
-    <div v-if="data.conditions && data.conditions.length > 0" class="mt-2 space-y-0.5">
+    <div v-if="hasConditions" class="mt-2 space-y-0.5">
       <div
-        v-for="(cond, ci) in data.conditions.slice(0, 3)"
+        v-for="(cond, ci) in data.conditions!.slice(0, 3)"
         :key="cond.label"
         class="flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px]"
       >
         <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="branchColor(getConditionColor(ci)).dot" />
         <span class="text-muted-foreground min-w-0 truncate font-mono">{{ cond.condition || cond.label }}</span>
       </div>
-      <div v-if="data.conditions.length > 3" class="text-muted-foreground px-2 text-[10px] opacity-60">
-        +{{ data.conditions.length - 3 }} more
+      <div v-if="data.conditions!.length > 3" class="text-muted-foreground px-2 text-[10px] opacity-60">
+        +{{ data.conditions!.length - 3 }} more
       </div>
     </div>
     <div v-else-if="data.config?.field" class="bg-muted/50 text-muted-foreground mt-2 rounded px-2 py-1 text-xs">
       {{ data.config.field }} {{ data.config.operator }} "{{ data.config.value }}"
     </div>
 
-    <!-- Dynamic handle labels (rendered first so refs are measured before handles) -->
-    <div
-      v-for="(branch, i) in branches"
-      :key="`label-${branch.id}`"
-      :ref="(el) => { if (el) labelRefs[i] = el as HTMLElement }"
-      class="bg-background/80 absolute -right-1 max-w-[80px] translate-x-full truncate rounded px-1 text-[10px] font-medium whitespace-nowrap"
-      :class="branch.isDefault ? 'text-muted-foreground' : branchColor(branch.colorIndex).text"
-      :style="{ top: `${(handlePositions[i] ?? 50) - 5}%` }"
-    >
-      {{ branch.label }}
-    </div>
+    <!-- Branch labels + handles (only when conditions are configured) -->
+    <template v-if="hasConditions">
+      <div
+        v-for="(branch, i) in branches"
+        :key="`label-${branch.id}`"
+        :ref="(el) => { if (el) labelRefs[i] = el as HTMLElement }"
+        class="bg-background/80 absolute -right-1 max-w-[80px] translate-x-full truncate rounded px-1 text-[10px] font-medium whitespace-nowrap"
+        :class="branch.isDefault ? 'text-muted-foreground' : branchColor(branch.colorIndex).text"
+        :style="{ top: `${(handlePositions[i] ?? 50) - 5}%` }"
+      >
+        {{ branch.label }}
+      </div>
 
-    <!-- Dynamic output handles -->
+      <WorkflowHandlePlus
+        v-for="(branch, i) in branches"
+        :key="branch.id"
+        :handle-id="branch.id"
+        :line-length="lineLength"
+        :style="{ top: `${handlePositions[i]}%` }"
+        :handle-class="`!border-background !h-3 !w-3 !border-2 ${branch.isDefault ? '!bg-muted-foreground' : branchColor(branch.colorIndex).bg}`"
+      />
+    </template>
+
+    <!-- Default single output handle (no conditions configured yet) -->
     <WorkflowHandlePlus
-      v-for="(branch, i) in branches"
-      :key="branch.id"
-      :handle-id="branch.id"
-      :line-length="lineLength"
-      :style="{ top: `${handlePositions[i]}%` }"
-      :handle-class="`!border-background !h-3 !w-3 !border-2 ${branch.isDefault ? '!bg-muted-foreground' : branchColor(branch.colorIndex).bg}`"
+      v-else
+      handle-class="!border-background !h-3 !w-3 !border-2 !bg-yellow-500"
     />
   </div>
 </template>
