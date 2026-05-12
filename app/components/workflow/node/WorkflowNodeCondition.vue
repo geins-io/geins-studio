@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useNode, useVueFlow } from '@vue-flow/core'
 import WorkflowHandleInput from './handle/WorkflowHandleInput.vue'
 import WorkflowHandlePlus from './handle/WorkflowHandlePlus.vue'
 
@@ -68,21 +69,16 @@ const branches = computed(() => {
 })
 
 const HANDLE_SPACING_PX = 36
-const MIN_CONTENT_HEIGHT = 100
 
-const nodeMinHeight = computed(() => {
+// Pixel offsets from center for each branch handle.
+// E.g. 2 branches → [-18, 18], 3 → [-36, 0, 36]
+const handleOffsets = computed(() => {
   const count = branches.value.length
-  const neededForHandles = (count - 1) * HANDLE_SPACING_PX
-  return Math.max(MIN_CONTENT_HEIGHT, neededForHandles + MIN_CONTENT_HEIGHT)
-})
-
-const handlePositions = computed(() => {
-  const count = branches.value.length
-  if (count === 1) return [50]
+  if (count === 0) return []
+  if (count === 1) return [0]
   const totalSpan = (count - 1) * HANDLE_SPACING_PX
-  const height = nodeMinHeight.value
-  const startY = (height - totalSpan) / 2
-  return branches.value.map((_, i) => ((startY + i * HANDLE_SPACING_PX) / height) * 100)
+  const startOffset = -totalSpan / 2
+  return branches.value.map((_, i) => startOffset + i * HANDLE_SPACING_PX)
 })
 
 const labelRefs = ref<HTMLElement[]>([])
@@ -95,15 +91,23 @@ function measureLabels() {
   lineLength.value = Math.max(MIN_LINE, maxWidth + LINE_PAD)
 }
 
-watch(branches, () => nextTick(measureLabels), { immediate: true })
-onMounted(() => nextTick(measureLabels))
+const { id: nodeId } = useNode()
+const { updateNodeInternals } = useVueFlow()
+
+watch(branches, () => nextTick(() => {
+  measureLabels()
+  updateNodeInternals([nodeId])
+}), { immediate: true })
+onMounted(() => nextTick(() => {
+  measureLabels()
+  updateNodeInternals([nodeId])
+}))
 </script>
 
 <template>
   <div
     class="bg-background flex min-w-[180px] flex-col justify-center rounded-lg border-2 px-4 py-3 shadow-md transition-all"
     :class="selected ? 'border-yellow-500 ring-[6px] ring-yellow-500/20' : 'border-yellow-500/50'"
-    :style="hasConditions ? { minHeight: `${nodeMinHeight}px` } : {}"
   >
     <!-- Input handle -->
     <WorkflowHandleInput handle-class="!border-background !h-[15px] !w-[15px] !border-2 !bg-yellow-500" />
@@ -144,7 +148,7 @@ onMounted(() => nextTick(measureLabels))
         :ref="(el) => { if (el) labelRefs[i] = el as HTMLElement }"
         class="bg-background/80 absolute -right-1 max-w-[80px] translate-x-full truncate rounded px-1 text-[10px] font-medium whitespace-nowrap"
         :class="branch.isDefault ? 'text-muted-foreground' : branchColor(branch.colorIndex).text"
-        :style="{ top: `${(handlePositions[i] ?? 50) - 5}%` }"
+        :style="{ top: `calc(50% + ${(handleOffsets[i] ?? 0) - 8}px)` }"
       >
         {{ branch.label }}
       </div>
@@ -154,7 +158,7 @@ onMounted(() => nextTick(measureLabels))
         :key="branch.id"
         :handle-id="branch.id"
         :line-length="lineLength"
-        :style="{ top: `${handlePositions[i]}%` }"
+        :style="{ top: `calc(50% + ${handleOffsets[i] ?? 0}px)` }"
         :handle-class="`!border-background !h-3 !w-3 !border-2 ${branch.isDefault ? '!bg-muted-foreground' : branchColor(branch.colorIndex).bg}`"
       />
     </template>

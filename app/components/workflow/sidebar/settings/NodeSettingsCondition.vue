@@ -12,6 +12,9 @@ const props = defineProps<{
 }>()
 
 const onNodeSettingsChange = inject<() => void>('onNodeSettingsChange', () => {})
+const removeEdgesForSourceHandle = inject<(sourceId: string, handleId: string) => void>('removeEdgesForSourceHandle', () => {})
+const renameEdgeSourceHandle = inject<(sourceId: string, oldHandle: string, newHandle: string) => void>('renameEdgeSourceHandle', () => {})
+const selectedNodeId = inject<Ref<string>>('selectedNodeId', ref(''))
 
 const conditions = computed<ConditionEntry[]>(() =>
   (props.nodeData.conditions as ConditionEntry[] | undefined) ?? [],
@@ -28,6 +31,14 @@ function updateConditions(updated: ConditionEntry[]) {
 }
 
 function updateDefaultLabel(val: string) {
+  const oldLabel = defaultLabel.value
+  if (oldLabel && selectedNodeId.value) {
+    if (!val) {
+      removeEdgesForSourceHandle(selectedNodeId.value, oldLabel)
+    } else if (oldLabel !== val) {
+      renameEdgeSourceHandle(selectedNodeId.value, oldLabel, val)
+    }
+  }
   // eslint-disable-next-line vue/no-mutating-props -- nodeData is a shared reactive object mutated by all settings panels
   props.nodeData.defaultLabel = val || undefined
   onNodeSettingsChange()
@@ -41,6 +52,10 @@ function addCondition() {
 }
 
 function removeCondition(index: number) {
+  const label = conditions.value[index]?.label
+  if (label && selectedNodeId.value) {
+    removeEdgesForSourceHandle(selectedNodeId.value, label)
+  }
   const updated = conditions.value.filter((_, i) => i !== index)
   persistColors(conditionColors.value.filter((_, i) => i !== index))
   updateConditions(updated)
@@ -60,6 +75,12 @@ function duplicateCondition(index: number) {
 }
 
 function updateConditionField(index: number, field: keyof ConditionEntry, value: string) {
+  if (field === 'label') {
+    const oldLabel = conditions.value[index]?.label
+    if (oldLabel && oldLabel !== value && selectedNodeId.value) {
+      renameEdgeSourceHandle(selectedNodeId.value, oldLabel, value)
+    }
+  }
   const updated = conditions.value.map((c, i) =>
     i === index ? { ...c, [field]: value } : c,
   )

@@ -173,6 +173,8 @@ provide('resolveExpression', resolveExpression)
 
 const nodeData = computed(() => (props.node?.data ?? {}) as Record<string, unknown>)
 const nodeType = computed(() => (props.node?.type ?? '') as string)
+const selectedNodeId = computed(() => (props.node?.id ?? '') as string)
+provide('selectedNodeId', selectedNodeId)
 const isTriggerNode = computed(() => nodeType.value === 'trigger')
 
 const manifestNodeType = computed(() => manifestStore.getNodeType(nodeType.value))

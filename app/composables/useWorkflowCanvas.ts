@@ -171,13 +171,33 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
       claimedLabels.get(source)!.add(c.label);
     }
 
-    const inferLabel = (source: string): string | undefined => {
+    // Pre-assign labels to unlabeled condition edges so each gets a unique
+    // branch. When only one label is unclaimed the match is unambiguous;
+    // otherwise assign unclaimed labels in order so edges at least attach to
+    // real handles instead of the node centre.
+    const inferredLabels = new Map<WorkflowNodeConnection, string>();
+    const unlabeledBySource = new Map<string, WorkflowNodeConnection[]>();
+    for (const c of apiConnections) {
+      if (c.label) continue;
+      const { source } = readEndpoints(c as unknown as Record<string, unknown>);
+      if (!source || !conditionNodeIds.has(source)) continue;
+      if (!unlabeledBySource.has(source)) unlabeledBySource.set(source, []);
+      unlabeledBySource.get(source)!.push(c);
+    }
+    for (const [source, conns] of unlabeledBySource) {
       const allLabels = conditionBranches.get(source);
-      if (!allLabels) return undefined;
+      if (!allLabels) continue;
       const claimed = claimedLabels.get(source);
       const unclaimed = allLabels.filter((l) => !claimed?.has(l));
-      return unclaimed.length === 1 ? unclaimed[0] : undefined;
-    };
+      for (let i = 0; i < conns.length && i < unclaimed.length; i++) {
+        inferredLabels.set(conns[i], unclaimed[i]);
+      }
+    }
+
+    const inferLabel = (
+      _source: string,
+      connection: WorkflowNodeConnection,
+    ): string | undefined => inferredLabels.get(connection);
 
     const nodes = apiNodes.map(toCanvasNode);
     const edges = apiConnections.map((c, i) =>

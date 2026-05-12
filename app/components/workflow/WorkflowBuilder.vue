@@ -160,7 +160,7 @@ onMounted(() => {
   initialEdges.value = finalEdges
 })
 
-const { onConnect, onPaneReady, addEdges, removeEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut, getViewport, setViewport, addSelectedNodes, removeSelectedNodes } = useVueFlow()
+const { onConnect, onPaneReady, addEdges, removeEdges, addNodes, removeNodes, project, findNode, nodes, edges, setNodes, fitView, zoomIn, zoomOut, getViewport, setViewport, addSelectedNodes, removeSelectedNodes, updateNodeInternals } = useVueFlow()
 
 const maxZoom = ref(1.5)
 onPaneReady(() => {
@@ -171,7 +171,13 @@ onPaneReady(() => {
   else if (!props.isNew) {
     fitView({ padding: 0.4, maxZoom: 0.85 })
   }
-  nextTick(() => { canvasReady.value = true })
+  nextTick(() => {
+    canvasReady.value = true
+    // Condition nodes use dynamic handles — tell Vue Flow to re-scan
+    // their handle positions after the initial layout settles.
+    const condIds = nodes.value.filter(n => n.type === 'condition').map(n => n.id)
+    if (condIds.length) nextTick(() => updateNodeInternals(condIds))
+  })
 })
 
 // After init, VueFlow owns the node store — mutate the trigger node's data
@@ -266,6 +272,23 @@ const onEdgeDelete = (edgeId: string) => {
   }
 }
 provide('onEdgeDelete', onEdgeDelete)
+
+const removeEdgesForSourceHandle = (sourceId: string, handleId: string) => {
+  const toRemove = edges.value.filter(e => e.source === sourceId && (e.sourceHandle === handleId || e.label === handleId))
+  if (toRemove.length) removeEdges(toRemove)
+}
+provide('removeEdgesForSourceHandle', removeEdgesForSourceHandle)
+
+const renameEdgeSourceHandle = (sourceId: string, oldHandle: string, newHandle: string) => {
+  for (const e of edges.value) {
+    if (e.source === sourceId && (e.sourceHandle === oldHandle || e.label === oldHandle)) {
+      e.sourceHandle = newHandle || undefined
+      e.label = newHandle
+      if (e.data) (e.data as Record<string, unknown>).type = newHandle ? 'conditional' : 'sequential'
+    }
+  }
+}
+provide('renameEdgeSourceHandle', renameEdgeSourceHandle)
 
 const onNodeDelete = (nodeId: string) => {
   if (nodeId === TRIGGER_NODE_ID) {
