@@ -34,21 +34,28 @@ function updateDefaultLabel(val: string) {
 }
 
 function addCondition() {
+  const color = nextColor()
   const updated = [...conditions.value, { label: '', condition: '', description: '' }]
+  persistColors([...conditionColors.value, color])
   updateConditions(updated)
 }
 
 function removeCondition(index: number) {
   const updated = conditions.value.filter((_, i) => i !== index)
+  persistColors(conditionColors.value.filter((_, i) => i !== index))
   updateConditions(updated)
 }
 
 function duplicateCondition(index: number) {
   const source = conditions.value[index]
   if (!source) return
+  const color = nextColor()
   const copy = { ...source, label: `${source.label} (copy)` }
   const updated = [...conditions.value]
   updated.splice(index + 1, 0, copy)
+  const colors = [...conditionColors.value]
+  colors.splice(index + 1, 0, color)
+  persistColors(colors)
   updateConditions(updated)
 }
 
@@ -148,12 +155,7 @@ function getBuilderClause(index: number): BuilderClause {
 function updateBuilderClause(index: number, patch: Partial<BuilderClause>) {
   const current = getBuilderClause(index)
   const updated = { ...current, ...patch }
-  const fn = FUNCTIONS.find(f => f.value === updated.operator)
-  const needsValue = fn ? fn.template.includes('{value}') : true
-  if (updated.field && (needsValue ? updated.value !== '' : true)) {
-    updateConditionField(index, 'condition', serializeClause(updated))
-  }
-  else if (updated.field && !needsValue) {
+  if (updated.field) {
     updateConditionField(index, 'condition', serializeClause(updated))
   }
 }
@@ -190,7 +192,13 @@ const groupedFields = computed(() => {
 const dragIndex = ref<number | null>(null)
 const dragOverIndex = ref<number | null>(null)
 
+const gripActive = ref(false)
+
 function onDragStart(index: number, event: DragEvent) {
+  if (!gripActive.value) {
+    event.preventDefault()
+    return
+  }
   dragIndex.value = index
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'move'
@@ -204,13 +212,25 @@ function onDragOver(index: number, event: DragEvent) {
   dragOverIndex.value = index
 }
 
+const recentlyMoved = ref<Set<number>>(new Set())
+
 function onDrop(index: number) {
   const from = dragIndex.value
   if (from === null || from === index) return
   const updated = [...conditions.value]
   const [moved] = updated.splice(from, 1)
   updated.splice(index, 0, moved)
+
+  const colors = [...conditionColors.value]
+  const [movedColor] = colors.splice(from, 1)
+  colors.splice(index, 0, movedColor)
+  persistColors(colors)
+
   updateConditions(updated)
+
+  recentlyMoved.value = new Set([index])
+  setTimeout(() => { recentlyMoved.value = new Set() }, 1500)
+
   dragIndex.value = null
   dragOverIndex.value = null
 }
@@ -228,7 +248,9 @@ const TEMPLATES = [
 ] as const
 
 function applyTemplate(tmpl: typeof TEMPLATES[number]) {
+  const color = nextColor()
   const updated = [...conditions.value, { label: '', condition: tmpl.condition, description: '' }]
+  persistColors([...conditionColors.value, color])
   updateConditions(updated)
 }
 
@@ -254,13 +276,118 @@ function selectField(index: number, fieldValue: string) {
   activeFieldPopover.value = null
   fieldSearch.value = ''
 }
+
+// ─── Branch colors (synced with WorkflowNodeCondition.vue) ──────
+const BRANCH_COLOR_COUNT = 6
+const BRANCH_COLORS = [
+  { badge: 'bg-green-500/15 text-green-600 dark:text-green-400', border: 'border-l-green-500' },
+  { badge: 'bg-blue-500/15 text-blue-600 dark:text-blue-400', border: 'border-l-blue-500' },
+  { badge: 'bg-violet-500/15 text-violet-600 dark:text-violet-400', border: 'border-l-violet-500' },
+  { badge: 'bg-amber-500/15 text-amber-600 dark:text-amber-400', border: 'border-l-amber-500' },
+  { badge: 'bg-rose-500/15 text-rose-600 dark:text-rose-400', border: 'border-l-rose-500' },
+  { badge: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400', border: 'border-l-cyan-500' },
+]
+
+function branchColor(colorIndex: number) {
+  return BRANCH_COLORS[colorIndex % BRANCH_COLOR_COUNT]
+}
+
+// ─── Color persistence via node ui ──────────────────────────────
+const nodeUi = computed(() => {
+  if (!props.nodeData.ui || typeof props.nodeData.ui !== 'object') {
+    // eslint-disable-next-line vue/no-mutating-props -- nodeData is a shared reactive object mutated by all settings panels
+    props.nodeData.ui = {}
+  }
+  return props.nodeData.ui as Record<string, unknown>
+})
+
+const conditionColors = computed<number[]>(() =>
+  (Array.isArray(nodeUi.value.conditionColors) ? nodeUi.value.conditionColors : []) as number[],
+)
+
+function persistColors(colors: number[]) {
+  nodeUi.value.conditionColors = colors
+  onNodeSettingsChange()
+}
+
+function getConditionColor(index: number): number {
+  return conditionColors.value[index] ?? index % BRANCH_COLOR_COUNT
+}
+
+function nextColor(): number {
+  const used = new Set(conditionColors.value)
+  for (let i = 0; i < BRANCH_COLOR_COUNT; i++) {
+    if (!used.has(i)) return i
+  }
+  return conditions.value.length % BRANCH_COLOR_COUNT
+}
+
+// Backfill colors on mount for conditions that don't have assigned colors yet
+onMounted(() => {
+  const existing = conditionColors.value
+  if (existing.length >= conditions.value.length) return
+  const used = new Set(existing)
+  const colors = [...existing]
+  for (let i = existing.length; i < conditions.value.length; i++) {
+    let c = 0
+    while (used.has(c)) c++
+    colors.push(c)
+    used.add(c)
+  }
+  persistColors(colors)
+})
+
+// ─── Validation ─────────────────────────────────────────────────
+interface ConditionErrors {
+  label?: string
+  condition?: string
+  field?: string
+  value?: string
+}
+
+const touched = ref<Record<number, Set<string>>>({})
+
+function markTouched(index: number, field: string) {
+  if (!touched.value[index]) touched.value[index] = new Set()
+  touched.value[index].add(field)
+}
+
+const validationErrors = computed<ConditionErrors[]>(() => {
+  const labels = conditions.value.map(c => c.label.trim().toLowerCase())
+  return conditions.value.map((cond, i) => {
+    const errors: ConditionErrors = {}
+    if (!cond.label.trim()) {
+      errors.label = 'Label is required'
+    }
+    else if (labels.filter(l => l === cond.label.trim().toLowerCase()).length > 1) {
+      errors.label = 'Duplicate label'
+    }
+
+    const mode = getMode(i)
+    if (mode === 'builder') {
+      const clause = getBuilderClause(i)
+      if (!clause.field) errors.field = 'Select a field'
+      if (operatorNeedsValue(clause.operator) && !clause.value) errors.value = 'Value is required'
+    }
+    else {
+      if (!cond.condition.trim()) errors.condition = 'Expression is required'
+    }
+
+    return errors
+  })
+})
+
+function getError(index: number, field: string): string | undefined {
+  if (!touched.value[index]?.has(field)) return undefined
+  return validationErrors.value[index]?.[field as keyof ConditionErrors]
+}
 </script>
 
 <template>
   <div class="space-y-4">
     <!-- Conditions list -->
     <div>
-      <div class="mb-2 flex items-center justify-between">
+      <div class="mb-1 flex items-center justify-between">
         <label class="text-sm font-medium">Conditions</label>
         <button
           type="button"
@@ -271,6 +398,7 @@ function selectField(index: number, fieldValue: string) {
           Add
         </button>
       </div>
+      <p class="text-muted-foreground mb-2 text-[11px]">Evaluated top-to-bottom. First match wins.</p>
 
       <!-- Empty state -->
       <div v-if="conditions.length === 0" class="space-y-3">
@@ -304,35 +432,47 @@ function selectField(index: number, fieldValue: string) {
         <div
           v-for="(cond, i) in conditions"
           :key="i"
-          class="group/card relative rounded-md border transition-all"
+          class="group/card relative rounded-md border border-l-[3px] transition-all duration-500"
           :class="[
+            branchColor(getConditionColor(i)).border,
             dragOverIndex === i && dragIndex !== i ? 'border-primary border-dashed' : '',
             dragIndex === i ? 'opacity-40' : '',
+            touched[i]?.size && Object.keys(validationErrors[i] ?? {}).length > 0 ? 'border-destructive/30' : '',
+            recentlyMoved.has(i) ? 'bg-primary/5 ring-primary/20 ring-1' : '',
           ]"
           draggable="true"
           @dragstart="onDragStart(i, $event)"
           @dragover="onDragOver(i, $event)"
           @drop="onDrop(i)"
-          @dragend="onDragEnd"
+          @dragend="onDragEnd(); gripActive = false"
         >
           <!-- Card header: number badge + label + actions -->
           <div class="flex items-center gap-2 px-3 pt-2.5 pb-1">
             <!-- Drag handle + number badge -->
-            <div class="flex shrink-0 cursor-grab items-center gap-1.5 active:cursor-grabbing">
+            <div
+              class="flex shrink-0 cursor-grab items-center gap-1.5 active:cursor-grabbing"
+              @mousedown="gripActive = true"
+              @mouseup="gripActive = false"
+            >
               <LucideGripVertical class="text-muted-foreground/40 group-hover/card:text-muted-foreground h-3 w-3 transition-colors" />
-              <span class="flex h-5 w-5 items-center justify-center rounded-full bg-green-500/15 text-[10px] font-bold text-green-600 dark:text-green-400">
+              <span class="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold" :class="branchColor(getConditionColor(i)).badge">
                 {{ i + 1 }}
               </span>
             </div>
 
             <!-- Label input -->
-            <Input
-              :model-value="cond.label"
-              placeholder="Branch label"
-              size="sm"
-              class="h-7 flex-1 border-none bg-transparent px-1 font-medium shadow-none focus-visible:ring-0"
-              @update:model-value="updateConditionField(i, 'label', String($event))"
-            />
+            <div class="min-w-0 flex-1">
+              <Input
+                :model-value="cond.label"
+                placeholder="Branch label"
+                size="sm"
+                class="h-7 w-full border-none bg-transparent px-1 font-medium shadow-none focus-visible:ring-0"
+                :class="getError(i, 'label') ? 'text-destructive placeholder:text-destructive/50' : ''"
+                @blur="markTouched(i, 'label')"
+                @update:model-value="updateConditionField(i, 'label', String($event))"
+              />
+              <p v-if="getError(i, 'label')" class="text-destructive px-1 text-[10px]">{{ getError(i, 'label') }}</p>
+            </div>
 
             <!-- Actions -->
             <div class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/card:opacity-100 focus-within:opacity-100">
@@ -372,11 +512,12 @@ function selectField(index: number, fieldValue: string) {
             <!-- Builder mode -->
             <div v-if="getMode(i) === 'builder'" class="space-y-1.5">
               <!-- Field selector -->
-              <Popover :open="activeFieldPopover === i" @update:open="(val: boolean) => { if (!val) { activeFieldPopover = null; fieldSearch = '' } }">
+              <Popover :open="activeFieldPopover === i" @update:open="(val: boolean) => { if (!val) { activeFieldPopover = null; fieldSearch = ''; markTouched(i, 'field') } }">
                 <PopoverTrigger as-child>
                   <button
                     type="button"
                     class="bg-muted/50 hover:bg-muted flex h-7 w-full items-center gap-1.5 rounded-md border px-2 text-left font-mono text-xs transition-colors"
+                    :class="getError(i, 'field') ? 'border-destructive/50' : ''"
                     @click="activeFieldPopover = activeFieldPopover === i ? null : i"
                   >
                     <LucideVariable class="text-muted-foreground h-3 w-3 shrink-0" />
@@ -422,6 +563,7 @@ function selectField(index: number, fieldValue: string) {
                   </div>
                 </PopoverContent>
               </Popover>
+              <p v-if="getError(i, 'field')" class="text-destructive text-[10px]">{{ getError(i, 'field') }}</p>
 
               <!-- Operator selector -->
               <Select
@@ -459,14 +601,18 @@ function selectField(index: number, fieldValue: string) {
               </Select>
 
               <!-- Value input (hidden for unary operators) -->
-              <Input
-                v-if="operatorNeedsValue(getBuilderClause(i).operator)"
-                :model-value="getBuilderClause(i).value"
-                placeholder="Value"
-                size="sm"
-                class="h-7 font-mono text-xs"
-                @update:model-value="updateBuilderClause(i, { value: String($event) })"
-              />
+              <div v-if="operatorNeedsValue(getBuilderClause(i).operator)">
+                <Input
+                  :model-value="getBuilderClause(i).value"
+                  placeholder="Value"
+                  size="sm"
+                  class="h-7 font-mono text-xs"
+                  :class="getError(i, 'value') ? 'border-destructive/50' : ''"
+                  @blur="markTouched(i, 'value')"
+                  @update:model-value="updateBuilderClause(i, { value: String($event) })"
+                />
+                <p v-if="getError(i, 'value')" class="text-destructive mt-0.5 text-[10px]">{{ getError(i, 'value') }}</p>
+              </div>
 
               <!-- Preview of generated expression -->
               <div v-if="cond.condition" class="text-muted-foreground truncate px-0.5 font-mono text-[10px] leading-relaxed">
@@ -480,8 +626,11 @@ function selectField(index: number, fieldValue: string) {
                 :model-value="cond.condition"
                 placeholder="e.g. output.node.status == 'active'"
                 size="sm"
+                :class="getError(i, 'condition') ? '[&_textarea]:border-destructive/50' : ''"
+                @blur="markTouched(i, 'condition')"
                 @update:model-value="updateConditionField(i, 'condition', String($event))"
               />
+              <p v-if="getError(i, 'condition')" class="text-destructive text-[10px]">{{ getError(i, 'condition') }}</p>
             </div>
 
             <!-- Description (collapsible) -->
