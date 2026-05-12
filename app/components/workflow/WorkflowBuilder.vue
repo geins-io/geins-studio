@@ -553,6 +553,7 @@ const executeWithInputs = async () => {
 }
 
 const startExecution = async (data?: { parameters?: Record<string, unknown> }) => {
+  lastNodeExecutions.value = new Map()
   try {
     const res = await orchestratorApi.execution.testRun(props.workflowId, data)
     const execId = res?.executionId ?? res?.newExecutionId ?? null

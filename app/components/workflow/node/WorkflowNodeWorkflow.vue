@@ -7,6 +7,7 @@ const props = defineProps<{
     icon: string
     description: string
     config: Record<string, any>
+    input: Record<string, any>
   }
   selected?: boolean
 }>()
@@ -15,7 +16,12 @@ const { resolveIcon } = useLucideIcon()
 
 const IconComponent = computed(() => resolveIcon(props.data.icon) || resolveIcon('Workflow'))
 
-const workflowName = computed(() => props.data.config?.workflowName || props.data.config?.workflowId)
+const workflowName = computed(() =>
+  props.data.input?.workflowName
+  || props.data.input?.workflowId
+  || props.data.config?.workflowName
+  || props.data.config?.workflowId,
+)
 </script>
 
 <template>

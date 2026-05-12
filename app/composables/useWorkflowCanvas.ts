@@ -104,23 +104,34 @@ const readEndpoints = (
     | undefined,
 });
 
-const toCanvasEdge = (c: WorkflowNodeConnection, index: number): Edge => {
+const toCanvasEdge = (
+  c: WorkflowNodeConnection,
+  index: number,
+  conditionNodeIds: Set<string>,
+  inferLabel?: (
+    source: string,
+    connection: WorkflowNodeConnection,
+  ) => string | undefined,
+): Edge => {
   const { source, target } = readEndpoints(
     c as unknown as Record<string, unknown>,
   );
-  // `conditional` connections carry the branch name in `label`. Route to a
-  // matching sourceHandle so the edge attaches to the right output port on
-  // condition / switch nodes (which render one handle per branch).
-  const sourceHandle =
-    c.type === 'conditional' && c.label ? c.label : undefined;
+  const isConditional =
+    c.type === 'conditional' || (!!source && conditionNodeIds.has(source));
+  let label = c.label;
+  // Infer missing labels for condition node edges from the node's branch config.
+  if (isConditional && !label && source && inferLabel) {
+    label = inferLabel(source, c);
+  }
+  const sourceHandle = isConditional && label ? label : undefined;
   return {
     id: `e-${source ?? 'src'}-${target ?? 'tgt'}-${index}`,
     source: source ?? '',
     target: target ?? '',
     sourceHandle,
-    label: c.label,
+    label,
     animated: false,
-    data: { type: c.type, ui: c.ui ?? {} },
+    data: { type: isConditional ? 'conditional' : c.type, ui: c.ui ?? {} },
   };
 };
 
@@ -130,8 +141,48 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
     const apiConnections = Array.isArray(wf?.connections)
       ? wf!.connections
       : [];
+    const conditionNodeIds = new Set(
+      apiNodes.filter((n) => n.type === 'condition').map((n) => n.id),
+    );
+
+    // Build branch labels per condition node so we can infer missing labels
+    // on legacy connections that were saved with empty label/type.
+    const conditionBranches = new Map<string, string[]>();
+    for (const n of apiNodes) {
+      if (n.type !== 'condition') continue;
+      const labels: string[] = [];
+      const conds = (n as { conditions?: { label: string }[] }).conditions;
+      if (Array.isArray(conds)) {
+        for (const c of conds) if (c.label) labels.push(c.label);
+      }
+      const def = (n as { defaultLabel?: string }).defaultLabel;
+      if (def) labels.push(def);
+      if (labels.length) conditionBranches.set(n.id, labels);
+    }
+
+    // Collect labels already claimed per source node so we can find the
+    // unclaimed one for a connection with an empty label.
+    const claimedLabels = new Map<string, Set<string>>();
+    for (const c of apiConnections) {
+      if (!c.label) continue;
+      const { source } = readEndpoints(c as unknown as Record<string, unknown>);
+      if (!source) continue;
+      if (!claimedLabels.has(source)) claimedLabels.set(source, new Set());
+      claimedLabels.get(source)!.add(c.label);
+    }
+
+    const inferLabel = (source: string): string | undefined => {
+      const allLabels = conditionBranches.get(source);
+      if (!allLabels) return undefined;
+      const claimed = claimedLabels.get(source);
+      const unclaimed = allLabels.filter((l) => !claimed?.has(l));
+      return unclaimed.length === 1 ? unclaimed[0] : undefined;
+    };
+
     const nodes = apiNodes.map(toCanvasNode);
-    const edges = apiConnections.map(toCanvasEdge);
+    const edges = apiConnections.map((c, i) =>
+      toCanvasEdge(c, i, conditionNodeIds, inferLabel),
+    );
     return { nodes, edges };
   };
 
@@ -170,10 +221,7 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
         ?.type;
       const existingUi = (e.data as { ui?: NodeUi } | undefined)?.ui;
       const type: ConnectionType =
-        storedType ??
-        (e.sourceHandle === 'true' || e.sourceHandle === 'false'
-          ? 'conditional'
-          : 'sequential');
+        storedType ?? (e.sourceHandle ? 'conditional' : 'sequential');
       // Conditional edges carry the branch name on `sourceHandle`. Fall back to
       // it so the API stores which branch this edge represents.
       const label =
