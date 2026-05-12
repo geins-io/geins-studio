@@ -124,17 +124,29 @@ const expressionCompletions = computed<ExpressionCompletion[]>(() => {
     })
   }
 
+  for (const fn of manifestStore.expressionFunctions.value) {
+    const params = (fn.parameters ?? []).map(p => p.name).join(', ')
+    items.push({
+      expression: `${fn.name}(`,
+      label: `${fn.name}(${params})`,
+      detail: `→ ${fn.returnType ?? '?'}  ${fn.description ?? ''}`,
+      section: `ƒ ${fn.category ?? 'Functions'}`,
+      type: 'function',
+    })
+  }
+
   return items
 })
 
 provide('expressionCompletions', expressionCompletions)
+provide('expressionFunctions', manifestStore.expressionFunctions)
 
 function drillPath(obj: Record<string, unknown>, segments: string[]): unknown {
   let current: unknown = obj
   for (const seg of segments) {
     if (current === null || current === undefined || typeof current !== 'object') return undefined
     const bracketMatch = seg.match(/^(.+?)\[(\d+)\]$/)
-    if (bracketMatch) {
+    if (bracketMatch && bracketMatch[1] && bracketMatch[2]) {
       current = (current as Record<string, unknown>)[bracketMatch[1]]
       if (!Array.isArray(current)) return undefined
       current = (current as unknown[])[Number(bracketMatch[2])]
@@ -149,7 +161,9 @@ function drillPath(obj: Record<string, unknown>, segments: string[]): unknown {
 function resolveExpression(expr: string): string | null {
   const match = expr.match(/^\{\{(\w+)\.(.+)\}\}$/)
   if (!match) return null
-  const [, ns, path] = match
+  const ns = match[1]
+  const path = match[2]
+  if (!ns || !path) return null
 
   if (ns === 'output') {
     const nodeId = props.node?.id as string | undefined

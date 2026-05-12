@@ -584,9 +584,17 @@ export interface ManifestActionCategory {
 
 export interface ManifestExpressionFunction {
   name: string;
+  category?: string;
   description?: string;
-  parameters?: { name: string; type: string; description?: string }[];
+  parameters?: {
+    name: string;
+    type: string;
+    required?: boolean;
+    description?: string;
+    default?: unknown;
+  }[];
   returnType?: string;
+  aliases?: string[];
   example?: string;
 }
 

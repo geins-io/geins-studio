@@ -3,6 +3,7 @@ import { autocompletion, acceptCompletion, startCompletion, type CompletionConte
 import { EditorState } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
 import { EditorView, minimalSetup } from 'codemirror'
+import type { ManifestExpressionFunction } from '#shared/types'
 import type { Ref } from 'vue'
 
 export interface ExpressionCompletion {
@@ -10,6 +11,7 @@ export interface ExpressionCompletion {
   label: string
   detail?: string
   section?: string
+  type?: 'path' | 'function'
 }
 
 const props = withDefaults(defineProps<{
@@ -37,7 +39,46 @@ let view: EditorView | null = null
 
 const completions = inject<Ref<ExpressionCompletion[]>>('expressionCompletions', ref([]))
 const resolveExpression = inject<(expr: string) => string | null>('resolveExpression', () => null)
+const expressionFunctions = inject<Ref<ManifestExpressionFunction[]>>('expressionFunctions', ref([]))
 
+// ─── Function reference panel ─────────────────────────────────────
+const showFnRef = ref(false)
+
+const fnCategories = computed(() => {
+  const map = new Map<string, ManifestExpressionFunction[]>()
+  for (const fn of expressionFunctions.value) {
+    const cat = fn.category ?? 'Other'
+    const list = map.get(cat)
+    if (list) list.push(fn)
+    else map.set(cat, [fn])
+  }
+  return map
+})
+
+const activeFnCategory = ref<string>('')
+
+watch(fnCategories, (cats) => {
+  if (!activeFnCategory.value && cats.size > 0) {
+    activeFnCategory.value = cats.keys().next().value!
+  }
+}, { immediate: true })
+
+function fnSignature(fn: ManifestExpressionFunction): string {
+  const params = (fn.parameters ?? []).map((p) => {
+    const opt = p.required === false ? '?' : ''
+    return `${p.name}${opt}: ${p.type}`
+  })
+  return `${fn.name}(${params.join(', ')})`
+}
+
+function insertFunction(fn: ManifestExpressionFunction) {
+  const template = `{{${fn.name}()}}`
+  emit('update:modelValue', template)
+  showFnRef.value = false
+  if (mode.value !== 'expression') mode.value = 'expression'
+}
+
+// ─── Expression preview ───────────────────────────────────────────
 const preview = computed(() => {
   if (mode.value !== 'expression' || !props.modelValue) return null
 
@@ -67,6 +108,7 @@ const truncatedPreview = computed(() => {
   return preview.value.length > 120 ? preview.value.slice(0, 120) + '…' : preview.value
 })
 
+// ─── CodeMirror theme ─────────────────────────────────────────────
 const expressionTheme = EditorView.theme({
   '&': {
     backgroundColor: 'transparent',
@@ -128,6 +170,29 @@ const expressionTheme = EditorView.theme({
   },
 })
 
+// ─── Autocomplete ─────────────────────────────────────────────────
+
+function isInsideFunctionParens(afterBraces: string): { insideFn: true, argText: string } | { insideFn: false } {
+  let depth = 0
+  let lastArgStart = -1
+  for (let i = afterBraces.length - 1; i >= 0; i--) {
+    const ch = afterBraces[i]
+    if (ch === ')') depth++
+    else if (ch === '(') {
+      if (depth > 0) depth--
+      else {
+        lastArgStart = i
+        break
+      }
+    }
+  }
+  if (lastArgStart === -1) return { insideFn: false }
+
+  const lastComma = afterBraces.lastIndexOf(',')
+  const argStart = Math.max(lastArgStart + 1, lastComma + 1)
+  return { insideFn: true, argText: afterBraces.slice(argStart).trimStart() }
+}
+
 function expressionCompletion(context: CompletionContext): CompletionResult | null {
   const doc = context.state.doc.toString()
   const pos = context.pos
@@ -139,14 +204,44 @@ function expressionCompletion(context: CompletionContext): CompletionResult | nu
   const afterBraces = before.slice(braceStart + 2)
   if (afterBraces.includes('}}')) return null
 
-  const from = braceStart
-  const typed = afterBraces.trimStart()
-
   const after = doc.slice(pos)
   const closingMatch = after.match(/^\s*\}\}/)
-  const to = closingMatch ? pos + closingMatch[0].length : pos
 
   const items = completions.value
+  const parenCtx = isInsideFunctionParens(afterBraces)
+
+  if (parenCtx.insideFn) {
+    const typed = parenCtx.argText
+    const pathItems = items.filter(c => c.type !== 'function')
+    const filtered = typed
+      ? pathItems.filter(c =>
+        c.expression.toLowerCase().includes(typed.toLowerCase())
+        || c.label.toLowerCase().includes(typed.toLowerCase()),
+      )
+      : pathItems
+
+    if (filtered.length === 0) return null
+
+    return {
+      from: pos - typed.length,
+      to: pos,
+      filter: false,
+      options: filtered.map(c => {
+        const bare = c.expression.replace(/^\{\{|\}\}$/g, '')
+        return {
+          label: bare,
+          displayLabel: c.label,
+          detail: c.detail,
+          section: c.section,
+        }
+      }),
+    }
+  }
+
+  const from = braceStart
+  const to = closingMatch ? pos + closingMatch[0].length : pos
+  const typed = afterBraces.trimStart()
+
   const filtered = typed
     ? items.filter(c =>
       c.expression.toLowerCase().includes(typed.toLowerCase())
@@ -160,15 +255,34 @@ function expressionCompletion(context: CompletionContext): CompletionResult | nu
     from,
     to,
     filter: false,
-    options: filtered.map(c => ({
-      label: c.expression,
-      displayLabel: c.label,
-      detail: c.detail,
-      section: c.section,
-    })),
+    options: filtered.map((c) => {
+      if (c.type === 'function') {
+        return {
+          label: `{{${c.expression}`,
+          displayLabel: c.label,
+          detail: c.detail,
+          section: c.section,
+          apply: (view: EditorView, _completion: unknown, fnFrom: number, fnTo: number) => {
+            const insert = `{{${c.expression})}}`
+            const cursorPos = fnFrom + insert.length - 3
+            view.dispatch({
+              changes: { from: fnFrom, to: fnTo, insert },
+              selection: { anchor: cursorPos },
+            })
+          },
+        }
+      }
+      return {
+        label: c.expression,
+        displayLabel: c.label,
+        detail: c.detail,
+        section: c.section,
+      }
+    }),
   }
 }
 
+// ─── Editor lifecycle ─────────────────────────────────────────────
 function mountEditor() {
   if (!editorContainer.value || view) return
 
@@ -191,10 +305,10 @@ function mountEditor() {
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
           emit('update:modelValue', update.state.doc.toString())
-          const doc = update.state.doc.toString()
-          const pos = update.state.selection.main.head
-          const before = doc.slice(0, pos)
-          if (before.endsWith('{{')) {
+          const d = update.state.doc.toString()
+          const p = update.state.selection.main.head
+          const b = d.slice(0, p)
+          if (b.endsWith('{{')) {
             startCompletion(update.view)
           }
         }
@@ -278,17 +392,93 @@ function onFixedInput(val: string | number) {
       </div>
     </div>
 
-    <!-- Toggle button -->
-    <button
-      type="button"
-      class="absolute right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold transition-colors"
-      :class="mode === 'expression'
-        ? 'top-1 bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400'
-        : 'top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted opacity-0 group-hover:opacity-100 focus:opacity-100'"
-      :title="mode === 'expression' ? 'Switch to fixed value' : 'Switch to expression'"
-      @click="toggleMode"
+    <!-- Buttons (fx toggle + function reference) -->
+    <div
+      class="absolute right-1.5 z-10 flex items-center gap-0.5"
+      :class="mode === 'expression' ? 'top-1' : 'top-1/2 -translate-y-1/2'"
     >
-      =
-    </button>
+      <!-- Function reference button (expression mode only) -->
+      <Popover v-if="mode === 'expression' && expressionFunctions.length > 0" v-model:open="showFnRef">
+        <PopoverTrigger as-child>
+          <button
+            type="button"
+            class="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold transition-colors"
+            :class="showFnRef
+              ? 'bg-primary/15 text-primary'
+              : 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400'"
+            title="Expression functions"
+          >
+            ƒ
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          :side-offset="8"
+          class="w-[360px] p-0"
+        >
+          <!-- Category tabs -->
+          <div class="flex gap-1 overflow-x-auto border-b px-2 py-1.5">
+            <button
+              v-for="[cat] in fnCategories"
+              :key="cat"
+              type="button"
+              class="shrink-0 rounded px-2 py-0.5 text-[10px] font-medium transition-colors"
+              :class="activeFnCategory === cat
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'"
+              @click="activeFnCategory = cat"
+            >
+              {{ cat }}
+            </button>
+          </div>
+
+          <!-- Function list -->
+          <div class="max-h-[320px] overflow-y-auto p-2">
+            <div
+              v-for="fn in fnCategories.get(activeFnCategory)"
+              :key="fn.name"
+              class="hover:bg-muted/50 group/fn cursor-pointer rounded-md px-2.5 py-2 transition-colors"
+              @click="insertFunction(fn)"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <code class="text-xs font-semibold">{{ fn.name }}</code>
+                <span class="bg-muted text-muted-foreground rounded px-1 py-0.5 text-[9px] font-mono">→ {{ fn.returnType ?? '?' }}</span>
+              </div>
+              <div class="mt-0.5 font-mono text-[10px] text-emerald-600 dark:text-emerald-400">
+                {{ fnSignature(fn) }}
+              </div>
+              <p v-if="fn.description" class="text-muted-foreground mt-0.5 text-[10px]">
+                {{ fn.description }}
+              </p>
+              <div
+                v-if="fn.example"
+                class="bg-muted/70 mt-1 rounded px-2 py-1 font-mono text-[10px]"
+              >
+                {{ fn.example }}
+              </div>
+              <div
+                v-if="fn.aliases?.length"
+                class="text-muted-foreground mt-0.5 text-[9px]"
+              >
+                alias: {{ fn.aliases.join(', ') }}
+              </div>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <!-- fx toggle -->
+      <button
+        type="button"
+        class="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold transition-colors"
+        :class="mode === 'expression'
+          ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400'
+          : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted opacity-0 group-hover:opacity-100 focus:opacity-100'"
+        :title="mode === 'expression' ? 'Switch to fixed value' : 'Switch to expression'"
+        @click="toggleMode"
+      >
+        =
+      </button>
+    </div>
   </div>
 </template>
