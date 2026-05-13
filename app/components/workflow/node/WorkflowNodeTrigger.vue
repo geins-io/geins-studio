@@ -21,7 +21,7 @@ const props = defineProps<{
   selected?: boolean
 }>()
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 
 const normalizedType = computed(() => (props.data.triggerType ?? 'onDemand').toLowerCase())
 
@@ -34,13 +34,16 @@ const IconComponent = computed(() => {
   }
 })
 
+const TYPE_I18N_KEYS: Record<string, string> = {
+  scheduled: 'workflows.scheduled',
+  event: 'workflows.event',
+  webhook: 'workflows.webhook',
+  ondemand: 'workflows.manual',
+}
+
 const typeDisplayName = computed(() => {
-  switch (normalizedType.value) {
-    case 'scheduled': return 'Schedule'
-    case 'event': return 'Event'
-    case 'webhook': return 'Webhook'
-    default: return 'Manual'
-  }
+  const key = TYPE_I18N_KEYS[normalizedType.value]
+  return key ? t(key) : t('workflows.manual')
 })
 
 const title = computed(() => props.data.label?.trim() || typeDisplayName.value)
@@ -56,17 +59,21 @@ const cronHuman = computed(() => {
   }
 })
 
+const eventPattern = computed(() => {
+  if (normalizedType.value !== 'event') return ''
+  const entity = props.data.eventEntity || props.data.eventName
+  const action = props.data.eventAction
+  if (entity && action) return `${entity} / ${action}`
+  return entity || ''
+})
+
 const subtitle = computed(() => {
   if (props.data.description?.trim()) return props.data.description.trim()
   switch (normalizedType.value) {
     case 'scheduled':
       return cronHuman.value || 'No schedule set'
-    case 'event': {
-      const entity = props.data.eventEntity || props.data.eventName
-      const action = props.data.eventAction
-      if (entity && action) return `${entity} / ${action}`
-      return entity || 'No event configured'
-    }
+    case 'event':
+      return eventPattern.value ? '' : 'No event configured'
     case 'webhook':
       return 'HTTP trigger'
     default:
@@ -91,8 +98,13 @@ const subtitle = computed(() => {
       <div class="truncate text-sm leading-tight font-semibold">
         {{ title }}
       </div>
-      <div class="text-muted-foreground truncate text-xs leading-tight">
+      <div v-if="subtitle" class="text-muted-foreground truncate text-xs leading-tight">
         {{ subtitle }}
+      </div>
+      <div v-if="eventPattern" class="mt-0.5 flex">
+        <span class="bg-muted text-muted-foreground inline-block max-w-full truncate rounded-full px-2 py-0.5 font-mono text-[10px] leading-tight">
+          {{ eventPattern }}
+        </span>
       </div>
     </div>
 

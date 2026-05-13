@@ -344,6 +344,7 @@
     "event": "Event",
     "scheduled": "Scheduled",
     "on_demand": "On Demand",
+    "webhook": "Webhook",
     "total_executions": "Total executions",
     "success_rate": "Success rate",
     "success_rate_total": "Success rate (total)",
