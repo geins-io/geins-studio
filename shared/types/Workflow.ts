@@ -873,9 +873,26 @@ export interface PaletteItem {
   description?: string;
   // For action items, the backend `actionName` that goes into the node's config.
   actionName?: string;
+  // When set, the item originates from a saved node template and should
+  // be created with the full template data instead of a blank node.
+  templateId?: string;
 }
 
 export interface PaletteSection {
   category: string;
   items: PaletteItem[];
+}
+
+// -- Node Templates --------------------------------------------------------
+// Locally stored (localStorage) node configurations that users can reuse
+// across workflows.
+
+export interface NodeTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  nodeType: string;
+  actionName?: string;
+  nodeData: Record<string, unknown>;
+  createdAt: string;
 }

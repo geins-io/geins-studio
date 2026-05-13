@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import type { PaletteItem } from '#shared/types'
+import type { NodeTemplate, PaletteItem } from '#shared/types'
 import type { ManifestAction } from '@/composables/useWorkflowManifest'
+import { useToast } from '@/components/ui/toast/use-toast'
 import type { Component } from 'vue'
 import LitiumSymbol from '~/assets/logos/litium-symbol.svg'
 import MonitorSymbol from '~/assets/logos/monitor-symbol.svg'
+import WorkflowNodeSaveTemplateDialog from '../node/WorkflowNodeSaveTemplateDialog.vue'
 
 // ─── Props / emits ─────────────────────────────────────────────────
 const open = defineModel<boolean>('open', { default: false })
@@ -11,6 +13,13 @@ const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{
   add: [item: PaletteItem]
 }>()
+
+// ─── Node templates ───────────────────────────────────────────────
+const nodeTemplates = useNodeTemplates()
+const { toast } = useToast()
+const confirmDeleteId = ref<string | null>(null)
+const editingTemplate = ref<NodeTemplate | null>(null)
+const showEditDialog = ref(false)
 
 // ─── Manifest data ─────────────────────────────────────────────────
 const manifestStore = useWorkflowManifest()
@@ -163,6 +172,18 @@ function _resetStacks() {
 function buildRootStack() {
   const items: ViewItem[] = []
 
+  // My Templates — only shown when templates exist
+  if (nodeTemplates.templateCount.value > 0) {
+    items.push({
+      type: 'category',
+      key: 'templates',
+      label: 'My Templates',
+      icon: resolveIcon('Bookmark'),
+      color: 'text-amber-500',
+      count: nodeTemplates.templateCount.value,
+    })
+  }
+
   // Actions category — count from manifest
   const actionCount = manifestActions.value.length
   if (actionCount > 0) {
@@ -261,6 +282,70 @@ function buildActionsStack(providerKey: string, label: string, icon: Component |
   })
 }
 
+// ─── Build the templates panel ────────────────────────────────────
+function buildTemplatesStack() {
+  const items: NodeViewItem[] = nodeTemplates.templates.value.map((t) => {
+    const meta = NODE_TYPE_META[t.nodeType]
+    return {
+      type: 'node' as const,
+      item: nodeTemplates.toPaletteItem(t),
+      icon: resolveIcon(meta?.icon ?? 'Bookmark'),
+      color: meta?.color ?? 'text-amber-500',
+    }
+  })
+
+  pushStack({
+    title: 'My Templates',
+    icon: resolveIcon('Bookmark'),
+    color: 'text-amber-500',
+    items,
+    hasSearch: true,
+  })
+}
+
+function refreshTemplatesStack() {
+  const stack = activeStack.value
+  if (!stack || stack.title !== 'My Templates') return
+  const items: NodeViewItem[] = nodeTemplates.templates.value.map((t) => {
+    const meta = NODE_TYPE_META[t.nodeType]
+    return {
+      type: 'node' as const,
+      item: nodeTemplates.toPaletteItem(t),
+      icon: resolveIcon(meta?.icon ?? 'Bookmark'),
+      color: meta?.color ?? 'text-amber-500',
+    }
+  })
+  stack.items = items
+}
+
+function onDeleteTemplate(id: string) {
+  nodeTemplates.deleteTemplate(id)
+  confirmDeleteId.value = null
+  toast({ title: 'Template deleted' })
+  if (nodeTemplates.templateCount.value === 0 && viewStacks.value.length > 1) {
+    popStack()
+  }
+  else {
+    refreshTemplatesStack()
+  }
+}
+
+function onEditTemplate(template: NodeTemplate) {
+  editingTemplate.value = template
+  showEditDialog.value = true
+}
+
+function onEditTemplateSave(payload: { name: string, description?: string }) {
+  if (!editingTemplate.value) return
+  nodeTemplates.updateTemplate(editingTemplate.value.id, {
+    name: payload.name,
+    description: payload.description,
+  })
+  editingTemplate.value = null
+  toast({ title: 'Template updated' })
+  refreshTemplatesStack()
+}
+
 // ─── Direct-add for single-node categories (condition, delay, etc.) ─
 function addSingleNodeType(nodeTypeKey: string) {
   const nt = manifestNodeTypes.value.find(n => n.type === nodeTypeKey)
@@ -280,6 +365,9 @@ function onItemClick(viewItem: ViewItem) {
   if (viewItem.type === 'category') {
     if (viewItem.key === 'action') {
       buildProvidersStack()
+    }
+    else if (viewItem.key === 'templates') {
+      buildTemplatesStack()
     }
     else {
       // Single-item category — add directly
@@ -403,7 +491,32 @@ const isGlobalSearch = computed(() => {
   return stack && viewStacks.value.length === 1 && stack.search.trim().length > 0
 })
 
+const globalTemplateResults = computed<NodeViewItem[]>(() => {
+  const stack = activeStack.value
+  if (!stack || viewStacks.value.length !== 1) return []
+
+  const q = stack.search.trim().toLowerCase()
+  if (!q) return []
+
+  return nodeTemplates.templates.value
+    .filter(t =>
+      t.name.toLowerCase().includes(q)
+      || (t.description ?? '').toLowerCase().includes(q)
+      || (t.actionName ?? '').toLowerCase().includes(q),
+    )
+    .map((t) => {
+      const meta = NODE_TYPE_META[t.nodeType]
+      return {
+        type: 'node' as const,
+        item: nodeTemplates.toPaletteItem(t),
+        icon: resolveIcon(meta?.icon ?? 'Bookmark'),
+        color: meta?.color ?? 'text-amber-500',
+      }
+    })
+})
+
 const allGlobalResults = computed<NodeViewItem[]>(() => [
+  ...globalTemplateResults.value,
   ...globalNodeTypeResults.value,
   ...globalSearchResults.value,
 ])
@@ -601,27 +714,73 @@ function onSearchInput(value: string) {
                   </div>
 
                   <!-- Node item (leaf level — compact) -->
-                  <button
+                  <div
                     v-if="viewItem.type === 'node'"
-                    class="hover:bg-muted/50 flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors"
-                    draggable="true"
-                    :title="viewItem.item.description"
-                    @dragstart="(e) => onDragStart(e, viewItem.item)"
-                    @click="onItemClick(viewItem)"
+                    class="hover:bg-muted/50 group/node flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors"
                   >
-                    <component
-                      :is="viewItem.logo"
-                      v-if="viewItem.logo"
-                      class="h-4 w-4 shrink-0 dark:invert"
-                    />
-                    <component
-                      :is="viewItem.icon"
-                      v-else
-                      class="h-4 w-4 shrink-0"
-                      :class="viewItem.color"
-                    />
-                    <span class="min-w-0 flex-1 truncate text-sm">{{ viewItem.item.label }}</span>
-                  </button>
+                    <!-- Delete confirmation overlay -->
+                    <template v-if="viewItem.item.templateId && confirmDeleteId === viewItem.item.templateId">
+                      <div class="flex w-full items-center justify-between gap-2">
+                        <span class="text-destructive text-xs">Delete template?</span>
+                        <div class="flex gap-1">
+                          <button
+                            class="bg-destructive text-destructive-foreground rounded px-2 py-0.5 text-xs"
+                            @click.stop="onDeleteTemplate(viewItem.item.templateId!)"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            class="bg-muted rounded px-2 py-0.5 text-xs"
+                            @click.stop="confirmDeleteId = null"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <button
+                        class="flex min-w-0 flex-1 items-center gap-2.5"
+                        draggable="true"
+                        :title="viewItem.item.description"
+                        @dragstart="(e) => onDragStart(e, viewItem.item)"
+                        @click="onItemClick(viewItem)"
+                      >
+                        <component
+                          :is="viewItem.logo"
+                          v-if="viewItem.logo"
+                          class="h-4 w-4 shrink-0 dark:invert"
+                        />
+                        <component
+                          :is="viewItem.icon"
+                          v-else
+                          class="h-4 w-4 shrink-0"
+                          :class="viewItem.color"
+                        />
+                        <span class="min-w-0 flex-1 truncate text-sm">{{ viewItem.item.label }}</span>
+                      </button>
+                      <!-- Template management buttons -->
+                      <div
+                        v-if="viewItem.item.templateId"
+                        class="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover/node:opacity-100"
+                      >
+                        <button
+                          class="text-muted-foreground hover:text-foreground rounded p-1"
+                          title="Edit template"
+                          @click.stop="onEditTemplate(nodeTemplates.getTemplate(viewItem.item.templateId!)!)"
+                        >
+                          <LucidePencil class="h-3 w-3" />
+                        </button>
+                        <button
+                          class="text-muted-foreground hover:text-destructive rounded p-1"
+                          title="Delete template"
+                          @click.stop="confirmDeleteId = viewItem.item.templateId!"
+                        >
+                          <LucideTrash2 class="h-3 w-3" />
+                        </button>
+                      </div>
+                    </template>
+                  </div>
                 </template>
               </div>
               <div
@@ -635,6 +794,15 @@ function onSearchInput(value: string) {
         </div>
       </Transition>
     </div>
+
+    <!-- Edit template dialog -->
+    <WorkflowNodeSaveTemplateDialog
+      :open="showEditDialog"
+      :default-name="editingTemplate?.name ?? ''"
+      :default-description="editingTemplate?.description"
+      @update:open="showEditDialog = $event"
+      @save="onEditTemplateSave"
+    />
   </div>
 </template>
 

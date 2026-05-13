@@ -366,6 +366,9 @@
         }
       },
       "product": {
+        "*": {
+          "!": "Product updated"
+        },
         "update": {
           "price": "Product price updated"
         }

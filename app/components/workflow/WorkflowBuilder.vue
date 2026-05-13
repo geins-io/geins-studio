@@ -15,6 +15,7 @@ import WorkflowSidebarAddNode from './sidebar/WorkflowSidebarAddNode.vue'
 import WorkflowSidebarNodeProperties from './sidebar/WorkflowSidebarNodeProperties.vue'
 import WorkflowEdge from './edge/WorkflowEdge.vue'
 import WorkflowNode from './node/WorkflowNode.vue'
+import WorkflowNodeSaveTemplateDialog from './node/WorkflowNodeSaveTemplateDialog.vue'
 
 
 const props = defineProps<{
@@ -317,6 +318,37 @@ const onNodeCopy = (nodeId: string) => {
 }
 provide('onNodeCopy', onNodeCopy)
 
+// ─── Save as template ────────────────────────────────────────────
+const nodeTemplates = useNodeTemplates()
+const showSaveTemplateDialog = ref(false)
+const saveTemplateDefaults = ref({ name: '', description: '', nodeType: '', actionName: '', nodeData: {} as Record<string, unknown> })
+
+const onNodeSaveAsTemplate = (nodeId: string) => {
+  const source = findNode(nodeId)
+  if (!source) return
+  const data = (source.data ?? {}) as Record<string, unknown>
+  saveTemplateDefaults.value = {
+    name: (data.label as string) || (data.actionName as string) || source.type,
+    description: (data.description as string) || '',
+    nodeType: source.type,
+    actionName: (data.actionName as string) || '',
+    nodeData: JSON.parse(JSON.stringify(data)),
+  }
+  showSaveTemplateDialog.value = true
+}
+provide('onNodeSaveAsTemplate', onNodeSaveAsTemplate)
+
+const onSaveTemplate = (payload: { name: string, description?: string }) => {
+  nodeTemplates.saveTemplate({
+    name: payload.name,
+    description: payload.description,
+    nodeType: saveTemplateDefaults.value.nodeType,
+    actionName: saveTemplateDefaults.value.actionName || undefined,
+    nodeData: saveTemplateDefaults.value.nodeData,
+  })
+  toast({ title: 'Template saved', description: payload.name })
+}
+
 const onNodeOpenSettings = (nodeId: string) => {
   const node = findNode(nodeId)
   if (!node || node.type === 'trigger') return
@@ -370,18 +402,24 @@ const avoidTriggerNode = (pos: { x: number, y: number }): { x: number, y: number
   return pos
 }
 
-const buildNewNode = (item: PaletteItem, position: { x: number, y: number }) => ({
-  id: `${item.id}-${Date.now()}`,
-  type: item.nodeType,
-  position,
-  data: {
-    label: item.label,
-    description: item.description,
-    actionName: item.actionName,
-    subtype: item.nodeType === 'action' ? undefined : item.id,
-    config: {},
-  },
-})
+const buildNewNode = (item: PaletteItem, position: { x: number, y: number }) => {
+  if (item.templateId) {
+    const tmpl = nodeTemplates.getTemplate(item.templateId)
+    if (tmpl) return nodeTemplates.toCanvasNode(tmpl, position)
+  }
+  return {
+    id: `${item.id}-${Date.now()}`,
+    type: item.nodeType,
+    position,
+    data: {
+      label: item.label,
+      description: item.description,
+      actionName: item.actionName,
+      subtype: item.nodeType === 'action' ? undefined : item.id,
+      config: {},
+    },
+  }
+}
 
 // Drop handler: the palette sidebar sets the PaletteItem JSON on dataTransfer
 // in its `dragstart` handler, which we read here to place the node at the
@@ -886,6 +924,13 @@ v-if="showMinimap" position="bottom-right" :node-color="(node: any) => {
         </SheetFooter>
       </SheetContent>
     </Sheet>
+
+    <WorkflowNodeSaveTemplateDialog
+      v-model:open="showSaveTemplateDialog"
+      :default-name="saveTemplateDefaults.name"
+      :default-description="saveTemplateDefaults.description"
+      @save="onSaveTemplate"
+    />
   </div>
 </template>
 

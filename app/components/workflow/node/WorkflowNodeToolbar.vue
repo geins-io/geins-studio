@@ -7,6 +7,7 @@ const props = defineProps<{
 const onNodeDelete = inject<(nodeId: string) => void>('onNodeDelete')
 const onNodeCopy = inject<(nodeId: string) => void>('onNodeCopy')
 const onNodeOpenSettings = inject<(nodeId: string) => void>('onNodeOpenSettings')
+const onNodeSaveAsTemplate = inject<(nodeId: string) => void>('onNodeSaveAsTemplate')
 </script>
 
 <template>
@@ -29,6 +30,13 @@ const onNodeOpenSettings = inject<(nodeId: string) => void>('onNodeOpenSettings'
         @click.stop="onNodeCopy?.(props.nodeId)"
       >
         <LucideCopy class="h-3.5 w-3.5" />
+      </button>
+      <button
+        class="text-muted-foreground hover:bg-accent hover:text-foreground flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+        title="Save as template"
+        @click.stop="onNodeSaveAsTemplate?.(props.nodeId)"
+      >
+        <LucideBookmarkPlus class="h-3.5 w-3.5" />
       </button>
       <button
         class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive flex h-7 w-7 items-center justify-center rounded-md transition-colors"
