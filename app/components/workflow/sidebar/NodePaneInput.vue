@@ -373,14 +373,14 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
           <div>
             <p class="mb-1.5 font-medium">Patterns</p>
             <div class="space-y-1">
-              <div v-for="ref in expressionPatterns" :key="ref.pattern" class="flex items-start gap-2">
-                <code class="bg-muted shrink-0 rounded px-1 py-0.5 font-mono text-[10px]">{{ ref.pattern }}</code>
-                <span class="text-[10px]">{{ ref.description }}</span>
+              <div v-for="pat in expressionPatterns" :key="pat.pattern" class="flex items-start gap-2">
+                <code class="bg-muted shrink-0 rounded px-1 py-0.5 font-mono text-[10px]">{{ pat.pattern }}</code>
+                <span class="text-[10px]">{{ pat.description }}</span>
               </div>
             </div>
           </div>
 
-          <div>
+          <div v-pre>
             <p class="mb-1.5 font-medium">Workflow input</p>
             <p class="text-[10px] leading-relaxed">
               When triggered via HTTP, the request body is available as <code class="bg-muted rounded px-1 py-0.5 font-mono">{{input}}</code>.
@@ -389,7 +389,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
             </p>
           </div>
 
-          <div>
+          <div v-pre>
             <p class="mb-1.5 font-medium">Node output</p>
             <p class="text-[10px] leading-relaxed">
               Reference a specific node's output with
@@ -399,7 +399,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
             </p>
           </div>
 
-          <div>
+          <div v-pre>
             <p class="mb-1.5 font-medium">Example</p>
             <div class="bg-muted/50 space-y-0.5 rounded-md px-2 py-1.5 font-mono text-[10px]">
               <p>{{input.customerName}}</p>
