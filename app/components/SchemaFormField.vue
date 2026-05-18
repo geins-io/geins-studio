@@ -5,6 +5,7 @@ import {
   setSettingValue,
   groupFieldsIntoRows,
   gridClass,
+  getSubSectionContrastWarnings,
 } from '@/utils/storefront';
 
 defineOptions({ name: 'SchemaFormField' });
@@ -15,11 +16,19 @@ const props = withDefaults(
     modelValue: StorefrontSettings;
     nested?: boolean;
     isFirstSubSection?: boolean;
+    contrastWarning?: number | null;
   }>(),
   {
     nested: false,
     isFirstSubSection: false,
+    contrastWarning: null,
   },
+);
+
+const pairWarnings = computed(() =>
+  props.field.type === 'sub-section'
+    ? getSubSectionContrastWarnings(props.field, props.modelValue)
+    : {},
 );
 
 const emit = defineEmits<{
@@ -159,6 +168,7 @@ function isVisible(field: SchemaFormField): boolean {
     <FormInputColor
       :model-value="(getSettingValue(modelValue, field.key) as string) ?? ''"
       :label="field.label"
+      :contrast-warning="contrastWarning"
       @update:model-value="updateValue(field.key, $event)"
     />
     <FormInputDescription v-if="field.description">
@@ -230,18 +240,20 @@ function isVisible(field: SchemaFormField): boolean {
       :title="field.label"
       :description="field.description"
       size="md"
+      class="@max-3xl/schema:mt-4 @max-3xl/schema:mb-2"
     />
 
     <!-- With columns: lay out children directly in grid -->
     <div
       v-if="field.children && field.columns && field.columns > 1"
-      :class="gridClass(field.columns, 'gap-8')"
+      :class="gridClass(field.columns)"
     >
       <template v-for="child in field.children" :key="child.key">
         <SchemaFormField
           v-if="isVisible(child)"
           :field="child"
           :model-value="modelValue"
+          :contrast-warning="pairWarnings[child.key] ?? null"
           nested
           @update:model-value="$emit('update:modelValue', $event)"
         />
@@ -253,12 +265,15 @@ function isVisible(field: SchemaFormField): boolean {
         v-for="row in groupFieldsIntoRows(field.children)"
         :key="row.fields.map((f) => f.key).join('-')"
       >
-        <div :class="row.columns > 1 ? gridClass(row.columns) : undefined">
+        <div
+          :class="row.columns > 1 ? gridClass(row.columns, true) : undefined"
+        >
           <template v-for="child in row.fields" :key="child.key">
             <SchemaFormField
               v-if="isVisible(child)"
               :field="child"
               :model-value="modelValue"
+              :contrast-warning="pairWarnings[child.key] ?? null"
               nested
               @update:model-value="$emit('update:modelValue', $event)"
             />

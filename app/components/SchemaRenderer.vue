@@ -13,7 +13,7 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="@container/schema space-y-6">
     <ContentSection
       v-for="section in schema.sections"
       :key="section.key"

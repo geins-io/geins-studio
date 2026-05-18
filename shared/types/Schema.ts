@@ -56,6 +56,11 @@ export interface SchemaFormField {
     field: string;
     equals: unknown;
   };
+
+  // For `color` fields: marks the field as part of a contrast-checked pair
+  // within its sub-section parent. Two siblings with complementary roles
+  // are auto-paired and validated against WCAG AA at render time.
+  role?: 'background' | 'foreground';
 }
 
 export type SchemaFieldType =
