@@ -156,6 +156,7 @@ export interface WorkflowDefinition extends WorkflowSummary {
 export interface CreateWorkflowRequest {
   name: string;
   description?: string;
+  group?: string;
   tags?: string[];
   type?: WorkflowType;
   enabled?: boolean;

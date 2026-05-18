@@ -279,11 +279,18 @@ const toFormWorkflowType = (
 // Trigger details live in the nested `trigger` object on the API response (not at
 // the top level) — read them from there so the General tab reflects the stored
 // configuration instead of showing the defaults.
+const skipActiveSync = ref(false)
+
 watch(
   currentWorkflow,
   (wf) => {
     if (!wf || isNew.value) return
-    workflowActive.value = wf.enabled ?? false
+    if (skipActiveSync.value) {
+      skipActiveSync.value = false
+    }
+    else {
+      workflowActive.value = wf.enabled ?? false
+    }
     const rawInputs: WorkflowInput[] = Array.isArray((wf as any)?.input) ? (wf as any).input : []
     // Deep copy so edits in the Inputs tab don't mutate the cached workflow.
     workflowInputs.value = rawInputs.map(i => ({ ...i }))
@@ -469,14 +476,6 @@ const handleSave = async () => {
     })
     const apiType = toApiWorkflowType(values.trigger.type)
     const trigger = buildTriggerConfig(apiType, values.trigger)
-    if (workflowActive.value !== isEnabled.value) {
-      if (workflowActive.value) {
-        await orchestratorApi.workflow.enable(workflowId.value)
-      }
-      else {
-        await orchestratorApi.workflow.disable(workflowId.value)
-      }
-    }
     // If the Builder tab has been mounted, prefer its live canvas graph so
     // node position edits (ui.position) are persisted. Otherwise fall back to
     // the cached workflow's nodes/connections.
@@ -485,6 +484,7 @@ const handleSave = async () => {
     const payload = {
       name: values.details.name,
       description: values.details.description || undefined,
+      group: values.details.group || undefined,
       tags: values.details.tags,
       type: apiType,
       enabled: workflowActive.value,
@@ -502,6 +502,15 @@ const handleSave = async () => {
     geinsLogInfo('Save workflow — full payload (object):', payload)
     geinsLogInfo('Save workflow — full payload (JSON):\n' + JSON.stringify(payload, null, 2))
     await orchestratorApi.workflow.update(workflowId.value, payload)
+    if (workflowActive.value !== isEnabled.value) {
+      if (workflowActive.value) {
+        await orchestratorApi.workflow.enable(workflowId.value)
+      }
+      else {
+        await orchestratorApi.workflow.disable(workflowId.value)
+      }
+    }
+    skipActiveSync.value = true
     await refreshCurrentWorkflow()
     // Refreshing currentWorkflow re-fires the trigger-node data watcher in the
     // Builder, which bumps `builderChangeCount` *after* save. Wait two ticks

@@ -15,24 +15,30 @@ let nextPairId = 0
 interface MappingPair {
   id: number
   key: string
-  value: string
+  value: unknown
 }
 
 const pairs = ref<MappingPair[]>([])
 
-function makePair(key = '', value = ''): MappingPair {
+function makePair(key = '', value: unknown = ''): MappingPair {
   return { id: nextPairId++, key, value }
+}
+
+function displayValue(v: unknown): string {
+  if (v === null || v === undefined) return ''
+  if (typeof v === 'string') return v
+  return JSON.stringify(v)
 }
 
 function syncFromInput() {
   const entries = Object.entries(props.nodeInput).filter(([k]) => k !== '')
   pairs.value = entries.length > 0
-    ? entries.map(([k, v]) => makePair(k, String(v ?? '')))
+    ? entries.map(([k, v]) => makePair(k, v ?? ''))
     : [makePair()]
 }
 syncFromInput()
 
-function applyMapping(obj: Record<string, string>) {
+function applyMapping(obj: Record<string, unknown>) {
   const currentKeys = new Set(Object.keys(props.nodeInput))
   const newKeys = new Set<string>()
 
@@ -51,7 +57,7 @@ function applyMapping(obj: Record<string, string>) {
 }
 
 function emitMapping() {
-  const obj: Record<string, string> = {}
+  const obj: Record<string, unknown> = {}
   for (const pair of pairs.value) {
     const k = pair.key.trim()
     if (k) obj[k] = pair.value
@@ -71,7 +77,7 @@ function removePair(index: number) {
 
 let valueDebounceTimer: ReturnType<typeof setTimeout> | undefined
 
-function onValueChange(pair: MappingPair, val: string) {
+function onValueChange(pair: MappingPair, val: unknown) {
   pair.value = val
   clearTimeout(valueDebounceTimer)
   valueDebounceTimer = setTimeout(emitMapping, 300)
@@ -86,9 +92,9 @@ const jsonText = ref('')
 const jsonError = ref('')
 
 function buildJsonFromInput(): string {
-  const obj: Record<string, string> = {}
+  const obj: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(props.nodeInput)) {
-    if (k) obj[k] = String(v ?? '')
+    if (k) obj[k] = v ?? ''
   }
   return Object.keys(obj).length > 0 ? JSON.stringify(obj, null, 2) : '{\n  \n}'
 }
@@ -118,9 +124,9 @@ function onJsonChange(text: string) {
       return
     }
     jsonError.value = ''
-    const obj: Record<string, string> = {}
+    const obj: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(parsed)) {
-      obj[k] = typeof v === 'string' ? v : JSON.stringify(v)
+      obj[k] = v
     }
     applyMapping(obj)
   }
@@ -175,7 +181,7 @@ onUnmounted(() => {
             @keydown.enter="($event.target as HTMLInputElement).blur()"
           />
           <ExpressionInput
-            :model-value="pair.value"
+            :model-value="displayValue(pair.value)"
             placeholder="{{output.node-id.field}}"
             size="sm"
             default-mode="expression"
