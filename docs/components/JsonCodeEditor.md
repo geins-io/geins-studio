@@ -1,6 +1,6 @@
 # `JsonCodeEditor`
 
-`JsonCodeEditor` is the CodeMirror-backed JSON editor — used for exampel inside [`ChannelSchemaEditorSheet`](/components/channel/ChannelSchemaEditorSheet) for editing the storefront-settings schema. Themed with the app's CSS custom properties so it adapts to light/dark mode automatically.
+`JsonCodeEditor` is the CodeMirror-backed JSON editor — used for example inside [`ChannelSchemaEditorSheet`](/components/channel/ChannelSchemaEditorSheet) for editing the storefront-settings schema. Themed with the app's CSS custom properties so it adapts to light/dark mode automatically.
 
 ## Features
 

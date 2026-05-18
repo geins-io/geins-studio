@@ -49,13 +49,13 @@ A section groups related fields under a heading.
 }
 ```
 
-| Property      | Required | Description                                                              |
-| ------------- | -------- | ------------------------------------------------------------------------ |
+| Property      | Required | Description                                                                |
+| ------------- | -------- | -------------------------------------------------------------------------- |
 | `key`         | Yes      | Unique layout identifier for the section card. Not part of the data shape. |
-| `title`       | Yes      | Heading shown at the top of the section card                             |
-| `description` | No       | Subtitle shown below the heading                    |
-| `icon`        | No       | Lucide icon name shown next to the section title    |
-| `fields`      | Yes      | Array of field definitions (see below)              |
+| `title`       | Yes      | Heading shown at the top of the section card                               |
+| `description` | No       | Subtitle shown below the heading                                           |
+| `icon`        | No       | Lucide icon name shown next to the section title                           |
+| `fields`      | Yes      | Array of field definitions (see below)                                     |
 
 ---
 
@@ -189,12 +189,12 @@ A toggle that, when enabled, reveals a secondary choice (radio buttons or radio 
 }
 ```
 
-| `choice` property | Description                                                                  |
-| ----------------- | ---------------------------------------------------------------------------- |
+| `choice` property | Description                                                                      |
+| ----------------- | -------------------------------------------------------------------------------- |
 | `key`             | Inner property name (e.g. `access` → produces `features.priceVisibility.access`) |
-| `label`           | Optional label shown above the revealed choice                               |
-| `type`            | `radio` or `radio-cards` — delegates to the matching renderer                |
-| `options`         | Choice options (`SchemaFormFieldOption[]`)                                   |
+| `label`           | Optional label shown above the revealed choice                                   |
+| `type`            | `radio` or `radio-cards` — delegates to the matching renderer                    |
+| `options`         | Choice options (`SchemaFormFieldOption[]`)                                       |
 
 **Renders as:** A `ContentSwitch` with a master `Switch`; flipping it on reveals the inner choice with an animated transition.
 
@@ -253,8 +253,8 @@ Renders an image upload input with a square preview thumbnail.
 | Property      | Type   | Description                                                                                                                                                    |
 | ------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `description` | string | Free-text hint shown inside the empty-state of the upload card. Use this to communicate constraints (size, accepted formats, intent) — nothing auto-generated. |
-| `accept`      | string | Standard HTML `accept` value (comma-separated MIME types and/or extensions, e.g. `".ico,image/x-icon"` or `"image/png,image/svg+xml"`). Defaults to `image/*`.   |
-| `maxSizeMB`   | number | Maximum file size in megabytes. Files exceeding the limit are rejected with a toast. Not auto-rendered — describe it in `description` if you want it visible.   |
+| `accept`      | string | Standard HTML `accept` value (comma-separated MIME types and/or extensions, e.g. `".ico,image/x-icon"` or `"image/png,image/svg+xml"`). Defaults to `image/*`. |
+| `maxSizeMB`   | number | Maximum file size in megabytes. Files exceeding the limit are rejected with a toast. Not auto-rendered — describe it in `description` if you want it visible.  |
 
 ---
 
@@ -331,17 +331,17 @@ A layout container for grouping related fields visually. Does not produce a valu
 
 ## Common field properties
 
-| Property      | Type   | Description                                                                  |
-| ------------- | ------ | ---------------------------------------------------------------------------- |
-| `key`         | string | Deep dot-notation path used to store the value (e.g. `theme.colors.buttonBackground`) |
-| `type`        | string | Field type (see above)                                                       |
-| `label`       | string | Field label shown to the user                                                |
-| `description` | string | Subtitle / helper text below the label                                       |
-| `icon`        | string | Lucide icon name shown next to the label                                     |
-| `default`     | any    | Default value applied when no override is set                                |
-| `columns`     | number | Grid column span (1–4). Controls the field's width                           |
-| `children`    | array  | Nested fields (used by `sub-section`)                                        |
-| `choice`      | object | Inner choice descriptor (used by `boolean-choice`)                           |
+| Property      | Type   | Description                                                                                                                                                                                            |
+| ------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `key`         | string | Deep dot-notation path used to store the value (e.g. `theme.colors.buttonBackground`)                                                                                                                  |
+| `type`        | string | Field type (see above)                                                                                                                                                                                 |
+| `label`       | string | Field label shown to the user                                                                                                                                                                          |
+| `description` | string | Subtitle / helper text below the label                                                                                                                                                                 |
+| `icon`        | string | Lucide icon name shown next to the label                                                                                                                                                               |
+| `default`     | any    | Default value applied when no override is set                                                                                                                                                          |
+| `columns`     | number | Grid column span (1–4). Controls the field's width. Renderer wraps in `@container/schema` — top-level grids collapse to one column below the `xl` container breakpoint (sub-section grids below `2xl`) |
+| `children`    | array  | Nested fields (used by `sub-section`)                                                                                                                                                                  |
+| `choice`      | object | Inner choice descriptor (used by `boolean-choice`)                                                                                                                                                     |
 
 ---
 
@@ -374,16 +374,22 @@ Settings are stored as a **nested object**. Each field's `key` is a deep dot-not
   "branding": { "logoUrl": "", "faviconUrl": "" },
   "features": {
     "priceVisibility": { "enabled": true, "access": "authenticated" },
-    "orderPlacement":  { "enabled": true, "access": "authenticated" },
-    "stockStatus":     { "enabled": false, "access": "authenticated" }
+    "orderPlacement": { "enabled": true, "access": "authenticated" },
+    "stockStatus": { "enabled": false, "access": "authenticated" }
   },
   "seo": {
-    "defaultTitle": "", "titleTemplate": "", "defaultDescription": "",
-    "defaultKeywords": "", "robots": "index, follow",
-    "googleAnalyticsId": "", "googleTagManagerId": "", "verification": ""
+    "defaultTitle": "",
+    "titleTemplate": "",
+    "defaultDescription": "",
+    "defaultKeywords": "",
+    "robots": "index, follow",
+    "googleAnalyticsId": "",
+    "googleTagManagerId": "",
+    "verification": ""
   },
   "contact": {
-    "email": "", "phone": "",
+    "email": "",
+    "phone": "",
     "address": { "street": "", "city": "", "postalCode": "", "country": "" }
   }
 }
@@ -403,56 +409,56 @@ The default Geins schema covers four tabs:
 
 ### Base settings
 
-| Section             | Field                       | Type           | Default                                          |
-| ------------------- | --------------------------- | -------------- | ------------------------------------------------ |
-| Storefront mode     | `mode`                      | radio-cards    | `commerce`                                       |
-| Access requirements | `features.priceVisibility`  | boolean-choice | `{ enabled: true, access: "authenticated" }`     |
-| Access requirements | `features.orderPlacement`   | boolean-choice | `{ enabled: true, access: "authenticated" }`     |
-| Access requirements | `features.stockStatus`      | boolean-choice | `{ enabled: false, access: "authenticated" }`    |
+| Section             | Field                      | Type           | Default                                       |
+| ------------------- | -------------------------- | -------------- | --------------------------------------------- |
+| Storefront mode     | `mode`                     | radio-cards    | `commerce`                                    |
+| Access requirements | `features.priceVisibility` | boolean-choice | `{ enabled: true, access: "authenticated" }`  |
+| Access requirements | `features.orderPlacement`  | boolean-choice | `{ enabled: true, access: "authenticated" }`  |
+| Access requirements | `features.stockStatus`     | boolean-choice | `{ enabled: false, access: "authenticated" }` |
 
 ### Layout options
 
-| Section       | Field                                  | Type        | Default   |
-| ------------- | -------------------------------------- | ----------- | --------- |
-| Branding      | `branding.logoUrl`                     | image       | —         |
-| Branding      | `branding.faviconUrl`                  | image       | —         |
-| Corner style  | `theme.radius`                         | radio-cards | `0`       |
-| Font settings | `theme.typography.headingFontFamily`   | font        | `Hanuman` |
-| Font settings | `theme.typography.fontFamily`          | font        | `Geist`   |
-| Theme colors  | `theme.colors.buttonBackground`        | color       | `#0E7490` |
-| Theme colors  | `theme.colors.buttonText`              | color       | `#FFFFFF` |
-| Theme colors  | `theme.colors.buttonPurchaseBackground`| color       | `#0E7490` |
-| Theme colors  | `theme.colors.buttonPurchaseText`      | color       | `#FFFFFF` |
-| Theme colors  | `theme.colors.siteBackground`          | radio-cards | `#FFFFFF` |
-| Theme colors  | `theme.colors.navBarBackground`        | radio-cards | `#F5F5F5` |
-| Theme colors  | `theme.colors.topBarBackground`        | color       | `#0E7490` |
-| Theme colors  | `theme.colors.topBarText`              | color       | `#FFFFFF` |
-| Theme colors  | `theme.colors.footerBackground`        | color       | `#F5F5F5` |
-| Theme colors  | `theme.colors.footerText`              | color       | `#0A0A0A` |
+| Section       | Field                                   | Type        | Default   |
+| ------------- | --------------------------------------- | ----------- | --------- |
+| Branding      | `branding.logoUrl`                      | image       | —         |
+| Branding      | `branding.faviconUrl`                   | image       | —         |
+| Corner style  | `theme.radius`                          | radio-cards | `0`       |
+| Font settings | `theme.typography.headingFontFamily`    | font        | `Hanuman` |
+| Font settings | `theme.typography.fontFamily`           | font        | `Geist`   |
+| Theme colors  | `theme.colors.buttonBackground`         | color       | `#0E7490` |
+| Theme colors  | `theme.colors.buttonText`               | color       | `#FFFFFF` |
+| Theme colors  | `theme.colors.buttonPurchaseBackground` | color       | `#0E7490` |
+| Theme colors  | `theme.colors.buttonPurchaseText`       | color       | `#FFFFFF` |
+| Theme colors  | `theme.colors.siteBackground`           | radio-cards | `#FFFFFF` |
+| Theme colors  | `theme.colors.navBarBackground`         | radio-cards | `#F5F5F5` |
+| Theme colors  | `theme.colors.topBarBackground`         | color       | `#0E7490` |
+| Theme colors  | `theme.colors.topBarText`               | color       | `#FFFFFF` |
+| Theme colors  | `theme.colors.footerBackground`         | color       | `#F5F5F5` |
+| Theme colors  | `theme.colors.footerText`               | color       | `#0A0A0A` |
 
 ### SEO
 
-| Section          | Field                       | Type     | Default          |
-| ---------------- | --------------------------- | -------- | ---------------- |
-| SEO & analytics  | `seo.defaultTitle`          | string   | `""`             |
-| SEO & analytics  | `seo.titleTemplate`         | string   | `""`             |
-| SEO & analytics  | `seo.defaultDescription`    | textarea | `""`             |
-| SEO & analytics  | `seo.defaultKeywords`       | string   | `""`             |
-| SEO & analytics  | `seo.robots`                | radio    | `index, follow`  |
-| SEO & analytics  | `seo.googleAnalyticsId`     | string   | `""`             |
-| SEO & analytics  | `seo.googleTagManagerId`    | string   | `""`             |
-| SEO & analytics  | `seo.verification`          | string   | `""`             |
+| Section         | Field                    | Type     | Default         |
+| --------------- | ------------------------ | -------- | --------------- |
+| SEO & analytics | `seo.defaultTitle`       | string   | `""`            |
+| SEO & analytics | `seo.titleTemplate`      | string   | `""`            |
+| SEO & analytics | `seo.defaultDescription` | textarea | `""`            |
+| SEO & analytics | `seo.defaultKeywords`    | string   | `""`            |
+| SEO & analytics | `seo.robots`             | radio    | `index, follow` |
+| SEO & analytics | `seo.googleAnalyticsId`  | string   | `""`            |
+| SEO & analytics | `seo.googleTagManagerId` | string   | `""`            |
+| SEO & analytics | `seo.verification`       | string   | `""`            |
 
 ### Contact
 
-| Section          | Field                       | Type     | Default |
-| ---------------- | --------------------------- | -------- | ------- |
-| Contact details  | `contact.email`             | string   | `""`    |
-| Contact details  | `contact.phone`             | string   | `""`    |
-| Contact details  | `contact.address.street`    | string   | `""`    |
-| Contact details  | `contact.address.postalCode`| string   | `""`    |
-| Contact details  | `contact.address.city`      | string   | `""`    |
-| Contact details  | `contact.address.country`   | string   | `""`    |
+| Section         | Field                        | Type   | Default |
+| --------------- | ---------------------------- | ------ | ------- |
+| Contact details | `contact.email`              | string | `""`    |
+| Contact details | `contact.phone`              | string | `""`    |
+| Contact details | `contact.address.street`     | string | `""`    |
+| Contact details | `contact.address.postalCode` | string | `""`    |
+| Contact details | `contact.address.city`       | string | `""`    |
+| Contact details | `contact.address.country`    | string | `""`    |
 
 ---
 

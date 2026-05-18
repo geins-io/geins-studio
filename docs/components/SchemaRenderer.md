@@ -7,6 +7,7 @@
 - Renders each section through [`ContentSection`](/components/content/ContentSection) (title + description + icon)
 - Auto-rows each section's fields via the `groupFieldsIntoRows` utility — multi-column grids get the appropriate `gridClass`
 - Tags the first sub-section per section with `isFirstSubSection` so [`SchemaFormField`](/components/SchemaFormField) can suppress its top border
+- Wraps everything in `@container/schema` so multi-column grids collapse to one column on narrow containers (mirrors the [`FormGridWrap`](/components/form/FormGridWrap) pattern). Top-level grids collapse below `xl`; sub-section grids collapse below `2xl` — both driven by `gridClass(cols, sub)` in `@/utils/storefront`
 
 ## Usage
 
@@ -30,7 +31,7 @@ This is mounted inside [`ChannelStorefrontSettings`](/components/channel/Channel
 ### `schema`
 
 ```ts
-schema: SchemaTab
+schema: SchemaTab;
 ```
 
 A single tab descriptor with `sections` and per-section `fields`.
@@ -38,7 +39,7 @@ A single tab descriptor with `sections` and per-section `fields`.
 ### `modelValue`
 
 ```ts
-modelValue: StorefrontSettings
+modelValue: StorefrontSettings;
 ```
 
 The full settings object — bubbled up to each [`SchemaFormField`](/components/SchemaFormField) for read/write.
