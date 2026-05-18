@@ -69,11 +69,22 @@ const upstreamNodes = computed(() => {
     if (!n) continue
     const data = (n.data ?? {}) as Record<string, unknown>
     const action = manifestStore.getAction(data.actionName as string | undefined)
+    const actionName = data.actionName as string | undefined
+
+    let outputFields: Array<{ name: string, type: string }>
+    if (actionName === 'transform.map') {
+      const input = (data.input ?? {}) as Record<string, unknown>
+      outputFields = Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: 'any' }))
+    }
+    else {
+      outputFields = (action?.output ?? []) as Array<{ name: string, type: string }>
+    }
+
     result.push({
       id: n.id,
       label: (data.label as string) || action?.displayName || n.id,
-      actionName: data.actionName as string | undefined,
-      outputFields: (action?.output ?? []) as Array<{ name: string, type: string }>,
+      actionName,
+      outputFields,
     })
   }
   return result

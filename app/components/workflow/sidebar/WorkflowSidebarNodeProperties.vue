@@ -92,7 +92,17 @@ const expressionCompletions = computed<ExpressionCompletion[]>(() => {
     const section = `output · ${label}`
     const exec = lastNodeExecutions?.value?.get(srcId)
 
-    for (const field of (action?.output ?? [])) {
+    const actionName = data.actionName as string | undefined
+    let outputFields: Array<{ name: string, type: string }>
+    if (actionName === 'transform.map') {
+      const input = (data.input ?? {}) as Record<string, unknown>
+      outputFields = Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: 'any' }))
+    }
+    else {
+      outputFields = (action?.output ?? []) as Array<{ name: string, type: string }>
+    }
+
+    for (const field of outputFields) {
       items.push({
         expression: `{{output.${srcId}.${field.name}}}`,
         label: field.name,

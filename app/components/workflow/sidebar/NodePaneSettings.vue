@@ -88,7 +88,14 @@ const isTextarea = (field: { editorHint?: string, type: string }): boolean =>
 
 const activeTab = ref<'settings' | 'schema' | 'expressions' | 'variables'>('settings')
 
-const outputFields = computed(() => manifestAction.value?.output ?? [])
+const outputFields = computed(() => {
+  const actionName = props.nodeData.actionName as string | undefined
+  if (actionName === 'transform.map') {
+    const input = (props.nodeData.input ?? {}) as Record<string, unknown>
+    return Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: 'any', description: '' }))
+  }
+  return manifestAction.value?.output ?? []
+})
 
 const expressionVariables = computed(() => manifestStore.manifest.value?.expressionVariables ?? [])
 
