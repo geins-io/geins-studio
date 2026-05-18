@@ -53,7 +53,13 @@ const updateConfig = (name: string, value: unknown) => {
 
 const updateInput = (name: string, value: unknown) => {
   if (!props.nodeData.input) props.nodeData.input = {}
-  ;(props.nodeData.input as Record<string, unknown>)[name] = value
+  const input = props.nodeData.input as Record<string, unknown>
+  if (value === undefined) {
+    delete input[name]
+  }
+  else {
+    input[name] = value
+  }
   onNodeSettingsChange()
 }
 

@@ -10,13 +10,25 @@ const props = defineProps<{
 
 const mode = ref<'fields' | 'json'>('fields')
 
-const pairs = ref<Array<{ key: string, value: string }>>([])
+let nextPairId = 0
+
+interface MappingPair {
+  id: number
+  key: string
+  value: string
+}
+
+const pairs = ref<MappingPair[]>([])
+
+function makePair(key = '', value = ''): MappingPair {
+  return { id: nextPairId++, key, value }
+}
 
 function syncFromInput() {
   const entries = Object.entries(props.nodeInput).filter(([k]) => k !== '')
   pairs.value = entries.length > 0
-    ? entries.map(([k, v]) => ({ key: k, value: String(v ?? '') }))
-    : [{ key: '', value: '' }]
+    ? entries.map(([k, v]) => makePair(k, String(v ?? '')))
+    : [makePair()]
 }
 syncFromInput()
 
@@ -48,16 +60,24 @@ function emitMapping() {
 }
 
 function addPair() {
-  pairs.value.push({ key: '', value: '' })
+  pairs.value.push(makePair())
 }
 
 function removePair(index: number) {
   pairs.value.splice(index, 1)
-  if (pairs.value.length === 0) pairs.value.push({ key: '', value: '' })
+  if (pairs.value.length === 0) pairs.value.push(makePair())
   emitMapping()
 }
 
-function onPairUpdate() {
+let valueDebounceTimer: ReturnType<typeof setTimeout> | undefined
+
+function onValueChange(pair: MappingPair, val: string) {
+  pair.value = val
+  clearTimeout(valueDebounceTimer)
+  valueDebounceTimer = setTimeout(emitMapping, 300)
+}
+
+function onKeyBlur() {
   emitMapping()
 }
 
@@ -108,6 +128,10 @@ function onJsonChange(text: string) {
     jsonError.value = 'Invalid JSON'
   }
 }
+
+onUnmounted(() => {
+  clearTimeout(valueDebounceTimer)
+})
 </script>
 
 <template>
@@ -138,7 +162,7 @@ function onJsonChange(text: string) {
     <div class="divide-y border-y">
       <div
         v-for="(pair, index) in pairs"
-        :key="index"
+        :key="pair.id"
         class="flex items-start gap-2 py-3"
       >
         <div class="min-w-0 flex-1 space-y-1.5">
@@ -147,7 +171,7 @@ function onJsonChange(text: string) {
             placeholder="Output field name"
             size="sm"
             @update:model-value="pair.key = String($event)"
-            @blur="emitMapping()"
+            @blur="onKeyBlur"
             @keydown.enter="($event.target as HTMLInputElement).blur()"
           />
           <ExpressionInput
@@ -155,7 +179,7 @@ function onJsonChange(text: string) {
             placeholder="{{output.node-id.field}}"
             size="sm"
             default-mode="expression"
-            @update:model-value="pair.value = String($event); onPairUpdate()"
+            @update:model-value="onValueChange(pair, String($event))"
           />
         </div>
         <button

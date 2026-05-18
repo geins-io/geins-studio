@@ -43,14 +43,18 @@ function toCamelKey(key: string): string {
   return key.charAt(0).toLowerCase() + key.slice(1);
 }
 
-function normalizeKeys<T>(value: unknown): T {
+const PRESERVE_VALUE_KEYS = new Set(['input', 'output', 'Input', 'Output']);
+
+function normalizeKeys<T>(value: unknown, preserveValue = false): T {
   if (Array.isArray(value)) {
-    return value.map((v) => normalizeKeys(v)) as unknown as T;
+    return value.map((v) => normalizeKeys(v, preserveValue)) as unknown as T;
   }
   if (value && typeof value === 'object') {
+    if (preserveValue) return value as T;
     const out: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      out[toCamelKey(k)] = normalizeKeys(v);
+      const camelKey = toCamelKey(k);
+      out[camelKey] = normalizeKeys(v, PRESERVE_VALUE_KEYS.has(k));
     }
     return out as T;
   }

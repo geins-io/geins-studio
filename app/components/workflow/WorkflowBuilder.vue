@@ -309,7 +309,7 @@ const onNodeCopy = (nodeId: string) => {
   if (!source) return
   const position = { x: source.position.x + (source.dimensions?.width ?? 200) + 60, y: source.position.y }
   const newNode = {
-    id: `${nodeId.split('-')[0]}-${Date.now()}`,
+    id: nextNodeId(nodeId.replace(/-\d+$/, '')),
     type: source.type,
     position,
     data: JSON.parse(JSON.stringify(source.data)),
@@ -402,13 +402,24 @@ const avoidTriggerNode = (pos: { x: number, y: number }): { x: number, y: number
   return pos
 }
 
+function nextNodeId(prefix: string): string {
+  const base = prefix.replaceAll('.', '-')
+  const existing = nodes.value.filter(n => n.id.startsWith(base + '-'))
+  const usedNums = existing.map((n) => {
+    const suffix = n.id.slice(base.length + 1)
+    return /^\d+$/.test(suffix) ? Number(suffix) : 0
+  })
+  const next = usedNums.length > 0 ? Math.max(...usedNums) + 1 : 1
+  return `${base}-${String(next).padStart(2, '0')}`
+}
+
 const buildNewNode = (item: PaletteItem, position: { x: number, y: number }) => {
   if (item.templateId) {
     const tmpl = nodeTemplates.getTemplate(item.templateId)
     if (tmpl) return nodeTemplates.toCanvasNode(tmpl, position)
   }
   return {
-    id: `${item.id}-${Date.now()}`,
+    id: nextNodeId(item.id),
     type: item.nodeType,
     position,
     data: {
