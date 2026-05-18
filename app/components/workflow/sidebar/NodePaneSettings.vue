@@ -338,9 +338,9 @@ const onSettingsDrop = (event: DragEvent) => {
     </div>
 
     <!-- Expressions tab -->
-    <div v-show="activeTab === 'expressions'" class="flex flex-1 flex-col overflow-hidden">
+    <div v-show="activeTab === 'expressions'" class="flex flex-1 flex-col overflow-hidden pt-4">
       <!-- Category pills -->
-      <div v-if="fnCategories.size > 1" class="flex gap-1 overflow-x-auto border-b px-3 py-1.5">
+      <div v-if="fnCategories.size > 1" class="flex gap-1 overflow-x-auto border-b px-4 pb-2">
         <button
           v-for="[cat] in fnCategories"
           :key="cat"
@@ -361,7 +361,7 @@ const onSettingsDrop = (event: DragEvent) => {
           <div
             v-for="fn in filteredFunctions"
             :key="fn.name"
-            class="px-3 py-3 space-y-1.5"
+            class="px-4 py-3 space-y-1.5"
           >
             <!-- Signature -->
             <div class="flex items-start justify-between gap-2">
