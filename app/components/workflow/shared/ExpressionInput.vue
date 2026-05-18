@@ -599,19 +599,25 @@ function onFixedInput(val: string | number) {
       :class="mode === 'expression' ? 'top-1' : 'top-1/2 -translate-y-1/2'"
     >
       <!-- Function reference button (expression mode only) -->
-      <Popover v-if="mode === 'expression' && expressionFunctions.length > 0" v-model:open="showFnRef">
-        <PopoverTrigger as-child>
-          <button
-            type="button"
-            class="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold transition-colors"
-            :class="showFnRef
-              ? 'bg-primary/15 text-primary'
-              : 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400'"
-            title="Expression functions"
-          >
-            ƒ
-          </button>
-        </PopoverTrigger>
+      <TooltipProvider v-if="mode === 'expression' && expressionFunctions.length > 0" :delay-duration="300">
+        <Tooltip :open="!showFnRef ? undefined : false">
+          <Popover v-model:open="showFnRef">
+            <TooltipTrigger as-child>
+              <PopoverTrigger as-child>
+                <button
+                  type="button"
+                  class="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold transition-colors"
+                  :class="showFnRef
+                    ? 'bg-primary/15 text-primary'
+                    : 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400'"
+                >
+                  ƒ
+                </button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="top" :side-offset="4">
+              Insert function
+            </TooltipContent>
         <PopoverContent
           align="end"
           :side-offset="8"
@@ -666,20 +672,30 @@ function onFixedInput(val: string | number) {
             </div>
           </div>
         </PopoverContent>
-      </Popover>
+          </Popover>
+        </Tooltip>
+      </TooltipProvider>
 
       <!-- fx toggle -->
-      <button
-        type="button"
-        class="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold transition-colors"
-        :class="mode === 'expression'
-          ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400'
-          : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted opacity-0 group-hover:opacity-100 focus:opacity-100'"
-        :title="mode === 'expression' ? 'Switch to fixed value' : 'Switch to expression'"
-        @click="toggleMode"
-      >
-        =
-      </button>
+      <TooltipProvider :delay-duration="300">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <button
+              type="button"
+              class="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold transition-colors"
+              :class="mode === 'expression'
+                ? 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400'
+                : 'text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted opacity-0 group-hover:opacity-100 focus:opacity-100'"
+              @click="toggleMode"
+            >
+              =
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" :side-offset="4">
+            {{ mode === 'expression' ? 'Switch to fixed value' : 'Switch to expression' }}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   </div>
 </template>
