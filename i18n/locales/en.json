@@ -762,5 +762,9 @@
     "remove_market": "Remove market",
     "remove_market_description": "Are you sure you want to remove this market from the channel? This change will take effect when you save.",
     "no_payment_methods": "No payment methods available for this channel."
+  },
+  "theme_colors": {
+    "contrast_warning_title": "Low contrast",
+    "contrast_warning_body": "Contrast ratio {ratio}:1 is below WCAG 2.1 AA (4.5:1). Text may be hard to read for users with low vision."
   }
 }

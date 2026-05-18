@@ -196,14 +196,16 @@
                     "type": "color",
                     "label": "Background",
                     "columns": 2,
-                    "default": "#0E7490"
+                    "default": "#0E7490",
+                    "role": "background"
                   },
                   {
                     "key": "theme.colors.buttonText",
                     "type": "color",
                     "label": "Text",
                     "columns": 2,
-                    "default": "#FFFFFF"
+                    "default": "#FFFFFF",
+                    "role": "foreground"
                   }
                 ]
               },
@@ -217,14 +219,16 @@
                     "type": "color",
                     "label": "Background",
                     "columns": 2,
-                    "default": "#0E7490"
+                    "default": "#0E7490",
+                    "role": "background"
                   },
                   {
                     "key": "theme.colors.buttonPurchaseText",
                     "type": "color",
                     "label": "Text",
                     "columns": 2,
-                    "default": "#FFFFFF"
+                    "default": "#FFFFFF",
+                    "role": "foreground"
                   }
                 ]
               }
@@ -297,14 +301,16 @@
                 "type": "color",
                 "label": "Background",
                 "columns": 4,
-                "default": "#0E7490"
+                "default": "#0E7490",
+                "role": "background"
               },
               {
                 "key": "theme.colors.topBarText",
                 "type": "color",
                 "label": "Text",
                 "columns": 4,
-                "default": "#FFFFFF"
+                "default": "#FFFFFF",
+                "role": "foreground"
               }
             ]
           },
@@ -319,14 +325,16 @@
                 "type": "color",
                 "label": "Background",
                 "columns": 4,
-                "default": "#F5F5F5"
+                "default": "#F5F5F5",
+                "role": "background"
               },
               {
                 "key": "theme.colors.footerText",
                 "type": "color",
                 "label": "Text",
                 "columns": 4,
-                "default": "#0A0A0A"
+                "default": "#0A0A0A",
+                "role": "foreground"
               }
             ]
           }
