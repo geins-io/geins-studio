@@ -60,11 +60,6 @@ export function groupFieldsIntoRows(
   return rows;
 }
 
-/**
- * Static grid class map — avoids dynamic Tailwind class generation.
- * Collapses to a single column below the 3xl container breakpoint
- * (requires an ancestor with `@container/schema`).
- */
 const gridClassMap: Record<number, string> = {
   2: 'grid grid-cols-2',
   3: 'grid grid-cols-3',

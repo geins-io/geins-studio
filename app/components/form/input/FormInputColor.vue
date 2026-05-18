@@ -62,13 +62,21 @@ function onTextInput(value: string | number) {
       @update:model-value="onTextInput"
     />
 
-    <InputGroupAddon v-if="contrastWarning !== null" align="inline-end">
+    <InputGroupAddon
+      v-if="contrastWarning !== null"
+      align="inline-end"
+      class="mr-0!"
+    >
       <TooltipProvider :delay-duration="150">
         <Tooltip>
           <TooltipTrigger as-child>
-            <span class="flex shrink-0 cursor-help items-center">
+            <button
+              type="button"
+              class="flex shrink-0 cursor-help items-center"
+              :aria-label="t('theme_colors.contrast_warning_title')"
+            >
               <LucideTriangleAlert class="text-warning size-4" />
-            </span>
+            </button>
           </TooltipTrigger>
           <TooltipContent class="max-w-xs">
             <p class="font-semibold">
