@@ -29,6 +29,17 @@ const lastNodeExecutions = inject<Ref<Map<string, NodeExecData>>>('lastNodeExecu
 
 const hasExecutionInput = computed(() => props.nodeExecution?.input != null)
 
+function inferValueType(v: unknown): string {
+  if (v === null || v === undefined) return 'string'
+  if (Array.isArray(v)) return 'array'
+  if (typeof v === 'object') return 'object'
+  if (typeof v === 'boolean') return 'boolean'
+  if (typeof v === 'number') return 'number'
+  const s = String(v)
+  if (s.startsWith('{') || s.startsWith('[')) return 'json'
+  return 'string'
+}
+
 const formatJson = (value: unknown): string => {
   if (value == null) return '{}'
   if (typeof value === 'string') return value
@@ -74,7 +85,7 @@ const upstreamNodes = computed(() => {
     let outputFields: Array<{ name: string, type: string }>
     if (actionName === 'transform.map') {
       const input = (data.input ?? {}) as Record<string, unknown>
-      outputFields = Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: 'any' }))
+      outputFields = Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: inferValueType(input[k]) }))
     }
     else {
       outputFields = (action?.output ?? []) as Array<{ name: string, type: string }>

@@ -34,6 +34,7 @@ const TYPE_MAP: Record<string, TypeMeta> = {
   object:  { label: '{ }', class: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
   json:    { label: '{ }', class: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
   array:   { label: '[ ]', class: 'bg-teal-500/10 text-teal-600 dark:text-teal-400' },
+  any:     { label: '{ }', class: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
   secret:  { label: '***', class: 'bg-red-500/10 text-red-600 dark:text-red-400' },
   date:    { label: '📅',  class: 'bg-pink-500/10 text-pink-600 dark:text-pink-400' },
 }
