@@ -203,6 +203,12 @@ const confirmAddInput = () => {
   addInputDialogOpen.value = false
 }
 
+const toggleRequired = (name: string) => {
+  emit('update:inputs', props.inputs.map(i =>
+    i.name === name ? { ...i, required: !i.required } : i,
+  ))
+}
+
 const removeInput = (name: string) => {
   emit('update:inputs', props.inputs.filter(i => i.name !== name))
   const { [name]: _removed, ...rest } = props.inputValues
@@ -321,19 +327,33 @@ v-for="group in filteredInputsByCategory" v-else :key="group.category" :title="g
               </div>
               <FormMessage />
             </div>
-            <div class="shrink-0">
-              <FormControl>
+            <div class="flex shrink-0 items-center gap-3">
+              <div class="space-y-1">
+                <label :for="`inp-${item.name}`" class="text-muted-foreground text-[11px]">Default value</label>
+                <FormControl>
+                  <Switch
+                    v-if="item.type === 'boolean'" :id="`inp-${item.name}`"
+                    :checked="componentField.modelValue" @update:checked="componentField['onUpdate:modelValue']" />
+                  <Input
+                    v-else-if="item.type === 'number'" :id="`inp-${item.name}`" type="number" class="w-48"
+                    :model-value="numberInputValue(item.name)"
+                    @update:model-value="(v) => componentField['onUpdate:modelValue'](v === '' ? null : Number(v))" />
+                  <Input
+                    v-else :id="`inp-${item.name}`" class="w-48"
+                    v-bind="componentField" />
+                </FormControl>
+              </div>
+              <div class="flex items-center gap-1.5">
                 <Switch
-                  v-if="item.type === 'boolean'" :id="`inp-${item.name}`"
-                  :checked="componentField.modelValue" @update:checked="componentField['onUpdate:modelValue']" />
-                <Input
-                  v-else-if="item.type === 'number'" :id="`inp-${item.name}`" type="number" class="w-64"
-                  :model-value="numberInputValue(item.name)"
-                  @update:model-value="(v) => componentField['onUpdate:modelValue'](v === '' ? null : Number(v))" />
-                <Input
-                  v-else :id="`inp-${item.name}`" class="w-64"
-                  v-bind="componentField" />
-              </FormControl>
+                  :id="`inp-required-${item.name}`"
+                  size="sm"
+                  :checked="!!item.required"
+                  @update:checked="toggleRequired(item.name)"
+                />
+                <label :for="`inp-required-${item.name}`" class="text-muted-foreground cursor-pointer text-xs whitespace-nowrap">
+                  Required
+                </label>
+              </div>
             </div>
             <Button
               variant="ghost" size="icon"

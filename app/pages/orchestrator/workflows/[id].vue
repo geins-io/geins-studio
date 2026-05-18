@@ -460,9 +460,11 @@ const handleSave = async () => {
     const values = form.values
     const mergedInputs: WorkflowInput[] = workflowInputs.value.map((i) => {
       const val = inputValues.value[i.name]
+      const hasValue = val !== undefined && val !== null && val !== ''
+      const { defaultValue: _, ...rest } = i
       return {
-        ...i,
-        ...(val != null && { defaultValue: val }),
+        ...rest,
+        ...(hasValue && { defaultValue: val }),
       }
     })
     const apiType = toApiWorkflowType(values.trigger.type)
@@ -528,6 +530,50 @@ const saveAndRun = async () => {
   await handleSave()
   if (!hasUnsavedChanges.value) {
     await builderRef.value?.startExecution()
+  }
+}
+
+// ─── Run workflow (production) ────────────────────────────────────
+const showRunSheet = ref(false)
+const runInputValues = ref<Record<string, unknown>>({})
+const isRunning = ref(false)
+
+function openRunWorkflow() {
+  const values: Record<string, unknown> = {}
+  for (const input of workflowInputs.value) {
+    values[input.name] = input.defaultValue ?? ''
+  }
+  runInputValues.value = values
+  showRunSheet.value = true
+}
+
+async function executeWorkflow() {
+  showRunSheet.value = false
+  isRunning.value = true
+  try {
+    const hasParams = Object.keys(runInputValues.value).length > 0
+    const res = await orchestratorApi.execution.start(
+      workflowId.value,
+      hasParams ? { parameters: runInputValues.value } : undefined,
+    )
+    const execId = res?.executionId ?? res?.newExecutionId ?? null
+    toast({
+      title: 'Workflow started',
+      description: execId ? `Execution ID: ${execId}` : res?.message ?? 'Workflow is running.',
+    })
+    refreshExecutions()
+  }
+  catch (err) {
+    geinsLogError('Failed to run workflow', err)
+    const apiErr = extractApiError(err)
+    toast({
+      title: apiErr?.title ?? 'Failed to run workflow',
+      description: apiErr?.detail ?? (err instanceof Error ? err.message : 'Unknown error'),
+      variant: 'negative',
+    })
+  }
+  finally {
+    isRunning.value = false
   }
 }
 
@@ -701,6 +747,11 @@ v-if="!isNew" icon="save" :loading="isSavingConfig"
                 <LucideCopy class="mr-2 size-4" />
                 <span>Duplicate</span>
               </DropdownMenuItem>
+              <DropdownMenuItem :disabled="!currentWorkflow || isRunning" @click="openRunWorkflow">
+                <LucideRocket class="mr-2 size-4" />
+                <span>Run workflow</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem :disabled="!currentWorkflow" @click="workflowActive = !workflowActive">
                 <LucidePause v-if="workflowActive" class="mr-2 size-4" />
                 <LucidePlay v-else class="mr-2 size-4" />
@@ -1093,6 +1144,62 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
       </ContentEditMain>
     </form>
   </ContentEditWrap>
+
+  <!-- Run workflow sheet -->
+  <Sheet v-model:open="showRunSheet">
+    <SheetContent width="medium">
+      <SheetHeader>
+        <SheetTitle>Run workflow</SheetTitle>
+        <SheetDescription>Start a production execution of this workflow.</SheetDescription>
+      </SheetHeader>
+      <SheetBody>
+        <div v-if="workflowInputs.length === 0" class="text-muted-foreground py-8 text-center text-sm">
+          This workflow has no input parameters. It will run with default settings.
+        </div>
+        <div v-else class="space-y-4">
+          <div v-for="input in workflowInputs" :key="input.name" class="space-y-1.5">
+            <label class="text-sm font-medium">
+              {{ input.name }}
+              <span v-if="input.required" class="text-destructive">*</span>
+            </label>
+            <p v-if="input.description" class="text-muted-foreground text-xs">{{ input.description }}</p>
+            <Textarea
+              v-if="input.type === 'object' || input.type === 'json'"
+              :model-value="typeof runInputValues[input.name] === 'string' ? runInputValues[input.name] as string : JSON.stringify(runInputValues[input.name], null, 2)"
+              rows="4"
+              class="font-mono text-xs"
+              @update:model-value="runInputValues[input.name] = $event"
+            />
+            <Input
+              v-else-if="input.type === 'number' || input.type === 'integer'"
+              type="number"
+              :model-value="runInputValues[input.name] as number"
+              @update:model-value="runInputValues[input.name] = Number($event)"
+            />
+            <div v-else-if="input.type === 'boolean'" class="flex items-center gap-2">
+              <Switch
+                :checked="!!runInputValues[input.name]"
+                @update:checked="runInputValues[input.name] = $event"
+              />
+              <span class="text-muted-foreground text-xs">{{ runInputValues[input.name] ? 'true' : 'false' }}</span>
+            </div>
+            <Input
+              v-else
+              :model-value="runInputValues[input.name] as string"
+              @update:model-value="runInputValues[input.name] = $event"
+            />
+          </div>
+        </div>
+      </SheetBody>
+      <SheetFooter>
+        <Button variant="outline" @click="showRunSheet = false">Cancel</Button>
+        <Button :disabled="isRunning" @click="executeWorkflow">
+          <LucideRocket class="mr-1.5 h-3.5 w-3.5" />
+          Run workflow
+        </Button>
+      </SheetFooter>
+    </SheetContent>
+  </Sheet>
 
   <!-- Builder mode: rendered outside ContentEditWrap so it escapes the
        `container` max-width. `-mx-3 @2xl:-mx-8` also escapes the default

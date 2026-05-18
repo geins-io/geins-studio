@@ -172,22 +172,21 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         workflowId: string,
         data?: StartWorkflowRequest,
       ): Promise<StartWorkflowResponse> {
-        // Backend requires GET with no body. Any start parameters go on the query string.
-        const query = data
-          ? '?' +
-            new URLSearchParams(
-              Object.entries(data).flatMap(([k, v]) =>
-                v === undefined
-                  ? []
-                  : [[k, typeof v === 'string' ? v : JSON.stringify(v)]],
-              ),
-            ).toString()
-          : '';
+        const params = data?.parameters;
+        const headers: Record<string, string> = {};
+        if (data?.idempotencyKey)
+          headers['Idempotency-Key'] = data.idempotencyKey;
+
+        // POST with input values as the body (not wrapped in `parameters`).
+        // GET is also supported but POST allows a JSON body for complex inputs.
         const raw = await fetch<Record<string, unknown>>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/execute${query}`,
-          { method: 'GET' },
+          `${WORKFLOW_ENDPOINT}/${workflowId}/execute`,
+          {
+            method: 'POST',
+            ...(params && Object.keys(params).length > 0 && { body: params }),
+            headers,
+          },
         );
-        // API returns PascalCase fields; normalize to the camelCase response type.
         return {
           success: raw.Status === 'accepted' || raw.success === true,
           status: (raw.Status ?? raw.status) as string | undefined,
@@ -206,9 +205,13 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         workflowId: string,
         data?: StartWorkflowRequest,
       ): Promise<StartWorkflowResponse> {
+        const params = data?.parameters;
         const raw = await fetch<Record<string, unknown>>(
           `${WORKFLOW_ENDPOINT}/${workflowId}/test-run`,
-          { method: 'POST', body: data },
+          {
+            method: 'POST',
+            ...(params && Object.keys(params).length > 0 && { body: params }),
+          },
         );
         return {
           success: raw.Status === 'accepted' || raw.success === true,
