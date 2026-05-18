@@ -86,9 +86,11 @@ const isTextarea = (field: { editorHint?: string, type: string }): boolean =>
   || field.type.toLowerCase() === 'object'
   || field.type.toLowerCase() === 'json'
 
-const activeTab = ref<'settings' | 'schema' | 'expressions'>('settings')
+const activeTab = ref<'settings' | 'schema' | 'expressions' | 'variables'>('settings')
 
 const outputFields = computed(() => manifestAction.value?.output ?? [])
+
+const expressionVariables = computed(() => manifestStore.manifest.value?.expressionVariables ?? [])
 
 const expressionFunctions = computed(() => manifestStore.expressionFunctions.value)
 
@@ -111,19 +113,10 @@ watch(fnCategories, (cats) => {
   }
 }, { immediate: true })
 
-const fnSearch = ref('')
-
 const filteredFunctions = computed(() => {
-  const q = fnSearch.value.toLowerCase().trim()
-  const fns = activeFnCategory.value
+  return activeFnCategory.value
     ? fnCategories.value.get(activeFnCategory.value) ?? []
     : expressionFunctions.value
-  if (!q) return fns
-  return fns.filter(fn =>
-    fn.name.toLowerCase().includes(q)
-    || fn.description?.toLowerCase().includes(q)
-    || fn.aliases?.some(a => a.toLowerCase().includes(q)),
-  )
 })
 
 function fnSignature(fn: typeof expressionFunctions.value[number]): string {
@@ -241,7 +234,18 @@ const onSettingsDrop = (event: DragEvent) => {
         @click="activeTab = 'expressions'"
       >
         <LucideBraces class="h-3.5 w-3.5" />
-        Expressions
+        Functions
+      </button>
+      <button
+        type="button"
+        class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors"
+        :class="activeTab === 'variables'
+          ? 'text-foreground border-b-2 border-primary'
+          : 'text-muted-foreground hover:text-foreground'"
+        @click="activeTab = 'variables'"
+      >
+        <LucideVariable class="h-3.5 w-3.5" />
+        Variables
       </button>
     </div>
 
@@ -335,19 +339,6 @@ const onSettingsDrop = (event: DragEvent) => {
 
     <!-- Expressions tab -->
     <div v-show="activeTab === 'expressions'" class="flex flex-1 flex-col overflow-hidden">
-      <!-- Search -->
-      <div class="border-b px-3 py-2">
-        <div class="relative">
-          <LucideSearch class="text-muted-foreground absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
-          <Input
-            v-model="fnSearch"
-            placeholder="Search functions..."
-            size="sm"
-            class="pl-8"
-          />
-        </div>
-      </div>
-
       <!-- Category pills -->
       <div v-if="fnCategories.size > 1" class="flex gap-1 overflow-x-auto border-b px-3 py-1.5">
         <button
@@ -432,6 +423,40 @@ const onSettingsDrop = (event: DragEvent) => {
         >
           <LucideSearchX class="h-8 w-8 opacity-40" />
           <p class="font-medium">No functions found</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variables tab -->
+    <div v-show="activeTab === 'variables'" class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
+      <div v-if="expressionVariables.length" class="divide-y">
+        <div
+          v-for="v in expressionVariables"
+          :key="v.pattern"
+          class="py-3 space-y-1"
+        >
+          <code class="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded px-2 py-0.5 font-mono text-xs font-medium">
+            {{ v.pattern }}
+          </code>
+          <p v-if="v.description" class="text-muted-foreground text-xs leading-relaxed">
+            {{ v.description }}
+          </p>
+          <div
+            v-if="v.example"
+            class="bg-muted/70 rounded px-2.5 py-1.5 font-mono text-[11px]"
+          >
+            {{ v.example }}
+          </div>
+        </div>
+      </div>
+      <div
+        v-else
+        class="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center text-xs"
+      >
+        <LucideVariable class="h-8 w-8 opacity-40" />
+        <div>
+          <p class="font-medium">No expression variables</p>
+          <p class="mt-0.5 opacity-70">The manifest does not define any expression variables</p>
         </div>
       </div>
     </div>

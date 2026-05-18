@@ -164,14 +164,6 @@ const inferVarType = (v: { value: string, isSecret: boolean }): string => {
   return 'string'
 }
 
-// ─── Expression reference data ───────────────────────────────────
-const expressionPatterns = [
-  { pattern: '{{input.x}}', description: 'Workflow input (from trigger/HTTP body)' },
-  { pattern: '{{output.nodeId.x}}', description: 'Output from a specific node' },
-  { pattern: '{{output.x}}', description: 'Output from the latest node' },
-  { pattern: '{{vars.x}}', description: 'Global workflow variables' },
-]
-
 // ─── Drag expression from input pane → drop into settings fields ──
 const DRAG_MIME = 'application/x-workflow-expression'
 
@@ -359,57 +351,6 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
         </div>
       </div>
 
-      <!-- Expression reference -->
-      <div class="border-b">
-        <button
-          class="flex w-full items-center gap-1.5 px-3 py-2 text-left"
-          @click="toggleSection('reference')"
-        >
-          <LucideChevronRight class="text-muted-foreground h-3 w-3 shrink-0 transition-transform" :class="{ 'rotate-90': inputPaneSections.has('reference') }" />
-          <span class="text-xs font-medium">Expression reference</span>
-          <LucideBookOpen class="text-muted-foreground ml-auto h-3 w-3" />
-        </button>
-        <div v-if="inputPaneSections.has('reference')" class="text-muted-foreground space-y-3 px-3 pb-3 text-[11px]">
-          <div>
-            <p class="mb-1.5 font-medium">Patterns</p>
-            <div class="space-y-1">
-              <div v-for="pat in expressionPatterns" :key="pat.pattern" class="flex items-start gap-2">
-                <code class="bg-muted shrink-0 rounded px-1 py-0.5 font-mono text-[10px]">{{ pat.pattern }}</code>
-                <span class="text-[10px]">{{ pat.description }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div v-pre>
-            <p class="mb-1.5 font-medium">Workflow input</p>
-            <p class="text-[10px] leading-relaxed">
-              When triggered via HTTP, the request body is available as <code class="bg-muted rounded px-1 py-0.5 font-mono">{{input}}</code>.
-              Access properties with dot notation:
-              <code class="bg-muted rounded px-1 py-0.5 font-mono">{{input.propertyName}}</code>
-            </p>
-          </div>
-
-          <div v-pre>
-            <p class="mb-1.5 font-medium">Node output</p>
-            <p class="text-[10px] leading-relaxed">
-              Reference a specific node's output with
-              <code class="bg-muted rounded px-1 py-0.5 font-mono">{{output.nodeId.field}}</code>
-              or the latest node's output with
-              <code class="bg-muted rounded px-1 py-0.5 font-mono">{{output.field}}</code>.
-            </p>
-          </div>
-
-          <div v-pre>
-            <p class="mb-1.5 font-medium">Example</p>
-            <div class="bg-muted/50 space-y-0.5 rounded-md px-2 py-1.5 font-mono text-[10px]">
-              <p>{{input.customerName}}</p>
-              <p>{{input.orderId}}</p>
-              <p>{{output.fetchData.body.status}}</p>
-              <p>{{vars.apiKey}}</p>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>
