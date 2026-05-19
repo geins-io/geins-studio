@@ -8,7 +8,7 @@ import Sveacheckout from '@/assets/logos/payment/sveacheckout.svg';
 import Walleycheckout from '@/assets/logos/payment/walleycheckout.svg';
 import type { Component } from 'vue';
 
-const paymentLogos: Record<string, Component> = {
+const paymentLogos: Record<string, Component | string> = {
   avarda: Avarda,
   geinspay: Geinspay,
   klarnacheckoutv3: Klarnacheckoutv3,
