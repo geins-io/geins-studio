@@ -124,6 +124,28 @@ export function getSubSectionContrastWarnings(
   return { [bg.key]: warning.ratio, [fg.key]: warning.ratio };
 }
 
+/**
+ * Recursively merge two settings objects with right-hand values winning.
+ * Plain objects are merged key-by-key; arrays and primitives are replaced as
+ * leaves. Used to backfill schema defaults under partial API responses.
+ */
+export function deepMerge(
+  base: StorefrontSettings,
+  override: StorefrontSettings,
+): StorefrontSettings {
+  const result: Record<string, unknown> = { ...base };
+  for (const key of Object.keys(override)) {
+    const baseValue = result[key];
+    const overrideValue = override[key];
+    if (isPlainObject(baseValue) && isPlainObject(overrideValue)) {
+      result[key] = deepMerge(baseValue, overrideValue);
+    } else {
+      result[key] = overrideValue;
+    }
+  }
+  return result;
+}
+
 /** Immutable deep set — clones along the path, leaves untouched branches shared. */
 export function setSettingValue(
   settings: StorefrontSettings,
