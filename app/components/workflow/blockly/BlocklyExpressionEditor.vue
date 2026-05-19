@@ -1,0 +1,117 @@
+<script setup lang="ts">
+const props = withDefaults(defineProps<{
+  modelValue?: string
+  open?: boolean
+}>(), {
+  modelValue: '',
+  open: false,
+})
+
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+  'update:open': [value: boolean]
+}>()
+
+const resolveExpression = inject<(expr: string) => string | null>('resolveExpression', () => null)
+
+// Local draft expression — only applied on confirm
+const draftExpression = ref(props.modelValue)
+
+// Sync draft when sheet opens with a new value
+watch(() => props.open, (isOpen) => {
+  if (isOpen) {
+    draftExpression.value = props.modelValue
+  }
+})
+
+// Live preview of the draft expression
+const preview = computed(() => {
+  if (!draftExpression.value) return null
+  const exprPattern = /\{\{[^}]+\}\}/g
+  const matches = draftExpression.value.match(exprPattern)
+  if (!matches) return null
+
+  if (matches.length === 1 && draftExpression.value.trim() === matches[0]) {
+    return resolveExpression(matches[0])
+  }
+
+  let result = draftExpression.value
+  let anyResolved = false
+  for (const m of matches) {
+    const resolved = resolveExpression(m)
+    if (resolved != null) {
+      result = result.replace(m, resolved)
+      anyResolved = true
+    }
+  }
+  return anyResolved ? result : null
+})
+
+const truncatedPreview = computed(() => {
+  if (!preview.value) return null
+  return preview.value.length > 200 ? preview.value.slice(0, 200) + '…' : preview.value
+})
+
+function onApply() {
+  emit('update:modelValue', draftExpression.value)
+  emit('update:open', false)
+}
+
+function onCancel() {
+  emit('update:open', false)
+}
+
+function onDraftUpdate(value: string) {
+  draftExpression.value = value
+}
+
+const BlocklyWorkspace = defineAsyncComponent(() =>
+  import('./BlocklyWorkspace.vue'),
+)
+</script>
+
+<template>
+  <Sheet :open="open" @update:open="emit('update:open', $event)">
+    <SheetContent side="right" class="flex w-[640px] max-w-full flex-col sm:max-w-[640px]">
+      <SheetHeader>
+        <SheetTitle class="flex items-center gap-2">
+          <LucideBlocks class="size-4" />
+          Block Expression Editor
+        </SheetTitle>
+      </SheetHeader>
+
+      <!-- Workspace area -->
+      <div class="relative min-h-0 flex-1 overflow-hidden rounded-md border">
+        <Suspense>
+          <BlocklyWorkspace
+            :model-value="draftExpression"
+            @update:model-value="onDraftUpdate"
+          />
+          <template #fallback>
+            <div class="flex h-full items-center justify-center">
+              <LucideLoader2 class="text-muted-foreground size-8 animate-spin" />
+            </div>
+          </template>
+        </Suspense>
+      </div>
+
+      <!-- Live preview -->
+      <div
+        v-if="truncatedPreview"
+        class="text-muted-foreground rounded-md border bg-emerald-500/5 px-3 py-2 font-mono text-xs"
+      >
+        <span class="opacity-50">Result: </span>{{ truncatedPreview }}
+      </div>
+
+      <!-- Actions -->
+      <SheetFooter class="flex-row justify-end gap-2">
+        <Button variant="outline" @click="onCancel">
+          Cancel
+        </Button>
+        <Button @click="onApply">
+          Apply
+        </Button>
+      </SheetFooter>
+    </SheetContent>
+  </Sheet>
+</template>

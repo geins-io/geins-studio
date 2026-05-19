@@ -535,6 +535,15 @@ function toggleMode() {
 function onFixedInput(val: string | number) {
   emit('update:modelValue', String(val))
 }
+
+// ─── Blockly editor sheet ────────────────────────────────────────
+const showBlocklyEditor = ref(false)
+
+function onBlocklyApply(value: string) {
+  if (value) {
+    emit('update:modelValue', value)
+  }
+}
 </script>
 
 <template>
@@ -676,6 +685,27 @@ function onFixedInput(val: string | number) {
         </Tooltip>
       </TooltipProvider>
 
+      <!-- Blockly editor button (expression mode only) -->
+      <TooltipProvider v-if="mode === 'expression'" :delay-duration="300">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <button
+              type="button"
+              class="flex h-5 w-5 items-center justify-center rounded transition-colors"
+              :class="showBlocklyEditor
+                ? 'bg-primary/15 text-primary'
+                : 'bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/25 dark:text-emerald-400'"
+              @click="showBlocklyEditor = true"
+            >
+              <LucideBlocks class="size-3" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" :side-offset="4">
+            Open block editor
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
       <!-- fx toggle -->
       <TooltipProvider :delay-duration="300">
         <Tooltip>
@@ -697,5 +727,13 @@ function onFixedInput(val: string | number) {
         </Tooltip>
       </TooltipProvider>
     </div>
+
+    <!-- Blockly expression editor sheet -->
+    <BlocklyExpressionEditor
+      :model-value="modelValue"
+      :open="showBlocklyEditor"
+      @update:model-value="onBlocklyApply"
+      @update:open="showBlocklyEditor = $event"
+    />
   </div>
 </template>

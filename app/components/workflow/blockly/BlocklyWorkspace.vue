@@ -1,0 +1,143 @@
+<script setup lang="ts">
+import type { ManifestExpressionFunction } from '#shared/types'
+import { useBlocklyTheme } from './useBlocklyTheme'
+import type { ExpressionCompletion } from '../shared/ExpressionInput.vue'
+import type { Ref } from 'vue'
+
+withDefaults(defineProps<{
+  modelValue?: string
+}>(), {
+  modelValue: '',
+})
+
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+}>()
+
+const { geinsLog, geinsLogError } = useGeinsLog('BlocklyWorkspace')
+
+const { createShadcnBlocklyTheme } = useBlocklyTheme()
+
+const containerRef = ref<HTMLElement>()
+const loading = ref(true)
+
+// Injections from workflow sidebar context
+const completions = inject<Ref<ExpressionCompletion[]>>('expressionCompletions', ref([]))
+const resolveExpression = inject<(expr: string) => string | null>('resolveExpression', () => null)
+const expressionFunctions = inject<Ref<ManifestExpressionFunction[]>>('expressionFunctions', ref([]))
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let workspace: any = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let Blockly: any = null
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+const colorMode = useColorMode()
+
+const isDark = computed(() => colorMode.value === 'dark')
+
+function onWorkspaceChange() {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    // Phase 1 stub: emit empty string — code generator will be added in Phase 2
+    emit('update:modelValue', '')
+  }, 150)
+}
+
+function applyTheme() {
+  if (!workspace || !Blockly) return
+  const theme = createShadcnBlocklyTheme(Blockly, isDark.value)
+  workspace.setTheme(theme)
+}
+
+async function initBlockly() {
+  if (!containerRef.value) return
+
+  try {
+    Blockly = await import('blockly')
+
+    const theme = createShadcnBlocklyTheme(Blockly, isDark.value)
+
+    workspace = Blockly.inject(containerRef.value, {
+      theme,
+      renderer: 'zelos',
+      toolbox: {
+        kind: 'categoryToolbox',
+        contents: [],
+      },
+      grid: {
+        spacing: 20,
+        length: 3,
+        colour: isDark.value ? '#27272a' : '#e4e4e7',
+        snap: true,
+      },
+      zoom: {
+        controls: true,
+        wheel: true,
+        startScale: 1.0,
+        maxScale: 3,
+        minScale: 0.3,
+        scaleSpeed: 1.2,
+      },
+      trashcan: true,
+      move: {
+        scrollbars: true,
+        drag: true,
+        wheel: true,
+      },
+    })
+
+    workspace.addChangeListener(onWorkspaceChange)
+
+    geinsLog('Blockly workspace initialized', {
+      completionCount: completions.value.length,
+      functionCount: expressionFunctions.value.length,
+      hasResolver: resolveExpression !== null,
+    })
+  }
+  catch (err) {
+    geinsLogError('Failed to initialize Blockly workspace', err)
+  }
+  finally {
+    loading.value = false
+  }
+}
+
+watch(isDark, () => {
+  applyTheme()
+})
+
+onMounted(() => {
+  initBlockly()
+})
+
+onBeforeUnmount(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  if (workspace) {
+    workspace.removeChangeListener(onWorkspaceChange)
+    workspace.dispose()
+    workspace = null
+  }
+  Blockly = null
+})
+</script>
+
+<template>
+  <div class="relative h-full w-full">
+    <!-- Loading spinner -->
+    <div
+      v-if="loading"
+      class="absolute inset-0 z-10 flex items-center justify-center"
+    >
+      <LucideLoader2 class="text-muted-foreground size-8 animate-spin" />
+    </div>
+
+    <!-- Blockly container -->
+    <div
+      ref="containerRef"
+      class="h-full w-full"
+      :class="{ 'opacity-0': loading }"
+    />
+  </div>
+</template>
