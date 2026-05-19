@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ManifestExpressionFunction } from '#shared/types'
 import { registerAllBlocks } from './useBlocklyBlocks'
+import { useBlocklyGenerator } from './useBlocklyGenerator'
 import { useBlocklyTheme } from './useBlocklyTheme'
 import type { ExpressionCompletion } from '../shared/ExpressionInput.vue'
 import type { Ref } from 'vue'
@@ -31,6 +32,8 @@ const expressionFunctions = inject<Ref<ManifestExpressionFunction[]>>('expressio
 let workspace: any = null
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Blockly: any = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let generateCode: ((ws: any) => string) | null = null
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -41,8 +44,9 @@ const isDark = computed(() => colorMode.value === 'dark')
 function onWorkspaceChange() {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
-    // Phase 1 stub: emit empty string — code generator will be added in Phase 2
-    emit('update:modelValue', '')
+    if (!workspace || !generateCode) return
+    const code = generateCode(workspace)
+    emit('update:modelValue', code)
   }, 150)
 }
 
@@ -59,6 +63,9 @@ async function initBlockly() {
     Blockly = await import('blockly')
 
     registerAllBlocks(Blockly)
+
+    const generator = useBlocklyGenerator(Blockly)
+    generateCode = generator.generateCode
 
     const theme = createShadcnBlocklyTheme(Blockly, isDark.value)
 
@@ -123,6 +130,7 @@ onBeforeUnmount(() => {
     workspace = null
   }
   Blockly = null
+  generateCode = null
 })
 </script>
 
