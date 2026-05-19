@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
 import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue'
+import KeyValueEditor from '@/components/workflow/shared/KeyValueEditor.vue'
 
 const props = defineProps<{
   nodeData: Record<string, unknown>
@@ -69,69 +69,6 @@ const removeHeaderRow = (index: number) => {
   commitHeaders()
 }
 
-// --- Body ---
-
-const bodyMode = ref<'json' | 'keypair'>('json')
-
-const bodyRaw = computed(() => props.nodeInput.body)
-
-const bodyJson = ref('')
-
-const bodyPairs = ref<Array<{ key: string, value: string }>>([])
-
-const syncBodyFromInput = () => {
-  const b = bodyRaw.value
-  if (b == null) {
-    bodyJson.value = ''
-    bodyPairs.value = [{ key: '', value: '' }]
-    return
-  }
-  if (typeof b === 'object') {
-    bodyJson.value = JSON.stringify(b, null, 2)
-    const entries = Object.entries(b as Record<string, unknown>).filter(([k]) => k !== '')
-    bodyPairs.value = entries.length > 0
-      ? entries.map(([k, v]) => ({ key: k, value: String(v ?? '') }))
-      : [{ key: '', value: '' }]
-  }
-  else {
-    bodyJson.value = String(b)
-    bodyPairs.value = [{ key: '', value: '' }]
-  }
-}
-syncBodyFromInput()
-watch(bodyRaw, syncBodyFromInput, { deep: true })
-
-const commitBodyJson = () => {
-  const text = bodyJson.value.trim()
-  if (!text) {
-    props.updateInput('body', undefined)
-    return
-  }
-  try {
-    props.updateInput('body', JSON.parse(text))
-  }
-  catch {
-    props.updateInput('body', text)
-  }
-}
-
-const commitBodyPairs = () => {
-  const obj: Record<string, string> = {}
-  for (const p of bodyPairs.value) {
-    if (p.key.trim()) obj[p.key.trim()] = p.value
-  }
-  props.updateInput('body', Object.keys(obj).length > 0 ? obj : undefined)
-}
-
-const addBodyRow = () => {
-  bodyPairs.value.push({ key: '', value: '' })
-}
-
-const removeBodyRow = (index: number) => {
-  bodyPairs.value.splice(index, 1)
-  if (bodyPairs.value.length === 0) bodyPairs.value.push({ key: '', value: '' })
-  commitBodyPairs()
-}
 
 // --- Expected status codes ---
 
@@ -159,7 +96,7 @@ const expectedStatusCodesText = computed({
 
 const showRequest = ref(true)
 const showHeaders = ref(Object.keys(headersRaw.value).length > 0)
-const showBody = ref(bodyRaw.value != null)
+const showBody = ref(props.nodeInput.body != null)
 const showOptions = ref(false)
 
 const needsBody = computed(() => ['POST', 'PUT', 'PATCH'].includes(method.value))
@@ -285,73 +222,20 @@ const methodBadgeColor = computed(() => {
         </span>
         <span v-if="!needsBody" class="text-muted-foreground text-[10px]">No body</span>
       </button>
-      <div v-if="showBody" class="mt-2 space-y-2">
+      <div v-if="showBody" class="mt-2">
         <p v-if="!needsBody" class="text-muted-foreground text-xs">
           {{ method }} requests do not have a body
         </p>
-        <template v-else>
-          <div class="flex gap-1">
-            <button
-              class="rounded-md px-2 py-1 text-xs font-medium"
-              :class="bodyMode === 'json' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'"
-              @click="bodyMode = 'json'"
-            >
-              JSON
-            </button>
-            <button
-              class="rounded-md px-2 py-1 text-xs font-medium"
-              :class="bodyMode === 'keypair' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'"
-              @click="bodyMode = 'keypair'"
-            >
-              Key-Value
-            </button>
-          </div>
-
-          <!-- JSON mode -->
-          <div v-if="bodyMode === 'json'" class="flex h-72">
-            <JsonCodeEditor
-              :model-value="bodyJson"
-              :line-numbers="false"
-              :line-wrapping="true"
-              @update:model-value="bodyJson = $event; commitBodyJson()"
-            />
-          </div>
-
-          <!-- Key-value mode -->
-          <div v-else>
-            <div class="divide-y">
-              <div v-for="(pair, i) in bodyPairs" :key="i" class="space-y-1 py-2 first:pt-0">
-                <div class="flex items-center gap-1">
-                  <input
-                    v-model="pair.key"
-                    placeholder="Key"
-                    class="bg-background focus:ring-ring h-8 min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
-                    @blur="commitBodyPairs()"
-                  />
-                  <Button class="hover:text-negative size-6 shrink-0 p-1" size="xs" variant="outline" @click="removeBodyRow(i)">
-                    <LucideX class="size-3.5" />
-                  </Button>
-                </div>
-                <div class="flex items-start gap-1">
-                  <div class="min-w-0 flex-1">
-                    <ExpressionInput
-                      :model-value="pair.value"
-                      placeholder="Value"
-                      size="sm"
-                      :default-mode="pair.value.includes('{{') ? 'expression' : 'fixed'"
-                      @update:model-value="pair.value = $event; commitBodyPairs()"
-                    />
-                  </div>
-                  <div class="w-6 shrink-0" />
-                </div>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" class="mt-2 w-full" @click="addBodyRow">
-              <LucidePlus class="mr-1.5 h-3.5 w-3.5" />
-              Add field
-            </Button>
-          </div>
-        </template>
+        <KeyValueEditor
+          v-else
+          :input="nodeInput"
+          :update-input="updateInput"
+          field-name="body"
+          inline
+          key-placeholder="Key"
+          value-placeholder="Value"
+          expand-title="Request Body JSON"
+        />
       </div>
     </div>
 
