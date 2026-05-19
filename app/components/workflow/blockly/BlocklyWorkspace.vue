@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ManifestExpressionFunction } from '#shared/types'
+import { registerAllBlocks } from './useBlocklyBlocks'
 import { useBlocklyTheme } from './useBlocklyTheme'
 import type { ExpressionCompletion } from '../shared/ExpressionInput.vue'
 import type { Ref } from 'vue'
@@ -56,6 +57,8 @@ async function initBlockly() {
 
   try {
     Blockly = await import('blockly')
+
+    registerAllBlocks(Blockly)
 
     const theme = createShadcnBlocklyTheme(Blockly, isDark.value)
 
