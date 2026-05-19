@@ -323,6 +323,7 @@ function paramError(inp: WorkflowInput): string | null {
             >
               <LucideX class="h-3 w-3" />
             </button>
+            <div v-else class="w-5 shrink-0" />
           </div>
           <p v-if="paramError(inp)" class="text-destructive text-[11px]">
             {{ paramError(inp) }}

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
+import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue'
 
 const props = defineProps<{
   nodeData: Record<string, unknown>
@@ -156,6 +157,7 @@ const expectedStatusCodesText = computed({
 
 // --- Collapsible sections ---
 
+const showRequest = ref(true)
 const showHeaders = ref(Object.keys(headersRaw.value).length > 0)
 const showBody = ref(bodyRaw.value != null)
 const showOptions = ref(false)
@@ -165,40 +167,66 @@ const needsBody = computed(() => ['POST', 'PUT', 'PATCH'].includes(method.value)
 const methodColor = computed(() => {
   switch (method.value) {
     case 'GET': return 'text-green-600 dark:text-green-400'
-    case 'POST': return 'text-blue-600 dark:text-blue-400'
-    case 'PUT': return 'text-amber-600 dark:text-amber-400'
+    case 'POST': return 'text-amber-600 dark:text-amber-400'
+    case 'PUT': return 'text-blue-600 dark:text-blue-400'
     case 'PATCH': return 'text-orange-600 dark:text-orange-400'
     case 'DELETE': return 'text-red-600 dark:text-red-400'
     default: return ''
+  }
+})
+
+const methodBadgeColor = computed(() => {
+  switch (method.value) {
+    case 'GET': return 'bg-green-600 dark:bg-green-500'
+    case 'POST': return 'bg-amber-600 dark:bg-amber-500'
+    case 'PUT': return 'bg-blue-600 dark:bg-blue-500'
+    case 'PATCH': return 'bg-orange-600 dark:bg-orange-500'
+    case 'DELETE': return 'bg-red-600 dark:bg-red-500'
+    default: return 'bg-muted'
   }
 })
 </script>
 
 <template>
   <div class="space-y-4">
-    <!-- Method + URL bar (n8n-style) -->
-    <div class="space-y-1">
-      <label class="text-sm font-medium">Request</label>
-      <div class="flex gap-0">
+    <!-- Method + URL bar -->
+    <div class="pb-3">
+      <button
+        class="flex w-full items-center gap-1.5 text-sm font-medium"
+        @click="showRequest = !showRequest"
+      >
+        <LucideChevronRight class="h-3.5 w-3.5 shrink-0 transition-transform" :class="{ 'rotate-90': showRequest }" />
+        Request
+        <span v-if="!showRequest" class="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-bold text-white" :class="methodBadgeColor">
+          {{ method }}
+        </span>
+      </button>
+      <div v-if="!showRequest && url" class="text-muted-foreground mt-1 pl-5 font-mono text-[10px] leading-relaxed break-all">
+        {{ url }}
+      </div>
+      <div v-if="showRequest" class="mt-2 flex items-stretch">
         <select
           :value="method"
-          class="bg-muted focus:ring-ring rounded-l-md border border-r-0 px-2 py-2 font-mono text-xs font-bold focus:ring-2 focus:outline-none"
+          class="bg-muted focus:ring-ring -mr-px rounded-l-md border px-2 font-mono text-xs font-bold focus:relative focus:z-10 focus:ring-2 focus:outline-none"
           :class="methodColor"
           @change="method = ($event.target as HTMLSelectElement).value"
         >
           <option v-for="m in HTTP_METHODS" :key="m" :value="m">{{ m }}</option>
         </select>
-        <input
-          :value="url"
-          placeholder="https://api.example.com/data"
-          class="bg-background focus:ring-ring min-w-0 flex-1 rounded-r-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none"
-          @input="url = ($event.target as HTMLInputElement).value"
-        />
+        <div class="min-w-0 flex-1 [&_.group>div]:rounded-l-none [&_.group>input]:rounded-l-none">
+          <ExpressionInput
+            :model-value="url"
+            placeholder="https://api.example.com/data"
+            size="sm"
+            default-mode="expression"
+            @update:model-value="url = $event"
+          />
+        </div>
       </div>
     </div>
 
     <!-- Send Headers toggle -->
-    <div class="border-t pt-3">
+    <div class="border-t py-3">
       <button
         class="flex w-full items-center justify-between text-sm font-medium"
         @click="showHeaders = !showHeaders"
@@ -211,36 +239,41 @@ const methodColor = computed(() => {
           {{ Object.keys(headersRaw).length }}
         </span>
       </button>
-      <div v-if="showHeaders" class="mt-2 space-y-2">
-        <div v-for="(pair, i) in headerPairs" :key="i" class="flex items-center gap-1">
-          <input
-            v-model="pair.key"
-            placeholder="Name"
-            class="bg-background focus:ring-ring min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
-            @blur="commitHeaders()"
-          />
-          <input
-            v-model="pair.value"
-            placeholder="Value"
-            class="bg-background focus:ring-ring min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
-            @blur="commitHeaders()"
-          />
-          <button class="hover:bg-muted shrink-0 rounded p-1" @click="removeHeaderRow(i)">
-            <LucideX class="text-muted-foreground h-3 w-3" />
-          </button>
+      <div v-if="showHeaders" class="mt-2 divide-y">
+        <div v-for="(pair, i) in headerPairs" :key="i" class="space-y-1 py-2 first:pt-0">
+          <div class="flex items-center gap-1">
+            <input
+              v-model="pair.key"
+              placeholder="Name"
+              class="bg-background focus:ring-ring h-8 min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
+              @blur="commitHeaders()"
+            />
+            <Button class="hover:text-negative size-6 shrink-0 p-1" size="xs" variant="outline" @click="removeHeaderRow(i)">
+              <LucideX class="size-3.5" />
+            </Button>
+          </div>
+          <div class="flex items-start gap-1">
+            <div class="min-w-0 flex-1">
+              <ExpressionInput
+                :model-value="pair.value"
+                placeholder="Value"
+                size="sm"
+                :default-mode="pair.value.includes('{{') ? 'expression' : 'fixed'"
+                @update:model-value="pair.value = $event; commitHeaders()"
+              />
+            </div>
+            <div class="w-6 shrink-0" />
+          </div>
         </div>
-        <button
-          class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-          @click="addHeaderRow"
-        >
-          <LucidePlus class="h-3 w-3" />
+        <Button variant="outline" size="sm" class="mt-2 w-full" @click="addHeaderRow">
+          <LucidePlus class="mr-1.5 h-3.5 w-3.5" />
           Add header
-        </button>
+        </Button>
       </div>
     </div>
 
     <!-- Send Body toggle -->
-    <div class="border-t pt-3">
+    <div class="border-t py-3">
       <button
         class="flex w-full items-center justify-between text-sm font-medium"
         @click="showBody = !showBody"
@@ -274,7 +307,7 @@ const methodColor = computed(() => {
           </div>
 
           <!-- JSON mode -->
-          <div v-if="bodyMode === 'json'" class="h-40">
+          <div v-if="bodyMode === 'json'" class="flex h-72">
             <JsonCodeEditor
               :model-value="bodyJson"
               :line-numbers="false"
@@ -284,38 +317,45 @@ const methodColor = computed(() => {
           </div>
 
           <!-- Key-value mode -->
-          <div v-else class="space-y-2">
-            <div v-for="(pair, i) in bodyPairs" :key="i" class="flex items-center gap-1">
-              <input
-                v-model="pair.key"
-                placeholder="Key"
-                class="bg-background focus:ring-ring min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
-                @blur="commitBodyPairs()"
-              />
-              <input
-                v-model="pair.value"
-                placeholder="Value"
-                class="bg-background focus:ring-ring min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
-                @blur="commitBodyPairs()"
-              />
-              <button class="hover:bg-muted shrink-0 rounded p-1" @click="removeBodyRow(i)">
-                <LucideX class="text-muted-foreground h-3 w-3" />
-              </button>
+          <div v-else>
+            <div class="divide-y">
+              <div v-for="(pair, i) in bodyPairs" :key="i" class="space-y-1 py-2 first:pt-0">
+                <div class="flex items-center gap-1">
+                  <input
+                    v-model="pair.key"
+                    placeholder="Key"
+                    class="bg-background focus:ring-ring h-8 min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
+                    @blur="commitBodyPairs()"
+                  />
+                  <Button class="hover:text-negative size-6 shrink-0 p-1" size="xs" variant="outline" @click="removeBodyRow(i)">
+                    <LucideX class="size-3.5" />
+                  </Button>
+                </div>
+                <div class="flex items-start gap-1">
+                  <div class="min-w-0 flex-1">
+                    <ExpressionInput
+                      :model-value="pair.value"
+                      placeholder="Value"
+                      size="sm"
+                      :default-mode="pair.value.includes('{{') ? 'expression' : 'fixed'"
+                      @update:model-value="pair.value = $event; commitBodyPairs()"
+                    />
+                  </div>
+                  <div class="w-6 shrink-0" />
+                </div>
+              </div>
             </div>
-            <button
-              class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-              @click="addBodyRow"
-            >
-              <LucidePlus class="h-3 w-3" />
+            <Button variant="outline" size="sm" class="mt-2 w-full" @click="addBodyRow">
+              <LucidePlus class="mr-1.5 h-3.5 w-3.5" />
               Add field
-            </button>
+            </Button>
           </div>
         </template>
       </div>
     </div>
 
     <!-- Options (collapsible) -->
-    <div class="border-t pt-3">
+    <div class="border-t py-3">
       <button
         class="flex w-full items-center gap-1.5 text-sm font-medium"
         @click="showOptions = !showOptions"
