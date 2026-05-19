@@ -4,6 +4,7 @@ import { registerAllBlocks } from './useBlocklyBlocks'
 import { useBlocklyGenerator } from './useBlocklyGenerator'
 import { useBlocklyParser } from './useBlocklyParser'
 import { useBlocklyTheme } from './useBlocklyTheme'
+import { buildToolbox } from './useBlocklyToolbox'
 import type { ExpressionCompletion } from '../shared/ExpressionInput.vue'
 import type { Ref } from 'vue'
 
@@ -73,10 +74,7 @@ async function initBlockly() {
     workspace = Blockly.inject(containerRef.value, {
       theme,
       renderer: 'zelos',
-      toolbox: {
-        kind: 'categoryToolbox',
-        contents: [],
-      },
+      toolbox: buildToolbox(),
       grid: {
         spacing: 20,
         length: 3,
@@ -159,3 +157,22 @@ onBeforeUnmount(() => {
     />
   </div>
 </template>
+
+<style scoped>
+:deep(.blocklyToolboxDiv) {
+  border-right: 1px solid var(--border);
+  padding: 4px 0;
+}
+:deep(.blocklyTreeRow) {
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+  margin: 1px 4px;
+}
+:deep(.blocklyTreeSelected) {
+  background-color: var(--accent) !important;
+}
+:deep(.blocklyTrash) {
+  display: none;
+}
+</style>

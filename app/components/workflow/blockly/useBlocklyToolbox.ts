@@ -1,0 +1,113 @@
+export function buildToolbox() {
+  return {
+    kind: 'categoryToolbox',
+    contents: [
+      {
+        kind: 'category',
+        name: 'Data',
+        categorystyle: 'data_category',
+        contents: [
+          { kind: 'block', type: 'ncalc_data_ref' },
+          { kind: 'block', type: 'ncalc_iterator_ref' },
+        ],
+      },
+      {
+        kind: 'category',
+        name: 'Logic',
+        categorystyle: 'logic_category',
+        contents: [
+          { kind: 'block', type: 'ncalc_if' },
+          { kind: 'block', type: 'ncalc_comparison' },
+          { kind: 'block', type: 'ncalc_logic_op' },
+          { kind: 'block', type: 'ncalc_not' },
+          { kind: 'block', type: 'ncalc_is_empty' },
+          { kind: 'block', type: 'ncalc_is_null' },
+          { kind: 'block', type: 'ncalc_boolean_literal' },
+        ],
+      },
+      {
+        kind: 'category',
+        name: 'Math',
+        categorystyle: 'math_category',
+        contents: [
+          { kind: 'block', type: 'ncalc_number_literal' },
+          { kind: 'block', type: 'ncalc_math_binary' },
+          { kind: 'block', type: 'ncalc_round' },
+          { kind: 'block', type: 'ncalc_math_unary' },
+          { kind: 'block', type: 'ncalc_min_max' },
+          { kind: 'block', type: 'ncalc_pow' },
+        ],
+      },
+      {
+        kind: 'category',
+        name: 'String',
+        categorystyle: 'string_category',
+        contents: [
+          { kind: 'block', type: 'ncalc_string_literal' },
+          { kind: 'block', type: 'ncalc_len' },
+          { kind: 'block', type: 'ncalc_concat' },
+          { kind: 'block', type: 'ncalc_replace' },
+          { kind: 'block', type: 'ncalc_contains' },
+          { kind: 'block', type: 'ncalc_starts_ends' },
+          { kind: 'block', type: 'ncalc_case' },
+          { kind: 'block', type: 'ncalc_substring' },
+          { kind: 'block', type: 'ncalc_base64' },
+        ],
+      },
+      {
+        kind: 'category',
+        name: 'Array',
+        categorystyle: 'array_category',
+        contents: [
+          { kind: 'block', type: 'ncalc_filter' },
+          { kind: 'block', type: 'ncalc_map_extract' },
+          { kind: 'block', type: 'ncalc_sum' },
+          { kind: 'block', type: 'ncalc_count' },
+          { kind: 'block', type: 'ncalc_first_last' },
+          { kind: 'block', type: 'ncalc_join' },
+          { kind: 'block', type: 'ncalc_sort' },
+          { kind: 'block', type: 'ncalc_sort_by' },
+          { kind: 'block', type: 'ncalc_groupby' },
+          { kind: 'block', type: 'ncalc_lookup' },
+          { kind: 'block', type: 'ncalc_lookup_closest' },
+          { kind: 'block', type: 'ncalc_any_all' },
+          { kind: 'block', type: 'ncalc_union_except' },
+        ],
+      },
+      {
+        kind: 'category',
+        name: 'DateTime',
+        categorystyle: 'datetime_category',
+        contents: [
+          { kind: 'block', type: 'ncalc_now' },
+          { kind: 'block', type: 'ncalc_today' },
+          { kind: 'block', type: 'ncalc_format_date' },
+          { kind: 'block', type: 'ncalc_add_time' },
+          { kind: 'block', type: 'ncalc_date_diff' },
+          { kind: 'block', type: 'ncalc_date_part' },
+        ],
+      },
+      {
+        kind: 'category',
+        name: 'Conversion',
+        categorystyle: 'conversion_category',
+        contents: [
+          { kind: 'block', type: 'ncalc_to_int' },
+          { kind: 'block', type: 'ncalc_to_string' },
+        ],
+      },
+      {
+        kind: 'category',
+        name: 'Other',
+        categorystyle: 'other_category',
+        contents: [
+          { kind: 'block', type: 'ncalc_null_literal' },
+          { kind: 'block', type: 'ncalc_coalesce' },
+          { kind: 'block', type: 'ncalc_new_guid' },
+          { kind: 'block', type: 'ncalc_json_path' },
+          { kind: 'block', type: 'ncalc_raw_expression' },
+        ],
+      },
+    ],
+  }
+}
