@@ -24,7 +24,7 @@ import {
 } from '#shared/types';
 import defaultStorefrontSchema from '@/assets/schemas/storefront-settings-default.json';
 import { useToast } from '@/components/ui/toast/use-toast';
-import { getDefaultSettings } from '@/utils/storefront';
+import { deepMerge, getDefaultSettings } from '@/utils/storefront';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -407,9 +407,10 @@ const {
       entity.storefrontSchema && Object.keys(entity.storefrontSchema).length > 0
         ? entity.storefrontSchema
         : (defaultStorefrontSchema as StorefrontSchema);
-    storefrontSettings.value = entity.storefrontSettings
-      ? { ...entity.storefrontSettings }
-      : getDefaultSettings(activeSchema.value);
+    storefrontSettings.value = deepMerge(
+      getDefaultSettings(activeSchema.value),
+      entity.storefrontSettings ?? {},
+    );
 
     schemaChanged.value = false;
     // Set explicit default IDs from the API response
