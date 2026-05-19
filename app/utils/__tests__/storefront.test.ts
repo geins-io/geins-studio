@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import type { StorefrontSchema } from '#shared/types';
 import defaultSchema from '../../assets/schemas/storefront-settings-default.json';
 import {
+  deepMerge,
   getDefaultSettings,
   getSettingValue,
   setSettingValue,
@@ -184,5 +185,76 @@ describe('setSettingValue', () => {
     const original = { theme: 'broken' };
     const updated = setSettingValue(original, 'theme.colors.x', 1);
     expect(updated).toEqual({ theme: { colors: { x: 1 } } });
+  });
+});
+
+describe('deepMerge', () => {
+  it('returns base when override is empty', () => {
+    const base = { mode: 'commerce', theme: { radius: '0' } };
+    expect(deepMerge(base, {})).toEqual(base);
+  });
+
+  it('overrides top-level keys', () => {
+    const base = { mode: 'commerce', theme: { radius: '0' } };
+    const override = { mode: 'catalogue' };
+    expect(deepMerge(base, override)).toEqual({
+      mode: 'catalogue',
+      theme: { radius: '0' },
+    });
+  });
+
+  it('backfills missing nested keys from base', () => {
+    const base = {
+      theme: {
+        colors: { buttonBackground: '#0E7490', buttonText: '#FFFFFF' },
+      },
+    };
+    const override = { theme: { colors: { buttonBackground: '#000' } } };
+    expect(deepMerge(base, override)).toEqual({
+      theme: {
+        colors: { buttonBackground: '#000', buttonText: '#FFFFFF' },
+      },
+    });
+  });
+
+  it('fully overrides when override has every leaf', () => {
+    const base = { theme: { radius: '0', colors: { x: '#fff' } } };
+    const override = { theme: { radius: '8', colors: { x: '#000' } } };
+    expect(deepMerge(base, override)).toEqual(override);
+  });
+
+  it('replaces arrays instead of concatenating', () => {
+    const base = { tags: ['a', 'b'] };
+    const override = { tags: ['c'] };
+    expect(deepMerge(base, override)).toEqual({ tags: ['c'] });
+  });
+
+  it('treats primitives as leaves (override wins)', () => {
+    expect(deepMerge({ x: 1 }, { x: 2 })).toEqual({ x: 2 });
+    expect(deepMerge({ x: null }, { x: 'value' })).toEqual({ x: 'value' });
+  });
+
+  it('replaces object with primitive when override is primitive', () => {
+    const base = { theme: { radius: '0' } };
+    const override = { theme: null };
+    expect(deepMerge(base, override)).toEqual({ theme: null });
+  });
+
+  it('does not mutate base or override', () => {
+    const base = { theme: { colors: { x: '#fff' } } };
+    const override = { theme: { colors: { x: '#000' } } };
+    const result = deepMerge(base, override);
+
+    expect(result).not.toBe(base);
+    expect((result.theme as { colors: object }).colors).not.toBe(
+      (base.theme as { colors: object }).colors,
+    );
+    expect(base.theme.colors.x).toBe('#fff');
+    expect(override.theme.colors.x).toBe('#000');
+  });
+
+  it('backfills schema defaults under an empty entity object', () => {
+    const defaults = { mode: 'commerce', theme: { radius: '0' } };
+    expect(deepMerge(defaults, {})).toEqual(defaults);
   });
 });
