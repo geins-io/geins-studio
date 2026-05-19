@@ -141,7 +141,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col" :class="mode === 'json' ? 'absolute inset-0 p-4' : ''">
     <!-- Shared header — always in the same position -->
     <div class="mb-3 flex items-center justify-between">
       <label class="text-sm font-medium">Fields</label>
@@ -215,10 +215,10 @@ onUnmounted(() => {
       </button>
     </template>
 
-    <!-- JSON mode -->
+    <!-- JSON mode — fills remaining height -->
     <div
       v-else
-      class="relative h-72 overflow-hidden rounded-lg transition-colors duration-200"
+      class="relative min-h-0 flex-1 overflow-hidden rounded-lg transition-colors duration-200"
       :class="jsonError ? 'border-2 border-amber-500/60' : 'border'"
     >
       <span
