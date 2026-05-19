@@ -213,12 +213,13 @@ const methodBadgeColor = computed(() => {
         >
           <option v-for="m in HTTP_METHODS" :key="m" :value="m">{{ m }}</option>
         </select>
-        <div class="min-w-0 flex-1 [&_.group>div]:rounded-l-none [&_.group>input]:rounded-l-none">
+        <div class="min-w-0 flex-1 [&_.group>div]:rounded-l-none [&_.group>input]:rounded-l-none [&_.group>textarea]:rounded-l-none">
           <ExpressionInput
             :model-value="url"
             placeholder="https://api.example.com/data"
             size="sm"
-            default-mode="expression"
+            expandable
+            :default-mode="url.includes('{{') ? 'expression' : 'fixed'"
             @update:model-value="url = $event"
           />
         </div>

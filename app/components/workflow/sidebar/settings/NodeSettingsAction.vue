@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
 import type { ManifestAction } from '@/composables/useWorkflowManifest'
+import NodeSettingsCompose from './NodeSettingsCompose.vue'
 import NodeSettingsHttpRequest from './NodeSettingsHttpRequest.vue'
 import NodeSettingsTransform from './NodeSettingsTransform.vue'
 import type { Component } from 'vue'
@@ -8,6 +9,7 @@ import type { Component } from 'vue'
 const ACTION_SETTINGS_COMPONENTS: Record<string, Component> = {
   'net.httpRequest': NodeSettingsHttpRequest,
   'transform.map': NodeSettingsTransform,
+  'transform.compose': NodeSettingsCompose,
 }
 
 const props = defineProps<{

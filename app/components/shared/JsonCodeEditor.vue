@@ -42,15 +42,26 @@ function openModal() {
   isExpanded.value = true;
   nextTick(() => {
     if (!modalEditorRef.value) return;
+    const extensions = [
+      basicSetup,
+      json(),
+      appTheme,
+    ];
+    if (props.readonly) {
+      extensions.push(EditorState.readOnly.of(true), EditorView.editable.of(false));
+    }
+    else {
+      extensions.push(
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) {
+            emit('update:modelValue', update.state.doc.toString());
+          }
+        }),
+      );
+    }
     modalView = new EditorView({
       doc: props.modelValue,
-      extensions: [
-        basicSetup,
-        json(),
-        appTheme,
-        EditorState.readOnly.of(true),
-        EditorView.editable.of(false),
-      ],
+      extensions,
       parent: modalEditorRef.value,
     });
   });
@@ -155,12 +166,22 @@ onUnmounted(() => {
 watch(
   () => props.modelValue,
   (newValue) => {
-    if (!view) return;
-    const current = view.state.doc.toString();
-    if (current === newValue) return;
-    view.dispatch({
-      changes: { from: 0, to: view.state.doc.length, insert: newValue },
-    });
+    if (view) {
+      const current = view.state.doc.toString();
+      if (current !== newValue) {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: newValue },
+        });
+      }
+    }
+    if (modalView) {
+      const current = modalView.state.doc.toString();
+      if (current !== newValue) {
+        modalView.dispatch({
+          changes: { from: 0, to: modalView.state.doc.length, insert: newValue },
+        });
+      }
+    }
   },
 );
 </script>

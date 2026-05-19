@@ -90,7 +90,7 @@ const activeTab = ref<'settings' | 'schema' | 'expressions' | 'variables'>('sett
 
 const outputFields = computed(() => {
   const actionName = props.nodeData.actionName as string | undefined
-  if (actionName === 'transform.map') {
+  if (actionName === 'transform.map' || actionName === 'transform.compose') {
     const input = (props.nodeData.input ?? {}) as Record<string, unknown>
     return Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: 'any', description: '' }))
   }

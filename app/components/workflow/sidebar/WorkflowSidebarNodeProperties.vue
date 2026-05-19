@@ -105,7 +105,7 @@ const expressionCompletions = computed<ExpressionCompletion[]>(() => {
 
     const actionName = data.actionName as string | undefined
     let outputFields: Array<{ name: string, type: string }>
-    if (actionName === 'transform.map') {
+    if (actionName === 'transform.map' || actionName === 'transform.compose') {
       const input = (data.input ?? {}) as Record<string, unknown>
       outputFields = Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: inferTransformValueType(input[k]) }))
     }
