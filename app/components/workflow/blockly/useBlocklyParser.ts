@@ -24,97 +24,177 @@ type TokenType =
   | 'STAR'
   | 'SLASH'
   | 'PERCENT'
-  | 'EOF'
+  | 'EOF';
 
 interface Token {
-  type: TokenType
-  value: string
+  type: TokenType;
+  value: string;
 }
 
 function tokenize(input: string): Token[] {
-  const tokens: Token[] = []
-  let i = 0
+  const tokens: Token[] = [];
+  let i = 0;
 
   while (i < input.length) {
+    const ch = input.charAt(i);
+
     // Skip whitespace
-    if (/\s/.test(input[i])) {
-      i++
-      continue
+    if (/\s/.test(ch)) {
+      i++;
+      continue;
     }
 
     // Two-char operators
-    const twoChar = input.slice(i, i + 2)
-    if (twoChar === '==') { tokens.push({ type: 'EQ', value: '==' }); i += 2; continue }
-    if (twoChar === '!=') { tokens.push({ type: 'NEQ', value: '!=' }); i += 2; continue }
-    if (twoChar === '>=') { tokens.push({ type: 'GTE', value: '>=' }); i += 2; continue }
-    if (twoChar === '<=') { tokens.push({ type: 'LTE', value: '<=' }); i += 2; continue }
-    if (twoChar === '&&') { tokens.push({ type: 'AND', value: '&&' }); i += 2; continue }
-    if (twoChar === '||') { tokens.push({ type: 'OR', value: '||' }); i += 2; continue }
+    const twoChar = input.slice(i, i + 2);
+    if (twoChar === '==') {
+      tokens.push({ type: 'EQ', value: '==' });
+      i += 2;
+      continue;
+    }
+    if (twoChar === '!=') {
+      tokens.push({ type: 'NEQ', value: '!=' });
+      i += 2;
+      continue;
+    }
+    if (twoChar === '>=') {
+      tokens.push({ type: 'GTE', value: '>=' });
+      i += 2;
+      continue;
+    }
+    if (twoChar === '<=') {
+      tokens.push({ type: 'LTE', value: '<=' });
+      i += 2;
+      continue;
+    }
+    if (twoChar === '&&') {
+      tokens.push({ type: 'AND', value: '&&' });
+      i += 2;
+      continue;
+    }
+    if (twoChar === '||') {
+      tokens.push({ type: 'OR', value: '||' });
+      i += 2;
+      continue;
+    }
 
     // Single-char operators
-    const ch = input[i]
-    if (ch === '(') { tokens.push({ type: 'LPAREN', value: '(' }); i++; continue }
-    if (ch === ')') { tokens.push({ type: 'RPAREN', value: ')' }); i++; continue }
-    if (ch === '[') { tokens.push({ type: 'LBRACKET', value: '[' }); i++; continue }
-    if (ch === ']') { tokens.push({ type: 'RBRACKET', value: ']' }); i++; continue }
-    if (ch === '.') { tokens.push({ type: 'DOT', value: '.' }); i++; continue }
-    if (ch === ',') { tokens.push({ type: 'COMMA', value: ',' }); i++; continue }
-    if (ch === '>') { tokens.push({ type: 'GT', value: '>' }); i++; continue }
-    if (ch === '<') { tokens.push({ type: 'LT', value: '<' }); i++; continue }
-    if (ch === '!') { tokens.push({ type: 'NOT', value: '!' }); i++; continue }
-    if (ch === '+') { tokens.push({ type: 'PLUS', value: '+' }); i++; continue }
-    if (ch === '-') { tokens.push({ type: 'MINUS', value: '-' }); i++; continue }
-    if (ch === '*') { tokens.push({ type: 'STAR', value: '*' }); i++; continue }
-    if (ch === '/') { tokens.push({ type: 'SLASH', value: '/' }); i++; continue }
-    if (ch === '%') { tokens.push({ type: 'PERCENT', value: '%' }); i++; continue }
+    if (ch === '(') {
+      tokens.push({ type: 'LPAREN', value: '(' });
+      i++;
+      continue;
+    }
+    if (ch === ')') {
+      tokens.push({ type: 'RPAREN', value: ')' });
+      i++;
+      continue;
+    }
+    if (ch === '[') {
+      tokens.push({ type: 'LBRACKET', value: '[' });
+      i++;
+      continue;
+    }
+    if (ch === ']') {
+      tokens.push({ type: 'RBRACKET', value: ']' });
+      i++;
+      continue;
+    }
+    if (ch === '.') {
+      tokens.push({ type: 'DOT', value: '.' });
+      i++;
+      continue;
+    }
+    if (ch === ',') {
+      tokens.push({ type: 'COMMA', value: ',' });
+      i++;
+      continue;
+    }
+    if (ch === '>') {
+      tokens.push({ type: 'GT', value: '>' });
+      i++;
+      continue;
+    }
+    if (ch === '<') {
+      tokens.push({ type: 'LT', value: '<' });
+      i++;
+      continue;
+    }
+    if (ch === '!') {
+      tokens.push({ type: 'NOT', value: '!' });
+      i++;
+      continue;
+    }
+    if (ch === '+') {
+      tokens.push({ type: 'PLUS', value: '+' });
+      i++;
+      continue;
+    }
+    if (ch === '-') {
+      tokens.push({ type: 'MINUS', value: '-' });
+      i++;
+      continue;
+    }
+    if (ch === '*') {
+      tokens.push({ type: 'STAR', value: '*' });
+      i++;
+      continue;
+    }
+    if (ch === '/') {
+      tokens.push({ type: 'SLASH', value: '/' });
+      i++;
+      continue;
+    }
+    if (ch === '%') {
+      tokens.push({ type: 'PERCENT', value: '%' });
+      i++;
+      continue;
+    }
 
     // String literal (single-quoted)
-    if (ch === '\'') {
-      let str = ''
-      i++ // skip opening quote
-      while (i < input.length && input[i] !== '\'') {
-        if (input[i] === '\\' && i + 1 < input.length) {
-          str += input[i + 1]
-          i += 2
-        }
-        else {
-          str += input[i]
-          i++
+    if (ch === "'") {
+      let str = '';
+      i++; // skip opening quote
+      while (i < input.length && input.charAt(i) !== "'") {
+        if (input.charAt(i) === '\\' && i + 1 < input.length) {
+          str += input.charAt(i + 1);
+          i += 2;
+        } else {
+          str += input.charAt(i);
+          i++;
         }
       }
-      i++ // skip closing quote
-      tokens.push({ type: 'STRING', value: str })
-      continue
+      i++; // skip closing quote
+      tokens.push({ type: 'STRING', value: str });
+      continue;
     }
 
     // Number
     if (/\d/.test(ch)) {
-      let num = ''
-      while (i < input.length && /[\d.]/.test(input[i])) {
-        num += input[i]
-        i++
+      let num = '';
+      while (i < input.length && /[\d.]/.test(input.charAt(i))) {
+        num += input.charAt(i);
+        i++;
       }
-      tokens.push({ type: 'NUMBER', value: num })
-      continue
+      tokens.push({ type: 'NUMBER', value: num });
+      continue;
     }
 
     // Identifier (includes $current, $index)
     if (/[a-zA-Z_$]/.test(ch)) {
-      let ident = ''
-      while (i < input.length && /[a-zA-Z0-9_$]/.test(input[i])) {
-        ident += input[i]
-        i++
+      let ident = '';
+      while (i < input.length && /[a-zA-Z0-9_$]/.test(input.charAt(i))) {
+        ident += input.charAt(i);
+        i++;
       }
-      tokens.push({ type: 'IDENT', value: ident })
-      continue
+      tokens.push({ type: 'IDENT', value: ident });
+      continue;
     }
 
     // Unknown character — skip
-    i++
+    i++;
   }
 
-  tokens.push({ type: 'EOF', value: '' })
-  return tokens
+  tokens.push({ type: 'EOF', value: '' });
+  return tokens;
 }
 
 // ---------- AST ----------
@@ -129,177 +209,196 @@ type ASTNode =
   | { type: 'comparison'; left: ASTNode; op: string; right: ASTNode }
   | { type: 'logic'; left: ASTNode; op: string; right: ASTNode }
   | { type: 'not'; operand: ASTNode }
-  | { type: 'arithmetic'; left: ASTNode; op: string; right: ASTNode }
+  | { type: 'arithmetic'; left: ASTNode; op: string; right: ASTNode };
 
 // ---------- Parser ----------
 
 function parse(tokens: Token[]): ASTNode {
-  let pos = 0
+  let pos = 0;
 
   function peek(): Token {
-    return tokens[pos] || { type: 'EOF', value: '' }
+    return tokens[pos] || { type: 'EOF', value: '' };
   }
 
   function advance(): Token {
-    return tokens[pos++]
+    return tokens[pos++] ?? { type: 'EOF', value: '' };
   }
 
   function expect(type: TokenType): Token {
-    const t = advance()
+    const t = advance();
     if (t.type !== type) {
-      throw new Error(`Expected ${type} but got ${t.type} (${t.value})`)
+      throw new Error(`Expected ${type} but got ${t.type} (${t.value})`);
     }
-    return t
+    return t;
   }
 
   function expression(): ASTNode {
-    return logicalOr()
+    return logicalOr();
   }
 
   function logicalOr(): ASTNode {
-    let left = logicalAnd()
+    let left = logicalAnd();
     while (peek().type === 'OR') {
-      advance()
-      const right = logicalAnd()
-      left = { type: 'logic', left, op: '||', right }
+      advance();
+      const right = logicalAnd();
+      left = { type: 'logic', left, op: '||', right };
     }
-    return left
+    return left;
   }
 
   function logicalAnd(): ASTNode {
-    let left = comparison()
+    let left = comparison();
     while (peek().type === 'AND') {
-      advance()
-      const right = comparison()
-      left = { type: 'logic', left, op: '&&', right }
+      advance();
+      const right = comparison();
+      left = { type: 'logic', left, op: '&&', right };
     }
-    return left
+    return left;
   }
 
   function comparison(): ASTNode {
-    let left = additive()
-    const t = peek()
-    if (t.type === 'EQ' || t.type === 'NEQ' || t.type === 'GT' || t.type === 'LT' || t.type === 'GTE' || t.type === 'LTE') {
-      const op = advance().value
-      const right = additive()
-      left = { type: 'comparison', left, op, right }
+    let left = additive();
+    const t = peek();
+    if (
+      t.type === 'EQ' ||
+      t.type === 'NEQ' ||
+      t.type === 'GT' ||
+      t.type === 'LT' ||
+      t.type === 'GTE' ||
+      t.type === 'LTE'
+    ) {
+      const op = advance().value;
+      const right = additive();
+      left = { type: 'comparison', left, op, right };
     }
-    return left
+    return left;
   }
 
   function additive(): ASTNode {
-    let left = multiplicative()
+    let left = multiplicative();
     while (peek().type === 'PLUS' || peek().type === 'MINUS') {
-      const op = advance().value
-      const right = multiplicative()
-      left = { type: 'arithmetic', left, op, right }
+      const op = advance().value;
+      const right = multiplicative();
+      left = { type: 'arithmetic', left, op, right };
     }
-    return left
+    return left;
   }
 
   function multiplicative(): ASTNode {
-    let left = unary()
-    while (peek().type === 'STAR' || peek().type === 'SLASH' || peek().type === 'PERCENT') {
-      const op = advance().value
-      const right = unary()
-      left = { type: 'arithmetic', left, op, right }
+    let left = unary();
+    while (
+      peek().type === 'STAR' ||
+      peek().type === 'SLASH' ||
+      peek().type === 'PERCENT'
+    ) {
+      const op = advance().value;
+      const right = unary();
+      left = { type: 'arithmetic', left, op, right };
     }
-    return left
+    return left;
   }
 
   function unary(): ASTNode {
     if (peek().type === 'NOT') {
-      advance()
-      const operand = unary()
-      return { type: 'not', operand }
+      advance();
+      const operand = unary();
+      return { type: 'not', operand };
     }
-    return primary()
+    return primary();
   }
 
   function primary(): ASTNode {
-    const t = peek()
+    const t = peek();
 
     // Parenthesized expression
     if (t.type === 'LPAREN') {
-      advance()
-      const expr = expression()
-      expect('RPAREN')
-      return expr
+      advance();
+      const expr = expression();
+      expect('RPAREN');
+      return expr;
     }
 
     // String literal
     if (t.type === 'STRING') {
-      advance()
-      return { type: 'string', value: t.value }
+      advance();
+      return { type: 'string', value: t.value };
     }
 
     // Number literal
     if (t.type === 'NUMBER') {
-      advance()
-      return { type: 'number', value: Number(t.value) }
+      advance();
+      return { type: 'number', value: Number(t.value) };
     }
 
     // Identifier — could be function call, keyword, or data ref
     if (t.type === 'IDENT') {
       // Keywords
-      if (t.value === 'true') { advance(); return { type: 'boolean', value: true } }
-      if (t.value === 'false') { advance(); return { type: 'boolean', value: false } }
-      if (t.value === 'null') { advance(); return { type: 'null' } }
+      if (t.value === 'true') {
+        advance();
+        return { type: 'boolean', value: true };
+      }
+      if (t.value === 'false') {
+        advance();
+        return { type: 'boolean', value: false };
+      }
+      if (t.value === 'null') {
+        advance();
+        return { type: 'null' };
+      }
 
       // Lookahead: function call?
-      if (pos + 1 < tokens.length && tokens[pos + 1].type === 'LPAREN') {
-        return functionCall()
+      const nextToken = tokens[pos + 1];
+      if (nextToken && nextToken.type === 'LPAREN') {
+        return functionCall();
       }
 
       // Data reference
-      return dataRef()
+      return dataRef();
     }
 
-    throw new Error(`Unexpected token: ${t.type} (${t.value})`)
+    throw new Error(`Unexpected token: ${t.type} (${t.value})`);
   }
 
   function functionCall(): ASTNode {
-    const nameToken = advance() // IDENT
-    expect('LPAREN')
-    const args: ASTNode[] = []
+    const nameToken = advance(); // IDENT
+    expect('LPAREN');
+    const args: ASTNode[] = [];
     if (peek().type !== 'RPAREN') {
-      args.push(expression())
+      args.push(expression());
       while (peek().type === 'COMMA') {
-        advance()
-        args.push(expression())
+        advance();
+        args.push(expression());
       }
     }
-    expect('RPAREN')
-    return { type: 'function', name: nameToken.value, args }
+    expect('RPAREN');
+    return { type: 'function', name: nameToken.value, args };
   }
 
   function dataRef(): ASTNode {
-    let path = advance().value // First IDENT
+    let path = advance().value; // First IDENT
 
     while (peek().type === 'DOT' || peek().type === 'LBRACKET') {
       if (peek().type === 'DOT') {
-        advance()
-        const next = expect('IDENT')
-        path += `.${next.value}`
-      }
-      else {
-        advance() // [
+        advance();
+        const next = expect('IDENT');
+        path += `.${next.value}`;
+      } else {
+        advance(); // [
         if (peek().type === 'NUMBER') {
-          path += `[${advance().value}]`
+          path += `[${advance().value}]`;
+        } else if (peek().type === 'STAR') {
+          advance();
+          path += '[*]';
         }
-        else if (peek().type === 'STAR') {
-          advance()
-          path += '[*]'
-        }
-        expect('RBRACKET')
+        expect('RBRACKET');
       }
     }
 
-    return { type: 'dataRef', path }
+    return { type: 'dataRef', path };
   }
 
-  const result = expression()
-  return result
+  const result = expression();
+  return result;
 }
 
 // ---------- AST to Blockly JSON ----------
@@ -373,11 +472,11 @@ const FUNCTION_TO_BLOCK: Record<string, string> = {
   JsonPath: 'ncalc_json_path',
   IsEmpty: 'ncalc_is_empty',
   IsNull: 'ncalc_is_null',
-}
+};
 
 // Known data reference namespaces
-const DATA_NAMESPACES = new Set(['output', 'input', 'vars'])
-const ITERATOR_REFS = new Set(['$current', '$index'])
+const DATA_NAMESPACES = new Set(['output', 'input', 'vars']);
+const ITERATOR_REFS = new Set(['$current', '$index']);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function astToBlocklyJson(node: ASTNode): Record<string, any> {
@@ -386,31 +485,31 @@ function astToBlocklyJson(node: ASTNode): Record<string, any> {
       return {
         type: 'ncalc_string_literal',
         fields: { TEXT: node.value },
-      }
+      };
 
     case 'number':
       return {
         type: 'ncalc_number_literal',
         fields: { NUM: node.value },
-      }
+      };
 
     case 'boolean':
       return {
         type: 'ncalc_boolean_literal',
         fields: { BOOL: String(node.value) },
-      }
+      };
 
     case 'null':
-      return { type: 'ncalc_null_literal' }
+      return { type: 'ncalc_null_literal' };
 
     case 'dataRef':
-      return dataRefToBlock(node.path)
+      return dataRefToBlock(node.path);
 
     case 'not':
       return {
         type: 'ncalc_not',
         inputs: { VALUE: { block: astToBlocklyJson(node.operand) } },
-      }
+      };
 
     case 'comparison':
       return {
@@ -420,7 +519,7 @@ function astToBlocklyJson(node: ASTNode): Record<string, any> {
           LEFT: { block: astToBlocklyJson(node.left) },
           RIGHT: { block: astToBlocklyJson(node.right) },
         },
-      }
+      };
 
     case 'logic':
       return {
@@ -430,20 +529,20 @@ function astToBlocklyJson(node: ASTNode): Record<string, any> {
           LEFT: { block: astToBlocklyJson(node.left) },
           RIGHT: { block: astToBlocklyJson(node.right) },
         },
-      }
+      };
 
     case 'arithmetic':
-      return arithmeticToBlock(node)
+      return arithmeticToBlock(node);
 
     case 'function':
-      return functionToBlock(node)
+      return functionToBlock(node);
   }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function dataRefToBlock(path: string): Record<string, any> {
-  const parts = path.split('.')
-  const first = parts[0]
+  const parts = path.split('.');
+  const first = parts[0] ?? '';
 
   // Iterator references: $current, $index
   if (ITERATOR_REFS.has(first)) {
@@ -453,7 +552,7 @@ function dataRefToBlock(path: string): Record<string, any> {
         REF: first,
         PATH: parts.slice(1).join('.'),
       },
-    }
+    };
   }
 
   // Known namespaces: output, input, vars
@@ -464,18 +563,20 @@ function dataRefToBlock(path: string): Record<string, any> {
         NAMESPACE: first,
         PATH: parts.slice(1).join('.'),
       },
-    }
+    };
   }
 
   // Unknown — use raw expression
   return {
     type: 'ncalc_raw_expression',
     fields: { EXPR: path },
-  }
+  };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function arithmeticToBlock(node: ASTNode & { type: 'arithmetic' }): Record<string, any> {
+function arithmeticToBlock(
+  node: ASTNode & { type: 'arithmetic' },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Record<string, any> {
   // Map arithmetic operators to NCalc function names
   const opMap: Record<string, string> = {
     '+': 'Add',
@@ -483,8 +584,8 @@ function arithmeticToBlock(node: ASTNode & { type: 'arithmetic' }): Record<strin
     '*': 'Multiply',
     '/': 'Divide',
     '%': 'Mod',
-  }
-  const funcName = opMap[node.op]
+  };
+  const funcName = opMap[node.op];
   if (funcName) {
     return {
       type: 'ncalc_math_binary',
@@ -493,41 +594,54 @@ function arithmeticToBlock(node: ASTNode & { type: 'arithmetic' }): Record<strin
         A: { block: astToBlocklyJson(node.left) },
         B: { block: astToBlocklyJson(node.right) },
       },
-    }
+    };
   }
   // Fallback
-  return { type: 'ncalc_raw_expression', fields: { EXPR: `${nodeToString(node.left)} ${node.op} ${nodeToString(node.right)}` } }
+  return {
+    type: 'ncalc_raw_expression',
+    fields: {
+      EXPR: `${nodeToString(node.left)} ${node.op} ${nodeToString(node.right)}`,
+    },
+  };
 }
 
 function nodeToString(node: ASTNode): string {
   switch (node.type) {
-    case 'string': return `'${node.value}'`
-    case 'number': return String(node.value)
-    case 'boolean': return String(node.value)
-    case 'null': return 'null'
-    case 'dataRef': return node.path
-    default: return '...'
+    case 'string':
+      return `'${node.value}'`;
+    case 'number':
+      return String(node.value);
+    case 'boolean':
+      return String(node.value);
+    case 'null':
+      return 'null';
+    case 'dataRef':
+      return node.path;
+    default:
+      return '...';
   }
 }
 
 function getStringArg(args: ASTNode[], index: number): string {
-  const arg = args[index]
-  if (!arg) return ''
-  if (arg.type === 'string') return arg.value
-  return nodeToString(arg)
+  const arg = args[index];
+  if (!arg) return '';
+  if (arg.type === 'string') return arg.value;
+  return nodeToString(arg);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function functionToBlock(node: ASTNode & { type: 'function' }): Record<string, any> {
-  const blockType = FUNCTION_TO_BLOCK[node.name]
+function functionToBlock(
+  node: ASTNode & { type: 'function' },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Record<string, any> {
+  const blockType = FUNCTION_TO_BLOCK[node.name];
 
   if (!blockType) {
     // Unknown function — raw expression fallback
-    const argsStr = node.args.map(a => nodeToString(a)).join(', ')
+    const argsStr = node.args.map((a) => nodeToString(a)).join(', ');
     return {
       type: 'ncalc_raw_expression',
       fields: { EXPR: `${node.name}(${argsStr})` },
-    }
+    };
   }
 
   switch (blockType) {
@@ -535,211 +649,283 @@ function functionToBlock(node: ASTNode & { type: 'function' }): Record<string, a
       return {
         type: 'ncalc_if',
         inputs: {
-          CONDITION: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          THEN: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
-          ELSE: node.args[2] ? { block: astToBlocklyJson(node.args[2]) } : undefined,
+          CONDITION: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          THEN: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
+          ELSE: node.args[2]
+            ? { block: astToBlocklyJson(node.args[2]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_round':
       return {
         type: 'ncalc_round',
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          DECIMALS: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          DECIMALS: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_math_unary':
       return {
         type: 'ncalc_math_unary',
         fields: { OP: node.name },
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_math_binary':
       return {
         type: 'ncalc_math_binary',
         fields: { OP: node.name },
         inputs: {
-          A: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          B: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
+          A: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          B: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_min_max':
       return {
         type: 'ncalc_min_max',
         fields: { OP: node.name },
         inputs: {
-          A: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          B: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
+          A: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          B: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_pow':
       return {
         type: 'ncalc_pow',
         inputs: {
-          BASE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          EXPONENT: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
+          BASE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          EXPONENT: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_len':
       return {
         type: 'ncalc_len',
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_concat':
       return {
         type: 'ncalc_concat',
         inputs: {
-          A: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          B: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
+          A: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          B: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_replace':
       return {
         type: 'ncalc_replace',
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          FIND: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
-          WITH: node.args[2] ? { block: astToBlocklyJson(node.args[2]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          FIND: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
+          WITH: node.args[2]
+            ? { block: astToBlocklyJson(node.args[2]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_contains':
       return {
         type: 'ncalc_contains',
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          SEARCH: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          SEARCH: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_starts_ends':
       return {
         type: 'ncalc_starts_ends',
         fields: { OP: node.name },
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          SEARCH: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          SEARCH: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_case':
       return {
         type: 'ncalc_case',
         fields: { OP: node.name },
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_substring':
       return {
         type: 'ncalc_substring',
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          START: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
-          LENGTH: node.args[2] ? { block: astToBlocklyJson(node.args[2]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          START: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
+          LENGTH: node.args[2]
+            ? { block: astToBlocklyJson(node.args[2]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_base64':
       return {
         type: 'ncalc_base64',
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_filter':
       return {
         type: 'ncalc_filter',
         fields: { CONDITION: getStringArg(node.args, 1) },
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_map_extract':
       return {
         type: 'ncalc_map_extract',
         fields: { PROPERTY: getStringArg(node.args, 1) },
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_sum':
       return {
         type: 'ncalc_sum',
         fields: { PROPERTY: node.args[1] ? getStringArg(node.args, 1) : '' },
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_count':
       return {
         type: 'ncalc_count',
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_first_last':
       return {
         type: 'ncalc_first_last',
         fields: { OP: node.name },
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_join':
       return {
         type: 'ncalc_join',
         fields: { SEPARATOR: getStringArg(node.args, 1) },
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_sort':
       return {
         type: 'ncalc_sort',
         fields: { OP: node.name },
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_sort_by':
       return {
         type: 'ncalc_sort_by',
         fields: { PROPERTY: getStringArg(node.args, 1) },
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_groupby':
       return {
         type: 'ncalc_groupby',
         fields: { KEY: getStringArg(node.args, 1) },
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_lookup':
       return {
@@ -749,10 +935,14 @@ function functionToBlock(node: ASTNode & { type: 'function' }): Record<string, a
           RETURN_PROP: getStringArg(node.args, 3),
         },
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          MATCH_VALUE: node.args[2] ? { block: astToBlocklyJson(node.args[2]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          MATCH_VALUE: node.args[2]
+            ? { block: astToBlocklyJson(node.args[2]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_lookup_closest':
       return {
@@ -762,163 +952,210 @@ function functionToBlock(node: ASTNode & { type: 'function' }): Record<string, a
           RETURN_PROP: getStringArg(node.args, 4),
         },
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          MATCH_VALUE: node.args[2] ? { block: astToBlocklyJson(node.args[2]) } : undefined,
-          TOLERANCE: node.args[3] ? { block: astToBlocklyJson(node.args[3]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          MATCH_VALUE: node.args[2]
+            ? { block: astToBlocklyJson(node.args[2]) }
+            : undefined,
+          TOLERANCE: node.args[3]
+            ? { block: astToBlocklyJson(node.args[3]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_any_all':
       return {
         type: 'ncalc_any_all',
         fields: { OP: node.name, CONDITION: getStringArg(node.args, 1) },
         inputs: {
-          ARRAY: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          ARRAY: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_union_except':
       return {
         type: 'ncalc_union_except',
         fields: { OP: node.name },
         inputs: {
-          A: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          B: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
+          A: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          B: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_now':
-      return { type: 'ncalc_now' }
+      return { type: 'ncalc_now' };
 
     case 'ncalc_today':
-      return { type: 'ncalc_today' }
+      return { type: 'ncalc_today' };
 
     case 'ncalc_format_date':
       return {
         type: 'ncalc_format_date',
         fields: { FORMAT: getStringArg(node.args, 1) },
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_add_time':
       return {
         type: 'ncalc_add_time',
         fields: { OP: node.name },
         inputs: {
-          DATE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          AMOUNT: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
+          DATE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          AMOUNT: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_date_diff':
       return {
         type: 'ncalc_date_diff',
         fields: { UNIT: getStringArg(node.args, 2) },
         inputs: {
-          DATE1: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          DATE2: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
+          DATE1: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          DATE2: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_date_part':
       return {
         type: 'ncalc_date_part',
         fields: { PART: node.name },
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_to_int':
       return {
         type: 'ncalc_to_int',
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_to_string': {
-      const fmt = node.args[1] ? getStringArg(node.args, 1) : ''
+      const fmt = node.args[1] ? getStringArg(node.args, 1) : '';
       return {
         type: 'ncalc_to_string',
         fields: { FORMAT: fmt },
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
     }
 
     case 'ncalc_coalesce':
       return {
         type: 'ncalc_coalesce',
         inputs: {
-          A: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
-          B: node.args[1] ? { block: astToBlocklyJson(node.args[1]) } : undefined,
+          A: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
+          B: node.args[1]
+            ? { block: astToBlocklyJson(node.args[1]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_new_guid':
-      return { type: 'ncalc_new_guid' }
+      return { type: 'ncalc_new_guid' };
 
     case 'ncalc_json_path':
       return {
         type: 'ncalc_json_path',
         fields: { PATH: getStringArg(node.args, 1) },
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_is_empty':
       return {
         type: 'ncalc_is_empty',
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     case 'ncalc_is_null':
       return {
         type: 'ncalc_is_null',
         inputs: {
-          VALUE: node.args[0] ? { block: astToBlocklyJson(node.args[0]) } : undefined,
+          VALUE: node.args[0]
+            ? { block: astToBlocklyJson(node.args[0]) }
+            : undefined,
         },
-      }
+      };
 
     default:
       return {
         type: 'ncalc_raw_expression',
-        fields: { EXPR: `${node.name}(${node.args.map(a => nodeToString(a)).join(', ')})` },
-      }
+        fields: {
+          EXPR: `${node.name}(${node.args.map((a) => nodeToString(a)).join(', ')})`,
+        },
+      };
   }
 }
 
 // ---------- Export ----------
 
 export function useBlocklyParser() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function loadExpression(workspace: any, Blockly: any, expression: string): boolean {
-    const inner = expression.replace(/^\{\{|\}\}$/g, '').trim()
-    if (!inner) return false
+  function loadExpression(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    workspace: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Blockly: any,
+    expression: string,
+  ): boolean {
+    const inner = expression.replace(/^\{\{|\}\}$/g, '').trim();
+    if (!inner) return false;
 
     try {
-      const tokens = tokenize(inner)
-      const ast = parse(tokens)
-      const blockJson = astToBlocklyJson(ast)
-      Blockly.serialization.blocks.append(blockJson, workspace)
-      return true
-    }
-    catch {
+      const tokens = tokenize(inner);
+      const ast = parse(tokens);
+      const blockJson = astToBlocklyJson(ast);
+      Blockly.serialization.blocks.append(blockJson, workspace);
+      return true;
+    } catch {
       // Fallback: create raw expression block
-      Blockly.serialization.blocks.append({
-        type: 'ncalc_raw_expression',
-        fields: { EXPR: inner },
-      }, workspace)
-      return false
+      Blockly.serialization.blocks.append(
+        {
+          type: 'ncalc_raw_expression',
+          fields: { EXPR: inner },
+        },
+        workspace,
+      );
+      return false;
     }
   }
 
-  return { loadExpression, tokenize, parse }
+  return { loadExpression, tokenize, parse };
 }
