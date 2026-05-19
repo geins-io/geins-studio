@@ -292,24 +292,25 @@ const cancelEditLabel = () => {
         <component :is="nodeIcon" v-if="nodeIcon" class="h-4 w-4 shrink-0" />
         <LucideSettings v-else class="h-4 w-4 shrink-0" />
         <div class="group relative inline-grid min-w-0 items-center text-sm font-medium">
-          <span ref="labelMeasure" class="invisible col-start-1 row-start-1 whitespace-pre px-1">{{ labelWidth }}</span>
+          <span ref="labelMeasure" class="invisible col-start-1 row-start-1 px-1 whitespace-pre">{{ labelWidth }}</span>
           <input
             v-if="isEditingLabel"
             ref="labelInput"
             v-model="editLabelText"
-            class="col-start-1 row-start-1 min-w-0 rounded bg-transparent px-1 text-sm font-medium outline-none ring-1 ring-primary"
+            class="ring-primary col-start-1 row-start-1 min-w-0 rounded bg-transparent px-1 text-sm font-medium ring-1 outline-none"
             @blur="commitLabel"
             @keydown.enter="($event.target as HTMLInputElement).blur()"
             @keydown.escape.prevent="cancelEditLabel"
           />
           <span
             v-else
-            class="col-start-1 row-start-1 cursor-text truncate rounded px-1 group-hover:ring-1 group-hover:ring-border"
+            class="group-hover:ring-border col-start-1 row-start-1 cursor-text truncate rounded px-1 group-hover:ring-1"
             @click="startEditLabel"
           >{{ nodeLabel }}</span>
         </div>
         <span v-if="!isTriggerNode && node?.id" class="bg-muted text-muted-foreground ml-1 shrink-0 rounded px-1 py-0.5 font-mono text-[9px]">{{ node.id }}</span>
-        <span v-if="nodeExecution?.status" class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium capitalize" :class="{
+        <span
+v-if="nodeExecution?.status" class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium capitalize" :class="{
           'bg-green-500/10 text-green-600 dark:text-green-400': nodeExecution.status === 'completed' || nodeExecution.status === 'succeeded',
           'bg-red-500/10 text-red-600 dark:text-red-400': nodeExecution.status === 'failed',
           'bg-blue-500/10 text-blue-600 dark:text-blue-400': nodeExecution.status === 'running',

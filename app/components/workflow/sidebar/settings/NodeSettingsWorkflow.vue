@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { WorkflowSummary, WorkflowInput, WorkflowDefinition } from '#shared/types'
+import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue'
+import WorkflowDataType from '@/components/workflow/shared/WorkflowDataType.vue'
 
 const props = defineProps<{
   nodeData: Record<string, unknown>
@@ -94,8 +96,8 @@ function selectWorkflow(wf: WorkflowSummary) {
   props.updateInput('workflowName', wf.name)
   selectorOpen.value = false
   selectorSearch.value = ''
+  removedOptionalKeys.value.clear()
 
-  // Auto-populate input parameters from the selected workflow's expected inputs
   const expectedInputs = getWorkflowInputs(wf.id)
   if (expectedInputs.length) {
     const existing = (props.nodeInput.input ?? {}) as Record<string, unknown>
@@ -103,11 +105,10 @@ function selectWorkflow(wf: WorkflowSummary) {
     for (const inp of expectedInputs) {
       merged[inp.name] = String(existing[inp.name] ?? inp.defaultValue ?? '')
     }
-    // Keep any extra keys the user already added that aren't in the expected inputs
-    for (const [k, v] of Object.entries(existing)) {
-      if (!(k in merged) && k.trim()) merged[k] = String(v ?? '')
-    }
     props.updateInput('input', merged)
+  }
+  else {
+    props.updateInput('input', undefined)
   }
 }
 
@@ -116,35 +117,63 @@ function clearWorkflow() {
   props.updateInput('workflowName', '')
 }
 
-// ─── Input parameters (key-value editor) ─────────────────────────
+// ─── Input parameters (driven by selected workflow's declared inputs) ─
 const inputRaw = computed(() => (props.nodeInput.input ?? {}) as Record<string, unknown>)
 
-const inputPairs = ref<Array<{ key: string, value: string }>>([])
+const removedOptionalKeys = ref<Set<string>>(new Set())
 
-const syncInputFromData = () => {
-  const entries = Object.entries(inputRaw.value).filter(([k]) => k !== '')
-  inputPairs.value = entries.length > 0
-    ? entries.map(([k, v]) => ({ key: k, value: String(v ?? '') }))
-    : []
-}
-syncInputFromData()
-watch(inputRaw, syncInputFromData, { deep: true })
+const activeInputParams = computed(() => {
+  return selectedWorkflowInputs.value.filter(
+    inp => inp.required || !removedOptionalKeys.value.has(inp.name),
+  )
+})
 
-const commitInput = () => {
-  const obj: Record<string, string> = {}
-  for (const p of inputPairs.value) {
-    if (p.key.trim()) obj[p.key.trim()] = p.value
-  }
-  props.updateInput('input', Object.keys(obj).length > 0 ? obj : undefined)
+function getInputValue(name: string): string {
+  const val = inputRaw.value[name]
+  if (val == null) return ''
+  return String(val)
 }
 
-const addInputRow = () => {
-  inputPairs.value.push({ key: '', value: '' })
+function setInputValue(name: string, value: string) {
+  const current = { ...inputRaw.value }
+  current[name] = value
+  props.updateInput('input', current)
 }
 
-const removeInputRow = (index: number) => {
-  inputPairs.value.splice(index, 1)
-  commitInput()
+function removeOptionalParam(name: string) {
+  removedOptionalKeys.value.add(name)
+  const current = Object.fromEntries(
+    Object.entries(inputRaw.value).filter(([k]) => k !== name),
+  )
+  props.updateInput('input', Object.keys(current).length > 0 ? current : undefined)
+}
+
+function restoreParam(name: string) {
+  removedOptionalKeys.value.delete(name)
+  const current = { ...(inputRaw.value) }
+  const def = selectedWorkflowInputs.value.find(i => i.name === name)
+  current[name] = def?.defaultValue ?? ''
+  props.updateInput('input', current)
+}
+
+const removedParams = computed(() => {
+  return selectedWorkflowInputs.value.filter(
+    inp => !inp.required && removedOptionalKeys.value.has(inp.name),
+  )
+})
+
+watch(selectedWorkflowInputs, () => {
+  removedOptionalKeys.value.clear()
+})
+
+const isNumericType = (type: string) => ['number', 'integer', 'int'].includes(type.toLowerCase())
+
+function paramError(inp: WorkflowInput): string | null {
+  const val = getInputValue(inp.name)
+  if (!val) return null
+  if (val.includes('{{')) return null
+  if (isNumericType(inp.type) && isNaN(Number(val))) return 'Must be a number'
+  return null
 }
 </script>
 
@@ -248,54 +277,75 @@ const removeInputRow = (index: number) => {
       </div>
     </div>
 
-    <!-- Expected inputs from selected workflow -->
-    <div v-if="selectedWorkflowInputs.length" class="space-y-2">
-      <label class="text-sm font-medium">Expected inputs</label>
-      <p class="text-muted-foreground text-xs">The selected workflow declares these input parameters</p>
-      <div class="bg-muted/50 space-y-1 rounded-md border px-3 py-2">
+    <!-- Input parameters (driven by selected workflow's declared inputs) -->
+    <div v-if="selectedWorkflowInputs.length" class="space-y-3">
+      <div>
+        <label class="text-sm font-medium">Input parameters</label>
+        <p class="text-muted-foreground text-xs">Values passed to the child workflow</p>
+      </div>
+
+      <div class="space-y-3">
         <div
-          v-for="inp in selectedWorkflowInputs"
+          v-for="inp in activeInputParams"
           :key="inp.name"
-          class="flex items-center gap-2 text-xs"
+          class="space-y-1"
         >
-          <span class="font-mono font-medium">{{ inp.name }}</span>
-          <span class="text-muted-foreground bg-muted rounded px-1 py-0.5 font-mono text-[10px]">{{ inp.type }}</span>
-          <span v-if="inp.required" class="text-destructive text-[10px] font-medium">required</span>
-          <span v-if="inp.description" class="text-muted-foreground ml-auto truncate text-[10px]">{{ inp.description }}</span>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-medium">{{ inp.name }}</span>
+            <WorkflowDataType :type="inp.type" display="long" />
+            <span v-if="inp.required" class="text-destructive text-[10px] font-medium">required</span>
+            <TooltipProvider v-if="inp.description" :delay-duration="200">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <LucideInfo class="text-muted-foreground h-3 w-3 shrink-0 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" :side-offset="4">
+                  {{ inp.description }}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div class="flex items-center gap-1">
+            <div class="min-w-0 flex-1">
+              <ExpressionInput
+                :model-value="getInputValue(inp.name)"
+                :placeholder="inp.defaultValue != null ? String(inp.defaultValue) : inp.name"
+                size="sm"
+                :default-mode="getInputValue(inp.name).includes('{{') ? 'expression' : 'fixed'"
+                @update:model-value="setInputValue(inp.name, $event)"
+              />
+            </div>
+            <button
+              v-if="!inp.required"
+              class="hover:bg-muted text-muted-foreground hover:text-foreground shrink-0 rounded p-1 transition-colors"
+              title="Remove parameter"
+              @click="removeOptionalParam(inp.name)"
+            >
+              <LucideX class="h-3 w-3" />
+            </button>
+          </div>
+          <p v-if="paramError(inp)" class="text-destructive text-[11px]">
+            {{ paramError(inp) }}
+          </p>
         </div>
       </div>
-    </div>
 
-    <!-- Input parameters -->
-    <div class="space-y-2">
-      <label class="text-sm font-medium">Input parameters</label>
-      <p class="text-muted-foreground text-xs">Key-value pairs passed as input to the child workflow</p>
-      <div v-if="inputPairs.length" class="space-y-2">
-        <div v-for="(pair, i) in inputPairs" :key="i" class="flex items-center gap-1">
-          <input
-            v-model="pair.key"
-            placeholder="Key"
-            class="bg-background focus:ring-ring min-w-0 flex-1 rounded-md border px-2 py-1.5 font-mono text-xs focus:ring-2 focus:outline-none"
-            @blur="commitInput()"
-          />
-          <input
-            v-model="pair.value"
-            placeholder="Value or {{expression}}"
-            class="bg-background focus:ring-ring min-w-0 flex-1 rounded-md border px-2 py-1.5 font-mono text-xs focus:ring-2 focus:outline-none"
-            @blur="commitInput()"
-          />
-          <button class="hover:bg-muted shrink-0 rounded p-1" @click="removeInputRow(i)">
-            <LucideX class="text-muted-foreground h-3 w-3" />
+      <!-- Removed optional params (restore) -->
+      <div v-if="removedParams.length" class="border-t pt-2">
+        <p class="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-wide uppercase">Removed</p>
+        <div class="flex flex-wrap gap-1">
+          <button
+            v-for="inp in removedParams"
+            :key="inp.name"
+            type="button"
+            class="bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground inline-flex items-center gap-1 rounded px-2 py-0.5 font-mono text-[11px] transition-colors"
+            @click="restoreParam(inp.name)"
+          >
+            <LucidePlus class="h-2.5 w-2.5" />
+            {{ inp.name }}
           </button>
         </div>
       </div>
-      <button
-        class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-        @click="addInputRow"
-      >
-        <LucidePlus class="h-3 w-3" />
-        Add parameter
-      </button>
     </div>
 
     <!-- Behaviour options -->

@@ -325,7 +325,7 @@ const onSettingsDrop = (event: DragEvent) => {
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
                 <span class="text-sm font-medium">{{ field.name }}</span>
-                <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px] font-mono">{{ field.type }}</span>
+                <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">{{ field.type }}</span>
               </div>
               <p v-if="field.description" class="text-muted-foreground mt-0.5 text-xs">{{ field.description }}</p>
             </div>
@@ -368,7 +368,7 @@ const onSettingsDrop = (event: DragEvent) => {
           <div
             v-for="fn in filteredFunctions"
             :key="fn.name"
-            class="px-4 py-3 space-y-1.5"
+            class="space-y-1.5 px-4 py-3"
           >
             <!-- Signature -->
             <div class="flex items-start justify-between gap-2">
@@ -440,9 +440,9 @@ const onSettingsDrop = (event: DragEvent) => {
         <div
           v-for="v in expressionVariables"
           :key="v.pattern"
-          class="py-3 space-y-1"
+          class="space-y-1 py-3"
         >
-          <code class="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded px-2 py-0.5 font-mono text-xs font-medium">
+          <code class="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-medium text-emerald-700 dark:text-emerald-400">
             {{ v.pattern }}
           </code>
           <p v-if="v.description" class="text-muted-foreground text-xs leading-relaxed">

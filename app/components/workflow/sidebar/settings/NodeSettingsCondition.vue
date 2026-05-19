@@ -572,7 +572,7 @@ function getError(index: number, field: string): string | undefined {
                           class="hover:bg-accent flex w-full flex-col rounded-sm px-2 py-1.5 text-left text-xs"
                           @click="selectField(i, f.value)"
                         >
-                          <span class="w-full break-all font-mono">{{ f.value }}</span>
+                          <span class="w-full font-mono break-all">{{ f.value }}</span>
                           <span v-if="f.detail" class="text-muted-foreground text-[10px]">{{ f.detail }}</span>
                         </button>
                       </template>

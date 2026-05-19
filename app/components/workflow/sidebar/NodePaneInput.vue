@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useVueFlow } from '@vue-flow/core'
 import type { WorkflowInput, WorkflowVariable } from '#shared/types'
-import { useToast } from '@/components/ui/toast/use-toast'
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
+import { useToast } from '@/components/ui/toast/use-toast'
 import WorkflowDataType from '../shared/WorkflowDataType.vue'
 import type { Ref } from 'vue'
 
@@ -265,7 +265,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
                       </button>
                     </TooltipTrigger>
                     <TooltipContent side="right" :side-offset="8" class="max-w-xs">
-                      <pre class="max-h-48 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px]">{{ truncatePreview(upstreamOutputPreview(upstream.id, field.name) ?? '') }}</pre>
+                      <pre class="max-h-48 overflow-auto font-mono text-[11px] break-all whitespace-pre-wrap">{{ truncatePreview(upstreamOutputPreview(upstream.id, field.name) ?? '') }}</pre>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -308,7 +308,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right" :side-offset="8" class="max-w-xs">
-                  <pre class="max-h-48 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px]">{{ truncatePreview(runDataPreview(inp.name) ?? '') }}</pre>
+                  <pre class="max-h-48 overflow-auto font-mono text-[11px] break-all whitespace-pre-wrap">{{ truncatePreview(runDataPreview(inp.name) ?? '') }}</pre>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -347,7 +347,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right" :side-offset="8" class="max-w-xs">
-                  <pre class="max-h-48 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px]">{{ truncatePreview(runDataPreview(v.key) ?? '') }}</pre>
+                  <pre class="max-h-48 overflow-auto font-mono text-[11px] break-all whitespace-pre-wrap">{{ truncatePreview(runDataPreview(v.key) ?? '') }}</pre>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

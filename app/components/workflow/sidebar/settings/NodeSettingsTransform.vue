@@ -149,14 +149,14 @@ onUnmounted(() => {
         <div class="bg-muted flex rounded-md p-0.5">
           <button
             type="button"
-            class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors bg-background text-foreground shadow-sm"
+            class="bg-background text-foreground rounded px-1.5 py-0.5 text-[10px] font-medium shadow-sm transition-colors"
             @click="mode = 'fields'"
           >
             Fields
           </button>
           <button
             type="button"
-            class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors text-muted-foreground hover:text-foreground"
+            class="text-muted-foreground hover:text-foreground rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors"
             @click="mode = 'json'"
           >
             JSON
@@ -216,14 +216,14 @@ onUnmounted(() => {
       <div class="bg-muted flex rounded-md p-0.5">
         <button
           type="button"
-          class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors text-muted-foreground hover:text-foreground"
+          class="text-muted-foreground hover:text-foreground rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors"
           @click="mode = 'fields'"
         >
           Fields
         </button>
         <button
           type="button"
-          class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors bg-background text-foreground shadow-sm"
+          class="bg-background text-foreground rounded px-1.5 py-0.5 text-[10px] font-medium shadow-sm transition-colors"
           @click="mode = 'json'"
         >
           JSON

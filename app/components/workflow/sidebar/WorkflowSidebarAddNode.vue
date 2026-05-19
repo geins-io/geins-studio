@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { NodeTemplate, PaletteItem } from '#shared/types'
-import type { ManifestAction } from '@/composables/useWorkflowManifest'
 import { useToast } from '@/components/ui/toast/use-toast'
+import type { ManifestAction } from '@/composables/useWorkflowManifest'
+import WorkflowNodeSaveTemplateDialog from '../node/WorkflowNodeSaveTemplateDialog.vue'
 import type { Component } from 'vue'
 import LitiumSymbol from '~/assets/logos/litium-symbol.svg'
 import MonitorSymbol from '~/assets/logos/monitor-symbol.svg'
-import WorkflowNodeSaveTemplateDialog from '../node/WorkflowNodeSaveTemplateDialog.vue'
 
 // ─── Props / emits ─────────────────────────────────────────────────
 const open = defineModel<boolean>('open', { default: false })

@@ -49,7 +49,7 @@ const displayText = computed(() =>
 
 <template>
   <span
-    class="inline-flex shrink-0 items-center justify-center rounded font-mono font-medium leading-none"
+    class="inline-flex shrink-0 items-center justify-center rounded font-mono leading-none font-medium"
     :class="[
       meta.class,
       display === 'short'

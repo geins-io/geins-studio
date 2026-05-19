@@ -186,7 +186,7 @@ watch(
           <div class="absolute inset-0 bg-black/50" @click="closeModal" />
           <div class="bg-background relative z-10 flex h-[70vh] w-[80vw] max-w-5xl flex-col overflow-hidden rounded-xl border shadow-2xl">
             <div class="flex items-center justify-between border-b px-4 py-2">
-              <span class="text-muted-foreground text-xs font-medium uppercase tracking-wider">{{ props.expandTitle }}</span>
+              <span class="text-muted-foreground text-xs font-medium tracking-wider uppercase">{{ props.expandTitle }}</span>
               <div class="flex items-center gap-1">
                 <button
                   class="text-muted-foreground hover:text-foreground flex h-6 w-6 items-center justify-center rounded transition-colors"
