@@ -2,11 +2,12 @@
 import type { ManifestExpressionFunction } from '#shared/types'
 import { registerAllBlocks } from './useBlocklyBlocks'
 import { useBlocklyGenerator } from './useBlocklyGenerator'
+import { useBlocklyParser } from './useBlocklyParser'
 import { useBlocklyTheme } from './useBlocklyTheme'
 import type { ExpressionCompletion } from '../shared/ExpressionInput.vue'
 import type { Ref } from 'vue'
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   modelValue?: string
 }>(), {
   modelValue: '',
@@ -99,6 +100,12 @@ async function initBlockly() {
     })
 
     workspace.addChangeListener(onWorkspaceChange)
+
+    // Load existing expression into workspace
+    if (props.modelValue) {
+      const { loadExpression } = useBlocklyParser()
+      loadExpression(workspace, Blockly, props.modelValue)
+    }
 
     geinsLog('Blockly workspace initialized', {
       completionCount: completions.value.length,
