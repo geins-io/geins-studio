@@ -65,6 +65,47 @@ function onDraftUpdate(value: string) {
   draftExpression.value = value
 }
 
+const validation = computed(() => {
+  const expr = draftExpression.value
+  if (!expr || !expr.trim()) {
+    return { valid: false, error: 'Expression is empty' }
+  }
+
+  const inner = expr.replace(/^\{\{|\}\}$/g, '').trim()
+  if (!inner) {
+    return { valid: false, error: 'Expression is empty' }
+  }
+
+  // Check for empty function arguments: func(, ) or func( ,)
+  if (/\(\s*,|,\s*,|,\s*\)/.test(inner)) {
+    return { valid: false, error: 'Missing function argument — connect all inputs' }
+  }
+
+  // Check for empty function calls with no args where args are required
+  // (but allow zero-arg functions like Now(), NewGuid(), UtcNow(), Today())
+  const zeroArgAllowed = new Set(['Now', 'UtcNow', 'Today', 'NewGuid'])
+  const emptyCallMatch = inner.match(/(\w+)\(\s*\)/g)
+  if (emptyCallMatch) {
+    for (const call of emptyCallMatch) {
+      const funcName = call.replace(/\(\s*\)/, '')
+      if (!zeroArgAllowed.has(funcName)) {
+        return { valid: false, error: `${funcName}() is missing arguments` }
+      }
+    }
+  }
+
+  // Check for unbalanced parentheses
+  let depth = 0
+  for (const ch of inner) {
+    if (ch === '(') depth++
+    if (ch === ')') depth--
+    if (depth < 0) return { valid: false, error: 'Unbalanced parentheses' }
+  }
+  if (depth !== 0) return { valid: false, error: 'Unbalanced parentheses' }
+
+  return { valid: true, error: null }
+})
+
 function onOpenChange(value: boolean) {
   if (!value) return
   emit('update:open', value)
@@ -100,9 +141,17 @@ const BlocklyWorkspace = defineAsyncComponent(() =>
         </Suspense>
       </div>
 
+      <!-- Validation error -->
+      <div
+        v-if="!validation.valid"
+        class="text-destructive rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs"
+      >
+        <span class="font-medium">Invalid: </span>{{ validation.error }}
+      </div>
+
       <!-- Live preview -->
       <div
-        v-if="truncatedPreview"
+        v-else-if="truncatedPreview"
         class="text-muted-foreground rounded-md border bg-emerald-500/5 px-3 py-2 font-mono text-xs"
       >
         <span class="opacity-50">Result: </span>{{ truncatedPreview }}
@@ -113,7 +162,7 @@ const BlocklyWorkspace = defineAsyncComponent(() =>
         <Button variant="outline" @click="onCancel">
           Cancel
         </Button>
-        <Button @click="onApply">
+        <Button :disabled="!validation.valid" @click="onApply">
           Apply
         </Button>
       </SheetFooter>
