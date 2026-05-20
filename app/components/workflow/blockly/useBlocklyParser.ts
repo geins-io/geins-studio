@@ -1166,16 +1166,13 @@ function functionToBlock(
 export function useBlocklyParser() {
   const { geinsLog, geinsLogError } = useGeinsLog('BlocklyParser');
 
-  function loadExpression(
+  function parseSingleExpression(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     workspace: any,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Blockly: any,
-    expression: string,
+    inner: string,
   ): boolean {
-    const inner = expression.replace(/^\{\{|\}\}$/g, '').trim();
-    if (!inner) return false;
-
     try {
       const tokens = tokenize(inner);
       const ast = parse(tokens);
@@ -1200,6 +1197,32 @@ export function useBlocklyParser() {
       );
       return false;
     }
+  }
+
+  function loadExpression(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    workspace: any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Blockly: any,
+    expression: string,
+  ): boolean {
+    if (!expression.trim()) return false;
+
+    // Extract all {{...}} expressions
+    const exprPattern = /\{\{([^}]+)\}\}/g;
+    const matches = [...expression.matchAll(exprPattern)];
+
+    if (matches.length === 0) return false;
+
+    let allSuccess = true;
+    for (const match of matches) {
+      const inner = match[1]!.trim();
+      if (!inner) continue;
+      if (!parseSingleExpression(workspace, Blockly, inner)) {
+        allSuccess = false;
+      }
+    }
+    return allSuccess;
   }
 
   return { loadExpression, tokenize, parse };
