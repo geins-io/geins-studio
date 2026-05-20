@@ -374,14 +374,36 @@ function parse(tokens: Token[]): ASTNode {
     return { type: 'function', name: nameToken.value, args };
   }
 
+  function consumePathSegment(): string {
+    let segment = expect('IDENT').value;
+    // Merge hyphenated identifiers: net-httpRequest-01
+    while (
+      peek().type === 'MINUS' &&
+      pos + 1 < tokens.length &&
+      (tokens[pos + 1]!.type === 'IDENT' || tokens[pos + 1]!.type === 'NUMBER')
+    ) {
+      advance(); // MINUS
+      segment += `-${advance().value}`;
+    }
+    return segment;
+  }
+
   function dataRef(): ASTNode {
     let path = advance().value; // First IDENT
+    // Merge hyphenated first segment (rare but possible)
+    while (
+      peek().type === 'MINUS' &&
+      pos + 1 < tokens.length &&
+      (tokens[pos + 1]!.type === 'IDENT' || tokens[pos + 1]!.type === 'NUMBER')
+    ) {
+      advance();
+      path += `-${advance().value}`;
+    }
 
     while (peek().type === 'DOT' || peek().type === 'LBRACKET') {
       if (peek().type === 'DOT') {
         advance();
-        const next = expect('IDENT');
-        path += `.${next.value}`;
+        path += `.${consumePathSegment()}`;
       } else {
         advance(); // [
         if (peek().type === 'NUMBER') {
@@ -1128,6 +1150,8 @@ function functionToBlock(
 // ---------- Export ----------
 
 export function useBlocklyParser() {
+  const { geinsLog, geinsLogError } = useGeinsLog('BlocklyParser');
+
   function loadExpression(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     workspace: any,
@@ -1142,10 +1166,17 @@ export function useBlocklyParser() {
       const tokens = tokenize(inner);
       const ast = parse(tokens);
       const blockJson = astToBlocklyJson(ast);
+      geinsLog('Parsed expression into blocks', {
+        expression: inner,
+        blockType: blockJson.type,
+      });
       Blockly.serialization.blocks.append(blockJson, workspace);
       return true;
-    } catch {
-      // Fallback: create raw expression block
+    } catch (err) {
+      geinsLogError('Failed to parse expression, using raw block', {
+        expression: inner,
+        error: err,
+      });
       Blockly.serialization.blocks.append(
         {
           type: 'ncalc_raw_expression',
