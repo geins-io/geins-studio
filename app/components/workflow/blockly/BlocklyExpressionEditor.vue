@@ -105,7 +105,7 @@ const BlocklyWorkspace = defineAsyncComponent(() =>
 </script>
 
 <template>
-  <Dialog :open="open" :modal="false" @update:open="(v: boolean) => emit('update:open', v)">
+  <Dialog :open="open" @update:open="(v: boolean) => emit('update:open', v)">
     <DialogContent
       :trap-focus="false"
       class="flex h-[85vh] w-[90vw] max-w-[1200px] flex-col gap-3 sm:max-w-[1200px]"
