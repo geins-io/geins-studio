@@ -85,7 +85,7 @@ async function initBlockly() {
         snap: true,
       },
       zoom: {
-        controls: true,
+        controls: false,
         wheel: true,
         startScale: 0.8,
         maxScale: 3,
