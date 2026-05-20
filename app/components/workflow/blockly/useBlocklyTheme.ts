@@ -118,7 +118,7 @@ export function useBlocklyTheme(): BlocklyThemeReturnType {
       fontStyle: {
         family: MONO_FONT,
         weight: '500',
-        size: 10,
+        size: 11,
       },
       startHats: false,
     });
