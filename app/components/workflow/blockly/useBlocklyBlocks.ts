@@ -1,5 +1,3 @@
-import type { ExpressionCompletion } from '../shared/ExpressionInput.vue'
-import type { Ref } from 'vue'
 import { registerArrayBlocks } from './blocks/array'
 import { registerConversionBlocks } from './blocks/conversion'
 import { registerDataBlocks } from './blocks/data'
@@ -9,6 +7,8 @@ import { registerLogicBlocks } from './blocks/logic'
 import { registerMathBlocks } from './blocks/math'
 import { registerOtherBlocks } from './blocks/other'
 import { registerStringBlocks } from './blocks/string'
+import type { ExpressionCompletion } from '../shared/ExpressionInput.vue'
+import type { Ref } from 'vue'
 
 export interface BlocklyContext {
   completions: Ref<ExpressionCompletion[]>

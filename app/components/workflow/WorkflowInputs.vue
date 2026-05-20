@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { toTypedSchema } from '@vee-validate/zod'
-import { useForm } from 'vee-validate'
-import * as z from 'zod'
 import type { WorkflowInput } from '#shared/types'
+import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
 import WorkflowDataType from './shared/WorkflowDataType.vue'
 
 const props = defineProps<{
@@ -65,82 +63,109 @@ const filteredInputsByCategory = computed(() => {
     .filter(group => group.items.length > 0)
 })
 
-// ─── Dynamic vee-validate form for input default values ────────────
-// Build a zod schema keyed by input name so each value field gets proper
-// FormField/FormItem/FormLabel/FormControl/FormDescription treatment.
-const inputSchema = computed(() => {
-  const shape: Record<string, z.ZodTypeAny> = {}
-  for (const input of props.inputs) {
-    if (input.type === 'boolean') {
-      shape[input.name] = z.boolean().default(false)
-    }
-    else if (input.type === 'number') {
-      shape[input.name] = z.number().nullish()
-    }
-    else {
-      shape[input.name] = z.string().nullish()
-    }
-  }
-  return toTypedSchema(z.object(shape))
-})
-
-const inputForm = useForm({
-  validationSchema: inputSchema,
-  keepValuesOnUnmount: true,
-})
-
-// Sync prop values → form whenever inputValues change from parent.
-watch(
-  () => props.inputValues,
-  (vals) => {
-    inputForm.setValues({ ...vals })
-  },
-  { immediate: true, deep: true },
-)
-
-// Emit changes back to parent when form values change.
-watch(
-  () => inputForm.values,
-  (vals) => {
-    // Shallow compare to avoid infinite loop — only emit when actually different.
-    const current = props.inputValues
-    const changed = Object.keys(vals).some(k => vals[k] !== current[k])
-      || Object.keys(current).some(k => !(k in vals))
-    if (changed) {
-      emit('update:inputValues', { ...vals })
-    }
-  },
-  { deep: true },
-)
-
-// Helpers hoist union-typed casts out of the template — otherwise the
-// template parser sees `string | number` and flags the `|` as a deprecated
-// Vue 2 filter (vue/no-deprecated-filter).
-const numberInputValue = (name: string): string | number | undefined => {
-  const v = props.inputValues[name]
-  if (v === null || v === undefined) return undefined
-  if (typeof v === 'number' || typeof v === 'string') return v
-  return String(v)
-}
-
 // ─── Add input dialog ──────────────────────────────────────────────
 const INPUT_NAME_RE = /^[a-zA-Z][a-zA-Z0-9_-]*$/
 const addInputDialogOpen = ref(false)
 const addInputCategory = ref('')
 const addInputError = ref('')
-const newInput = reactive<{
-  name: string
-  type: string
-  required: boolean
-  description: string
-  defaultValue: string
-}>({
+const newInput = reactive({
   name: '',
   type: 'string',
   required: false,
   description: '',
   defaultValue: '',
 })
+
+const defaultPlaceholder = computed(() => {
+  if (newInput.type === 'object') return '{}'
+  if (newInput.type === 'array') return '[]'
+  return ''
+})
+
+const tryParseJson = (raw: string): { ok: true, value: unknown } | { ok: false } => {
+  try { return { ok: true, value: JSON.parse(raw) } }
+  catch {
+    try { return { ok: true, value: JSON.parse(raw.replace(/'/g, '"')) } }
+    catch { return { ok: false } }
+  }
+}
+
+const validateJson = (raw: string, expectedType: 'object' | 'array'): string | null => {
+  if (!raw.trim()) return null
+  const result = tryParseJson(raw)
+  if (!result.ok) return 'Invalid JSON'
+  if (expectedType === 'object' && (typeof result.value !== 'object' || Array.isArray(result.value) || result.value === null)) {
+    return 'Value must be a JSON object'
+  }
+  if (expectedType === 'array' && !Array.isArray(result.value)) {
+    return 'Value must be a JSON array'
+  }
+  return null
+}
+
+const newInputJsonError = computed(() => {
+  if (newInput.type !== 'object' && newInput.type !== 'array') return null
+  return validateJson(newInput.defaultValue, newInput.type as 'object' | 'array')
+})
+
+const newInputCanSave = computed(() => {
+  return !newInputJsonError.value
+})
+
+// ─── Edit input sheet ─────────────────────────────────────────────
+const editInputOpen = ref(false)
+const editingInput = ref<WorkflowInput | null>(null)
+const editDefaultValue = ref('')
+
+const openEditInput = (item: WorkflowInput) => {
+  editingInput.value = item
+  const current = props.inputValues[item.name]
+  if (item.type === 'object' || item.type === 'array') {
+    editDefaultValue.value = current !== undefined && current !== null
+      ? (typeof current === 'string' ? current : JSON.stringify(current, null, 2))
+      : (item.type === 'object' ? '{}' : '[]')
+  }
+  else if (item.type === 'boolean') {
+    editDefaultValue.value = current === true ? 'true' : 'false'
+  }
+  else {
+    editDefaultValue.value = current !== undefined && current !== null ? String(current) : ''
+  }
+  editInputOpen.value = true
+}
+
+const editJsonError = computed(() => {
+  if (!editingInput.value) return null
+  const t = editingInput.value.type
+  if (t !== 'object' && t !== 'array') return null
+  return validateJson(editDefaultValue.value, t as 'object' | 'array')
+})
+
+const editCanSave = computed(() => {
+  return !editJsonError.value
+})
+
+const confirmEditInput = () => {
+  if (!editingInput.value || !editCanSave.value) return
+  const item = editingInput.value
+  const coerced = coerceDefault(editDefaultValue.value, item.type)
+  emit('update:inputValues', { ...props.inputValues, [item.name]: coerced })
+  emit('update:inputs', props.inputs.map(i =>
+    i.name === item.name ? { ...i, defaultValue: coerced } : i,
+  ))
+  editInputOpen.value = false
+}
+
+const displayValue = (item: WorkflowInput): string => {
+  const v = props.inputValues[item.name]
+  if (v === undefined || v === null) return '—'
+  if (item.type === 'boolean') return v ? 'true' : 'false'
+  if (item.type === 'object' || item.type === 'array') {
+    const s = typeof v === 'string' ? v : JSON.stringify(v)
+    return s.length > 30 ? `${s.slice(0, 30)}…` : s
+  }
+  return String(v)
+}
 
 const openAddInput = (category: string) => {
   addInputCategory.value = category
@@ -153,13 +178,24 @@ const openAddInput = (category: string) => {
   addInputDialogOpen.value = true
 }
 
+watch(() => newInput.type, (type) => {
+  if (type === 'object') newInput.defaultValue = '{}'
+  else if (type === 'array') newInput.defaultValue = '[]'
+  else if (type === 'boolean') newInput.defaultValue = 'false'
+  else newInput.defaultValue = ''
+})
+
 const coerceDefault = (raw: string, type: string): unknown => {
-  if (raw === '') return type === 'boolean' ? false : undefined
+  if (raw === '') return type === 'boolean' ? false : (type === 'object' ? {} : (type === 'array' ? [] : undefined))
   if (type === 'number') {
     const n = Number(raw)
     return Number.isNaN(n) ? undefined : n
   }
   if (type === 'boolean') return raw === 'true'
+  if (type === 'object' || type === 'array') {
+    const result = tryParseJson(raw)
+    return result.ok ? result.value : raw
+  }
   return raw
 }
 
@@ -169,6 +205,7 @@ const inputNameValid = computed(() => {
 })
 
 const confirmAddInput = () => {
+  if (!newInputCanSave.value) return
   const name = newInput.name.trim()
   if (!name) {
     addInputError.value = 'Name is required'
@@ -309,60 +346,46 @@ v-for="group in filteredInputsByCategory" v-else :key="group.category" :title="g
         No inputs in this group yet.
       </div>
       <div v-else class="divide-y border-y">
-        <FormField
+        <div
           v-for="item in group.items" :key="item.name"
-          v-slot="{ componentField }" :name="item.name">
-          <FormItem class="flex items-center gap-4 space-y-0! py-4">
-            <div class="min-w-0 flex-1">
-              <FormLabel :for="`inp-${item.name}`" class="flex items-center gap-1.5 text-sm font-semibold">
-                {{ prettyLabel(item.name) }}
-                <span v-if="item.required" class="text-destructive">*</span>
-              </FormLabel>
-              <FormDescription v-if="item.description" class="mt-1 pl-0 text-xs">
-                {{ item.description }}
-              </FormDescription>
-              <div class="mt-3 flex flex-wrap items-center gap-1.5">
-                <WorkflowDataType :type="item.type" display="long" />
-                <span class="text-muted-foreground font-mono text-[11px]">{{ item.name }}</span>
-              </div>
-              <FormMessage />
+          class="hover:bg-muted/50 flex cursor-pointer items-center gap-4 py-4 transition-colors"
+          @click="openEditInput(item)">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5 text-sm font-semibold">
+              {{ prettyLabel(item.name) }}
+              <span v-if="item.required" class="text-destructive">*</span>
             </div>
-            <div class="flex shrink-0 items-center gap-3">
-              <div class="space-y-1">
-                <label :for="`inp-${item.name}`" class="text-muted-foreground text-[11px]">Default value</label>
-                <FormControl>
-                  <Switch
-                    v-if="item.type === 'boolean'" :id="`inp-${item.name}`"
-                    :checked="componentField.modelValue" @update:checked="componentField['onUpdate:modelValue']" />
-                  <Input
-                    v-else-if="item.type === 'number'" :id="`inp-${item.name}`" type="number" class="w-48"
-                    :model-value="numberInputValue(item.name)"
-                    @update:model-value="(v) => componentField['onUpdate:modelValue'](v === '' ? null : Number(v))" />
-                  <Input
-                    v-else :id="`inp-${item.name}`" class="w-48"
-                    v-bind="componentField" />
-                </FormControl>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <Switch
-                  :id="`inp-required-${item.name}`"
-                  size="sm"
-                  :checked="!!item.required"
-                  @update:checked="toggleRequired(item.name)"
-                />
-                <label :for="`inp-required-${item.name}`" class="text-muted-foreground cursor-pointer text-xs whitespace-nowrap">
-                  Required
-                </label>
-              </div>
+            <p v-if="item.description" class="text-muted-foreground mt-1 text-xs">
+              {{ item.description }}
+            </p>
+            <div class="mt-3 flex flex-wrap items-center gap-1.5">
+              <WorkflowDataType :type="item.type" display="long" />
+              <span class="text-muted-foreground font-mono text-[11px]">{{ item.name }}</span>
             </div>
-            <Button
-              variant="ghost" size="icon"
-              class="text-muted-foreground hover:text-destructive size-8 shrink-0"
-              :aria-label="`Remove ${item.name}`" @click="removeInput(item.name)">
-              <LucideTrash class="size-4" />
-            </Button>
-          </FormItem>
-        </FormField>
+          </div>
+          <div class="flex shrink-0 items-center gap-3">
+            <div class="text-muted-foreground max-w-48 truncate font-mono text-xs">
+              {{ displayValue(item) }}
+            </div>
+            <div class="flex items-center gap-1.5" @click.stop>
+              <Switch
+                :id="`inp-required-${item.name}`"
+                size="sm"
+                :checked="!!item.required"
+                @update:checked="toggleRequired(item.name)"
+              />
+              <label :for="`inp-required-${item.name}`" class="text-muted-foreground cursor-pointer text-xs whitespace-nowrap">
+                Required
+              </label>
+            </div>
+          </div>
+          <Button
+            variant="ghost" size="icon"
+            class="text-muted-foreground hover:text-destructive size-8 shrink-0"
+            :aria-label="`Remove ${item.name}`" @click.stop="removeInput(item.name)">
+            <LucideTrash class="size-4" />
+          </Button>
+        </div>
       </div>
     </ContentEditCard>
     <Button
@@ -420,30 +443,40 @@ id="new-input-description" v-model="newInput.description"
                   placeholder="What this input is used for" />
               </div>
             </FormGrid>
-            <FormGrid v-if="newInput.type !== 'boolean'" design="1">
-              <div class="space-y-1.5">
+            <FormGrid design="1">
+              <div
+                v-if="newInput.type === 'boolean'"
+                class="flex flex-row items-center justify-between gap-4 rounded-lg border p-4 text-sm"
+                data-slot="form-item">
+                <div class="text-left">
+                  <Label>Default value</Label>
+                  <p class="text-muted-foreground mt-1 text-xs">Toggle the boolean default.</p>
+                </div>
+                <Switch
+                  id="new-input-default" :model-value="newInput.defaultValue === 'true'"
+                  @update:model-value="(v: boolean) => (newInput.defaultValue = v ? 'true' : 'false')" />
+              </div>
+              <div v-else-if="newInput.type === 'object' || newInput.type === 'array'" class="space-y-1.5">
+                <Label for="new-input-default">
+                  Default value
+                  <span class="text-muted-foreground ml-1 text-xs font-normal">({{ t('form.optional') }})</span>
+                </Label>
+                <div class="h-48" :class="{ 'ring-destructive rounded-lg ring-1': newInputJsonError }">
+                  <JsonCodeEditor
+                    :model-value="newInput.defaultValue || defaultPlaceholder"
+                    @update:model-value="(v: string) => (newInput.defaultValue = v)" />
+                </div>
+                <p v-if="newInputJsonError" class="text-destructive text-xs">{{ newInputJsonError }}</p>
+              </div>
+              <div v-else class="space-y-1.5">
                 <Label for="new-input-default">
                   Default value
                   <span class="text-muted-foreground ml-1 text-xs font-normal">({{ t('form.optional') }})</span>
                 </Label>
                 <Input
-id="new-input-default" :model-value="newInput.defaultValue"
+                  id="new-input-default" :model-value="newInput.defaultValue"
                   :type="newInput.type === 'number' ? 'number' : 'text'"
                   @update:model-value="(v) => (newInput.defaultValue = String(v ?? ''))" />
-              </div>
-            </FormGrid>
-            <FormGrid v-else design="1">
-              <div
-class="flex flex-row items-center justify-between gap-4 rounded-lg border p-4 text-sm"
-                data-slot="form-item">
-                <div class="text-left">
-                  <p class="text-muted-foreground text-xs">
-                    Toggle the boolean default.
-                  </p>
-                </div>
-                <Switch
-id="new-input-default" :model-value="newInput.defaultValue === 'true'"
-                  @update:model-value="(v: boolean) => (newInput.defaultValue = v ? 'true' : 'false')" />
               </div>
             </FormGrid>
             <FormGrid design="1">
@@ -465,7 +498,73 @@ class="flex flex-row items-center justify-between gap-4 rounded-lg border p-4 te
       </SheetBody>
       <SheetFooter>
         <Button variant="outline" @click="addInputDialogOpen = false">{{ t('cancel') }}</Button>
-        <Button @click="confirmAddInput">Add input</Button>
+        <Button :disabled="!newInputCanSave" @click="confirmAddInput">Add input</Button>
+      </SheetFooter>
+    </SheetContent>
+  </Sheet>
+
+  <!-- Edit input sheet -->
+  <Sheet v-model:open="editInputOpen">
+    <SheetContent width="medium">
+      <SheetHeader>
+        <SheetTitle>Edit input</SheetTitle>
+        <SheetDescription>
+          Change the default value for this input.
+        </SheetDescription>
+      </SheetHeader>
+      <SheetBody v-if="editingInput">
+        <FormGridWrap>
+          <FormGrid design="1+1">
+            <div class="space-y-1.5">
+              <Label>Name</Label>
+              <Input :model-value="editingInput.name" disabled />
+            </div>
+            <div class="space-y-1.5">
+              <Label>Type</Label>
+              <Input :model-value="editingInput.type" disabled />
+            </div>
+          </FormGrid>
+          <FormGrid design="1">
+            <div
+v-if="editingInput.type === 'boolean'"
+              class="flex flex-row items-center justify-between gap-4 rounded-lg border p-4 text-sm"
+              data-slot="form-item">
+              <div class="text-left">
+                <Label>Default value</Label>
+                <p class="text-muted-foreground mt-1 text-xs">Toggle the boolean default.</p>
+              </div>
+              <Switch
+                :model-value="editDefaultValue === 'true'"
+                @update:model-value="(v: boolean) => (editDefaultValue = v ? 'true' : 'false')" />
+            </div>
+            <div v-else-if="editingInput.type === 'number'" class="space-y-1.5">
+              <Label>Default value</Label>
+              <Input
+                type="number"
+                :model-value="editDefaultValue"
+                @update:model-value="(v) => (editDefaultValue = String(v ?? ''))" />
+            </div>
+            <div v-else-if="editingInput.type === 'object' || editingInput.type === 'array'" class="space-y-1.5">
+              <Label>Default value</Label>
+              <div class="h-64" :class="{ 'ring-destructive rounded-lg ring-1': editJsonError }">
+                <JsonCodeEditor
+                  :model-value="editDefaultValue"
+                  @update:model-value="(v: string) => (editDefaultValue = v)" />
+              </div>
+              <p v-if="editJsonError" class="text-destructive text-xs">{{ editJsonError }}</p>
+            </div>
+            <div v-else class="space-y-1.5">
+              <Label>Default value</Label>
+              <Input
+                :model-value="editDefaultValue"
+                @update:model-value="(v) => (editDefaultValue = String(v ?? ''))" />
+            </div>
+          </FormGrid>
+        </FormGridWrap>
+      </SheetBody>
+      <SheetFooter>
+        <Button variant="outline" @click="editInputOpen = false">{{ t('cancel') }}</Button>
+        <Button :disabled="!editCanSave" @click="confirmEditInput">Save</Button>
       </SheetFooter>
     </SheetContent>
   </Sheet>
