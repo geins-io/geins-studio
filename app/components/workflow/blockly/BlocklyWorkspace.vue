@@ -71,6 +71,11 @@ async function initBlockly() {
 
     const theme = createShadcnBlocklyTheme(Blockly, isDark.value)
 
+    const sheetContent = containerRef.value.closest('[role="dialog"]')
+    if (sheetContent) {
+      Blockly.common.setParentContainer(sheetContent)
+    }
+
     workspace = Blockly.inject(containerRef.value, {
       theme,
       renderer: 'zelos',
@@ -84,7 +89,7 @@ async function initBlockly() {
       zoom: {
         controls: true,
         wheel: true,
-        startScale: 1.0,
+        startScale: 0.8,
         maxScale: 3,
         minScale: 0.3,
         scaleSpeed: 1.2,
@@ -187,5 +192,17 @@ onBeforeUnmount(() => {
 :deep(.blocklySvg:hover .blocklyScrollbarVertical),
 :deep(.blocklySvg:hover .blocklyScrollbarHorizontal) {
   opacity: 0.4;
+}
+</style>
+
+<style>
+.blocklyDropDownDiv {
+  z-index: 100000 !important;
+}
+.blocklyWidgetDiv {
+  z-index: 100000 !important;
+}
+.blocklyTooltipDiv {
+  z-index: 100000 !important;
 }
 </style>

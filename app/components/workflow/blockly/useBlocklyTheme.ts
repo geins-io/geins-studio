@@ -13,13 +13,14 @@
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type BlocklyModule = any
+type BlocklyModule = any;
 
-const MONO_FONT = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
+const MONO_FONT =
+  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
 
 /** HSL background values matching shadcn CSS custom properties */
-const BG_DARK = '#0a0a0b' // hsl(240 10% 3.9%)
-const BG_LIGHT = '#ffffff' // hsl(0 0% 100%)
+const BG_DARK = '#0a0a0b'; // hsl(240 10% 3.9%)
+const BG_LIGHT = '#ffffff'; // hsl(0 0% 100%)
 
 const CATEGORY_COLOURS: Record<string, string> = {
   data: '#10b981',
@@ -30,31 +31,66 @@ const CATEGORY_COLOURS: Record<string, string> = {
   datetime: '#06b6d4',
   conversion: '#6366f1',
   other: '#6b7280',
-}
+};
 
 export interface BlocklyThemeReturnType {
-  createShadcnBlocklyTheme: (Blockly: BlocklyModule, isDark: boolean) => unknown
-  categoryColours: Record<string, string>
+  createShadcnBlocklyTheme: (
+    Blockly: BlocklyModule,
+    isDark: boolean,
+  ) => unknown;
+  categoryColours: Record<string, string>;
 }
 
 export function useBlocklyTheme(): BlocklyThemeReturnType {
   function createShadcnBlocklyTheme(Blockly: BlocklyModule, isDark: boolean) {
-    const bg = isDark ? BG_DARK : BG_LIGHT
-    const toolboxBg = isDark ? '#111113' : '#f9fafb'
-    const textColor = isDark ? '#fafafa' : '#09090b'
+    const bg = isDark ? BG_DARK : BG_LIGHT;
+    const toolboxBg = isDark ? '#111113' : '#f9fafb';
+    const textColor = isDark ? '#fafafa' : '#09090b';
 
     return Blockly.Theme.defineTheme('shadcn', {
       name: 'shadcn',
       base: Blockly.Themes.Classic,
       blockStyles: {
-        data_blocks: { colourPrimary: CATEGORY_COLOURS.data, colourSecondary: '#059669', colourTertiary: '#047857' },
-        logic_blocks: { colourPrimary: CATEGORY_COLOURS.logic, colourSecondary: '#d97706', colourTertiary: '#b45309' },
-        math_blocks: { colourPrimary: CATEGORY_COLOURS.math, colourSecondary: '#2563eb', colourTertiary: '#1d4ed8' },
-        array_blocks: { colourPrimary: CATEGORY_COLOURS.array, colourSecondary: '#db2777', colourTertiary: '#be185d' },
-        string_blocks: { colourPrimary: CATEGORY_COLOURS.string, colourSecondary: '#7c3aed', colourTertiary: '#6d28d9' },
-        datetime_blocks: { colourPrimary: CATEGORY_COLOURS.datetime, colourSecondary: '#0891b2', colourTertiary: '#0e7490' },
-        conversion_blocks: { colourPrimary: CATEGORY_COLOURS.conversion, colourSecondary: '#4f46e5', colourTertiary: '#4338ca' },
-        default_blocks: { colourPrimary: CATEGORY_COLOURS.other, colourSecondary: '#4b5563', colourTertiary: '#374151' },
+        data_blocks: {
+          colourPrimary: CATEGORY_COLOURS.data,
+          colourSecondary: '#059669',
+          colourTertiary: '#047857',
+        },
+        logic_blocks: {
+          colourPrimary: CATEGORY_COLOURS.logic,
+          colourSecondary: '#d97706',
+          colourTertiary: '#b45309',
+        },
+        math_blocks: {
+          colourPrimary: CATEGORY_COLOURS.math,
+          colourSecondary: '#2563eb',
+          colourTertiary: '#1d4ed8',
+        },
+        array_blocks: {
+          colourPrimary: CATEGORY_COLOURS.array,
+          colourSecondary: '#db2777',
+          colourTertiary: '#be185d',
+        },
+        string_blocks: {
+          colourPrimary: CATEGORY_COLOURS.string,
+          colourSecondary: '#7c3aed',
+          colourTertiary: '#6d28d9',
+        },
+        datetime_blocks: {
+          colourPrimary: CATEGORY_COLOURS.datetime,
+          colourSecondary: '#0891b2',
+          colourTertiary: '#0e7490',
+        },
+        conversion_blocks: {
+          colourPrimary: CATEGORY_COLOURS.conversion,
+          colourSecondary: '#4f46e5',
+          colourTertiary: '#4338ca',
+        },
+        default_blocks: {
+          colourPrimary: CATEGORY_COLOURS.other,
+          colourSecondary: '#4b5563',
+          colourTertiary: '#374151',
+        },
       },
       categoryStyles: {
         data_category: { colour: CATEGORY_COLOURS.data },
@@ -82,14 +118,14 @@ export function useBlocklyTheme(): BlocklyThemeReturnType {
       fontStyle: {
         family: MONO_FONT,
         weight: '500',
-        size: 12,
+        size: 10,
       },
       startHats: false,
-    })
+    });
   }
 
   return {
     createShadcnBlocklyTheme,
     categoryColours: CATEGORY_COLOURS,
-  }
+  };
 }
