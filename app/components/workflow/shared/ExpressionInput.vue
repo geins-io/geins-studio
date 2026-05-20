@@ -537,6 +537,9 @@ function onFixedInput(val: string | number) {
 }
 
 // ─── Blockly editor sheet ────────────────────────────────────────
+const BlocklyExpressionEditor = defineAsyncComponent(() =>
+  import('@/components/workflow/blockly/BlocklyExpressionEditor.vue'),
+)
 const showBlocklyEditor = ref(false)
 
 function onBlocklyApply(value: string) {
