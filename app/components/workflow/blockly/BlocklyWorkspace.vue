@@ -196,6 +196,7 @@ onBeforeUnmount(() => {
 }
 .blocklyWidgetDiv {
   z-index: 100000 !important;
+  position: fixed !important;
 }
 .blocklyWidgetDiv .blocklyHtmlInput {
   background-color: var(--color-muted);
