@@ -65,13 +65,18 @@ function onDraftUpdate(value: string) {
   draftExpression.value = value
 }
 
+function onOpenChange(value: boolean) {
+  if (!value) return
+  emit('update:open', value)
+}
+
 const BlocklyWorkspace = defineAsyncComponent(() =>
   import('./BlocklyWorkspace.vue'),
 )
 </script>
 
 <template>
-  <Sheet :open="open" :modal="false" @update:open="emit('update:open', $event)">
+  <Sheet :open="open" :modal="false" @update:open="onOpenChange">
     <SheetContent side="right" class="flex w-[90vw] max-w-[1200px] flex-col sm:max-w-[1200px]" :on-interact-outside="(e: Event) => e.preventDefault()" :on-pointer-down-outside="(e: Event) => e.preventDefault()" :on-focus-outside="(e: Event) => e.preventDefault()" :on-escape-key-down="() => emit('update:open', false)">
       <SheetHeader>
         <SheetTitle class="flex items-center gap-2">
