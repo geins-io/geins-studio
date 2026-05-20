@@ -71,8 +71,8 @@ const BlocklyWorkspace = defineAsyncComponent(() =>
 </script>
 
 <template>
-  <Sheet :open="open" @update:open="emit('update:open', $event)">
-    <SheetContent side="right" class="flex w-[90vw] max-w-[1200px] flex-col sm:max-w-[1200px]">
+  <Sheet :open="open" :modal="false" @update:open="emit('update:open', $event)">
+    <SheetContent side="right" class="flex w-[90vw] max-w-[1200px] flex-col sm:max-w-[1200px]" :on-interact-outside="(e: Event) => e.preventDefault()" :on-escape-key-down="() => emit('update:open', false)">
       <SheetHeader>
         <SheetTitle class="flex items-center gap-2">
           <LucideBlocks class="size-4" />

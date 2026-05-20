@@ -71,11 +71,6 @@ async function initBlockly() {
 
     const theme = createShadcnBlocklyTheme(Blockly, isDark.value)
 
-    const sheetContent = containerRef.value.closest('[role="dialog"]')
-    if (sheetContent) {
-      Blockly.common.setParentContainer(sheetContent)
-    }
-
     workspace = Blockly.inject(containerRef.value, {
       theme,
       renderer: 'zelos',
