@@ -117,14 +117,14 @@ const BlocklyWorkspace = defineAsyncComponent(() =>
 </script>
 
 <template>
-  <Sheet :open="open" :modal="false" @update:open="onOpenChange">
-    <SheetContent side="right" :trap-focus="false" class="flex w-[90vw] max-w-[1200px] flex-col [&>button:last-of-type]:hidden sm:max-w-[1200px]" :on-interact-outside="(e: Event) => e.preventDefault()" :on-pointer-down-outside="(e: Event) => e.preventDefault()" :on-focus-outside="(e: Event) => e.preventDefault()" :on-escape-key-down="() => emit('update:open', false)">
-      <SheetHeader>
-        <SheetTitle class="flex items-center gap-2">
+  <Dialog :open="open" :modal="false">
+    <DialogContent :trap-focus="false" class="flex h-[85vh] w-[90vw] max-w-[1200px] flex-col gap-3 [&>button:last-of-type]:hidden sm:max-w-[1200px]" :on-interact-outside="(e: Event) => e.preventDefault()" :on-pointer-down-outside="(e: Event) => e.preventDefault()" :on-focus-outside="(e: Event) => e.preventDefault()" :on-escape-key-down="() => emit('update:open', false)">
+      <DialogHeader>
+        <DialogTitle class="flex items-center gap-2">
           <LucideBlocks class="size-4" />
           Block Expression Editor
-        </SheetTitle>
-      </SheetHeader>
+        </DialogTitle>
+      </DialogHeader>
 
       <!-- Validation error -->
       <div
@@ -158,14 +158,14 @@ const BlocklyWorkspace = defineAsyncComponent(() =>
       </div>
 
       <!-- Actions -->
-      <SheetFooter class="flex-row justify-end gap-2">
+      <DialogFooter class="flex-row justify-end gap-2">
         <Button variant="outline" @click="onCancel">
           Cancel
         </Button>
         <Button :disabled="!validation.valid" @click="onApply">
           Apply
         </Button>
-      </SheetFooter>
-    </SheetContent>
-  </Sheet>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
