@@ -151,7 +151,7 @@ const BlocklyWorkspace = defineAsyncComponent(() =>
 
       <!-- Live preview -->
       <div
-        v-else-if="truncatedPreview"
+        v-if="validation.valid && truncatedPreview"
         class="text-muted-foreground rounded-md border bg-emerald-500/5 px-3 py-2 font-mono text-xs"
       >
         <span class="opacity-50">Result: </span>{{ truncatedPreview }}
