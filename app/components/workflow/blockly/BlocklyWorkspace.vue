@@ -69,6 +69,26 @@ async function initBlockly() {
 
     registerAllBlocks(Blockly, { completions })
 
+    const BaseConstants = Blockly.zelos.ConstantProvider
+    const BaseRenderer = Blockly.zelos.Renderer
+    class PaddedConstants extends BaseConstants {
+      // @ts-expect-error -- Blockly internal override
+      init() {
+        super.init()
+        this.MEDIUM_PADDING = 10
+        this.MEDIUM_LARGE_PADDING = 14
+        this.LARGE_PADDING = 18
+      }
+    }
+    class PaddedRenderer extends BaseRenderer {
+      // @ts-expect-error -- Blockly internal override
+      makeConstants_() {
+        return new PaddedConstants()
+      }
+    }
+    try { Blockly.blockRendering.unregister('padded-zelos') } catch { /* first load */ }
+    Blockly.blockRendering.register('padded-zelos', PaddedRenderer)
+
     const generator = useBlocklyGenerator(Blockly)
     generateCode = generator.generateCode
 
@@ -76,7 +96,7 @@ async function initBlockly() {
 
     workspace = Blockly.inject(containerRef.value, {
       theme,
-      renderer: 'zelos',
+      renderer: 'padded-zelos',
       toolbox: buildToolbox(),
       grid: {
         spacing: 20,
