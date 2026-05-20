@@ -1079,9 +1079,19 @@ function functionToBlock(
 
     case 'ncalc_to_string': {
       const fmt = node.args[1] ? getStringArg(node.args, 1) : '';
+      if (fmt) {
+        return {
+          type: 'ncalc_to_string_fmt',
+          fields: { FORMAT: fmt },
+          inputs: {
+            VALUE: node.args[0]
+              ? { block: astToBlocklyJson(node.args[0]) }
+              : undefined,
+          },
+        };
+      }
       return {
         type: 'ncalc_to_string',
-        fields: { FORMAT: fmt },
         inputs: {
           VALUE: node.args[0]
             ? { block: astToBlocklyJson(node.args[0]) }

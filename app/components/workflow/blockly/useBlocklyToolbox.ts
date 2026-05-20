@@ -94,6 +94,7 @@ export function buildToolbox() {
         contents: [
           { kind: 'block', type: 'ncalc_to_int' },
           { kind: 'block', type: 'ncalc_to_string' },
+          { kind: 'block', type: 'ncalc_to_string_fmt' },
         ],
       },
       {
