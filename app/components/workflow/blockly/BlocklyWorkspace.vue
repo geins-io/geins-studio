@@ -126,6 +126,7 @@ async function initBlockly() {
     if (props.modelValue) {
       const { loadExpression } = useBlocklyParser()
       loadExpression(workspace, Blockly, props.modelValue)
+      workspace.scrollCenter()
     }
 
     geinsLog('Blockly workspace initialized', {
