@@ -415,8 +415,19 @@ export function useBlocklyGenerator(Blockly: any) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function generateCode(workspace: any): string {
-    const code = ncalc.workspaceToCode(workspace).trim();
-    return code ? `{{${code}}}` : '';
+    const topBlocks = workspace.getTopBlocks(true);
+    if (topBlocks.length === 0) return '';
+
+    const expressions = topBlocks
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((block: any) => {
+        const code = ncalc.blockToCode(block);
+        const expr = Array.isArray(code) ? code[0] : code;
+        return typeof expr === 'string' ? expr.trim() : '';
+      })
+      .filter(Boolean);
+
+    return expressions.map((e: string) => `{{${e}}}`).join('');
   }
 
   return {
