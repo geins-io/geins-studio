@@ -17,7 +17,7 @@ const resolveExpression = inject<(expr: string) => string | null>('resolveExpres
 // Local draft expression — only applied on confirm
 const draftExpression = ref(props.modelValue)
 
-// Sync draft when sheet opens with a new value
+// Sync draft when panel opens with a new value
 watch(() => props.open, (isOpen) => {
   if (isOpen) {
     draftExpression.value = props.modelValue
@@ -76,13 +76,10 @@ const validation = computed(() => {
     return { valid: false, error: 'Expression is empty' }
   }
 
-  // Check for empty function arguments: func(, ) or func( ,)
   if (/\(\s*,|,\s*,|,\s*\)/.test(inner)) {
     return { valid: false, error: 'Missing function argument — connect all inputs' }
   }
 
-  // Check for empty function calls with no args where args are required
-  // (but allow zero-arg functions like Now(), NewGuid(), UtcNow(), Today())
   const zeroArgAllowed = new Set(['Now', 'UtcNow', 'Today', 'NewGuid'])
   const emptyCallMatch = inner.match(/(\w+)\(\s*\)/g)
   if (emptyCallMatch) {
@@ -94,7 +91,6 @@ const validation = computed(() => {
     }
   }
 
-  // Check for unbalanced parentheses
   let depth = 0
   for (const ch of inner) {
     if (ch === '(') depth++
@@ -106,66 +102,71 @@ const validation = computed(() => {
   return { valid: true, error: null }
 })
 
-function onOpenChange(value: boolean) {
-  if (!value) return
-  emit('update:open', value)
-}
-
 const BlocklyWorkspace = defineAsyncComponent(() =>
   import('./BlocklyWorkspace.vue'),
 )
 </script>
 
 <template>
-  <Sheet :open="open" :modal="false" @update:open="onOpenChange">
-    <SheetContent side="right" :trap-focus="false" class="flex w-[90vw] max-w-[1200px] flex-col [&>button:last-of-type]:hidden sm:max-w-[1200px]" :on-interact-outside="(e: Event) => e.preventDefault()" :on-pointer-down-outside="(e: Event) => e.preventDefault()" :on-focus-outside="(e: Event) => e.preventDefault()" :on-escape-key-down="() => emit('update:open', false)">
-      <SheetHeader>
-        <SheetTitle class="flex items-center gap-2">
-          <LucideBlocks class="size-4" />
-          Block Expression Editor
-        </SheetTitle>
-      </SheetHeader>
-
-      <!-- Validation error -->
-      <div
-        v-if="!validation.valid"
-        class="text-destructive rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs"
+  <div
+    class="bg-background absolute inset-y-0 right-0 z-20 flex w-[calc(100%-20px)] flex-col border-l shadow-lg transition-transform duration-200 ease-in-out"
+    :class="open ? 'translate-x-0' : 'translate-x-full'"
+  >
+    <!-- Header -->
+    <div class="flex items-center justify-between gap-2 border-b px-4 py-3">
+      <div class="flex items-center gap-2 text-sm font-medium">
+        <LucideBlocks class="h-4 w-4 shrink-0" />
+        Block Expression Editor
+      </div>
+      <button
+        class="text-muted-foreground hover:text-foreground hover:bg-accent rounded-md p-1.5 transition-colors"
+        title="Close"
+        @click="onCancel"
       >
-        <span class="font-medium">Invalid: </span>{{ validation.error }}
-      </div>
+        <LucideX class="h-4 w-4" />
+      </button>
+    </div>
 
-      <!-- Workspace area -->
-      <div class="relative min-h-0 flex-1 overflow-hidden rounded-md border">
-        <Suspense>
-          <BlocklyWorkspace
-            :model-value="draftExpression"
-            @update:model-value="onDraftUpdate"
-          />
-          <template #fallback>
-            <div class="flex h-full items-center justify-center">
-              <LucideLoader2 class="text-muted-foreground size-8 animate-spin" />
-            </div>
-          </template>
-        </Suspense>
-      </div>
+    <!-- Validation error -->
+    <div
+      v-if="!validation.valid"
+      class="text-destructive border-b border-red-500/20 bg-red-500/5 px-4 py-2 text-xs"
+    >
+      <span class="font-medium">Invalid: </span>{{ validation.error }}
+    </div>
 
-      <!-- Live preview -->
-      <div
-        v-if="validation.valid && truncatedPreview"
-        class="text-muted-foreground rounded-md border bg-emerald-500/5 px-3 py-2 font-mono text-xs"
-      >
-        <span class="opacity-50">Result: </span>{{ truncatedPreview }}
-      </div>
+    <!-- Workspace area -->
+    <div class="relative min-h-0 flex-1 overflow-hidden">
+      <Suspense>
+        <BlocklyWorkspace
+          v-if="open"
+          :model-value="draftExpression"
+          @update:model-value="onDraftUpdate"
+        />
+        <template #fallback>
+          <div class="flex h-full items-center justify-center">
+            <LucideLoader2 class="text-muted-foreground size-8 animate-spin" />
+          </div>
+        </template>
+      </Suspense>
+    </div>
 
-      <!-- Actions -->
-      <SheetFooter class="flex-row justify-end gap-2">
-        <Button variant="outline" @click="onCancel">
-          Cancel
-        </Button>
-        <Button :disabled="!validation.valid" @click="onApply">
-          Apply
-        </Button>
-      </SheetFooter>
-    </SheetContent>
-  </Sheet>
+    <!-- Live preview -->
+    <div
+      v-if="validation.valid && truncatedPreview"
+      class="text-muted-foreground border-t bg-emerald-500/5 px-4 py-2 font-mono text-xs"
+    >
+      <span class="opacity-50">Result: </span>{{ truncatedPreview }}
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-end gap-2 border-t px-4 py-3">
+      <Button variant="outline" size="sm" @click="onCancel">
+        Cancel
+      </Button>
+      <Button size="sm" :disabled="!validation.valid" @click="onApply">
+        Apply
+      </Button>
+    </div>
+  </div>
 </template>
