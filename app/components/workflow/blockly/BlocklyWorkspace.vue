@@ -67,7 +67,7 @@ async function initBlockly() {
     Blockly.config.snapRadius = 48
     Blockly.config.connectingSnapRadius = 300
 
-    registerAllBlocks(Blockly)
+    registerAllBlocks(Blockly, { completions })
 
     const generator = useBlocklyGenerator(Blockly)
     generateCode = generator.generateCode

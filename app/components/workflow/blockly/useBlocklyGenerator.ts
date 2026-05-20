@@ -31,6 +31,24 @@ export function useBlocklyGenerator(Blockly: any) {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ncalc.forBlock['ncalc_output_ref'] = (block: any) => {
+    const path = block.getFieldValue('PATH');
+    return [path ? `output.${path}` : 'output', ORDER_ATOMIC];
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ncalc.forBlock['ncalc_input_ref'] = (block: any) => {
+    const path = block.getFieldValue('PATH');
+    return [path ? `input.${path}` : 'input', ORDER_ATOMIC];
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ncalc.forBlock['ncalc_vars_ref'] = (block: any) => {
+    const path = block.getFieldValue('PATH');
+    return [path ? `vars.${path}` : 'vars', ORDER_ATOMIC];
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ncalc.forBlock['ncalc_iterator_ref'] = (block: any) => {
     const ref = block.getFieldValue('REF');
     const path = block.getFieldValue('PATH');

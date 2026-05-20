@@ -1,3 +1,5 @@
+import type { ExpressionCompletion } from '../shared/ExpressionInput.vue'
+import type { Ref } from 'vue'
 import { registerArrayBlocks } from './blocks/array'
 import { registerConversionBlocks } from './blocks/conversion'
 import { registerDataBlocks } from './blocks/data'
@@ -8,9 +10,13 @@ import { registerMathBlocks } from './blocks/math'
 import { registerOtherBlocks } from './blocks/other'
 import { registerStringBlocks } from './blocks/string'
 
+export interface BlocklyContext {
+  completions: Ref<ExpressionCompletion[]>
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function registerAllBlocks(Blockly: any) {
-  registerDataBlocks(Blockly)
+export function registerAllBlocks(Blockly: any, ctx: BlocklyContext) {
+  registerDataBlocks(Blockly, ctx)
   registerLiteralBlocks(Blockly)
   registerLogicBlocks(Blockly)
   registerMathBlocks(Blockly)

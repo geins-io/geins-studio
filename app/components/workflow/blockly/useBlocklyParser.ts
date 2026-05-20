@@ -577,14 +577,18 @@ function dataRefToBlock(path: string): Record<string, any> {
     };
   }
 
-  // Known namespaces: output, input, vars
+  // Known namespaces: output, input, vars → use specific blocks
+  const namespaceBlockMap: Record<string, string> = {
+    output: 'ncalc_output_ref',
+    input: 'ncalc_input_ref',
+    vars: 'ncalc_vars_ref',
+  };
   if (DATA_NAMESPACES.has(first)) {
     return {
-      type: 'ncalc_data_ref',
-      fields: {
-        NAMESPACE: first,
-        PATH: parts.slice(1).join('.'),
-      },
+      type: namespaceBlockMap[first] ?? 'ncalc_data_ref',
+      fields: namespaceBlockMap[first]
+        ? { PATH: parts.slice(1).join('.') }
+        : { NAMESPACE: first, PATH: parts.slice(1).join('.') },
     };
   }
 

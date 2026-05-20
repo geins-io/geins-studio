@@ -7,8 +7,11 @@ export function buildToolbox() {
         name: 'Data',
         categorystyle: 'data_category',
         contents: [
-          { kind: 'block', type: 'ncalc_data_ref' },
+          { kind: 'block', type: 'ncalc_output_ref' },
+          { kind: 'block', type: 'ncalc_input_ref' },
+          { kind: 'block', type: 'ncalc_vars_ref' },
           { kind: 'block', type: 'ncalc_iterator_ref' },
+          { kind: 'block', type: 'ncalc_data_ref' },
         ],
       },
       {
