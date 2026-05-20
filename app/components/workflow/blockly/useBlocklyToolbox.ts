@@ -101,13 +101,13 @@ export function buildToolbox() {
         name: 'Other',
         categorystyle: 'other_category',
         contents: [
-          { kind: 'block', type: 'ncalc_null_literal' },
           { kind: 'block', type: 'ncalc_coalesce' },
-          { kind: 'block', type: 'ncalc_new_guid' },
           { kind: 'block', type: 'ncalc_json_path' },
+          { kind: 'block', type: 'ncalc_new_guid' },
+          { kind: 'block', type: 'ncalc_null_literal' },
           { kind: 'block', type: 'ncalc_raw_expression' },
         ],
       },
     ],
-  }
+  };
 }
