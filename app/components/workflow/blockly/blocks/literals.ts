@@ -1,11 +1,31 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function registerLiteralBlocks(Blockly: any) {
+  class WideTextInput extends Blockly.FieldTextInput {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constructor(value: any) {
+      super(value);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    updateSize_(margin?: any) {
+      super.updateSize_(margin);
+      const minWidth = 150;
+      if (this.borderRect_) {
+        const cur = Number(this.borderRect_.getAttribute('width'));
+        if (cur < minWidth) {
+          this.borderRect_.setAttribute('width', String(minWidth));
+          this.size_.width += minWidth - cur;
+        }
+      }
+    }
+  }
+
   Blockly.Blocks['ncalc_string_literal'] = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     init(this: any) {
       this.appendDummyInput()
         .appendField('text')
-        .appendField(new Blockly.FieldTextInput(''), 'TEXT');
+        .appendField(new WideTextInput(''), 'TEXT');
       this.setOutput(true);
       this.setStyle('string_blocks');
       this.setTooltip('String literal value');

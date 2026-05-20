@@ -690,7 +690,7 @@ function onBlocklyApply(value: string) {
 
       <!-- Blockly editor button (expression mode only) -->
       <TooltipProvider v-if="mode === 'expression'" :delay-duration="300">
-        <Tooltip>
+        <Tooltip :open="showBlocklyEditor ? false : undefined">
           <TooltipTrigger as-child>
             <button
               type="button"

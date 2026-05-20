@@ -66,6 +66,7 @@ async function initBlockly() {
 
     Blockly.config.snapRadius = 48
     Blockly.config.connectingSnapRadius = 300
+    Blockly.ContextMenuRegistry.registry.reset()
 
     registerAllBlocks(Blockly, { completions })
 
@@ -121,6 +122,11 @@ async function initBlockly() {
     })
 
     workspace.addChangeListener(onWorkspaceChange)
+
+    const svgEl = workspace.getParentSvg()
+    if (svgEl) {
+      svgEl.addEventListener('contextmenu', (e: Event) => e.preventDefault())
+    }
 
     // Load existing expression into workspace
     if (props.modelValue) {
@@ -217,10 +223,12 @@ onBeforeUnmount(() => {
 <style>
 .blocklyDropDownDiv {
   z-index: 100000 !important;
+  pointer-events: auto !important;
 }
 .blocklyWidgetDiv {
   z-index: 100000 !important;
   position: fixed !important;
+  pointer-events: auto !important;
 }
 .blocklyWidgetDiv .blocklyHtmlInput {
   background-color: var(--color-muted);
