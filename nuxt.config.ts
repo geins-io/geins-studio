@@ -105,6 +105,8 @@ export default defineNuxtConfig({
     },
     private: {
       authSecret: process.env.AUTH_SECRET,
+      // HOTFIX STU-216 — remove when BE handles config-refresh natively (STU-217)
+      salesPortalWebhookSecret: process.env.SALES_PORTAL_WEBHOOK_SECRET,
     },
   },
 
