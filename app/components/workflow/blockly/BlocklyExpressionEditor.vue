@@ -14,17 +14,14 @@ const emit = defineEmits<{
 
 const resolveExpression = inject<(expr: string) => string | null>('resolveExpression', () => null)
 
-// Local draft expression — only applied on confirm
 const draftExpression = ref(props.modelValue)
 
-// Sync draft when sheet opens with a new value
 watch(() => props.open, (isOpen) => {
   if (isOpen) {
     draftExpression.value = props.modelValue
   }
 })
 
-// Live preview of the draft expression
 const preview = computed(() => {
   if (!draftExpression.value) return null
   const exprPattern = /\{\{[^}]+\}\}/g
@@ -76,13 +73,10 @@ const validation = computed(() => {
     return { valid: false, error: 'Expression is empty' }
   }
 
-  // Check for empty function arguments: func(, ) or func( ,)
   if (/\(\s*,|,\s*,|,\s*\)/.test(inner)) {
     return { valid: false, error: 'Missing function argument — connect all inputs' }
   }
 
-  // Check for empty function calls with no args where args are required
-  // (but allow zero-arg functions like Now(), NewGuid(), UtcNow(), Today())
   const zeroArgAllowed = new Set(['Now', 'UtcNow', 'Today', 'NewGuid'])
   const emptyCallMatch = inner.match(/(\w+)\(\s*\)/g)
   if (emptyCallMatch) {
@@ -94,7 +88,6 @@ const validation = computed(() => {
     }
   }
 
-  // Check for unbalanced parentheses
   let depth = 0
   for (const ch of inner) {
     if (ch === '(') depth++
@@ -106,19 +99,19 @@ const validation = computed(() => {
   return { valid: true, error: null }
 })
 
-function onOpenChange(value: boolean) {
-  if (!value) return
-  emit('update:open', value)
-}
-
 const BlocklyWorkspace = defineAsyncComponent(() =>
   import('./BlocklyWorkspace.vue'),
 )
 </script>
 
 <template>
-  <Dialog :open="open" :modal="false">
-    <DialogContent :trap-focus="false" class="flex h-[85vh] w-[90vw] max-w-[1200px] flex-col gap-3 [&>button:last-of-type]:hidden sm:max-w-[1200px]" :on-interact-outside="(e: Event) => e.preventDefault()" :on-pointer-down-outside="(e: Event) => e.preventDefault()" :on-focus-outside="(e: Event) => e.preventDefault()" :on-escape-key-down="() => emit('update:open', false)">
+  <Dialog :open="open" :modal="false" @update:open="(v: boolean) => emit('update:open', v)">
+    <DialogContent
+      :trap-focus="false"
+      class="flex h-[85vh] w-[90vw] max-w-[1200px] flex-col gap-3 sm:max-w-[1200px]"
+      :on-pointer-down-outside="(e: Event) => e.preventDefault()"
+      :on-focus-outside="(e: Event) => e.preventDefault()"
+    >
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2">
           <LucideBlocks class="size-4" />
@@ -158,7 +151,7 @@ const BlocklyWorkspace = defineAsyncComponent(() =>
       </div>
 
       <!-- Actions -->
-      <DialogFooter class="flex-row justify-end gap-2">
+      <DialogFooter>
         <Button variant="outline" @click="onCancel">
           Cancel
         </Button>
