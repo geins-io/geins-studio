@@ -570,7 +570,7 @@ function onBlocklyApply(value: string) {
           truncatedPreview || paramHint ? 'rounded-b-none' : '',
         ]"
       >
-        <div ref="editorContainer" class="min-w-0 flex-1" />
+        <div ref="editorContainer" class="min-w-0 flex-1 pr-16" />
       </div>
 
       <!-- Parameter hint bar -->
