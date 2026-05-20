@@ -69,6 +69,25 @@ async function initBlockly() {
 
     registerAllBlocks(Blockly, { completions })
 
+    // Register custom renderer with more padding for easier dragging
+    class PaddedZelos extends Blockly.zelos.ConstantProvider {
+      constructor() {
+        super()
+        this.FIELD_TEXT_HEIGHT = 20
+        this.TALL_INPUT_FIELD_OFFSET_Y = 8
+        this.MEDIUM_PADDING = 8
+        this.MEDIUM_LARGE_PADDING = 10
+        this.LARGE_PADDING = 14
+        this.EMPTY_INLINE_INPUT_PADDING = 20
+      }
+    }
+    class PaddedRenderer extends Blockly.zelos.Renderer {
+      makeConstants_() {
+        return new PaddedZelos()
+      }
+    }
+    Blockly.blockRendering.register('padded-zelos', PaddedRenderer)
+
     const generator = useBlocklyGenerator(Blockly)
     generateCode = generator.generateCode
 
@@ -76,7 +95,7 @@ async function initBlockly() {
 
     workspace = Blockly.inject(containerRef.value, {
       theme,
-      renderer: 'zelos',
+      renderer: 'padded-zelos',
       toolbox: buildToolbox(),
       grid: {
         spacing: 20,
