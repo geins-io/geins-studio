@@ -4,11 +4,10 @@ export function registerLiteralBlocks(Blockly: any) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     init(this: any) {
       this.appendDummyInput()
-        .appendField('"')
-        .appendField(new Blockly.FieldTextInput(''), 'TEXT')
-        .appendField('"');
+        .appendField('text')
+        .appendField(new Blockly.FieldTextInput(''), 'TEXT');
       this.setOutput(true);
-      this.setStyle('default_blocks');
+      this.setStyle('string_blocks');
       this.setTooltip('String literal value');
     },
   };
