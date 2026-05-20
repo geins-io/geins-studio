@@ -191,16 +191,33 @@ onBeforeUnmount(() => {
 <style scoped>
 :deep(.blocklyToolboxDiv) {
   border-right: 1px solid var(--border);
-  padding: 4px 0;
+  padding: 8px 0;
+  background: var(--color-background) !important;
 }
 :deep(.blocklyTreeRow) {
-  padding: 4px 12px;
-  font-size: 12px;
-  border-radius: 4px;
-  margin: 1px 4px;
+  padding: 6px 12px 6px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border-radius: 6px;
+  margin: 1px 6px;
+  transition: background-color 0.15s;
+  cursor: pointer;
+}
+:deep(.blocklyTreeRow:hover) {
+  background-color: var(--color-accent) !important;
 }
 :deep(.blocklyTreeSelected) {
-  background-color: var(--accent) !important;
+  background-color: var(--color-accent) !important;
+}
+:deep(.blocklyTreeLabel) {
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+:deep(.blocklyTreeIcon) {
+  width: 3px !important;
+  height: 14px !important;
+  border-radius: 2px;
+  margin-right: 8px;
 }
 :deep(.blocklyTrash) {
   display: none;
@@ -209,10 +226,6 @@ onBeforeUnmount(() => {
 :deep(.blocklyScrollbarHorizontal) {
   opacity: 0;
   transition: opacity 0.2s;
-}
-:deep(.blocklyMainWorkspaceScrollbar:hover) .blocklyScrollbarVertical,
-:deep(.blocklyMainWorkspaceScrollbar:hover) .blocklyScrollbarHorizontal {
-  opacity: 0.4;
 }
 :deep(.blocklySvg:hover .blocklyScrollbarVertical),
 :deep(.blocklySvg:hover .blocklyScrollbarHorizontal) {
