@@ -1172,11 +1172,13 @@ export function useBlocklyParser() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Blockly: any,
     inner: string,
+    x: number,
+    y: number,
   ): boolean {
     try {
       const tokens = tokenize(inner);
       const ast = parse(tokens);
-      const blockJson = astToBlocklyJson(ast);
+      const blockJson = { ...astToBlocklyJson(ast), x, y };
       geinsLog('Parsed expression into blocks', {
         expression: inner,
         blockType: blockJson.type,
@@ -1192,6 +1194,8 @@ export function useBlocklyParser() {
         {
           type: 'ncalc_raw_expression',
           fields: { EXPR: inner },
+          x,
+          y,
         },
         workspace,
       );
@@ -1215,12 +1219,14 @@ export function useBlocklyParser() {
     if (matches.length === 0) return false;
 
     let allSuccess = true;
+    let xOffset = 50;
     for (const match of matches) {
       const inner = match[1]!.trim();
       if (!inner) continue;
-      if (!parseSingleExpression(workspace, Blockly, inner)) {
+      if (!parseSingleExpression(workspace, Blockly, inner, xOffset, 50)) {
         allSuccess = false;
       }
+      xOffset += 250;
     }
     return allSuccess;
   }
