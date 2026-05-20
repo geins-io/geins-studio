@@ -197,6 +197,14 @@ onBeforeUnmount(() => {
 .blocklyWidgetDiv {
   z-index: 100000 !important;
 }
+.blocklyWidgetDiv .blocklyHtmlInput {
+  background-color: var(--color-muted);
+  color: var(--color-foreground);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
 .blocklyTooltipDiv {
   z-index: 100000 !important;
 }
