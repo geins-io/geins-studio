@@ -175,4 +175,17 @@ onBeforeUnmount(() => {
 :deep(.blocklyTrash) {
   display: none;
 }
+:deep(.blocklyScrollbarVertical),
+:deep(.blocklyScrollbarHorizontal) {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+:deep(.blocklyMainWorkspaceScrollbar:hover) .blocklyScrollbarVertical,
+:deep(.blocklyMainWorkspaceScrollbar:hover) .blocklyScrollbarHorizontal {
+  opacity: 0.4;
+}
+:deep(.blocklySvg:hover .blocklyScrollbarVertical),
+:deep(.blocklySvg:hover .blocklyScrollbarHorizontal) {
+  opacity: 0.4;
+}
 </style>

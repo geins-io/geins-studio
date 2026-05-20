@@ -72,7 +72,7 @@ const BlocklyWorkspace = defineAsyncComponent(() =>
 
 <template>
   <Sheet :open="open" @update:open="emit('update:open', $event)">
-    <SheetContent side="right" class="flex w-[640px] max-w-full flex-col sm:max-w-[640px]">
+    <SheetContent side="right" class="flex w-[90vw] max-w-[1200px] flex-col sm:max-w-[1200px]">
       <SheetHeader>
         <SheetTitle class="flex items-center gap-2">
           <LucideBlocks class="size-4" />
