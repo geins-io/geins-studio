@@ -12,7 +12,7 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
-  ignore: ['.temp/**', '.agents/**', '.mint/**'],
+  ignore: ['.temp/**', '.agents/**', '.mint/**', '.claude/**'],
 
   modules: [
     '@sidebase/nuxt-auth',
@@ -47,6 +47,7 @@ export default defineNuxtConfig({
           '**/.temp/**',
           '**/.agents/**',
           '**/.mint/**',
+          '**/.claude/**',
           '**/.output/**',
           '**/.nuxt/**',
         ],
@@ -56,7 +57,7 @@ export default defineNuxtConfig({
 
   nitro: {
     watchOptions: {
-      ignored: ['**/.temp/**', '**/.agents/**', '**/.mint/**'],
+      ignored: ['**/.temp/**', '**/.agents/**', '**/.mint/**', '**/.claude/**'],
     },
     ...(process.env.NITRO_PRESET && { preset: process.env.NITRO_PRESET }),
   },
