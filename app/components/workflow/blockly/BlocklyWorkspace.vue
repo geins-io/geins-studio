@@ -73,12 +73,17 @@ async function initBlockly() {
     class PaddedZelos extends Blockly.zelos.ConstantProvider {
       constructor() {
         super()
-        this.FIELD_TEXT_HEIGHT = 20
-        this.TALL_INPUT_FIELD_OFFSET_Y = 8
-        this.MEDIUM_PADDING = 8
-        this.MEDIUM_LARGE_PADDING = 10
-        this.LARGE_PADDING = 14
-        this.EMPTY_INLINE_INPUT_PADDING = 20
+        this.FIELD_TEXT_HEIGHT = 22
+        this.TALL_INPUT_FIELD_OFFSET_Y = 10
+        this.MEDIUM_PADDING = 10
+        this.MEDIUM_LARGE_PADDING = 12
+        this.LARGE_PADDING = 16
+        this.EMPTY_INLINE_INPUT_PADDING = 22
+        this.TOP_ROW_MIN_HEIGHT = 28
+        this.BOTTOM_ROW_MIN_HEIGHT = 28
+        this.MIN_BLOCK_HEIGHT = 36
+        this.NOTCH_HEIGHT = 6
+        this.CORNER_RADIUS = 8
       }
     }
     class PaddedRenderer extends Blockly.zelos.Renderer {
