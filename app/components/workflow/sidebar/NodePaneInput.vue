@@ -67,23 +67,30 @@ type UpstreamNode = {
   outputFields: Array<{ name: string, type: string }>
 }
 
+const ITERATOR_CONTEXT_VARS: Array<{ name: string, type: string }> = [
+  { name: '$current', type: 'any' },
+  { name: '$index', type: 'number' },
+]
+
 const upstreamNodes = computed(() => {
   if (!props.nodeId) return [] as UpstreamNode[]
 
-  const sourceIds = vfEdges.value
-    .filter(e => e.target === props.nodeId)
-    .map(e => e.source)
+  const incomingEdges = vfEdges.value.filter(e => e.target === props.nodeId)
 
   const result: UpstreamNode[] = []
-  for (const srcId of sourceIds) {
-    const n = vfNodes.value.find(nd => nd.id === srcId)
+  for (const edge of incomingEdges) {
+    const n = vfNodes.value.find(nd => nd.id === edge.source)
     if (!n) continue
     const data = (n.data ?? {}) as Record<string, unknown>
     const action = manifestStore.getAction(data.actionName as string | undefined)
     const actionName = data.actionName as string | undefined
+    const nodeType = n.type as string
 
     let outputFields: Array<{ name: string, type: string }>
-    if (actionName === 'transform.map' || actionName === 'transform.compose') {
+    if ((nodeType === 'iterator' || nodeType === 'loop') && edge.sourceHandle === 'foreach') {
+      outputFields = ITERATOR_CONTEXT_VARS
+    }
+    else if (actionName === 'transform.map' || actionName === 'transform.compose') {
       const input = (data.input ?? {}) as Record<string, unknown>
       outputFields = Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: inferValueType(input[k]) }))
     }
@@ -100,6 +107,11 @@ const upstreamNodes = computed(() => {
   }
   return result
 })
+
+const isIteratorContextVar = (fieldName: string) => fieldName.startsWith('$')
+
+const fieldExpression = (upstream: UpstreamNode, fieldName: string) =>
+  isIteratorContextVar(fieldName) ? `{{${fieldName}}}` : `{{output.${upstream.id}.${fieldName}}}`
 
 const copyExpression = (expr: string) => {
   navigator.clipboard.writeText(expr)
@@ -253,9 +265,9 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
                       <button
                         draggable="true"
                         class="hover:bg-muted flex w-full cursor-grab items-center justify-between rounded px-1.5 py-1 text-left text-xs transition-colors active:cursor-grabbing"
-                        :title="upstreamOutputPreview(upstream.id, field.name) ? undefined : `Drag or click to copy {{output.${upstream.id}.${field.name}}}`"
-                        @click="copyExpression(`{{output.${upstream.id}.${field.name}}}`)"
-                        @dragstart="onExpressionDragStart($event, `{{output.${upstream.id}.${field.name}}}`)"
+                        :title="upstreamOutputPreview(upstream.id, field.name) ? undefined : `Drag or click to copy ${fieldExpression(upstream, field.name)}`"
+                        @click="copyExpression(fieldExpression(upstream, field.name))"
+                        @dragstart="onExpressionDragStart($event, fieldExpression(upstream, field.name))"
                       >
                         <span class="font-mono text-[11px]">{{ field.name }}</span>
                         <div class="flex items-center gap-1">

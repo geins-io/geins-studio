@@ -91,21 +91,28 @@ const expressionCompletions = computed<ExpressionCompletion[]>(() => {
 
   const items: ExpressionCompletion[] = []
 
-  const sourceIds = vfEdges.value
-    .filter(e => e.target === nodeId)
-    .map(e => e.source)
-  for (const srcId of sourceIds) {
-    const n = vfNodes.value.find(nd => nd.id === srcId)
+  const ITERATOR_CONTEXT_VARS: Array<{ name: string, type: string }> = [
+    { name: '$current', type: 'any' },
+    { name: '$index', type: 'number' },
+  ]
+
+  const incomingEdges = vfEdges.value.filter(e => e.target === nodeId)
+  for (const edge of incomingEdges) {
+    const n = vfNodes.value.find(nd => nd.id === edge.source)
     if (!n) continue
     const data = (n.data ?? {}) as Record<string, unknown>
     const action = manifestStore.getAction(data.actionName as string | undefined)
     const label = (data.label as string) || action?.displayName || n.id
     const section = `output · ${label}`
-    const exec = lastNodeExecutions?.value?.get(srcId)
+    const exec = lastNodeExecutions?.value?.get(edge.source)
+    const nodeType = n.type as string
 
     const actionName = data.actionName as string | undefined
     let outputFields: Array<{ name: string, type: string }>
-    if (actionName === 'transform.map' || actionName === 'transform.compose') {
+    if ((nodeType === 'iterator' || nodeType === 'loop') && edge.sourceHandle === 'foreach') {
+      outputFields = ITERATOR_CONTEXT_VARS
+    }
+    else if (actionName === 'transform.map' || actionName === 'transform.compose') {
       const input = (data.input ?? {}) as Record<string, unknown>
       outputFields = Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: inferTransformValueType(input[k]) }))
     }
@@ -114,15 +121,16 @@ const expressionCompletions = computed<ExpressionCompletion[]>(() => {
     }
 
     for (const field of outputFields) {
+      const isContextVar = field.name.startsWith('$')
       items.push({
-        expression: `{{output.${srcId}.${field.name}}}`,
+        expression: isContextVar ? `{{${field.name}}}` : `{{output.${edge.source}.${field.name}}}`,
         label: field.name,
         detail: `${label} · ${field.type}`,
         section,
       })
-      if (exec?.output) {
+      if (!isContextVar && exec?.output) {
         const val = exec.output[field.name]
-        addObjectKeyCompletions(items, val, `output.${srcId}.${field.name}`, section)
+        addObjectKeyCompletions(items, val, `output.${edge.source}.${field.name}`, section)
       }
     }
   }
