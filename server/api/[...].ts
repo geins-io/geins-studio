@@ -5,7 +5,54 @@ import {
   getHeaders,
   getQuery,
 } from 'h3';
+import {
+  refreshSalesPortal,
+  describeFetchError,
+} from '../utils/refresh-sales-portal';
 import { useRuntimeConfig } from '#imports';
+
+// HOTFIX STU-216 — remove when BE handles config-refresh natively (STU-217)
+const CHANNEL_PATCH_RE = /^\/api\/account\/channel\/([^/?]+)(\?|$)/;
+async function triggerChannelRefresh(
+  channelId: string,
+  apiBase: string,
+  apiHeaders: Record<string, string | undefined>,
+) {
+  const { geinsLogInfo, geinsLogError } = log(
+    'server/api/[...].ts:STU-216',
+  );
+  let url: string | undefined;
+  try {
+    const channel = await $fetch<Record<string, unknown>>(
+      `${apiBase}/account/channel/${channelId}`,
+      {
+        headers: apiHeaders as Record<string, string>,
+        timeout: 5000,
+      },
+    );
+    url = channel?.url as string | undefined;
+    if (!url) {
+      geinsLogInfo(
+        `[STU-216] GET channel ${channelId} ok but no "url"; keys=${JSON.stringify(
+          Object.keys(channel ?? {}),
+        )}`,
+      );
+      return;
+    }
+  } catch (err) {
+    geinsLogError(
+      `[STU-216] GET channel ${channelId} failed :: ${describeFetchError(err)}`,
+    );
+    return;
+  }
+  try {
+    const hostname = new URL(url).hostname;
+    await refreshSalesPortal(hostname);
+  } catch (err) {
+    geinsLogError(`[STU-216] invalid url "${url}" :: ${String(err)}`);
+  }
+}
+
 /**
  * Event handler for processing API requests.
  *
@@ -57,9 +104,23 @@ export default defineEventHandler(async (event) => {
     delete apiHeaders['content-length'];
   }
 
+  // HOTFIX STU-216 — match channel PATCH once, reuse in both branches below
+  const channelPatchId: string | undefined =
+    event.method === 'PATCH'
+      ? event.path.match(CHANNEL_PATCH_RE)?.[1]
+      : undefined;
+
   const contentType = headers['content-type'] ?? '';
   if (contentType.includes('multipart/form-data')) {
-    return proxyRequest(event, fetchUrl, { headers: apiHeaders });
+    const result = await proxyRequest(event, fetchUrl, { headers: apiHeaders });
+    if (channelPatchId) {
+      await triggerChannelRefresh(
+        channelPatchId,
+        config.public.apiUrl,
+        apiHeaders,
+      );
+    }
+    return result;
   }
 
   let body;
@@ -74,6 +135,13 @@ export default defineEventHandler(async (event) => {
       headers: apiHeaders,
     });
 
+    if (channelPatchId) {
+      await triggerChannelRefresh(
+        channelPatchId,
+        config.public.apiUrl,
+        apiHeaders,
+      );
+    }
     return response;
   } catch (error) {
     geinsLogError('error connecting to the api:', error);
