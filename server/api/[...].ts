@@ -114,7 +114,10 @@ export default defineEventHandler(async (event) => {
   if (contentType.includes('multipart/form-data')) {
     const result = await proxyRequest(event, fetchUrl, { headers: apiHeaders });
     if (channelPatchId) {
-      await triggerChannelRefresh(
+      // Fire-and-forget: storefronts behind WAFs that block Vercel egress
+      // hang for the full 15s timeout; awaiting made every save brutally
+      // slow. The util has its own try/catch so this never rejects.
+      void triggerChannelRefresh(
         channelPatchId,
         config.public.apiUrl,
         apiHeaders,
@@ -136,7 +139,10 @@ export default defineEventHandler(async (event) => {
     });
 
     if (channelPatchId) {
-      await triggerChannelRefresh(
+      // Fire-and-forget: storefronts behind WAFs that block Vercel egress
+      // hang for the full 15s timeout; awaiting made every save brutally
+      // slow. The util has its own try/catch so this never rejects.
+      void triggerChannelRefresh(
         channelPatchId,
         config.public.apiUrl,
         apiHeaders,
