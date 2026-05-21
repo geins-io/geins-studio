@@ -96,6 +96,12 @@ const expressionCompletions = computed<ExpressionCompletion[]>(() => {
     { name: '$index', type: 'number' },
   ]
 
+  const PAGINATOR_CONTEXT_VARS: Array<{ name: string, type: string }> = [
+    { name: '$cursor', type: 'any' },
+    { name: '$pageNumber', type: 'number' },
+    { name: '$pageSize', type: 'number' },
+  ]
+
   const incomingEdges = vfEdges.value.filter(e => e.target === nodeId)
   for (const edge of incomingEdges) {
     const n = vfNodes.value.find(nd => nd.id === edge.source)
@@ -111,6 +117,9 @@ const expressionCompletions = computed<ExpressionCompletion[]>(() => {
     let outputFields: Array<{ name: string, type: string }>
     if ((nodeType === 'iterator' || nodeType === 'loop') && edge.sourceHandle === 'foreach') {
       outputFields = ITERATOR_CONTEXT_VARS
+    }
+    else if (nodeType === 'paginator' && (edge.sourceHandle === 'fetchPage' || edge.sourceHandle === 'forEachPage')) {
+      outputFields = PAGINATOR_CONTEXT_VARS
     }
     else if (actionName === 'transform.map' || actionName === 'transform.compose') {
       const input = (data.input ?? {}) as Record<string, unknown>

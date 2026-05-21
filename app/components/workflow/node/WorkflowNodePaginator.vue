@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import WorkflowHandleInput from './handle/WorkflowHandleInput.vue'
 import WorkflowHandlePlus from './handle/WorkflowHandlePlus.vue'
+
 const props = defineProps<{
   data: {
     label: string
     icon: string
     description: string
     config: Record<string, any>
+    input: Record<string, any>
   }
   selected?: boolean
 }>()
@@ -16,10 +18,17 @@ const { resolveIcon } = useLucideIcon()
 const IconComponent = computed(() => resolveIcon(props.data.icon) || resolveIcon('BookOpen'))
 
 const pageDisplay = computed(() => {
-  const size = props.data.config?.pageSize
+  const input = props.data.input ?? {}
+  const config = props.data.config ?? {}
+  const size = input.pageSize || config.pageSize
   if (!size) return null
-  const max = props.data.config?.maxPages
-  return max ? `${size} per page (max: ${max})` : `${size} per page`
+  const strategy = input.strategy || config.strategy
+  const max = input.maxPages || config.maxPages
+  const parts: string[] = []
+  if (strategy) parts.push(strategy)
+  parts.push(`${size}/page`)
+  if (max) parts.push(`max: ${max}`)
+  return parts.join(' · ')
 })
 </script>
 
@@ -41,31 +50,50 @@ const pageDisplay = computed(() => {
       </div>
     </div>
 
-    <!-- Paginator config preview -->
-    <div v-if="pageDisplay" class="text-muted-foreground bg-muted/50 mt-2 rounded px-2 py-1 text-xs">
+    <!-- Config preview -->
+    <div v-if="pageDisplay" class="text-muted-foreground bg-muted/50 mt-2 truncate rounded px-2 py-1 font-mono text-xs">
       {{ pageDisplay }}
     </div>
 
-    <!-- Page output handle -->
+    <!-- Fetch Page output handle -->
     <WorkflowHandlePlus
-      handle-id="page"
-      :style="{ top: '30%' }"
+      handle-id="fetchPage"
+      :style="{ top: '20%' }"
+      :line-length="56"
       handle-class="!border-background !h-3 !w-3 !border-2 !bg-indigo-500"
     />
 
-    <!-- Done output handle -->
+    <!-- For Each Page output handle -->
     <WorkflowHandlePlus
-      handle-id="done"
-      :style="{ top: '70%' }"
+      handle-id="forEachPage"
+      :style="{ top: '50%' }"
+      :line-length="56"
+      handle-class="!border-background !h-3 !w-3 !border-2 !bg-indigo-500"
+    />
+
+    <!-- Completed output handle -->
+    <WorkflowHandlePlus
+      handle-id="completed"
+      :style="{ top: '80%' }"
+      :line-length="56"
       handle-class="!border-background !h-3 !w-3 !border-2 !bg-gray-400"
     />
 
     <!-- Labels for handles -->
-    <div class="absolute top-[25%] -right-1 translate-x-full px-1 text-[10px] font-medium text-indigo-500">
-      Page
+    <div
+      class="bg-background/80 absolute top-[15%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-indigo-500"
+    >
+      Fetch Page
     </div>
-    <div class="absolute top-[65%] -right-1 translate-x-full px-1 text-[10px] font-medium text-gray-400">
-      Done
+    <div
+      class="bg-background/80 absolute top-[45%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-indigo-500"
+    >
+      Each Page
+    </div>
+    <div
+      class="bg-background/80 absolute top-[75%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-gray-400"
+    >
+      Completed
     </div>
   </div>
 </template>

@@ -91,6 +91,12 @@ const ITERATOR_CONTEXT_VARS: Array<{ name: string, type: string }> = [
   { name: '$index', type: 'number' },
 ]
 
+const PAGINATOR_CONTEXT_VARS: Array<{ name: string, type: string }> = [
+  { name: '$cursor', type: 'any' },
+  { name: '$pageNumber', type: 'number' },
+  { name: '$pageSize', type: 'number' },
+]
+
 const upstreamNodes = computed(() => {
   if (!props.nodeId) return [] as UpstreamNode[]
 
@@ -108,6 +114,9 @@ const upstreamNodes = computed(() => {
     let outputFields: Array<{ name: string, type: string }>
     if ((nodeType === 'iterator' || nodeType === 'loop') && edge.sourceHandle === 'foreach') {
       outputFields = ITERATOR_CONTEXT_VARS
+    }
+    else if (nodeType === 'paginator' && (edge.sourceHandle === 'fetchPage' || edge.sourceHandle === 'forEachPage')) {
+      outputFields = PAGINATOR_CONTEXT_VARS
     }
     else if (actionName === 'transform.map' || actionName === 'transform.compose') {
       const input = (data.input ?? {}) as Record<string, unknown>

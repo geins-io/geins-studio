@@ -142,6 +142,17 @@ onMounted(() => {
     target: isLegacyTriggerRef(e.target) ? TRIGGER_NODE_ID : e.target,
   }))
 
+  // Remap legacy paginator handle IDs (page → fetchPage, done → completed).
+  const PAGINATOR_HANDLE_MAP: Record<string, string> = { page: 'fetchPage', done: 'completed' }
+  for (const e of finalEdges) {
+    if (e.sourceHandle && PAGINATOR_HANDLE_MAP[e.sourceHandle]) {
+      const srcNode = finalNodes.find(n => n.id === e.source)
+      if (srcNode?.type === 'paginator') {
+        e.sourceHandle = PAGINATOR_HANDLE_MAP[e.sourceHandle]
+      }
+    }
+  }
+
   // If we injected the trigger and there's at least one action node but no
   // edge from the trigger, auto-connect trigger → first action node.
   if (!existingTrigger && canvasNodes.length > 0) {
