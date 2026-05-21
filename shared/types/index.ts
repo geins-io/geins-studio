@@ -3,7 +3,6 @@ export * from './Api';
 export * from './Auth';
 export * from './Channel';
 export * from './Global';
-export * from './Schema';
 export * from './Storefront';
 export * from './Order';
 export * from './Quotation';

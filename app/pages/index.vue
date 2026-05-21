@@ -70,7 +70,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
 
         <!-- Quick access cards grid -->
         <div class="grid grid-cols-1 gap-4 @2xl:grid-cols-2 @6xl:grid-cols-4">
-          <ContentCardLinked
+          <ContentLinkCard
             title="Create a new company"
             description="Create a new company"
             link="/customers/company/new"
@@ -78,7 +78,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           />
 
           <!-- Companies card -->
-          <ContentCardLinked
+          <ContentLinkCard
             title="Companies"
             description="Manage existing companies"
             link="/customers/company/list"
@@ -86,7 +86,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           />
 
           <!-- Create a new price list card -->
-          <ContentCardLinked
+          <ContentLinkCard
             title="Create a new price list"
             description="Create a new price list"
             link="/pricing/price-list/new"
@@ -94,7 +94,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           />
 
           <!-- Price lists card -->
-          <ContentCardLinked
+          <ContentLinkCard
             title="Price lists"
             description="Manage existing price lists"
             link="/pricing/price-list/list"

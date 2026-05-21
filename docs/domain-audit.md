@@ -80,7 +80,7 @@
 | company/ | Customers | CompanyBuyerPanel.vue |
 | price-list/ | Pricing | PriceListPriceModeCell, PriceListRule, PriceListRules, PriceListRulesWrapper, PriceListVolumePricingCell, PriceListVolumePricingPanel |
 | quotation/ | Orders | QuotationChangelog, QuotationCommunications, QuotationMessageCompose, QuotationMessageThread |
-| quotation/ | Orders | QuotationCustomerDisplay, QuotationWorkflowInfo |
+| content/quotation/ | Orders | ContentQuotationCustomerDisplay, ContentQuotationWorkflowInfo |
 
 ## `app/components/` (infrastructure)
 
@@ -100,7 +100,7 @@
 | selector/ | Infrastructure | Selector, SelectorPanel, SelectorHeader, SelectorTag, etc. |
 | layout/ | Infrastructure | LayoutHeader |
 | layout/sidebar/ | Infrastructure | LayoutSidebar, LayoutSidebarUser |
-| layout/sidebar/ | Infrastructure | LayoutSidebar, LayoutSidebarUser, LayoutSidebarNav, LayoutSidebarNavItem |
+| sidebar/ | Infrastructure | SidebarNav, SidebarNavItem |
 | button/ | Infrastructure | ButtonExport, ButtonIcon |
 | error/ | Infrastructure | 404.vue, 500.vue |
 | feedback/ | Infrastructure | Feedback.vue |
@@ -113,7 +113,7 @@
 | ContentEditCustomerPanel.vue | Orders | Quotation customer panel, but address/buyer patterns are reusable |
 | ContentEditAddressPanel.vue | Infrastructure | Address editing used by both Customers and Orders |
 | ContentAddressDisplay.vue | Infrastructure | Address display used by both Customers and Orders |
-| QuotationDialogStatusTransition.vue | Orders | Status transition dialog, quotation-specific |
+| DialogStatusTransition.vue | Orders | Status transition dialog, currently quotation-only |
 | TableCellProduct.vue | Products | Product display cell, used by Orders and Pricing too |
 | LayoutSidebarUser.vue | Account/Auth | User profile in sidebar, infrastructure-adjacent |
 

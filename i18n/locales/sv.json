@@ -758,9 +758,5 @@
     "remove_market": "Ta bort marknad",
     "remove_market_description": "Är du säker på att du vill ta bort denna marknad från kanalen? Ändringen träder i kraft när du sparar.",
     "no_payment_methods": "Inga betalningsmetoder tillgängliga för denna kanal."
-  },
-  "theme_colors": {
-    "contrast_warning_title": "Låg kontrast",
-    "contrast_warning_body": "Kontrastförhållandet {ratio}:1 är under WCAG 2.1 AA (4.5:1). Texten kan vara svår att läsa för användare med nedsatt syn."
   }
 }

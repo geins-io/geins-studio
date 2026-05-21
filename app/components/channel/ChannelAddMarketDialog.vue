@@ -76,18 +76,26 @@ const handleCancel = () => {
         disable-teleport
       >
         <template #item="{ item }">
-          <FlagIcon
-            v-if="item"
-            :country-code="getCountryCode(item._id)"
-            :name="item.name"
-          />
+          <span v-if="item" class="inline-flex items-center gap-2">
+            <div
+              :class="[
+                flagClass(getCountryCode(item._id)),
+                'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
+              ]"
+            />
+            {{ item.name }}
+          </span>
         </template>
         <template #tag="{ item }">
-          <FlagIcon
-            v-if="item"
-            :country-code="getCountryCode(item._id)"
-            :name="item.name"
-          />
+          <span v-if="item" class="inline-flex items-center gap-2">
+            <div
+              :class="[
+                flagClass(getCountryCode(item._id)),
+                'size-4.5 rounded-full border bg-contain bg-center bg-no-repeat',
+              ]"
+            />
+            {{ item.name }}
+          </span>
         </template>
       </FormInputTagsSearch>
       <DialogFooter>

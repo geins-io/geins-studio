@@ -351,7 +351,7 @@ Located in `app/components/form/input/` and `app/components/form/item/`. All are
 | `FormInputColor`          | `string` (hex)           | Color picker button + hex text input                                                                                                                         |
 | `FormInputFont`           | `string`                 | Font selector combobox with live preview                                                                                                                     |
 | `FormInputImage`          | `string \| File \| null` | File picker with drag-drop and image preview                                                                                                                 |
-| `FormInputRadioCards`     | `string`                 | 2-column grid of radio card options. Props: `options: SchemaFormFieldOption[]`                                                                               |
+| `FormInputRadioCards`     | `string`                 | 2-column grid of radio card options. Props: `options: SchemaFieldOption[]`                                                                                   |
 
 ### Usage within FormField
 
