@@ -24,6 +24,7 @@ export const storefrontFonts: StorefrontFont[] = [
   { label: 'Raleway', value: 'Raleway', category: 'sans-serif' },
   { label: 'Nunito', value: 'Nunito', category: 'sans-serif' },
   { label: 'Source Sans 3', value: 'Source Sans 3', category: 'sans-serif' },
+  { label: 'Mukta', value: 'Mukta', category: 'sans-serif' },
 
   // Serif
   { label: 'Hanuman', value: 'Hanuman', category: 'serif' },
