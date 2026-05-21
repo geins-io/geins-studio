@@ -1,19 +1,21 @@
 <script setup lang="ts">
+import { FileText, Receipt } from '@lucide/vue';
 import type { ChannelPaymentMethod, Market } from '#shared/types';
 import Avarda from '@/assets/logos/payment/avarda.svg';
 import Geinspay from '@/assets/logos/payment/geinspay.svg';
 import Klarnacheckoutv3 from '@/assets/logos/payment/klarnacheckoutv3.svg';
-import Manualinvoice from '@/assets/logos/payment/manualinvoice.svg';
 import Sveacheckout from '@/assets/logos/payment/sveacheckout.svg';
 import Walleycheckout from '@/assets/logos/payment/walleycheckout.svg';
+import type { Component } from 'vue';
 
-const paymentLogos: Record<string, string> = {
+const paymentLogos: Record<string, Component | string> = {
   avarda: Avarda,
   geinspay: Geinspay,
   klarnacheckoutv3: Klarnacheckoutv3,
-  manualinvoice: Manualinvoice,
+  manualinvoice: FileText,
   sveacheckout: Sveacheckout,
   walleycheckout: Walleycheckout,
+  prepaid: Receipt,
 };
 
 const props = defineProps<{

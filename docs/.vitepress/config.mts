@@ -55,6 +55,7 @@ export default defineConfig({
       },
       {
         text: 'Composables',
+        collapsed: true,
         items: [
           {
             text: 'API ',
@@ -155,6 +156,565 @@ export default defineConfig({
                 text: 'useWholesaleOrders',
                 link: '/composables/useWholesaleOrders.md',
               },
+            ],
+          },
+        ],
+      },
+      {
+        text: 'Components',
+        collapsed: true,
+        items: [
+          {
+            text: 'shadcn-vue primitives',
+            link: '/components/shadcn-vue.md',
+          },
+          {
+            text: 'Buttons',
+            collapsed: true,
+            items: [
+              {
+                text: 'ButtonExport',
+                link: '/components/button/ButtonExport.md',
+              },
+              { text: 'ButtonIcon', link: '/components/button/ButtonIcon.md' },
+            ],
+          },
+          {
+            text: 'Dialogs',
+            collapsed: true,
+            items: [
+              {
+                text: 'DialogDelete',
+                link: '/components/dialog/DialogDelete.md',
+              },
+              {
+                text: 'DialogUnsavedChanges',
+                link: '/components/dialog/DialogUnsavedChanges.md',
+              },
+            ],
+          },
+          {
+            text: 'Form',
+            collapsed: true,
+            items: [
+              {
+                text: 'Layout',
+                items: [
+                  { text: 'FormGrid', link: '/components/form/FormGrid.md' },
+                  {
+                    text: 'FormGridWrap',
+                    link: '/components/form/FormGridWrap.md',
+                  },
+                  {
+                    text: 'FormItemSwitch',
+                    link: '/components/form/item/FormItemSwitch.md',
+                  },
+                ],
+              },
+              {
+                text: 'Inputs',
+                items: [
+                  {
+                    text: 'FormInputChannels',
+                    link: '/components/form/input/FormInputChannels.md',
+                  },
+                  {
+                    text: 'FormInputColor',
+                    link: '/components/form/input/FormInputColor.md',
+                  },
+                  {
+                    text: 'FormInputCountrySelect',
+                    link: '/components/form/input/FormInputCountrySelect.md',
+                  },
+                  {
+                    text: 'FormInputDate',
+                    link: '/components/form/input/FormInputDate.md',
+                  },
+                  {
+                    text: 'FormInputDescription',
+                    link: '/components/form/input/FormInputDescription.md',
+                  },
+                  {
+                    text: 'FormInputFont',
+                    link: '/components/form/input/FormInputFont.md',
+                  },
+                  {
+                    text: 'FormInputImage',
+                    link: '/components/form/input/FormInputImage.md',
+                  },
+                  {
+                    text: 'FormInputLanguageSelect',
+                    link: '/components/form/input/FormInputLanguageSelect.md',
+                  },
+                  {
+                    text: 'FormInputLocked',
+                    link: '/components/form/input/FormInputLocked.md',
+                  },
+                  {
+                    text: 'FormInputMarketSelect',
+                    link: '/components/form/input/FormInputMarketSelect.md',
+                  },
+                  {
+                    text: 'FormInputPixel',
+                    link: '/components/form/input/FormInputPixel.md',
+                  },
+                  {
+                    text: 'FormInputRadioCards',
+                    link: '/components/form/input/FormInputRadioCards.md',
+                  },
+                  {
+                    text: 'FormInputSelectSearch',
+                    link: '/components/form/input/FormInputSelectSearch.md',
+                  },
+                  {
+                    text: 'FormInputTagsSearch',
+                    link: '/components/form/input/FormInputTagsSearch.md',
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            text: 'Tables',
+            collapsed: true,
+            items: [
+              { text: 'TableView', link: '/components/table/TableView.md' },
+              {
+                text: 'TableColumnToggle',
+                link: '/components/table/TableColumnToggle.md',
+              },
+              {
+                text: 'TablePagination',
+                link: '/components/table/TablePagination.md',
+              },
+              {
+                text: 'TableHeaderSort',
+                link: '/components/table/header/TableHeaderSort.md',
+              },
+              {
+                text: 'Cells',
+                items: [
+                  {
+                    text: 'TableCellActions',
+                    link: '/components/table/cell/TableCellActions.md',
+                  },
+                  {
+                    text: 'TableCellBoolean',
+                    link: '/components/table/cell/TableCellBoolean.md',
+                  },
+                  {
+                    text: 'TableCellChannels',
+                    link: '/components/table/cell/TableCellChannels.md',
+                  },
+                  {
+                    text: 'TableCellCurrency',
+                    link: '/components/table/cell/TableCellCurrency.md',
+                  },
+                  {
+                    text: 'TableCellDelete',
+                    link: '/components/table/cell/TableCellDelete.md',
+                  },
+                  {
+                    text: 'TableCellEdit',
+                    link: '/components/table/cell/TableCellEdit.md',
+                  },
+                  {
+                    text: 'TableCellEditable',
+                    link: '/components/table/cell/TableCellEditable.md',
+                  },
+                  {
+                    text: 'TableCellFlag',
+                    link: '/components/table/cell/TableCellFlag.md',
+                  },
+                  {
+                    text: 'TableCellLongText',
+                    link: '/components/table/cell/TableCellLongText.md',
+                  },
+                  {
+                    text: 'TableCellProduct',
+                    link: '/components/table/cell/TableCellProduct.md',
+                  },
+                  {
+                    text: 'TableCellStatus',
+                    link: '/components/table/cell/TableCellStatus.md',
+                  },
+                  {
+                    text: 'TableCellSwitch',
+                    link: '/components/table/cell/TableCellSwitch.md',
+                  },
+                  {
+                    text: 'TableCellTags',
+                    link: '/components/table/cell/TableCellTags.md',
+                  },
+                  {
+                    text: 'TableCellTooltip',
+                    link: '/components/table/cell/TableCellTooltip.md',
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            text: 'Selector',
+            collapsed: true,
+            items: [
+              {
+                text: 'Selector',
+                link: '/components/selector/Selector.md',
+              },
+              {
+                text: 'SelectorHeader',
+                link: '/components/selector/SelectorHeader.md',
+              },
+              {
+                text: 'SelectorLinkingWord',
+                link: '/components/selector/SelectorLinkingWord.md',
+              },
+              {
+                text: 'SelectorPanel',
+                link: '/components/selector/SelectorPanel.md',
+              },
+              {
+                text: 'SelectorQuickAdd',
+                link: '/components/selector/SelectorQuickAdd.md',
+              },
+              {
+                text: 'SelectorSelection',
+                link: '/components/selector/SelectorSelection.md',
+              },
+              {
+                text: 'SelectorTag',
+                link: '/components/selector/SelectorTag.md',
+              },
+              {
+                text: 'SelectorTagLink',
+                link: '/components/selector/SelectorTagLink.md',
+              },
+              {
+                text: 'SelectorTags',
+                link: '/components/selector/SelectorTags.md',
+              },
+            ],
+          },
+          {
+            text: 'Content',
+            collapsed: true,
+            items: [
+              {
+                text: 'ContentActionBar',
+                link: '/components/content/ContentActionBar.md',
+              },
+              {
+                text: 'ContentAddressDisplay',
+                link: '/components/content/ContentAddressDisplay.md',
+              },
+              {
+                text: 'ContentAddressForm',
+                link: '/components/content/ContentAddressForm.md',
+              },
+              {
+                text: 'ContentDataList',
+                link: '/components/content/ContentDataList.md',
+              },
+              {
+                text: 'ContentHeader',
+                link: '/components/content/ContentHeader.md',
+              },
+              {
+                text: 'ContentHeading',
+                link: '/components/content/ContentHeading.md',
+              },
+              {
+                text: 'ContentPriceSummary',
+                link: '/components/content/ContentPriceSummary.md',
+              },
+              {
+                text: 'ContentSection',
+                link: '/components/content/ContentSection.md',
+              },
+              {
+                text: 'ContentSwitch',
+                link: '/components/content/ContentSwitch.md',
+              },
+              {
+                text: 'ContentTitleBlock',
+                link: '/components/content/ContentTitleBlock.md',
+              },
+              {
+                text: 'Card',
+                items: [
+                  {
+                    text: 'ContentCard',
+                    link: '/components/content/ContentCard.md',
+                  },
+                  {
+                    text: 'ContentCardHeader',
+                    link: '/components/content/ContentCardHeader.md',
+                  },
+                  {
+                    text: 'ContentCardLinked',
+                    link: '/components/content/ContentCardLinked.md',
+                  },
+                ],
+              },
+              {
+                text: 'Text',
+                items: [
+                  {
+                    text: 'ContentTextCopy',
+                    link: '/components/content/text/ContentTextCopy.md',
+                  },
+                  {
+                    text: 'ContentTextTooltip',
+                    link: '/components/content/text/ContentTextTooltip.md',
+                  },
+                ],
+              },
+              {
+                text: 'Edit',
+                items: [
+                  {
+                    text: 'ContentEditWrap',
+                    link: '/components/content/edit/ContentEditWrap.md',
+                  },
+                  {
+                    text: 'ContentEditMain',
+                    link: '/components/content/edit/ContentEditMain.md',
+                  },
+                  {
+                    text: 'ContentEditMainContent',
+                    link: '/components/content/edit/ContentEditMainContent.md',
+                  },
+                  {
+                    text: 'ContentEditCard',
+                    link: '/components/content/edit/ContentEditCard.md',
+                  },
+                  {
+                    text: 'ContentEditTabs',
+                    link: '/components/content/edit/ContentEditTabs.md',
+                  },
+                  {
+                    text: 'ContentEditSummary',
+                    link: '/components/content/edit/ContentEditSummary.md',
+                  },
+                  {
+                    text: 'ContentEditAddressPanel',
+                    link: '/components/content/edit/ContentEditAddressPanel.md',
+                  },
+                  {
+                    text: 'ContentEditCustomerPanel',
+                    link: '/components/content/edit/ContentEditCustomerPanel.md',
+                  },
+                  {
+                    text: 'ContentEditHasChanges',
+                    link: '/components/content/edit/ContentEditHasChanges.md',
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            text: 'Layout',
+            collapsed: true,
+            items: [
+              {
+                text: 'LayoutHeader',
+                link: '/components/layout/LayoutHeader.md',
+              },
+              {
+                text: 'LayoutSidebar',
+                link: '/components/layout/sidebar/LayoutSidebar.md',
+              },
+              {
+                text: 'LayoutSidebarUser',
+                link: '/components/layout/sidebar/LayoutSidebarUser.md',
+              },
+              {
+                text: 'LayoutSidebarNav',
+                link: '/components/layout/sidebar/LayoutSidebarNav.md',
+              },
+              {
+                text: 'LayoutSidebarNavItem',
+                link: '/components/layout/sidebar/LayoutSidebarNavItem.md',
+              },
+            ],
+          },
+          {
+            text: 'Auth',
+            collapsed: true,
+            items: [{ text: 'AuthForm', link: '/components/auth/AuthForm.md' }],
+          },
+          {
+            text: 'Channel',
+            collapsed: true,
+            items: [
+              {
+                text: 'Markets',
+                items: [
+                  {
+                    text: 'ChannelAddMarketDialog',
+                    link: '/components/channel/ChannelAddMarketDialog.md',
+                  },
+                  {
+                    text: 'ChannelAdditionalLanguages',
+                    link: '/components/channel/ChannelAdditionalLanguages.md',
+                  },
+                  {
+                    text: 'ChannelAdditionalMarkets',
+                    link: '/components/channel/ChannelAdditionalMarkets.md',
+                  },
+                  {
+                    text: 'ChannelDefaultMarket',
+                    link: '/components/channel/ChannelDefaultMarket.md',
+                  },
+                ],
+              },
+              {
+                text: 'Mail',
+                items: [
+                  {
+                    text: 'ChannelMailsTab',
+                    link: '/components/channel/ChannelMailsTab.md',
+                  },
+                  {
+                    text: 'ChannelMailGeneralTab',
+                    link: '/components/channel/ChannelMailGeneralTab.md',
+                  },
+                  {
+                    text: 'ChannelMailContentTab',
+                    link: '/components/channel/ChannelMailContentTab.md',
+                  },
+                  {
+                    text: 'ChannelMailLayoutTab',
+                    link: '/components/channel/ChannelMailLayoutTab.md',
+                  },
+                  {
+                    text: 'ChannelMailContentRow',
+                    link: '/components/channel/ChannelMailContentRow.md',
+                  },
+                  {
+                    text: 'ChannelMailConfigSheet',
+                    link: '/components/channel/ChannelMailConfigSheet.md',
+                  },
+                ],
+              },
+              {
+                text: 'Payments',
+                items: [
+                  {
+                    text: 'ChannelPaymentsTab',
+                    link: '/components/channel/ChannelPaymentsTab.md',
+                  },
+                  {
+                    text: 'ChannelPaymentRow',
+                    link: '/components/channel/ChannelPaymentRow.md',
+                  },
+                ],
+              },
+              {
+                text: 'Storefront',
+                items: [
+                  {
+                    text: 'ChannelStorefrontSettings',
+                    link: '/components/channel/ChannelStorefrontSettings.md',
+                  },
+                  {
+                    text: 'ChannelSchemaEditorSheet',
+                    link: '/components/channel/ChannelSchemaEditorSheet.md',
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            text: 'Company',
+            collapsed: true,
+            items: [
+              {
+                text: 'CompanyBuyerPanel',
+                link: '/components/company/CompanyBuyerPanel.md',
+              },
+            ],
+          },
+          {
+            text: 'Price list',
+            collapsed: true,
+            items: [
+              {
+                text: 'PriceListRulesWrapper',
+                link: '/components/price-list/PriceListRulesWrapper.md',
+              },
+              {
+                text: 'PriceListRules',
+                link: '/components/price-list/PriceListRules.md',
+              },
+              {
+                text: 'PriceListRule',
+                link: '/components/price-list/PriceListRule.md',
+              },
+              {
+                text: 'PriceListVolumePricingPanel',
+                link: '/components/price-list/PriceListVolumePricingPanel.md',
+              },
+              {
+                text: 'PriceListVolumePricingCell',
+                link: '/components/price-list/PriceListVolumePricingCell.md',
+              },
+              {
+                text: 'PriceListPriceModeCell',
+                link: '/components/price-list/PriceListPriceModeCell.md',
+              },
+            ],
+          },
+          {
+            text: 'Quotation',
+            collapsed: true,
+            items: [
+              {
+                text: 'QuotationDialogStatusTransition',
+                link: '/components/quotation/QuotationDialogStatusTransition.md',
+              },
+              {
+                text: 'QuotationCustomerDisplay',
+                link: '/components/quotation/QuotationCustomerDisplay.md',
+              },
+              {
+                text: 'QuotationWorkflowInfo',
+                link: '/components/quotation/QuotationWorkflowInfo.md',
+              },
+              {
+                text: 'QuotationCommunications',
+                link: '/components/quotation/QuotationCommunications.md',
+              },
+              {
+                text: 'QuotationMessageThread',
+                link: '/components/quotation/QuotationMessageThread.md',
+              },
+              {
+                text: 'QuotationMessageCompose',
+                link: '/components/quotation/QuotationMessageCompose.md',
+              },
+              {
+                text: 'QuotationChangelog',
+                link: '/components/quotation/QuotationChangelog.md',
+              },
+            ],
+          },
+          {
+            text: 'Global',
+            collapsed: true,
+            items: [
+              { text: 'Error404', link: '/components/Error404.md' },
+              { text: 'Error500', link: '/components/Error500.md' },
+              { text: 'Feedback', link: '/components/Feedback.md' },
+              { text: 'FlagIcon', link: '/components/FlagIcon.md' },
+              { text: 'JsonCodeEditor', link: '/components/JsonCodeEditor.md' },
+              {
+                text: 'SchemaFormField',
+                link: '/components/SchemaFormField.md',
+              },
+              { text: 'SchemaRenderer', link: '/components/SchemaRenderer.md' },
+              { text: 'StatusBadge', link: '/components/StatusBadge.md' },
             ],
           },
         ],

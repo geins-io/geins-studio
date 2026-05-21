@@ -24,7 +24,7 @@ import {
 } from '#shared/types';
 import defaultStorefrontSchema from '@/assets/schemas/storefront-settings-default.json';
 import { useToast } from '@/components/ui/toast/use-toast';
-import { getDefaultSettings } from '@/utils/storefront';
+import { deepMerge, getDefaultSettings } from '@/utils/storefront';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -407,9 +407,10 @@ const {
       entity.storefrontSchema && Object.keys(entity.storefrontSchema).length > 0
         ? entity.storefrontSchema
         : (defaultStorefrontSchema as StorefrontSchema);
-    storefrontSettings.value = entity.storefrontSettings
-      ? { ...entity.storefrontSettings }
-      : getDefaultSettings(activeSchema.value);
+    storefrontSettings.value = deepMerge(
+      getDefaultSettings(activeSchema.value),
+      entity.storefrontSettings ?? {},
+    );
 
     schemaChanged.value = false;
     // Set explicit default IDs from the API response
@@ -967,9 +968,9 @@ if (!createMode.value) {
                     {{ $t('language') }}
                   </div>
                   <div class="flex items-center gap-2.5 px-4 py-5">
-                    <ChannelLanguageIcon
+                    <FlagIcon
                       v-if="defaultLanguage"
-                      :language-id="defaultLanguage._id"
+                      :country-code="languageToCountryCode(defaultLanguage._id)"
                       :name="defaultLanguage.name"
                     />
                     <span v-else class="text-muted-foreground text-sm"

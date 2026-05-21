@@ -47,7 +47,10 @@
               "label": "Who can see prices",
               "type": "radio",
               "options": [
-                { "value": "authenticated", "label": "Authenticated users only" },
+                {
+                  "value": "authenticated",
+                  "label": "Authenticated users only"
+                },
                 { "value": "all", "label": "All users" }
               ]
             }
@@ -64,7 +67,10 @@
               "label": "Who can place orders",
               "type": "radio",
               "options": [
-                { "value": "authenticated", "label": "Authenticated users only" },
+                {
+                  "value": "authenticated",
+                  "label": "Authenticated users only"
+                },
                 { "value": "all", "label": "All users" }
               ]
             }
@@ -81,7 +87,10 @@
               "label": "Who can see stock levels",
               "type": "radio",
               "options": [
-                { "value": "authenticated", "label": "Authenticated users only" },
+                {
+                  "value": "authenticated",
+                  "label": "Authenticated users only"
+                },
                 { "value": "all", "label": "All users" }
               ]
             }
@@ -196,14 +205,16 @@
                     "type": "color",
                     "label": "Background",
                     "columns": 2,
-                    "default": "#0E7490"
+                    "default": "#363636",
+                    "role": "background"
                   },
                   {
                     "key": "theme.colors.buttonText",
                     "type": "color",
                     "label": "Text",
                     "columns": 2,
-                    "default": "#FFFFFF"
+                    "default": "#ffffff",
+                    "role": "foreground"
                   }
                 ]
               },
@@ -217,14 +228,16 @@
                     "type": "color",
                     "label": "Background",
                     "columns": 2,
-                    "default": "#0E7490"
+                    "default": "#363636",
+                    "role": "background"
                   },
                   {
                     "key": "theme.colors.buttonPurchaseText",
                     "type": "color",
                     "label": "Text",
                     "columns": 2,
-                    "default": "#FFFFFF"
+                    "default": "#ffffff",
+                    "role": "foreground"
                   }
                 ]
               }
@@ -240,7 +253,7 @@
                 "key": "theme.colors.siteBackground",
                 "type": "radio-cards",
                 "label": "Site background",
-                "default": "#FFFFFF",
+                "default": "#FAFAFA",
                 "options": [
                   {
                     "value": "#FFFFFF",
@@ -268,7 +281,7 @@
                 "key": "theme.colors.navBarBackground",
                 "type": "radio-cards",
                 "label": "Navigation bar background",
-                "default": "#F5F5F5",
+                "default": "#FFFFFF",
                 "options": [
                   {
                     "value": "#FFFFFF",
@@ -297,14 +310,16 @@
                 "type": "color",
                 "label": "Background",
                 "columns": 4,
-                "default": "#0E7490"
+                "default": "#363636",
+                "role": "background"
               },
               {
                 "key": "theme.colors.topBarText",
                 "type": "color",
                 "label": "Text",
                 "columns": 4,
-                "default": "#FFFFFF"
+                "default": "#ffffff",
+                "role": "foreground"
               }
             ]
           },
@@ -319,14 +334,16 @@
                 "type": "color",
                 "label": "Background",
                 "columns": 4,
-                "default": "#F5F5F5"
+                "default": "#363636",
+                "role": "background"
               },
               {
                 "key": "theme.colors.footerText",
                 "type": "color",
                 "label": "Text",
                 "columns": 4,
-                "default": "#0A0A0A"
+                "default": "#ffffff",
+                "role": "foreground"
               }
             ]
           }
@@ -438,7 +455,7 @@
                 "key": "contact.phone",
                 "type": "string",
                 "label": "Phone",
-                "placeholder": "+46 …",
+                "placeholder": "+46 XXX XXX XXX",
                 "default": "",
                 "columns": 2
               }

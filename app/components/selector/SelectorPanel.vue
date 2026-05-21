@@ -371,8 +371,8 @@ const handleCancel = () => {
       >
         <div class="w-full shrink-0 px-4 pt-3 md:w-42.5 md:py-3">
           <ContentHeading>{{ $t('select_from') }}</ContentHeading>
-          <SidebarNav>
-            <SidebarNavItem
+          <LayoutSidebarNav>
+            <LayoutSidebarNavItem
               v-for="option in options"
               :id="option.id"
               :key="option.id"
@@ -380,8 +380,8 @@ const handleCancel = () => {
               @click="selectOption(option.id)"
             >
               {{ option.label }}
-            </SidebarNavItem>
-          </SidebarNav>
+            </LayoutSidebarNavItem>
+          </LayoutSidebarNav>
         </div>
         <div class="@container w-full border-x px-4 py-3">
           <ContentHeading>{{ $t('select') }}</ContentHeading>
