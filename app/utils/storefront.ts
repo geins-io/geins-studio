@@ -1,9 +1,8 @@
 import type {
   StorefrontSchema,
   StorefrontSettings,
-  SchemaFormField,
+  SchemaField,
 } from '#shared/types';
-import { getContrastWarning } from '#shared/utils/contrast';
 
 /**
  * Settings are stored as a nested object. Field `key` values are deep
@@ -16,7 +15,7 @@ export function getDefaultSettings(
 ): StorefrontSettings {
   let settings: StorefrontSettings = {};
 
-  function collectDefaults(fields: SchemaFormField[]) {
+  function collectDefaults(fields: SchemaField[]) {
     for (const field of fields) {
       if (field.default !== undefined) {
         settings = setSettingValue(settings, field.key, field.default);
@@ -42,9 +41,9 @@ export function getDefaultSettings(
  * Sub-sections use `columns` for internal layout, not parent grid placement.
  */
 export function groupFieldsIntoRows(
-  fields: SchemaFormField[],
-): { columns: number; fields: SchemaFormField[] }[] {
-  const rows: { columns: number; fields: SchemaFormField[] }[] = [];
+  fields: SchemaField[],
+): { columns: number; fields: SchemaField[] }[] {
+  const rows: { columns: number; fields: SchemaField[] }[] = [];
 
   for (const field of fields) {
     const cols = field.type === 'sub-section' ? 1 : (field.columns ?? 1);
@@ -60,15 +59,16 @@ export function groupFieldsIntoRows(
   return rows;
 }
 
+/** Static grid class map — avoids dynamic Tailwind class generation */
 const gridClassMap: Record<number, string> = {
   2: 'grid grid-cols-2',
   3: 'grid grid-cols-3',
   4: 'grid grid-cols-4',
 };
 
-export function gridClass(cols: number, sub = false): string | undefined {
+export function gridClass(cols: number, gap = 'gap-6'): string | undefined {
   if (cols <= 1) return undefined;
-  return `${gridClassMap[cols]} ${sub ? '@max-2xl/schema:grid-cols-1' : '@max-xl/schema:grid-cols-1'} gap-x-6 gap-y-2`;
+  return `${gridClassMap[cols]} ${gap}`;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -92,58 +92,6 @@ export function getSettingValue(
     current = current[segment];
   }
   return current;
-}
-
-/**
- * Inspects a sub-section's children for a `role: 'background'` + `role: 'foreground'`
- * color pair and computes contrast against the current settings. Returns a map keyed
- * by failing field keys with the failing ratio. Empty map when no pair, invalid hex,
- * or ratio passes WCAG AA.
- */
-export function getSubSectionContrastWarnings(
-  field: SchemaFormField,
-  settings: StorefrontSettings,
-): Record<string, number> {
-  if (field.type !== 'sub-section' || !field.children) return {};
-
-  const bg = field.children.find(
-    (c) => c.type === 'color' && c.role === 'background',
-  );
-  const fg = field.children.find(
-    (c) => c.type === 'color' && c.role === 'foreground',
-  );
-  if (!bg || !fg) return {};
-
-  const bgHex = getSettingValue(settings, bg.key) as string | undefined;
-  const fgHex = getSettingValue(settings, fg.key) as string | undefined;
-  if (!bgHex || !fgHex) return {};
-
-  const warning = getContrastWarning(bgHex, fgHex);
-  if (!warning) return {};
-
-  return { [bg.key]: warning.ratio, [fg.key]: warning.ratio };
-}
-
-/**
- * Recursively merge two settings objects with right-hand values winning.
- * Plain objects are merged key-by-key; arrays and primitives are replaced as
- * leaves. Used to backfill schema defaults under partial API responses.
- */
-export function deepMerge(
-  base: StorefrontSettings,
-  override: StorefrontSettings,
-): StorefrontSettings {
-  const result: Record<string, unknown> = { ...base };
-  for (const key of Object.keys(override)) {
-    const baseValue = result[key];
-    const overrideValue = override[key];
-    if (isPlainObject(baseValue) && isPlainObject(overrideValue)) {
-      result[key] = deepMerge(baseValue, overrideValue);
-    } else {
-      result[key] = overrideValue;
-    }
-  }
-  return result;
 }
 
 /** Immutable deep set — clones along the path, leaves untouched branches shared. */

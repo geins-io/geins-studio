@@ -4,9 +4,7 @@ import { refreshSalesPortal, describeFetchError } from '../utils/refresh-sales-p
 const CHANNEL_PATCH_RE = /^\/api\/account\/channel\/([^/?]+)(\?|$)/;
 
 export default defineNitroPlugin((nitroApp) => {
-  const { geinsLogInfo, geinsLogError } = log(
-    'server/plugins/refresh-sales-portal.ts',
-  );
+  const { geinsLogError } = log('server/plugins/refresh-sales-portal.ts');
 
   nitroApp.hooks.hook('beforeResponse', async (event) => {
     if (event.method !== 'PATCH') return;
@@ -15,7 +13,6 @@ export default defineNitroPlugin((nitroApp) => {
     const channelId = match[1];
 
     const status = getResponseStatus(event);
-    geinsLogInfo(`[STU-216] hook fired — PATCH ${event.path} → ${status}`);
     if (status < 200 || status >= 300) return;
 
     // Multipart PATCH (image uploads) is streamed by proxyRequest in
@@ -38,18 +35,11 @@ export default defineNitroPlugin((nitroApp) => {
     const channelUrl = `${config.public.apiUrl}/account/channel/${channelId}`;
     let url: string | undefined;
     try {
-      const channel = await $fetch<Record<string, unknown>>(channelUrl, {
+      const channel = await $fetch<{ url?: string }>(channelUrl, {
         headers,
         timeout: 5000,
       });
-      url = channel?.url as string | undefined;
-      if (!url) {
-        geinsLogInfo(
-          `[STU-216] GET ${channelUrl} ok but no "url"; keys=${JSON.stringify(
-            Object.keys(channel ?? {}),
-          )}`,
-        );
-      }
+      url = channel?.url;
     } catch (err) {
       geinsLogError(
         `GET ${channelUrl} failed :: ${describeFetchError(err)}`,
@@ -57,7 +47,6 @@ export default defineNitroPlugin((nitroApp) => {
       return;
     }
     if (!url) return;
-    geinsLogInfo(`[STU-216] resolved url="${url}", calling refresh`);
 
     let hostname: string;
     try {
