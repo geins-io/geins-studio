@@ -59,7 +59,10 @@ export async function refreshSalesPortal(hostname: string): Promise<void> {
         'x-webhook-id': randomUUID(),
       },
       body,
-      timeout: 5000,
+      // 15s to accommodate cold-start on the storefront webhook handler when
+      // the request comes from Vercel egress (works fast from localhost, slow
+      // from arn1). Vercel Pro function timeout is well above this.
+      timeout: 15000,
     });
     geinsLog(`config-refresh sent to ${hostname}`);
   } catch (error) {
