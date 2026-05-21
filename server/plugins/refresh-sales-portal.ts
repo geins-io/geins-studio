@@ -1,5 +1,5 @@
 // HOTFIX STU-216 — remove when BE handles config-refresh natively (STU-217)
-import { refreshSalesPortal } from '../utils/refresh-sales-portal';
+import { refreshSalesPortal, describeFetchError } from '../utils/refresh-sales-portal';
 
 const CHANNEL_PATCH_RE = /^\/api\/account\/channel\/([^/?]+)(\?|$)/;
 
@@ -32,15 +32,18 @@ export default defineNitroPlugin((nitroApp) => {
     delete headers['content-length'];
     delete headers['content-type'];
 
+    const channelUrl = `${config.public.apiUrl}/account/channel/${channelId}`;
     let url: string | undefined;
     try {
-      const channel = await $fetch<{ url?: string }>(
-        `${config.public.apiUrl}/account/channel/${channelId}`,
-        { headers, timeout: 5000 },
-      );
+      const channel = await $fetch<{ url?: string }>(channelUrl, {
+        headers,
+        timeout: 5000,
+      });
       url = channel?.url;
     } catch (err) {
-      geinsLogError(`GET channel ${channelId} failed`, err);
+      geinsLogError(
+        `GET ${channelUrl} failed :: ${describeFetchError(err)}`,
+      );
       return;
     }
     if (!url) return;
