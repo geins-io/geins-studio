@@ -64,7 +64,26 @@ type UpstreamNode = {
   id: string
   label: string
   actionName?: string
+  nodeType: string
   outputFields: Array<{ name: string, type: string }>
+}
+
+const NODE_TYPE_COLORS: Record<string, string> = {
+  action: 'text-blue-500 fill-blue-500',
+  condition: 'text-amber-500 fill-amber-500',
+  iterator: 'text-purple-500 fill-purple-500',
+  loop: 'text-purple-500 fill-purple-500',
+  delay: 'text-orange-500 fill-orange-500',
+  workflow: 'text-teal-500 fill-teal-500',
+  paginator: 'text-sky-500 fill-sky-500',
+}
+
+const upstreamDotClass = (nodeType: string) =>
+  NODE_TYPE_COLORS[nodeType] ?? 'text-blue-500 fill-blue-500'
+
+const upstreamLabelClass = (nodeType: string) => {
+  const c = NODE_TYPE_COLORS[nodeType]
+  return c ? c.split(' ')[0] : 'text-muted-foreground'
 }
 
 const ITERATOR_CONTEXT_VARS: Array<{ name: string, type: string }> = [
@@ -102,6 +121,7 @@ const upstreamNodes = computed(() => {
       id: n.id,
       label: (data.label as string) || action?.displayName || n.id,
       actionName,
+      nodeType,
       outputFields,
     })
   }
@@ -253,8 +273,8 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
         <div v-if="inputPaneSections.has('incoming')" class="px-3 pb-3">
           <div v-if="filteredUpstreamNodes.length" class="space-y-2">
             <div v-for="upstream in filteredUpstreamNodes" :key="upstream.id">
-              <div class="text-muted-foreground mb-1 flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase">
-                <LucideCircle v-if="!upstreamHasOutput(upstream.id)" class="h-2 w-2 fill-blue-500 text-blue-500" />
+              <div class="mb-1 flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase" :class="upstreamLabelClass(upstream.nodeType)">
+                <LucideCircle v-if="!upstreamHasOutput(upstream.id)" class="h-2 w-2" :class="upstreamDotClass(upstream.nodeType)" />
                 <LucideCheckCircle2 v-else class="h-2.5 w-2.5 text-green-500" />
                 {{ upstream.label }}
               </div>
