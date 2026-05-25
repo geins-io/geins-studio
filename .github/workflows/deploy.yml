@@ -78,8 +78,8 @@ jobs:
           parameters: >-
             infra/parameters/prod.bicepparam
             containerImage=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.image-tag }}
-            ghcrUsername=${{ github.actor }}
-            ghcrToken=${{ secrets.GITHUB_TOKEN }}
+            ghcrUsername=${{ secrets.GHCR_USERNAME }}
+            ghcrToken=${{ secrets.GHCR_TOKEN }}
             authSecret=${{ secrets.AUTH_SECRET }}
             geinsApiUrl=${{ secrets.GEINS_API_URL }}
             baseUrl=${{ vars.BASE_URL }}
