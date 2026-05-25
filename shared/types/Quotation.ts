@@ -253,7 +253,7 @@ export interface QuotationBase {
   channelId: string;
   marketId: string;
   validFrom?: string;
-  validTo?: string;
+  validTo?: string | null;
   createdAt?: string;
   modifiedAt?: string;
   suggestedShippingFee?: number;

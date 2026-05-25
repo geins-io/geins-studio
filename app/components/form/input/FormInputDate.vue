@@ -8,18 +8,25 @@ withDefaults(
   defineProps<{
     placeholder?: string;
     minValue?: DateValue;
+    allowClear?: boolean;
   }>(),
   {
     placeholder: 'Pick a date',
+    allowClear: false,
   },
 );
 
+const { t } = useI18n();
 const { formatDate } = useDate();
 
 const handleDateUpdate = (v: unknown) => {
-  if (v) {
-    model.value = new Date(v.toString()).toISOString();
-  }
+  model.value = v ? new Date(v.toString()).toISOString() : '';
+};
+
+const clearDate = (e: Event) => {
+  e.stopPropagation();
+  e.preventDefault();
+  model.value = '';
 };
 </script>
 
@@ -38,7 +45,19 @@ const handleDateUpdate = (v: unknown) => {
         <span>
           {{ model ? formatDate(model) : placeholder }}
         </span>
-        <LucideCalendar class="ml-auto size-4 opacity-50" />
+        <span
+          v-if="allowClear && model"
+          role="button"
+          tabindex="0"
+          :aria-label="t('clear_date')"
+          class="text-muted-foreground hover:text-foreground ml-auto inline-flex size-5 items-center justify-center rounded transition-colors"
+          @click="clearDate"
+          @keydown.enter.prevent="clearDate"
+          @keydown.space.prevent="clearDate"
+        >
+          <LucideX class="size-4" />
+        </span>
+        <LucideCalendar v-else class="ml-auto size-4 opacity-50" />
       </Button>
     </PopoverTrigger>
     <PopoverContent class="w-auto p-0">

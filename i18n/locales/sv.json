@@ -95,6 +95,7 @@
   "price_updated_for": "Pris uppdaterat för {name} ({id})",
   "product_selection_updated": "Produktval uppdaterat",
   "clear_search": "Rensa sökning",
+  "clear_date": "Rensa datum",
   "all_entity": "Alla @.lower:{entityName}",
   "entity_is_active": "@:{entityName} är aktiv",
   "entity_is_inactive": "@:{entityName} är inaktiv",
