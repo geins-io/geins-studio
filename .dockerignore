@@ -1,0 +1,16 @@
+node_modules
+.output
+.nuxt
+.git
+.github
+.agents
+.mint
+.claude
+docs
+*.md
+!README.md
+.env
+.env.*
+.vscode
+.idea
+coverage
