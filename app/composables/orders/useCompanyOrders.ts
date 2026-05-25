@@ -114,6 +114,7 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
     allCompanies?: CustomerCompany[],
     allBuyers?: CompanyBuyer[],
   ): CustomerOrder[] => {
+    _channelIdMap.clear();
     orders.forEach((order) => _channelIdMap.set(order._id, order.channel));
     return orders.map((order) => ({
       _id: order._id,

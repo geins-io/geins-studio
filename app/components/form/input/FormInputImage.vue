@@ -189,10 +189,11 @@ onBeforeUnmount(() => {
         size="icon"
         class="text-muted-foreground ml-auto size-6 shrink-0"
         :title="t('image_upload_remove')"
+        :aria-label="t('image_upload_remove')"
         @click="removeImage"
-        @keydown.enter.stop="removeImage"
       >
         <LucideX class="size-4" />
+        <span class="sr-only">{{ t('image_upload_remove') }}</span>
       </Button>
     </template>
 
