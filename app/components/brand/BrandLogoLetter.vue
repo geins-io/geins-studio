@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import GeinsLetter from '@/assets/logos/geins-g.svg';
-import LitiumLetter from '@/assets/logos/litium-g.svg';
+import GeinsLetter from '@/assets/logos/geins-symbol.svg';
+import LitiumLetter from '@/assets/logos/litium-symbol.svg';
 
 const { isLitium } = useBrand();
 </script>
