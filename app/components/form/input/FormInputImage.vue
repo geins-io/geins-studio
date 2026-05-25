@@ -189,7 +189,6 @@ onBeforeUnmount(() => {
         size="icon"
         class="text-muted-foreground ml-auto size-6 shrink-0"
         :title="t('image_upload_remove')"
-        :aria-label="t('image_upload_remove')"
         @click="removeImage"
       >
         <LucideX class="size-4" />
