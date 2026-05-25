@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { SpeedInsights } from '@vercel/speed-insights/vue';
-
-const { brandName } = useBrand();
+const { brandName} = useBrand();
 </script>
 
 <template>
@@ -20,5 +18,4 @@ const { brandName } = useBrand();
       <slot />
     </div>
   </div>
-  <SpeedInsights />
 </template>
