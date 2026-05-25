@@ -31,10 +31,7 @@ export default defineNuxtConfig({
   },
 
   imports: {
-    dirs: [
-      'composables',
-      'composables/**',
-    ],
+    dirs: ['composables', 'composables/**'],
   },
 
   css: ['~/assets/css/main.css', 'flag-icons/css/flag-icons.min.css'],
@@ -101,7 +98,9 @@ export default defineNuxtConfig({
       baseUrl: getBaseUrl(),
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
-      featureOrchestrator: process.env.NUXT_PUBLIC_FEATURE_ORCHESTRATOR === 'true',
+      featureOrchestrator:
+        process.env.NUXT_PUBLIC_FEATURE_ORCHESTRATOR === 'true',
+      brandOverride: process.env.NUXT_PUBLIC_BRAND_OVERRIDE || '',
     },
     private: {
       authSecret: process.env.AUTH_SECRET,

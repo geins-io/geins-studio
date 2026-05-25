@@ -4,7 +4,7 @@ import { LucidePackage } from '#components';
 
 definePageMeta({
   layout: 'default',
-  title: 'Welcome to Geins Studio',
+  title: 'Welcome',
 });
 
 const { customerApi } = useGeinsRepository();
@@ -48,13 +48,15 @@ if (allCompanies.value.length === 0) {
   });
 }
 
+const { brandName } = useBrand();
+
 const breadcrumbsStore = useBreadcrumbsStore();
 breadcrumbsStore.setShowBreadcrumbs(false);
 </script>
 
 <template>
   <div class="max-w-full sm:p-4">
-    <ContentHeader title="Welcome to Geins Studio" />
+    <ContentHeader :title="`Welcome to ${brandName}`" />
 
     <!-- Main content area -->
     <div class="space-y-8">
