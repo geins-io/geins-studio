@@ -111,7 +111,7 @@ resource availabilityTest 'Microsoft.Insights/webtests@2022-06-15' = if (webAppR
       WebTest: '''
 <WebTest Name="HealthCheck" Id="${guid('${name}-health-check')}" Enabled="True" CssProjectStructure="" CssIteration="" Timeout="30" WorkItemIds="" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010" Description="" CredentialUserName="" CredentialPassword="" PreAuthenticate="True" Proxy="default" StopOnError="False" RecordedResultFile="" ResultsLocale="">
   <Items>
-    <Request Method="GET" Guid="${guid('${name}-health-request')}" Version="1.1" Url="https://${reference(webAppResourceId, '2023-12-01').defaultHostName}/api/ping" ThinkTime="0" Timeout="30" ParseDependentRequests="False" FollowRedirects="True" RecordResult="True" Cache="False" ResponseTimeGoal="0" Encoding="utf-8" ExpectedHttpStatusCode="200" ExpectedResponseUrl="" ReportingName="" IgnoreHttpStatusCode="False" />
+    <Request Method="GET" Guid="${guid('${name}-health-request')}" Version="1.1" Url="https://${reference(webAppResourceId, '2023-12-01').defaultHostName}/api/health" ThinkTime="0" Timeout="30" ParseDependentRequests="False" FollowRedirects="True" RecordResult="True" Cache="False" ResponseTimeGoal="0" Encoding="utf-8" ExpectedHttpStatusCode="200" ExpectedResponseUrl="" ReportingName="" IgnoreHttpStatusCode="False" />
   </Items>
 </WebTest>
 '''
