@@ -207,8 +207,12 @@ const cardDescription = computed(() => {
   return '';
 });
 
-// Account selection
-const accounts = computed(() => props.accounts || []);
+// Account selection — sorted alphabetically
+const accounts = computed(() =>
+  [...(props.accounts || [])].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+  ),
+);
 
 // Button text
 const buttonText = computed(() => {

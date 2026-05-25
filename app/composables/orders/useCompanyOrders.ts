@@ -55,6 +55,8 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
 
   // Reactive state
   const ordersList = ref<CustomerOrder[]>([]);
+  // Map order ID → raw channel ID for re-resolution when channels load
+  const _channelIdMap = new Map<string, string>();
 
   // Column configuration for orders table
   const columnOptionsOrders: ColumnOptions<CustomerOrder> = {
@@ -90,6 +92,21 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
     return email;
   };
 
+  // Re-resolve channel names when channels finish loading
+  watch(
+    () => accountStore.channels,
+    (channels) => {
+      if (channels.length && _channelIdMap.size) {
+        ordersList.value = ordersList.value.map((order) => ({
+          ...order,
+          channel: accountStore.getChannelNameById(
+            _channelIdMap.get(order._id) ?? '',
+          ),
+        }));
+      }
+    },
+  );
+
   // Transform orders from API format to display format
   const transformOrdersForList = (
     orders: Order[],
@@ -97,6 +114,7 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
     allCompanies?: CustomerCompany[],
     allBuyers?: CompanyBuyer[],
   ): CustomerOrder[] => {
+    orders.forEach((order) => _channelIdMap.set(order._id, order.channel));
     return orders.map((order) => ({
       _id: order._id,
       created: order.dateCreated,
