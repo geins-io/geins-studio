@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Analytics } from '@vercel/analytics/nuxt';
 import { ConfigProvider } from 'reka-ui';
 
 const useIdFunction = () => useId();
@@ -16,7 +15,6 @@ useHead({
 </script>
 
 <template>
-  <Analytics />
   <ConfigProvider :use-id="useIdFunction">
     <NuxtLoadingIndicator :color="loadingBarColor" :height="6" />
     <NuxtLayout>
