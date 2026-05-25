@@ -20,7 +20,17 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "changelog:release": "changelogen --bump --release --push",
-    "changelog:update": "changelogen --output CHANGELOG.md"
+    "changelog:update": "changelogen --output CHANGELOG.md",
+    "infra:setup": "bash infra/scripts/setup.sh",
+    "infra:setup:rg": "bash infra/scripts/setup.sh --rg-only",
+    "infra:setup:sp": "bash infra/scripts/setup.sh --sp-only",
+    "infra:setup:creds": "bash infra/scripts/setup.sh --creds-only",
+    "infra:deploy": "bash infra/scripts/deploy.sh",
+    "infra:deploy:dev": "bash infra/scripts/deploy.sh --env dev",
+    "infra:deploy:staging": "bash infra/scripts/deploy.sh --env staging",
+    "infra:deploy:prod": "bash infra/scripts/deploy.sh --env prod",
+    "infra:validate": "bash infra/scripts/validate.sh",
+    "infra:validate:build": "bash infra/scripts/validate.sh --build-only"
   },
   "dependencies": {
     "@codemirror/lang-json": "^6.0.2",
