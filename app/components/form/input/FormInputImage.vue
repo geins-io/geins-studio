@@ -58,8 +58,10 @@ function validateFile(file: File): boolean {
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const selectedFileName = ref<string | null>(null);
 const localPreviewUrl = ref<string | null>(null);
+const removedByUser = ref(false);
 
 const previewUrl = computed(() => {
+  if (removedByUser.value) return null;
   if (localPreviewUrl.value) return localPreviewUrl.value;
   if (typeof props.modelValue === 'string' && props.modelValue)
     return props.modelValue;
@@ -86,16 +88,24 @@ function openFilePicker() {
 
 function handleFile(file: File | null) {
   if (file) {
+    removedByUser.value = false;
     if (!validateFile(file)) return;
     if (localPreviewUrl.value) URL.revokeObjectURL(localPreviewUrl.value);
     selectedFileName.value = file.name;
     localPreviewUrl.value = URL.createObjectURL(file);
   } else {
+    removedByUser.value = true;
+    if (localPreviewUrl.value) URL.revokeObjectURL(localPreviewUrl.value);
     selectedFileName.value = null;
     localPreviewUrl.value = null;
     errorMessage.value = null;
   }
   emit('update:modelValue', file);
+}
+
+function removeImage(event: Event) {
+  event.stopPropagation();
+  handleFile(null);
 }
 
 function onFileChange(event: Event) {
@@ -133,6 +143,13 @@ function onImageError(event: Event) {
   handleImageError(event);
 }
 
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) removedByUser.value = false;
+  },
+);
+
 onBeforeUnmount(() => {
   if (localPreviewUrl.value) URL.revokeObjectURL(localPreviewUrl.value);
 });
@@ -166,6 +183,17 @@ onBeforeUnmount(() => {
           {{ errorMessage ?? t('image_upload_replace') }}
         </ItemDescription>
       </ItemContent>
+      <Button
+        v-if="!disabled"
+        variant="ghost"
+        size="icon"
+        class="text-muted-foreground ml-auto size-6 shrink-0"
+        :title="t('image_upload_remove')"
+        @click="removeImage"
+      >
+        <LucideX class="size-4" />
+        <span class="sr-only">{{ t('image_upload_remove') }}</span>
+      </Button>
     </template>
 
     <!-- Empty state -->

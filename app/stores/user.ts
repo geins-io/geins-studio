@@ -57,7 +57,10 @@ export const useUserStore = defineStore('user', () => {
   };
 
   const userAccounts = computed(() => {
-    return user.value?.basicAccounts || [];
+    const accounts = user.value?.basicAccounts || [];
+    return [...accounts].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+    );
   });
 
   const currentAccountName = computed(() => {

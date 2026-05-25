@@ -764,22 +764,24 @@ const summary = computed<DataItem[]>(() => {
   if (!createMode.value) {
     const channelData: Channel = entityData.value;
     if (channelData?.languages?.length) {
-      const displayValue = channelData.languages
+      const activeLanguages = channelData.languages.filter((l) => l.active);
+      const displayValue = activeLanguages
         .map(
           (l) =>
             allLanguages.value.find((al) => al._id === l._id)?.name ?? l._id,
         )
         .join(', ');
       dataList.push({
-        label: t('language', 2),
-        value: channelData.languages.map((l) => l._id),
-        displayValue,
+        label: t('language', activeLanguages.length),
+        value: activeLanguages.map((l) => l._id),
+        displayValue: displayValue || t('none'),
         displayType: DataItemDisplayType.Array,
         entityName: 'language',
       });
     }
     if (channelData?.markets?.length) {
-      const displayValue = channelData.markets
+      const activeMarkets = channelData.markets.filter((m) => m.active);
+      const displayValue = activeMarkets
         .map((m) => {
           const full = allMarkets.value.find((am) => am._id === m._id);
           return full
@@ -788,9 +790,9 @@ const summary = computed<DataItem[]>(() => {
         })
         .join(', ');
       dataList.push({
-        label: t('market', 2),
-        value: channelData.markets.map((m) => m._id),
-        displayValue,
+        label: t('market', activeMarkets.length),
+        value: activeMarkets.map((m) => m._id),
+        displayValue: displayValue || t('none'),
         displayType: DataItemDisplayType.Array,
         entityName: 'market',
       });
