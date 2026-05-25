@@ -68,7 +68,7 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
           :font-controlled="false"
           class="h-8 w-auto"
         />
-        <BrandLogoLetter v-else :font-controlled="false" class="h-8 w-auto" />
+        <BrandLogoSymbol v-else :font-controlled="false" class="h-8 w-auto" />
       </NuxtLink>
     </SidebarHeader>
 

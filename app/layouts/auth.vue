@@ -13,7 +13,7 @@ const { brandName } = useBrand();
         <div
           class="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md"
         >
-          <BrandLogoLetter class="size-4" :font-controlled="false" />
+          <BrandLogoSymbol class="size-4" :font-controlled="false" />
         </div>
         {{ brandName }}
       </div>

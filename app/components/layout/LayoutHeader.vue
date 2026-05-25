@@ -68,7 +68,7 @@ onMounted(() => {
         <BreadcrumbItem class="md:hidden">
           <BreadcrumbLink as-child>
             <NuxtLink to="/">
-              <BrandLogoLetter class="size-4" :font-controlled="false" />
+              <BrandLogoSymbol class="size-4" :font-controlled="false" />
             </NuxtLink>
           </BreadcrumbLink>
         </BreadcrumbItem>
