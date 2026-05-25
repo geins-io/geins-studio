@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import LogoLetter from '@/assets/logos/geins-g.svg';
-import Logo from '@/assets/logos/geins.svg';
 import { useSidebar } from '@/components/ui/sidebar';
 import {
   SIDEBAR_COOKIE_NAME,
@@ -65,12 +63,12 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
     <!-- Header with Logo -->
     <SidebarHeader>
       <NuxtLink to="/" class="mt-0.5 ml-2" @click="handleNavClick">
-        <Logo
+        <BrandLogoFull
           v-if="state === 'expanded' || isMobile"
           :font-controlled="false"
           class="h-8 w-auto"
         />
-        <LogoLetter v-else :font-controlled="false" class="h-8 w-auto" />
+        <BrandLogoLetter v-else :font-controlled="false" class="h-8 w-auto" />
       </NuxtLink>
     </SidebarHeader>
 

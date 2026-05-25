@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { SpeedInsights } from '@vercel/speed-insights/vue';
-import LogoLetter from '@/assets/logos/geins-g.svg';
+
+const { brandName } = useBrand();
 </script>
 
 <template>
@@ -12,9 +13,9 @@ import LogoLetter from '@/assets/logos/geins-g.svg';
         <div
           class="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md"
         >
-          <LogoLetter class="size-4" :font-controlled="false" />
+          <BrandLogoLetter class="size-4" :font-controlled="false" />
         </div>
-        Geins Studio
+        {{ brandName }}
       </div>
       <slot />
     </div>

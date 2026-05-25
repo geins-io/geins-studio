@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import LogoLetter from '@/assets/logos/geins-g.svg';
 import { useSidebar } from '@/components/ui/sidebar';
 
 const { geinsLogError } = useGeinsLog('components/../LayoutSidebarUser.vue');
@@ -81,7 +80,7 @@ const setNewAccount = async (accountKey: string) => {
           <DropdownMenuSeparator v-if="hasMultipleAccounts" />
           <DropdownMenuSub v-if="hasMultipleAccounts">
             <DropdownMenuSubTrigger class="text-xs">
-              <LogoLetter class="mr-2 size-4" :font-controlled="false" />
+              <BrandLogoLetter class="mr-2 size-4" :font-controlled="false" />
               {{ currentAccountName }}
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>

@@ -270,7 +270,7 @@
     "send_reset_link": "Send reset link",
     "forgot_password": "Forgot your password?",
     "forgot_password_description": "Use your email to receive a reset link.",
-    "new_to_geins": "New to Geins Studio? Visit {link} to learn more and to get started.",
+    "new_to_studio": "New to {brandName}? Visit {link} to learn more and to get started.",
     "logging_out": "Logging out..."
   },
   "form": {
