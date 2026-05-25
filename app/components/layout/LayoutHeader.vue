@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import LogoLetter from '@/assets/logos/geins-g.svg';
 import { useSidebar } from '@/components/ui/sidebar';
 import {
   Tooltip,
@@ -69,7 +68,7 @@ onMounted(() => {
         <BreadcrumbItem class="md:hidden">
           <BreadcrumbLink as-child>
             <NuxtLink to="/">
-              <LogoLetter class="size-4" :font-controlled="false" />
+              <BrandLogoSymbol class="size-4" :font-controlled="false" />
             </NuxtLink>
           </BreadcrumbLink>
         </BreadcrumbItem>

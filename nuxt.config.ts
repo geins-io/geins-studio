@@ -121,6 +121,7 @@ export default defineNuxtConfig({
       debug: process.env.GEINS_DEBUG === 'true',
       featureOrchestrator:
         process.env.NUXT_PUBLIC_FEATURE_ORCHESTRATOR === 'true',
+      brandOverride: process.env.NUXT_PUBLIC_BRAND_OVERRIDE || '',
     },
     private: {
       authSecret: process.env.AUTH_SECRET,

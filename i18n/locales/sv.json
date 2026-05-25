@@ -273,7 +273,7 @@
     "send_reset_link": "Skicka återställningslänk",
     "forgot_password": "Glömt ditt lösenord?",
     "forgot_password_description": "Använd din e-post för att få en återställningslänk.",
-    "new_to_geins": "Ny på Geins Studio? Besök {link} för att lära dig mer och komma igång.",
+    "new_to_studio": "Ny på {brandName}? Besök {link} för att lära dig mer och komma igång.",
     "logging_out": "Loggar ut..."
   },
   "form": {
