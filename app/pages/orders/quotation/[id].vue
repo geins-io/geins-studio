@@ -160,7 +160,6 @@ const discountRequest = computed<QuotationDiscountRequest | null>(() => {
   return { type: discountType.value, value: val };
 });
 
-const hasExpirationDate = ref(false);
 const selectedBillingAddressId = ref<string>('');
 const selectedShippingAddressId = ref<string>('');
 const billingAddress = ref<Address | null>(null);
@@ -686,9 +685,6 @@ const {
     // Resolve payment terms from validPaymentMethods
     const paymentTerms = quotation.terms || 'Net 30';
 
-    // Set expiration date toggle
-    hasExpirationDate.value = !!quotation.validTo;
-
     // Set items from API response as the source of truth
     displayItems.value = quotation.items || [];
 
@@ -726,7 +722,7 @@ const {
   },
   prepareUpdateData: (formData, _entity) => ({
     name: formData.details.name,
-    validTo: formData.details.expirationDate || undefined,
+    validTo: formData.details.expirationDate || null,
     ownerId: formData.details.ownerId || undefined,
     customerId: formData.details.buyerId || undefined,
     companyId: formData.details.accountId || undefined,
@@ -763,7 +759,7 @@ const {
       entityDataUpdate.value = {
         ...entityDataUpdate.value,
         name: values.details.name,
-        validTo: values.details.expirationDate || undefined,
+        validTo: values.details.expirationDate || null,
         ownerId: values.details.ownerId || undefined,
         customerId: values.details.buyerId || undefined,
         companyId: values.details.accountId || undefined,
@@ -921,13 +917,6 @@ watch(currentChannels, (loaded) => {
   const defaultMarketId = getDefaultMarketIdForChannel(channelId);
   if (defaultMarketId) {
     form.setFieldValue('details.marketId', defaultMarketId, false);
-  }
-});
-
-// Sync expiration date toggle with form value
-watch(hasExpirationDate, (enabled) => {
-  if (!enabled) {
-    form.setFieldValue('details.expirationDate', '');
   }
 });
 
@@ -2518,6 +2507,7 @@ definePageMeta({
                             v-bind="componentField"
                             :placeholder="$t('expiration_date')"
                             :min-value="today(getLocalTimeZone())"
+                            allow-clear
                           />
                         </FormControl>
                         <FormMessage />

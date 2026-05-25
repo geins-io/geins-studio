@@ -95,6 +95,7 @@
   "price_updated_for": "Price updated for {name} ({id})",
   "product_selection_updated": "Product selection updated",
   "clear_search": "Clear search",
+  "clear_date": "Clear date",
   "all_entity": "All @.lower:{entityName}",
   "entity_is_active": "@:{entityName} is active",
   "entity_is_inactive": "@:{entityName} is inactive",
