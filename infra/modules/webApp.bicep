@@ -180,10 +180,7 @@ resource stagingSlot 'Microsoft.Web/sites/slots@2023-12-01' = if (environment ==
 resource stagingSlotSettings 'Microsoft.Web/sites/slots/config@2023-12-01' = if (environment == 'prod') {
   parent: stagingSlot
   name: 'appsettings'
-  properties: union(
-    environment == 'prod' ? list('${webApp.id}/slots/staging/config/appsettings', '2023-12-01').properties : {}
-    , managedSettingsStaging
-  )
+  properties: union(environment == 'prod' ? list('${webApp.id}/slots/staging/config/appsettings', '2023-12-01').properties : {}, managedSettingsStaging)
 }
 
 // -----------------------------------------------------------------------------
