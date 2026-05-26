@@ -5,7 +5,9 @@ import {
   proxyRequest,
   getHeaders,
   getQuery,
+  getRequestHost,
 } from 'h3';
+import { resolveAppId } from '#shared/utils/app';
 import {
   refreshSalesPortal,
   describeFetchError,
@@ -94,10 +96,17 @@ export default defineEventHandler(async (event) => {
 
   geinsLog(fetchUrl);
 
-  const apiHeaders = {
+  const apiHeaders: Record<string, string> = {
     ...headers,
     ...(token ? { authorization: `Bearer ${token}` } : {}),
   };
+
+  if (!apiHeaders['x-app']) {
+    apiHeaders['x-app'] = resolveAppId(
+      config.public.appId as string,
+      getRequestHost(event, { xForwardedHost: true }),
+    );
+  }
 
   if (event.method === 'DELETE' && apiHeaders['content-length'] === '0') {
     delete apiHeaders['content-length'];

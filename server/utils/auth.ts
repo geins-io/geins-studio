@@ -8,10 +8,12 @@ import type {
   ApiOptions,
 } from '#shared/types';
 import { buildQueryString } from '#shared/utils/api-query';
+import { resolveAppId } from '#shared/utils/app';
 import type { JWT } from 'next-auth/jwt';
 
 const config = useRuntimeConfig();
 const API_URL = config.public.apiUrl;
+const APP_ID = resolveAppId(config.public.appId as string);
 const { geinsLog } = log('server/utils/auth.ts');
 
 const ENDPOINTS = {
@@ -46,7 +48,7 @@ export const auth = () => {
   ): Promise<T> => {
     const headers: HeadersInit = {
       'content-type': 'application/json',
-      ...(config.public.appId ? { 'x-app': config.public.appId } : {}),
+      'x-app': APP_ID,
     };
     if (token) {
       headers['authorization'] = `Bearer ${token}`;
