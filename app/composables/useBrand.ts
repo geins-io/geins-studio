@@ -34,6 +34,7 @@ interface UseBrandReturnType {
   brandId: ComputedRef<BrandId>;
   brandName: ComputedRef<string>;
   appId: ComputedRef<string>;
+  favicon: ComputedRef<string>;
 }
 
 const _brandId = ref<BrandId | null>(null);
@@ -78,6 +79,7 @@ export const useBrand = (): UseBrandReturnType => {
   const brand = computed(() => brands[_brandId.value!]);
   const brandName = computed(() => brand.value.name);
   const appId = computed(() => _appId.value!);
+  const favicon = computed(() => `/favicon-${appId.value}.svg`);
 
-  return { brand, brandId, brandName, appId };
+  return { brand, brandId, brandName, appId, favicon };
 };
