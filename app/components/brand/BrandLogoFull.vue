@@ -2,10 +2,14 @@
 import GeinsLogo from '@/assets/logos/geins.svg';
 import LitiumLogo from '@/assets/logos/litium.svg';
 
-const { isLitium } = useBrand();
+const logoMap = { geins: GeinsLogo, litium: LitiumLogo } as const;
+const { brand, brandId } = useBrand();
 </script>
 
 <template>
-  <LitiumLogo v-if="isLitium" v-bind="$attrs" style="max-width: 86px" />
-  <GeinsLogo v-else v-bind="$attrs" />
+  <component
+    :is="logoMap[brandId]"
+    v-bind="$attrs"
+    :style="brand.logoFullMaxWidth ? { maxWidth: brand.logoFullMaxWidth } : undefined"
+  />
 </template>

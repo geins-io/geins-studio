@@ -6,16 +6,12 @@ const useIdFunction = () => useId();
 const loadingBarColor =
   'repeating-linear-gradient(90deg, #ffadad 0%, #ffd6a5 12.5%, #fdffb6 25%, #caffbf 37.5%, #9bf6ff 50%, #a0c4ff 62.5%, #bdb2ff 75%, #ffc6ff 87.5%, #ffadad 100%)';
 
-const { brandName, isLitium } = useBrand();
-
-const favicon = computed(() =>
-  isLitium.value ? '/favicon-litium.svg' : '/favicon-geins.svg',
-);
+const { brand, brandName } = useBrand();
 
 useHead({
   titleTemplate: (title) =>
     title ? `${title} - ${brandName.value}` : brandName.value,
-  link: [{ rel: 'icon', type: 'image/svg+xml', href: favicon }],
+  link: [{ rel: 'icon', type: 'image/svg+xml', href: () => brand.value.favicon }],
 });
 </script>
 

@@ -2,10 +2,10 @@
 import GeinsSymbol from '@/assets/logos/geins-symbol.svg';
 import LitiumSymbol from '@/assets/logos/litium-symbol.svg';
 
-const { isLitium } = useBrand();
+const logoMap = { geins: GeinsSymbol, litium: LitiumSymbol } as const;
+const { brandId } = useBrand();
 </script>
 
 <template>
-  <LitiumSymbol v-if="isLitium" v-bind="$attrs" />
-  <GeinsSymbol v-else v-bind="$attrs" />
+  <component :is="logoMap[brandId]" v-bind="$attrs" />
 </template>

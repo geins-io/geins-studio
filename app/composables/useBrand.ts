@@ -1,9 +1,38 @@
 type BrandId = 'geins' | 'litium';
 
+interface BrandConfig {
+  id: BrandId;
+  name: string;
+  website: { url: string; label: string };
+  favicon: string;
+  hostnames: string[];
+  logoFullMaxWidth?: string;
+}
+
+const brands: Record<BrandId, BrandConfig> = {
+  geins: {
+    id: 'geins',
+    name: 'Geins Studio',
+    website: { url: 'https://www.geins.io', label: 'geins.io' },
+    favicon: '/favicon-geins.svg',
+    hostnames: ['geins.studio'],
+  },
+  litium: {
+    id: 'litium',
+    name: 'Litium Studio',
+    website: { url: 'https://www.litium.com', label: 'litium.com' },
+    favicon: '/favicon-litium.svg',
+    hostnames: ['litium.studio'],
+    logoFullMaxWidth: '86px',
+  },
+};
+
+const DEFAULT_BRAND: BrandId = 'geins';
+
 interface UseBrandReturnType {
+  brand: ComputedRef<BrandConfig>;
   brandId: ComputedRef<BrandId>;
   brandName: ComputedRef<string>;
-  isLitium: ComputedRef<boolean>;
 }
 
 const _brandId = ref<BrandId | null>(null);
@@ -11,17 +40,18 @@ const _brandId = ref<BrandId | null>(null);
 function detectBrand(): BrandId {
   const config = useRuntimeConfig();
   const override = config.public.brandOverride as string;
-  if (override === 'litium') return 'litium';
-  if (override === 'geins') return 'geins';
+  if (override in brands) return override as BrandId;
 
   if (import.meta.client) {
     const hostname = window.location.hostname;
-    if (hostname === 'litium.studio' || hostname.endsWith('.litium.studio')) {
-      return 'litium';
+    for (const [id, cfg] of Object.entries(brands)) {
+      if (cfg.hostnames.some((h) => hostname === h || hostname.endsWith(`.${h}`))) {
+        return id as BrandId;
+      }
     }
   }
 
-  return 'geins';
+  return DEFAULT_BRAND;
 }
 
 export const useBrand = (): UseBrandReturnType => {
@@ -30,10 +60,8 @@ export const useBrand = (): UseBrandReturnType => {
   }
 
   const brandId = computed(() => _brandId.value!);
-  const brandName = computed(() =>
-    _brandId.value === 'litium' ? 'Litium Studio' : 'Geins Studio',
-  );
-  const isLitium = computed(() => _brandId.value === 'litium');
+  const brand = computed(() => brands[_brandId.value!]);
+  const brandName = computed(() => brand.value.name);
 
-  return { brandId, brandName, isLitium };
+  return { brand, brandId, brandName };
 };
