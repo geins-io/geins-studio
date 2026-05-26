@@ -1,4 +1,5 @@
 import type { GeinsApiError, GeinsApiFetch, Session } from '#shared/types';
+import { resolveAppId } from '#shared/utils/app';
 /**
  * Nuxt plugin for handling Geins API requests.
  *
@@ -26,6 +27,10 @@ export default defineNuxtPlugin(() => {
     isExpired,
     expiresSoon,
   } = useGeinsAuth();
+  const appId = resolveAppId(
+    useRuntimeConfig().public.appId as string,
+    window.location.hostname,
+  );
 
   // Create a WeakMap to store refresh promises per user session
   // This prevents shared state between different users
@@ -113,6 +118,7 @@ export default defineNuxtPlugin(() => {
         if (accountKey.value) {
           options.headers.set('x-account-key', accountKey.value);
         }
+        options.headers.set('x-app', appId);
       } catch (error) {
         const errorMessage = getErrorMessage(error);
         geinsLogError('error during request setup', errorMessage);
