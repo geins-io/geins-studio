@@ -46,6 +46,7 @@ export const auth = () => {
   ): Promise<T> => {
     const headers: HeadersInit = {
       'content-type': 'application/json',
+      ...(config.public.appId ? { 'x-app': config.public.appId } : {}),
     };
     if (token) {
       headers['authorization'] = `Bearer ${token}`;

@@ -26,6 +26,7 @@ export default defineNuxtPlugin(() => {
     isExpired,
     expiresSoon,
   } = useGeinsAuth();
+  const appId = useRuntimeConfig().public.appId as string;
 
   // Create a WeakMap to store refresh promises per user session
   // This prevents shared state between different users
@@ -112,6 +113,10 @@ export default defineNuxtPlugin(() => {
         // Add the account key to the request
         if (accountKey.value) {
           options.headers.set('x-account-key', accountKey.value);
+        }
+        // Add the app identifier to the request
+        if (appId) {
+          options.headers.set('x-app', appId);
         }
       } catch (error) {
         const errorMessage = getErrorMessage(error);
