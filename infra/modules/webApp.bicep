@@ -63,6 +63,9 @@ param salesPortalWebhookSecret string = ''
 @description('Log level')
 param logLevel string
 
+@description('Enable orchestrator feature flag')
+param featureOrchestrator string = 'true'
+
 // Monitoring settings
 @description('Application Insights connection string')
 param appInsightsConnectionString string = ''
@@ -153,8 +156,16 @@ var appSettings = [
     value: salesPortalWebhookSecret
   }
   {
+    name: 'NUXT_PRIVATE_SALES_PORTAL_WEBHOOK_SECRET'
+    value: salesPortalWebhookSecret
+  }
+  {
     name: 'LOG_LEVEL'
     value: logLevel
+  }
+  {
+    name: 'NUXT_PUBLIC_FEATURE_ORCHESTRATOR'
+    value: featureOrchestrator
   }
   // Application Insights Configuration
   {
@@ -240,6 +251,10 @@ var stagingAppSettings = [
   }
   {
     name: 'SALES_PORTAL_WEBHOOK_SECRET'
+    value: salesPortalWebhookSecret
+  }
+  {
+    name: 'NUXT_PRIVATE_SALES_PORTAL_WEBHOOK_SECRET'
     value: salesPortalWebhookSecret
   }
   {
