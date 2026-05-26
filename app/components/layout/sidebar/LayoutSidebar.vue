@@ -62,7 +62,12 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
   <Sidebar collapsible="icon" class="overflow-hidden border-r">
     <!-- Header with Logo -->
     <SidebarHeader>
-      <NuxtLink to="/" class="mt-0.5 ml-2" @click="handleNavClick">
+      <NuxtLink
+        to="/"
+        class="mt-0.5"
+        :class="state === 'expanded' || isMobile ? 'ml-2' : 'mx-auto'"
+        @click="handleNavClick"
+      >
         <BrandLogoFull
           v-if="state === 'expanded' || isMobile"
           :font-controlled="false"

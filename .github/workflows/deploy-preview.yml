@@ -89,7 +89,9 @@ jobs:
             baseUrl=${{ vars.BASE_URL }}
             authPath=${{ vars.AUTH_PATH }}
             geinsDebug=true
+            salesPortalWebhookSecret=${{ secrets.SALES_PORTAL_WEBHOOK_SECRET }}
             logLevel=debug
+            featureOrchestrator=${{ vars.FEATURE_ORCHESTRATOR || 'true' }}
           deploymentName: deploy-dev-${{ github.sha }}
 
       - name: Print preview URL

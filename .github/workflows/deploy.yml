@@ -87,6 +87,7 @@ jobs:
             geinsDebug=${{ vars.GEINS_DEBUG || 'false' }}
             salesPortalWebhookSecret=${{ secrets.SALES_PORTAL_WEBHOOK_SECRET }}
             logLevel=${{ vars.LOG_LEVEL || 'warn' }}
+            featureOrchestrator=${{ vars.FEATURE_ORCHESTRATOR || 'true' }}
           deploymentName: deploy-${{ github.sha }}
 
   swap:
