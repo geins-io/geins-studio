@@ -1,14 +1,24 @@
 <script setup lang="ts">
-import GeinsLogo from '@/assets/logos/geins.svg';
-import LitiumLogo from '@/assets/logos/litium.svg';
+import type { Component } from 'vue';
 
-const logoMap = { geins: GeinsLogo, litium: LitiumLogo } as const;
-const { brand, brandId } = useBrand();
+const modules = import.meta.glob<{ default: Component }>(
+  '@/assets/logos/*-logo.svg',
+  { eager: true },
+);
+
+const logoMap: Record<string, Component> = {};
+for (const [path, mod] of Object.entries(modules)) {
+  const name = path.match(/\/([^/]+)-logo\.svg$/)?.[1];
+  if (name) logoMap[name] = mod.default;
+}
+
+const { appId, brand } = useBrand();
+const logo = computed(() => logoMap[appId.value] ?? logoMap['geins']);
 </script>
 
 <template>
   <component
-    :is="logoMap[brandId]"
+    :is="logo"
     v-bind="$attrs"
     :style="brand.logoFullMaxWidth ? { maxWidth: brand.logoFullMaxWidth } : undefined"
   />

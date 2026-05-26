@@ -122,7 +122,6 @@ export default defineNuxtConfig({
       appId: process.env.NUXT_PUBLIC_APP_ID || '',
       featureOrchestrator:
         process.env.NUXT_PUBLIC_FEATURE_ORCHESTRATOR === 'true',
-      brandOverride: process.env.NUXT_PUBLIC_BRAND_OVERRIDE || '',
     },
     private: {
       authSecret: process.env.AUTH_SECRET,

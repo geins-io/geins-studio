@@ -33,35 +33,51 @@ interface UseBrandReturnType {
   brand: ComputedRef<BrandConfig>;
   brandId: ComputedRef<BrandId>;
   brandName: ComputedRef<string>;
+  appId: ComputedRef<string>;
 }
 
 const _brandId = ref<BrandId | null>(null);
+const _appId = ref<string | null>(null);
 
-function detectBrand(): BrandId {
+function detectBrand(): { brandId: BrandId; appId: string } {
   const config = useRuntimeConfig();
-  const override = config.public.brandOverride as string;
-  if (override in brands) return override as BrandId;
+  const override = config.public.appId as string;
 
+  if (override) {
+    const brandId =
+      override in brands ? (override as BrandId) : detectBrandFromHostname();
+    return { brandId, appId: override };
+  }
+
+  const brandId = detectBrandFromHostname();
+  return { brandId, appId: brandId };
+}
+
+function detectBrandFromHostname(): BrandId {
   if (import.meta.client) {
     const hostname = window.location.hostname;
     for (const [id, cfg] of Object.entries(brands)) {
-      if (cfg.hostnames.some((h) => hostname === h || hostname.endsWith(`.${h}`))) {
+      if (
+        cfg.hostnames.some((h) => hostname === h || hostname.endsWith(`.${h}`))
+      ) {
         return id as BrandId;
       }
     }
   }
-
   return DEFAULT_BRAND;
 }
 
 export const useBrand = (): UseBrandReturnType => {
   if (_brandId.value === null) {
-    _brandId.value = detectBrand();
+    const detected = detectBrand();
+    _brandId.value = detected.brandId;
+    _appId.value = detected.appId;
   }
 
   const brandId = computed(() => _brandId.value!);
   const brand = computed(() => brands[_brandId.value!]);
   const brandName = computed(() => brand.value.name);
+  const appId = computed(() => _appId.value!);
 
-  return { brand, brandId, brandName };
+  return { brand, brandId, brandName, appId };
 };
