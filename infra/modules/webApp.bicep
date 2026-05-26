@@ -3,6 +3,9 @@
 // =============================================================================
 // Creates a Linux Web App configured for container deployment from GHCR.
 // Includes managed identity, health checks, and application settings.
+//
+// App settings use a merge strategy: Bicep-managed settings always win,
+// but manually-added settings in the Azure portal are preserved.
 // =============================================================================
 
 // -----------------------------------------------------------------------------
@@ -71,11 +74,45 @@ param appInsightsInstrumentationKey string = ''
 // Variables
 // -----------------------------------------------------------------------------
 
-// Container registry server
 var registryServer = 'ghcr.io'
 
-// Node environment based on deployment environment
 var nodeEnv = environment == 'prod' ? 'production' : environment == 'staging' ? 'production' : 'development'
+
+// Bicep-managed app settings (object form for union/merge)
+var managedSettings = {
+  // Container Registry
+  DOCKER_REGISTRY_SERVER_URL: 'https://${registryServer}'
+  DOCKER_REGISTRY_SERVER_USERNAME: ghcrUsername
+  DOCKER_REGISTRY_SERVER_PASSWORD: ghcrToken
+  // Azure Web App
+  WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'false'
+  WEBSITES_PORT: '3000'
+  WEBSITES_CONTAINER_START_TIME_LIMIT: '600'
+  // Nitro/Nuxt server binding
+  NITRO_HOST: '0.0.0.0'
+  NITRO_PORT: '3000'
+  NODE_ENV: nodeEnv
+  // Nuxt runtime config overrides
+  GEINS_API_URL: geinsApiUrl
+  NUXT_PUBLIC_API_URL: geinsApiUrl
+  NUXT_PRIVATE_AUTH_SECRET: authSecret
+  BASE_URL: baseUrl
+  AUTH_ORIGIN: baseUrl
+  AUTH_PATH: authPath
+  GEINS_DEBUG: geinsDebug
+  SALES_PORTAL_WEBHOOK_SECRET: salesPortalWebhookSecret
+  LOG_LEVEL: logLevel
+  // Application Insights
+  APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsConnectionString
+  APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsInstrumentationKey
+  ApplicationInsightsAgent_EXTENSION_VERSION: '~0'
+}
+
+// Staging slot overrides (NODE_ENV and GEINS_DEBUG are always production/false)
+var managedSettingsStaging = union(managedSettings, {
+  NODE_ENV: 'production'
+  GEINS_DEBUG: 'false'
+})
 
 // -----------------------------------------------------------------------------
 // Resources
@@ -95,110 +132,23 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     clientAffinityEnabled: false
     siteConfig: {
       linuxFxVersion: 'DOCKER|${containerImage}'
-      alwaysOn: environment != 'dev' // Always On for staging and prod
+      alwaysOn: environment != 'dev'
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       http20Enabled: true
       healthCheckPath: '/api/health'
-      appSettings: [
-        // Container Registry Configuration
-        {
-          name: 'DOCKER_REGISTRY_SERVER_URL'
-          value: 'https://${registryServer}'
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_USERNAME'
-          value: ghcrUsername
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
-          value: ghcrToken
-        }
-        // Application Settings
-        {
-          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
-          value: 'false'
-        }
-        {
-          name: 'WEBSITES_PORT'
-          value: '3000'
-        }
-        // Container startup timeout (in seconds) - B1 tier requires longer startup time
-        {
-          name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'
-          value: '600'
-        }
-        // Nitro/Nuxt server binding - must bind to 0.0.0.0 for Azure
-        {
-          name: 'NITRO_HOST'
-          value: '0.0.0.0'
-        }
-        {
-          name: 'NITRO_PORT'
-          value: '3000'
-        }
-        {
-          name: 'NODE_ENV'
-          value: nodeEnv
-        }
-        // ─────────────────────────────────────────────────────────────────────
-        // NUXT RUNTIME CONFIG OVERRIDES
-        // These MUST use NUXT_ prefix for Nuxt to pick them up at runtime.
-        // See: nuxt.config.ts runtimeConfig section for the full mapping.
-        // ─────────────────────────────────────────────────────────────────────
-        {
-          name: 'GEINS_API_URL'
-          value: geinsApiUrl
-        }
-        {
-          name: 'NUXT_PUBLIC_API_URL'
-          value: geinsApiUrl
-        }
-        {
-          name: 'NUXT_PRIVATE_AUTH_SECRET'
-          value: authSecret
-        }
-        {
-          name: 'BASE_URL'
-          value: baseUrl
-        }
-        {
-          name: 'AUTH_ORIGIN'
-          value: baseUrl
-        }
-        {
-          name: 'AUTH_PATH'
-          value: authPath
-        }
-        {
-          name: 'GEINS_DEBUG'
-          value: geinsDebug
-        }
-        {
-          name: 'SALES_PORTAL_WEBHOOK_SECRET'
-          value: salesPortalWebhookSecret
-        }
-        {
-          name: 'LOG_LEVEL'
-          value: logLevel
-        }
-        // Application Insights Configuration
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsightsConnectionString
-        }
-        {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsInstrumentationKey
-        }
-        // Disable the auto-instrumentation agent for Linux containers - it can interfere with Node.js startup
-        {
-          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
-          value: '~0'
-        }
-      ]
     }
   }
+}
+
+// Merge existing app settings with Bicep-managed ones (preserves portal-set vars)
+resource appSettings 'Microsoft.Web/sites/config@2023-12-01' = {
+  parent: webApp
+  name: 'appsettings'
+  properties: union(
+    list('${webApp.id}/config/appsettings', '2023-12-01').properties,
+    managedSettings
+  )
 }
 
 // Staging slot for prod environment (blue-green deployment)
@@ -222,94 +172,18 @@ resource stagingSlot 'Microsoft.Web/sites/slots@2023-12-01' = if (environment ==
       minTlsVersion: '1.2'
       http20Enabled: true
       healthCheckPath: '/api/health'
-      appSettings: [
-        {
-          name: 'DOCKER_REGISTRY_SERVER_URL'
-          value: 'https://${registryServer}'
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_USERNAME'
-          value: ghcrUsername
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
-          value: ghcrToken
-        }
-        {
-          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
-          value: 'false'
-        }
-        {
-          name: 'WEBSITES_PORT'
-          value: '3000'
-        }
-        {
-          name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'
-          value: '600'
-        }
-        {
-          name: 'NITRO_HOST'
-          value: '0.0.0.0'
-        }
-        {
-          name: 'NITRO_PORT'
-          value: '3000'
-        }
-        {
-          name: 'NODE_ENV'
-          value: 'production'
-        }
-        {
-          name: 'GEINS_API_URL'
-          value: geinsApiUrl
-        }
-        {
-          name: 'NUXT_PUBLIC_API_URL'
-          value: geinsApiUrl
-        }
-        {
-          name: 'NUXT_PRIVATE_AUTH_SECRET'
-          value: authSecret
-        }
-        {
-          name: 'BASE_URL'
-          value: baseUrl
-        }
-        {
-          name: 'AUTH_ORIGIN'
-          value: baseUrl
-        }
-        {
-          name: 'AUTH_PATH'
-          value: authPath
-        }
-        {
-          name: 'GEINS_DEBUG'
-          value: 'false'
-        }
-        {
-          name: 'SALES_PORTAL_WEBHOOK_SECRET'
-          value: salesPortalWebhookSecret
-        }
-        {
-          name: 'LOG_LEVEL'
-          value: logLevel
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsightsConnectionString
-        }
-        {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsInstrumentationKey
-        }
-        {
-          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
-          value: '~0'
-        }
-      ]
     }
   }
+}
+
+// Merge existing staging slot settings with Bicep-managed ones
+resource stagingSlotSettings 'Microsoft.Web/sites/slots/config@2023-12-01' = if (environment == 'prod') {
+  parent: stagingSlot
+  name: 'appsettings'
+  properties: union(
+    environment == 'prod' ? list('${webApp.id}/slots/staging/config/appsettings', '2023-12-01').properties : {}
+    , managedSettingsStaging
+  )
 }
 
 // -----------------------------------------------------------------------------
