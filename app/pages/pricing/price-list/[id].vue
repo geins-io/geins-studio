@@ -65,6 +65,7 @@ const formSchema = toTypedSchema(
       currency: z
         .string()
         .min(1, t('entity_required', { entityName: 'currency' })),
+      identifier: z.string().optional(),
       forced: z.boolean().optional(),
       autoAddProducts: z.boolean().optional(),
     }),
@@ -253,6 +254,7 @@ const {
     },
     default: {
       name: entityData.name || '',
+      identifier: entityData.identifier || '',
       channel: entityData.channel || '',
       currency: entityData.currency || '',
       forced: entityData.forced,
@@ -301,6 +303,7 @@ const {
       },
       default: {
         name: entity.name || '',
+        identifier: entity.identifier || '',
         channel: entity.channel || '',
         currency: entity.currency || '',
         forced: entity.forced,
@@ -576,6 +579,12 @@ const summary = computed<DataItem[]>(() => {
       value: entityData.value.name,
     });
   }
+
+  dataList.push({
+    label: t('entity_identifier', { entityName }),
+    value: entityData.value?.identifier || '–',
+    displayType: entityData.value?.identifier ? DataItemDisplayType.Copy : undefined,
+  });
 
   if (entityData.value?.channel) {
     const channelId = entityData.value.channel;
@@ -894,7 +903,7 @@ if (!createMode.value) {
               @previous="previousStep"
             >
               <FormGridWrap>
-                <FormGrid design="1+1+1">
+                <FormGrid design="1+1">
                   <FormField v-slot="{ componentField }" name="default.name">
                     <FormItem>
                       <FormLabel>{{
@@ -906,6 +915,27 @@ if (!createMode.value) {
                       <FormMessage />
                     </FormItem>
                   </FormField>
+                  <FormField
+                    v-slot="{ componentField }"
+                    name="default.identifier"
+                  >
+                    <FormItem>
+                      <FormLabel>{{ $t('entity_identifier', { entityName }) }}</FormLabel>
+                      <FormControl>
+                        <Input
+                          v-bind="componentField"
+                          type="text"
+                          :disabled="!createMode"
+                        />
+                      </FormControl>
+                      <FormDescription v-if="createMode">
+                        {{ $t('form.cannot_be_changed') }}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  </FormField>
+                </FormGrid>
+                <FormGrid design="1+1">
                   <FormField v-slot="{ componentField }" name="default.channel">
                     <FormItem>
                       <FormLabel>

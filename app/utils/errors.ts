@@ -76,6 +76,37 @@ export function getFallbackErrorMessage(
   return serverMessage || statusMessages[status] || 'Unknown error';
 }
 
+export function getApiErrorTitle(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const err = error as Record<string, unknown>;
+
+  // GeinsApiError shape: error.originalError.data.title
+  const orig = err.originalError;
+  if (orig && typeof orig === 'object') {
+    const data = (orig as Record<string, unknown>).data;
+    if (data && typeof data === 'object' && 'title' in data) {
+      const title = (data as Record<string, unknown>).title;
+      if (typeof title === 'string') return title;
+    }
+  }
+
+  // FetchError shape: error.data.title or error.data.data.title
+  const outer = err.data;
+  if (outer && typeof outer === 'object') {
+    if ('title' in outer) {
+      const title = (outer as Record<string, unknown>).title;
+      if (typeof title === 'string') return title;
+    }
+    const inner = (outer as Record<string, unknown>).data;
+    if (inner && typeof inner === 'object' && 'title' in inner) {
+      const title = (inner as Record<string, unknown>).title;
+      if (typeof title === 'string') return title;
+    }
+  }
+
+  return undefined;
+}
+
 export function getErrorType(status: number): GeinsErrorType {
   if (status === 401) return 'AUTH_ERROR';
   if (status === 403) return 'PERMISSION_ERROR';
