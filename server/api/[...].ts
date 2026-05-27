@@ -140,7 +140,10 @@ export default defineEventHandler(async (event) => {
   let body;
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
     body = await readBody(event);
-    geinsLogInfo(`${event.method} ${fetchUrl} body:`, body);
+    geinsLogInfo(
+      `${event.method} ${fetchUrl} body:`,
+      JSON.stringify(body, null, 2),
+    );
   }
 
   try {

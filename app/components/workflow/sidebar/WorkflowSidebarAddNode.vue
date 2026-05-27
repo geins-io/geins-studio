@@ -757,7 +757,7 @@ function onSearchInput(value: string) {
                           class="h-4 w-4 shrink-0"
                           :class="viewItem.color"
                         />
-                        <span class="min-w-0 flex-1 truncate text-sm">{{ viewItem.item.label }}</span>
+                        <span class="min-w-0 flex-1 truncate text-left text-sm">{{ viewItem.item.label }}</span>
                       </button>
                       <!-- Template management buttons -->
                       <div

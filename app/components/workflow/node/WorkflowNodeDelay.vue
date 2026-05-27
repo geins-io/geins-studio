@@ -7,6 +7,7 @@ const props = defineProps<{
     icon: string
     description: string
     config: Record<string, any>
+    input: Record<string, any>
   }
   selected?: boolean
 }>()
@@ -15,11 +16,38 @@ const { resolveIcon } = useLucideIcon()
 
 const IconComponent = computed(() => resolveIcon(props.data.icon) || resolveIcon('Timer'))
 
-const durationDisplay = computed(() => {
-  if (!props.data.config?.duration) return null
-  const unit = props.data.config.unit || 'seconds'
-  return `${props.data.config.duration} ${unit}`
+const UNIT_LABELS: Record<string, [string, string]> = {
+  S: ['second', 'seconds'],
+  M: ['minute', 'minutes'],
+  H: ['hour', 'hours'],
+}
+
+const summary = computed(() => {
+  const input = props.data.input ?? {}
+
+  if (input.waitUntil) {
+    const val = String(input.waitUntil)
+    if (val.includes('{{')) return val
+    return val.length > 24 ? val.slice(0, 24) + '…' : val
+  }
+
+  const iso = input.duration ?? props.data.config?.duration
+  if (!iso) return null
+  const match = String(iso).match(/^PT?(\d+)(S|M|H)$/i)
+  if (match && match[1] && match[2]) {
+    const amount = Number(match[1])
+    const [singular, plural] = UNIT_LABELS[match[2].toUpperCase()] ?? ['unit', 'units']
+    return `${amount} ${amount === 1 ? singular : plural}`
+  }
+  return String(iso)
 })
+
+const summaryIcon = computed(() => {
+  const input = props.data.input ?? {}
+  return input.waitUntil ? 'calendar-clock' : 'timer'
+})
+
+const SummaryIcon = computed(() => resolveIcon(summaryIcon.value))
 </script>
 
 <template>
@@ -40,9 +68,10 @@ const durationDisplay = computed(() => {
       </div>
     </div>
 
-    <!-- Delay config preview -->
-    <div v-if="durationDisplay" class="text-muted-foreground bg-muted/50 mt-2 rounded px-2 py-1 text-xs">
-      Wait: {{ durationDisplay }}
+    <!-- Delay config summary -->
+    <div v-if="summary" class="text-muted-foreground bg-muted/50 mt-2 flex items-center gap-1.5 truncate rounded px-2 py-1 text-xs">
+      <component :is="SummaryIcon" v-if="SummaryIcon" class="h-3 w-3 shrink-0" />
+      {{ summary }}
     </div>
     
     <!-- Output handle -->
