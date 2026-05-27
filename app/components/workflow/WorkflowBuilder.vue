@@ -203,8 +203,57 @@ watch(
   { deep: true },
 )
 
+const manifestStore = useWorkflowManifest()
+
+function getNodeOutputFields(nodeId: string): Array<{ name: string, type: string }> {
+  const n = findNode(nodeId)
+  if (!n) return []
+  const data = (n.data ?? {}) as Record<string, unknown>
+  const actionName = data.actionName as string | undefined
+  const action = manifestStore.getAction(actionName)
+  const nodeTypeDef = manifestStore.getNodeType(n.type as string)
+  if (actionName === 'transform.map' || actionName === 'transform.compose') {
+    const input = (data.input ?? {}) as Record<string, unknown>
+    return Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: 'any' }))
+  }
+  return (action?.output ?? nodeTypeDef?.output ?? []) as Array<{ name: string, type: string }>
+}
+
+function autoBindInputs(sourceId: string, targetId: string) {
+  const target = findNode(targetId)
+  if (!target) return
+  const data = (target.data ?? {}) as Record<string, unknown>
+  const existingInput = (data.input ?? {}) as Record<string, unknown>
+  const hasSettings = Object.keys(existingInput).some(k => !k.startsWith('_') && existingInput[k] != null)
+  if (hasSettings) return
+
+  const action = manifestStore.getAction(data.actionName as string | undefined)
+  const inputFields = action?.input ?? []
+  if (!inputFields.length) return
+
+  const outputFields = getNodeOutputFields(sourceId)
+  if (!outputFields.length) return
+
+  const outputNames = new Set(outputFields.map(f => f.name.toLowerCase()))
+  const bindings: Record<string, string> = {}
+  for (const field of inputFields) {
+    if (outputNames.has(field.name.toLowerCase())) {
+      const match = outputFields.find(o => o.name.toLowerCase() === field.name.toLowerCase())!
+      bindings[field.name] = `{{output.${sourceId}.${match.name}}}`
+    }
+  }
+
+  if (Object.keys(bindings).length) {
+    if (!data.input) data.input = {}
+    Object.assign(data.input as Record<string, unknown>, bindings)
+  }
+}
+
 onConnect((params) => {
   addEdges([{ ...params, animated: false }])
+  if (params.source && params.target) {
+    autoBindInputs(params.source, params.target)
+  }
 })
 
 // `canvasReady` flips to true after VueFlow has settled its initial layout
@@ -503,6 +552,7 @@ const handleAddFromPalette = (item: PaletteItem) => {
         animated: false,
       },
     ])
+    autoBindInputs(edgeInsert.sourceId, newNode.id)
     pendingEdgeInsert.value = null
     pendingConnection.value = null
   }
@@ -514,6 +564,7 @@ const handleAddFromPalette = (item: PaletteItem) => {
       target: newNode.id,
       animated: false,
     }])
+    autoBindInputs(pending.sourceId, newNode.id)
     pendingConnection.value = null
   }
 

@@ -118,6 +118,7 @@ async function initBlockly() {
         minScale: 0.3,
         scaleSpeed: 1.2,
       },
+      sounds: false,
       trashcan: true,
       move: {
         scrollbars: true,
