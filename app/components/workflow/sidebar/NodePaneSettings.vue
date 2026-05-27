@@ -103,6 +103,16 @@ const isTextarea = (field: { editorHint?: string, type: string }): boolean =>
   || field.type.toLowerCase() === 'object'
   || field.type.toLowerCase() === 'json'
 
+const typeBadgeClass = (type: string): string => {
+  const t = type.toLowerCase()
+  if (t === 'string') return 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+  if (t === 'number' || t === 'integer' || t === 'int') return 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+  if (t === 'boolean' || t === 'bool') return 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+  if (t === 'array') return 'bg-teal-500/10 text-teal-600 dark:text-teal-400'
+  if (t === 'object' || t === 'json') return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+  return 'bg-muted text-muted-foreground'
+}
+
 const activeTab = ref<'settings' | 'schema' | 'expressions' | 'variables'>('settings')
 const schemaSubTab = ref<'input' | 'output'>('input')
 
@@ -383,7 +393,10 @@ const onSettingsDrop = (event: DragEvent) => {
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
                     <span class="text-sm font-medium">{{ field.name }}</span>
-                    <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">{{ field.type }}</span>
+                    <span
+                      class="rounded px-1.5 py-0.5 font-mono text-[10px] font-medium"
+                      :class="typeBadgeClass(field.type)"
+                    >{{ field.type }}</span>
                   </div>
                   <p v-if="field.description" class="text-muted-foreground mt-0.5 text-xs">{{ field.description }}</p>
                 </div>
