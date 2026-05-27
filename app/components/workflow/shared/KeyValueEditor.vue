@@ -262,7 +262,7 @@ onUnmounted(() => {
     <!-- JSON mode -->
     <div
       v-else
-      class="relative overflow-hidden rounded-lg transition-colors duration-200"
+      class="relative flex flex-col overflow-hidden rounded-lg transition-colors duration-200"
       :class="[
         jsonError ? 'border-2 border-amber-500/60' : 'border',
         inline ? 'h-72' : 'min-h-0 flex-1',

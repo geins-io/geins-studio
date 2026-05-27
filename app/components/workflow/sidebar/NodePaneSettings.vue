@@ -241,7 +241,7 @@ const onSettingsDrop = (event: DragEvent) => {
 
 <template>
   <div
-    class="flex min-w-0 flex-1 flex-col"
+    class="flex min-h-0 min-w-0 flex-1 flex-col"
     @dragover="onSettingsDragOver"
     @dragleave="onSettingsDragLeave"
     @drop="onSettingsDrop"
@@ -294,7 +294,7 @@ const onSettingsDrop = (event: DragEvent) => {
     </div>
 
     <!-- Settings tab -->
-    <div v-show="activeTab === 'settings'" class="relative flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
+    <div v-show="activeTab === 'settings'" class="relative min-h-0 flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
       <!-- Per-node-type settings component -->
       <component
         :is="settingsComponent"
