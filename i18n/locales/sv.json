@@ -46,6 +46,7 @@
   "new_entity_url_alias": "ny",
   "list_entity_url_alias": "lista",
   "entity_id": "@:{entityName}-ID",
+  "entity_identifier": "@:{entityName}-identifierare",
   "new_entity": "Skapa @.lower:{entityName}",
   "edit_entity": "Redigera @.lower:{entityName}",
   "save_entity": "Spara @.lower:{entityName}",
