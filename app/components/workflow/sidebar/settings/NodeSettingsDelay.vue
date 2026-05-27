@@ -65,7 +65,7 @@ const updateDuration = (amount: number, unit: UnitValue) => {
 }
 
 const waitUntil = computed(() => String(props.nodeInput.waitUntil ?? ''))
-const reason = computed(() => String(props.nodeConfig.reason ?? ''))
+const reason = computed(() => String(props.nodeInput.reason ?? ''))
 
 const isExpression = (val: string) => /\{\{.+\}\}/.test(val)
 const ISO_DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(.\d+)?(Z|[+-]\d{2}:\d{2})?$/
@@ -184,7 +184,7 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
       <Input
         :model-value="reason"
         placeholder="e.g. Wait for batch window"
-        @update:model-value="updateConfig('reason', $event || undefined)"
+        @update:model-value="updateInput('reason', $event || undefined)"
       />
       <p class="text-muted-foreground text-xs">
         Optional note logged with the delay for debugging

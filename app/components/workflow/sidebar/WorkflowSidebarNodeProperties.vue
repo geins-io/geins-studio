@@ -198,6 +198,9 @@ function drillPath(obj: Record<string, unknown>, segments: string[]): unknown {
 }
 
 function resolveExpression(expr: string): string | null {
+  const strLiteral = expr.match(/^\{\{\s*'([^']*)'\s*\}\}$/) || expr.match(/^\{\{\s*"([^"]*)"\s*\}\}$/)
+  if (strLiteral && strLiteral[1] !== undefined) return strLiteral[1]
+
   const match = expr.match(/^\{\{(\w+)\.(.+)\}\}$/)
   if (!match) return null
   const ns = match[1]

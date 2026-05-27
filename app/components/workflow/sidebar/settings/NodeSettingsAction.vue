@@ -15,8 +15,10 @@ const ACTION_SETTINGS_COMPONENTS: Record<string, Component> = {
 const props = defineProps<{
   nodeData: Record<string, unknown>
   nodeInput: Record<string, unknown>
+  editorHints: Record<string, unknown>
   manifestAction?: ManifestAction
   updateInput: (name: string, value: unknown) => void
+  updateEditorHint: (name: string, value: unknown) => void
 }>()
 
 const customComponent = computed(() => {
@@ -78,8 +80,10 @@ const isSelect = (field: { allowedValues?: unknown[] }): boolean =>
       v-if="customComponent"
       :node-data="nodeData"
       :node-input="nodeInput"
+      :editor-hints="editorHints"
       :manifest-action="manifestAction"
       :update-input="updateInput"
+      :update-editor-hint="updateEditorHint"
     />
 
     <!-- Generic manifest-driven form (fallback) -->

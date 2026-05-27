@@ -12,6 +12,9 @@ const props = withDefaults(defineProps<{
   valuePlaceholder?: string
   expandTitle?: string
   inline?: boolean
+  editorHintKey?: string
+  editorHints?: Record<string, unknown>
+  updateEditorHint?: (name: string, value: unknown) => void
 }>(), {
   fieldName: '',
   label: 'Fields',
@@ -20,9 +23,17 @@ const props = withDefaults(defineProps<{
   valuePlaceholder: 'Value or {{expression}}',
   expandTitle: 'JSON',
   inline: false,
+  editorHintKey: '',
 })
 
-const mode = ref<'fields' | 'json'>('fields')
+const hintKey = computed(() => props.editorHintKey || `${props.fieldName || 'input'}Mode`)
+const savedMode = computed(() => props.editorHints?.[hintKey.value] as 'fields' | 'json' | undefined)
+
+const mode = ref<'fields' | 'json'>(savedMode.value ?? 'fields')
+
+watch(mode, (v) => {
+  props.updateEditorHint?.(hintKey.value, v === 'fields' ? undefined : v)
+})
 
 let nextPairId = 0
 
@@ -126,6 +137,10 @@ function buildJsonFromInput(): string {
     if (k) obj[k] = v ?? ''
   }
   return Object.keys(obj).length > 0 ? JSON.stringify(obj, null, 2) : '{\n  \n}'
+}
+
+if (mode.value === 'json') {
+  jsonText.value = buildJsonFromInput()
 }
 
 watch(mode, (next) => {

@@ -543,6 +543,16 @@ const saveAndRun = async () => {
   }
 }
 
+// ─── Cmd+S shortcut ──────────────────────────────────────────────
+const onKeyDown = (e: KeyboardEvent) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+    e.preventDefault()
+    if (hasUnsavedChanges.value && !isSavingConfig.value) handleSave()
+  }
+}
+onMounted(() => window.addEventListener('keydown', onKeyDown))
+onUnmounted(() => window.removeEventListener('keydown', onKeyDown))
+
 // ─── Run workflow (production) ────────────────────────────────────
 const showRunSheet = ref(false)
 const runInputValues = ref<Record<string, unknown>>({})
@@ -1116,7 +1126,7 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
         <KeepAlive>
           <WorkflowHistory
             v-if="currentTab === 2" :key="`tab-${currentTab}`"
-            :workflow-id="workflowId" :is-new="isNew" />
+            :workflow-id="workflowId" :workflow-name="workflowNameValue" :is-new="isNew" />
         </KeepAlive>
 
         <template #sidebar>

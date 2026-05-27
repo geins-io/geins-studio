@@ -40,6 +40,8 @@ const nodeTypeConfig = computed<ManifestNodeTypeConfig[]>(
 
 const nodeConfig = computed(() => (props.nodeData.config ?? {}) as Record<string, unknown>)
 const nodeInput = computed(() => (props.nodeData.input ?? {}) as Record<string, unknown>)
+const nodeUi = computed(() => (props.nodeData.ui ?? {}) as Record<string, unknown>)
+const nodeEditorHints = computed(() => (nodeUi.value.editor ?? {}) as Record<string, unknown>)
 
 const settingsComponent = computed(() => SETTINGS_COMPONENTS[props.nodeType])
 
@@ -59,6 +61,20 @@ const updateInput = (name: string, value: unknown) => {
   }
   else {
     input[name] = value
+  }
+  onNodeSettingsChange()
+}
+
+const updateEditorHint = (name: string, value: unknown) => {
+  if (!props.nodeData.ui) props.nodeData.ui = {}
+  const ui = props.nodeData.ui as Record<string, unknown>
+  if (!ui.editor) ui.editor = {}
+  const editor = ui.editor as Record<string, unknown>
+  if (value === undefined) {
+    delete editor[name]
+  }
+  else {
+    editor[name] = value
   }
   onNodeSettingsChange()
 }
@@ -265,9 +281,11 @@ const onSettingsDrop = (event: DragEvent) => {
         :node-data="nodeData"
         :node-config="nodeConfig"
         :node-input="nodeInput"
+        :editor-hints="nodeEditorHints"
         :manifest-action="manifestAction"
         :update-config="updateConfig"
         :update-input="updateInput"
+        :update-editor-hint="updateEditorHint"
       />
 
       <!-- Fallback: manifest config fields for unknown node types -->

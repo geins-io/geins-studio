@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import type { VersionDiffChange, ExecutionLog } from '#shared/types'
+import type { VersionDiffChange, ExecutionLog, WorkflowNode, WorkflowNodeConnection, WorkflowSettings, WorkflowTriggerConfig } from '#shared/types'
+import { useToast } from '@/components/ui/toast/use-toast'
 
 const props = defineProps<{
   workflowId: string
+  workflowName: string
   isNew: boolean
 }>()
 
@@ -253,6 +255,50 @@ const diffCache = ref<Record<number, VersionDiffChange[]>>({})
 const diffLoading = ref<Record<number, boolean>>({})
 const diffErrors = ref<Record<number, string>>({})
 
+const recreatingVersion = ref<number | null>(null)
+const recreatedWorkflows = ref<Record<number, { id: string, name: string }>>({})
+const { toast } = useToast()
+
+async function recreateFromVersion(version: number) {
+  recreatingVersion.value = version
+  try {
+    const def = definitionsByVersion.value[version]
+    if (!def) {
+      toast({ title: 'Version data not available', variant: 'negative' })
+      return
+    }
+
+    const nodes = (def.nodes ?? def.Nodes ?? []) as WorkflowNode[]
+    const connections = (def.connections ?? def.Connections ?? []) as WorkflowNodeConnection[]
+    const settings = (def.settings ?? def.Settings) as WorkflowSettings | undefined
+    const trigger = (def.trigger ?? def.Trigger) as WorkflowTriggerConfig | undefined
+
+    const name = `${props.workflowName} - v${version}`
+    const created = await orchestratorApi.workflow.create({
+      name,
+      type: 'onDemand',
+      enabled: false,
+      nodes,
+      connections,
+      ...(settings ? { settings } : {}),
+      ...(trigger ? { trigger } : {}),
+    })
+
+    recreatedWorkflows.value[version] = { id: created.id, name: created.name ?? name }
+    toast({ title: 'Workflow created', description: `Created "${created.name}".` })
+  }
+  catch (err: unknown) {
+    toast({
+      title: 'Failed to recreate',
+      description: (err as { message?: string })?.message || 'Unknown error',
+      variant: 'negative',
+    })
+  }
+  finally {
+    recreatingVersion.value = null
+  }
+}
+
 function toggleVersion(version: number) {
   if (expandedVersions.value.has(version)) {
     expandedVersions.value.delete(version)
@@ -496,6 +542,31 @@ class="text-sm font-medium tabular-nums" :class="{
             <div v-else class="text-muted-foreground bg-muted/30 mb-3 flex items-center gap-2 rounded-md p-3 text-xs">
               <LucideActivity class="h-3.5 w-3.5" />
               No executions recorded for this version
+            </div>
+
+            <!-- Recreate from version -->
+            <div class="mb-3 flex items-center justify-end">
+              <Button
+                v-if="recreatedWorkflows[entry.version]"
+                variant="link"
+                size="sm"
+                class="text-primary h-auto gap-1.5 p-0 text-xs"
+                @click.stop="navigateTo(`/orchestrator/workflows/${recreatedWorkflows[entry.version]!.id}`)"
+              >
+                <LucideExternalLink class="h-3.5 w-3.5" />
+                {{ recreatedWorkflows[entry.version]!.name }}
+              </Button>
+              <Button
+                v-else
+                variant="outline"
+                size="sm"
+                :disabled="recreatingVersion !== null || !definitionsByVersion[entry.version]"
+                :loading="recreatingVersion === entry.version"
+                @click.stop="recreateFromVersion(entry.version)"
+              >
+                <LucideCopyPlus class="mr-1.5 h-3.5 w-3.5" />
+                Recreate as v{{ entry.version }}
+              </Button>
             </div>
 
             <!-- First version: no diff available -->

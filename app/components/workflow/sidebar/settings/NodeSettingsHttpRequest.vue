@@ -5,7 +5,9 @@ import KeyValueEditor from '@/components/workflow/shared/KeyValueEditor.vue'
 const props = defineProps<{
   nodeData: Record<string, unknown>
   nodeInput: Record<string, unknown>
+  editorHints: Record<string, unknown>
   updateInput: (name: string, value: unknown) => void
+  updateEditorHint: (name: string, value: unknown) => void
 }>()
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'] as const
@@ -230,6 +232,8 @@ const methodBadgeColor = computed(() => {
           v-else
           :input="nodeInput"
           :update-input="updateInput"
+          :editor-hints="editorHints"
+          :update-editor-hint="updateEditorHint"
           field-name="body"
           inline
           key-placeholder="Key"

@@ -96,7 +96,12 @@ const pinnedStateOverride = computed(() => {
 /**
  * Setup table state
  */
-const sorting = ref<SortingState>(props.initSortingState ?? []);
+const sorting = ref<SortingState>([]);
+watch(() => props.loading, (loading) => {
+  if (!loading && sorting.value.length === 0 && props.initSortingState?.length) {
+    sorting.value = props.initSortingState;
+  }
+}, { immediate: true });
 const columnFilters = ref<ColumnFiltersState>([]);
 const globalFilter = ref('');
 const searchInput = ref(''); // Local search input for debouncing

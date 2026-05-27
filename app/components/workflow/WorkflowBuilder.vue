@@ -783,6 +783,7 @@ useKeybindings({
         <div class="relative flex-1 overflow-hidden" @dragover="onDragOver" @drop="onDrop">
           <VueFlow
 :nodes="initialNodes" :edges="initialEdges" :node-types="nodeTypes" :edge-types="edgeTypes"
+            :delete-key-code="null"
             :default-viewport="{ zoom: 0.8, x: 0, y: 0 }" :min-zoom="0.1" :max-zoom="maxZoom"
             class="bg-muted/30" @node-double-click="onNodeDoubleClick" @pane-click="onPaneClick">
             <Background pattern-color="hsl(var(--border))" :gap="20" />
