@@ -25,8 +25,15 @@ import type {
  * normalize at the call site.
  */
 
+export interface ManifestActionExample {
+  name: string;
+  description?: string;
+  input?: Record<string, unknown>;
+}
+
 export type ManifestAction = WorkflowAction & {
   isPseudoAction?: boolean;
+  provider?: string;
   input?: Array<{
     name: string;
     type: string;
@@ -37,6 +44,7 @@ export type ManifestAction = WorkflowAction & {
     schema?: Record<string, unknown>;
     editorHint?: string;
   }>;
+  examples?: ManifestActionExample[];
 };
 
 export function useWorkflowManifest() {

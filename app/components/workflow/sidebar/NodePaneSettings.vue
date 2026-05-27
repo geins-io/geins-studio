@@ -4,6 +4,7 @@ import type { ManifestAction } from '@/composables/useWorkflowManifest'
 import NodeSettingsAction from './settings/NodeSettingsAction.vue'
 import NodeSettingsCondition from './settings/NodeSettingsCondition.vue'
 import NodeSettingsDelay from './settings/NodeSettingsDelay.vue'
+import NodeSettingsInputSchema from './settings/NodeSettingsInputSchema.vue'
 import NodeSettingsIterator from './settings/NodeSettingsIterator.vue'
 import NodeSettingsPaginator from './settings/NodeSettingsPaginator.vue'
 import NodeSettingsTrigger from './settings/NodeSettingsTrigger.vue'
@@ -102,7 +103,16 @@ const isTextarea = (field: { editorHint?: string, type: string }): boolean =>
   || field.type.toLowerCase() === 'object'
   || field.type.toLowerCase() === 'json'
 
-const activeTab = ref<'settings' | 'schema' | 'expressions' | 'variables'>('settings')
+const activeTab = ref<'settings' | 'inputSchema' | 'schema' | 'expressions' | 'variables'>('settings')
+
+const hasInputSchema = computed(() => {
+  if (!manifestAction.value?.examples?.length) return false
+  const inputs = manifestAction.value.input ?? []
+  return inputs.some(f => {
+    const t = f.type.toLowerCase()
+    return t === 'array' || t === 'object' || t === 'json'
+  })
+})
 
 const outputFields = computed(() => {
   const actionName = props.nodeData.actionName as string | undefined
@@ -238,6 +248,18 @@ const onSettingsDrop = (event: DragEvent) => {
         Settings
       </button>
       <button
+        v-if="hasInputSchema"
+        type="button"
+        class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors"
+        :class="activeTab === 'inputSchema'
+          ? 'text-foreground border-b-2 border-primary'
+          : 'text-muted-foreground hover:text-foreground'"
+        @click="activeTab = 'inputSchema'"
+      >
+        <LucideBookOpen class="h-3.5 w-3.5" />
+        Input Schema
+      </button>
+      <button
         type="button"
         class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors"
         :class="activeTab === 'schema'
@@ -329,6 +351,11 @@ const onSettingsDrop = (event: DragEvent) => {
           </div>
         </div>
       </template>
+    </div>
+
+    <!-- Input Schema tab -->
+    <div v-show="activeTab === 'inputSchema'" class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
+      <NodeSettingsInputSchema v-if="manifestAction" :manifest-action="manifestAction" />
     </div>
 
     <!-- Output Schema tab -->
