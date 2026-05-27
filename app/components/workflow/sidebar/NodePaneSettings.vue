@@ -94,7 +94,7 @@ const outputFields = computed(() => {
     const input = (props.nodeData.input ?? {}) as Record<string, unknown>
     return Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: 'any', description: '' }))
   }
-  return manifestAction.value?.output ?? []
+  return manifestAction.value?.output ?? manifestNodeType.value?.output ?? []
 })
 
 const expressionVariables = computed(() => manifestStore.manifest.value?.expressionVariables ?? [])

@@ -126,7 +126,8 @@ const expressionCompletions = computed<ExpressionCompletion[]>(() => {
       outputFields = Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: inferTransformValueType(input[k]) }))
     }
     else {
-      outputFields = (action?.output ?? []) as Array<{ name: string, type: string }>
+      const nodeTypeDef = manifestStore.getNodeType(nodeType)
+      outputFields = (action?.output ?? nodeTypeDef?.output ?? []) as Array<{ name: string, type: string }>
     }
 
     for (const field of outputFields) {

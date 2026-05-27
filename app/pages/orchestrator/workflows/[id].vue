@@ -392,6 +392,7 @@ const handleCreate = async () => {
     const created = await orchestratorApi.workflow.create({
       name: values.details.name,
       description: values.details.description || undefined,
+      group: values.details.group || undefined,
       tags: values.details.tags,
       type: 'onDemand',
       enabled: false,

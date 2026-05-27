@@ -83,6 +83,11 @@ function getProviderDisplayName(providerKey: string): string {
   return titleCase(providerKey)
 }
 
+function getProviderDescription(providerKey: string): string | undefined {
+  const cat = manifestActionCategories.value.find(c => c.name === providerKey)
+  return cat?.description
+}
+
 /** Group actions by their provider prefix */
 const actionsByProvider = computed(() => {
   const map = new Map<string, ManifestAction[]>()
@@ -110,6 +115,7 @@ type ProviderViewItem = {
   type: 'provider'
   key: string
   label: string
+  description?: string
   icon: Component | null
   logo: Component | null
   count: number
@@ -231,6 +237,7 @@ function buildProvidersStack() {
       type: 'provider',
       key: providerKey,
       label: getProviderDisplayName(providerKey),
+      description: getProviderDescription(providerKey),
       icon: getProviderIcon(providerKey),
       logo: getProviderLogo(providerKey),
       count: providerActions.length,
@@ -697,6 +704,9 @@ function onSearchInput(value: string) {
                     </div>
                     <div class="min-w-0 flex-1">
                       <div class="text-sm font-medium">{{ viewItem.label }}</div>
+                      <div v-if="viewItem.description" class="text-muted-foreground line-clamp-2 text-xs">
+                        {{ viewItem.description }}
+                      </div>
                       <div class="text-muted-foreground text-xs">
                         {{ viewItem.count }} {{ viewItem.count === 1 ? 'action' : 'actions' }}
                       </div>

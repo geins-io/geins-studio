@@ -551,6 +551,7 @@ export interface ManifestNodeType {
   color?: string;
   connections: ManifestNodeTypeConnection;
   config?: ManifestNodeTypeConfig[];
+  output?: ManifestActionOutput[];
 }
 
 export interface ManifestActionParameter {
