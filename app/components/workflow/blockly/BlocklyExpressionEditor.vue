@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import type { ExpressionCompletion } from '@/components/workflow/shared/ExpressionInput.vue'
+import type { ManifestExpressionFunction } from '#shared/types'
+import type { Ref } from 'vue'
+
 const props = withDefaults(defineProps<{
   modelValue?: string
   open?: boolean
@@ -13,6 +17,9 @@ const emit = defineEmits<{
 }>()
 
 const resolveExpression = inject<(expr: string) => string | null>('resolveExpression', () => null)
+
+const completions = inject<Ref<ExpressionCompletion[]>>('expressionCompletions', ref([]))
+const expressionFunctions = inject<Ref<ManifestExpressionFunction[]>>('expressionFunctions', ref([]))
 
 const draftExpression = ref(props.modelValue)
 
@@ -135,6 +142,8 @@ const BlocklyWorkspace = defineAsyncComponent(() =>
         <Suspense>
           <BlocklyWorkspace
             :model-value="draftExpression"
+            :completions="completions"
+            :expression-functions="expressionFunctions"
             @update:model-value="onDraftUpdate"
           />
           <template #fallback>

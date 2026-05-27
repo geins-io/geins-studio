@@ -10,6 +10,8 @@ import type { Ref } from 'vue'
 
 const props = withDefaults(defineProps<{
   modelValue?: string
+  completions?: ExpressionCompletion[]
+  expressionFunctions?: ManifestExpressionFunction[]
 }>(), {
   modelValue: '',
 })
@@ -25,10 +27,13 @@ const { createShadcnBlocklyTheme } = useBlocklyTheme()
 const containerRef = ref<HTMLElement>()
 const loading = ref(true)
 
-// Injections from workflow sidebar context
-const completions = inject<Ref<ExpressionCompletion[]>>('expressionCompletions', ref([]))
+// Use props if provided (teleported context), fall back to inject
+const injectedCompletions = inject<Ref<ExpressionCompletion[]>>('expressionCompletions', ref([]))
+const injectedFunctions = inject<Ref<ManifestExpressionFunction[]>>('expressionFunctions', ref([]))
 const resolveExpression = inject<(expr: string) => string | null>('resolveExpression', () => null)
-const expressionFunctions = inject<Ref<ManifestExpressionFunction[]>>('expressionFunctions', ref([]))
+
+const completions = computed(() => props.completions ?? injectedCompletions.value)
+const expressionFunctions = computed(() => props.expressionFunctions ?? injectedFunctions.value)
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let workspace: any = null
