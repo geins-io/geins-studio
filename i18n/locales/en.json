@@ -44,6 +44,7 @@
   "new_entity_url_alias": "new",
   "list_entity_url_alias": "list",
   "entity_id": "@:{entityName} ID",
+  "entity_identifier": "@:{entityName} identifier",
   "new_entity": "New @.lower:{entityName}",
   "edit_entity": "Edit @.lower:{entityName}",
   "save_entity": "Save @.lower:{entityName}",
