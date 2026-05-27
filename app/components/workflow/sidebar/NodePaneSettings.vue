@@ -354,7 +354,7 @@ const onSettingsDrop = (event: DragEvent) => {
 
     <!-- Schema tab (combined input + output) -->
     <div v-show="activeTab === 'schema'" class="flex flex-1 flex-col overflow-hidden">
-      <div v-if="hasInputSchema" class="flex gap-1 border-b px-4 py-2">
+      <div v-if="hasInputSchema" class="flex gap-1 border-b px-4 pb-2 pt-4">
         <button
           type="button"
           class="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors"
@@ -418,9 +418,9 @@ const onSettingsDrop = (event: DragEvent) => {
     </div>
 
     <!-- Expressions tab -->
-    <div v-show="activeTab === 'expressions'" class="flex flex-1 flex-col overflow-hidden pt-4">
+    <div v-show="activeTab === 'expressions'" class="flex flex-1 flex-col overflow-hidden">
       <!-- Category pills -->
-      <div v-if="fnCategories.size > 1" class="flex gap-1 overflow-x-auto border-b px-4 pb-2">
+      <div v-if="fnCategories.size > 1" class="flex gap-1 overflow-x-auto border-b px-4 pb-2 pt-4">
         <button
           v-for="[cat] in fnCategories"
           :key="cat"
@@ -436,12 +436,12 @@ const onSettingsDrop = (event: DragEvent) => {
       </div>
 
       <!-- Function list -->
-      <div class="flex-1 overflow-y-auto" style="scrollbar-gutter: stable;">
+      <div class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
         <div v-if="filteredFunctions.length" class="divide-y">
           <div
             v-for="fn in filteredFunctions"
             :key="fn.name"
-            class="space-y-1.5 px-4 py-3"
+            class="space-y-1.5 py-3 first:pt-0"
           >
             <!-- Signature -->
             <div class="flex items-start justify-between gap-2">
@@ -513,7 +513,7 @@ const onSettingsDrop = (event: DragEvent) => {
         <div
           v-for="v in expressionVariables"
           :key="v.pattern"
-          class="space-y-1 py-3"
+          class="space-y-1 py-3 first:pt-0"
         >
           <code class="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-medium text-emerald-700 dark:text-emerald-400">
             {{ v.pattern }}
