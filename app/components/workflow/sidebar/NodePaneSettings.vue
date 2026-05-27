@@ -103,7 +103,8 @@ const isTextarea = (field: { editorHint?: string, type: string }): boolean =>
   || field.type.toLowerCase() === 'object'
   || field.type.toLowerCase() === 'json'
 
-const activeTab = ref<'settings' | 'inputSchema' | 'schema' | 'expressions' | 'variables'>('settings')
+const activeTab = ref<'settings' | 'schema' | 'expressions' | 'variables'>('settings')
+const schemaSubTab = ref<'input' | 'output'>('input')
 
 const hasInputSchema = computed(() => {
   if (!manifestAction.value?.examples?.length) return false
@@ -248,18 +249,6 @@ const onSettingsDrop = (event: DragEvent) => {
         Settings
       </button>
       <button
-        v-if="hasInputSchema"
-        type="button"
-        class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors"
-        :class="activeTab === 'inputSchema'
-          ? 'text-foreground border-b-2 border-primary'
-          : 'text-muted-foreground hover:text-foreground'"
-        @click="activeTab = 'inputSchema'"
-      >
-        <LucideBookOpen class="h-3.5 w-3.5" />
-        Input Schema
-      </button>
-      <button
         type="button"
         class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors"
         :class="activeTab === 'schema'
@@ -268,7 +257,7 @@ const onSettingsDrop = (event: DragEvent) => {
         @click="activeTab = 'schema'"
       >
         <LucideFileJson class="h-3.5 w-3.5" />
-        Output Schema
+        Schema
       </button>
       <button
         type="button"
@@ -353,38 +342,64 @@ const onSettingsDrop = (event: DragEvent) => {
       </template>
     </div>
 
-    <!-- Input Schema tab -->
-    <div v-show="activeTab === 'inputSchema'" class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
-      <NodeSettingsInputSchema v-if="manifestAction" :manifest-action="manifestAction" />
-    </div>
-
-    <!-- Output Schema tab -->
-    <div v-show="activeTab === 'schema'" class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
-      <template v-if="outputFields.length">
-        <div class="space-y-2">
-          <div
-            v-for="field in outputFields"
-            :key="field.name"
-            class="bg-muted/50 flex items-start gap-3 rounded-md border px-3 py-2"
-          >
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-medium">{{ field.name }}</span>
-                <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">{{ field.type }}</span>
+    <!-- Schema tab (combined input + output) -->
+    <div v-show="activeTab === 'schema'" class="flex flex-1 flex-col overflow-hidden">
+      <div v-if="hasInputSchema" class="flex gap-1 border-b px-4 py-2">
+        <button
+          type="button"
+          class="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors"
+          :class="schemaSubTab === 'input'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:text-foreground'"
+          @click="schemaSubTab = 'input'"
+        >
+          Input
+        </button>
+        <button
+          type="button"
+          class="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors"
+          :class="schemaSubTab === 'output'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:text-foreground'"
+          @click="schemaSubTab = 'output'"
+        >
+          Output
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
+        <!-- Input schema sub-tab -->
+        <div v-if="hasInputSchema && schemaSubTab === 'input'">
+          <NodeSettingsInputSchema v-if="manifestAction" :manifest-action="manifestAction" />
+        </div>
+        <!-- Output schema sub-tab (or sole content when no input schema) -->
+        <div v-if="!hasInputSchema || schemaSubTab === 'output'">
+          <template v-if="outputFields.length">
+            <div class="space-y-2">
+              <div
+                v-for="field in outputFields"
+                :key="field.name"
+                class="bg-muted/50 flex items-start gap-3 rounded-md border px-3 py-2"
+              >
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">{{ field.name }}</span>
+                    <span class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">{{ field.type }}</span>
+                  </div>
+                  <p v-if="field.description" class="text-muted-foreground mt-0.5 text-xs">{{ field.description }}</p>
+                </div>
               </div>
-              <p v-if="field.description" class="text-muted-foreground mt-0.5 text-xs">{{ field.description }}</p>
+            </div>
+          </template>
+          <div
+            v-else
+            class="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center text-xs"
+          >
+            <LucideFileJson class="h-8 w-8 opacity-40" />
+            <div>
+              <p class="font-medium">No output schema</p>
+              <p class="mt-0.5 opacity-70">This node type does not define an output schema</p>
             </div>
           </div>
-        </div>
-      </template>
-      <div
-        v-else
-        class="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center text-xs"
-      >
-        <LucideFileJson class="h-8 w-8 opacity-40" />
-        <div>
-          <p class="font-medium">No output schema</p>
-          <p class="mt-0.5 opacity-70">This node type does not define an output schema</p>
         </div>
       </div>
     </div>
