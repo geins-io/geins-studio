@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import draggable from 'vuedraggable'
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
 import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue'
 
@@ -215,39 +216,51 @@ onUnmounted(() => {
         {{ description }}
       </p>
 
-      <div class="divide-y border-y">
-        <div
-          v-for="(pair, index) in pairs"
-          :key="pair.id"
-          class="flex items-start gap-2 py-3"
-        >
-          <div class="min-w-0 flex-1 space-y-1.5">
-            <Input
-              :model-value="pair.key"
-              :placeholder="keyPlaceholder"
-              size="sm"
-              @update:model-value="pair.key = String($event)"
-              @blur="onKeyBlur"
-              @keydown.enter="($event.target as HTMLInputElement).blur()"
-            />
-            <ExpressionInput
-              :model-value="displayValue(pair.value)"
-              :placeholder="valuePlaceholder"
-              size="sm"
-              :default-mode="String(pair.value).includes('{{') ? 'expression' : 'fixed'"
-              @update:model-value="onValueChange(pair, String($event))"
-            />
+      <draggable
+        v-model="pairs"
+        item-key="id"
+        handle=".drag-handle"
+        ghost-class="opacity-30"
+        class="divide-y border-y"
+        @end="emitFields"
+      >
+        <template #item="{ element: pair, index }">
+          <div class="flex items-start gap-1 py-3">
+            <button
+              type="button"
+              class="drag-handle text-muted-foreground/50 hover:text-muted-foreground mt-1.5 shrink-0 cursor-grab p-0.5 active:cursor-grabbing"
+              title="Drag to reorder"
+            >
+              <LucideGripVertical class="h-3.5 w-3.5" />
+            </button>
+            <div class="min-w-0 flex-1 space-y-1.5">
+              <Input
+                :model-value="pair.key"
+                :placeholder="keyPlaceholder"
+                size="sm"
+                @update:model-value="pair.key = String($event)"
+                @blur="onKeyBlur"
+                @keydown.enter="($event.target as HTMLInputElement).blur()"
+              />
+              <ExpressionInput
+                :model-value="displayValue(pair.value)"
+                :placeholder="valuePlaceholder"
+                size="sm"
+                :default-mode="String(pair.value).includes('{{') ? 'expression' : 'fixed'"
+                @update:model-value="onValueChange(pair, String($event))"
+              />
+            </div>
+            <button
+              type="button"
+              class="text-muted-foreground hover:text-destructive mt-1 shrink-0 p-1"
+              title="Remove field"
+              @click="removePair(index)"
+            >
+              <LucideTrash class="h-3.5 w-3.5" />
+            </button>
           </div>
-          <button
-            type="button"
-            class="text-muted-foreground hover:text-destructive mt-1 shrink-0 p-1"
-            title="Remove field"
-            @click="removePair(index)"
-          >
-            <LucideTrash class="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
+        </template>
+      </draggable>
 
       <button
         type="button"
