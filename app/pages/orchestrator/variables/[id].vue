@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WorkflowVariable } from '#shared/types';
+import type { SaveVariableRequest, WorkflowVariable } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import {
   LucideEye,
@@ -38,22 +38,25 @@ const { data: existing, error, refresh } = await useAsyncData(
 const keyField = ref('');
 const value = ref('');
 const description = ref('');
-const isSecret = ref(true);
+const isSecret = ref(false);
+const savedAsSecret = ref(false);
 const showValue = ref(false);
 const saving = ref(false);
 
 const resetForm = (v: WorkflowVariable | null) => {
   if (v) {
     keyField.value = v.key;
-    value.value = v.value ?? '';
+    value.value = v.isSecret ? '' : (v.value ?? '');
     description.value = v.description ?? '';
     isSecret.value = v.isSecret ?? false;
+    savedAsSecret.value = v.isSecret ?? false;
   }
   else {
     keyField.value = '';
     value.value = '';
     description.value = '';
-    isSecret.value = true;
+    isSecret.value = false;
+    savedAsSecret.value = false;
   }
   showValue.value = !isSecret.value;
 };
@@ -72,12 +75,15 @@ const handleSave = async () => {
   if (!canSave.value) return;
   saving.value = true;
   try {
-    await orchestratorApi.variable.save({
+    const payload: SaveVariableRequest = {
       key: keyField.value.trim(),
-      value: value.value,
       description: description.value || undefined,
       isSecret: isSecret.value,
-    });
+    };
+    if (!savedAsSecret.value || value.value) {
+      payload.value = value.value;
+    }
+    await orchestratorApi.variable.save(payload);
     toast({ title: 'Variable saved' });
     if (isNew.value) {
       await navigateTo(`/orchestrator/variables/${encodeURIComponent(keyField.value.trim())}`);
@@ -192,12 +198,12 @@ const pageTitle = computed(() => (isNew.value ? 'New variable' : keyField.value 
             id="variable-value"
             v-model="value"
             :type="isSecret && !showValue ? 'password' : 'text'"
-            placeholder="Enter value…"
+            :placeholder="savedAsSecret ? 'Enter new value to replace secret…' : 'Enter value…'"
             autocomplete="off"
-            class="pr-20" />
+            :class="savedAsSecret && !value ? 'pr-10' : 'pr-20'" />
           <div class="absolute inset-y-0 right-0 flex items-center gap-0.5 pr-1">
             <button
-              v-if="isSecret"
+              v-if="isSecret && !savedAsSecret"
               type="button"
               class="hover:bg-muted text-muted-foreground rounded p-1.5"
               :title="showValue ? 'Hide value' : 'Show value'"
@@ -205,6 +211,7 @@ const pageTitle = computed(() => (isNew.value ? 'New variable' : keyField.value 
               <component :is="showValue ? LucideEyeOff : LucideEye" class="h-4 w-4" />
             </button>
             <button
+              v-if="!savedAsSecret || value"
               type="button"
               class="hover:bg-muted text-muted-foreground rounded p-1.5"
               :disabled="!value"
@@ -214,6 +221,9 @@ const pageTitle = computed(() => (isNew.value ? 'New variable' : keyField.value 
             </button>
           </div>
         </div>
+        <p v-if="savedAsSecret" class="text-muted-foreground text-xs">
+          Secret values cannot be revealed after saving. Leave empty to keep the current value.
+        </p>
       </div>
 
       <div class="space-y-2">
