@@ -108,7 +108,7 @@ export function useBlocklyTheme(): BlocklyThemeReturnType {
         toolboxForegroundColour: textColor,
         flyoutBackgroundColour: isDark ? '#18181b' : '#f4f4f5',
         flyoutForegroundColour: textColor,
-        flyoutOpacity: 0.95,
+        flyoutOpacity: 1,
         scrollbarColour: isDark ? '#3f3f46' : '#d4d4d8',
         scrollbarOpacity: 0.6,
         insertionMarkerColour: CATEGORY_COLOURS.data,

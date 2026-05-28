@@ -197,16 +197,16 @@ onBeforeUnmount(() => {
 <style scoped>
 :deep(.blocklyToolboxDiv) {
   border-right: 1px solid var(--border);
-  padding: 8px 0;
+  padding: 12px 0;
   background: var(--color-background) !important;
 }
 :deep(.blocklyTreeRow) {
-  padding: 6px 12px 6px 8px;
-  font-size: 11px;
+  padding: 8px 12px 8px 10px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.01em;
   border-radius: 6px;
-  margin: 1px 6px;
+  margin: 2px 6px;
   transition: background-color 0.15s;
   cursor: pointer;
 }
@@ -220,10 +220,15 @@ onBeforeUnmount(() => {
   font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
 }
 :deep(.blocklyTreeIcon) {
-  width: 3px !important;
+  width: 4px !important;
   height: 14px !important;
   border-radius: 2px;
   margin-right: 8px;
+}
+:deep(.blocklyFlyoutBackground) {
+  fill-opacity: 1;
+  stroke: var(--border);
+  stroke-width: 1;
 }
 :deep(.blocklyTrash) {
   display: none;
