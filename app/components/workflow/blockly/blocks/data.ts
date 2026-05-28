@@ -1,4 +1,4 @@
-import type { BlocklyContext } from '../useBlocklyBlocks'
+import type { BlocklyContext } from '../useBlocklyBlocks';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function registerDataBlocks(Blockly: any, ctx: BlocklyContext) {
@@ -6,11 +6,39 @@ export function registerDataBlocks(Blockly: any, ctx: BlocklyContext) {
     const items = ctx.completions.value
       .filter((c) => c.expression.startsWith(`{{${namespace}.`))
       .map((c) => {
-        const path = c.expression.replace(/^\{\{|\}\}$/g, '').slice(namespace.length + 1)
-        const label = c.label || path
-        return [label, path] as [string, string]
-      })
-    return items.length > 0 ? items : [['(no data available)', '']]
+        const path = c.expression
+          .replace(/^\{\{|\}\}$/g, '')
+          .slice(namespace.length + 1);
+        const label = c.label || path;
+        return [label, path] as [string, string];
+      });
+    return items.length > 0 ? items : [['(no data available)', '']];
+  }
+
+  // FieldDropdown subclass that accepts any value during deserialization.
+  // Standard FieldDropdown rejects values not in the options list, which
+  // breaks loading expressions whose paths aren't in the current completions.
+  class PathDropdown extends Blockly.FieldDropdown {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    doClassValidation_(newValue: any) {
+      const result = super.doClassValidation_(newValue);
+      if (result === null && typeof newValue === 'string' && newValue) {
+        return newValue;
+      }
+      return result;
+    }
+
+    getOptions(useCache?: boolean) {
+      const options = super.getOptions(useCache) as [string, string][];
+      const current = this.getValue?.();
+      if (
+        current &&
+        !options.some(([, val]: [string, string]) => val === current)
+      ) {
+        options.push([current, current]);
+      }
+      return options;
+    }
   }
 
   Blockly.Blocks['ncalc_output_ref'] = {
@@ -18,45 +46,36 @@ export function registerDataBlocks(Blockly: any, ctx: BlocklyContext) {
     init(this: any) {
       this.appendDummyInput()
         .appendField('output')
-        .appendField(
-          new Blockly.FieldDropdown(() => getPathOptions('output')),
-          'PATH',
-        )
-      this.setOutput(true)
-      this.setStyle('data_blocks')
-      this.setTooltip('Reference output data from upstream nodes')
+        .appendField(new PathDropdown(() => getPathOptions('output')), 'PATH');
+      this.setOutput(true);
+      this.setStyle('data_blocks');
+      this.setTooltip('Reference output data from upstream nodes');
     },
-  }
+  };
 
   Blockly.Blocks['ncalc_input_ref'] = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     init(this: any) {
       this.appendDummyInput()
         .appendField('input')
-        .appendField(
-          new Blockly.FieldDropdown(() => getPathOptions('input')),
-          'PATH',
-        )
-      this.setOutput(true)
-      this.setStyle('data_blocks')
-      this.setTooltip('Reference workflow input variables')
+        .appendField(new PathDropdown(() => getPathOptions('input')), 'PATH');
+      this.setOutput(true);
+      this.setStyle('data_blocks');
+      this.setTooltip('Reference workflow input variables');
     },
-  }
+  };
 
   Blockly.Blocks['ncalc_vars_ref'] = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     init(this: any) {
       this.appendDummyInput()
         .appendField('vars')
-        .appendField(
-          new Blockly.FieldDropdown(() => getPathOptions('vars')),
-          'PATH',
-        )
-      this.setOutput(true)
-      this.setStyle('data_blocks')
-      this.setTooltip('Reference workflow variables and secrets')
+        .appendField(new PathDropdown(() => getPathOptions('vars')), 'PATH');
+      this.setOutput(true);
+      this.setStyle('data_blocks');
+      this.setTooltip('Reference workflow variables and secrets');
     },
-  }
+  };
 
   // Keep the generic data ref for the parser fallback and manual paths
   Blockly.Blocks['ncalc_data_ref'] = {
@@ -71,12 +90,12 @@ export function registerDataBlocks(Blockly: any, ctx: BlocklyContext) {
           ]),
           'NAMESPACE',
         )
-        .appendField(new Blockly.FieldTextInput(''), 'PATH')
-      this.setOutput(true)
-      this.setStyle('data_blocks')
-      this.setTooltip('Reference data from nodes, inputs, or variables')
+        .appendField(new Blockly.FieldTextInput(''), 'PATH');
+      this.setOutput(true);
+      this.setStyle('data_blocks');
+      this.setTooltip('Reference data from nodes, inputs, or variables');
     },
-  }
+  };
 
   Blockly.Blocks['ncalc_iterator_ref'] = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -89,10 +108,10 @@ export function registerDataBlocks(Blockly: any, ctx: BlocklyContext) {
           ]),
           'REF',
         )
-        .appendField(new Blockly.FieldTextInput(''), 'PATH')
-      this.setOutput(true)
-      this.setStyle('data_blocks')
-      this.setTooltip('Iterator context variable')
+        .appendField(new Blockly.FieldTextInput(''), 'PATH');
+      this.setOutput(true);
+      this.setStyle('data_blocks');
+      this.setTooltip('Iterator context variable');
     },
-  }
+  };
 }

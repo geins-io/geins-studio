@@ -22,8 +22,18 @@ const { toast } = useToast()
 const { orchestratorApi } = useGeinsRepository()
 
 function extractApiError(err: unknown): { title?: string; detail?: string } | undefined {
-  const e = err as { originalError?: { data?: { title?: string; detail?: string } } }
-  return e?.originalError?.data ?? undefined
+  if (!err || typeof err !== 'object') return undefined
+  const e = err as Record<string, unknown>
+  const orig = e.originalError as Record<string, unknown> | undefined
+  if (typeof orig?.data === 'string') return { detail: orig.data }
+  if (orig?.data && typeof orig.data === 'object') {
+    const d = orig.data as Record<string, unknown>
+    if (d.title || d.detail) return { title: d.title as string, detail: d.detail as string }
+    if (d.message && typeof d.message === 'string') return { detail: d.message }
+  }
+  if (orig?.title || orig?.detail) return { title: orig?.title as string, detail: orig?.detail as string }
+  if (e.message && typeof e.message === 'string') return { detail: e.message }
+  return undefined
 }
 
 const workflowId = computed(() => route.params.id as string)
@@ -588,7 +598,7 @@ async function executeWorkflow() {
     const apiErr = extractApiError(err)
     toast({
       title: apiErr?.title ?? 'Failed to run workflow',
-      description: apiErr?.detail ?? (err instanceof Error ? err.message : 'Unknown error'),
+      description: apiErr?.detail ?? getErrorMessage(err),
       variant: 'negative',
     })
   }

@@ -705,7 +705,7 @@ const startExecution = async (data?: { parameters?: Record<string, unknown> }) =
     geinsLogError('Failed to start execution', err)
     toast({
       title: 'Failed to start execution',
-      description: err instanceof Error ? err.message : 'Unknown error',
+      description: getErrorMessage(err),
       variant: 'negative',
     })
   }
@@ -793,11 +793,9 @@ const validateWorkflow = async () => {
   }
   catch (err) {
     geinsLogError('Failed to validate workflow', err)
-    const e = err as { originalError?: { data?: { title?: string, detail?: string } } }
-    const apiBody = e?.originalError?.data
     toast({
-      title: apiBody?.title || 'Validation error',
-      description: apiBody?.detail || (err instanceof Error ? err.message : 'Unknown error'),
+      title: 'Validation error',
+      description: getErrorMessage(err),
       variant: 'negative',
     })
   }

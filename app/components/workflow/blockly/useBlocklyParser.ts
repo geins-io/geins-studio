@@ -170,9 +170,13 @@ function tokenize(input: string): Token[] {
     // Number
     if (/\d/.test(ch)) {
       let num = '';
-      while (i < input.length && /[\d.]/.test(input.charAt(i))) {
+      while (i < input.length && /\d/.test(input.charAt(i))) {
         num += input.charAt(i);
         i++;
+        if (input.charAt(i) === '.' && /\d/.test(input.charAt(i + 1) ?? '')) {
+          num += '.';
+          i++;
+        }
       }
       tokens.push({ type: 'NUMBER', value: num });
       continue;
