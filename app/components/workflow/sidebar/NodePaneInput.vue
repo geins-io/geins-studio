@@ -97,43 +97,63 @@ const PAGINATOR_CONTEXT_VARS: Array<{ name: string, type: string }> = [
   { name: '$pageSize', type: 'number' },
 ]
 
+function resolveOutputFields(
+  nodeId: string,
+  nodeType: string,
+  data: Record<string, unknown>,
+  sourceHandle?: string,
+): Array<{ name: string, type: string }> {
+  const actionName = data.actionName as string | undefined
+  const action = manifestStore.getAction(actionName)
+
+  if ((nodeType === 'iterator' || nodeType === 'loop') && sourceHandle === 'foreach') {
+    return ITERATOR_CONTEXT_VARS
+  }
+  if (nodeType === 'paginator' && (sourceHandle === 'fetchPage' || sourceHandle === 'forEachPage')) {
+    return PAGINATOR_CONTEXT_VARS
+  }
+  if (actionName === 'transform.map' || actionName === 'transform.compose') {
+    const input = (data.input ?? {}) as Record<string, unknown>
+    return Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: inferValueType(input[k]) }))
+  }
+  const nodeTypeDef = manifestStore.getNodeType(nodeType)
+  return (action?.output ?? nodeTypeDef?.output ?? []) as Array<{ name: string, type: string }>
+}
+
 const upstreamNodes = computed(() => {
   if (!props.nodeId) return [] as UpstreamNode[]
 
-  const incomingEdges = vfEdges.value.filter(e => e.target === props.nodeId)
-
+  const visited = new Set<string>()
   const result: UpstreamNode[] = []
-  for (const edge of incomingEdges) {
-    const n = vfNodes.value.find(nd => nd.id === edge.source)
-    if (!n) continue
-    const data = (n.data ?? {}) as Record<string, unknown>
-    const action = manifestStore.getAction(data.actionName as string | undefined)
-    const actionName = data.actionName as string | undefined
-    const nodeType = n.type as string
+  const queue: string[] = [props.nodeId]
 
-    let outputFields: Array<{ name: string, type: string }>
-    if ((nodeType === 'iterator' || nodeType === 'loop') && edge.sourceHandle === 'foreach') {
-      outputFields = ITERATOR_CONTEXT_VARS
-    }
-    else if (nodeType === 'paginator' && (edge.sourceHandle === 'fetchPage' || edge.sourceHandle === 'forEachPage')) {
-      outputFields = PAGINATOR_CONTEXT_VARS
-    }
-    else if (actionName === 'transform.map' || actionName === 'transform.compose') {
-      const input = (data.input ?? {}) as Record<string, unknown>
-      outputFields = Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: inferValueType(input[k]) }))
-    }
-    else {
-      const nodeTypeDef = manifestStore.getNodeType(nodeType)
-      outputFields = (action?.output ?? nodeTypeDef?.output ?? []) as Array<{ name: string, type: string }>
-    }
+  while (queue.length) {
+    const current = queue.shift()!
+    const incomingEdges = vfEdges.value.filter(e => e.target === current)
 
-    result.push({
-      id: n.id,
-      label: (data.label as string) || action?.displayName || n.id,
-      actionName,
-      nodeType,
-      outputFields,
-    })
+    for (const edge of incomingEdges) {
+      if (visited.has(edge.source)) continue
+      visited.add(edge.source)
+
+      const n = vfNodes.value.find(nd => nd.id === edge.source)
+      if (!n) continue
+      const data = (n.data ?? {}) as Record<string, unknown>
+      const action = manifestStore.getAction(data.actionName as string | undefined)
+      const nodeType = n.type as string
+
+      const sourceHandle = current === props.nodeId ? edge.sourceHandle ?? undefined : undefined
+      const outputFields = resolveOutputFields(n.id, nodeType, data, sourceHandle)
+
+      result.push({
+        id: n.id,
+        label: (data.label as string) || action?.displayName || n.id,
+        actionName: data.actionName as string | undefined,
+        nodeType,
+        outputFields,
+      })
+
+      queue.push(n.id)
+    }
   }
   return result
 })
