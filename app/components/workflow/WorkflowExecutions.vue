@@ -27,13 +27,24 @@ const formatDuration = (ms: number | undefined): string => {
   return `${minutes}m ${remainingSeconds}s`
 }
 
-const mapStatus = (status: string | undefined): 'success' | 'failed' | 'running' | string => {
+const mapStatus = (status: string | undefined): string => {
   const s = (status ?? '').toLowerCase()
   if (s === 'completed') return 'success'
+  if (s === 'completedwitherrors') return 'completedWithErrors'
   if (s === 'failed' || s === 'timedout' || s === 'canceled' || s === 'cancelled') return 'failed'
   if (s === 'running' || s === 'pending' || s === 'suspended') return 'running'
   return s || 'unknown'
 }
+
+const STATUS_LABELS: Record<string, string> = {
+  success: 'Success',
+  failed: 'Failed',
+  running: 'Running',
+  completedWithErrors: 'Completed with errors',
+}
+
+const formatStatus = (status: string): string =>
+  STATUS_LABELS[status] ?? status.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, c => c.toUpperCase())
 
 const { data: executionsRaw, pending: executionsLoading, refresh: refreshExecutions } = useLazyAsyncData(
   () => `workflow-executions-${props.workflowId}`,
@@ -74,15 +85,16 @@ const executions = computed(() =>
         <NuxtLink
           v-for="execution in executions" :key="execution.id"
           :to="`/orchestrator/executions/${execution.id}`"
-          class="hover:bg-muted/50 grid grid-cols-[6rem_1fr_10rem_8rem] items-center gap-4 rounded-lg border p-3 transition-colors">
+          class="hover:bg-muted/50 grid grid-cols-[auto_1fr_10rem_5rem] items-center gap-4 rounded-lg border p-3 transition-colors">
           <div class="flex items-center gap-2">
             <div
               class="h-2 w-2 rounded-full" :class="{
-                'bg-green-500': execution.status === 'success',
+                'bg-green-500': execution.status === 'success' || execution.status === 'completed',
                 'bg-red-500': execution.status === 'failed',
-                'animate-pulse bg-yellow-500': execution.status === 'running',
+                'bg-yellow-500': execution.status === 'completedWithErrors',
+                'animate-pulse bg-blue-500': execution.status === 'running',
               }" />
-            <span class="text-sm font-medium capitalize">{{ execution.status }}</span>
+            <span class="whitespace-nowrap text-sm font-medium">{{ formatStatus(execution.status) }}</span>
           </div>
           <div class="text-muted-foreground truncate font-mono text-xs">{{ execution.startedAt }}</div>
           <div class="text-muted-foreground truncate text-xs">Trigger: {{ execution.trigger }}</div>

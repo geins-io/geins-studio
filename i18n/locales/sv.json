@@ -365,6 +365,10 @@
         "unpaid": "Order unpaid"
       },
       "product": {
+        "*": {
+          "_label": "Valfri produkthändelse",
+          "!": "Produkt uppdaterad"
+        },
         "update": {
           "price": "Produktpris uppdaterat"
         }

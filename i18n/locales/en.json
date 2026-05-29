@@ -369,6 +369,7 @@
       },
       "product": {
         "*": {
+          "_label": "Product any event",
           "!": "Product updated"
         },
         "update": {

@@ -207,8 +207,9 @@ function toggleExample(idx: number) {
       <div class="text-muted-foreground mb-2 text-[10px] font-medium tracking-wider uppercase">Examples</div>
       <div class="space-y-1">
         <div v-for="(example, idx) in examples" :key="idx">
-          <button
-            class="hover:bg-muted/50 flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
+          <div
+            role="button"
+            class="hover:bg-muted/50 flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left text-xs transition-colors"
             @click="toggleExample(idx)"
           >
             <LucideChevronRight
@@ -226,7 +227,7 @@ function toggleExample(idx: number) {
             >
               <LucideCopy class="h-3 w-3" />
             </button>
-          </button>
+          </div>
           <div v-if="expandedExamples.has(idx)" class="mt-1 ml-5">
             <pre class="bg-muted/50 max-h-60 overflow-auto rounded border p-2 font-mono text-[11px]">{{ JSON.stringify(example.input, null, 2) }}</pre>
           </div>

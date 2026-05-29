@@ -126,7 +126,16 @@ const cronToHuman = (cron: string): string => {
 
 const deriveTriggerSummary = (wf: WorkflowSummary): string => {
   if (wf.cronExpression) return cronToHuman(wf.cronExpression);
-  if (wf.type === 'event') return wf.eventName ? t(`workflows.events.${wf.eventName}`) : t('workflows.event');
+  if (wf.type === 'event') {
+    if (!wf.eventName) return t('workflows.event');
+    const name = wf.eventName.replace(/\.+$/, '');
+    const key = `workflows.events.${name}`;
+    const resolved = t(key);
+    if (resolved !== key) return resolved;
+    const labelKey = `${key}._label`;
+    const label = t(labelKey);
+    return label !== labelKey ? label : wf.eventName;
+  }
   if (wf.type === 'scheduled') {
     return wf.cronExpression ? cronToHuman(wf.cronExpression) : t('workflows.scheduled');
   }

@@ -304,7 +304,7 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
 
     <!-- Meta cards -->
     <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
-      <div class="rounded-lg border p-3">
+      <div class="bg-card rounded-lg border p-3 shadow-sm">
         <div class="text-muted-foreground text-xs">
           Started
         </div>
@@ -312,7 +312,7 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
           {{ formatTimestamp(execution.startTime) }}
         </div>
       </div>
-      <div class="rounded-lg border p-3">
+      <div class="bg-card rounded-lg border p-3 shadow-sm">
         <div class="text-muted-foreground text-xs">
           Ended
         </div>
@@ -320,7 +320,7 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
           {{ formatTimestamp(execution.endTime) }}
         </div>
       </div>
-      <div class="rounded-lg border p-3">
+      <div class="bg-card rounded-lg border p-3 shadow-sm">
         <div class="text-muted-foreground flex items-center gap-1.5 text-xs">
           Duration
           <span v-if="isRunning" class="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" title="Live" />
@@ -329,7 +329,7 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
           {{ formatDuration(liveDurationMs) }}
         </div>
       </div>
-      <div class="rounded-lg border p-3">
+      <div class="bg-card rounded-lg border p-3 shadow-sm">
         <div class="text-muted-foreground text-xs">
           Errors
         </div>
@@ -337,7 +337,7 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
           {{ execution.errorCount ?? 0 }}
         </div>
       </div>
-      <div v-if="execution.totalNodes != null" class="rounded-lg border p-3">
+      <div v-if="execution.totalNodes != null" class="bg-card rounded-lg border p-3 shadow-sm">
         <div class="text-muted-foreground text-xs">
           Nodes
         </div>
@@ -346,7 +346,7 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
           <span v-if="execution.failedNodes" class="text-destructive">({{ execution.failedNodes }} failed)</span>
         </div>
       </div>
-      <div v-if="execution.workflowVersion != null" class="rounded-lg border p-3">
+      <div v-if="execution.workflowVersion != null" class="bg-card rounded-lg border p-3 shadow-sm">
         <div class="text-muted-foreground text-xs">
           Version
         </div>
