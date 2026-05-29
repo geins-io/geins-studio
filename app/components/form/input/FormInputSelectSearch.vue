@@ -35,6 +35,8 @@ watch(choice, (newChoice) => {
   }
   model.value = newChoice?.value ?? '';
   open.value = false;
+  isComingFromSearchInput.value = true;
+  setTimeout(() => trigger.value?.focus(), 0);
 });
 
 watch([model, () => props.dataSet], ([newModelValue]) => {
@@ -64,10 +66,8 @@ const handleFocus = async (event: FocusEvent) => {
 };
 
 const handleBlur = (event: FocusEvent) => {
-  // If tabbing out of the search input (not clicking within dropdown)
   const relatedTarget = event.relatedTarget as Node | null;
   const listElement = comboboxList.value;
-
   if (
     !relatedTarget ||
     (listElement &&
@@ -75,15 +75,14 @@ const handleBlur = (event: FocusEvent) => {
       !listElement.contains(relatedTarget))
   ) {
     open.value = false;
-
-    // Set flag and focus the trigger to continue natural tab order
-    isComingFromSearchInput.value = true;
-    setTimeout(() => {
-      if (trigger.value) {
-        trigger.value.focus();
-      }
-    }, 0);
   }
+};
+
+const handleSearchTab = (event: KeyboardEvent) => {
+  event.preventDefault();
+  isComingFromSearchInput.value = true;
+  open.value = false;
+  setTimeout(() => trigger.value?.focus(), 0);
 };
 
 // Handle pointer events (works for both mouse and touch)
@@ -151,6 +150,7 @@ const handleKeyDown = () => {
             :placeholder="$t('search_entity', { entityName }) + '...'"
             autocomplete="off"
             @blur="handleBlur"
+            @keydown.tab="handleSearchTab"
           />
           <span
             class="absolute inset-y-0 start-0 flex items-center justify-center px-3"
