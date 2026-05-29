@@ -108,6 +108,7 @@ const toCanvasEdge = (
   c: WorkflowNodeConnection,
   index: number,
   conditionNodeIds: Set<string>,
+  handleSourceNodeIds: Set<string>,
   inferLabel?: (
     source: string,
     connection: WorkflowNodeConnection,
@@ -123,7 +124,16 @@ const toCanvasEdge = (
   if (isConditional && !label && source && inferLabel) {
     label = inferLabel(source, c);
   }
-  const sourceHandle = isConditional && label ? label : undefined;
+  // Restore the source handle from the saved `label` for any node that routes
+  // through named handles: condition branches AND the structural handles on
+  // iterator/loop (foreach/completed) and paginator (fetchPage/forEachPage/
+  // completed). These edges are persisted with `type: 'parallel'` as often as
+  // `'conditional'`, so the handle identity lives on `label`, not the type —
+  // without this, `WorkflowHandlePlus` can't match the edge to its handle and
+  // keeps showing the "+" affordance on an already-connected handle.
+  const isHandleSource = !!source && handleSourceNodeIds.has(source);
+  const sourceHandle =
+    (isConditional || isHandleSource) && label ? label : undefined;
   return {
     id: `e-${source ?? 'src'}-${target ?? 'tgt'}-${index}`,
     source: source ?? '',
@@ -143,6 +153,14 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
       : [];
     const conditionNodeIds = new Set(
       apiNodes.filter((n) => n.type === 'condition').map((n) => n.id),
+    );
+    // Nodes whose outgoing edges leave from named structural handles. Their
+    // handle identity is stored on the connection `label`, so the canvas must
+    // restore `sourceHandle` from it on load (see `toCanvasEdge`). `loop` is a
+    // legacy alias for `iterator` that can still appear in saved definitions.
+    const HANDLE_SOURCE_TYPES = new Set(['iterator', 'loop', 'paginator']);
+    const handleSourceNodeIds = new Set(
+      apiNodes.filter((n) => HANDLE_SOURCE_TYPES.has(n.type)).map((n) => n.id),
     );
 
     // Build branch labels per condition node so we can infer missing labels
@@ -201,7 +219,7 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
 
     const nodes = apiNodes.map(toCanvasNode);
     const edges = apiConnections.map((c, i) =>
-      toCanvasEdge(c, i, conditionNodeIds, inferLabel),
+      toCanvasEdge(c, i, conditionNodeIds, handleSourceNodeIds, inferLabel),
     );
     return { nodes, edges };
   };
