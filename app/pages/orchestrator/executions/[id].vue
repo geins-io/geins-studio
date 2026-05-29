@@ -15,6 +15,8 @@ import {
   LucideCirclePlay,
   LucideCopy,
   LucideCheck,
+  LucideChevronLeft,
+  LucideChevronRight,
 } from '#components';
 
 const route = useRoute();
@@ -59,6 +61,29 @@ watch(execution, (exec) => {
     breadcrumbsStore.setCurrentTitle(exec.workflowName);
   }
 }, { immediate: true });
+
+// Sibling executions for prev/next navigation
+const { data: siblingExecutions } = useLazyAsyncData(
+  () => `sibling-executions-${execution.value?.workflowId}`,
+  () => {
+    const wfId = execution.value?.workflowId;
+    if (!wfId) return Promise.resolve([] as ExecutionLog[]);
+    return orchestratorApi.execution.list({ workflowId: wfId });
+  },
+  { default: () => [] as ExecutionLog[], watch: [() => execution.value?.workflowId] },
+);
+
+const siblingIndex = computed(() =>
+  siblingExecutions.value.findIndex(e => e.id === executionId.value),
+);
+const newerExecutionId = computed(() =>
+  siblingIndex.value > 0 ? siblingExecutions.value[siblingIndex.value - 1]?.id ?? null : null,
+);
+const olderExecutionId = computed(() => {
+  const list = siblingExecutions.value;
+  if (siblingIndex.value < 0 || siblingIndex.value >= list.length - 1) return null;
+  return list[siblingIndex.value + 1]?.id ?? null;
+});
 
 // Live ticking clock + polling while execution is running
 const { now } = useLiveClock(isRunning);
@@ -243,7 +268,7 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
             </button>
           </div>
           <div class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
-            <NuxtLink :to="`/orchestrator/workflows/${execution.workflowId}`" class="hover:text-foreground underline">
+            <NuxtLink :to="`/orchestrator/workflows/${execution.workflowId}?tab=3`" class="hover:text-foreground underline">
               {{ execution.workflowName || 'Workflow' }}
             </NuxtLink>
             <span v-if="execution.group">•</span>
@@ -264,6 +289,30 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
         </div>
       </template>
       <ContentActionBar>
+        <div class="flex items-center gap-0.5">
+          <NuxtLink
+            v-if="olderExecutionId"
+            :to="`/orchestrator/executions/${olderExecutionId}`"
+            class="hover:bg-muted inline-flex items-center justify-center rounded-md border p-1.5 transition-colors"
+            title="Older execution"
+          >
+            <LucideChevronLeft class="size-4" />
+          </NuxtLink>
+          <span v-else class="inline-flex cursor-default items-center justify-center rounded-md border p-1.5 opacity-30">
+            <LucideChevronLeft class="size-4" />
+          </span>
+          <NuxtLink
+            v-if="newerExecutionId"
+            :to="`/orchestrator/executions/${newerExecutionId}`"
+            class="hover:bg-muted inline-flex items-center justify-center rounded-md border p-1.5 transition-colors"
+            title="Newer execution"
+          >
+            <LucideChevronRight class="size-4" />
+          </NuxtLink>
+          <span v-else class="inline-flex cursor-default items-center justify-center rounded-md border p-1.5 opacity-30">
+            <LucideChevronRight class="size-4" />
+          </span>
+        </div>
         <ButtonIcon icon="retry" :disabled="!details?.canReplay || actionPending" @click="handleReplay">
           Replay
         </ButtonIcon>
