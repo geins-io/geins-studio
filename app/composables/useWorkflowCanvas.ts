@@ -208,7 +208,9 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
       const claimed = claimedLabels.get(source);
       const unclaimed = allLabels.filter((l) => !claimed?.has(l));
       for (let i = 0; i < conns.length && i < unclaimed.length; i++) {
-        inferredLabels.set(conns[i], unclaimed[i]);
+        const conn = conns[i];
+        const branchLabel = unclaimed[i];
+        if (conn && branchLabel) inferredLabels.set(conn, branchLabel);
       }
     }
 

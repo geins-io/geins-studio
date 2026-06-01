@@ -41,43 +41,104 @@ export const tidyUpLayout = (nodes: GraphNode[], edges: Edge[]): Node[] => {
     positions.set(n.id, { x: laid.x - width / 2, y: laid.y - height / 2 });
   }
 
-  // Condition/switch nodes render handles in a fixed vertical order (matching
-  // the branch array). Dagre doesn't know about handles so targets may end up
-  // in the wrong vertical order, causing edges to cross. Reorder target Y
-  // positions to match the handle order on each condition node.
-  const conditionNodes = nodes.filter((n) => n.type === 'condition');
-  for (const cn of conditionNodes) {
-    const branches: string[] = [];
-    const conds = cn.data?.conditions as { label: string }[] | undefined;
-    if (Array.isArray(conds)) {
-      for (const c of conds) if (c.label) branches.push(c.label);
-    }
-    const def = cn.data?.defaultLabel as string | undefined;
-    if (def) branches.push(def);
-    if (branches.length < 2) continue;
+  // Some node types render several output handles in a fixed vertical order:
+  // condition branches, iterator/loop (foreach → completed) and paginator
+  // (fetchPage → forEachPage → completed). Dagre is handle-agnostic, so its
+  // targets can land in the wrong vertical order and cross the connections at
+  // the source handles. For each such node, reorder its target rows so the
+  // top handle's target sits highest, and shift each target's *exclusive*
+  // downstream subtree by the same delta so independent branches move as a
+  // unit (rather than tearing a target away from its own children).
+  const adjacency = new Map<string, string[]>();
+  for (const e of edges) {
+    const list = adjacency.get(e.source);
+    if (list) list.push(e.target);
+    else adjacency.set(e.source, [e.target]);
+  }
 
-    // Map each branch label to its target node via edges
-    const branchTargets: { targetId: string; handleIndex: number }[] = [];
-    for (const e of edges) {
-      if (e.source !== cn.id) continue;
-      const handle = e.sourceHandle ?? e.label;
-      const idx = typeof handle === 'string' ? branches.indexOf(handle) : -1;
-      if (idx >= 0 && positions.has(e.target)) {
-        branchTargets.push({ targetId: e.target, handleIndex: idx });
+  // Nodes reachable downstream from `start` (inclusive), following edges.
+  const reachableFrom = (start: string): Set<string> => {
+    const seen = new Set<string>([start]);
+    const queue = [start];
+    while (queue.length) {
+      const id = queue.shift()!;
+      for (const next of adjacency.get(id) ?? []) {
+        if (!seen.has(next)) {
+          seen.add(next);
+          queue.push(next);
+        }
       }
     }
-    if (branchTargets.length < 2) continue;
+    return seen;
+  };
 
-    // Sort by handle index (top-to-bottom) and collect current Y positions
-    branchTargets.sort((a, b) => a.handleIndex - b.handleIndex);
-    const currentYs = branchTargets
-      .map((bt) => positions.get(bt.targetId)!.y)
+  // Vertical handle order per node. Condition order is data-driven (branch
+  // labels); iterator/loop/paginator orders are fixed by their renderers.
+  const handleOrderForNode = (n: GraphNode): string[] => {
+    if (n.type === 'iterator' || n.type === 'loop') {
+      return ['foreach', 'completed'];
+    }
+    if (n.type === 'paginator') {
+      return ['fetchPage', 'forEachPage', 'completed'];
+    }
+    if (n.type === 'condition') {
+      const branches: string[] = [];
+      const conds = n.data?.conditions as { label: string }[] | undefined;
+      if (Array.isArray(conds)) {
+        for (const c of conds) if (c.label) branches.push(c.label);
+      }
+      const def = n.data?.defaultLabel as string | undefined;
+      if (def) branches.push(def);
+      return branches;
+    }
+    return [];
+  };
+
+  for (const node of nodes) {
+    const handleOrder = handleOrderForNode(node);
+    if (handleOrder.length < 2) continue;
+
+    // Map each outgoing edge to its handle index (top-to-bottom).
+    const handleTargets: { targetId: string; handleIndex: number }[] = [];
+    for (const e of edges) {
+      if (e.source !== node.id) continue;
+      const handle = e.sourceHandle ?? e.label;
+      const idx = typeof handle === 'string' ? handleOrder.indexOf(handle) : -1;
+      if (idx >= 0 && positions.has(e.target)) {
+        handleTargets.push({ targetId: e.target, handleIndex: idx });
+      }
+    }
+    if (handleTargets.length < 2) continue;
+
+    // Sort targets by handle order, then re-slot their Y positions in the same
+    // ascending order so the topmost handle owns the topmost row.
+    handleTargets.sort((a, b) => a.handleIndex - b.handleIndex);
+    const currentYs = handleTargets
+      .map((ht) => positions.get(ht.targetId)!.y)
       .sort((a, b) => a - b);
 
-    // Assign sorted Y values so the top handle's target is visually highest
-    for (let i = 0; i < branchTargets.length; i++) {
-      const pos = positions.get(branchTargets[i].targetId)!;
-      pos.y = currentYs[i];
+    // A node downstream of more than one target (a convergence point) can't
+    // belong to a single branch — leave those to dagre and only move nodes
+    // owned exclusively by one target.
+    const reachSets = handleTargets.map((ht) => reachableFrom(ht.targetId));
+    for (let i = 0; i < handleTargets.length; i++) {
+      const target = handleTargets[i];
+      const reach = reachSets[i];
+      const newY = currentYs[i];
+      if (!target || !reach || newY === undefined) continue;
+      const targetPos = positions.get(target.targetId);
+      if (!targetPos) continue;
+      const delta = newY - targetPos.y;
+      if (delta === 0) continue;
+      for (const id of reach) {
+        const pos = positions.get(id);
+        if (!pos) continue;
+        const sharedWithSibling = reachSets.some(
+          (set, j) => j !== i && set.has(id),
+        );
+        if (sharedWithSibling) continue;
+        pos.y += delta;
+      }
     }
   }
 
