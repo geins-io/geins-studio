@@ -235,6 +235,28 @@
   align-items: center;
 }
 
+/* Always-visible thin scrollbar — gives an affordance that a list overflows
+   (macOS overlay scrollbars stay hidden until scrolling otherwise). */
+@utility scroll-visible {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+  }
+}
+
 @layer base {
   @font-face {
     font-family: 'Suisse Intl';

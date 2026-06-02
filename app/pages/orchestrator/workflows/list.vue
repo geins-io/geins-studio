@@ -37,6 +37,10 @@ export interface WorkflowListItem {
   successRate24h: string;
   successRate7d: string;
   successRate30d: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  updatedBy: string;
 }
 
 type Entity = WorkflowSummary;
@@ -122,7 +126,16 @@ const cronToHuman = (cron: string): string => {
 
 const deriveTriggerSummary = (wf: WorkflowSummary): string => {
   if (wf.cronExpression) return cronToHuman(wf.cronExpression);
-  if (wf.type === 'event') return wf.eventName ? t(`workflows.events.${wf.eventName}`) : t('workflows.event');
+  if (wf.type === 'event') {
+    if (!wf.eventName) return t('workflows.event');
+    const name = wf.eventName.replace(/\.+$/, '');
+    const key = `workflows.events.${name}`;
+    const resolved = t(key);
+    if (resolved !== key) return resolved;
+    const labelKey = `${key}._label`;
+    const label = t(labelKey);
+    return label !== labelKey ? label : wf.eventName;
+  }
   if (wf.type === 'scheduled') {
     return wf.cronExpression ? cronToHuman(wf.cronExpression) : t('workflows.scheduled');
   }
@@ -166,6 +179,10 @@ const mapToListData = (
       successRate7d: formatRate(wfMetrics?.metrics7d?.successRate, wfMetrics?.metrics7d?.totalExecutions),
       successRate30d: formatRate(wfMetrics?.metrics30d?.successRate, wfMetrics?.metrics30d?.totalExecutions),
 
+      createdAt: wf.createdAt ?? '',
+      updatedAt: wf.updatedAt ?? '',
+      createdBy: wf.createdBy ?? '',
+      updatedBy: wf.updatedBy ?? '',
       group: groupName,
       groupSlug: groupName ? groupName.toLowerCase().replace(/\s+/g, '-') : null,
     };
@@ -184,7 +201,7 @@ const dataList = computed(() => {
 });
 
 const clearGroupFilter = () => {
-  navigateTo('/orchestrator/workflows');
+  navigateTo('/orchestrator/workflows/list');
 };
 
 // ─── Table Columns ─────────────────────────────────────────────────
@@ -242,13 +259,15 @@ onMounted(() => {
       successRate24h: 'icon',
       successRate7d: 'icon',
       successRate30d: 'icon',
+      createdAt: 'date',
+      updatedAt: 'date',
     },
     linkColumns: {
       name: { url: '/orchestrator/workflows/{id}', idField: 'id' },
       executionsTotal: { url: '/orchestrator/executions?id={id}', idField: 'id' },
-      executions24h: { url: '/orchestrator/executions?id={id}', idField: 'id' },
-      executions7d: { url: '/orchestrator/executions?id={id}', idField: 'id' },
-      executions30d: { url: '/orchestrator/executions?id={id}', idField: 'id' },
+      executions24h: { url: '/orchestrator/executions?id={id}&period=24h', idField: 'id' },
+      executions7d: { url: '/orchestrator/executions?id={id}&period=7d', idField: 'id' },
+      executions30d: { url: '/orchestrator/executions?id={id}&period=30d', idField: 'id' },
     },
     iconColumns: {
       triggerSummary: { resolveIcon: resolveTriggerIcon },
@@ -274,9 +293,15 @@ onMounted(() => {
       successRate24h: t('workflows.success_rate_24h'),
       successRate7d: t('workflows.success_rate_7d'),
       successRate30d: t('workflows.success_rate_30d'),
+      createdAt: t('created'),
+      updatedAt: t('modified'),
+      createdBy: t('created_by'),
+      updatedBy: t('modified_by'),
     },
     excludeColumns: [],
   };
+
+
 
   columns.value = getColumns(dataList.value, columnOptions);
   loading.value = false;
@@ -284,8 +309,11 @@ onMounted(() => {
 
 // ─── Column Visibility ────────────────────────────────────────────
 const { getVisibilityState } = useTable<EntityList>();
-const hiddenColumns: StringKeyOf<EntityList>[] = ['id', 'description', 'groupSlug'];
+const hiddenColumns: StringKeyOf<EntityList>[] = ['id', 'description', 'groupSlug', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy'];
 visibilityState.value = getVisibilityState(hiddenColumns);
+
+// SET UP SEARCHABLE FIELDS
+const searchableFields: Array<keyof EntityList> = ['name', 'type', 'health', 'status', 'group', 'triggerSummary'];
 </script>
 
 <template>
@@ -315,7 +343,8 @@ visibilityState.value = getVisibilityState(hiddenColumns);
   <NuxtErrorBoundary>
     <TableView
 :loading="loading" :entity-name="entityName" :columns="columns" :data="dataList"
-      :init-visibility-state="visibilityState" :error="fetchError" :on-retry="refresh">
+      :init-visibility-state="visibilityState" :init-sorting-state="[{ id: 'createdAt', desc: true }]" :searchable-fields="searchableFields" :error="fetchError"
+      :on-retry="refresh">
       <template #empty-actions>
         <ButtonIcon icon="new" variant="secondary" @click="navigateTo('/orchestrator/workflows/new')">
           {{ $t('create_new_entity', { entityName }) }}

@@ -56,7 +56,19 @@ export function getFallbackErrorMessage(
   data: Record<string, unknown> | null,
 ): string {
   // Extract meaningful message from response data if possible
-  const msg = data?.message || data?.error || null;
+  // Nitro createError wraps upstream body in `data` — may be a string or { message }
+  const nested = data?.data;
+  const nestedMsg =
+    typeof nested === 'string'
+      ? nested
+      : nested && typeof nested === 'object' && 'message' in nested
+        ? (nested as Record<string, unknown>).message
+        : null;
+  const msg =
+    (typeof nestedMsg === 'string' ? nestedMsg : null) ||
+    data?.message ||
+    data?.error ||
+    null;
   const serverMessage = typeof msg === 'string' ? msg : null;
 
   const statusMessages: Record<number, string> = {

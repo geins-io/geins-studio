@@ -30,12 +30,13 @@ export type HealthStatus =
 export type ConnectionType = 'sequential' | 'conditional' | 'parallel';
 
 export type WorkflowNodeType =
-  | 'Action'
-  | 'Condition'
-  | 'Iterator'
-  | 'Delay'
-  | 'Trigger'
-  | 'Workflow';
+  | 'action'
+  | 'condition'
+  | 'iterator'
+  | 'delay'
+  | 'trigger'
+  | 'workflow'
+  | 'paginator';
 
 // -- Workflow Definition ----------------------------------------------------
 
@@ -50,11 +51,36 @@ export interface WorkflowTrigger {
   timeWindow?: string;
 }
 
+/**
+ * Trigger configuration payload as stored/accepted by the Management API.
+ *
+ * Required on create/update for `scheduled` and `event` workflows:
+ * - scheduled → `cronExpression`
+ * - event → `entity` + `action`
+ */
+export interface WorkflowTriggerConfig {
+  enabled?: boolean;
+  cronExpression?: string;
+  entity?: string;
+  action?: string;
+  subEntity?: string;
+  description?: string;
+  startTime?: string | null;
+  endTime?: string | null;
+  eventFilters?: Record<string, unknown> | null;
+  inputParameters?: Record<string, unknown> | null;
+}
+
 export interface WorkflowNodeConnection {
-  sourceNodeId: string;
-  targetNodeId: string;
+  /** Source node id. The Geins Management API uses `from` (not `sourceNodeId`). */
+  from: string;
+  /** Target node id. The Geins Management API uses `to` (not `targetNodeId`). */
+  to: string;
   type: ConnectionType;
+  /** Always serialised — empty string when no label is set. */
   label?: string;
+  /** Free-form editor metadata (positions, sourceHandle, etc.). `null` when unset. */
+  ui?: Record<string, unknown> | null;
 }
 
 export interface WorkflowNodeConfig {
@@ -77,6 +103,8 @@ export interface WorkflowInput {
   required?: boolean;
   defaultValue?: unknown;
   description?: string;
+  /** Used to group inputs in the editor — empty/undefined falls back to `general`. */
+  category?: string;
 }
 
 export interface WorkflowSettings {
@@ -113,6 +141,8 @@ export interface WorkflowSummary {
   version: number;
   createdAt?: string;
   updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface WorkflowDefinition extends WorkflowSummary {
@@ -126,6 +156,7 @@ export interface WorkflowDefinition extends WorkflowSummary {
 export interface CreateWorkflowRequest {
   name: string;
   description?: string;
+  group?: string;
   tags?: string[];
   type?: WorkflowType;
   enabled?: boolean;
@@ -136,6 +167,8 @@ export interface CreateWorkflowRequest {
   connections?: WorkflowNodeConnection[];
   settings?: WorkflowSettings;
   ui?: WorkflowUiMetadata;
+  /** Required for `scheduled` and `event` workflow types. */
+  trigger?: WorkflowTriggerConfig;
 }
 
 export interface UpdateWorkflowRequest extends CreateWorkflowRequest {
@@ -143,7 +176,9 @@ export interface UpdateWorkflowRequest extends CreateWorkflowRequest {
 }
 
 export interface ValidateWorkflowResult {
-  valid: boolean;
+  valid?: boolean;
+  isValid?: boolean;
+  message?: string;
   errors?: WorkflowValidationError[];
 }
 
@@ -155,18 +190,68 @@ export interface WorkflowValidationError {
 
 // -- Executions -------------------------------------------------------------
 
+export interface ExecutionNodeExecution {
+  nodeId: string;
+  nodeName?: string;
+  nodeType: string;
+  activityName?: string | null;
+  status: string;
+  startTime?: string;
+  endTime?: string;
+  durationMs?: number;
+  retryCount?: number;
+  retryErrors?: string[] | null;
+  executionOrder?: number;
+  input?: Record<string, unknown> | null;
+  output?: Record<string, unknown> | null;
+}
+
 export interface ExecutionLog {
-  _id: string;
-  _type: string;
-  instanceId: string;
+  id: string;
   workflowId: string;
   workflowName: string;
-  status: ExecutionStatus;
-  startedAt: string;
-  completedAt?: string;
-  durationMs?: number;
-  startedBy?: string;
-  error?: string;
+  group?: string;
+  status: string;
+  startTime: string;
+  endTime?: string | null;
+  durationMs?: number | null;
+  totalNodes?: number;
+  completedNodes?: number;
+  failedNodes?: number;
+  skippedNodes?: number;
+  isScheduled?: boolean;
+  triggerType?: string | null;
+  startedBy?: string | null;
+  cronExpression?: string | null;
+  eventName?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  workflowVersion?: string | number;
+  tags?: string[] | null;
+  childExecutionIds?: string[] | null;
+  cascadeCancellation?: boolean;
+  idempotencyKey?: string | null;
+  replayOf?: string | null;
+  replayedBy?: string | null;
+  replayedAt?: string | null;
+  pauseReason?: string | null;
+  pausedBy?: string | null;
+  pausedAt?: string | null;
+  cancelledBy?: string | null;
+  cancellationReason?: string | null;
+  errors?: string[] | null;
+  errorCount?: number;
+  isTestRun?: boolean;
+  nodeExecutions?: ExecutionNodeExecution[] | null;
+}
+
+export interface ExecutionDetailsResponse {
+  execution: ExecutionLog;
+  orchestrationStatus: string | null;
+  canCancel: boolean;
+  canPause: boolean;
+  canResume?: boolean;
+  canReplay: boolean;
 }
 
 export interface ExecutionNodeResult {
@@ -184,7 +269,6 @@ export interface ExecutionNodeResult {
 
 export interface ExecutionDetails extends ExecutionLog {
   workflowVersion: number;
-  idempotencyKey?: string;
   parameters?: Record<string, unknown>;
   nodeResults: ExecutionNodeResult[];
   availableActions: string[];
@@ -218,8 +302,26 @@ export interface StartWorkflowRequest {
   startedBy?: string;
 }
 
+export interface BulkEnableDisableRequest {
+  workflowIds: string[];
+}
+
+export interface BulkWorkflowOperationResponse {
+  totalProcessed: number;
+  successful: number;
+  failed: number;
+  successfulWorkflowIds: string[];
+  failedWorkflowIds: string[];
+  errors?: Record<string, string>;
+}
+
 export interface StartWorkflowResponse {
-  instanceId: string;
+  success?: boolean;
+  status?: string;
+  executionId?: string;
+  newExecutionId?: string;
+  message?: string;
+  instanceId?: string;
 }
 
 export interface CancelExecutionRequest {
@@ -266,9 +368,10 @@ export interface BulkReplayFailedResponse {
 
 export interface ListExecutionLogsOptions {
   status?: ExecutionStatus;
-  startTime?: string;
-  endTime?: string;
+  startedAfter?: string;
+  startedBefore?: string;
   limit?: number;
+  workflowId?: string;
 }
 
 export interface ListWorkflowExecutionsOptions {
@@ -371,6 +474,14 @@ export interface WorkflowVersionEntry {
   createdAt: string;
   createdBy?: string;
   description?: string;
+  archivedAt?: string;
+  archivedBy?: string;
+  definitionHash?: string;
+  definition?: {
+    nodes?: unknown[];
+    connections?: unknown[];
+    [key: string]: unknown;
+  };
 }
 
 export interface WorkflowHistory {
@@ -440,6 +551,7 @@ export interface ManifestNodeType {
   color?: string;
   connections: ManifestNodeTypeConnection;
   config?: ManifestNodeTypeConfig[];
+  output?: ManifestActionOutput[];
 }
 
 export interface ManifestActionParameter {
@@ -474,9 +586,17 @@ export interface ManifestActionCategory {
 
 export interface ManifestExpressionFunction {
   name: string;
+  category?: string;
   description?: string;
-  parameters?: { name: string; type: string; description?: string }[];
+  parameters?: {
+    name: string;
+    type: string;
+    required?: boolean;
+    description?: string;
+    default?: unknown;
+  }[];
   returnType?: string;
+  aliases?: string[];
   example?: string;
 }
 
@@ -492,15 +612,11 @@ export interface ManifestTriggerType {
   description?: string;
 }
 
-export interface ManifestEventEntityAction {
-  name: string;
-  displayName: string;
-}
-
 export interface ManifestEventEntity {
   name: string;
   displayName: string;
-  actions: ManifestEventEntityAction[];
+  /** Action names as returned by the manifest (e.g. `['create', 'update', 'activate']`). */
+  actions: string[];
   subEntities?: string[];
 }
 
@@ -586,7 +702,8 @@ export interface WorkflowEntityExecutionBase {
   currentStepId?: string;
 }
 
-export type WorkflowEntityExecution = ResponseEntity<WorkflowEntityExecutionBase>;
+export type WorkflowEntityExecution =
+  ResponseEntity<WorkflowEntityExecutionBase>;
 
 export type WorkflowEntityExecutionStatus =
   | 'pending'
@@ -682,7 +799,8 @@ export interface WorkflowEntityVariableBase {
   workflowId?: string;
 }
 
-export type WorkflowEntityVariableCreate = CreateEntity<WorkflowEntityVariableBase>;
+export type WorkflowEntityVariableCreate =
+  CreateEntity<WorkflowEntityVariableBase>;
 export type WorkflowEntityVariable = ResponseEntity<WorkflowEntityVariableBase>;
 
 // ─── Entity Editor ─────────────────────────────────────────────────
@@ -735,3 +853,48 @@ export type WorkflowExecutionFieldsFilter =
   | 'logs';
 export type WorkflowExecutionApiOptions =
   ApiOptions<WorkflowExecutionFieldsFilter>;
+
+export interface LiveConsoleLine {
+  id: number;
+  timestamp: string;
+  level: 'info' | 'warn' | 'error' | 'debug';
+  source: string;
+  message: string;
+}
+
+// -- Workflow Node Palette --------------------------------------------------
+// Used by WorkflowSidebarAddNode (produces items) and WorkflowBuilder
+// (consumes items when placing nodes on the canvas).
+
+export interface PaletteItem {
+  // VueFlow node type this item creates ('action' | 'trigger' | 'condition' | 'iterator' | 'delay' | 'workflow').
+  nodeType: string;
+  // Stable id for template keying.
+  id: string;
+  label: string;
+  description?: string;
+  // For action items, the backend `actionName` that goes into the node's config.
+  actionName?: string;
+  // When set, the item originates from a saved node template and should
+  // be created with the full template data instead of a blank node.
+  templateId?: string;
+}
+
+export interface PaletteSection {
+  category: string;
+  items: PaletteItem[];
+}
+
+// -- Node Templates --------------------------------------------------------
+// Locally stored (localStorage) node configurations that users can reuse
+// across workflows.
+
+export interface NodeTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  nodeType: string;
+  actionName?: string;
+  nodeData: Record<string, unknown>;
+  createdAt: string;
+}

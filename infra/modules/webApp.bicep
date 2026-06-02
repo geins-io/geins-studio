@@ -3,6 +3,9 @@
 // =============================================================================
 // Creates a Linux Web App configured for container deployment from GHCR.
 // Includes managed identity, health checks, and application settings.
+//
+// NOTE: appSettings in siteConfig is a full replace — any env var not listed
+// here will be wiped on deploy. Add new vars here, not just in the portal.
 // =============================================================================
 
 // -----------------------------------------------------------------------------
@@ -60,6 +63,9 @@ param salesPortalWebhookSecret string = ''
 @description('Log level')
 param logLevel string
 
+@description('Enable orchestrator feature flag')
+param featureOrchestrator string = 'true'
+
 // Monitoring settings
 @description('Application Insights connection string')
 param appInsightsConnectionString string = ''
@@ -71,11 +77,203 @@ param appInsightsInstrumentationKey string = ''
 // Variables
 // -----------------------------------------------------------------------------
 
-// Container registry server
 var registryServer = 'ghcr.io'
 
-// Node environment based on deployment environment
 var nodeEnv = environment == 'prod' ? 'production' : environment == 'staging' ? 'production' : 'development'
+
+// Shared app settings (array form for siteConfig.appSettings)
+var appSettings = [
+  // Container Registry Configuration
+  {
+    name: 'DOCKER_REGISTRY_SERVER_URL'
+    value: 'https://${registryServer}'
+  }
+  {
+    name: 'DOCKER_REGISTRY_SERVER_USERNAME'
+    value: ghcrUsername
+  }
+  {
+    name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
+    value: ghcrToken
+  }
+  // Application Settings
+  {
+    name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
+    value: 'false'
+  }
+  {
+    name: 'WEBSITES_PORT'
+    value: '3000'
+  }
+  {
+    name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'
+    value: '600'
+  }
+  // Nitro/Nuxt server binding
+  {
+    name: 'NITRO_HOST'
+    value: '0.0.0.0'
+  }
+  {
+    name: 'NITRO_PORT'
+    value: '3000'
+  }
+  {
+    name: 'NODE_ENV'
+    value: nodeEnv
+  }
+  // Nuxt runtime config overrides
+  {
+    name: 'GEINS_API_URL'
+    value: geinsApiUrl
+  }
+  {
+    name: 'NUXT_PUBLIC_API_URL'
+    value: geinsApiUrl
+  }
+  {
+    name: 'NUXT_PRIVATE_AUTH_SECRET'
+    value: authSecret
+  }
+  {
+    name: 'BASE_URL'
+    value: baseUrl
+  }
+  {
+    name: 'AUTH_ORIGIN'
+    value: baseUrl
+  }
+  {
+    name: 'AUTH_PATH'
+    value: authPath
+  }
+  {
+    name: 'GEINS_DEBUG'
+    value: geinsDebug
+  }
+  {
+    name: 'SALES_PORTAL_WEBHOOK_SECRET'
+    value: salesPortalWebhookSecret
+  }
+  {
+    name: 'NUXT_PRIVATE_SALES_PORTAL_WEBHOOK_SECRET'
+    value: salesPortalWebhookSecret
+  }
+  {
+    name: 'LOG_LEVEL'
+    value: logLevel
+  }
+  {
+    name: 'NUXT_PUBLIC_FEATURE_ORCHESTRATOR'
+    value: featureOrchestrator
+  }
+  // Application Insights Configuration
+  {
+    name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+    value: appInsightsConnectionString
+  }
+  {
+    name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+    value: appInsightsInstrumentationKey
+  }
+  {
+    name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
+    value: '~0'
+  }
+]
+
+// Staging slot overrides
+var stagingAppSettings = [
+  // Container Registry Configuration
+  {
+    name: 'DOCKER_REGISTRY_SERVER_URL'
+    value: 'https://${registryServer}'
+  }
+  {
+    name: 'DOCKER_REGISTRY_SERVER_USERNAME'
+    value: ghcrUsername
+  }
+  {
+    name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
+    value: ghcrToken
+  }
+  {
+    name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
+    value: 'false'
+  }
+  {
+    name: 'WEBSITES_PORT'
+    value: '3000'
+  }
+  {
+    name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'
+    value: '600'
+  }
+  {
+    name: 'NITRO_HOST'
+    value: '0.0.0.0'
+  }
+  {
+    name: 'NITRO_PORT'
+    value: '3000'
+  }
+  {
+    name: 'NODE_ENV'
+    value: 'production'
+  }
+  {
+    name: 'GEINS_API_URL'
+    value: geinsApiUrl
+  }
+  {
+    name: 'NUXT_PUBLIC_API_URL'
+    value: geinsApiUrl
+  }
+  {
+    name: 'NUXT_PRIVATE_AUTH_SECRET'
+    value: authSecret
+  }
+  {
+    name: 'BASE_URL'
+    value: baseUrl
+  }
+  {
+    name: 'AUTH_ORIGIN'
+    value: baseUrl
+  }
+  {
+    name: 'AUTH_PATH'
+    value: authPath
+  }
+  {
+    name: 'GEINS_DEBUG'
+    value: 'false'
+  }
+  {
+    name: 'SALES_PORTAL_WEBHOOK_SECRET'
+    value: salesPortalWebhookSecret
+  }
+  {
+    name: 'NUXT_PRIVATE_SALES_PORTAL_WEBHOOK_SECRET'
+    value: salesPortalWebhookSecret
+  }
+  {
+    name: 'LOG_LEVEL'
+    value: logLevel
+  }
+  {
+    name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+    value: appInsightsConnectionString
+  }
+  {
+    name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+    value: appInsightsInstrumentationKey
+  }
+  {
+    name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
+    value: '~0'
+  }
+]
 
 // -----------------------------------------------------------------------------
 // Resources
@@ -95,108 +293,12 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     clientAffinityEnabled: false
     siteConfig: {
       linuxFxVersion: 'DOCKER|${containerImage}'
-      alwaysOn: environment != 'dev' // Always On for staging and prod
+      alwaysOn: environment != 'dev'
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       http20Enabled: true
       healthCheckPath: '/api/health'
-      appSettings: [
-        // Container Registry Configuration
-        {
-          name: 'DOCKER_REGISTRY_SERVER_URL'
-          value: 'https://${registryServer}'
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_USERNAME'
-          value: ghcrUsername
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
-          value: ghcrToken
-        }
-        // Application Settings
-        {
-          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
-          value: 'false'
-        }
-        {
-          name: 'WEBSITES_PORT'
-          value: '3000'
-        }
-        // Container startup timeout (in seconds) - B1 tier requires longer startup time
-        {
-          name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'
-          value: '600'
-        }
-        // Nitro/Nuxt server binding - must bind to 0.0.0.0 for Azure
-        {
-          name: 'NITRO_HOST'
-          value: '0.0.0.0'
-        }
-        {
-          name: 'NITRO_PORT'
-          value: '3000'
-        }
-        {
-          name: 'NODE_ENV'
-          value: nodeEnv
-        }
-        // ─────────────────────────────────────────────────────────────────────
-        // NUXT RUNTIME CONFIG OVERRIDES
-        // These MUST use NUXT_ prefix for Nuxt to pick them up at runtime.
-        // See: nuxt.config.ts runtimeConfig section for the full mapping.
-        // ─────────────────────────────────────────────────────────────────────
-        {
-          name: 'GEINS_API_URL'
-          value: geinsApiUrl
-        }
-        {
-          name: 'NUXT_PUBLIC_API_URL'
-          value: geinsApiUrl
-        }
-        {
-          name: 'NUXT_PRIVATE_AUTH_SECRET'
-          value: authSecret
-        }
-        {
-          name: 'BASE_URL'
-          value: baseUrl
-        }
-        {
-          name: 'AUTH_ORIGIN'
-          value: baseUrl
-        }
-        {
-          name: 'AUTH_PATH'
-          value: authPath
-        }
-        {
-          name: 'GEINS_DEBUG'
-          value: geinsDebug
-        }
-        {
-          name: 'SALES_PORTAL_WEBHOOK_SECRET'
-          value: salesPortalWebhookSecret
-        }
-        {
-          name: 'LOG_LEVEL'
-          value: logLevel
-        }
-        // Application Insights Configuration
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsightsConnectionString
-        }
-        {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsInstrumentationKey
-        }
-        // Disable the auto-instrumentation agent for Linux containers - it can interfere with Node.js startup
-        {
-          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
-          value: '~0'
-        }
-      ]
+      appSettings: appSettings
     }
   }
 }
@@ -222,92 +324,7 @@ resource stagingSlot 'Microsoft.Web/sites/slots@2023-12-01' = if (environment ==
       minTlsVersion: '1.2'
       http20Enabled: true
       healthCheckPath: '/api/health'
-      appSettings: [
-        {
-          name: 'DOCKER_REGISTRY_SERVER_URL'
-          value: 'https://${registryServer}'
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_USERNAME'
-          value: ghcrUsername
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
-          value: ghcrToken
-        }
-        {
-          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
-          value: 'false'
-        }
-        {
-          name: 'WEBSITES_PORT'
-          value: '3000'
-        }
-        {
-          name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'
-          value: '600'
-        }
-        {
-          name: 'NITRO_HOST'
-          value: '0.0.0.0'
-        }
-        {
-          name: 'NITRO_PORT'
-          value: '3000'
-        }
-        {
-          name: 'NODE_ENV'
-          value: 'production'
-        }
-        {
-          name: 'GEINS_API_URL'
-          value: geinsApiUrl
-        }
-        {
-          name: 'NUXT_PUBLIC_API_URL'
-          value: geinsApiUrl
-        }
-        {
-          name: 'NUXT_PRIVATE_AUTH_SECRET'
-          value: authSecret
-        }
-        {
-          name: 'BASE_URL'
-          value: baseUrl
-        }
-        {
-          name: 'AUTH_ORIGIN'
-          value: baseUrl
-        }
-        {
-          name: 'AUTH_PATH'
-          value: authPath
-        }
-        {
-          name: 'GEINS_DEBUG'
-          value: 'false'
-        }
-        {
-          name: 'SALES_PORTAL_WEBHOOK_SECRET'
-          value: salesPortalWebhookSecret
-        }
-        {
-          name: 'LOG_LEVEL'
-          value: logLevel
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsightsConnectionString
-        }
-        {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsightsInstrumentationKey
-        }
-        {
-          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
-          value: '~0'
-        }
-      ]
+      appSettings: stagingAppSettings
     }
   }
 }

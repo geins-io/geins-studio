@@ -12,6 +12,8 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
+  ignore: ['.temp/**', '.agents/**', '.mint/**', '.claude/**'],
+
   modules: [
     '@sidebase/nuxt-auth',
     '@nuxt/test-utils/module',
@@ -39,6 +41,25 @@ export default defineNuxtConfig({
   vite: {
     // @ts-expect-error Type conflict: @tailwindcss/vite uses vite 7 types, vitepress pulls in vite 5 types
     plugins: [tailwindcss()],
+    server: {
+      watch: {
+        ignored: [
+          '**/.temp/**',
+          '**/.agents/**',
+          '**/.mint/**',
+          '**/.claude/**',
+          '**/.output/**',
+          '**/.nuxt/**',
+        ],
+      },
+    },
+  },
+
+  nitro: {
+    watchOptions: {
+      ignored: ['**/.temp/**', '**/.agents/**', '**/.mint/**', '**/.claude/**'],
+    },
+    ...(process.env.NITRO_PRESET && { preset: process.env.NITRO_PRESET }),
   },
 
   viewport: {
@@ -98,9 +119,9 @@ export default defineNuxtConfig({
       baseUrl: getBaseUrl(),
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
+      appId: process.env.NUXT_PUBLIC_APP_ID || '',
       featureOrchestrator:
         process.env.NUXT_PUBLIC_FEATURE_ORCHESTRATOR === 'true',
-      brandOverride: process.env.NUXT_PUBLIC_BRAND_OVERRIDE || '',
     },
     private: {
       authSecret: process.env.AUTH_SECRET,
@@ -113,12 +134,6 @@ export default defineNuxtConfig({
     server: false,
     client: true,
   },
-
-  ...(process.env.NITRO_PRESET && {
-    nitro: {
-      preset: process.env.NITRO_PRESET,
-    },
-  }),
 
   compatibilityDate: '2024-07-05',
 });

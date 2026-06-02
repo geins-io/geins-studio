@@ -34,7 +34,7 @@ const emit = defineEmits<{
 }>();
 
 const { geinsLogError } = useGeinsLog('components/AuthForm.vue');
-const { isLitium, brandName } = useBrand();
+const { brand, brandName } = useBrand();
 const { t } = useI18n();
 const {
   public: { baseUrl },
@@ -543,10 +543,10 @@ const backToLogin = () => {
         <template #brandName>{{ brandName }}</template>
         <template #link>
           <a
-            :href="isLitium ? 'https://www.litium.com' : 'https://www.geins.io'"
+            :href="brand.website.url"
             target="_blank"
             rel="noopener noreferrer"
-          >{{ isLitium ? 'litium.com' : 'geins.io' }}</a>
+          >{{ brand.website.label }}</a>
         </template>
       </i18n-t>
     </FieldDescription>

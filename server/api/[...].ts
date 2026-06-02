@@ -1,10 +1,13 @@
 import {
+  createError,
   defineEventHandler,
   readBody,
   proxyRequest,
   getHeaders,
   getQuery,
+  getRequestHost,
 } from 'h3';
+import { resolveAppId } from '#shared/utils/app';
 import {
   refreshSalesPortal,
   describeFetchError,
@@ -18,9 +21,7 @@ async function triggerChannelRefresh(
   apiBase: string,
   apiHeaders: Record<string, string | undefined>,
 ) {
-  const { geinsLogInfo, geinsLogError } = log(
-    'server/api/[...].ts:STU-216',
-  );
+  const { geinsLogInfo, geinsLogError } = log('server/api/[...].ts:STU-216');
   let url: string | undefined;
   try {
     const channel = await $fetch<Record<string, unknown>>(
@@ -64,7 +65,7 @@ async function triggerChannelRefresh(
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
-  const { geinsLog, geinsLogError } = log('server/api/[...].ts');
+  const { geinsLog, geinsLogInfo, geinsLogError } = log('server/api/[...].ts');
 
   const headers = getHeaders(event);
   const token = headers['x-access-token'];
@@ -95,10 +96,17 @@ export default defineEventHandler(async (event) => {
 
   geinsLog(fetchUrl);
 
-  const apiHeaders = {
+  const apiHeaders: Record<string, string> = {
     ...headers,
     ...(token ? { authorization: `Bearer ${token}` } : {}),
   };
+
+  if (!apiHeaders['x-app']) {
+    apiHeaders['x-app'] = resolveAppId(
+      config.public.appId as string,
+      getRequestHost(event, { xForwardedHost: true }),
+    );
+  }
 
   if (event.method === 'DELETE' && apiHeaders['content-length'] === '0') {
     delete apiHeaders['content-length'];
@@ -123,9 +131,19 @@ export default defineEventHandler(async (event) => {
     return result;
   }
 
+  // Stream endpoints (e.g. /orchestrator/executions/:id/stream) need to be
+  // piped through without buffering so the client gets incremental chunks.
+  if (targetUrl.endsWith('/stream')) {
+    return proxyRequest(event, fetchUrl, { headers: apiHeaders });
+  }
+
   let body;
   if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
     body = await readBody(event);
+    geinsLogInfo(
+      `${event.method} ${fetchUrl} body:`,
+      JSON.stringify(body, null, 2),
+    );
   }
 
   try {
@@ -144,7 +162,26 @@ export default defineEventHandler(async (event) => {
     }
     return response;
   } catch (error) {
-    geinsLogError('error connecting to the api:', error);
-    return error;
+    const fe = error as {
+      name?: string;
+      message?: string;
+      statusCode?: number;
+      statusMessage?: string;
+      data?: unknown;
+    };
+    geinsLogError('error connecting to the api:', {
+      url: fetchUrl,
+      method: event.method,
+      name: fe.name,
+      message: fe.message,
+      statusCode: fe.statusCode,
+      statusMessage: fe.statusMessage,
+      data: fe.data,
+    });
+    throw createError({
+      statusCode: fe.statusCode || 500,
+      statusMessage: fe.statusMessage || 'Internal Server Error',
+      data: fe.data,
+    });
   }
 });

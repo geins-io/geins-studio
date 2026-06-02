@@ -30,6 +30,8 @@
   "discount": "Rabatt | Rabatter",
   "quotation": "Offert | Offerter",
   "workflow": "Arbetsflöde | Arbetsflöden",
+  "input": "Indata | Indata",
+  "group": "Grupp | Grupper",
   "communication": "Kommunikation | Kommunikationer",
   "entity": "Entitet | Entiteter",
   "sku": "SKU | SKUs",
@@ -163,6 +165,7 @@
   "created": "Skapad",
   "modified": "Ändrad",
   "created_by": "Skapad av",
+  "modified_by": "Ändrad av",
   "expiration_date": "Utgångsdatum",
   "ref_number": "Referensnummer",
   "customer": "Kund | Kunder",
@@ -308,7 +311,9 @@
     "channels": "Kanaler",
     "workflows": "Arbetsflöden",
     "orchestrator": "Orkestrator",
-    "overview": "Översikt"
+    "overview": "Översikt",
+    "executions": "Körningar",
+    "variables": "Variabler"
   },
   "workflows": {
     "total": "Totalt antal arbetsflöden",
@@ -336,6 +341,11 @@
     "enable": "Aktivera",
     "pause": "Pausa",
     "group": "Grupp",
+    "manual": "Manuell",
+    "event": "Händelse",
+    "scheduled": "Schemalagd",
+    "on_demand": "På begäran",
+    "webhook": "Webhook",
     "total_executions": "Totalt antal körningar",
     "success_rate": "Framgångsfrekvens",
     "success_rate_total": "Framgångsfrekvens (totalt)",
@@ -344,6 +354,7 @@
     "success_rate_30d": "Framgångsfrekvens (30d)",
     "events": {
       "order": {
+        "activate": "Order aktiverad",
         "created": "Order skapad",
         "update": "Order uppdaterad",
         "cancelled": "Order annullerad",
@@ -352,11 +363,39 @@
         "returned": "Order returnerad",
         "paid": "Order paid",
         "unpaid": "Order unpaid"
+      },
+      "product": {
+        "*": {
+          "_label": "Valfri produkthändelse",
+          "!": "Produkt uppdaterad"
+        },
+        "update": {
+          "price": "Produktpris uppdaterat"
+        }
       }
     }
   },
   "orchestrator": {
     "description": "Översikt över dina arbetsflödens hälsa, prestanda och körningar."
+  },
+  "executions": {
+    "description": "Visa körningshistorik och övervaka arbetsflödeskörningar.",
+    "id": "Körnings-ID",
+    "workflow_name": "Arbetsflöde",
+    "workflow_id": "Arbetsflödes-ID",
+    "start_time": "Startad",
+    "end_time": "Avslutad",
+    "duration": "Varaktighet",
+    "errors": "Fel",
+    "nodes": "Noder",
+    "test_run": "Testkörning"
+  },
+  "variables": {
+    "description": "Delade värden tillgängliga för alla arbetsflöden — använd för API-nycklar, behörigheter och miljökonfiguration.",
+    "key": "Nyckel",
+    "value": "Värde",
+    "description_col": "Beskrivning",
+    "secret": "Hemlig"
   },
   "account_profile": {
     "login_credentials": "Inloggningsuppgifter",
