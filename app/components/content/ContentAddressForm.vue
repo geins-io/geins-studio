@@ -140,7 +140,7 @@ const formPrefix = computed(
     <FormGrid design="1+1">
       <FormField v-slot="{ componentField }" :name="`${formPrefix}firstName`">
         <FormItem>
-          <FormLabel>{{ $t('person.first_name') }}</FormLabel>
+          <FormLabel :optional="true">{{ $t('person.first_name') }}</FormLabel>
           <FormControl>
             <Input
               v-bind="componentField"
@@ -153,7 +153,7 @@ const formPrefix = computed(
       </FormField>
       <FormField v-slot="{ componentField }" :name="`${formPrefix}lastName`">
         <FormItem>
-          <FormLabel>{{ $t('person.last_name') }}</FormLabel>
+          <FormLabel :optional="true">{{ $t('person.last_name') }}</FormLabel>
           <FormControl>
             <Input
               v-bind="componentField"
@@ -168,7 +168,7 @@ const formPrefix = computed(
     <FormGrid design="1+1">
       <FormField v-slot="{ componentField }" :name="`${formPrefix}email`">
         <FormItem>
-          <FormLabel>{{ $t('person.email') }}</FormLabel>
+          <FormLabel :optional="true">{{ $t('person.email') }}</FormLabel>
           <FormControl>
             <Input
               v-bind="componentField"

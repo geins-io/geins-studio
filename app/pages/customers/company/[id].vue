@@ -48,12 +48,15 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // Intent: Define Zod validation schemas converted via toTypedSchema for vee-validate.
 // addressSchema is reused for billing and shipping. stepValidationMap (below) ties form steps
 // to schema segments. Keep schema in sync with the form fields in the <template>.
+const { newEntityUrlAlias } = useEntityUrl();
+const isCreateMode = useRoute().params.id === newEntityUrlAlias.value;
+
 const addressSchema = z.object({
-  email: z.string().min(1, { message: t('form.field_required') }),
+  email: z.string().optional(),
   phone: z.string().optional(),
   company: z.string().min(1, { message: t('form.field_required') }),
-  firstName: z.string().min(1, { message: t('form.field_required') }),
-  lastName: z.string().min(1, { message: t('form.field_required') }),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   addressLine1: z.string().min(1, { message: t('form.field_required') }),
   addressLine2: z.string().optional(),
   zip: z.string().min(1, { message: t('form.field_required') }),
@@ -67,7 +70,9 @@ const formSchema = toTypedSchema(
     details: z
       .object({
         name: z.string().min(1, { message: t('form.field_required') }),
-        vatNumber: z.string().min(1, { message: t('form.field_required') }),
+        vatNumber: isCreateMode
+          ? z.string().min(1, { message: t('form.field_required') })
+          : z.string().optional(),
         externalId: z.string().optional(),
         channels: z.array(z.string()).min(1, {
           message: t('form.field_required'),

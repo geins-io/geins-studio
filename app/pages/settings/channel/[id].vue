@@ -97,7 +97,7 @@ const initialUpdateData: ChannelUpdate = {
 // show a red dot on the tab that owns the invalid field. Tabs not covered by
 // the schema (Markets, Payments, Storefront settings) never show a dot.
 const tabs = computed(() => {
-  const errors = form.errors.value;
+  const errors = validateOnChange.value ? form.errors.value : {};
   const mailHasError = Object.keys(errors).some((k) => k.startsWith('mail.'));
   return [
     {

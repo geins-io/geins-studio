@@ -29,6 +29,8 @@ watch(choice, (newChoice) => {
   if (newChoice?.value === model.value) return;
   model.value = newChoice?.value ?? '';
   open.value = false;
+  isComingFromSearchInput.value = true;
+  setTimeout(() => trigger.value?.focus(), 0);
 });
 
 watch(model, (newVal) => {
@@ -62,9 +64,14 @@ const handleBlur = (event: FocusEvent) => {
       !listElement.contains(relatedTarget))
   ) {
     open.value = false;
-    isComingFromSearchInput.value = true;
-    setTimeout(() => trigger.value?.focus(), 0);
   }
+};
+
+const handleSearchTab = (event: KeyboardEvent) => {
+  event.preventDefault();
+  isComingFromSearchInput.value = true;
+  open.value = false;
+  setTimeout(() => trigger.value?.focus(), 0);
 };
 
 const handlePointerDown = (event: PointerEvent) => {
@@ -118,6 +125,7 @@ const handleKeyDown = () => {
             placeholder="Search fonts..."
             autocomplete="off"
             @blur="handleBlur"
+            @keydown.tab="handleSearchTab"
           />
           <span
             class="absolute inset-y-0 start-0 flex items-center justify-center px-3"

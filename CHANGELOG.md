@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.4.2 - 2026-06-02
+
+### 🚀 Enhancements
+
+- Domain-based branding — Geins Studio / Litium Studio ([#247](https://github.com/geins-io/geins-studio/pull/247))
+- Price list — add identifier field, show API error titles in toasts ([#251](https://github.com/geins-io/geins-studio/pull/251))
+- Storefront — update default settings & widen payment logo type ([#235](https://github.com/geins-io/geins-studio/pull/235))
+- Channels — WCAG AA contrast warning + storefront schema polish ([#233](https://github.com/geins-io/geins-studio/pull/233))
+- Azure infrastructure, Dockerfile, deploy workflow & `/api/health` endpoint
+
+### 🐛 Bug Fixes
+
+- Restore combobox tab order and selection focus return ([#252](https://github.com/geins-io/geins-studio/pull/252))
+- Suppress Mails tab error dot on initial load ([#250](https://github.com/geins-io/geins-studio/pull/250))
+- Fix required field rules on company form ([#249](https://github.com/geins-io/geins-studio/pull/249))
+- Image remove, channel name race, account sort & active counts ([#245](https://github.com/geins-io/geins-studio/pull/245))
+- Allow clearing expiration date ([#244](https://github.com/geins-io/geins-studio/pull/244))
+- Missing payment icons & JSON schema fallback ([#234](https://github.com/geins-io/geins-studio/pull/234))
+- Align GHCR registry auth and secret names for deployment
+
+### 🔄 Refactor
+
+- Component naming + folder structure cleanup ([#232](https://github.com/geins-io/geins-studio/pull/232))
+
+### 📖 Documentation
+
+- Component documentation phases 1–4 ([#224](https://github.com/geins-io/geins-studio/pull/224), [#227](https://github.com/geins-io/geins-studio/pull/227), [#228](https://github.com/geins-io/geins-studio/pull/228), [#230](https://github.com/geins-io/geins-studio/pull/230))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+
 ## v0.4.1 - 2026-05-07
 
 ### 🐛 Bug Fixes
