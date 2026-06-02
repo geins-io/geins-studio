@@ -5,7 +5,7 @@ import type { Component } from 'vue'
 import LitiumSymbol from '~/assets/logos/litium-symbol.svg'
 import MonitorSymbol from '~/assets/logos/monitor-symbol.svg'
 
-const PROVIDER_LOGOS: Record<string, Component> = {
+const PROVIDER_LOGOS: Record<string, Component | string> = {
   litium: LitiumSymbol,
   monitor: MonitorSymbol,
 }
@@ -16,7 +16,7 @@ const props = defineProps<{
     icon: string
     description: string
     actionName?: string
-    config: Record<string, any>
+    config: Record<string, unknown>
   }
   selected?: boolean
 }>()
@@ -46,7 +46,7 @@ const actionDisplayName = computed(() => {
   return action?.displayName ?? ''
 })
 
-const providerLogo = computed(() => PROVIDER_LOGOS[providerKey.value] ?? null)
+const providerLogo = computed<Component | string | null>(() => PROVIDER_LOGOS[providerKey.value] ?? null)
 const IconComponent = computed(() => {
   const key = providerKey.value
   const cat = manifestActionCategories.value.find(c => c.name === key)

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { Background } from '@vue-flow/background'
 import { Controls, ControlButton } from '@vue-flow/controls'
-import { VueFlow, useVueFlow, type NodeTypesObject, type EdgeTypesObject } from '@vue-flow/core'
+import { VueFlow, useVueFlow, type NodeTypesObject, type EdgeTypesObject, type Edge, type Node } from '@vue-flow/core'
 import { MiniMap } from '@vue-flow/minimap'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
-import type { PaletteItem, WorkflowInput } from '#shared/types'
+import type { ExecutionDetailsResponse, ExecutionNodeExecution, PaletteItem, WorkflowDefinition, WorkflowInput, WorkflowType } from '#shared/types'
 import { useToast } from '@/components/ui/toast/use-toast'
 import WorkflowEdge from './edge/WorkflowEdge.vue'
 import WorkflowNode from './node/WorkflowNode.vue'
@@ -32,7 +32,7 @@ const emit = defineEmits<{
 }>()
 
 const { orchestratorApi } = useGeinsRepository()
-const { geinsLogInfo, geinsLogError } = useGeinsLog('workflow-builder')
+const { geinsLogError } = useGeinsLog('workflow-builder')
 const { toast } = useToast()
 const { toCanvas, toApi } = useWorkflowCanvas()
 
@@ -113,15 +113,15 @@ const buildTriggerNode = () => ({
   deletable: false,
 })
 
-const initialNodes = ref<any[]>([])
-const initialEdges = ref<any[]>([])
+const initialNodes = ref<Node[]>([])
+const initialEdges = ref<Edge[]>([])
 
 onMounted(() => {
   if (props.isNew) {
     initialNodes.value = [buildTriggerNode()]
     return
   }
-  const { nodes: canvasNodes, edges: canvasEdges } = toCanvas(currentWorkflow.value as any)
+  const { nodes: canvasNodes, edges: canvasEdges } = toCanvas(currentWorkflow.value as WorkflowDefinition | null)
   // If the API payload omits a trigger node, prepend our derived one so the
   // canvas always has a trigger to anchor downstream nodes to.
   const existingTrigger = canvasNodes.find(n => n.type === 'trigger')
@@ -159,12 +159,14 @@ onMounted(() => {
     const hasTriggerEdge = finalEdges.some(e => e.source === triggerId)
     if (!hasTriggerEdge) {
       const firstNode = canvasNodes[0]
-      finalEdges.push({
-        id: `${triggerId}-${firstNode.id}`,
-        source: triggerId,
-        target: firstNode.id,
-        animated: false,
-      })
+      if (firstNode) {
+        finalEdges.push({
+          id: `${triggerId}-${firstNode.id}`,
+          source: triggerId,
+          target: firstNode.id,
+          animated: false,
+        })
+      }
     }
   }
 
@@ -305,7 +307,7 @@ const onNodeSettingsChange = () => {
 }
 provide('onNodeSettingsChange', onNodeSettingsChange)
 
-const selectedNode = ref<any>(null)
+const selectedNode = ref<Node | null>(null)
 const isAddNodeOpen = ref(false)
 const showMinimap = ref(false)
 
@@ -419,7 +421,7 @@ provide('onNodeOpenSettings', onNodeOpenSettings)
 
 // Double-click a node to open the properties panel (like n8n);
 // single click just selects. Clicking the pane clears both.
-const onNodeDoubleClick = (event: any) => {
+const onNodeDoubleClick = (event: { node: Node }) => {
   if (event.node.type === 'trigger') return
   isAddNodeOpen.value = false
   selectedNode.value = event.node
@@ -617,6 +619,9 @@ type NodeExecData = { input?: Record<string, unknown> | null, output?: Record<st
 const lastNodeExecutions = ref<Map<string, NodeExecData>>(new Map())
 provide('lastNodeExecutions', lastNodeExecutions)
 
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' ? value as Record<string, unknown> : null
+
 // Poll the current execution's status while `isRunning` is true so the Run
 // button keeps its running visual as long as the workflow is actually
 // executing in the backend (not just while the start API call is in flight).
@@ -624,27 +629,28 @@ usePollWhile(
   isRunning,
   async () => {
     if (!lastExecutionId.value) return
-    const details = await orchestratorApi.execution.get(lastExecutionId.value) as Record<string, unknown>
-    const inner = (details?.execution as Record<string, unknown>) ?? details
+    const details = await orchestratorApi.execution.get(lastExecutionId.value) as ExecutionDetailsResponse
+    const detailsRecord = details as unknown as Record<string, unknown>
+    const inner = asRecord(detailsRecord.execution) ?? detailsRecord
     const nodeExecs = (
-      Array.isArray(inner?.nodeExecutions) ? inner.nodeExecutions
-      : Array.isArray(details?.nodeExecutions) ? details.nodeExecutions
+      Array.isArray(inner.nodeExecutions) ? inner.nodeExecutions
+      : Array.isArray(detailsRecord.nodeExecutions) ? detailsRecord.nodeExecutions
       : []
-    ) as Array<Record<string, unknown>>
+    ) as ExecutionNodeExecution[]
     if (nodeExecs.length > 0) {
       const map = new Map<string, NodeExecData>()
       for (const n of nodeExecs) {
-        map.set(n.nodeId as string, {
-          input: n.input as Record<string, unknown> | null | undefined,
-          output: n.output as Record<string, unknown> | null | undefined,
-          status: n.status as string | undefined,
-          error: (n.error as string | null | undefined) ?? (n.errorMessage as string | null | undefined) ?? (n.message as string | null | undefined) ?? null,
+        map.set(n.nodeId, {
+          input: n.input,
+          output: n.output,
+          status: n.status,
+          error: null,
         })
       }
       lastNodeExecutions.value = map
     }
     const status = String(
-      details?.orchestrationStatus ?? inner?.status ?? details?.status ?? '',
+      detailsRecord.orchestrationStatus ?? inner.status ?? '',
     ).toLowerCase()
     if (TERMINAL_STATUSES.has(status)) {
       isRunning.value = false
@@ -767,16 +773,22 @@ const validateWorkflow = async () => {
   }
   isValidating.value = true
   try {
-    const wf = currentWorkflow.value as Record<string, unknown> | null
+    const wf = (currentWorkflow.value as WorkflowDefinition | null)
+    const toWorkflowType = (value: string | undefined): WorkflowType => {
+      const lower = (value ?? '').toLowerCase()
+      if (lower === 'scheduled') return 'scheduled'
+      if (lower === 'event') return 'event'
+      return 'onDemand'
+    }
     const { nodes: apiNodes, connections: apiConnections } = toApi({ nodes: nodes.value, edges: edges.value })
     const result = await orchestratorApi.workflow.validate({
-      name: (wf?.name as string) ?? '',
-      type: (wf?.type as string) ?? 'onDemand',
-      enabled: (wf?.enabled as boolean) ?? false,
+      name: wf?.name ?? '',
+      type: toWorkflowType(wf?.type),
+      enabled: wf?.enabled ?? false,
       nodes: apiNodes,
       connections: apiConnections,
-      settings: (wf?.settings as Record<string, unknown>) ?? undefined,
-      trigger: (wf?.trigger as Record<string, unknown>) ?? undefined,
+      settings: wf?.settings,
+      trigger: undefined,
     })
     const isValid = result.isValid ?? result.valid ?? false
     if (isValid) {

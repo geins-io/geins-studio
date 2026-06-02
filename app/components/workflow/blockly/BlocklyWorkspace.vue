@@ -78,7 +78,6 @@ async function initBlockly() {
     const BaseConstants = Blockly.zelos.ConstantProvider
     const BaseRenderer = Blockly.zelos.Renderer
     class PaddedConstants extends BaseConstants {
-      // @ts-expect-error -- Blockly internal override
       init() {
         super.init()
         this.MEDIUM_PADDING = 10
@@ -87,7 +86,6 @@ async function initBlockly() {
       }
     }
     class PaddedRenderer extends BaseRenderer {
-      // @ts-expect-error -- Blockly internal override
       makeConstants_() {
         return new PaddedConstants()
       }

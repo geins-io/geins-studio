@@ -387,6 +387,7 @@ export function useBlocklyGenerator(
     return [`ToString(${val})`, ORDER_FUNCTION_CALL];
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ncalc.forBlock['ncalc_to_string_fmt'] = (block: any) => {
     const val = valueToCode(block, 'VALUE', ORDER_NONE);
     const fmt = block.getFieldValue('FORMAT') || '';

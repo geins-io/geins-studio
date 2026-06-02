@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Handle, Position, useNode, useVueFlow } from '@vue-flow/core'
 
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
   handleClass?: string
   style?: Record<string, string>
 }>(), {})

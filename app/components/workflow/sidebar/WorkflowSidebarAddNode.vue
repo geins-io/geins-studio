@@ -61,13 +61,21 @@ const PROVIDER_ICON_DEFAULTS: Record<string, string> = {
   common: 'Settings',
 }
 
-const PROVIDER_LOGOS: Record<string, Component> = {
+const PROVIDER_LOGOS: Record<string, unknown> = {
   litium: LitiumSymbol,
   monitor: MonitorSymbol,
 }
 
+function toComponentOrNull(value: unknown): Component | null {
+  if (!value) return null
+  if (typeof value === 'object' || typeof value === 'function') {
+    return value as Component
+  }
+  return null
+}
+
 function getProviderLogo(providerKey: string): Component | null {
-  return PROVIDER_LOGOS[providerKey] ?? null
+  return toComponentOrNull(PROVIDER_LOGOS[providerKey])
 }
 
 function getProviderIcon(providerKey: string): Component | null {
@@ -85,7 +93,8 @@ function getProviderDisplayName(providerKey: string): string {
 
 function getProviderDescription(providerKey: string): string | undefined {
   const cat = manifestActionCategories.value.find(c => c.name === providerKey)
-  return cat?.description
+  if (!cat) return undefined
+  return 'description' in cat ? (cat.description as string | undefined) : undefined
 }
 
 /** Group actions by their provider prefix */

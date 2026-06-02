@@ -7,8 +7,8 @@ const props = defineProps<{
     label: string
     icon: string
     description: string
-    config: Record<string, any>
-    input: Record<string, any>
+    config: Record<string, unknown>
+    input: Record<string, unknown>
   }
   selected?: boolean
 }>()
@@ -22,7 +22,8 @@ const pageDisplay = computed(() => {
   const config = props.data.config ?? {}
   const size = input.pageSize || config.pageSize
   if (!size) return null
-  const strategy = input.strategy || config.strategy
+  const strategyRaw = input.strategy || config.strategy
+  const strategy = typeof strategyRaw === 'string' ? strategyRaw : ''
   const max = input.maxPages || config.maxPages
   const parts: string[] = []
   if (strategy) parts.push(strategy)

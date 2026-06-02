@@ -48,17 +48,31 @@ const settingsComponent = computed(() => SETTINGS_COMPONENTS[props.nodeType])
 
 const onNodeSettingsChange = inject<() => void>('onNodeSettingsChange', () => {})
 
+const patchNodeData = (patch: Partial<Record<'config' | 'input' | 'ui', Record<string, unknown>>>) => {
+  // eslint-disable-next-line vue/no-mutating-props -- nodeData is a shared reactive object mutated by all settings panels
+  Object.assign(props.nodeData, patch)
+}
+
+const getNodeSection = (key: 'config' | 'input' | 'ui'): Record<string, unknown> => {
+  const section = props.nodeData[key]
+  if (section && typeof section === 'object' && !Array.isArray(section)) {
+    return section as Record<string, unknown>
+  }
+  const next: Record<string, unknown> = {}
+  patchNodeData({ [key]: next })
+  return next
+}
+
 const updateConfig = (name: string, value: unknown) => {
-  if (!props.nodeData.config) props.nodeData.config = {}
-  ;(props.nodeData.config as Record<string, unknown>)[name] = value
+  const config = getNodeSection('config')
+  config[name] = value
   onNodeSettingsChange()
 }
 
 const updateInput = (name: string, value: unknown) => {
-  if (!props.nodeData.input) props.nodeData.input = {}
-  const input = props.nodeData.input as Record<string, unknown>
+  const input = getNodeSection('input')
   if (value === undefined) {
-    delete input[name]
+    Reflect.deleteProperty(input, name)
   }
   else {
     input[name] = value
@@ -67,12 +81,11 @@ const updateInput = (name: string, value: unknown) => {
 }
 
 const updateEditorHint = (name: string, value: unknown) => {
-  if (!props.nodeData.ui) props.nodeData.ui = {}
-  const ui = props.nodeData.ui as Record<string, unknown>
+  const ui = getNodeSection('ui')
   if (!ui.editor) ui.editor = {}
   const editor = ui.editor as Record<string, unknown>
   if (value === undefined) {
-    delete editor[name]
+    Reflect.deleteProperty(editor, name)
   }
   else {
     editor[name] = value
@@ -354,7 +367,7 @@ const onSettingsDrop = (event: DragEvent) => {
 
     <!-- Schema tab (combined input + output) -->
     <div v-show="activeTab === 'schema'" class="flex flex-1 flex-col overflow-hidden">
-      <div v-if="hasInputSchema" class="flex gap-1 border-b px-4 pb-2 pt-4">
+      <div v-if="hasInputSchema" class="flex gap-1 border-b px-4 pt-4 pb-2">
         <button
           type="button"
           class="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors"
@@ -420,7 +433,7 @@ const onSettingsDrop = (event: DragEvent) => {
     <!-- Expressions tab -->
     <div v-show="activeTab === 'expressions'" class="flex flex-1 flex-col overflow-hidden">
       <!-- Category pills -->
-      <div v-if="fnCategories.size > 1" class="flex gap-1 overflow-x-auto border-b px-4 pb-2 pt-4">
+      <div v-if="fnCategories.size > 1" class="flex gap-1 overflow-x-auto border-b px-4 pt-4 pb-2">
         <button
           v-for="[cat] in fnCategories"
           :key="cat"

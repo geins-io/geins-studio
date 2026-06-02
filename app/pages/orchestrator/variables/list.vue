@@ -9,7 +9,6 @@ import type { Component } from 'vue';
 import {
   LucideKeyRound,
   LucideEye,
-  LucideCircleAlert,
 } from '#components';
 
 export interface VariableListItem {

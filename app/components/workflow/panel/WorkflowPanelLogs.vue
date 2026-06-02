@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount, watch, nextTick } from 'vue'
+import type { ExecutionDetailsResponse, ExecutionNodeResult } from '#shared/types'
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
 
 type NodeEvent = {
@@ -57,6 +58,9 @@ let pollTimer: ReturnType<typeof setTimeout> | null = null
 let activeExecutionId: string | null = null
 const POLL_INTERVAL_MS = 800
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'canceled', 'cancelled', 'timedout'])
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' ? value as Record<string, unknown> : null
 
 const eventsSorted = computed(() =>
   [...events.value].sort((a, b) => a.seq - b.seq),
@@ -133,29 +137,25 @@ function upsertEvent(raw: Record<string, unknown>) {
 
 async function pollOnce(execId: string): Promise<boolean> {
   try {
-    const details = await orchestratorApi.execution.get(execId) as any
+    const details = await orchestratorApi.execution.get(execId) as ExecutionDetailsResponse
+    const detailsRecord = details as unknown as Record<string, unknown>
     // normalizeKeys wraps the response; node data lives on details.execution.nodeExecutions
     // and the orchestration status can be either at the top or on the inner execution.
-    const inner = details?.execution ?? details
+    const inner = (asRecord(detailsRecord.execution) ?? detailsRecord) as Record<string, unknown>
     const statusStr = String(
-      details?.orchestrationStatus
-      ?? inner?.status
-      ?? details?.status
+      detailsRecord.orchestrationStatus
+      ?? inner.status
       ?? '',
     ).toLowerCase()
     executionStatus.value = statusStr
-    const nodes: any[] = Array.isArray(inner?.nodeExecutions)
-      ? inner.nodeExecutions
-      : Array.isArray(details?.nodeExecutions)
-        ? details.nodeExecutions
-        : []
+    const nodes = Array.isArray(inner.nodeExecutions)
+      ? inner.nodeExecutions as Array<Record<string, unknown>>
+      : []
 
     // Build a nodeId→error lookup from nodeResults (if the API returns them)
-    const nodeResults: any[] = Array.isArray(inner?.nodeResults)
-      ? inner.nodeResults
-      : Array.isArray(details?.nodeResults)
-        ? details.nodeResults
-        : []
+    const nodeResults = (Array.isArray((inner as { nodeResults?: ExecutionNodeResult[] }).nodeResults)
+      ? (inner as { nodeResults: ExecutionNodeResult[] }).nodeResults
+      : []) as ExecutionNodeResult[]
     const nodeResultErrors = new Map<string, string>()
     for (const nr of nodeResults) {
       if (nr.error && nr.nodeId) nodeResultErrors.set(nr.nodeId as string, nr.error as string)
@@ -165,21 +165,24 @@ async function pollOnce(execId: string): Promise<boolean> {
     const execErrors: string[] = Array.isArray(inner?.errors) ? inner.errors : []
 
     for (const [idx, n] of nodes.entries()) {
+      const nodeId = typeof n.nodeId === 'string' ? n.nodeId : ''
+      if (!nodeId) continue
+      const retryErrors = Array.isArray(n.retryErrors) ? n.retryErrors : []
       const nodeError = n.error
         ?? n.errorMessage
         ?? n.message
-        ?? nodeResultErrors.get(n.nodeId)
-        ?? (Array.isArray(n.retryErrors) && n.retryErrors.length > 0 ? n.retryErrors[n.retryErrors.length - 1] : null)
+        ?? nodeResultErrors.get(nodeId)
+        ?? (retryErrors.length > 0 ? retryErrors[retryErrors.length - 1] : null)
         ?? null
 
       upsertEvent({
-        nodeId: n.nodeId,
-        nodeName: n.nodeName,
-        status: n.status,
+        nodeId,
+        nodeName: typeof n.nodeName === 'string' ? n.nodeName : undefined,
+        status: typeof n.status === 'string' ? n.status : 'unknown',
         seq: typeof n.executionOrder === 'number' ? n.executionOrder : idx,
-        startTime: n.startTime,
-        endTime: n.endTime,
-        error: nodeError,
+        startTime: typeof n.startTime === 'string' ? n.startTime : undefined,
+        endTime: typeof n.endTime === 'string' ? n.endTime : undefined,
+        error: typeof nodeError === 'string' ? nodeError : null,
         input: n.input,
         output: n.output,
       })

@@ -1224,10 +1224,10 @@ export function useBlocklyParser() {
     try {
       const tokens = tokenize(inner);
       const ast = parse(tokens);
-      const blockJson = { ...astToBlocklyJson(ast), x, y };
+      const blockJson = { ...astToBlocklyJson(ast), x, y } as Record<string, unknown>;
       geinsLog('Parsed expression into blocks', {
         expression: inner,
-        blockType: blockJson.type,
+        blockType: typeof blockJson.type === 'string' ? blockJson.type : 'unknown',
       });
       Blockly.serialization.blocks.append(blockJson, workspace);
       return true;

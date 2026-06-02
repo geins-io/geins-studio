@@ -2,11 +2,6 @@
 export function registerLiteralBlocks(Blockly: any) {
   class WideTextInput extends Blockly.FieldTextInput {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    constructor(value: any) {
-      super(value);
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateSize_(margin?: any) {
       super.updateSize_(margin);
       const minWidth = 150;
@@ -25,7 +20,7 @@ export function registerLiteralBlocks(Blockly: any) {
     init(this: any) {
       this.appendDummyInput()
         .appendField('text')
-        .appendField(new WideTextInput(''), 'TEXT');
+        .appendField(new WideTextInput(), 'TEXT');
       this.setOutput(true);
       this.setStyle('string_blocks');
       this.setTooltip('String literal value');

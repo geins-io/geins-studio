@@ -125,17 +125,23 @@ function parseExpression(expr: string): BuilderClause | null {
       : new RegExp(`^${fnName}\\(([^,)]+)(?:,\\s*'([^']*)')?\\)$`)
     const m = expr.trim().match(pattern)
     if (m) {
-      return { field: m[1].trim(), operator: fn.value, value: m[2] ?? '' }
+      const field = m[1]
+      if (!field) continue
+      return { field: field.trim(), operator: fn.value, value: m[2] ?? '' }
     }
   }
 
   const compMatch = expr.trim().match(/^(.+?)\s*(==|!=|>=|<=|>|<)\s*(.+)$/)
   if (compMatch) {
-    let val = compMatch[3].trim()
+    const field = compMatch[1]
+    const operator = compMatch[2]
+    const rhs = compMatch[3]
+    if (!field || !operator || !rhs) return null
+    let val = rhs.trim()
     if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"'))) {
       val = val.slice(1, -1)
     }
-    return { field: compMatch[1].trim(), operator: compMatch[2] as OperatorValue, value: val }
+    return { field: field.trim(), operator: operator as OperatorValue, value: val }
   }
 
   return null
@@ -240,10 +246,12 @@ function onDrop(index: number) {
   if (from === null || from === index) return
   const updated = [...conditions.value]
   const [moved] = updated.splice(from, 1)
+  if (!moved) return
   updated.splice(index, 0, moved)
 
   const colors = [...conditionColors.value]
   const [movedColor] = colors.splice(from, 1)
+  if (movedColor === undefined) return
   colors.splice(index, 0, movedColor)
   persistColors(colors)
 
@@ -310,24 +318,33 @@ const BRANCH_COLORS = [
 ]
 
 function branchColor(colorIndex: number) {
-  return BRANCH_COLORS[colorIndex % BRANCH_COLOR_COUNT]
+  return BRANCH_COLORS[colorIndex % BRANCH_COLOR_COUNT] ?? BRANCH_COLORS[0]!
 }
 
 // ─── Color persistence via node ui ──────────────────────────────
-const nodeUi = computed(() => {
-  if (!props.nodeData.ui || typeof props.nodeData.ui !== 'object') {
-    // eslint-disable-next-line vue/no-mutating-props -- nodeData is a shared reactive object mutated by all settings panels
-    props.nodeData.ui = {}
+const nodeUi = computed(() =>
+  (props.nodeData.ui && typeof props.nodeData.ui === 'object')
+    ? props.nodeData.ui as Record<string, unknown>
+    : {},
+)
+
+function ensureNodeUi(): Record<string, unknown> {
+  if (props.nodeData.ui && typeof props.nodeData.ui === 'object') {
+    return props.nodeData.ui as Record<string, unknown>
   }
-  return props.nodeData.ui as Record<string, unknown>
-})
+  const next: Record<string, unknown> = {}
+  // eslint-disable-next-line vue/no-mutating-props -- nodeData is a shared reactive object mutated by all settings panels
+  Object.assign(props.nodeData, { ui: next })
+  return next
+}
 
 const conditionColors = computed<number[]>(() =>
   (Array.isArray(nodeUi.value.conditionColors) ? nodeUi.value.conditionColors : []) as number[],
 )
 
 function persistColors(colors: number[]) {
-  nodeUi.value.conditionColors = colors
+  const ui = ensureNodeUi()
+  ui.conditionColors = colors
   onNodeSettingsChange()
 }
 

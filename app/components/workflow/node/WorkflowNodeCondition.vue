@@ -28,7 +28,7 @@ const BRANCH_COLORS = [
 ]
 
 function branchColor(index: number) {
-  return BRANCH_COLORS[((index % BRANCH_COLORS.length) + BRANCH_COLORS.length) % BRANCH_COLORS.length]
+  return BRANCH_COLORS[((index % BRANCH_COLORS.length) + BRANCH_COLORS.length) % BRANCH_COLORS.length] ?? BRANCH_COLORS[0]!
 }
 
 const conditionColors = computed<number[]>(() => {

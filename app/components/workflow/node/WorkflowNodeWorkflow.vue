@@ -6,8 +6,8 @@ const props = defineProps<{
     label: string
     icon: string
     description: string
-    config: Record<string, any>
-    input: Record<string, any>
+    config: Record<string, unknown>
+    input: Record<string, unknown>
   }
   selected?: boolean
 }>()

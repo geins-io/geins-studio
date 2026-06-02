@@ -2,13 +2,13 @@
 import { toTypedSchema } from '@vee-validate/zod'
 import cronstrue from 'cronstrue'
 import { useForm } from 'vee-validate'
-import type { Component } from 'vue'
 import * as z from 'zod'
 import 'cronstrue/locales/sv'
 import { DataItemDisplayType } from '#shared/types'
-import type { WorkflowInput, WorkflowNode } from '#shared/types'
+import type { WorkflowDefinition, WorkflowInput, WorkflowNode, WorkflowNodeConnection } from '#shared/types'
 import { useToast } from '@/components/ui/toast/use-toast'
 import { sanitizeWorkflowNodes } from '@/composables/useWorkflowCanvas'
+import type { Component } from 'vue'
 
 definePageMeta({
   layout: 'default',
@@ -187,7 +187,7 @@ const refreshExecutions = () => executionsRef.value?.refresh()
 // graph (nodes + connections with position ui) instead of persisting the
 // stale cached `wf.nodes` / `wf.connections`.
 const builderRef = ref<{
-  getGraph: () => { nodes: unknown[], connections: unknown[] }
+  getGraph: () => { nodes: WorkflowNode[], connections: WorkflowNodeConnection[] }
   getUi: () => Record<string, unknown>
   startExecution: () => Promise<void>
 } | null>(null)
@@ -272,6 +272,10 @@ const { data: currentWorkflow, refresh: refreshCurrentWorkflow } = await useAsyn
   { watch: [workflowId], getCachedData: () => undefined },
 )
 
+type WorkflowEditorDefinition = WorkflowDefinition & {
+  trigger?: Record<string, unknown>
+}
+
 const isEnabled = computed(() => currentWorkflow.value?.enabled ?? false)
 const menuBusy = ref(false)
 
@@ -295,36 +299,37 @@ watch(
   currentWorkflow,
   (wf) => {
     if (!wf || isNew.value) return
+    const workflow = wf as WorkflowEditorDefinition
     if (skipActiveSync.value) {
       skipActiveSync.value = false
     }
     else {
-      workflowActive.value = wf.enabled ?? false
+      workflowActive.value = workflow.enabled ?? false
     }
-    const rawInputs: WorkflowInput[] = Array.isArray((wf as any)?.input) ? (wf as any).input : []
+    const rawInputs: WorkflowInput[] = Array.isArray(workflow.input) ? workflow.input : []
     // Deep copy so edits in the Inputs tab don't mutate the cached workflow.
     workflowInputs.value = rawInputs.map(i => ({ ...i }))
     additionalInputGroups.value = []
     const inputs: Record<string, unknown> = {}
     for (const i of rawInputs) inputs[i.name] = i.defaultValue
     inputValues.value = inputs
-    const triggerObj = ((wf as any)?.trigger ?? {}) as Record<string, unknown>
+    const triggerObj = (workflow.trigger ?? {}) as Record<string, unknown>
     form.setValues({
       details: {
-        name: wf.name ?? '',
-        description: wf.description ?? '',
-        group: (wf as any).group ?? '',
-        tags: Array.isArray((wf as any)?.tags) ? [...(wf as any).tags] : [],
+        name: workflow.name ?? '',
+        description: workflow.description ?? '',
+        group: workflow.group ?? '',
+        tags: Array.isArray(workflow.tags) ? [...workflow.tags] : [],
       },
       trigger: {
-        type: toFormWorkflowType(wf.type),
-        cron: (triggerObj.cronExpression as string | undefined) ?? wf.cronExpression ?? '',
+        type: toFormWorkflowType(workflow.type),
+        cron: (triggerObj.cronExpression as string | undefined) ?? workflow.cronExpression ?? '',
         eventEntity: (triggerObj.entity as string | undefined) ?? '',
         eventAction: (triggerObj.action as string | undefined) ?? '',
         eventSubEntity: (triggerObj.subEntity as string | undefined) ?? '',
         description: (triggerObj.description as string | undefined) ?? '',
       },
-      settings: { ...((wf as any)?.settings ?? {}) },
+      settings: { ...(workflow.settings ?? {}) },
     })
   },
   { immediate: true },
@@ -474,7 +479,7 @@ const handleSave = async () => {
   validateOnChange.value = false
   isSavingConfig.value = true
   try {
-    const wf = currentWorkflow.value as any
+    const wf = currentWorkflow.value as WorkflowEditorDefinition
     const values = form.values
     const mergedInputs: WorkflowInput[] = workflowInputs.value.map((i) => {
       const val = inputValues.value[i.name]
@@ -616,7 +621,7 @@ const handleValidate = async () => {
   isValidating.value = true
   validationResult.value = null
   try {
-    const wf = currentWorkflow.value as any
+    const wf = currentWorkflow.value as WorkflowEditorDefinition
     const values = form.values
     const apiType = toApiWorkflowType(values.trigger.type)
     const trigger = buildTriggerConfig(apiType, values.trigger)

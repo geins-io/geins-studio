@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { VersionDiffChange, ExecutionLog, WorkflowNode, WorkflowNodeConnection, WorkflowSettings, WorkflowTriggerConfig } from '#shared/types'
+import type { VersionComparison, VersionDiffChange, ExecutionLog, WorkflowHistory, WorkflowNode, WorkflowNodeConnection, WorkflowSettings, WorkflowTriggerConfig } from '#shared/types'
 import { useToast } from '@/components/ui/toast/use-toast'
 
 const props = defineProps<{
@@ -62,13 +62,40 @@ interface VersionStats {
   lastRun: string | null
 }
 
+type LegacyVersionLog = ExecutionLog & { WorkflowVersion?: string | number }
+type LegacyVersionEntry = Record<string, unknown>
+
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' ? value as Record<string, unknown> : null
+
+const historyEntries = computed<LegacyVersionEntry[]>(() => {
+  const raw = historyRaw.value as WorkflowHistory | { items?: unknown[] } | unknown[] | null
+  if (Array.isArray(raw)) return raw.filter(asRecord) as LegacyVersionEntry[]
+  if (raw && typeof raw === 'object') {
+    if (Array.isArray((raw as { items?: unknown[] }).items)) {
+      return (raw as { items: unknown[] }).items.filter(asRecord) as LegacyVersionEntry[]
+    }
+    if (Array.isArray((raw as WorkflowHistory).versions)) {
+      return (raw as WorkflowHistory).versions.map(v => v as unknown as LegacyVersionEntry)
+    }
+  }
+  return []
+})
+
+const readVersionNumber = (entry: LegacyVersionEntry): number =>
+  Number(entry.version ?? entry.Version ?? 0)
+
+const readDefinition = (entry: LegacyVersionEntry): Record<string, unknown> | null =>
+  asRecord(entry.definition ?? entry.Definition)
+
 const versionStats = computed<Record<number, VersionStats>>(() => {
   const logs = executionLogs.value as ExecutionLog[]
   if (!logs?.length) return {}
 
   const grouped: Record<number, ExecutionLog[]> = {}
   for (const log of logs) {
-    const ver = Number(log.workflowVersion ?? (log as any).WorkflowVersion ?? 0)
+    const legacy = log as LegacyVersionLog
+    const ver = Number(log.workflowVersion ?? legacy.WorkflowVersion ?? 0)
     if (ver <= 0) continue
     if (!grouped[ver]) grouped[ver] = []
     grouped[ver]!.push(log)
@@ -130,52 +157,39 @@ interface VersionRow {
 }
 
 const versions = computed<VersionRow[]>(() => {
-  const raw = historyRaw.value as any
-  const list: any[] = Array.isArray(raw?.items)
-    ? raw.items
-    : Array.isArray(raw?.versions)
-      ? raw.versions
-      : Array.isArray(raw)
-        ? raw
+  const sorted = historyEntries.value
+    .map((v) => {
+      const definition = readDefinition(v)
+      const nodes = definition
+        ? (Array.isArray(definition.nodes) ? definition.nodes : (Array.isArray(definition.Nodes) ? definition.Nodes : []))
         : []
-
-  const sorted = list
-    .map((v: any) => ({
-      version: v.version ?? v.Version ?? 0,
-      timestamp: formatDate(v.archivedAt ?? v.createdAt ?? v.CreatedAt),
-      relative: relativeTime(v.archivedAt ?? v.createdAt ?? v.CreatedAt),
-      author: v.archivedBy || v.createdBy || v.CreatedBy || null,
-      nodeCount: Array.isArray(v.definition?.nodes ?? v.definition?.Nodes)
-        ? (v.definition?.nodes ?? v.definition?.Nodes).length
-        : 0,
-      connectionCount: Array.isArray(v.definition?.connections ?? v.definition?.Connections)
-        ? (v.definition?.connections ?? v.definition?.Connections).length
-        : 0,
-      stats: versionStats.value[v.version ?? v.Version ?? 0] ?? null,
-    }))
+      const connections = definition
+        ? (Array.isArray(definition.connections) ? definition.connections : (Array.isArray(definition.Connections) ? definition.Connections : []))
+        : []
+      const version = readVersionNumber(v)
+      return {
+        version,
+        timestamp: formatDate((v.archivedAt ?? v.createdAt ?? v.CreatedAt) as string | undefined),
+        relative: relativeTime((v.archivedAt ?? v.createdAt ?? v.CreatedAt) as string | undefined),
+        author: (v.archivedBy ?? v.createdBy ?? v.CreatedBy ?? null) as string | null,
+        nodeCount: nodes.length,
+        connectionCount: connections.length,
+        stats: versionStats.value[version] ?? null,
+      }
+    })
     .sort((a, b) => b.version - a.version)
 
-  if (sorted.length > 0) sorted[0]!.isCurrent = true
-  return sorted.map(v => ({ ...v, isCurrent: v.isCurrent ?? false }))
+  return sorted.map((v, index) => ({ ...v, isCurrent: index === 0 }))
 })
 
 // ─── Store raw definitions for diff computation ──────────────────
 const definitionsByVersion = computed<Record<number, Record<string, unknown>>>(() => {
-  const raw = historyRaw.value as any
-  const list: any[] = Array.isArray(raw?.items)
-    ? raw.items
-    : Array.isArray(raw?.versions)
-      ? raw.versions
-      : Array.isArray(raw)
-        ? raw
-        : []
-
   const map: Record<number, Record<string, unknown>> = {}
-  for (const v of list) {
-    const ver = v.version ?? v.Version ?? 0
-    const def = v.definition ?? v.Definition
-    if (ver > 0 && def && typeof def === 'object') {
-      map[ver] = def as Record<string, unknown>
+  for (const v of historyEntries.value) {
+    const ver = readVersionNumber(v)
+    const def = readDefinition(v)
+    if (ver > 0 && def) {
+      map[ver] = def
     }
   }
   return map
@@ -325,13 +339,19 @@ async function loadDiff(version: number) {
         version - 1,
         version,
       )
-      const changes = (result as any)?.changes ?? (result as any)?.Changes ?? []
-      diffCache.value[version] = changes.map((c: any) => ({
-        path: c.path ?? c.Path ?? '',
-        type: (c.type ?? c.Type ?? 'changed') as VersionDiffChange['type'],
-        from: c.from ?? c.From ?? c.oldValue ?? c.OldValue,
-        to: c.to ?? c.To ?? c.newValue ?? c.NewValue,
-      }))
+      const legacyResult = result as VersionComparison & { Changes?: unknown[] }
+      const changes = Array.isArray(legacyResult.changes)
+        ? legacyResult.changes
+        : (Array.isArray(legacyResult.Changes) ? legacyResult.Changes : [])
+      diffCache.value[version] = changes.map((change) => {
+        const c = asRecord(change) ?? {}
+        return {
+          path: String(c.path ?? c.Path ?? ''),
+          type: String(c.type ?? c.Type ?? 'changed') as VersionDiffChange['type'],
+          from: c.from ?? c.From ?? c.oldValue ?? c.OldValue,
+          to: c.to ?? c.To ?? c.newValue ?? c.NewValue,
+        }
+      })
     }
     else {
       // Client-side diff from definition snapshots

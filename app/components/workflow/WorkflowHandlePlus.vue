@@ -42,10 +42,10 @@ const onClick = (event: MouseEvent) => {
   >
     <template v-if="showPlus">
       <!-- Connecting line from handle dot to + button -->
-      <div class="nodrag pointer-events-none absolute left-1/2 top-1/2 h-[2px] w-[24px] -translate-y-1/2 bg-muted-foreground/40" />
+      <div class="nodrag bg-muted-foreground/40 pointer-events-none absolute top-1/2 left-1/2 h-[2px] w-[24px] -translate-y-1/2" />
       <!-- + button (inside Handle so drag starts a connection) -->
       <div
-        class="nodrag absolute left-[calc(50%+24px)] top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-all hover:scale-110 hover:border-foreground/30 hover:text-foreground"
+        class="nodrag bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground absolute top-1/2 left-[calc(50%+24px)] flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border shadow-sm transition-all hover:scale-110"
         @click="onClick"
       >
         <LucidePlus class="h-3 w-3" />

@@ -173,7 +173,7 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
           {{ waitUntilError }}
         </p>
         <p v-else class="text-muted-foreground text-xs">
-          UTC datetime (e.g. <code class="rounded bg-muted px-1">{{ waitUntilPlaceholder }}</code>) or expression like <code class="rounded bg-emerald-500/10 px-1 text-emerald-700 dark:text-emerald-400" v-text="'{{output.nodeId.scheduledAt}}'" />
+          UTC datetime (e.g. <code class="bg-muted rounded px-1">{{ waitUntilPlaceholder }}</code>) or expression like <code class="rounded bg-emerald-500/10 px-1 text-emerald-700 dark:text-emerald-400" v-text="'{{output.nodeId.scheduledAt}}'" />
         </p>
       </div>
     </template>

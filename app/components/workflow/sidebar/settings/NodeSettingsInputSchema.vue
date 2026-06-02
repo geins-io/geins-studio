@@ -71,13 +71,6 @@ function extractShape(obj: unknown, prefix = ''): Record<string, string> {
   return shape
 }
 
-function inferFieldType(val: unknown): string {
-  if (val === null) return 'string?'
-  if (Array.isArray(val)) return 'array'
-  if (typeof val === 'object') return 'object'
-  return typeof val
-}
-
 const expandedFields = ref<Set<string>>(new Set())
 
 function toggleField(name: string) {

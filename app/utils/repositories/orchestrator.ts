@@ -5,7 +5,6 @@ import type {
   UpdateWorkflowRequest,
   ValidateWorkflowResult,
   ExecutionLog,
-  ExecutionDetails,
   ExecutionDetailsResponse,
   BulkEnableDisableRequest,
   BulkWorkflowOperationResponse,

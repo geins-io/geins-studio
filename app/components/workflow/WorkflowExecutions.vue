@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { ExecutionLog } from '#shared/types'
+
 const props = defineProps<{
   workflowId: string
   isNew: boolean
@@ -55,14 +57,17 @@ const { data: executionsRaw, pending: executionsLoading, refresh: refreshExecuti
 )
 
 const executions = computed(() =>
-  (executionsRaw.value ?? []).map((e: any) => ({
-    id: e.id,
-    status: mapStatus(e.status),
-    startedAt: formatStartedAt(e.startTime),
-    duration: formatDuration(e.durationMs),
-    trigger: e.startedBy || (e.isTestRun ? 'Test run' : 'Scheduled'),
-    error: Array.isArray(e.errors) && e.errors.length > 0 ? e.errors[0] : undefined,
-  })),
+  (Array.isArray(executionsRaw.value) ? executionsRaw.value : []).map((e) => {
+    const log = e as ExecutionLog
+    return {
+      id: log.id,
+      status: mapStatus(log.status),
+      startedAt: formatStartedAt(log.startTime),
+      duration: formatDuration(log.durationMs ?? undefined),
+      trigger: log.startedBy || (log.isTestRun ? 'Test run' : 'Scheduled'),
+      error: Array.isArray(log.errors) && log.errors.length > 0 ? log.errors[0] : undefined,
+    }
+  }),
 )
 </script>
 
@@ -94,7 +99,7 @@ const executions = computed(() =>
                 'bg-yellow-500': execution.status === 'completedWithErrors',
                 'animate-pulse bg-blue-500': execution.status === 'running',
               }" />
-            <span class="whitespace-nowrap text-sm font-medium">{{ formatStatus(execution.status) }}</span>
+            <span class="text-sm font-medium whitespace-nowrap">{{ formatStatus(execution.status) }}</span>
           </div>
           <div class="text-muted-foreground truncate font-mono text-xs">{{ execution.startedAt }}</div>
           <div class="text-muted-foreground truncate text-xs">Trigger: {{ execution.trigger }}</div>

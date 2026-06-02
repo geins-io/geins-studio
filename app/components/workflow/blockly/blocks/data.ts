@@ -41,12 +41,19 @@ export function registerDataBlocks(Blockly: any, ctx: BlocklyContext) {
     }
   }
 
+  const createPathDropdown = (namespace: string) => {
+    const dropdown = new PathDropdown();
+    (dropdown as unknown as { menuGenerator_: () => [string, string][] }).menuGenerator_ =
+      () => getPathOptions(namespace);
+    return dropdown;
+  };
+
   Blockly.Blocks['ncalc_output_ref'] = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     init(this: any) {
       this.appendDummyInput()
         .appendField('output')
-        .appendField(new PathDropdown(() => getPathOptions('output')), 'PATH');
+        .appendField(createPathDropdown('output'), 'PATH');
       this.setOutput(true);
       this.setStyle('data_blocks');
       this.setTooltip('Reference output data from upstream nodes');
@@ -58,7 +65,7 @@ export function registerDataBlocks(Blockly: any, ctx: BlocklyContext) {
     init(this: any) {
       this.appendDummyInput()
         .appendField('input')
-        .appendField(new PathDropdown(() => getPathOptions('input')), 'PATH');
+        .appendField(createPathDropdown('input'), 'PATH');
       this.setOutput(true);
       this.setStyle('data_blocks');
       this.setTooltip('Reference workflow input variables');
@@ -70,7 +77,7 @@ export function registerDataBlocks(Blockly: any, ctx: BlocklyContext) {
     init(this: any) {
       this.appendDummyInput()
         .appendField('vars')
-        .appendField(new PathDropdown(() => getPathOptions('vars')), 'PATH');
+        .appendField(createPathDropdown('vars'), 'PATH');
       this.setOutput(true);
       this.setStyle('data_blocks');
       this.setTooltip('Reference workflow variables and secrets');

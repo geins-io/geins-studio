@@ -7,8 +7,8 @@ const props = defineProps<{
     label: string
     icon: string
     description: string
-    config: Record<string, any>
-    input: Record<string, any>
+    config: Record<string, unknown>
+    input: Record<string, unknown>
   }
   selected?: boolean
 }>()
@@ -20,8 +20,9 @@ const IconComponent = computed(() => resolveIcon(props.data.icon) || resolveIcon
 const collectionDisplay = computed(() => {
   const expr = props.data.input?.collection || props.data.config?.collection
   if (!expr) return null
-  const maxConc = props.data.input?.maxConcurrent || props.data.config?.maxConcurrent
-  if (maxConc && maxConc > 1) return `${expr} (×${maxConc})`
+  const maxConcRaw = props.data.input?.maxConcurrent || props.data.config?.maxConcurrent
+  const maxConc = Number(maxConcRaw)
+  if (Number.isFinite(maxConc) && maxConc > 1) return `${expr} (×${maxConc})`
   return expr
 })
 </script>

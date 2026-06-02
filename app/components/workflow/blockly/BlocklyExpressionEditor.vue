@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ExpressionCompletion } from '@/components/workflow/shared/ExpressionInput.vue'
 import type { ManifestExpressionFunction } from '#shared/types'
+import type { ExpressionCompletion } from '@/components/workflow/shared/ExpressionInput.vue'
 import type { Ref } from 'vue'
 
 const props = withDefaults(defineProps<{

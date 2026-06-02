@@ -53,7 +53,8 @@ const fetchWorkflowInputs = async () => {
   results.forEach((result, i) => {
     if (result.status === 'fulfilled' && result.value) {
       const def = result.value as WorkflowDefinition
-      if (def.input?.length) map.set(ids[i], def.input)
+      const id = ids[i]
+      if (id && def.input?.length) map.set(id, def.input)
     }
   })
   workflowInputDefs.value = map
