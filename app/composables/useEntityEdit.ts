@@ -314,7 +314,10 @@ export function useEntityEdit<
 
       return result;
     } catch (error) {
-      showErrorToast(t('error_creating_entity', { entityName }));
+      showErrorToast(
+        t('error_creating_entity', { entityName }),
+        getApiErrorTitle(error),
+      );
       throw error;
     } finally {
       loading.value = false;
@@ -366,7 +369,10 @@ export function useEntityEdit<
       return result;
     } catch (error) {
       if (!silent) {
-        showErrorToast(t('error_updating_entity', { entityName }));
+        showErrorToast(
+          t('error_updating_entity', { entityName }),
+          getApiErrorTitle(error),
+        );
       }
       throw error;
     } finally {
@@ -386,8 +392,10 @@ export function useEntityEdit<
       });
       return true;
     } catch (error) {
-      const _message = getErrorMessage(error);
-      showErrorToast(t('entity_delete_failed', { entityName }));
+      showErrorToast(
+        t('entity_delete_failed', { entityName }),
+        getApiErrorTitle(error),
+      );
       return false;
     }
   };

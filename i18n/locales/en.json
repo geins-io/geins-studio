@@ -44,6 +44,7 @@
   "new_entity_url_alias": "new",
   "list_entity_url_alias": "list",
   "entity_id": "@:{entityName} ID",
+  "entity_identifier": "@:{entityName} identifier",
   "new_entity": "New @.lower:{entityName}",
   "edit_entity": "Edit @.lower:{entityName}",
   "save_entity": "Save @.lower:{entityName}",
@@ -95,6 +96,7 @@
   "price_updated_for": "Price updated for {name} ({id})",
   "product_selection_updated": "Product selection updated",
   "clear_search": "Clear search",
+  "clear_date": "Clear date",
   "all_entity": "All @.lower:{entityName}",
   "entity_is_active": "@:{entityName} is active",
   "entity_is_inactive": "@:{entityName} is inactive",
@@ -151,6 +153,7 @@
   "image_upload_replace": "Click here to browse or drop image to replace",
   "image_upload_invalid_type": "Unsupported file type. Allowed: {accept}",
   "image_upload_too_large": "File is too large. Maximum size: {size}",
+  "image_upload_remove": "Remove image",
   "delete": "Delete",
   "remove": "Remove",
   "status": "Status",
@@ -268,7 +271,7 @@
     "send_reset_link": "Send reset link",
     "forgot_password": "Forgot your password?",
     "forgot_password_description": "Use your email to receive a reset link.",
-    "new_to_geins": "New to Geins Studio? Visit {link} to learn more and to get started.",
+    "new_to_studio": "New to {brandName}? Visit {link} to learn more and to get started.",
     "logging_out": "Logging out..."
   },
   "form": {
@@ -762,5 +765,9 @@
     "remove_market": "Remove market",
     "remove_market_description": "Are you sure you want to remove this market from the channel? This change will take effect when you save.",
     "no_payment_methods": "No payment methods available for this channel."
+  },
+  "theme_colors": {
+    "contrast_warning_title": "Low contrast",
+    "contrast_warning_body": "Contrast ratio {ratio}:1 is below WCAG 2.1 AA (4.5:1). Text may be hard to read for users with low vision."
   }
 }

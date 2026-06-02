@@ -28,13 +28,69 @@ const searchInput = ref<HTMLElement | null>(null);
 const comboboxList = ref<HTMLElement | null>(null);
 const isComingFromSearchInput = ref(false);
 const wasOpenBeforeClick = ref(false);
+const pendingReturnFocus = ref(false);
+
+const focusTrigger = () => {
+  // Guard handleFocus so re-focusing the trigger doesn't reopen the dropdown.
+  isComingFromSearchInput.value = true;
+  trigger.value?.focus();
+};
+
+// Return focus to the trigger when the list closes (after selecting an item or
+// tabbing out of the search input).
+//
+// Teleport mode: the list is portaled to <body>, outside any panel focus trap,
+// so closing then refocusing the trigger on the next tick is enough.
+//
+// Inline mode (disableTeleport): the list renders *inside* the host panel. For
+// a Sheet/Dialog that panel is a *trapped* Reka FocusScope. When the list
+// finally unmounts (delayed by its close animation), the trap's MutationObserver
+// sees its lastFocusedElementRef — still the now-removed search input — gone and
+// calls focus(container), yanking focus to the panel start. That fires after any
+// setTimeout we could schedule, so we can't win on timing. Instead we flag a
+// pending return and let reclaimTriggerFocus (a focusin listener) bounce focus
+// back to the trigger if a containing ancestor steals it. See onMounted below.
+const returnFocusToTrigger = () => {
+  isComingFromSearchInput.value = true;
+  open.value = false;
+  if (props.disableTeleport) {
+    pendingReturnFocus.value = true;
+    focusTrigger();
+  } else {
+    setTimeout(focusTrigger, 0);
+  }
+};
+
+// While a return-to-trigger is pending, the panel's focus trap may pull focus to
+// a container that *wraps* the trigger (only a focus trap does this — a normal
+// next field is never an ancestor of the trigger). Reclaim it to the trigger.
+// Any other focus move means the user navigated on, so stop guarding.
+const reclaimTriggerFocus = (event: FocusEvent) => {
+  if (!pendingReturnFocus.value) return;
+  const target = event.target as Node | null;
+  const triggerEl = trigger.value;
+  if (!triggerEl || !target) return;
+  if (target === triggerEl) return;
+  if (target instanceof Node && target.contains(triggerEl)) {
+    focusTrigger();
+  } else {
+    pendingReturnFocus.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('focusin', reclaimTriggerFocus);
+  onUnmounted(() => {
+    document.removeEventListener('focusin', reclaimTriggerFocus);
+  });
+});
 
 watch(choice, (newChoice) => {
   if (newChoice?.value === model.value) {
     return;
   }
   model.value = newChoice?.value ?? '';
-  open.value = false;
+  returnFocusToTrigger();
 });
 
 watch([model, () => props.dataSet], ([newModelValue]) => {
@@ -64,10 +120,8 @@ const handleFocus = async (event: FocusEvent) => {
 };
 
 const handleBlur = (event: FocusEvent) => {
-  // If tabbing out of the search input (not clicking within dropdown)
   const relatedTarget = event.relatedTarget as Node | null;
   const listElement = comboboxList.value;
-
   if (
     !relatedTarget ||
     (listElement &&
@@ -75,15 +129,14 @@ const handleBlur = (event: FocusEvent) => {
       !listElement.contains(relatedTarget))
   ) {
     open.value = false;
-
-    // Set flag and focus the trigger to continue natural tab order
-    isComingFromSearchInput.value = true;
-    setTimeout(() => {
-      if (trigger.value) {
-        trigger.value.focus();
-      }
-    }, 0);
   }
+};
+
+const handleSearchTab = (event: KeyboardEvent) => {
+  // Close and hand focus to the trigger (Tab again from there moves on to the
+  // next field). returnFocusToTrigger keeps focus off <body> in inline mode.
+  event.preventDefault();
+  returnFocusToTrigger();
 };
 
 // Handle pointer events (works for both mouse and touch)
@@ -151,6 +204,7 @@ const handleKeyDown = () => {
             :placeholder="$t('search_entity', { entityName }) + '...'"
             autocomplete="off"
             @blur="handleBlur"
+            @keydown.tab="handleSearchTab"
           />
           <span
             class="absolute inset-y-0 start-0 flex items-center justify-center px-3"

@@ -24,7 +24,7 @@ import {
 } from '#shared/types';
 import defaultStorefrontSchema from '@/assets/schemas/storefront-settings-default.json';
 import { useToast } from '@/components/ui/toast/use-toast';
-import { getDefaultSettings } from '@/utils/storefront';
+import { deepMerge, getDefaultSettings } from '@/utils/storefront';
 
 // =====================================================================================
 // COMPOSABLES & STORES
@@ -97,7 +97,7 @@ const initialUpdateData: ChannelUpdate = {
 // show a red dot on the tab that owns the invalid field. Tabs not covered by
 // the schema (Markets, Payments, Storefront settings) never show a dot.
 const tabs = computed(() => {
-  const errors = form.errors.value;
+  const errors = validateOnChange.value ? form.errors.value : {};
   const mailHasError = Object.keys(errors).some((k) => k.startsWith('mail.'));
   return [
     {
@@ -407,9 +407,10 @@ const {
       entity.storefrontSchema && Object.keys(entity.storefrontSchema).length > 0
         ? entity.storefrontSchema
         : (defaultStorefrontSchema as StorefrontSchema);
-    storefrontSettings.value = entity.storefrontSettings
-      ? { ...entity.storefrontSettings }
-      : getDefaultSettings(activeSchema.value);
+    storefrontSettings.value = deepMerge(
+      getDefaultSettings(activeSchema.value),
+      entity.storefrontSettings ?? {},
+    );
 
     schemaChanged.value = false;
     // Set explicit default IDs from the API response
@@ -763,22 +764,24 @@ const summary = computed<DataItem[]>(() => {
   if (!createMode.value) {
     const channelData: Channel = entityData.value;
     if (channelData?.languages?.length) {
-      const displayValue = channelData.languages
+      const activeLanguages = channelData.languages.filter((l) => l.active);
+      const displayValue = activeLanguages
         .map(
           (l) =>
             allLanguages.value.find((al) => al._id === l._id)?.name ?? l._id,
         )
         .join(', ');
       dataList.push({
-        label: t('language', 2),
-        value: channelData.languages.map((l) => l._id),
-        displayValue,
+        label: t('language', activeLanguages.length),
+        value: activeLanguages.map((l) => l._id),
+        displayValue: displayValue || t('none'),
         displayType: DataItemDisplayType.Array,
         entityName: 'language',
       });
     }
     if (channelData?.markets?.length) {
-      const displayValue = channelData.markets
+      const activeMarkets = channelData.markets.filter((m) => m.active);
+      const displayValue = activeMarkets
         .map((m) => {
           const full = allMarkets.value.find((am) => am._id === m._id);
           return full
@@ -787,9 +790,9 @@ const summary = computed<DataItem[]>(() => {
         })
         .join(', ');
       dataList.push({
-        label: t('market', 2),
-        value: channelData.markets.map((m) => m._id),
-        displayValue,
+        label: t('market', activeMarkets.length),
+        value: activeMarkets.map((m) => m._id),
+        displayValue: displayValue || t('none'),
         displayType: DataItemDisplayType.Array,
         entityName: 'market',
       });
@@ -967,9 +970,9 @@ if (!createMode.value) {
                     {{ $t('language') }}
                   </div>
                   <div class="flex items-center gap-2.5 px-4 py-5">
-                    <ChannelLanguageIcon
+                    <FlagIcon
                       v-if="defaultLanguage"
-                      :language-id="defaultLanguage._id"
+                      :country-code="languageToCountryCode(defaultLanguage._id)"
                       :name="defaultLanguage.name"
                     />
                     <span v-else class="text-muted-foreground text-sm"

@@ -9,7 +9,6 @@ import type {
   ForgotPasswordFormValues,
   ResetPasswordFormValues,
 } from '#shared/types';
-import LogoLetter from '@/assets/logos/geins-g.svg';
 import { createPasswordResetSchema } from '@/utils/password-validation';
 
 const props = withDefaults(
@@ -35,6 +34,7 @@ const emit = defineEmits<{
 }>();
 
 const { geinsLogError } = useGeinsLog('components/AuthForm.vue');
+const { isLitium, brandName } = useBrand();
 const { t } = useI18n();
 const {
   public: { baseUrl },
@@ -207,8 +207,12 @@ const cardDescription = computed(() => {
   return '';
 });
 
-// Account selection
-const accounts = computed(() => props.accounts || []);
+// Account selection — sorted alphabetically
+const accounts = computed(() =>
+  [...(props.accounts || [])].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+  ),
+);
 
 // Button text
 const buttonText = computed(() => {
@@ -490,7 +494,7 @@ const backToLogin = () => {
             class="flex max-h-58 flex-col gap-2 overflow-auto px-2"
           >
             <li
-              v-for="account in accounts"
+              v-for="account in [...(accounts ?? [])].sort((a, b) => a.name.localeCompare(b.name))"
               :key="account.accountKey"
               class="w-full"
             >
@@ -500,7 +504,7 @@ const backToLogin = () => {
                 size="lg"
                 @click="$emit('set-account', account.accountKey)"
               >
-                <LogoLetter class="mr-auto size-4" :font-controlled="false" />
+                <BrandLogoSymbol class="mr-auto size-4" :font-controlled="false" />
                 <span class="mr-auto">{{ account.name }}</span>
               </Button>
             </li>
@@ -535,14 +539,14 @@ const backToLogin = () => {
       v-if="!resetPasswordMode"
       class="px-11 text-center text-sm"
     >
-      <i18n-t keypath="auth.new_to_geins" scope="global">
+      <i18n-t keypath="auth.new_to_studio" scope="global">
+        <template #brandName>{{ brandName }}</template>
         <template #link>
           <a
-            href="https://www.geins.io"
+            :href="isLitium ? 'https://www.litium.com' : 'https://www.geins.io'"
             target="_blank"
             rel="noopener noreferrer"
-            >geins.io</a
-          >
+          >{{ isLitium ? 'litium.com' : 'geins.io' }}</a>
         </template>
       </i18n-t>
     </FieldDescription>

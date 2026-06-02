@@ -44,6 +44,7 @@
   "new_entity_url_alias": "ny",
   "list_entity_url_alias": "lista",
   "entity_id": "@:{entityName}-ID",
+  "entity_identifier": "@:{entityName}-identifierare",
   "new_entity": "Skapa @.lower:{entityName}",
   "edit_entity": "Redigera @.lower:{entityName}",
   "save_entity": "Spara @.lower:{entityName}",
@@ -95,6 +96,7 @@
   "price_updated_for": "Pris uppdaterat för {name} ({id})",
   "product_selection_updated": "Produktval uppdaterat",
   "clear_search": "Rensa sökning",
+  "clear_date": "Rensa datum",
   "all_entity": "Alla @.lower:{entityName}",
   "entity_is_active": "@:{entityName} är aktiv",
   "entity_is_inactive": "@:{entityName} är inaktiv",
@@ -151,6 +153,7 @@
   "image_upload_replace": "Klicka för att bläddra eller dra en bild för att ersätta",
   "image_upload_invalid_type": "Filtypen stöds inte. Tillåtet: {accept}",
   "image_upload_too_large": "Filen är för stor. Maxstorlek: {size}",
+  "image_upload_remove": "Ta bort bild",
   "delete": "Ta bort",
   "remove": "Ta bort",
   "status": "Status",
@@ -268,7 +271,7 @@
     "send_reset_link": "Skicka återställningslänk",
     "forgot_password": "Glömt ditt lösenord?",
     "forgot_password_description": "Använd din e-post för att få en återställningslänk.",
-    "new_to_geins": "Ny på Geins Studio? Besök {link} för att lära dig mer och komma igång.",
+    "new_to_studio": "Ny på {brandName}? Besök {link} för att lära dig mer och komma igång.",
     "logging_out": "Loggar ut..."
   },
   "form": {
@@ -758,5 +761,9 @@
     "remove_market": "Ta bort marknad",
     "remove_market_description": "Är du säker på att du vill ta bort denna marknad från kanalen? Ändringen träder i kraft när du sparar.",
     "no_payment_methods": "Inga betalningsmetoder tillgängliga för denna kanal."
+  },
+  "theme_colors": {
+    "contrast_warning_title": "Låg kontrast",
+    "contrast_warning_body": "Kontrastförhållandet {ratio}:1 är under WCAG 2.1 AA (4.5:1). Texten kan vara svår att läsa för användare med nedsatt syn."
   }
 }
