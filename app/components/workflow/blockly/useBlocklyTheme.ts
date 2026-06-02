@@ -30,6 +30,7 @@ const CATEGORY_COLOURS: Record<string, string> = {
   string: '#8b5cf6',
   datetime: '#06b6d4',
   conversion: '#6366f1',
+  object: '#14b8a6', // teal-500
   other: '#6b7280',
 };
 
@@ -86,6 +87,11 @@ export function useBlocklyTheme(): BlocklyThemeReturnType {
           colourSecondary: '#4f46e5',
           colourTertiary: '#4338ca',
         },
+        object_blocks: {
+          colourPrimary: CATEGORY_COLOURS.object,
+          colourSecondary: '#0d9488',
+          colourTertiary: '#0f766e',
+        },
         default_blocks: {
           colourPrimary: CATEGORY_COLOURS.other,
           colourSecondary: '#4b5563',
@@ -100,6 +106,7 @@ export function useBlocklyTheme(): BlocklyThemeReturnType {
         string_category: { colour: CATEGORY_COLOURS.string },
         datetime_category: { colour: CATEGORY_COLOURS.datetime },
         conversion_category: { colour: CATEGORY_COLOURS.conversion },
+        object_category: { colour: CATEGORY_COLOURS.object },
         other_category: { colour: CATEGORY_COLOURS.other },
       },
       componentStyles: {

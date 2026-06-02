@@ -500,6 +500,37 @@ const FUNCTION_TO_BLOCK: Record<string, string> = {
   IsNull: 'ncalc_is_null',
 };
 
+/** Function names (and aliases) that have a hand-built bespoke block. */
+export const BESPOKE_FUNCTION_NAMES = new Set(Object.keys(FUNCTION_TO_BLOCK));
+
+// Manifest-driven generic functions: canonical names not covered by a bespoke
+// block, plus an alias→canonical map so aliased calls route to the same block.
+const genericFunctionNames = new Set<string>();
+const aliasToCanonical = new Map<string, string>();
+
+/**
+ * Registers the manifest's expression functions for generic-block routing.
+ * Bespoke functions are skipped (they keep their hand-built blocks). Called
+ * from the editor whenever the manifest resolves.
+ */
+function setManifestFunctions(
+  functions: { name: string; aliases?: string[] }[],
+): void {
+  genericFunctionNames.clear();
+  aliasToCanonical.clear();
+  for (const fn of functions) {
+    if (!fn?.name) continue;
+    const aliases = fn.aliases ?? [];
+    const isBespoke =
+      BESPOKE_FUNCTION_NAMES.has(fn.name) ||
+      aliases.some((a) => BESPOKE_FUNCTION_NAMES.has(a));
+    if (isBespoke) continue;
+    genericFunctionNames.add(fn.name);
+    aliasToCanonical.set(fn.name, fn.name);
+    for (const a of aliases) aliasToCanonical.set(a, fn.name);
+  }
+}
+
 // Known data reference namespaces
 const DATA_NAMESPACES = new Set(['output', 'input', 'vars']);
 const ITERATOR_REFS = new Set(['$current', '$index']);
@@ -666,6 +697,17 @@ function functionToBlock(
   const blockType = FUNCTION_TO_BLOCK[node.name];
 
   if (!blockType) {
+    // Manifest-driven generic function block (one value input per argument)
+    const canonical = aliasToCanonical.get(node.name);
+    if (canonical && genericFunctionNames.has(canonical)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const inputs: Record<string, { block: Record<string, any> }> = {};
+      node.args.forEach((arg, i) => {
+        if (arg) inputs[`ARG${i}`] = { block: astToBlocklyJson(arg) };
+      });
+      return { type: `ncalc_fn_${canonical}`, inputs };
+    }
+
     // Unknown function — raw expression fallback
     const argsStr = node.args.map((a) => nodeToString(a)).join(', ');
     return {
@@ -1235,5 +1277,5 @@ export function useBlocklyParser() {
     return allSuccess;
   }
 
-  return { loadExpression, tokenize, parse };
+  return { loadExpression, tokenize, parse, setManifestFunctions };
 }

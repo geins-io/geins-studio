@@ -1,5 +1,10 @@
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useBlocklyGenerator(Blockly: any) {
+import type { ManifestExpressionFunction } from '#shared/types';
+
+export function useBlocklyGenerator(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Blockly: any,
+  expressionFunctions: ManifestExpressionFunction[] = [],
+) {
   const ORDER_ATOMIC = 0;
   const ORDER_FUNCTION_CALL = 1;
   const ORDER_UNARY = 2;
@@ -412,6 +417,20 @@ export function useBlocklyGenerator(Blockly: any) {
   ncalc.forBlock['ncalc_raw_expression'] = (block: any) => {
     return [block.getFieldValue('EXPR') || '', ORDER_ATOMIC];
   };
+
+  // --- Generic manifest-driven function blocks (ncalc_fn_<Name>) ---
+  for (const fn of expressionFunctions) {
+    if (!fn?.name) continue;
+    const argCount = fn.parameters?.length ?? 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ncalc.forBlock[`ncalc_fn_${fn.name}`] = (block: any) => {
+      const args: string[] = [];
+      for (let i = 0; i < argCount; i++) {
+        args.push(valueToCode(block, `ARG${i}`, ORDER_NONE));
+      }
+      return [`${fn.name}(${args.join(', ')})`, ORDER_FUNCTION_CALL];
+    };
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function generateCode(workspace: any): string {

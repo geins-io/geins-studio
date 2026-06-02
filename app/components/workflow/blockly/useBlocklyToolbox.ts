@@ -1,5 +1,61 @@
-export function buildToolbox() {
-  return {
+import type { ManifestExpressionFunction } from '#shared/types';
+import { BESPOKE_FUNCTION_NAMES } from './useBlocklyParser';
+
+interface ToolboxBlock {
+  kind: 'block';
+  type: string;
+}
+interface ToolboxCategory {
+  kind: 'category';
+  name: string;
+  categorystyle: string;
+  contents: ToolboxBlock[];
+}
+
+/** Manifest category → toolbox categorystyle (mirrors useBlocklyTheme). */
+function categoryStyleFor(category: string): string {
+  const c = category.toLowerCase();
+  const known = [
+    'data',
+    'logic',
+    'math',
+    'array',
+    'string',
+    'datetime',
+    'conversion',
+    'object',
+  ];
+  return known.includes(c) ? `${c}_category` : 'other_category';
+}
+
+/**
+ * Groups manifest functions NOT covered by a bespoke block into
+ * `ncalc_fn_<Name>` toolbox blocks keyed by their category name.
+ */
+function genericBlocksByCategory(
+  functions: ManifestExpressionFunction[],
+): Map<string, ToolboxBlock[]> {
+  const groups = new Map<string, ToolboxBlock[]>();
+  for (const fn of functions) {
+    if (!fn?.name) continue;
+    const aliases = fn.aliases ?? [];
+    if (
+      BESPOKE_FUNCTION_NAMES.has(fn.name) ||
+      aliases.some((a) => BESPOKE_FUNCTION_NAMES.has(a))
+    )
+      continue;
+    const category = fn.category || 'Other';
+    const list = groups.get(category) ?? [];
+    list.push({ kind: 'block', type: `ncalc_fn_${fn.name}` });
+    groups.set(category, list);
+  }
+  return groups;
+}
+
+export function buildToolbox(
+  expressionFunctions: ManifestExpressionFunction[] = [],
+) {
+  const toolbox = {
     kind: 'categoryToolbox',
     contents: [
       {
@@ -112,6 +168,29 @@ export function buildToolbox() {
           { kind: 'block', type: 'ncalc_raw_expression' },
         ],
       },
-    ],
+    ] as ToolboxCategory[],
   };
+
+  // Merge manifest-driven generic functions into their category. Append to an
+  // existing category when the name matches; otherwise insert a new category
+  // (e.g. "Object") just before "Other".
+  const groups = genericBlocksByCategory(expressionFunctions);
+  for (const [category, blocks] of groups) {
+    const existing = toolbox.contents.find((c) => c.name === category);
+    if (existing) {
+      existing.contents.push(...blocks);
+      continue;
+    }
+    const newCategory: ToolboxCategory = {
+      kind: 'category',
+      name: category,
+      categorystyle: categoryStyleFor(category),
+      contents: blocks,
+    };
+    const otherIndex = toolbox.contents.findIndex((c) => c.name === 'Other');
+    if (otherIndex === -1) toolbox.contents.push(newCategory);
+    else toolbox.contents.splice(otherIndex, 0, newCategory);
+  }
+
+  return toolbox;
 }

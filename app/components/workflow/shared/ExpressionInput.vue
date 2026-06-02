@@ -636,7 +636,7 @@ function onBlocklyApply(value: string) {
           class="w-[360px] p-0"
         >
           <!-- Category tabs -->
-          <div class="flex gap-1 overflow-x-auto border-b px-2 py-1.5">
+          <div class="scroll-visible flex gap-1 overflow-x-auto border-b px-2 py-1.5">
             <button
               v-for="[cat] in fnCategories"
               :key="cat"
@@ -652,7 +652,7 @@ function onBlocklyApply(value: string) {
           </div>
 
           <!-- Function list -->
-          <div class="max-h-[320px] overflow-y-auto p-2">
+          <div class="scroll-visible max-h-[320px] overflow-y-auto p-2">
             <div
               v-for="fn in fnCategories.get(activeFnCategory)"
               :key="fn.name"

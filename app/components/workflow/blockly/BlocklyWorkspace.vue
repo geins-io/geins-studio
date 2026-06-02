@@ -73,7 +73,7 @@ async function initBlockly() {
     Blockly.config.connectingSnapRadius = 300
     Blockly.ContextMenuRegistry.registry.reset()
 
-    registerAllBlocks(Blockly, { completions })
+    registerAllBlocks(Blockly, { completions, expressionFunctions: expressionFunctions.value })
 
     const BaseConstants = Blockly.zelos.ConstantProvider
     const BaseRenderer = Blockly.zelos.Renderer
@@ -95,7 +95,7 @@ async function initBlockly() {
     try { Blockly.blockRendering.unregister('padded-zelos') } catch { /* first load */ }
     Blockly.blockRendering.register('padded-zelos', PaddedRenderer)
 
-    const generator = useBlocklyGenerator(Blockly)
+    const generator = useBlocklyGenerator(Blockly, expressionFunctions.value)
     generateCode = generator.generateCode
 
     const theme = createShadcnBlocklyTheme(Blockly, isDark.value)
@@ -103,7 +103,7 @@ async function initBlockly() {
     workspace = Blockly.inject(containerRef.value, {
       theme,
       renderer: 'padded-zelos',
-      toolbox: buildToolbox(),
+      toolbox: buildToolbox(expressionFunctions.value),
       grid: {
         spacing: 20,
         length: 3,
@@ -136,7 +136,8 @@ async function initBlockly() {
 
     // Load existing expression into workspace
     if (props.modelValue) {
-      const { loadExpression } = useBlocklyParser()
+      const { loadExpression, setManifestFunctions } = useBlocklyParser()
+      setManifestFunctions(expressionFunctions.value)
       loadExpression(workspace, Blockly, props.modelValue)
       workspace.scrollCenter()
     }
@@ -157,6 +158,17 @@ async function initBlockly() {
 
 watch(isDark, () => {
   applyTheme()
+})
+
+// The manifest loads asynchronously, so expressionFunctions may be empty at
+// first inject. When it resolves (or changes), re-register the generic
+// function blocks/generator and refresh the toolbox so new functions appear.
+watch(expressionFunctions, (fns) => {
+  if (!Blockly || !workspace) return
+  registerAllBlocks(Blockly, { completions, expressionFunctions: fns })
+  generateCode = useBlocklyGenerator(Blockly, fns).generateCode
+  useBlocklyParser().setManifestFunctions(fns)
+  workspace.updateToolbox(buildToolbox(fns))
 })
 
 onMounted(() => {
