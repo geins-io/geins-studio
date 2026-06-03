@@ -19,6 +19,13 @@ export function registerDataBlocks(Blockly: any, ctx: BlocklyContext) {
   // Standard FieldDropdown rejects values not in the options list, which
   // breaks loading expressions whose paths aren't in the current completions.
   class PathDropdown extends Blockly.FieldDropdown {
+    // Explicit constructor only to expose a 1-arg signature — the `any`-typed
+    // Blockly base infers a 0-arg constructor, which TS rejects at the call site.
+    // eslint-disable-next-line @typescript-eslint/no-useless-constructor
+    constructor(menuGenerator: () => [string, string][]) {
+      super(menuGenerator);
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     doClassValidation_(newValue: any) {
       const result = super.doClassValidation_(newValue);
@@ -41,12 +48,11 @@ export function registerDataBlocks(Blockly: any, ctx: BlocklyContext) {
     }
   }
 
-  const createPathDropdown = (namespace: string) => {
-    const dropdown = new PathDropdown();
-    (dropdown as unknown as { menuGenerator_: () => [string, string][] }).menuGenerator_ =
-      () => getPathOptions(namespace);
-    return dropdown;
-  };
+  // Pass the generator function straight to the constructor. Blockly 12's
+  // FieldDropdown runs setup in the constructor and throws if no menu generator
+  // is supplied, so assigning `menuGenerator_` afterwards is too late.
+  const createPathDropdown = (namespace: string) =>
+    new PathDropdown(() => getPathOptions(namespace));
 
   Blockly.Blocks['ncalc_output_ref'] = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
