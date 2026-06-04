@@ -31,6 +31,8 @@
   "quotation": "Offert | Offerter",
   "workflow": "Arbetsflöde | Arbetsflöden",
   "input": "Indata | Indata",
+  "variable": "Variabel | Variabler",
+  "execution": "Körning | Körningar",
   "group": "Grupp | Grupper",
   "communication": "Kommunikation | Kommunikationer",
   "entity": "Entitet | Entiteter",

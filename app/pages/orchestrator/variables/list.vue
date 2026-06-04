@@ -108,6 +108,7 @@ onMounted(() => {
   const columnOptions: ColumnOptions<EntityList> = {
     columnTypes: {
       key: 'link',
+      displayValue: 'code',
       isSecret: 'icon',
     },
     linkColumns: {
