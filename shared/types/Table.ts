@@ -32,6 +32,7 @@ export type ColumnType =
   | 'channels'
   | 'tags'
   | 'status'
+  | 'code'
   | 'tooltip'
   | 'product'
   | 'flag'

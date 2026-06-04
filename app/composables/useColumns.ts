@@ -11,6 +11,7 @@ import {
   TableCellChannels,
   TableCellTags,
   TableCellStatus,
+  TableCellCode,
   TableCellTooltip,
   TableCellBoolean,
   TableCellEditable,
@@ -608,6 +609,16 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             return h(TableCellStatus, {
               class: getBasicCellStyle(table),
               status: value as StatusBadgeStatus,
+              ...cellProps,
+            });
+          };
+          break;
+        case 'code':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value = row.getValue(key);
+            return h(TableCellCode, {
+              class: getBasicCellStyle(table),
+              value: value == null ? '' : String(value),
               ...cellProps,
             });
           };

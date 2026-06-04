@@ -31,6 +31,8 @@
   "quotation": "Quotation | Quotations",
   "workflow": "Workflow | Workflows",
   "input": "Input | Inputs",
+  "variable": "Variable | Variables",
+  "execution": "Execution | Executions",
   "group": "Group | Groups",
   "communication": "Communication | Communications",
   "entity": "Entity | Entities",

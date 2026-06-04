@@ -19,14 +19,14 @@ const setMode = (key: string) => {
 </script>
 
 <template>
-  <div class="bg-muted inline-flex items-center gap-1 rounded-lg p-1">
+  <div class="bg-muted inline-flex h-8 items-center gap-1 rounded-lg p-1 sm:h-9">
     <button
       v-for="mode in props.modes"
       :key="mode.key"
       type="button"
       :class="
         cn(
-          'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+          'inline-flex h-full items-center gap-1.5 rounded-md px-3 text-sm font-medium transition-colors',
           modelValue === mode.key
             ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground',

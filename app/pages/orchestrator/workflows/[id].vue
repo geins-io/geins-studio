@@ -177,7 +177,7 @@ const viewModes = [
 ] as Array<{ key: string, label: string, icon: Component }>
 
 // Sub-tabs within Settings mode.
-const mainTabs = ['General', 'Inputs', 'History', 'Executions']
+const mainTabs = ['General', 'Inputs', 'Changelog', 'Executions']
 const currentTab = ref(0)
 
 const executionsRef = ref<{ refresh: () => void } | null>(null)
@@ -614,12 +614,10 @@ async function executeWorkflow() {
 
 // ─── Validate ─────────────────────────────────────────────────────
 const isValidating = ref(false)
-const validationResult = ref<{ valid: boolean, message?: string, errors?: { message: string, nodeId?: string, field?: string }[] } | null>(null)
 
 const handleValidate = async () => {
   if (isNew.value || !currentWorkflow.value) return
   isValidating.value = true
-  validationResult.value = null
   try {
     const wf = currentWorkflow.value as WorkflowEditorDefinition
     const values = form.values
@@ -641,11 +639,6 @@ const handleValidate = async () => {
       trigger,
     })
     const isValid = result.isValid ?? result.valid ?? false
-    validationResult.value = {
-      valid: isValid,
-      message: result.message,
-      errors: result.errors,
-    }
     if (isValid) {
       toast({ title: 'Validation passed', description: result.message || 'Workflow configuration is valid.' })
     }
@@ -660,10 +653,6 @@ const handleValidate = async () => {
   catch (err: unknown) {
     geinsLogError('Failed to validate workflow', err)
     const apiBody = extractApiError(err)
-    validationResult.value = {
-      valid: false,
-      errors: [{ message: apiBody?.detail || (err as { message?: string })?.message || 'Validation request failed' }],
-    }
     toast({
       title: apiBody?.title || 'Validation error',
       description: apiBody?.detail || (err as { message?: string })?.message || 'Unknown error',
@@ -785,6 +774,10 @@ v-if="!isNew" icon="save" :loading="isSavingConfig"
               <DropdownMenuItem :disabled="!currentWorkflow || isRunning" @click="openRunWorkflow">
                 <LucideRocket class="mr-2 size-4" />
                 <span>Run workflow</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem :disabled="isValidating || !currentWorkflow" @click="handleValidate">
+                <LucideShieldCheck class="mr-2 size-4" />
+                <span>{{ isValidating ? 'Validating…' : 'Validate workflow' }}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem :disabled="!currentWorkflow" @click="workflowActive = !workflowActive">
@@ -1148,31 +1141,6 @@ v-if="currentTab === 1" :key="`tab-${currentTab}`"
           <ContentEditSummary v-model:active="workflowActive" v-bind="summaryProps">
             <template #after-summary>
               <ContentDataList v-if="triggerSummary.length" :data-list="triggerSummary" label="Trigger" />
-            </template>
-            <template #after-settings>
-              <Separator />
-              <div class="space-y-3">
-                <Button
-                  variant="outline" class="w-full" :disabled="isValidating"
-                  @click="handleValidate"
-                >
-                  <LucideShieldCheck class="mr-2 size-4" />
-                  {{ isValidating ? 'Validating…' : 'Validate workflow' }}
-                </Button>
-                <div v-if="validationResult" class="rounded-md border p-3 text-sm" :class="validationResult.valid ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950' : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'">
-                  <div class="flex items-center gap-2 font-medium" :class="validationResult.valid ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'">
-                    <LucideCircleCheck v-if="validationResult.valid" class="size-4" />
-                    <LucideCircleX v-else class="size-4" />
-                    {{ validationResult.valid ? (validationResult.message || 'Valid') : (validationResult.errors?.length ? `${validationResult.errors.length} issue(s)` : (validationResult.message || 'Invalid')) }}
-                  </div>
-                  <ul v-if="validationResult.errors?.length" class="mt-2 space-y-1 text-red-600 dark:text-red-400">
-                    <li v-for="(error, idx) in validationResult.errors" :key="idx" class="flex gap-1.5">
-                      <span class="mt-0.5 shrink-0">•</span>
-                      <span>{{ error.message }}</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
             </template>
           </ContentEditSummary>
         </template>

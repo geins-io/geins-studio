@@ -177,7 +177,10 @@ const pageTitle = computed(() => (isNew.value ? 'New variable' : keyField.value 
       </ContentActionBar>
     </ContentHeader>
 
-    <form class="max-w-2xl space-y-5" @submit.prevent="handleSave">
+    <form class="max-w-2xl" @submit.prevent="handleSave">
+      <ContentEditCard
+        title="Details"
+        description="Key, value, and visibility for this variable.">
       <div class="space-y-2">
         <Label for="variable-key">Key</Label>
         <Input
@@ -248,6 +251,7 @@ const pageTitle = computed(() => (isNew.value ? 'New variable' : keyField.value 
           </p>
         </div>
       </div>
+      </ContentEditCard>
     </form>
 
     <DialogDelete
