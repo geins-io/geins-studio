@@ -1,0 +1,3 @@
+# Full quality gate — mirrors CI (.github/workflows/ci-quality-gate.yml).
+# Blocks broken code from leaving your machine without slowing every commit.
+pnpm lint:check && pnpm format:check && pnpm typecheck && pnpm test --run
