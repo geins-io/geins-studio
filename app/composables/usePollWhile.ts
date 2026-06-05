@@ -23,8 +23,7 @@ export const usePollWhile = (
   const tick = async () => {
     try {
       await fn();
-    }
-    catch (err) {
+    } catch (err) {
       geinsLogError('poll tick failed', err);
     }
   };

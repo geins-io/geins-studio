@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import type {
-  ExecutionLog,
-  ColumnOptions,
-  StringKeyOf,
-} from '#shared/types';
+import type { ExecutionLog, ColumnOptions, StringKeyOf } from '#shared/types';
 import { formatDuration, formatTimestamp } from '#shared/utils/time';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
@@ -86,12 +82,17 @@ const periodRange = computed(() => {
 });
 
 // ─── Fetch Data ────────────────────────────────────────────────────
-const { data: executions, error: executionError, refresh } = await useAsyncData<Entity[]>(
+const {
+  data: executions,
+  error: executionError,
+  refresh,
+} = await useAsyncData<Entity[]>(
   'executions-list',
-  () => orchestratorApi.execution.list({
-    ...(workflowIdFilter.value ? { workflowId: workflowIdFilter.value } : {}),
-    ...(periodRange.value ?? {}),
-  }),
+  () =>
+    orchestratorApi.execution.list({
+      ...(workflowIdFilter.value ? { workflowId: workflowIdFilter.value } : {}),
+      ...(periodRange.value ?? {}),
+    }),
   {
     watch: [workflowIdFilter, periodFilter],
     // Opt out of Nuxt payload cache — always fetch fresh on mount
@@ -101,7 +102,9 @@ const { data: executions, error: executionError, refresh } = await useAsyncData<
 
 const filteredWorkflowName = computed(() => {
   if (!workflowIdFilter.value) return null;
-  const match = allData.value.find((item) => item.workflowId === workflowIdFilter.value);
+  const match = allData.value.find(
+    (item) => item.workflowId === workflowIdFilter.value,
+  );
   return match?.workflowName ?? null;
 });
 
@@ -114,7 +117,10 @@ type ActiveFilter =
 const activeFilters = computed<ActiveFilter[]>(() => {
   const filters: ActiveFilter[] = [];
   if (workflowIdFilter.value) {
-    filters.push({ type: 'workflow', label: filteredWorkflowName.value ?? workflowIdFilter.value });
+    filters.push({
+      type: 'workflow',
+      label: filteredWorkflowName.value ?? workflowIdFilter.value,
+    });
   }
   if (groupFilter.value) {
     const label = groupFilter.value
@@ -133,21 +139,25 @@ const activeFilters = computed<ActiveFilter[]>(() => {
 });
 
 const hasFilters = computed(() => activeFilters.value.length > 0);
-const filterLabel = computed(() => activeFilters.value.map((f) => f.label).join(' · '));
+const filterLabel = computed(() =>
+  activeFilters.value.map((f) => f.label).join(' · '),
+);
 
 // Sync breadcrumb title with active filters (replace last segment on list page)
-watch([hasFilters, filterLabel], () => {
-  const base = t('navigation.executions');
-  breadcrumbsStore.setCurrentTitle(
-    hasFilters.value ? `${base} — ${filterLabel.value}` : base,
-    true,
-  );
-}, { immediate: true });
+watch(
+  [hasFilters, filterLabel],
+  () => {
+    const base = t('navigation.executions');
+    breadcrumbsStore.setCurrentTitle(
+      hasFilters.value ? `${base} — ${filterLabel.value}` : base,
+      true,
+    );
+  },
+  { immediate: true },
+);
 
 // ─── Data Mapping ──────────────────────────────────────────────────
-const mapToListData = (
-  list: ExecutionLog[],
-): EntityList[] => {
+const mapToListData = (list: ExecutionLog[]): EntityList[] => {
   return list.map((e) => {
     const groupName = e.group ?? '';
 
@@ -156,7 +166,9 @@ const mapToListData = (
       workflowName: e.workflowName || 'Unknown',
       workflowId: e.workflowId,
       group: groupName,
-      groupSlug: groupName ? groupName.toLowerCase().replace(/\s+/g, '-') : null,
+      groupSlug: groupName
+        ? groupName.toLowerCase().replace(/\s+/g, '-')
+        : null,
       status: e.status?.toLowerCase() ?? 'unknown',
       startTime: formatTimestamp(e.startTime),
       startTimeIso: e.startTime ?? null,
@@ -171,7 +183,9 @@ const mapToListData = (
 };
 
 // ─── Live ticking clock for running executions ────────────────────
-const hasRunning = computed(() => allData.value.some((item) => item.status === 'running'));
+const hasRunning = computed(() =>
+  allData.value.some((item) => item.status === 'running'),
+);
 const { now } = useLiveClock(hasRunning);
 
 const applyLiveDuration = (item: EntityList): EntityList => {
@@ -191,8 +205,7 @@ const dataList = computed(() => {
   let list = allData.value;
   if (groupFilter.value) {
     list = list.filter((item) => item.groupSlug === groupFilter.value);
-  }
-  else if (nameFilter.value) {
+  } else if (nameFilter.value) {
     list = list.filter((item) => item.workflowName === nameFilter.value);
   }
   return list.map(applyLiveDuration);
@@ -236,8 +249,7 @@ const pollNewExecutions = async () => {
     if (newRows.length === 0) return;
 
     allData.value = [...newRows, ...allData.value];
-  }
-  catch {
+  } catch {
     // silent poll failure — next tick will retry
   }
 };
@@ -288,7 +300,10 @@ onMounted(() => {
         idField: 'id',
         maxTextLength: 24,
       },
-      workflowName: { url: '/orchestrator/workflows/{id}', idField: 'workflowId' },
+      workflowName: {
+        url: '/orchestrator/workflows/{id}',
+        idField: 'workflowId',
+      },
     },
     iconColumns: {
       status: {
@@ -322,31 +337,53 @@ onBeforeUnmount(stopPolling);
 
 // ─── Column Visibility ────────────────────────────────────────────
 const { getVisibilityState } = useTable<EntityList>();
-const hiddenColumns: StringKeyOf<EntityList>[] = ['groupSlug', 'workflowId', 'isTestRun', 'endTime', 'startTimeIso'];
+const hiddenColumns: StringKeyOf<EntityList>[] = [
+  'groupSlug',
+  'workflowId',
+  'isTestRun',
+  'endTime',
+  'startTimeIso',
+];
 visibilityState.value = getVisibilityState(hiddenColumns);
 
 // SET UP SEARCHABLE FIELDS
-const searchableFields: Array<keyof EntityList> = ['workflowName', 'group', 'status'];
+const searchableFields: Array<keyof EntityList> = [
+  'workflowName',
+  'group',
+  'status',
+];
 </script>
 
 <template>
   <ContentHeader
-:title="hasFilters ? `${$t('navigation.executions')} — ${filterLabel}` : $t('navigation.executions')"
-    :description="$t('executions.description')" />
+    :title="
+      hasFilters
+        ? `${$t('navigation.executions')} — ${filterLabel}`
+        : $t('navigation.executions')
+    "
+    :description="$t('executions.description')"
+  />
 
   <!-- Active Filter Banner -->
-  <div v-if="hasFilters" class="bg-muted/50 mb-4 flex items-center justify-between rounded-lg border px-4 py-2">
+  <div
+    v-if="hasFilters"
+    class="bg-muted/50 mb-4 flex items-center justify-between rounded-lg border px-4 py-2"
+  >
     <div class="flex flex-wrap items-center gap-2 text-sm">
       <LucideFilter class="text-muted-foreground h-4 w-4" />
       <span class="text-muted-foreground">Filtered by:</span>
       <span
-v-for="f in activeFilters" :key="f.type"
-        class="bg-background inline-flex items-center gap-1 rounded-full border py-0.5 pr-1 pl-2 text-xs">
+        v-for="f in activeFilters"
+        :key="f.type"
+        class="bg-background inline-flex items-center gap-1 rounded-full border py-0.5 pr-1 pl-2 text-xs"
+      >
         <span class="text-muted-foreground">{{ f.type }}:</span>
         <span class="font-medium">{{ f.label }}</span>
         <button
-class="hover:bg-muted text-muted-foreground hover:text-foreground ml-0.5 rounded-full p-0.5"
-          :title="`Remove ${f.type} filter`" @click="removeFilter(f.type)">
+          class="hover:bg-muted text-muted-foreground hover:text-foreground ml-0.5 rounded-full p-0.5"
+          :title="`Remove ${f.type} filter`"
+          @click="removeFilter(f.type)"
+        >
           <LucideX class="h-3 w-3" />
         </button>
       </span>
@@ -359,8 +396,14 @@ class="hover:bg-muted text-muted-foreground hover:text-foreground ml-0.5 rounded
 
   <NuxtErrorBoundary>
     <TableView
-:loading="loading" :entity-name="entityName" :columns="columns" :data="dataList"
-      :init-visibility-state="visibilityState" :searchable-fields="searchableFields" :error="fetchError"
-      :on-retry="refresh" />
+      :loading="loading"
+      :entity-name="entityName"
+      :columns="columns"
+      :data="dataList"
+      :init-visibility-state="visibilityState"
+      :searchable-fields="searchableFields"
+      :error="fetchError"
+      :on-retry="refresh"
+    />
   </NuxtErrorBoundary>
 </template>

@@ -90,11 +90,15 @@ describe('usePrice', () => {
     });
 
     it('formats string decimal number', () => {
-      expect(formatCurrency('100.9')).toBe(svTwoDecimalFormatter.format(Number('100.9')));
+      expect(formatCurrency('100.9')).toBe(
+        svTwoDecimalFormatter.format(Number('100.9')),
+      );
     });
 
     it('formats string whole number without decimals', () => {
-      expect(formatCurrency('1000')).toBe(svNoDecimalFormatter.format(Number('1000')));
+      expect(formatCurrency('1000')).toBe(
+        svNoDecimalFormatter.format(Number('1000')),
+      );
     });
 
     it('returns empty string for undefined', () => {

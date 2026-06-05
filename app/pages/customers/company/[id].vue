@@ -925,8 +925,9 @@ if (!createMode.value) {
             :loading="loading"
             :disabled="!hasUnsavedChanges || loading"
             @click="handleUpdateCompany"
-            >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
+            {{ $t('save_entity', { entityName }) }}
+          </ButtonIcon>
           <DropdownMenu v-if="!createMode">
             <DropdownMenuTrigger as-child>
               <Button size="icon" variant="secondary">
@@ -976,9 +977,9 @@ if (!createMode.value) {
                 <FormGrid design="1+1+1">
                   <FormField v-slot="{ componentField }" name="details.name">
                     <FormItem>
-                      <FormLabel>{{
-                        $t('entity_name', { entityName })
-                      }}</FormLabel>
+                      <FormLabel>
+                        {{ $t('entity_name', { entityName }) }}
+                      </FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="text" />
                       </FormControl>
@@ -1029,8 +1030,9 @@ if (!createMode.value) {
                                         class="underline underline-offset-2"
                                         href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
                                         target="_blank"
-                                        >{{ $t('customers.veis') }}</a
                                       >
+                                        {{ $t('customers.veis') }}
+                                      </a>
                                     </template>
                                   </i18n-t>
                                 </TooltipContent>
@@ -1047,9 +1049,9 @@ if (!createMode.value) {
                     name="details.externalId"
                   >
                     <FormItem>
-                      <FormLabel :optional="true">{{
-                        $t('customers.external_id')
-                      }}</FormLabel>
+                      <FormLabel :optional="true">
+                        {{ $t('customers.external_id') }}
+                      </FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="text" />
                       </FormControl>
@@ -1063,9 +1065,9 @@ if (!createMode.value) {
                     name="details.salesReps"
                   >
                     <FormItem>
-                      <FormLabel :optional="true">{{
-                        $t('sales_rep', 2)
-                      }}</FormLabel>
+                      <FormLabel :optional="true">
+                        {{ $t('sales_rep', 2) }}
+                      </FormLabel>
                       <FormControl>
                         <FormInputTagsSearch
                           :model-value="componentField.modelValue"
@@ -1102,9 +1104,9 @@ if (!createMode.value) {
                 <FormGrid v-if="!createMode" design="1">
                   <FormField v-slot="{ componentField }" name="details.tags">
                     <FormItem>
-                      <FormLabel :optional="true">{{
-                        $t('customers.company_groups')
-                      }}</FormLabel>
+                      <FormLabel :optional="true">
+                        {{ $t('customers.company_groups') }}
+                      </FormLabel>
                       <FormControl>
                         <FormInputTagsSearch
                           :model-value="componentField.modelValue"
@@ -1148,9 +1150,9 @@ if (!createMode.value) {
                       :address="billingAddress"
                       @save="saveAddress"
                     >
-                      <Button variant="outline" size="sm">{{
-                        $t('edit')
-                      }}</Button>
+                      <Button variant="outline" size="sm">
+                        {{ $t('edit') }}
+                      </Button>
                     </ContentEditAddressPanel>
                   </div>
                 </TabsContent>
@@ -1189,9 +1191,9 @@ if (!createMode.value) {
                       @save="saveAddress"
                       @delete="openAddressDeleteDialog"
                     >
-                      <Button variant="outline" size="sm">{{
-                        $t('edit')
-                      }}</Button>
+                      <Button variant="outline" size="sm">
+                        {{ $t('edit') }}
+                      </Button>
                     </ContentEditAddressPanel>
                   </div>
                 </TabsContent>
@@ -1414,8 +1416,9 @@ if (!createMode.value) {
                               class="underline underline-offset-2"
                               href="https://ec.europa.eu/taxation_customs/vies/#/vat-validation"
                               target="_blank"
-                              >{{ $t('customers.veis') }}</a
                             >
+                              {{ $t('customers.veis') }}
+                            </a>
                           </template>
                         </i18n-t>
                       </p>

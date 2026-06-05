@@ -75,7 +75,7 @@ When the entity can't transition (missing fields, invalid state), pass `blockRea
 ### `action`
 
 ```ts
-action: string
+action: string;
 ```
 
 Label for the confirm button (e.g. `'Send'`, `'Accept'`).
@@ -83,7 +83,7 @@ Label for the confirm button (e.g. `'Send'`, `'Accept'`).
 ### `title`
 
 ```ts
-title: string
+title: string;
 ```
 
 Dialog title.
@@ -91,7 +91,7 @@ Dialog title.
 ### `description`
 
 ```ts
-description: string
+description: string;
 ```
 
 Body text shown under the title.
@@ -99,7 +99,7 @@ Body text shown under the title.
 ### `loading`
 
 ```ts
-loading: boolean
+loading: boolean;
 ```
 
 Disables the confirm button and shows a spinner.

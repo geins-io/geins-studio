@@ -18,7 +18,10 @@ logs
 *.log
 
 # Misc
-.vscode
+# Ignore personal VS Code config, but share formatting + extension recommendations
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .DS_Store
 .fleet
 .idea

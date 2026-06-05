@@ -21,7 +21,7 @@
 ### `status`
 
 ```ts
-status: StatusBadgeStatus
+status: StatusBadgeStatus;
 ```
 
 Status value. See [`StatusBadge`](/components/StatusBadge) for the full union.

@@ -29,10 +29,7 @@ export function relativeLuminance(rgb: [number, number, number]): number {
   return r * 0.2126 + g * 0.7152 + b * 0.0722;
 }
 
-export function calculateContrast(
-  hex1: string,
-  hex2: string,
-): number | null {
+export function calculateContrast(hex1: string, hex2: string): number | null {
   const rgb1 = hexToRgb(hex1);
   const rgb2 = hexToRgb(hex2);
   if (!rgb1 || !rgb2) return null;

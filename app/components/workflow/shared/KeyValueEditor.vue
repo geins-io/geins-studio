@@ -1,200 +1,225 @@
 <script setup lang="ts">
-import draggable from 'vuedraggable'
-import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue'
-import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue'
+import draggable from 'vuedraggable';
+import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue';
+import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue';
 
-const props = withDefaults(defineProps<{
-  input: Record<string, unknown>
-  updateInput: (name: string, value: unknown) => void
-  fieldName?: string
-  label?: string
-  description?: string
-  keyPlaceholder?: string
-  valuePlaceholder?: string
-  expandTitle?: string
-  inline?: boolean
-  editorHintKey?: string
-  editorHints?: Record<string, unknown>
-  updateEditorHint?: (name: string, value: unknown) => void
-}>(), {
-  fieldName: '',
-  label: 'Fields',
-  description: '',
-  keyPlaceholder: 'Field name',
-  valuePlaceholder: 'Value or {{expression}}',
-  expandTitle: 'JSON',
-  inline: false,
-  editorHintKey: '',
-})
+const props = withDefaults(
+  defineProps<{
+    input: Record<string, unknown>;
+    updateInput: (name: string, value: unknown) => void;
+    fieldName?: string;
+    label?: string;
+    description?: string;
+    keyPlaceholder?: string;
+    valuePlaceholder?: string;
+    expandTitle?: string;
+    inline?: boolean;
+    editorHintKey?: string;
+    editorHints?: Record<string, unknown>;
+    updateEditorHint?: (name: string, value: unknown) => void;
+  }>(),
+  {
+    fieldName: '',
+    label: 'Fields',
+    description: '',
+    keyPlaceholder: 'Field name',
+    valuePlaceholder: 'Value or {{expression}}',
+    expandTitle: 'JSON',
+    inline: false,
+    editorHintKey: '',
+  },
+);
 
-const hintKey = computed(() => props.editorHintKey || `${props.fieldName || 'input'}Mode`)
-const savedMode = computed(() => props.editorHints?.[hintKey.value] as 'fields' | 'json' | undefined)
+const hintKey = computed(
+  () => props.editorHintKey || `${props.fieldName || 'input'}Mode`,
+);
+const savedMode = computed(
+  () => props.editorHints?.[hintKey.value] as 'fields' | 'json' | undefined,
+);
 
-const mode = ref<'fields' | 'json'>(savedMode.value ?? 'fields')
+const mode = ref<'fields' | 'json'>(savedMode.value ?? 'fields');
 
 watch(mode, (v) => {
-  props.updateEditorHint?.(hintKey.value, v === 'fields' ? undefined : v)
-})
+  props.updateEditorHint?.(hintKey.value, v === 'fields' ? undefined : v);
+});
 
-let nextPairId = 0
+let nextPairId = 0;
 
 interface KVPair {
-  id: number
-  key: string
-  value: unknown
+  id: number;
+  key: string;
+  value: unknown;
 }
 
-const pairs = ref<KVPair[]>([])
+const pairs = ref<KVPair[]>([]);
 
 function makePair(key = '', value: unknown = ''): KVPair {
-  return { id: nextPairId++, key, value }
+  return { id: nextPairId++, key, value };
 }
 
 function displayValue(v: unknown): string {
-  if (v === null || v === undefined) return ''
-  if (typeof v === 'string') return v
-  return JSON.stringify(v)
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'string') return v;
+  return JSON.stringify(v);
 }
 
 function getSourceObject(): Record<string, unknown> {
   if (props.fieldName) {
-    const val = props.input[props.fieldName]
-    return (val && typeof val === 'object' && !Array.isArray(val))
-      ? val as Record<string, unknown>
-      : {}
+    const val = props.input[props.fieldName];
+    return val && typeof val === 'object' && !Array.isArray(val)
+      ? (val as Record<string, unknown>)
+      : {};
   }
-  return props.input
+  return props.input;
 }
 
 function syncFromInput() {
-  const entries = Object.entries(getSourceObject()).filter(([k]) => k !== '')
-  pairs.value = entries.length > 0
-    ? entries.map(([k, v]) => makePair(k, v ?? ''))
-    : [makePair()]
+  const entries = Object.entries(getSourceObject()).filter(([k]) => k !== '');
+  pairs.value =
+    entries.length > 0
+      ? entries.map(([k, v]) => makePair(k, v ?? ''))
+      : [makePair()];
 }
-syncFromInput()
+syncFromInput();
 
 function applyFields(obj: Record<string, unknown>) {
   if (props.fieldName) {
-    props.updateInput(props.fieldName, Object.keys(obj).length > 0 ? obj : undefined)
-    return
+    props.updateInput(
+      props.fieldName,
+      Object.keys(obj).length > 0 ? obj : undefined,
+    );
+    return;
   }
 
-  const currentKeys = new Set(Object.keys(props.input))
-  const newKeys = new Set<string>()
+  const currentKeys = new Set(Object.keys(props.input));
+  const newKeys = new Set<string>();
 
   for (const [k, v] of Object.entries(obj)) {
     if (k) {
-      props.updateInput(k, v)
-      newKeys.add(k)
+      props.updateInput(k, v);
+      newKeys.add(k);
     }
   }
 
   for (const oldKey of currentKeys) {
     if (!newKeys.has(oldKey)) {
-      props.updateInput(oldKey, undefined)
+      props.updateInput(oldKey, undefined);
     }
   }
 }
 
 function emitFields() {
-  const obj: Record<string, unknown> = {}
+  const obj: Record<string, unknown> = {};
   for (const pair of pairs.value) {
-    const k = pair.key.trim()
-    if (k) obj[k] = pair.value
+    const k = pair.key.trim();
+    if (k) obj[k] = pair.value;
   }
-  applyFields(obj)
+  applyFields(obj);
 }
 
 function addPair() {
-  pairs.value.push(makePair())
+  pairs.value.push(makePair());
 }
 
 function removePair(index: number) {
-  pairs.value.splice(index, 1)
-  if (pairs.value.length === 0) pairs.value.push(makePair())
-  emitFields()
+  pairs.value.splice(index, 1);
+  if (pairs.value.length === 0) pairs.value.push(makePair());
+  emitFields();
 }
 
-let valueDebounceTimer: ReturnType<typeof setTimeout> | undefined
+let valueDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
 function onValueChange(pair: KVPair, val: unknown) {
-  pair.value = val
-  clearTimeout(valueDebounceTimer)
-  valueDebounceTimer = setTimeout(emitFields, 300)
+  pair.value = val;
+  clearTimeout(valueDebounceTimer);
+  valueDebounceTimer = setTimeout(emitFields, 300);
 }
 
 function onKeyBlur() {
-  emitFields()
+  emitFields();
 }
 
 // ─── JSON mode ───────────────────────────────────────────────────
-const jsonText = ref('')
-const jsonError = ref('')
+const jsonText = ref('');
+const jsonError = ref('');
 
 function buildJsonFromInput(): string {
-  const obj: Record<string, unknown> = {}
+  const obj: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(getSourceObject())) {
-    if (k) obj[k] = v ?? ''
+    if (k) obj[k] = v ?? '';
   }
-  return Object.keys(obj).length > 0 ? JSON.stringify(obj, null, 2) : '{\n  \n}'
+  return Object.keys(obj).length > 0
+    ? JSON.stringify(obj, null, 2)
+    : '{\n  \n}';
 }
 
 if (mode.value === 'json') {
-  jsonText.value = buildJsonFromInput()
+  jsonText.value = buildJsonFromInput();
 }
 
 watch(mode, (next) => {
   if (next === 'json') {
-    jsonText.value = buildJsonFromInput()
-    jsonError.value = ''
+    jsonText.value = buildJsonFromInput();
+    jsonError.value = '';
+  } else {
+    syncFromInput();
   }
-  else {
-    syncFromInput()
-  }
-})
+});
 
 function onJsonChange(text: string) {
-  jsonText.value = text
-  const trimmed = text.trim()
+  jsonText.value = text;
+  const trimmed = text.trim();
   if (!trimmed || trimmed === '{}') {
-    jsonError.value = ''
-    applyFields({})
-    return
+    jsonError.value = '';
+    applyFields({});
+    return;
   }
   try {
-    const parsed = JSON.parse(trimmed)
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      jsonError.value = 'Must be a JSON object'
-      return
+    const parsed = JSON.parse(trimmed);
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      jsonError.value = 'Must be a JSON object';
+      return;
     }
-    jsonError.value = ''
-    const obj: Record<string, unknown> = {}
+    jsonError.value = '';
+    const obj: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(parsed)) {
-      obj[k] = v
+      obj[k] = v;
     }
-    applyFields(obj)
-  }
-  catch {
-    jsonError.value = 'Invalid JSON'
+    applyFields(obj);
+  } catch {
+    jsonError.value = 'Invalid JSON';
   }
 }
 
 onUnmounted(() => {
-  clearTimeout(valueDebounceTimer)
-})
+  clearTimeout(valueDebounceTimer);
+});
 </script>
 
 <template>
-  <div class="flex flex-col" :class="!inline && mode === 'json' ? 'absolute inset-0 p-4' : ''">
+  <div
+    class="flex flex-col"
+    :class="!inline && mode === 'json' ? 'absolute inset-0 p-4' : ''"
+  >
     <!-- Header -->
-    <div class="mb-3 flex items-center" :class="inline ? 'justify-end' : 'justify-between'">
+    <div
+      class="mb-3 flex items-center"
+      :class="inline ? 'justify-end' : 'justify-between'"
+    >
       <label v-if="!inline" class="text-sm font-medium">{{ label }}</label>
       <div class="bg-muted flex rounded-md p-0.5">
         <button
           type="button"
           class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors"
-          :class="mode === 'fields' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+          :class="
+            mode === 'fields'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          "
           @click="mode = 'fields'"
         >
           Fields
@@ -202,7 +227,11 @@ onUnmounted(() => {
         <button
           type="button"
           class="rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors"
-          :class="mode === 'json' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'"
+          :class="
+            mode === 'json'
+              ? 'bg-background text-foreground shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
+          "
           @click="mode = 'json'"
         >
           JSON
@@ -246,7 +275,9 @@ onUnmounted(() => {
                 :model-value="displayValue(pair.value)"
                 :placeholder="valuePlaceholder"
                 size="sm"
-                :default-mode="String(pair.value).includes('{{') ? 'expression' : 'fixed'"
+                :default-mode="
+                  String(pair.value).includes('{{') ? 'expression' : 'fixed'
+                "
                 @update:model-value="onValueChange(pair, String($event))"
               />
             </div>

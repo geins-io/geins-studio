@@ -44,20 +44,27 @@
 ### `icon`
 
 ```ts
-icon: 'new' | 'save' | 'copy' | 'export' | 'settings' | 'send' | 'retry' | (string & {})
+icon: 'new' |
+  'save' |
+  'copy' |
+  'export' |
+  'settings' |
+  'send' |
+  'retry' |
+  (string & {});
 ```
 
 Either an alias from the table below or any PascalCase Lucide icon name.
 
-| Alias | Lucide icon |
-| --- | --- |
-| `new` | `Plus` |
-| `save` | `Save` |
-| `copy` | `Copy` |
-| `export` | `File` |
+| Alias      | Lucide icon |
+| ---------- | ----------- |
+| `new`      | `Plus`      |
+| `save`     | `Save`      |
+| `copy`     | `Copy`      |
+| `export`   | `File`      |
 | `settings` | `Settings2` |
-| `send` | `Send` |
-| `retry` | `RotateCw` |
+| `send`     | `Send`      |
+| `retry`    | `RotateCw`  |
 
 ### `href`
 

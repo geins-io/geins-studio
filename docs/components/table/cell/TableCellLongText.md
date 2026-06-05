@@ -27,7 +27,7 @@
 ### `text`
 
 ```ts
-text: string
+text: string;
 ```
 
 The full text. Always shown in the tooltip; trimmed for the trigger.
@@ -35,7 +35,7 @@ The full text. Always shown in the tooltip; trimmed for the trigger.
 ### `maxTextLength`
 
 ```ts
-maxTextLength: number
+maxTextLength: number;
 ```
 
 Max characters before truncation.

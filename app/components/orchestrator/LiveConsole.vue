@@ -50,7 +50,8 @@ watch(() => props.seedLines, scrollToBottom, { immediate: true });
 
 const detectLevel = (line: string): LiveConsoleLine['level'] => {
   const l = line.toLowerCase();
-  if (l.includes('error') || l.includes('failed') || l.includes('✖')) return 'error';
+  if (l.includes('error') || l.includes('failed') || l.includes('✖'))
+    return 'error';
   if (l.includes('warn')) return 'warn';
   if (l.includes('debug') || l.startsWith('tick')) return 'debug';
   return 'info';
@@ -71,14 +72,20 @@ const appendStreamLine = (raw: string) => {
       if (typeof obj.message === 'string') message = obj.message;
       if (typeof obj.source === 'string') source = obj.source;
       else if (typeof obj.nodeId === 'string') source = obj.nodeId;
-      if (typeof obj.timestamp === 'string') timestamp = formatTimestamp(obj.timestamp);
-      else if (typeof obj.time === 'string') timestamp = formatTimestamp(obj.time);
+      if (typeof obj.timestamp === 'string')
+        timestamp = formatTimestamp(obj.timestamp);
+      else if (typeof obj.time === 'string')
+        timestamp = formatTimestamp(obj.time);
       const lvl = String(obj.level ?? '').toLowerCase();
-      if (lvl === 'info' || lvl === 'warn' || lvl === 'error' || lvl === 'debug') {
+      if (
+        lvl === 'info' ||
+        lvl === 'warn' ||
+        lvl === 'error' ||
+        lvl === 'debug'
+      ) {
         level = lvl;
       }
-    }
-    catch {
+    } catch {
       // keep raw line
     }
   }
@@ -158,13 +165,11 @@ const startLiveStream = async () => {
     }
 
     if (buffer.trim()) appendStreamLine(buffer);
-  }
-  catch (err) {
+  } catch (err) {
     if ((err as Error).name !== 'AbortError') {
       appendStreamLine(`Stream error: ${(err as Error).message}`);
     }
-  }
-  finally {
+  } finally {
     if (streamController === controller) streamController = null;
   }
 };
@@ -196,8 +201,12 @@ const clearConsole = () => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col overflow-hidden rounded-lg border bg-zinc-950 text-zinc-100">
-    <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+  <div
+    class="flex h-full flex-col overflow-hidden rounded-lg border bg-zinc-950 text-zinc-100"
+  >
+    <div
+      class="flex items-center justify-between border-b border-zinc-800 px-4 py-2"
+    >
       <div class="flex items-center gap-2">
         <div
           class="h-2 w-2 rounded-full"
@@ -238,7 +247,9 @@ const clearConsole = () => {
         >
           {{ line.level }}
         </span>
-        <span class="w-32 shrink-0 truncate text-zinc-500">{{ line.source }}</span>
+        <span class="w-32 shrink-0 truncate text-zinc-500">
+          {{ line.source }}
+        </span>
         <span class="flex-1 break-all text-zinc-200">{{ line.message }}</span>
       </div>
     </div>

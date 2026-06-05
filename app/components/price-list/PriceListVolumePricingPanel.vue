@@ -214,7 +214,7 @@ const handleRemove = async (rule: PriceListRule) => {
           type="negative"
           class="mt-10"
         >
-          <template #title> Check your price breaks and try again </template>
+          <template #title>Check your price breaks and try again</template>
           <template #description>
             Quantity must be more than 1 and at least one value must be present
           </template>

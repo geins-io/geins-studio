@@ -275,9 +275,9 @@ const existingCustomerName = computed(() => {
             <FormGrid design="1+1">
               <FormField v-slot="{ componentField }" name="firstName">
                 <FormItem>
-                  <FormLabel :optional="true">{{
-                    t('person.first_name')
-                  }}</FormLabel>
+                  <FormLabel :optional="true">
+                    {{ t('person.first_name') }}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -290,9 +290,9 @@ const existingCustomerName = computed(() => {
               </FormField>
               <FormField v-slot="{ componentField }" name="lastName">
                 <FormItem>
-                  <FormLabel :optional="true">{{
-                    t('person.last_name')
-                  }}</FormLabel>
+                  <FormLabel :optional="true">
+                    {{ t('person.last_name') }}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -321,9 +321,9 @@ const existingCustomerName = computed(() => {
               </FormField>
               <FormField v-slot="{ componentField }" name="phone">
                 <FormItem>
-                  <FormLabel :optional="true">{{
-                    $t('person.phone')
-                  }}</FormLabel>
+                  <FormLabel :optional="true">
+                    {{ $t('person.phone') }}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"

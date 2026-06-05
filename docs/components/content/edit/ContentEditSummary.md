@@ -15,7 +15,9 @@
 
 ```vue
 <script setup lang="ts">
-const { entityDataUpdate, summary, entityName } = useEntityEdit({ /* ... */ });
+const { entityDataUpdate, summary, entityName } = useEntityEdit({
+  /* ... */
+});
 const active = computed({
   get: () => entityDataUpdate.value?.active ?? false,
   set: (v) => (entityDataUpdate.value!.active = v),
@@ -88,7 +90,7 @@ Used in the active-toggle description copy (`entity_is_active`, `entity_will_act
 entityLiveStatus?: boolean
 ```
 
-The currently *persisted* active state — drives the status badge (when no explicit `status` is set) and the toggle's transition copy.
+The currently _persisted_ active state — drives the status badge (when no explicit `status` is set) and the toggle's transition copy.
 
 - **Default:** `false`
 

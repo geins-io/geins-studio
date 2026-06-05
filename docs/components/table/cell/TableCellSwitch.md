@@ -26,7 +26,7 @@
 ### `value`
 
 ```ts
-value: boolean
+value: boolean;
 ```
 
 Current toggle state.

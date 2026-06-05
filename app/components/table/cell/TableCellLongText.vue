@@ -27,9 +27,10 @@ const copy = async (event: Event) => {
     await navigator.clipboard.writeText(props.text);
     copied.value = true;
     if (copiedTimer) clearTimeout(copiedTimer);
-    copiedTimer = setTimeout(() => { copied.value = false; }, 1500);
-  }
-  catch {
+    copiedTimer = setTimeout(() => {
+      copied.value = false;
+    }, 1500);
+  } catch {
     // ignore clipboard failure
   }
 };
@@ -52,7 +53,8 @@ const copy = async (event: Event) => {
       v-if="copyable"
       class="hover:bg-muted text-muted-foreground hover:text-foreground shrink-0 rounded p-1 opacity-0 transition-opacity group-hover:opacity-100"
       :title="copied ? 'Copied!' : 'Copy'"
-      @click.prevent.stop="copy">
+      @click.prevent.stop="copy"
+    >
       <LucideCheck v-if="copied" class="h-3 w-3" />
       <LucideCopy v-else class="h-3 w-3" />
     </button>

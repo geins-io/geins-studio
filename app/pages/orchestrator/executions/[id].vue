@@ -28,15 +28,28 @@ const executionId = computed(() => route.params.id as string);
 // ─── Fetch real data ──────────────────────────────────────────────
 // Cache completed/terminal executions (they don't change), but always refetch
 // running/pending/queued ones so the user sees live progress.
-const VOLATILE_STATUSES = new Set(['running', 'pending', 'queued', 'suspended', 'paused']);
+const VOLATILE_STATUSES = new Set([
+  'running',
+  'pending',
+  'queued',
+  'suspended',
+  'paused',
+]);
 
-const { data: details, pending, error, refresh } = await useAsyncData(
+const {
+  data: details,
+  pending,
+  error,
+  refresh,
+} = await useAsyncData(
   () => `execution-${executionId.value}`,
   () => orchestratorApi.execution.get(executionId.value),
   {
     watch: [executionId],
     getCachedData: (key, nuxtApp) => {
-      const cached = nuxtApp.payload.data[key] as ExecutionDetailsResponse | undefined;
+      const cached = nuxtApp.payload.data[key] as
+        | ExecutionDetailsResponse
+        | undefined;
       if (!cached?.execution) return undefined;
       const status = cached.execution.status?.toLowerCase() ?? '';
       return VOLATILE_STATUSES.has(status) ? undefined : cached;
@@ -44,9 +57,15 @@ const { data: details, pending, error, refresh } = await useAsyncData(
   },
 );
 
-const execution = computed<ExecutionLog | null>(() => details.value?.execution ?? null);
-const nodeExecutions = computed<ExecutionNodeExecution[]>(() => execution.value?.nodeExecutions ?? []);
-const isRunning = computed(() => execution.value?.status?.toLowerCase() === 'running');
+const execution = computed<ExecutionLog | null>(
+  () => details.value?.execution ?? null,
+);
+const nodeExecutions = computed<ExecutionNodeExecution[]>(
+  () => execution.value?.nodeExecutions ?? [],
+);
+const isRunning = computed(
+  () => execution.value?.status?.toLowerCase() === 'running',
+);
 
 // Fallback: derive canResume from status when API doesn't return it
 const canResume = computed(() => {
@@ -56,11 +75,15 @@ const canResume = computed(() => {
 });
 
 // Breadcrumb title
-watch(execution, (exec) => {
-  if (exec?.workflowName) {
-    breadcrumbsStore.setCurrentTitle(exec.workflowName);
-  }
-}, { immediate: true });
+watch(
+  execution,
+  (exec) => {
+    if (exec?.workflowName) {
+      breadcrumbsStore.setCurrentTitle(exec.workflowName);
+    }
+  },
+  { immediate: true },
+);
 
 // Sibling executions for prev/next navigation
 const { data: siblingExecutions } = useLazyAsyncData(
@@ -70,18 +93,24 @@ const { data: siblingExecutions } = useLazyAsyncData(
     if (!wfId) return Promise.resolve([] as ExecutionLog[]);
     return orchestratorApi.execution.list({ workflowId: wfId });
   },
-  { default: () => [] as ExecutionLog[], watch: [() => execution.value?.workflowId] },
+  {
+    default: () => [] as ExecutionLog[],
+    watch: [() => execution.value?.workflowId],
+  },
 );
 
 const siblingIndex = computed(() =>
-  siblingExecutions.value.findIndex(e => e.id === executionId.value),
+  siblingExecutions.value.findIndex((e) => e.id === executionId.value),
 );
 const newerExecutionId = computed(() =>
-  siblingIndex.value > 0 ? siblingExecutions.value[siblingIndex.value - 1]?.id ?? null : null,
+  siblingIndex.value > 0
+    ? (siblingExecutions.value[siblingIndex.value - 1]?.id ?? null)
+    : null,
 );
 const olderExecutionId = computed(() => {
   const list = siblingExecutions.value;
-  if (siblingIndex.value < 0 || siblingIndex.value >= list.length - 1) return null;
+  if (siblingIndex.value < 0 || siblingIndex.value >= list.length - 1)
+    return null;
   return list[siblingIndex.value + 1]?.id ?? null;
 });
 
@@ -111,7 +140,8 @@ const timelineStart = computed(() => {
 });
 const timelineEnd = computed(() => {
   if (!execution.value) return null;
-  if (execution.value.endTime) return new Date(execution.value.endTime).getTime();
+  if (execution.value.endTime)
+    return new Date(execution.value.endTime).getTime();
   if (timelineStart.value != null && execution.value.durationMs != null) {
     return timelineStart.value + execution.value.durationMs;
   }
@@ -128,15 +158,13 @@ const runAction = async (label: string, fn: () => Promise<unknown>) => {
     await fn();
     await refresh();
     toast({ title: `${label} successful` });
-  }
-  catch (err) {
+  } catch (err) {
     toast({
       title: `${label} failed`,
       description: err instanceof Error ? err.message : String(err),
       variant: 'negative',
     });
-  }
-  finally {
+  } finally {
     actionPending.value = false;
   }
 };
@@ -150,9 +178,10 @@ const copyExecutionId = async () => {
     await navigator.clipboard.writeText(execution.value.id);
     copiedId.value = true;
     if (copiedTimer) clearTimeout(copiedTimer);
-    copiedTimer = setTimeout(() => { copiedId.value = false; }, 1500);
-  }
-  catch (err) {
+    copiedTimer = setTimeout(() => {
+      copiedId.value = false;
+    }, 1500);
+  } catch (err) {
     toast({
       title: 'Copy failed',
       description: err instanceof Error ? err.message : String(err),
@@ -167,23 +196,25 @@ const handleReplay = async () => {
     const res = await orchestratorApi.execution.replay(executionId.value);
     const newId = res?.newExecutionId ?? res?.executionId ?? res?.instanceId;
     if (!newId) {
-      throw new Error(res?.message ?? 'Replay did not return a new execution id');
+      throw new Error(
+        res?.message ?? 'Replay did not return a new execution id',
+      );
     }
-    toast({ title: 'Replay started', description: res?.message ?? `New execution: ${newId}` });
+    toast({
+      title: 'Replay started',
+      description: res?.message ?? `New execution: ${newId}`,
+    });
     await navigateTo(`/orchestrator/executions/${newId}`);
-  }
-  catch (err) {
+  } catch (err) {
     toast({
       title: 'Replay failed',
       description: err instanceof Error ? err.message : String(err),
       variant: 'negative',
     });
-  }
-  finally {
+  } finally {
     actionPending.value = false;
   }
 };
-
 
 // ─── Live console ──────────────────────────────────────────────────
 const { accessToken, accountKey } = useGeinsAuth();
@@ -219,8 +250,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         source: node.nodeId,
         message: `✔ ${node.nodeName ?? node.nodeId} completed in ${formatDuration(node.durationMs)}`,
       });
-    }
-    else if (status === 'failed') {
+    } else if (status === 'failed') {
       lines.push({
         id: ++id,
         timestamp: formatTimestamp(node.endTime),
@@ -232,14 +262,19 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
   }
   return lines;
 });
-
 </script>
 
 <template>
-  <div v-if="error" class="text-destructive border-destructive/30 bg-destructive/5 rounded-lg border p-4 text-sm">
+  <div
+    v-if="error"
+    class="text-destructive border-destructive/30 bg-destructive/5 rounded-lg border p-4 text-sm"
+  >
     Failed to load execution: {{ error.message ?? 'Unknown error' }}
   </div>
-  <div v-else-if="!execution" class="text-muted-foreground py-12 text-center text-sm">
+  <div
+    v-else-if="!execution"
+    class="text-muted-foreground py-12 text-center text-sm"
+  >
     Loading execution…
   </div>
   <div v-else class="flex flex-col gap-4">
@@ -251,39 +286,67 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
               {{ execution.workflowName }}
             </h1>
             <component
-:is="resolveStatusIcon(execution.status).icon"
-              :class="['h-5 w-5', resolveStatusIcon(execution.status).class]" />
+              :is="resolveStatusIcon(execution.status).icon"
+              :class="['h-5 w-5', resolveStatusIcon(execution.status).class]"
+            />
             <span
-v-if="execution.isTestRun"
-              class="rounded bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600">
+              v-if="execution.isTestRun"
+              class="rounded bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600"
+            >
               Test run
             </span>
           </div>
-          <div class="text-muted-foreground flex items-center gap-1.5 font-mono text-xs">
+          <div
+            class="text-muted-foreground flex items-center gap-1.5 font-mono text-xs"
+          >
             <span :title="execution.id">{{ shortenId(execution.id) }}</span>
             <button
-class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
-              :title="copiedId ? 'Copied!' : 'Copy execution ID'" @click="copyExecutionId">
-              <component :is="copiedId ? LucideCheck : LucideCopy" class="h-3 w-3" />
+              class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
+              :title="copiedId ? 'Copied!' : 'Copy execution ID'"
+              @click="copyExecutionId"
+            >
+              <component
+                :is="copiedId ? LucideCheck : LucideCopy"
+                class="h-3 w-3"
+              />
             </button>
           </div>
-          <div class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
-            <NuxtLink :to="`/orchestrator/workflows/${execution.workflowId}?tab=3`" class="hover:text-foreground underline">
+          <div
+            class="text-muted-foreground flex flex-wrap items-center gap-2 text-xs"
+          >
+            <NuxtLink
+              :to="`/orchestrator/workflows/${execution.workflowId}?tab=3`"
+              class="hover:text-foreground underline"
+            >
               {{ execution.workflowName || 'Workflow' }}
             </NuxtLink>
             <span v-if="execution.group">•</span>
             <span v-if="execution.group">{{ execution.group }}</span>
             <span>•</span>
-            <span>Status: <span class="text-foreground font-medium capitalize">{{ details?.orchestrationStatus ??
-              execution.status }}</span></span>
+            <span>
+              Status:
+              <span class="text-foreground font-medium capitalize">
+                {{ details?.orchestrationStatus ?? execution.status }}
+              </span>
+            </span>
             <template v-if="execution.triggerType">
               <span>•</span>
-              <span>Trigger: <span class="text-foreground font-medium">{{ execution.triggerType }}{{ execution.eventName
-                ? ` (${execution.eventName})` : '' }}</span></span>
+              <span>
+                Trigger:
+                <span class="text-foreground font-medium">
+                  {{ execution.triggerType
+                  }}{{ execution.eventName ? ` (${execution.eventName})` : '' }}
+                </span>
+              </span>
             </template>
             <template v-if="execution.startedBy">
               <span>•</span>
-              <span>By: <span class="text-foreground font-medium">{{ execution.startedBy }}</span></span>
+              <span>
+                By:
+                <span class="text-foreground font-medium">
+                  {{ execution.startedBy }}
+                </span>
+              </span>
             </template>
           </div>
         </div>
@@ -298,7 +361,10 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
           >
             <LucideChevronLeft class="size-4" />
           </NuxtLink>
-          <span v-else class="inline-flex cursor-default items-center justify-center rounded-md border p-1.5 opacity-30">
+          <span
+            v-else
+            class="inline-flex cursor-default items-center justify-center rounded-md border p-1.5 opacity-30"
+          >
             <LucideChevronLeft class="size-4" />
           </span>
           <NuxtLink
@@ -309,11 +375,18 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
           >
             <LucideChevronRight class="size-4" />
           </NuxtLink>
-          <span v-else class="inline-flex cursor-default items-center justify-center rounded-md border p-1.5 opacity-30">
+          <span
+            v-else
+            class="inline-flex cursor-default items-center justify-center rounded-md border p-1.5 opacity-30"
+          >
             <LucideChevronRight class="size-4" />
           </span>
         </div>
-        <ButtonIcon icon="retry" :disabled="!details?.canReplay || actionPending" @click="handleReplay">
+        <ButtonIcon
+          icon="retry"
+          :disabled="!details?.canReplay || actionPending"
+          @click="handleReplay"
+        >
           Replay
         </ButtonIcon>
         <DropdownMenu>
@@ -324,20 +397,35 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem
-:disabled="!details?.canCancel || actionPending"
-              @click="runAction('Cancel', () => orchestratorApi.execution.cancel(executionId))">
+              :disabled="!details?.canCancel || actionPending"
+              @click="
+                runAction('Cancel', () =>
+                  orchestratorApi.execution.cancel(executionId),
+                )
+              "
+            >
               <LucideSquare class="mr-2 size-4" />
               <span>Cancel</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-:disabled="!details?.canPause || actionPending"
-              @click="runAction('Pause', () => orchestratorApi.execution.pause(executionId))">
+              :disabled="!details?.canPause || actionPending"
+              @click="
+                runAction('Pause', () =>
+                  orchestratorApi.execution.pause(executionId),
+                )
+              "
+            >
               <LucidePause class="mr-2 size-4" />
               <span>Pause</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-:disabled="!canResume || actionPending"
-              @click="runAction('Resume', () => orchestratorApi.execution.resume(executionId))">
+              :disabled="!canResume || actionPending"
+              @click="
+                runAction('Resume', () =>
+                  orchestratorApi.execution.resume(executionId),
+                )
+              "
+            >
               <LucideCirclePlay class="mr-2 size-4" />
               <span>Resume</span>
             </DropdownMenuItem>
@@ -354,17 +442,13 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
     <!-- Meta cards -->
     <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
       <div class="bg-card rounded-lg border p-3 shadow-sm">
-        <div class="text-muted-foreground text-xs">
-          Started
-        </div>
+        <div class="text-muted-foreground text-xs">Started</div>
         <div class="font-mono text-sm">
           {{ formatTimestamp(execution.startTime) }}
         </div>
       </div>
       <div class="bg-card rounded-lg border p-3 shadow-sm">
-        <div class="text-muted-foreground text-xs">
-          Ended
-        </div>
+        <div class="text-muted-foreground text-xs">Ended</div>
         <div class="font-mono text-sm">
           {{ formatTimestamp(execution.endTime) }}
         </div>
@@ -372,36 +456,43 @@ class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
       <div class="bg-card rounded-lg border p-3 shadow-sm">
         <div class="text-muted-foreground flex items-center gap-1.5 text-xs">
           Duration
-          <span v-if="isRunning" class="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" title="Live" />
+          <span
+            v-if="isRunning"
+            class="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500"
+            title="Live"
+          />
         </div>
         <div class="font-mono text-sm tabular-nums">
           {{ formatDuration(liveDurationMs) }}
         </div>
       </div>
       <div class="bg-card rounded-lg border p-3 shadow-sm">
-        <div class="text-muted-foreground text-xs">
-          Errors
-        </div>
-        <div class="font-mono text-sm" :class="(execution.errorCount ?? 0) > 0 ? 'text-destructive' : ''">
+        <div class="text-muted-foreground text-xs">Errors</div>
+        <div
+          class="font-mono text-sm"
+          :class="(execution.errorCount ?? 0) > 0 ? 'text-destructive' : ''"
+        >
           {{ execution.errorCount ?? 0 }}
         </div>
       </div>
-      <div v-if="execution.totalNodes != null" class="bg-card rounded-lg border p-3 shadow-sm">
-        <div class="text-muted-foreground text-xs">
-          Nodes
-        </div>
+      <div
+        v-if="execution.totalNodes != null"
+        class="bg-card rounded-lg border p-3 shadow-sm"
+      >
+        <div class="text-muted-foreground text-xs">Nodes</div>
         <div class="font-mono text-sm">
           {{ execution.completedNodes ?? 0 }} / {{ execution.totalNodes }}
-          <span v-if="execution.failedNodes" class="text-destructive">({{ execution.failedNodes }} failed)</span>
+          <span v-if="execution.failedNodes" class="text-destructive">
+            ({{ execution.failedNodes }} failed)
+          </span>
         </div>
       </div>
-      <div v-if="execution.workflowVersion != null" class="bg-card rounded-lg border p-3 shadow-sm">
-        <div class="text-muted-foreground text-xs">
-          Version
-        </div>
-        <div class="font-mono text-sm">
-          v{{ execution.workflowVersion }}
-        </div>
+      <div
+        v-if="execution.workflowVersion != null"
+        class="bg-card rounded-lg border p-3 shadow-sm"
+      >
+        <div class="text-muted-foreground text-xs">Version</div>
+        <div class="font-mono text-sm">v{{ execution.workflowVersion }}</div>
       </div>
     </div>
 

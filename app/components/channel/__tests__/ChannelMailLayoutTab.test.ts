@@ -35,7 +35,9 @@ describe('ChannelMailLayoutTab', () => {
         modelValue: { backgroundColor: '#ffffff' },
       } as Record<string, unknown>,
     });
-    const textInputs = component.findAll('input[type="text"], input:not([type])');
+    const textInputs = component.findAll(
+      'input[type="text"], input:not([type])',
+    );
     const bgTextInput = textInputs.find(
       (i) => (i.element as HTMLInputElement).value === '#ffffff',
     );

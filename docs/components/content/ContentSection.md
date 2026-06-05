@@ -28,11 +28,7 @@ A padded `ContentCard` with a built-in `ContentCardHeader` and a content area be
 
 ```vue
 <template>
-  <ContentSection
-    title="Billing Address"
-    size="sm"
-    heading-level="h3"
-  >
+  <ContentSection title="Billing Address" size="sm" heading-level="h3">
     <ContentAddressDisplay :address="billingAddress" />
   </ContentSection>
 </template>
@@ -43,7 +39,7 @@ A padded `ContentCard` with a built-in `ContentCardHeader` and a content area be
 ### `title`
 
 ```ts
-title: string
+title: string;
 ```
 
 - **Type:** `string`

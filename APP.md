@@ -170,21 +170,21 @@ Rule of thumb: if a page needs to react to something changing over time (duratio
 
 Components in `app/components/` are classified as **domain** or **infrastructure**:
 
-| Directory                                               | Classification   | Notes                                       |
-| ------------------------------------------------------- | ---------------- | ------------------------------------------- |
-| `ui/`                                                   | Infrastructure   | shadcn-vue primitives (CLI-installed)       |
-| `content/`, `content/edit/`, `content/text/`            | Infrastructure   | Reusable edit page building blocks          |
-| `table/`, `table/cell/`, `table/header/`                | Infrastructure   | Table system                                |
-| `form/`, `form/input/`, `form/item/`                    | Infrastructure   | Form layout and inputs                      |
-| `dialog/`                                               | Infrastructure   | Delete, unsaved changes, status transitions |
-| `selector/`                                             | Infrastructure   | Reusable entity selection pattern           |
-| `layout/`, `sidebar/`, `button/`, `error/`, `feedback/` | Infrastructure   | App shell and utilities                     |
+| Directory                                               | Classification   | Notes                                             |
+| ------------------------------------------------------- | ---------------- | ------------------------------------------------- |
+| `ui/`                                                   | Infrastructure   | shadcn-vue primitives (CLI-installed)             |
+| `content/`, `content/edit/`, `content/text/`            | Infrastructure   | Reusable edit page building blocks                |
+| `table/`, `table/cell/`, `table/header/`                | Infrastructure   | Table system                                      |
+| `form/`, `form/input/`, `form/item/`                    | Infrastructure   | Form layout and inputs                            |
+| `dialog/`                                               | Infrastructure   | Delete, unsaved changes, status transitions       |
+| `selector/`                                             | Infrastructure   | Reusable entity selection pattern                 |
+| `layout/`, `sidebar/`, `button/`, `error/`, `feedback/` | Infrastructure   | App shell and utilities                           |
 | `shared/`                                               | Infrastructure   | Cross-domain reusable components (JsonCodeEditor) |
-| `company/`                                              | **Customers**    | CompanyBuyerPanel                           |
-| `price-list/`                                           | **Pricing**      | PriceMode, Rules, VolumePricing             |
-| `quotation/`                                            | **Orders**       | Changelog, Communications, Messages         |
-| `content/quotation/`                                    | **Orders**       | QuotationCustomerDisplay, WorkflowInfo      |
-| `auth/`                                                 | **Account/Auth** | AuthForm                                    |
+| `company/`                                              | **Customers**    | CompanyBuyerPanel                                 |
+| `price-list/`                                           | **Pricing**      | PriceMode, Rules, VolumePricing                   |
+| `quotation/`                                            | **Orders**       | Changelog, Communications, Messages               |
+| `content/quotation/`                                    | **Orders**       | QuotationCustomerDisplay, WorkflowInfo            |
+| `auth/`                                                 | **Account/Auth** | AuthForm                                          |
 
 > Components are **not moved** into domain groupings because Nuxt auto-import naming depends on directory path. See `docs/domain-colocation-proposal.md` for rationale.
 

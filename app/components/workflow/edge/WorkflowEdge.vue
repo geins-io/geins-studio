@@ -1,81 +1,109 @@
 <script setup lang="ts">
-import { BaseEdge, EdgeLabelRenderer, getBezierPath, useEdge, type Position } from '@vue-flow/core'
+import {
+  BaseEdge,
+  EdgeLabelRenderer,
+  getBezierPath,
+  useEdge,
+  type Position,
+} from '@vue-flow/core';
 
 const props = defineProps<{
-  sourceX: number
-  sourceY: number
-  targetX: number
-  targetY: number
-  sourcePosition: string
-  targetPosition: string
-  markerEnd?: string
-  label?: string
-}>()
+  sourceX: number;
+  sourceY: number;
+  targetX: number;
+  targetY: number;
+  sourcePosition: string;
+  targetPosition: string;
+  markerEnd?: string;
+  label?: string;
+}>();
 
-const { edge } = useEdge()
+const { edge } = useEdge();
 
-const path = computed(() => getBezierPath({
-  sourceX: props.sourceX,
-  sourceY: props.sourceY,
-  targetX: props.targetX,
-  targetY: props.targetY,
-  sourcePosition: props.sourcePosition as Position,
-  targetPosition: props.targetPosition as Position,
-}))
+const path = computed(() =>
+  getBezierPath({
+    sourceX: props.sourceX,
+    sourceY: props.sourceY,
+    targetX: props.targetX,
+    targetY: props.targetY,
+    sourcePosition: props.sourcePosition as Position,
+    targetPosition: props.targetPosition as Position,
+  }),
+);
 
 const edgeLength = computed(() => {
-  const dx = props.targetX - props.sourceX
-  const dy = props.targetY - props.sourceY
-  return Math.sqrt(dx * dx + dy * dy)
-})
+  const dx = props.targetX - props.sourceX;
+  const dy = props.targetY - props.sourceY;
+  return Math.sqrt(dx * dx + dy * dy);
+});
 
-const isCompact = computed(() => edgeLength.value < 120)
+const isCompact = computed(() => edgeLength.value < 120);
 
-const isHovered = ref(false)
+const isHovered = ref(false);
 
-const interactionEl = ref<SVGPathElement | null>(null)
+const interactionEl = ref<SVGPathElement | null>(null);
 
 const attachInteraction = (): boolean => {
-  const edgeEl = document.querySelector(`[data-id="${edge.id}"]`)
-    ?? document.querySelector(`[data-id="vueflow__edge-${edge.id}"]`)
-  const interaction = edgeEl?.querySelector('.vue-flow__edge-interaction') as SVGPathElement | null
+  const edgeEl =
+    document.querySelector(`[data-id="${edge.id}"]`) ??
+    document.querySelector(`[data-id="vueflow__edge-${edge.id}"]`);
+  const interaction = edgeEl?.querySelector(
+    '.vue-flow__edge-interaction',
+  ) as SVGPathElement | null;
   if (interaction && interaction !== interactionEl.value) {
-    interactionEl.value = interaction
-    interaction.style.pointerEvents = 'all'
-    interaction.addEventListener('mouseenter', () => { isHovered.value = true })
-    interaction.addEventListener('mouseleave', () => { isHovered.value = false })
-    return true
+    interactionEl.value = interaction;
+    interaction.style.pointerEvents = 'all';
+    interaction.addEventListener('mouseenter', () => {
+      isHovered.value = true;
+    });
+    interaction.addEventListener('mouseleave', () => {
+      isHovered.value = false;
+    });
+    return true;
   }
-  return false
-}
+  return false;
+};
 
 onMounted(() => {
-  let attempts = 0
+  let attempts = 0;
   const tryAttach = () => {
-    if (attachInteraction() || attempts++ > 10) return
-    requestAnimationFrame(tryAttach)
-  }
-  requestAnimationFrame(tryAttach)
-})
+    if (attachInteraction() || attempts++ > 10) return;
+    requestAnimationFrame(tryAttach);
+  };
+  requestAnimationFrame(tryAttach);
+});
 
 onBeforeUnmount(() => {
-  interactionEl.value = null
-})
+  interactionEl.value = null;
+});
 
-const onEdgeAddNode = inject<(edgeId: string, sourceNodeId: string, targetNodeId: string, sourceHandle?: string | null) => void>('onEdgeAddNode')
-const onEdgeDelete = inject<(edgeId: string) => void>('onEdgeDelete')
+const onEdgeAddNode =
+  inject<
+    (
+      edgeId: string,
+      sourceNodeId: string,
+      targetNodeId: string,
+      sourceHandle?: string | null,
+    ) => void
+  >('onEdgeAddNode');
+const onEdgeDelete = inject<(edgeId: string) => void>('onEdgeDelete');
 
 const onAdd = () => {
-  onEdgeAddNode?.(edge.id, edge.source, edge.target, edge.sourceHandle)
-}
+  onEdgeAddNode?.(edge.id, edge.source, edge.target, edge.sourceHandle);
+};
 
 const onDelete = () => {
-  onEdgeDelete?.(edge.id)
-}
+  onEdgeDelete?.(edge.id);
+};
 </script>
 
 <template>
-  <BaseEdge :path="path[0]" :marker-end="markerEnd" :label="label" :interaction-width="24" />
+  <BaseEdge
+    :path="path[0]"
+    :marker-end="markerEnd"
+    :label="label"
+    :interaction-width="24"
+  />
   <EdgeLabelRenderer>
     <div
       class="edge-toolbar nodrag nopan pointer-events-auto absolute flex items-center gap-1"
@@ -121,7 +149,9 @@ const onDelete = () => {
 
 .edge-action-enter-active,
 .edge-action-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .edge-action-enter-from,

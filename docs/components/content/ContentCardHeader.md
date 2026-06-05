@@ -53,7 +53,7 @@ A structured header block with an optional icon/image, title, and description. U
 ### `title`
 
 ```ts
-title: string
+title: string;
 ```
 
 - **Type:** `string`

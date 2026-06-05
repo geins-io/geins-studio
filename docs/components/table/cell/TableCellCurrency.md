@@ -24,7 +24,7 @@ Spreads the `Price` shape:
 ### `currency`
 
 ```ts
-currency: string
+currency: string;
 ```
 
 Currency code (e.g. `'SEK'`, `'EUR'`).
@@ -32,7 +32,7 @@ Currency code (e.g. `'SEK'`, `'EUR'`).
 ### `price`
 
 ```ts
-price: string
+price: string;
 ```
 
 Numeric string (`'1234.56'`) or the literal `'---'` for unknown.

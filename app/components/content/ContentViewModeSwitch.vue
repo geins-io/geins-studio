@@ -1,25 +1,27 @@
 <script setup lang="ts">
-import type { Component } from 'vue'
+import type { Component } from 'vue';
 
 export interface ViewMode {
-  key: string
-  label: string
-  icon?: Component
+  key: string;
+  label: string;
+  icon?: Component;
 }
 
 const props = defineProps<{
-  modes: ViewMode[]
-}>()
+  modes: ViewMode[];
+}>();
 
-const modelValue = defineModel<string>({ required: true })
+const modelValue = defineModel<string>({ required: true });
 
 const setMode = (key: string) => {
-  modelValue.value = key
-}
+  modelValue.value = key;
+};
 </script>
 
 <template>
-  <div class="bg-muted inline-flex h-8 items-center gap-1 rounded-lg p-1 sm:h-9">
+  <div
+    class="bg-muted inline-flex h-8 items-center gap-1 rounded-lg p-1 sm:h-9"
+  >
     <button
       v-for="mode in props.modes"
       :key="mode.key"
@@ -34,11 +36,7 @@ const setMode = (key: string) => {
       "
       @click="setMode(mode.key)"
     >
-      <component
-        :is="mode.icon"
-        v-if="mode.icon"
-        class="size-3.5"
-      />
+      <component :is="mode.icon" v-if="mode.icon" class="size-3.5" />
       {{ mode.label }}
     </button>
   </div>

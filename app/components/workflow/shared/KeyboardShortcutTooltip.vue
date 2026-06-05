@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import KeyboardShortcut from './KeyboardShortcut.vue'
+import KeyboardShortcut from './KeyboardShortcut.vue';
 
 defineProps<{
-  label: string
-  keys: string
-}>()
+  label: string;
+  keys: string;
+}>();
 </script>
 
 <template>

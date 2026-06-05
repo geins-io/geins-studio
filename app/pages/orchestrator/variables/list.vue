@@ -6,10 +6,7 @@ import type {
 } from '#shared/types';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 import type { Component } from 'vue';
-import {
-  LucideKeyRound,
-  LucideEye,
-} from '#components';
+import { LucideKeyRound, LucideEye } from '#components';
 
 export interface VariableListItem {
   key: string;
@@ -42,12 +39,20 @@ const visibilityState = ref<VisibilityState>({});
 usePageError({ entityName, entityList: true, scope });
 const fetchError = ref(false);
 
-watch(() => t('navigation.variables'), (title) => {
-  breadcrumbsStore.setCurrentTitle(title, true);
-}, { immediate: true });
+watch(
+  () => t('navigation.variables'),
+  (title) => {
+    breadcrumbsStore.setCurrentTitle(title, true);
+  },
+  { immediate: true },
+);
 
 // ─── Fetch Data ────────────────────────────────────────────────────
-const { data: variables, error: variableError, refresh } = await useAsyncData<Entity[]>(
+const {
+  data: variables,
+  error: variableError,
+  refresh,
+} = await useAsyncData<Entity[]>(
   'variables-list',
   () => orchestratorApi.variable.list(),
   { getCachedData: () => undefined },
@@ -71,7 +76,7 @@ const maskValue = (value: string | undefined): string => {
 const mapToListData = (list: WorkflowVariable[]): EntityList[] =>
   list.map((v) => ({
     key: v.key,
-    displayValue: v.isSecret ? maskValue(v.value) : (v.value || '–'),
+    displayValue: v.isSecret ? maskValue(v.value) : v.value || '–',
     description: v.description ?? '',
     isSecret: v.isSecret,
     createdAt: formatTimestamp(v.createdAt),
@@ -99,7 +104,9 @@ onMounted(() => {
     { immediate: true },
   );
 
-  const resolveSecretIcon = (row: EntityList): { icon: Component; class: string } => {
+  const resolveSecretIcon = (
+    row: EntityList,
+  ): { icon: Component; class: string } => {
     return row.isSecret
       ? { icon: LucideKeyRound, class: 'text-yellow-500' }
       : { icon: LucideEye, class: 'text-muted-foreground' };
@@ -141,7 +148,10 @@ const searchableFields: Array<keyof EntityList> = ['key', 'description'];
 </script>
 
 <template>
-  <ContentHeader :title="$t('navigation.variables')" :description="$t('variables.description')">
+  <ContentHeader
+    :title="$t('navigation.variables')"
+    :description="$t('variables.description')"
+  >
     <ContentActionBar>
       <ButtonIcon icon="new" href="/orchestrator/variables/new">
         {{ $t('new_entity', { entityName }) }}
@@ -158,9 +168,14 @@ const searchableFields: Array<keyof EntityList> = ['key', 'description'];
       :init-visibility-state="visibilityState"
       :searchable-fields="searchableFields"
       :error="fetchError"
-      :on-retry="refresh">
+      :on-retry="refresh"
+    >
       <template #empty-actions>
-        <ButtonIcon icon="new" variant="secondary" @click="navigateTo('/orchestrator/variables/new')">
+        <ButtonIcon
+          icon="new"
+          variant="secondary"
+          @click="navigateTo('/orchestrator/variables/new')"
+        >
           {{ $t('create_new_entity', { entityName }) }}
         </ButtonIcon>
       </template>

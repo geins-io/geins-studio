@@ -19,7 +19,11 @@ const handleClear = () => clearError({ redirect: '/' });
 </script>
 
 <template>
-  <Error404 v-if="error?.statusCode === 404" :message="error.message" @clear="handleClear" />
+  <Error404
+    v-if="error?.statusCode === 404"
+    :message="error.message"
+    @clear="handleClear"
+  />
   <Error500 v-else :message="error.message" @clear="handleClear" />
 </template>
 ```

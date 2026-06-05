@@ -1,0 +1,89 @@
+{
+  // --- Formatting: Prettier is the single source of truth (see eslint.config.js) ---
+  // Shared so every contributor formats identically on save. Requires the
+  // Prettier extension (esbenp.prettier-vscode) — recommended in extensions.json.
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.requireConfig": true,
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[vue]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[html]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  // eslint handles code quality only; run its autofixes on save (flat config).
+  "eslint.useFlatConfig": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // Prevent auto-imports from test files and build artifacts
+  "typescript.preferences.exclude": [
+    "**/node_modules",
+    "**/.nuxt",
+    "**/.output",
+    "**/dist",
+    "**/build",
+    "**/test",
+    "**/tests",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/vitest",
+    "**/__tests__"
+  ],
+  "typescript.suggest.autoImports": true,
+  "typescript.suggest.includeAutomaticOptionalChainCompletions": false,
+
+  // More strict auto-import behavior
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.suggest.completeFunctionCalls": false,
+
+  // Exclude specific patterns from IntelliSense
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+
+  // JavaScript settings (similar to TypeScript)
+  "javascript.preferences.exclude": [
+    "**/node_modules",
+    "**/.nuxt",
+    "**/.output",
+    "**/dist",
+    "**/build",
+    "**/test",
+    "**/tests",
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/vitest",
+    "**/__tests__"
+  ],
+  "javascript.suggest.autoImports": true,
+  "javascript.preferences.importModuleSpecifier": "relative",
+
+  // General file exclude patterns for search and suggestions
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/.nuxt": true,
+    "**/.output": true,
+    "**/node_modules": true,
+    "**/dist": true
+  },
+
+  // Search exclude patterns
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "**/.nuxt": true,
+    "**/.output": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/coverage": true,
+    "**/.nyc_output": true
+  }
+}

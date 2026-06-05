@@ -37,7 +37,7 @@ const onAdd = (assignments: ChannelMarketAssignment[]) => {
 ### `open`
 
 ```ts
-open: boolean
+open: boolean;
 ```
 
 Dialog visibility. Pair with `@update:open` for two-way binding.

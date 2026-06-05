@@ -1,13 +1,16 @@
 <script setup lang="ts">
 const props = defineProps<{
-  nodeId: string
-  visible: boolean
-}>()
+  nodeId: string;
+  visible: boolean;
+}>();
 
-const onNodeDelete = inject<(nodeId: string) => void>('onNodeDelete')
-const onNodeCopy = inject<(nodeId: string) => void>('onNodeCopy')
-const onNodeOpenSettings = inject<(nodeId: string) => void>('onNodeOpenSettings')
-const onNodeSaveAsTemplate = inject<(nodeId: string) => void>('onNodeSaveAsTemplate')
+const onNodeDelete = inject<(nodeId: string) => void>('onNodeDelete');
+const onNodeCopy = inject<(nodeId: string) => void>('onNodeCopy');
+const onNodeOpenSettings =
+  inject<(nodeId: string) => void>('onNodeOpenSettings');
+const onNodeSaveAsTemplate = inject<(nodeId: string) => void>(
+  'onNodeSaveAsTemplate',
+);
 </script>
 
 <template>
@@ -52,7 +55,9 @@ const onNodeSaveAsTemplate = inject<(nodeId: string) => void>('onNodeSaveAsTempl
 <style scoped>
 .toolbar-fade-enter-active,
 .toolbar-fade-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 .toolbar-fade-enter-from,
 .toolbar-fade-leave-to {

@@ -1,27 +1,30 @@
 <script setup lang="ts">
-import { Handle, Position, useNode, useVueFlow } from '@vue-flow/core'
+import { Handle, Position, useNode, useVueFlow } from '@vue-flow/core';
 
-withDefaults(defineProps<{
-  handleClass?: string
-  style?: Record<string, string>
-}>(), {})
+withDefaults(
+  defineProps<{
+    handleClass?: string;
+    style?: Record<string, string>;
+  }>(),
+  {},
+);
 
-const { id: nodeId } = useNode()
-const { edges, connectionStartHandle } = useVueFlow()
+const { id: nodeId } = useNode();
+const { edges, connectionStartHandle } = useVueFlow();
 
 const isConnected = computed(() =>
-  edges.value.some(e => e.target === nodeId),
-)
+  edges.value.some((e) => e.target === nodeId),
+);
 
 const isValidTarget = computed(() => {
-  const start = connectionStartHandle.value
-  if (!start) return false
-  if (start.nodeId === nodeId) return false
+  const start = connectionStartHandle.value;
+  if (!start) return false;
+  if (start.nodeId === nodeId) return false;
   const alreadyConnected = edges.value.some(
-    e => e.source === start.nodeId && e.target === nodeId,
-  )
-  return !alreadyConnected
-})
+    (e) => e.source === start.nodeId && e.target === nodeId,
+  );
+  return !alreadyConnected;
+});
 </script>
 
 <template>
@@ -29,7 +32,11 @@ const isValidTarget = computed(() => {
     type="target"
     :position="Position.Left"
     :style="style"
-    :class="[handleClass, isConnected ? 'tear' : '', isValidTarget ? 'pulse-handle' : '']"
+    :class="[
+      handleClass,
+      isConnected ? 'tear' : '',
+      isValidTarget ? 'pulse-handle' : '',
+    ]"
   />
 </template>
 
@@ -44,7 +51,8 @@ const isValidTarget = computed(() => {
 }
 
 @keyframes handle-pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 currentColor;
     opacity: 1;
   }

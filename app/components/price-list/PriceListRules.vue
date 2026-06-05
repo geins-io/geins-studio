@@ -121,9 +121,7 @@ const thClasses = 'text-xs font-bold text-left py-2';
               {{ $t('discount') }}
             </th>
             <th v-if="mode === 'all'" :class="thClasses">
-              {{ $t('pricing.price_list_price') }} ({{
-                props.vatDescription
-              }})
+              {{ $t('pricing.price_list_price') }} ({{ props.vatDescription }})
             </th>
             <th v-else :class="thClasses">
               {{ $t('pricing.price_list_applied') }}

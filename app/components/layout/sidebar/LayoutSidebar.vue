@@ -83,9 +83,9 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
         v-for="[groupKey, items] in groupedNavigation"
         :key="groupKey"
       >
-        <SidebarGroupLabel>{{
-          groupLabels[groupKey] ?? groupKey
-        }}</SidebarGroupLabel>
+        <SidebarGroupLabel>
+          {{ groupLabels[groupKey] ?? groupKey }}
+        </SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem v-for="item in items" :key="item.label">

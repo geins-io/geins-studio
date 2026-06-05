@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+
+# Build output
+.nuxt
+.output
+dist
+build
+coverage
+
+# Lockfiles (managed by package manager)
+pnpm-lock.yaml
+
+# Scratch / notes dirs (may contain cloned repos — see CLAUDE.md)
+.agents
+.temp
+.mint
+
+# shadcn-vue primitives — CLI-managed, formatted upstream (avoid churn on `shadcn-vue add`)
+app/components/ui
+
+# Generated / vendored
+*.min.js
+*.min.css

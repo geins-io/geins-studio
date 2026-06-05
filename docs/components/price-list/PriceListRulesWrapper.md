@@ -39,7 +39,7 @@ const ruleMode = ref<PriceListRuleMode>('margin');
 ### `title`
 
 ```ts
-title: string
+title: string;
 ```
 
 Heading rendered in the title bar.
@@ -47,7 +47,7 @@ Heading rendered in the title bar.
 ### `modeId`
 
 ```ts
-modeId: string
+modeId: string;
 ```
 
 `id` for the mode `Select` — pair with the `Label`'s `for` attribute.

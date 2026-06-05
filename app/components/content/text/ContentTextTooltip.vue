@@ -12,14 +12,7 @@ const props = withDefaults(
   <TooltipProvider :delay-duration="100">
     <Tooltip>
       <TooltipTrigger class="cursor-default">
-        <span
-          :class="
-            cn(
-              'tooltip-text',
-              props.triggerClass,
-            )
-          "
-        >
+        <span :class="cn('tooltip-text', props.triggerClass)">
           <slot />
         </span>
       </TooltipTrigger>

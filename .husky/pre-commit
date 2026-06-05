@@ -1,0 +1,2 @@
+# Fast: format + lint-fix only staged files (Prettier owns formatting).
+pnpm exec lint-staged

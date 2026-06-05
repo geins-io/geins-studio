@@ -26,9 +26,15 @@ const loading = ref(false);
 const showInvalid = ref(false);
 const accounts = ref<AuthAccounts[]>([]);
 
-const onLogin = async (credentials: LoginCredentials) => { /* ... */ };
-const onVerify = async (code: string) => { /* ... */ };
-const onSetAccount = async (accountKey: string) => { /* ... */ };
+const onLogin = async (credentials: LoginCredentials) => {
+  /* ... */
+};
+const onVerify = async (code: string) => {
+  /* ... */
+};
+const onSetAccount = async (accountKey: string) => {
+  /* ... */
+};
 </script>
 
 <template>
@@ -50,7 +56,7 @@ const onSetAccount = async (accountKey: string) => { /* ... */ };
 ### `mode`
 
 ```ts
-mode: AuthFormMode  // 'login' | 'verify' | 'account' | 'forgot-password' | 'reset-password' | 'logout'
+mode: AuthFormMode; // 'login' | 'verify' | 'account' | 'forgot-password' | 'reset-password' | 'logout'
 ```
 
 Drives which form/UI is rendered.

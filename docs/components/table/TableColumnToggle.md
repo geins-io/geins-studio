@@ -25,7 +25,7 @@
 ### `table`
 
 ```ts
-table: Table<TData>
+table: Table<TData>;
 ```
 
 [TanStack Table](https://tanstack.com/table/latest/docs/introduction) instance.

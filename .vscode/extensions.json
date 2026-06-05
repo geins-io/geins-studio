@@ -1,0 +1,5 @@
+{
+  // Workspace extension recommendations — VS Code prompts contributors to install these.
+  // Required for the shared format-on-save behavior in settings.json to work.
+  "recommendations": ["esbenp.prettier-vscode", "dbaeumer.vscode-eslint"]
+}

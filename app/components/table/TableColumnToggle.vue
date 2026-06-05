@@ -215,9 +215,9 @@ const resetOrderAndVisibility = () => {
           </Button>
         </SheetClose>
         <SheetClose as-child>
-          <Button @click="saveOrderAndVisibility">{{
-            $t('table.save_options')
-          }}</Button>
+          <Button @click="saveOrderAndVisibility">
+            {{ $t('table.save_options') }}
+          </Button>
         </SheetClose>
       </SheetFooter>
     </SheetContent>

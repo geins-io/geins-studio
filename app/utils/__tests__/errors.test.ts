@@ -113,9 +113,9 @@ describe('getFallbackErrorMessage', () => {
   });
 
   it('prefers data.message over data.error', () => {
-    expect(
-      getFallbackErrorMessage(500, { message: 'msg', error: 'err' }),
-    ).toBe('msg');
+    expect(getFallbackErrorMessage(500, { message: 'msg', error: 'err' })).toBe(
+      'msg',
+    );
   });
 
   it('ignores non-string message values in data', () => {

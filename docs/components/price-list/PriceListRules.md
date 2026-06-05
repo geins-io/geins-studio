@@ -67,7 +67,7 @@ The current set of rules. Each rule should carry a stable `internalId` — gener
 ### `mode`
 
 ```ts
-mode: 'margin' | 'discount' | 'all'
+mode: 'margin' | 'discount' | 'all';
 ```
 
 Which columns render in each row. See [`PriceListRule`](/components/price-list/PriceListRule).

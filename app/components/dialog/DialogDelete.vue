@@ -14,9 +14,9 @@ const _emit = defineEmits(['confirm', 'cancel']);
   <AlertDialog v-model:open="open">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>{{
-          $t('dialog.delete_confirm_title')
-        }}</AlertDialogTitle>
+        <AlertDialogTitle>
+          {{ $t('dialog.delete_confirm_title') }}
+        </AlertDialogTitle>
         <AlertDialogDescription>
           {{
             $t('dialog.delete_confirm_description', {
@@ -26,9 +26,9 @@ const _emit = defineEmits(['confirm', 'cancel']);
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="$emit('cancel')">{{
-          $t('cancel')
-        }}</AlertDialogCancel>
+        <AlertDialogCancel @click="$emit('cancel')">
+          {{ $t('cancel') }}
+        </AlertDialogCancel>
 
         <Button
           :loading="loading"

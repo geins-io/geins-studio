@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: "Version bump type"
+        description: 'Version bump type'
         required: false
-        default: "auto"
+        default: 'auto'
         type: choice
         options:
           - auto
@@ -39,7 +39,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: '24'
           cache: pnpm
 
       - name: Install dependencies

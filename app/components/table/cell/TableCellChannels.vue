@@ -8,8 +8,8 @@ const accountStore = useAccountStore();
 <template>
   <div>
     <span v-for="(channelId, index) in channelIds" :key="channelId">
-      {{ accountStore.getChannelNameById(channelId)
-      }}<span v-if="index < channelIds.length - 1">,&nbsp;</span>
+      {{ accountStore.getChannelNameById(channelId) }}
+      <span v-if="index < channelIds.length - 1">,&nbsp;</span>
     </span>
   </div>
 </template>

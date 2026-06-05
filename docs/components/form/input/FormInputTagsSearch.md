@@ -42,7 +42,10 @@ const channels = await fetchChannels();
   >
     <template #tag="{ item }">
       <span class="flex items-center gap-1.5">
-        <span :class="flagClass(item?.country?._id)" class="size-3 rounded-full" />
+        <span
+          :class="flagClass(item?.country?._id)"
+          class="size-3 rounded-full"
+        />
         <TagsInputItemText />
       </span>
     </template>

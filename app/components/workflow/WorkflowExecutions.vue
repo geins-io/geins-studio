@@ -142,9 +142,9 @@ const executions = computed(() => allExecutions.value.slice(0, PAGE_SIZE));
                 'animate-pulse bg-blue-500': execution.status === 'running',
               }"
             />
-            <span class="text-sm font-medium whitespace-nowrap">{{
-              formatStatus(execution.status)
-            }}</span>
+            <span class="text-sm font-medium whitespace-nowrap">
+              {{ formatStatus(execution.status) }}
+            </span>
           </div>
           <div class="text-muted-foreground truncate font-mono text-xs">
             {{ execution.startedAt }}
@@ -162,10 +162,9 @@ const executions = computed(() => allExecutions.value.slice(0, PAGE_SIZE));
               <LucideHistory class="size-5" />
             </EmptyMedia>
             <EmptyTitle>No executions yet</EmptyTitle>
-            <EmptyDescription
-              >Runs will appear here once the workflow
-              executes.</EmptyDescription
-            >
+            <EmptyDescription>
+              Runs will appear here once the workflow executes.
+            </EmptyDescription>
           </EmptyHeader>
         </Empty>
       </div>

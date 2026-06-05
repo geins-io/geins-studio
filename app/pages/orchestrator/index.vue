@@ -14,7 +14,6 @@ import {
   CardDescription,
 } from '~/components/ui/card';
 
-
 // ─── Types ─────────────────────────────────────────────────────────
 interface WorkflowGroupCard {
   id: string;
@@ -50,17 +49,22 @@ const fetchError = ref(false);
 const groups = ref<WorkflowGroupCard[]>([]);
 
 // ─── Fetch Data ────────────────────────────────────────────────────
-const { data: rawMetrics, error: metricsError, refresh } = await useAsyncData<WorkflowMetrics[]>(
+const {
+  data: rawMetrics,
+  error: metricsError,
+  refresh,
+} = await useAsyncData<WorkflowMetrics[]>(
   'overview-workflows-metrics',
   () => orchestratorApi.metrics.list(),
   { getCachedData: () => undefined },
 );
 
-const { data: aggregate, refresh: refreshAggregate } = await useAsyncData<AggregateMetrics>(
-  'overview-workflows-aggregate',
-  () => orchestratorApi.metrics.getAggregate(),
-  { getCachedData: () => undefined },
-);
+const { data: aggregate, refresh: refreshAggregate } =
+  await useAsyncData<AggregateMetrics>(
+    'overview-workflows-aggregate',
+    () => orchestratorApi.metrics.getAggregate(),
+    { getCachedData: () => undefined },
+  );
 
 // Workflow id → expected enabled value for toggles we've applied locally.
 // The server's metrics endpoint is cached and may return stale `enabled`
@@ -92,16 +96,22 @@ const getInitials = (name: string): string => {
 
 /** API returns lowercase health values; normalize to HealthStatus (PascalCase). */
 const normalizeHealth = (raw: string | undefined): HealthStatus =>
-  raw ? (raw.charAt(0).toUpperCase() + raw.slice(1)) as HealthStatus : 'Unknown';
+  raw
+    ? ((raw.charAt(0).toUpperCase() + raw.slice(1)) as HealthStatus)
+    : 'Unknown';
 
 const deriveGroupHealth = (
   workflowHealths: HealthStatus[],
   allEnabled: boolean,
 ): HealthStatus | 'Idle' => {
-  if (!allEnabled && workflowHealths.every(h => h === 'Disabled' || h === 'Unknown')) return 'Idle';
-  if (workflowHealths.some(h => h === 'Unhealthy')) return 'Unhealthy';
-  if (workflowHealths.some(h => h === 'Degraded')) return 'Degraded';
-  if (workflowHealths.every(h => h === 'Healthy')) return 'Healthy';
+  if (
+    !allEnabled &&
+    workflowHealths.every((h) => h === 'Disabled' || h === 'Unknown')
+  )
+    return 'Idle';
+  if (workflowHealths.some((h) => h === 'Unhealthy')) return 'Unhealthy';
+  if (workflowHealths.some((h) => h === 'Degraded')) return 'Degraded';
+  if (workflowHealths.every((h) => h === 'Healthy')) return 'Healthy';
   return 'Unknown';
 };
 
@@ -147,24 +157,44 @@ const mapToGroups = (metricsList: WorkflowMetrics[]): WorkflowGroupCard[] => {
     items: WorkflowMetrics[],
     standalone = false,
   ): WorkflowGroupCard => {
-    const totalExecutions24h = items.reduce((sum, m) => sum + (m.metrics24h?.totalExecutions ?? 0), 0);
-    const totalExecutions7d = items.reduce((sum, m) => sum + (m.metrics7d?.totalExecutions ?? 0), 0);
-    const totalExecutions = items.reduce((sum, m) => sum + (m.metricsAllTime?.totalExecutions ?? 0), 0);
-    const totalSuccess = items.reduce((sum, m) => sum + (m.metrics24h?.successfulExecutions ?? 0), 0);
-    const totalExec = items.reduce((sum, m) => sum + (m.metrics24h?.totalExecutions ?? 0), 0);
-    const successRate = totalExec > 0 ? Math.round((totalSuccess / totalExec) * 100) : 100;
-    const healths: HealthStatus[] = items.map(m => normalizeHealth(m.status?.health));
+    const totalExecutions24h = items.reduce(
+      (sum, m) => sum + (m.metrics24h?.totalExecutions ?? 0),
+      0,
+    );
+    const totalExecutions7d = items.reduce(
+      (sum, m) => sum + (m.metrics7d?.totalExecutions ?? 0),
+      0,
+    );
+    const totalExecutions = items.reduce(
+      (sum, m) => sum + (m.metricsAllTime?.totalExecutions ?? 0),
+      0,
+    );
+    const totalSuccess = items.reduce(
+      (sum, m) => sum + (m.metrics24h?.successfulExecutions ?? 0),
+      0,
+    );
+    const totalExec = items.reduce(
+      (sum, m) => sum + (m.metrics24h?.totalExecutions ?? 0),
+      0,
+    );
+    const successRate =
+      totalExec > 0 ? Math.round((totalSuccess / totalExec) * 100) : 100;
+    const healths: HealthStatus[] = items.map((m) =>
+      normalizeHealth(m.status?.health),
+    );
     // Only scheduled + event-triggered workflows have an enable/disable toggle.
     // OnDemand workflows are always active and the bulk API rejects them.
-    const toggleableItems = items.filter(m => m.type !== 'onDemand');
-    const enabledItems = toggleableItems.filter(m => m.enabled);
-    const allEnabled = toggleableItems.length > 0 && enabledItems.length === toggleableItems.length;
+    const toggleableItems = items.filter((m) => m.type !== 'onDemand');
+    const enabledItems = toggleableItems.filter((m) => m.enabled);
+    const allEnabled =
+      toggleableItems.length > 0 &&
+      enabledItems.length === toggleableItems.length;
     const lastUpdated = items.reduce((latest, m) => {
       const d = m.updatedAt || m.createdAt || m.lastMetricsUpdate || '';
       return d > latest ? d : latest;
     }, '');
-    const workflowIds = items.map(m => m.id);
-    const toggleableWorkflowIds = toggleableItems.map(m => m.id);
+    const workflowIds = items.map((m) => m.id);
+    const toggleableWorkflowIds = toggleableItems.map((m) => m.id);
     const slug = name.toLowerCase().replace(/\s+/g, '-');
 
     return {
@@ -195,7 +225,7 @@ const mapToGroups = (metricsList: WorkflowMetrics[]): WorkflowGroupCard[] => {
     ),
   );
 
-  const standaloneCards = ungrouped.map(m =>
+  const standaloneCards = ungrouped.map((m) =>
     buildCard(m.name || 'Unnamed Workflow', m.description || '', [m], true),
   );
 
@@ -252,8 +282,7 @@ const toggleGroup = async (group: WorkflowGroupCard, enable: boolean) => {
         title: `${label} succeeded`,
         description: `${result.successful} workflow${result.successful === 1 ? '' : 's'} ${verb} in "${group.name}".`,
       });
-    }
-    else {
+    } else {
       // Map failed ids back to their display names so the user knows
       // exactly what the API refused.
       const nameById = new Map(
@@ -263,42 +292,45 @@ const toggleGroup = async (group: WorkflowGroupCard, enable: boolean) => {
         (id) => nameById.get(id) ?? id,
       );
       const firstFailId = result.failedWorkflowIds?.[0];
-      const firstFailError = firstFailId && result.errors
-        ? result.errors[firstFailId]
-        : undefined;
+      const firstFailError =
+        firstFailId && result.errors ? result.errors[firstFailId] : undefined;
 
       if (result.successful === 0) {
         toast({
           title: `${label} failed`,
-          description: [
-            firstFailError,
-            failedNames.length > 0 ? `Failed: ${failedNames.join(', ')}` : null,
-          ].filter(Boolean).join(' — ')
-            || `Could not ${label.toLowerCase()} workflows in "${group.name}".`,
+          description:
+            [
+              firstFailError,
+              failedNames.length > 0
+                ? `Failed: ${failedNames.join(', ')}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' — ') ||
+            `Could not ${label.toLowerCase()} workflows in "${group.name}".`,
           variant: 'negative',
         });
-      }
-      else {
+      } else {
         toast({
           title: `${label} partially applied`,
           description: [
             `${result.successful} ${verb}, ${result.failed} failed in "${group.name}".`,
             failedNames.length > 0 ? `Failed: ${failedNames.join(', ')}` : null,
             firstFailError ? `Reason: ${firstFailError}` : null,
-          ].filter(Boolean).join(' '),
+          ]
+            .filter(Boolean)
+            .join(' '),
           variant: 'warning',
         });
       }
     }
-  }
-  catch (err) {
+  } catch (err) {
     toast({
       title: `${label} failed`,
       description: err instanceof Error ? err.message : String(err),
       variant: 'negative',
     });
-  }
-  finally {
+  } finally {
     await reloadCards();
     togglingGroup.value = null;
   }
@@ -335,7 +367,10 @@ watchEffect(() => {
 </script>
 
 <template>
-  <ContentHeader :title="$t('navigation.orchestrator')" :description="$t('orchestrator.description')" />
+  <ContentHeader
+    :title="$t('navigation.orchestrator')"
+    :description="$t('orchestrator.description')"
+  />
 
   <!-- KPI Stat Cards -->
   <div class="mb-6 grid gap-4 md:grid-cols-4">
@@ -343,7 +378,9 @@ watchEffect(() => {
       <CardContent class="pt-6">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-muted-foreground text-sm">{{ $t('workflows.total') }}</p>
+            <p class="text-muted-foreground text-sm">
+              {{ $t('workflows.total') }}
+            </p>
             <p class="text-2xl font-bold">{{ stats.total }}</p>
           </div>
           <LucideWorkflow class="text-muted-foreground h-8 w-8" />
@@ -354,7 +391,9 @@ watchEffect(() => {
       <CardContent class="pt-6">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-muted-foreground text-sm">{{ $t('workflows.healthy_workflows') }}</p>
+            <p class="text-muted-foreground text-sm">
+              {{ $t('workflows.healthy_workflows') }}
+            </p>
             <p class="text-2xl font-bold text-green-500">{{ stats.healthy }}</p>
           </div>
           <LucideCheckCircle2 class="h-8 w-8 text-green-500" />
@@ -365,8 +404,12 @@ watchEffect(() => {
       <CardContent class="pt-6">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-muted-foreground text-sm">{{ $t('workflows.executions_24h') }}</p>
-            <p class="text-2xl font-bold">{{ stats.executions24h.toLocaleString() }}</p>
+            <p class="text-muted-foreground text-sm">
+              {{ $t('workflows.executions_24h') }}
+            </p>
+            <p class="text-2xl font-bold">
+              {{ stats.executions24h.toLocaleString() }}
+            </p>
           </div>
           <LucideClock class="text-muted-foreground h-8 w-8" />
         </div>
@@ -376,12 +419,24 @@ watchEffect(() => {
       <CardContent class="pt-6">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-muted-foreground text-sm">{{ $t('workflows.success_rate') }}</p>
-            <p class="text-2xl font-bold" :class="stats.successRate24h < 95 ? 'text-yellow-500' : 'text-green-500'">
+            <p class="text-muted-foreground text-sm">
+              {{ $t('workflows.success_rate') }}
+            </p>
+            <p
+              class="text-2xl font-bold"
+              :class="
+                stats.successRate24h < 95 ? 'text-yellow-500' : 'text-green-500'
+              "
+            >
               {{ stats.successRate24h }}%
             </p>
           </div>
-          <LucideTarget class="h-8 w-8" :class="stats.successRate24h < 95 ? 'text-yellow-500' : 'text-green-500'" />
+          <LucideTarget
+            class="h-8 w-8"
+            :class="
+              stats.successRate24h < 95 ? 'text-yellow-500' : 'text-green-500'
+            "
+          />
         </div>
       </CardContent>
     </Card>
@@ -415,7 +470,9 @@ watchEffect(() => {
         <div class="flex flex-col items-center justify-center text-center">
           <LucideXCircle class="text-destructive mb-4 h-12 w-12" />
           <h3 class="mb-2 text-lg font-medium">{{ $t('feedback_error') }}</h3>
-          <p class="text-muted-foreground mb-4">{{ $t('error_empty_description') }}</p>
+          <p class="text-muted-foreground mb-4">
+            {{ $t('error_empty_description') }}
+          </p>
           <Button @click="refresh()">
             {{ $t('retry') }}
           </Button>
@@ -428,8 +485,12 @@ watchEffect(() => {
       <CardContent class="py-12">
         <div class="flex flex-col items-center justify-center text-center">
           <LucideWorkflow class="text-muted-foreground mb-4 h-12 w-12" />
-          <h3 class="mb-2 text-lg font-medium">{{ $t('workflows.no_workflows') }}</h3>
-          <p class="text-muted-foreground mb-4">{{ $t('workflows.create_first') }}</p>
+          <h3 class="mb-2 text-lg font-medium">
+            {{ $t('workflows.no_workflows') }}
+          </h3>
+          <p class="text-muted-foreground mb-4">
+            {{ $t('workflows.create_first') }}
+          </p>
           <NuxtLink to="/orchestrator/workflows/new">
             <Button>
               {{ $t('new_entity', { entityName: 'workflow' }) }}
@@ -442,8 +503,10 @@ watchEffect(() => {
     <!-- Workflow Group Cards -->
     <div v-else class="grid gap-5 md:grid-cols-2">
       <Card
-v-for="group in groups" :key="group.id"
-        class="hover:border-primary/30 group relative flex flex-col transition-all duration-200 hover:shadow-md">
+        v-for="group in groups"
+        :key="group.id"
+        class="hover:border-primary/30 group relative flex flex-col transition-all duration-200 hover:shadow-md"
+      >
         <CardHeader class="pt-5 pb-4">
           <!-- Header: Avatar + Name + Health Badge -->
           <div class="flex items-start justify-between">
@@ -462,20 +525,30 @@ v-for="group in groups" :key="group.id"
                 </CardDescription>
               </div>
             </div>
-            <StatusBadge :status="group.health.toLowerCase()" class="mt-0.5 ml-2 shrink-0" />
+            <StatusBadge
+              :status="group.health.toLowerCase()"
+              class="mt-0.5 ml-2 shrink-0"
+            />
           </div>
         </CardHeader>
 
         <CardContent class="flex flex-1 flex-col pt-0">
           <!-- Metrics Grid -->
-          <div class="bg-muted/30 mt-1 grid grid-cols-3 gap-px overflow-hidden rounded-lg border">
+          <div
+            class="bg-muted/30 mt-1 grid grid-cols-3 gap-px overflow-hidden rounded-lg border"
+          >
             <!-- ACTIVE WORKFLOWS -->
             <div class="bg-background flex flex-col gap-0.5 px-3 py-2.5">
-              <span class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">Active
-                Workflows</span>
+              <span
+                class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
+              >
+                Active Workflows
+              </span>
               <span class="text-sm font-semibold">
                 <template v-if="group.toggleableWorkflowIds.length > 0">
-                  {{ group.enabledCount }}/{{ group.toggleableWorkflowIds.length }}
+                  {{ group.enabledCount }}/{{
+                    group.toggleableWorkflowIds.length
+                  }}
                 </template>
                 <template v-else>
                   {{ group.workflowCount }}
@@ -484,35 +557,60 @@ v-for="group in groups" :key="group.id"
             </div>
             <!-- LAST SYNC -->
             <div class="bg-background flex flex-col gap-0.5 px-3 py-2.5">
-              <span class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">Last Sync</span>
+              <span
+                class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
+              >
+                Last Sync
+              </span>
               <span class="text-sm font-semibold">{{ group.lastSync }}</span>
             </div>
             <!-- SUCCESS RATE -->
             <div class="bg-background flex flex-col gap-0.5 px-3 py-2.5">
-              <span class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">{{ $t('workflows.success_rate') }}</span>
               <span
-class="text-sm font-semibold"
-                :class="group.successRate < 95 ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'">
+                class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
+              >
+                {{ $t('workflows.success_rate') }}
+              </span>
+              <span
+                class="text-sm font-semibold"
+                :class="
+                  group.successRate < 95
+                    ? 'text-yellow-600 dark:text-yellow-400'
+                    : 'text-green-600 dark:text-green-400'
+                "
+              >
                 {{ group.successRate }}%
               </span>
             </div>
             <!-- EXECUTIONS -->
-            <div class="bg-background col-span-3 flex flex-col gap-1 px-3 py-2.5">
-              <span class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">Executions</span>
+            <div
+              class="bg-background col-span-3 flex flex-col gap-1 px-3 py-2.5"
+            >
+              <span
+                class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
+              >
+                Executions
+              </span>
               <div class="flex items-center gap-3">
                 <span class="text-sm font-semibold">
                   {{ formatThroughput(group.executions24h) }}
-                  <span class="text-muted-foreground text-[10px] font-normal">24h</span>
+                  <span class="text-muted-foreground text-[10px] font-normal">
+                    24h
+                  </span>
                 </span>
                 <span class="text-muted-foreground text-xs">·</span>
                 <span class="text-sm font-semibold">
                   {{ formatThroughput(group.executions7d) }}
-                  <span class="text-muted-foreground text-[10px] font-normal">7d</span>
+                  <span class="text-muted-foreground text-[10px] font-normal">
+                    7d
+                  </span>
                 </span>
                 <span class="text-muted-foreground text-xs">·</span>
                 <span class="text-sm font-semibold">
                   {{ formatThroughput(group.executionsTotal) }}
-                  <span class="text-muted-foreground text-[10px] font-normal">total</span>
+                  <span class="text-muted-foreground text-[10px] font-normal">
+                    total
+                  </span>
                 </span>
               </div>
             </div>
@@ -522,33 +620,76 @@ class="text-sm font-semibold"
           <div class="mt-3 flex items-center justify-between">
             <div class="flex items-center gap-1">
               <NuxtLink
-                :to="{ path: '/orchestrator/workflows/list', query: group.isStandalone ? { name: group.name } : { group: group.id } }">
-                <Button variant="outline" size="icon" class="h-7 w-7" title="Workflows">
+                :to="{
+                  path: '/orchestrator/workflows/list',
+                  query: group.isStandalone
+                    ? { name: group.name }
+                    : { group: group.id },
+                }"
+              >
+                <Button
+                  variant="outline"
+                  size="icon"
+                  class="h-7 w-7"
+                  title="Workflows"
+                >
                   <LucideWorkflow class="h-3.5 w-3.5" />
                 </Button>
               </NuxtLink>
               <NuxtLink
-                :to="{ path: '/orchestrator/executions/list', query: group.isStandalone ? { name: group.name } : { group: group.id } }">
-                <Button variant="outline" size="icon" class="h-7 w-7" title="Executions">
+                :to="{
+                  path: '/orchestrator/executions/list',
+                  query: group.isStandalone
+                    ? { name: group.name }
+                    : { group: group.id },
+                }"
+              >
+                <Button
+                  variant="outline"
+                  size="icon"
+                  class="h-7 w-7"
+                  title="Executions"
+                >
                   <LucideHistory class="h-3.5 w-3.5" />
                 </Button>
               </NuxtLink>
-              <NuxtLink v-if="group.workflowCount === 1" :to="`/orchestrator/workflows/${group.workflowIds[0]}`">
-                <Button variant="outline" size="icon" class="h-7 w-7" title="Edit workflow">
+              <NuxtLink
+                v-if="group.workflowCount === 1"
+                :to="`/orchestrator/workflows/${group.workflowIds[0]}`"
+              >
+                <Button
+                  variant="outline"
+                  size="icon"
+                  class="h-7 w-7"
+                  title="Edit workflow"
+                >
                   <LucidePencil class="h-3.5 w-3.5" />
                 </Button>
               </NuxtLink>
             </div>
-            <div v-if="group.toggleableWorkflowIds.length > 0" class="flex items-center gap-1.5">
+            <div
+              v-if="group.toggleableWorkflowIds.length > 0"
+              class="flex items-center gap-1.5"
+            >
               <Button
-                v-if="group.allEnabled" variant="outline" size="sm" class="h-7 text-xs"
-                :disabled="togglingGroup === group.id" @click="toggleGroup(group, false)">
+                v-if="group.allEnabled"
+                variant="outline"
+                size="sm"
+                class="h-7 text-xs"
+                :disabled="togglingGroup === group.id"
+                @click="toggleGroup(group, false)"
+              >
                 <LucidePause class="mr-1 h-3 w-3" />
                 {{ $t('workflows.pause') }}
               </Button>
               <Button
-                v-else variant="default" size="sm" class="h-7 text-xs" :disabled="togglingGroup === group.id"
-                @click="toggleGroup(group, true)">
+                v-else
+                variant="default"
+                size="sm"
+                class="h-7 text-xs"
+                :disabled="togglingGroup === group.id"
+                @click="toggleGroup(group, true)"
+              >
                 <LucidePlay class="mr-1 h-3 w-3" />
                 {{ $t('workflows.enable') }}
               </Button>

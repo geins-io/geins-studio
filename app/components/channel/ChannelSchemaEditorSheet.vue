@@ -63,21 +63,21 @@ function handleApply() {
       </SheetHeader>
       <SheetBody class="flex flex-1 flex-col gap-4 overflow-hidden">
         <Feedback type="warning">
-          <template #title>{{
-            t('channels.schema_editor_warning_title')
-          }}</template>
-          <template #description>{{
-            t('channels.schema_editor_warning_description')
-          }}</template>
+          <template #title>
+            {{ t('channels.schema_editor_warning_title') }}
+          </template>
+          <template #description>
+            {{ t('channels.schema_editor_warning_description') }}
+          </template>
         </Feedback>
         <LazySharedJsonCodeEditor
           v-model="editorContent"
           class="min-h-0 flex-1"
         />
         <Feedback v-if="jsonError" type="negative">
-          <template #title>{{
-            t('channels.schema_editor_invalid_title')
-          }}</template>
+          <template #title>
+            {{ t('channels.schema_editor_invalid_title') }}
+          </template>
           <template #description>
             {{ jsonError }}
           </template>

@@ -100,9 +100,9 @@ function handleFontFamily(value: string) {
               :model-value="model.logoUrl ?? ''"
               @update:model-value="handleFile('logoUrl', $event)"
             />
-            <FormInputDescription>{{
-              t('channels.mail_logo_hint')
-            }}</FormInputDescription>
+            <FormInputDescription>
+              {{ t('channels.mail_logo_hint') }}
+            </FormInputDescription>
           </div>
           <div class="space-y-1.5">
             <Label>{{ t('channels.mail_header_image') }}</Label>
@@ -110,9 +110,9 @@ function handleFontFamily(value: string) {
               :model-value="model.headerImgUrl ?? ''"
               @update:model-value="handleFile('headerImgUrl', $event)"
             />
-            <FormInputDescription>{{
-              t('channels.mail_header_image_hint')
-            }}</FormInputDescription>
+            <FormInputDescription>
+              {{ t('channels.mail_header_image_hint') }}
+            </FormInputDescription>
           </div>
         </FormGrid>
       </FormGridWrap>

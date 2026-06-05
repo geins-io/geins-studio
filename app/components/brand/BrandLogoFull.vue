@@ -20,6 +20,8 @@ const logo = computed(() => logoMap[appId.value] ?? logoMap['geins']);
   <component
     :is="logo"
     v-bind="$attrs"
-    :style="brand.logoFullMaxWidth ? { maxWidth: brand.logoFullMaxWidth } : undefined"
+    :style="
+      brand.logoFullMaxWidth ? { maxWidth: brand.logoFullMaxWidth } : undefined
+    "
   />
 </template>

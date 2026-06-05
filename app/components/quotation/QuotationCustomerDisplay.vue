@@ -99,6 +99,5 @@ withDefaults(
         </p>
       </div>
     </div>
-
   </div>
 </template>

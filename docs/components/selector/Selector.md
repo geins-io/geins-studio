@@ -17,10 +17,13 @@ Full-featured entity selection widget that supports selecting products, SKUs, or
 
 ```vue
 <script setup lang="ts">
-import type { SelectorSelectionQueryBase } from '#shared/types'
-import { SelectorMode, SelectorSelectionStrategy } from '#shared/types'
+import type { SelectorSelectionQueryBase } from '#shared/types';
+import { SelectorMode, SelectorSelectionStrategy } from '#shared/types';
 
-const selection = ref<SelectorSelectionQueryBase>({ ids: [], condition: 'and' })
+const selection = ref<SelectorSelectionQueryBase>({
+  ids: [],
+  condition: 'and',
+});
 </script>
 
 <template>
@@ -36,10 +39,10 @@ const selection = ref<SelectorSelectionQueryBase>({ ids: [], condition: 'and' })
 
 ```vue
 <script setup lang="ts">
-import type { SelectorSelectionSimpleBase } from '#shared/types'
-import { SelectorMode, SelectorSelectionStrategy } from '#shared/types'
+import type { SelectorSelectionSimpleBase } from '#shared/types';
+import { SelectorMode, SelectorSelectionStrategy } from '#shared/types';
 
-const selection = ref<SelectorSelectionSimpleBase>({ ids: [] })
+const selection = ref<SelectorSelectionSimpleBase>({ ids: [] });
 </script>
 
 <template>
@@ -165,24 +168,24 @@ Two-way bound selection in simple format (IDs array only). Use with `SelectorMod
 
 ```ts
 interface SelectorEntity {
-  _id: string
-  name: string
-  thumbnail?: string
-  image?: string
-  articleNumber?: string
-  productId?: string | number
-  skus?: SelectorEntity[]
+  _id: string;
+  name: string;
+  thumbnail?: string;
+  image?: string;
+  articleNumber?: string;
+  productId?: string | number;
+  skus?: SelectorEntity[];
 }
 
 interface SelectorSelectionQueryBase {
-  ids?: string[]
-  categoryIds?: string[]
-  brandIds?: string[]
-  condition?: 'and' | 'or'
+  ids?: string[];
+  categoryIds?: string[];
+  brandIds?: string[];
+  condition?: 'and' | 'or';
 }
 
 interface SelectorSelectionSimpleBase {
-  ids?: string[]
+  ids?: string[];
 }
 
 enum SelectorMode {

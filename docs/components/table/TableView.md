@@ -71,7 +71,7 @@ For tables embedded inside cards or panels — no search, no pagination, no pinn
 ### `columns`
 
 ```ts
-columns: ColumnDef<TData, TValue>[]
+columns: (ColumnDef < TData, TValue > []);
 ```
 
 TanStack column definitions. Use [`useColumns`](/composables/useColumns) to compose typed column factories.

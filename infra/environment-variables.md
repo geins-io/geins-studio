@@ -36,8 +36,8 @@ These are **sensitive values** that must be kept secret. They are encrypted by G
 | `AZURE_CLIENT_ID`       |    ✅    | Service Principal App (Client) ID | Run `pnpm infra:setup` |
 | `AZURE_TENANT_ID`       |    ✅    | Azure AD Tenant ID                | Run `pnpm infra:setup` |
 | `AZURE_SUBSCRIPTION_ID` |    ✅    | Target Azure Subscription ID      | Run `pnpm infra:setup` |
-| `AUTH_SECRET`            |    ✅    | NextAuth.js secret key            | Generate with openssl  |
-| `GEINS_API_URL`          |    ✅    | Geins Management API URL          | Geins admin portal     |
+| `AUTH_SECRET`           |    ✅    | NextAuth.js secret key            | Generate with openssl  |
+| `GEINS_API_URL`         |    ✅    | Geins Management API URL          | Geins admin portal     |
 
 ### Notes on Secrets
 
@@ -52,12 +52,12 @@ These are **sensitive values** that must be kept secret. They are encrypted by G
 
 These are **non-sensitive configuration values** visible in the repository settings.
 
-| Variable     | Default   | Description              | Options                                    |
-| ------------ | --------- | ------------------------ | ------------------------------------------ |
-| `BASE_URL`   | _(empty)_ | Application base URL     | Any valid URL                              |
-| `AUTH_PATH`  | _(empty)_ | Auth server function path| Custom auth path                           |
-| `GEINS_DEBUG`| `false`   | Enable debug mode        | `true`, `false`                            |
-| `LOG_LEVEL`  | `info`    | Server log verbosity     | `debug`, `info`, `warn`, `error`, `silent` |
+| Variable      | Default   | Description               | Options                                    |
+| ------------- | --------- | ------------------------- | ------------------------------------------ |
+| `BASE_URL`    | _(empty)_ | Application base URL      | Any valid URL                              |
+| `AUTH_PATH`   | _(empty)_ | Auth server function path | Custom auth path                           |
+| `GEINS_DEBUG` | `false`   | Enable debug mode         | `true`, `false`                            |
+| `LOG_LEVEL`   | `info`    | Server log verbosity      | `debug`, `info`, `warn`, `error`, `silent` |
 
 ### Notes on Variables
 
@@ -72,29 +72,29 @@ These are **non-sensitive configuration values** visible in the repository setti
 
 The `deploy.yml` workflow passes GitHub variables to Bicep, which sets these in Azure App Service:
 
-| Azure App Setting              | Source                       | Maps to nuxt.config.ts                |
-| ------------------------------ | ---------------------------- | ------------------------------------- |
-| `NODE_ENV`                     | Set by Bicep per environment | `process.env.NODE_ENV`                |
-| `GEINS_API_URL`                | `secrets.GEINS_API_URL`      | `runtimeConfig.public.apiUrl`         |
-| `AUTH_SECRET`                  | `secrets.AUTH_SECRET`        | `runtimeConfig.private.authSecret`    |
-| `BASE_URL`                     | `vars.BASE_URL`              | `runtimeConfig.public.baseUrl`        |
-| `AUTH_PATH`                    | `vars.AUTH_PATH`             | Auth server function path             |
-| `GEINS_DEBUG`                  | `vars.GEINS_DEBUG`           | `runtimeConfig.public.debug`          |
-| `SALES_PORTAL_WEBHOOK_SECRET`  | `secrets.*`                  | `runtimeConfig.private.*` (STU-216)   |
-| `NITRO_HOST`                   | Hardcoded `0.0.0.0`         | Required for Azure containers         |
-| `NITRO_PORT`                   | Hardcoded `3000`             | Container port                        |
-| `WEBSITES_PORT`                | Hardcoded `3000`             | Azure port mapping                    |
+| Azure App Setting             | Source                       | Maps to nuxt.config.ts              |
+| ----------------------------- | ---------------------------- | ----------------------------------- |
+| `NODE_ENV`                    | Set by Bicep per environment | `process.env.NODE_ENV`              |
+| `GEINS_API_URL`               | `secrets.GEINS_API_URL`      | `runtimeConfig.public.apiUrl`       |
+| `AUTH_SECRET`                 | `secrets.AUTH_SECRET`        | `runtimeConfig.private.authSecret`  |
+| `BASE_URL`                    | `vars.BASE_URL`              | `runtimeConfig.public.baseUrl`      |
+| `AUTH_PATH`                   | `vars.AUTH_PATH`             | Auth server function path           |
+| `GEINS_DEBUG`                 | `vars.GEINS_DEBUG`           | `runtimeConfig.public.debug`        |
+| `SALES_PORTAL_WEBHOOK_SECRET` | `secrets.*`                  | `runtimeConfig.private.*` (STU-216) |
+| `NITRO_HOST`                  | Hardcoded `0.0.0.0`          | Required for Azure containers       |
+| `NITRO_PORT`                  | Hardcoded `3000`             | Container port                      |
+| `WEBSITES_PORT`               | Hardcoded `3000`             | Azure port mapping                  |
 
 ---
 
 ## Build-Time vs Runtime Variables
 
-| Variable      | Build-Time | Runtime | Where to Set               |
-| ------------- | :--------: | :-----: | -------------------------- |
-| `GEINS_API_URL`|    ❌     |   ✅    | GitHub Secrets → Azure     |
-| `AUTH_SECRET`  |    ❌     |   ✅    | GitHub Secrets → Azure     |
-| `BASE_URL`     |    ❌     |   ✅    | GitHub Variables → Azure   |
-| `GEINS_DEBUG`  |    ❌     |   ✅    | GitHub Variables → Azure   |
+| Variable        | Build-Time | Runtime | Where to Set             |
+| --------------- | :--------: | :-----: | ------------------------ |
+| `GEINS_API_URL` |     ❌     |   ✅    | GitHub Secrets → Azure   |
+| `AUTH_SECRET`   |     ❌     |   ✅    | GitHub Secrets → Azure   |
+| `BASE_URL`      |     ❌     |   ✅    | GitHub Variables → Azure |
+| `GEINS_DEBUG`   |     ❌     |   ✅    | GitHub Variables → Azure |
 
 **Build-time** = Used during `docker build` in GitHub Actions
 **Runtime** = Used when the app runs in Azure
@@ -110,8 +110,8 @@ You can set different values per GitHub Environment (dev, staging, prod):
 ### Required Production Secrets
 
 | Environment | `AUTH_SECRET` | `GEINS_API_URL` | Notes          |
-| ----------- | :-----------: | :--------------: | -------------- |
-| prod        |      ✅       |       ✅         | Production API |
+| ----------- | :-----------: | :-------------: | -------------- |
+| prod        |      ✅       |       ✅        | Production API |
 
 ---
 

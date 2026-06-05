@@ -46,7 +46,7 @@ Languages already assigned to the channel.
 ### `defaultLanguageId`
 
 ```ts
-defaultLanguageId: string
+defaultLanguageId: string;
 ```
 
 Used to filter out the default from the additional table.

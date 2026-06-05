@@ -21,9 +21,9 @@ const _props = withDefaults(
         :key="index"
         class="text-muted-foreground flex items-center justify-between gap-2 text-right text-xs sm:text-sm"
       >
-        <span class="text-foreground text-left font-bold"
-          >{{ item.label }}:</span
-        >
+        <span class="text-foreground text-left font-bold">
+          {{ item.label }}:
+        </span>
 
         <ContentTextTooltip
           v-if="

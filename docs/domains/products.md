@@ -21,13 +21,13 @@ The Products domain is the foundational data layer for the commerce backend. It 
 
 ## API Shape
 
-| Endpoint | Method | Purpose |
-| --- | --- | --- |
-| `/product/query` | POST | Batch query products with selection filters |
-| `/product/{id}` | GET | Single product |
-| `/product/category/query` | POST | Query categories |
-| `/product/brand/query` | POST | Query brands |
-| `/product/pricelist/*` | CRUD | Price list management (see Pricing domain) |
+| Endpoint                  | Method | Purpose                                     |
+| ------------------------- | ------ | ------------------------------------------- |
+| `/product/query`          | POST   | Batch query products with selection filters |
+| `/product/{id}`           | GET    | Single product                              |
+| `/product/category/query` | POST   | Query categories                            |
+| `/product/brand/query`    | POST   | Query brands                                |
+| `/product/pricelist/*`    | CRUD   | Price list management (see Pricing domain)  |
 
 **`ProductApiOptions`** extends the base `ApiOptions` with extra string params forwarded as query parameters: `defaultChannel`, `defaultCurrency`, `defaultCountry`, `defaultLocale`, `currencies`, `localizations`.
 
@@ -39,13 +39,13 @@ The Products domain is the foundational data layer for the commerce backend. It 
 
 ## Contracts (Cross-Domain Usage)
 
-| Type | Used By | Purpose |
-| --- | --- | --- |
-| `Product` | Orders (quotation items) | SKU selection and display |
-| `ProductPriceList` | Pricing, Customers | Price list CRUD and company assignment |
-| `PriceListProduct` | Pricing | Per-product pricing within a price list |
-| `Category`, `Brand` | Pricing (product selector) | Filtering products in selectors |
-| `ProductApiOptions` | Orders | Querying products with channel/currency context |
+| Type                | Used By                    | Purpose                                         |
+| ------------------- | -------------------------- | ----------------------------------------------- |
+| `Product`           | Orders (quotation items)   | SKU selection and display                       |
+| `ProductPriceList`  | Pricing, Customers         | Price list CRUD and company assignment          |
+| `PriceListProduct`  | Pricing                    | Per-product pricing within a price list         |
+| `Category`, `Brand` | Pricing (product selector) | Filtering products in selectors                 |
+| `ProductApiOptions` | Orders                     | Querying products with channel/currency context |
 
 ## Dependencies
 
@@ -54,13 +54,13 @@ The Products domain is the foundational data layer for the commerce backend. It 
 
 ## Key Files
 
-| Layer | Path |
-| --- | --- |
-| Types | `shared/types/Product.ts` |
-| Repository | `app/utils/repositories/product.ts` |
-| Store | `app/stores/products.ts` |
+| Layer       | Path                                 |
+| ----------- | ------------------------------------ |
+| Types       | `shared/types/Product.ts`            |
+| Repository  | `app/utils/repositories/product.ts`  |
+| Store       | `app/stores/products.ts`             |
 | Composables | `useSelector.ts`, `useGeinsImage.ts` |
-| Components | `app/components/selector/` |
+| Components  | `app/components/selector/`           |
 
 ## Decision Log
 

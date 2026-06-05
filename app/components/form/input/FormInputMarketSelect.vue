@@ -129,7 +129,10 @@ const handleKeyDown = () => {
         @keydown.enter.prevent="handleKeyDown"
       >
         <span v-if="choice" class="inline-flex items-center gap-2">
-          <FlagIcon v-if="choice.countryCode" :country-code="choice.countryCode" />
+          <FlagIcon
+            v-if="choice.countryCode"
+            :country-code="choice.countryCode"
+          />
           {{ choice.label }}
         </span>
         <span v-else>{{ t('select_entity', { entityName: 'market' }) }}</span>
@@ -170,7 +173,10 @@ const handleKeyDown = () => {
 
         <ComboboxGroup class="max-h-75 overflow-auto">
           <ComboboxItem v-for="item in markets" :key="item.value" :value="item">
-            <FlagIcon v-if="item.countryCode" :country-code="item.countryCode" />
+            <FlagIcon
+              v-if="item.countryCode"
+              :country-code="item.countryCode"
+            />
             {{ item.label }}
 
             <ComboboxItemIndicator>

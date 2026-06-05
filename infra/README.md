@@ -103,10 +103,10 @@ The following pnpm scripts are available for infrastructure management:
 
 ## Custom Domains
 
-| Domain           | DNS Provider |
-| ---------------- | ------------ |
-| `litium.studio`  | Cloudflare   |
-| `geins.studio`   | Cloudflare   |
+| Domain          | DNS Provider |
+| --------------- | ------------ |
+| `litium.studio` | Cloudflare   |
+| `geins.studio`  | Cloudflare   |
 
 ## Prerequisites
 
@@ -214,11 +214,11 @@ pnpm infra:validate -- --env dev
 
 ### Quick Summary
 
-| Where              | What to Set                                                    |
-| ------------------ | -------------------------------------------------------------- |
-| **GitHub Secrets** | `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AUTH_SECRET`, `GEINS_API_URL` |
-| **GitHub Variables**| `BASE_URL`, `AUTH_PATH`, `GEINS_DEBUG`, `LOG_LEVEL`           |
-| **Azure App Service**| Do not set manually - Bicep handles this automatically       |
+| Where                 | What to Set                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| **GitHub Secrets**    | `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `AUTH_SECRET`, `GEINS_API_URL` |
+| **GitHub Variables**  | `BASE_URL`, `AUTH_PATH`, `GEINS_DEBUG`, `LOG_LEVEL`                                           |
+| **Azure App Service** | Do not set manually - Bicep handles this automatically                                        |
 
 ## Monitoring & Alerting
 

@@ -583,7 +583,9 @@ const summary = computed<DataItem[]>(() => {
   dataList.push({
     label: t('entity_identifier', { entityName }),
     value: entityData.value?.identifier || '–',
-    displayType: entityData.value?.identifier ? DataItemDisplayType.Copy : undefined,
+    displayType: entityData.value?.identifier
+      ? DataItemDisplayType.Copy
+      : undefined,
   });
 
   if (entityData.value?.channel) {
@@ -714,9 +716,9 @@ if (!createMode.value) {
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="cancelModeChange">{{
-          $t('cancel')
-        }}</AlertDialogCancel>
+        <AlertDialogCancel @click="cancelModeChange">
+          {{ $t('cancel') }}
+        </AlertDialogCancel>
 
         <Button @click.prevent.stop="confirmModeChange">
           {{ $t('continue') }}
@@ -735,9 +737,9 @@ if (!createMode.value) {
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="overwriteBaseRulePromptVisible = false">{{
-          $t('cancel')
-        }}</AlertDialogCancel>
+        <AlertDialogCancel @click="overwriteBaseRulePromptVisible = false">
+          {{ $t('cancel') }}
+        </AlertDialogCancel>
 
         <Button @click.prevent.stop="overwriteContinueAction">
           {{ $t('continue') }}
@@ -760,9 +762,9 @@ if (!createMode.value) {
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="overwriteLevelsPromptVisible = false">{{
-          $t('cancel')
-        }}</AlertDialogCancel>
+        <AlertDialogCancel @click="overwriteLevelsPromptVisible = false">
+          {{ $t('cancel') }}
+        </AlertDialogCancel>
 
         <Button @click.prevent.stop="overwriteContinueAction">
           {{ $t('continue') }}
@@ -788,9 +790,9 @@ if (!createMode.value) {
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="removeBaseRulePromptVisible = false">{{
-          $t('cancel')
-        }}</AlertDialogCancel>
+        <AlertDialogCancel @click="removeBaseRulePromptVisible = false">
+          {{ $t('cancel') }}
+        </AlertDialogCancel>
 
         <Button @click.prevent.stop="removeBaseRule">
           {{ $t('continue') }}
@@ -820,8 +822,9 @@ if (!createMode.value) {
             :loading="loading"
             :disabled="!hasUnsavedChanges || saveInProgress"
             @click="handleSave"
-            >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
+            {{ $t('save_entity', { entityName }) }}
+          </ButtonIcon>
           <DropdownMenu v-if="!createMode">
             <DropdownMenuTrigger as-child>
               <Button class="p-1" size="icon" variant="secondary">
@@ -906,9 +909,9 @@ if (!createMode.value) {
                 <FormGrid design="1+1">
                   <FormField v-slot="{ componentField }" name="default.name">
                     <FormItem>
-                      <FormLabel>{{
-                        $t('entity_name', { entityName })
-                      }}</FormLabel>
+                      <FormLabel>
+                        {{ $t('entity_name', { entityName }) }}
+                      </FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="text" />
                       </FormControl>
@@ -920,7 +923,9 @@ if (!createMode.value) {
                     name="default.identifier"
                   >
                     <FormItem>
-                      <FormLabel>{{ $t('entity_identifier', { entityName }) }}</FormLabel>
+                      <FormLabel>
+                        {{ $t('entity_identifier', { entityName }) }}
+                      </FormLabel>
                       <FormControl>
                         <Input
                           v-bind="componentField"
@@ -1102,9 +1107,9 @@ if (!createMode.value) {
                       >
                         <template #valueDescriptor>%</template>
                       </Input>
-                      <Button variant="outline" @click="handleApplyBaseRule">{{
-                        $t('apply')
-                      }}</Button>
+                      <Button variant="outline" @click="handleApplyBaseRule">
+                        {{ $t('apply') }}
+                      </Button>
                       <Button
                         variant="outline"
                         @click="handleApplyBaseRuleAndOverwrite"

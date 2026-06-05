@@ -1847,8 +1847,9 @@ definePageMeta({
               :loading="loading"
               :disabled="!hasUnsavedChanges || loading || fetchingData"
               @click="handleSave"
-              >{{ $t('save_entity', { entityName: 'draft' }) }}</ButtonIcon
             >
+              {{ $t('save_entity', { entityName: 'draft' }) }}
+            </ButtonIcon>
             <ButtonGroup>
               <ButtonIcon
                 variant="secondary"
@@ -1869,7 +1870,8 @@ definePageMeta({
                     blockReasons: sendBlockReasons,
                   })
                 "
-                >{{ $t('send_entity', { entityName }) }}
+              >
+                {{ $t('send_entity', { entityName }) }}
               </ButtonIcon>
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
@@ -2057,9 +2059,9 @@ definePageMeta({
                   <FormGrid design="1+1">
                     <FormField v-slot="{ componentField }" name="details.name">
                       <FormItem>
-                        <FormLabel>{{
-                          $t('entity_name', { entityName })
-                        }}</FormLabel>
+                        <FormLabel>
+                          {{ $t('entity_name', { entityName }) }}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             v-bind="componentField"
@@ -2112,9 +2114,9 @@ definePageMeta({
                       name="details.ownerId"
                     >
                       <FormItem>
-                        <FormLabel>{{
-                          $t('orders.quotation_owner')
-                        }}</FormLabel>
+                        <FormLabel>
+                          {{ $t('orders.quotation_owner') }}
+                        </FormLabel>
                         <FormControl>
                           <Select
                             v-bind="componentField"
@@ -2484,9 +2486,9 @@ definePageMeta({
                   <FormGrid design="1+1">
                     <FormField v-slot="{ componentField }" name="details.name">
                       <FormItem>
-                        <FormLabel>{{
-                          $t('entity_name', { entityName })
-                        }}</FormLabel>
+                        <FormLabel>
+                          {{ $t('entity_name', { entityName }) }}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             v-bind="componentField"

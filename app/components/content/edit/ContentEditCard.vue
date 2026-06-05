@@ -30,7 +30,9 @@ const stepTitle = computed(() => {
   return props.createMode ? `${props.step}. ${props.title}` : props.title;
 });
 
-const open = props.createMode ? props.step === props.currentStep : props.defaultOpen;
+const open = props.createMode
+  ? props.step === props.currentStep
+  : props.defaultOpen;
 const isOpen = ref(open);
 
 if (props.createMode) {

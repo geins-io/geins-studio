@@ -16,7 +16,9 @@ export interface ExecutionStatusVisual {
 }
 
 interface UseExecutionStatusReturnType {
-  resolveStatusIcon: (status: string | null | undefined) => ExecutionStatusVisual;
+  resolveStatusIcon: (
+    status: string | null | undefined,
+  ) => ExecutionStatusVisual;
 }
 
 const STATUS_ICON_MAP: Record<string, ExecutionStatusVisual> = {
@@ -44,7 +46,9 @@ const FALLBACK: ExecutionStatusVisual = {
  * the node executions panel.
  */
 export const useExecutionStatus = (): UseExecutionStatusReturnType => {
-  const resolveStatusIcon = (status: string | null | undefined): ExecutionStatusVisual => {
+  const resolveStatusIcon = (
+    status: string | null | undefined,
+  ): ExecutionStatusVisual => {
     return STATUS_ICON_MAP[status?.toLowerCase() ?? ''] ?? FALLBACK;
   };
 

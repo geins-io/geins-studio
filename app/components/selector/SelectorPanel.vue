@@ -453,11 +453,9 @@ const handleCancel = () => {
               :class="cn('size-4', { 'rotate-180': showSelectedList })"
             />
           </Button>
-          <ContentHeading
-            >{{ $t('selected') }} ({{
-              selectedEntities.length
-            }})</ContentHeading
-          >
+          <ContentHeading>
+            {{ $t('selected') }} ({{ selectedEntities.length }})
+          </ContentHeading>
           <!-- IDS -->
           <ul
             v-if="currentSelectionGroup === 'ids'"
@@ -469,11 +467,11 @@ const handleCancel = () => {
               class="flex items-center gap-2.5 py-1.5 text-xs"
             >
               <span class="font-semibold">{{ entity._id }}</span>
-              <span v-if="entityIsSku && !entity.isCollapsed" class="truncate"
-                >{{ getProductNameByProductId(String(entity.productId)) }} ({{
+              <span v-if="entityIsSku && !entity.isCollapsed" class="truncate">
+                {{ getProductNameByProductId(String(entity.productId)) }} ({{
                   entity.name
-                }})</span
-              >
+                }})
+              </span>
               <span v-else class="truncate">{{ entity.name }}</span>
               <Button
                 size="icon"

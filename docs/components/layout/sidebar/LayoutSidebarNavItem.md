@@ -14,7 +14,11 @@
 ```vue
 <template>
   <LayoutSidebarNav>
-    <LayoutSidebarNavItem id="product" :current="active === 'product'" @click="active = 'product'">
+    <LayoutSidebarNavItem
+      id="product"
+      :current="active === 'product'"
+      @click="active = 'product'"
+    >
       {{ $t('products') }}
     </LayoutSidebarNavItem>
   </LayoutSidebarNav>
@@ -26,7 +30,7 @@
 ### `id`
 
 ```ts
-id: SelectorSelectionOptionsId
+id: SelectorSelectionOptionsId;
 ```
 
 Drives which Lucide icon renders. Unrecognised ids fall back to `CopyCheck`.
@@ -34,7 +38,7 @@ Drives which Lucide icon renders. Unrecognised ids fall back to `CopyCheck`.
 ### `current`
 
 ```ts
-current: boolean
+current: boolean;
 ```
 
 Active state — applies the highlighted background/border styling.

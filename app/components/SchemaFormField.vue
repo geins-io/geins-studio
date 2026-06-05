@@ -301,9 +301,9 @@ function isVisible(field: SchemaFormField): boolean {
       class="space-y-2 border-t pt-4"
       :class="field.disabled && 'pointer-events-none opacity-50'"
     >
-      <Label v-if="field.choice.label" class="block py-1.5">{{
-        field.choice.label
-      }}</Label>
+      <Label v-if="field.choice.label" class="block py-1.5">
+        {{ field.choice.label }}
+      </Label>
       <FormInputRadioCards
         v-if="field.choice.type === 'radio-cards'"
         :options="field.choice.options"

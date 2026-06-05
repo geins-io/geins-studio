@@ -88,9 +88,9 @@ const customerTypesTooltip = computed(() =>
           </template>
           <ContentTextTooltip v-if="!customerTypesTooltip.disabled">
             {{ customerTypesTooltip.displayValue }}
-            <template #tooltip>{{
-              customerTypesTooltip.contentValue
-            }}</template>
+            <template #tooltip>
+              {{ customerTypesTooltip.contentValue }}
+            </template>
           </ContentTextTooltip>
         </span>
       </ItemDescription>

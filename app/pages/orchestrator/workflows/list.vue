@@ -94,21 +94,27 @@ const activeFilter = computed(() => {
 const groupLabel = computed(() => activeFilter.value?.label ?? '');
 
 // ─── Fetch Data ────────────────────────────────────────────────────
-const { data: workflows, error: workflowError, refresh } = await useAsyncData<Entity[]>(
-  'workflows-list',
-  () => orchestratorApi.workflow.list(),
+const {
+  data: workflows,
+  error: workflowError,
+  refresh,
+} = await useAsyncData<Entity[]>('workflows-list', () =>
+  orchestratorApi.workflow.list(),
 );
 
-const { data: rawMetrics } = await useAsyncData(
-  'workflows-metrics',
-  () => orchestratorApi.metrics.list(),
+const { data: rawMetrics } = await useAsyncData('workflows-metrics', () =>
+  orchestratorApi.metrics.list(),
 );
 
 // The metrics API may return { workflows: [...] } or a flat array
 const metrics = computed<WorkflowMetrics[]>(() => {
   const raw = rawMetrics.value;
   if (Array.isArray(raw)) return raw;
-  if (raw && typeof raw === 'object' && 'workflows' in (raw as Record<string, unknown>)) {
+  if (
+    raw &&
+    typeof raw === 'object' &&
+    'workflows' in (raw as Record<string, unknown>)
+  ) {
     return (raw as unknown as { workflows: WorkflowMetrics[] }).workflows;
   }
   return [];
@@ -117,9 +123,11 @@ const metrics = computed<WorkflowMetrics[]>(() => {
 // ─── Data Mapping ──────────────────────────────────────────────────
 const cronToHuman = (cron: string): string => {
   try {
-    return cronstrue.toString(cron, { locale: locale.value, use24HourTimeFormat: true });
-  }
-  catch {
+    return cronstrue.toString(cron, {
+      locale: locale.value,
+      use24HourTimeFormat: true,
+    });
+  } catch {
     return cron;
   }
 };
@@ -137,13 +145,18 @@ const deriveTriggerSummary = (wf: WorkflowSummary): string => {
     return label !== labelKey ? label : wf.eventName;
   }
   if (wf.type === 'scheduled') {
-    return wf.cronExpression ? cronToHuman(wf.cronExpression) : t('workflows.scheduled');
+    return wf.cronExpression
+      ? cronToHuman(wf.cronExpression)
+      : t('workflows.scheduled');
   }
   if (wf.type === 'onDemand') return t('workflows.trigger_manual');
   return String(wf.type || t('workflows.trigger_manual'));
 };
 
-const formatRate = (rate: number | undefined, executions: number | undefined): string => {
+const formatRate = (
+  rate: number | undefined,
+  executions: number | undefined,
+): string => {
   if (!executions) return '–';
   return `${(rate ?? 0).toFixed(1)}%`;
 };
@@ -174,17 +187,31 @@ const mapToListData = (
       executions24h: wfMetrics?.metrics24h?.totalExecutions || '–',
       executions7d: wfMetrics?.metrics7d?.totalExecutions || '–',
       executions30d: wfMetrics?.metrics30d?.totalExecutions || '–',
-      successRateTotal: formatRate(wfMetrics?.metricsAllTime?.successRate, wfMetrics?.metricsAllTime?.totalExecutions),
-      successRate24h: formatRate(wfMetrics?.metrics24h?.successRate, wfMetrics?.metrics24h?.totalExecutions),
-      successRate7d: formatRate(wfMetrics?.metrics7d?.successRate, wfMetrics?.metrics7d?.totalExecutions),
-      successRate30d: formatRate(wfMetrics?.metrics30d?.successRate, wfMetrics?.metrics30d?.totalExecutions),
+      successRateTotal: formatRate(
+        wfMetrics?.metricsAllTime?.successRate,
+        wfMetrics?.metricsAllTime?.totalExecutions,
+      ),
+      successRate24h: formatRate(
+        wfMetrics?.metrics24h?.successRate,
+        wfMetrics?.metrics24h?.totalExecutions,
+      ),
+      successRate7d: formatRate(
+        wfMetrics?.metrics7d?.successRate,
+        wfMetrics?.metrics7d?.totalExecutions,
+      ),
+      successRate30d: formatRate(
+        wfMetrics?.metrics30d?.successRate,
+        wfMetrics?.metrics30d?.totalExecutions,
+      ),
 
       createdAt: wf.createdAt ?? '',
       updatedAt: wf.updatedAt ?? '',
       createdBy: wf.createdBy ?? '',
       updatedBy: wf.updatedBy ?? '',
       group: groupName,
-      groupSlug: groupName ? groupName.toLowerCase().replace(/\s+/g, '-') : null,
+      groupSlug: groupName
+        ? groupName.toLowerCase().replace(/\s+/g, '-')
+        : null,
     };
   });
 };
@@ -241,7 +268,8 @@ onMounted(() => {
     const rate = parseFloat(val);
     if (Number.isNaN(rate)) return undefined;
     if (rate > 99) return { icon: LucideCircleCheck, class: 'text-green-500' };
-    if (rate >= 80) return { icon: LucideCircleAlert, class: 'text-yellow-500' };
+    if (rate >= 80)
+      return { icon: LucideCircleAlert, class: 'text-yellow-500' };
     return { icon: LucideCircleX, class: 'text-destructive' };
   };
 
@@ -264,17 +292,37 @@ onMounted(() => {
     },
     linkColumns: {
       name: { url: '/orchestrator/workflows/{id}', idField: 'id' },
-      executionsTotal: { url: '/orchestrator/executions?id={id}', idField: 'id' },
-      executions24h: { url: '/orchestrator/executions?id={id}&period=24h', idField: 'id' },
-      executions7d: { url: '/orchestrator/executions?id={id}&period=7d', idField: 'id' },
-      executions30d: { url: '/orchestrator/executions?id={id}&period=30d', idField: 'id' },
+      executionsTotal: {
+        url: '/orchestrator/executions?id={id}',
+        idField: 'id',
+      },
+      executions24h: {
+        url: '/orchestrator/executions?id={id}&period=24h',
+        idField: 'id',
+      },
+      executions7d: {
+        url: '/orchestrator/executions?id={id}&period=7d',
+        idField: 'id',
+      },
+      executions30d: {
+        url: '/orchestrator/executions?id={id}&period=30d',
+        idField: 'id',
+      },
     },
     iconColumns: {
       triggerSummary: { resolveIcon: resolveTriggerIcon },
-      successRateTotal: { resolveIcon: (row) => resolveRateIcon(row, 'successRateTotal') },
-      successRate24h: { resolveIcon: (row) => resolveRateIcon(row, 'successRate24h') },
-      successRate7d: { resolveIcon: (row) => resolveRateIcon(row, 'successRate7d') },
-      successRate30d: { resolveIcon: (row) => resolveRateIcon(row, 'successRate30d') },
+      successRateTotal: {
+        resolveIcon: (row) => resolveRateIcon(row, 'successRateTotal'),
+      },
+      successRate24h: {
+        resolveIcon: (row) => resolveRateIcon(row, 'successRate24h'),
+      },
+      successRate7d: {
+        resolveIcon: (row) => resolveRateIcon(row, 'successRate7d'),
+      },
+      successRate30d: {
+        resolveIcon: (row) => resolveRateIcon(row, 'successRate30d'),
+      },
     },
     columnTitles: {
       name: t('name'),
@@ -301,25 +349,39 @@ onMounted(() => {
     excludeColumns: [],
   };
 
-
-
   columns.value = getColumns(dataList.value, columnOptions);
   loading.value = false;
 });
 
 // ─── Column Visibility ────────────────────────────────────────────
 const { getVisibilityState } = useTable<EntityList>();
-const hiddenColumns: StringKeyOf<EntityList>[] = ['id', 'description', 'groupSlug', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy'];
+const hiddenColumns: StringKeyOf<EntityList>[] = [
+  'id',
+  'description',
+  'groupSlug',
+  'createdAt',
+  'updatedAt',
+  'createdBy',
+  'updatedBy',
+];
 visibilityState.value = getVisibilityState(hiddenColumns);
 
 // SET UP SEARCHABLE FIELDS
-const searchableFields: Array<keyof EntityList> = ['name', 'type', 'health', 'status', 'group', 'triggerSummary'];
+const searchableFields: Array<keyof EntityList> = [
+  'name',
+  'type',
+  'health',
+  'status',
+  'group',
+  'triggerSummary',
+];
 </script>
 
 <template>
   <ContentHeader
-:title="activeFilter ? groupLabel : $t('navigation.workflows')"
-    :description="$t('workflows.description')">
+    :title="activeFilter ? groupLabel : $t('navigation.workflows')"
+    :description="$t('workflows.description')"
+  >
     <ContentActionBar>
       <ButtonIcon icon="new" href="/orchestrator/workflows/new">
         {{ $t('new_entity', { entityName }) }}
@@ -328,13 +390,23 @@ const searchableFields: Array<keyof EntityList> = ['name', 'type', 'health', 'st
   </ContentHeader>
 
   <!-- Active Filter Banner -->
-  <div v-if="activeFilter" class="bg-muted/50 mb-4 flex items-center justify-between rounded-lg border px-4 py-2">
+  <div
+    v-if="activeFilter"
+    class="bg-muted/50 mb-4 flex items-center justify-between rounded-lg border px-4 py-2"
+  >
     <div class="flex items-center gap-2 text-sm">
       <LucideFilter class="text-muted-foreground h-4 w-4" />
-      <span class="text-muted-foreground">Filtered by {{ activeFilter.type }}:</span>
+      <span class="text-muted-foreground">
+        Filtered by {{ activeFilter.type }}:
+      </span>
       <span class="font-medium">{{ activeFilter.label }}</span>
     </div>
-    <Button variant="ghost" size="sm" class="h-7 text-xs" @click="clearGroupFilter">
+    <Button
+      variant="ghost"
+      size="sm"
+      class="h-7 text-xs"
+      @click="clearGroupFilter"
+    >
       <LucideX class="mr-1 h-3 w-3" />
       Clear filter
     </Button>
@@ -342,11 +414,22 @@ const searchableFields: Array<keyof EntityList> = ['name', 'type', 'health', 'st
 
   <NuxtErrorBoundary>
     <TableView
-:loading="loading" :entity-name="entityName" :columns="columns" :data="dataList"
-      :init-visibility-state="visibilityState" :init-sorting-state="[{ id: 'createdAt', desc: true }]" :searchable-fields="searchableFields" :error="fetchError"
-      :on-retry="refresh">
+      :loading="loading"
+      :entity-name="entityName"
+      :columns="columns"
+      :data="dataList"
+      :init-visibility-state="visibilityState"
+      :init-sorting-state="[{ id: 'createdAt', desc: true }]"
+      :searchable-fields="searchableFields"
+      :error="fetchError"
+      :on-retry="refresh"
+    >
       <template #empty-actions>
-        <ButtonIcon icon="new" variant="secondary" @click="navigateTo('/orchestrator/workflows/new')">
+        <ButtonIcon
+          icon="new"
+          variant="secondary"
+          @click="navigateTo('/orchestrator/workflows/new')"
+        >
           {{ $t('create_new_entity', { entityName }) }}
         </ButtonIcon>
       </template>

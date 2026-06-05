@@ -17,6 +17,7 @@
     "lint:check": "eslint .",
     "typecheck": "nuxi typecheck",
     "format:check": "prettier --check .",
+    "format": "prettier --write .",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "changelog:release": "changelogen --bump --release --push",
@@ -30,7 +31,8 @@
     "infra:deploy:staging": "bash infra/scripts/deploy.sh --env staging",
     "infra:deploy:prod": "bash infra/scripts/deploy.sh --env prod",
     "infra:validate": "bash infra/scripts/validate.sh",
-    "infra:validate:build": "bash infra/scripts/validate.sh --build-only"
+    "infra:validate:build": "bash infra/scripts/validate.sh --build-only",
+    "prepare": "husky"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.2",
@@ -89,9 +91,10 @@
     "changelogen": "^0.6.2",
     "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-tailwindcss": "^4.0.0-beta.0",
     "happy-dom": "20.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "prettier-plugin-vue": "^1.1.6",
@@ -103,5 +106,14 @@
   "packageManager": "pnpm@10.29.3",
   "engines": {
     "node": ">=24"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,jsonc,md,css,yml,yaml,html}": [
+      "prettier --write"
+    ]
   }
 }

@@ -63,9 +63,9 @@ const handleClick = (id: string) => {
               cn('quick-search-results bg-card overflow-x-hidden rounded-lg')
             "
           >
-            <CommandEmpty>{{
-              $t('no_entity_found', { entityName }, 2)
-            }}</CommandEmpty>
+            <CommandEmpty>
+              {{ $t('no_entity_found', { entityName }, 2) }}
+            </CommandEmpty>
             <CommandGroup :heading="$t(entityName, 2)" class="text-left">
               <CommandItem
                 v-for="entity in entities"

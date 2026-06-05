@@ -21,7 +21,9 @@ const {
   unsavedChangesDialog,
   confirmUnsavedChanges,
   cancelUnsavedChanges,
-} = useEntityEdit({ /* … */ });
+} = useEntityEdit({
+  /* … */
+});
 </script>
 
 <template>
@@ -44,7 +46,7 @@ const {
 ### `entityName`
 
 ```ts
-entityName: string
+entityName: string;
 ```
 
 Reserved for future copy interpolation. Currently the localized strings don't reference it but the prop is required for parity with [`DialogDelete`](/components/dialog/DialogDelete).
@@ -54,7 +56,7 @@ Reserved for future copy interpolation. Currently the localized strings don't re
 ### `loading`
 
 ```ts
-loading: boolean
+loading: boolean;
 ```
 
 Disables the confirm button and shows a spinner while the discard navigation runs.

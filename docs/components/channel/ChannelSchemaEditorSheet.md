@@ -39,7 +39,7 @@ const onApply = (next: StorefrontSchema) => {
 ### `open`
 
 ```ts
-open: boolean
+open: boolean;
 ```
 
 Sheet visibility.
@@ -47,7 +47,7 @@ Sheet visibility.
 ### `schema`
 
 ```ts
-schema: StorefrontSchema
+schema: StorefrontSchema;
 ```
 
 The current schema — re-serialized into the editor each time the sheet opens.

@@ -1,7 +1,9 @@
 import type { ChannelMarket, ChannelMarketAssignment } from '#shared/types';
 import { nextId } from './ids';
 
-export function buildChannelMarket(overrides?: Partial<ChannelMarket>): ChannelMarket {
+export function buildChannelMarket(
+  overrides?: Partial<ChannelMarket>,
+): ChannelMarket {
   return {
     _id: nextId('market'),
     _type: 'market',

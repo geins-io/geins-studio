@@ -502,7 +502,8 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             }
 
             // Per-column max length override, fall back to the shared one
-            const effectiveMaxLength = linkConfig?.maxTextLength ?? maxTextLength;
+            const effectiveMaxLength =
+              linkConfig?.maxTextLength ?? maxTextLength;
             // Head + tail ellipsis for long values (e.g. IDs) — "abc…xyz"
             const shortenWithEllipsis = (val: string, max: number) => {
               if (val.length <= max) return val;

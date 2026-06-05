@@ -89,7 +89,6 @@ export const getNavigation = (
                 href: '/orchestrator/variables/list',
                 childPattern: '/orchestrator/variables/:id',
               },
-
             ],
           } as NavigationItem,
         ]
