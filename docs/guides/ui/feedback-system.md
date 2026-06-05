@@ -85,7 +85,7 @@ Use the **Alert** component to show a message to the user.
 ```vue
 <template>
   <Alert v-if="showInvalid" variant="destructive">
-    <ExclamationTriangleIcon class="w-4 h-4" />
+    <ExclamationTriangleIcon class="h-4 w-4" />
     <AlertTitle> Invalid credentials </AlertTitle>
     <AlertDescription>
       Please check your email and password and try again.

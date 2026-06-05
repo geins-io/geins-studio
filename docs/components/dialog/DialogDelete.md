@@ -44,7 +44,7 @@ const onConfirm = async () => {
 ### `entityName`
 
 ```ts
-entityName: string
+entityName: string;
 ```
 
 The i18n key for the entity name (e.g. `'quotation'`, `'company'`). Interpolated into the dialog description.
@@ -54,7 +54,7 @@ The i18n key for the entity name (e.g. `'quotation'`, `'company'`). Interpolated
 ### `loading`
 
 ```ts
-loading: boolean
+loading: boolean;
 ```
 
 Disables the confirm button and shows a spinner while the delete request is in flight.

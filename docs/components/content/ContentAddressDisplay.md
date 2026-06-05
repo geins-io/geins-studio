@@ -15,9 +15,9 @@ Read-only formatted display of an `AddressUpdate` object. Handles loading skelet
 
 ```vue
 <script setup lang="ts">
-import type { AddressUpdate } from '#shared/types'
+import type { AddressUpdate } from '#shared/types';
 
-const address = ref<AddressUpdate | null>(null)
+const address = ref<AddressUpdate | null>(null);
 </script>
 
 <template>
@@ -69,17 +69,17 @@ loading?: boolean
 
 ```ts
 interface AddressUpdate {
-  firstName?: string
-  lastName?: string
-  company?: string
-  addressLine1?: string
-  addressLine2?: string
-  zip?: string
-  city?: string
-  region?: string
-  country?: string
-  email?: string
-  phone?: string
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  zip?: string;
+  city?: string;
+  region?: string;
+  country?: string;
+  email?: string;
+  phone?: string;
 }
 ```
 

@@ -16,13 +16,15 @@ Keyboard-first search input for quickly adding or removing entities from a selec
 
 ```vue
 <script setup lang="ts">
-const products = ref([/* SelectorEntity[] */])
-const selectedIds = ref<string[]>([])
+const products = ref([
+  /* SelectorEntity[] */
+]);
+const selectedIds = ref<string[]>([]);
 
-const onAdd = (id: string) => selectedIds.value.push(id)
+const onAdd = (id: string) => selectedIds.value.push(id);
 const onRemove = (id: string) => {
-  selectedIds.value = selectedIds.value.filter(i => i !== id)
-}
+  selectedIds.value = selectedIds.value.filter((i) => i !== id);
+};
 </script>
 
 <template>
@@ -63,7 +65,7 @@ selection: string[]
 ### `entityName`
 
 ```ts
-entityName: string
+entityName: string;
 ```
 
 - **Type:** `string`

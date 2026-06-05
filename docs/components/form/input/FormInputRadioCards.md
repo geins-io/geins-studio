@@ -19,8 +19,18 @@ import type { SchemaFormFieldOption } from '#shared/types';
 
 const layout = ref<string>('grid');
 const options: SchemaFormFieldOption[] = [
-  { value: 'grid', label: 'Grid', description: 'Tile cards in a grid', icon: 'LayoutGrid' },
-  { value: 'list', label: 'List', description: 'Stack cards vertically', icon: 'List' },
+  {
+    value: 'grid',
+    label: 'Grid',
+    description: 'Tile cards in a grid',
+    icon: 'LayoutGrid',
+  },
+  {
+    value: 'list',
+    label: 'List',
+    description: 'Stack cards vertically',
+    icon: 'List',
+  },
 ];
 </script>
 

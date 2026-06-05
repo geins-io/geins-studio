@@ -49,10 +49,12 @@ const { formatDate } = useDate();
 
 const summary = computed(() => [
   ...(formValues?.expirationDate
-    ? [{
-        label: t('expiration_date'),
-        value: formatDate(formValues.expirationDate),
-      }]
+    ? [
+        {
+          label: t('expiration_date'),
+          value: formatDate(formValues.expirationDate),
+        },
+      ]
     : []),
 ]);
 ```

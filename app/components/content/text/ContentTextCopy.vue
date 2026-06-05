@@ -32,12 +32,19 @@ const copyValue = () => {
     <span class="relative size-3">
       <LucideCopy
         :class="
-          cn('absolute inset-0 size-3 transition-all', hovered && !copied ? 'text-positive' : '', copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100')
+          cn(
+            'absolute inset-0 size-3 transition-all',
+            hovered && !copied ? 'text-positive' : '',
+            copied ? 'scale-75 opacity-0' : 'scale-100 opacity-100',
+          )
         "
       />
       <LucideCopyCheck
         :class="
-          cn('absolute inset-0 size-3 text-positive transition-all', copied ? 'opacity-100 scale-100' : 'opacity-0 scale-75')
+          cn(
+            'text-positive absolute inset-0 size-3 transition-all',
+            copied ? 'scale-100 opacity-100' : 'scale-75 opacity-0',
+          )
         "
       />
     </span>

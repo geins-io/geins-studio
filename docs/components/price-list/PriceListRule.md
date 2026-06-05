@@ -35,7 +35,7 @@ Which input columns render.
 ### `index`
 
 ```ts
-index: number
+index: number;
 ```
 
 Row index used by the parent for loading-state targeting.
@@ -64,7 +64,7 @@ When `true`, inputs that didn't change show a spinner placeholder.
 lastFieldChanged?: PriceListRuleField  // 'price' | 'margin' | 'discountPercent'
 ```
 
-Drives which input *isn't* spinner-loading-masked.
+Drives which input _isn't_ spinner-loading-masked.
 
 ### `global`
 

@@ -8,7 +8,11 @@ export const storefrontFonts: StorefrontFont[] = [
   // Modern sans
   { label: 'Inter', value: 'Inter', category: 'sans-serif' },
   { label: 'Geist', value: 'Geist', category: 'sans-serif' },
-  { label: 'Plus Jakarta Sans', value: 'Plus Jakarta Sans', category: 'sans-serif' },
+  {
+    label: 'Plus Jakarta Sans',
+    value: 'Plus Jakarta Sans',
+    category: 'sans-serif',
+  },
   { label: 'DM Sans', value: 'DM Sans', category: 'sans-serif' },
   { label: 'Work Sans', value: 'Work Sans', category: 'sans-serif' },
   { label: 'Outfit', value: 'Outfit', category: 'sans-serif' },
@@ -32,7 +36,11 @@ export const storefrontFonts: StorefrontFont[] = [
   { label: 'Merriweather', value: 'Merriweather', category: 'serif' },
   { label: 'Lora', value: 'Lora', category: 'serif' },
   { label: 'PT Serif', value: 'PT Serif', category: 'serif' },
-  { label: 'Cormorant Garamond', value: 'Cormorant Garamond', category: 'serif' },
+  {
+    label: 'Cormorant Garamond',
+    value: 'Cormorant Garamond',
+    category: 'serif',
+  },
   { label: 'EB Garamond', value: 'EB Garamond', category: 'serif' },
 
   // Display
@@ -48,7 +56,8 @@ export const storefrontFonts: StorefrontFont[] = [
 ];
 
 /** Characters needed to render all font names in the preview subset */
-const subsetText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz 0123456789+-';
+const subsetText =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz 0123456789+-';
 
 /** Single Google Fonts CSS URL loading all curated fonts as lightweight subsets */
 export const storefrontFontsCssUrl = (() => {

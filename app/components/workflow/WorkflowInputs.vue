@@ -435,7 +435,9 @@ const confirmAddGroup = () => {
                 class="text-muted-foreground size-4 shrink-0 transition-transform group-data-[state=closed]:-rotate-90"
               />
               <span class="text-lg font-semibold">{{ group.category }}</span>
-              <span class="text-muted-foreground flex items-center gap-1 text-xs font-normal">
+              <span
+                class="text-muted-foreground flex items-center gap-1 text-xs font-normal"
+              >
                 <LucideCircleDot class="size-3.5" />
                 {{ group.items.length }} input{{
                   group.items.length === 1 ? '' : 's'

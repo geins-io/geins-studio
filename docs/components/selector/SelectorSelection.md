@@ -17,12 +17,16 @@ Full selection display panel for a single include-or-exclude axis. Shows the cur
 
 ```vue
 <script setup lang="ts">
-import type { SelectorSelectionInternal } from '#shared/types'
-import { SelectorMode, SelectorSelectionType, SelectorSelectionStrategy } from '#shared/types'
+import type { SelectorSelectionInternal } from '#shared/types';
+import {
+  SelectorMode,
+  SelectorSelectionType,
+  SelectorSelectionStrategy,
+} from '#shared/types';
 
 const selection = defineModel<SelectorSelectionInternal>('selection', {
   required: true,
-})
+});
 </script>
 
 <template>
@@ -50,7 +54,7 @@ currency?: string
 ### `type`
 
 ```ts
-type: SelectorSelectionType
+type: SelectorSelectionType;
 ```
 
 - **Type:** `SelectorSelectionType`
@@ -60,7 +64,7 @@ type: SelectorSelectionType
 ### `entityName`
 
 ```ts
-entityName: string
+entityName: string;
 ```
 
 - **Type:** `string`
@@ -70,7 +74,7 @@ entityName: string
 ### `mode`
 
 ```ts
-mode: SelectorMode
+mode: SelectorMode;
 ```
 
 - **Type:** `SelectorMode`

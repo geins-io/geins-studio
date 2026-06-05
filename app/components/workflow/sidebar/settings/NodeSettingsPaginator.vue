@@ -1,52 +1,83 @@
 <script setup lang="ts">
-import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue'
+import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue';
 
 const props = defineProps<{
-  nodeData: Record<string, unknown>
-  nodeConfig: Record<string, unknown>
-  nodeInput: Record<string, unknown>
-  updateConfig: (name: string, value: unknown) => void
-  updateInput: (name: string, value: unknown) => void
-}>()
+  nodeData: Record<string, unknown>;
+  nodeConfig: Record<string, unknown>;
+  nodeInput: Record<string, unknown>;
+  updateConfig: (name: string, value: unknown) => void;
+  updateInput: (name: string, value: unknown) => void;
+}>();
 
 const STRATEGY_OPTIONS = [
-  { value: 'offset', label: 'Offset', description: 'Skip-based pagination (offset + limit)' },
-  { value: 'pageNumber', label: 'Page Number', description: 'Classic page-number pagination (page=1, page=2, ...)' },
-  { value: 'cursor', label: 'Cursor', description: 'Opaque cursor/token-based pagination' },
-  { value: 'linkHeader', label: 'Link Header', description: 'Follows RFC 5988 Link headers (rel="next")' },
-  { value: 'watermark', label: 'Watermark', description: 'Per-item high-water mark (e.g. last modified timestamp)' },
-]
+  {
+    value: 'offset',
+    label: 'Offset',
+    description: 'Skip-based pagination (offset + limit)',
+  },
+  {
+    value: 'pageNumber',
+    label: 'Page Number',
+    description: 'Classic page-number pagination (page=1, page=2, ...)',
+  },
+  {
+    value: 'cursor',
+    label: 'Cursor',
+    description: 'Opaque cursor/token-based pagination',
+  },
+  {
+    value: 'linkHeader',
+    label: 'Link Header',
+    description: 'Follows RFC 5988 Link headers (rel="next")',
+  },
+  {
+    value: 'watermark',
+    label: 'Watermark',
+    description: 'Per-item high-water mark (e.g. last modified timestamp)',
+  },
+];
 
-const CURSOR_STRATEGIES = new Set(['cursor', 'linkHeader', 'watermark'])
+const CURSOR_STRATEGIES = new Set(['cursor', 'linkHeader', 'watermark']);
 
-const strategy = computed(() => String(props.nodeInput.strategy ?? ''))
-const pageSize = computed(() => String(props.nodeInput.pageSize ?? ''))
-const maxPages = computed(() => props.nodeInput.maxPages as number | undefined)
-const initialCursor = computed(() => String(props.nodeInput.initialCursor ?? ''))
-const itemsPath = computed(() => String(props.nodeInput.itemsPath ?? ''))
-const cursorPath = computed(() => String(props.nodeInput.cursorPath ?? ''))
-const terminationCondition = computed(() => String(props.nodeInput.terminationCondition ?? ''))
+const strategy = computed(() => String(props.nodeInput.strategy ?? ''));
+const pageSize = computed(() => String(props.nodeInput.pageSize ?? ''));
+const maxPages = computed(() => props.nodeInput.maxPages as number | undefined);
+const initialCursor = computed(() =>
+  String(props.nodeInput.initialCursor ?? ''),
+);
+const itemsPath = computed(() => String(props.nodeInput.itemsPath ?? ''));
+const cursorPath = computed(() => String(props.nodeInput.cursorPath ?? ''));
+const terminationCondition = computed(() =>
+  String(props.nodeInput.terminationCondition ?? ''),
+);
 
-const showCursorFields = computed(() => CURSOR_STRATEGIES.has(strategy.value))
-const cursorPathRequired = computed(() => strategy.value === 'cursor' || strategy.value === 'linkHeader')
+const showCursorFields = computed(() => CURSOR_STRATEGIES.has(strategy.value));
+const cursorPathRequired = computed(
+  () => strategy.value === 'cursor' || strategy.value === 'linkHeader',
+);
 
-const strategyDescription = computed(() =>
-  STRATEGY_OPTIONS.find(s => s.value === strategy.value)?.description ?? 'Select a pagination strategy',
-)
+const strategyDescription = computed(
+  () =>
+    STRATEGY_OPTIONS.find((s) => s.value === strategy.value)?.description ??
+    'Select a pagination strategy',
+);
 
 const onStrategyChange = (value: string) => {
-  props.updateInput('strategy', value || undefined)
+  props.updateInput('strategy', value || undefined);
   if (!CURSOR_STRATEGIES.has(value)) {
-    props.updateInput('cursorPath', undefined)
-    props.updateInput('initialCursor', undefined)
+    props.updateInput('cursorPath', undefined);
+    props.updateInput('initialCursor', undefined);
   }
-}
+};
 
 const CONTEXT_VARS = [
-  { expr: '{{$cursor}}', description: 'Current pagination cursor (strategy-specific)' },
+  {
+    expr: '{{$cursor}}',
+    description: 'Current pagination cursor (strategy-specific)',
+  },
   { expr: '{{$pageNumber}}', description: '1-based page number being fetched' },
   { expr: '{{$pageSize}}', description: 'Configured page size' },
-]
+];
 </script>
 
 <template>
@@ -63,7 +94,11 @@ const CONTEXT_VARS = [
         @change="onStrategyChange(($event.target as HTMLSelectElement).value)"
       >
         <option value="" disabled>Select strategy…</option>
-        <option v-for="opt in STRATEGY_OPTIONS" :key="opt.value" :value="opt.value">
+        <option
+          v-for="opt in STRATEGY_OPTIONS"
+          :key="opt.value"
+          :value="opt.value"
+        >
           {{ opt.label }}
         </option>
       </select>
@@ -97,7 +132,9 @@ const CONTEXT_VARS = [
         default-mode="expression"
         @update:model-value="updateInput('itemsPath', $event)"
       />
-      <p class="text-muted-foreground text-xs">Path to the items array on fetchPage output</p>
+      <p class="text-muted-foreground text-xs">
+        Path to the items array on fetchPage output
+      </p>
     </div>
 
     <!-- Cursor Path (conditional) -->
@@ -113,7 +150,11 @@ const CONTEXT_VARS = [
         @update:model-value="updateInput('cursorPath', $event)"
       />
       <p class="text-muted-foreground text-xs">
-        {{ strategy === 'watermark' ? 'Per-item field used as watermark' : 'Path to the next-page cursor in fetchPage output' }}
+        {{
+          strategy === 'watermark'
+            ? 'Per-item field used as watermark'
+            : 'Path to the next-page cursor in fetchPage output'
+        }}
       </p>
     </div>
 
@@ -125,9 +166,13 @@ const CONTEXT_VARS = [
         :model-value="maxPages ?? 1000"
         placeholder="1000"
         min="1"
-        @update:model-value="updateInput('maxPages', $event === '' ? undefined : Number($event))"
+        @update:model-value="
+          updateInput('maxPages', $event === '' ? undefined : Number($event))
+        "
       />
-      <p class="text-muted-foreground text-xs">Safety cap on the number of pages fetched</p>
+      <p class="text-muted-foreground text-xs">
+        Safety cap on the number of pages fetched
+      </p>
     </div>
 
     <!-- Initial Cursor (conditional) -->
@@ -139,7 +184,9 @@ const CONTEXT_VARS = [
         default-mode="expression"
         @update:model-value="updateInput('initialCursor', $event || undefined)"
       />
-      <p class="text-muted-foreground text-xs">Override the starting cursor (defaults are strategy-specific)</p>
+      <p class="text-muted-foreground text-xs">
+        Override the starting cursor (defaults are strategy-specific)
+      </p>
     </div>
 
     <!-- Termination Condition -->
@@ -149,17 +196,30 @@ const CONTEXT_VARS = [
         :model-value="terminationCondition"
         placeholder="Optional override"
         default-mode="expression"
-        @update:model-value="updateInput('terminationCondition', $event || undefined)"
+        @update:model-value="
+          updateInput('terminationCondition', $event || undefined)
+        "
       />
-      <p class="text-muted-foreground text-xs">Override the strategy's default stop condition</p>
+      <p class="text-muted-foreground text-xs">
+        Override the strategy's default stop condition
+      </p>
     </div>
 
     <!-- Context variables reference -->
     <div class="border-t pt-3">
-      <p class="text-muted-foreground mb-2 text-xs font-medium">Context variables</p>
+      <p class="text-muted-foreground mb-2 text-xs font-medium">
+        Context variables
+      </p>
       <div class="space-y-1.5">
-        <div v-for="v in CONTEXT_VARS" :key="v.expr" class="bg-muted/50 flex items-start gap-2 rounded-md px-2.5 py-2">
-          <code class="shrink-0 rounded bg-indigo-500/10 px-1.5 py-0.5 font-mono text-[11px] font-medium text-indigo-600 dark:text-indigo-400">{{ v.expr }}</code>
+        <div
+          v-for="v in CONTEXT_VARS"
+          :key="v.expr"
+          class="bg-muted/50 flex items-start gap-2 rounded-md px-2.5 py-2"
+        >
+          <code
+            class="shrink-0 rounded bg-indigo-500/10 px-1.5 py-0.5 font-mono text-[11px] font-medium text-indigo-600 dark:text-indigo-400"
+            >{{ v.expr }}</code
+          >
           <p class="text-muted-foreground text-[11px]">{{ v.description }}</p>
         </div>
       </div>
@@ -167,9 +227,18 @@ const CONTEXT_VARS = [
 
     <!-- Handle labels reference -->
     <div class="text-muted-foreground border-t pt-3 text-xs">
-      <p><span class="font-medium text-indigo-600">Fetch Page</span> action that fetches one page</p>
-      <p class="mt-1"><span class="font-medium text-indigo-600">Each Page</span> body executed per page</p>
-      <p class="mt-1"><span class="font-medium text-gray-500">Completed</span> runs after all pages are processed</p>
+      <p>
+        <span class="font-medium text-indigo-600">Fetch Page</span> action that
+        fetches one page
+      </p>
+      <p class="mt-1">
+        <span class="font-medium text-indigo-600">Each Page</span> body executed
+        per page
+      </p>
+      <p class="mt-1">
+        <span class="font-medium text-gray-500">Completed</span> runs after all
+        pages are processed
+      </p>
     </div>
   </div>
 </template>

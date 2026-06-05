@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import type { ManifestNodeTypeConfig } from '#shared/types'
-import type { ManifestAction } from '@/composables/useWorkflowManifest'
-import NodeSettingsAction from './settings/NodeSettingsAction.vue'
-import NodeSettingsCondition from './settings/NodeSettingsCondition.vue'
-import NodeSettingsDelay from './settings/NodeSettingsDelay.vue'
-import NodeSettingsInputSchema from './settings/NodeSettingsInputSchema.vue'
-import NodeSettingsIterator from './settings/NodeSettingsIterator.vue'
-import NodeSettingsPaginator from './settings/NodeSettingsPaginator.vue'
-import NodeSettingsTrigger from './settings/NodeSettingsTrigger.vue'
-import NodeSettingsWorkflow from './settings/NodeSettingsWorkflow.vue'
-import type { Component } from 'vue'
+import type { ManifestNodeTypeConfig } from '#shared/types';
+import type { ManifestAction } from '@/composables/useWorkflowManifest';
+import NodeSettingsAction from './settings/NodeSettingsAction.vue';
+import NodeSettingsCondition from './settings/NodeSettingsCondition.vue';
+import NodeSettingsDelay from './settings/NodeSettingsDelay.vue';
+import NodeSettingsInputSchema from './settings/NodeSettingsInputSchema.vue';
+import NodeSettingsIterator from './settings/NodeSettingsIterator.vue';
+import NodeSettingsPaginator from './settings/NodeSettingsPaginator.vue';
+import NodeSettingsTrigger from './settings/NodeSettingsTrigger.vue';
+import NodeSettingsWorkflow from './settings/NodeSettingsWorkflow.vue';
+import type { Component } from 'vue';
 
 const SETTINGS_COMPONENTS: Record<string, Component> = {
   trigger: NodeSettingsTrigger,
@@ -20,78 +20,95 @@ const SETTINGS_COMPONENTS: Record<string, Component> = {
   delay: NodeSettingsDelay,
   workflow: NodeSettingsWorkflow,
   paginator: NodeSettingsPaginator,
-}
+};
 
 const props = defineProps<{
-  nodeType: string
-  nodeData: Record<string, unknown>
-}>()
+  nodeType: string;
+  nodeData: Record<string, unknown>;
+}>();
 
-const manifestStore = useWorkflowManifest()
+const manifestStore = useWorkflowManifest();
 
-const manifestNodeType = computed(() => manifestStore.getNodeType(props.nodeType))
+const manifestNodeType = computed(() =>
+  manifestStore.getNodeType(props.nodeType),
+);
 const manifestAction = computed<ManifestAction | undefined>(() => {
-  if (props.nodeType !== 'action') return undefined
-  return manifestStore.getAction(props.nodeData.actionName as string | undefined)
-})
+  if (props.nodeType !== 'action') return undefined;
+  return manifestStore.getAction(
+    props.nodeData.actionName as string | undefined,
+  );
+});
 
 const nodeTypeConfig = computed<ManifestNodeTypeConfig[]>(
   () => manifestNodeType.value?.config ?? [],
-)
+);
 
-const nodeConfig = computed(() => (props.nodeData.config ?? {}) as Record<string, unknown>)
-const nodeInput = computed(() => (props.nodeData.input ?? {}) as Record<string, unknown>)
-const nodeUi = computed(() => (props.nodeData.ui ?? {}) as Record<string, unknown>)
-const nodeEditorHints = computed(() => (nodeUi.value.editor ?? {}) as Record<string, unknown>)
+const nodeConfig = computed(
+  () => (props.nodeData.config ?? {}) as Record<string, unknown>,
+);
+const nodeInput = computed(
+  () => (props.nodeData.input ?? {}) as Record<string, unknown>,
+);
+const nodeUi = computed(
+  () => (props.nodeData.ui ?? {}) as Record<string, unknown>,
+);
+const nodeEditorHints = computed(
+  () => (nodeUi.value.editor ?? {}) as Record<string, unknown>,
+);
 
-const settingsComponent = computed(() => SETTINGS_COMPONENTS[props.nodeType])
+const settingsComponent = computed(() => SETTINGS_COMPONENTS[props.nodeType]);
 
-const onNodeSettingsChange = inject<() => void>('onNodeSettingsChange', () => {})
+const onNodeSettingsChange = inject<() => void>(
+  'onNodeSettingsChange',
+  () => {},
+);
 
-const patchNodeData = (patch: Partial<Record<'config' | 'input' | 'ui', Record<string, unknown>>>) => {
+const patchNodeData = (
+  patch: Partial<Record<'config' | 'input' | 'ui', Record<string, unknown>>>,
+) => {
   // eslint-disable-next-line vue/no-mutating-props -- nodeData is a shared reactive object mutated by all settings panels
-  Object.assign(props.nodeData, patch)
-}
+  Object.assign(props.nodeData, patch);
+};
 
-const getNodeSection = (key: 'config' | 'input' | 'ui'): Record<string, unknown> => {
-  const section = props.nodeData[key]
+const getNodeSection = (
+  key: 'config' | 'input' | 'ui',
+): Record<string, unknown> => {
+  const section = props.nodeData[key];
   if (section && typeof section === 'object' && !Array.isArray(section)) {
-    return section as Record<string, unknown>
+    return section as Record<string, unknown>;
   }
-  const next: Record<string, unknown> = {}
-  patchNodeData({ [key]: next })
-  return next
-}
+  const next: Record<string, unknown> = {};
+  patchNodeData({ [key]: next });
+  return next;
+};
 
 const updateConfig = (name: string, value: unknown) => {
-  const config = getNodeSection('config')
-  config[name] = value
-  onNodeSettingsChange()
-}
+  const config = getNodeSection('config');
+  config[name] = value;
+  onNodeSettingsChange();
+};
 
 const updateInput = (name: string, value: unknown) => {
-  const input = getNodeSection('input')
+  const input = getNodeSection('input');
   if (value === undefined) {
-    Reflect.deleteProperty(input, name)
+    Reflect.deleteProperty(input, name);
+  } else {
+    input[name] = value;
   }
-  else {
-    input[name] = value
-  }
-  onNodeSettingsChange()
-}
+  onNodeSettingsChange();
+};
 
 const updateEditorHint = (name: string, value: unknown) => {
-  const ui = getNodeSection('ui')
-  if (!ui.editor) ui.editor = {}
-  const editor = ui.editor as Record<string, unknown>
+  const ui = getNodeSection('ui');
+  if (!ui.editor) ui.editor = {};
+  const editor = ui.editor as Record<string, unknown>;
   if (value === undefined) {
-    Reflect.deleteProperty(editor, name)
+    Reflect.deleteProperty(editor, name);
+  } else {
+    editor[name] = value;
   }
-  else {
-    editor[name] = value
-  }
-  onNodeSettingsChange()
-}
+  onNodeSettingsChange();
+};
 
 const prettyLabel = (name: string): string =>
   name
@@ -99,157 +116,180 @@ const prettyLabel = (name: string): string =>
     .replace(/[-_]/g, ' ')
     .trim()
     .split(/\s+/)
-    .map(w => (w[0]?.toUpperCase() ?? '') + w.slice(1))
-    .join(' ')
+    .map((w) => (w[0]?.toUpperCase() ?? '') + w.slice(1))
+    .join(' ');
 
 const inputTypeToHtml = (type: string): string => {
-  const lower = type.toLowerCase()
-  if (lower === 'number' || lower === 'integer' || lower === 'int') return 'number'
-  if (lower === 'boolean' || lower === 'bool') return 'checkbox'
-  return 'text'
-}
+  const lower = type.toLowerCase();
+  if (lower === 'number' || lower === 'integer' || lower === 'int')
+    return 'number';
+  if (lower === 'boolean' || lower === 'bool') return 'checkbox';
+  return 'text';
+};
 
-const isTextarea = (field: { editorHint?: string, type: string }): boolean =>
-  field.editorHint === 'textarea'
-  || field.editorHint === 'json'
-  || field.editorHint === 'expression'
-  || field.type.toLowerCase() === 'object'
-  || field.type.toLowerCase() === 'json'
+const isTextarea = (field: { editorHint?: string; type: string }): boolean =>
+  field.editorHint === 'textarea' ||
+  field.editorHint === 'json' ||
+  field.editorHint === 'expression' ||
+  field.type.toLowerCase() === 'object' ||
+  field.type.toLowerCase() === 'json';
 
 const typeBadgeClass = (type: string): string => {
-  const t = type.toLowerCase()
-  if (t === 'string') return 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-  if (t === 'number' || t === 'integer' || t === 'int') return 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-  if (t === 'boolean' || t === 'bool') return 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
-  if (t === 'array') return 'bg-teal-500/10 text-teal-600 dark:text-teal-400'
-  if (t === 'object' || t === 'json') return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-  return 'bg-muted text-muted-foreground'
-}
+  const t = type.toLowerCase();
+  if (t === 'string') return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
+  if (t === 'number' || t === 'integer' || t === 'int')
+    return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
+  if (t === 'boolean' || t === 'bool')
+    return 'bg-purple-500/10 text-purple-600 dark:text-purple-400';
+  if (t === 'array') return 'bg-teal-500/10 text-teal-600 dark:text-teal-400';
+  if (t === 'object' || t === 'json')
+    return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
+  return 'bg-muted text-muted-foreground';
+};
 
-const activeTab = ref<'settings' | 'schema' | 'expressions' | 'variables'>('settings')
-const schemaSubTab = ref<'input' | 'output'>('input')
+const activeTab = ref<'settings' | 'schema' | 'expressions' | 'variables'>(
+  'settings',
+);
+const schemaSubTab = ref<'input' | 'output'>('input');
 
 const hasInputSchema = computed(() => {
-  if (!manifestAction.value?.examples?.length) return false
-  const inputs = manifestAction.value.input ?? []
-  return inputs.some(f => {
-    const t = f.type.toLowerCase()
-    return t === 'array' || t === 'object' || t === 'json'
-  })
-})
+  if (!manifestAction.value?.examples?.length) return false;
+  const inputs = manifestAction.value.input ?? [];
+  return inputs.some((f) => {
+    const t = f.type.toLowerCase();
+    return t === 'array' || t === 'object' || t === 'json';
+  });
+});
 
 const outputFields = computed(() => {
-  const actionName = props.nodeData.actionName as string | undefined
+  const actionName = props.nodeData.actionName as string | undefined;
   if (actionName === 'transform.map' || actionName === 'transform.compose') {
-    const input = (props.nodeData.input ?? {}) as Record<string, unknown>
-    return Object.keys(input).filter(k => k && !k.startsWith('_')).map(k => ({ name: k, type: 'any', description: '' }))
+    const input = (props.nodeData.input ?? {}) as Record<string, unknown>;
+    return Object.keys(input)
+      .filter((k) => k && !k.startsWith('_'))
+      .map((k) => ({ name: k, type: 'any', description: '' }));
   }
-  return manifestAction.value?.output ?? manifestNodeType.value?.output ?? []
-})
+  return manifestAction.value?.output ?? manifestNodeType.value?.output ?? [];
+});
 
-const expressionVariables = computed(() => manifestStore.manifest.value?.expressionVariables ?? [])
+const expressionVariables = computed(
+  () => manifestStore.manifest.value?.expressionVariables ?? [],
+);
 
-const expressionFunctions = computed(() => manifestStore.expressionFunctions.value)
+const expressionFunctions = computed(
+  () => manifestStore.expressionFunctions.value,
+);
 
 const fnCategories = computed(() => {
-  const map = new Map<string, typeof expressionFunctions.value>()
+  const map = new Map<string, typeof expressionFunctions.value>();
   for (const fn of expressionFunctions.value) {
-    const cat = fn.category ?? 'Other'
-    const list = map.get(cat)
-    if (list) list.push(fn)
-    else map.set(cat, [fn])
+    const cat = fn.category ?? 'Other';
+    const list = map.get(cat);
+    if (list) list.push(fn);
+    else map.set(cat, [fn]);
   }
-  return map
-})
+  return map;
+});
 
-const activeFnCategory = ref('')
+const activeFnCategory = ref('');
 
-watch(fnCategories, (cats) => {
-  if (!activeFnCategory.value && cats.size > 0) {
-    activeFnCategory.value = cats.keys().next().value!
-  }
-}, { immediate: true })
+watch(
+  fnCategories,
+  (cats) => {
+    if (!activeFnCategory.value && cats.size > 0) {
+      activeFnCategory.value = cats.keys().next().value!;
+    }
+  },
+  { immediate: true },
+);
 
 const filteredFunctions = computed(() => {
   return activeFnCategory.value
-    ? fnCategories.value.get(activeFnCategory.value) ?? []
-    : expressionFunctions.value
-})
+    ? (fnCategories.value.get(activeFnCategory.value) ?? [])
+    : expressionFunctions.value;
+});
 
-function fnSignature(fn: typeof expressionFunctions.value[number]): string {
+function fnSignature(fn: (typeof expressionFunctions.value)[number]): string {
   const params = (fn.parameters ?? []).map((p) => {
-    const opt = p.required === false ? '?' : ''
-    return `${p.name}${opt}: ${p.type}`
-  })
-  return `${fn.name}(${params.join(', ')})`
+    const opt = p.required === false ? '?' : '';
+    return `${p.name}${opt}: ${p.type}`;
+  });
+  return `${fn.name}(${params.join(', ')})`;
 }
 
 // ─── Drag expression drop handling ────────────────────────────────
-const DRAG_MIME = 'application/x-workflow-expression'
+const DRAG_MIME = 'application/x-workflow-expression';
 
 const hasExpressionData = (dt: DataTransfer): boolean => {
   for (let i = 0; i < dt.types.length; i++) {
-    if (dt.types[i] === DRAG_MIME) return true
+    if (dt.types[i] === DRAG_MIME) return true;
   }
-  return false
-}
+  return false;
+};
 
-const resolveDropTarget = (el: EventTarget | null): HTMLInputElement | HTMLTextAreaElement | null => {
-  if (!(el instanceof HTMLElement)) return null
-  if (el.tagName === 'INPUT') return el as HTMLInputElement
-  if (el.tagName === 'TEXTAREA') return el as HTMLTextAreaElement
-  return el.closest('input, textarea') as HTMLInputElement | HTMLTextAreaElement | null
-}
+const resolveDropTarget = (
+  el: EventTarget | null,
+): HTMLInputElement | HTMLTextAreaElement | null => {
+  if (!(el instanceof HTMLElement)) return null;
+  if (el.tagName === 'INPUT') return el as HTMLInputElement;
+  if (el.tagName === 'TEXTAREA') return el as HTMLTextAreaElement;
+  return el.closest('input, textarea') as
+    | HTMLInputElement
+    | HTMLTextAreaElement
+    | null;
+};
 
-let lastHighlighted: HTMLElement | null = null
+let lastHighlighted: HTMLElement | null = null;
 
 const onSettingsDragOver = (event: DragEvent) => {
-  if (!event.dataTransfer || !hasExpressionData(event.dataTransfer)) return
-  event.preventDefault()
-  event.dataTransfer.dropEffect = 'copy'
-  const target = resolveDropTarget(event.target)
+  if (!event.dataTransfer || !hasExpressionData(event.dataTransfer)) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'copy';
+  const target = resolveDropTarget(event.target);
   if (target && target !== lastHighlighted) {
-    lastHighlighted?.classList.remove('ring-2', 'ring-primary/50')
-    target.classList.add('ring-2', 'ring-primary/50')
-    lastHighlighted = target
+    lastHighlighted?.classList.remove('ring-2', 'ring-primary/50');
+    target.classList.add('ring-2', 'ring-primary/50');
+    lastHighlighted = target;
   }
-}
+};
 
 const onSettingsDragLeave = (event: DragEvent) => {
-  const related = event.relatedTarget as HTMLElement | null
+  const related = event.relatedTarget as HTMLElement | null;
   if (lastHighlighted && !lastHighlighted.contains(related)) {
-    lastHighlighted.classList.remove('ring-2', 'ring-primary/50')
-    lastHighlighted = null
+    lastHighlighted.classList.remove('ring-2', 'ring-primary/50');
+    lastHighlighted = null;
   }
-}
+};
 
 const onSettingsDrop = (event: DragEvent) => {
-  lastHighlighted?.classList.remove('ring-2', 'ring-primary/50')
-  lastHighlighted = null
+  lastHighlighted?.classList.remove('ring-2', 'ring-primary/50');
+  lastHighlighted = null;
 
-  if (!event.dataTransfer) return
-  const expr = event.dataTransfer.getData(DRAG_MIME) || event.dataTransfer.getData('text/plain')
-  if (!expr) return
-  const target = resolveDropTarget(event.target)
-  if (!target) return
+  if (!event.dataTransfer) return;
+  const expr =
+    event.dataTransfer.getData(DRAG_MIME) ||
+    event.dataTransfer.getData('text/plain');
+  if (!expr) return;
+  const target = resolveDropTarget(event.target);
+  if (!target) return;
 
-  event.preventDefault()
-  event.stopPropagation()
+  event.preventDefault();
+  event.stopPropagation();
 
-  const start = target.selectionStart ?? target.value.length
-  const end = target.selectionEnd ?? start
-  const before = target.value.slice(0, start)
-  const after = target.value.slice(end)
-  target.value = before + expr + after
-  target.dispatchEvent(new Event('input', { bubbles: true }))
-  target.dispatchEvent(new Event('change', { bubbles: true }))
+  const start = target.selectionStart ?? target.value.length;
+  const end = target.selectionEnd ?? start;
+  const before = target.value.slice(0, start);
+  const after = target.value.slice(end);
+  target.value = before + expr + after;
+  target.dispatchEvent(new Event('input', { bubbles: true }));
+  target.dispatchEvent(new Event('change', { bubbles: true }));
 
   nextTick(() => {
-    const pos = start + expr.length
-    target.setSelectionRange(pos, pos)
-    target.focus()
-  })
-}
+    const pos = start + expr.length;
+    target.setSelectionRange(pos, pos);
+    target.focus();
+  });
+};
 </script>
 
 <template>
@@ -263,9 +303,11 @@ const onSettingsDrop = (event: DragEvent) => {
       <button
         type="button"
         class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors"
-        :class="activeTab === 'settings'
-          ? 'text-foreground border-b-2 border-primary'
-          : 'text-muted-foreground hover:text-foreground'"
+        :class="
+          activeTab === 'settings'
+            ? 'text-foreground border-primary border-b-2'
+            : 'text-muted-foreground hover:text-foreground'
+        "
         @click="activeTab = 'settings'"
       >
         <LucideSettings2 class="h-3.5 w-3.5" />
@@ -274,9 +316,11 @@ const onSettingsDrop = (event: DragEvent) => {
       <button
         type="button"
         class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors"
-        :class="activeTab === 'schema'
-          ? 'text-foreground border-b-2 border-primary'
-          : 'text-muted-foreground hover:text-foreground'"
+        :class="
+          activeTab === 'schema'
+            ? 'text-foreground border-primary border-b-2'
+            : 'text-muted-foreground hover:text-foreground'
+        "
         @click="activeTab = 'schema'"
       >
         <LucideFileJson class="h-3.5 w-3.5" />
@@ -285,9 +329,11 @@ const onSettingsDrop = (event: DragEvent) => {
       <button
         type="button"
         class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors"
-        :class="activeTab === 'expressions'
-          ? 'text-foreground border-b-2 border-primary'
-          : 'text-muted-foreground hover:text-foreground'"
+        :class="
+          activeTab === 'expressions'
+            ? 'text-foreground border-primary border-b-2'
+            : 'text-muted-foreground hover:text-foreground'
+        "
         @click="activeTab = 'expressions'"
       >
         <LucideBraces class="h-3.5 w-3.5" />
@@ -296,9 +342,11 @@ const onSettingsDrop = (event: DragEvent) => {
       <button
         type="button"
         class="flex items-center gap-1.5 px-3 py-2 text-xs font-medium tracking-wide uppercase transition-colors"
-        :class="activeTab === 'variables'
-          ? 'text-foreground border-b-2 border-primary'
-          : 'text-muted-foreground hover:text-foreground'"
+        :class="
+          activeTab === 'variables'
+            ? 'text-foreground border-primary border-b-2'
+            : 'text-muted-foreground hover:text-foreground'
+        "
         @click="activeTab = 'variables'"
       >
         <LucideVariable class="h-3.5 w-3.5" />
@@ -307,7 +355,11 @@ const onSettingsDrop = (event: DragEvent) => {
     </div>
 
     <!-- Settings tab -->
-    <div v-show="activeTab === 'settings'" class="relative min-h-0 flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
+    <div
+      v-show="activeTab === 'settings'"
+      class="relative min-h-0 flex-1 overflow-y-auto p-4"
+      style="scrollbar-gutter: stable"
+    >
       <!-- Per-node-type settings component -->
       <component
         :is="settingsComponent"
@@ -325,8 +377,14 @@ const onSettingsDrop = (event: DragEvent) => {
       <!-- Fallback: manifest config fields for unknown node types -->
       <template v-else-if="nodeTypeConfig.length">
         <div class="space-y-3">
-          <div v-for="field in nodeTypeConfig" :key="field.name" class="space-y-1">
-            <label class="text-muted-foreground flex items-center gap-1 text-sm">
+          <div
+            v-for="field in nodeTypeConfig"
+            :key="field.name"
+            class="space-y-1"
+          >
+            <label
+              class="text-muted-foreground flex items-center gap-1 text-sm"
+            >
               {{ prettyLabel(field.name) }}
               <span v-if="field.required" class="text-destructive">*</span>
             </label>
@@ -335,11 +393,22 @@ const onSettingsDrop = (event: DragEvent) => {
             </p>
             <textarea
               v-if="isTextarea(field)"
-              :value="typeof nodeConfig[field.name] === 'object' ? JSON.stringify(nodeConfig[field.name], null, 2) : String(nodeConfig[field.name] ?? field.defaultValue ?? '')"
+              :value="
+                typeof nodeConfig[field.name] === 'object'
+                  ? JSON.stringify(nodeConfig[field.name], null, 2)
+                  : String(nodeConfig[field.name] ?? field.defaultValue ?? '')
+              "
               rows="3"
-              :placeholder="field.editorHint === 'expression' ? '{{ expression }}' : ''"
+              :placeholder="
+                field.editorHint === 'expression' ? '{{ expression }}' : ''
+              "
               class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none"
-              @input="updateConfig(field.name, ($event.target as HTMLTextAreaElement).value)"
+              @input="
+                updateConfig(
+                  field.name,
+                  ($event.target as HTMLTextAreaElement).value,
+                )
+              "
             />
             <div
               v-else-if="inputTypeToHtml(field.type) === 'checkbox'"
@@ -349,7 +418,12 @@ const onSettingsDrop = (event: DragEvent) => {
                 type="checkbox"
                 :checked="Boolean(nodeConfig[field.name] ?? field.defaultValue)"
                 class="rounded border"
-                @change="updateConfig(field.name, ($event.target as HTMLInputElement).checked)"
+                @change="
+                  updateConfig(
+                    field.name,
+                    ($event.target as HTMLInputElement).checked,
+                  )
+                "
               />
             </div>
             <input
@@ -358,7 +432,12 @@ const onSettingsDrop = (event: DragEvent) => {
               :value="nodeConfig[field.name] ?? field.defaultValue ?? ''"
               :placeholder="String(field.defaultValue ?? '')"
               class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-              @input="updateConfig(field.name, ($event.target as HTMLInputElement).value)"
+              @input="
+                updateConfig(
+                  field.name,
+                  ($event.target as HTMLInputElement).value,
+                )
+              "
             />
           </div>
         </div>
@@ -366,14 +445,19 @@ const onSettingsDrop = (event: DragEvent) => {
     </div>
 
     <!-- Schema tab (combined input + output) -->
-    <div v-show="activeTab === 'schema'" class="flex flex-1 flex-col overflow-hidden">
+    <div
+      v-show="activeTab === 'schema'"
+      class="flex flex-1 flex-col overflow-hidden"
+    >
       <div v-if="hasInputSchema" class="flex gap-1 border-b px-4 pt-4 pb-2">
         <button
           type="button"
           class="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors"
-          :class="schemaSubTab === 'input'
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-muted-foreground hover:text-foreground'"
+          :class="
+            schemaSubTab === 'input'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground hover:text-foreground'
+          "
           @click="schemaSubTab = 'input'"
         >
           Input
@@ -381,18 +465,23 @@ const onSettingsDrop = (event: DragEvent) => {
         <button
           type="button"
           class="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors"
-          :class="schemaSubTab === 'output'
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-muted-foreground hover:text-foreground'"
+          :class="
+            schemaSubTab === 'output'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground hover:text-foreground'
+          "
           @click="schemaSubTab = 'output'"
         >
           Output
         </button>
       </div>
-      <div class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
+      <div class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable">
         <!-- Input schema sub-tab -->
         <div v-if="hasInputSchema && schemaSubTab === 'input'">
-          <NodeSettingsInputSchema v-if="manifestAction" :manifest-action="manifestAction" />
+          <NodeSettingsInputSchema
+            v-if="manifestAction"
+            :manifest-action="manifestAction"
+          />
         </div>
         <!-- Output schema sub-tab (or sole content when no input schema) -->
         <div v-if="!hasInputSchema || schemaSubTab === 'output'">
@@ -409,9 +498,15 @@ const onSettingsDrop = (event: DragEvent) => {
                     <span
                       class="rounded px-1.5 py-0.5 font-mono text-[10px] font-medium"
                       :class="typeBadgeClass(field.type)"
-                    >{{ field.type }}</span>
+                      >{{ field.type }}</span
+                    >
                   </div>
-                  <p v-if="field.description" class="text-muted-foreground mt-0.5 text-xs">{{ field.description }}</p>
+                  <p
+                    v-if="field.description"
+                    class="text-muted-foreground mt-0.5 text-xs"
+                  >
+                    {{ field.description }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -423,7 +518,9 @@ const onSettingsDrop = (event: DragEvent) => {
             <LucideFileJson class="h-8 w-8 opacity-40" />
             <div>
               <p class="font-medium">No output schema</p>
-              <p class="mt-0.5 opacity-70">This node type does not define an output schema</p>
+              <p class="mt-0.5 opacity-70">
+                This node type does not define an output schema
+              </p>
             </div>
           </div>
         </div>
@@ -431,17 +528,25 @@ const onSettingsDrop = (event: DragEvent) => {
     </div>
 
     <!-- Expressions tab -->
-    <div v-show="activeTab === 'expressions'" class="flex flex-1 flex-col overflow-hidden">
+    <div
+      v-show="activeTab === 'expressions'"
+      class="flex flex-1 flex-col overflow-hidden"
+    >
       <!-- Category pills -->
-      <div v-if="fnCategories.size > 1" class="flex gap-1 overflow-x-auto border-b px-4 pt-4 pb-2">
+      <div
+        v-if="fnCategories.size > 1"
+        class="flex gap-1 overflow-x-auto border-b px-4 pt-4 pb-2"
+      >
         <button
           v-for="[cat] in fnCategories"
           :key="cat"
           type="button"
           class="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-medium transition-colors"
-          :class="activeFnCategory === cat
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-muted-foreground hover:text-foreground'"
+          :class="
+            activeFnCategory === cat
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground hover:text-foreground'
+          "
           @click="activeFnCategory = cat"
         >
           {{ cat }}
@@ -449,7 +554,7 @@ const onSettingsDrop = (event: DragEvent) => {
       </div>
 
       <!-- Function list -->
-      <div class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
+      <div class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable">
         <div v-if="filteredFunctions.length" class="divide-y">
           <div
             v-for="fn in filteredFunctions"
@@ -468,12 +573,17 @@ const onSettingsDrop = (event: DragEvent) => {
             </div>
 
             <!-- Full signature -->
-            <div class="font-mono text-[11px] text-emerald-600 dark:text-emerald-400">
+            <div
+              class="font-mono text-[11px] text-emerald-600 dark:text-emerald-400"
+            >
               {{ fnSignature(fn) }}
             </div>
 
             <!-- Description -->
-            <p v-if="fn.description" class="text-muted-foreground text-xs leading-relaxed">
+            <p
+              v-if="fn.description"
+              class="text-muted-foreground text-xs leading-relaxed"
+            >
               {{ fn.description }}
             </p>
 
@@ -485,9 +595,19 @@ const onSettingsDrop = (event: DragEvent) => {
                 class="bg-muted/50 flex items-baseline gap-2 rounded px-2 py-1 text-[11px]"
               >
                 <code class="font-semibold">{{ param.name }}</code>
-                <span class="text-muted-foreground font-mono text-[10px]">{{ param.type }}</span>
-                <span v-if="param.required === false" class="text-muted-foreground text-[9px] italic">optional</span>
-                <span v-if="param.description" class="text-muted-foreground ml-auto text-[10px]">{{ param.description }}</span>
+                <span class="text-muted-foreground font-mono text-[10px]">{{
+                  param.type
+                }}</span>
+                <span
+                  v-if="param.required === false"
+                  class="text-muted-foreground text-[9px] italic"
+                  >optional</span
+                >
+                <span
+                  v-if="param.description"
+                  class="text-muted-foreground ml-auto text-[10px]"
+                  >{{ param.description }}</span
+                >
               </div>
             </div>
 
@@ -521,17 +641,26 @@ const onSettingsDrop = (event: DragEvent) => {
     </div>
 
     <!-- Variables tab -->
-    <div v-show="activeTab === 'variables'" class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable;">
+    <div
+      v-show="activeTab === 'variables'"
+      class="flex-1 overflow-y-auto p-4"
+      style="scrollbar-gutter: stable"
+    >
       <div v-if="expressionVariables.length" class="divide-y">
         <div
           v-for="v in expressionVariables"
           :key="v.pattern"
           class="space-y-1 py-3 first:pt-0"
         >
-          <code class="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-medium text-emerald-700 dark:text-emerald-400">
+          <code
+            class="rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-xs font-medium text-emerald-700 dark:text-emerald-400"
+          >
             {{ v.pattern }}
           </code>
-          <p v-if="v.description" class="text-muted-foreground text-xs leading-relaxed">
+          <p
+            v-if="v.description"
+            class="text-muted-foreground text-xs leading-relaxed"
+          >
             {{ v.description }}
           </p>
           <div
@@ -549,7 +678,9 @@ const onSettingsDrop = (event: DragEvent) => {
         <LucideVariable class="h-8 w-8 opacity-40" />
         <div>
           <p class="font-medium">No expression variables</p>
-          <p class="mt-0.5 opacity-70">The manifest does not define any expression variables</p>
+          <p class="mt-0.5 opacity-70">
+            The manifest does not define any expression variables
+          </p>
         </div>
       </div>
     </div>

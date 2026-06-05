@@ -13,10 +13,18 @@
 ```vue
 <template>
   <LayoutSidebarNav>
-    <LayoutSidebarNavItem id="product" :current="step === 'product'" @click="step = 'product'">
+    <LayoutSidebarNavItem
+      id="product"
+      :current="step === 'product'"
+      @click="step = 'product'"
+    >
       {{ $t('products') }}
     </LayoutSidebarNavItem>
-    <LayoutSidebarNavItem id="category" :current="step === 'category'" @click="step = 'category'">
+    <LayoutSidebarNavItem
+      id="category"
+      :current="step === 'category'"
+      @click="step = 'category'"
+    >
       {{ $t('categories') }}
     </LayoutSidebarNavItem>
   </LayoutSidebarNav>

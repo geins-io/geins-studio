@@ -52,7 +52,7 @@ Combined rules for this product — the panel splits into `global` (read-only) a
 ### `productId`
 
 ```ts
-productId: string
+productId: string;
 ```
 
 Product `_id`.
@@ -60,7 +60,7 @@ Product `_id`.
 ### `productName`
 
 ```ts
-productName: string
+productName: string;
 ```
 
 Used in the sheet description.
@@ -68,7 +68,7 @@ Used in the sheet description.
 ### `priceListId`
 
 ```ts
-priceListId: string
+priceListId: string;
 ```
 
 Used to scope the preview-price API call.

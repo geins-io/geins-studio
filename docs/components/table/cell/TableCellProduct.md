@@ -28,7 +28,7 @@
 ### `name`
 
 ```ts
-name: string
+name: string;
 ```
 
 Product name (top line).

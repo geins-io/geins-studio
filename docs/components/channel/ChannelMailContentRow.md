@@ -29,7 +29,7 @@
 ### `mailType`
 
 ```ts
-mailType: ChannelMailType
+mailType: ChannelMailType;
 ```
 
 The mail type to render.

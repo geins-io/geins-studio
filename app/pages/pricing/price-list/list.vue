@@ -87,8 +87,13 @@ onMounted(() => {
       onCopy: async (item: Entity) => {
         try {
           const newPriceList = await productApi.priceList.id(item._id).copy();
-          toast({ title: t('entity_copied', { entityName }), variant: 'positive' });
-          await navigateTo(entityUrl.replace(entityIdentifier, String(newPriceList._id)));
+          toast({
+            title: t('entity_copied', { entityName }),
+            variant: 'positive',
+          });
+          await navigateTo(
+            entityUrl.replace(entityIdentifier, String(newPriceList._id)),
+          );
         } catch (err) {
           geinsLogError('copyPriceList :::', getErrorMessage(err));
           showErrorToast(t('error_copying_entity', { entityName }));

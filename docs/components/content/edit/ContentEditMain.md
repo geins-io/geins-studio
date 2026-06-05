@@ -68,7 +68,7 @@ Optional content rendered below the main grid (e.g. an embedded table).
 ### `sidebar-floating`
 
 ```ts
-Ref<boolean>
+Ref<boolean>;
 ```
 
 `true` when the sidebar is in floating-toggle mode. Child components inject this to know whether to constrain their height.

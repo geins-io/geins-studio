@@ -17,7 +17,10 @@
 
 ```vue
 <template>
-  <ContentEditCard :title="$t('general')" :description="$t('general_description')">
+  <ContentEditCard
+    :title="$t('general')"
+    :description="$t('general_description')"
+  >
     <FormGridWrap>
       <FormGrid design="1+1">
         <FormFieldName />

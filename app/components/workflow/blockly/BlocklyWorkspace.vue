@@ -1,102 +1,125 @@
 <script setup lang="ts">
-import type { ManifestExpressionFunction } from '#shared/types'
-import { registerAllBlocks } from './useBlocklyBlocks'
-import { useBlocklyGenerator } from './useBlocklyGenerator'
-import { useBlocklyParser } from './useBlocklyParser'
-import { useBlocklyTheme } from './useBlocklyTheme'
-import { buildToolbox } from './useBlocklyToolbox'
-import type { ExpressionCompletion } from '../shared/ExpressionInput.vue'
-import type { Ref } from 'vue'
+import type { ManifestExpressionFunction } from '#shared/types';
+import { registerAllBlocks } from './useBlocklyBlocks';
+import { useBlocklyGenerator } from './useBlocklyGenerator';
+import { useBlocklyParser } from './useBlocklyParser';
+import { useBlocklyTheme } from './useBlocklyTheme';
+import { buildToolbox } from './useBlocklyToolbox';
+import type { ExpressionCompletion } from '../shared/ExpressionInput.vue';
+import type { Ref } from 'vue';
 
-const props = withDefaults(defineProps<{
-  modelValue?: string
-  completions?: ExpressionCompletion[]
-  expressionFunctions?: ManifestExpressionFunction[]
-}>(), {
-  modelValue: '',
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string;
+    completions?: ExpressionCompletion[];
+    expressionFunctions?: ManifestExpressionFunction[];
+  }>(),
+  {
+    modelValue: '',
+  },
+);
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
-}>()
+  'update:modelValue': [value: string];
+}>();
 
-const { geinsLog, geinsLogError } = useGeinsLog('BlocklyWorkspace')
+const { geinsLog, geinsLogError } = useGeinsLog('BlocklyWorkspace');
 
-const { createShadcnBlocklyTheme } = useBlocklyTheme()
+const { createShadcnBlocklyTheme } = useBlocklyTheme();
 
-const containerRef = ref<HTMLElement>()
-const loading = ref(true)
+const containerRef = ref<HTMLElement>();
+const loading = ref(true);
 
 // Use props if provided (teleported context), fall back to inject
-const injectedCompletions = inject<Ref<ExpressionCompletion[]>>('expressionCompletions', ref([]))
-const injectedFunctions = inject<Ref<ManifestExpressionFunction[]>>('expressionFunctions', ref([]))
-const resolveExpression = inject<(expr: string) => string | null>('resolveExpression', () => null)
+const injectedCompletions = inject<Ref<ExpressionCompletion[]>>(
+  'expressionCompletions',
+  ref([]),
+);
+const injectedFunctions = inject<Ref<ManifestExpressionFunction[]>>(
+  'expressionFunctions',
+  ref([]),
+);
+const resolveExpression = inject<(expr: string) => string | null>(
+  'resolveExpression',
+  () => null,
+);
 
-const completions = computed(() => props.completions ?? injectedCompletions.value)
-const expressionFunctions = computed(() => props.expressionFunctions ?? injectedFunctions.value)
+const completions = computed(
+  () => props.completions ?? injectedCompletions.value,
+);
+const expressionFunctions = computed(
+  () => props.expressionFunctions ?? injectedFunctions.value,
+);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let workspace: any = null
+let workspace: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let Blockly: any = null
+let Blockly: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let generateCode: ((ws: any) => string) | null = null
+let generateCode: ((ws: any) => string) | null = null;
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-const colorMode = useColorMode()
+const colorMode = useColorMode();
 
-const isDark = computed(() => colorMode.value === 'dark')
+const isDark = computed(() => colorMode.value === 'dark');
 
 function onWorkspaceChange() {
-  if (debounceTimer) clearTimeout(debounceTimer)
+  if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
-    if (!workspace || !generateCode) return
-    const code = generateCode(workspace)
-    emit('update:modelValue', code)
-  }, 150)
+    if (!workspace || !generateCode) return;
+    const code = generateCode(workspace);
+    emit('update:modelValue', code);
+  }, 150);
 }
 
 function applyTheme() {
-  if (!workspace || !Blockly) return
-  const theme = createShadcnBlocklyTheme(Blockly, isDark.value)
-  workspace.setTheme(theme)
+  if (!workspace || !Blockly) return;
+  const theme = createShadcnBlocklyTheme(Blockly, isDark.value);
+  workspace.setTheme(theme);
 }
 
 async function initBlockly() {
-  if (!containerRef.value) return
+  if (!containerRef.value) return;
 
   try {
-    Blockly = await import('blockly')
+    Blockly = await import('blockly');
 
-    Blockly.config.snapRadius = 48
-    Blockly.config.connectingSnapRadius = 300
-    Blockly.ContextMenuRegistry.registry.reset()
+    Blockly.config.snapRadius = 48;
+    Blockly.config.connectingSnapRadius = 300;
+    Blockly.ContextMenuRegistry.registry.reset();
 
-    registerAllBlocks(Blockly, { completions, expressionFunctions: expressionFunctions.value })
+    registerAllBlocks(Blockly, {
+      completions,
+      expressionFunctions: expressionFunctions.value,
+    });
 
-    const BaseConstants = Blockly.zelos.ConstantProvider
-    const BaseRenderer = Blockly.zelos.Renderer
+    const BaseConstants = Blockly.zelos.ConstantProvider;
+    const BaseRenderer = Blockly.zelos.Renderer;
     class PaddedConstants extends BaseConstants {
       init() {
-        super.init()
-        this.MEDIUM_PADDING = 10
-        this.MEDIUM_LARGE_PADDING = 14
-        this.LARGE_PADDING = 18
+        super.init();
+        this.MEDIUM_PADDING = 10;
+        this.MEDIUM_LARGE_PADDING = 14;
+        this.LARGE_PADDING = 18;
       }
     }
     class PaddedRenderer extends BaseRenderer {
       makeConstants_() {
-        return new PaddedConstants()
+        return new PaddedConstants();
       }
     }
-    try { Blockly.blockRendering.unregister('padded-zelos') } catch { /* first load */ }
-    Blockly.blockRendering.register('padded-zelos', PaddedRenderer)
+    try {
+      Blockly.blockRendering.unregister('padded-zelos');
+    } catch {
+      /* first load */
+    }
+    Blockly.blockRendering.register('padded-zelos', PaddedRenderer);
 
-    const generator = useBlocklyGenerator(Blockly, expressionFunctions.value)
-    generateCode = generator.generateCode
+    const generator = useBlocklyGenerator(Blockly, expressionFunctions.value);
+    generateCode = generator.generateCode;
 
-    const theme = createShadcnBlocklyTheme(Blockly, isDark.value)
+    const theme = createShadcnBlocklyTheme(Blockly, isDark.value);
 
     workspace = Blockly.inject(containerRef.value, {
       theme,
@@ -123,66 +146,64 @@ async function initBlockly() {
         drag: true,
         wheel: true,
       },
-    })
+    });
 
-    workspace.addChangeListener(onWorkspaceChange)
+    workspace.addChangeListener(onWorkspaceChange);
 
-    const svgEl = workspace.getParentSvg()
+    const svgEl = workspace.getParentSvg();
     if (svgEl) {
-      svgEl.addEventListener('contextmenu', (e: Event) => e.preventDefault())
+      svgEl.addEventListener('contextmenu', (e: Event) => e.preventDefault());
     }
 
     // Load existing expression into workspace
     if (props.modelValue) {
-      const { loadExpression, setManifestFunctions } = useBlocklyParser()
-      setManifestFunctions(expressionFunctions.value)
-      loadExpression(workspace, Blockly, props.modelValue)
-      workspace.scrollCenter()
+      const { loadExpression, setManifestFunctions } = useBlocklyParser();
+      setManifestFunctions(expressionFunctions.value);
+      loadExpression(workspace, Blockly, props.modelValue);
+      workspace.scrollCenter();
     }
 
     geinsLog('Blockly workspace initialized', {
       completionCount: completions.value.length,
       functionCount: expressionFunctions.value.length,
       hasResolver: resolveExpression !== null,
-    })
-  }
-  catch (err) {
-    geinsLogError('Failed to initialize Blockly workspace', err)
-  }
-  finally {
-    loading.value = false
+    });
+  } catch (err) {
+    geinsLogError('Failed to initialize Blockly workspace', err);
+  } finally {
+    loading.value = false;
   }
 }
 
 watch(isDark, () => {
-  applyTheme()
-})
+  applyTheme();
+});
 
 // The manifest loads asynchronously, so expressionFunctions may be empty at
 // first inject. When it resolves (or changes), re-register the generic
 // function blocks/generator and refresh the toolbox so new functions appear.
 watch(expressionFunctions, (fns) => {
-  if (!Blockly || !workspace) return
-  registerAllBlocks(Blockly, { completions, expressionFunctions: fns })
-  generateCode = useBlocklyGenerator(Blockly, fns).generateCode
-  useBlocklyParser().setManifestFunctions(fns)
-  workspace.updateToolbox(buildToolbox(fns))
-})
+  if (!Blockly || !workspace) return;
+  registerAllBlocks(Blockly, { completions, expressionFunctions: fns });
+  generateCode = useBlocklyGenerator(Blockly, fns).generateCode;
+  useBlocklyParser().setManifestFunctions(fns);
+  workspace.updateToolbox(buildToolbox(fns));
+});
 
 onMounted(() => {
-  initBlockly()
-})
+  initBlockly();
+});
 
 onBeforeUnmount(() => {
-  if (debounceTimer) clearTimeout(debounceTimer)
+  if (debounceTimer) clearTimeout(debounceTimer);
   if (workspace) {
-    workspace.removeChangeListener(onWorkspaceChange)
-    workspace.dispose()
-    workspace = null
+    workspace.removeChangeListener(onWorkspaceChange);
+    workspace.dispose();
+    workspace = null;
   }
-  Blockly = null
-  generateCode = null
-})
+  Blockly = null;
+  generateCode = null;
+});
 </script>
 
 <template>

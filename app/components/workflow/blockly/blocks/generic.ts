@@ -1,4 +1,4 @@
-import type { ManifestExpressionFunction } from '#shared/types'
+import type { ManifestExpressionFunction } from '#shared/types';
 
 /**
  * Maps a manifest function category to its Blockly blockStyle name.
@@ -6,10 +6,19 @@ import type { ManifestExpressionFunction } from '#shared/types'
  * category (and any unknown category) falls back to `default_blocks`.
  */
 function blockStyleForCategory(category?: string): string {
-  const c = (category ?? '').toLowerCase()
-  const known = ['data', 'logic', 'math', 'array', 'string', 'datetime', 'conversion', 'object']
-  if (!c || c === 'other') return 'default_blocks'
-  return known.includes(c) ? `${c}_blocks` : 'default_blocks'
+  const c = (category ?? '').toLowerCase();
+  const known = [
+    'data',
+    'logic',
+    'math',
+    'array',
+    'string',
+    'datetime',
+    'conversion',
+    'object',
+  ];
+  if (!c || c === 'other') return 'default_blocks';
+  return known.includes(c) ? `${c}_blocks` : 'default_blocks';
 }
 
 /**
@@ -30,33 +39,33 @@ export function registerGenericFunctionBlocks(
   bespokeNames: Set<string>,
 ) {
   for (const fn of functions) {
-    if (!fn?.name) continue
-    const aliases = fn.aliases ?? []
-    if (bespokeNames.has(fn.name) || aliases.some((a) => bespokeNames.has(a))) continue
+    if (!fn?.name) continue;
+    const aliases = fn.aliases ?? [];
+    if (bespokeNames.has(fn.name) || aliases.some((a) => bespokeNames.has(a)))
+      continue;
 
-    const type = `ncalc_fn_${fn.name}`
-    const params = fn.parameters ?? []
-    const style = blockStyleForCategory(fn.category)
-    const tooltip = [fn.description, fn.example].filter(Boolean).join(' — ')
+    const type = `ncalc_fn_${fn.name}`;
+    const params = fn.parameters ?? [];
+    const style = blockStyleForCategory(fn.category);
+    const tooltip = [fn.description, fn.example].filter(Boolean).join(' — ');
 
     Blockly.Blocks[type] = {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       init(this: any) {
         if (params.length === 0) {
-          this.appendDummyInput().appendField(fn.name)
-        }
-        else {
+          this.appendDummyInput().appendField(fn.name);
+        } else {
           params.forEach((p, i) => {
-            const input = this.appendValueInput(`ARG${i}`)
-            if (i === 0) input.appendField(fn.name)
-            input.appendField(p.name)
-          })
-          this.setInputsInline(params.length <= 3)
+            const input = this.appendValueInput(`ARG${i}`);
+            if (i === 0) input.appendField(fn.name);
+            input.appendField(p.name);
+          });
+          this.setInputsInline(params.length <= 3);
         }
-        this.setOutput(true)
-        this.setStyle(style)
-        if (tooltip) this.setTooltip(tooltip)
+        this.setOutput(true);
+        this.setStyle(style);
+        if (tooltip) this.setTooltip(tooltip);
       },
-    }
+    };
   }
 }

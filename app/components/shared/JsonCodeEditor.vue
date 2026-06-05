@@ -35,22 +35,22 @@ const copied = ref(false);
 async function copyToClipboard() {
   await navigator.clipboard.writeText(props.modelValue);
   copied.value = true;
-  setTimeout(() => { copied.value = false; }, 1500);
+  setTimeout(() => {
+    copied.value = false;
+  }, 1500);
 }
 
 function openModal() {
   isExpanded.value = true;
   nextTick(() => {
     if (!modalEditorRef.value) return;
-    const extensions = [
-      basicSetup,
-      json(),
-      appTheme,
-    ];
+    const extensions = [basicSetup, json(), appTheme];
     if (props.readonly) {
-      extensions.push(EditorState.readOnly.of(true), EditorView.editable.of(false));
-    }
-    else {
+      extensions.push(
+        EditorState.readOnly.of(true),
+        EditorView.editable.of(false),
+      );
+    } else {
       extensions.push(
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
@@ -137,9 +137,11 @@ onMounted(() => {
   }
 
   if (props.readonly) {
-    extensions.push(EditorState.readOnly.of(true), EditorView.editable.of(false));
-  }
-  else {
+    extensions.push(
+      EditorState.readOnly.of(true),
+      EditorView.editable.of(false),
+    );
+  } else {
     extensions.push(
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
@@ -178,7 +180,11 @@ watch(
       const current = modalView.state.doc.toString();
       if (current !== newValue) {
         modalView.dispatch({
-          changes: { from: 0, to: modalView.state.doc.length, insert: newValue },
+          changes: {
+            from: 0,
+            to: modalView.state.doc.length,
+            insert: newValue,
+          },
         });
       }
     }
@@ -188,10 +194,7 @@ watch(
 
 <template>
   <div class="relative min-h-0 flex-1">
-    <div
-      ref="containerRef"
-      class="h-full overflow-hidden rounded-lg border"
-    />
+    <div ref="containerRef" class="h-full overflow-hidden rounded-lg border" />
     <button
       v-if="props.expandable"
       class="text-muted-foreground hover:text-foreground absolute top-1 right-1 z-10 flex h-5 w-5 items-center justify-center rounded transition-colors"
@@ -203,18 +206,29 @@ watch(
 
     <Teleport to="body">
       <Transition name="modal-fade">
-        <div v-if="isExpanded" class="fixed inset-0 z-[9999] flex items-center justify-center">
+        <div
+          v-if="isExpanded"
+          class="fixed inset-0 z-[9999] flex items-center justify-center"
+        >
           <div class="absolute inset-0 bg-black/50" @click="closeModal" />
-          <div class="bg-background relative z-10 flex h-[70vh] w-[80vw] max-w-5xl flex-col overflow-hidden rounded-xl border shadow-2xl">
+          <div
+            class="bg-background relative z-10 flex h-[70vh] w-[80vw] max-w-5xl flex-col overflow-hidden rounded-xl border shadow-2xl"
+          >
             <div class="flex items-center justify-between border-b px-4 py-2">
-              <span class="text-muted-foreground text-xs font-medium tracking-wider uppercase">{{ props.expandTitle }}</span>
+              <span
+                class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
+                >{{ props.expandTitle }}</span
+              >
               <div class="flex items-center gap-1">
                 <button
                   class="text-muted-foreground hover:text-foreground flex h-6 w-6 items-center justify-center rounded transition-colors"
                   :title="copied ? 'Copied!' : 'Copy to clipboard'"
                   @click="copyToClipboard"
                 >
-                  <LucideCheck v-if="copied" class="h-3.5 w-3.5 text-green-500" />
+                  <LucideCheck
+                    v-if="copied"
+                    class="h-3.5 w-3.5 text-green-500"
+                  />
                   <LucideCopy v-else class="h-3.5 w-3.5" />
                 </button>
                 <button

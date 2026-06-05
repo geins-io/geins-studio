@@ -47,7 +47,7 @@ const tabs = computed<TabDescriptor[]>(() => [
 ### `tabs`
 
 ```ts
-tabs: Array<string | TabDescriptor>
+tabs: Array<string | TabDescriptor>;
 ```
 
 The tab labels. Strings are normalized to `{ label }`.

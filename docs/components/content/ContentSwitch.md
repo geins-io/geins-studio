@@ -15,7 +15,7 @@ A bordered toggle row with a label, optional description, optional icon, and an 
 
 ```vue
 <script setup lang="ts">
-const enabled = ref(false)
+const enabled = ref(false);
 </script>
 
 <template>
@@ -31,15 +31,11 @@ const enabled = ref(false)
 
 ```vue
 <script setup lang="ts">
-const active = ref(false)
+const active = ref(false);
 </script>
 
 <template>
-  <ContentSwitch
-    v-model:checked="active"
-    label="Custom shipping"
-    icon="Truck"
-  >
+  <ContentSwitch v-model:checked="active" label="Custom shipping" icon="Truck">
     <!-- Shown only when active is true -->
     <FormGrid design="1+1">
       <FormField name="shippingMethod">...</FormField>
@@ -66,7 +62,7 @@ const active = ref(false)
 ### `label`
 
 ```ts
-label: string
+label: string;
 ```
 
 - **Type:** `string`

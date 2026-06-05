@@ -16,9 +16,7 @@ Wraps inline text with a `TooltipProvider` so that hovering reveals additional d
 <template>
   <ContentTextTooltip>
     3 categories
-    <template #tooltip>
-      Accessories, Footwear, Outerwear
-    </template>
+    <template #tooltip> Accessories, Footwear, Outerwear </template>
   </ContentTextTooltip>
 </template>
 ```

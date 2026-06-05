@@ -340,8 +340,10 @@ interface SelectorSelectionQuery {
   productIds?: string[];
 }
 
-interface SelectorSelectionInternal
-  extends Omit<SelectorSelectionQuery, 'productIds'> {
+interface SelectorSelectionInternal extends Omit<
+  SelectorSelectionQuery,
+  'productIds'
+> {
   ids?: string[];
 }
 

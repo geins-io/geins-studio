@@ -28,7 +28,6 @@ const decimalFormatter = new Intl.NumberFormat('sv-SE', {
  * @property {function} formatCurrency - Formats a numeric value with locale-aware thousands separators and 2 decimal places
  */
 export const usePrice = (): UsePriceReturnType => {
-
   const formatCurrency = (
     value: string | number | undefined | null,
   ): string => {

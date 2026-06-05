@@ -33,7 +33,9 @@ const onSave = (data: {
     :current-shipping-address-id="quotation.shippingAddressId"
     @save="onSave"
   >
-    <Button variant="outline">{{ $t('orders.change_customer_details') }}</Button>
+    <Button variant="outline">{{
+      $t('orders.change_customer_details')
+    }}</Button>
   </ContentEditCustomerPanel>
 </template>
 ```
@@ -43,7 +45,7 @@ const onSave = (data: {
 ### `company`
 
 ```ts
-company: CustomerCompany | undefined
+company: CustomerCompany | undefined;
 ```
 
 Source of `addresses` for the billing/shipping selects.

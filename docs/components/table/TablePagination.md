@@ -15,7 +15,11 @@
 
 ```vue
 <script setup lang="ts" generic="T">
-import { useVueTable, getCoreRowModel, getPaginationRowModel } from '@tanstack/vue-table';
+import {
+  useVueTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+} from '@tanstack/vue-table';
 
 const table = useVueTable({
   data,
@@ -40,7 +44,7 @@ const table = useVueTable({
 ### `table`
 
 ```ts
-table: Table<TData>
+table: Table<TData>;
 ```
 
 [TanStack Table](https://tanstack.com/table/latest/docs/introduction) instance.
@@ -48,7 +52,7 @@ table: Table<TData>
 ### `rowsSelectable`
 
 ```ts
-rowsSelectable: boolean
+rowsSelectable: boolean;
 ```
 
 When `true`, the row counter renders "X of Y selected" instead of "Y total".
@@ -56,7 +60,7 @@ When `true`, the row counter renders "X of Y selected" instead of "Y total".
 ### `entityName`
 
 ```ts
-entityName: string
+entityName: string;
 ```
 
 i18n key for the entity used in the counter and "rows per page" labels.
@@ -64,7 +68,7 @@ i18n key for the entity used in the counter and "rows per page" labels.
 ### `advanced`
 
 ```ts
-advanced: boolean
+advanced: boolean;
 ```
 
 Shows the page-size selector. Hidden in simple/minimal modes.

@@ -1,39 +1,47 @@
 <script setup lang="ts">
-import { Handle, Position, useNode, useVueFlow } from '@vue-flow/core'
+import { Handle, Position, useNode, useVueFlow } from '@vue-flow/core';
 
-const props = withDefaults(defineProps<{
-  handleId?: string
-  position?: Position
-  style?: Record<string, string>
-  handleClass?: string
-  lineLength?: number
-}>(), {
-  position: Position.Right,
-  lineLength: 24,
-})
+const props = withDefaults(
+  defineProps<{
+    handleId?: string;
+    position?: Position;
+    style?: Record<string, string>;
+    handleClass?: string;
+    lineLength?: number;
+  }>(),
+  {
+    position: Position.Right,
+    lineLength: 24,
+  },
+);
 
-const { id: nodeId } = useNode()
-const { edges, connectionStartHandle } = useVueFlow()
+const { id: nodeId } = useNode();
+const { edges, connectionStartHandle } = useVueFlow();
 
-const onHandlePlusClick = inject<(sourceNodeId: string, sourceHandleId?: string) => void>('onHandlePlusClick')
+const onHandlePlusClick =
+  inject<(sourceNodeId: string, sourceHandleId?: string) => void>(
+    'onHandlePlusClick',
+  );
 
 const isConnected = computed(() =>
   edges.value.some(
-    e => e.source === nodeId && (props.handleId == null || e.sourceHandle === props.handleId),
+    (e) =>
+      e.source === nodeId &&
+      (props.handleId == null || e.sourceHandle === props.handleId),
   ),
-)
+);
 
-const isConnecting = computed(() => connectionStartHandle.value !== null)
+const isConnecting = computed(() => connectionStartHandle.value !== null);
 
-const isHovered = ref(false)
+const isHovered = ref(false);
 
-const isPlusVisible = computed(() => !isConnecting.value || isHovered.value)
+const isPlusVisible = computed(() => !isConnecting.value || isHovered.value);
 
 const onClick = (event: MouseEvent) => {
-  event.stopPropagation()
-  event.preventDefault()
-  onHandlePlusClick?.(nodeId, props.handleId)
-}
+  event.stopPropagation();
+  event.preventDefault();
+  onHandlePlusClick?.(nodeId, props.handleId);
+};
 </script>
 
 <template>
@@ -53,7 +61,10 @@ const onClick = (event: MouseEvent) => {
         @mouseleave="isHovered = false"
       >
         <!-- Connecting line from handle dot to + button (starts past handle edge) -->
-        <div class="bg-muted-foreground/40 ml-1 h-[2px]" :style="{ width: `${lineLength}px` }" />
+        <div
+          class="bg-muted-foreground/40 ml-1 h-[2px]"
+          :style="{ width: `${lineLength}px` }"
+        />
         <!-- + button -->
         <div
           class="nodrag bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground pointer-events-auto flex h-6 w-6 items-center justify-center rounded-full border shadow-sm transition-all hover:scale-110"
@@ -70,7 +81,9 @@ const onClick = (event: MouseEvent) => {
 .handle-plus-enter-active,
 .handle-plus-leave-active {
   transform-origin: left center;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .handle-plus-enter-from,

@@ -53,7 +53,7 @@ Forwarded to the Mail content tab.
 ### `channelId`
 
 ```ts
-channelId: string
+channelId: string;
 ```
 
 ### `languages`
@@ -65,7 +65,7 @@ languages: Language[]
 ### `defaultLanguage`
 
 ```ts
-defaultLanguage: string
+defaultLanguage: string;
 ```
 
 ### `storefrontUrl`

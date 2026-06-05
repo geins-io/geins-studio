@@ -9,7 +9,10 @@ interface EntityEditSummaryProps {
   entityName: string;
   entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
   showActiveStatus?: boolean;
-  status?: Ref<StatusBadgeStatus> | ComputedRef<StatusBadgeStatus> | StatusBadgeStatus;
+  status?:
+    | Ref<StatusBadgeStatus>
+    | ComputedRef<StatusBadgeStatus>
+    | StatusBadgeStatus;
 }
 
 /** Return type for {@link useEntityEditSummary}. */

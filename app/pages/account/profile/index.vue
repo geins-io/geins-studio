@@ -60,9 +60,7 @@ const entityBase: UserProfileCreate = {
   phoneNumber: '',
 };
 
-const userFullName = computed(() =>
-  fullName(entityData.value),
-);
+const userFullName = computed(() => fullName(entityData.value));
 
 const entityPageTitle = computed(() =>
   createMode.value

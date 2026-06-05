@@ -32,7 +32,9 @@ export const useLiveClock = (
   const start = () => {
     if (timer) return;
     now.value = Date.now();
-    timer = setInterval(() => { now.value = Date.now(); }, intervalMs);
+    timer = setInterval(() => {
+      now.value = Date.now();
+    }, intervalMs);
   };
 
   watch(

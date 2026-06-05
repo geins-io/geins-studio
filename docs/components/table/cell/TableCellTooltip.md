@@ -28,7 +28,7 @@ Spreads the `Tooltip` shape:
 ### `displayValue`
 
 ```ts
-displayValue: string
+displayValue: string;
 ```
 
 Always-visible value.
@@ -36,7 +36,7 @@ Always-visible value.
 ### `contentValue`
 
 ```ts
-contentValue: string
+contentValue: string;
 ```
 
 Tooltip content (only shown when `disabled` is `false`).

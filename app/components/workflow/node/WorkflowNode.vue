@@ -1,23 +1,28 @@
 <script setup lang="ts">
-import WorkflowNodeAction from './WorkflowNodeAction.vue'
-import WorkflowNodeCondition from './WorkflowNodeCondition.vue'
-import WorkflowNodeDelay from './WorkflowNodeDelay.vue'
-import WorkflowNodeIterator from './WorkflowNodeIterator.vue'
-import WorkflowNodePaginator from './WorkflowNodePaginator.vue'
-import WorkflowNodeToolbar from './WorkflowNodeToolbar.vue'
-import WorkflowNodeTrigger from './WorkflowNodeTrigger.vue'
-import WorkflowNodeWorkflow from './WorkflowNodeWorkflow.vue'
-import type { Component } from 'vue'
+import WorkflowNodeAction from './WorkflowNodeAction.vue';
+import WorkflowNodeCondition from './WorkflowNodeCondition.vue';
+import WorkflowNodeDelay from './WorkflowNodeDelay.vue';
+import WorkflowNodeIterator from './WorkflowNodeIterator.vue';
+import WorkflowNodePaginator from './WorkflowNodePaginator.vue';
+import WorkflowNodeToolbar from './WorkflowNodeToolbar.vue';
+import WorkflowNodeTrigger from './WorkflowNodeTrigger.vue';
+import WorkflowNodeWorkflow from './WorkflowNodeWorkflow.vue';
+import type { Component } from 'vue';
 
-type NodeExecData = { input?: Record<string, unknown> | null, output?: Record<string, unknown> | null, status?: string, error?: string | null }
+type NodeExecData = {
+  input?: Record<string, unknown> | null;
+  output?: Record<string, unknown> | null;
+  status?: string;
+  error?: string | null;
+};
 
-defineOptions({ inheritAttrs: false })
+defineOptions({ inheritAttrs: false });
 
 const props = defineProps<{
-  type: string
-  id: string
-  selected?: boolean
-}>()
+  type: string;
+  id: string;
+  selected?: boolean;
+}>();
 
 const NODE_COMPONENTS: Record<string, Component> = {
   trigger: WorkflowNodeTrigger,
@@ -28,14 +33,19 @@ const NODE_COMPONENTS: Record<string, Component> = {
   delay: WorkflowNodeDelay,
   workflow: WorkflowNodeWorkflow,
   paginator: WorkflowNodePaginator,
-}
+};
 
-const componentForType = computed(() => NODE_COMPONENTS[props.type] ?? WorkflowNodeAction)
+const componentForType = computed(
+  () => NODE_COMPONENTS[props.type] ?? WorkflowNodeAction,
+);
 
-const lastNodeExecutions = inject<Ref<Map<string, NodeExecData>>>('lastNodeExecutions')
-const nodeExecStatus = computed(() => lastNodeExecutions?.value?.get(props.id)?.status?.toLowerCase())
-const hasFailed = computed(() => nodeExecStatus.value === 'failed')
-const hasSucceeded = computed(() => nodeExecStatus.value === 'completed')
+const lastNodeExecutions =
+  inject<Ref<Map<string, NodeExecData>>>('lastNodeExecutions');
+const nodeExecStatus = computed(() =>
+  lastNodeExecutions?.value?.get(props.id)?.status?.toLowerCase(),
+);
+const hasFailed = computed(() => nodeExecStatus.value === 'failed');
+const hasSucceeded = computed(() => nodeExecStatus.value === 'completed');
 </script>
 
 <template>
@@ -57,6 +67,10 @@ const hasSucceeded = computed(() => nodeExecStatus.value === 'completed')
     >
       <LucideCheck class="h-3 w-3" />
     </div>
-    <component :is="componentForType" v-bind="$attrs" :selected="props.selected" />
+    <component
+      :is="componentForType"
+      v-bind="$attrs"
+      :selected="props.selected"
+    />
   </div>
 </template>

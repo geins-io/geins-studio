@@ -31,7 +31,9 @@ const onRemoved = () => refetchBuyers();
     @added="onAdded"
     @removed="onRemoved"
   >
-    <Button variant="outline">{{ $t('add_entity', { entityName: 'buyer' }) }}</Button>
+    <Button variant="outline">{{
+      $t('add_entity', { entityName: 'buyer' })
+    }}</Button>
   </CompanyBuyerPanel>
 </template>
 ```
@@ -41,7 +43,7 @@ const onRemoved = () => refetchBuyers();
 ### `companyId`
 
 ```ts
-companyId: string
+companyId: string;
 ```
 
 Company `_id` the buyer is attached to.
@@ -49,7 +51,7 @@ Company `_id` the buyer is attached to.
 ### `companyName`
 
 ```ts
-companyName: string
+companyName: string;
 ```
 
 Used in the "assign existing customer" banner copy.

@@ -20,7 +20,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: '24'
           cache: pnpm
 
       # Step 4: Install dependencies
@@ -38,8 +38,8 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "docs/.vitepress/dist"
-          output_location: ""
+          action: 'upload'
+          app_location: 'docs/.vitepress/dist'
+          output_location: ''
           skip_app_build: true
           skip_api_build: true

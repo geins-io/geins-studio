@@ -583,7 +583,9 @@ const summary = computed<DataItem[]>(() => {
   dataList.push({
     label: t('entity_identifier', { entityName }),
     value: entityData.value?.identifier || '–',
-    displayType: entityData.value?.identifier ? DataItemDisplayType.Copy : undefined,
+    displayType: entityData.value?.identifier
+      ? DataItemDisplayType.Copy
+      : undefined,
   });
 
   if (entityData.value?.channel) {
@@ -920,7 +922,9 @@ if (!createMode.value) {
                     name="default.identifier"
                   >
                     <FormItem>
-                      <FormLabel>{{ $t('entity_identifier', { entityName }) }}</FormLabel>
+                      <FormLabel>{{
+                        $t('entity_identifier', { entityName })
+                      }}</FormLabel>
                       <FormControl>
                         <Input
                           v-bind="componentField"

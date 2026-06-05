@@ -25,7 +25,7 @@
 ### `code`
 
 ```ts
-code: string
+code: string;
 ```
 
 ISO country code (`'SE'`, `'NO'`). Empty string skips the flag.
@@ -33,7 +33,7 @@ ISO country code (`'SE'`, `'NO'`). Empty string skips the flag.
 ### `label`
 
 ```ts
-label: string
+label: string;
 ```
 
 Visible label next to the flag.

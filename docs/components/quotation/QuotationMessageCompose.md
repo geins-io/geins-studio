@@ -44,7 +44,7 @@ const onSend = async (text: string) => {
 ### `messageType`
 
 ```ts
-messageType: QuotationMessageType  // 'toCustomer' | 'fromCustomer' | 'internal'
+messageType: QuotationMessageType; // 'toCustomer' | 'fromCustomer' | 'internal'
 ```
 
 Drives the placeholder copy.

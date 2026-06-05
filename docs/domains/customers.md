@@ -33,13 +33,13 @@ The Customers domain manages B2B wholesale accounts. A company is the central en
 
 ## Contracts (Cross-Domain Usage)
 
-| Type | Used By | Purpose |
-| --- | --- | --- |
-| `CustomerCompany` | Orders | Company selection for quotations |
-| `CompanyBuyer` | Orders | Buyer selection for quotations |
+| Type                | Used By | Purpose                             |
+| ------------------- | ------- | ----------------------------------- |
+| `CustomerCompany`   | Orders  | Company selection for quotations    |
+| `CompanyBuyer`      | Orders  | Buyer selection for quotations      |
 | `CustomerPriceList` | Pricing | Price list display on company cards |
-| `Address` | Orders | Billing/shipping address selection |
-| `CustomerOrder` | Orders | Company order history display |
+| `Address`           | Orders  | Billing/shipping address selection  |
+| `CustomerOrder`     | Orders  | Company order history display       |
 
 ## Dependencies
 
@@ -48,13 +48,13 @@ The Customers domain manages B2B wholesale accounts. A company is the central en
 
 ## Key Files
 
-| Layer | Path |
-| --- | --- |
-| Types | `shared/types/Customer.ts` |
-| Repository | `app/utils/repositories/customer.ts` |
-| Composables | `useCustomerCompanies.ts`, `useCompanyOrders.ts` |
-| Components | `app/components/company/CompanyBuyerPanel.vue` |
-| Pages | `app/pages/customers/company/list.vue`, `[id].vue` |
+| Layer       | Path                                               |
+| ----------- | -------------------------------------------------- |
+| Types       | `shared/types/Customer.ts`                         |
+| Repository  | `app/utils/repositories/customer.ts`               |
+| Composables | `useCustomerCompanies.ts`, `useCompanyOrders.ts`   |
+| Components  | `app/components/company/CompanyBuyerPanel.vue`     |
+| Pages       | `app/pages/customers/company/list.vue`, `[id].vue` |
 
 ## Decision Log
 

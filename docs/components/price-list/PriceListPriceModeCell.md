@@ -10,11 +10,11 @@
 
 ## Mode → letter
 
-| `priceMode` | Letter |
-| --- | --- |
-| `fixed`, `margin`, `discount` | `M` |
-| `rule`, `autoRule` | `G` |
-| `auto` (or anything else) | `D` |
+| `priceMode`                   | Letter |
+| ----------------------------- | ------ |
+| `fixed`, `margin`, `discount` | `M`    |
+| `rule`, `autoRule`            | `G`    |
+| `auto` (or anything else)     | `D`    |
 
 ## Usage
 
@@ -31,7 +31,7 @@
 ### `priceMode`
 
 ```ts
-priceMode: PriceListPriceMode
+priceMode: PriceListPriceMode;
 ```
 
 The product's current price mode.
