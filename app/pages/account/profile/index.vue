@@ -367,8 +367,9 @@ if (!createMode.value) {
             :loading="loading"
             :disabled="!hasUnsavedChanges || loading"
             @click="handleSave"
-            >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
+            {{ $t('save_entity', { entityName }) }}
+          </ButtonIcon>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
@@ -461,9 +462,9 @@ if (!createMode.value) {
                   :validate-on-blur="true"
                 >
                   <FormItem>
-                    <FormLabel>{{
-                      $t('account_profile.current_password')
-                    }}</FormLabel>
+                    <FormLabel>
+                      {{ $t('account_profile.current_password') }}
+                    </FormLabel>
                     <FormControl>
                       <Input type="password" v-bind="componentField" />
                     </FormControl>
@@ -477,9 +478,9 @@ if (!createMode.value) {
                   :validate-on-blur="true"
                 >
                   <FormItem>
-                    <FormLabel>{{
-                      $t('account_profile.new_password')
-                    }}</FormLabel>
+                    <FormLabel>
+                      {{ $t('account_profile.new_password') }}
+                    </FormLabel>
                     <FormControl>
                       <Input type="password" v-bind="componentField" />
                     </FormControl>
@@ -496,9 +497,9 @@ if (!createMode.value) {
                   :validate-on-blur="true"
                 >
                   <FormItem>
-                    <FormLabel>{{
-                      $t('account_profile.confirm_new_password')
-                    }}</FormLabel>
+                    <FormLabel>
+                      {{ $t('account_profile.confirm_new_password') }}
+                    </FormLabel>
                     <FormControl>
                       <Input type="password" v-bind="componentField" />
                     </FormControl>

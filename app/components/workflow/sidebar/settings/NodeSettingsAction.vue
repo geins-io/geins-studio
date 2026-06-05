@@ -131,8 +131,9 @@ const typeBadgeClass = (type: string): string => {
             <span
               class="rounded px-1.5 py-0.5 font-mono text-[10px] font-medium"
               :class="typeBadgeClass(field.type)"
-              >{{ field.type }}</span
             >
+              {{ field.type }}
+            </span>
           </Label>
           <div v-if="isJsonEditor(field)" class="h-40">
             <JsonCodeEditor
@@ -220,8 +221,9 @@ const typeBadgeClass = (type: string): string => {
                 <span
                   class="rounded px-1.5 py-0.5 font-mono text-[10px] font-medium"
                   :class="typeBadgeClass(field.type)"
-                  >{{ field.type }}</span
                 >
+                  {{ field.type }}
+                </span>
               </Label>
               <div v-if="isJsonEditor(field)" class="h-40">
                 <JsonCodeEditor

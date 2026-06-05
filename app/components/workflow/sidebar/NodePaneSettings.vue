@@ -498,8 +498,9 @@ const onSettingsDrop = (event: DragEvent) => {
                     <span
                       class="rounded px-1.5 py-0.5 font-mono text-[10px] font-medium"
                       :class="typeBadgeClass(field.type)"
-                      >{{ field.type }}</span
                     >
+                      {{ field.type }}
+                    </span>
                   </div>
                   <p
                     v-if="field.description"
@@ -595,19 +596,21 @@ const onSettingsDrop = (event: DragEvent) => {
                 class="bg-muted/50 flex items-baseline gap-2 rounded px-2 py-1 text-[11px]"
               >
                 <code class="font-semibold">{{ param.name }}</code>
-                <span class="text-muted-foreground font-mono text-[10px]">{{
-                  param.type
-                }}</span>
+                <span class="text-muted-foreground font-mono text-[10px]">
+                  {{ param.type }}
+                </span>
                 <span
                   v-if="param.required === false"
                   class="text-muted-foreground text-[9px] italic"
-                  >optional</span
                 >
+                  optional
+                </span>
                 <span
                   v-if="param.description"
                   class="text-muted-foreground ml-auto text-[10px]"
-                  >{{ param.description }}</span
                 >
+                  {{ param.description }}
+                </span>
               </div>
             </div>
 

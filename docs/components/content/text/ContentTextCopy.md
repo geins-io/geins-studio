@@ -15,7 +15,7 @@ An inline button that copies its value to the clipboard on click. Provides anima
 
 ```vue
 <template>
-  <ContentTextCopy label="Order ID" value="ORD-123"> ORD-123 </ContentTextCopy>
+  <ContentTextCopy label="Order ID" value="ORD-123">ORD-123</ContentTextCopy>
 </template>
 ```
 

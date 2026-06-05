@@ -40,9 +40,9 @@ function handleToggle(paymentId: string, active: boolean) {
         <EmptyTitle>
           {{ t('no_entity', { entityName: 'payment_method' }, 2) }}
         </EmptyTitle>
-        <EmptyDescription>{{
-          t('channels.no_payment_methods')
-        }}</EmptyDescription>
+        <EmptyDescription>
+          {{ t('channels.no_payment_methods') }}
+        </EmptyDescription>
       </EmptyHeader>
     </Empty>
 

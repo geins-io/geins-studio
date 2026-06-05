@@ -40,10 +40,9 @@ function onSave() {
     <DialogContent class="sm:max-w-md">
       <DialogHeader>
         <DialogTitle>Save as template</DialogTitle>
-        <DialogDescription
-          >Save this node configuration for reuse in other
-          workflows.</DialogDescription
-        >
+        <DialogDescription>
+          Save this node configuration for reuse in other workflows.
+        </DialogDescription>
       </DialogHeader>
       <div class="space-y-3 py-2">
         <div class="space-y-1.5">
@@ -55,12 +54,10 @@ function onSave() {
           />
         </div>
         <div class="space-y-1.5">
-          <label class="text-sm font-medium"
-            >Description
-            <span class="text-muted-foreground font-normal"
-              >(optional)</span
-            ></label
-          >
+          <label class="text-sm font-medium">
+            Description
+            <span class="text-muted-foreground font-normal">(optional)</span>
+          </label>
           <Textarea
             v-model="description"
             placeholder="What does this template do?"
@@ -69,9 +66,9 @@ function onSave() {
         </div>
       </div>
       <DialogFooter>
-        <Button variant="outline" @click="emit('update:open', false)"
-          >Cancel</Button
-        >
+        <Button variant="outline" @click="emit('update:open', false)">
+          Cancel
+        </Button>
         <Button :disabled="!canSave" @click="onSave">
           <LucideBookmarkPlus class="mr-1.5 h-3.5 w-3.5" />
           Save template

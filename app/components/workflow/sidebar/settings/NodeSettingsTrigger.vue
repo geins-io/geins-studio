@@ -8,9 +8,9 @@ defineProps<{
   <div class="space-y-3 text-sm">
     <div class="flex items-center justify-between">
       <span class="text-muted-foreground">Trigger type</span>
-      <span class="font-medium capitalize">{{
-        nodeData.triggerType || 'onDemand'
-      }}</span>
+      <span class="font-medium capitalize">
+        {{ nodeData.triggerType || 'onDemand' }}
+      </span>
     </div>
     <div
       v-if="nodeData.cronExpression"

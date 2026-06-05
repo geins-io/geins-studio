@@ -287,9 +287,9 @@ const methodBadgeColor = computed(() => {
           />
           Body
         </span>
-        <span v-if="!needsBody" class="text-muted-foreground text-[10px]"
-          >No body</span
-        >
+        <span v-if="!needsBody" class="text-muted-foreground text-[10px]">
+          No body
+        </span>
       </button>
       <div v-if="showBody" class="mt-2">
         <p v-if="!needsBody" class="text-muted-foreground text-xs">
@@ -351,9 +351,9 @@ const methodBadgeColor = computed(() => {
 
         <!-- Expected status codes -->
         <div class="space-y-1">
-          <label class="text-muted-foreground text-xs"
-            >Expected status codes</label
-          >
+          <label class="text-muted-foreground text-xs">
+            Expected status codes
+          </label>
           <input
             :value="expectedStatusCodesText"
             placeholder="e.g. 200, 201, 204"

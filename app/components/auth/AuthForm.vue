@@ -318,7 +318,8 @@ const backToLogin = () => {
         </CardTitle>
         <CardDescription v-if="cardDescription">
           <template v-if="verifyMode && mfaMethod.length > 0">
-            {{ $t('auth.verify_description') }} <strong>{{ mfaMethod }}</strong>
+            {{ $t('auth.verify_description') }}
+            <strong>{{ mfaMethod }}</strong>
           </template>
           <template v-else>
             {{ cardDescription }}
@@ -551,8 +552,9 @@ const backToLogin = () => {
             :href="brand.website.url"
             target="_blank"
             rel="noopener noreferrer"
-            >{{ brand.website.label }}</a
           >
+            {{ brand.website.label }}
+          </a>
         </template>
       </i18n-t>
     </FieldDescription>

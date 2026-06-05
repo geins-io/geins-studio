@@ -447,9 +447,9 @@ const bodyStyle = computed(() => ({
         />
         <LucideExternalLink v-else class="text-muted-foreground size-4" />
         <span class="text-sm font-medium">Logs</span>
-        <span v-if="isPoppedOut" class="text-muted-foreground text-xs"
-          >(popped out)</span
-        >
+        <span v-if="isPoppedOut" class="text-muted-foreground text-xs">
+          (popped out)
+        </span>
       </div>
       <div class="flex items-center gap-1" @click.stop>
         <button
@@ -506,33 +506,34 @@ const bodyStyle = computed(() => ({
                     class="text-destructive h-3 w-3"
                   />
                   <span class="text-muted-foreground">
-                    <template v-if="streamStatus === 'connecting'"
-                      >Connecting…</template
-                    >
-                    <template v-else-if="streamStatus === 'live'"
-                      >Live · {{ events.length }} events{{
+                    <template v-if="streamStatus === 'connecting'">
+                      Connecting…
+                    </template>
+                    <template v-else-if="streamStatus === 'live'">
+                      Live · {{ events.length }} events{{
                         runningCount ? ` · ${runningCount} running` : ''
-                      }}</template
-                    >
-                    <template v-else-if="streamStatus === 'done'"
-                      >Completed · {{ events.length }} events</template
-                    >
-                    <template v-else-if="streamStatus === 'error'"
-                      >Stream error: {{ streamError }}</template
-                    >
+                      }}
+                    </template>
+                    <template v-else-if="streamStatus === 'done'">
+                      Completed · {{ events.length }} events
+                    </template>
+                    <template v-else-if="streamStatus === 'error'">
+                      Stream error: {{ streamError }}
+                    </template>
                     <template v-else>Idle</template>
                   </span>
                   <NuxtLink
                     :to="`/orchestrator/executions/${props.executionId}`"
                     target="_blank"
                     class="bg-muted text-muted-foreground hover:text-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px] underline-offset-2 hover:underline"
-                    >{{ props.executionId }}</NuxtLink
                   >
+                    {{ props.executionId }}
+                  </NuxtLink>
                 </template>
                 <template v-else>
-                  <span class="text-muted-foreground"
-                    >Run a workflow to see live events</span
-                  >
+                  <span class="text-muted-foreground">
+                    Run a workflow to see live events
+                  </span>
                 </template>
               </div>
               <div class="flex items-center gap-2">
@@ -600,13 +601,14 @@ const bodyStyle = computed(() => ({
                             }"
                           />
                           <template v-if="event.nodeName">
-                            <span class="font-medium">{{
-                              event.nodeName
-                            }}</span>
+                            <span class="font-medium">
+                              {{ event.nodeName }}
+                            </span>
                             <span
                               class="bg-muted text-muted-foreground ml-1 rounded px-1 py-0.5 font-mono text-[9px]"
-                              >{{ event.nodeId }}</span
                             >
+                              {{ event.nodeId }}
+                            </span>
                           </template>
                           <template v-else>{{ event.nodeId }}</template>
                         </span>
@@ -663,9 +665,9 @@ const bodyStyle = computed(() => ({
                           <LucideTriangleAlert
                             class="mt-0.5 h-3 w-3 shrink-0"
                           />
-                          <span class="break-all whitespace-pre-wrap">{{
-                            event.error
-                          }}</span>
+                          <span class="break-all whitespace-pre-wrap">
+                            {{ event.error }}
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -769,33 +771,34 @@ const bodyStyle = computed(() => ({
                   class="text-destructive h-3 w-3"
                 />
                 <span class="text-muted-foreground">
-                  <template v-if="streamStatus === 'connecting'"
-                    >Connecting…</template
-                  >
-                  <template v-else-if="streamStatus === 'live'"
-                    >Live · {{ events.length }} events{{
+                  <template v-if="streamStatus === 'connecting'">
+                    Connecting…
+                  </template>
+                  <template v-else-if="streamStatus === 'live'">
+                    Live · {{ events.length }} events{{
                       runningCount ? ` · ${runningCount} running` : ''
-                    }}</template
-                  >
-                  <template v-else-if="streamStatus === 'done'"
-                    >Completed · {{ events.length }} events</template
-                  >
-                  <template v-else-if="streamStatus === 'error'"
-                    >Stream error: {{ streamError }}</template
-                  >
+                    }}
+                  </template>
+                  <template v-else-if="streamStatus === 'done'">
+                    Completed · {{ events.length }} events
+                  </template>
+                  <template v-else-if="streamStatus === 'error'">
+                    Stream error: {{ streamError }}
+                  </template>
                   <template v-else>Idle</template>
                 </span>
                 <NuxtLink
                   :to="`/orchestrator/executions/${props.executionId}`"
                   target="_blank"
                   class="bg-muted text-muted-foreground hover:text-foreground ml-1 rounded px-1.5 py-0.5 font-mono text-[10px] underline-offset-2 hover:underline"
-                  >{{ props.executionId }}</NuxtLink
                 >
+                  {{ props.executionId }}
+                </NuxtLink>
               </template>
               <template v-else>
-                <span class="text-muted-foreground"
-                  >Run a workflow to see live events</span
-                >
+                <span class="text-muted-foreground">
+                  Run a workflow to see live events
+                </span>
               </template>
             </div>
             <div class="flex items-center gap-2">
@@ -864,8 +867,9 @@ const bodyStyle = computed(() => ({
                           <span class="font-medium">{{ event.nodeName }}</span>
                           <span
                             class="bg-muted text-muted-foreground ml-1 rounded px-1 py-0.5 font-mono text-[9px]"
-                            >{{ event.nodeId }}</span
                           >
+                            {{ event.nodeId }}
+                          </span>
                         </template>
                         <template v-else>{{ event.nodeId }}</template>
                       </span>
@@ -917,9 +921,9 @@ const bodyStyle = computed(() => ({
                         class="flex items-start gap-1.5 rounded bg-red-500/10 px-2.5 py-1.5 text-xs text-red-600 dark:text-red-400"
                       >
                         <LucideTriangleAlert class="mt-0.5 h-3 w-3 shrink-0" />
-                        <span class="break-all whitespace-pre-wrap">{{
-                          event.error
-                        }}</span>
+                        <span class="break-all whitespace-pre-wrap">
+                          {{ event.error }}
+                        </span>
                       </div>
                     </td>
                   </tr>

@@ -247,9 +247,9 @@ const clearConsole = () => {
         >
           {{ line.level }}
         </span>
-        <span class="w-32 shrink-0 truncate text-zinc-500">{{
-          line.source
-        }}</span>
+        <span class="w-32 shrink-0 truncate text-zinc-500">
+          {{ line.source }}
+        </span>
         <span class="flex-1 break-all text-zinc-200">{{ line.message }}</span>
       </div>
     </div>

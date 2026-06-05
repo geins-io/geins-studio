@@ -98,8 +98,9 @@ const CONTEXT_VARS = [
         >
           <code
             class="shrink-0 rounded bg-purple-500/10 px-1.5 py-0.5 font-mono text-[11px] font-medium text-purple-600 dark:text-purple-400"
-            >{{ v.expr }}</code
           >
+            {{ v.expr }}
+          </code>
           <p class="text-muted-foreground text-[11px]">{{ v.description }}</p>
         </div>
       </div>
@@ -108,12 +109,12 @@ const CONTEXT_VARS = [
     <!-- Handle labels reference -->
     <div class="text-muted-foreground border-t pt-3 text-xs">
       <p>
-        <span class="font-medium text-purple-600">Foreach</span> executes once
-        per collection item
+        <span class="font-medium text-purple-600">Foreach</span>
+        executes once per collection item
       </p>
       <p class="mt-1">
-        <span class="font-medium text-gray-500">Completed</span> runs after all
-        iterations complete
+        <span class="font-medium text-gray-500">Completed</span>
+        runs after all iterations complete
       </p>
     </div>
   </div>

@@ -333,11 +333,11 @@ const categoryLabel = computed(() => {
                     v-for="(variable, idx) in entry.variables"
                     :key="variable"
                   >
-                    <code class="bg-muted rounded px-1 py-0.5 text-xs">{{
-                      '{' + variable + '}'
-                    }}</code
-                    ><span v-if="idx < (entry.variables?.length ?? 0) - 1"
-                      >,
+                    <code class="bg-muted rounded px-1 py-0.5 text-xs">
+                      {{ '{' + variable + '}' }}
+                    </code>
+                    <span v-if="idx < (entry.variables?.length ?? 0) - 1">
+                      ,
                     </span>
                   </template>
                 </FormInputDescription>

@@ -102,9 +102,9 @@ const toggleNodeExpanded = (nodeId: string) => {
             <span class="text-muted-foreground font-mono text-xs tabular-nums">
               #{{ node.executionOrder }}
             </span>
-            <span class="flex-1 truncate text-sm font-medium">{{
-              node.nodeName
-            }}</span>
+            <span class="flex-1 truncate text-sm font-medium">
+              {{ node.nodeName }}
+            </span>
             <span
               class="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-xs"
             >

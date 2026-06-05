@@ -666,9 +666,9 @@ function onBlocklyApply(value: string) {
         class="flex items-center gap-1 border border-t-0 bg-emerald-500/5 px-2.5 py-1 font-mono text-[10px] leading-tight"
         :class="truncatedPreview ? '' : 'rounded-b-md'"
       >
-        <span class="text-emerald-600 dark:text-emerald-400">{{
-          paramHint.fn.name
-        }}</span>
+        <span class="text-emerald-600 dark:text-emerald-400">
+          {{ paramHint.fn.name }}
+        </span>
         <span class="text-muted-foreground">(</span>
         <template
           v-for="(param, i) in paramHint.fn.parameters"
@@ -682,13 +682,14 @@ function onBlocklyApply(value: string) {
                 : 'text-muted-foreground'
             "
           >
-            {{ param.name }}<span class="opacity-60">: {{ param.type }}</span>
+            {{ param.name }}
+            <span class="opacity-60">: {{ param.type }}</span>
           </span>
         </template>
         <span class="text-muted-foreground">)</span>
-        <span class="text-muted-foreground ml-auto"
-          >→ {{ paramHint.fn.returnType ?? '?' }}</span
-        >
+        <span class="text-muted-foreground ml-auto">
+          → {{ paramHint.fn.returnType ?? '?' }}
+        </span>
       </div>
 
       <!-- Resolved preview -->
@@ -697,7 +698,8 @@ function onBlocklyApply(value: string) {
         class="text-muted-foreground truncate rounded-b-md border border-t-0 bg-emerald-500/5 px-2.5 py-1 font-mono text-[10px] leading-tight"
         :title="preview ?? ''"
       >
-        <span class="opacity-50">= </span>{{ truncatedPreview }}
+        <span class="opacity-50">=</span>
+        {{ truncatedPreview }}
       </div>
     </div>
 
@@ -764,8 +766,9 @@ function onBlocklyApply(value: string) {
                     <code class="text-xs font-semibold">{{ fn.name }}</code>
                     <span
                       class="bg-muted text-muted-foreground rounded px-1 py-0.5 font-mono text-[9px]"
-                      >→ {{ fn.returnType ?? '?' }}</span
                     >
+                      → {{ fn.returnType ?? '?' }}
+                    </span>
                   </div>
                   <div
                     class="mt-0.5 font-mono text-[10px] text-emerald-600 dark:text-emerald-400"

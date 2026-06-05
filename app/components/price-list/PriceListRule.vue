@@ -129,16 +129,18 @@ const handleApply = (overwrite: boolean) => {
         size="xs"
         variant="outline"
         @click="handleApply(false)"
-        >{{ $t('apply') }}</Button
       >
+        {{ $t('apply') }}
+      </Button>
       <Button
         v-if="props.mode !== 'all'"
         :disabled="quantity === undefined || !ruleValid"
         size="xs"
         variant="outline"
         @click="handleApply(true)"
-        >{{ $t('pricing.price_list_apply_overwrite') }}</Button
       >
+        {{ $t('pricing.price_list_apply_overwrite') }}
+      </Button>
       <Button
         :disabled="global && mode === 'all'"
         size="xs"

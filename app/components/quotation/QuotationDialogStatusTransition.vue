@@ -132,9 +132,9 @@ watch(open, (isOpen) => {
         />
       </div>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="$emit('cancel')">{{
-          $t('cancel')
-        }}</AlertDialogCancel>
+        <AlertDialogCancel @click="$emit('cancel')">
+          {{ $t('cancel') }}
+        </AlertDialogCancel>
         <Button
           :loading="props.loading"
           :variant="props.variant"

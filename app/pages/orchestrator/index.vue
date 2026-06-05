@@ -541,8 +541,9 @@ watchEffect(() => {
             <div class="bg-background flex flex-col gap-0.5 px-3 py-2.5">
               <span
                 class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
-                >Active Workflows</span
               >
+                Active Workflows
+              </span>
               <span class="text-sm font-semibold">
                 <template v-if="group.toggleableWorkflowIds.length > 0">
                   {{ group.enabledCount }}/{{
@@ -558,16 +559,18 @@ watchEffect(() => {
             <div class="bg-background flex flex-col gap-0.5 px-3 py-2.5">
               <span
                 class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
-                >Last Sync</span
               >
+                Last Sync
+              </span>
               <span class="text-sm font-semibold">{{ group.lastSync }}</span>
             </div>
             <!-- SUCCESS RATE -->
             <div class="bg-background flex flex-col gap-0.5 px-3 py-2.5">
               <span
                 class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
-                >{{ $t('workflows.success_rate') }}</span
               >
+                {{ $t('workflows.success_rate') }}
+              </span>
               <span
                 class="text-sm font-semibold"
                 :class="
@@ -585,28 +588,29 @@ watchEffect(() => {
             >
               <span
                 class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
-                >Executions</span
               >
+                Executions
+              </span>
               <div class="flex items-center gap-3">
                 <span class="text-sm font-semibold">
                   {{ formatThroughput(group.executions24h) }}
-                  <span class="text-muted-foreground text-[10px] font-normal"
-                    >24h</span
-                  >
+                  <span class="text-muted-foreground text-[10px] font-normal">
+                    24h
+                  </span>
                 </span>
                 <span class="text-muted-foreground text-xs">·</span>
                 <span class="text-sm font-semibold">
                   {{ formatThroughput(group.executions7d) }}
-                  <span class="text-muted-foreground text-[10px] font-normal"
-                    >7d</span
-                  >
+                  <span class="text-muted-foreground text-[10px] font-normal">
+                    7d
+                  </span>
                 </span>
                 <span class="text-muted-foreground text-xs">·</span>
                 <span class="text-sm font-semibold">
                   {{ formatThroughput(group.executionsTotal) }}
-                  <span class="text-muted-foreground text-[10px] font-normal"
-                    >total</span
-                  >
+                  <span class="text-muted-foreground text-[10px] font-normal">
+                    total
+                  </span>
                 </span>
               </div>
             </div>

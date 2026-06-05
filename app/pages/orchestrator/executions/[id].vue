@@ -323,32 +323,30 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
             <span v-if="execution.group">•</span>
             <span v-if="execution.group">{{ execution.group }}</span>
             <span>•</span>
-            <span
-              >Status:
-              <span class="text-foreground font-medium capitalize">{{
-                details?.orchestrationStatus ?? execution.status
-              }}</span></span
-            >
+            <span>
+              Status:
+              <span class="text-foreground font-medium capitalize">
+                {{ details?.orchestrationStatus ?? execution.status }}
+              </span>
+            </span>
             <template v-if="execution.triggerType">
               <span>•</span>
-              <span
-                >Trigger:
-                <span class="text-foreground font-medium"
-                  >{{ execution.triggerType
-                  }}{{
-                    execution.eventName ? ` (${execution.eventName})` : ''
-                  }}</span
-                ></span
-              >
+              <span>
+                Trigger:
+                <span class="text-foreground font-medium">
+                  {{ execution.triggerType
+                  }}{{ execution.eventName ? ` (${execution.eventName})` : '' }}
+                </span>
+              </span>
             </template>
             <template v-if="execution.startedBy">
               <span>•</span>
-              <span
-                >By:
-                <span class="text-foreground font-medium">{{
-                  execution.startedBy
-                }}</span></span
-              >
+              <span>
+                By:
+                <span class="text-foreground font-medium">
+                  {{ execution.startedBy }}
+                </span>
+              </span>
             </template>
           </div>
         </div>
@@ -484,9 +482,9 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         <div class="text-muted-foreground text-xs">Nodes</div>
         <div class="font-mono text-sm">
           {{ execution.completedNodes ?? 0 }} / {{ execution.totalNodes }}
-          <span v-if="execution.failedNodes" class="text-destructive"
-            >({{ execution.failedNodes }} failed)</span
-          >
+          <span v-if="execution.failedNodes" class="text-destructive">
+            ({{ execution.failedNodes }} failed)
+          </span>
         </div>
       </div>
       <div

@@ -2,7 +2,7 @@
 <template>
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <ButtonIcon icon="export" variant="secondary"> Export list </ButtonIcon>
+      <ButtonIcon icon="export" variant="secondary">Export list</ButtonIcon>
     </DropdownMenuTrigger>
     <DropdownMenuContent>
       <DropdownMenuItem>

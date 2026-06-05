@@ -706,13 +706,15 @@ function getError(index: number, field: string): string | undefined {
                     <span
                       v-if="getBuilderClause(i).field"
                       class="min-w-0 flex-1 truncate"
-                      >{{ getBuilderClause(i).field }}</span
                     >
+                      {{ getBuilderClause(i).field }}
+                    </span>
                     <span
                       v-else
                       class="text-muted-foreground min-w-0 flex-1 truncate"
-                      >Select field...</span
                     >
+                      Select field...
+                    </span>
                     <LucideChevronsUpDown
                       class="text-muted-foreground h-3 w-3 shrink-0 opacity-50"
                     />
@@ -752,14 +754,15 @@ function getError(index: number, field: string): string | undefined {
                           class="hover:bg-accent flex w-full flex-col rounded-sm px-2 py-1.5 text-left text-xs"
                           @click="selectField(i, f.value)"
                         >
-                          <span class="w-full font-mono break-all">{{
-                            f.value
-                          }}</span>
+                          <span class="w-full font-mono break-all">
+                            {{ f.value }}
+                          </span>
                           <span
                             v-if="f.detail"
                             class="text-muted-foreground text-[10px]"
-                            >{{ f.detail }}</span
                           >
+                            {{ f.detail }}
+                          </span>
                         </button>
                       </template>
                     </template>
@@ -845,7 +848,8 @@ function getError(index: number, field: string): string | undefined {
                 v-if="cond.condition"
                 class="text-muted-foreground truncate px-0.5 font-mono text-[10px] leading-relaxed"
               >
-                <span class="opacity-40">expr: </span>{{ cond.condition }}
+                <span class="opacity-40">expr:</span>
+                {{ cond.condition }}
               </div>
             </div>
 
@@ -956,10 +960,16 @@ function getError(index: number, field: string): string | undefined {
           <p class="mb-1 font-medium">Syntax</p>
           <!-- eslint-disable-next-line vue/no-parsing-error -->
           <p>
-            Use <strong>bare paths</strong> (no
-            <code class="bg-muted rounded px-1"
-              >{<!-- -->{&nbsp;}<!-- -->}</code
-            >
+            Use
+            <strong>bare paths</strong>
+            (no
+            <code class="bg-muted rounded px-1">
+              {
+              <!-- -->
+              {&nbsp;}
+              <!-- -->
+              }
+            </code>
             wrapping).
           </p>
           <div

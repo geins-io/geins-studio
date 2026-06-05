@@ -839,9 +839,9 @@ function onSearchInput(value: string) {
                       <div
                         class="flex w-full items-center justify-between gap-2"
                       >
-                        <span class="text-destructive text-xs"
-                          >Delete template?</span
-                        >
+                        <span class="text-destructive text-xs">
+                          Delete template?
+                        </span>
                         <div class="flex gap-1">
                           <button
                             class="bg-destructive text-destructive-foreground rounded px-2 py-0.5 text-xs"
@@ -879,10 +879,9 @@ function onSearchInput(value: string) {
                           class="h-4 w-4 shrink-0"
                           :class="viewItem.color"
                         />
-                        <span
-                          class="min-w-0 flex-1 truncate text-left text-sm"
-                          >{{ viewItem.item.label }}</span
-                        >
+                        <span class="min-w-0 flex-1 truncate text-left text-sm">
+                          {{ viewItem.item.label }}
+                        </span>
                       </button>
                       <!-- Template management buttons -->
                       <div

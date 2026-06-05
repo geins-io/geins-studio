@@ -975,9 +975,9 @@ if (!createMode.value) {
                       :country-code="languageToCountryCode(defaultLanguage._id)"
                       :name="defaultLanguage.name"
                     />
-                    <span v-else class="text-muted-foreground text-sm"
-                      >&mdash;</span
-                    >
+                    <span v-else class="text-muted-foreground text-sm">
+                      &mdash;
+                    </span>
                   </div>
                 </div>
               </div>

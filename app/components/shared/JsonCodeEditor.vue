@@ -217,8 +217,9 @@ watch(
             <div class="flex items-center justify-between border-b px-4 py-2">
               <span
                 class="text-muted-foreground text-xs font-medium tracking-wider uppercase"
-                >{{ props.expandTitle }}</span
               >
+                {{ props.expandTitle }}
+              </span>
               <div class="flex items-center gap-1">
                 <button
                   class="text-muted-foreground hover:text-foreground flex h-6 w-6 items-center justify-center rounded transition-colors"

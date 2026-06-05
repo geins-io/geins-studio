@@ -46,9 +46,9 @@ const setPageSize = (value: AcceptableValue) => {
       <span v-else-if="viewport.isGreaterThan('sm')">
         {{ $t('rows_total', { total: totalRows, entityName }, totalRows) }}
       </span>
-      <span v-else>{{
-        `${totalRows} ${t(entityName, totalRows).toLowerCase()}`
-      }}</span>
+      <span v-else>
+        {{ `${totalRows} ${t(entityName, totalRows).toLowerCase()}` }}
+      </span>
     </div>
     <div class="flex items-center space-x-6 lg:space-x-8">
       <div v-if="advanced" class="flex items-center space-x-2 max-sm:hidden">

@@ -30,8 +30,9 @@ const formatJson = (value: unknown): string => {
       <LucideArrowUpFromLine class="text-muted-foreground h-3.5 w-3.5" />
       <span
         class="text-muted-foreground text-xs font-medium tracking-wide uppercase"
-        >Output</span
       >
+        Output
+      </span>
       <span
         v-if="hasExecutionOutput"
         class="ml-auto h-1.5 w-1.5 rounded-full bg-green-500"

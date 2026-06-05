@@ -305,8 +305,9 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
       <LucideArrowDownToLine class="text-muted-foreground h-3.5 w-3.5" />
       <span
         class="text-muted-foreground text-xs font-medium tracking-wide uppercase"
-        >Input</span
       >
+        Input
+      </span>
       <span
         v-if="hasExecutionInput"
         class="ml-auto h-1.5 w-1.5 rounded-full bg-blue-500"
@@ -349,8 +350,9 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
           <span
             v-if="filteredUpstreamNodes.length"
             class="bg-primary/10 text-primary ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-            >{{ filteredUpstreamNodes.length }}</span
           >
+            {{ filteredUpstreamNodes.length }}
+          </span>
         </button>
         <div v-if="inputPaneSections.has('incoming')" class="px-3 pb-3">
           <div v-if="filteredUpstreamNodes.length" class="space-y-2">
@@ -394,9 +396,9 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
                           )
                         "
                       >
-                        <span class="font-mono text-[11px]">{{
-                          field.name
-                        }}</span>
+                        <span class="font-mono text-[11px]">
+                          {{ field.name }}
+                        </span>
                         <div class="flex items-center gap-1">
                           <span
                             v-if="
@@ -457,8 +459,9 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
           <span
             v-if="filteredInputDefs.length"
             class="bg-primary/10 text-primary ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-            >{{ filteredInputDefs.length }}</span
           >
+            {{ filteredInputDefs.length }}
+          </span>
         </button>
         <div v-if="inputPaneSections.has('inputs')" class="px-3 pb-3">
           <div v-if="filteredInputDefs.length" class="space-y-0.5">
@@ -479,14 +482,15 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
                     "
                   >
                     <WorkflowDataType :type="inp.type" />
-                    <span class="min-w-0 truncate font-mono text-[11px]">{{
-                      inp.name
-                    }}</span>
+                    <span class="min-w-0 truncate font-mono text-[11px]">
+                      {{ inp.name }}
+                    </span>
                     <span
                       v-if="inp.required"
                       class="text-destructive text-[9px]"
-                      >*</span
                     >
+                      *
+                    </span>
                     <span
                       v-if="runDataPreview(inp.name)"
                       class="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500"
@@ -525,8 +529,9 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
           <span
             v-if="filteredVariables.length"
             class="bg-primary/10 text-primary ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-            >{{ filteredVariables.length }}</span
           >
+            {{ filteredVariables.length }}
+          </span>
         </button>
         <div v-if="inputPaneSections.has('variables')" class="px-3 pb-3">
           <div v-if="filteredVariables.length" class="space-y-0.5">
@@ -549,9 +554,9 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
                     "
                   >
                     <WorkflowDataType :type="inferVarType(v)" />
-                    <span class="min-w-0 truncate font-mono text-[11px]">{{
-                      v.key
-                    }}</span>
+                    <span class="min-w-0 truncate font-mono text-[11px]">
+                      {{ v.key }}
+                    </span>
                     <span
                       v-if="runDataPreview(v.key)"
                       class="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500"

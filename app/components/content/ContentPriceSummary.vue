@@ -212,8 +212,9 @@ const rows = computed<PriceRow[]>(() => {
         <span
           v-if="row.vat"
           class="text-muted-foreground shrink-0 text-xs font-normal"
-          >({{ row.vat }})</span
         >
+          ({{ row.vat }})
+        </span>
 
         <span
           class="border-muted-foreground/30 min-w-4 flex-1 translate-y-[-0.4em] self-end border-b border-dashed"

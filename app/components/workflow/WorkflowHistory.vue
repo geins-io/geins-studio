@@ -580,9 +580,9 @@ function truncateValue(val: unknown): string {
             <!-- Version badge -->
             <div class="flex items-center gap-1.5">
               <LucideGitCommit class="text-muted-foreground h-4 w-4" />
-              <span class="text-sm font-semibold tabular-nums"
-                >v{{ entry.version }}</span
-              >
+              <span class="text-sm font-semibold tabular-nums">
+                v{{ entry.version }}
+              </span>
             </div>
 
             <!-- Current badge -->
@@ -601,10 +601,10 @@ function truncateValue(val: unknown): string {
               class="text-muted-foreground hidden items-center gap-1 text-xs sm:flex"
             >
               <LucideBoxes class="h-3 w-3" />
-              <span
-                >{{ entry.nodeCount }}
-                {{ entry.nodeCount === 1 ? 'node' : 'nodes' }}</span
-              >
+              <span>
+                {{ entry.nodeCount }}
+                {{ entry.nodeCount === 1 ? 'node' : 'nodes' }}
+              </span>
               <span class="mx-0.5">·</span>
               <LucideCable class="h-3 w-3" />
               <span>{{ entry.connectionCount }}</span>
@@ -842,9 +842,9 @@ function truncateValue(val: unknown): string {
                     class="text-muted-foreground flex items-center gap-1.5 text-[11px] font-medium tracking-wider uppercase"
                   >
                     <span>{{ group.label }}</span>
-                    <span class="text-muted-foreground/50"
-                      >({{ group.changes.length }})</span
-                    >
+                    <span class="text-muted-foreground/50">
+                      ({{ group.changes.length }})
+                    </span>
                   </div>
 
                   <!-- Individual changes -->
@@ -880,9 +880,9 @@ function truncateValue(val: unknown): string {
                     </span>
 
                     <!-- Path -->
-                    <span class="text-foreground min-w-0 font-mono">{{
-                      prettyPath(change.path)
-                    }}</span>
+                    <span class="text-foreground min-w-0 font-mono">
+                      {{ prettyPath(change.path) }}
+                    </span>
 
                     <!-- Values (for changed type) -->
                     <template v-if="change.type === 'changed'">

@@ -457,9 +457,9 @@ watch(
         {{ showAdvanced ? 'Hide' : 'Show' }} cron expression
       </button>
       <div v-if="showAdvanced" class="mt-1.5">
-        <code class="bg-muted text-foreground rounded px-2 py-1 text-xs">{{
-          buildCron()
-        }}</code>
+        <code class="bg-muted text-foreground rounded px-2 py-1 text-xs">
+          {{ buildCron() }}
+        </code>
       </div>
     </div>
   </div>

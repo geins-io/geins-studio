@@ -1160,9 +1160,9 @@ useKeybindings({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <Button variant="outline" @click="handleRunWithoutSaving"
-            >Run without saving</Button
-          >
+          <Button variant="outline" @click="handleRunWithoutSaving">
+            Run without saving
+          </Button>
           <Button @click="handleSaveAndRun">Save & Run</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -1172,10 +1172,9 @@ useKeybindings({
       <SheetContent width="medium">
         <SheetHeader>
           <SheetTitle>Run with inputs</SheetTitle>
-          <SheetDescription
-            >Set input values for this execution. Default values are
-            pre-filled.</SheetDescription
-          >
+          <SheetDescription>
+            Set input values for this execution. Default values are pre-filled.
+          </SheetDescription>
         </SheetHeader>
         <SheetBody>
           <div
@@ -1224,9 +1223,9 @@ useKeybindings({
                   :checked="!!runInputValues[input.name]"
                   @update:checked="runInputValues[input.name] = $event"
                 />
-                <span class="text-muted-foreground text-xs">{{
-                  runInputValues[input.name] ? 'true' : 'false'
-                }}</span>
+                <span class="text-muted-foreground text-xs">
+                  {{ runInputValues[input.name] ? 'true' : 'false' }}
+                </span>
               </div>
               <Input
                 v-else
@@ -1237,9 +1236,9 @@ useKeybindings({
           </div>
         </SheetBody>
         <SheetFooter>
-          <Button variant="outline" @click="showRunInputsSidebar = false"
-            >Cancel</Button
-          >
+          <Button variant="outline" @click="showRunInputsSidebar = false">
+            Cancel
+          </Button>
           <Button
             class="bg-red-500 hover:bg-red-800"
             @click="executeWithInputs"

@@ -380,8 +380,9 @@ const cancelEditLabel = () => {
           <span
             ref="labelMeasure"
             class="invisible col-start-1 row-start-1 px-1 whitespace-pre"
-            >{{ labelWidth }}</span
           >
+            {{ labelWidth }}
+          </span>
           <input
             v-if="isEditingLabel"
             ref="labelInput"
@@ -395,14 +396,16 @@ const cancelEditLabel = () => {
             v-else
             class="group-hover:ring-border col-start-1 row-start-1 cursor-text truncate rounded px-1 group-hover:ring-1"
             @click="startEditLabel"
-            >{{ nodeLabel }}</span
           >
+            {{ nodeLabel }}
+          </span>
         </div>
         <span
           v-if="!isTriggerNode && node?.id"
           class="bg-muted text-muted-foreground ml-1 shrink-0 rounded px-1 py-0.5 font-mono text-[9px]"
-          >{{ node.id }}</span
         >
+          {{ node.id }}
+        </span>
         <span
           v-if="nodeExecution?.status"
           class="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium capitalize"

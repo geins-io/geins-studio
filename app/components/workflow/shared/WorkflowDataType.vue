@@ -92,6 +92,7 @@ const displayText = computed(() =>
         ? 'px-1 py-0.5 text-[9px]'
         : 'px-1.5 py-0.5 text-[10px]',
     ]"
-    >{{ displayText }}</span
   >
+    {{ displayText }}
+  </span>
 </template>

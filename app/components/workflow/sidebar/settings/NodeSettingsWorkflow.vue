@@ -217,9 +217,9 @@ function paramError(inp: WorkflowInput): string | null {
             <span v-if="nodeInput.workflowId" class="min-w-0 flex-1 truncate">
               {{ selectedWorkflowName || nodeInput.workflowId }}
             </span>
-            <span v-else class="text-muted-foreground min-w-0 flex-1 truncate"
-              >Select workflow…</span
-            >
+            <span v-else class="text-muted-foreground min-w-0 flex-1 truncate">
+              Select workflow…
+            </span>
             <button
               v-if="nodeInput.workflowId"
               type="button"
@@ -270,20 +270,22 @@ function paramError(inp: WorkflowInput): string | null {
                     v-else
                     class="text-muted-foreground h-3 w-3 shrink-0"
                   />
-                  <span class="min-w-0 flex-1 truncate font-medium">{{
-                    wf.name
-                  }}</span>
+                  <span class="min-w-0 flex-1 truncate font-medium">
+                    {{ wf.name }}
+                  </span>
                   <span
                     v-if="wf.group"
                     class="bg-muted text-muted-foreground shrink-0 rounded px-1.5 py-0.5 text-[10px]"
-                    >{{ wf.group }}</span
                   >
+                    {{ wf.group }}
+                  </span>
                 </div>
                 <span
                   v-if="wf.description"
                   class="text-muted-foreground mt-0.5 pl-5 text-[10px]"
-                  >{{ wf.description }}</span
                 >
+                  {{ wf.description }}
+                </span>
                 <!-- Input parameters info -->
                 <div
                   v-if="getWorkflowInputs(wf.id).length"
@@ -307,8 +309,9 @@ function paramError(inp: WorkflowInput): string | null {
                 </div>
                 <span
                   class="text-muted-foreground mt-0.5 pl-5 font-mono text-[10px]"
-                  >{{ wf.id }}</span
                 >
+                  {{ wf.id }}
+                </span>
               </button>
             </template>
             <div
@@ -351,8 +354,9 @@ function paramError(inp: WorkflowInput): string | null {
             <span
               v-if="inp.required"
               class="text-destructive text-[10px] font-medium"
-              >required</span
             >
+              required
+            </span>
             <TooltipProvider v-if="inp.description" :delay-duration="200">
               <Tooltip>
                 <TooltipTrigger as-child>

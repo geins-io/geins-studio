@@ -94,9 +94,9 @@ watch(currentTab, async (value) => {
               )
             "
           />
-          <span v-if="tab.error" class="sr-only">{{
-            t('tab_has_errors')
-          }}</span>
+          <span v-if="tab.error" class="sr-only">
+            {{ t('tab_has_errors') }}
+          </span>
         </button>
       </li>
     </ul>

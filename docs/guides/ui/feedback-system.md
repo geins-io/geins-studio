@@ -16,7 +16,7 @@ Used to show that an action initiated by the user is being processed. The button
 
 ```vue
 <template>
-  <Button :loading="pending"> Submit </Button>
+  <Button :loading="pending">Submit</Button>
 </template>
 ```
 
@@ -86,7 +86,7 @@ Use the **Alert** component to show a message to the user.
 <template>
   <Alert v-if="showInvalid" variant="destructive">
     <ExclamationTriangleIcon class="h-4 w-4" />
-    <AlertTitle> Invalid credentials </AlertTitle>
+    <AlertTitle>Invalid credentials</AlertTitle>
     <AlertDescription>
       Please check your email and password and try again.
     </AlertDescription>

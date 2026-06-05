@@ -48,9 +48,9 @@ const setNewAccount = async (accountKey: string) => {
               </AvatarFallback>
             </Avatar>
             <div class="grid flex-1 text-left text-sm leading-tight">
-              <span v-if="userName" class="truncate font-semibold">{{
-                userName
-              }}</span>
+              <span v-if="userName" class="truncate font-semibold">
+                {{ userName }}
+              </span>
               <span class="truncate text-xs">{{ userEmail }}</span>
             </div>
             <LucideEllipsisVertical class="ml-auto size-4" />
@@ -70,9 +70,9 @@ const setNewAccount = async (accountKey: string) => {
                 </AvatarFallback>
               </Avatar>
               <div class="grid flex-1 text-left text-sm leading-tight">
-                <span v-if="userName" class="truncate font-semibold">{{
-                  userName
-                }}</span>
+                <span v-if="userName" class="truncate font-semibold">
+                  {{ userName }}
+                </span>
                 <span class="truncate text-xs">{{ userEmail }}</span>
               </div>
             </div>

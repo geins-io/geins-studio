@@ -396,9 +396,9 @@ const searchableFields: Array<keyof EntityList> = [
   >
     <div class="flex items-center gap-2 text-sm">
       <LucideFilter class="text-muted-foreground h-4 w-4" />
-      <span class="text-muted-foreground"
-        >Filtered by {{ activeFilter.type }}:</span
-      >
+      <span class="text-muted-foreground">
+        Filtered by {{ activeFilter.type }}:
+      </span>
       <span class="font-medium">{{ activeFilter.label }}</span>
     </div>
     <Button

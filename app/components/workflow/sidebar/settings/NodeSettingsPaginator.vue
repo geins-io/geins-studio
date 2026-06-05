@@ -218,8 +218,9 @@ const CONTEXT_VARS = [
         >
           <code
             class="shrink-0 rounded bg-indigo-500/10 px-1.5 py-0.5 font-mono text-[11px] font-medium text-indigo-600 dark:text-indigo-400"
-            >{{ v.expr }}</code
           >
+            {{ v.expr }}
+          </code>
           <p class="text-muted-foreground text-[11px]">{{ v.description }}</p>
         </div>
       </div>
@@ -228,16 +229,16 @@ const CONTEXT_VARS = [
     <!-- Handle labels reference -->
     <div class="text-muted-foreground border-t pt-3 text-xs">
       <p>
-        <span class="font-medium text-indigo-600">Fetch Page</span> action that
-        fetches one page
+        <span class="font-medium text-indigo-600">Fetch Page</span>
+        action that fetches one page
       </p>
       <p class="mt-1">
-        <span class="font-medium text-indigo-600">Each Page</span> body executed
-        per page
+        <span class="font-medium text-indigo-600">Each Page</span>
+        body executed per page
       </p>
       <p class="mt-1">
-        <span class="font-medium text-gray-500">Completed</span> runs after all
-        pages are processed
+        <span class="font-medium text-gray-500">Completed</span>
+        runs after all pages are processed
       </p>
     </div>
   </div>

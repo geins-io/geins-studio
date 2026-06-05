@@ -188,9 +188,9 @@ onMounted(() =>
           class="h-1.5 w-1.5 shrink-0 rounded-full"
           :class="branchColor(getConditionColor(ci)).dot"
         />
-        <span class="text-muted-foreground min-w-0 truncate font-mono">{{
-          cond.condition || cond.label
-        }}</span>
+        <span class="text-muted-foreground min-w-0 truncate font-mono">
+          {{ cond.condition || cond.label }}
+        </span>
       </div>
       <div
         v-if="data.conditions!.length > 3"

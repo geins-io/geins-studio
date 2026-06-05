@@ -108,9 +108,9 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
   <div class="space-y-4">
     <!-- Mode toggle -->
     <div class="space-y-1.5">
-      <label class="text-muted-foreground text-xs font-medium"
-        >Delay type</label
-      >
+      <label class="text-muted-foreground text-xs font-medium">
+        Delay type
+      </label>
       <div class="bg-muted flex rounded-md p-0.5">
         <button
           type="button"
@@ -191,8 +191,8 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
         </p>
         <p v-else class="text-muted-foreground text-xs">
           UTC datetime (e.g.
-          <code class="bg-muted rounded px-1">{{ waitUntilPlaceholder }}</code
-          >) or expression like
+          <code class="bg-muted rounded px-1">{{ waitUntilPlaceholder }}</code>
+          ) or expression like
           <code
             class="rounded bg-emerald-500/10 px-1 text-emerald-700 dark:text-emerald-400"
             v-text="'{{output.nodeId.scheduledAt}}'"

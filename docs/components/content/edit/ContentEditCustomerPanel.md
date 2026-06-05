@@ -33,9 +33,9 @@ const onSave = (data: {
     :current-shipping-address-id="quotation.shippingAddressId"
     @save="onSave"
   >
-    <Button variant="outline">{{
-      $t('orders.change_customer_details')
-    }}</Button>
+    <Button variant="outline">
+      {{ $t('orders.change_customer_details') }}
+    </Button>
   </ContentEditCustomerPanel>
 </template>
 ```

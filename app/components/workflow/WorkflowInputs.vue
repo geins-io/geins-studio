@@ -393,9 +393,9 @@ const confirmAddGroup = () => {
           <EmptyMedia variant="icon">
             <LucideCircleDot class="size-5" />
           </EmptyMedia>
-          <EmptyTitle>{{
-            t('no_entity', { entityName: 'input' }, 2)
-          }}</EmptyTitle>
+          <EmptyTitle>
+            {{ t('no_entity', { entityName: 'input' }, 2) }}
+          </EmptyTitle>
           <EmptyDescription>This workflow has no inputs yet.</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
@@ -479,9 +479,9 @@ const confirmAddGroup = () => {
                     <LucideCircleDot class="size-5" />
                   </EmptyMedia>
                   <EmptyTitle>No inputs in this group</EmptyTitle>
-                  <EmptyDescription
-                    >Add an input to this group.</EmptyDescription
-                  >
+                  <EmptyDescription>
+                    Add an input to this group.
+                  </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
                   <Button
@@ -506,9 +506,9 @@ const confirmAddGroup = () => {
                       class="flex items-center gap-1.5 text-sm font-semibold"
                     >
                       {{ prettyLabel(item.name) }}
-                      <span v-if="item.required" class="text-destructive"
-                        >*</span
-                      >
+                      <span v-if="item.required" class="text-destructive">
+                        *
+                      </span>
                     </div>
                     <p
                       v-if="item.description"
@@ -518,10 +518,9 @@ const confirmAddGroup = () => {
                     </p>
                     <div class="mt-3 flex flex-wrap items-center gap-1.5">
                       <WorkflowDataType :type="item.type" display="long" />
-                      <span
-                        class="text-muted-foreground font-mono text-[11px]"
-                        >{{ item.name }}</span
-                      >
+                      <span class="text-muted-foreground font-mono text-[11px]">
+                        {{ item.name }}
+                      </span>
                     </div>
                   </div>
                   <div class="flex shrink-0 items-center gap-3">
@@ -627,9 +626,9 @@ const confirmAddGroup = () => {
               <div class="space-y-1.5">
                 <Label for="new-input-description">
                   Description
-                  <span class="text-muted-foreground ml-1 text-xs font-normal"
-                    >({{ t('form.optional') }})</span
-                  >
+                  <span class="text-muted-foreground ml-1 text-xs font-normal">
+                    ({{ t('form.optional') }})
+                  </span>
                 </Label>
                 <Input
                   id="new-input-description"
@@ -667,9 +666,9 @@ const confirmAddGroup = () => {
               >
                 <Label for="new-input-default">
                   Default value
-                  <span class="text-muted-foreground ml-1 text-xs font-normal"
-                    >({{ t('form.optional') }})</span
-                  >
+                  <span class="text-muted-foreground ml-1 text-xs font-normal">
+                    ({{ t('form.optional') }})
+                  </span>
                 </Label>
                 <div
                   class="h-48"
@@ -691,9 +690,9 @@ const confirmAddGroup = () => {
               <div v-else class="space-y-1.5">
                 <Label for="new-input-default">
                   Default value
-                  <span class="text-muted-foreground ml-1 text-xs font-normal"
-                    >({{ t('form.optional') }})</span
-                  >
+                  <span class="text-muted-foreground ml-1 text-xs font-normal">
+                    ({{ t('form.optional') }})
+                  </span>
                 </Label>
                 <Input
                   id="new-input-default"
@@ -711,9 +710,9 @@ const confirmAddGroup = () => {
                 data-slot="form-item"
               >
                 <div class="text-left">
-                  <Label for="new-input-required" class="text-sm font-semibold"
-                    >Required</Label
-                  >
+                  <Label for="new-input-required" class="text-sm font-semibold">
+                    Required
+                  </Label>
                   <p class="text-muted-foreground mt-1 text-xs">
                     Executions must provide a value for this input.
                   </p>
@@ -728,12 +727,12 @@ const confirmAddGroup = () => {
         </form>
       </SheetBody>
       <SheetFooter>
-        <Button variant="outline" @click="addInputDialogOpen = false">{{
-          t('cancel')
-        }}</Button>
-        <Button :disabled="!newInputCanSave" @click="confirmAddInput"
-          >Add input</Button
-        >
+        <Button variant="outline" @click="addInputDialogOpen = false">
+          {{ t('cancel') }}
+        </Button>
+        <Button :disabled="!newInputCanSave" @click="confirmAddInput">
+          Add input
+        </Button>
       </SheetFooter>
     </SheetContent>
   </Sheet>
@@ -821,9 +820,9 @@ const confirmAddGroup = () => {
         </FormGridWrap>
       </SheetBody>
       <SheetFooter>
-        <Button variant="outline" @click="editInputOpen = false">{{
-          t('cancel')
-        }}</Button>
+        <Button variant="outline" @click="editInputOpen = false">
+          {{ t('cancel') }}
+        </Button>
         <Button :disabled="!editCanSave" @click="confirmEditInput">Save</Button>
       </SheetFooter>
     </SheetContent>
@@ -858,9 +857,9 @@ const confirmAddGroup = () => {
         </FormGridWrap>
       </form>
       <DialogFooter>
-        <Button variant="secondary" @click="addGroupDialogOpen = false">{{
-          t('cancel')
-        }}</Button>
+        <Button variant="secondary" @click="addGroupDialogOpen = false">
+          {{ t('cancel') }}
+        </Button>
         <Button @click="confirmAddGroup">Add group</Button>
       </DialogFooter>
     </DialogContent>

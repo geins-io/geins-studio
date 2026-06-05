@@ -125,8 +125,9 @@ function toggleExample(idx: number) {
         <span v-if="field.required" class="text-destructive text-xs">*</span>
         <span
           class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]"
-          >{{ field.type }}</span
         >
+          {{ field.type }}
+        </span>
       </button>
 
       <p v-if="field.description" class="text-muted-foreground pl-5 text-xs">
@@ -144,8 +145,9 @@ function toggleExample(idx: number) {
           <div class="mb-2 flex items-center gap-1.5">
             <span
               class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
-              >Item shape</span
             >
+              Item shape
+            </span>
             <button
               class="text-muted-foreground hover:text-foreground rounded p-0.5"
               title="Copy item template as JSON"
@@ -178,8 +180,9 @@ function toggleExample(idx: number) {
                   'bg-teal-500/10 text-teal-600 dark:text-teal-400':
                     type === 'array',
                 }"
-                >{{ type }}</span
               >
+                {{ type }}
+              </span>
             </div>
           </div>
         </template>
@@ -189,8 +192,9 @@ function toggleExample(idx: number) {
           <div class="mb-2 flex items-center gap-1.5">
             <span
               class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
-              >Object shape</span
             >
+              Object shape
+            </span>
             <button
               class="text-muted-foreground hover:text-foreground rounded p-0.5"
               title="Copy object template as JSON"
@@ -221,8 +225,9 @@ function toggleExample(idx: number) {
                   'bg-teal-500/10 text-teal-600 dark:text-teal-400':
                     type === 'array',
                 }"
-                >{{ type }}</span
               >
+                {{ type }}
+              </span>
             </div>
           </div>
         </template>

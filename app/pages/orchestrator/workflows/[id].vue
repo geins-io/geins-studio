@@ -941,9 +941,9 @@ const { summaryProps } = useEntityEditSummary({
                 @click="handleValidate"
               >
                 <LucideShieldCheck class="mr-2 size-4" />
-                <span>{{
-                  isValidating ? 'Validating…' : 'Validate workflow'
-                }}</span>
+                <span>
+                  {{ isValidating ? 'Validating…' : 'Validate workflow' }}
+                </span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -1261,9 +1261,9 @@ const { summaryProps } = useEntityEditSummary({
                     name="settings.executionLogRetentionDays"
                   >
                     <FormItem>
-                      <FormLabel :optional="true"
-                        >Log retention (days)</FormLabel
-                      >
+                      <FormLabel :optional="true">
+                        Log retention (days)
+                      </FormLabel>
                       <FormControl>
                         <Input
                           v-bind="componentField"
@@ -1332,9 +1332,9 @@ const { summaryProps } = useEntityEditSummary({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="failFast">Fail fast</SelectItem>
-                            <SelectItem value="continue"
-                              >Continue on error</SelectItem
-                            >
+                            <SelectItem value="continue">
+                              Continue on error
+                            </SelectItem>
                             <SelectItem value="retry">Retry</SelectItem>
                           </SelectContent>
                         </Select>
@@ -1391,9 +1391,9 @@ const { summaryProps } = useEntityEditSummary({
 
             <div v-if="isNew" class="flex flex-row justify-end gap-4">
               <Button variant="secondary" as-child>
-                <NuxtLink to="/orchestrator/workflows/list">{{
-                  $t('cancel')
-                }}</NuxtLink>
+                <NuxtLink to="/orchestrator/workflows/list">
+                  {{ $t('cancel') }}
+                </NuxtLink>
               </Button>
               <Button :loading="isSavingConfig" @click="handleCreate">
                 {{ $t('create_entity', { entityName }) }}
@@ -1458,9 +1458,9 @@ const { summaryProps } = useEntityEditSummary({
     <SheetContent width="medium">
       <SheetHeader>
         <SheetTitle>Run workflow</SheetTitle>
-        <SheetDescription
-          >Start a production execution of this workflow.</SheetDescription
-        >
+        <SheetDescription>
+          Start a production execution of this workflow.
+        </SheetDescription>
       </SheetHeader>
       <SheetBody>
         <div
@@ -1508,9 +1508,9 @@ const { summaryProps } = useEntityEditSummary({
                 :checked="!!runInputValues[input.name]"
                 @update:checked="runInputValues[input.name] = $event"
               />
-              <span class="text-muted-foreground text-xs">{{
-                runInputValues[input.name] ? 'true' : 'false'
-              }}</span>
+              <span class="text-muted-foreground text-xs">
+                {{ runInputValues[input.name] ? 'true' : 'false' }}
+              </span>
             </div>
             <Input
               v-else

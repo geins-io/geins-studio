@@ -154,7 +154,8 @@ const BlocklyWorkspace = defineAsyncComponent(
         v-if="!validation.valid"
         class="text-destructive rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs"
       >
-        <span class="font-medium">Invalid: </span>{{ validation.error }}
+        <span class="font-medium">Invalid:</span>
+        {{ validation.error }}
       </div>
 
       <!-- Workspace area -->
@@ -181,13 +182,14 @@ const BlocklyWorkspace = defineAsyncComponent(
         v-if="validation.valid && truncatedPreview"
         class="text-muted-foreground rounded-md border bg-emerald-500/5 px-3 py-2 font-mono text-xs"
       >
-        <span class="opacity-50">Result: </span>{{ truncatedPreview }}
+        <span class="opacity-50">Result:</span>
+        {{ truncatedPreview }}
       </div>
 
       <!-- Actions -->
       <DialogFooter>
-        <Button variant="outline" @click="onCancel"> Cancel </Button>
-        <Button :disabled="!validation.valid" @click="onApply"> Apply </Button>
+        <Button variant="outline" @click="onCancel">Cancel</Button>
+        <Button :disabled="!validation.valid" @click="onApply">Apply</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
