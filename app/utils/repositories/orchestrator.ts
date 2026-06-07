@@ -33,6 +33,15 @@ import type {
   WorkflowVariable,
   SaveVariableRequest,
   EditorManifest,
+  KitSummary,
+  Kit,
+  InstallKitRequest,
+  InstallKitResponse,
+  KitInstallation,
+  UninstallKitRequest,
+  UninstallKitResponse,
+  UpgradeKitRequest,
+  UpgradeKitResponse,
 } from '#shared/types';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
@@ -59,11 +68,27 @@ function normalizeKeys<T>(value: unknown, preserveValue = false): T {
   }
   return value as T;
 }
+
+/**
+ * Unwrap a list response that may be a bare array or an envelope. The
+ * orchestrator API has shipped both shapes and varies the envelope key and
+ * its casing (`kits` / `Kits` / `items` / `data`). Falls back to the first
+ * array-valued property so we never silently drop a populated list.
+ */
+function unwrapArray<T = unknown>(res: unknown): T[] {
+  if (Array.isArray(res)) return res as T[];
+  if (res && typeof res === 'object') {
+    const obj = res as Record<string, unknown>;
+    return (Object.values(obj).find((v) => Array.isArray(v)) ?? []) as T[];
+  }
+  return [];
+}
 const WORKFLOW_ENDPOINT = `${BASE}/workflows`;
 const EXECUTION_ENDPOINT = `${BASE}/executions`;
 const METRICS_ENDPOINT = `${BASE}/workflows/metrics`;
 const VARIABLE_ENDPOINT = `${BASE}/variables`;
 const MANIFEST_ENDPOINT = `${BASE}/manifest`;
+const KIT_ENDPOINT = `${BASE}/kits`;
 
 export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   return {
@@ -451,6 +476,97 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     editor: {
       async getManifest(): Promise<EditorManifest> {
         return await fetch<EditorManifest>(MANIFEST_ENDPOINT);
+      },
+    },
+
+    // -- Kits ---------------------------------------------------------------
+    // Provider-supplied bundles of workflows + variables. The catalog returns
+    // summaries; the detail endpoint adds full variable/workflow specs.
+
+    kit: {
+      async list(): Promise<KitSummary[]> {
+        const res = await fetch<unknown>(KIT_ENDPOINT);
+        const { geinsLog } = useGeinsLog('orchestratorRepo.kit.list');
+        geinsLog('raw response', res);
+        return normalizeKeys<KitSummary[]>(unwrapArray(res));
+      },
+
+      async get(id: string): Promise<Kit> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/${encodeURIComponent(id)}`,
+        );
+        return normalizeKeys<Kit>(raw);
+      },
+
+      async install(
+        id: string,
+        data?: InstallKitRequest,
+      ): Promise<InstallKitResponse> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/${encodeURIComponent(id)}/install`,
+          { method: 'POST', body: data ?? {} },
+        );
+        return normalizeKeys<InstallKitResponse>(raw);
+      },
+
+      async listInstallations(): Promise<KitInstallation[]> {
+        const res = await fetch<unknown>(`${KIT_ENDPOINT}/installations`);
+        const { geinsLog } = useGeinsLog(
+          'orchestratorRepo.kit.listInstallations',
+        );
+        geinsLog('raw response', res);
+        return normalizeKeys<KitInstallation[]>(unwrapArray(res));
+      },
+
+      async getInstallation(installationId: string): Promise<KitInstallation> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/installations/${encodeURIComponent(installationId)}`,
+        );
+        return normalizeKeys<KitInstallation>(raw);
+      },
+
+      async upgrade(
+        id: string,
+        data?: UpgradeKitRequest,
+      ): Promise<UpgradeKitResponse> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/${encodeURIComponent(id)}/upgrade`,
+          { method: 'POST', body: data ?? {} },
+        );
+        return normalizeKeys<UpgradeKitResponse>(raw);
+      },
+
+      async upgradeByInstallation(
+        installationId: string,
+        data?: UpgradeKitRequest,
+      ): Promise<UpgradeKitResponse> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/installations/${encodeURIComponent(installationId)}/upgrade`,
+          { method: 'POST', body: data ?? {} },
+        );
+        return normalizeKeys<UpgradeKitResponse>(raw);
+      },
+
+      async uninstall(
+        id: string,
+        data?: UninstallKitRequest,
+      ): Promise<UninstallKitResponse> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/${encodeURIComponent(id)}/uninstall`,
+          { method: 'POST', body: data ?? {} },
+        );
+        return normalizeKeys<UninstallKitResponse>(raw);
+      },
+
+      async uninstallByInstallation(
+        installationId: string,
+        data?: UninstallKitRequest,
+      ): Promise<UninstallKitResponse> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/installations/${encodeURIComponent(installationId)}/uninstall`,
+          { method: 'POST', body: data ?? {} },
+        );
+        return normalizeKeys<UninstallKitResponse>(raw);
       },
     },
   };

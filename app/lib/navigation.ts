@@ -80,6 +80,14 @@ export const getNavigation = (
                 childPattern: '/orchestrator/workflows/:id',
               },
               {
+                label: t('navigation.kits'),
+                href: '/orchestrator/kits/list',
+              },
+              {
+                label: t('navigation.installed_kits'),
+                href: '/orchestrator/kits/installed',
+              },
+              {
                 label: t('navigation.executions'),
                 href: '/orchestrator/executions/list',
                 childPattern: '/orchestrator/executions/:id',
