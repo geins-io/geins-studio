@@ -67,6 +67,60 @@ const isRunning = computed(
   () => execution.value?.status?.toLowerCase() === 'running',
 );
 
+const asRecord = (value: unknown): Record<string, unknown> | null =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+
+// The input the workflow was started with isn't stored on the execution itself —
+// it's the input of the entry node (lowest executionOrder, earliest start).
+const entryNodeInput = computed<Record<string, unknown> | null>(() => {
+  const nodes = nodeExecutions.value;
+  if (nodes.length === 0) return null;
+  const entry = [...nodes].sort((a, b) => {
+    const order = (a.executionOrder ?? 0) - (b.executionOrder ?? 0);
+    if (order !== 0) return order;
+    const aStart = a.startTime ? new Date(a.startTime).getTime() : 0;
+    const bStart = b.startTime ? new Date(b.startTime).getTime() : 0;
+    return aStart - bStart;
+  })[0];
+  return asRecord(entry?.input);
+});
+
+// Sub-workflows don't record their input on the child execution — the engine
+// stores it on the calling `workflow` node in the parent. When the child has no
+// entry-node input but has a parent, resolve the input from that spawning node.
+const parentExecutionLogId = computed(
+  () => execution.value?.parentExecutionLogId ?? null,
+);
+
+const { data: parentSpawnInput } = useLazyAsyncData(
+  () => `parent-spawn-input-${executionId.value}`,
+  async () => {
+    const parentId = parentExecutionLogId.value;
+    if (!parentId) return null;
+    const parent = await orchestratorApi.execution.get(parentId);
+    const spawnNode = (parent.execution?.nodeExecutions ?? []).find(
+      (n) =>
+        n.nodeType === 'workflow' &&
+        asRecord(n.output)?.instanceId === executionId.value,
+    );
+    return asRecord(asRecord(spawnNode?.input)?.input);
+  },
+  { default: () => null, watch: [parentExecutionLogId] },
+);
+
+const workflowInput = computed<Record<string, unknown> | null>(
+  () => entryNodeInput.value ?? parentSpawnInput.value,
+);
+
+// Show where the input came from when it was resolved via the parent.
+const workflowInputSource = computed(() =>
+  !entryNodeInput.value && parentSpawnInput.value
+    ? 'Passed from parent workflow'
+    : null,
+);
+
 // Fallback: derive canResume from status when API doesn't return it
 const canResume = computed(() => {
   if (details.value?.canResume != null) return details.value.canResume;
@@ -495,6 +549,12 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         <div class="font-mono text-sm">v{{ execution.workflowVersion }}</div>
       </div>
     </div>
+
+    <!-- Workflow input -->
+    <OrchestratorExecutionInput
+      :input="workflowInput"
+      :source-label="workflowInputSource"
+    />
 
     <!-- Main content: nodes + console -->
     <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">

@@ -53,7 +53,7 @@ const openInstall = (kit: KitSummary) => {
   installDialogOpen.value = true;
 };
 
-const onManage = () => navigateTo('/orchestrator/kits/installed');
+const onManage = () => navigateTo('/settings/orchestrator/kits/installed');
 
 const onInstalled = async () => {
   await refresh();
@@ -69,7 +69,7 @@ const onInstalled = async () => {
       <ButtonIcon
         icon="LayoutGrid"
         variant="secondary"
-        href="/orchestrator/kits/installed"
+        href="/settings/orchestrator/kits/installed"
       >
         {{ $t('kits.installed_kits') }}
       </ButtonIcon>

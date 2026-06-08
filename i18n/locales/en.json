@@ -316,8 +316,8 @@
     "overview": "Overview",
     "executions": "Executions",
     "variables": "Variables",
-    "kits": "Kits",
-    "installed_kits": "Installed kits"
+    "kits": "Integration directory",
+    "installed_kits": "Installed Integrations"
   },
   "workflows": {
     "total": "Total Workflows",
@@ -816,7 +816,7 @@
   "kits": {
     "description": "Install provider-built bundles of workflows and variables to add ready-made integrations to your account.",
     "installed_description": "Workflow bundles installed in your account. Keep them up to date or remove them.",
-    "installed_kits": "Installed kits",
+    "installed_kits": "Installed Integrations",
     "browse_kits": "Browse kits",
     "by_author": "by {author}",
     "installed": "Installed",

@@ -80,22 +80,9 @@ export const getNavigation = (
                 childPattern: '/orchestrator/workflows/:id',
               },
               {
-                label: t('navigation.kits'),
-                href: '/orchestrator/kits/list',
-              },
-              {
-                label: t('navigation.installed_kits'),
-                href: '/orchestrator/kits/installed',
-              },
-              {
                 label: t('navigation.executions'),
                 href: '/orchestrator/executions/list',
                 childPattern: '/orchestrator/executions/:id',
-              },
-              {
-                label: t('navigation.variables'),
-                href: '/orchestrator/variables/list',
-                childPattern: '/orchestrator/variables/:id',
               },
             ],
           } as NavigationItem,
@@ -108,6 +95,31 @@ export const getNavigation = (
       group: 'settings',
       childPattern: '/settings/channel/:id',
     },
+    ...(options?.featureOrchestrator
+      ? [
+          {
+            label: t('navigation.orchestrator'),
+            href: '/settings/orchestrator/variables/list',
+            icon: 'Workflow',
+            group: 'settings',
+            children: [
+              {
+                label: t('navigation.variables'),
+                href: '/settings/orchestrator/variables/list',
+                childPattern: '/settings/orchestrator/variables/:id',
+              },
+              {
+                label: t('navigation.installed_kits'),
+                href: '/settings/orchestrator/kits/installed',
+              },
+              {
+                label: t('navigation.kits'),
+                href: '/settings/orchestrator/kits/list',
+              },
+            ],
+          } as NavigationItem,
+        ]
+      : []),
     {
       label: t('navigation.account'),
       href: '',

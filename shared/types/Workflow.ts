@@ -229,6 +229,8 @@ export interface ExecutionLog {
   workflowVersion?: string | number;
   tags?: string[] | null;
   childExecutionIds?: string[] | null;
+  parentExecutionLogId?: string | null;
+  parentWorkflowId?: string | null;
   cascadeCancellation?: boolean;
   idempotencyKey?: string | null;
   replayOf?: string | null;

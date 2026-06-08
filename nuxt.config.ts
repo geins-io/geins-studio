@@ -8,6 +8,17 @@ export default defineNuxtConfig({
 
   routeRules: {
     '/auth/*': { prerender: true },
+    // Orchestrator variables + kits moved under Settings (Settings › Orchestrator).
+    // Keep old links working.
+    '/orchestrator/kits/list': {
+      redirect: '/settings/orchestrator/kits/list',
+    },
+    '/orchestrator/kits/installed': {
+      redirect: '/settings/orchestrator/kits/installed',
+    },
+    '/orchestrator/variables/**': {
+      redirect: '/settings/orchestrator/variables/**',
+    },
   },
 
   devtools: { enabled: true },

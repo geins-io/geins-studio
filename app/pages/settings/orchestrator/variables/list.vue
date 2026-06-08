@@ -20,7 +20,7 @@ export interface VariableListItem {
 type Entity = WorkflowVariable;
 type EntityList = VariableListItem;
 
-const scope = 'pages/orchestrator/variables/list.vue';
+const scope = 'pages/settings/orchestrator/variables/list.vue';
 const { t } = useI18n();
 
 definePageMeta({
@@ -119,7 +119,7 @@ onMounted(() => {
       isSecret: 'icon',
     },
     linkColumns: {
-      key: { url: '/orchestrator/variables/{id}', idField: 'key' },
+      key: { url: '/settings/orchestrator/variables/{id}', idField: 'key' },
     },
     iconColumns: {
       isSecret: { resolveIcon: resolveSecretIcon },
@@ -153,7 +153,7 @@ const searchableFields: Array<keyof EntityList> = ['key', 'description'];
     :description="$t('variables.description')"
   >
     <ContentActionBar>
-      <ButtonIcon icon="new" href="/orchestrator/variables/new">
+      <ButtonIcon icon="new" href="/settings/orchestrator/variables/new">
         {{ $t('new_entity', { entityName }) }}
       </ButtonIcon>
     </ContentActionBar>
@@ -174,7 +174,7 @@ const searchableFields: Array<keyof EntityList> = ['key', 'description'];
         <ButtonIcon
           icon="new"
           variant="secondary"
-          @click="navigateTo('/orchestrator/variables/new')"
+          @click="navigateTo('/settings/orchestrator/variables/new')"
         >
           {{ $t('create_new_entity', { entityName }) }}
         </ButtonIcon>

@@ -175,7 +175,7 @@ const close = () => emit('update:open', false);
 
 const goToInstalled = () => {
   close();
-  navigateTo('/orchestrator/kits/installed');
+  navigateTo('/settings/orchestrator/kits/installed');
 };
 </script>
 

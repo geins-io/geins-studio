@@ -316,8 +316,8 @@
     "overview": "Översikt",
     "executions": "Körningar",
     "variables": "Variabler",
-    "kits": "Kit",
-    "installed_kits": "Installerade kit"
+    "kits": "Integrationskatalog",
+    "installed_kits": "Installerade integrationer"
   },
   "workflows": {
     "total": "Totalt antal arbetsflöden",
@@ -813,7 +813,7 @@
   "kits": {
     "description": "Installera färdiga paket med arbetsflöden och variabler för att lägga till integrationer i ditt konto.",
     "installed_description": "Paket installerade i ditt konto. Håll dem uppdaterade eller ta bort dem.",
-    "installed_kits": "Installerade kit",
+    "installed_kits": "Installerade integrationer",
     "browse_kits": "Bläddra bland kit",
     "by_author": "av {author}",
     "installed": "Installerat",

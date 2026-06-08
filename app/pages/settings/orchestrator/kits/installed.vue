@@ -9,7 +9,7 @@ definePageMeta({
 
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLog } = useGeinsLog('pages/orchestrator/kits/installed.vue');
+const { geinsLog } = useGeinsLog('pages/settings/orchestrator/kits/installed.vue');
 const breadcrumbsStore = useBreadcrumbsStore();
 
 const {
@@ -136,7 +136,7 @@ const confirmUninstall = async (payload: {
     :description="$t('kits.installed_description')"
   >
     <ContentActionBar>
-      <ButtonIcon icon="new" href="/orchestrator/kits/list">
+      <ButtonIcon icon="new" href="/settings/orchestrator/kits/list">
         {{ $t('kits.browse_kits') }}
       </ButtonIcon>
     </ContentActionBar>
@@ -184,7 +184,7 @@ const confirmUninstall = async (payload: {
           <p class="text-muted-foreground mb-4">
             {{ $t('kits.no_installations_description') }}
           </p>
-          <NuxtLink to="/orchestrator/kits/list">
+          <NuxtLink to="/settings/orchestrator/kits/list">
             <Button>{{ $t('kits.browse_kits') }}</Button>
           </NuxtLink>
         </div>
