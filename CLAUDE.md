@@ -27,6 +27,7 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 - NEVER use `as unknown as` type casts — reshape data to fit the target type instead (e.g. `.map(x => x._id)` to get `string[]`)
 - NEVER spread `entityDataUpdate` in `prepareUpdateData` | NEVER modify `ui/table/` primitives for modes
 - NEVER omit `<DialogUnsavedChanges>` from entity edit page templates — without it the route guard silently blocks all navigation with no user feedback (stuck page, no error, no dialog)
+- NEVER wrap a `<Button>` (or other interactive element) inside `<NuxtLink>`/`<a>` — renders invalid `<a><button>`. Use `<Button as-child><NuxtLink …>…</NuxtLink></Button>` (single `<a>` with button styling). For icon-only link buttons use a `Tooltip` (`TooltipProvider :delay-duration="100"` → `Tooltip`/`TooltipTrigger as-child`/`TooltipContent`), never the `title` attr. Ref: [orchestrator/index.vue](app/pages/orchestrator/index.vue) card actions
 - NEVER `git push --force` to `main`/`next`
 - NEVER commit `.env`, credentials, or secret files
 
