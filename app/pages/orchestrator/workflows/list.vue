@@ -56,6 +56,7 @@ definePageMeta({
 // ─── Global Setup ──────────────────────────────────────────────────
 const route = useRoute();
 const { orchestratorApi } = useGeinsRepository();
+const workflowGroupsStore = useWorkflowGroupsStore();
 const allData = ref<EntityList[]>([]);
 const entityName = 'workflow';
 const loading = ref(true);
@@ -246,6 +247,7 @@ onMounted(() => {
       fetchError.value = false;
       const safeData: WorkflowSummary[] = Array.isArray(newData) ? newData : [];
       allData.value = mapToListData(safeData, newMetrics || []);
+      workflowGroupsStore.setFromWorkflows(safeData);
     },
     { immediate: true },
   );

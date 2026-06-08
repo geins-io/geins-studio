@@ -15,10 +15,14 @@ const props = withDefaults(
     placeholder?: string;
     allowCustomTags?: boolean;
     disableTeleport?: boolean;
+    /** Restrict to a single selection: caps at one tag and hides the
+     * search input (and its "Add …" placeholder) once one is selected. */
+    singleSelect?: boolean;
   }>(),
   {
     allowCustomTags: false,
     disableTeleport: false,
+    singleSelect: false,
   },
 );
 const dataSet = toRef(props, 'dataSet');
@@ -39,12 +43,15 @@ const placeholder = computed(() => {
         {
           entityName: props.entityName,
         },
-        2,
+        props.singleSelect ? 1 : 2,
       ) + '...'
     );
   }
   return '';
 });
+
+// In single-select mode the input disappears once a tag is selected.
+const isFull = computed(() => props.singleSelect && model.value.length >= 1);
 
 const { contains } = useFilter({ sensitivity: 'base' });
 const filteredData = computed(() => {
@@ -114,6 +121,7 @@ const getItemFromDataSet = (id: string): T | undefined => {
     <ComboboxAnchor as-child>
       <TagsInput
         v-model="model"
+        :max="singleSelect ? 1 : undefined"
         :class="
           cn('w-full gap-2 px-2', {
             'border-primary border': open,
@@ -135,7 +143,7 @@ const getItemFromDataSet = (id: string): T | undefined => {
           </TagsInputItem>
         </div>
 
-        <ComboboxInput v-model="searchTerm" as-child>
+        <ComboboxInput v-if="!isFull" v-model="searchTerm" as-child>
           <TagsInputInput
             :placeholder="placeholder"
             class="h-auto w-full min-w-50 border-none p-0 focus-visible:ring-0"

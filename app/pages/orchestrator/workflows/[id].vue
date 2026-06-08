@@ -10,6 +10,7 @@ import type {
   WorkflowInput,
   WorkflowNode,
   WorkflowNodeConnection,
+  EntityBaseWithName,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { sanitizeWorkflowNodes } from '@/composables/useWorkflowCanvas';
@@ -56,6 +57,20 @@ const {
   triggerTypes: manifestTriggerTypes,
   eventEntities: manifestEventEntities,
 } = manifestStore;
+
+// ─── Workflow groups (single-select group input) ──────────────────────
+// No groups endpoint exists; the set is derived from existing workflows.
+// Populated by the list page; lazily fetched here if not visited yet.
+const workflowGroupsStore = useWorkflowGroupsStore();
+const { groups: workflowGroups } = storeToRefs(workflowGroupsStore);
+const groupDataSet = computed<EntityBaseWithName[]>(() =>
+  workflowGroups.value.map((group) => ({ _id: group, name: group })),
+);
+onMounted(() => {
+  workflowGroupsStore.ensureLoaded().catch((err) => {
+    geinsLogError('failed to load workflow groups', err);
+  });
+});
 
 // ─── Form validation schema ────────────────────────────────────────
 const formSchema = toTypedSchema(
@@ -811,7 +826,13 @@ const summary = computed<DataItem[]>(() => {
   }
   const group = form.values.details?.group;
   if (group) {
-    items.push({ label: 'Group', value: group });
+    items.push({
+      label: 'Group',
+      value: [group],
+      displayValue: group,
+      displayType: DataItemDisplayType.Array,
+      entityName: 'group',
+    });
   }
   const tags = form.values.details?.tags ?? [];
   if (tags.length) {
@@ -1006,9 +1027,22 @@ const { summaryProps } = useEntityEditSummary({
                     <FormItem>
                       <FormLabel :optional="true">Group</FormLabel>
                       <FormControl>
-                        <Input
-                          v-bind="componentField"
-                          placeholder="e.g. Monitor ERP Sync"
+                        <FormInputTagsSearch
+                          entity-name="group"
+                          :data-set="groupDataSet"
+                          :allow-custom-tags="true"
+                          :single-select="true"
+                          :model-value="
+                            componentField.modelValue
+                              ? [componentField.modelValue]
+                              : []
+                          "
+                          @update:model-value="
+                            (val) =>
+                              componentField['onUpdate:modelValue']?.(
+                                val[0] ?? '',
+                              )
+                          "
                         />
                       </FormControl>
                       <FormMessage />
