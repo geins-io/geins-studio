@@ -381,9 +381,13 @@ watchEffect(() => {
             <p class="text-muted-foreground text-sm">
               {{ $t('workflows.total') }}
             </p>
-            <p class="text-2xl font-bold">{{ stats.total }}</p>
+            <p class="mt-1 text-3xl font-bold">{{ stats.total }}</p>
           </div>
-          <LucideWorkflow class="text-muted-foreground h-8 w-8" />
+          <div
+            class="bg-secondary text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm"
+          >
+            <LucideWorkflow class="size-6" />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -394,9 +398,15 @@ watchEffect(() => {
             <p class="text-muted-foreground text-sm">
               {{ $t('workflows.healthy_workflows') }}
             </p>
-            <p class="text-2xl font-bold text-green-500">{{ stats.healthy }}</p>
+            <p class="mt-1 text-3xl font-bold text-green-500">
+              {{ stats.healthy }}
+            </p>
           </div>
-          <LucideCheckCircle2 class="h-8 w-8 text-green-500" />
+          <div
+            class="bg-secondary text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm"
+          >
+            <LucideCheckCircle2 class="size-6" />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -407,11 +417,15 @@ watchEffect(() => {
             <p class="text-muted-foreground text-sm">
               {{ $t('workflows.executions_24h') }}
             </p>
-            <p class="text-2xl font-bold">
+            <p class="mt-1 text-3xl font-bold">
               {{ stats.executions24h.toLocaleString() }}
             </p>
           </div>
-          <LucideClock class="text-muted-foreground h-8 w-8" />
+          <div
+            class="bg-secondary text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm"
+          >
+            <LucideClock class="size-6" />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -423,7 +437,7 @@ watchEffect(() => {
               {{ $t('workflows.success_rate') }}
             </p>
             <p
-              class="text-2xl font-bold"
+              class="mt-1 text-3xl font-bold"
               :class="
                 stats.successRate24h < 95 ? 'text-yellow-500' : 'text-green-500'
               "
@@ -431,12 +445,11 @@ watchEffect(() => {
               {{ stats.successRate24h }}%
             </p>
           </div>
-          <LucideTarget
-            class="h-8 w-8"
-            :class="
-              stats.successRate24h < 95 ? 'text-yellow-500' : 'text-green-500'
-            "
-          />
+          <div
+            class="bg-secondary text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm"
+          >
+            <LucideTarget class="size-6" />
+          </div>
         </div>
       </CardContent>
     </Card>
