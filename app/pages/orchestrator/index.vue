@@ -381,7 +381,7 @@ watchEffect(() => {
             <p class="text-muted-foreground text-sm">
               {{ $t('workflows.total') }}
             </p>
-            <p class="mt-1 text-3xl font-bold">{{ stats.total }}</p>
+            <p class="mt-0.5 text-[1.55rem] font-bold">{{ stats.total }}</p>
           </div>
           <div
             class="bg-secondary text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm"
@@ -398,14 +398,14 @@ watchEffect(() => {
             <p class="text-muted-foreground text-sm">
               {{ $t('workflows.healthy_workflows') }}
             </p>
-            <p class="mt-1 text-3xl font-bold text-green-500">
+            <p class="text-positive mt-0.5 text-[1.55rem] font-bold">
               {{ stats.healthy }}
             </p>
           </div>
           <div
             class="bg-secondary text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm"
           >
-            <LucideCheckCircle2 class="size-6 text-green-500" />
+            <LucideCheckCircle2 class="text-positive size-6" />
           </div>
         </div>
       </CardContent>
@@ -417,7 +417,7 @@ watchEffect(() => {
             <p class="text-muted-foreground text-sm">
               {{ $t('workflows.executions_24h') }}
             </p>
-            <p class="mt-1 text-3xl font-bold">
+            <p class="mt-0.5 text-[1.55rem] font-bold">
               {{ stats.executions24h.toLocaleString() }}
             </p>
           </div>
@@ -437,9 +437,9 @@ watchEffect(() => {
               {{ $t('workflows.success_rate') }}
             </p>
             <p
-              class="mt-1 text-3xl font-bold"
+              class="mt-0.5 text-[1.55rem] font-bold"
               :class="
-                stats.successRate24h < 95 ? 'text-yellow-500' : 'text-green-500'
+                stats.successRate24h < 95 ? 'text-warning' : 'text-positive'
               "
             >
               {{ stats.successRate24h }}%
@@ -451,7 +451,7 @@ watchEffect(() => {
             <LucideTarget
               class="size-6"
               :class="
-                stats.successRate24h < 95 ? 'text-yellow-500' : 'text-green-500'
+                stats.successRate24h < 95 ? 'text-warning' : 'text-positive'
               "
             />
           </div>
@@ -592,9 +592,7 @@ watchEffect(() => {
               <span
                 class="text-sm font-semibold"
                 :class="
-                  group.successRate < 95
-                    ? 'text-yellow-600 dark:text-yellow-400'
-                    : 'text-green-600 dark:text-green-400'
+                  group.successRate < 95 ? 'text-warning' : 'text-positive'
                 "
               >
                 {{ group.successRate }}%
