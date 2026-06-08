@@ -156,7 +156,7 @@ const onInstalled = async () => {
 
     <!-- Catalog grid -->
     <div v-else class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-      <KitCard
+      <WorkflowKitCard
         v-for="kit in filteredKits"
         :key="kit.id"
         :kit="kit"
@@ -167,7 +167,7 @@ const onInstalled = async () => {
     </div>
   </NuxtErrorBoundary>
 
-  <KitInstallDialog
+  <WorkflowKitInstallDialog
     v-model:open="installDialogOpen"
     :kit-id="installKitId"
     @installed="onInstalled"

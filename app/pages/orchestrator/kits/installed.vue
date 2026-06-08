@@ -193,7 +193,7 @@ const confirmUninstall = async (payload: {
 
     <!-- Installed grid -->
     <div v-else class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-      <KitInstalledCard
+      <WorkflowKitInstalledCard
         v-for="installation in installations"
         :key="installation.id"
         :installation="installation"
@@ -205,7 +205,7 @@ const confirmUninstall = async (payload: {
     </div>
   </NuxtErrorBoundary>
 
-  <KitUpgradeDialog
+  <WorkflowKitUpgradeDialog
     v-model:open="upgradeOpen"
     :installation="activeInstallation"
     :latest-version="
@@ -217,7 +217,7 @@ const confirmUninstall = async (payload: {
     @confirm="confirmUpgrade"
   />
 
-  <KitUninstallDialog
+  <WorkflowKitUninstallDialog
     v-model:open="uninstallOpen"
     :installation="activeInstallation"
     :loading="actionLoading"

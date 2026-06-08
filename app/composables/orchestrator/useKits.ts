@@ -81,21 +81,34 @@ export function useKits(): UseKitsReturnType {
   const load = async () => {
     loading.value = true;
     error.value = false;
-    try {
-      const [catalog, installed] = await Promise.all([
-        orchestratorApi.kit.list(),
-        orchestratorApi.kit.listInstallations(),
-      ]);
-      kits.value = Array.isArray(catalog) ? catalog : [];
-      installations.value = Array.isArray(installed) ? installed : [];
-    } catch (err) {
-      geinsLog('failed to load kits', err);
+    // Load the catalog and installations independently: installations only
+    // drive the "installed / update-available" badges, so a failure there
+    // (e.g. endpoint not yet available) must NOT wipe out the catalog list.
+    const [catalogResult, installedResult] = await Promise.allSettled([
+      orchestratorApi.kit.list(),
+      orchestratorApi.kit.listInstallations(),
+    ]);
+
+    if (catalogResult.status === 'fulfilled') {
+      kits.value = Array.isArray(catalogResult.value)
+        ? catalogResult.value
+        : [];
+    } else {
+      geinsLog('failed to load kit catalog', catalogResult.reason);
       error.value = true;
       kits.value = [];
-      installations.value = [];
-    } finally {
-      loading.value = false;
     }
+
+    if (installedResult.status === 'fulfilled') {
+      installations.value = Array.isArray(installedResult.value)
+        ? installedResult.value
+        : [];
+    } else {
+      geinsLog('failed to load kit installations', installedResult.reason);
+      installations.value = [];
+    }
+
+    loading.value = false;
   };
 
   const refreshInstallations = async () => {
