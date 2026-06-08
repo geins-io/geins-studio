@@ -405,7 +405,7 @@ watchEffect(() => {
           <div
             class="bg-secondary text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm"
           >
-            <LucideCheckCircle2 class="size-6" />
+            <LucideCheckCircle2 class="size-6 text-green-500" />
           </div>
         </div>
       </CardContent>
@@ -448,7 +448,12 @@ watchEffect(() => {
           <div
             class="bg-secondary text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg shadow-sm"
           >
-            <LucideTarget class="size-6" />
+            <LucideTarget
+              class="size-6"
+              :class="
+                stats.successRate24h < 95 ? 'text-yellow-500' : 'text-green-500'
+              "
+            />
           </div>
         </div>
       </CardContent>
