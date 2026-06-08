@@ -836,7 +836,13 @@ const summary = computed<DataItem[]>(() => {
   }
   const tags = form.values.details?.tags ?? [];
   if (tags.length) {
-    items.push({ label: 'Tags', value: tags });
+    items.push({
+      label: 'Tags',
+      value: tags,
+      displayValue: tags.join(', '),
+      displayType: DataItemDisplayType.Array,
+      entityName: 'tag',
+    });
   }
   return items;
 });
