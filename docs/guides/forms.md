@@ -339,19 +339,19 @@ Located in `app/components/form/input/` and `app/components/form/item/`. All are
 
 ### Input Components
 
-| Component                 | v-model                  | Purpose                                                                                                                                                      |
-| ------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `FormInputSelectSearch`   | `string`                 | Combobox with search. Props: `dataSet`, `entityName`, `autocomplete`, `disableTeleport`                                                                      |
-| `FormInputTagsSearch`     | `string[]`               | Multi-select tags with search. Generic `<T extends EntityBaseWithName>`. Props: `dataSet`, `entityName`, `placeholder`, `allowCustomTags`, `disableTeleport` |
-| `FormInputChannels`       | `string[]`               | Channel multi-select. Wraps `FormInputTagsSearch` with channel data from store                                                                               |
-| `FormInputCountrySelect`  | `string`                 | Country dropdown. Wraps `FormInputSelectSearch` with country data from store                                                                                 |
-| `FormInputLanguageSelect` | `string`                 | Language dropdown. Props: `dataSet`, `showFlags`, `disableTeleport`                                                                                          |
-| `FormInputMarketSelect`   | `string`                 | Market dropdown. Shows "{country} ({currency})" format. Props: `dataSet`, `disableTeleport`                                                                  |
-| `FormInputDate`           | `string` (ISO)           | Date picker via Popover + Calendar. Props: `placeholder`, `minValue`                                                                                         |
-| `FormInputColor`          | `string` (hex)           | Color picker button + hex text input                                                                                                                         |
-| `FormInputFont`           | `string`                 | Font selector combobox with live preview                                                                                                                     |
-| `FormInputImage`          | `string \| File \| null` | File picker with drag-drop and image preview                                                                                                                 |
-| `FormInputRadioCards`     | `string`                 | 2-column grid of radio card options. Props: `options: SchemaFormFieldOption[]`                                                                               |
+| Component                 | v-model                  | Purpose                                                                                                                                                                      |
+| ------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FormInputSelectSearch`   | `string`                 | Combobox with search. Props: `dataSet`, `entityName`, `autocomplete`, `disableTeleport`                                                                                      |
+| `FormInputTagsSearch`     | `string[]`               | Multi-select tags with search. Generic `<T extends EntityBaseWithName>`. Props: `dataSet`, `entityName`, `placeholder`, `allowCustomTags`, `singleSelect`, `disableTeleport` |
+| `FormInputChannels`       | `string[]`               | Channel multi-select. Wraps `FormInputTagsSearch` with channel data from store                                                                                               |
+| `FormInputCountrySelect`  | `string`                 | Country dropdown. Wraps `FormInputSelectSearch` with country data from store                                                                                                 |
+| `FormInputLanguageSelect` | `string`                 | Language dropdown. Props: `dataSet`, `showFlags`, `disableTeleport`                                                                                                          |
+| `FormInputMarketSelect`   | `string`                 | Market dropdown. Shows "{country} ({currency})" format. Props: `dataSet`, `disableTeleport`                                                                                  |
+| `FormInputDate`           | `string` (ISO)           | Date picker via Popover + Calendar. Props: `placeholder`, `minValue`                                                                                                         |
+| `FormInputColor`          | `string` (hex)           | Color picker button + hex text input                                                                                                                                         |
+| `FormInputFont`           | `string`                 | Font selector combobox with live preview                                                                                                                                     |
+| `FormInputImage`          | `string \| File \| null` | File picker with drag-drop and image preview                                                                                                                                 |
+| `FormInputRadioCards`     | `string`                 | 2-column grid of radio card options. Props: `options: SchemaFormFieldOption[]`                                                                                               |
 
 ### Usage within FormField
 
