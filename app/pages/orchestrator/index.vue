@@ -491,11 +491,11 @@ watchEffect(() => {
           <p class="text-muted-foreground mb-4">
             {{ $t('workflows.create_first') }}
           </p>
-          <NuxtLink to="/orchestrator/workflows/new">
-            <Button>
+          <Button as-child>
+            <NuxtLink to="/orchestrator/workflows/new">
               {{ $t('new_entity', { entityName: 'workflow' }) }}
-            </Button>
-          </NuxtLink>
+            </NuxtLink>
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -618,55 +618,73 @@ watchEffect(() => {
 
           <!-- Actions -->
           <div class="mt-3 flex items-center justify-between">
-            <div class="flex items-center gap-1">
-              <NuxtLink
-                :to="{
-                  path: '/orchestrator/workflows/list',
-                  query: group.isStandalone
-                    ? { name: group.name }
-                    : { group: group.id },
-                }"
-              >
-                <Button
-                  variant="outline"
-                  size="icon"
-                  class="h-7 w-7"
-                  title="Workflows"
-                >
-                  <LucideWorkflow class="h-3.5 w-3.5" />
-                </Button>
-              </NuxtLink>
-              <NuxtLink
-                :to="{
-                  path: '/orchestrator/executions/list',
-                  query: group.isStandalone
-                    ? { name: group.name }
-                    : { group: group.id },
-                }"
-              >
-                <Button
-                  variant="outline"
-                  size="icon"
-                  class="h-7 w-7"
-                  title="Executions"
-                >
-                  <LucideHistory class="h-3.5 w-3.5" />
-                </Button>
-              </NuxtLink>
-              <NuxtLink
-                v-if="group.workflowCount === 1"
-                :to="`/orchestrator/workflows/${group.workflowIds[0]}`"
-              >
-                <Button
-                  variant="outline"
-                  size="icon"
-                  class="h-7 w-7"
-                  title="Edit workflow"
-                >
-                  <LucidePencil class="h-3.5 w-3.5" />
-                </Button>
-              </NuxtLink>
-            </div>
+            <TooltipProvider :delay-duration="100">
+              <div class="flex items-center gap-1">
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button
+                      as-child
+                      variant="outline"
+                      size="icon"
+                      class="h-7 w-7"
+                    >
+                      <NuxtLink
+                        :to="{
+                          path: '/orchestrator/workflows/list',
+                          query: group.isStandalone
+                            ? { name: group.name }
+                            : { group: group.id },
+                        }"
+                      >
+                        <LucideWorkflow class="h-3.5 w-3.5" />
+                      </NuxtLink>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{{ $t('workflow', 2) }}</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <Button
+                      as-child
+                      variant="outline"
+                      size="icon"
+                      class="h-7 w-7"
+                    >
+                      <NuxtLink
+                        :to="{
+                          path: '/orchestrator/executions/list',
+                          query: group.isStandalone
+                            ? { name: group.name }
+                            : { group: group.id },
+                        }"
+                      >
+                        <LucideHistory class="h-3.5 w-3.5" />
+                      </NuxtLink>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{{ $t('execution', 2) }}</TooltipContent>
+                </Tooltip>
+                <Tooltip v-if="group.workflowCount === 1">
+                  <TooltipTrigger as-child>
+                    <Button
+                      as-child
+                      variant="outline"
+                      size="icon"
+                      class="h-7 w-7"
+                    >
+                      <NuxtLink
+                        :to="`/orchestrator/workflows/${group.workflowIds[0]}`"
+                      >
+                        <LucidePencil class="h-3.5 w-3.5" />
+                      </NuxtLink>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {{ $t('edit_entity', { entityName: 'workflow' }) }}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
             <div
               v-if="group.toggleableWorkflowIds.length > 0"
               class="flex items-center gap-1.5"
