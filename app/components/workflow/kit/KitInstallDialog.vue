@@ -183,7 +183,7 @@ const performInstall = async () => {
     geinsLog('install failed', err);
     toast({
       title: t('kits.install_error'),
-      description: err instanceof Error ? err.message : String(err),
+      description: getErrorMessage(err),
       variant: 'negative',
     });
   } finally {
