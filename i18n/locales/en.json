@@ -314,15 +314,15 @@
     "channels": "Channels",
     "workflows": "Workflows",
     "orchestrator": "Orchestrator",
-    "orchestrator_config": "Orchestrator Config",
+    "orchestrator_config": "Orchestrator config",
     "overview": "Overview",
     "executions": "Executions",
-    "variables": "Global Variables",
-    "kits": "Integration Kits",
-    "installed_kits": "Installed Kits"
+    "variables": "Global variables",
+    "kits": "Integration kits",
+    "installed_kits": "Installed kits"
   },
   "workflows": {
-    "total": "Total Workflows",
+    "total": "Total workflows",
     "healthy": "Healthy",
     "degraded": "Degraded",
     "executions_24h": "Executions (24h)",

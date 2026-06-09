@@ -505,19 +505,19 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
 
     <!-- Meta cards -->
     <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
-      <Card class="px-5 py-4">
+      <Card class="px-5 py-4 shadow-xs">
         <div class="text-muted-foreground text-xs">Started</div>
         <div class="text-md font-mono">
           {{ formatTimestamp(execution.startTime) }}
         </div>
       </Card>
-      <Card class="px-5 py-4">
+      <Card class="px-5 py-4 shadow-xs">
         <div class="text-muted-foreground text-xs">Ended</div>
         <div class="text-md font-mono">
           {{ formatTimestamp(execution.endTime) }}
         </div>
       </Card>
-      <Card class="px-5 py-4">
+      <Card class="px-5 py-4 shadow-xs">
         <div class="text-muted-foreground flex items-center gap-1.5 text-xs">
           Duration
           <span
@@ -530,7 +530,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
           {{ formatDuration(liveDurationMs) }}
         </div>
       </Card>
-      <Card class="px-5 py-4">
+      <Card class="px-5 py-4 shadow-xs">
         <div class="text-muted-foreground text-xs">Errors</div>
         <div
           class="text-md font-mono"
@@ -539,7 +539,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
           {{ execution.errorCount ?? 0 }}
         </div>
       </Card>
-      <Card v-if="execution.totalNodes != null" class="px-5 py-4">
+      <Card v-if="execution.totalNodes != null" class="px-5 py-4 shadow-xs">
         <div class="text-muted-foreground text-xs">Nodes</div>
         <div class="text-md font-mono">
           {{ execution.completedNodes ?? 0 }} / {{ execution.totalNodes }}
@@ -548,7 +548,10 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
           </span>
         </div>
       </Card>
-      <Card v-if="execution.workflowVersion != null" class="px-5 py-4">
+      <Card
+        v-if="execution.workflowVersion != null"
+        class="px-5 py-4 shadow-xs"
+      >
         <div class="text-muted-foreground text-xs">Version</div>
         <div class="text-md font-mono">v{{ execution.workflowVersion }}</div>
       </Card>
@@ -563,7 +566,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
     <!-- Main content: nodes + console -->
     <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
       <OrchestratorNodeExecutions
-        class="min-h-100 lg:col-span-1"
+        class="min-h-50 shadow-xs lg:col-span-1"
         :nodes="nodeExecutions"
         :timeline-start="timelineStart"
         :timeline-end="timelineEnd"
@@ -571,7 +574,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
 
       <!-- Live console -->
       <OrchestratorLiveConsole
-        class="sticky top-4 h-[70vh] min-h-100 lg:col-span-2"
+        class="sticky top-4 h-[70vh] min-h-50 shadow-xs lg:col-span-2"
         :stream-url="consoleStreamUrl"
         :active="isRunning"
         :seed-lines="consoleSeedLines"

@@ -49,7 +49,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col rounded-lg border">
+  <div class="bg-card flex flex-col rounded-lg border shadow-xs">
     <div class="flex items-center justify-between border-b px-4 py-2">
       <button
         class="flex items-center gap-2 text-left focus:outline-none focus-visible:outline-none"
@@ -59,7 +59,7 @@ onUnmounted(() => {
           :is="expanded ? LucideChevronDown : LucideChevronRight"
           class="text-muted-foreground h-4 w-4 shrink-0"
         />
-        <h2 class="text-sm font-medium">Workflow Input</h2>
+        <h2 class="text-sm font-medium">Workflow input</h2>
         <span
           v-if="sourceLabel && hasInput"
           class="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-xs"
@@ -88,7 +88,7 @@ onUnmounted(() => {
       </div>
       <pre
         v-else
-        class="bg-muted max-h-80 overflow-auto rounded-b-lg p-3 font-mono text-xs"
+        class="bg-secondary/50 dark:bg-secondary/70 max-h-80 overflow-auto rounded-b-lg p-4 font-mono text-xs"
         >{{ formatted }}</pre
       >
     </div>

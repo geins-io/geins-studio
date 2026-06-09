@@ -28,6 +28,8 @@ Skills live in `.agents/skills/{name}/SKILL.md` and are auto-discovered by the a
 - NEVER spread `entityDataUpdate` in `prepareUpdateData` | NEVER modify `ui/table/` primitives for modes
 - NEVER omit `<DialogUnsavedChanges>` from entity edit page templates — without it the route guard silently blocks all navigation with no user feedback (stuck page, no error, no dialog)
 - NEVER wrap a `<Button>` (or other interactive element) inside `<NuxtLink>`/`<a>` — renders invalid `<a><button>`. Use `<Button as-child><NuxtLink …>…</NuxtLink></Button>` (single `<a>` with button styling). For icon-only link buttons use a `Tooltip` (`TooltipProvider :delay-duration="100"` → `Tooltip`/`TooltipTrigger as-child`/`TooltipContent`), never the `title` attr. Ref: [orchestrator/index.vue](app/pages/orchestrator/index.vue) card actions
+- NEVER hardcode user-facing text in templates/components/scripts (incl. `title=`/`placeholder=`/toast strings) — every label, button, heading, placeholder, tooltip, toast, dialog, and message MUST be an i18n key resolved via `$t`/`t` and added to BOTH `en.json` and `sv.json`. Only dynamic API/data values render raw. Reuse existing keys (e.g. `$t('workflow', 2)`) before adding new ones — see [feedback_i18n_no_duplicate_keys]
+- NEVER use Title Case for UI copy — write **sentence case**: capitalize only the first word and proper nouns. Applies to every i18n value AND any inline UI string: labels, buttons, headings, menu/nav items, placeholders, tooltips, empty states, toasts. e.g. `Total workflows` not `Total Workflows`; `Integration kits` not `Integration Kits`; `New workflow` not `New Workflow`. Pluralized entity keys keep their case (`Workflow | Workflows`)
 - NEVER `git push --force` to `main`/`next`
 - NEVER commit `.env`, credentials, or secret files
 
@@ -57,7 +59,7 @@ Admin interface for Geins Commerce Backend. **Client-side SPA** (`ssr: false`) t
 - **Styling**: Tailwind CSS 4 with CSS custom properties theming
 - **UI Components**: shadcn-vue (`app/components/ui/`) — install via `npx shadcn-vue@latest add`, never create manually
 - **Icons**: Lucide (auto-imported via `nuxt-lucide-icons`). Dynamic name→component resolution: `useLucideIcon()` (uses `@lucide/vue` v1). Never use `resolveComponent('Lucide...')` — tree-shaking removes unresolved icons.
-- **i18n**: `@nuxtjs/i18n` — always update both `en.json` and `sv.json`. Entity action keys: `save_entity`, `delete_entity`, `send_entity`, etc. use `@.lower:{entityName}` interpolation.
+- **i18n**: `@nuxtjs/i18n` — always update both `en.json` and `sv.json`. No hardcoded UI strings; **sentence case** for all values (see Hard Blocks). Entity action keys: `save_entity`, `delete_entity`, `send_entity`, etc. use `@.lower:{entityName}` interpolation.
 - **State**: Pinia stores in `app/stores/`
 - **Tables**: TanStack Table (`@tanstack/vue-table`)
 

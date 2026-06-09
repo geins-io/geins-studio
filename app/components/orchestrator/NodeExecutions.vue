@@ -60,9 +60,13 @@ const toggleNodeExpanded = (nodeId: string) => {
 </script>
 
 <template>
-  <div class="bg-card flex flex-col rounded-lg border">
-    <div class="flex items-center justify-between border-b px-4 py-2">
-      <h2 class="text-sm font-medium">Node Executions</h2>
+  <div
+    class="bg-secondary/50 dark:bg-secondary/70 flex flex-col rounded-lg border shadow-xs"
+  >
+    <div
+      class="bg-card flex items-center justify-between rounded-t-lg border-b px-4 py-2"
+    >
+      <h2 class="text-sm font-medium">Node executions</h2>
       <span class="text-muted-foreground text-xs">
         {{ nodes.length }} nodes
       </span>
@@ -74,11 +78,7 @@ const toggleNodeExpanded = (nodeId: string) => {
       No node executions
     </div>
     <div v-else>
-      <div
-        v-for="node in nodes"
-        :key="node.nodeId"
-        class="hover:bg-muted/50 border-b px-4 py-3 transition-colors"
-      >
+      <div v-for="node in nodes" :key="node.nodeId" class="border-b px-4 py-3">
         <button
           class="w-full cursor-pointer text-left focus:outline-none focus-visible:outline-none"
           @click="toggleNodeExpanded(node.nodeId)"
@@ -185,14 +185,14 @@ const toggleNodeExpanded = (nodeId: string) => {
           <div v-if="node.input">
             <div class="text-muted-foreground mb-1">Input</div>
             <pre
-              class="bg-muted max-h-40 overflow-auto rounded p-2 font-mono text-xs"
+              class="bg-muted max-h-40 overflow-auto rounded border p-2 font-mono text-xs"
               >{{ JSON.stringify(node.input, null, 2) }}</pre
             >
           </div>
           <div v-if="node.output">
             <div class="text-muted-foreground mb-1">Output</div>
             <pre
-              class="bg-muted max-h-40 overflow-auto rounded p-2 font-mono text-xs"
+              class="bg-muted max-h-40 overflow-auto rounded border p-2 font-mono text-xs"
               >{{ JSON.stringify(node.output, null, 2) }}</pre
             >
           </div>
