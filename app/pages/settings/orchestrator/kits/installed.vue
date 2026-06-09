@@ -9,7 +9,9 @@ definePageMeta({
 
 const { t } = useI18n();
 const { toast } = useToast();
-const { geinsLog } = useGeinsLog('pages/settings/orchestrator/kits/installed.vue');
+const { geinsLog } = useGeinsLog(
+  'pages/settings/orchestrator/kits/installed.vue',
+);
 const breadcrumbsStore = useBreadcrumbsStore();
 
 const {

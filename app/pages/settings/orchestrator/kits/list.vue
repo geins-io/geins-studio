@@ -66,24 +66,24 @@ const onInstalled = async () => {
     v-if="categories.length"
     class="mb-5 flex flex-wrap items-center gap-1.5"
   >
-      <Button
-        size="sm"
-        :variant="activeCategory === null ? 'default' : 'outline'"
-        class="h-7 text-xs"
-        @click="activeCategory = null"
-      >
-        {{ $t('kits.all_categories') }}
-      </Button>
-      <Button
-        v-for="category in categories"
-        :key="category"
-        size="sm"
-        :variant="activeCategory === category ? 'default' : 'outline'"
-        class="h-7 text-xs"
-        @click="activeCategory = category"
-      >
-        {{ category }}
-      </Button>
+    <Button
+      size="sm"
+      :variant="activeCategory === null ? 'default' : 'outline'"
+      class="h-7 text-xs"
+      @click="activeCategory = null"
+    >
+      {{ $t('kits.all_categories') }}
+    </Button>
+    <Button
+      v-for="category in categories"
+      :key="category"
+      size="sm"
+      :variant="activeCategory === category ? 'default' : 'outline'"
+      class="h-7 text-xs"
+      @click="activeCategory = category"
+    >
+      {{ category }}
+    </Button>
   </div>
 
   <NuxtErrorBoundary>

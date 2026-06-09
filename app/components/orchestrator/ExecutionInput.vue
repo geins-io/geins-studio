@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { LucideChevronDown, LucideChevronRight, LucideCopy, LucideCheck } from '#components';
+import {
+  LucideChevronDown,
+  LucideChevronRight,
+  LucideCopy,
+  LucideCheck,
+} from '#components';
 
 interface Props {
   input?: Record<string, unknown> | null;
@@ -68,7 +73,10 @@ onUnmounted(() => {
         :title="copied ? 'Copied!' : 'Copy input'"
         @click="copyInput"
       >
-        <component :is="copied ? LucideCheck : LucideCopy" class="h-3.5 w-3.5" />
+        <component
+          :is="copied ? LucideCheck : LucideCopy"
+          class="h-3.5 w-3.5"
+        />
       </button>
     </div>
     <div v-if="expanded">

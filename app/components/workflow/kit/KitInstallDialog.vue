@@ -326,10 +326,7 @@ const goToInstalled = () => {
               >
                 {{ w.description }}
               </span>
-              <span
-                v-if="(w.dependencies ?? []).length"
-                class="block text-xs"
-              >
+              <span v-if="(w.dependencies ?? []).length" class="block text-xs">
                 {{ $t('kits.depends_on', { names: dependencyNames(w.refId) }) }}
               </span>
               <span
