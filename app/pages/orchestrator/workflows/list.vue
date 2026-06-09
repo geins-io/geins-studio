@@ -295,19 +295,19 @@ onMounted(() => {
     linkColumns: {
       name: { url: '/orchestrator/workflows/{id}', idField: 'id' },
       executionsTotal: {
-        url: '/orchestrator/executions?id={id}',
+        url: '/orchestrator/executions/list?id={id}',
         idField: 'id',
       },
       executions24h: {
-        url: '/orchestrator/executions?id={id}&period=24h',
+        url: '/orchestrator/executions/list?id={id}&period=24h',
         idField: 'id',
       },
       executions7d: {
-        url: '/orchestrator/executions?id={id}&period=7d',
+        url: '/orchestrator/executions/list?id={id}&period=7d',
         idField: 'id',
       },
       executions30d: {
-        url: '/orchestrator/executions?id={id}&period=30d',
+        url: '/orchestrator/executions/list?id={id}&period=30d',
         idField: 'id',
       },
     },
