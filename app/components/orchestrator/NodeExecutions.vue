@@ -60,7 +60,7 @@ const toggleNodeExpanded = (nodeId: string) => {
 </script>
 
 <template>
-  <div class="flex flex-col rounded-lg border">
+  <div class="bg-card flex flex-col rounded-lg border">
     <div class="flex items-center justify-between border-b px-4 py-2">
       <h2 class="text-sm font-medium">Node Executions</h2>
       <span class="text-muted-foreground text-xs">

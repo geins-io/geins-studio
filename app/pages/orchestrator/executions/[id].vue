@@ -406,36 +406,46 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         </div>
       </template>
       <ContentActionBar>
-        <div class="flex items-center gap-0.5">
-          <NuxtLink
-            v-if="olderExecutionId"
-            :to="`/orchestrator/executions/${olderExecutionId}`"
-            class="hover:bg-muted inline-flex items-center justify-center rounded-md border p-1.5 transition-colors"
-            title="Older execution"
-          >
-            <LucideChevronLeft class="size-4" />
-          </NuxtLink>
-          <span
-            v-else
-            class="inline-flex cursor-default items-center justify-center rounded-md border p-1.5 opacity-30"
-          >
-            <LucideChevronLeft class="size-4" />
-          </span>
-          <NuxtLink
-            v-if="newerExecutionId"
-            :to="`/orchestrator/executions/${newerExecutionId}`"
-            class="hover:bg-muted inline-flex items-center justify-center rounded-md border p-1.5 transition-colors"
-            title="Newer execution"
-          >
-            <LucideChevronRight class="size-4" />
-          </NuxtLink>
-          <span
-            v-else
-            class="inline-flex cursor-default items-center justify-center rounded-md border p-1.5 opacity-30"
-          >
-            <LucideChevronRight class="size-4" />
-          </span>
-        </div>
+        <TooltipProvider :delay-duration="100">
+          <ButtonGroup>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  :disabled="!olderExecutionId"
+                  @click="
+                    olderExecutionId &&
+                    navigateTo(`/orchestrator/executions/${olderExecutionId}`)
+                  "
+                >
+                  <LucideChevronLeft class="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {{ $t('executions.older_execution') }}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  :disabled="!newerExecutionId"
+                  @click="
+                    newerExecutionId &&
+                    navigateTo(`/orchestrator/executions/${newerExecutionId}`)
+                  "
+                >
+                  <LucideChevronRight class="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {{ $t('executions.newer_execution') }}
+              </TooltipContent>
+            </Tooltip>
+          </ButtonGroup>
+        </TooltipProvider>
         <ButtonIcon
           icon="retry"
           :disabled="!details?.canReplay || actionPending"
@@ -495,19 +505,19 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
 
     <!-- Meta cards -->
     <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
-      <div class="bg-card rounded-lg border p-3 shadow-sm">
+      <Card class="px-5 py-4">
         <div class="text-muted-foreground text-xs">Started</div>
-        <div class="font-mono text-sm">
+        <div class="text-md font-mono">
           {{ formatTimestamp(execution.startTime) }}
         </div>
-      </div>
-      <div class="bg-card rounded-lg border p-3 shadow-sm">
+      </Card>
+      <Card class="px-5 py-4">
         <div class="text-muted-foreground text-xs">Ended</div>
-        <div class="font-mono text-sm">
+        <div class="text-md font-mono">
           {{ formatTimestamp(execution.endTime) }}
         </div>
-      </div>
-      <div class="bg-card rounded-lg border p-3 shadow-sm">
+      </Card>
+      <Card class="px-5 py-4">
         <div class="text-muted-foreground flex items-center gap-1.5 text-xs">
           Duration
           <span
@@ -516,38 +526,32 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
             title="Live"
           />
         </div>
-        <div class="font-mono text-sm tabular-nums">
+        <div class="text-md font-mono tabular-nums">
           {{ formatDuration(liveDurationMs) }}
         </div>
-      </div>
-      <div class="bg-card rounded-lg border p-3 shadow-sm">
+      </Card>
+      <Card class="px-5 py-4">
         <div class="text-muted-foreground text-xs">Errors</div>
         <div
-          class="font-mono text-sm"
+          class="text-md font-mono"
           :class="(execution.errorCount ?? 0) > 0 ? 'text-destructive' : ''"
         >
           {{ execution.errorCount ?? 0 }}
         </div>
-      </div>
-      <div
-        v-if="execution.totalNodes != null"
-        class="bg-card rounded-lg border p-3 shadow-sm"
-      >
+      </Card>
+      <Card v-if="execution.totalNodes != null" class="px-5 py-4">
         <div class="text-muted-foreground text-xs">Nodes</div>
-        <div class="font-mono text-sm">
+        <div class="text-md font-mono">
           {{ execution.completedNodes ?? 0 }} / {{ execution.totalNodes }}
           <span v-if="execution.failedNodes" class="text-destructive">
             ({{ execution.failedNodes }} failed)
           </span>
         </div>
-      </div>
-      <div
-        v-if="execution.workflowVersion != null"
-        class="bg-card rounded-lg border p-3 shadow-sm"
-      >
+      </Card>
+      <Card v-if="execution.workflowVersion != null" class="px-5 py-4">
         <div class="text-muted-foreground text-xs">Version</div>
-        <div class="font-mono text-sm">v{{ execution.workflowVersion }}</div>
-      </div>
+        <div class="text-md font-mono">v{{ execution.workflowVersion }}</div>
+      </Card>
     </div>
 
     <!-- Workflow input -->
@@ -559,7 +563,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
     <!-- Main content: nodes + console -->
     <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
       <OrchestratorNodeExecutions
-        class="lg:col-span-1"
+        class="min-h-100 lg:col-span-1"
         :nodes="nodeExecutions"
         :timeline-start="timelineStart"
         :timeline-end="timelineEnd"
@@ -567,7 +571,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
 
       <!-- Live console -->
       <OrchestratorLiveConsole
-        class="sticky top-4 h-[70vh] lg:col-span-2"
+        class="sticky top-4 h-[70vh] min-h-100 lg:col-span-2"
         :stream-url="consoleStreamUrl"
         :active="isRunning"
         :seed-lines="consoleSeedLines"

@@ -394,7 +394,9 @@
     "duration": "Varaktighet",
     "errors": "Fel",
     "nodes": "Noder",
-    "test_run": "Testkörning"
+    "test_run": "Testkörning",
+    "newer_execution": "Nyare körning av detta arbetsflöde",
+    "older_execution": "Äldre körning av detta arbetsflöde"
   },
   "variables": {
     "description": "Delade värden tillgängliga för alla arbetsflöden — använd för API-nycklar, behörigheter och miljökonfiguration.",
