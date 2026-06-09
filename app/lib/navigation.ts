@@ -98,10 +98,11 @@ export const getNavigation = (
     ...(options?.featureOrchestrator
       ? [
           {
-            label: t('navigation.orchestrator'),
+            label: t('navigation.orchestrator_config'),
             href: '/settings/orchestrator/variables/list',
-            icon: 'Workflow',
+            icon: 'Plug',
             group: 'settings',
+            defaultOpen: false,
             children: [
               {
                 label: t('navigation.variables'),

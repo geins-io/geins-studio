@@ -313,11 +313,12 @@
     "channels": "Channels",
     "workflows": "Workflows",
     "orchestrator": "Orchestrator",
+    "orchestrator_config": "Orchestrator Config",
     "overview": "Overview",
     "executions": "Executions",
-    "variables": "Variables",
-    "kits": "Integration directory",
-    "installed_kits": "Installed Integrations"
+    "variables": "Global Variables",
+    "kits": "Integration Kits",
+    "installed_kits": "Installed Kits"
   },
   "workflows": {
     "total": "Total Workflows",
@@ -816,7 +817,7 @@
   "kits": {
     "description": "Install provider-built bundles of workflows and variables to add ready-made integrations to your account.",
     "installed_description": "Workflow bundles installed in your account. Keep them up to date or remove them.",
-    "installed_kits": "Installed Integrations",
+    "installed_kits": "Installed Integrations Kits",
     "browse_kits": "Browse kits",
     "by_author": "by {author}",
     "installed": "Installed",
@@ -841,6 +842,7 @@
     "required": "Required",
     "secret": "Secret",
     "required_by": "Required by {names}",
+    "depends_on": "Depends on {names}",
     "back": "Back",
     "workflows_to_remove": "Workflows to remove",
     "delete_variables": "Also delete variables",

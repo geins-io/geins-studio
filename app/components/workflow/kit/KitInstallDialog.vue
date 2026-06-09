@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { Kit, KitVariableSpec, InstallKitResponse } from '#shared/types';
+import type {
+  Kit,
+  KitVariableSpec,
+  KitWorkflowSpec,
+  InstallKitResponse,
+} from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { Badge } from '~/components/ui/badge';
 
@@ -83,12 +88,30 @@ const toggleWorkflow = (refId: string, value: boolean) => {
   selected.value = { ...selected.value, [refId]: value };
 };
 
+/** Human-readable workflow name from its definition, falling back to refId. */
+const workflowName = (w: KitWorkflowSpec): string => {
+  const name = w.definition?.name;
+  return typeof name === 'string' && name ? name : w.refId;
+};
+
+const nameByRef = computed(() =>
+  Object.fromEntries(workflows.value.map((w) => [w.refId, workflowName(w)])),
+);
+
+/** Names of the workflows that `refId` depends upon. */
+const dependencyNames = (refId: string): string => {
+  const w = workflows.value.find((x) => x.refId === refId);
+  return (w?.dependencies ?? [])
+    .map((dep) => nameByRef.value[dep] ?? dep)
+    .join(', ');
+};
+
 const dependantNames = (refId: string): string => {
   const names = workflows.value
     .filter(
       (w) => selected.value[w.refId] && (w.dependencies ?? []).includes(refId),
     )
-    .map((w) => w.description || w.refId);
+    .map((w) => workflowName(w));
   return names.join(', ');
 };
 
@@ -96,6 +119,9 @@ const dependantNames = (refId: string): string => {
 const visibleVariables = computed<KitVariableSpec[]>(() => {
   const refs = new Set(selectedRefs.value);
   return (kit.value?.variables ?? []).filter((v) => {
+    // Only required variables need input here; optional ones are created from
+    // their defaults automatically on install.
+    if (!v.required) return false;
     const usedBy = v.usedBy ?? [];
     // Global variables (no usedBy) always show; otherwise show when at least
     // one consuming workflow is selected.
@@ -129,25 +155,19 @@ const performInstall = async () => {
   if (missingRequired.value) return;
   installing.value = true;
   try {
+    // Variable values must be supplied in the install request — the API creates
+    // them on install and rejects with 422 if a required one is missing. Send
+    // every non-empty value (user input + prefilled defaults).
+    const variables: Record<string, string> = {};
+    for (const [key, value] of Object.entries(values.value)) {
+      const trimmed = (value ?? '').trim();
+      if (trimmed) variables[key] = trimmed;
+    }
+
     const res = await orchestratorApi.kit.install(props.kitId, {
       workflows: selectedRefs.value,
+      variables,
     });
-
-    // Install creates variables from their defaults. Persist any value the
-    // user supplied (secrets always, others when changed from the default).
-    const toSave = visibleVariables.value.filter((v) => {
-      const value = (values.value[v.key] ?? '').trim();
-      if (!value) return false;
-      return v.isSecret || value !== (v.defaultValue ?? '');
-    });
-    for (const v of toSave) {
-      await orchestratorApi.variable.save({
-        key: v.key,
-        value: values.value[v.key] ?? '',
-        description: v.description,
-        isSecret: v.isSecret,
-      });
-    }
 
     result.value = res;
     emit('installed', res);
@@ -181,7 +201,7 @@ const goToInstalled = () => {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="sm:max-w-lg">
+    <DialogContent class="sm:max-w-2xl">
       <DialogHeader>
         <DialogTitle>
           {{
@@ -274,19 +294,6 @@ const goToInstalled = () => {
               </span>
             </div>
           </div>
-          <div v-if="workflows.length" class="space-y-1.5">
-            <p class="text-sm font-medium">{{ $t('kits.workflows') }}</p>
-            <ul class="space-y-1">
-              <li
-                v-for="w in workflows"
-                :key="w.refId"
-                class="text-muted-foreground flex items-center gap-2 text-sm"
-              >
-                <LucideWorkflow class="size-3.5 shrink-0" />
-                {{ w.description || w.refId }}
-              </li>
-            </ul>
-          </div>
         </div>
 
         <!-- Step 2: Select workflows -->
@@ -306,13 +313,28 @@ const goToInstalled = () => {
               class="mt-0.5"
               @update:model-value="toggleWorkflow(w.refId, !!$event)"
             />
-            <label :for="`wf-${w.refId}`" class="min-w-0 flex-1 cursor-pointer">
+            <label
+              :for="`wf-${w.refId}`"
+              class="min-w-0 flex-1 cursor-pointer space-y-1"
+            >
               <span class="block text-sm font-medium">
-                {{ w.description || w.refId }}
+                {{ workflowName(w) }}
+              </span>
+              <span
+                v-if="w.description"
+                class="text-muted-foreground block text-xs"
+              >
+                {{ w.description }}
+              </span>
+              <span
+                v-if="(w.dependencies ?? []).length"
+                class="block text-xs"
+              >
+                {{ $t('kits.depends_on', { names: dependencyNames(w.refId) }) }}
               </span>
               <span
                 v-if="lockedRefs.has(w.refId)"
-                class="text-muted-foreground block text-xs"
+                class="text-muted-foreground block text-xs italic"
               >
                 {{ $t('kits.required_by', { names: dependantNames(w.refId) }) }}
               </span>
@@ -339,9 +361,6 @@ const goToInstalled = () => {
               <code class="bg-muted rounded px-1 py-0.5 text-xs">
                 {{ v.key }}
               </code>
-              <Badge v-if="v.required" variant="outline" size="sm">
-                {{ $t('kits.required') }}
-              </Badge>
               <Badge v-if="v.isSecret" variant="secondary" size="sm">
                 <LucideKeyRound class="size-3" />
                 {{ $t('kits.secret') }}
@@ -361,41 +380,13 @@ const goToInstalled = () => {
         </div>
 
         <!-- Step 4: Done -->
-        <div v-else-if="currentStep === 4 && result" class="space-y-4 py-2">
+        <div v-else-if="currentStep === 4 && result" class="pt-8 pb-2">
           <div class="flex flex-col items-center gap-2 text-center">
             <LucideCircleCheck class="size-10 text-green-500" />
             <p class="text-base font-semibold">{{ $t('kits.done_title') }}</p>
             <p class="text-muted-foreground text-sm">
               {{ $t('kits.done_summary', { name: result.kitName }) }}
             </p>
-          </div>
-          <div
-            class="bg-muted/40 grid grid-cols-3 gap-px overflow-hidden rounded-lg border"
-          >
-            <div class="bg-background flex flex-col gap-0.5 px-3 py-2.5">
-              <span class="text-muted-foreground text-[10px] uppercase">
-                {{ $t('kits.workflows_created') }}
-              </span>
-              <span class="text-sm font-semibold">
-                {{ result.workflowsCreated ?? 0 }}
-              </span>
-            </div>
-            <div class="bg-background flex flex-col gap-0.5 px-3 py-2.5">
-              <span class="text-muted-foreground text-[10px] uppercase">
-                {{ $t('kits.variables_created') }}
-              </span>
-              <span class="text-sm font-semibold">
-                {{ result.variablesCreated ?? 0 }}
-              </span>
-            </div>
-            <div class="bg-background flex flex-col gap-0.5 px-3 py-2.5">
-              <span class="text-muted-foreground text-[10px] uppercase">
-                {{ $t('kits.variables_existed') }}
-              </span>
-              <span class="text-sm font-semibold">
-                {{ result.variablesExisted ?? 0 }}
-              </span>
-            </div>
           </div>
         </div>
       </div>

@@ -21,28 +21,13 @@ watch(
 onMounted(load);
 
 // ─── Filtering ─────────────────────────────────────────────────────
-const search = ref('');
 const activeCategory = ref<string | null>(null);
 
-const filteredKits = computed<KitSummary[]>(() => {
-  const term = search.value.trim().toLowerCase();
-  return kits.value.filter((k) => {
-    if (activeCategory.value && k.category !== activeCategory.value) {
-      return false;
-    }
-    if (!term) return true;
-    const haystack = [
-      k.name,
-      k.description ?? '',
-      k.author,
-      k.category ?? '',
-      ...(k.tags ?? []),
-    ]
-      .join(' ')
-      .toLowerCase();
-    return haystack.includes(term);
-  });
-});
+const filteredKits = computed<KitSummary[]>(() =>
+  kits.value.filter(
+    (k) => !activeCategory.value || k.category === activeCategory.value,
+  ),
+);
 
 // ─── Install wizard ────────────────────────────────────────────────
 const installDialogOpen = ref(false);
@@ -76,19 +61,11 @@ const onInstalled = async () => {
     </ContentActionBar>
   </ContentHeader>
 
-  <!-- Search + category filter -->
-  <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-    <div class="relative w-full sm:max-w-xs">
-      <LucideSearch
-        class="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
-      />
-      <Input
-        v-model="search"
-        :placeholder="$t('kits.search_placeholder')"
-        class="pl-8"
-      />
-    </div>
-    <div v-if="categories.length" class="flex flex-wrap items-center gap-1.5">
+  <!-- Category filter -->
+  <div
+    v-if="categories.length"
+    class="mb-5 flex flex-wrap items-center gap-1.5"
+  >
       <Button
         size="sm"
         :variant="activeCategory === null ? 'default' : 'outline'"
@@ -107,7 +84,6 @@ const onInstalled = async () => {
       >
         {{ category }}
       </Button>
-    </div>
   </div>
 
   <NuxtErrorBoundary>

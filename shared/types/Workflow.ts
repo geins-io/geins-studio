@@ -953,6 +953,12 @@ export interface Kit extends KitSummary {
 export interface InstallKitRequest {
   /** refIds of the kit workflows to install. Omit/empty installs all. */
   workflows?: string[];
+  /**
+   * Variable values to create on install, keyed by variable key. Required
+   * variables (e.g. secrets without a default) must be supplied here or the
+   * API rejects the install with 422.
+   */
+  variables?: Record<string, string>;
 }
 
 /** A workflow created (or referenced) by an installation. */

@@ -88,10 +88,6 @@ const tags = computed(() => props.kit.tags ?? []);
           <LucideKeyRound class="size-3" />
           {{ $t('kits.variables_count', { count: kit.variableCount ?? 0 }) }}
         </span>
-        <span class="inline-flex items-center gap-1">
-          <LucideHash class="size-3" />
-          {{ kit.version }}
-        </span>
       </div>
 
       <!-- Tags -->
