@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { KitSummary } from '#shared/types';
 import type { KitInstallStatus } from '@/composables/orchestrator/useKits';
+import type { Component } from 'vue';
 import { Avatar, AvatarFallback } from '~/components/ui/avatar';
 import { Badge } from '~/components/ui/badge';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
@@ -23,6 +24,41 @@ const initials = computed(() => {
 });
 
 const tags = computed(() => props.kit.tags ?? []);
+
+// ─── Kit logo ──────────────────────────────────────────────────────
+// The API has no logo field, so logos live in app/assets/logos/kits/ and are
+// matched by the slug of the kit name, category, or any tag. See the folder's
+// README for naming. Kits with no match fall back to the initials avatar.
+const logoModules = import.meta.glob<{ default: Component }>(
+  '@/assets/logos/kits/*.svg',
+  { eager: true },
+);
+
+const logoMap: Record<string, Component> = {};
+for (const [path, mod] of Object.entries(logoModules)) {
+  const name = path.match(/\/([^/]+)\.svg$/)?.[1];
+  if (name) logoMap[name] = mod.default;
+}
+
+const slugify = (value: string): string =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const logo = computed<Component | null>(() => {
+  const candidates = [
+    props.kit.name,
+    props.kit.category ?? '',
+    ...(props.kit.tags ?? []),
+  ];
+  for (const candidate of candidates) {
+    const match = logoMap[slugify(candidate)];
+    if (match) return match;
+  }
+  return null;
+});
 </script>
 
 <template>
@@ -32,7 +68,13 @@ const tags = computed(() => props.kit.tags ?? []);
     <CardHeader class="pt-5 pb-3">
       <div class="flex items-start justify-between gap-2">
         <div class="flex min-w-0 flex-1 items-center gap-3">
-          <Avatar class="size-10 rounded-lg">
+          <div
+            v-if="logo"
+            class="bg-background flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border p-1.5"
+          >
+            <component :is="logo" class="max-h-full max-w-full" />
+          </div>
+          <Avatar v-else class="size-10 rounded-lg">
             <AvatarFallback class="rounded-lg text-sm">
               {{ initials }}
             </AvatarFallback>

@@ -372,8 +372,8 @@ watchEffect(() => {
     :description="$t('orchestrator.description')"
   />
 
-  <!-- KPI Stat Cards -->
-  <div class="mb-6 grid gap-4 md:grid-cols-4">
+  <!-- KPI Stat Cards — only when workflows exist -->
+  <div v-if="groups.length > 0" class="mb-6 grid gap-4 md:grid-cols-4">
     <Card>
       <CardContent class="pt-6">
         <div class="flex items-center justify-between">
