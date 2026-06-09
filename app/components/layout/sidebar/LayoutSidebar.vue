@@ -8,7 +8,7 @@ import {
 const { state, isMobile, setOpenMobile } = useSidebar();
 
 // Use the navigation composable for filtered, role-based navigation
-const { navigationItems, isItemActive } = useNavigation();
+const { navigationItems, isItemActive, isItemOpen } = useNavigation();
 
 // Get route for checking active children
 const route = useRoute();
@@ -92,13 +92,13 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
               <!-- Item with children (collapsible) -->
               <Collapsible
                 v-if="item.children?.length"
-                :default-open="true"
+                :default-open="isItemOpen(item) || (item.defaultOpen ?? true)"
                 :disabled="!sidebarOpen"
                 class="group/collapsible"
               >
                 <CollapsibleTrigger as-child>
                   <SidebarMenuButton
-                    class="w-full"
+                    class="w-full cursor-pointer"
                     :tooltip="state === 'collapsed' ? item.label : undefined"
                     as-child
                   >

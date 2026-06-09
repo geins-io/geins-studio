@@ -94,6 +94,11 @@ export interface NavigationItem {
   children?: NavigationItem[];
   hideFromMenu?: boolean;
 
+  // Initial expand state for collapsible groups (items with children).
+  // Defaults to `true` (expanded). Set `false` to start collapsed — the group
+  // still auto-expands when the current route matches one of its children.
+  defaultOpen?: boolean;
+
   // Role-based access control
   roles?: string[]; // e.g., ['admin', 'editor', 'viewer']
   permissions?: string[]; // e.g., ['customer.read', 'products.write']

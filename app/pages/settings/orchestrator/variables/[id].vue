@@ -97,7 +97,7 @@ const handleSave = async () => {
     toast({ title: 'Variable saved' });
     if (isNew.value) {
       await navigateTo(
-        `/orchestrator/variables/${encodeURIComponent(keyField.value.trim())}`,
+        `/settings/orchestrator/variables/${encodeURIComponent(keyField.value.trim())}`,
       );
     } else {
       await refresh();
@@ -130,7 +130,7 @@ const deleteEntity = async (): Promise<boolean> => {
 };
 
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteEntity, '/orchestrator/variables/list');
+  useDeleteDialog(deleteEntity, '/settings/orchestrator/variables/list');
 
 // ─── Copy value ────────────────────────────────────────────────────
 const copied = ref(false);

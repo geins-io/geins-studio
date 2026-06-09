@@ -84,11 +84,6 @@ export const getNavigation = (
                 href: '/orchestrator/executions/list',
                 childPattern: '/orchestrator/executions/:id',
               },
-              {
-                label: t('navigation.variables'),
-                href: '/orchestrator/variables/list',
-                childPattern: '/orchestrator/variables/:id',
-              },
             ],
           } as NavigationItem,
         ]
@@ -100,6 +95,32 @@ export const getNavigation = (
       group: 'settings',
       childPattern: '/settings/channel/:id',
     },
+    ...(options?.featureOrchestrator
+      ? [
+          {
+            label: t('navigation.orchestrator_config'),
+            href: '/settings/orchestrator/variables/list',
+            icon: 'Plug',
+            group: 'settings',
+            defaultOpen: false,
+            children: [
+              {
+                label: t('navigation.variables'),
+                href: '/settings/orchestrator/variables/list',
+                childPattern: '/settings/orchestrator/variables/:id',
+              },
+              {
+                label: t('navigation.installed_kits'),
+                href: '/settings/orchestrator/kits/installed',
+              },
+              {
+                label: t('navigation.kits'),
+                href: '/settings/orchestrator/kits/list',
+              },
+            ],
+          } as NavigationItem,
+        ]
+      : []),
     {
       label: t('navigation.account'),
       href: '',

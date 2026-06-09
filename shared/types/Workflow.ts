@@ -229,6 +229,8 @@ export interface ExecutionLog {
   workflowVersion?: string | number;
   tags?: string[] | null;
   childExecutionIds?: string[] | null;
+  parentExecutionLogId?: string | null;
+  parentWorkflowId?: string | null;
   cascadeCancellation?: boolean;
   idempotencyKey?: string | null;
   replayOf?: string | null;
@@ -897,4 +899,137 @@ export interface NodeTemplate {
   actionName?: string;
   nodeData: Record<string, unknown>;
   createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Kits (provider-supplied workflow + variable bundles / integrations)
+// ---------------------------------------------------------------------------
+// Engine-type family (plain interfaces, like WorkflowSummary). A kit bundles
+// one or more workflow definitions plus the variables they depend on, ready to
+// install into an account. The catalog (`GET /orchestrator/kits`) returns
+// `KitSummary[]`; the detail endpoint adds the full `variables`/`workflows`.
+
+/** A variable a kit needs in order to run. Created on install from `defaultValue`. */
+export interface KitVariableSpec {
+  key: string;
+  description?: string;
+  /** Secret variables have no default and must be supplied by the installer. */
+  isSecret?: boolean;
+  required?: boolean;
+  defaultValue?: string;
+  /** Workflow refIds (or names) that consume this variable. */
+  usedBy?: string[];
+}
+
+/** A workflow bundled in a kit. `refId` is the kit-local identifier. */
+export interface KitWorkflowSpec {
+  refId: string;
+  /** Full workflow definition payload (opaque to the UI). */
+  definition?: Record<string, unknown>;
+  description?: string;
+  /** refIds of other kit workflows this one depends on. */
+  dependencies?: string[];
+}
+
+/** Catalog list item. */
+export interface KitSummary {
+  id: string;
+  name: string;
+  author: string;
+  description?: string;
+  category?: string;
+  version: string;
+  tags?: string[];
+  workflowCount?: number;
+  variableCount?: number;
+}
+
+/** Full kit detail (`GET /orchestrator/kits/{id}`). */
+export interface Kit extends KitSummary {
+  variables: KitVariableSpec[];
+  workflows: KitWorkflowSpec[];
+}
+
+export interface InstallKitRequest {
+  /** refIds of the kit workflows to install. Omit/empty installs all. */
+  workflows?: string[];
+  /**
+   * Variable values to create on install, keyed by variable key. Required
+   * variables (e.g. secrets without a default) must be supplied here or the
+   * API rejects the install with 422.
+   */
+  variables?: Record<string, string>;
+}
+
+/** A workflow created (or referenced) by an installation. */
+export interface KitInstallationWorkflow {
+  refId: string;
+  workflowId: string;
+  workflowName: string;
+}
+
+/** A variable created by an installation. */
+export interface KitInstallationVariable {
+  key: string;
+  created?: string;
+}
+
+export interface InstallKitResponse {
+  installationId: string;
+  kitId: string;
+  kitName: string;
+  kitVersion: string;
+  workflowsCreated?: number;
+  variablesCreated?: number;
+  variablesExisted?: number;
+  workflows?: KitInstallationWorkflow[];
+  variables?: KitInstallationVariable[];
+}
+
+/** A record of a kit installed into the account. */
+export interface KitInstallation {
+  id: string;
+  kitId: string;
+  kitName: string;
+  kitVersion: string;
+  installedAt?: string;
+  installedBy: string;
+  workflows?: KitInstallationWorkflow[];
+  variables?: KitInstallationVariable[];
+}
+
+export interface UninstallKitRequest {
+  /** refIds to remove. Omit/empty uninstalls all installed workflows. */
+  workflows?: string[];
+  /** Also delete the kit's variables. Defaults to keeping them. */
+  deleteVariables?: boolean;
+}
+
+export interface UninstallKitResponse {
+  workflowsDeleted?: number;
+  workflowsSkipped?: number;
+  variablesDeleted?: number;
+  workflowsRemaining?: string[];
+}
+
+export interface UpgradeKitRequest {
+  /** Overwrite workflows that were modified locally since install. */
+  force?: boolean;
+}
+
+export interface UpgradeKitResponse {
+  installationId: string;
+  kitId: string;
+  kitName: string;
+  previousVersion: string;
+  newVersion: string;
+  workflowsUpdated?: number;
+  workflowsCreated?: number;
+  workflowsRemoved?: number;
+  variablesCreated?: number;
+  variablesExisted?: number;
+  workflows?: KitInstallationWorkflow[];
+  variables?: KitInstallationVariable[];
+  /** Workflows changed by the upgrade — surfaced as a warning before applying. */
+  modifiedWorkflows?: KitInstallationWorkflow[];
 }
