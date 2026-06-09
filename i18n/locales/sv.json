@@ -403,7 +403,8 @@
     "key": "Nyckel",
     "value": "Värde",
     "description_col": "Beskrivning",
-    "secret": "Hemlig"
+    "secret": "Hemlig",
+    "secret_description": "Hemliga värden maskeras i variabellistan och lagras krypterat. Använd för API-nycklar, tokens och behörigheter."
   },
   "account_profile": {
     "login_credentials": "Inloggningsuppgifter",
