@@ -406,7 +406,8 @@
     "key": "Key",
     "value": "Value",
     "description_col": "Description",
-    "secret": "Secret"
+    "secret": "Secret",
+    "secret_description": "Secret values are masked in the variable list and stored encrypted. Use for API keys, tokens, and credentials."
   },
   "account_profile": {
     "login_credentials": "Login credentials",

@@ -5,7 +5,6 @@ import {
   LucideEye,
   LucideEyeOff,
   LucideTrash2,
-  LucideKeyRound,
   LucideCopy,
   LucideCheck,
   LucideMoreHorizontal,
@@ -275,27 +274,12 @@ const pageTitle = computed(() =>
           />
         </div>
 
-        <div class="bg-muted/40 flex items-start gap-3 rounded-lg border p-3">
-          <LucideKeyRound
-            class="text-muted-foreground mt-0.5 h-4 w-4 shrink-0"
-          />
-          <div class="flex-1 space-y-1">
-            <div class="flex items-center justify-between gap-2">
-              <Label for="variable-secret" class="text-sm font-medium">
-                Secret
-              </Label>
-              <Switch
-                id="variable-secret"
-                :model-value="isSecret"
-                @update:model-value="isSecret = $event"
-              />
-            </div>
-            <p class="text-muted-foreground text-xs">
-              Secret values are masked in the variable list and stored
-              encrypted. Use for API keys, tokens, and credentials.
-            </p>
-          </div>
-        </div>
+        <ContentSwitch
+          v-model:checked="isSecret"
+          icon="KeyRound"
+          :label="$t('variables.secret')"
+          :description="$t('variables.secret_description')"
+        />
       </ContentEditCard>
     </form>
 
