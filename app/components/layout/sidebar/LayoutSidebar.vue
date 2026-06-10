@@ -71,13 +71,13 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
         <BrandLogoFull
           v-if="state === 'expanded' || isMobile"
           :font-controlled="false"
-          class="h-full w-auto"
+          class="h-full w-auto shrink-0"
           :style="{ maxHeight: brand.logoMaxHeight }"
         />
         <BrandLogoSymbol
           v-else
           :font-controlled="false"
-          class="h-full w-auto"
+          class="h-full w-auto shrink-0"
           :style="{ maxHeight: brand.logoMaxHeight }"
         />
       </NuxtLink>
