@@ -227,44 +227,54 @@ const removeFilter = (type: ActiveFilter['type']) => {
   navigateTo({ path: '/orchestrator/executions/list', query: rest });
 };
 
-// ─── Live polling for new executions ───────────────────────────────
+// ─── Live polling: new executions + running-status refresh ─────────
 const POLL_INTERVAL_MS = 15_000;
 const lastPollAt = ref<string>(new Date().toISOString());
-let pollTimer: ReturnType<typeof setInterval> | null = null;
 
-const pollNewExecutions = async () => {
-  if (periodFilter.value) return;
-  try {
-    const since = lastPollAt.value;
-    lastPollAt.value = new Date().toISOString();
-    const fresh = await orchestratorApi.execution.list({
-      startedAfter: since,
-      ...(workflowIdFilter.value ? { workflowId: workflowIdFilter.value } : {}),
-    });
-    if (!Array.isArray(fresh) || fresh.length === 0) return;
+const pollExecutions = async () => {
+  const since = lastPollAt.value;
+  lastPollAt.value = new Date().toISOString();
 
-    const mapped = mapToListData(fresh);
-    const existingIds = new Set(allData.value.map((item) => item.id));
-    const newRows = mapped.filter((row) => !existingIds.has(row.id));
-    if (newRows.length === 0) return;
+  // Rows shown as "running" must be re-fetched too, or they stay running
+  // forever after the execution finishes. Widen the fetch window back to
+  // the oldest running row so its status transition is picked up.
+  const runningStarts = allData.value
+    .filter((item) => item.status === 'running' && item.startTimeIso)
+    .map((item) => new Date(item.startTimeIso as string).getTime())
+    .filter((ts) => !Number.isNaN(ts));
+  const oldestRunning = runningStarts.length
+    ? Math.min(...runningStarts)
+    : null;
 
-    allData.value = [...newRows, ...allData.value];
-  } catch {
-    // silent poll failure — next tick will retry
-  }
+  // With a period filter the list is a fixed historical window — only
+  // refresh running rows, never inject new ones.
+  if (periodFilter.value && oldestRunning === null) return;
+
+  const startedAfter =
+    oldestRunning === null
+      ? since
+      : new Date(
+          Math.min(oldestRunning - 1000, new Date(since).getTime()),
+        ).toISOString();
+
+  const fresh = await orchestratorApi.execution.list({
+    startedAfter,
+    ...(workflowIdFilter.value ? { workflowId: workflowIdFilter.value } : {}),
+  });
+  if (!Array.isArray(fresh) || fresh.length === 0) return;
+
+  const mapped = mapToListData(fresh);
+  const byId = new Map(mapped.map((row) => [row.id, row]));
+  const existingIds = new Set(allData.value.map((item) => item.id));
+
+  const updated = allData.value.map((item) => byId.get(item.id) ?? item);
+  const newRows = periodFilter.value
+    ? []
+    : mapped.filter((row) => !existingIds.has(row.id));
+  allData.value = newRows.length ? [...newRows, ...updated] : updated;
 };
 
-const startPolling = () => {
-  if (pollTimer) return;
-  pollTimer = setInterval(pollNewExecutions, POLL_INTERVAL_MS);
-};
-
-const stopPolling = () => {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
-};
+usePollWhile(() => !loading.value, pollExecutions, POLL_INTERVAL_MS);
 
 // ─── Table Columns ─────────────────────────────────────────────────
 const { getColumns } = useColumns<EntityList>();
@@ -330,10 +340,7 @@ onMounted(() => {
 
   columns.value = getColumns(dataList.value, columnOptions);
   loading.value = false;
-  startPolling();
 });
-
-onBeforeUnmount(stopPolling);
 
 // ─── Column Visibility ────────────────────────────────────────────
 const { getVisibilityState } = useTable<EntityList>();
