@@ -77,7 +77,7 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
         <BrandLogoSymbol
           v-else
           :font-controlled="false"
-          class="h-full w-auto shrink-0"
+          class="h-full w-auto max-w-5 shrink-0"
           :style="{ maxHeight: brand.logoMaxHeight }"
         />
       </NuxtLink>
