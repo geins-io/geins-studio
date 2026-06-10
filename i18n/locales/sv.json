@@ -359,6 +359,10 @@
     "success_rate_24h": "Framgångsfrekvens (24h)",
     "success_rate_7d": "Framgångsfrekvens (7d)",
     "success_rate_30d": "Framgångsfrekvens (30d)",
+    "filtered_by_group": "Filtrerat på grupp:",
+    "filtered_by_name": "Filtrerat på namn:",
+    "filtered_by_kit": "Filtrerat på kit:",
+    "clear_filter": "Rensa filter",
     "events": {
       "order": {
         "activate": "Order aktiverad",

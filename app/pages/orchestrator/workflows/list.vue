@@ -4,6 +4,7 @@ import 'cronstrue/locales/sv';
 import type {
   WorkflowSummary,
   WorkflowMetrics,
+  KitInstallation,
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
@@ -48,6 +49,7 @@ type EntityList = WorkflowListItem;
 
 const scope = 'pages/orchestrator/workflows.vue';
 const { t, locale } = useI18n();
+const { geinsLog } = useGeinsLog(scope);
 
 definePageMeta({
   pageType: 'list',
@@ -77,7 +79,41 @@ const nameFilter = computed(() => {
   return typeof n === 'string' && n.length > 0 ? n : null;
 });
 
+const kitFilter = computed(() => {
+  const k = route.query.kit;
+  return typeof k === 'string' && k.length > 0 ? k : null;
+});
+
+// Resolve the kit installation behind ?kit=<installationId> so the
+// filter can match its workflow ids and label the banner with the kit name.
+const kitInstallation = ref<KitInstallation | null>(null);
+watch(
+  kitFilter,
+  async (installationId) => {
+    if (!installationId) {
+      kitInstallation.value = null;
+      return;
+    }
+    try {
+      const installed = await orchestratorApi.kit.listInstallations();
+      const list = Array.isArray(installed) ? installed : [];
+      kitInstallation.value =
+        list.find((i) => i.id === installationId) ?? null;
+    } catch (err) {
+      geinsLog('failed to load kit installations for filter', err);
+      kitInstallation.value = null;
+    }
+  },
+  { immediate: true },
+);
+
 const activeFilter = computed(() => {
+  if (kitFilter.value) {
+    return {
+      type: 'kit' as const,
+      label: kitInstallation.value?.kitName ?? '',
+    };
+  }
   if (groupFilter.value) {
     // Convert slug back to display name: "order-sync" → "Order Sync"
     const label = groupFilter.value
@@ -93,6 +129,19 @@ const activeFilter = computed(() => {
 });
 
 const groupLabel = computed(() => activeFilter.value?.label ?? '');
+
+const filterTypeLabel = computed(() => {
+  switch (activeFilter.value?.type) {
+    case 'kit':
+      return t('workflows.filtered_by_kit');
+    case 'group':
+      return t('workflows.filtered_by_group');
+    case 'name':
+      return t('workflows.filtered_by_name');
+    default:
+      return '';
+  }
+});
 
 // ─── Fetch Data ────────────────────────────────────────────────────
 const {
@@ -219,6 +268,12 @@ const mapToListData = (
 
 // ─── Filtered Data (applies group or name filter) ──────────────────
 const dataList = computed(() => {
+  if (kitFilter.value) {
+    const kitWorkflowIds = new Set(
+      (kitInstallation.value?.workflows ?? []).map((w) => w.workflowId),
+    );
+    return allData.value.filter((item) => kitWorkflowIds.has(item.id));
+  }
   if (groupFilter.value) {
     return allData.value.filter((item) => item.groupSlug === groupFilter.value);
   }
@@ -381,7 +436,9 @@ const searchableFields: Array<keyof EntityList> = [
 
 <template>
   <ContentHeader
-    :title="activeFilter ? groupLabel : $t('navigation.workflows')"
+    :title="
+      activeFilter && groupLabel ? groupLabel : $t('navigation.workflows')
+    "
     :description="$t('workflows.description')"
   >
     <ContentActionBar>
@@ -398,9 +455,7 @@ const searchableFields: Array<keyof EntityList> = [
   >
     <div class="flex items-center gap-2 text-sm">
       <LucideFilter class="text-muted-foreground h-4 w-4" />
-      <span class="text-muted-foreground">
-        Filtered by {{ activeFilter.type }}:
-      </span>
+      <span class="text-muted-foreground">{{ filterTypeLabel }}</span>
       <span class="font-medium">{{ activeFilter.label }}</span>
     </div>
     <Button
@@ -410,7 +465,7 @@ const searchableFields: Array<keyof EntityList> = [
       @click="clearGroupFilter"
     >
       <LucideX class="mr-1 h-3 w-3" />
-      Clear filter
+      {{ $t('workflows.clear_filter') }}
     </Button>
   </div>
 

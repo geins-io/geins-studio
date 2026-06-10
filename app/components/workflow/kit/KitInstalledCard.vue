@@ -66,11 +66,27 @@ const variableCount = computed(
       <div
         class="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
       >
-        <span class="inline-flex items-center gap-1">
+        <NuxtLink
+          v-if="workflows.length"
+          :to="`/orchestrator/workflows/list?kit=${installation.id}`"
+          class="hover:text-foreground inline-flex items-center gap-1 underline-offset-2 hover:underline"
+        >
+          <LucideWorkflow class="size-3" />
+          {{ $t('kits.workflows_count', { count: workflows.length }) }}
+        </NuxtLink>
+        <span v-else class="inline-flex items-center gap-1">
           <LucideWorkflow class="size-3" />
           {{ $t('kits.workflows_count', { count: workflows.length }) }}
         </span>
-        <span class="inline-flex items-center gap-1">
+        <NuxtLink
+          v-if="variableCount"
+          :to="`/settings/orchestrator/variables/list?kit=${installation.id}`"
+          class="hover:text-foreground inline-flex items-center gap-1 underline-offset-2 hover:underline"
+        >
+          <LucideKeyRound class="size-3" />
+          {{ $t('kits.variables_count', { count: variableCount }) }}
+        </NuxtLink>
+        <span v-else class="inline-flex items-center gap-1">
           <LucideKeyRound class="size-3" />
           {{ $t('kits.variables_count', { count: variableCount }) }}
         </span>
@@ -85,20 +101,6 @@ const variableCount = computed(
           <LucideUser class="size-3" />
           {{ installation.installedBy }}
         </span>
-      </div>
-
-      <!-- Workflow links -->
-      <div v-if="workflows.length" class="flex flex-wrap gap-1.5">
-        <NuxtLink
-          v-for="w in workflows"
-          :key="w.workflowId"
-          :to="`/orchestrator/workflows/${w.workflowId}`"
-        >
-          <Badge variant="outline" size="sm" class="hover:bg-muted font-normal">
-            <LucideWorkflow class="size-3" />
-            {{ w.workflowName }}
-          </Badge>
-        </NuxtLink>
       </div>
 
       <!-- Actions -->

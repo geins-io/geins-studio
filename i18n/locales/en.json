@@ -359,6 +359,10 @@
     "success_rate_24h": "Success rate (24h)",
     "success_rate_7d": "Success rate (7d)",
     "success_rate_30d": "Success rate (30d)",
+    "filtered_by_group": "Filtered by group:",
+    "filtered_by_name": "Filtered by name:",
+    "filtered_by_kit": "Filtered by kit:",
+    "clear_filter": "Clear filter",
     "events": {
       "order": {
         "activate": "Order activated",
