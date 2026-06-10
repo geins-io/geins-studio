@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/sidebar/utils';
 
 const { state, isMobile, setOpenMobile } = useSidebar();
+const { brand } = useBrand();
 
 // Use the navigation composable for filtered, role-based navigation
 const { navigationItems, isItemActive, isItemOpen } = useNavigation();
@@ -61,19 +62,24 @@ const sidebarOpen = useCookie<boolean>(SIDEBAR_COOKIE_NAME, {
 <template>
   <Sidebar collapsible="icon" class="overflow-hidden border-r">
     <!-- Header with Logo -->
-    <SidebarHeader>
+    <SidebarHeader class="p-0">
       <NuxtLink
         to="/"
-        class="mt-0.5"
-        :class="state === 'expanded' || isMobile ? 'ml-2' : 'mx-auto'"
+        class="flex h-(--h-header) items-center pl-[0.95rem]"
         @click="handleNavClick"
       >
         <BrandLogoFull
           v-if="state === 'expanded' || isMobile"
           :font-controlled="false"
-          class="h-8 w-auto"
+          class="h-full w-auto shrink-0"
+          :style="{ maxHeight: brand.logoMaxHeight }"
         />
-        <BrandLogoSymbol v-else :font-controlled="false" class="h-8 w-auto" />
+        <BrandLogoSymbol
+          v-else
+          :font-controlled="false"
+          class="h-full w-auto max-w-5 shrink-0"
+          :style="{ maxHeight: brand.logoMaxHeight }"
+        />
       </NuxtLink>
     </SidebarHeader>
 

@@ -12,16 +12,10 @@ for (const [path, mod] of Object.entries(modules)) {
   if (name) logoMap[name] = mod.default;
 }
 
-const { appId, brand } = useBrand();
+const { appId } = useBrand();
 const logo = computed(() => logoMap[appId.value] ?? logoMap['geins']);
 </script>
 
 <template>
-  <component
-    :is="logo"
-    v-bind="$attrs"
-    :style="
-      brand.logoFullMaxWidth ? { maxWidth: brand.logoFullMaxWidth } : undefined
-    "
-  />
+  <component :is="logo" v-bind="$attrs" />
 </template>

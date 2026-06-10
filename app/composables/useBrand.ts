@@ -6,7 +6,15 @@ interface BrandConfig {
   website: { url: string; label: string };
   favicon: string;
   hostnames: string[];
-  logoFullMaxWidth?: string;
+  /**
+   * Max height of the logo/symbol inside the sidebar header box. The box is a
+   * fixed height (matching the app header); the logo is vertically centered
+   * and capped to this value, applied to BOTH the full logo and the collapsed
+   * symbol so the shared mark stays the same size across the collapse. Tune
+   * per brand — wide/square symbols (e.g. a circle) need a smaller value to
+   * fit the narrow collapsed icon rail without clipping.
+   */
+  logoMaxHeight: string;
 }
 
 const brands: Record<BrandId, BrandConfig> = {
@@ -16,6 +24,7 @@ const brands: Record<BrandId, BrandConfig> = {
     website: { url: 'https://www.geins.io', label: 'geins.io' },
     favicon: '/favicon-geins.svg',
     hostnames: ['geins.studio'],
+    logoMaxHeight: '2rem',
   },
   litium: {
     id: 'litium',
@@ -23,7 +32,7 @@ const brands: Record<BrandId, BrandConfig> = {
     website: { url: 'https://www.litium.com', label: 'litium.com' },
     favicon: '/favicon-litium.svg',
     hostnames: ['litium.studio'],
-    logoFullMaxWidth: '86px',
+    logoMaxHeight: '1.25rem',
   },
 };
 
