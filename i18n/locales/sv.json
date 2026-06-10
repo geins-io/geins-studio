@@ -197,6 +197,7 @@
   "dashboard_description": "Alla belopp visas exklusive moms. Om du håller denna sida öppen uppdateras din statistik var 60:e sekund.",
   "feedback_error": "Något gick fel",
   "feedback_error_description": "Uppdatera sidan och försök igen. Kontakta support om problemet kvarstår.",
+  "welcome_title": "Välkommen till {brand} {account}",
   "feedback_welcome_back": "Välkommen tillbaka {name}!",
   "feedback_welcome_back_description": "Du har loggat in.",
   "selector_brand_linking_word_or": "och alla produkter från",

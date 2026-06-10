@@ -197,6 +197,7 @@
   "dashboard_description": "All amounts will be shown excluding VAT. If you keep this page open, your stats will update every 60 seconds.",
   "feedback_error": "Something went wrong",
   "feedback_error_description": "Please refresh the page and try again. Contact support if the problem persists.",
+  "welcome_title": "Welcome to {brand} {account}",
   "feedback_welcome_back": "Welcome back {name}!",
   "feedback_welcome_back_description": "You have successfully logged in.",
   "selector_brand_linking_word_or": "and all products from",

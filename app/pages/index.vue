@@ -49,6 +49,17 @@ if (allCompanies.value.length === 0) {
 }
 
 const { brandName } = useBrand();
+const { t } = useI18n();
+
+const accountStore = useAccountStore();
+const { account } = storeToRefs(accountStore);
+
+const welcomeTitle = computed(() =>
+  t('welcome_title', {
+    brand: brandName.value,
+    account: account.value?.name ?? '',
+  }).trim(),
+);
 
 const breadcrumbsStore = useBreadcrumbsStore();
 breadcrumbsStore.setShowBreadcrumbs(false);
@@ -56,7 +67,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
 
 <template>
   <div class="max-w-full sm:p-4">
-    <ContentHeader :title="`Welcome to ${brandName}`" />
+    <ContentHeader :title="welcomeTitle" />
 
     <!-- Main content area -->
     <div class="space-y-8">
