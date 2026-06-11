@@ -73,9 +73,10 @@ const hasImage = computed(() => !!previewUrl.value);
 const displayName = computed(() => {
   if (selectedFileName.value) return selectedFileName.value;
   if (typeof props.modelValue === 'string' && props.modelValue) {
-    const filename = props.modelValue.substring(
-      props.modelValue.lastIndexOf('/') + 1,
-    );
+    // Drop the cache-busting query string / hash the API appends
+    // (e.g. "image.jpg?932938") before taking the basename.
+    const path = props.modelValue.split(/[?#]/)[0] ?? props.modelValue;
+    const filename = path.substring(path.lastIndexOf('/') + 1);
     // Strip the "storefrontSettings." prefix the server adds
     return filename.replace(/^storefrontSettings\./, '');
   }
