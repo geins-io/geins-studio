@@ -2,8 +2,8 @@
 import WorkflowHandleInput from './handle/WorkflowHandleInput.vue';
 import WorkflowHandlePlus from './handle/WorkflowHandlePlus.vue';
 import type { Component } from 'vue';
+import MonitorSymbol from '~/assets/logos/kits/monitor.svg';
 import LitiumSymbol from '~/assets/logos/litium-symbol.svg';
-import MonitorSymbol from '~/assets/logos/monitor-symbol.svg';
 
 const PROVIDER_LOGOS: Record<string, Component | string> = {
   litium: LitiumSymbol,
@@ -78,9 +78,10 @@ const IconComponent = computed(() => {
         <component
           :is="providerLogo"
           v-if="providerLogo"
-          class="h-5 w-5 dark:invert"
+          class="size-5 dark:invert"
+          :font-controlled="false"
         />
-        <component :is="IconComponent" v-else class="h-5 w-5" />
+        <component :is="IconComponent" v-else class="size-5" />
       </div>
       <div>
         <div class="text-xs font-medium tracking-wider text-blue-500 uppercase">

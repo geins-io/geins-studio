@@ -4,8 +4,8 @@ import { useToast } from '@/components/ui/toast/use-toast';
 import type { ManifestAction } from '@/composables/useWorkflowManifest';
 import WorkflowNodeSaveTemplateDialog from '../node/WorkflowNodeSaveTemplateDialog.vue';
 import type { Component } from 'vue';
+import MonitorSymbol from '~/assets/logos/kits/monitor.svg';
 import LitiumSymbol from '~/assets/logos/litium-symbol.svg';
-import MonitorSymbol from '~/assets/logos/monitor-symbol.svg';
 
 // ─── Props / emits ─────────────────────────────────────────────────
 const open = defineModel<boolean>('open', { default: false });
@@ -695,12 +695,13 @@ function onSearchInput(value: string) {
                   <component
                     :is="viewItem.logo"
                     v-if="viewItem.logo"
-                    class="mt-0.5 h-4 w-4 shrink-0 dark:invert"
+                    class="mt-0.5 size-4 shrink-0 dark:invert"
+                    :font-controlled="false"
                   />
                   <component
                     :is="viewItem.icon"
                     v-else
-                    class="mt-0.5 h-4 w-4 shrink-0"
+                    class="mt-0.5 size-4 shrink-0"
                     :class="viewItem.color"
                   />
                   <div class="min-w-0 flex-1">
@@ -784,6 +785,7 @@ function onSearchInput(value: string) {
                         :is="viewItem.logo"
                         v-if="viewItem.logo"
                         class="h-5 w-5 dark:invert"
+                        :font-controlled="false"
                       />
                       <component
                         :is="viewItem.icon"

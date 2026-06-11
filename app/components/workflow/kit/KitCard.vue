@@ -72,7 +72,11 @@ const logo = computed<Component | null>(() => {
             v-if="logo"
             class="bg-background flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border p-1.5"
           >
-            <component :is="logo" class="max-h-full max-w-full" />
+            <component
+              :is="logo"
+              class="size-6 max-h-full max-w-full"
+              :font-controlled="false"
+            />
           </div>
           <Avatar v-else class="size-10 rounded-lg">
             <AvatarFallback class="rounded-lg text-sm">
