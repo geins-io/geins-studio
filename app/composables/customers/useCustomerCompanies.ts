@@ -1,8 +1,29 @@
 /**
  * Composable for customer API operations, supporting both reactive and imperative usage
  */
+import * as z from 'zod';
 import type { CustomerVatValidation } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
+
+/**
+ * Single source of truth for the address validation shape, shared between the
+ * company edit page form and the address edit panel. email/firstName/lastName
+ * are optional — keep this in sync with the (optional) labels in the template.
+ */
+const buildAddressSchema = (t: (key: string) => string) =>
+  z.object({
+    email: z.string().optional(),
+    phone: z.string().optional(),
+    company: z.string().min(1, { message: t('form.field_required') }),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    addressLine1: z.string().min(1, { message: t('form.field_required') }),
+    addressLine2: z.string().optional(),
+    zip: z.string().min(1, { message: t('form.field_required') }),
+    city: z.string().min(1, { message: t('form.field_required') }),
+    region: z.string().optional(),
+    country: z.string().min(1, { message: t('form.field_required') }),
+  });
 
 interface UseCustomerCompaniesReturnType {
   deleteCompany: (id?: string, entityName?: string) => Promise<boolean>;
@@ -19,6 +40,7 @@ interface UseCustomerCompaniesReturnType {
     billing: AddressUpdate,
     shipping?: AddressUpdate,
   ) => AddressUpdate[];
+  addressSchema: ReturnType<typeof buildAddressSchema>;
 }
 
 /**
@@ -186,5 +208,6 @@ export const useCustomerCompanies = (): UseCustomerCompaniesReturnType => {
     validateVatNumber,
     // Address helpers
     getAddresses,
+    addressSchema: buildAddressSchema(t),
   };
 };
