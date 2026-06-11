@@ -3,12 +3,10 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import { VisuallyHidden } from 'reka-ui';
 import { useForm } from 'vee-validate';
-import * as z from 'zod';
 
 const props = defineProps<{
   address: AddressUpdate;
 }>();
-const { t } = useI18n();
 const emit = defineEmits<{
   (event: 'save', address: AddressUpdate): void;
   (event: 'delete', id: string): void;
@@ -31,21 +29,8 @@ watch(open, (value) => {
   }
 });
 
-const formSchema = toTypedSchema(
-  z.object({
-    email: z.string().optional(),
-    phone: z.string().optional(),
-    company: z.string().min(1, { message: t('form.field_required') }),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
-    addressLine1: z.string().min(1, { message: t('form.field_required') }),
-    addressLine2: z.string().optional(),
-    zip: z.string().min(1, { message: t('form.field_required') }),
-    city: z.string().min(1, { message: t('form.field_required') }),
-    region: z.string().optional(),
-    country: z.string().min(1, { message: t('form.field_required') }),
-  }),
-);
+const { addressSchema } = useCustomerCompanies();
+const formSchema = toTypedSchema(addressSchema);
 
 const form = useForm({
   validationSchema: formSchema,
