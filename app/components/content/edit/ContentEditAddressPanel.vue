@@ -33,11 +33,11 @@ watch(open, (value) => {
 
 const formSchema = toTypedSchema(
   z.object({
-    email: z.string().min(1, { message: t('form.field_required') }),
+    email: z.string().optional(),
     phone: z.string().optional(),
     company: z.string().min(1, { message: t('form.field_required') }),
-    firstName: z.string().min(1, { message: t('form.field_required') }),
-    lastName: z.string().min(1, { message: t('form.field_required') }),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
     addressLine1: z.string().min(1, { message: t('form.field_required') }),
     addressLine2: z.string().optional(),
     zip: z.string().min(1, { message: t('form.field_required') }),

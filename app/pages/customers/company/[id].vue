@@ -301,6 +301,17 @@ const {
   reshapeEntityData: (entityData) => {
     return {
       ...entityData,
+      // Canonicalize address order (billing first, shipping last) so the
+      // unsaved-changes snapshot matches the order getAddresses() emits on
+      // form sync — the API returns addresses in arbitrary order, which would
+      // otherwise flag a false "unsaved changes" right after load (STU-224).
+      addresses: entityData.addresses
+        ? [...entityData.addresses].sort(
+            (a, b) =>
+              (a.addressType === 'shipping' ? 1 : 0) -
+              (b.addressType === 'shipping' ? 1 : 0),
+          )
+        : entityData.addresses,
       salesReps: entityData.salesReps?.map((salesRep) => salesRep._id),
       priceLists: entityData.priceLists?.map((priceList) => priceList._id),
       buyers: undefined,
