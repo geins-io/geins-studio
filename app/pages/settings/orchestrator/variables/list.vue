@@ -105,8 +105,7 @@ watch(
     try {
       const installed = await orchestratorApi.kit.listInstallations();
       const list = Array.isArray(installed) ? installed : [];
-      kitInstallation.value =
-        list.find((i) => i.id === installationId) ?? null;
+      kitInstallation.value = list.find((i) => i.id === installationId) ?? null;
     } catch (err) {
       geinsLog('failed to load kit installations for filter', err);
       kitInstallation.value = null;

@@ -202,7 +202,7 @@ const pageTitle = computed(() =>
             id="variable-key"
             v-model="keyField"
             :disabled="!isNew"
-            placeholder="e.g. MONITOR_API_KEY"
+            placeholder="e.g. MY_API_KEY"
             autocomplete="off"
           />
           <p class="text-muted-foreground text-xs">
