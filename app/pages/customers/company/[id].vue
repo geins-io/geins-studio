@@ -1300,7 +1300,7 @@ if (!createMode.value) {
                   :selection="addedPriceListsIds"
                   entity-name="price_list"
                   :show-image="false"
-                  class="sm:w-2/5!"
+                  class="sm:w-60! lg:w-96!"
                   @add="addPriceList($event)"
                   @remove="removePriceList($event)"
                 />
