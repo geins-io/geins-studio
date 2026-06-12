@@ -3,8 +3,11 @@ import type {
   WorkflowMetrics,
   AggregateMetrics,
   HealthStatus,
+  KitSummary,
+  KitInstallation,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
+import type { Component } from 'vue';
 import { Avatar, AvatarFallback } from '~/components/ui/avatar';
 import {
   Card,
@@ -32,6 +35,8 @@ interface WorkflowGroupCard {
   toggleableWorkflowIds: string[];
   allEnabled: boolean;
   isStandalone: boolean;
+  /** Kit logo when this group's workflows come from an installed kit. */
+  logo: Component | null;
 }
 
 const _i18n = useI18n();
@@ -65,6 +70,46 @@ const { data: aggregate, refresh: refreshAggregate } =
     () => orchestratorApi.metrics.getAggregate(),
     { getCachedData: () => undefined },
   );
+
+// Kit installations + catalog drive the per-group kit logo only. They must
+// never break the overview, so failures fall back to an empty list (and the
+// initials avatar). Installations map workflowIds → kit; the catalog adds the
+// kit's category/tags for richer logo matching (see useKitLogo).
+const { data: kitInstallations } = await useAsyncData<KitInstallation[]>(
+  'overview-kit-installations',
+  () => orchestratorApi.kit.listInstallations(),
+  { getCachedData: () => undefined, default: () => [] },
+);
+
+const { data: kitCatalog } = await useAsyncData<KitSummary[]>(
+  'overview-kit-catalog',
+  () => orchestratorApi.kit.list(),
+  { getCachedData: () => undefined, default: () => [] },
+);
+
+const { resolveKitLogo } = useKitLogo();
+
+// workflowId → catalog kit (or a name-only stand-in when the catalog entry is
+// missing), so a group can find the kit its workflows were installed from.
+const kitByWorkflowId = computed<Map<string, KitSummary>>(() => {
+  const installs = Array.isArray(kitInstallations.value)
+    ? kitInstallations.value
+    : [];
+  const catalog = Array.isArray(kitCatalog.value) ? kitCatalog.value : [];
+  const catalogById = new Map(catalog.map((k) => [k.id, k]));
+  const map = new Map<string, KitSummary>();
+  for (const inst of installs) {
+    const kit = catalogById.get(inst.kitId);
+    const info: KitSummary = kit ?? {
+      id: inst.kitId,
+      name: inst.kitName,
+      author: '',
+      version: inst.kitVersion,
+    };
+    for (const wf of inst.workflows ?? []) map.set(wf.workflowId, info);
+  }
+  return map;
+});
 
 // Workflow id → expected enabled value for toggles we've applied locally.
 // The server's metrics endpoint is cached and may return stale `enabled`
@@ -197,6 +242,14 @@ const mapToGroups = (metricsList: WorkflowMetrics[]): WorkflowGroupCard[] => {
     const toggleableWorkflowIds = toggleableItems.map((m) => m.id);
     const slug = name.toLowerCase().replace(/\s+/g, '-');
 
+    // If any of the group's workflows came from a kit, show that kit's logo.
+    const kit = items
+      .map((m) => kitByWorkflowId.value.get(m.id))
+      .find((k): k is KitSummary => !!k);
+    const logo = kit
+      ? resolveKitLogo([kit.name, kit.category, ...(kit.tags ?? [])])
+      : null;
+
     return {
       id: slug,
       name,
@@ -214,6 +267,7 @@ const mapToGroups = (metricsList: WorkflowMetrics[]): WorkflowGroupCard[] => {
       toggleableWorkflowIds,
       allEnabled,
       isStandalone: standalone,
+      logo,
     };
   };
 
@@ -529,7 +583,17 @@ watchEffect(() => {
           <!-- Header: Avatar + Name + Health Badge -->
           <div class="flex items-start justify-between">
             <div class="flex min-w-0 flex-1 items-center gap-3">
-              <Avatar class="mr-1 size-10 rounded-lg">
+              <div
+                v-if="group.logo"
+                class="bg-background mr-1 flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border p-1.5"
+              >
+                <component
+                  :is="group.logo"
+                  class="size-6 max-h-full max-w-full"
+                  :font-controlled="false"
+                />
+              </div>
+              <Avatar v-else class="mr-1 size-10 rounded-lg">
                 <AvatarFallback class="rounded-lg text-sm">
                   {{ group.avatar }}
                 </AvatarFallback>

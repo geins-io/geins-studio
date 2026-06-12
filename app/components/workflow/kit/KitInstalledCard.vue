@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import type { KitInstallation } from '#shared/types';
+import type { KitInstallation, KitSummary } from '#shared/types';
+import type { Component } from 'vue';
 import { Avatar, AvatarFallback } from '~/components/ui/avatar';
 import { Badge } from '~/components/ui/badge';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
 
 const props = defineProps<{
   installation: KitInstallation;
+  /** Matching catalog kit, when available — adds category/tags for logo matching. */
+  catalogKit?: KitSummary;
   updateAvailable?: boolean;
   latestVersion?: string;
 }>();
@@ -24,6 +27,17 @@ const initials = computed(() => {
   return (name.charAt(0) + name.charAt(name.length - 1)).toUpperCase();
 });
 
+// Logo matched by slug of the kit name, category, or tag — see useKitLogo.
+// Falls back to the initials avatar when nothing matches.
+const { resolveKitLogo } = useKitLogo();
+const logo = computed<Component | null>(() =>
+  resolveKitLogo([
+    props.installation.kitName,
+    props.catalogKit?.category,
+    ...(props.catalogKit?.tags ?? []),
+  ]),
+);
+
 const workflows = computed(() => props.installation.workflows ?? []);
 const variableCount = computed(
   () => (props.installation.variables ?? []).length,
@@ -35,7 +49,17 @@ const variableCount = computed(
     <CardHeader class="pt-5 pb-3">
       <div class="flex items-start justify-between gap-2">
         <div class="flex min-w-0 flex-1 items-center gap-3">
-          <Avatar class="size-10 rounded-lg">
+          <div
+            v-if="logo"
+            class="bg-background flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border p-1.5"
+          >
+            <component
+              :is="logo"
+              class="size-6 max-h-full max-w-full"
+              :font-controlled="false"
+            />
+          </div>
+          <Avatar v-else class="size-10 rounded-lg">
             <AvatarFallback class="rounded-lg text-sm">
               {{ initials }}
             </AvatarFallback>

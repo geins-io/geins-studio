@@ -26,39 +26,16 @@ const initials = computed(() => {
 const tags = computed(() => props.kit.tags ?? []);
 
 // ─── Kit logo ──────────────────────────────────────────────────────
-// The API has no logo field, so logos live in app/assets/logos/kits/ and are
-// matched by the slug of the kit name, category, or any tag. See the folder's
-// README for naming. Kits with no match fall back to the initials avatar.
-const logoModules = import.meta.glob<{ default: Component }>(
-  '@/assets/logos/kits/*.svg',
-  { eager: true },
-);
-
-const logoMap: Record<string, Component> = {};
-for (const [path, mod] of Object.entries(logoModules)) {
-  const name = path.match(/\/([^/]+)\.svg$/)?.[1];
-  if (name) logoMap[name] = mod.default;
-}
-
-const slugify = (value: string): string =>
-  value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
-const logo = computed<Component | null>(() => {
-  const candidates = [
+// Logos are matched by the slug of the kit name, category, or any tag — see
+// useKitLogo. Kits with no match fall back to the initials avatar.
+const { resolveKitLogo } = useKitLogo();
+const logo = computed<Component | null>(() =>
+  resolveKitLogo([
     props.kit.name,
-    props.kit.category ?? '',
+    props.kit.category,
     ...(props.kit.tags ?? []),
-  ];
-  for (const candidate of candidates) {
-    const match = logoMap[slugify(candidate)];
-    if (match) return match;
-  }
-  return null;
-});
+  ]),
+);
 </script>
 
 <template>

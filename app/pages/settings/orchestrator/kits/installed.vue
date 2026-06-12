@@ -199,6 +199,7 @@ const confirmUninstall = async (payload: {
         v-for="installation in installations"
         :key="installation.id"
         :installation="installation"
+        :catalog-kit="kits.find((k) => k.id === installation.kitId)"
         :update-available="updateAvailableFor(installation)"
         :latest-version="latestVersionFor(installation.kitId)"
         @upgrade="onUpgrade"
