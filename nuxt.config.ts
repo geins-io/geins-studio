@@ -127,7 +127,7 @@ export default defineNuxtConfig({
         channel: '1',
         country: 'SE',
       },
-      baseUrl: getBaseUrl(),
+      baseUrl: process.env.NUXT_PUBLIC_BASE_URL || getBaseUrl(),
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
       appId: process.env.NUXT_PUBLIC_APP_ID || '',

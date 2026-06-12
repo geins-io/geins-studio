@@ -137,6 +137,10 @@ var appSettings = [
     value: baseUrl
   }
   {
+    name: 'NUXT_PUBLIC_BASE_URL'
+    value: baseUrl
+  }
+  {
     name: 'AUTH_ORIGIN'
     value: baseUrl
   }
@@ -228,6 +232,10 @@ var stagingAppSettings = [
   }
   {
     name: 'BASE_URL'
+    value: baseUrl
+  }
+  {
+    name: 'NUXT_PUBLIC_BASE_URL'
     value: baseUrl
   }
   {
