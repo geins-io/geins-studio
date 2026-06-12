@@ -109,16 +109,23 @@ function selectWorkflow(wf: WorkflowSummary) {
   props.updateInput('workflowName', wf.name);
   selectorOpen.value = false;
   selectorSearch.value = '';
-  removedOptionalKeys.value.clear();
 
   const expectedInputs = getWorkflowInputs(wf.id);
   if (expectedInputs.length) {
     const existing = (props.nodeInput.input ?? {}) as Record<string, unknown>;
     const merged: Record<string, string> = {};
     for (const inp of expectedInputs) {
-      merged[inp.name] = String(existing[inp.name] ?? inp.defaultValue ?? '');
+      const existingVal = existing[inp.name];
+      // Optional params start collapsed under "Removed" — only required params
+      // (and optional ones that already carry a value) are prefilled/shown.
+      if (!inp.required && existingVal == null) continue;
+      merged[inp.name] =
+        existingVal != null ? String(existingVal) : scalarDefault(inp);
     }
-    props.updateInput('input', merged);
+    props.updateInput(
+      'input',
+      Object.keys(merged).length > 0 ? merged : undefined,
+    );
   } else {
     props.updateInput('input', undefined);
   }
@@ -169,7 +176,7 @@ function restoreParam(name: string) {
   removedOptionalKeys.value.delete(name);
   const current = { ...inputRaw.value };
   const def = selectedWorkflowInputs.value.find((i) => i.name === name);
-  current[name] = def?.defaultValue ?? '';
+  current[name] = def ? scalarDefault(def) : '';
   props.updateInput('input', current);
 }
 
@@ -179,12 +186,34 @@ const removedParams = computed(() => {
   );
 });
 
-watch(selectedWorkflowInputs, () => {
-  removedOptionalKeys.value.clear();
+// Optional params default to the "Removed" state: when the selected workflow's
+// inputs become known (on select, or when defs load for an existing node), any
+// optional param without a value is collapsed into the restore chips, leaving
+// only required params (and optional ones with a value) shown.
+watch(selectedWorkflowInputs, (inputs) => {
+  const present = (props.nodeInput.input ?? {}) as Record<string, unknown>;
+  const removed = new Set<string>();
+  for (const inp of inputs) {
+    if (!inp.required && present[inp.name] == null) removed.add(inp.name);
+  }
+  removedOptionalKeys.value = removed;
 });
 
 const isNumericType = (type: string) =>
   ['number', 'integer', 'int'].includes(type.toLowerCase());
+
+const SCALAR_TYPES = ['string', 'number', 'integer', 'int', 'boolean', 'bool'];
+const isScalarType = (type: string) =>
+  SCALAR_TYPES.includes(type.toLowerCase());
+
+// Default value as text for prefilling/placeholder. Only scalar types
+// (string/number/boolean) are prefilled — object/array defaults are objects,
+// so `String()` would render "[object Object]". Those are left blank for the
+// user to fill in (typically as JSON or an expression).
+const scalarDefault = (inp: WorkflowInput): string =>
+  isScalarType(inp.type) && inp.defaultValue != null
+    ? String(inp.defaultValue)
+    : '';
 
 function paramError(inp: WorkflowInput): string | null {
   const val = getInputValue(inp.name);
@@ -374,9 +403,7 @@ function paramError(inp: WorkflowInput): string | null {
             <div class="min-w-0 flex-1">
               <ExpressionInput
                 :model-value="getInputValue(inp.name)"
-                :placeholder="
-                  inp.defaultValue != null ? String(inp.defaultValue) : inp.name
-                "
+                :placeholder="scalarDefault(inp) || inp.name"
                 size="sm"
                 :default-mode="
                   getInputValue(inp.name).includes('{{')
