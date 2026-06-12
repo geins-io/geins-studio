@@ -59,9 +59,6 @@ param salesPortalWebhookSecret string = ''
 @description('Log level')
 param logLevel string = 'info'
 
-@description('Enable orchestrator feature flag')
-param featureOrchestrator string = 'true'
-
 // Monitoring configuration
 @description('Enable Application Insights monitoring')
 param enableMonitoring bool = true
@@ -163,7 +160,6 @@ module webApp 'modules/webApp.bicep' = {
     geinsDebug: geinsDebug
     salesPortalWebhookSecret: salesPortalWebhookSecret
     logLevel: logLevel
-    featureOrchestrator: featureOrchestrator
     // Application Insights connection (suppress BCP318 - condition matches module condition)
     #disable-next-line BCP318
     appInsightsConnectionString: enableMonitoring ? monitoring.outputs.connectionString : ''

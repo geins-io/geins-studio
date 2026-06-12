@@ -63,9 +63,6 @@ param salesPortalWebhookSecret string = ''
 @description('Log level')
 param logLevel string
 
-@description('Enable orchestrator feature flag')
-param featureOrchestrator string = 'true'
-
 // Monitoring settings
 @description('Application Insights connection string')
 param appInsightsConnectionString string = ''
@@ -162,10 +159,6 @@ var appSettings = [
   {
     name: 'LOG_LEVEL'
     value: logLevel
-  }
-  {
-    name: 'NUXT_PUBLIC_FEATURE_ORCHESTRATOR'
-    value: featureOrchestrator
   }
   // Application Insights Configuration
   {

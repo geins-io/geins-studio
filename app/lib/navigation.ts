@@ -18,10 +18,7 @@ import type { NavigationItem } from '#shared/types';
  * Returns localized navigation items
  * @param t - Translation function from useI18n()
  */
-export const getNavigation = (
-  t: (key: string) => string,
-  options?: { featureOrchestrator?: boolean },
-): NavigationItem[] => {
+export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
   return [
     {
       label: t('navigation.pricing'),
@@ -62,32 +59,28 @@ export const getNavigation = (
         },
       ],
     },
-    ...(options?.featureOrchestrator
-      ? [
-          {
-            label: t('navigation.orchestrator'),
-            href: '/orchestrator',
-            icon: 'Workflow',
-            group: 'workspace',
-            children: [
-              {
-                label: t('navigation.overview'),
-                href: '/orchestrator',
-              },
-              {
-                label: t('navigation.workflows'),
-                href: '/orchestrator/workflows/list',
-                childPattern: '/orchestrator/workflows/:id',
-              },
-              {
-                label: t('navigation.executions'),
-                href: '/orchestrator/executions/list',
-                childPattern: '/orchestrator/executions/:id',
-              },
-            ],
-          } as NavigationItem,
-        ]
-      : []),
+    {
+      label: t('navigation.orchestrator'),
+      href: '/orchestrator',
+      icon: 'Workflow',
+      group: 'workspace',
+      children: [
+        {
+          label: t('navigation.overview'),
+          href: '/orchestrator',
+        },
+        {
+          label: t('navigation.workflows'),
+          href: '/orchestrator/workflows/list',
+          childPattern: '/orchestrator/workflows/:id',
+        },
+        {
+          label: t('navigation.executions'),
+          href: '/orchestrator/executions/list',
+          childPattern: '/orchestrator/executions/:id',
+        },
+      ],
+    },
     {
       label: t('navigation.channels'),
       href: '/settings/channel/list',
@@ -95,32 +88,28 @@ export const getNavigation = (
       group: 'settings',
       childPattern: '/settings/channel/:id',
     },
-    ...(options?.featureOrchestrator
-      ? [
-          {
-            label: t('navigation.orchestrator_config'),
-            href: '/settings/orchestrator/variables/list',
-            icon: 'Plug',
-            group: 'settings',
-            defaultOpen: false,
-            children: [
-              {
-                label: t('navigation.variables'),
-                href: '/settings/orchestrator/variables/list',
-                childPattern: '/settings/orchestrator/variables/:id',
-              },
-              {
-                label: t('navigation.installed_kits'),
-                href: '/settings/orchestrator/kits/installed',
-              },
-              {
-                label: t('navigation.kits'),
-                href: '/settings/orchestrator/kits/list',
-              },
-            ],
-          } as NavigationItem,
-        ]
-      : []),
+    {
+      label: t('navigation.orchestrator_config'),
+      href: '/settings/orchestrator/variables/list',
+      icon: 'Plug',
+      group: 'settings',
+      defaultOpen: false,
+      children: [
+        {
+          label: t('navigation.variables'),
+          href: '/settings/orchestrator/variables/list',
+          childPattern: '/settings/orchestrator/variables/:id',
+        },
+        {
+          label: t('navigation.installed_kits'),
+          href: '/settings/orchestrator/kits/installed',
+        },
+        {
+          label: t('navigation.kits'),
+          href: '/settings/orchestrator/kits/list',
+        },
+      ],
+    },
     {
       label: t('navigation.account'),
       href: '',

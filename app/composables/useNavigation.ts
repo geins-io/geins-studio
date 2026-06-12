@@ -19,10 +19,7 @@ export const useNavigation = () => {
   const userStore = useUserStore();
   const breadcrumbsStore = useBreadcrumbsStore();
   const route = useRoute();
-  const config = useRuntimeConfig();
-  const navigationConfig = getNavigation(t, {
-    featureOrchestrator: Boolean(config.public.featureOrchestrator),
-  });
+  const navigationConfig = getNavigation(t);
 
   // Store the navigation config in breadcrumbs store for use in watchers
   breadcrumbsStore.setNavigationConfig(navigationConfig);
