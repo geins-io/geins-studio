@@ -99,14 +99,68 @@ async function initBlockly() {
     class PaddedConstants extends BaseConstants {
       init() {
         super.init();
-        this.MEDIUM_PADDING = 10;
-        this.MEDIUM_LARGE_PADDING = 14;
-        this.LARGE_PADDING = 18;
+        // Internal spacing: drives the gaps between stacked input rows and
+        // around fields. Bumped above Zelos defaults (8/12/16) for more
+        // breathing room inside blocks like if/then/else.
+        this.MEDIUM_PADDING = 14;
+        this.MEDIUM_LARGE_PADDING = 16;
+        this.LARGE_PADDING = 20;
+        // Zelos' CORNER_RADIUS (GRID_UNIT = 4) reads too soft. Match the app's
+        // input/button radius (~5px) for statement-block corners.
+        this.CORNER_RADIUS = 5;
+        // Value/reporter blocks keep Zelos' dynamic ROUNDED output shape (so
+        // they stay visually distinct from hexagonal Booleans), but Zelos caps
+        // its radius at MAX_DYNAMIC_CONNECTION_SHAPE_WIDTH (default 12*GRID_UNIT
+        // = 48), which makes short blocks render as full pills (radius =
+        // height/2). Lower the cap so the ends are gently rounded rectangles,
+        // not pills.
+        this.MAX_DYNAMIC_CONNECTION_SHAPE_WIDTH = 12;
+        // Use the ▾ text-glyph dropdown arrow instead of Zelos' baked-in white
+        // SVG <image> (whose fill can't be themed via CSS). The glyph is a
+        // tspan inside .blocklyDropdownText, so it inherits our foreground fill.
+        this.FIELD_DROPDOWN_SVG_ARROW = false;
+
+        // super.init() already built the connection shapes and corner objects,
+        // capturing the OLD CORNER_RADIUS / MAX_DYNAMIC_CONNECTION_SHAPE_WIDTH
+        // in closures. The block-measuring code reads those constants live, so
+        // unless we rebuild the derived artifacts the drawn path (stale) and
+        // the measured size (new) desync — block outlines stop enclosing their
+        // inputs. Rebuild everything that depends on the constants above.
+        this.HEXAGONAL = this.makeHexagonal();
+        this.ROUNDED = this.makeRounded();
+        this.SQUARED = this.makeSquared();
+        this.INSIDE_CORNERS = this.makeInsideCorners();
+        this.OUTSIDE_CORNERS = this.makeOutsideCorners();
+        this.STATEMENT_INPUT_NOTCH_OFFSET =
+          this.NOTCH_OFFSET_LEFT + this.INSIDE_CORNERS.rightWidth;
+        this.TOP_ROW_MIN_HEIGHT = this.CORNER_RADIUS;
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    type AnyCtor = new (...args: any[]) => any;
+    const BasePathObject = Blockly.zelos.PathObject as AnyCtor;
+    class PaddedPathObject extends BasePathObject {
+      // Empty value-input sockets are drop targets: white (card) fill via the
+      // .blocklyOutlinePath CSS rule, with a dashed border in the block's own
+      // border colour (colourTertiary), set inline here since it's per-block.
+      // setOutlinePath runs on every draw, once the outline element exists —
+      // applyColour can fire before the outlines are built and miss them.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setOutlinePath(name: any, pathString: any) {
+        super.setOutlinePath(name, pathString);
+        this.getOutlinePath(name).setAttribute(
+          'stroke',
+          this.style.colourTertiary,
+        );
       }
     }
     class PaddedRenderer extends BaseRenderer {
       makeConstants_() {
         return new PaddedConstants();
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      makePathObject(root: any, style: any) {
+        return new PaddedPathObject(root, style, this.getConstants());
       }
     }
     try {
@@ -295,5 +349,36 @@ onBeforeUnmount(() => {
 }
 .blocklyTooltipDiv {
   z-index: 100000 !important;
+}
+/* Zelos paints block/field/menu text white; unreadable on the pale badge
+   fills. --foreground is dark-grey in light mode, white in dark mode (flips
+   under .dark), so text stays readable in both themes.
+
+   Blockly injects theme-scoped !important rules
+   (.padded-zelos-renderer.shadcn-theme .blockly…) that out-specify a bare
+   single-class selector, so we mirror that scope and tack on [class] (always
+   matches, +1 specificity, tag-agnostic) to win regardless of source order.
+   Renderer/theme names come from BlocklyWorkspace ('padded-zelos') and
+   useBlocklyTheme ('shadcn'). */
+.blocklyText {
+  fill: var(--foreground) !important;
+}
+.padded-zelos-renderer.shadcn-theme .blocklyDropdownText[class],
+.padded-zelos-renderer.shadcn-theme .blocklyDropdownText tspan {
+  /* tspan = the ▾ arrow; its fill is set inline to the pale block colour. */
+  fill: var(--foreground) !important;
+}
+/* Dropdown menu item labels are HTML (color, not SVG fill). */
+.blocklyMenuItemContent[class],
+.padded-zelos-renderer.shadcn-theme .blocklyMenuItemContent[class] {
+  color: var(--foreground) !important;
+}
+/* Empty value-input sockets (drop targets): white card surface with a dashed
+   border. The dash colour is the block's own border (colourTertiary), set
+   inline per-block in PaddedPathObject — so no stroke colour here. */
+.blocklyOutlinePath {
+  fill: var(--card) !important;
+  stroke-width: 1px;
+  stroke-dasharray: 4 3;
 }
 </style>
