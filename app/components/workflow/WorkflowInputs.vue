@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import draggable from 'vuedraggable';
 import type { WorkflowInput } from '#shared/types';
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue';
 import WorkflowDataType from './shared/WorkflowDataType.vue';
@@ -142,9 +143,13 @@ const newInputCanSave = computed(() => {
 const editInputOpen = ref(false);
 const editingInput = ref<WorkflowInput | null>(null);
 const editDefaultValue = ref('');
+const editDescription = ref('');
+const editRequired = ref(false);
 
 const openEditInput = (item: WorkflowInput) => {
   editingInput.value = item;
+  editDescription.value = item.description ?? '';
+  editRequired.value = !!item.required;
   const current = props.inputValues[item.name];
   if (item.type === 'object' || item.type === 'array') {
     editDefaultValue.value =
@@ -183,7 +188,14 @@ const confirmEditInput = () => {
   emit(
     'update:inputs',
     props.inputs.map((i) =>
-      i.name === item.name ? { ...i, defaultValue: coerced } : i,
+      i.name === item.name
+        ? {
+            ...i,
+            defaultValue: coerced,
+            description: editDescription.value || undefined,
+            required: editRequired.value,
+          }
+        : i,
     ),
   );
   editInputOpen.value = false;
@@ -286,6 +298,18 @@ const confirmAddInput = () => {
     );
   }
   addInputDialogOpen.value = false;
+};
+
+// Reorder inputs within a single group. Rebuilds the full input list by
+// flattening the groups in display order, swapping in the new order for the
+// affected category. Disabled while searching (the filtered view is partial).
+const reorderGroup = (category: string, newItems: WorkflowInput[]) => {
+  const next: WorkflowInput[] = [];
+  for (const group of inputsByCategory.value) {
+    if (group.category === category) next.push(...newItems);
+    else next.push(...group.items);
+  }
+  emit('update:inputs', next);
 };
 
 const toggleRequired = (name: string) => {
@@ -494,67 +518,90 @@ const confirmAddGroup = () => {
                   </Button>
                 </EmptyContent>
               </Empty>
-              <div v-else class="divide-y p-1.5">
-                <div
-                  v-for="item in group.items"
-                  :key="item.name"
-                  class="hover:bg-background flex cursor-pointer items-center gap-4 px-3 py-4 transition-colors"
-                  @click="openEditInput(item)"
-                >
-                  <div class="min-w-0 flex-1">
-                    <div
-                      class="flex items-center gap-1.5 text-sm font-semibold"
-                    >
-                      {{ prettyLabel(item.name) }}
-                      <span v-if="item.required" class="text-destructive">
-                        *
-                      </span>
-                    </div>
-                    <p
-                      v-if="item.description"
-                      class="text-muted-foreground mt-1 text-xs"
-                    >
-                      {{ item.description }}
-                    </p>
-                    <div class="mt-3 flex flex-wrap items-center gap-1.5">
-                      <WorkflowDataType :type="item.type" display="long" />
-                      <span class="text-muted-foreground font-mono text-[11px]">
-                        {{ item.name }}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="flex shrink-0 items-center gap-3">
-                    <div
-                      class="text-muted-foreground max-w-48 truncate font-mono text-xs"
-                    >
-                      {{ displayValue(item) }}
-                    </div>
-                    <div class="flex items-center gap-1.5" @click.stop>
-                      <Switch
-                        :id="`inp-required-${item.name}`"
-                        size="sm"
-                        :model-value="!!item.required"
-                        @update:model-value="toggleRequired(item.name)"
-                      />
-                      <label
-                        :for="`inp-required-${item.name}`"
-                        class="text-muted-foreground cursor-pointer text-xs whitespace-nowrap"
-                      >
-                        Required
-                      </label>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    class="text-muted-foreground hover:text-destructive size-8 shrink-0"
-                    :aria-label="`Remove ${item.name}`"
-                    @click.stop="removeInput(item.name)"
+              <draggable
+                v-else
+                :model-value="group.items"
+                item-key="name"
+                handle=".drag-handle"
+                ghost-class="opacity-30"
+                :disabled="searching"
+                class="divide-y p-1.5"
+                @update:model-value="
+                  (items: WorkflowInput[]) =>
+                    reorderGroup(group.category, items)
+                "
+              >
+                <template #item="{ element: item }">
+                  <div
+                    class="hover:bg-background flex cursor-pointer items-center gap-2 px-1 py-4 transition-colors"
+                    @click="openEditInput(item)"
                   >
-                    <LucideTrash class="size-4" />
-                  </Button>
-                </div>
-              </div>
+                    <button
+                      type="button"
+                      class="drag-handle text-muted-foreground/50 hover:text-muted-foreground shrink-0 cursor-grab p-1 active:cursor-grabbing"
+                      :class="{ 'pointer-events-none opacity-30': searching }"
+                      title="Drag to reorder"
+                      @click.stop
+                    >
+                      <LucideGripVertical class="size-4" />
+                    </button>
+                    <div class="min-w-0 flex-1">
+                      <div
+                        class="flex items-center gap-1.5 text-sm font-semibold"
+                      >
+                        {{ prettyLabel(item.name) }}
+                        <span v-if="item.required" class="text-destructive">
+                          *
+                        </span>
+                      </div>
+                      <p
+                        v-if="item.description"
+                        class="text-muted-foreground mt-1 text-xs"
+                      >
+                        {{ item.description }}
+                      </p>
+                      <div class="mt-3 flex flex-wrap items-center gap-1.5">
+                        <WorkflowDataType :type="item.type" display="long" />
+                        <span
+                          class="text-muted-foreground font-mono text-[11px]"
+                        >
+                          {{ item.name }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="flex shrink-0 items-center gap-3">
+                      <div
+                        class="text-muted-foreground max-w-48 truncate font-mono text-xs"
+                      >
+                        {{ displayValue(item) }}
+                      </div>
+                      <div class="flex items-center gap-1.5" @click.stop>
+                        <Switch
+                          :id="`inp-required-${item.name}`"
+                          size="sm"
+                          :model-value="!!item.required"
+                          @update:model-value="toggleRequired(item.name)"
+                        />
+                        <label
+                          :for="`inp-required-${item.name}`"
+                          class="text-muted-foreground cursor-pointer text-xs whitespace-nowrap"
+                        >
+                          Required
+                        </label>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="text-muted-foreground hover:text-destructive size-8 shrink-0"
+                      :aria-label="`Remove ${item.name}`"
+                      @click.stop="removeInput(item.name)"
+                    >
+                      <LucideTrash class="size-4" />
+                    </Button>
+                  </div>
+                </template>
+              </draggable>
             </div>
           </CollapsibleContent>
         </Collapsible>
@@ -743,7 +790,8 @@ const confirmAddGroup = () => {
       <SheetHeader>
         <SheetTitle>Edit input</SheetTitle>
         <SheetDescription>
-          Change the default value for this input.
+          Update this input's description, default value, and whether it's
+          required.
         </SheetDescription>
       </SheetHeader>
       <SheetBody v-if="editingInput">
@@ -756,6 +804,21 @@ const confirmAddGroup = () => {
             <div class="space-y-1.5">
               <Label>Type</Label>
               <Input :model-value="editingInput.type" disabled />
+            </div>
+          </FormGrid>
+          <FormGrid design="1">
+            <div class="space-y-1.5">
+              <Label for="edit-input-description">
+                Description
+                <span class="text-muted-foreground ml-1 text-xs font-normal">
+                  ({{ t('form.optional') }})
+                </span>
+              </Label>
+              <Input
+                id="edit-input-description"
+                v-model="editDescription"
+                placeholder="What this input is used for"
+              />
             </div>
           </FormGrid>
           <FormGrid design="1">
@@ -815,6 +878,22 @@ const confirmAddGroup = () => {
                   (v) => (editDefaultValue = String(v ?? ''))
                 "
               />
+            </div>
+          </FormGrid>
+          <FormGrid design="1">
+            <div
+              class="flex flex-row items-center justify-between gap-4 rounded-lg border p-4 text-sm"
+              data-slot="form-item"
+            >
+              <div class="text-left">
+                <Label for="edit-input-required" class="text-sm font-semibold">
+                  Required
+                </Label>
+                <p class="text-muted-foreground mt-1 text-xs">
+                  Executions must provide a value for this input.
+                </p>
+              </div>
+              <Switch id="edit-input-required" v-model="editRequired" />
             </div>
           </FormGrid>
         </FormGridWrap>
