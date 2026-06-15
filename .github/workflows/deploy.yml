@@ -51,6 +51,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             GEINS_API_URL=${{ secrets.GEINS_API_URL }}
+            GIT_SHA=${{ github.sha }}
 
   deploy:
     name: Deploy to Production

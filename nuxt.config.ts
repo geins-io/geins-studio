@@ -1,8 +1,22 @@
+import { readFileSync } from 'node:fs';
 import tailwindcss from '@tailwindcss/vite';
 import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
 
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
+
 export default defineNuxtConfig({
   ssr: false,
+
+  app: {
+    head: {
+      meta: [
+        {
+          name: 'app-version',
+          content: `${pkg.version}+${process.env.GIT_SHA || 'dev'}`,
+        },
+      ],
+    },
+  },
 
   spaLoadingTemplate: 'app-skeleton.html',
 
@@ -121,6 +135,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
+      appVersion: pkg.version,
+      gitSha: process.env.GIT_SHA || 'dev',
       fallback: {
         language: 'en',
         currency: 'SEK',

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useSidebar } from '@/components/ui/sidebar';
 
+const { appVersion, gitSha } = useRuntimeConfig().public;
+
 const { geinsLogError } = useGeinsLog('components/../LayoutSidebarUser.vue');
 const { session, setAccount, logout } = useGeinsAuth();
 const userStore = useUserStore();
@@ -122,6 +124,16 @@ const setNewAccount = async (accountKey: string) => {
             <span class="dark:hidden">{{ $t('dark_mode') }}</span>
             <span class="hidden dark:block">{{ $t('light_mode') }}</span>
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <div
+            class="text-muted-foreground/60 px-2 py-1.5 text-[10px] select-all"
+          >
+            v{{ appVersion }}
+            <span v-if="gitSha !== 'dev'" class="ml-1 font-mono">
+              ({{ String(gitSha).slice(0, 7) }})
+            </span>
+            <span v-else class="ml-1 font-mono">(dev)</span>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
     </SidebarMenuItem>

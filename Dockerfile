@@ -11,6 +11,8 @@ RUN pnpm install --frozen-lockfile --prod=false
 FROM base AS build
 WORKDIR /app
 ARG GEINS_API_URL
+ARG GIT_SHA
+ENV GIT_SHA=${GIT_SHA}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm build
