@@ -293,7 +293,11 @@ resource webApp 'Microsoft.Web/sites@2023-12-01' = {
     httpsOnly: true
     clientAffinityEnabled: false
     siteConfig: {
-      linuxFxVersion: 'DOCKER|${containerImage}'
+      // NOTE: linuxFxVersion is intentionally omitted here.
+      // The production slot receives its container image exclusively via
+      // slot-swap from staging (blue-green deployment). Setting it here
+      // would cause production to restart with the new image immediately,
+      // bypassing staging health-checks and the swap gate.
       alwaysOn: environment != 'dev'
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
