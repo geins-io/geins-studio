@@ -48,6 +48,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             GEINS_API_URL=${{ secrets.GEINS_API_URL }}
+            GIT_SHA=${{ github.sha }}
 
   deploy:
     name: Deploy to Dev
@@ -80,7 +81,9 @@ jobs:
           resourceGroupName: rg-studio-dev
           template: infra/main.bicep
           parameters: >-
-            infra/parameters/dev.bicepparam
+            environment=dev
+            location=westeurope
+            appName=studio
             containerImage=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.image-tag }}
             ghcrUsername=${{ github.actor }}
             ghcrToken=${{ secrets.GHCR_PAT }}
@@ -91,7 +94,6 @@ jobs:
             geinsDebug=true
             salesPortalWebhookSecret=${{ secrets.SALES_PORTAL_WEBHOOK_SECRET }}
             logLevel=debug
-            featureOrchestrator=${{ vars.FEATURE_ORCHESTRATOR || 'true' }}
           deploymentName: deploy-dev-${{ github.sha }}
 
       - name: Print preview URL
