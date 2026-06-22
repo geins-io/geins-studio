@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { markRaw, type Component } from 'vue';
 import type {
   WorkflowMetrics,
   AggregateMetrics,
@@ -7,7 +8,6 @@ import type {
   KitInstallation,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
-import type { Component } from 'vue';
 import { Avatar, AvatarFallback } from '~/components/ui/avatar';
 import {
   Card,
@@ -246,9 +246,10 @@ const mapToGroups = (metricsList: WorkflowMetrics[]): WorkflowGroupCard[] => {
     const kit = items
       .map((m) => kitByWorkflowId.value.get(m.id))
       .find((k): k is KitSummary => !!k);
-    const logo = kit
+    const resolvedLogo = kit
       ? resolveKitLogo([kit.name, kit.category, ...(kit.tags ?? [])])
       : null;
+    const logo = resolvedLogo ? markRaw(resolvedLogo) : null;
 
     return {
       id: slug,
