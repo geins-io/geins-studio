@@ -38,6 +38,7 @@ describe('getDefaultSettings', () => {
         priceVisibility: { enabled: true, access: 'authenticated' },
         orderPlacement: { enabled: true, access: 'authenticated' },
         stockStatus: { enabled: false, access: 'authenticated' },
+        newsletterSignup: false,
       },
       seo: {
         defaultTitle: '',
