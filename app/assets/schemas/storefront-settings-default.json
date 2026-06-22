@@ -96,6 +96,20 @@
             }
           }
         ]
+      },
+      {
+        "key": "additionalSettings",
+        "title": "Additional settings",
+        "fields": [
+          {
+            "key": "features.newsletterSignup",
+            "type": "boolean",
+            "label": "Newsletter signup",
+            "description": "Controls whether the newsletter signup is shown on the storefront.",
+            "icon": "Mail",
+            "default": false
+          }
+        ]
       }
     ]
   },
