@@ -22,6 +22,9 @@ const breadcrumbsStore = useBreadcrumbsStore();
 const routeKey = computed(() => decodeURIComponent(route.params.id as string));
 const isNew = computed(() => routeKey.value === 'new');
 const entityName = 'variable';
+const variableDataKey = computed(
+  () => `orchestrator-variable-${routeKey.value}`,
+);
 
 // ─── Fetch existing variable (skip for new) ────────────────────────
 const {
@@ -29,7 +32,7 @@ const {
   error,
   refresh,
 } = await useAsyncData(
-  () => `variable-${routeKey.value}`,
+  variableDataKey,
   () =>
     isNew.value
       ? Promise.resolve(null)

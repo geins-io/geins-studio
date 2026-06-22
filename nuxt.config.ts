@@ -37,6 +37,10 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
+  experimental: {
+    normalizeComponentNames: true,
+  },
+
   ignore: ['.temp/**', '.agents/**', '.mint/**', '.claude/**'],
 
   modules: [
@@ -64,7 +68,6 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css', 'flag-icons/css/flag-icons.min.css'],
 
   vite: {
-    // @ts-expect-error Type conflict: @tailwindcss/vite uses vite 7 types, vitepress pulls in vite 5 types
     plugins: [tailwindcss()],
     server: {
       watch: {

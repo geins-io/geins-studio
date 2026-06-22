@@ -25,6 +25,9 @@ const { orchestratorApi } = useGeinsRepository();
 const breadcrumbsStore = useBreadcrumbsStore();
 
 const executionId = computed(() => route.params.id as string);
+const executionDataKey = computed(
+  () => `orchestrator-execution-${executionId.value}`,
+);
 
 // ─── Fetch real data ──────────────────────────────────────────────
 // Cache completed/terminal executions (they don't change), but always refetch
@@ -43,7 +46,7 @@ const {
   error,
   refresh,
 } = await useAsyncData(
-  () => `execution-${executionId.value}`,
+  executionDataKey,
   () => orchestratorApi.execution.get(executionId.value),
   {
     watch: [executionId],

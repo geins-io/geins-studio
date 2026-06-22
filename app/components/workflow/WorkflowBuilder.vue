@@ -80,8 +80,12 @@ const isLegacyTriggerRef = (id: string | undefined): boolean =>
 
 // Shares the cache key with the parent page (pages/orchestrator/workflows/[id].vue),
 // so Nuxt returns the already-fetched workflow instead of re-requesting.
+const workflowDataKey = computed(
+  () => `orchestrator-workflow-${props.workflowId}`,
+);
+
 const { data: currentWorkflow } = useAsyncData(
-  () => `workflow-${props.workflowId}`,
+  workflowDataKey,
   () =>
     props.isNew
       ? Promise.resolve(null)

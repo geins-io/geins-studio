@@ -67,6 +67,7 @@ Admin interface for Geins Commerce Backend. **Client-side SPA** (`ssr: false`) t
 
 ```bash
 pnpm dev              # Dev server at localhost:3000
+pnpm build:profile    # Build with Nuxt profile output for perf analysis
 pnpm lint             # ESLint with auto-fix
 pnpm lint:check       # ESLint read-only (CI-safe)
 pnpm typecheck        # Nuxi typecheck
