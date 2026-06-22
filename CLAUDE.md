@@ -110,6 +110,7 @@ i18n/locales/           # en.json, sv.json
 - **Props**: `defineProps<{}>()` with `withDefaults()` | **Stores**: `storeToRefs(store)` for reactive state
 - **Imports**: Nuxt auto-imports composables/utils/components. Types: `import type { X } from '#shared/types'`
 - **Forms**: `<FormField v-slot="{ componentField }">` pattern. `useEntityEdit` handles unsaved-changes. Disabled/read-only fields should still use `FormField`/`FormItem`/`FormLabel`/`FormControl` for visual consistency — omit `v-slot="{ componentField }"` and bind `:model-value` directly on the input.
+- **Data fetching**: Page/entity reads use `useAsyncData(key, () => repo.x())` with explicit stable keys. Mutations stay imperative (`await repo.update(...)`) and must invalidate related reads via `refresh()` / `refreshNuxtData(key)`. Put shared reference data in Pinia stores. Avoid raw `useFetch(url)` where a repository exists, and never wrap mutations in `useAsyncData`.
 - **Sidebar summary entity ID**: Always use `entityId.value` (from `useEntityEdit`) for the summary ID row, not `entityDataUpdate.value?._id` which can be `undefined` before data loads.
 - **Entity URLs**: Use `useEntityUrl()` — `getEntityUrl(id)` for current context, `getEntityUrlFor(entityName, parentPath, id)` for any entity. Prefer over hardcoded routes.
 - **Full name display**: Use `fullName(entity)` (auto-imported). Never use inline template literals.

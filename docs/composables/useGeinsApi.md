@@ -1,52 +1,42 @@
 # `useGeinsApi`
 
-The `useGeinsApi` composable provides utility functions for making API requests to the Geins API. It offers both reactive (`useGeinsFetch`) and direct (`geinsFetch`) methods for data fetching, built on top of Nuxt's fetch utilities with pre-configured Geins API integration.
+The `useGeinsApi` composable provides utility helpers for ad-hoc requests to the Geins API. It exposes `geinsFetch` as a direct wrapper around the configured API client.
+
+Reactive page reads should use `useAsyncData(key, () => repo.x())` with repositories from `useGeinsRepository()`.
 
 ::: tip
-This composable is ideal for ad-hoc queries that don't fit into a specific repository, or as a foundation for building more specific API composables. For structured data access, consider using dedicated repository composable [useGeinsRepository](/composables/useGeinsRepository).
+This composable is ideal for one-shot calls that do not belong in a repository yet. For structured data access, use [useGeinsRepository](/composables/useGeinsRepository) and `useAsyncData`.
 :::
 
 ## Features
 
-- Reactive data fetching with `useGeinsFetch` (wrapper around Nuxt's `useFetch`)
 - Direct API calls with `geinsFetch` (wrapper around `$fetch`)
 - Pre-configured with Geins API client
-- Compatible with all Nuxt fetch options and features
+- Useful for imperative actions and edge-case one-offs
 
 ## Usage
-
-Here are the different ways you can use the `useGeinsApi` composable:
 
 ### Basic Usage
 
 ```ts
-const { useGeinsFetch, geinsFetch } = useGeinsApi();
-
-// Reactive fetch example
-const { data, status, error } =
-  await useGeinsFetch<Product[]>('/api/product/list');
+const { geinsFetch } = useGeinsApi();
 
 // Direct fetch example
 const product = await geinsFetch<Product>('/api/product/123');
 ```
 
-## Properties and Methods
-
-### `useGeinsFetch`
+### Recommended page-load read pattern
 
 ```ts
-useGeinsFetch<T>(
-  url: string | (() => string),
-  options?: UseFetchOptions<T>,
-): ReturnType<typeof useFetch>
+const { productApi } = useGeinsRepository();
+
+const { data, error, refresh } = await useAsyncData<Product[]>(
+  'products-list',
+  () => productApi.product.list(),
+);
 ```
 
-A reactive wrapper around [Nuxt's `useFetch`](https://nuxt.com/docs/3.x/api/composables/use-fetch) that is pre-configured with the Geins API client.
-
-- **Parameters**:
-  - `url`: The API endpoint URL (string or reactive function)
-  - `options`: Optional Nuxt `UseFetchOptions` configuration
-- **Returns**: Nuxt's `useFetch` return object with `data`, `pending`, `error`, `refresh`, etc.
+## Properties and Methods
 
 ### `geinsFetch`
 
@@ -64,17 +54,15 @@ A direct API call function that returns a Promise with the response data.
   - `options`: Optional Nitro fetch options (method, body, headers, etc.)
 - **Returns**: Promise that resolves to the API response data
 
-## When to Use Each Method
+## Data-fetching convention
 
-### Use `useGeinsFetch` when:
+- Page/entity reads: `useAsyncData(key, () => repo.x())`
+- Mutations: imperative repository call (`await repo.update(...)`) followed by `await refresh()` on the relevant read
+- Cross-page reference data: Pinia store with a fetch action and explicit invalidation
+- Avoid raw `useFetch(url)` when a repository exists
+- Do not wrap mutations in `useAsyncData`
 
-- Fetching data on page load
-- Building reactive UI components that display API data
-- You need automatic loading and error states
-- Data should automatically refresh when dependencies change
-- Implementing real-time data updates
-
-### Use `geinsFetch` when:
+## When to Use `geinsFetch`
 
 - Fetching data on-demand
 - Making one-time API calls (form submissions, actions)
@@ -84,19 +72,13 @@ A direct API call function that returns a Promise with the response data.
 ## Error Handling
 
 ```ts
-const { useGeinsFetch, geinsFetch } = useGeinsApi();
-
-// With useGeinsFetch
-const { data, error } = await useGeinsFetch<Entity[]>('/api/endpoint');
-if (error.value) {
-  console.error('Reactive fetch error:', error.value);
-}
+const { geinsFetch } = useGeinsApi();
 
 // With geinsFetch
 try {
   const result = await geinsFetch<Entity[]>('/api/endpoint');
 } catch (error) {
-  console.error('Direct fetch error:', error);
+  // handle the error via page/composable error strategy
 }
 ```
 
@@ -105,7 +87,6 @@ try {
 This composable depends on:
 
 1. **Nuxt App Context**: Uses `useNuxtApp().$geinsApi` for the configured API client
-2. **Nuxt's `useFetch`**: For reactive data fetching capabilities
 
 ## Type Definitions
 
@@ -113,10 +94,6 @@ This composable depends on:
 function useGeinsApi(): UseGeinsApiReturnType;
 
 interface UseGeinsApiReturnType {
-  useGeinsFetch: <T>(
-    url: string | (() => string),
-    options?: UseFetchOptions<T>,
-  ) => ReturnType<typeof useFetch>;
   geinsFetch: <T>(
     url: string,
     options?: NitroFetchOptions<string>,
