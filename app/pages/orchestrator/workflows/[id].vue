@@ -1674,6 +1674,7 @@ const { summaryProps } = useEntityEditSummary({
       :workflow-id="workflowId"
       :is-new="isNew"
       :is-dirty="hasExecutionChanges"
+      :current-workflow="currentWorkflow"
       @executed="refreshExecutions"
       @change="onBuilderChange"
       @change:ui="onBuilderUiChange"
