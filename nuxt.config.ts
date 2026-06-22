@@ -69,6 +69,21 @@ export default defineNuxtConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    optimizeDeps: {
+      include: [
+        '@lucide/vue',
+        '@tanstack/vue-table',
+        '@vercel/analytics/nuxt',
+        '@vueuse/core',
+        'chalk',
+        'class-variance-authority',
+        'clsx',
+        'jwt-decode',
+        'reka-ui',
+        'tailwind-merge',
+        'vuedraggable',
+      ],
+    },
     server: {
       watch: {
         ignored: [

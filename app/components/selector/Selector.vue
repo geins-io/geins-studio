@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="T extends SelectorEntity">
 import {
+  TableMode,
   SelectorMode,
   SelectorSelectionStrategy,
   SelectorSelectionType,

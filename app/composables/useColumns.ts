@@ -1,4 +1,5 @@
 import { h } from 'vue';
+import { TableMode } from '#shared/types';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
 import {
   Checkbox,
