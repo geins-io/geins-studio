@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChannelMarket, ChannelMarketRow } from '#shared/types';
+import { TableMode } from '#shared/types';
 
 const { t } = useI18n();
 const { resolveIcon } = useLucideIcon();
