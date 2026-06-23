@@ -133,10 +133,21 @@ const activeFilters = computed<ActiveFilter[]>(() => {
     filters.push({ type: 'name', label: nameFilter.value });
   }
   if (periodFilter.value) {
-    filters.push({ type: 'period', label: `Last ${periodFilter.value}` });
+    filters.push({
+      type: 'period',
+      label: t('executions.period_last', { period: periodFilter.value }),
+    });
   }
   return filters;
 });
+
+// Localized label for each filter-type tag prefix.
+const filterTypeLabels = computed<Record<ActiveFilter['type'], string>>(() => ({
+  workflow: t('workflow'),
+  group: t('group'),
+  name: t('name'),
+  period: t('executions.period'),
+}));
 
 const hasFilters = computed(() => activeFilters.value.length > 0);
 const filterLabel = computed(() =>
@@ -163,7 +174,7 @@ const mapToListData = (list: ExecutionLog[]): EntityList[] => {
 
     return {
       id: e.id,
-      workflowName: e.workflowName || 'Unknown',
+      workflowName: e.workflowName || t('workflows.unknown'),
       workflowId: e.workflowId,
       group: groupName,
       groupSlug: groupName
@@ -378,17 +389,23 @@ const searchableFields: Array<keyof EntityList> = [
   >
     <div class="flex flex-wrap items-center gap-2 text-sm">
       <LucideFilter class="text-muted-foreground h-4 w-4" />
-      <span class="text-muted-foreground">Filtered by:</span>
+      <span class="text-muted-foreground">
+        {{ $t('executions.filtered_by') }}
+      </span>
       <span
         v-for="f in activeFilters"
         :key="f.type"
         class="bg-background inline-flex items-center gap-1 rounded-full border py-0.5 pr-1 pl-2 text-xs"
       >
-        <span class="text-muted-foreground">{{ f.type }}:</span>
+        <span class="text-muted-foreground">
+          {{ filterTypeLabels[f.type] }}:
+        </span>
         <span class="font-medium">{{ f.label }}</span>
         <button
           class="hover:bg-muted text-muted-foreground hover:text-foreground ml-0.5 rounded-full p-0.5"
-          :title="`Remove ${f.type} filter`"
+          :title="
+            $t('executions.remove_filter', { type: filterTypeLabels[f.type] })
+          "
           @click="removeFilter(f.type)"
         >
           <LucideX class="h-3 w-3" />
@@ -397,7 +414,7 @@ const searchableFields: Array<keyof EntityList> = [
     </div>
     <Button variant="ghost" size="sm" class="h-7 text-xs" @click="clearFilter">
       <LucideX class="mr-1 h-3 w-3" />
-      Clear filters
+      {{ $t('executions.clear_filters') }}
     </Button>
   </div>
 

@@ -39,39 +39,41 @@ function onSave() {
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>Save as template</DialogTitle>
+        <DialogTitle>{{ $t('node.save_as_template') }}</DialogTitle>
         <DialogDescription>
-          Save this node configuration for reuse in other workflows.
+          {{ $t('node.save_template_description') }}
         </DialogDescription>
       </DialogHeader>
       <div class="space-y-3 py-2">
         <div class="space-y-1.5">
-          <label class="text-sm font-medium">Name</label>
+          <label class="text-sm font-medium">{{ $t('name') }}</label>
           <Input
             v-model="name"
-            placeholder="Template name"
+            :placeholder="$t('node.template_name_placeholder')"
             @keydown.enter="onSave"
           />
         </div>
         <div class="space-y-1.5">
           <label class="text-sm font-medium">
-            Description
-            <span class="text-muted-foreground font-normal">(optional)</span>
+            {{ $t('node.description') }}
+            <span class="text-muted-foreground font-normal">
+              ({{ $t('form.optional') }})
+            </span>
           </label>
           <Textarea
             v-model="description"
-            placeholder="What does this template do?"
+            :placeholder="$t('node.template_description_placeholder')"
             rows="2"
           />
         </div>
       </div>
       <DialogFooter>
         <Button variant="outline" @click="emit('update:open', false)">
-          Cancel
+          {{ $t('cancel') }}
         </Button>
         <Button :disabled="!canSave" @click="onSave">
           <LucideBookmarkPlus class="mr-1.5 h-3.5 w-3.5" />
-          Save template
+          {{ $t('node.save_template') }}
         </Button>
       </DialogFooter>
     </DialogContent>

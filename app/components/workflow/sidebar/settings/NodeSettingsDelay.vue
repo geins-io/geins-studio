@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue';
 
+const { t } = useI18n();
+
 const props = defineProps<{
   nodeData: Record<string, unknown>;
   nodeConfig: Record<string, unknown>;
@@ -35,9 +37,9 @@ const setMode = (newMode: DelayMode) => {
 };
 
 const UNITS = [
-  { value: 'S', label: 'Seconds', short: 'sec' },
-  { value: 'M', label: 'Minutes', short: 'min' },
-  { value: 'H', label: 'Hours', short: 'hr' },
+  { value: 'S', label: t('node.settings.delay.seconds'), short: 'sec' },
+  { value: 'M', label: t('node.settings.delay.minutes'), short: 'min' },
+  { value: 'H', label: t('node.settings.delay.hours'), short: 'hr' },
 ] as const;
 
 type UnitValue = (typeof UNITS)[number]['value'];
@@ -79,10 +81,9 @@ const ISO_DATETIME_RE =
 function validateWaitUntil(val: string): string | null {
   if (!val) return null;
   if (isExpression(val)) return null;
-  if (!ISO_DATETIME_RE.test(val))
-    return 'Must be an ISO 8601 datetime (e.g. 2026-03-06T15:00:00Z) or an expression';
+  if (!ISO_DATETIME_RE.test(val)) return t('node.settings.delay.invalid_iso');
   const d = new Date(val);
-  if (Number.isNaN(d.getTime())) return 'Invalid date';
+  if (Number.isNaN(d.getTime())) return t('node.settings.delay.invalid_date');
   return null;
 }
 
@@ -94,13 +95,12 @@ const waitUntilPlaceholder = computed(() => {
 });
 
 function humanReadableDuration(amount: number, unit: UnitValue): string {
-  const labels: Record<UnitValue, [string, string]> = {
-    S: ['second', 'seconds'],
-    M: ['minute', 'minutes'],
-    H: ['hour', 'hours'],
+  const keys: Record<UnitValue, string> = {
+    S: 'node.settings.delay.seconds_count',
+    M: 'node.settings.delay.minutes_count',
+    H: 'node.settings.delay.hours_count',
   };
-  const [singular, plural] = labels[unit];
-  return `${amount} ${amount === 1 ? singular : plural}`;
+  return t(keys[unit], { count: amount }, amount);
 }
 </script>
 
@@ -109,7 +109,7 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
     <!-- Mode toggle -->
     <div class="space-y-1.5">
       <label class="text-muted-foreground text-xs font-medium">
-        Delay type
+        {{ $t('node.settings.delay.delay_type') }}
       </label>
       <div class="bg-muted flex rounded-md p-0.5">
         <button
@@ -123,7 +123,7 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
           @click="setMode('duration')"
         >
           <LucideTimer class="h-3.5 w-3.5" />
-          Fixed duration
+          {{ $t('node.settings.delay.fixed_duration') }}
         </button>
         <button
           type="button"
@@ -136,7 +136,7 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
           @click="setMode('waitUntil')"
         >
           <LucideCalendarClock class="h-3.5 w-3.5" />
-          Wait until
+          {{ $t('node.settings.delay.wait_until') }}
         </button>
       </div>
     </div>
@@ -144,7 +144,9 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
     <!-- Duration mode -->
     <template v-if="mode === 'duration'">
       <div class="space-y-1.5">
-        <label class="text-sm font-medium">Duration</label>
+        <label class="text-sm font-medium">
+          {{ $t('node.settings.delay.duration') }}
+        </label>
         <div class="flex gap-2">
           <Input
             type="number"
@@ -172,7 +174,11 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
           </Select>
         </div>
         <p class="text-muted-foreground text-xs">
-          Pauses for {{ humanReadableDuration(durationAmount, durationUnit) }}
+          {{
+            $t('node.settings.delay.pauses_for', {
+              duration: humanReadableDuration(durationAmount, durationUnit),
+            })
+          }}
         </p>
       </div>
     </template>
@@ -180,7 +186,9 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
     <!-- Wait Until mode -->
     <template v-else>
       <div class="space-y-1.5">
-        <label class="text-sm font-medium">Wait until</label>
+        <label class="text-sm font-medium">
+          {{ $t('node.settings.delay.wait_until') }}
+        </label>
         <ExpressionInput
           :model-value="waitUntil"
           :placeholder="waitUntilPlaceholder"
@@ -190,9 +198,9 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
           {{ waitUntilError }}
         </p>
         <p v-else class="text-muted-foreground text-xs">
-          UTC datetime (e.g.
+          {{ $t('node.settings.delay.utc_datetime_eg') }}
           <code class="bg-muted rounded px-1">{{ waitUntilPlaceholder }}</code>
-          ) or expression like
+          {{ $t('node.settings.delay.or_expression_like') }}
           <code
             class="rounded bg-emerald-500/10 px-1 text-emerald-700 dark:text-emerald-400"
             v-text="'{{output.nodeId.scheduledAt}}'"
@@ -203,14 +211,16 @@ function humanReadableDuration(amount: number, unit: UnitValue): string {
 
     <!-- Reason -->
     <div class="space-y-1.5">
-      <label class="text-sm font-medium">Reason</label>
+      <label class="text-sm font-medium">
+        {{ $t('node.settings.delay.reason') }}
+      </label>
       <Input
         :model-value="reason"
-        placeholder="e.g. Wait for batch window"
+        :placeholder="$t('node.settings.delay.reason_placeholder')"
         @update:model-value="updateInput('reason', $event || undefined)"
       />
       <p class="text-muted-foreground text-xs">
-        Optional note logged with the delay for debugging
+        {{ $t('node.settings.delay.reason_help') }}
       </p>
     </div>
   </div>

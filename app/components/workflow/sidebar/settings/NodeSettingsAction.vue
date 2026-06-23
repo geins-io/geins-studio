@@ -149,7 +149,9 @@ const typeBadgeClass = (type: string): string => {
             @update:model-value="updateInput(field.name, $event)"
           >
             <SelectTrigger size="sm">
-              <SelectValue placeholder="Select…" />
+              <SelectValue
+                :placeholder="$t('node.settings.select_placeholder')"
+              />
             </SelectTrigger>
             <SelectContent>
               <SelectItem
@@ -169,8 +171,8 @@ const typeBadgeClass = (type: string): string => {
             <span class="text-muted-foreground text-xs">
               {{
                 Boolean(nodeInput[field.name] ?? field.default)
-                  ? 'Enabled'
-                  : 'Disabled'
+                  ? $t('node.settings.enabled')
+                  : $t('node.settings.disabled')
               }}
             </span>
           </div>
@@ -205,7 +207,9 @@ const typeBadgeClass = (type: string): string => {
             class="size-3.5 transition-transform"
             :class="optionalOpen && 'rotate-90'"
           />
-          Optional ({{ optionalFields.length }})
+          {{
+            $t('node.settings.optional_count', { count: optionalFields.length })
+          }}
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div class="mt-3 space-y-4">
@@ -241,7 +245,9 @@ const typeBadgeClass = (type: string): string => {
                 @update:model-value="updateInput(field.name, $event)"
               >
                 <SelectTrigger size="sm">
-                  <SelectValue placeholder="Select…" />
+                  <SelectValue
+                    :placeholder="$t('node.settings.select_placeholder')"
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem
@@ -291,7 +297,7 @@ const typeBadgeClass = (type: string): string => {
       class="text-muted-foreground flex flex-col items-center gap-2 py-8 text-center text-sm"
     >
       <LucideSettings2 class="size-8 opacity-30" />
-      <p>No configurable parameters</p>
+      <p>{{ $t('node.settings.no_parameters') }}</p>
     </div>
   </div>
 </template>

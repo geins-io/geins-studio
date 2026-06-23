@@ -171,7 +171,7 @@ onMounted(() =>
         <div
           class="text-xs font-medium tracking-wider text-yellow-500 uppercase"
         >
-          Condition
+          {{ $t('node.types.condition') }}
         </div>
         <div class="font-semibold">{{ data.label }}</div>
       </div>
@@ -196,7 +196,7 @@ onMounted(() =>
         v-if="data.conditions!.length > 3"
         class="text-muted-foreground px-2 text-[10px] opacity-60"
       >
-        +{{ data.conditions!.length - 3 }} more
+        {{ $t('node.more_count', { count: data.conditions!.length - 3 }) }}
       </div>
     </div>
     <div

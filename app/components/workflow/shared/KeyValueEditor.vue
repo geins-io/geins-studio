@@ -3,6 +3,8 @@ import draggable from 'vuedraggable';
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue';
 import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue';
 
+const { t } = useI18n();
+
 const props = withDefaults(
   defineProps<{
     input: Record<string, unknown>;
@@ -20,14 +22,30 @@ const props = withDefaults(
   }>(),
   {
     fieldName: '',
-    label: 'Fields',
+    label: '',
     description: '',
-    keyPlaceholder: 'Field name',
-    valuePlaceholder: 'Value or {{expression}}',
-    expandTitle: 'JSON',
+    keyPlaceholder: '',
+    valuePlaceholder: '',
+    expandTitle: '',
     inline: false,
     editorHintKey: '',
   },
+);
+
+const labelText = computed(
+  () => props.label || t('workflow_builder.key_value.fields_label'),
+);
+const keyPlaceholderText = computed(
+  () =>
+    props.keyPlaceholder ||
+    t('workflow_builder.key_value.field_name_placeholder'),
+);
+const valuePlaceholderText = computed(
+  () =>
+    props.valuePlaceholder || t('workflow_builder.key_value.value_placeholder'),
+);
+const expandTitleText = computed(
+  () => props.expandTitle || t('workflow_builder.key_value.json_mode'),
 );
 
 const hintKey = computed(
@@ -181,7 +199,7 @@ function onJsonChange(text: string) {
       parsed === null ||
       Array.isArray(parsed)
     ) {
-      jsonError.value = 'Must be a JSON object';
+      jsonError.value = t('workflow_builder.key_value.must_be_object');
       return;
     }
     jsonError.value = '';
@@ -191,7 +209,7 @@ function onJsonChange(text: string) {
     }
     applyFields(obj);
   } catch {
-    jsonError.value = 'Invalid JSON';
+    jsonError.value = t('workflow_builder.key_value.invalid_json');
   }
 }
 
@@ -210,7 +228,7 @@ onUnmounted(() => {
       class="mb-3 flex items-center"
       :class="inline ? 'justify-end' : 'justify-between'"
     >
-      <label v-if="!inline" class="text-sm font-medium">{{ label }}</label>
+      <label v-if="!inline" class="text-sm font-medium">{{ labelText }}</label>
       <div class="bg-muted flex rounded-md p-0.5">
         <button
           type="button"
@@ -222,7 +240,7 @@ onUnmounted(() => {
           "
           @click="mode = 'fields'"
         >
-          Fields
+          {{ $t('workflow_builder.key_value.fields_mode') }}
         </button>
         <button
           type="button"
@@ -234,7 +252,7 @@ onUnmounted(() => {
           "
           @click="mode = 'json'"
         >
-          JSON
+          {{ $t('workflow_builder.key_value.json_mode') }}
         </button>
       </div>
     </div>
@@ -258,14 +276,14 @@ onUnmounted(() => {
             <button
               type="button"
               class="drag-handle text-muted-foreground/50 hover:text-muted-foreground mt-1.5 shrink-0 cursor-grab p-0.5 active:cursor-grabbing"
-              title="Drag to reorder"
+              :title="$t('workflow_builder.key_value.drag_to_reorder')"
             >
               <LucideGripVertical class="h-3.5 w-3.5" />
             </button>
             <div class="min-w-0 flex-1 space-y-1.5">
               <Input
                 :model-value="pair.key"
-                :placeholder="keyPlaceholder"
+                :placeholder="keyPlaceholderText"
                 size="sm"
                 @update:model-value="pair.key = String($event)"
                 @blur="onKeyBlur"
@@ -273,7 +291,7 @@ onUnmounted(() => {
               />
               <ExpressionInput
                 :model-value="displayValue(pair.value)"
-                :placeholder="valuePlaceholder"
+                :placeholder="valuePlaceholderText"
                 size="sm"
                 :default-mode="
                   String(pair.value).includes('{{') ? 'expression' : 'fixed'
@@ -284,7 +302,7 @@ onUnmounted(() => {
             <button
               type="button"
               class="text-muted-foreground hover:text-destructive mt-1 shrink-0 p-1"
-              title="Remove field"
+              :title="$t('workflow_builder.key_value.remove_field')"
               @click="removePair(index)"
             >
               <LucideTrash class="h-3.5 w-3.5" />
@@ -299,7 +317,7 @@ onUnmounted(() => {
         @click="addPair"
       >
         <LucidePlus class="h-3 w-3" />
-        Add field
+        {{ $t('workflow_builder.key_value.add_field') }}
       </button>
     </template>
 
@@ -323,7 +341,7 @@ onUnmounted(() => {
         :line-numbers="false"
         :line-wrapping="true"
         expandable
-        :expand-title="expandTitle"
+        :expand-title="expandTitleText"
         @update:model-value="onJsonChange"
       />
     </div>

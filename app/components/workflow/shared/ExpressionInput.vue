@@ -731,7 +731,7 @@ function onBlocklyApply(value: string) {
               </PopoverTrigger>
             </TooltipTrigger>
             <TooltipContent side="top" :side-offset="4">
-              Insert function
+              {{ $t('workflow_builder.expression.insert_function') }}
             </TooltipContent>
             <PopoverContent align="end" :side-offset="8" class="w-[360px] p-0">
               <!-- Category tabs -->
@@ -818,7 +818,7 @@ function onBlocklyApply(value: string) {
             </button>
           </TooltipTrigger>
           <TooltipContent side="top" :side-offset="4">
-            Open block editor
+            {{ $t('workflow_builder.expression.open_block_editor') }}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -843,8 +843,8 @@ function onBlocklyApply(value: string) {
           <TooltipContent side="top" :side-offset="4">
             {{
               mode === 'expression'
-                ? 'Switch to fixed value'
-                : 'Switch to expression'
+                ? $t('workflow_builder.expression.switch_to_fixed')
+                : $t('workflow_builder.expression.switch_to_expression')
             }}
           </TooltipContent>
         </Tooltip>

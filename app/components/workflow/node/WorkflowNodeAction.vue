@@ -85,7 +85,7 @@ const IconComponent = computed(() => {
       </div>
       <div>
         <div class="text-xs font-medium tracking-wider text-blue-500 uppercase">
-          Action
+          {{ $t('node.types.action') }}
         </div>
         <div class="font-semibold">{{ data.label }}</div>
         <div

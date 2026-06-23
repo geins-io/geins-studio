@@ -17,6 +17,7 @@ const emit = defineEmits<{
 // ─── Node templates ───────────────────────────────────────────────
 const nodeTemplates = useNodeTemplates();
 const { toast } = useToast();
+const { t } = useI18n();
 const confirmDeleteId = ref<string | null>(null);
 const editingTemplate = ref<NodeTemplate | null>(null);
 const showEditDialog = ref(false);
@@ -34,22 +35,33 @@ const { resolveIcon } = useLucideIcon();
 // ─── Node-type metadata (for the root category cards) ──────────────
 const NODE_TYPE_META: Record<
   string,
-  { icon: string; color: string; label: string; description?: string }
+  { icon: string; color: string; labelKey: string }
 > = {
   action: {
     icon: 'Globe',
     color: 'text-blue-500',
-    label: 'Action in an app',
-    description: 'Perform an action using a provider',
+    labelKey: 'node.add_category.action',
   },
   condition: {
     icon: 'GitBranch',
     color: 'text-yellow-500',
-    label: 'Conditions',
+    labelKey: 'node.add_category.condition',
   },
-  iterator: { icon: 'Repeat', color: 'text-purple-500', label: 'Iterators' },
-  delay: { icon: 'Timer', color: 'text-orange-500', label: 'Delays' },
-  workflow: { icon: 'Workflow', color: 'text-blue-500', label: 'Workflows' },
+  iterator: {
+    icon: 'Repeat',
+    color: 'text-purple-500',
+    labelKey: 'node.add_category.iterator',
+  },
+  delay: {
+    icon: 'Timer',
+    color: 'text-orange-500',
+    labelKey: 'node.add_category.delay',
+  },
+  workflow: {
+    icon: 'Workflow',
+    color: 'text-blue-500',
+    labelKey: 'node.add_category.workflow',
+  },
 };
 
 /** Extract the provider prefix from a dotted action name: "monitor.buildPartQuery" → "monitor" */
@@ -214,7 +226,7 @@ function buildRootStack() {
     items.push({
       type: 'category',
       key: 'templates',
-      label: 'My Templates',
+      label: t('node.templates.title'),
       icon: resolveIcon('Bookmark'),
       color: 'text-amber-500',
       count: nodeTemplates.templateCount.value,
@@ -228,7 +240,7 @@ function buildRootStack() {
     items.push({
       type: 'category',
       key: 'action',
-      label: meta.label,
+      label: t(meta.labelKey),
       icon: resolveIcon(meta.icon),
       color: meta.color,
       count: actionCount,
@@ -238,23 +250,19 @@ function buildRootStack() {
   // Non-action node types (condition, iterator, delay, etc.)
   for (const nt of manifestNodeTypes.value) {
     if (nt.type === 'trigger' || nt.type === 'action') continue;
-    const meta = NODE_TYPE_META[nt.type] ?? {
-      icon: 'Zap',
-      color: 'text-blue-500',
-      label: nt.displayName || nt.type,
-    };
+    const meta = NODE_TYPE_META[nt.type];
     items.push({
       type: 'category',
       key: nt.type,
-      label: meta.label,
-      icon: resolveIcon(meta.icon),
-      color: meta.color,
+      label: meta ? t(meta.labelKey) : nt.displayName || nt.type,
+      icon: resolveIcon(meta?.icon ?? 'Zap'),
+      color: meta?.color ?? 'text-blue-500',
       count: 1,
     });
   }
 
   pushStack({
-    title: 'Add node',
+    title: t('node.add'),
     items,
     hasSearch: true,
   });
@@ -283,7 +291,7 @@ function buildProvidersStack() {
 
   const meta = NODE_TYPE_META.action!;
   pushStack({
-    title: meta.label,
+    title: t(meta.labelKey),
     icon: resolveIcon(meta.icon),
     color: meta.color,
     items,
@@ -333,18 +341,18 @@ function buildActionsStack(
 
 // ─── Build the templates panel ────────────────────────────────────
 function buildTemplatesStack() {
-  const items: NodeViewItem[] = nodeTemplates.templates.value.map((t) => {
-    const meta = NODE_TYPE_META[t.nodeType];
+  const items: NodeViewItem[] = nodeTemplates.templates.value.map((tpl) => {
+    const meta = NODE_TYPE_META[tpl.nodeType];
     return {
       type: 'node' as const,
-      item: nodeTemplates.toPaletteItem(t),
+      item: nodeTemplates.toPaletteItem(tpl),
       icon: resolveIcon(meta?.icon ?? 'Bookmark'),
       color: meta?.color ?? 'text-amber-500',
     };
   });
 
   pushStack({
-    title: 'My Templates',
+    title: t('node.templates.title'),
     icon: resolveIcon('Bookmark'),
     color: 'text-amber-500',
     items,
@@ -354,12 +362,12 @@ function buildTemplatesStack() {
 
 function refreshTemplatesStack() {
   const stack = activeStack.value;
-  if (!stack || stack.title !== 'My Templates') return;
-  const items: NodeViewItem[] = nodeTemplates.templates.value.map((t) => {
-    const meta = NODE_TYPE_META[t.nodeType];
+  if (!stack || stack.title !== t('node.templates.title')) return;
+  const items: NodeViewItem[] = nodeTemplates.templates.value.map((tpl) => {
+    const meta = NODE_TYPE_META[tpl.nodeType];
     return {
       type: 'node' as const,
-      item: nodeTemplates.toPaletteItem(t),
+      item: nodeTemplates.toPaletteItem(tpl),
       icon: resolveIcon(meta?.icon ?? 'Bookmark'),
       color: meta?.color ?? 'text-amber-500',
     };
@@ -370,7 +378,7 @@ function refreshTemplatesStack() {
 function onDeleteTemplate(id: string) {
   nodeTemplates.deleteTemplate(id);
   confirmDeleteId.value = null;
-  toast({ title: 'Template deleted' });
+  toast({ title: t('node.templates.deleted') });
   if (nodeTemplates.templateCount.value === 0 && viewStacks.value.length > 1) {
     popStack();
   } else {
@@ -390,7 +398,7 @@ function onEditTemplateSave(payload: { name: string; description?: string }) {
     description: payload.description,
   });
   editingTemplate.value = null;
-  toast({ title: 'Template updated' });
+  toast({ title: t('node.templates.updated') });
   refreshTemplatesStack();
 }
 
@@ -522,11 +530,7 @@ const globalNodeTypeResults = computed<NodeViewItem[]>(() => {
         (nt.description ?? '').toLowerCase().includes(q),
     )
     .map((nt) => {
-      const meta = NODE_TYPE_META[nt.type] ?? {
-        icon: 'Zap',
-        color: 'text-blue-500',
-        label: nt.displayName || nt.type,
-      };
+      const meta = NODE_TYPE_META[nt.type];
       return {
         type: 'node' as const,
         item: {
@@ -535,8 +539,8 @@ const globalNodeTypeResults = computed<NodeViewItem[]>(() => {
           label: nt.displayName || nt.type,
           description: nt.description,
         },
-        icon: resolveIcon(meta.icon),
-        color: meta.color,
+        icon: resolveIcon(meta?.icon ?? 'Zap'),
+        color: meta?.color ?? 'text-blue-500',
       };
     });
 });
@@ -557,16 +561,16 @@ const globalTemplateResults = computed<NodeViewItem[]>(() => {
 
   return nodeTemplates.templates.value
     .filter(
-      (t) =>
-        t.name.toLowerCase().includes(q) ||
-        (t.description ?? '').toLowerCase().includes(q) ||
-        (t.actionName ?? '').toLowerCase().includes(q),
+      (tpl) =>
+        tpl.name.toLowerCase().includes(q) ||
+        (tpl.description ?? '').toLowerCase().includes(q) ||
+        (tpl.actionName ?? '').toLowerCase().includes(q),
     )
-    .map((t) => {
-      const meta = NODE_TYPE_META[t.nodeType];
+    .map((tpl) => {
+      const meta = NODE_TYPE_META[tpl.nodeType];
       return {
         type: 'node' as const,
-        item: nodeTemplates.toPaletteItem(t),
+        item: nodeTemplates.toPaletteItem(tpl),
         icon: resolveIcon(meta?.icon ?? 'Bookmark'),
         color: meta?.color ?? 'text-amber-500',
       };
@@ -615,7 +619,7 @@ function onSearchInput(value: string) {
         v-if="manifestStore.loading.value && !activeStack"
         class="text-muted-foreground flex h-full items-center justify-center text-sm"
       >
-        Loading node types…
+        {{ $t('node.loading') }}
       </div>
 
       <!-- Panel transition container -->
@@ -630,7 +634,7 @@ function onSearchInput(value: string) {
             <button
               v-if="canGoBack"
               class="hover:bg-accent -ml-1 rounded p-1"
-              title="Back"
+              :title="$t('node.back')"
               @click="popStack"
             >
               <LucideArrowLeft class="h-4 w-4" />
@@ -651,7 +655,7 @@ function onSearchInput(value: string) {
             </span>
             <button
               class="hover:bg-accent rounded p-1.5"
-              title="Close"
+              :title="$t('close')"
               @click="open = false"
             >
               <LucideX class="h-4 w-4" />
@@ -667,7 +671,7 @@ function onSearchInput(value: string) {
               <input
                 :value="activeStack.search"
                 type="text"
-                placeholder="Search…"
+                :placeholder="$t('node.search_placeholder')"
                 class="bg-background focus:ring-ring w-full rounded-md border py-1.5 pr-2 pl-8 text-sm focus:ring-2 focus:outline-none"
                 @input="
                   onSearchInput(($event.target as HTMLInputElement).value)
@@ -727,7 +731,7 @@ function onSearchInput(value: string) {
                 v-else
                 class="text-muted-foreground py-8 text-center text-sm"
               >
-                No nodes match your search
+                {{ $t('node.no_results') }}
               </div>
             </template>
 
@@ -760,11 +764,10 @@ function onSearchInput(value: string) {
                         v-if="viewItem.key === 'action'"
                         class="text-muted-foreground text-xs"
                       >
-                        Perform an action using a provider
+                        {{ $t('node.action_description') }}
                       </div>
                       <div v-else class="text-muted-foreground text-xs">
-                        {{ viewItem.count }}
-                        {{ viewItem.count === 1 ? 'node' : 'nodes' }}
+                        {{ $t('node.node_count', viewItem.count) }}
                       </div>
                     </div>
                     <LucideChevronRight
@@ -804,8 +807,7 @@ function onSearchInput(value: string) {
                         {{ viewItem.description }}
                       </div>
                       <div class="text-muted-foreground text-xs">
-                        {{ viewItem.count }}
-                        {{ viewItem.count === 1 ? 'action' : 'actions' }}
+                        {{ $t('node.action_count', viewItem.count) }}
                       </div>
                     </div>
                     <LucideChevronRight
@@ -842,7 +844,7 @@ function onSearchInput(value: string) {
                         class="flex w-full items-center justify-between gap-2"
                       >
                         <span class="text-destructive text-xs">
-                          Delete template?
+                          {{ $t('node.templates.delete_confirm') }}
                         </span>
                         <div class="flex gap-1">
                           <button
@@ -851,13 +853,13 @@ function onSearchInput(value: string) {
                               onDeleteTemplate(viewItem.item.templateId!)
                             "
                           >
-                            Delete
+                            {{ $t('delete') }}
                           </button>
                           <button
                             class="bg-muted rounded px-2 py-0.5 text-xs"
                             @click.stop="confirmDeleteId = null"
                           >
-                            Cancel
+                            {{ $t('cancel') }}
                           </button>
                         </div>
                       </div>
@@ -892,7 +894,7 @@ function onSearchInput(value: string) {
                       >
                         <button
                           class="text-muted-foreground hover:text-foreground rounded p-1"
-                          title="Edit template"
+                          :title="$t('node.templates.edit')"
                           @click.stop="
                             onEditTemplate(
                               nodeTemplates.getTemplate(
@@ -905,7 +907,7 @@ function onSearchInput(value: string) {
                         </button>
                         <button
                           class="text-muted-foreground hover:text-destructive rounded p-1"
-                          title="Delete template"
+                          :title="$t('node.templates.delete')"
                           @click.stop="
                             confirmDeleteId = viewItem.item.templateId!
                           "
@@ -921,7 +923,7 @@ function onSearchInput(value: string) {
                 v-else
                 class="text-muted-foreground py-8 text-center text-sm"
               >
-                No items match your search
+                {{ $t('node.no_items_match') }}
               </div>
             </template>
           </div>

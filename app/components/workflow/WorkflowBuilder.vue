@@ -47,6 +47,7 @@ const emit = defineEmits<{
 const { orchestratorApi } = useGeinsRepository();
 const { geinsLogError } = useGeinsLog('workflow-builder');
 const { toast } = useToast();
+const { t } = useI18n();
 const { toCanvas, toApi } = useWorkflowCanvas();
 
 // All node types are routed through the same dispatcher so the canvas host
@@ -449,8 +450,8 @@ provide('renameEdgeSourceHandle', renameEdgeSourceHandle);
 const onNodeDelete = (nodeId: string) => {
   if (nodeId === TRIGGER_NODE_ID) {
     toast({
-      title: 'Trigger cannot be deleted',
-      description: 'Change the trigger type in the General tab.',
+      title: t('workflow_builder.trigger_cannot_be_deleted'),
+      description: t('workflow_builder.trigger_cannot_be_deleted_description'),
     });
     return;
   }
@@ -510,7 +511,10 @@ const onSaveTemplate = (payload: { name: string; description?: string }) => {
     actionName: saveTemplateDefaults.value.actionName || undefined,
     nodeData: saveTemplateDefaults.value.nodeData,
   });
-  toast({ title: 'Template saved', description: payload.name });
+  toast({
+    title: t('workflow_builder.template_saved'),
+    description: payload.name,
+  });
 };
 
 const onNodeOpenSettings = (nodeId: string) => {
@@ -809,8 +813,8 @@ function initRunInputValues() {
 const openRunWithInputs = () => {
   if (props.isNew) {
     toast({
-      title: 'Save the workflow first',
-      description: 'New workflows must be saved before they can be executed.',
+      title: t('workflow_builder.save_workflow_first'),
+      description: t('workflow_builder.save_before_execute'),
     });
     return;
   }
@@ -834,17 +838,17 @@ const startExecution = async (data?: {
     isRunning.value = true;
     workflowPanelLogsRef.value?.open();
     toast({
-      title: 'Execution started',
+      title: t('workflow_builder.execution_started'),
       description: execId
-        ? `ID: ${execId}`
-        : (res?.message ?? 'Workflow is running.'),
+        ? t('workflow_builder.execution_id', { id: execId })
+        : (res?.message ?? t('workflow_builder.workflow_is_running')),
     });
     emit('executed');
   } catch (err) {
     isRunning.value = false;
     geinsLogError('Failed to start execution', err);
     toast({
-      title: 'Failed to start execution',
+      title: t('workflow_builder.failed_to_start_execution'),
       description: getErrorMessage(err),
       variant: 'negative',
     });
@@ -854,8 +858,8 @@ const startExecution = async (data?: {
 const runWorkflow = async () => {
   if (props.isNew) {
     toast({
-      title: 'Save the workflow first',
-      description: 'New workflows must be saved before they can be executed.',
+      title: t('workflow_builder.save_workflow_first'),
+      description: t('workflow_builder.save_before_execute'),
     });
     return;
   }
@@ -901,8 +905,8 @@ const isValidating = ref(false);
 const validateWorkflow = async () => {
   if (props.isNew) {
     toast({
-      title: 'Save the workflow first',
-      description: 'New workflows must be saved before they can be validated.',
+      title: t('workflow_builder.save_workflow_first'),
+      description: t('workflow_builder.save_before_validate'),
     });
     return;
   }
@@ -931,21 +935,23 @@ const validateWorkflow = async () => {
     const isValid = result.isValid ?? result.valid ?? false;
     if (isValid) {
       toast({
-        title: 'Validation passed',
-        description: result.message || 'Workflow is valid.',
+        title: t('workflow_builder.validation_passed'),
+        description: result.message || t('workflow_builder.workflow_is_valid'),
       });
     } else {
       const errors = result.errors ?? [];
       toast({
-        title: 'Validation failed',
-        description: result.message || `${errors.length} issue(s) found.`,
+        title: t('workflow_builder.validation_failed'),
+        description:
+          result.message ||
+          t('workflow_builder.issues_found', { count: errors.length }),
         variant: 'negative',
       });
     }
   } catch (err) {
     geinsLogError('Failed to validate workflow', err);
     toast({
-      title: 'Validation error',
+      title: t('workflow_builder.validation_error'),
       description: getErrorMessage(err),
       variant: 'negative',
     });
@@ -1007,28 +1013,44 @@ useKeybindings({
               :show-fit-view="false"
               :show-interactive="false"
             >
-              <KeyboardShortcutTooltip label="Zoom in" keys="+">
+              <KeyboardShortcutTooltip
+                :label="$t('workflow_builder.zoom_in')"
+                keys="+"
+              >
                 <ControlButton @click="zoomIn()">
                   <LucideZoomIn class="h-4 w-4" />
                 </ControlButton>
               </KeyboardShortcutTooltip>
-              <KeyboardShortcutTooltip label="Zoom out" keys="-">
+              <KeyboardShortcutTooltip
+                :label="$t('workflow_builder.zoom_out')"
+                keys="-"
+              >
                 <ControlButton @click="zoomOut()">
                   <LucideZoomOut class="h-4 w-4" />
                 </ControlButton>
               </KeyboardShortcutTooltip>
-              <KeyboardShortcutTooltip label="Fit view" keys="1">
+              <KeyboardShortcutTooltip
+                :label="$t('workflow_builder.fit_view')"
+                keys="1"
+              >
                 <ControlButton @click="fitView({ padding: 0.2 })">
                   <LucideMaximize class="h-4 w-4" />
                 </ControlButton>
               </KeyboardShortcutTooltip>
-              <KeyboardShortcutTooltip label="Tidy up" keys="shift+alt+t">
+              <KeyboardShortcutTooltip
+                :label="$t('workflow_builder.tidy_up')"
+                keys="shift+alt+t"
+              >
                 <ControlButton @click="tidyUp">
                   <LucideWandSparkles class="h-4 w-4" />
                 </ControlButton>
               </KeyboardShortcutTooltip>
               <KeyboardShortcutTooltip
-                :label="showMinimap ? 'Hide minimap' : 'Show minimap'"
+                :label="
+                  showMinimap
+                    ? $t('workflow_builder.hide_minimap')
+                    : $t('workflow_builder.show_minimap')
+                "
                 keys="m"
               >
                 <ControlButton @click="toggleMinimap">
@@ -1058,7 +1080,11 @@ useKeybindings({
             class="pointer-events-none absolute top-4 right-3 z-10 flex flex-col gap-2 @2xl:right-8"
           >
             <KeyboardShortcutTooltip
-              :label="isAddNodeOpen ? 'Close add node' : 'Add node'"
+              :label="
+                isAddNodeOpen
+                  ? $t('workflow_builder.close_add_node')
+                  : $t('workflow_builder.add_node')
+              "
               keys="n"
             >
               <button
@@ -1071,10 +1097,10 @@ useKeybindings({
             <KeyboardShortcutTooltip
               :label="
                 isNew
-                  ? 'Save workflow to validate'
+                  ? $t('workflow_builder.save_workflow_to_validate')
                   : isValidating
-                    ? 'Validating…'
-                    : 'Validate workflow'
+                    ? $t('workflow_builder.validating')
+                    : $t('workflow_builder.validate_workflow')
               "
               keys=""
             >
@@ -1094,10 +1120,10 @@ useKeybindings({
             <KeyboardShortcutTooltip
               :label="
                 isNew
-                  ? 'Save workflow to run'
+                  ? $t('workflow_builder.save_workflow_to_run')
                   : isRunning
-                    ? 'Running…'
-                    : 'Run workflow'
+                    ? $t('workflow_builder.running')
+                    : $t('workflow_builder.run_workflow')
               "
               keys="mod+enter"
             >
@@ -1115,7 +1141,11 @@ useKeybindings({
               </button>
             </KeyboardShortcutTooltip>
             <KeyboardShortcutTooltip
-              :label="isNew ? 'Save workflow to run' : 'Run with inputs'"
+              :label="
+                isNew
+                  ? $t('workflow_builder.save_workflow_to_run')
+                  : $t('workflow_builder.run_with_inputs')
+              "
               keys=""
             >
               <button
@@ -1152,18 +1182,19 @@ useKeybindings({
     <AlertDialog v-model:open="showDirtyRunDialog">
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
+          <AlertDialogTitle>{{ $t('unsaved_changes') }}</AlertDialogTitle>
           <AlertDialogDescription>
-            This workflow has unsaved changes. Would you like to save before
-            running?
+            {{ $t('workflow_builder.unsaved_changes_run_description') }}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{{ $t('cancel') }}</AlertDialogCancel>
           <Button variant="outline" @click="handleRunWithoutSaving">
-            Run without saving
+            {{ $t('workflow_builder.run_without_saving') }}
           </Button>
-          <Button @click="handleSaveAndRun">Save & Run</Button>
+          <Button @click="handleSaveAndRun">
+            {{ $t('workflow_builder.save_and_run') }}
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -1171,9 +1202,9 @@ useKeybindings({
     <Sheet v-model:open="showRunInputsSidebar">
       <SheetContent width="medium">
         <SheetHeader>
-          <SheetTitle>Run with inputs</SheetTitle>
+          <SheetTitle>{{ $t('workflow_builder.run_with_inputs') }}</SheetTitle>
           <SheetDescription>
-            Set input values for this execution. Default values are pre-filled.
+            {{ $t('workflow_builder.run_with_inputs_description') }}
           </SheetDescription>
         </SheetHeader>
         <SheetBody>
@@ -1181,7 +1212,7 @@ useKeybindings({
             v-if="workflowInputDefs.length === 0"
             class="text-muted-foreground py-8 text-center text-sm"
           >
-            This workflow has no input variables defined.
+            {{ $t('workflow_builder.no_input_variables') }}
           </div>
           <div v-else class="space-y-4">
             <div
@@ -1237,14 +1268,14 @@ useKeybindings({
         </SheetBody>
         <SheetFooter>
           <Button variant="outline" @click="showRunInputsSidebar = false">
-            Cancel
+            {{ $t('cancel') }}
           </Button>
           <Button
             class="bg-red-500 hover:bg-red-800"
             @click="executeWithInputs"
           >
             <LucidePlay class="mr-1.5 h-3.5 w-3.5" />
-            Run workflow
+            {{ $t('workflow_builder.run_workflow') }}
           </Button>
         </SheetFooter>
       </SheetContent>

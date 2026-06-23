@@ -3,6 +3,8 @@ import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue';
 import type { ExpressionCompletion } from '@/components/workflow/shared/ExpressionInput.vue';
 import type { Ref } from 'vue';
 
+const { t } = useI18n();
+
 type ConditionEntry = {
   label: string;
   condition: string;
@@ -79,7 +81,10 @@ function duplicateCondition(index: number) {
   const source = conditions.value[index];
   if (!source) return;
   const color = nextColor();
-  const copy = { ...source, label: `${source.label} (copy)` };
+  const copy = {
+    ...source,
+    label: t('node.settings.condition.copy_suffix', { label: source.label }),
+  };
   const updated = [...conditions.value];
   updated.splice(index + 1, 0, copy);
   const colors = [...conditionColors.value];
@@ -107,30 +112,44 @@ function updateConditionField(
 
 // ─── Builder mode per condition ──────────────────────────────────
 const OPERATORS = [
-  { value: '==', label: 'equals (==)' },
-  { value: '!=', label: 'not equals (!=)' },
-  { value: '>', label: 'greater than (>)' },
-  { value: '<', label: 'less than (<)' },
-  { value: '>=', label: 'greater or equal (>=)' },
-  { value: '<=', label: 'less or equal (<=)' },
+  { value: '==', label: `${t('node.settings.condition.op_equals')} (==)` },
+  { value: '!=', label: `${t('node.settings.condition.op_not_equals')} (!=)` },
+  { value: '>', label: `${t('node.settings.condition.op_greater_than')} (>)` },
+  { value: '<', label: `${t('node.settings.condition.op_less_than')} (<)` },
+  {
+    value: '>=',
+    label: `${t('node.settings.condition.op_greater_or_equal')} (>=)`,
+  },
+  {
+    value: '<=',
+    label: `${t('node.settings.condition.op_less_or_equal')} (<=)`,
+  },
 ] as const;
 
 const FUNCTIONS = [
-  { value: 'IsEmpty', label: 'is empty', template: 'IsEmpty({field})' },
-  { value: '!IsEmpty', label: 'is not empty', template: '!IsEmpty({field})' },
+  {
+    value: 'IsEmpty',
+    label: t('node.settings.condition.fn_is_empty'),
+    template: 'IsEmpty({field})',
+  },
+  {
+    value: '!IsEmpty',
+    label: t('node.settings.condition.fn_is_not_empty'),
+    template: '!IsEmpty({field})',
+  },
   {
     value: 'Contains',
-    label: 'contains',
+    label: t('node.settings.condition.fn_contains'),
     template: "Contains({field}, '{value}')",
   },
   {
     value: 'StartsWith',
-    label: 'starts with',
+    label: t('node.settings.condition.fn_starts_with'),
     template: "StartsWith({field}, '{value}')",
   },
   {
     value: 'EndsWith',
-    label: 'ends with',
+    label: t('node.settings.condition.fn_ends_with'),
     template: "EndsWith({field}, '{value}')",
   },
 ] as const;
@@ -319,19 +338,19 @@ function onDragEnd() {
 // ─── Quick-start templates ───────────────────────────────────────
 const TEMPLATES = [
   {
-    label: 'Check output status',
+    label: t('node.settings.condition.tmpl_check_output_status'),
     condition: "output.nodeId.status == 'success'",
-    description: 'Branch on a previous node result',
+    description: t('node.settings.condition.tmpl_check_output_status_desc'),
   },
   {
-    label: 'Compare input value',
+    label: t('node.settings.condition.tmpl_compare_input_value'),
     condition: 'input.amount > 100',
-    description: 'Numeric comparison on workflow input',
+    description: t('node.settings.condition.tmpl_compare_input_value_desc'),
   },
   {
-    label: 'Check if empty',
+    label: t('node.settings.condition.tmpl_check_if_empty'),
     condition: 'IsEmpty(output.nodeId.result)',
-    description: 'Branch when a value is empty',
+    description: t('node.settings.condition.tmpl_check_if_empty_desc'),
   },
 ] as const;
 
@@ -479,21 +498,23 @@ const validationErrors = computed<ConditionErrors[]>(() => {
   return conditions.value.map((cond, i) => {
     const errors: ConditionErrors = {};
     if (!cond.label.trim()) {
-      errors.label = 'Label is required';
+      errors.label = t('node.settings.condition.err_label_required');
     } else if (
       labels.filter((l) => l === cond.label.trim().toLowerCase()).length > 1
     ) {
-      errors.label = 'Duplicate label';
+      errors.label = t('node.settings.condition.err_duplicate_label');
     }
 
     const mode = getMode(i);
     if (mode === 'builder') {
       const clause = getBuilderClause(i);
-      if (!clause.field) errors.field = 'Select a field';
+      if (!clause.field)
+        errors.field = t('node.settings.condition.err_select_field');
       if (operatorNeedsValue(clause.operator) && !clause.value)
-        errors.value = 'Value is required';
+        errors.value = t('node.settings.condition.err_value_required');
     } else {
-      if (!cond.condition.trim()) errors.condition = 'Expression is required';
+      if (!cond.condition.trim())
+        errors.condition = t('node.settings.condition.err_expression_required');
     }
 
     return errors;
@@ -511,18 +532,20 @@ function getError(index: number, field: string): string | undefined {
     <!-- Conditions list -->
     <div>
       <div class="mb-1 flex items-center justify-between">
-        <label class="text-sm font-medium">Conditions</label>
+        <label class="text-sm font-medium">
+          {{ $t('node.settings.condition.conditions') }}
+        </label>
         <button
           type="button"
           class="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
           @click="addCondition"
         >
           <LucidePlus class="h-3 w-3" />
-          Add
+          {{ $t('add') }}
         </button>
       </div>
       <p class="text-muted-foreground mb-2 text-[11px]">
-        Evaluated top-to-bottom. First match wins.
+        {{ $t('node.settings.condition.evaluated_order') }}
       </p>
 
       <!-- Empty state -->
@@ -531,9 +554,11 @@ function getError(index: number, field: string): string | undefined {
           class="text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs"
         >
           <LucideGitBranch class="mx-auto mb-2 h-6 w-6 opacity-40" />
-          <p class="font-medium">No conditions yet</p>
+          <p class="font-medium">
+            {{ $t('node.settings.condition.no_conditions') }}
+          </p>
           <p class="mt-1 opacity-70">
-            Add a condition to create decision branches.
+            {{ $t('node.settings.condition.no_conditions_help') }}
           </p>
         </div>
 
@@ -542,7 +567,7 @@ function getError(index: number, field: string): string | undefined {
           <p
             class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
           >
-            Quick start
+            {{ $t('node.settings.condition.quick_start') }}
           </p>
           <button
             v-for="tmpl in TEMPLATES"
@@ -612,7 +637,7 @@ function getError(index: number, field: string): string | undefined {
             <div class="min-w-0 flex-1">
               <Input
                 :model-value="cond.label"
-                placeholder="Branch label"
+                :placeholder="$t('node.settings.condition.branch_label')"
                 size="sm"
                 class="h-7 w-full border-none bg-transparent px-1 font-medium shadow-none focus-visible:ring-0"
                 :class="
@@ -648,8 +673,8 @@ function getError(index: number, field: string): string | undefined {
                 "
                 :title="
                   getMode(i) === 'expression'
-                    ? 'Switch to builder'
-                    : 'Switch to expression'
+                    ? $t('node.settings.condition.switch_to_builder')
+                    : $t('node.settings.condition.switch_to_expression')
                 "
                 @click="toggleMode(i)"
               >
@@ -658,7 +683,7 @@ function getError(index: number, field: string): string | undefined {
               <button
                 type="button"
                 class="text-muted-foreground hover:text-foreground hover:bg-muted rounded p-1 transition-colors"
-                title="Duplicate"
+                :title="$t('node.settings.condition.duplicate')"
                 @click="duplicateCondition(i)"
               >
                 <LucideCopy class="h-3 w-3" />
@@ -666,7 +691,7 @@ function getError(index: number, field: string): string | undefined {
               <button
                 type="button"
                 class="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded p-1 transition-colors"
-                title="Remove"
+                :title="$t('remove')"
                 @click="removeCondition(i)"
               >
                 <LucideTrash2 class="h-3 w-3" />
@@ -713,7 +738,7 @@ function getError(index: number, field: string): string | undefined {
                       v-else
                       class="text-muted-foreground min-w-0 flex-1 truncate"
                     >
-                      Select field...
+                      {{ $t('node.settings.condition.select_field') }}
                     </span>
                     <LucideChevronsUpDown
                       class="text-muted-foreground h-3 w-3 shrink-0 opacity-50"
@@ -728,7 +753,7 @@ function getError(index: number, field: string): string | undefined {
                   <div class="border-b p-2">
                     <Input
                       v-model="fieldSearch"
-                      placeholder="Search fields..."
+                      :placeholder="$t('node.settings.condition.search_fields')"
                       size="sm"
                       class="h-7"
                     />
@@ -770,9 +795,13 @@ function getError(index: number, field: string): string | undefined {
                       v-else
                       class="text-muted-foreground px-2 py-4 text-center text-xs"
                     >
-                      <p>No matching fields</p>
+                      <p>
+                        {{ $t('node.settings.condition.no_matching_fields') }}
+                      </p>
                       <p class="mt-1 opacity-60">
-                        Type a field path manually in expression mode
+                        {{
+                          $t('node.settings.condition.no_matching_fields_help')
+                        }}
                       </p>
                     </div>
                   </div>
@@ -793,11 +822,15 @@ function getError(index: number, field: string): string | undefined {
                 "
               >
                 <SelectTrigger size="sm" class="h-7 font-mono text-xs">
-                  <SelectValue placeholder="Operator" />
+                  <SelectValue
+                    :placeholder="$t('node.settings.condition.operator')"
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectLabel class="text-[10px]">Comparison</SelectLabel>
+                    <SelectLabel class="text-[10px]">
+                      {{ $t('node.settings.condition.comparison') }}
+                    </SelectLabel>
                     <SelectItem
                       v-for="op in OPERATORS"
                       :key="op.value"
@@ -809,7 +842,9 @@ function getError(index: number, field: string): string | undefined {
                   </SelectGroup>
                   <SelectSeparator />
                   <SelectGroup>
-                    <SelectLabel class="text-[10px]">Functions</SelectLabel>
+                    <SelectLabel class="text-[10px]">
+                      {{ $t('node.settings.condition.functions') }}
+                    </SelectLabel>
                     <SelectItem
                       v-for="fn in FUNCTIONS"
                       :key="fn.value"
@@ -826,7 +861,7 @@ function getError(index: number, field: string): string | undefined {
               <div v-if="operatorNeedsValue(getBuilderClause(i).operator)">
                 <Input
                   :model-value="getBuilderClause(i).value"
-                  placeholder="Value"
+                  :placeholder="$t('node.settings.condition.value')"
                   size="sm"
                   class="h-7 font-mono text-xs"
                   :class="getError(i, 'value') ? 'border-destructive/50' : ''"
@@ -848,7 +883,9 @@ function getError(index: number, field: string): string | undefined {
                 v-if="cond.condition"
                 class="text-muted-foreground truncate px-0.5 font-mono text-[10px] leading-relaxed"
               >
-                <span class="opacity-40">expr:</span>
+                <span class="opacity-40">
+                  {{ $t('node.settings.condition.expr_prefix') }}
+                </span>
                 {{ cond.condition }}
               </div>
             </div>
@@ -857,7 +894,9 @@ function getError(index: number, field: string): string | undefined {
             <div v-else class="space-y-1.5">
               <ExpressionInput
                 :model-value="cond.condition"
-                placeholder="e.g. output.node.status == 'active'"
+                :placeholder="
+                  $t('node.settings.condition.expression_placeholder')
+                "
                 size="sm"
                 :class="
                   getError(i, 'condition')
@@ -881,7 +920,9 @@ function getError(index: number, field: string): string | undefined {
             <div class="mt-2">
               <Input
                 :model-value="cond.description ?? ''"
-                placeholder="Description (optional)"
+                :placeholder="
+                  $t('node.settings.condition.description_optional')
+                "
                 size="sm"
                 class="text-muted-foreground h-6 border-none bg-transparent px-0 text-[11px] italic shadow-none focus-visible:ring-0"
                 @update:model-value="
@@ -900,7 +941,7 @@ function getError(index: number, field: string): string | undefined {
           @click="addCondition"
         >
           <LucidePlus class="h-3 w-3" />
-          Add condition
+          {{ $t('node.settings.condition.add_condition') }}
         </button>
       </div>
     </div>
@@ -914,15 +955,17 @@ function getError(index: number, field: string): string | undefined {
           *
         </span>
         <div class="flex-1 space-y-1">
-          <label class="text-sm font-medium">Default branch</label>
+          <label class="text-sm font-medium">
+            {{ $t('node.settings.condition.default_branch') }}
+          </label>
           <p class="text-muted-foreground text-[11px]">
-            Fallback when no condition matches.
+            {{ $t('node.settings.condition.default_branch_help') }}
           </p>
         </div>
       </div>
       <Input
         :model-value="defaultLabel"
-        placeholder="e.g. default, else, fallback"
+        :placeholder="$t('node.settings.condition.default_branch_placeholder')"
         size="sm"
         class="mt-2"
         @update:model-value="updateDefaultLabel(String($event))"
@@ -937,7 +980,7 @@ function getError(index: number, field: string): string | undefined {
         @click="showReference = !showReference"
       >
         <LucideBookOpen class="h-3 w-3" />
-        Expression reference
+        {{ $t('node.settings.condition.expression_reference') }}
         <LucideChevronDown
           class="ml-auto h-3 w-3 transition-transform"
           :class="showReference ? 'rotate-180' : ''"
@@ -949,29 +992,39 @@ function getError(index: number, field: string): string | undefined {
         class="text-muted-foreground mt-3 space-y-3 text-[11px]"
       >
         <div>
-          <p class="mb-1 font-medium">Evaluation order</p>
+          <p class="mb-1 font-medium">
+            {{ $t('node.settings.condition.ref_evaluation_order') }}
+          </p>
           <p>
-            Conditions evaluate top-to-bottom — first match wins. Use drag
-            handles to reorder.
+            {{ $t('node.settings.condition.ref_evaluation_order_body') }}
           </p>
         </div>
 
         <div>
-          <p class="mb-1 font-medium">Syntax</p>
-          <!-- eslint-disable-next-line vue/no-parsing-error -->
-          <p>
-            Use
-            <strong>bare paths</strong>
-            (no
-            <code class="bg-muted rounded px-1">
-              {
-              <!-- -->
-              {&nbsp;}
-              <!-- -->
-              }
-            </code>
-            wrapping).
+          <p class="mb-1 font-medium">
+            {{ $t('node.settings.condition.ref_syntax') }}
           </p>
+          <!-- eslint-disable-next-line vue/no-parsing-error -->
+          <i18n-t
+            keypath="node.settings.condition.ref_syntax_body"
+            tag="p"
+            scope="global"
+          >
+            <template #bare>
+              <strong>
+                {{ $t('node.settings.condition.ref_bare_paths') }}
+              </strong>
+            </template>
+            <template #code>
+              <code class="bg-muted rounded px-1">
+                {
+                <!-- -->
+                {&nbsp;}
+                <!-- -->
+                }
+              </code>
+            </template>
+          </i18n-t>
           <div
             class="bg-muted/50 mt-1.5 space-y-0.5 rounded-md px-2 py-1.5 font-mono text-[10px]"
           >
@@ -983,24 +1036,32 @@ function getError(index: number, field: string): string | undefined {
         </div>
 
         <div>
-          <p class="mb-1 font-medium">Operators</p>
+          <p class="mb-1 font-medium">
+            {{ $t('node.settings.condition.ref_operators') }}
+          </p>
           <div
             class="bg-muted/50 grid grid-cols-3 gap-x-3 gap-y-0.5 rounded-md px-2 py-1.5 font-mono text-[10px]"
           >
-            <span>== equals</span>
-            <span>!= not eq</span>
-            <span>&gt; greater</span>
-            <span>&lt; less</span>
-            <span>&gt;= gte</span>
-            <span>&lt;= lte</span>
-            <span>&amp;&amp; and</span>
-            <span>|| or</span>
-            <span>! not</span>
+            <span>== {{ $t('node.settings.condition.op_gloss_equals') }}</span>
+            <span>!= {{ $t('node.settings.condition.op_gloss_not_eq') }}</span>
+            <span>
+              &gt; {{ $t('node.settings.condition.op_gloss_greater') }}
+            </span>
+            <span>&lt; {{ $t('node.settings.condition.op_gloss_less') }}</span>
+            <span>&gt;= {{ $t('node.settings.condition.op_gloss_gte') }}</span>
+            <span>&lt;= {{ $t('node.settings.condition.op_gloss_lte') }}</span>
+            <span>
+              &amp;&amp; {{ $t('node.settings.condition.op_gloss_and') }}
+            </span>
+            <span>|| {{ $t('node.settings.condition.op_gloss_or') }}</span>
+            <span>! {{ $t('node.settings.condition.op_gloss_not') }}</span>
           </div>
         </div>
 
         <div>
-          <p class="mb-1 font-medium">Functions</p>
+          <p class="mb-1 font-medium">
+            {{ $t('node.settings.condition.functions') }}
+          </p>
           <div
             class="bg-muted/50 space-y-0.5 rounded-md px-2 py-1.5 font-mono text-[10px]"
           >

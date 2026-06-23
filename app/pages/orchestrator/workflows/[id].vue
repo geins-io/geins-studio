@@ -96,7 +96,7 @@ const formSchema = toTypedSchema(
           if (!expr) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: 'Cron expression is required for scheduled triggers',
+              message: t('workflows.cron_required'),
               path: ['cron'],
             });
             return;
@@ -106,7 +106,7 @@ const formSchema = toTypedSchema(
           } catch {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
-              message: 'Invalid cron expression',
+              message: t('workflows.cron_invalid'),
               path: ['cron'],
             });
           }
@@ -114,7 +114,7 @@ const formSchema = toTypedSchema(
         if (val.type === 'Event' && !val.eventEntity?.trim()) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: 'Event entity is required',
+            message: t('workflows.event_entity_required'),
             path: ['eventEntity'],
           });
         }
@@ -155,7 +155,7 @@ const form = useForm<WorkflowFormValues>({
   keepValuesOnUnmount: true,
   initialValues: {
     details: {
-      name: isNew.value ? 'New Workflow' : '',
+      name: isNew.value ? t('workflows.new_workflow_name') : '',
       description: '',
       group: '',
       tags: [],
@@ -233,7 +233,7 @@ watch(
   [isNew, workflowNameValue],
   ([newFlag, name]) => {
     breadcrumbsStore.setCurrentTitle(
-      newFlag ? 'New workflow' : name || 'Workflow',
+      newFlag ? t('workflows.new_workflow_name') : name || t('workflow'),
     );
   },
   { immediate: true },
@@ -241,21 +241,29 @@ watch(
 
 // View mode switcher (top-level: Settings vs Builder).
 const viewMode = ref<'settings' | 'builder'>('settings');
-const viewModes = [
-  {
-    key: 'settings',
-    label: 'Settings',
-    icon: resolveComponent('LucideSettings'),
-  },
-  {
-    key: 'builder',
-    label: 'Builder',
-    icon: resolveComponent('LucideWorkflow'),
-  },
-] as Array<{ key: string; label: string; icon: Component }>;
+const viewModes = computed(
+  () =>
+    [
+      {
+        key: 'settings',
+        label: t('settings'),
+        icon: resolveComponent('LucideSettings'),
+      },
+      {
+        key: 'builder',
+        label: t('workflows.builder'),
+        icon: resolveComponent('LucideWorkflow'),
+      },
+    ] as Array<{ key: string; label: string; icon: Component }>,
+);
 
 // Sub-tabs within Settings mode.
-const mainTabs = ['General', 'Inputs', 'Changelog', 'Executions'];
+const mainTabs = computed(() => [
+  t('general'),
+  t('input', 2),
+  t('workflows.changelog'),
+  t('execution', 2),
+]);
 const currentTab = ref(0);
 
 const executionsRef = ref<{ refresh: () => void } | null>(null);
@@ -460,18 +468,18 @@ const handleDuplicate = async () => {
       enabled: false,
     });
     toast({
-      title: 'Workflow duplicated',
-      description: `Created "${copy.name}".`,
+      title: t('workflows.duplicated'),
+      description: t('workflows.created_named', { name: copy.name }),
     });
     await navigateTo(`/orchestrator/workflows/${copy.id}`);
   } catch (err: unknown) {
     const apiBody = extractApiError(err);
     toast({
-      title: apiBody?.title || 'Duplicate failed',
+      title: apiBody?.title || t('workflows.duplicate_failed'),
       description:
         apiBody?.detail ||
         (err as { message?: string })?.message ||
-        'Unknown error',
+        t('workflows.unknown_error'),
       variant: 'negative',
     });
   } finally {
@@ -521,19 +529,19 @@ const handleCreate = async () => {
     // Snapshot so the route guard doesn't block navigation to the new page.
     originalEditableState.value = JSON.stringify(editableState.value);
     toast({
-      title: 'Workflow created',
-      description: `Created "${created.name}".`,
+      title: t('workflows.created'),
+      description: t('workflows.created_named', { name: created.name }),
     });
     await navigateTo(`/orchestrator/workflows/${created.id}`);
   } catch (err: unknown) {
     geinsLogError('Failed to create workflow', err);
     const apiBody = extractApiError(err);
     toast({
-      title: apiBody?.title || 'Failed to create',
+      title: apiBody?.title || t('workflows.create_failed'),
       description:
         apiBody?.detail ||
         (err as { message?: string })?.message ||
-        'Unknown error',
+        t('workflows.unknown_error'),
       variant: 'negative',
     });
   } finally {
@@ -584,8 +592,8 @@ const handleSave = async () => {
     validateOnChange.value = true;
     viewMode.value = 'settings';
     toast({
-      title: 'Validation failed',
-      description: 'Please fix the errors before saving.',
+      title: t('workflows.validation_failed'),
+      description: t('workflows.fix_errors_before_saving'),
       variant: 'negative',
     });
     return;
@@ -653,16 +661,16 @@ const handleSave = async () => {
     await nextTick();
     await nextTick();
     originalEditableState.value = JSON.stringify(editableState.value);
-    toast({ title: 'Configuration saved' });
+    toast({ title: t('workflows.configuration_saved') });
   } catch (err: unknown) {
     geinsLogError('Failed to save workflow configuration', err);
     const apiBody = extractApiError(err);
     toast({
-      title: apiBody?.title || 'Failed to save',
+      title: apiBody?.title || t('workflows.save_failed'),
       description:
         apiBody?.detail ||
         (err as { message?: string })?.message ||
-        'Unknown error',
+        t('workflows.unknown_error'),
       variant: 'negative',
     });
   } finally {
@@ -712,17 +720,17 @@ async function executeWorkflow() {
     );
     const execId = res?.executionId ?? res?.newExecutionId ?? null;
     toast({
-      title: 'Workflow started',
+      title: t('workflows.workflow_started'),
       description: execId
-        ? `Execution ID: ${execId}`
-        : (res?.message ?? 'Workflow is running.'),
+        ? t('workflows.execution_id_value', { id: execId })
+        : (res?.message ?? t('workflows.workflow_is_running')),
     });
     refreshExecutions();
   } catch (err) {
     geinsLogError('Failed to run workflow', err);
     const apiErr = extractApiError(err);
     toast({
-      title: apiErr?.title ?? 'Failed to run workflow',
+      title: apiErr?.title ?? t('workflows.run_failed'),
       description: apiErr?.detail ?? getErrorMessage(err),
       variant: 'negative',
     });
@@ -762,14 +770,15 @@ const handleValidate = async () => {
     const isValid = result.isValid ?? result.valid ?? false;
     if (isValid) {
       toast({
-        title: 'Validation passed',
-        description: result.message || 'Workflow configuration is valid.',
+        title: t('workflows.validation_passed'),
+        description: result.message || t('workflows.configuration_valid'),
       });
     } else {
       toast({
-        title: 'Validation failed',
+        title: t('workflows.validation_failed'),
         description:
-          result.message || `${result.errors?.length ?? 0} issue(s) found.`,
+          result.message ||
+          t('workflows.issues_found', { count: result.errors?.length ?? 0 }),
         variant: 'negative',
       });
     }
@@ -777,11 +786,11 @@ const handleValidate = async () => {
     geinsLogError('Failed to validate workflow', err);
     const apiBody = extractApiError(err);
     toast({
-      title: apiBody?.title || 'Validation error',
+      title: apiBody?.title || t('workflows.validation_error'),
       description:
         apiBody?.detail ||
         (err as { message?: string })?.message ||
-        'Unknown error',
+        t('workflows.unknown_error'),
       variant: 'negative',
     });
   } finally {
@@ -822,12 +831,12 @@ const summary = computed<DataItem[]>(() => {
     });
   }
   if (workflowNameValue.value) {
-    items.push({ label: 'Name', value: workflowNameValue.value });
+    items.push({ label: t('name'), value: workflowNameValue.value });
   }
   const group = form.values.details?.group;
   if (group) {
     items.push({
-      label: 'Group',
+      label: t('group'),
       value: [group],
       displayValue: group,
       displayType: DataItemDisplayType.Array,
@@ -837,7 +846,7 @@ const summary = computed<DataItem[]>(() => {
   const tags = form.values.details?.tags ?? [];
   if (tags.length) {
     items.push({
-      label: 'Tags',
+      label: t('tag', 2),
       value: tags,
       displayValue: tags.join(', '),
       displayType: DataItemDisplayType.Array,
@@ -849,13 +858,16 @@ const summary = computed<DataItem[]>(() => {
 
 const triggerSummary = computed<DataItem[]>(() => {
   const items: DataItem[] = [];
-  items.push({ label: 'Type', value: triggerDisplayName.value });
+  items.push({ label: t('workflows.type'), value: triggerDisplayName.value });
   if (
     triggerTypeValue.value === 'Scheduled' &&
     triggerCronValue.value &&
     cronDescription.value
   ) {
-    items.push({ label: 'Schedule', value: cronDescription.value });
+    items.push({
+      label: t('workflows.schedule'),
+      value: cronDescription.value,
+    });
   }
   if (triggerTypeValue.value === 'Event' && triggerEventEntity.value) {
     const entityLabel =
@@ -866,7 +878,7 @@ const triggerSummary = computed<DataItem[]>(() => {
       ? prettyLabel(triggerEventAction.value)
       : '';
     items.push({
-      label: 'Event',
+      label: t('workflows.event'),
       value: actionLabel ? `${entityLabel} / ${actionLabel}` : entityLabel,
     });
   }
@@ -878,12 +890,16 @@ const settingsValuesView = computed(() => form.values.settings ?? {});
 const settingsSummary = computed<DataItem[]>(() => {
   const items: DataItem[] = [];
   const s = settingsValuesView.value;
-  if (s.timeout) items.push({ label: 'Timeout', value: String(s.timeout) });
+  if (s.timeout)
+    items.push({ label: t('workflows.timeout'), value: String(s.timeout) });
   if (s.logVerbosity)
-    items.push({ label: 'Log verbosity', value: String(s.logVerbosity) });
+    items.push({
+      label: t('workflows.log_verbosity'),
+      value: String(s.logVerbosity),
+    });
   if (s.errorHandlingStrategy)
     items.push({
-      label: 'Error handling',
+      label: t('workflows.error_handling'),
       value: String(s.errorHandlingStrategy),
     });
   return items;
@@ -918,7 +934,11 @@ const { summaryProps } = useEntityEditSummary({
     <template #header>
       <ContentHeader
         :class="{ 'builder-active': viewMode === 'builder' }"
-        :title="isNew ? 'New workflow' : workflowNameValue || 'Workflow'"
+        :title="
+          isNew
+            ? $t('workflows.new_workflow_name')
+            : workflowNameValue || $t('workflow')
+        "
         :entity-name="entityName"
       >
         <ContentActionBar>
@@ -954,14 +974,14 @@ const { summaryProps } = useEntityEditSummary({
                 @click="handleDuplicate"
               >
                 <LucideCopy class="mr-2 size-4" />
-                <span>Duplicate</span>
+                <span>{{ $t('workflows.duplicate') }}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 :disabled="!currentWorkflow || isRunning"
                 @click="openRunWorkflow"
               >
                 <LucideRocket class="mr-2 size-4" />
-                <span>Run workflow</span>
+                <span>{{ $t('workflows.run_workflow') }}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 :disabled="isValidating || !currentWorkflow"
@@ -969,7 +989,11 @@ const { summaryProps } = useEntityEditSummary({
               >
                 <LucideShieldCheck class="mr-2 size-4" />
                 <span>
-                  {{ isValidating ? 'Validating…' : 'Validate workflow' }}
+                  {{
+                    isValidating
+                      ? $t('workflows.validating')
+                      : $t('workflows.validate_workflow')
+                  }}
                 </span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -979,7 +1003,13 @@ const { summaryProps } = useEntityEditSummary({
               >
                 <LucidePause v-if="workflowActive" class="mr-2 size-4" />
                 <LucidePlay v-else class="mr-2 size-4" />
-                <span>{{ workflowActive ? 'Pause' : 'Start' }}</span>
+                <span>
+                  {{
+                    workflowActive
+                      ? $t('workflows.pause')
+                      : $t('workflows.start')
+                  }}
+                </span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem @click="openDeleteDialog">
@@ -1012,18 +1042,18 @@ const { summaryProps } = useEntityEditSummary({
             :key="`tab-${currentTab}`"
           >
             <ContentEditCard
-              title="General"
-              description="Name, description, group, and tags used to organize this workflow."
+              :title="$t('general')"
+              :description="$t('workflows.general_description')"
             >
               <FormGridWrap>
                 <FormGrid design="1+1">
                   <FormField v-slot="{ componentField }" name="details.name">
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>{{ $t('name') }}</FormLabel>
                       <FormControl>
                         <Input
                           v-bind="componentField"
-                          placeholder="Workflow name"
+                          :placeholder="$t('workflows.name_placeholder')"
                         />
                       </FormControl>
                       <FormMessage />
@@ -1031,7 +1061,7 @@ const { summaryProps } = useEntityEditSummary({
                   </FormField>
                   <FormField v-slot="{ componentField }" name="details.group">
                     <FormItem>
-                      <FormLabel :optional="true">Group</FormLabel>
+                      <FormLabel :optional="true">{{ $t('group') }}</FormLabel>
                       <FormControl>
                         <FormInputTagsSearch
                           entity-name="group"
@@ -1061,12 +1091,14 @@ const { summaryProps } = useEntityEditSummary({
                     name="details.description"
                   >
                     <FormItem>
-                      <FormLabel :optional="true">Description</FormLabel>
+                      <FormLabel :optional="true">
+                        {{ $t('workflows.field_description') }}
+                      </FormLabel>
                       <FormControl>
                         <Textarea
                           v-bind="componentField"
                           rows="3"
-                          placeholder="Describe what this workflow does…"
+                          :placeholder="$t('workflows.description_placeholder')"
                         />
                       </FormControl>
                       <FormMessage />
@@ -1076,7 +1108,7 @@ const { summaryProps } = useEntityEditSummary({
                 <FormGrid design="1">
                   <FormField v-slot="{ componentField }" name="details.tags">
                     <FormItem>
-                      <FormLabel :optional="true">Tags</FormLabel>
+                      <FormLabel :optional="true">{{ $t('tag', 2) }}</FormLabel>
                       <FormControl>
                         <TagsInput
                           :model-value="
@@ -1096,7 +1128,9 @@ const { summaryProps } = useEntityEditSummary({
                             <TagsInputItemText />
                             <TagsInputItemDelete />
                           </TagsInputItem>
-                          <TagsInputInput placeholder="Add tag…" />
+                          <TagsInputInput
+                            :placeholder="$t('workflows.add_tag_placeholder')"
+                          />
                         </TagsInput>
                       </FormControl>
                       <FormMessage />
@@ -1108,18 +1142,20 @@ const { summaryProps } = useEntityEditSummary({
 
             <ContentEditCard
               v-if="!isNew"
-              title="Trigger"
-              description="How and when this workflow starts."
+              :title="$t('workflows.trigger')"
+              :description="$t('workflows.trigger_description')"
             >
               <FormGridWrap>
                 <FormGrid design="1">
                   <FormField v-slot="{ componentField }" name="trigger.type">
                     <FormItem>
-                      <FormLabel>Type</FormLabel>
+                      <FormLabel>{{ $t('workflows.type') }}</FormLabel>
                       <FormControl>
                         <Select v-bind="componentField">
                           <SelectTrigger>
-                            <SelectValue placeholder="Select trigger type…" />
+                            <SelectValue
+                              :placeholder="$t('workflows.select_trigger_type')"
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem
@@ -1141,15 +1177,14 @@ const { summaryProps } = useEntityEditSummary({
                   v-if="triggerTypeValue === 'OnDemand'"
                   class="text-muted-foreground text-sm"
                 >
-                  Triggered manually via API call. No additional configuration
-                  needed.
+                  {{ $t('workflows.on_demand_help') }}
                 </div>
 
                 <template v-if="triggerTypeValue === 'Scheduled'">
                   <FormGrid design="1">
                     <FormField v-slot="{ componentField }" name="trigger.cron">
                       <FormItem>
-                        <FormLabel>Schedule</FormLabel>
+                        <FormLabel>{{ $t('workflows.schedule') }}</FormLabel>
                         <FormControl>
                           <SharedCronBuilder v-bind="componentField" />
                         </FormControl>
@@ -1166,14 +1201,18 @@ const { summaryProps } = useEntityEditSummary({
                       name="trigger.eventEntity"
                     >
                       <FormItem>
-                        <FormLabel>Entity</FormLabel>
+                        <FormLabel>{{ $t('workflows.entity') }}</FormLabel>
                         <FormControl>
                           <Select v-bind="componentField">
                             <SelectTrigger>
-                              <SelectValue placeholder="Select entity…" />
+                              <SelectValue
+                                :placeholder="$t('workflows.select_entity')"
+                              />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="*">* (any)</SelectItem>
+                              <SelectItem value="*">
+                                {{ $t('workflows.any_option') }}
+                              </SelectItem>
                               <SelectItem
                                 v-for="entity in manifestEventEntities"
                                 :key="entity.name"
@@ -1192,14 +1231,18 @@ const { summaryProps } = useEntityEditSummary({
                       name="trigger.eventAction"
                     >
                       <FormItem>
-                        <FormLabel>Action</FormLabel>
+                        <FormLabel>{{ $t('workflows.action') }}</FormLabel>
                         <FormControl>
                           <Select v-bind="componentField">
                             <SelectTrigger>
-                              <SelectValue placeholder="Select action…" />
+                              <SelectValue
+                                :placeholder="$t('workflows.select_action')"
+                              />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="*">* (any)</SelectItem>
+                              <SelectItem value="*">
+                                {{ $t('workflows.any_option') }}
+                              </SelectItem>
                               <SelectItem
                                 v-for="a in availableEventActions"
                                 :key="a"
@@ -1220,16 +1263,22 @@ const { summaryProps } = useEntityEditSummary({
                       name="trigger.eventSubEntity"
                     >
                       <FormItem>
-                        <FormLabel :optional="true">Sub-entity</FormLabel>
+                        <FormLabel :optional="true">
+                          {{ $t('workflows.sub_entity') }}
+                        </FormLabel>
                         <FormControl>
                           <Select v-bind="componentField">
                             <SelectTrigger>
-                              <SelectValue placeholder="None" />
+                              <SelectValue :placeholder="$t('none')" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
-                              <SelectItem value="*">* (any)</SelectItem>
-                              <SelectItem value="!">! (absent only)</SelectItem>
+                              <SelectItem value="">{{ $t('none') }}</SelectItem>
+                              <SelectItem value="*">
+                                {{ $t('workflows.any_option') }}
+                              </SelectItem>
+                              <SelectItem value="!">
+                                {{ $t('workflows.absent_only_option') }}
+                              </SelectItem>
                               <SelectItem
                                 v-for="sub in availableSubEntities"
                                 :key="sub"
@@ -1250,11 +1299,15 @@ const { summaryProps } = useEntityEditSummary({
                       name="trigger.description"
                     >
                       <FormItem>
-                        <FormLabel :optional="true">Description</FormLabel>
+                        <FormLabel :optional="true">
+                          {{ $t('workflows.field_description') }}
+                        </FormLabel>
                         <FormControl>
                           <Input
                             v-bind="componentField"
-                            placeholder="e.g. When an order is updated"
+                            :placeholder="
+                              $t('workflows.trigger_description_placeholder')
+                            "
                           />
                         </FormControl>
                         <FormMessage />
@@ -1267,8 +1320,8 @@ const { summaryProps } = useEntityEditSummary({
 
             <ContentEditCard
               v-if="!isNew"
-              title="Runtime Settings"
-              description="Timeout, concurrency, logging, and error handling."
+              :title="$t('workflows.runtime_settings')"
+              :description="$t('workflows.runtime_settings_description')"
             >
               <FormGridWrap>
                 <FormGrid>
@@ -1277,7 +1330,9 @@ const { summaryProps } = useEntityEditSummary({
                     name="settings.timeout"
                   >
                     <FormItem>
-                      <FormLabel :optional="true">Timeout</FormLabel>
+                      <FormLabel :optional="true">
+                        {{ $t('workflows.timeout') }}
+                      </FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" placeholder="00:10:00" />
                       </FormControl>
@@ -1289,7 +1344,9 @@ const { summaryProps } = useEntityEditSummary({
                     name="settings.maxConcurrency"
                   >
                     <FormItem>
-                      <FormLabel :optional="true">Max concurrency</FormLabel>
+                      <FormLabel :optional="true">
+                        {{ $t('workflows.max_concurrency') }}
+                      </FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="number" min="1" />
                       </FormControl>
@@ -1302,14 +1359,14 @@ const { summaryProps } = useEntityEditSummary({
                   >
                     <FormItem>
                       <FormLabel :optional="true">
-                        Log retention (days)
+                        {{ $t('workflows.log_retention') }}
                       </FormLabel>
                       <FormControl>
                         <Input
                           v-bind="componentField"
                           type="number"
                           min="0"
-                          placeholder="Keep indefinitely"
+                          :placeholder="$t('workflows.keep_indefinitely')"
                         />
                       </FormControl>
                       <FormMessage />
@@ -1322,16 +1379,26 @@ const { summaryProps } = useEntityEditSummary({
                     name="settings.logVerbosity"
                   >
                     <FormItem>
-                      <FormLabel :optional="true">Log verbosity</FormLabel>
+                      <FormLabel :optional="true">
+                        {{ $t('workflows.log_verbosity') }}
+                      </FormLabel>
                       <FormControl>
                         <Select v-bind="componentField">
                           <SelectTrigger>
-                            <SelectValue placeholder="Select…" />
+                            <SelectValue
+                              :placeholder="$t('workflows.select')"
+                            />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="minimal">Minimal</SelectItem>
-                            <SelectItem value="normal">Normal</SelectItem>
-                            <SelectItem value="detailed">Detailed</SelectItem>
+                            <SelectItem value="minimal">
+                              {{ $t('workflows.verbosity_minimal') }}
+                            </SelectItem>
+                            <SelectItem value="normal">
+                              {{ $t('workflows.verbosity_normal') }}
+                            </SelectItem>
+                            <SelectItem value="detailed">
+                              {{ $t('workflows.verbosity_detailed') }}
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -1343,16 +1410,26 @@ const { summaryProps } = useEntityEditSummary({
                     name="settings.timeoutBehavior"
                   >
                     <FormItem>
-                      <FormLabel :optional="true">Timeout behaviour</FormLabel>
+                      <FormLabel :optional="true">
+                        {{ $t('workflows.timeout_behaviour') }}
+                      </FormLabel>
                       <FormControl>
                         <Select v-bind="componentField">
                           <SelectTrigger>
-                            <SelectValue placeholder="Select…" />
+                            <SelectValue
+                              :placeholder="$t('workflows.select')"
+                            />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="fail">Fail</SelectItem>
-                            <SelectItem value="continue">Continue</SelectItem>
-                            <SelectItem value="cancel">Cancel</SelectItem>
+                            <SelectItem value="fail">
+                              {{ $t('workflows.timeout_fail') }}
+                            </SelectItem>
+                            <SelectItem value="continue">
+                              {{ $t('workflows.timeout_continue') }}
+                            </SelectItem>
+                            <SelectItem value="cancel">
+                              {{ $t('workflows.timeout_cancel') }}
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -1364,18 +1441,26 @@ const { summaryProps } = useEntityEditSummary({
                     name="settings.errorHandlingStrategy"
                   >
                     <FormItem>
-                      <FormLabel :optional="true">Error handling</FormLabel>
+                      <FormLabel :optional="true">
+                        {{ $t('workflows.error_handling') }}
+                      </FormLabel>
                       <FormControl>
                         <Select v-bind="componentField">
                           <SelectTrigger>
-                            <SelectValue placeholder="Select…" />
+                            <SelectValue
+                              :placeholder="$t('workflows.select')"
+                            />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="failFast">Fail fast</SelectItem>
-                            <SelectItem value="continue">
-                              Continue on error
+                            <SelectItem value="failFast">
+                              {{ $t('workflows.error_fail_fast') }}
                             </SelectItem>
-                            <SelectItem value="retry">Retry</SelectItem>
+                            <SelectItem value="continue">
+                              {{ $t('workflows.error_continue') }}
+                            </SelectItem>
+                            <SelectItem value="retry">
+                              {{ $t('workflows.error_retry') }}
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -1392,13 +1477,13 @@ const { summaryProps } = useEntityEditSummary({
                 ((settingsValuesView as any).retryPolicy ||
                   (settingsValuesView as any).rateLimit)
               "
-              title="Advanced"
-              description="Retry and rate-limit policies."
+              :title="$t('workflows.advanced')"
+              :description="$t('workflows.advanced_description')"
             >
               <FormGridWrap>
                 <FormGrid design="1+1">
                   <FormItem v-if="(settingsValuesView as any).retryPolicy">
-                    <Label>Retry policy</Label>
+                    <Label>{{ $t('workflows.retry_policy') }}</Label>
                     <pre
                       class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs"
                     >
@@ -1412,7 +1497,7 @@ const { summaryProps } = useEntityEditSummary({
                     </pre>
                   </FormItem>
                   <FormItem v-if="(settingsValuesView as any).rateLimit">
-                    <Label>Rate limit</Label>
+                    <Label>{{ $t('workflows.rate_limit') }}</Label>
                     <pre
                       class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs"
                     >
@@ -1484,7 +1569,7 @@ const { summaryProps } = useEntityEditSummary({
               <ContentDataList
                 v-if="triggerSummary.length"
                 :data-list="triggerSummary"
-                label="Trigger"
+                :label="$t('workflows.trigger')"
               />
             </template>
           </ContentEditSummary>
@@ -1497,9 +1582,9 @@ const { summaryProps } = useEntityEditSummary({
   <Sheet v-model:open="showRunSheet">
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>Run workflow</SheetTitle>
+        <SheetTitle>{{ $t('workflows.run_workflow') }}</SheetTitle>
         <SheetDescription>
-          Start a production execution of this workflow.
+          {{ $t('workflows.run_sheet_description') }}
         </SheetDescription>
       </SheetHeader>
       <SheetBody>
@@ -1507,8 +1592,7 @@ const { summaryProps } = useEntityEditSummary({
           v-if="workflowInputs.length === 0"
           class="text-muted-foreground py-8 text-center text-sm"
         >
-          This workflow has no input parameters. It will run with default
-          settings.
+          {{ $t('workflows.no_input_parameters') }}
         </div>
         <div v-else class="space-y-4">
           <div
@@ -1561,10 +1645,12 @@ const { summaryProps } = useEntityEditSummary({
         </div>
       </SheetBody>
       <SheetFooter>
-        <Button variant="outline" @click="showRunSheet = false">Cancel</Button>
+        <Button variant="outline" @click="showRunSheet = false">
+          {{ $t('cancel') }}
+        </Button>
         <Button :disabled="isRunning" @click="executeWorkflow">
           <LucideRocket class="mr-1.5 h-3.5 w-3.5" />
-          Run workflow
+          {{ $t('workflows.run_workflow') }}
         </Button>
       </SheetFooter>
     </SheetContent>

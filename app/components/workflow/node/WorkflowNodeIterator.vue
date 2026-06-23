@@ -54,7 +54,7 @@ const collectionDisplay = computed(() => {
         <div
           class="text-xs font-medium tracking-wider text-purple-500 uppercase"
         >
-          Iterator
+          {{ $t('node.types.iterator') }}
         </div>
         <div class="font-semibold">{{ data.label }}</div>
       </div>
@@ -88,12 +88,12 @@ const collectionDisplay = computed(() => {
     <div
       class="bg-background/80 absolute top-[25%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-purple-500"
     >
-      Foreach
+      {{ $t('node.handle.foreach') }}
     </div>
     <div
       class="bg-background/80 absolute top-[65%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-gray-400"
     >
-      Completed
+      {{ $t('node.handle.completed') }}
     </div>
   </div>
 </template>

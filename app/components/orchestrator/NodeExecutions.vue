@@ -66,16 +66,18 @@ const toggleNodeExpanded = (nodeId: string) => {
     <div
       class="bg-card flex items-center justify-between rounded-t-lg border-b px-4 py-2"
     >
-      <h2 class="text-sm font-medium">Node executions</h2>
+      <h2 class="text-sm font-medium">
+        {{ $t('orchestrator.node_executions.title') }}
+      </h2>
       <span class="text-muted-foreground text-xs">
-        {{ nodes.length }} nodes
+        {{ $t('workflows.nodes', { count: nodes.length }) }}
       </span>
     </div>
     <div
       v-if="nodes.length === 0"
       class="text-muted-foreground p-4 text-center text-sm"
     >
-      No node executions
+      {{ $t('orchestrator.node_executions.empty') }}
     </div>
     <div v-else>
       <div v-for="node in nodes" :key="node.nodeId" class="border-b px-4 py-3">
@@ -140,57 +142,71 @@ const toggleNodeExpanded = (nodeId: string) => {
         >
           <dl class="space-y-1.5">
             <div>
-              <dt class="text-muted-foreground">Node ID</dt>
+              <dt class="text-muted-foreground">
+                {{ $t('orchestrator.node_executions.node_id') }}
+              </dt>
               <dd class="font-mono select-all">
                 {{ node.nodeId }}
               </dd>
             </div>
             <div>
-              <dt class="text-muted-foreground">Activity</dt>
+              <dt class="text-muted-foreground">
+                {{ $t('orchestrator.node_executions.activity') }}
+              </dt>
               <dd class="font-mono select-all">
                 {{ node.activityName ?? '–' }}
               </dd>
             </div>
             <div>
-              <dt class="text-muted-foreground">Status</dt>
+              <dt class="text-muted-foreground">{{ $t('status') }}</dt>
               <dd class="font-mono capitalize select-all">
                 {{ node.status }}
               </dd>
             </div>
             <div>
-              <dt class="text-muted-foreground">Retries</dt>
+              <dt class="text-muted-foreground">
+                {{ $t('orchestrator.node_executions.retries') }}
+              </dt>
               <dd class="font-mono select-all">
                 {{ node.retryCount ?? 0 }}
               </dd>
             </div>
             <div>
-              <dt class="text-muted-foreground">Started</dt>
+              <dt class="text-muted-foreground">
+                {{ $t('executions.start_time') }}
+              </dt>
               <dd class="font-mono select-all">
                 {{ formatTimestamp(node.startTime) }}
               </dd>
             </div>
             <div>
-              <dt class="text-muted-foreground">Ended</dt>
+              <dt class="text-muted-foreground">
+                {{ $t('executions.end_time') }}
+              </dt>
               <dd class="font-mono select-all">
                 {{ formatTimestamp(node.endTime) }}
               </dd>
             </div>
             <div>
-              <dt class="text-muted-foreground">Duration</dt>
+              <dt class="text-muted-foreground">
+                {{ $t('executions.duration') }}
+              </dt>
               <dd class="font-mono select-all">
                 {{ formatDuration(node.durationMs) }}
               </dd>
             </div>
           </dl>
           <div v-if="node.input">
-            <div class="text-muted-foreground mb-1">Input</div>
+            <div class="text-muted-foreground mb-1">{{ $t('input', 1) }}</div>
             <pre
               class="bg-muted max-h-40 overflow-auto rounded border p-2 font-mono text-xs"
               >{{ JSON.stringify(node.input, null, 2) }}</pre
             >
           </div>
           <div v-if="node.output">
-            <div class="text-muted-foreground mb-1">Output</div>
+            <div class="text-muted-foreground mb-1">
+              {{ $t('orchestrator.node_executions.output') }}
+            </div>
             <pre
               class="bg-muted max-h-40 overflow-auto rounded border p-2 font-mono text-xs"
               >{{ JSON.stringify(node.output, null, 2) }}</pre

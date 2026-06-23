@@ -22,28 +22,28 @@ const onNodeSaveAsTemplate = inject<(nodeId: string) => void>(
     >
       <button
         class="text-muted-foreground hover:bg-accent hover:text-foreground flex h-7 w-7 items-center justify-center rounded-md transition-colors"
-        title="Open settings"
+        :title="$t('node.open_settings')"
         @click.stop="onNodeOpenSettings?.(props.nodeId)"
       >
         <LucideSettings class="h-3.5 w-3.5" />
       </button>
       <button
         class="text-muted-foreground hover:bg-accent hover:text-foreground flex h-7 w-7 items-center justify-center rounded-md transition-colors"
-        title="Copy node"
+        :title="$t('node.copy_node')"
         @click.stop="onNodeCopy?.(props.nodeId)"
       >
         <LucideCopy class="h-3.5 w-3.5" />
       </button>
       <button
         class="text-muted-foreground hover:bg-accent hover:text-foreground flex h-7 w-7 items-center justify-center rounded-md transition-colors"
-        title="Save as template"
+        :title="$t('node.save_as_template')"
         @click.stop="onNodeSaveAsTemplate?.(props.nodeId)"
       >
         <LucideBookmarkPlus class="h-3.5 w-3.5" />
       </button>
       <button
         class="text-muted-foreground hover:bg-destructive/10 hover:text-destructive flex h-7 w-7 items-center justify-center rounded-md transition-colors"
-        title="Delete node"
+        :title="$t('node.delete_node')"
         @click.stop="onNodeDelete?.(props.nodeId)"
       >
         <LucideTrash2 class="h-3.5 w-3.5" />

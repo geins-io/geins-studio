@@ -26,6 +26,7 @@ const emit = defineEmits<{
   'select:node': [nodeId: string];
 }>();
 
+const { t } = useI18n();
 const { orchestratorApi } = useGeinsRepository();
 
 const STORAGE_KEY_HEIGHT = 'workflow.logsPanel.height';
@@ -383,7 +384,7 @@ async function popOut() {
   if (isPoppedOut.value) return;
   const w = window.open('', 'workflow-logs-panel', 'width=1000,height=640');
   if (!w) return;
-  w.document.title = 'Workflow Logs';
+  w.document.title = t('workflow_builder.logs.window_title');
   copyStyles(w.document);
   w.document.documentElement.className = document.documentElement.className;
   w.document.body.className = document.body.className;
@@ -446,16 +447,18 @@ const bodyStyle = computed(() => ({
           class="text-muted-foreground size-4"
         />
         <LucideExternalLink v-else class="text-muted-foreground size-4" />
-        <span class="text-sm font-medium">Logs</span>
+        <span class="text-sm font-medium">
+          {{ $t('workflow_builder.logs.title') }}
+        </span>
         <span v-if="isPoppedOut" class="text-muted-foreground text-xs">
-          (popped out)
+          {{ $t('workflow_builder.logs.popped_out') }}
         </span>
       </div>
       <div class="flex items-center gap-1" @click.stop>
         <button
           v-if="!isPoppedOut"
           class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded"
-          title="Open in new window"
+          :title="$t('workflow_builder.logs.open_in_new_window')"
           @click="popOut"
         >
           <LucideExternalLink class="size-3.5" />
@@ -463,7 +466,7 @@ const bodyStyle = computed(() => ({
         <button
           v-else
           class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-7 w-7 items-center justify-center rounded"
-          title="Dock back"
+          :title="$t('workflow_builder.logs.dock_back')"
           @click="dockBack"
         >
           <LucidePanelBottomClose class="size-3.5" />
@@ -507,20 +510,37 @@ const bodyStyle = computed(() => ({
                   />
                   <span class="text-muted-foreground">
                     <template v-if="streamStatus === 'connecting'">
-                      Connecting…
+                      {{ $t('workflow_builder.logs.connecting') }}
                     </template>
                     <template v-else-if="streamStatus === 'live'">
-                      Live · {{ events.length }} events{{
-                        runningCount ? ` · ${runningCount} running` : ''
+                      {{
+                        runningCount
+                          ? $t('workflow_builder.logs.live_running', {
+                              count: events.length,
+                              running: runningCount,
+                            })
+                          : $t('workflow_builder.logs.live', {
+                              count: events.length,
+                            })
                       }}
                     </template>
                     <template v-else-if="streamStatus === 'done'">
-                      Completed · {{ events.length }} events
+                      {{
+                        $t('workflow_builder.logs.completed', {
+                          count: events.length,
+                        })
+                      }}
                     </template>
                     <template v-else-if="streamStatus === 'error'">
-                      Stream error: {{ streamError }}
+                      {{
+                        $t('workflow_builder.logs.stream_error', {
+                          error: streamError,
+                        })
+                      }}
                     </template>
-                    <template v-else>Idle</template>
+                    <template v-else>
+                      {{ $t('workflow_builder.logs.idle') }}
+                    </template>
                   </span>
                   <NuxtLink
                     :to="`/orchestrator/executions/${props.executionId}`"
@@ -532,7 +552,7 @@ const bodyStyle = computed(() => ({
                 </template>
                 <template v-else>
                   <span class="text-muted-foreground">
-                    Run a workflow to see live events
+                    {{ $t('workflow_builder.logs.run_to_see_events') }}
                   </span>
                 </template>
               </div>
@@ -540,11 +560,11 @@ const bodyStyle = computed(() => ({
                 <button
                   v-if="events.length"
                   class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-6 items-center gap-1 rounded px-1.5"
-                  title="Clear events"
+                  :title="$t('workflow_builder.logs.clear_events')"
                   @click="clearEvents"
                 >
                   <LucideTrash2 class="h-3 w-3" />
-                  Clear
+                  {{ $t('workflow_builder.logs.clear') }}
                 </button>
               </div>
             </div>
@@ -555,18 +575,26 @@ const bodyStyle = computed(() => ({
               >
                 {{
                   props.executionId
-                    ? 'Waiting for node events…'
-                    : 'No execution running'
+                    ? $t('workflow_builder.logs.waiting_for_events')
+                    : $t('workflow_builder.logs.no_execution_running')
                 }}
               </div>
               <table v-else class="w-full text-xs">
                 <thead class="bg-muted/50 sticky top-0">
                   <tr class="text-muted-foreground text-left">
                     <th class="w-12 px-3 py-1.5 font-medium">#</th>
-                    <th class="px-3 py-1.5 font-medium">Node</th>
-                    <th class="w-24 px-3 py-1.5 font-medium">Status</th>
-                    <th class="w-32 px-3 py-1.5 font-medium">Started</th>
-                    <th class="w-24 px-3 py-1.5 font-medium">Duration</th>
+                    <th class="px-3 py-1.5 font-medium">
+                      {{ $t('workflow_builder.logs.node') }}
+                    </th>
+                    <th class="w-24 px-3 py-1.5 font-medium">
+                      {{ $t('status') }}
+                    </th>
+                    <th class="w-32 px-3 py-1.5 font-medium">
+                      {{ $t('workflow_builder.logs.started') }}
+                    </th>
+                    <th class="w-24 px-3 py-1.5 font-medium">
+                      {{ $t('workflow_builder.logs.duration') }}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -695,7 +723,7 @@ const bodyStyle = computed(() => ({
                               "
                               @click.stop="expandedTab = 'input'"
                             >
-                              Input
+                              {{ $t('input') }}
                             </button>
                             <button
                               v-if="event.output != null"
@@ -707,7 +735,7 @@ const bodyStyle = computed(() => ({
                               "
                               @click.stop="expandedTab = 'output'"
                             >
-                              Output
+                              {{ $t('workflow_builder.logs.output') }}
                             </button>
                           </div>
                           <div class="h-48">
@@ -720,7 +748,9 @@ const bodyStyle = computed(() => ({
                               :line-numbers="false"
                               :line-wrapping="true"
                               :expandable="true"
-                              expand-title="Input Run Data"
+                              :expand-title="
+                                $t('workflow_builder.logs.input_run_data')
+                              "
                             />
                             <JsonCodeEditor
                               v-else-if="
@@ -731,7 +761,9 @@ const bodyStyle = computed(() => ({
                               :line-numbers="false"
                               :line-wrapping="true"
                               :expandable="true"
-                              expand-title="Output Run Data"
+                              :expand-title="
+                                $t('workflow_builder.logs.output_run_data')
+                              "
                             />
                           </div>
                         </div>
@@ -772,20 +804,37 @@ const bodyStyle = computed(() => ({
                 />
                 <span class="text-muted-foreground">
                   <template v-if="streamStatus === 'connecting'">
-                    Connecting…
+                    {{ $t('workflow_builder.logs.connecting') }}
                   </template>
                   <template v-else-if="streamStatus === 'live'">
-                    Live · {{ events.length }} events{{
-                      runningCount ? ` · ${runningCount} running` : ''
+                    {{
+                      runningCount
+                        ? $t('workflow_builder.logs.live_running', {
+                            count: events.length,
+                            running: runningCount,
+                          })
+                        : $t('workflow_builder.logs.live', {
+                            count: events.length,
+                          })
                     }}
                   </template>
                   <template v-else-if="streamStatus === 'done'">
-                    Completed · {{ events.length }} events
+                    {{
+                      $t('workflow_builder.logs.completed', {
+                        count: events.length,
+                      })
+                    }}
                   </template>
                   <template v-else-if="streamStatus === 'error'">
-                    Stream error: {{ streamError }}
+                    {{
+                      $t('workflow_builder.logs.stream_error', {
+                        error: streamError,
+                      })
+                    }}
                   </template>
-                  <template v-else>Idle</template>
+                  <template v-else>
+                    {{ $t('workflow_builder.logs.idle') }}
+                  </template>
                 </span>
                 <NuxtLink
                   :to="`/orchestrator/executions/${props.executionId}`"
@@ -797,7 +846,7 @@ const bodyStyle = computed(() => ({
               </template>
               <template v-else>
                 <span class="text-muted-foreground">
-                  Run a workflow to see live events
+                  {{ $t('workflow_builder.logs.run_to_see_events') }}
                 </span>
               </template>
             </div>
@@ -805,11 +854,11 @@ const bodyStyle = computed(() => ({
               <button
                 v-if="events.length"
                 class="hover:bg-accent text-muted-foreground hover:text-foreground flex h-6 items-center gap-1 rounded px-1.5"
-                title="Clear events"
+                :title="$t('workflow_builder.logs.clear_events')"
                 @click="clearEvents"
               >
                 <LucideTrash2 class="h-3 w-3" />
-                Clear
+                {{ $t('workflow_builder.logs.clear') }}
               </button>
             </div>
           </div>
@@ -822,18 +871,26 @@ const bodyStyle = computed(() => ({
             >
               {{
                 props.executionId
-                  ? 'Waiting for node events…'
-                  : 'No execution running'
+                  ? $t('workflow_builder.logs.waiting_for_events')
+                  : $t('workflow_builder.logs.no_execution_running')
               }}
             </div>
             <table v-else class="w-full text-xs">
               <thead class="bg-muted/50 sticky top-0">
                 <tr class="text-muted-foreground text-left">
                   <th class="w-12 px-3 py-1.5 font-medium">#</th>
-                  <th class="px-3 py-1.5 font-medium">Node</th>
-                  <th class="w-24 px-3 py-1.5 font-medium">Status</th>
-                  <th class="w-32 px-3 py-1.5 font-medium">Started</th>
-                  <th class="w-24 px-3 py-1.5 font-medium">Duration</th>
+                  <th class="px-3 py-1.5 font-medium">
+                    {{ $t('workflow_builder.logs.node') }}
+                  </th>
+                  <th class="w-24 px-3 py-1.5 font-medium">
+                    {{ $t('status') }}
+                  </th>
+                  <th class="w-32 px-3 py-1.5 font-medium">
+                    {{ $t('workflow_builder.logs.started') }}
+                  </th>
+                  <th class="w-24 px-3 py-1.5 font-medium">
+                    {{ $t('workflow_builder.logs.duration') }}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -949,7 +1006,7 @@ const bodyStyle = computed(() => ({
                             "
                             @click.stop="expandedTab = 'input'"
                           >
-                            Input
+                            {{ $t('input') }}
                           </button>
                           <button
                             v-if="event.output != null"
@@ -961,7 +1018,7 @@ const bodyStyle = computed(() => ({
                             "
                             @click.stop="expandedTab = 'output'"
                           >
-                            Output
+                            {{ $t('workflow_builder.logs.output') }}
                           </button>
                         </div>
                         <div class="h-48">
@@ -974,7 +1031,9 @@ const bodyStyle = computed(() => ({
                             :line-numbers="false"
                             :line-wrapping="true"
                             :expandable="true"
-                            expand-title="Input Run Data"
+                            :expand-title="
+                              $t('workflow_builder.logs.input_run_data')
+                            "
                           />
                           <JsonCodeEditor
                             v-else-if="
@@ -985,7 +1044,9 @@ const bodyStyle = computed(() => ({
                             :line-numbers="false"
                             :line-wrapping="true"
                             :expandable="true"
-                            expand-title="Output Run Data"
+                            :expand-title="
+                              $t('workflow_builder.logs.output_run_data')
+                            "
                           />
                         </div>
                       </div>

@@ -20,6 +20,7 @@ import {
 } from '#components';
 
 const route = useRoute();
+const { t } = useI18n();
 const { orchestratorApi } = useGeinsRepository();
 const breadcrumbsStore = useBreadcrumbsStore();
 
@@ -117,7 +118,7 @@ const workflowInput = computed<Record<string, unknown> | null>(
 // Show where the input came from when it was resolved via the parent.
 const workflowInputSource = computed(() =>
   !entryNodeInput.value && parentSpawnInput.value
-    ? 'Passed from parent workflow'
+    ? t('executions.passed_from_parent')
     : null,
 );
 
@@ -211,10 +212,10 @@ const runAction = async (label: string, fn: () => Promise<unknown>) => {
   try {
     await fn();
     await refresh();
-    toast({ title: `${label} successful` });
+    toast({ title: t('executions.action_successful', { action: label }) });
   } catch (err) {
     toast({
-      title: `${label} failed`,
+      title: t('executions.action_failed', { action: label }),
       description: err instanceof Error ? err.message : String(err),
       variant: 'negative',
     });
@@ -237,7 +238,7 @@ const copyExecutionId = async () => {
     }, 1500);
   } catch (err) {
     toast({
-      title: 'Copy failed',
+      title: t('executions.copy_failed'),
       description: err instanceof Error ? err.message : String(err),
       variant: 'negative',
     });
@@ -250,18 +251,17 @@ const handleReplay = async () => {
     const res = await orchestratorApi.execution.replay(executionId.value);
     const newId = res?.newExecutionId ?? res?.executionId ?? res?.instanceId;
     if (!newId) {
-      throw new Error(
-        res?.message ?? 'Replay did not return a new execution id',
-      );
+      throw new Error(res?.message ?? t('executions.replay_no_new_id'));
     }
     toast({
-      title: 'Replay started',
-      description: res?.message ?? `New execution: ${newId}`,
+      title: t('executions.replay_started'),
+      description:
+        res?.message ?? t('executions.new_execution_value', { id: newId }),
     });
     await navigateTo(`/orchestrator/executions/${newId}`);
   } catch (err) {
     toast({
-      title: 'Replay failed',
+      title: t('executions.replay_failed'),
       description: err instanceof Error ? err.message : String(err),
       variant: 'negative',
     });
@@ -288,12 +288,20 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
   const lines: LiveConsoleLine[] = [];
   let id = 0;
   for (const node of nodeExecutions.value) {
+    const nodeLabel = node.nodeName ?? node.nodeId;
     lines.push({
       id: ++id,
       timestamp: formatTimestamp(node.startTime),
       level: 'info',
       source: node.nodeId,
-      message: `▶ ${node.nodeName ?? node.nodeId} started${node.activityName ? ` (${node.activityName})` : ''}`,
+      message: `▶ ${
+        node.activityName
+          ? t('executions.console_node_started_activity', {
+              node: nodeLabel,
+              activity: node.activityName,
+            })
+          : t('executions.console_node_started', { node: nodeLabel })
+      }`,
     });
     const status = node.status?.toLowerCase();
     if (status === 'completed') {
@@ -302,7 +310,10 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         timestamp: formatTimestamp(node.endTime),
         level: 'info',
         source: node.nodeId,
-        message: `✔ ${node.nodeName ?? node.nodeId} completed in ${formatDuration(node.durationMs)}`,
+        message: `✔ ${t('executions.console_node_completed', {
+          node: nodeLabel,
+          duration: formatDuration(node.durationMs),
+        })}`,
       });
     } else if (status === 'failed') {
       lines.push({
@@ -310,7 +321,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         timestamp: formatTimestamp(node.endTime),
         level: 'error',
         source: node.nodeId,
-        message: `✖ ${node.nodeName ?? node.nodeId} failed`,
+        message: `✖ ${t('executions.console_node_failed', { node: nodeLabel })}`,
       });
     }
   }
@@ -323,13 +334,17 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
     v-if="error"
     class="text-destructive border-destructive/30 bg-destructive/5 rounded-lg border p-4 text-sm"
   >
-    Failed to load execution: {{ error.message ?? 'Unknown error' }}
+    {{
+      $t('executions.load_failed', {
+        error: error.message ?? $t('executions.unknown_error'),
+      })
+    }}
   </div>
   <div
     v-else-if="!execution"
     class="text-muted-foreground py-12 text-center text-sm"
   >
-    Loading execution…
+    {{ $t('executions.loading_execution') }}
   </div>
   <div v-else class="flex flex-col gap-4">
     <ContentHeader :title="execution.workflowName" :description="execution.id">
@@ -347,7 +362,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
               v-if="execution.isTestRun"
               class="rounded bg-yellow-500/10 px-2 py-0.5 text-xs font-medium text-yellow-600"
             >
-              Test run
+              {{ $t('executions.test_run') }}
             </span>
           </div>
           <div
@@ -356,7 +371,11 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
             <span :title="execution.id">{{ shortenId(execution.id) }}</span>
             <button
               class="hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
-              :title="copiedId ? 'Copied!' : 'Copy execution ID'"
+              :title="
+                copiedId
+                  ? $t('executions.copied')
+                  : $t('executions.copy_execution_id')
+              "
               @click="copyExecutionId"
             >
               <component
@@ -372,13 +391,13 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
               :to="`/orchestrator/workflows/${execution.workflowId}?tab=3`"
               class="hover:text-foreground underline"
             >
-              {{ execution.workflowName || 'Workflow' }}
+              {{ execution.workflowName || $t('workflow') }}
             </NuxtLink>
             <span v-if="execution.group">•</span>
             <span v-if="execution.group">{{ execution.group }}</span>
             <span>•</span>
             <span>
-              Status:
+              {{ $t('executions.status_label') }}
               <span class="text-foreground font-medium capitalize">
                 {{ details?.orchestrationStatus ?? execution.status }}
               </span>
@@ -386,7 +405,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
             <template v-if="execution.triggerType">
               <span>•</span>
               <span>
-                Trigger:
+                {{ $t('executions.trigger_label') }}
                 <span class="text-foreground font-medium">
                   {{ execution.triggerType
                   }}{{ execution.eventName ? ` (${execution.eventName})` : '' }}
@@ -396,7 +415,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
             <template v-if="execution.startedBy">
               <span>•</span>
               <span>
-                By:
+                {{ $t('executions.by_label') }}
                 <span class="text-foreground font-medium">
                   {{ execution.startedBy }}
                 </span>
@@ -451,7 +470,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
           :disabled="!details?.canReplay || actionPending"
           @click="handleReplay"
         >
-          Replay
+          {{ $t('executions.replay') }}
         </ButtonIcon>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
@@ -463,40 +482,40 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
             <DropdownMenuItem
               :disabled="!details?.canCancel || actionPending"
               @click="
-                runAction('Cancel', () =>
+                runAction($t('executions.cancel'), () =>
                   orchestratorApi.execution.cancel(executionId),
                 )
               "
             >
               <LucideSquare class="mr-2 size-4" />
-              <span>Cancel</span>
+              <span>{{ $t('executions.cancel') }}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               :disabled="!details?.canPause || actionPending"
               @click="
-                runAction('Pause', () =>
+                runAction($t('executions.pause'), () =>
                   orchestratorApi.execution.pause(executionId),
                 )
               "
             >
               <LucidePause class="mr-2 size-4" />
-              <span>Pause</span>
+              <span>{{ $t('executions.pause') }}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               :disabled="!canResume || actionPending"
               @click="
-                runAction('Resume', () =>
+                runAction($t('executions.resume'), () =>
                   orchestratorApi.execution.resume(executionId),
                 )
               "
             >
               <LucideCirclePlay class="mr-2 size-4" />
-              <span>Resume</span>
+              <span>{{ $t('executions.resume') }}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem :disabled="pending" @click="refresh()">
               <LucideRefreshCw class="mr-2 size-4" />
-              <span>Refresh</span>
+              <span>{{ $t('executions.refresh') }}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -506,24 +525,28 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
     <!-- Meta cards -->
     <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
       <Card class="px-5 py-4 shadow-xs">
-        <div class="text-muted-foreground text-xs">Started</div>
+        <div class="text-muted-foreground text-xs">
+          {{ $t('executions.start_time') }}
+        </div>
         <div class="text-md font-mono">
           {{ formatTimestamp(execution.startTime) }}
         </div>
       </Card>
       <Card class="px-5 py-4 shadow-xs">
-        <div class="text-muted-foreground text-xs">Ended</div>
+        <div class="text-muted-foreground text-xs">
+          {{ $t('executions.end_time') }}
+        </div>
         <div class="text-md font-mono">
           {{ formatTimestamp(execution.endTime) }}
         </div>
       </Card>
       <Card class="px-5 py-4 shadow-xs">
         <div class="text-muted-foreground flex items-center gap-1.5 text-xs">
-          Duration
+          {{ $t('executions.duration') }}
           <span
             v-if="isRunning"
             class="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500"
-            title="Live"
+            :title="$t('executions.live')"
           />
         </div>
         <div class="text-md font-mono tabular-nums">
@@ -531,7 +554,9 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         </div>
       </Card>
       <Card class="px-5 py-4 shadow-xs">
-        <div class="text-muted-foreground text-xs">Errors</div>
+        <div class="text-muted-foreground text-xs">
+          {{ $t('executions.errors') }}
+        </div>
         <div
           class="text-md font-mono"
           :class="(execution.errorCount ?? 0) > 0 ? 'text-destructive' : ''"
@@ -540,11 +565,15 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         </div>
       </Card>
       <Card v-if="execution.totalNodes != null" class="px-5 py-4 shadow-xs">
-        <div class="text-muted-foreground text-xs">Nodes</div>
+        <div class="text-muted-foreground text-xs">
+          {{ $t('executions.nodes') }}
+        </div>
         <div class="text-md font-mono">
           {{ execution.completedNodes ?? 0 }} / {{ execution.totalNodes }}
           <span v-if="execution.failedNodes" class="text-destructive">
-            ({{ execution.failedNodes }} failed)
+            {{
+              $t('executions.nodes_failed', { count: execution.failedNodes })
+            }}
           </span>
         </div>
       </Card>
@@ -552,7 +581,9 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
         v-if="execution.workflowVersion != null"
         class="px-5 py-4 shadow-xs"
       >
-        <div class="text-muted-foreground text-xs">Version</div>
+        <div class="text-muted-foreground text-xs">
+          {{ $t('executions.version') }}
+        </div>
         <div class="text-md font-mono">v{{ execution.workflowVersion }}</div>
       </Card>
     </div>

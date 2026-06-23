@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue';
 
+const { t } = useI18n();
+
 const props = defineProps<{
   nodeData: Record<string, unknown>;
   nodeConfig: Record<string, unknown>;
@@ -18,10 +20,13 @@ const maxConcurrent = computed(
 );
 
 const CONTEXT_VARS = [
-  { expr: '{{$current}}', description: 'Current item in the iteration' },
+  {
+    expr: '{{$current}}',
+    description: t('node.settings.iterator.var_current'),
+  },
   {
     expr: '{{$index}}',
-    description: 'Zero-based index of the current iteration',
+    description: t('node.settings.iterator.var_index'),
   },
 ];
 </script>
@@ -30,22 +35,24 @@ const CONTEXT_VARS = [
   <div class="space-y-4">
     <div class="space-y-1">
       <label class="text-sm font-medium">
-        Collection
+        {{ $t('node.settings.iterator.collection') }}
         <span class="text-destructive">*</span>
       </label>
       <ExpressionInput
         :model-value="collection"
-        placeholder="e.g. {{order.items}}"
+        :placeholder="$t('node.settings.iterator.collection_placeholder')"
         default-mode="expression"
         @update:model-value="updateInput('collection', $event)"
       />
       <p class="text-muted-foreground text-xs">
-        Expression resolving to the array to iterate over
+        {{ $t('node.settings.iterator.collection_help') }}
       </p>
     </div>
 
     <div class="space-y-1">
-      <label class="text-sm font-medium">Max iterations</label>
+      <label class="text-sm font-medium">
+        {{ $t('node.settings.iterator.max_iterations') }}
+      </label>
       <Input
         type="number"
         :model-value="maxIterations ?? 100"
@@ -59,12 +66,14 @@ const CONTEXT_VARS = [
         "
       />
       <p class="text-muted-foreground text-xs">
-        Safety limit to prevent infinite loops
+        {{ $t('node.settings.iterator.max_iterations_help') }}
       </p>
     </div>
 
     <div class="space-y-1">
-      <label class="text-sm font-medium">Max concurrent</label>
+      <label class="text-sm font-medium">
+        {{ $t('node.settings.iterator.max_concurrent') }}
+      </label>
       <Input
         type="number"
         :model-value="maxConcurrent ?? 1"
@@ -81,14 +90,14 @@ const CONTEXT_VARS = [
         "
       />
       <p class="text-muted-foreground text-xs">
-        Parallel branches (1 = serial, max 10)
+        {{ $t('node.settings.iterator.max_concurrent_help') }}
       </p>
     </div>
 
     <!-- Context variables reference -->
     <div class="border-t pt-3">
       <p class="text-muted-foreground mb-2 text-xs font-medium">
-        Context variables
+        {{ $t('node.settings.context_variables') }}
       </p>
       <div class="space-y-1.5">
         <div
@@ -109,12 +118,16 @@ const CONTEXT_VARS = [
     <!-- Handle labels reference -->
     <div class="text-muted-foreground border-t pt-3 text-xs">
       <p>
-        <span class="font-medium text-purple-600">Foreach</span>
-        executes once per collection item
+        <span class="font-medium text-purple-600">
+          {{ $t('node.settings.iterator.foreach') }}
+        </span>
+        {{ $t('node.settings.iterator.foreach_help') }}
       </p>
       <p class="mt-1">
-        <span class="font-medium text-gray-500">Completed</span>
-        runs after all iterations complete
+        <span class="font-medium text-gray-500">
+          {{ $t('node.settings.completed') }}
+        </span>
+        {{ $t('node.settings.iterator.completed_help') }}
       </p>
     </div>
   </div>

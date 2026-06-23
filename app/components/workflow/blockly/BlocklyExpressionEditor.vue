@@ -19,6 +19,8 @@ const emit = defineEmits<{
   'update:open': [value: boolean];
 }>();
 
+const { t } = useI18n();
+
 const resolveExpression = inject<(expr: string) => string | null>(
   'resolveExpression',
   () => null,
@@ -89,18 +91,24 @@ function onDraftUpdate(value: string) {
 const validation = computed(() => {
   const expr = draftExpression.value;
   if (!expr || !expr.trim()) {
-    return { valid: false, error: 'Expression is empty' };
+    return {
+      valid: false,
+      error: t('workflow_builder.expression.expression_empty'),
+    };
   }
 
   const inner = expr.replace(/^\{\{|\}\}$/g, '').trim();
   if (!inner) {
-    return { valid: false, error: 'Expression is empty' };
+    return {
+      valid: false,
+      error: t('workflow_builder.expression.expression_empty'),
+    };
   }
 
   if (/\(\s*,|,\s*,|,\s*\)/.test(inner)) {
     return {
       valid: false,
-      error: 'Missing function argument — connect all inputs',
+      error: t('workflow_builder.expression.missing_argument'),
     };
   }
 
@@ -110,7 +118,12 @@ const validation = computed(() => {
     for (const call of emptyCallMatch) {
       const funcName = call.replace(/\(\s*\)/, '');
       if (!zeroArgAllowed.has(funcName)) {
-        return { valid: false, error: `${funcName}() is missing arguments` };
+        return {
+          valid: false,
+          error: t('workflow_builder.expression.missing_arguments', {
+            name: funcName,
+          }),
+        };
       }
     }
   }
@@ -119,9 +132,17 @@ const validation = computed(() => {
   for (const ch of inner) {
     if (ch === '(') depth++;
     if (ch === ')') depth--;
-    if (depth < 0) return { valid: false, error: 'Unbalanced parentheses' };
+    if (depth < 0)
+      return {
+        valid: false,
+        error: t('workflow_builder.expression.unbalanced_parentheses'),
+      };
   }
-  if (depth !== 0) return { valid: false, error: 'Unbalanced parentheses' };
+  if (depth !== 0)
+    return {
+      valid: false,
+      error: t('workflow_builder.expression.unbalanced_parentheses'),
+    };
 
   return { valid: true, error: null };
 });
@@ -145,7 +166,7 @@ const BlocklyWorkspace = defineAsyncComponent(
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2">
           <LucideBlocks class="size-4" />
-          Block Expression Editor
+          {{ $t('workflow_builder.expression.block_editor_title') }}
         </DialogTitle>
       </DialogHeader>
 
@@ -154,7 +175,9 @@ const BlocklyWorkspace = defineAsyncComponent(
         v-if="!validation.valid"
         class="text-destructive rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs"
       >
-        <span class="font-medium">Invalid:</span>
+        <span class="font-medium">
+          {{ $t('workflow_builder.expression.invalid') }}
+        </span>
         {{ validation.error }}
       </div>
 
@@ -182,14 +205,18 @@ const BlocklyWorkspace = defineAsyncComponent(
         v-if="validation.valid && truncatedPreview"
         class="text-muted-foreground rounded-md border bg-emerald-500/5 px-3 py-2 font-mono text-xs"
       >
-        <span class="opacity-50">Result:</span>
+        <span class="opacity-50">
+          {{ $t('workflow_builder.expression.result') }}
+        </span>
         {{ truncatedPreview }}
       </div>
 
       <!-- Actions -->
       <DialogFooter>
-        <Button variant="outline" @click="onCancel">Cancel</Button>
-        <Button :disabled="!validation.valid" @click="onApply">Apply</Button>
+        <Button variant="outline" @click="onCancel">{{ $t('cancel') }}</Button>
+        <Button :disabled="!validation.valid" @click="onApply">
+          {{ $t('apply') }}
+        </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

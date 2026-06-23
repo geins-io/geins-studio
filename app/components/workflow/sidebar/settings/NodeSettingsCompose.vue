@@ -16,10 +16,10 @@ defineProps<{
     :update-input="updateInput"
     :editor-hints="editorHints"
     :update-editor-hint="updateEditorHint"
-    label="Fields"
-    description="Each field becomes a key in the output object. Use expressions to reference upstream data."
-    key-placeholder="Field name"
-    value-placeholder="Value or {{expression}}"
-    expand-title="Compose Object JSON"
+    :label="$t('node.settings.compose.fields')"
+    :description="$t('node.settings.compose.fields_help')"
+    :key-placeholder="$t('node.settings.compose.field_name')"
+    :value-placeholder="$t('node.settings.compose.value_placeholder')"
+    :expand-title="$t('node.settings.compose.expand_title')"
   />
 </template>
