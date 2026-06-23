@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.5.0 - 2026-06-08
+
+### 🚀 Enhancements
+
+- **Orchestrator** — new visual workflow automation: build, run & monitor workflows with a Blockly-based editor, integration kits & Settings › Orchestrator config ([#254](https://github.com/geins-io/geins-studio/pull/254))
+- Storefront — newsletter signup toggle ([#269](https://github.com/geins-io/geins-studio/pull/269))
+- Nuxt 4.4 upgrade — async-data & runtime fixes ([#271](https://github.com/geins-io/geins-studio/pull/271))
+- App version meta tag & build info
+
+### 🐛 Bug Fixes
+
+- Address false unsaved-changes + optional name/email fields ([#267](https://github.com/geins-io/geins-studio/pull/267))
+- Stable sidebar logo across collapse + white-label sizing ([#266](https://github.com/geins-io/geins-studio/pull/266))
+- Restore SelectorQuickAdd width on company price lists, strip cache-busting query string from image file names, logo sizing fixes
+- Deploy — inline Bicep parameters, stop Bicep updating production container directly, `NUXT_PUBLIC_BASE_URL` runtime override
+
+### 🔄 Refactor
+
+- Prettier formatting baseline + automated enforcement ([#257](https://github.com/geins-io/geins-studio/pull/257))
+
+### ❤️ Contributors
+
+- Olivia Axelsson ([@olivia-geins](https://github.com/olivia-geins))
+- Kristian Arvidsson ([@arvidsson-geins](https://github.com/arvidsson-geins))
+
 ## v0.4.2 - 2026-06-02
 
 ### 🚀 Enhancements
