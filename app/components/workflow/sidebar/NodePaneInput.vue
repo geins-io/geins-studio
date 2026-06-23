@@ -19,6 +19,7 @@ const props = defineProps<{
 
 const manifestStore = useWorkflowManifest();
 const { toast } = useToast();
+const { t } = useI18n();
 const { nodes: vfNodes, edges: vfEdges } = useVueFlow();
 
 const workflowInputDefs = inject<Ref<WorkflowInput[]>>(
@@ -197,7 +198,7 @@ const fieldExpression = (upstream: UpstreamNode, fieldName: string) =>
 
 const copyExpression = (expr: string) => {
   navigator.clipboard.writeText(expr);
-  toast({ title: 'Copied', description: expr });
+  toast({ title: t('node.input.copied'), description: expr });
 };
 
 // ─── Search ───────────────────────────────────────────────────────
@@ -306,7 +307,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
       <span
         class="text-muted-foreground text-xs font-medium tracking-wide uppercase"
       >
-        Input
+        {{ $t('input', 1) }}
       </span>
       <span
         v-if="hasExecutionInput"
@@ -323,7 +324,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
           <input
             v-model="inputSearch"
             type="text"
-            placeholder="Search fields…"
+            :placeholder="$t('node.input.search_placeholder')"
             class="bg-muted focus:ring-ring w-full rounded-md py-1.5 pr-2 pl-7 text-xs focus:ring-2 focus:outline-none"
           />
           <button
@@ -346,7 +347,9 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
             class="text-muted-foreground h-3 w-3 shrink-0 transition-transform"
             :class="{ 'rotate-90': inputPaneSections.has('incoming') }"
           />
-          <span class="text-xs font-medium">Incoming data</span>
+          <span class="text-xs font-medium">
+            {{ $t('node.input.incoming_data') }}
+          </span>
           <span
             v-if="filteredUpstreamNodes.length"
             class="bg-primary/10 text-primary ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-medium"
@@ -384,7 +387,12 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
                         :title="
                           upstreamOutputPreview(upstream.id, field.name)
                             ? undefined
-                            : `Drag or click to copy ${fieldExpression(upstream, field.name)}`
+                            : $t('node.input.drag_or_copy', {
+                                expression: fieldExpression(
+                                  upstream,
+                                  field.name,
+                                ),
+                              })
                         "
                         @click="
                           copyExpression(fieldExpression(upstream, field.name))
@@ -432,7 +440,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
                 v-else
                 class="text-muted-foreground px-1.5 py-1 text-[10px] italic"
               >
-                No output schema
+                {{ $t('node.no_output_schema') }}
               </div>
             </div>
           </div>
@@ -440,7 +448,11 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
             v-else
             class="text-muted-foreground py-2 text-center text-[10px]"
           >
-            {{ inputSearchLower ? 'No matches' : 'No connected nodes' }}
+            {{
+              inputSearchLower
+                ? $t('node.input.no_matches')
+                : $t('node.input.no_connected_nodes')
+            }}
           </div>
         </div>
       </div>
@@ -455,7 +467,9 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
             class="text-muted-foreground h-3 w-3 shrink-0 transition-transform"
             :class="{ 'rotate-90': inputPaneSections.has('inputs') }"
           />
-          <span class="text-xs font-medium">Workflow inputs</span>
+          <span class="text-xs font-medium">
+            {{ $t('node.input.workflow_inputs') }}
+          </span>
           <span
             v-if="filteredInputDefs.length"
             class="bg-primary/10 text-primary ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-medium"
@@ -510,7 +524,11 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
             v-else
             class="text-muted-foreground py-2 text-center text-[10px]"
           >
-            {{ inputSearchLower ? 'No matches' : 'No inputs defined' }}
+            {{
+              inputSearchLower
+                ? $t('node.input.no_matches')
+                : $t('node.input.no_inputs')
+            }}
           </div>
         </div>
       </div>
@@ -525,7 +543,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
             class="text-muted-foreground h-3 w-3 shrink-0 transition-transform"
             :class="{ 'rotate-90': inputPaneSections.has('variables') }"
           />
-          <span class="text-xs font-medium">Variables</span>
+          <span class="text-xs font-medium">{{ $t('variable', 2) }}</span>
           <span
             v-if="filteredVariables.length"
             class="bg-primary/10 text-primary ml-auto rounded-full px-1.5 py-0.5 text-[10px] font-medium"
@@ -576,7 +594,11 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
             v-else
             class="text-muted-foreground py-2 text-center text-[10px]"
           >
-            {{ inputSearchLower ? 'No matches' : 'No variables defined' }}
+            {{
+              inputSearchLower
+                ? $t('node.input.no_matches')
+                : $t('node.input.no_variables')
+            }}
           </div>
         </div>
       </div>
@@ -586,7 +608,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
         <h4
           class="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-wider uppercase"
         >
-          Run data
+          {{ $t('node.run_data') }}
         </h4>
         <div class="min-h-40">
           <JsonCodeEditor
@@ -595,7 +617,7 @@ const onExpressionDragStart = (event: DragEvent, expr: string) => {
             :line-numbers="false"
             :line-wrapping="true"
             :expandable="true"
-            expand-title="Input Run Data"
+            :expand-title="$t('node.input.run_data_title')"
           />
         </div>
       </div>

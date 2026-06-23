@@ -16,9 +16,9 @@ defineProps<{
     :update-input="updateInput"
     :editor-hints="editorHints"
     :update-editor-hint="updateEditorHint"
-    label="Mapping"
-    key-placeholder="Output field name"
+    :label="$t('node.settings.transform.mapping')"
+    :key-placeholder="$t('node.settings.transform.output_field_name')"
     value-placeholder="{{output.node-id.field}}"
-    expand-title="Mapping JSON"
+    :expand-title="$t('node.settings.transform.expand_title')"
   />
 </template>

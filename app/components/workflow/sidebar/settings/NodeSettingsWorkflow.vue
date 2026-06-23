@@ -15,6 +15,7 @@ const props = defineProps<{
   updateInput: (name: string, value: unknown) => void;
 }>();
 
+const { t } = useI18n();
 const route = useRoute();
 const { orchestratorApi } = useGeinsRepository();
 
@@ -219,7 +220,8 @@ function paramError(inp: WorkflowInput): string | null {
   const val = getInputValue(inp.name);
   if (!val) return null;
   if (val.includes('{{')) return null;
-  if (isNumericType(inp.type) && isNaN(Number(val))) return 'Must be a number';
+  if (isNumericType(inp.type) && isNaN(Number(val)))
+    return t('node.settings.workflow.must_be_number');
   return null;
 }
 </script>
@@ -229,11 +231,11 @@ function paramError(inp: WorkflowInput): string | null {
     <!-- Workflow selector -->
     <div class="space-y-1">
       <label class="text-sm font-medium">
-        Workflow
+        {{ $t('workflow', 1) }}
         <span class="text-destructive">*</span>
       </label>
       <p class="text-muted-foreground text-xs">
-        Select an active on-demand workflow to execute
+        {{ $t('node.settings.workflow.select_help') }}
       </p>
 
       <Popover v-model:open="selectorOpen">
@@ -247,7 +249,7 @@ function paramError(inp: WorkflowInput): string | null {
               {{ selectedWorkflowName || nodeInput.workflowId }}
             </span>
             <span v-else class="text-muted-foreground min-w-0 flex-1 truncate">
-              Select workflow…
+              {{ $t('node.settings.workflow.select_workflow') }}
             </span>
             <button
               v-if="nodeInput.workflowId"
@@ -275,7 +277,7 @@ function paramError(inp: WorkflowInput): string | null {
               <input
                 v-model="selectorSearch"
                 type="text"
-                placeholder="Search workflows…"
+                :placeholder="$t('workflows.search_placeholder')"
                 class="bg-muted focus:ring-ring w-full rounded-md py-1.5 pr-2 pl-7 text-xs focus:ring-2 focus:outline-none"
               />
             </div>
@@ -333,7 +335,11 @@ function paramError(inp: WorkflowInput): string | null {
                     v-if="getWorkflowInputs(wf.id).length > 5"
                     class="text-muted-foreground inline-flex items-center px-1 text-[10px]"
                   >
-                    +{{ getWorkflowInputs(wf.id).length - 5 }} more
+                    {{
+                      $t('node.settings.workflow.more_count', {
+                        count: getWorkflowInputs(wf.id).length - 5,
+                      })
+                    }}
                   </span>
                 </div>
                 <span
@@ -347,9 +353,9 @@ function paramError(inp: WorkflowInput): string | null {
               v-else
               class="text-muted-foreground px-2 py-4 text-center text-xs"
             >
-              <p>No matching workflows</p>
+              <p>{{ $t('node.settings.workflow.no_matching') }}</p>
               <p class="mt-1 opacity-60">
-                Only active on-demand workflows are shown
+                {{ $t('node.settings.workflow.only_active_on_demand') }}
               </p>
             </div>
           </div>
@@ -361,7 +367,9 @@ function paramError(inp: WorkflowInput): string | null {
         v-if="nodeInput.workflowId"
         class="text-muted-foreground flex items-center gap-1 px-0.5 font-mono text-[10px]"
       >
-        <span class="opacity-50">ID:</span>
+        <span class="opacity-50">
+          {{ $t('node.settings.workflow.id_label') }}
+        </span>
         <span class="truncate">{{ nodeInput.workflowId }}</span>
       </div>
     </div>
@@ -369,9 +377,11 @@ function paramError(inp: WorkflowInput): string | null {
     <!-- Input parameters (driven by selected workflow's declared inputs) -->
     <div v-if="selectedWorkflowInputs.length" class="space-y-3">
       <div>
-        <label class="text-sm font-medium">Input parameters</label>
+        <label class="text-sm font-medium">
+          {{ $t('node.settings.workflow.input_parameters') }}
+        </label>
         <p class="text-muted-foreground text-xs">
-          Values passed to the child workflow
+          {{ $t('node.settings.workflow.input_parameters_help') }}
         </p>
       </div>
 
@@ -384,7 +394,7 @@ function paramError(inp: WorkflowInput): string | null {
               v-if="inp.required"
               class="text-destructive text-[10px] font-medium"
             >
-              required
+              {{ $t('node.settings.workflow.required') }}
             </span>
             <TooltipProvider v-if="inp.description" :delay-duration="200">
               <Tooltip>
@@ -416,7 +426,7 @@ function paramError(inp: WorkflowInput): string | null {
             <button
               v-if="!inp.required"
               class="hover:bg-muted text-muted-foreground hover:text-foreground shrink-0 rounded p-1 transition-colors"
-              title="Remove parameter"
+              :title="$t('node.settings.workflow.remove_parameter')"
               @click="removeOptionalParam(inp.name)"
             >
               <LucideX class="h-3 w-3" />
@@ -434,7 +444,7 @@ function paramError(inp: WorkflowInput): string | null {
         <p
           class="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-wide uppercase"
         >
-          Removed
+          {{ $t('node.settings.workflow.removed') }}
         </p>
         <div class="flex flex-wrap gap-1">
           <button
@@ -453,7 +463,9 @@ function paramError(inp: WorkflowInput): string | null {
 
     <!-- Behaviour options -->
     <div class="border-t pt-4">
-      <label class="mb-2 block text-sm font-medium">Behaviour</label>
+      <label class="mb-2 block text-sm font-medium">
+        {{ $t('node.settings.workflow.behaviour') }}
+      </label>
       <div class="space-y-3">
         <div class="flex items-start gap-2">
           <input
@@ -468,9 +480,11 @@ function paramError(inp: WorkflowInput): string | null {
             "
           />
           <div>
-            <label class="text-sm">Wait for completion</label>
+            <label class="text-sm">
+              {{ $t('node.settings.workflow.wait_for_completion') }}
+            </label>
             <p class="text-muted-foreground text-xs">
-              Wait for child workflow to finish before continuing
+              {{ $t('node.settings.workflow.wait_for_completion_help') }}
             </p>
           </div>
         </div>
@@ -488,9 +502,11 @@ function paramError(inp: WorkflowInput): string | null {
             "
           />
           <div>
-            <label class="text-sm">Cascade cancellation</label>
+            <label class="text-sm">
+              {{ $t('node.settings.workflow.cascade_cancellation') }}
+            </label>
             <p class="text-muted-foreground text-xs">
-              Cancel child workflow if parent is cancelled
+              {{ $t('node.settings.workflow.cascade_cancellation_help') }}
             </p>
           </div>
         </div>
@@ -508,9 +524,11 @@ function paramError(inp: WorkflowInput): string | null {
             "
           />
           <div>
-            <label class="text-sm">Inherit variables</label>
+            <label class="text-sm">
+              {{ $t('node.settings.workflow.inherit_variables') }}
+            </label>
             <p class="text-muted-foreground text-xs">
-              Pass parent workflow variables to child
+              {{ $t('node.settings.workflow.inherit_variables_help') }}
             </p>
           </div>
         </div>

@@ -77,6 +77,8 @@ onBeforeUnmount(() => {
   interactionEl.value = null;
 });
 
+const { t } = useI18n();
+
 const onEdgeAddNode =
   inject<
     (
@@ -116,7 +118,11 @@ const onDelete = () => {
       <button
         v-show="!isHovered || isCompact"
         class="bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground flex h-6 w-6 items-center justify-center rounded-full border shadow-sm transition-colors"
-        :title="isCompact ? 'Add node' : 'Edge actions'"
+        :title="
+          isCompact
+            ? t('workflow_builder.add_node')
+            : t('workflow_builder.edge_actions')
+        "
         @click="onAdd"
       >
         <LucidePlus v-if="isCompact" class="h-3 w-3" />
@@ -125,14 +131,14 @@ const onDelete = () => {
       <template v-if="isHovered && !isCompact">
         <button
           class="bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground flex h-6 w-6 items-center justify-center rounded-full border shadow-sm transition-colors"
-          title="Add node"
+          :title="t('workflow_builder.add_node')"
           @click="onAdd"
         >
           <LucidePlus class="h-3 w-3" />
         </button>
         <button
           class="bg-background text-muted-foreground hover:border-destructive/50 hover:text-destructive flex h-6 w-6 items-center justify-center rounded-full border shadow-sm transition-colors"
-          title="Delete connection"
+          :title="t('workflow_builder.delete_connection')"
           @click="onDelete"
         >
           <LucideTrash2 class="h-3 w-3" />

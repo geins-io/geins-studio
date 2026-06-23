@@ -225,7 +225,7 @@ const mapToListData = (
 
     return {
       id: wf.id,
-      name: wf.name || 'Unknown',
+      name: wf.name || t('workflows.unknown'),
       description: wf.description ?? '',
       type: displayType,
       triggerSummary: deriveTriggerSummary(wf),

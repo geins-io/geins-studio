@@ -112,17 +112,17 @@ const validateJson = (
 ): string | null => {
   if (!raw.trim()) return null;
   const result = tryParseJson(raw);
-  if (!result.ok) return 'Invalid JSON';
+  if (!result.ok) return t('workflow_builder.invalid_json');
   if (
     expectedType === 'object' &&
     (typeof result.value !== 'object' ||
       Array.isArray(result.value) ||
       result.value === null)
   ) {
-    return 'Value must be a JSON object';
+    return t('workflow_builder.value_must_be_json_object');
   }
   if (expectedType === 'array' && !Array.isArray(result.value)) {
-    return 'Value must be a JSON array';
+    return t('workflow_builder.value_must_be_json_array');
   }
   return null;
 };
@@ -263,16 +263,15 @@ const confirmAddInput = () => {
   if (!newInputCanSave.value) return;
   const name = newInput.name.trim();
   if (!name) {
-    addInputError.value = 'Name is required';
+    addInputError.value = t('workflow_builder.name_required');
     return;
   }
   if (!INPUT_NAME_RE.test(name)) {
-    addInputError.value =
-      'Name must start with a letter and contain only letters, digits, underscores, and dashes';
+    addInputError.value = t('workflow_builder.name_format_error');
     return;
   }
   if (props.inputs.some((i) => i.name === name)) {
-    addInputError.value = 'An input with this name already exists';
+    addInputError.value = t('workflow_builder.input_name_exists');
     return;
   }
   const defaultValue = coerceDefault(newInput.defaultValue, newInput.type);
@@ -371,11 +370,11 @@ const openAddGroup = () => {
 const confirmAddGroup = () => {
   const name = newGroupName.value.trim();
   if (!name) {
-    addGroupError.value = 'Group name is required';
+    addGroupError.value = t('workflow_builder.group_name_required');
     return;
   }
   if (existingGroupNames.value.has(name)) {
-    addGroupError.value = 'A group with this name already exists';
+    addGroupError.value = t('workflow_builder.group_name_exists');
     return;
   }
   emit('update:additionalGroups', [...props.additionalGroups, name]);
@@ -385,7 +384,7 @@ const confirmAddGroup = () => {
 
 <template>
   <ContentEditMainContent>
-    <ContentEditCard title="Inputs">
+    <ContentEditCard :title="$t('input', 2)">
       <template #header-action>
         <div class="flex items-center gap-2">
           <InputGroup
@@ -397,7 +396,7 @@ const confirmAddGroup = () => {
             </InputGroupAddon>
             <InputGroupInput
               v-model="searchQuery"
-              placeholder="Search inputs…"
+              :placeholder="$t('workflow_builder.search_inputs')"
             />
           </InputGroup>
           <ButtonIcon
@@ -406,7 +405,7 @@ const confirmAddGroup = () => {
             class="h-9"
             @click="openAddGroup"
           >
-            {{ t('add_entity', { entityName: 'group' }) }}
+            {{ t('add_entity', { entityName: t('group', 1) }) }}
           </ButtonIcon>
         </div>
       </template>
@@ -418,9 +417,11 @@ const confirmAddGroup = () => {
             <LucideCircleDot class="size-5" />
           </EmptyMedia>
           <EmptyTitle>
-            {{ t('no_entity', { entityName: 'input' }, 2) }}
+            {{ t('no_entity', { entityName: t('input', 2) }) }}
           </EmptyTitle>
-          <EmptyDescription>This workflow has no inputs yet.</EmptyDescription>
+          <EmptyDescription>
+            {{ t('workflow_builder.no_inputs_yet') }}
+          </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
           <Button
@@ -429,7 +430,7 @@ const confirmAddGroup = () => {
             @click="openAddInput('general')"
           >
             <LucidePlus class="mr-2 h-3.5 w-3.5" />
-            Add your first input
+            {{ t('workflow_builder.add_first_input') }}
           </Button>
         </EmptyContent>
       </Empty>
@@ -439,7 +440,7 @@ const confirmAddGroup = () => {
         v-else-if="filteredInputsByCategory.length === 0"
         class="text-muted-foreground py-8 text-center text-sm"
       >
-        No inputs match your search.
+        {{ t('workflow_builder.no_inputs_match_search') }}
       </div>
 
       <!-- Category sections — each group collapsible -->
@@ -463,9 +464,7 @@ const confirmAddGroup = () => {
                 class="text-muted-foreground flex items-center gap-1 text-xs font-normal"
               >
                 <LucideCircleDot class="size-3.5" />
-                {{ group.items.length }} input{{
-                  group.items.length === 1 ? '' : 's'
-                }}
+                {{ t('workflow_builder.input_count', group.items.length) }}
               </span>
             </CollapsibleTrigger>
             <ButtonGroup>
@@ -474,14 +473,14 @@ const confirmAddGroup = () => {
                 variant="secondary"
                 @click="openAddInput(group.category)"
               >
-                {{ $t('add_entity', { entityName: 'input' }) }}
+                {{ t('add_entity', { entityName: t('input', 1) }) }}
               </ButtonIcon>
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
                   <Button
                     size="icon"
                     variant="secondary"
-                    aria-label="More options"
+                    :aria-label="t('workflow_builder.more_options')"
                   >
                     <LucideMoreHorizontal class="size-3.5" />
                   </Button>
@@ -489,7 +488,7 @@ const confirmAddGroup = () => {
                 <DropdownMenuContent>
                   <DropdownMenuItem @click="removeGroup(group.category)">
                     <LucideTrash class="mr-2 size-4" />
-                    <span>Remove group</span>
+                    <span>{{ t('workflow_builder.remove_group') }}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -502,9 +501,11 @@ const confirmAddGroup = () => {
                   <EmptyMedia variant="icon">
                     <LucideCircleDot class="size-5" />
                   </EmptyMedia>
-                  <EmptyTitle>No inputs in this group</EmptyTitle>
+                  <EmptyTitle>
+                    {{ t('workflow_builder.no_inputs_in_group') }}
+                  </EmptyTitle>
                   <EmptyDescription>
-                    Add an input to this group.
+                    {{ t('workflow_builder.add_input_to_group') }}
                   </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent>
@@ -514,7 +515,7 @@ const confirmAddGroup = () => {
                     @click="openAddInput(group.category)"
                   >
                     <LucidePlus class="mr-2 h-3.5 w-3.5" />
-                    Add input
+                    {{ t('add_entity', { entityName: t('input', 1) }) }}
                   </Button>
                 </EmptyContent>
               </Empty>
@@ -540,7 +541,7 @@ const confirmAddGroup = () => {
                       type="button"
                       class="drag-handle text-muted-foreground/50 hover:text-muted-foreground shrink-0 cursor-grab p-1 active:cursor-grabbing"
                       :class="{ 'pointer-events-none opacity-30': searching }"
-                      title="Drag to reorder"
+                      :title="t('workflow_builder.drag_to_reorder')"
                       @click.stop
                     >
                       <LucideGripVertical class="size-4" />
@@ -586,7 +587,7 @@ const confirmAddGroup = () => {
                           :for="`inp-required-${item.name}`"
                           class="text-muted-foreground cursor-pointer text-xs whitespace-nowrap"
                         >
-                          Required
+                          {{ t('workflow_builder.required') }}
                         </label>
                       </div>
                     </div>
@@ -594,7 +595,9 @@ const confirmAddGroup = () => {
                       variant="ghost"
                       size="icon"
                       class="text-muted-foreground hover:text-destructive size-8 shrink-0"
-                      :aria-label="`Remove ${item.name}`"
+                      :aria-label="
+                        t('workflow_builder.remove_input', { name: item.name })
+                      "
                       @click.stop="removeInput(item.name)"
                     >
                       <LucideTrash class="size-4" />
@@ -611,7 +614,7 @@ const confirmAddGroup = () => {
           @click="openAddGroup"
         >
           <LucidePlus class="mr-2 size-4" />
-          Add group
+          {{ t('add_entity', { entityName: t('group', 1) }) }}
         </Button>
       </div>
     </ContentEditCard>
@@ -621,10 +624,15 @@ const confirmAddGroup = () => {
   <Sheet v-model:open="addInputDialogOpen">
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>Add input</SheetTitle>
+        <SheetTitle>
+          {{ t('add_entity', { entityName: t('input', 1) }) }}
+        </SheetTitle>
         <SheetDescription>
-          Add an input to the "{{ addInputCategory }}" group. It will be saved
-          with the workflow.
+          {{
+            t('workflow_builder.add_input_description', {
+              category: addInputCategory,
+            })
+          }}
         </SheetDescription>
       </SheetHeader>
       <SheetBody>
@@ -632,11 +640,11 @@ const confirmAddGroup = () => {
           <FormGridWrap>
             <FormGrid design="1+1">
               <div class="space-y-1.5">
-                <Label for="new-input-name">Name</Label>
+                <Label for="new-input-name">{{ t('name', 1) }}</Label>
                 <Input
                   id="new-input-name"
                   v-model="newInput.name"
-                  placeholder="e.g. batchSize"
+                  :placeholder="t('workflow_builder.input_name_placeholder')"
                   autofocus
                   :class="{
                     'border-destructive':
@@ -649,12 +657,13 @@ const confirmAddGroup = () => {
                     'text-destructive': newInput.name.trim() && !inputNameValid,
                   }"
                 >
-                  Must start with a letter. Only letters, digits, underscores,
-                  and dashes.
+                  {{ t('workflow_builder.input_name_hint') }}
                 </p>
               </div>
               <div class="space-y-1.5">
-                <Label for="new-input-type">Type</Label>
+                <Label for="new-input-type">
+                  {{ t('workflow_builder.type') }}
+                </Label>
                 <Select v-model="newInput.type">
                   <SelectTrigger id="new-input-type">
                     <SelectValue />
@@ -672,7 +681,7 @@ const confirmAddGroup = () => {
             <FormGrid design="1">
               <div class="space-y-1.5">
                 <Label for="new-input-description">
-                  Description
+                  {{ t('workflow_builder.description') }}
                   <span class="text-muted-foreground ml-1 text-xs font-normal">
                     ({{ t('form.optional') }})
                   </span>
@@ -680,7 +689,9 @@ const confirmAddGroup = () => {
                 <Input
                   id="new-input-description"
                   v-model="newInput.description"
-                  placeholder="What this input is used for"
+                  :placeholder="
+                    t('workflow_builder.input_description_placeholder')
+                  "
                 />
               </div>
             </FormGrid>
@@ -691,9 +702,9 @@ const confirmAddGroup = () => {
                 data-slot="form-item"
               >
                 <div class="text-left">
-                  <Label>Default value</Label>
+                  <Label>{{ t('workflow_builder.default_value') }}</Label>
                   <p class="text-muted-foreground mt-1 text-xs">
-                    Toggle the boolean default.
+                    {{ t('workflow_builder.toggle_boolean_default') }}
                   </p>
                 </div>
                 <Switch
@@ -712,7 +723,7 @@ const confirmAddGroup = () => {
                 class="space-y-1.5"
               >
                 <Label for="new-input-default">
-                  Default value
+                  {{ t('workflow_builder.default_value') }}
                   <span class="text-muted-foreground ml-1 text-xs font-normal">
                     ({{ t('form.optional') }})
                   </span>
@@ -736,7 +747,7 @@ const confirmAddGroup = () => {
               </div>
               <div v-else class="space-y-1.5">
                 <Label for="new-input-default">
-                  Default value
+                  {{ t('workflow_builder.default_value') }}
                   <span class="text-muted-foreground ml-1 text-xs font-normal">
                     ({{ t('form.optional') }})
                   </span>
@@ -758,10 +769,10 @@ const confirmAddGroup = () => {
               >
                 <div class="text-left">
                   <Label for="new-input-required" class="text-sm font-semibold">
-                    Required
+                    {{ t('workflow_builder.required') }}
                   </Label>
                   <p class="text-muted-foreground mt-1 text-xs">
-                    Executions must provide a value for this input.
+                    {{ t('workflow_builder.required_description') }}
                   </p>
                 </div>
                 <Switch id="new-input-required" v-model="newInput.required" />
@@ -778,7 +789,7 @@ const confirmAddGroup = () => {
           {{ t('cancel') }}
         </Button>
         <Button :disabled="!newInputCanSave" @click="confirmAddInput">
-          Add input
+          {{ t('add_entity', { entityName: t('input', 1) }) }}
         </Button>
       </SheetFooter>
     </SheetContent>
@@ -788,28 +799,27 @@ const confirmAddGroup = () => {
   <Sheet v-model:open="editInputOpen">
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>Edit input</SheetTitle>
+        <SheetTitle>{{ t('workflow_builder.edit_input') }}</SheetTitle>
         <SheetDescription>
-          Update this input's description, default value, and whether it's
-          required.
+          {{ t('workflow_builder.edit_input_description') }}
         </SheetDescription>
       </SheetHeader>
       <SheetBody v-if="editingInput">
         <FormGridWrap>
           <FormGrid design="1+1">
             <div class="space-y-1.5">
-              <Label>Name</Label>
+              <Label>{{ t('name', 1) }}</Label>
               <Input :model-value="editingInput.name" disabled />
             </div>
             <div class="space-y-1.5">
-              <Label>Type</Label>
+              <Label>{{ t('workflow_builder.type') }}</Label>
               <Input :model-value="editingInput.type" disabled />
             </div>
           </FormGrid>
           <FormGrid design="1">
             <div class="space-y-1.5">
               <Label for="edit-input-description">
-                Description
+                {{ t('workflow_builder.description') }}
                 <span class="text-muted-foreground ml-1 text-xs font-normal">
                   ({{ t('form.optional') }})
                 </span>
@@ -817,7 +827,9 @@ const confirmAddGroup = () => {
               <Input
                 id="edit-input-description"
                 v-model="editDescription"
-                placeholder="What this input is used for"
+                :placeholder="
+                  t('workflow_builder.input_description_placeholder')
+                "
               />
             </div>
           </FormGrid>
@@ -828,9 +840,9 @@ const confirmAddGroup = () => {
               data-slot="form-item"
             >
               <div class="text-left">
-                <Label>Default value</Label>
+                <Label>{{ t('workflow_builder.default_value') }}</Label>
                 <p class="text-muted-foreground mt-1 text-xs">
-                  Toggle the boolean default.
+                  {{ t('workflow_builder.toggle_boolean_default') }}
                 </p>
               </div>
               <Switch
@@ -841,7 +853,7 @@ const confirmAddGroup = () => {
               />
             </div>
             <div v-else-if="editingInput.type === 'number'" class="space-y-1.5">
-              <Label>Default value</Label>
+              <Label>{{ t('workflow_builder.default_value') }}</Label>
               <Input
                 type="number"
                 :model-value="editDefaultValue"
@@ -856,7 +868,7 @@ const confirmAddGroup = () => {
               "
               class="space-y-1.5"
             >
-              <Label>Default value</Label>
+              <Label>{{ t('workflow_builder.default_value') }}</Label>
               <div
                 class="h-64"
                 :class="{ 'ring-destructive rounded-lg ring-1': editJsonError }"
@@ -871,7 +883,7 @@ const confirmAddGroup = () => {
               </p>
             </div>
             <div v-else class="space-y-1.5">
-              <Label>Default value</Label>
+              <Label>{{ t('workflow_builder.default_value') }}</Label>
               <Input
                 :model-value="editDefaultValue"
                 @update:model-value="
@@ -887,10 +899,10 @@ const confirmAddGroup = () => {
             >
               <div class="text-left">
                 <Label for="edit-input-required" class="text-sm font-semibold">
-                  Required
+                  {{ t('workflow_builder.required') }}
                 </Label>
                 <p class="text-muted-foreground mt-1 text-xs">
-                  Executions must provide a value for this input.
+                  {{ t('workflow_builder.required_description') }}
                 </p>
               </div>
               <Switch id="edit-input-required" v-model="editRequired" />
@@ -902,7 +914,9 @@ const confirmAddGroup = () => {
         <Button variant="outline" @click="editInputOpen = false">
           {{ t('cancel') }}
         </Button>
-        <Button :disabled="!editCanSave" @click="confirmEditInput">Save</Button>
+        <Button :disabled="!editCanSave" @click="confirmEditInput">
+          {{ t('save') }}
+        </Button>
       </SheetFooter>
     </SheetContent>
   </Sheet>
@@ -911,21 +925,22 @@ const confirmAddGroup = () => {
   <Dialog v-model:open="addGroupDialogOpen">
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Add group</DialogTitle>
+        <DialogTitle>
+          {{ t('add_entity', { entityName: t('group', 1) }) }}
+        </DialogTitle>
         <DialogDescription>
-          Groups organize related inputs. The group persists once you add at
-          least one input to it and save.
+          {{ t('workflow_builder.add_group_description') }}
         </DialogDescription>
       </DialogHeader>
       <form @submit.prevent="confirmAddGroup">
         <FormGridWrap>
           <FormGrid design="1">
             <div class="space-y-1.5">
-              <Label for="new-group-name">Name</Label>
+              <Label for="new-group-name">{{ t('name', 1) }}</Label>
               <Input
                 id="new-group-name"
                 v-model="newGroupName"
-                placeholder="e.g. Filters"
+                :placeholder="t('workflow_builder.group_name_placeholder')"
                 autofocus
               />
             </div>
@@ -939,7 +954,9 @@ const confirmAddGroup = () => {
         <Button variant="secondary" @click="addGroupDialogOpen = false">
           {{ t('cancel') }}
         </Button>
-        <Button @click="confirmAddGroup">Add group</Button>
+        <Button @click="confirmAddGroup">
+          {{ t('add_entity', { entityName: t('group', 1) }) }}
+        </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

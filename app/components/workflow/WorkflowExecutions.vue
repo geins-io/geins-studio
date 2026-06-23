@@ -9,6 +9,7 @@ const props = defineProps<{
 defineExpose({ refresh: () => refreshExecutions() });
 
 const { orchestratorApi } = useGeinsRepository();
+const { t } = useI18n();
 
 const pad = (n: number, len = 2) => String(n).padStart(len, '0');
 
@@ -45,10 +46,10 @@ const mapStatus = (status: string | undefined): string => {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  success: 'Success',
-  failed: 'Failed',
-  running: 'Running',
-  completedWithErrors: 'Completed with errors',
+  success: t('workflow_builder.status_success'),
+  failed: t('workflow_builder.status_failed'),
+  running: t('workflow_builder.status_running'),
+  completedWithErrors: t('workflow_builder.status_completed_with_errors'),
 };
 
 const formatStatus = (status: string): string =>
@@ -85,7 +86,9 @@ const allExecutions = computed(() =>
       status: mapStatus(log.status),
       startedAt: formatStartedAt(log.startTime),
       duration: formatDuration(log.durationMs ?? undefined),
-      trigger: log.startedBy || (log.isTestRun ? 'Test run' : 'Scheduled'),
+      trigger:
+        log.startedBy ||
+        (log.isTestRun ? t('executions.test_run') : t('workflows.scheduled')),
       error:
         Array.isArray(log.errors) && log.errors.length > 0
           ? log.errors[0]
@@ -99,7 +102,7 @@ const executions = computed(() => allExecutions.value.slice(0, PAGE_SIZE));
 
 <template>
   <ContentEditMainContent>
-    <ContentEditCard title="Executions">
+    <ContentEditCard :title="$t('execution', 2)">
       <template #header-action>
         <Button
           variant="secondary"
@@ -111,7 +114,7 @@ const executions = computed(() => allExecutions.value.slice(0, PAGE_SIZE));
             class="mr-2 h-3.5 w-3.5"
             :class="{ 'animate-spin': executionsLoading }"
           />
-          Refresh
+          {{ $t('workflow_builder.refresh') }}
         </Button>
       </template>
       <div
@@ -150,7 +153,7 @@ const executions = computed(() => allExecutions.value.slice(0, PAGE_SIZE));
             {{ execution.startedAt }}
           </div>
           <div class="text-muted-foreground truncate text-xs">
-            Trigger: {{ execution.trigger }}
+            {{ $t('workflows.trigger') }}: {{ execution.trigger }}
           </div>
           <div class="text-muted-foreground text-right font-mono text-xs">
             {{ execution.duration }}
@@ -161,9 +164,11 @@ const executions = computed(() => allExecutions.value.slice(0, PAGE_SIZE));
             <EmptyMedia variant="icon">
               <LucideHistory class="size-5" />
             </EmptyMedia>
-            <EmptyTitle>No executions yet</EmptyTitle>
+            <EmptyTitle>
+              {{ $t('workflow_builder.no_executions_yet') }}
+            </EmptyTitle>
             <EmptyDescription>
-              Runs will appear here once the workflow executes.
+              {{ $t('workflow_builder.executions_empty_description') }}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

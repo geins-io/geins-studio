@@ -31,7 +31,7 @@ const formatJson = (value: unknown): string => {
       <span
         class="text-muted-foreground text-xs font-medium tracking-wide uppercase"
       >
-        Output
+        {{ $t('node.output.title') }}
       </span>
       <span
         v-if="hasExecutionOutput"
@@ -44,7 +44,7 @@ const formatJson = (value: unknown): string => {
         <h4
           class="text-muted-foreground mb-1.5 text-[10px] font-medium tracking-wider uppercase"
         >
-          Run data
+          {{ $t('node.run_data') }}
         </h4>
         <div class="min-h-40 flex-1">
           <JsonCodeEditor
@@ -53,7 +53,7 @@ const formatJson = (value: unknown): string => {
             :line-numbers="false"
             :line-wrapping="true"
             :expandable="true"
-            expand-title="Output Run Data"
+            :expand-title="$t('node.output.run_data_title')"
           />
         </div>
       </template>
@@ -63,8 +63,8 @@ const formatJson = (value: unknown): string => {
       >
         <LucideInbox class="h-8 w-8 opacity-40" />
         <div>
-          <p class="font-medium">No output data</p>
-          <p class="mt-0.5 opacity-70">Run the workflow to view output data</p>
+          <p class="font-medium">{{ $t('node.output.empty_title') }}</p>
+          <p class="mt-0.5 opacity-70">{{ $t('node.output.empty_hint') }}</p>
         </div>
       </div>
     </div>

@@ -311,7 +311,7 @@ const onSettingsDrop = (event: DragEvent) => {
         @click="activeTab = 'settings'"
       >
         <LucideSettings2 class="h-3.5 w-3.5" />
-        Settings
+        {{ $t('settings') }}
       </button>
       <button
         type="button"
@@ -324,7 +324,7 @@ const onSettingsDrop = (event: DragEvent) => {
         @click="activeTab = 'schema'"
       >
         <LucideFileJson class="h-3.5 w-3.5" />
-        Schema
+        {{ $t('node.properties.schema') }}
       </button>
       <button
         type="button"
@@ -337,7 +337,7 @@ const onSettingsDrop = (event: DragEvent) => {
         @click="activeTab = 'expressions'"
       >
         <LucideBraces class="h-3.5 w-3.5" />
-        Functions
+        {{ $t('node.properties.functions') }}
       </button>
       <button
         type="button"
@@ -350,7 +350,7 @@ const onSettingsDrop = (event: DragEvent) => {
         @click="activeTab = 'variables'"
       >
         <LucideVariable class="h-3.5 w-3.5" />
-        Variables
+        {{ $t('variable', 2) }}
       </button>
     </div>
 
@@ -460,7 +460,7 @@ const onSettingsDrop = (event: DragEvent) => {
           "
           @click="schemaSubTab = 'input'"
         >
-          Input
+          {{ $t('input', 1) }}
         </button>
         <button
           type="button"
@@ -472,7 +472,7 @@ const onSettingsDrop = (event: DragEvent) => {
           "
           @click="schemaSubTab = 'output'"
         >
-          Output
+          {{ $t('node.output.title') }}
         </button>
       </div>
       <div class="flex-1 overflow-y-auto p-4" style="scrollbar-gutter: stable">
@@ -518,9 +518,9 @@ const onSettingsDrop = (event: DragEvent) => {
           >
             <LucideFileJson class="h-8 w-8 opacity-40" />
             <div>
-              <p class="font-medium">No output schema</p>
+              <p class="font-medium">{{ $t('node.no_output_schema') }}</p>
               <p class="mt-0.5 opacity-70">
-                This node type does not define an output schema
+                {{ $t('node.properties.no_output_schema_hint') }}
               </p>
             </div>
           </div>
@@ -603,7 +603,7 @@ const onSettingsDrop = (event: DragEvent) => {
                   v-if="param.required === false"
                   class="text-muted-foreground text-[9px] italic"
                 >
-                  optional
+                  {{ $t('node.properties.optional') }}
                 </span>
                 <span
                   v-if="param.description"
@@ -627,7 +627,7 @@ const onSettingsDrop = (event: DragEvent) => {
               v-if="fn.aliases?.length"
               class="text-muted-foreground text-[10px]"
             >
-              Aliases: {{ fn.aliases.join(', ') }}
+              {{ $t('node.properties.aliases') }}: {{ fn.aliases.join(', ') }}
             </div>
           </div>
         </div>
@@ -638,7 +638,7 @@ const onSettingsDrop = (event: DragEvent) => {
           class="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center text-xs"
         >
           <LucideSearchX class="h-8 w-8 opacity-40" />
-          <p class="font-medium">No functions found</p>
+          <p class="font-medium">{{ $t('node.properties.no_functions') }}</p>
         </div>
       </div>
     </div>
@@ -680,9 +680,11 @@ const onSettingsDrop = (event: DragEvent) => {
       >
         <LucideVariable class="h-8 w-8 opacity-40" />
         <div>
-          <p class="font-medium">No expression variables</p>
+          <p class="font-medium">
+            {{ $t('node.properties.no_expression_variables') }}
+          </p>
           <p class="mt-0.5 opacity-70">
-            The manifest does not define any expression variables
+            {{ $t('node.properties.no_expression_variables_hint') }}
           </p>
         </div>
       </div>

@@ -3,6 +3,8 @@ import type { LiveConsoleLine } from '#shared/types';
 import { formatTimestamp } from '#shared/utils/time';
 import { LucideTrash2 } from '#components';
 
+const { t } = useI18n();
+
 interface Props {
   streamUrl?: string | null;
   active?: boolean;
@@ -16,10 +18,17 @@ const props = withDefaults(defineProps<Props>(), {
   streamUrl: null,
   active: false,
   seedLines: () => [],
-  title: 'Console log',
-  liveTitle: 'Live console',
+  title: undefined,
+  liveTitle: undefined,
   requestHeaders: () => ({}),
 });
+
+const resolvedTitle = computed(
+  () => props.title ?? t('orchestrator.console.title'),
+);
+const resolvedLiveTitle = computed(
+  () => props.liveTitle ?? t('orchestrator.console.live_title'),
+);
 
 // Seed lines come from the parent (derived from upstream state) and may be
 // replaced wholesale when the parent refetches. Stream lines are appended
@@ -117,7 +126,7 @@ const startLiveStream = async () => {
         timestamp: formatTimestamp(new Date().toISOString()),
         level: 'debug',
         source: 'stream',
-        message: '… Waiting for stream (upstream has not flushed any data yet)',
+        message: `… ${t('orchestrator.console.waiting')}`,
       });
     }
   }, 3000);
@@ -136,7 +145,7 @@ const startLiveStream = async () => {
         timestamp: formatTimestamp(new Date().toISOString()),
         level: 'error',
         source: 'stream',
-        message: `Stream unavailable: HTTP ${res.status}`,
+        message: t('orchestrator.console.unavailable', { status: res.status }),
       });
       return;
     }
@@ -149,7 +158,7 @@ const startLiveStream = async () => {
       timestamp: formatTimestamp(new Date().toISOString()),
       level: 'info',
       source: 'stream',
-      message: '● Connected to live stream',
+      message: `● ${t('orchestrator.console.connected')}`,
     });
 
     while (true) {
@@ -167,7 +176,14 @@ const startLiveStream = async () => {
     if (buffer.trim()) appendStreamLine(buffer);
   } catch (err) {
     if ((err as Error).name !== 'AbortError') {
-      appendStreamLine(`Stream error: ${(err as Error).message}`);
+      pushStream({
+        timestamp: formatTimestamp(new Date().toISOString()),
+        level: 'error',
+        source: 'stream',
+        message: t('orchestrator.console.error', {
+          message: (err as Error).message,
+        }),
+      });
     }
   } finally {
     if (streamController === controller) streamController = null;
@@ -213,15 +229,15 @@ const clearConsole = () => {
           :class="active ? 'animate-pulse bg-green-400' : 'bg-zinc-600'"
         />
         <h2 class="text-sm font-medium text-zinc-200">
-          {{ active ? liveTitle : title }}
+          {{ active ? resolvedLiveTitle : resolvedTitle }}
         </h2>
         <span class="text-xs text-zinc-500">
-          {{ consoleLines.length }} lines
+          {{ $t('orchestrator.console.lines', { count: consoleLines.length }) }}
         </span>
       </div>
       <button
         class="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-        title="Clear console"
+        :title="$t('orchestrator.console.clear')"
         @click="clearConsole"
       >
         <LucideTrash2 class="h-3.5 w-3.5" />
@@ -232,7 +248,7 @@ const clearConsole = () => {
       class="flex-1 overflow-y-auto p-3 font-mono text-xs leading-relaxed"
     >
       <div v-if="consoleLines.length === 0" class="text-zinc-600">
-        No output
+        {{ $t('orchestrator.console.no_output') }}
       </div>
       <div v-for="line in consoleLines" :key="line.id" class="flex gap-2">
         <span class="shrink-0 text-zinc-600">{{ line.timestamp }}</span>

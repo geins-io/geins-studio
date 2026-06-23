@@ -84,13 +84,13 @@ const subtitle = computed(() => {
   if (props.data.description?.trim()) return props.data.description.trim();
   switch (normalizedType.value) {
     case 'scheduled':
-      return cronHuman.value || 'No schedule set';
+      return cronHuman.value || t('node.trigger.no_schedule');
     case 'event':
-      return eventPattern.value ? '' : 'No event configured';
+      return eventPattern.value ? '' : t('node.trigger.no_event');
     case 'webhook':
-      return 'HTTP trigger';
+      return t('node.trigger.http');
     default:
-      return 'Triggered on demand';
+      return t('node.trigger.on_demand');
   }
 });
 </script>
@@ -114,7 +114,7 @@ const subtitle = computed(() => {
       <div
         class="text-[9px] font-semibold tracking-wider text-green-600 uppercase dark:text-green-400"
       >
-        Trigger
+        {{ $t('node.types.trigger') }}
       </div>
       <div class="truncate text-sm leading-tight font-semibold">
         {{ title }}

@@ -59,7 +59,9 @@ onUnmounted(() => {
           :is="expanded ? LucideChevronDown : LucideChevronRight"
           class="text-muted-foreground h-4 w-4 shrink-0"
         />
-        <h2 class="text-sm font-medium">Workflow input</h2>
+        <h2 class="text-sm font-medium">
+          {{ $t('orchestrator.execution_input.title') }}
+        </h2>
         <span
           v-if="sourceLabel && hasInput"
           class="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-xs"
@@ -70,7 +72,11 @@ onUnmounted(() => {
       <button
         v-if="hasInput"
         class="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1 transition-colors"
-        :title="copied ? 'Copied!' : 'Copy input'"
+        :title="
+          copied
+            ? $t('orchestrator.execution_input.copied')
+            : $t('orchestrator.execution_input.copy_input')
+        "
         @click="copyInput"
       >
         <component
@@ -84,7 +90,7 @@ onUnmounted(() => {
         v-if="!hasInput"
         class="text-muted-foreground p-4 text-center text-sm"
       >
-        No input was recorded for this execution.
+        {{ $t('orchestrator.execution_input.no_input') }}
       </div>
       <pre
         v-else

@@ -163,7 +163,7 @@ const methodBadgeColor = computed(() => {
           class="h-3.5 w-3.5 shrink-0 transition-transform"
           :class="{ 'rotate-90': showRequest }"
         />
-        Request
+        {{ $t('node.settings.http.request') }}
         <span
           v-if="!showRequest"
           class="shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-bold text-white"
@@ -192,7 +192,7 @@ const methodBadgeColor = computed(() => {
         >
           <ExpressionInput
             :model-value="url"
-            placeholder="https://api.example.com/data"
+            :placeholder="$t('node.settings.http.url_placeholder')"
             size="sm"
             expandable
             :default-mode="url.includes('{{') ? 'expression' : 'fixed'"
@@ -213,7 +213,7 @@ const methodBadgeColor = computed(() => {
             class="h-3.5 w-3.5 transition-transform"
             :class="{ 'rotate-90': showHeaders }"
           />
-          Headers
+          {{ $t('node.settings.http.headers') }}
         </span>
         <span
           v-if="Object.keys(headersRaw).length > 0"
@@ -231,7 +231,7 @@ const methodBadgeColor = computed(() => {
           <div class="flex items-center gap-1">
             <input
               v-model="pair.key"
-              placeholder="Name"
+              :placeholder="$t('node.settings.http.header_name')"
               class="bg-background focus:ring-ring h-8 min-w-0 flex-1 rounded-md border px-2 py-1.5 text-xs focus:ring-2 focus:outline-none"
               @blur="commitHeaders()"
             />
@@ -248,7 +248,7 @@ const methodBadgeColor = computed(() => {
             <div class="min-w-0 flex-1">
               <ExpressionInput
                 :model-value="pair.value"
-                placeholder="Value"
+                :placeholder="$t('node.settings.http.header_value')"
                 size="sm"
                 :default-mode="
                   pair.value.includes('{{') ? 'expression' : 'fixed'
@@ -269,7 +269,7 @@ const methodBadgeColor = computed(() => {
           @click="addHeaderRow"
         >
           <LucidePlus class="mr-1.5 h-3.5 w-3.5" />
-          Add header
+          {{ $t('node.settings.http.add_header') }}
         </Button>
       </div>
     </div>
@@ -285,15 +285,15 @@ const methodBadgeColor = computed(() => {
             class="h-3.5 w-3.5 transition-transform"
             :class="{ 'rotate-90': showBody }"
           />
-          Body
+          {{ $t('node.settings.http.body') }}
         </span>
         <span v-if="!needsBody" class="text-muted-foreground text-[10px]">
-          No body
+          {{ $t('node.settings.http.no_body') }}
         </span>
       </button>
       <div v-if="showBody" class="mt-2">
         <p v-if="!needsBody" class="text-muted-foreground text-xs">
-          {{ method }} requests do not have a body
+          {{ $t('node.settings.http.method_no_body', { method }) }}
         </p>
         <KeyValueEditor
           v-else
@@ -303,9 +303,9 @@ const methodBadgeColor = computed(() => {
           :update-editor-hint="updateEditorHint"
           field-name="body"
           inline
-          key-placeholder="Key"
-          value-placeholder="Value"
-          expand-title="Request Body JSON"
+          :key-placeholder="$t('node.settings.http.body_key')"
+          :value-placeholder="$t('node.settings.http.body_value')"
+          :expand-title="$t('node.settings.http.body_expand_title')"
         />
       </div>
     </div>
@@ -320,12 +320,14 @@ const methodBadgeColor = computed(() => {
           class="h-3.5 w-3.5 transition-transform"
           :class="{ 'rotate-90': showOptions }"
         />
-        Options
+        {{ $t('node.settings.http.options') }}
       </button>
       <div v-if="showOptions" class="mt-3 space-y-3">
         <!-- Timeout -->
         <div class="space-y-1">
-          <label class="text-muted-foreground text-xs">Timeout (seconds)</label>
+          <label class="text-muted-foreground text-xs">
+            {{ $t('node.settings.http.timeout_seconds') }}
+          </label>
           <input
             type="number"
             :value="timeout"
@@ -341,9 +343,11 @@ const methodBadgeColor = computed(() => {
         <!-- Throw on error -->
         <div class="flex items-center justify-between gap-2">
           <div>
-            <label class="text-xs font-medium">Throw on error</label>
+            <label class="text-xs font-medium">
+              {{ $t('node.settings.http.throw_on_error') }}
+            </label>
             <p class="text-muted-foreground text-[10px]">
-              Fail the node on HTTP errors
+              {{ $t('node.settings.http.throw_on_error_help') }}
             </p>
           </div>
           <Switch v-model="throwOnError" />
@@ -352,11 +356,13 @@ const methodBadgeColor = computed(() => {
         <!-- Expected status codes -->
         <div class="space-y-1">
           <label class="text-muted-foreground text-xs">
-            Expected status codes
+            {{ $t('node.settings.http.expected_status_codes') }}
           </label>
           <input
             :value="expectedStatusCodesText"
-            placeholder="e.g. 200, 201, 204"
+            :placeholder="
+              $t('node.settings.http.expected_status_codes_placeholder')
+            "
             class="bg-background focus:ring-ring w-full rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
             @input="
               expectedStatusCodesText = ($event.target as HTMLInputElement)
@@ -364,21 +370,23 @@ const methodBadgeColor = computed(() => {
             "
           />
           <p class="text-muted-foreground text-[10px]">
-            Comma-separated. Responses outside this set are treated as errors.
+            {{ $t('node.settings.http.expected_status_codes_help') }}
           </p>
         </div>
 
         <!-- HTTP client name -->
         <div class="space-y-1">
-          <label class="text-muted-foreground text-xs">HTTP client name</label>
+          <label class="text-muted-foreground text-xs">
+            {{ $t('node.settings.http.client_name') }}
+          </label>
           <input
             :value="httpClientName"
-            placeholder="e.g. MonitorSession"
+            :placeholder="$t('node.settings.http.client_name_placeholder')"
             class="bg-background focus:ring-ring w-full rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
             @input="httpClientName = ($event.target as HTMLInputElement).value"
           />
           <p class="text-muted-foreground text-[10px]">
-            Named HTTP client for session sharing between nodes.
+            {{ $t('node.settings.http.client_name_help') }}
           </p>
         </div>
       </div>

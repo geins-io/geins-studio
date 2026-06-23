@@ -59,7 +59,7 @@ const pageDisplay = computed(() => {
         <div
           class="text-xs font-medium tracking-wider text-indigo-500 uppercase"
         >
-          Paginator
+          {{ $t('node.types.paginator') }}
         </div>
         <div class="font-semibold">{{ data.label }}</div>
       </div>
@@ -101,17 +101,17 @@ const pageDisplay = computed(() => {
     <div
       class="bg-background/80 absolute top-[15%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-indigo-500"
     >
-      Fetch Page
+      {{ $t('node.handle.fetch_page') }}
     </div>
     <div
       class="bg-background/80 absolute top-[45%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-indigo-500"
     >
-      Each Page
+      {{ $t('node.handle.each_page') }}
     </div>
     <div
       class="bg-background/80 absolute top-[75%] -right-1 translate-x-full rounded px-1 text-[10px] font-medium text-gray-400"
     >
-      Completed
+      {{ $t('node.handle.completed') }}
     </div>
   </div>
 </template>

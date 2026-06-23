@@ -27,6 +27,7 @@ const isOpen = computed(() => props.node !== null);
 
 const manifestStore = useWorkflowManifest();
 const { resolveIcon } = useLucideIcon();
+const { t } = useI18n();
 const { nodes: vfNodes, edges: vfEdges } = useVueFlow();
 
 const workflowInputDefs = inject<Ref<WorkflowInput[]>>(
@@ -329,7 +330,7 @@ const nodeLabel = computed(
   () =>
     (nodeData.value.label as string) ||
     manifestNodeType.value?.displayName ||
-    'Node properties',
+    t('node.properties.title'),
 );
 
 const isEditingLabel = ref(false);
@@ -430,7 +431,7 @@ const cancelEditLabel = () => {
       </div>
       <button
         class="text-muted-foreground hover:text-foreground hover:bg-accent rounded-md p-1.5 transition-colors"
-        title="Close"
+        :title="$t('close')"
         @click="emit('close')"
       >
         <LucideX class="h-4 w-4" />

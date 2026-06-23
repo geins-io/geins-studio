@@ -10,6 +10,7 @@ const props = defineProps<{
 }>();
 
 const { toast } = useToast();
+const { t } = useI18n();
 
 const inputFields = computed(() => props.manifestAction.input ?? []);
 const examples = computed(() => props.manifestAction.examples ?? []);
@@ -87,8 +88,10 @@ function copyTemplate(fieldName: string) {
   if (!json) return;
   navigator.clipboard.writeText(json);
   toast({
-    title: 'Template copied',
-    description: `Example shape for "${fieldName}" copied to clipboard.`,
+    title: t('node.settings.schema.template_copied'),
+    description: t('node.settings.schema.template_copied_desc', {
+      field: fieldName,
+    }),
   });
 }
 
@@ -96,8 +99,10 @@ function copyFullExample(example: ManifestActionExample) {
   const json = JSON.stringify(example.input, null, 2);
   navigator.clipboard.writeText(json);
   toast({
-    title: 'Example copied',
-    description: `"${example.name}" copied to clipboard.`,
+    title: t('node.settings.schema.example_copied'),
+    description: t('node.settings.schema.example_copied_desc', {
+      name: example.name,
+    }),
   });
 }
 
@@ -146,11 +151,11 @@ function toggleExample(idx: number) {
             <span
               class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
             >
-              Item shape
+              {{ $t('node.settings.schema.item_shape') }}
             </span>
             <button
               class="text-muted-foreground hover:text-foreground rounded p-0.5"
-              title="Copy item template as JSON"
+              :title="$t('node.settings.schema.copy_item_template')"
               @click.stop="copyTemplate(field.name)"
             >
               <LucideCopy class="h-3 w-3" />
@@ -193,11 +198,11 @@ function toggleExample(idx: number) {
             <span
               class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
             >
-              Object shape
+              {{ $t('node.settings.schema.object_shape') }}
             </span>
             <button
               class="text-muted-foreground hover:text-foreground rounded p-0.5"
-              title="Copy object template as JSON"
+              :title="$t('node.settings.schema.copy_object_template')"
               @click.stop="copyTemplate(field.name)"
             >
               <LucideCopy class="h-3 w-3" />
@@ -233,7 +238,7 @@ function toggleExample(idx: number) {
         </template>
 
         <div v-else class="text-muted-foreground text-xs italic">
-          No example shape available
+          {{ $t('node.settings.schema.no_example_shape') }}
         </div>
       </div>
     </div>
@@ -243,7 +248,7 @@ function toggleExample(idx: number) {
       <div
         class="text-muted-foreground mb-2 text-[10px] font-medium tracking-wider uppercase"
       >
-        Examples
+        {{ $t('node.settings.schema.examples') }}
       </div>
       <div class="space-y-1">
         <div v-for="(example, idx) in examples" :key="idx">
@@ -267,7 +272,7 @@ function toggleExample(idx: number) {
             </div>
             <button
               class="text-muted-foreground hover:text-foreground shrink-0 rounded p-1"
-              title="Copy example input"
+              :title="$t('node.settings.schema.copy_example')"
               @click.stop="copyFullExample(example)"
             >
               <LucideCopy class="h-3 w-3" />

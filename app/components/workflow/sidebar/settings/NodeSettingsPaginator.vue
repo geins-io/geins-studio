@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue';
 
+const { t } = useI18n();
+
 const props = defineProps<{
   nodeData: Record<string, unknown>;
   nodeConfig: Record<string, unknown>;
@@ -12,28 +14,28 @@ const props = defineProps<{
 const STRATEGY_OPTIONS = [
   {
     value: 'offset',
-    label: 'Offset',
-    description: 'Skip-based pagination (offset + limit)',
+    label: t('node.settings.paginator.strategy_offset'),
+    description: t('node.settings.paginator.strategy_offset_desc'),
   },
   {
     value: 'pageNumber',
-    label: 'Page Number',
-    description: 'Classic page-number pagination (page=1, page=2, ...)',
+    label: t('node.settings.paginator.strategy_page_number'),
+    description: t('node.settings.paginator.strategy_page_number_desc'),
   },
   {
     value: 'cursor',
-    label: 'Cursor',
-    description: 'Opaque cursor/token-based pagination',
+    label: t('node.settings.paginator.strategy_cursor'),
+    description: t('node.settings.paginator.strategy_cursor_desc'),
   },
   {
     value: 'linkHeader',
-    label: 'Link Header',
-    description: 'Follows RFC 5988 Link headers (rel="next")',
+    label: t('node.settings.paginator.strategy_link_header'),
+    description: t('node.settings.paginator.strategy_link_header_desc'),
   },
   {
     value: 'watermark',
-    label: 'Watermark',
-    description: 'Per-item high-water mark (e.g. last modified timestamp)',
+    label: t('node.settings.paginator.strategy_watermark'),
+    description: t('node.settings.paginator.strategy_watermark_desc'),
   },
 ];
 
@@ -59,7 +61,7 @@ const cursorPathRequired = computed(
 const strategyDescription = computed(
   () =>
     STRATEGY_OPTIONS.find((s) => s.value === strategy.value)?.description ??
-    'Select a pagination strategy',
+    t('node.settings.paginator.select_strategy_hint'),
 );
 
 const onStrategyChange = (value: string) => {
@@ -73,10 +75,16 @@ const onStrategyChange = (value: string) => {
 const CONTEXT_VARS = [
   {
     expr: '{{$cursor}}',
-    description: 'Current pagination cursor (strategy-specific)',
+    description: t('node.settings.paginator.var_cursor'),
   },
-  { expr: '{{$pageNumber}}', description: '1-based page number being fetched' },
-  { expr: '{{$pageSize}}', description: 'Configured page size' },
+  {
+    expr: '{{$pageNumber}}',
+    description: t('node.settings.paginator.var_page_number'),
+  },
+  {
+    expr: '{{$pageSize}}',
+    description: t('node.settings.paginator.var_page_size'),
+  },
 ];
 </script>
 
@@ -85,7 +93,7 @@ const CONTEXT_VARS = [
     <!-- Strategy -->
     <div class="space-y-1">
       <label class="text-sm font-medium">
-        Strategy
+        {{ $t('node.settings.paginator.strategy') }}
         <span class="text-destructive">*</span>
       </label>
       <select
@@ -93,7 +101,9 @@ const CONTEXT_VARS = [
         class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
         @change="onStrategyChange(($event.target as HTMLSelectElement).value)"
       >
-        <option value="" disabled>Select strategy…</option>
+        <option value="" disabled>
+          {{ $t('node.settings.paginator.select_strategy') }}
+        </option>
         <option
           v-for="opt in STRATEGY_OPTIONS"
           :key="opt.value"
@@ -108,59 +118,63 @@ const CONTEXT_VARS = [
     <!-- Page Size -->
     <div class="space-y-1">
       <label class="text-sm font-medium">
-        Page size
+        {{ $t('node.settings.paginator.page_size') }}
         <span class="text-destructive">*</span>
       </label>
       <ExpressionInput
         :model-value="pageSize"
-        placeholder="e.g. 50 or {{input.pageSize}}"
+        :placeholder="$t('node.settings.paginator.page_size_placeholder')"
         default-mode="expression"
         @update:model-value="updateInput('pageSize', $event)"
       />
-      <p class="text-muted-foreground text-xs">Number of items per page</p>
+      <p class="text-muted-foreground text-xs">
+        {{ $t('node.settings.paginator.page_size_help') }}
+      </p>
     </div>
 
     <!-- Items Path -->
     <div class="space-y-1">
       <label class="text-sm font-medium">
-        Items path
+        {{ $t('node.settings.paginator.items_path') }}
         <span class="text-destructive">*</span>
       </label>
       <ExpressionInput
         :model-value="itemsPath"
-        placeholder="e.g. {{$fetchPage.data.items}}"
+        :placeholder="$t('node.settings.paginator.items_path_placeholder')"
         default-mode="expression"
         @update:model-value="updateInput('itemsPath', $event)"
       />
       <p class="text-muted-foreground text-xs">
-        Path to the items array on fetchPage output
+        {{ $t('node.settings.paginator.items_path_help') }}
       </p>
     </div>
 
     <!-- Cursor Path (conditional) -->
     <div v-if="showCursorFields" class="space-y-1">
       <label class="text-sm font-medium">
-        Cursor path
+        {{ $t('node.settings.paginator.cursor_path') }}
         <span v-if="cursorPathRequired" class="text-destructive">*</span>
       </label>
       <ExpressionInput
         :model-value="cursorPath"
-        placeholder="e.g. {{$fetchPage.data.nextCursor}}"
+        :placeholder="$t('node.settings.paginator.cursor_path_placeholder')"
         default-mode="expression"
         @update:model-value="updateInput('cursorPath', $event)"
       />
       <p class="text-muted-foreground text-xs">
         {{
           strategy === 'watermark'
-            ? 'Per-item field used as watermark'
-            : 'Path to the next-page cursor in fetchPage output'
+            ? $t('node.settings.paginator.cursor_path_watermark_help')
+            : $t('node.settings.paginator.cursor_path_help')
         }}
       </p>
     </div>
 
     <!-- Max Pages -->
     <div class="space-y-1">
-      <label class="text-sm font-medium">Max pages</label>
+      <label class="text-sm font-medium">
+        {{ $t('node.settings.paginator.max_pages') }}
+      </label>
       <Input
         type="number"
         :model-value="maxPages ?? 1000"
@@ -171,44 +185,50 @@ const CONTEXT_VARS = [
         "
       />
       <p class="text-muted-foreground text-xs">
-        Safety cap on the number of pages fetched
+        {{ $t('node.settings.paginator.max_pages_help') }}
       </p>
     </div>
 
     <!-- Initial Cursor (conditional) -->
     <div v-if="showCursorFields" class="space-y-1">
-      <label class="text-sm font-medium">Initial cursor</label>
+      <label class="text-sm font-medium">
+        {{ $t('node.settings.paginator.initial_cursor') }}
+      </label>
       <ExpressionInput
         :model-value="initialCursor"
-        placeholder="Optional starting cursor"
+        :placeholder="$t('node.settings.paginator.initial_cursor_placeholder')"
         default-mode="expression"
         @update:model-value="updateInput('initialCursor', $event || undefined)"
       />
       <p class="text-muted-foreground text-xs">
-        Override the starting cursor (defaults are strategy-specific)
+        {{ $t('node.settings.paginator.initial_cursor_help') }}
       </p>
     </div>
 
     <!-- Termination Condition -->
     <div class="space-y-1">
-      <label class="text-sm font-medium">Termination condition</label>
+      <label class="text-sm font-medium">
+        {{ $t('node.settings.paginator.termination_condition') }}
+      </label>
       <ExpressionInput
         :model-value="terminationCondition"
-        placeholder="Optional override"
+        :placeholder="
+          $t('node.settings.paginator.termination_condition_placeholder')
+        "
         default-mode="expression"
         @update:model-value="
           updateInput('terminationCondition', $event || undefined)
         "
       />
       <p class="text-muted-foreground text-xs">
-        Override the strategy's default stop condition
+        {{ $t('node.settings.paginator.termination_condition_help') }}
       </p>
     </div>
 
     <!-- Context variables reference -->
     <div class="border-t pt-3">
       <p class="text-muted-foreground mb-2 text-xs font-medium">
-        Context variables
+        {{ $t('node.settings.context_variables') }}
       </p>
       <div class="space-y-1.5">
         <div
@@ -229,16 +249,22 @@ const CONTEXT_VARS = [
     <!-- Handle labels reference -->
     <div class="text-muted-foreground border-t pt-3 text-xs">
       <p>
-        <span class="font-medium text-indigo-600">Fetch Page</span>
-        action that fetches one page
+        <span class="font-medium text-indigo-600">
+          {{ $t('node.settings.paginator.fetch_page') }}
+        </span>
+        {{ $t('node.settings.paginator.fetch_page_help') }}
       </p>
       <p class="mt-1">
-        <span class="font-medium text-indigo-600">Each Page</span>
-        body executed per page
+        <span class="font-medium text-indigo-600">
+          {{ $t('node.settings.paginator.each_page') }}
+        </span>
+        {{ $t('node.settings.paginator.each_page_help') }}
       </p>
       <p class="mt-1">
-        <span class="font-medium text-gray-500">Completed</span>
-        runs after all pages are processed
+        <span class="font-medium text-gray-500">
+          {{ $t('node.settings.completed') }}
+        </span>
+        {{ $t('node.settings.paginator.completed_help') }}
       </p>
     </div>
   </div>

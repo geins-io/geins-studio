@@ -39,7 +39,7 @@ interface WorkflowGroupCard {
   logo: Component | null;
 }
 
-const _i18n = useI18n();
+const { t } = useI18n();
 
 definePageMeta({
   pageType: 'default',
@@ -165,12 +165,12 @@ const formatRelativeTime = (isoDate: string): string => {
   const then = new Date(isoDate).getTime();
   const diffMs = now - then;
   const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 1) return t('workflows.just_now');
+  if (diffMin < 60) return t('workflows.minutes_ago', { count: diffMin });
   const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 24) return t('workflows.hours_ago', { count: diffHours });
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+  return t('workflows.days_ago', { count: diffDays });
 };
 
 const formatThroughput = (count: number): string => {
@@ -258,7 +258,9 @@ const mapToGroups = (metricsList: WorkflowMetrics[]): WorkflowGroupCard[] => {
       workflowCount: items.length,
       enabledCount: enabledItems.length,
       health: deriveGroupHealth(healths, allEnabled),
-      lastSync: lastUpdated ? formatRelativeTime(lastUpdated) : 'Never',
+      lastSync: lastUpdated
+        ? formatRelativeTime(lastUpdated)
+        : t('workflows.never'),
       executions24h: totalExecutions24h,
       executions7d: totalExecutions7d,
       executionsTotal: totalExecutions,
@@ -274,13 +276,18 @@ const mapToGroups = (metricsList: WorkflowMetrics[]): WorkflowGroupCard[] => {
   const groupCards = Array.from(groupMap.entries()).map(([groupName, bucket]) =>
     buildCard(
       groupName,
-      `${bucket.metrics.length} workflow${bucket.metrics.length !== 1 ? 's' : ''} in this group`,
+      t('workflows.workflows_in_group', bucket.metrics.length),
       bucket.metrics,
     ),
   );
 
   const standaloneCards = ungrouped.map((m) =>
-    buildCard(m.name || 'Unnamed Workflow', m.description || '', [m], true),
+    buildCard(
+      m.name || t('workflows.unnamed_workflow'),
+      m.description || '',
+      [m],
+      true,
+    ),
   );
 
   return [...groupCards, ...standaloneCards];
@@ -307,18 +314,26 @@ const toggleGroup = async (group: WorkflowGroupCard, enable: boolean) => {
   if (!ids?.length) return;
   togglingGroup.value = group.id;
 
-  const label = enable ? 'Enable' : 'Disable';
-  const verb = enable ? 'enabled' : 'disabled';
+  const action = enable ? 'enable' : 'disable';
+  const titleSucceeded = enable
+    ? t('workflows.enable_succeeded')
+    : t('workflows.disable_succeeded');
+  const titleFailed = enable
+    ? t('workflows.enable_failed')
+    : t('workflows.disable_failed');
+  const titlePartial = enable
+    ? t('workflows.enable_partial')
+    : t('workflows.disable_partial');
 
   try {
-    geinsLog(`${label} request →`, {
+    geinsLog(`${action} request →`, {
       group: group.name,
       workflowIds: ids,
     });
     const result = enable
       ? await orchestratorApi.workflow.bulkEnable(ids)
       : await orchestratorApi.workflow.bulkDisable(ids);
-    geinsLog(`${label} response ←`, result);
+    geinsLog(`${action} response ←`, result);
 
     // Record optimistic overrides. The computed `metrics` layers these on
     // top of the cached server response so later refreshes can't overwrite
@@ -333,8 +348,14 @@ const toggleGroup = async (group: WorkflowGroupCard, enable: boolean) => {
 
     if (result.failed === 0) {
       toast({
-        title: `${label} succeeded`,
-        description: `${result.successful} workflow${result.successful === 1 ? '' : 's'} ${verb} in "${group.name}".`,
+        title: titleSucceeded,
+        description: enable
+          ? t('workflows.bulk_enabled_count', result.successful, {
+              named: { count: result.successful, group: group.name },
+            })
+          : t('workflows.bulk_disabled_count', result.successful, {
+              named: { count: result.successful, group: group.name },
+            }),
       });
     } else {
       // Map failed ids back to their display names so the user knows
@@ -351,26 +372,48 @@ const toggleGroup = async (group: WorkflowGroupCard, enable: boolean) => {
 
       if (result.successful === 0) {
         toast({
-          title: `${label} failed`,
+          title: titleFailed,
           description:
             [
               firstFailError,
               failedNames.length > 0
-                ? `Failed: ${failedNames.join(', ')}`
+                ? t('workflows.bulk_failed_names', {
+                    names: failedNames.join(', '),
+                  })
                 : null,
             ]
               .filter(Boolean)
               .join(' — ') ||
-            `Could not ${label.toLowerCase()} workflows in "${group.name}".`,
+            (enable
+              ? t('workflows.bulk_enable_failed_generic', { group: group.name })
+              : t('workflows.bulk_disable_failed_generic', {
+                  group: group.name,
+                })),
           variant: 'negative',
         });
       } else {
         toast({
-          title: `${label} partially applied`,
+          title: titlePartial,
           description: [
-            `${result.successful} ${verb}, ${result.failed} failed in "${group.name}".`,
-            failedNames.length > 0 ? `Failed: ${failedNames.join(', ')}` : null,
-            firstFailError ? `Reason: ${firstFailError}` : null,
+            enable
+              ? t('workflows.bulk_enable_partial_count', {
+                  successful: result.successful,
+                  failed: result.failed,
+                  group: group.name,
+                })
+              : t('workflows.bulk_disable_partial_count', {
+                  successful: result.successful,
+                  failed: result.failed,
+                  group: group.name,
+                }),
+            failedNames.length > 0
+              ? t('workflows.bulk_failed_names', {
+                  names: failedNames.join(', '),
+                })
+              : null,
+            firstFailError
+              ? t('workflows.bulk_failed_reason', { reason: firstFailError })
+              : null,
           ]
             .filter(Boolean)
             .join(' '),
@@ -380,7 +423,7 @@ const toggleGroup = async (group: WorkflowGroupCard, enable: boolean) => {
     }
   } catch (err) {
     toast({
-      title: `${label} failed`,
+      title: titleFailed,
       description: err instanceof Error ? err.message : String(err),
       variant: 'negative',
     });
@@ -624,7 +667,7 @@ watchEffect(() => {
               <span
                 class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
               >
-                Active Workflows
+                {{ $t('workflows.active_workflows') }}
               </span>
               <span class="text-sm font-semibold">
                 <template v-if="group.toggleableWorkflowIds.length > 0">
@@ -642,7 +685,7 @@ watchEffect(() => {
               <span
                 class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
               >
-                Last Sync
+                {{ $t('workflows.last_sync') }}
               </span>
               <span class="text-sm font-semibold">{{ group.lastSync }}</span>
             </div>
@@ -669,27 +712,27 @@ watchEffect(() => {
               <span
                 class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
               >
-                Executions
+                {{ $t('execution', 2) }}
               </span>
               <div class="flex items-center gap-3">
                 <span class="text-sm font-semibold">
                   {{ formatThroughput(group.executions24h) }}
                   <span class="text-muted-foreground text-[10px] font-normal">
-                    24h
+                    {{ $t('workflows.period_24h') }}
                   </span>
                 </span>
                 <span class="text-muted-foreground text-xs">·</span>
                 <span class="text-sm font-semibold">
                   {{ formatThroughput(group.executions7d) }}
                   <span class="text-muted-foreground text-[10px] font-normal">
-                    7d
+                    {{ $t('workflows.period_7d') }}
                   </span>
                 </span>
                 <span class="text-muted-foreground text-xs">·</span>
                 <span class="text-sm font-semibold">
                   {{ formatThroughput(group.executionsTotal) }}
                   <span class="text-muted-foreground text-[10px] font-normal">
-                    total
+                    {{ $t('workflows.period_total') }}
                   </span>
                 </span>
               </div>

@@ -49,7 +49,7 @@ const workflowName = computed(
       </div>
       <div>
         <div class="text-xs font-medium tracking-wider text-teal-500 uppercase">
-          Workflow
+          {{ $t('node.types.workflow') }}
         </div>
         <div class="font-semibold">{{ data.label }}</div>
       </div>
@@ -60,7 +60,7 @@ const workflowName = computed(
       v-if="workflowName"
       class="text-muted-foreground bg-muted/50 mt-2 rounded px-2 py-1 text-xs"
     >
-      Runs: {{ workflowName }}
+      {{ $t('node.runs', { workflow: workflowName }) }}
     </div>
 
     <!-- Output handle -->

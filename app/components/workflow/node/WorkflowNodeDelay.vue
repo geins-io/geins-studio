@@ -13,15 +13,16 @@ const props = defineProps<{
 }>();
 
 const { resolveIcon } = useLucideIcon();
+const { t } = useI18n();
 
 const IconComponent = computed(
   () => resolveIcon(props.data.icon) || resolveIcon('Timer'),
 );
 
-const UNIT_LABELS: Record<string, [string, string]> = {
-  S: ['second', 'seconds'],
-  M: ['minute', 'minutes'],
-  H: ['hour', 'hours'],
+const UNIT_KEYS: Record<string, string> = {
+  S: 'node.time.second',
+  M: 'node.time.minute',
+  H: 'node.time.hour',
 };
 
 const summary = computed(() => {
@@ -38,11 +39,8 @@ const summary = computed(() => {
   const match = String(iso).match(/^PT?(\d+)(S|M|H)$/i);
   if (match && match[1] && match[2]) {
     const amount = Number(match[1]);
-    const [singular, plural] = UNIT_LABELS[match[2].toUpperCase()] ?? [
-      'unit',
-      'units',
-    ];
-    return `${amount} ${amount === 1 ? singular : plural}`;
+    const unitKey = UNIT_KEYS[match[2].toUpperCase()] ?? 'node.time.unit';
+    return t(unitKey, { count: amount }, amount);
   }
   return String(iso);
 });
@@ -79,7 +77,7 @@ const SummaryIcon = computed(() => resolveIcon(summaryIcon.value));
         <div
           class="text-xs font-medium tracking-wider text-orange-500 uppercase"
         >
-          Delay
+          {{ $t('node.types.delay') }}
         </div>
         <div class="font-semibold">{{ data.label }}</div>
       </div>

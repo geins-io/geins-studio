@@ -18,6 +18,7 @@ const props = defineProps<{
 }>();
 
 const { orchestratorApi } = useGeinsRepository();
+const { t } = useI18n();
 
 // ─── Date formatting ──────────────────────────────────────────────
 const pad = (n: number, len = 2) => String(n).padStart(len, '0');
@@ -35,12 +36,12 @@ const relativeTime = (iso: string | undefined): string => {
   if (Number.isNaN(d.getTime())) return '';
   const diff = Date.now() - d.getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return t('workflow_builder.just_now');
+  if (mins < 60) return t('workflow_builder.minutes_ago', { count: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t('workflow_builder.hours_ago', { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return t('workflow_builder.days_ago', { count: days });
   return formatDate(iso);
 };
 
@@ -342,7 +343,10 @@ async function recreateFromVersion(version: number) {
   try {
     const def = definitionsByVersion.value[version];
     if (!def) {
-      toast({ title: 'Version data not available', variant: 'negative' });
+      toast({
+        title: t('workflow_builder.version_data_unavailable'),
+        variant: 'negative',
+      });
       return;
     }
 
@@ -373,13 +377,17 @@ async function recreateFromVersion(version: number) {
       name: created.name ?? name,
     };
     toast({
-      title: 'Workflow created',
-      description: `Created "${created.name}".`,
+      title: t('workflow_builder.workflow_created'),
+      description: t('workflow_builder.workflow_created_description', {
+        name: created.name ?? name,
+      }),
     });
   } catch (err: unknown) {
     toast({
-      title: 'Failed to recreate',
-      description: (err as { message?: string })?.message || 'Unknown error',
+      title: t('workflow_builder.failed_to_recreate'),
+      description:
+        (err as { message?: string })?.message ||
+        t('workflow_builder.unknown_error'),
       variant: 'negative',
     });
   } finally {
@@ -437,7 +445,9 @@ async function loadDiff(version: number) {
     }
   } catch (err) {
     diffErrors.value[version] =
-      err instanceof Error ? err.message : 'Failed to load diff';
+      err instanceof Error
+        ? err.message
+        : t('workflow_builder.failed_to_load_diff');
   } finally {
     diffLoading.value[version] = false;
   }
@@ -488,23 +498,35 @@ function groupChanges(changes: VersionDiffChange[]): DiffGroup[] {
 
   const result: DiffGroup[] = [];
   if (groups.nodes!.length)
-    result.push({ label: 'Nodes', icon: 'boxes', changes: groups.nodes! });
+    result.push({
+      label: t('workflow_builder.diff_group_nodes'),
+      icon: 'boxes',
+      changes: groups.nodes!,
+    });
   if (groups.connections!.length)
     result.push({
-      label: 'Connections',
+      label: t('workflow_builder.diff_group_connections'),
       icon: 'cable',
       changes: groups.connections!,
     });
   if (groups.trigger!.length)
-    result.push({ label: 'Trigger', icon: 'zap', changes: groups.trigger! });
+    result.push({
+      label: t('workflows.trigger'),
+      icon: 'zap',
+      changes: groups.trigger!,
+    });
   if (groups.settings!.length)
     result.push({
-      label: 'Settings',
+      label: t('settings'),
       icon: 'settings',
       changes: groups.settings!,
     });
   if (groups.other!.length)
-    result.push({ label: 'Other', icon: 'file-text', changes: groups.other! });
+    result.push({
+      label: t('workflow_builder.diff_group_other'),
+      icon: 'file-text',
+      changes: groups.other!,
+    });
   return result;
 }
 
@@ -530,8 +552,10 @@ function truncateValue(val: unknown): string {
 <template>
   <ContentEditMainContent>
     <ContentEditCard
-      title="Version history"
-      :description="`${versions.length} versions`"
+      :title="$t('workflow_builder.version_history')"
+      :description="
+        $t('workflow_builder.version_count', { count: versions.length })
+      "
     >
       <template #header-action>
         <Button
@@ -544,7 +568,7 @@ function truncateValue(val: unknown): string {
             class="mr-2 h-3.5 w-3.5"
             :class="{ 'animate-spin': historyLoading }"
           />
-          Refresh
+          {{ $t('workflow_builder.refresh') }}
         </Button>
       </template>
 
@@ -592,7 +616,7 @@ function truncateValue(val: unknown): string {
               size="sm"
               class="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
             >
-              Current
+              {{ $t('workflow_builder.current') }}
             </Badge>
 
             <!-- Node/connection counts -->
@@ -602,8 +626,7 @@ function truncateValue(val: unknown): string {
             >
               <LucideBoxes class="h-3 w-3" />
               <span>
-                {{ entry.nodeCount }}
-                {{ entry.nodeCount === 1 ? 'node' : 'nodes' }}
+                {{ $t('workflow_builder.node_count', entry.nodeCount) }}
               </span>
               <span class="mx-0.5">·</span>
               <LucideCable class="h-3 w-3" />
@@ -671,12 +694,12 @@ function truncateValue(val: unknown): string {
               <div
                 class="text-muted-foreground mb-2 text-[11px] font-medium tracking-wider uppercase"
               >
-                Execution stats
+                {{ $t('workflow_builder.execution_stats') }}
               </div>
               <div class="grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-4">
                 <div>
                   <div class="text-muted-foreground text-[10px] uppercase">
-                    Runs
+                    {{ $t('workflow_builder.runs') }}
                   </div>
                   <div class="text-sm font-medium tabular-nums">
                     {{ entry.stats.totalExecutions }}
@@ -684,7 +707,7 @@ function truncateValue(val: unknown): string {
                 </div>
                 <div>
                   <div class="text-muted-foreground text-[10px] uppercase">
-                    Success rate
+                    {{ $t('workflows.success_rate') }}
                   </div>
                   <div
                     class="text-sm font-medium tabular-nums"
@@ -708,7 +731,7 @@ function truncateValue(val: unknown): string {
                 </div>
                 <div>
                   <div class="text-muted-foreground text-[10px] uppercase">
-                    Avg duration
+                    {{ $t('workflow_builder.avg_duration') }}
                   </div>
                   <div class="text-sm font-medium tabular-nums">
                     {{
@@ -720,7 +743,7 @@ function truncateValue(val: unknown): string {
                 </div>
                 <div>
                   <div class="text-muted-foreground text-[10px] uppercase">
-                    Failed
+                    {{ $t('workflow_builder.status_failed') }}
                   </div>
                   <div
                     class="text-sm font-medium tabular-nums"
@@ -738,7 +761,7 @@ function truncateValue(val: unknown): string {
               class="text-muted-foreground bg-muted/30 mb-3 flex items-center gap-2 rounded-md p-3 text-xs"
             >
               <LucideActivity class="h-3.5 w-3.5" />
-              No executions recorded for this version
+              {{ $t('workflow_builder.no_executions_for_version') }}
             </div>
 
             <!-- Recreate from version -->
@@ -769,7 +792,11 @@ function truncateValue(val: unknown): string {
                 @click.stop="recreateFromVersion(entry.version)"
               >
                 <LucideCopyPlus class="mr-1.5 h-3.5 w-3.5" />
-                Recreate as v{{ entry.version }}
+                {{
+                  $t('workflow_builder.recreate_as_version', {
+                    version: entry.version,
+                  })
+                }}
               </Button>
             </div>
 
@@ -779,7 +806,7 @@ function truncateValue(val: unknown): string {
               class="text-muted-foreground flex items-center gap-2 py-2 text-sm"
             >
               <LucideSparkles class="h-4 w-4 text-amber-500" />
-              Initial version — no previous version to compare
+              {{ $t('workflow_builder.initial_version') }}
             </div>
 
             <!-- Loading diff -->
@@ -803,7 +830,7 @@ function truncateValue(val: unknown): string {
                 class="ml-2 h-6 px-2 text-xs"
                 @click="loadDiff(entry.version)"
               >
-                Retry
+                {{ $t('retry') }}
               </Button>
             </div>
 
@@ -815,21 +842,24 @@ function truncateValue(val: unknown): string {
                 class="text-muted-foreground flex items-center gap-2 py-2 text-sm"
               >
                 <LucideEqual class="h-4 w-4" />
-                No changes detected between v{{ entry.version - 1 }} and v{{
-                  entry.version
+                {{
+                  $t('workflow_builder.no_changes_between_versions', {
+                    from: entry.version - 1,
+                    to: entry.version,
+                  })
                 }}
               </div>
 
               <!-- Grouped changes -->
               <template v-else>
                 <div class="text-muted-foreground mb-2 text-xs">
-                  {{ diffCache[entry.version]!.length }}
                   {{
-                    diffCache[entry.version]!.length === 1
-                      ? 'change'
-                      : 'changes'
+                    $t(
+                      'workflow_builder.changes_from_version',
+                      { from: entry.version - 1 },
+                      diffCache[entry.version]!.length,
+                    )
                   }}
-                  from v{{ entry.version - 1 }}
                 </div>
 
                 <div
@@ -924,7 +954,7 @@ function truncateValue(val: unknown): string {
           v-if="versions.length === 0"
           class="text-muted-foreground py-12 text-center text-sm"
         >
-          No version history
+          {{ $t('workflow_builder.no_version_history') }}
         </div>
       </div>
     </ContentEditCard>
