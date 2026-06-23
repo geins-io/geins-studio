@@ -68,8 +68,8 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css', 'flag-icons/css/flag-icons.min.css'],
 
   vite: {
-    // @ts-expect-error Type conflict: @tailwindcss/vite uses vite 7 types while vitepress pulls in vite 5 types.
-    plugins: [tailwindcss()],
+    // Cast required because Nuxt and VitePress may resolve different Vite type versions.
+    plugins: [tailwindcss() as unknown as never],
     optimizeDeps: {
       include: [
         '@lucide/vue',
