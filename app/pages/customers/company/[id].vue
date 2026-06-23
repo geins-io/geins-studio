@@ -23,7 +23,7 @@ import { LucideUser, LucidePackage } from '#components';
 // Order matters — some composables depend on values from earlier ones (e.g. useGeinsRepository before API calls).
 // Add new composables here; do not scatter initialization throughout the file.
 const scope = 'pages/customers/company/[id].vue';
-const { customerApi } = useGeinsRepository();
+const { customerApi, userApi } = useGeinsRepository();
 const {
   hasValidatedVat,
   vatValid,
@@ -356,20 +356,18 @@ const { handleFetchResult } = usePageError({
 // Intent: Fetch and store user list for the sales rep selector.
 // Users are fetched once on page load and used in the form dropdown and summary display.
 const users = ref<User[]>([]);
-const { useGeinsFetch } = useGeinsApi();
 
-const fetchUsers = async () => {
-  const usersResult = await useGeinsFetch<User[]>('/user/list');
-  if (!usersResult.error.value) {
-    users.value = usersResult.data.value as User[];
-    users.value = users.value.map((user) => ({
-      ...user,
-      name: fullName(user),
-    }));
-  }
-};
+const { data: usersData, error: usersError } = await useAsyncData<User[]>(
+  'company-users',
+  () => userApi.list(),
+);
 
-fetchUsers();
+if (!usersError.value && Array.isArray(usersData.value)) {
+  users.value = usersData.value.map((user) => ({
+    ...user,
+    name: fullName(user),
+  }));
+}
 
 // =====================================================================================
 // BUYERS MANAGEMENT

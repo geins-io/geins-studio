@@ -7,6 +7,7 @@
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import {
+  TableMode,
   SelectorSelectionStrategy,
   type PriceListRuleMode,
   type PriceListProductList,

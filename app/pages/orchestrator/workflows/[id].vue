@@ -208,13 +208,17 @@ const workflowInputs = ref<WorkflowInput[]>([]);
 // render as empty cards in the Inputs tab; once the user adds an input the
 // category persists naturally through `workflowInputs[].category`.
 const additionalInputGroups = ref<string[]>([]);
+const workflowVariablesKey = 'orchestrator-workflow-variables';
+const workflowDataKey = computed(
+  () => `orchestrator-workflow-${workflowId.value}`,
+);
 
 // Provide workflow inputs + variables to the builder's node properties sidebar
 // so the input pane can show available data sources without prop drilling.
 provide('workflowInputDefs', workflowInputs);
 
 const { data: workflowVariables } = useAsyncData(
-  'workflow-variables',
+  workflowVariablesKey,
   () => orchestratorApi.variable.list(),
   {
     default: () =>
@@ -367,7 +371,7 @@ const hasExecutionChanges = computed(() => {
 // ─── Current workflow (for enable/disable + duplicate) ────────────
 const { data: currentWorkflow, refresh: refreshCurrentWorkflow } =
   await useAsyncData(
-    () => `workflow-${workflowId.value}`,
+    workflowDataKey,
     () =>
       isNew.value
         ? Promise.resolve(null)
@@ -1670,6 +1674,7 @@ const { summaryProps } = useEntityEditSummary({
       :workflow-id="workflowId"
       :is-new="isNew"
       :is-dirty="hasExecutionChanges"
+      :current-workflow="currentWorkflow"
       @executed="refreshExecutions"
       @change="onBuilderChange"
       @change:ui="onBuilderUiChange"

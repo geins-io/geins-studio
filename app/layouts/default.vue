@@ -38,6 +38,7 @@ const contentClasses = computed(() => {
       >
         <slot />
       </div>
+      <NuxtAnnouncer />
     </SidebarInset>
   </SidebarProvider>
 </template>

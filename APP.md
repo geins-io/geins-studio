@@ -88,7 +88,7 @@ Each entry has optional `children[]` with `childPattern` used for active-state m
 ```
 definePageMeta({ pageType: 'list' })
 → useGeinsRepository()     — typed API client
-→ useAsyncData()           — fetch with SSR cache key
+→ useAsyncData(key, fn)    — fetch with explicit stable client cache key
 → useColumns<T>()          — column defs + addActionsColumn
 → useTable<T>()            — visibility / sort state
 → useEntityUrl()           — link generation
@@ -97,6 +97,13 @@ definePageMeta({ pageType: 'list' })
 ```
 
 Error handling: a `fetchError` ref is passed to `TableView` (`:error` + `:on-retry`). `NuxtErrorBoundary` wraps as a safety net.
+
+Data fetching convention:
+
+- Reads: `useAsyncData(key, () => repo.x())`.
+- Mutations: imperative repository calls, then invalidate reads with `refresh()` or `refreshNuxtData(key)`.
+- Shared reference data (channels/currencies/countries/etc.): Pinia store fetch actions with explicit invalidation.
+- Avoid `useFetch(url)` when a repository exists.
 
 ### Detail / Edit Page
 

@@ -4,6 +4,7 @@ import type {
   FlagText,
   Language,
 } from '#shared/types';
+import { TableMode } from '#shared/types';
 import type { Row } from '@tanstack/vue-table';
 
 const { t } = useI18n();

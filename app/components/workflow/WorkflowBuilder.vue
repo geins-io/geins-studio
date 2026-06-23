@@ -35,6 +35,7 @@ const props = defineProps<{
   workflowId: string;
   isNew: boolean;
   isDirty?: boolean;
+  currentWorkflow?: WorkflowDefinition | null;
 }>();
 
 const emit = defineEmits<{
@@ -53,15 +54,17 @@ const { toCanvas, toApi } = useWorkflowCanvas();
 // All node types are routed through the same dispatcher so the canvas host
 // doesn't need to know about individual node implementations. WorkflowNode
 // reads the `type` prop VueFlow forwards and renders the matching component.
+const rawWorkflowNode = markRaw(WorkflowNode);
+
 const nodeTypes = {
-  trigger: WorkflowNode,
-  action: WorkflowNode,
-  condition: WorkflowNode,
-  iterator: WorkflowNode,
-  loop: WorkflowNode,
-  delay: WorkflowNode,
-  workflow: WorkflowNode,
-  paginator: WorkflowNode,
+  trigger: rawWorkflowNode,
+  action: rawWorkflowNode,
+  condition: rawWorkflowNode,
+  iterator: rawWorkflowNode,
+  loop: rawWorkflowNode,
+  delay: rawWorkflowNode,
+  workflow: rawWorkflowNode,
+  paginator: rawWorkflowNode,
 } as unknown as NodeTypesObject;
 
 const edgeTypes = {
@@ -78,16 +81,9 @@ const isLegacyTriggerRef = (id: string | undefined): boolean =>
   id.toLowerCase() === 'trigger' &&
   id !== TRIGGER_NODE_ID;
 
-// Shares the cache key with the parent page (pages/orchestrator/workflows/[id].vue),
-// so Nuxt returns the already-fetched workflow instead of re-requesting.
-const { data: currentWorkflow } = useAsyncData(
-  () => `workflow-${props.workflowId}`,
-  () =>
-    props.isNew
-      ? Promise.resolve(null)
-      : orchestratorApi.workflow.get(props.workflowId),
-  { watch: [() => props.workflowId] },
-);
+// Parent page owns workflow fetching. Builder consumes that data to avoid
+// duplicate useAsyncData calls with conflicting handlers/options.
+const currentWorkflow = computed(() => props.currentWorkflow ?? null);
 
 // The trigger is workflow-level metadata — derive the node's display data
 // from the workflow object so the canvas reflects the configured trigger
