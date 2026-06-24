@@ -26,6 +26,8 @@ const { geinsLogInfo, geinsLogError } = useGeinsLog('workflow-editor');
 const { t, locale } = useI18n();
 const { toast } = useToast();
 const { orchestratorApi } = useGeinsRepository();
+const { triggerTypeLabel, logVerbosityLabel, errorHandlingLabel } =
+  useWorkflowLabels();
 
 function extractApiError(
   err: unknown,
@@ -820,12 +822,9 @@ const showSidebar = computed(
     !isNew.value,
 );
 
-const triggerDisplayName = computed(() => {
-  const tt = manifestTriggerTypes.value.find(
-    (t) => (t.type as string) === triggerTypeValue.value,
-  );
-  return tt?.displayName ?? triggerTypeValue.value;
-});
+const triggerDisplayName = computed(() =>
+  triggerTypeLabel(triggerTypeValue.value),
+);
 
 const summary = computed<DataItem[]>(() => {
   const items: DataItem[] = [];
@@ -904,12 +903,12 @@ const settingsSummary = computed<DataItem[]>(() => {
   if (s.logVerbosity)
     items.push({
       label: t('workflows.log_verbosity'),
-      value: String(s.logVerbosity),
+      value: logVerbosityLabel(String(s.logVerbosity)),
     });
   if (s.errorHandlingStrategy)
     items.push({
       label: t('workflows.error_handling'),
-      value: String(s.errorHandlingStrategy),
+      value: errorHandlingLabel(String(s.errorHandlingStrategy)),
     });
   return items;
 });
@@ -1172,7 +1171,7 @@ const { summaryProps } = useEntityEditSummary({
                               :key="tt.type"
                               :value="tt.type"
                             >
-                              {{ tt.displayName }}
+                              {{ triggerTypeLabel(tt.type) }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
