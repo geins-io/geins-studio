@@ -49,6 +49,7 @@ type EntityList = WorkflowListItem;
 
 const scope = 'pages/orchestrator/workflows.vue';
 const { t, te, locale } = useI18n();
+const { triggerTypeLabel } = useWorkflowLabels();
 const { geinsLog } = useGeinsLog(scope);
 
 definePageMeta({
@@ -219,14 +220,11 @@ const mapToListData = (
     const wfMetrics = metricsMap.get(wf.id);
     const groupName = wf.group ?? '';
 
-    let displayType = String(wf.type || 'onDemand');
-    displayType = displayType.charAt(0).toUpperCase() + displayType.slice(1);
-
     return {
       id: wf.id,
       name: wf.name || t('workflows.unknown'),
       description: wf.description ?? '',
-      type: displayType,
+      type: triggerTypeLabel(wf.type || 'onDemand'),
       triggerSummary: deriveTriggerSummary(wf),
       nodeCount: wf.nodeCount || 0,
       health: wfMetrics?.status?.health ?? 'Unknown',
@@ -308,11 +306,14 @@ onMounted(() => {
   const triggerIconMap: Record<string, Component> = {
     scheduled: LucideClock,
     event: LucideZap,
-    onDemand: LucidePlay,
+    ondemand: LucidePlay,
   };
 
+  // `row.type` is a translated label ("On demand"), so normalize away case and
+  // separators before mapping to an icon — never assume the raw enum value.
   const resolveTriggerIcon = (row: EntityList) => {
-    const type = row.type?.toLowerCase() || 'ondemand';
+    const type =
+      (row.type ?? '').toLowerCase().replace(/[^a-z0-9]/g, '') || 'ondemand';
     const icon = triggerIconMap[type] || LucidePlay;
     return { icon, class: 'text-muted-foreground' };
   };

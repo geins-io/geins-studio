@@ -26,6 +26,8 @@ const { geinsLogInfo, geinsLogError } = useGeinsLog('workflow-editor');
 const { t, locale } = useI18n();
 const { toast } = useToast();
 const { orchestratorApi } = useGeinsRepository();
+const { triggerTypeLabel, logVerbosityLabel, errorHandlingLabel } =
+  useWorkflowLabels();
 
 function extractApiError(
   err: unknown,
@@ -314,6 +316,11 @@ const availableSubEntities = computed(() => {
   );
   return entity?.subEntities ?? [];
 });
+
+// Reka's <SelectItem> rejects an empty-string value (it's reserved for the
+// cleared/placeholder state). Use a sentinel for the "none" option and map it
+// back to '' on the form so the API payload stays unchanged.
+const SUB_ENTITY_NONE = '__none__';
 
 const prettyLabel = (name: string): string =>
   name
@@ -815,12 +822,9 @@ const showSidebar = computed(
     !isNew.value,
 );
 
-const triggerDisplayName = computed(() => {
-  const tt = manifestTriggerTypes.value.find(
-    (t) => (t.type as string) === triggerTypeValue.value,
-  );
-  return tt?.displayName ?? triggerTypeValue.value;
-});
+const triggerDisplayName = computed(() =>
+  triggerTypeLabel(triggerTypeValue.value),
+);
 
 const summary = computed<DataItem[]>(() => {
   const items: DataItem[] = [];
@@ -899,12 +903,12 @@ const settingsSummary = computed<DataItem[]>(() => {
   if (s.logVerbosity)
     items.push({
       label: t('workflows.log_verbosity'),
-      value: String(s.logVerbosity),
+      value: logVerbosityLabel(String(s.logVerbosity)),
     });
   if (s.errorHandlingStrategy)
     items.push({
       label: t('workflows.error_handling'),
-      value: String(s.errorHandlingStrategy),
+      value: errorHandlingLabel(String(s.errorHandlingStrategy)),
     });
   return items;
 });
@@ -1167,7 +1171,7 @@ const { summaryProps } = useEntityEditSummary({
                               :key="tt.type"
                               :value="tt.type"
                             >
-                              {{ tt.displayName }}
+                              {{ triggerTypeLabel(tt.type) }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1271,12 +1275,26 @@ const { summaryProps } = useEntityEditSummary({
                           {{ $t('workflows.sub_entity') }}
                         </FormLabel>
                         <FormControl>
-                          <Select v-bind="componentField">
+                          <Select
+                            v-bind="componentField"
+                            :model-value="
+                              componentField.modelValue || SUB_ENTITY_NONE
+                            "
+                            @update:model-value="
+                              (v) =>
+                                form.setFieldValue(
+                                  'trigger.eventSubEntity',
+                                  v === SUB_ENTITY_NONE ? '' : String(v),
+                                )
+                            "
+                          >
                             <SelectTrigger>
                               <SelectValue :placeholder="$t('none')" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">{{ $t('none') }}</SelectItem>
+                              <SelectItem :value="SUB_ENTITY_NONE">
+                                {{ $t('none') }}
+                              </SelectItem>
                               <SelectItem value="*">
                                 {{ $t('workflows.any_option') }}
                               </SelectItem>
@@ -1459,7 +1477,7 @@ const { summaryProps } = useEntityEditSummary({
                             <SelectItem value="failFast">
                               {{ $t('workflows.error_fail_fast') }}
                             </SelectItem>
-                            <SelectItem value="continue">
+                            <SelectItem value="continueOnError">
                               {{ $t('workflows.error_continue') }}
                             </SelectItem>
                             <SelectItem value="retry">
