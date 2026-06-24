@@ -61,7 +61,7 @@ const {
 
 // ─── Fetch execution logs for per-version stats ───────────────────
 const { data: executionLogs } = useLazyAsyncData(
-  () => `workflow-executions-${props.workflowId}`,
+  () => `workflow-version-executions-${props.workflowId}`,
   () =>
     props.isNew
       ? Promise.resolve([])
