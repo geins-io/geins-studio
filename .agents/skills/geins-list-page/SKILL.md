@@ -154,6 +154,46 @@ visibilityState.value = getVisibilityState(hiddenColumns);
 </template>
 ```
 
+## Empty & error states
+
+`TableView` renders empty + error states internally (`:error` / `:on-retry`) — table list pages get them for free. **Card-grid / non-table list pages** must supply them with the `<Empty>` primitive — NEVER hand-roll `Card`+`div` with manual centering. Wrap each in `<Card><CardContent class="p-0">` (the primitive provides its own padding, so `p-0` avoids double-pad):
+
+```vue
+<!-- Error -->
+<Card v-else-if="error">
+  <CardContent class="p-0">
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="destructive"><LucideXCircle /></EmptyMedia>
+        <EmptyTitle>{{ $t('feedback_error') }}</EmptyTitle>
+        <EmptyDescription>{{ $t('error_empty_description') }}</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <ButtonIcon icon="retry" variant="secondary" @click="refresh()">
+          {{ $t('retry') }}
+        </ButtonIcon>
+      </EmptyContent>
+    </Empty>
+  </CardContent>
+</Card>
+
+<!-- Empty -->
+<Card v-else-if="items.length === 0">
+  <CardContent class="p-0">
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon"><LucidePackage class="size-5" /></EmptyMedia>
+        <EmptyTitle>{{ $t('...no_items') }}</EmptyTitle>
+        <EmptyDescription>{{ $t('...no_items_description') }}</EmptyDescription>
+      </EmptyHeader>
+      <!-- optional action; use Button/ButtonIcon as-child for links -->
+    </Empty>
+  </CardContent>
+</Card>
+```
+
+Ref: [orchestrator/index.vue](app/pages/orchestrator/index.vue), [settings/orchestrator/kits/list.vue](app/pages/settings/orchestrator/kits/list.vue).
+
 ## Tooltip columns with `createTooltip()`
 
 Use `createTooltip()` from `app/utils/tooltip.ts` to transform arrays into display-friendly tooltips:
