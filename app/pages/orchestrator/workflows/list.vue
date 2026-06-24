@@ -48,7 +48,7 @@ type Entity = WorkflowSummary;
 type EntityList = WorkflowListItem;
 
 const scope = 'pages/orchestrator/workflows.vue';
-const { t, locale } = useI18n();
+const { t, te, locale } = useI18n();
 const { geinsLog } = useGeinsLog(scope);
 
 definePageMeta({
@@ -187,11 +187,10 @@ const deriveTriggerSummary = (wf: WorkflowSummary): string => {
     if (!wf.eventName) return t('workflows.event');
     const name = wf.eventName.replace(/\.+$/, '');
     const key = `workflows.events.${name}`;
-    const resolved = t(key);
-    if (resolved !== key) return resolved;
+    if (te(key)) return t(key);
     const labelKey = `${key}._label`;
-    const label = t(labelKey);
-    return label !== labelKey ? label : wf.eventName;
+    if (te(labelKey)) return t(labelKey);
+    return wf.eventName;
   }
   if (wf.type === 'scheduled') {
     return wf.cronExpression
