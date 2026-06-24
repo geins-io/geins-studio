@@ -1,11 +1,10 @@
 # Changelog
 
-## v0.5.0 - 2026-06-08
+## v0.5.0 - 2026-06-24
 
 ### 🚀 Enhancements
 
 - **Orchestrator** — new visual workflow automation: build, run & monitor workflows with a Blockly-based editor, integration kits & Settings › Orchestrator config ([#254](https://github.com/geins-io/geins-studio/pull/254))
-- Storefront — newsletter signup toggle ([#269](https://github.com/geins-io/geins-studio/pull/269))
 - Nuxt 4.4 upgrade — async-data & runtime fixes ([#271](https://github.com/geins-io/geins-studio/pull/271))
 - App version meta tag & build info
 
