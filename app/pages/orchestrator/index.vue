@@ -582,37 +582,47 @@ watchEffect(() => {
 
     <!-- Error -->
     <Card v-else-if="fetchError">
-      <CardContent class="py-12">
-        <div class="flex flex-col items-center justify-center text-center">
-          <LucideXCircle class="text-destructive mb-4 h-12 w-12" />
-          <h3 class="mb-2 text-lg font-medium">{{ $t('feedback_error') }}</h3>
-          <p class="text-muted-foreground mb-4">
-            {{ $t('error_empty_description') }}
-          </p>
-          <Button @click="refresh()">
-            {{ $t('retry') }}
-          </Button>
-        </div>
+      <CardContent class="p-0">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="destructive">
+              <LucideXCircle />
+            </EmptyMedia>
+            <EmptyTitle>{{ $t('feedback_error') }}</EmptyTitle>
+            <EmptyDescription>
+              {{ $t('error_empty_description') }}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <ButtonIcon icon="retry" variant="secondary" @click="refresh()">
+              {{ $t('retry') }}
+            </ButtonIcon>
+          </EmptyContent>
+        </Empty>
       </CardContent>
     </Card>
 
     <!-- Empty -->
     <Card v-else-if="groups.length === 0">
-      <CardContent class="py-12">
-        <div class="flex flex-col items-center justify-center text-center">
-          <LucideWorkflow class="text-muted-foreground mb-4 h-12 w-12" />
-          <h3 class="mb-2 text-lg font-medium">
-            {{ $t('workflows.no_workflows') }}
-          </h3>
-          <p class="text-muted-foreground mb-4">
-            {{ $t('workflows.create_first') }}
-          </p>
-          <Button as-child>
-            <NuxtLink to="/orchestrator/workflows/new">
-              {{ $t('new_entity', { entityName: 'workflow' }) }}
-            </NuxtLink>
-          </Button>
-        </div>
+      <CardContent class="p-0">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LucideWorkflow class="size-5" />
+            </EmptyMedia>
+            <EmptyTitle>{{ $t('workflows.no_workflows') }}</EmptyTitle>
+            <EmptyDescription>
+              {{ $t('workflows.create_first') }}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <ButtonIcon icon="new" variant="secondary" as-child>
+              <NuxtLink to="/orchestrator/workflows/new">
+                {{ $t('new_entity', { entityName: 'workflow' }) }}
+              </NuxtLink>
+            </ButtonIcon>
+          </EmptyContent>
+        </Empty>
       </CardContent>
     </Card>
 

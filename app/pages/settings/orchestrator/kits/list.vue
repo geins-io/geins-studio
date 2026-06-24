@@ -52,7 +52,7 @@ const onInstalled = async () => {
   >
     <ContentActionBar>
       <ButtonIcon
-        icon="LayoutGrid"
+        icon="Grid2x2Check"
         variant="secondary"
         href="/settings/orchestrator/kits/installed"
       >
@@ -105,28 +105,40 @@ const onInstalled = async () => {
 
     <!-- Error -->
     <Card v-else-if="error">
-      <CardContent class="py-12">
-        <div class="flex flex-col items-center justify-center text-center">
-          <LucideXCircle class="text-destructive mb-4 size-12" />
-          <h3 class="mb-2 text-lg font-medium">{{ $t('feedback_error') }}</h3>
-          <p class="text-muted-foreground mb-4">
-            {{ $t('error_empty_description') }}
-          </p>
-          <Button @click="refresh()">{{ $t('retry') }}</Button>
-        </div>
+      <CardContent class="p-0">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="destructive">
+              <LucideXCircle />
+            </EmptyMedia>
+            <EmptyTitle>{{ $t('feedback_error') }}</EmptyTitle>
+            <EmptyDescription>
+              {{ $t('error_empty_description') }}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <ButtonIcon icon="retry" variant="secondary" @click="refresh()">
+              {{ $t('retry') }}
+            </ButtonIcon>
+          </EmptyContent>
+        </Empty>
       </CardContent>
     </Card>
 
     <!-- Empty -->
     <Card v-else-if="filteredKits.length === 0">
-      <CardContent class="py-12">
-        <div class="flex flex-col items-center justify-center text-center">
-          <LucidePackage class="text-muted-foreground mb-4 size-12" />
-          <h3 class="mb-2 text-lg font-medium">{{ $t('kits.no_kits') }}</h3>
-          <p class="text-muted-foreground">
-            {{ $t('kits.no_kits_description') }}
-          </p>
-        </div>
+      <CardContent class="p-0">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LucidePackage class="size-5" />
+            </EmptyMedia>
+            <EmptyTitle>{{ $t('kits.no_kits') }}</EmptyTitle>
+            <EmptyDescription>
+              {{ $t('kits.no_kits_description') }}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       </CardContent>
     </Card>
 

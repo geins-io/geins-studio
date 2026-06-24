@@ -138,7 +138,7 @@ const confirmUninstall = async (payload: {
     :description="$t('kits.installed_description')"
   >
     <ContentActionBar>
-      <ButtonIcon icon="new" href="/settings/orchestrator/kits/list">
+      <ButtonIcon icon="Search" href="/settings/orchestrator/kits/list">
         {{ $t('kits.browse_kits') }}
       </ButtonIcon>
     </ContentActionBar>
@@ -163,33 +163,47 @@ const confirmUninstall = async (payload: {
 
     <!-- Error -->
     <Card v-else-if="error">
-      <CardContent class="py-12">
-        <div class="flex flex-col items-center justify-center text-center">
-          <LucideXCircle class="text-destructive mb-4 size-12" />
-          <h3 class="mb-2 text-lg font-medium">{{ $t('feedback_error') }}</h3>
-          <p class="text-muted-foreground mb-4">
-            {{ $t('error_empty_description') }}
-          </p>
-          <Button @click="refresh()">{{ $t('retry') }}</Button>
-        </div>
+      <CardContent class="p-0">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="destructive">
+              <LucideXCircle />
+            </EmptyMedia>
+            <EmptyTitle>{{ $t('feedback_error') }}</EmptyTitle>
+            <EmptyDescription>
+              {{ $t('error_empty_description') }}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <ButtonIcon icon="retry" variant="secondary" @click="refresh()">
+              {{ $t('retry') }}
+            </ButtonIcon>
+          </EmptyContent>
+        </Empty>
       </CardContent>
     </Card>
 
     <!-- Empty -->
     <Card v-else-if="installations.length === 0">
-      <CardContent class="py-12">
-        <div class="flex flex-col items-center justify-center text-center">
-          <LucidePackage class="text-muted-foreground mb-4 size-12" />
-          <h3 class="mb-2 text-lg font-medium">
-            {{ $t('kits.no_installations') }}
-          </h3>
-          <p class="text-muted-foreground mb-4">
-            {{ $t('kits.no_installations_description') }}
-          </p>
-          <NuxtLink to="/settings/orchestrator/kits/list">
-            <Button>{{ $t('kits.browse_kits') }}</Button>
-          </NuxtLink>
-        </div>
+      <CardContent class="p-0">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LucidePackage class="size-5" />
+            </EmptyMedia>
+            <EmptyTitle>{{ $t('kits.no_installations') }}</EmptyTitle>
+            <EmptyDescription>
+              {{ $t('kits.no_installations_description') }}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <ButtonIcon icon="Search" variant="secondary" as-child>
+              <NuxtLink to="/settings/orchestrator/kits/list">
+                {{ $t('kits.browse_kits') }}
+              </NuxtLink>
+            </ButtonIcon>
+          </EmptyContent>
+        </Empty>
       </CardContent>
     </Card>
 
