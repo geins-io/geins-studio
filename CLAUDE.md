@@ -156,10 +156,6 @@ Factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `en
 - **Architecture & golden path**: [ARCHITECTURE.md](ARCHITECTURE.md)
 - **Domain docs**: [orders](docs/domains/orders.md) | [customers](docs/domains/customers.md) | [products](docs/domains/products.md) | [pricing](docs/domains/pricing.md) | [account-auth](docs/domains/account-auth.md)
 
-## Branch specific knowledge
-
-- **Branch**: `feat/orchestrator-ux` | **Knowledge**: [.temp/orchestrator.md](.temp/orchestrator.md)
-
 ## Decision Log
 
 **2025-01-15: Skills-based agent architecture**
