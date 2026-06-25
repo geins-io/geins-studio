@@ -17,6 +17,12 @@ import { resolveAppId } from '#shared/utils/app';
 
 export default defineNuxtPlugin(() => {
   const { geinsLog, geinsLogError } = useGeinsLog('plugins/geins-api.ts');
+  // Suppression check + the global error toast emitter both live in the
+  // useApiErrorToast composable. Keeping NuxtApp/$i18n out of THIS file is
+  // deliberate: referencing them here re-instantiates the provided
+  // $geinsApiFetchInstance type and tips Nitro's route-type resolution over
+  // the "excessive stack depth" limit (see the GeinsApiFetch note below).
+  const { isSuppressed, showGlobalErrorToast } = useApiErrorToast();
   const {
     isAuthenticated,
     accessToken,
@@ -210,6 +216,16 @@ export default defineNuxtPlugin(() => {
         } ::: `,
         geinsApiError,
       );
+
+      // Surface mutation failures globally. Reads (GET/HEAD) render page-level
+      // error/empty states instead, and 401 is the silent token refresh/retry
+      // path. Flows that opt out (e.g. silent auto-saves, or pages that show
+      // their own richer error toast) set the suppression flag via
+      // useApiErrorToast.
+      const isMutation = !['GET', 'HEAD'].includes(method.toUpperCase());
+      if (isMutation && response.status !== 401 && !isSuppressed()) {
+        void showGlobalErrorToast(geinsApiError, errorData);
+      }
 
       throw geinsApiError;
     },

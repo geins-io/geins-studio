@@ -90,10 +90,6 @@ export const useCustomerCompanies = (): UseCustomerCompaniesReturnType => {
       return true;
     } catch (error) {
       geinsLogError('deleteCompany :::', getErrorMessage(error));
-      toast({
-        title: t('entity_delete_failed', { entityName }),
-        variant: 'negative',
-      });
       return false;
     }
   };

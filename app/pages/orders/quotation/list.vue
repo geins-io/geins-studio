@@ -33,11 +33,6 @@ const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
 
-const { showErrorToast } = usePageError({
-  entityName,
-  entityList: true,
-  scope,
-});
 const fetchError = ref(false);
 
 // Transform raw API quotation data to list view format
@@ -145,7 +140,6 @@ onMounted(() => {
           );
         } catch (err) {
           geinsLogError('copyQuotation :::', getErrorMessage(err));
-          showErrorToast(t('error_copying_entity', { entityName }));
         }
       },
       onDelete: async (item: EntityList) => await openDeleteDialog(item._id),
@@ -192,7 +186,6 @@ const deleteQuotation = async (
     return true;
   } catch (error) {
     geinsLogError('deleteQuotation :::', getErrorMessage(error));
-    showErrorToast(t('entity_delete_failed', { entityName }));
     return false;
   }
 };

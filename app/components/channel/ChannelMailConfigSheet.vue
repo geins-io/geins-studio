@@ -169,7 +169,7 @@ async function handleSave() {
       previewLoaded.value = false;
     }
   } catch {
-    await showErrorToast(t('channels.mail_save_error'));
+    // Error toast shown globally by $geinsApi.
   } finally {
     saving.value = false;
   }
@@ -201,7 +201,7 @@ async function handleRestoreDefaults() {
       previewLoaded.value = false;
     }
   } catch {
-    await showErrorToast(t('channels.mail_save_error'));
+    // Error toast shown globally by $geinsApi.
   } finally {
     saving.value = false;
   }

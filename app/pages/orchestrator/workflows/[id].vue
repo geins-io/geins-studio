@@ -26,6 +26,9 @@ const { geinsLogInfo, geinsLogError } = useGeinsLog('workflow-editor');
 const { t, locale } = useI18n();
 const { toast } = useToast();
 const { orchestratorApi } = useGeinsRepository();
+// This page owns its API error toasts (rich extractApiError title/detail), so
+// it suppresses the global error toast on its mutations to avoid a double.
+const { withSuppressedErrorToast } = useApiErrorToast();
 const { triggerTypeLabel, logVerbosityLabel, errorHandlingLabel } =
   useWorkflowLabels();
 
@@ -473,11 +476,13 @@ const handleDuplicate = async () => {
   menuBusy.value = true;
   try {
     const src = currentWorkflow.value;
-    const copy = await orchestratorApi.workflow.create({
-      ...src,
-      name: `${src.name} (copy)`,
-      enabled: false,
-    });
+    const copy = await withSuppressedErrorToast(() =>
+      orchestratorApi.workflow.create({
+        ...src,
+        name: `${src.name} (copy)`,
+        enabled: false,
+      }),
+    );
     toast({
       title: t('workflows.duplicated'),
       description: t('workflows.created_named', { name: copy.name }),
@@ -529,14 +534,16 @@ const handleCreate = async () => {
   isSavingConfig.value = true;
   try {
     const values = form.values;
-    const created = await orchestratorApi.workflow.create({
-      name: values.details.name,
-      description: values.details.description || undefined,
-      group: values.details.group || undefined,
-      tags: values.details.tags,
-      type: 'onDemand',
-      enabled: false,
-    });
+    const created = await withSuppressedErrorToast(() =>
+      orchestratorApi.workflow.create({
+        name: values.details.name,
+        description: values.details.description || undefined,
+        group: values.details.group || undefined,
+        tags: values.details.tags,
+        type: 'onDemand',
+        enabled: false,
+      }),
+    );
     // Snapshot so the route guard doesn't block navigation to the new page.
     originalEditableState.value = JSON.stringify(editableState.value);
     toast({
@@ -655,12 +662,18 @@ const handleSave = async () => {
       'Save workflow — full payload (JSON):\n' +
         JSON.stringify(payload, null, 2),
     );
-    await orchestratorApi.workflow.update(workflowId.value, payload);
+    await withSuppressedErrorToast(() =>
+      orchestratorApi.workflow.update(workflowId.value, payload),
+    );
     if (workflowActive.value !== isEnabled.value) {
       if (workflowActive.value) {
-        await orchestratorApi.workflow.enable(workflowId.value);
+        await withSuppressedErrorToast(() =>
+          orchestratorApi.workflow.enable(workflowId.value),
+        );
       } else {
-        await orchestratorApi.workflow.disable(workflowId.value);
+        await withSuppressedErrorToast(() =>
+          orchestratorApi.workflow.disable(workflowId.value),
+        );
       }
     }
     skipActiveSync.value = true;
@@ -725,9 +738,11 @@ async function executeWorkflow() {
   isRunning.value = true;
   try {
     const hasParams = Object.keys(runInputValues.value).length > 0;
-    const res = await orchestratorApi.execution.start(
-      workflowId.value,
-      hasParams ? { parameters: runInputValues.value } : undefined,
+    const res = await withSuppressedErrorToast(() =>
+      orchestratorApi.execution.start(
+        workflowId.value,
+        hasParams ? { parameters: runInputValues.value } : undefined,
+      ),
     );
     const execId = res?.executionId ?? res?.newExecutionId ?? null;
     toast({
@@ -762,22 +777,25 @@ const handleValidate = async () => {
     const apiType = toApiWorkflowType(values.trigger.type);
     const trigger = buildTriggerConfig(apiType, values.trigger);
     const graph = builderRef.value?.getGraph?.();
-    const result = await orchestratorApi.workflow.validate({
-      name: values.details.name,
-      description: values.details.description || undefined,
-      tags: values.details.tags,
-      type: apiType,
-      enabled: workflowActive.value,
-      cronExpression: apiType === 'scheduled' ? values.trigger.cron : undefined,
-      eventName: apiType === 'event' ? values.trigger.eventEntity : undefined,
-      nodes: sanitizeWorkflowNodes(
-        (graph?.nodes ?? wf.nodes) as WorkflowNode[],
-      ),
-      connections: graph?.connections ?? wf.connections,
-      input: workflowInputs.value,
-      settings: values.settings,
-      trigger,
-    });
+    const result = await withSuppressedErrorToast(() =>
+      orchestratorApi.workflow.validate({
+        name: values.details.name,
+        description: values.details.description || undefined,
+        tags: values.details.tags,
+        type: apiType,
+        enabled: workflowActive.value,
+        cronExpression:
+          apiType === 'scheduled' ? values.trigger.cron : undefined,
+        eventName: apiType === 'event' ? values.trigger.eventEntity : undefined,
+        nodes: sanitizeWorkflowNodes(
+          (graph?.nodes ?? wf.nodes) as WorkflowNode[],
+        ),
+        connections: graph?.connections ?? wf.connections,
+        input: workflowInputs.value,
+        settings: values.settings,
+        trigger,
+      }),
+    );
     const isValid = result.isValid ?? result.valid ?? false;
     if (isValid) {
       toast({

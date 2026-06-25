@@ -6,7 +6,7 @@
  * `statusCode`/`statusMessage`/`data`. The only useful signal lives on the
  * underlying system error — usually on `error.cause` — as `code` / `errno` /
  * `syscall` / `address` / `port`. This extracts those fields so the catch
- * block can log *why* the connection failed. See STU-246.
+ * block can log *why* the connection failed.
  */
 
 export interface NetworkErrorInfo {

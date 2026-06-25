@@ -204,7 +204,7 @@ const {
 // ERROR HANDLING SETUP
 // =====================================================================================
 
-const { handleFetchResult, showErrorToast } = usePageError({
+const { handleFetchResult } = usePageError({
   entityName,
   scope,
 });
@@ -235,7 +235,6 @@ const handleSave = async () => {
       }
     } catch (error) {
       geinsLogError('error updating password:', error);
-      showErrorToast(t('error_updating_entity', { entityName }));
       return;
     }
   }

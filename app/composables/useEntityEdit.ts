@@ -147,7 +147,10 @@ export function useEntityEdit<
   const loading = ref(false);
   const refreshEntityData = ref<() => Promise<void>>(() => Promise.resolve());
   const entityLiveStatus = ref<boolean>(false);
-  const { showErrorToast } = usePageError({ entityName });
+  // Error toasts are owned globally by $geinsApi.onResponseError. Silent
+  // updates suppress that global toast so a background save can fail without
+  // alarming the user.
+  const { withSuppressedErrorToast } = useApiErrorToast();
 
   // Entity data
   const entityDataCreate = ref<TCreate>(options.initialEntityData);
@@ -313,12 +316,6 @@ export function useEntityEdit<
       }
 
       return result;
-    } catch (error) {
-      showErrorToast(
-        t('error_creating_entity', { entityName }),
-        getApiErrorTitle(error),
-      );
-      throw error;
     } finally {
       loading.value = false;
     }
@@ -350,11 +347,13 @@ export function useEntityEdit<
       if (!updateData) {
         return;
       }
-      const result = await options.repository.update(
-        id,
-        updateData,
-        queryOptions,
-      );
+      // Silent updates (e.g. background re-save on load) must fail without the
+      // global error toast firing.
+      const result = silent
+        ? await withSuppressedErrorToast(() =>
+            options.repository.update(id, updateData, queryOptions),
+          )
+        : await options.repository.update(id, updateData, queryOptions);
       const newData =
         result ?? (await options.repository.get(id, queryOptions));
       await parseAndSaveData(newData, setSavedData);
@@ -367,14 +366,6 @@ export function useEntityEdit<
       }
 
       return result;
-    } catch (error) {
-      if (!silent) {
-        showErrorToast(
-          t('error_updating_entity', { entityName }),
-          getApiErrorTitle(error),
-        );
-      }
-      throw error;
     } finally {
       loading.value = false;
     }
@@ -391,11 +382,8 @@ export function useEntityEdit<
         variant: 'positive',
       });
       return true;
-    } catch (error) {
-      showErrorToast(
-        t('entity_delete_failed', { entityName }),
-        getApiErrorTitle(error),
-      );
+    } catch {
+      // Error toast shown globally by $geinsApi; just signal failure here.
       return false;
     }
   };

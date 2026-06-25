@@ -382,14 +382,8 @@ async function recreateFromVersion(version: number) {
         name: created.name ?? name,
       }),
     });
-  } catch (err: unknown) {
-    toast({
-      title: t('workflow_builder.failed_to_recreate'),
-      description:
-        (err as { message?: string })?.message ||
-        t('workflow_builder.unknown_error'),
-      variant: 'negative',
-    });
+  } catch {
+    // Error toast shown globally by $geinsApi.
   } finally {
     recreatingVersion.value = null;
   }

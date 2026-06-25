@@ -92,11 +92,6 @@ const confirmUpgrade = async (payload: { force: boolean }) => {
     upgradeOpen.value = false;
   } catch (err) {
     geinsLog('upgrade failed', err);
-    toast({
-      title: t('kits.upgrade_error'),
-      description: err instanceof Error ? err.message : String(err),
-      variant: 'negative',
-    });
   } finally {
     actionLoading.value = false;
   }
@@ -121,11 +116,6 @@ const confirmUninstall = async (payload: {
     uninstallOpen.value = false;
   } catch (err) {
     geinsLog('uninstall failed', err);
-    toast({
-      title: t('kits.uninstall_error'),
-      description: err instanceof Error ? err.message : String(err),
-      variant: 'negative',
-    });
   } finally {
     actionLoading.value = false;
   }

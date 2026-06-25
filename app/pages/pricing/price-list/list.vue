@@ -26,11 +26,6 @@ const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
 
-const { showErrorToast } = usePageError({
-  entityName,
-  entityList: true,
-  scope,
-});
 const fetchError = ref(false);
 
 // Add the mapping function
@@ -96,7 +91,6 @@ onMounted(() => {
           );
         } catch (err) {
           geinsLogError('copyPriceList :::', getErrorMessage(err));
-          showErrorToast(t('error_copying_entity', { entityName }));
         }
       },
       onDelete: async (item: Entity) => await openDeleteDialog(item._id),
@@ -129,7 +123,6 @@ const deletePriceList = async (
     return true;
   } catch (error) {
     geinsLogError('deletePriceList :::', getErrorMessage(error));
-    showErrorToast(t('entity_delete_failed', { entityName }));
     return false;
   }
 };

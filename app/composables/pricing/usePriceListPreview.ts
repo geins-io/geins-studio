@@ -57,6 +57,7 @@ export function usePriceListPreview({
   const { geinsLogError } = useGeinsLog('composables/usePriceListPreview');
   const { batchQueryNoPagination } = useBatchQuery();
   const { productApi } = useGeinsRepository();
+  const { withSuppressedErrorToast } = useApiErrorToast();
 
   // =====================================================================================
   // STATE
@@ -91,11 +92,18 @@ export function usePriceListPreview({
     try {
       updateInProgress.value = true;
 
-      const previewPriceList = await productApi.priceList
-        .id(entityId.value)
-        .preview(entityDataUpdate.value, batchQueryNoPagination.value, {
-          fields: ['products', 'productinfo'],
-        });
+      // Narrowed non-null by the guard above; capture so the suppression
+      // closure keeps the type.
+      const id = entityId.value;
+      // Preview is a read-style POST with its own contextual error toast
+      // below — suppress the global API error toast to avoid a double.
+      const previewPriceList = await withSuppressedErrorToast(() =>
+        productApi.priceList
+          .id(id)
+          .preview(entityDataUpdate.value, batchQueryNoPagination.value, {
+            fields: ['products', 'productinfo'],
+          }),
+      );
 
       priceListProducts.value = previewPriceList.products?.items || [];
 

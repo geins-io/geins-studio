@@ -843,11 +843,6 @@ const startExecution = async (data?: {
   } catch (err) {
     isRunning.value = false;
     geinsLogError('Failed to start execution', err);
-    toast({
-      title: t('workflow_builder.failed_to_start_execution'),
-      description: getErrorMessage(err),
-      variant: 'negative',
-    });
   }
 };
 

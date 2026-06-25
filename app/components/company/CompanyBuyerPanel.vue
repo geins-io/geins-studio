@@ -204,14 +204,7 @@ const handleSave = async () => {
 
     handleSuccess();
   } catch (error) {
-    const feedbackWord = props.mode === 'edit' ? 'updating' : 'adding';
-    toast({
-      title: t(`error_${feedbackWord}_entity`, { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
-    const message = getErrorMessage(error);
-    geinsLogError('error saving buyer:', message);
+    geinsLogError('error saving buyer:', getErrorMessage(error));
   } finally {
     loading.value = false;
   }

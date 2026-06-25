@@ -104,12 +104,8 @@ const handleSave = async () => {
     } else {
       await refresh();
     }
-  } catch (err) {
-    toast({
-      title: 'Save failed',
-      description: err instanceof Error ? err.message : String(err),
-      variant: 'negative',
-    });
+  } catch {
+    // Error toast shown globally by $geinsApi.
   } finally {
     saving.value = false;
   }
@@ -121,12 +117,8 @@ const deleteEntity = async (): Promise<boolean> => {
     await orchestratorApi.variable.delete(existing.value.key);
     toast({ title: 'Variable deleted' });
     return true;
-  } catch (err) {
-    toast({
-      title: 'Delete failed',
-      description: err instanceof Error ? err.message : String(err),
-      variant: 'negative',
-    });
+  } catch {
+    // Error toast shown globally by $geinsApi; just signal failure here.
     return false;
   }
 };

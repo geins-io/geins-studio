@@ -338,7 +338,7 @@ const {
 // Intent: Page-level error handling for API fetch failures and user-facing error toasts.
 // handleFetchResult validates the initial data load; showErrorToast wraps toast() for errors.
 
-const { handleFetchResult, showErrorToast } = usePageError({
+const { handleFetchResult } = usePageError({
   entityName,
   entityId: entityId.value,
   scope,
@@ -524,7 +524,6 @@ const copyEntity = async () => {
     }
   } catch (error) {
     geinsLogError('error copying entity:', error);
-    showErrorToast(t('error_copying_entity', { entityName }));
   } finally {
     loading.value = false;
   }

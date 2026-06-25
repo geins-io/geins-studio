@@ -526,7 +526,7 @@ async function handleResetToDefault() {
     await refreshEntityData.value?.();
     toast({ title: t('channels.reset_schema_success') });
   } catch {
-    toast({ title: t('channels.reset_schema_error'), variant: 'negative' });
+    // Error toast shown globally by $geinsApi.
   } finally {
     isResettingSchema.value = false;
   }
@@ -548,7 +548,7 @@ async function handlePreview() {
     u.searchParams.set('preview', '1');
     window.open(u.toString(), '_blank', 'noopener,noreferrer');
   } catch {
-    toast({ title: t('channels.preview_error'), variant: 'negative' });
+    // Error toast shown globally by $geinsApi.
   } finally {
     isLoadingPreview.value = false;
   }
