@@ -85,7 +85,9 @@ export default defineNuxtPlugin(() => {
    * */
   const geinsApiFetchInstance = $fetch.create({
     baseURL: '/api',
-    retryStatusCodes: [401, 500, 502, 503, 504],
+    // 500 deliberately excluded — it is often a non-idempotent server fault and
+    // a blind retry just doubles the failure count
+    retryStatusCodes: [401, 502, 503, 504],
     retry: 1,
     retryDelay: 1000,
     async onRequest({ options }) {
@@ -139,6 +141,19 @@ export default defineNuxtPlugin(() => {
       const method = options.method || 'GET';
       const url = String(request);
 
+      // Capture the network cause — for a connection-level failure this is the
+      // only useful signal, and it is non-enumerable on the raw Error so it
+      // would otherwise be lost when the error is serialised for logging.
+      const rawCause = (error as { cause?: unknown }).cause;
+      const cause =
+        rawCause && typeof rawCause === 'object'
+          ? {
+              name: (rawCause as { name?: string }).name,
+              code: (rawCause as { code?: string }).code,
+              message: (rawCause as { message?: string }).message,
+            }
+          : undefined;
+
       const geinsApiError: GeinsApiError = {
         status: 0,
         method,
@@ -147,9 +162,15 @@ export default defineNuxtPlugin(() => {
         timestamp,
         type: errorType,
         originalError: error,
+        cause,
       };
 
-      geinsLogError(`[${method}] ${url} ::: request error ::: `, geinsApiError);
+      geinsLogError(
+        `[${method}] ${url} ::: request error ::: ${error.message}${
+          cause?.code ? ` (cause: ${cause.code})` : ''
+        } ::: `,
+        geinsApiError,
+      );
       throw geinsApiError;
     },
     async onResponse({ response, options }) {
@@ -179,8 +200,14 @@ export default defineNuxtPlugin(() => {
         originalError: errorData,
       };
 
+      // Flag responses that $fetch will auto-retry (matches retryStatusCodes
+      // above) so a retried call is visible in the logs rather than looking
+      // like two unrelated failures.
+      const willRetry = [401, 502, 503, 504].includes(response.status);
       geinsLogError(
-        `[${method}] ${url} ::: response error ::: `,
+        `[${method}] ${url} ::: response error ::: ${response.status}${
+          willRetry ? ' (retryable)' : ''
+        } ::: `,
         geinsApiError,
       );
 

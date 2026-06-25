@@ -119,6 +119,9 @@ export interface GeinsApiError {
   timestamp: string;
   type: GeinsErrorType;
   originalError: unknown;
+  // Network cause for connection-level failures (DNS/TLS/ECONNRESET/timeout).
+  // Non-enumerable on the raw Error, so captured explicitly. STU-246.
+  cause?: { name?: string; code?: string; message?: string };
 }
 
 export type GeinsErrorType =

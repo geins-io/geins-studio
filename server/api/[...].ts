@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   createError,
   defineEventHandler,
@@ -8,6 +9,7 @@ import {
   getRequestHost,
 } from 'h3';
 import { resolveAppId } from '#shared/utils/app';
+import { describeNetworkError } from '../utils/error-logging';
 import {
   refreshSalesPortal,
   describeFetchError,
@@ -67,6 +69,11 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
   const { geinsLog, geinsLogInfo, geinsLogError } = log('server/api/[...].ts');
 
+  // Proxy-side correlation id — present in every log line for this request even
+  // when the call never reaches the backend (so there is no backend traceId).
+  // Lets a window of failures be grouped from the proxy logs alone.
+  const correlationId = randomUUID();
+
   const headers = getHeaders(event);
   const token = headers['x-access-token'];
 
@@ -94,7 +101,7 @@ export default defineEventHandler(async (event) => {
     .join('&');
   const fetchUrl = queryStr ? `${fullUrl}?${queryStr}` : fullUrl;
 
-  geinsLog(fetchUrl);
+  geinsLog(`[${correlationId}] ${event.method} ${fetchUrl}`);
 
   const apiHeaders: Record<string, string> = {
     ...headers,
@@ -146,6 +153,7 @@ export default defineEventHandler(async (event) => {
     );
   }
 
+  const startedAt = Date.now();
   try {
     const response = await $fetch(fetchUrl, {
       method: event.method,
@@ -162,6 +170,7 @@ export default defineEventHandler(async (event) => {
     }
     return response;
   } catch (error) {
+    const durationMs = Date.now() - startedAt;
     const fe = error as {
       name?: string;
       message?: string;
@@ -169,19 +178,52 @@ export default defineEventHandler(async (event) => {
       statusMessage?: string;
       data?: unknown;
     };
-    geinsLogError('error connecting to the api:', {
-      url: fetchUrl,
-      method: event.method,
-      name: fe.name,
-      message: fe.message,
-      statusCode: fe.statusCode,
-      statusMessage: fe.statusMessage,
-      data: fe.data,
-    });
+
+    // No statusCode on the caught error means the request never reached the
+    // backend (DNS/TLS/ECONNRESET/timeout); a statusCode means the backend
+    // responded with an error. Tag the two cases distinctly.
+    const reachedBackend = typeof fe.statusCode === 'number';
+    const tag = reachedBackend ? 'upstream_error' : 'upstream_unreachable';
+    const network = describeNetworkError(error);
+
+    // Serialise into a single string — Vercel's log UI drops the 2nd arg of
+    // console.error when it is an object (see describeFetchError).
+    geinsLogError(
+      `[${tag}] [${correlationId}] ${JSON.stringify({
+        url: fetchUrl,
+        method: event.method,
+        durationMs,
+        name: fe.name,
+        message: fe.message,
+        statusCode: fe.statusCode,
+        statusMessage: fe.statusMessage,
+        data: fe.data,
+        network,
+      })}`,
+    );
+
+    // When there is no upstream `data` (the unreachable case), attach a minimal
+    // proxy-side diagnostic so the client/toast has something traceable instead
+    // of `undefined`.
+    const data =
+      fe.data ??
+      (reachedBackend
+        ? undefined
+        : {
+            proxyError: true,
+            reason: tag,
+            correlationId,
+            code: network.code,
+            message:
+              network.cause?.message ||
+              fe.message ||
+              'Upstream request failed before reaching the backend',
+          });
+
     throw createError({
       statusCode: fe.statusCode || 500,
       statusMessage: fe.statusMessage || 'Internal Server Error',
-      data: fe.data,
+      data,
     });
   }
 });
