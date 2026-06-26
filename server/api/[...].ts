@@ -204,7 +204,9 @@ export default defineEventHandler(async (event) => {
 
     // When there is no upstream `data` (the unreachable case), attach a minimal
     // proxy-side diagnostic so the client/toast has something traceable instead
-    // of `undefined`.
+    // of `undefined`. The message is intentionally generic — the detailed cause
+    // (which can contain internal hostnames / DNS errors) stays in the server
+    // log above; the client gets `correlationId` + `code` to trace it.
     const data =
       fe.data ??
       (reachedBackend
@@ -214,10 +216,7 @@ export default defineEventHandler(async (event) => {
             reason: tag,
             correlationId,
             code: network.code,
-            message:
-              network.cause?.message ||
-              fe.message ||
-              'Upstream request failed before reaching the backend',
+            message: 'Upstream request failed before reaching the backend',
           });
 
     throw createError({
