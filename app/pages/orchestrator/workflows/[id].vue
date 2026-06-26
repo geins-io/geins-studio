@@ -380,15 +380,35 @@ const hasExecutionChanges = computed(() => {
 });
 
 // ─── Current workflow (for enable/disable + duplicate) ────────────
-const { data: currentWorkflow, refresh: refreshCurrentWorkflow } =
-  await useAsyncData(
-    workflowDataKey,
-    () =>
-      isNew.value
-        ? Promise.resolve(null)
-        : orchestratorApi.workflow.get(workflowId.value),
-    { watch: [workflowId], getCachedData: () => undefined },
+const {
+  data: currentWorkflow,
+  error: currentWorkflowError,
+  refresh: refreshCurrentWorkflow,
+} = await useAsyncData(
+  workflowDataKey,
+  () =>
+    isNew.value
+      ? Promise.resolve(null)
+      : orchestratorApi.workflow.get(workflowId.value),
+  { watch: [workflowId], getCachedData: () => undefined },
+);
+
+// Route a missing/invalid workflow ID through the canonical fatal-error path so
+// it renders the standard 404 error boundary like other entity pages. Skip in
+// `new` mode, where a null workflow is expected (nothing fetched yet).
+const { handleFetchResult } = usePageError({
+  entityName,
+  entityId: workflowId.value,
+  scope: 'workflow-editor',
+});
+
+onMounted(() => {
+  if (isNew.value) return;
+  handleFetchResult(
+    currentWorkflowError.value ?? undefined,
+    currentWorkflow.value,
   );
+});
 
 type WorkflowEditorDefinition = WorkflowDefinition & {
   trigger?: Record<string, unknown>;
@@ -1052,7 +1072,7 @@ const { summaryProps } = useEntityEditSummary({
             v-model:current-tab="currentTab"
             :tabs="mainTabs"
           />
-          <div v-else class="h-[30px]" />
+          <div v-else class="h-7.5" />
         </template>
         <template v-if="!isNew" #changes>
           <ContentEditHasChanges :changes="hasUnsavedChanges" />
