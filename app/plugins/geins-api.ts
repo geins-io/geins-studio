@@ -17,6 +17,12 @@ import { resolveAppId } from '#shared/utils/app';
 
 export default defineNuxtPlugin(() => {
   const { geinsLog, geinsLogError } = useGeinsLog('plugins/geins-api.ts');
+  // Suppression check + the global error toast emitter both live in the
+  // useApiErrorToast composable. Keeping NuxtApp/$i18n out of THIS file is
+  // deliberate: referencing them here re-instantiates the provided
+  // $geinsApiFetchInstance type and tips Nitro's route-type resolution over
+  // the "excessive stack depth" limit (see the GeinsApiFetch note below).
+  const { isSuppressed, showGlobalErrorToast } = useApiErrorToast();
   const {
     isAuthenticated,
     accessToken,
@@ -85,7 +91,9 @@ export default defineNuxtPlugin(() => {
    * */
   const geinsApiFetchInstance = $fetch.create({
     baseURL: '/api',
-    retryStatusCodes: [401, 500, 502, 503, 504],
+    // 500 deliberately excluded — it is often a non-idempotent server fault and
+    // a blind retry just doubles the failure count
+    retryStatusCodes: [401, 502, 503, 504],
     retry: 1,
     retryDelay: 1000,
     async onRequest({ options }) {
@@ -139,6 +147,19 @@ export default defineNuxtPlugin(() => {
       const method = options.method || 'GET';
       const url = String(request);
 
+      // Capture the network cause — for a connection-level failure this is the
+      // only useful signal, and it is non-enumerable on the raw Error so it
+      // would otherwise be lost when the error is serialised for logging.
+      const rawCause = (error as { cause?: unknown }).cause;
+      const cause =
+        rawCause && typeof rawCause === 'object'
+          ? {
+              name: (rawCause as { name?: string }).name,
+              code: (rawCause as { code?: string }).code,
+              message: (rawCause as { message?: string }).message,
+            }
+          : undefined;
+
       const geinsApiError: GeinsApiError = {
         status: 0,
         method,
@@ -147,9 +168,25 @@ export default defineNuxtPlugin(() => {
         timestamp,
         type: errorType,
         originalError: error,
+        cause,
       };
 
-      geinsLogError(`[${method}] ${url} ::: request error ::: `, geinsApiError);
+      geinsLogError(
+        `[${method}] ${url} ::: request error ::: ${error.message}${
+          cause?.code ? ` (cause: ${cause.code})` : ''
+        } ::: `,
+        geinsApiError,
+      );
+
+      // Connection-level failures (offline, DNS, timeout) never reach
+      // onResponseError because there is no response — surface them here with
+      // the same global toast rules. Cancelled requests are intentional (user
+      // navigation / abort) so they stay silent.
+      const isMutation = !['GET', 'HEAD'].includes(method.toUpperCase());
+      if (isMutation && errorType !== 'CANCELLED_ERROR' && !isSuppressed()) {
+        void showGlobalErrorToast(geinsApiError, {}, options.errorContext);
+      }
+
       throw geinsApiError;
     },
     async onResponse({ response, options }) {
@@ -179,10 +216,30 @@ export default defineNuxtPlugin(() => {
         originalError: errorData,
       };
 
+      // Flag responses that $fetch will auto-retry (matches retryStatusCodes
+      // above) so a retried call is visible in the logs rather than looking
+      // like two unrelated failures.
+      const willRetry = [401, 502, 503, 504].includes(response.status);
       geinsLogError(
-        `[${method}] ${url} ::: response error ::: `,
+        `[${method}] ${url} ::: response error ::: ${response.status}${
+          willRetry ? ' (retryable)' : ''
+        } ::: `,
         geinsApiError,
       );
+
+      // Surface mutation failures globally. Reads (GET/HEAD) render page-level
+      // error/empty states instead, and 401 is the silent token refresh/retry
+      // path. Flows that opt out (e.g. silent auto-saves, or pages that show
+      // their own richer error toast) set the suppression flag via
+      // useApiErrorToast.
+      const isMutation = !['GET', 'HEAD'].includes(method.toUpperCase());
+      if (isMutation && response.status !== 401 && !isSuppressed()) {
+        void showGlobalErrorToast(
+          geinsApiError,
+          errorData,
+          options.errorContext,
+        );
+      }
 
       throw geinsApiError;
     },

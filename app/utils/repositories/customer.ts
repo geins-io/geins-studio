@@ -11,6 +11,7 @@ import type {
   CustomerCreate,
   CustomerUpdate,
 } from '#shared/types';
+import { ENTITY } from '#shared/utils/entities';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/wholesale';
@@ -25,7 +26,7 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     CustomerCompanyCreate,
     CustomerCompanyUpdate,
     CustomerCompanyApiOptions
-  >(companyEndpoint, fetch);
+  >(companyEndpoint, fetch, ENTITY.company);
 
   const buyerEndpoint = `${BASE_ENDPOINT}/buyer`;
   const buyerRepo = repo.entityBase<CompanyBuyer>(buyerEndpoint, fetch);
@@ -34,6 +35,7 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   const subCustomerRepo = repo.entity<Customer, CustomerCreate, CustomerUpdate>(
     customerEndpoint,
     fetch,
+    ENTITY.customer,
   );
 
   return {
@@ -52,7 +54,7 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           CompanyBuyer,
           CompanyBuyerCreate,
           CompanyBuyerUpdate
-        >(companyBuyerEndpoint, fetch);
+        >(companyBuyerEndpoint, fetch, ENTITY.buyer);
         return {
           buyer: {
             ...buyerEntityRepo,

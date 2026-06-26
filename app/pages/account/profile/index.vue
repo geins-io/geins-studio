@@ -5,6 +5,7 @@
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import { DataItemDisplayType } from '#shared/types';
+import { ENTITY } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { createPasswordChangeSchema } from '@/utils/password-validation';
 
@@ -50,7 +51,7 @@ const formSchema = toTypedSchema(
 // =====================================================================================
 // ENTITY DATA SETUP
 // =====================================================================================
-const entityName = 'profile';
+const entityName = ENTITY.profile;
 
 const entityBase: UserProfileCreate = {
   name: '',
@@ -204,7 +205,7 @@ const {
 // ERROR HANDLING SETUP
 // =====================================================================================
 
-const { handleFetchResult, showErrorToast } = usePageError({
+const { handleFetchResult } = usePageError({
   entityName,
   scope,
 });
@@ -235,7 +236,6 @@ const handleSave = async () => {
       }
     } catch (error) {
       geinsLogError('error updating password:', error);
-      showErrorToast(t('error_updating_entity', { entityName }));
       return;
     }
   }

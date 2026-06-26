@@ -47,6 +47,9 @@ definePageMeta({
 
 // ─── Global Setup ──────────────────────────────────────────────────
 const { orchestratorApi } = useGeinsRepository();
+// Bulk enable/disable owns its rich result + error toasts, so suppress the
+// global API error toast on those calls to avoid a double.
+const { withSuppressedErrorToast } = useApiErrorToast();
 const { toast } = useToast();
 const { geinsLog } = useGeinsLog('pages/orchestrator/index.vue');
 const loading = ref(true);
@@ -331,9 +334,11 @@ const toggleGroup = async (group: WorkflowGroupCard, enable: boolean) => {
       group: group.name,
       workflowIds: ids,
     });
-    const result = enable
-      ? await orchestratorApi.workflow.bulkEnable(ids)
-      : await orchestratorApi.workflow.bulkDisable(ids);
+    const result = await withSuppressedErrorToast(() =>
+      enable
+        ? orchestratorApi.workflow.bulkEnable(ids)
+        : orchestratorApi.workflow.bulkDisable(ids),
+    );
     geinsLog(`${action} response ←`, result);
 
     // Record optimistic overrides. The computed `metrics` layers these on

@@ -783,7 +783,7 @@ const {
 // =====================================================================================
 // ERROR HANDLING SETUP
 // =====================================================================================
-const { handleFetchResult, showErrorToast } = usePageError({
+const { handleFetchResult } = usePageError({
   entityName,
   entityId: entityId.value,
   scope,
@@ -1464,7 +1464,6 @@ const handleStatusTransition = async (
       });
     } catch (error) {
       geinsLogError('Failed to extend quotation:', error);
-      showErrorToast(t('orders.quotation_transition_error'));
     } finally {
       transitionLoading.value = false;
       transitionDialogOpen.value = false;
@@ -1504,7 +1503,6 @@ const handleStatusTransition = async (
     });
   } catch (error) {
     geinsLogError(`Failed to ${action} quotation:`, error);
-    showErrorToast(t('orders.quotation_transition_error'));
   } finally {
     transitionLoading.value = false;
     transitionDialogOpen.value = false;
@@ -1523,7 +1521,6 @@ const handleCopy = async () => {
     }
   } catch (error) {
     geinsLogError('Failed to copy quotation:', error);
-    showErrorToast(t('error_copying_entity', { entityName }));
   } finally {
     copyLoading.value = false;
   }
@@ -1559,7 +1556,6 @@ const handleSendMessage = async (
     });
   } catch (error) {
     geinsLogError('Failed to create message:', error);
-    showErrorToast(t('error_sending_entity', { entityName: 'message' }));
   } finally {
     messageLoading.value = false;
   }
@@ -1573,7 +1569,6 @@ const handleEditMessage = async (messageId: string, newText: string) => {
     toast({ title: t('entity_updated'), variant: 'positive' });
   } catch (error) {
     geinsLogError('Failed to update message:', error);
-    showErrorToast(t('error_updating_entity', { entityName: 'message' }));
   } finally {
     messageEditLoading.value = false;
   }
@@ -1589,7 +1584,6 @@ const handleDeleteMessage = async (messageId: string) => {
     });
   } catch (error) {
     geinsLogError('Failed to delete message:', error);
-    showErrorToast(t('error_deleting_entity', { entityName: 'message' }));
   }
 };
 

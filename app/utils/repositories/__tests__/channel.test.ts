@@ -72,6 +72,8 @@ describe('accountRepo', () => {
       expect(mockFetch).toHaveBeenCalledWith('/account/channel', {
         method: 'POST',
         body: data,
+        query: undefined,
+        errorContext: { action: 'creating', entity: 'channel' },
       });
       expect(result).toEqual(response);
     });

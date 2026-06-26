@@ -181,11 +181,6 @@ const performInstall = async () => {
     });
   } catch (err) {
     geinsLog('install failed', err);
-    toast({
-      title: t('kits.install_error'),
-      description: getErrorMessage(err),
-      variant: 'negative',
-    });
   } finally {
     installing.value = false;
   }

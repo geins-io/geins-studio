@@ -4,6 +4,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { VisuallyHidden } from 'reka-ui';
 import { useForm } from 'vee-validate';
 import * as z from 'zod';
+import { ENTITY } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = withDefaults(
@@ -28,7 +29,7 @@ const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('components/CompanyBuyerPanel.vue');
 const { customerApi } = useGeinsRepository();
 
-const entityName = 'buyer';
+const entityName = ENTITY.buyer;
 
 const open = defineModel<boolean>('open');
 const loading = ref(false);
@@ -204,14 +205,7 @@ const handleSave = async () => {
 
     handleSuccess();
   } catch (error) {
-    const feedbackWord = props.mode === 'edit' ? 'updating' : 'adding';
-    toast({
-      title: t(`error_${feedbackWord}_entity`, { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
-    const message = getErrorMessage(error);
-    geinsLogError('error saving buyer:', message);
+    geinsLogError('error saving buyer:', getErrorMessage(error));
   } finally {
     loading.value = false;
   }

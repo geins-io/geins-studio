@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SaveVariableRequest, WorkflowVariable } from '#shared/types';
+import { ENTITY } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import {
   LucideEye,
@@ -21,7 +22,7 @@ const breadcrumbsStore = useBreadcrumbsStore();
 
 const routeKey = computed(() => decodeURIComponent(route.params.id as string));
 const isNew = computed(() => routeKey.value === 'new');
-const entityName = 'variable';
+const entityName = ENTITY.variable;
 const variableDataKey = computed(
   () => `orchestrator-variable-${routeKey.value}`,
 );
@@ -104,12 +105,8 @@ const handleSave = async () => {
     } else {
       await refresh();
     }
-  } catch (err) {
-    toast({
-      title: 'Save failed',
-      description: err instanceof Error ? err.message : String(err),
-      variant: 'negative',
-    });
+  } catch {
+    // Error toast shown globally by $geinsApi.
   } finally {
     saving.value = false;
   }
@@ -121,12 +118,8 @@ const deleteEntity = async (): Promise<boolean> => {
     await orchestratorApi.variable.delete(existing.value.key);
     toast({ title: 'Variable deleted' });
     return true;
-  } catch (err) {
-    toast({
-      title: 'Delete failed',
-      description: err instanceof Error ? err.message : String(err),
-      variant: 'negative',
-    });
+  } catch {
+    // Error toast shown globally by $geinsApi; just signal failure here.
     return false;
   }
 };
