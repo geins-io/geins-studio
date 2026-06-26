@@ -1,5 +1,10 @@
-import type { ApiOptions } from '#shared/types';
+import type {
+  ApiOptions,
+  GeinsErrorAction,
+  GeinsErrorContext,
+} from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
+import type { EntityKey } from '#shared/utils/entities';
 import { entityBaseRepo } from './entity-base';
 import type { EntityBaseRepo } from './entity-base';
 import type { $Fetch } from 'nitropack';
@@ -29,6 +34,10 @@ export interface EntityRepo<
  *
  * @param entityEndpoint - API path (e.g., '/product/pricelist')
  * @param fetch - Authenticated $fetch instance ($geinsApi)
+ * @param entityKey - Optional i18n entity key (e.g. 'price_list'). When set,
+ *   create/update/delete attach `errorContext` so the global error toast shows
+ *   a specific "Something went wrong while {action} {entity}" message instead
+ *   of the generic fallback. Omit for entities without a localized name.
  * @returns Object with get, list, create, update, delete methods
  *
  * @example
@@ -36,6 +45,7 @@ export interface EntityRepo<
  * const priceListRepo = entityRepo<PriceListResponse, PriceListCreate, PriceListUpdate>(
  *   '/product/pricelist',
  *   $geinsApi,
+ *   'price_list',
  * );
  * const item = await priceListRepo.get('123');
  * await priceListRepo.create({ name: 'New List' });
@@ -49,8 +59,17 @@ export function entityRepo<
 >(
   entityEndpoint: string,
   fetch: $Fetch,
+  entityKey?: EntityKey,
 ): EntityRepo<TResponse, TCreate, TUpdate, TOptions> {
   const entityBase = entityBaseRepo<TResponse, TOptions>(entityEndpoint, fetch);
+
+  // Build the per-action errorContext consumed by the global toast. Returns
+  // undefined when no entityKey was supplied, so the call falls back to the
+  // generic error message.
+  const errorContext = (
+    action: GeinsErrorAction,
+  ): GeinsErrorContext | undefined =>
+    entityKey ? { action, entity: entityKey } : undefined;
 
   return {
     ...entityBase,
@@ -60,6 +79,7 @@ export function entityRepo<
         method: 'POST',
         body: data,
         query: buildQueryObject(options),
+        errorContext: errorContext('creating'),
       });
     },
 
@@ -72,12 +92,14 @@ export function entityRepo<
         method: 'PATCH',
         body: data,
         query: buildQueryObject(options),
+        errorContext: errorContext('updating'),
       });
     },
 
     async delete(id: string): Promise<void> {
       await fetch<null>(`${entityEndpoint}/${id}`, {
         method: 'DELETE',
+        errorContext: errorContext('deleting'),
       });
     },
   };

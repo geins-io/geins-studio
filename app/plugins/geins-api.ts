@@ -177,6 +177,16 @@ export default defineNuxtPlugin(() => {
         } ::: `,
         geinsApiError,
       );
+
+      // Connection-level failures (offline, DNS, timeout) never reach
+      // onResponseError because there is no response — surface them here with
+      // the same global toast rules. Cancelled requests are intentional (user
+      // navigation / abort) so they stay silent.
+      const isMutation = !['GET', 'HEAD'].includes(method.toUpperCase());
+      if (isMutation && errorType !== 'CANCELLED_ERROR' && !isSuppressed()) {
+        void showGlobalErrorToast(geinsApiError, {}, options.errorContext);
+      }
+
       throw geinsApiError;
     },
     async onResponse({ response, options }) {
@@ -224,7 +234,11 @@ export default defineNuxtPlugin(() => {
       // useApiErrorToast.
       const isMutation = !['GET', 'HEAD'].includes(method.toUpperCase());
       if (isMutation && response.status !== 401 && !isSuppressed()) {
-        void showGlobalErrorToast(geinsApiError, errorData);
+        void showGlobalErrorToast(
+          geinsApiError,
+          errorData,
+          options.errorContext,
+        );
       }
 
       throw geinsApiError;

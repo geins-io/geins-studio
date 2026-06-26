@@ -5,6 +5,7 @@ import type {
   ChannelListItem,
   StringKeyOf,
 } from '#shared/types';
+import { ENTITY } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = ChannelListItem;
@@ -21,7 +22,7 @@ definePageMeta({
 // GLOBAL SETUP
 const accountStore = useAccountStore();
 const dataList = ref<EntityList[]>([]);
-const entityName = 'channel';
+const entityName = ENTITY.channel;
 const entityIdentifier = '{id}';
 const entityUrl = getEntityUrlFor('channel', 'settings', entityIdentifier);
 const loading = ref(true);

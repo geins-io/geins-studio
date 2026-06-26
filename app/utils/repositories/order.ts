@@ -16,6 +16,7 @@ import type {
   ExtendTransitionRequest,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
+import { ENTITY } from '#shared/utils/entities';
 import { entityGetRepo } from './entity-base';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
@@ -37,7 +38,7 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     QuotationCreate,
     QuotationUpdate,
     QuotationApiOptions
-  >(QUOTATION_ENDPOINT, fetch);
+  >(QUOTATION_ENDPOINT, fetch, ENTITY.quotation);
 
   return {
     ...baseRepo,
@@ -106,53 +107,62 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/send`, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'sending', entity: ENTITY.quotation },
         });
       },
       async accept(id: string, data: StatusTransitionRequest): Promise<void> {
         await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/accept`, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'updating', entity: ENTITY.quotation },
         });
       },
       async reject(id: string, data: StatusTransitionRequest): Promise<void> {
         await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/reject`, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'updating', entity: ENTITY.quotation },
         });
       },
       async confirm(id: string, data: StatusTransitionRequest): Promise<void> {
         await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/confirm`, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'updating', entity: ENTITY.quotation },
         });
       },
       async expire(id: string, data: StatusTransitionRequest): Promise<void> {
         await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/expire`, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'updating', entity: ENTITY.quotation },
         });
       },
       async cancel(id: string, data: StatusTransitionRequest): Promise<void> {
         await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/cancel`, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'updating', entity: ENTITY.quotation },
         });
       },
       async finalize(id: string, data: StatusTransitionRequest): Promise<void> {
         await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/finalize`, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'updating', entity: ENTITY.quotation },
         });
       },
       async extend(id: string, data: ExtendTransitionRequest): Promise<void> {
         await fetch<null>(`${QUOTATION_ENDPOINT}/${id}/extend`, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'updating', entity: ENTITY.quotation },
         });
       },
       async copy(id: string): Promise<Quotation> {
         return await fetch<Quotation>(`${QUOTATION_ENDPOINT}/${id}/copy`, {
           method: 'POST',
+          errorContext: { action: 'copying', entity: ENTITY.quotation },
         });
       },
       async preview(
@@ -176,6 +186,7 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         await fetch<null>(`${QUOTATION_ENDPOINT}/${quotationId}/message`, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'creating', entity: ENTITY.message },
         });
       },
       async updateMessage(
@@ -185,11 +196,13 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         await fetch<null>(`${QUOTATION_ENDPOINT}/message/${messageId}`, {
           method: 'PATCH',
           body: data,
+          errorContext: { action: 'updating', entity: ENTITY.message },
         });
       },
       async deleteMessage(messageId: string): Promise<void> {
         await fetch<null>(`${QUOTATION_ENDPOINT}/message/${messageId}`, {
           method: 'DELETE',
+          errorContext: { action: 'deleting', entity: ENTITY.message },
         });
       },
     },

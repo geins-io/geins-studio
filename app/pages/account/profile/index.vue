@@ -5,6 +5,7 @@
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import { DataItemDisplayType } from '#shared/types';
+import { ENTITY } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { createPasswordChangeSchema } from '@/utils/password-validation';
 
@@ -50,7 +51,7 @@ const formSchema = toTypedSchema(
 // =====================================================================================
 // ENTITY DATA SETUP
 // =====================================================================================
-const entityName = 'profile';
+const entityName = ENTITY.profile;
 
 const entityBase: UserProfileCreate = {
   name: '',

@@ -11,7 +11,7 @@
  * Module-scoped depth counter so it is a single shared singleton across the
  * app and supports nesting.
  */
-import type { GeinsApiError } from '#shared/types';
+import type { GeinsApiError, GeinsErrorContext } from '#shared/types';
 
 const suppressDepth = ref(0);
 
@@ -24,6 +24,7 @@ interface UseApiErrorToastReturnType {
   showGlobalErrorToast: (
     error: GeinsApiError,
     data: Record<string, unknown>,
+    context?: GeinsErrorContext,
   ) => Promise<void>;
 }
 
@@ -50,13 +51,25 @@ export function useApiErrorToast(): UseApiErrorToastReturnType {
   const showGlobalErrorToast = async (
     error: GeinsApiError,
     data: Record<string, unknown>,
+    context?: GeinsErrorContext,
   ): Promise<void> => {
     const nuxtApp = useNuxtApp();
-    const i18n = nuxtApp.$i18n as { t: (key: string) => string };
+    const i18n = nuxtApp.$i18n as {
+      t: (key: string, named?: Record<string, unknown>) => string;
+    };
     const { useToast } = await import('@/components/ui/toast/use-toast');
     const { toast } = useToast();
+
+    // Title uses the action+entity sentence from errorContext (e.g.
+    // "Something went wrong while sending quotation"), falling back to the
+    // generic feedback_error. The entity is a raw i18n key — `error_{action}_entity`
+    // resolves it via `@.lower:{entityName}`, keeping correct grammar per locale.
+    const contextMessage = context
+      ? i18n.t(`error_${context.action}_entity`, { entityName: context.entity })
+      : undefined;
+
     toast({
-      title: i18n.t('feedback_error'),
+      title: contextMessage || i18n.t('feedback_error'),
       description:
         getApiErrorTitle(error) || getFallbackErrorMessage(error.status, data),
       variant: 'negative',

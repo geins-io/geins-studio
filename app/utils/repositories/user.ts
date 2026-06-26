@@ -6,6 +6,7 @@ import type {
   UserUpdate,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
+import { ENTITY } from '#shared/utils/entities';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/user';
@@ -23,6 +24,7 @@ export function userRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   const userRepo = repo.entity<User, UserCreate, UserUpdate>(
     BASE_ENDPOINT,
     fetch,
+    ENTITY.user,
   );
 
   return {

@@ -1,3 +1,5 @@
+import type { EntityKey } from '../utils/entities';
+
 export type StringKeyOf<T> = Extract<keyof T, string>;
 
 /**
@@ -134,6 +136,34 @@ export type GeinsErrorType =
   | 'TIMEOUT_ERROR'
   | 'CANCELLED_ERROR'
   | 'NETWORK_ERROR';
+
+/**
+ * Semantic action for the global API error toast. Maps to the
+ * `error_{action}_entity` i18n key (e.g. 'creating' → `error_creating_entity`),
+ * which is a full grammatically-correct sentence per locale — we cannot inject
+ * a bare verb into one template because verb position/conjugation differ
+ * between languages (en: "…while creating {entity}", sv: "…när {entity} skapades").
+ */
+export type GeinsErrorAction =
+  | 'creating'
+  | 'updating'
+  | 'deleting'
+  | 'sending'
+  | 'copying'
+  | 'adding';
+
+/**
+ * Optional per-request context attached to a $geinsApi mutation call. When
+ * present, the global error toast renders the specific
+ * `error_{action}_entity` message with `entity` as the i18n entity key
+ * (e.g. 'price_list'); when absent it falls back to the generic message.
+ * Rides through ofetch options into the interceptors.
+ */
+export interface GeinsErrorContext {
+  action: GeinsErrorAction;
+  /** Entity-name i18n key (use `ENTITY.x` from `#shared/utils/entities`), NOT a translated string. */
+  entity: EntityKey;
+}
 
 export type AddressType = 'billing' | 'shipping' | 'billingandshipping';
 

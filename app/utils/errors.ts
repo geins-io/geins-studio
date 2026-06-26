@@ -72,6 +72,7 @@ export function getFallbackErrorMessage(
   const serverMessage = typeof msg === 'string' ? msg : null;
 
   const statusMessages: Record<number, string> = {
+    0: 'Network error — please check your connection',
     400: 'Bad request',
     401: 'Authentication required',
     403: 'Insufficient permissions',

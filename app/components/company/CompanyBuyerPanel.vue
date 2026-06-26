@@ -4,6 +4,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { VisuallyHidden } from 'reka-ui';
 import { useForm } from 'vee-validate';
 import * as z from 'zod';
+import { ENTITY } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = withDefaults(
@@ -28,7 +29,7 @@ const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('components/CompanyBuyerPanel.vue');
 const { customerApi } = useGeinsRepository();
 
-const entityName = 'buyer';
+const entityName = ENTITY.buyer;
 
 const open = defineModel<boolean>('open');
 const loading = ref(false);
