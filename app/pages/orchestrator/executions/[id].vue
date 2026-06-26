@@ -5,6 +5,7 @@ import type {
   ExecutionNodeExecution,
   LiveConsoleLine,
 } from '#shared/types';
+import { ENTITY } from '#shared/utils/entities';
 import { formatDuration, formatTimestamp } from '#shared/utils/time';
 import { useToast } from '@/components/ui/toast/use-toast';
 import {
@@ -133,6 +134,19 @@ const canResume = computed(() => {
   if (details.value?.canResume != null) return details.value.canResume;
   const s = execution.value?.status?.toLowerCase();
   return s === 'suspended' || s === 'paused';
+});
+
+// Route a missing/invalid execution ID through the canonical fatal-error path so
+// it renders the standard 404 error boundary like other entity pages, instead of
+// an inline error div.
+const { handleFetchResult } = usePageError({
+  entityName: ENTITY.execution,
+  entityId: executionId.value,
+  scope: 'execution-details',
+});
+
+onMounted(() => {
+  handleFetchResult(error.value ?? undefined, details.value);
 });
 
 // Breadcrumb title
@@ -339,17 +353,7 @@ const consoleSeedLines = computed<LiveConsoleLine[]>(() => {
 
 <template>
   <div
-    v-if="error"
-    class="text-destructive border-destructive/30 bg-destructive/5 rounded-lg border p-4 text-sm"
-  >
-    {{
-      $t('executions.load_failed', {
-        error: error.message ?? $t('executions.unknown_error'),
-      })
-    }}
-  </div>
-  <div
-    v-else-if="!execution"
+    v-if="!execution"
     class="text-muted-foreground py-12 text-center text-sm"
   >
     {{ $t('executions.loading_execution') }}

@@ -542,8 +542,6 @@
     "console_node_started_activity": "{node} startade ({activity})",
     "console_node_completed": "{node} slutförd på {duration}",
     "console_node_failed": "{node} misslyckades",
-    "load_failed": "Kunde inte ladda körning: {error}",
-    "unknown_error": "Okänt fel",
     "loading_execution": "Laddar körning…",
     "copied": "Kopierat!",
     "copy_execution_id": "Kopiera körnings-ID",

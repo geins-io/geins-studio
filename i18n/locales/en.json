@@ -545,8 +545,6 @@
     "console_node_started_activity": "{node} started ({activity})",
     "console_node_completed": "{node} completed in {duration}",
     "console_node_failed": "{node} failed",
-    "load_failed": "Failed to load execution: {error}",
-    "unknown_error": "Unknown error",
     "loading_execution": "Loading execution…",
     "copied": "Copied!",
     "copy_execution_id": "Copy execution ID",
