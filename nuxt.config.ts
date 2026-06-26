@@ -166,6 +166,10 @@ export default defineNuxtConfig({
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
       appId: process.env.NUXT_PUBLIC_APP_ID || '',
+      // True only on a real Vercel build. Gates Vercel Analytics / Speed Insights
+      // so their injected scripts don't 404 (and throw "Unexpected token '<'")
+      // during local `build` + `preview`, where the /_vercel/* endpoints don't exist.
+      isVercel: !!process.env.VERCEL,
     },
     private: {
       authSecret: process.env.AUTH_SECRET,

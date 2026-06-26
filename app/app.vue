@@ -9,6 +9,8 @@ const loadingBarColor =
 
 const { brandName, favicon } = useBrand();
 
+const isVercel = useRuntimeConfig().public.isVercel;
+
 useHead({
   titleTemplate: (title) =>
     title ? `${title} - ${brandName.value}` : brandName.value,
@@ -17,7 +19,7 @@ useHead({
 </script>
 
 <template>
-  <Analytics />
+  <Analytics v-if="isVercel" />
   <ConfigProvider :use-id="useIdFunction">
     <NuxtLoadingIndicator :color="loadingBarColor" :height="6" />
     <NuxtLayout>
