@@ -6,7 +6,7 @@ import type {
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
-import type { EntityKey } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
@@ -26,7 +26,7 @@ definePageMeta({
 // GLOBAL SETUP
 const { orderApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
-const entityName: EntityKey = 'quotation';
+const entityName = ENTITIES.quotation.key;
 const newEntityUrl = getEntityNewUrl();
 const entityIdentifier = '{id}';
 const entityUrl = getEntityUrl(entityIdentifier);

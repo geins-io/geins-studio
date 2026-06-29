@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SaveVariableRequest, WorkflowVariable } from '#shared/types';
-import type { EntityKey } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import {
   LucideEye,
@@ -22,7 +22,7 @@ const breadcrumbsStore = useBreadcrumbsStore();
 
 const routeKey = computed(() => decodeURIComponent(route.params.id as string));
 const isNew = computed(() => routeKey.value === 'new');
-const entityName: EntityKey = 'variable';
+const entityName = ENTITIES.variable.key;
 const variableDataKey = computed(
   () => `orchestrator-variable-${routeKey.value}`,
 );
