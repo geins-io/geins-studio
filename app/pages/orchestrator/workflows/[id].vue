@@ -12,7 +12,7 @@ import type {
   WorkflowNodeConnection,
   EntityBaseWithName,
 } from '#shared/types';
-import type { EntityKey } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { sanitizeWorkflowNodes } from '@/composables/useWorkflowCanvas';
 import type { Component } from 'vue';
@@ -55,7 +55,9 @@ function extractApiError(
 
 const workflowId = computed(() => route.params.id as string);
 const isNew = computed(() => workflowId.value === 'new');
-const entityName: EntityKey = 'workflow';
+// entityName for display/summary; the entry is passed inline to usePageError.
+// (A local `const entity` would shadow the template's `v-for="entity in …"`.)
+const entityName = ENTITIES.workflow.key;
 
 // ─── Editor manifest — trigger types + event entities for General tab ──
 const manifestStore = useWorkflowManifest();
@@ -397,7 +399,7 @@ const {
 // it renders the standard 404 error boundary like other entity pages. Skip in
 // `new` mode, where a null workflow is expected (nothing fetched yet).
 const { handleFetchResult } = usePageError({
-  entityName,
+  entity: ENTITIES.workflow,
   entityId: workflowId.value,
   scope: 'workflow-editor',
 });

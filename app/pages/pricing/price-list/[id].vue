@@ -15,6 +15,7 @@ import {
   type PriceListRuleField,
   type ProductPriceListApiOptions,
 } from '#shared/types';
+import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 import type { AcceptableValue } from 'reka-ui';
@@ -244,7 +245,7 @@ const {
   ProductPriceListUpdate,
   ProductPriceListApiOptions
 >({
-  entityName: 'price_list',
+  entity: ENTITIES.price_list,
   repository: productApi.priceList,
   validationSchema: formSchema,
   initialEntityData: entityBase,
@@ -340,7 +341,7 @@ const {
 // handleFetchResult validates the initial data load; showErrorToast wraps toast() for errors.
 
 const { handleFetchResult } = usePageError({
-  entityName,
+  entity: ENTITIES.price_list,
   entityId: entityId.value,
   scope,
 });

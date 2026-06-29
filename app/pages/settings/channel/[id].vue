@@ -22,6 +22,7 @@ import {
   type StorefrontSchema,
   type StorefrontSettings,
 } from '#shared/types';
+import { ENTITIES } from '#shared/utils/entities';
 import defaultStorefrontSchema from '@/assets/schemas/storefront-settings-default.json';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { deepMerge, getDefaultSettings } from '@/utils/storefront';
@@ -372,7 +373,7 @@ const {
   ChannelUpdate,
   ChannelApiOptions
 >({
-  entityName: 'channel',
+  entity: ENTITIES.channel,
   repository: {
     get: accountApi.channel.get,
     create: accountApi.channel.create,
@@ -684,7 +685,7 @@ watch(
 // ERROR HANDLING SETUP
 // =====================================================================================
 const { handleFetchResult } = usePageError({
-  entityName,
+  entity: ENTITIES.channel,
   entityId: entityId.value,
   scope,
 });
