@@ -4,10 +4,21 @@ import type {
   GeinsErrorContext,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
-import type { EntityKey, EntityWithEndpoint } from '#shared/utils/entities';
+import type { EntityKey } from '#shared/utils/entities';
 import { entityBaseRepo } from './entity-base';
 import type { EntityBaseRepo } from './entity-base';
 import type { $Fetch } from 'nitropack';
+
+/**
+ * Input to {@link entityRepo}: an endpoint plus an optional i18n entity key.
+ *
+ * A registry entry (`ENTITIES.x`) satisfies this directly — that is the normal
+ * call: `repo.entity(ENTITIES.price_list, fetch)`. For a scoped/custom endpoint
+ * that isn't in the registry (e.g. a company-scoped buyer), pass an inline
+ * `{ endpoint, key }`. Omit `key` for endpoints with no localized name (no
+ * specific error toast).
+ */
+export type EntityRepoTarget = { endpoint: string; key?: EntityKey };
 
 /** Return type for {@link entityRepo} — full CRUD (get + list + create + update + delete) */
 export interface EntityRepo<
@@ -22,33 +33,33 @@ export interface EntityRepo<
 }
 
 /**
- * Creates a full CRUD repository for an entity endpoint.
+ * Creates a full CRUD repository for an entity.
  *
  * Extends {@link entityBaseRepo} (get + list) with create, update, and delete.
  * This is the standard factory for entities that need write operations.
+ *
+ * Takes a {@link EntityRepoTarget} (endpoint + optional i18n key). Pass a
+ * registry entry directly for domain entities — `repo.entity(ENTITIES.x, fetch)`
+ * — so the endpoint and the toast key both come from the single source. When a
+ * `key` is present, create/update/delete attach `errorContext` so the global
+ * error toast shows a specific "Something went wrong while {action} {entity}"
+ * message instead of the generic fallback.
  *
  * @template TResponse - API response type (must extend EntityBase)
  * @template TCreate - Creation payload type
  * @template TUpdate - Update payload type
  * @template TOptions - Query options type for field selection
  *
- * @param entityEndpoint - API path (e.g., '/product/pricelist')
+ * @param target - Registry entry (`ENTITIES.x`) or `{ endpoint, key? }`
  * @param fetch - Authenticated $fetch instance ($geinsApi)
- * @param entityKey - Optional i18n entity key (e.g. 'price_list'). When set,
- *   create/update/delete attach `errorContext` so the global error toast shows
- *   a specific "Something went wrong while {action} {entity}" message instead
- *   of the generic fallback. Omit for entities without a localized name.
  * @returns Object with get, list, create, update, delete methods
  *
  * @example
  * ```ts
- * const priceListRepo = entityRepo<PriceListResponse, PriceListCreate, PriceListUpdate>(
- *   '/product/pricelist',
- *   $geinsApi,
- *   'price_list',
- * );
- * const item = await priceListRepo.get('123');
- * await priceListRepo.create({ name: 'New List' });
+ * // registry entity (normal case)
+ * const priceListRepo = entityRepo<ProductPriceList, ...>(ENTITIES.price_list, $geinsApi);
+ * // scoped/custom endpoint not in the registry
+ * const buyerRepo = entityRepo<CompanyBuyer, ...>({ endpoint, key: 'buyer' }, $geinsApi);
  * ```
  */
 export function entityRepo<
@@ -57,10 +68,10 @@ export function entityRepo<
   TUpdate extends object,
   TOptions extends ApiOptions<string> = ApiOptions<string>,
 >(
-  entityEndpoint: string,
+  target: EntityRepoTarget,
   fetch: $Fetch,
-  entityKey?: EntityKey,
 ): EntityRepo<TResponse, TCreate, TUpdate, TOptions> {
+  const { endpoint: entityEndpoint, key: entityKey } = target;
   const entityBase = entityBaseRepo<TResponse, TOptions>(entityEndpoint, fetch);
 
   // Build the per-action errorContext consumed by the global toast. Returns
@@ -103,39 +114,4 @@ export function entityRepo<
       });
     },
   };
-}
-
-/**
- * Registry-aware shorthand for {@link entityRepo}: takes a registry entry and
- * reads its `endpoint` + `key` directly, so a domain repo declares the entity
- * once (`ENTITIES.price_list`) instead of hand-passing endpoint + key. The key
- * doubles as the i18n entity key (wired into the global error toast).
- *
- * The param is {@link EntityWithEndpoint} — only entries that actually have a
- * repo endpoint — so passing a singleton like `ENTITIES.profile` is a compile
- * error.
- *
- * @example
- * ```ts
- * // equivalent to entityRepo('/product/pricelist', fetch, 'price_list')
- * const priceListRepo = entityRepoFor<PriceList, PriceListCreate, PriceListUpdate>(
- *   ENTITIES.price_list,
- *   $geinsApi,
- * );
- * ```
- */
-export function entityRepoFor<
-  TResponse extends EntityBase,
-  TCreate extends object,
-  TUpdate extends object,
-  TOptions extends ApiOptions<string> = ApiOptions<string>,
->(
-  entity: EntityWithEndpoint,
-  fetch: $Fetch,
-): EntityRepo<TResponse, TCreate, TUpdate, TOptions> {
-  return entityRepo<TResponse, TCreate, TUpdate, TOptions>(
-    entity.endpoint,
-    fetch,
-    entity.key,
-  );
 }

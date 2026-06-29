@@ -90,11 +90,11 @@ await listRepo.list(options);
 
 ### Full Entity Repository
 
-The `entityRepo` extends the base repository with full CRUD operations:
+The `entityRepo` extends the base repository with full CRUD operations. Unlike the read-only factories above (which take a raw endpoint string), it takes an **entity target** — `{ endpoint, key? }`. A registry entry satisfies it directly, so the normal call passes `ENTITIES.x`:
 
 ```ts
-const fullRepo = entityRepo<Product, ProductCreate, ProductUpdate>(
-  '/product',
+const fullRepo = repo.entity<Product, ProductCreate, ProductUpdate>(
+  ENTITIES.product, // endpoint + i18n key, from the single source
   $geinsApi,
 );
 
@@ -106,16 +106,15 @@ await fullRepo.update(id, data, options);
 await fullRepo.delete(id);
 ```
 
-For domain entities, prefer the registry-aware shorthand **`entityRepoFor(entity, fetch)`** (exposed as `repo.entityFor`). It takes a registry entry and reads its `endpoint` + `key` directly — the key is passed through as the i18n entity key, so `create`/`update`/`delete` failures surface a specific error toast. It is equivalent to `entityRepo(entity.endpoint, fetch, entity.key)`:
+The `key` is passed through as the i18n entity key, so `create`/`update`/`delete` failures surface a specific error toast. Passing an endpointless entry (e.g. `ENTITIES.profile`) is a compile error. For a scoped/custom endpoint that isn't in the registry, pass an inline target:
 
 ```ts
-const fullRepo = repo.entityFor<Product, ProductCreate, ProductUpdate>(
-  ENTITIES.product,
+// company-scoped buyer — endpoint built at runtime, not in ENTITIES
+repo.entity<CompanyBuyer, CompanyBuyerCreate, CompanyBuyerUpdate>(
+  { endpoint: `${companyEndpoint}/buyer`, key: 'buyer' },
   $geinsApi,
 );
 ```
-
-Passing an endpointless entry (e.g. `ENTITIES.profile`) is a compile error. The third `entityKey` argument on the raw `entityRepo(endpoint, fetch, entityKey?)` is what wires the error-toast context; `entityRepoFor` fills it in from the entry.
 
 ## Type Definitions
 
@@ -128,7 +127,7 @@ function entityRepo<
   TUpdate,
   TOptions = Record<string, any>,
 >(
-  endpoint: string,
+  target: { endpoint: string; key?: EntityKey }, // a registry entry satisfies this
   fetch: $Fetch,
 ): EntityRepository<TResponse, TCreate, TUpdate, TOptions>;
 
@@ -174,13 +173,13 @@ export const ENTITIES = {
 } as const satisfies Record<string, EntityDescriptor>;
 ```
 
-3. **Create the repository file** — use `repo.entityFor(ENTITIES.entity, fetch)`, which reads the endpoint (and the i18n entity key, for error toasts) straight from the registry entry. No local endpoint literal:
+3. **Create the repository file** — use `repo.entity(ENTITIES.entity, fetch)`, which reads the endpoint (and the i18n entity key, for error toasts) straight from the registry entry. No local endpoint literal:
 
 ```ts
 // In app/utils/repositories/article.ts
 
 export function articleRepo(fetch: $Fetch) {
-  return repo.entityFor<Article, ArticleCreate, ArticleUpdate>(
+  return repo.entity<Article, ArticleCreate, ArticleUpdate>(
     ENTITIES.article,
     fetch,
   );

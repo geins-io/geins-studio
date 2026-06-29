@@ -21,7 +21,7 @@ const BASE_ENDPOINT = '/wholesale';
  */
 export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   const companyEndpoint = ENTITIES.company.endpoint;
-  const companyRepo = repo.entityFor<
+  const companyRepo = repo.entity<
     CustomerCompany,
     CustomerCompanyCreate,
     CustomerCompanyUpdate,
@@ -31,11 +31,10 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   const buyerEndpoint = ENTITIES.buyer.endpoint;
   const buyerRepo = repo.entityBase<CompanyBuyer>(buyerEndpoint, fetch);
 
-  const subCustomerRepo = repo.entityFor<
-    Customer,
-    CustomerCreate,
-    CustomerUpdate
-  >(ENTITIES.customer, fetch);
+  const subCustomerRepo = repo.entity<Customer, CustomerCreate, CustomerUpdate>(
+    ENTITIES.customer,
+    fetch,
+  );
 
   return {
     company: {
@@ -53,7 +52,7 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           CompanyBuyer,
           CompanyBuyerCreate,
           CompanyBuyerUpdate
-        >(companyBuyerEndpoint, fetch, 'buyer');
+        >({ endpoint: companyBuyerEndpoint, key: 'buyer' }, fetch);
         return {
           buyer: {
             ...buyerEntityRepo,

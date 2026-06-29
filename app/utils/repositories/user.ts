@@ -21,7 +21,7 @@ const BASE_ENDPOINT = ENTITIES.user.endpoint;
  * @param fetch - Authenticated $fetch instance ($geinsApi)
  */
 export function userRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const userRepo = repo.entityFor<User, UserCreate, UserUpdate>(
+  const userRepo = repo.entity<User, UserCreate, UserUpdate>(
     ENTITIES.user,
     fetch,
   );

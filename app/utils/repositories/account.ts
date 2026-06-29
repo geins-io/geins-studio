@@ -30,7 +30,7 @@ const CHANNEL_ENDPOINT = ENTITIES.channel.endpoint;
  * a multipart method where each file part's name matches its dot-notation schema path.
  */
 export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const channelEntityRepo = repo.entityFor<
+  const channelEntityRepo = repo.entity<
     Channel,
     ChannelCreate,
     ChannelUpdate,

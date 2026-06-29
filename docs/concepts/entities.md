@@ -27,7 +27,7 @@ export type EntityKey = keyof typeof ENTITIES; // 'price_list' | 'quotation' | â
 // ENTITIES.price_list === { endpoint: '/product/pricelist', route: 'pricing/price-list', key: 'price_list' }
 ```
 
-- **`endpoint`** is omitted for singletons with no standard CRUD endpoint (`profile`, served via `/user/me`). Repositories read it by passing the entry to `repo.entityFor(ENTITIES.x, fetch)` (see [API Repositories](./api-repositories.md)).
+- **`endpoint`** is omitted for singletons with no standard CRUD endpoint (`profile`, served via `/user/me`). Repositories read it by passing the entry to `repo.entity(ENTITIES.x, fetch)` (see [API Repositories](./api-repositories.md)).
 - **`route`** is omitted for sub-entities rendered inside a parent page (`buyer`, `customer`) and entities with no list/`[id]` page (`product`, `message`). It is the one place a routeâ†”i18n-key mismatch (e.g. a plural folder) is reconciled. The route helpers `entityListHref(key)` / `entityChildPattern(key)` / `entityBasePath(key)` build page URLs from it, so [`navigation.ts`](/composables/) (and any entity link) reads paths from the registry rather than hardcoding them.
 
 Two distinct sets exist, and only the first goes in the registry:
@@ -41,7 +41,7 @@ Used everywhere from the one declaration:
 
 | Consumer    | Reads            | How                                                                 |
 | ----------- | ---------------- | ------------------------------------------------------------------- |
-| repository  | `endpoint`       | `repo.entityFor(ENTITIES.price_list, fetch)`                        |
+| repository  | `endpoint`       | `repo.entity(ENTITIES.price_list, fetch)`                           |
 | entity page | key (= i18n key) | `const entityName: EntityKey = 'price_list'`                        |
 | navigation  | `route`          | `entityListHref('price_list')` / `entityChildPattern('price_list')` |
 | i18n        | key              | `en.json` / `sv.json` (guarded by the parity test)                  |

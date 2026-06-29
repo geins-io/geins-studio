@@ -8,7 +8,7 @@
  *   toast), page `usePageError({ entityName })`, table empty states, and
  *   validation messages — all of which must agree on the same key.
  * - **endpoint** — the API base path the repo fetches (current, verbatim — this
- *   file does NOT change any endpoint string). Read by `entityRepoFor`.
+ *   file does NOT change any endpoint string). Read by `repo.entity(ENTITIES.x, fetch)`.
  * - **route** — the page folder under `app/pages/`. The one place the
  *   route↔i18n-key mismatch (e.g. plural folders) is reconciled.
  *
@@ -82,15 +82,6 @@ export type EntityKey = keyof typeof ENTITIES;
 
 /** A single registry entry: its descriptor plus its own `key`. */
 export type Entity = (typeof ENTITIES)[EntityKey];
-
-/**
- * A registry entry that has a repo `endpoint` — the input to `entityRepoFor`.
- * Passing an endpointless entry (e.g. `ENTITIES.profile`) is a compile error.
- */
-export type EntityWithEndpoint = EntityDescriptor & {
-  endpoint: string;
-  key: EntityKey;
-};
 
 /** Subset of {@link EntityKey} whose descriptor declares a page `route`. */
 export type EntityKeyWithRoute = {

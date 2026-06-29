@@ -22,7 +22,7 @@ const BASE_ENDPOINT = ENTITIES.product.endpoint;
  * Repository for managing product operations
  */
 export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const productRepo = repo.entityFor<
+  const productRepo = repo.entity<
     Product,
     ProductCreate,
     ProductUpdate,
@@ -34,7 +34,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   const brandEndpoint = `${BASE_ENDPOINT}/brand`;
 
   const priceListEndpoint = ENTITIES.price_list.endpoint;
-  const priceListRepo = repo.entityFor<
+  const priceListRepo = repo.entity<
     ProductPriceList,
     ProductPriceListCreate,
     ProductPriceListUpdate

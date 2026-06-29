@@ -33,7 +33,7 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   const baseRepo = entityGetRepo<Order, OrderApiOptions>(orderEndpoint, fetch);
 
   // Standard CRUD for quotations
-  const quotationRepo = repo.entityFor<
+  const quotationRepo = repo.entity<
     Quotation,
     QuotationCreate,
     QuotationUpdate,
