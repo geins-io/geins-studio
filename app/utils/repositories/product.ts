@@ -11,12 +11,12 @@ import type {
   ProductPriceListApiOptions,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
-import { ENTITY } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
 
-const BASE_ENDPOINT = '/product';
+const BASE_ENDPOINT = ENTITIES.product.endpoint;
 
 /**
  * Repository for managing product operations
@@ -27,18 +27,18 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     ProductCreate,
     ProductUpdate,
     ProductApiOptions
-  >(BASE_ENDPOINT, fetch, ENTITY.product);
+  >(ENTITIES.product, fetch);
 
   const categoryEndpoint = `${BASE_ENDPOINT}/category`;
 
   const brandEndpoint = `${BASE_ENDPOINT}/brand`;
 
-  const priceListEndpoint = `${BASE_ENDPOINT}/pricelist`;
+  const priceListEndpoint = ENTITIES.price_list.endpoint;
   const priceListRepo = repo.entity<
     ProductPriceList,
     ProductPriceListCreate,
     ProductPriceListUpdate
-  >(priceListEndpoint, fetch, ENTITY.price_list);
+  >(ENTITIES.price_list, fetch);
 
   return {
     ...productRepo,

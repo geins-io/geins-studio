@@ -1,10 +1,12 @@
+import type { EntityKey } from '#shared/utils/entities';
 import type { NuxtError } from '#app';
 
 interface PageErrorOptions {
   /**
-   * The name of the entity being edited/viewed (for entity-specific errors)
+   * Domain-entity i18n key from the `ENTITIES` registry (for entity-specific
+   * errors). Omit on non-entity pages for the generic message.
    */
-  entityName?: string;
+  entityName?: EntityKey;
   /**
    * The ID of the entity (for more specific error messages)
    */

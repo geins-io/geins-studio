@@ -36,6 +36,21 @@ Key callbacks you implement:
 - `prepareCreateData()` / `prepareUpdateData()` — map form → POST/PATCH body
 - `onFormValuesChange(values)` — keep `entityDataUpdate` in sync as the form changes
 
+## Entity key (`entityName`)
+
+Pass an **explicit typed `EntityKey`** to both `useEntityEdit` and `usePageError` — it drives the CRUD toasts, the 404 title, and the page heading. Declare it once and reuse it; don't rely on route-folder derivation (it only equals the key when folder == key, and breaks for plural folders):
+
+```ts
+import type { EntityKey } from '#shared/utils/entities';
+
+const entityName: EntityKey = 'channel'; // typo-checked against the registry
+
+const { /* … */ } = useEntityEdit<…>({ entityName, repository, /* … */ });
+const { handleFetchResult } = usePageError({ entityName });
+```
+
+The key must already exist in the `ENTITIES` registry (`shared/utils/entities.ts`) — see the **geins-add-entity** skill, step 3.
+
 ## Required edit-mode loading block
 
 Every `[id].vue` **must** include this block at the bottom of `<script setup>`. Without it, reloading on an existing entity or returning after creation shows a blank form.

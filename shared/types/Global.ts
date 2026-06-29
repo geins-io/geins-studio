@@ -161,7 +161,7 @@ export type GeinsErrorAction =
  */
 export interface GeinsErrorContext {
   action: GeinsErrorAction;
-  /** Entity-name i18n key (use `ENTITY.x` from `#shared/utils/entities`), NOT a translated string. */
+  /** Entity-name i18n key — a domain-entity key from `ENTITIES` (`#shared/utils/entities`), NOT a translated string. */
   entity: EntityKey;
 }
 

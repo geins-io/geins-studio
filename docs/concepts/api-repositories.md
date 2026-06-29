@@ -90,11 +90,11 @@ await listRepo.list(options);
 
 ### Full Entity Repository
 
-The `entityRepo` extends the base repository with full CRUD operations:
+The `entityRepo` extends the base repository with full CRUD operations. Unlike the read-only factories above (which take a raw endpoint string), it takes an **entity target** — `{ endpoint, key? }`. A registry entry satisfies it directly, so the normal call passes `ENTITIES.x`:
 
 ```ts
-const fullRepo = entityRepo<Product, ProductCreate, ProductUpdate>(
-  '/product',
+const fullRepo = repo.entity<Product, ProductCreate, ProductUpdate>(
+  ENTITIES.product, // endpoint + i18n key, from the single source
   $geinsApi,
 );
 
@@ -104,6 +104,16 @@ await fullRepo.list(options);
 await fullRepo.create(data, options);
 await fullRepo.update(id, data, options);
 await fullRepo.delete(id);
+```
+
+The `key` is passed through as the i18n entity key, so `create`/`update`/`delete` failures surface a specific error toast. Passing an endpointless entry (e.g. `ENTITIES.profile`) is a compile error. For a scoped/custom endpoint that isn't in the registry, pass an inline target:
+
+```ts
+// company-scoped buyer — endpoint built at runtime, not in ENTITIES
+repo.entity<CompanyBuyer, CompanyBuyerCreate, CompanyBuyerUpdate>(
+  { endpoint: `${companyEndpoint}/buyer`, key: 'buyer' },
+  $geinsApi,
+);
 ```
 
 ## Type Definitions
@@ -117,7 +127,7 @@ function entityRepo<
   TUpdate,
   TOptions = Record<string, any>,
 >(
-  endpoint: string,
+  target: { endpoint: string; key?: EntityKey }, // a registry entry satisfies this
   fetch: $Fetch,
 ): EntityRepository<TResponse, TCreate, TUpdate, TOptions>;
 
@@ -154,23 +164,31 @@ type Article = ResponseEntity<ArticleBase>;
 Read more about entity types in the [Entitites](./entities.md) docs.
 :::
 
-2. **Create the repository file**:
+2. **Register the entity** in the `ENTITIES` registry (`shared/utils/entities.ts`) — the key _is_ the i18n key:
+
+```ts
+export const ENTITIES = {
+  // …
+  article: { endpoint: '/article', route: 'content/article' },
+} as const satisfies Record<string, EntityDescriptor>;
+```
+
+3. **Create the repository file** — use `repo.entity(ENTITIES.entity, fetch)`, which reads the endpoint (and the i18n entity key, for error toasts) straight from the registry entry. No local endpoint literal:
 
 ```ts
 // In app/utils/repositories/article.ts
-import { entityRepo } from './entity';
-
-const BASE_ENDPOINT = '/article';
 
 export function articleRepo(fetch: $Fetch) {
-  return entityRepo<Article, ArticleCreate, ArticleUpdate>(
-    BASE_ENDPOINT,
+  return repo.entity<Article, ArticleCreate, ArticleUpdate>(
+    ENTITIES.article,
     fetch,
   );
 }
 ```
 
-3. **Register in the main repo object**:
+Reach for the lower-level `entityRepo('/endpoint', fetch, key)` only for sub-entities with a scoped/non-registry endpoint (e.g. a company-scoped `buyer`).
+
+4. **Register in the main repo object**:
 
 ```ts
 // In app/utils/repos.ts
@@ -182,7 +200,7 @@ export const repo = {
 };
 ```
 
-4. **Add to the useGeinsRepository composable**:
+5. **Add to the useGeinsRepository composable**:
 
 ```ts
 // In app/composables/useGeinsRepository.ts

@@ -164,12 +164,13 @@ Rule of thumb: if a page needs to react to something changing over time (duratio
 
 1. **Types** → `shared/types/{Entity}.ts` — Define `{Entity}Base`, `{Entity}Create`, `{Entity}Update`, and `{Entity}` (response type)
 2. **Export types** → `shared/types/index.ts`
-3. **Repository** → `app/utils/repositories/{entity}.ts`
-4. **Register repo** → `app/utils/repos.ts` + `app/composables/useGeinsRepository.ts`
-5. **List page** → `app/pages/{domain}/{entity}/list.vue`
-6. **Detail page** → `app/pages/{domain}/{entity}/[id].vue`
-7. **Navigation** → `app/lib/navigation.ts`
-8. **i18n** → `i18n/locales/en.json` + `sv.json`
+3. **Registry** → `shared/utils/entities.ts` — add an `ENTITIES` entry (`{ endpoint, route }`); the key _is_ the i18n key, and `EntityKey` is derived from it. See [Entities](docs/concepts/entities.md#entity-registry-single-source-of-truth).
+4. **Repository** → `app/utils/repositories/{entity}.ts` — use `repo.entity(ENTITIES.{key}, fetch)` (endpoint + key read from the registry entry)
+5. **Register repo** → `app/utils/repos.ts` + `app/composables/useGeinsRepository.ts`
+6. **List page** → `app/pages/{domain}/{entity}/list.vue`
+7. **Detail page** → `app/pages/{domain}/{entity}/[id].vue` — pass an explicit `entityName: EntityKey` to `useEntityEdit`/`usePageError`
+8. **Navigation** → `app/lib/navigation.ts`
+9. **i18n** → `i18n/locales/en.json` + `sv.json`
 
 ---
 

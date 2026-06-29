@@ -580,6 +580,7 @@ const {
   QuotationUpdate,
   QuotationApiOptions
 >({
+  entityName: 'quotation',
   repository: orderApi.quotation,
   validationSchema: formSchema,
   initialEntityData: entityBase,
