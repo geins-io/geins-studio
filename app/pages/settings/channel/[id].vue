@@ -372,6 +372,7 @@ const {
   ChannelUpdate,
   ChannelApiOptions
 >({
+  entityName: 'channel',
   repository: {
     get: accountApi.channel.get,
     create: accountApi.channel.create,

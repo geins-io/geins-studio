@@ -12,7 +12,7 @@ import type {
   WorkflowNodeConnection,
   EntityBaseWithName,
 } from '#shared/types';
-import { ENTITY } from '#shared/utils/entities';
+import type { EntityKey } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { sanitizeWorkflowNodes } from '@/composables/useWorkflowCanvas';
 import type { Component } from 'vue';
@@ -55,7 +55,7 @@ function extractApiError(
 
 const workflowId = computed(() => route.params.id as string);
 const isNew = computed(() => workflowId.value === 'new');
-const entityName = ENTITY.workflow;
+const entityName: EntityKey = 'workflow';
 
 // ─── Editor manifest — trigger types + event entities for General tab ──
 const manifestStore = useWorkflowManifest();

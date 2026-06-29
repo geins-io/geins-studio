@@ -6,10 +6,10 @@ import type {
   UserUpdate,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
-import { ENTITY } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
-const BASE_ENDPOINT = '/user';
+const BASE_ENDPOINT = ENTITIES.user.endpoint;
 
 /**
  * Repository for managing user operations.
@@ -21,11 +21,7 @@ const BASE_ENDPOINT = '/user';
  * @param fetch - Authenticated $fetch instance ($geinsApi)
  */
 export function userRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const userRepo = repo.entity<User, UserCreate, UserUpdate>(
-    BASE_ENDPOINT,
-    fetch,
-    ENTITY.user,
-  );
+  const userRepo = repo.entityFor<User, UserCreate, UserUpdate>('user', fetch);
 
   return {
     ...userRepo,

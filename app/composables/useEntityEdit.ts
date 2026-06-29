@@ -1,4 +1,5 @@
 import { useForm, type GenericObject } from 'vee-validate';
+import type { EntityKey } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { toTypedSchema } from '@vee-validate/zod';
 
@@ -9,7 +10,8 @@ interface EntityEditOptions<
   TUpdate extends UpdateEntity<TBase>,
   TOptions extends ApiOptions<string> = ApiOptions<string>,
 > {
-  entityName?: string;
+  /** Domain-entity i18n key from the `ENTITIES` registry (`#shared/utils/entities`). */
+  entityName: EntityKey;
   repository: {
     get: (id: string, options?: TOptions) => Promise<TResponse>;
     create: (data: TCreate, options?: TOptions) => Promise<TResponse>;
@@ -50,7 +52,7 @@ interface _UseEntityEditReturnType<
   TUpdate extends UpdateEntity<TBase>,
 > {
   // State
-  entityName: string;
+  entityName: EntityKey;
   entityId: ComputedRef<string>;
   createMode: Ref<boolean>;
   loading: Ref<boolean>;
@@ -131,16 +133,13 @@ export function useEntityEdit<
   const route = useRoute();
   const router = useRouter();
   const { toast } = useToast();
-  const {
-    newEntityUrlAlias,
-    getEntityName,
-    getEntityNewUrl,
-    getEntityListUrl,
-  } = useEntityUrl();
+  const { newEntityUrlAlias, getEntityNewUrl, getEntityListUrl } =
+    useEntityUrl();
   const { hasReducedSpace } = useLayout();
 
-  // Core state
-  const entityName = options.entityName || getEntityName();
+  // Core state — i18n key comes from the registry via the page (single source);
+  // never derived from the route folder.
+  const entityName = options.entityName;
   const newEntityUrl = getEntityNewUrl();
   const entityListUrl = getEntityListUrl();
   const createMode = ref(route.params.id === newEntityUrlAlias.value);

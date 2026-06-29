@@ -14,11 +14,11 @@ import type {
   MailTextsUpdateRequest,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
-import { ENTITY } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/account';
-const CHANNEL_ENDPOINT = `${BASE_ENDPOINT}/channel`;
+const CHANNEL_ENDPOINT = ENTITIES.channel.endpoint;
 
 /**
  * Unified repository for all account-scoped endpoints.
@@ -30,12 +30,12 @@ const CHANNEL_ENDPOINT = `${BASE_ENDPOINT}/channel`;
  * a multipart method where each file part's name matches its dot-notation schema path.
  */
 export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const channelEntityRepo = repo.entity<
+  const channelEntityRepo = repo.entityFor<
     Channel,
     ChannelCreate,
     ChannelUpdate,
     ChannelApiOptions
-  >(CHANNEL_ENDPOINT, fetch, ENTITY.channel);
+  >('channel', fetch);
 
   return {
     account: {

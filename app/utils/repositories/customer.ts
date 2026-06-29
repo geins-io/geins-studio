@@ -11,7 +11,7 @@ import type {
   CustomerCreate,
   CustomerUpdate,
 } from '#shared/types';
-import { ENTITY } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/wholesale';
@@ -20,23 +20,22 @@ const BASE_ENDPOINT = '/wholesale';
  * Repository for managing customer company operations
  */
 export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const companyEndpoint = `${BASE_ENDPOINT}/account`;
-  const companyRepo = repo.entity<
+  const companyEndpoint = ENTITIES.company.endpoint;
+  const companyRepo = repo.entityFor<
     CustomerCompany,
     CustomerCompanyCreate,
     CustomerCompanyUpdate,
     CustomerCompanyApiOptions
-  >(companyEndpoint, fetch, ENTITY.company);
+  >('company', fetch);
 
-  const buyerEndpoint = `${BASE_ENDPOINT}/buyer`;
+  const buyerEndpoint = ENTITIES.buyer.endpoint;
   const buyerRepo = repo.entityBase<CompanyBuyer>(buyerEndpoint, fetch);
 
-  const customerEndpoint = `${BASE_ENDPOINT}/customer`;
-  const subCustomerRepo = repo.entity<Customer, CustomerCreate, CustomerUpdate>(
-    customerEndpoint,
-    fetch,
-    ENTITY.customer,
-  );
+  const subCustomerRepo = repo.entityFor<
+    Customer,
+    CustomerCreate,
+    CustomerUpdate
+  >('customer', fetch);
 
   return {
     company: {
@@ -54,7 +53,7 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           CompanyBuyer,
           CompanyBuyerCreate,
           CompanyBuyerUpdate
-        >(companyBuyerEndpoint, fetch, ENTITY.buyer);
+        >(companyBuyerEndpoint, fetch, 'buyer');
         return {
           buyer: {
             ...buyerEntityRepo,

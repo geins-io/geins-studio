@@ -4,7 +4,8 @@ import type {
   GeinsErrorContext,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
-import type { EntityKey } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
+import type { EntityKey, EntityKeyWithEndpoint } from '#shared/utils/entities';
 import { entityBaseRepo } from './entity-base';
 import type { EntityBaseRepo } from './entity-base';
 import type { $Fetch } from 'nitropack';
@@ -103,4 +104,39 @@ export function entityRepo<
       });
     },
   };
+}
+
+/**
+ * Registry-aware shorthand for {@link entityRepo}: reads the endpoint from the
+ * {@link ENTITIES} registry by key, so a domain repo declares the entity once
+ * instead of hand-passing endpoint + key. The key doubles as the i18n entity
+ * key (wired into the global error toast).
+ *
+ * The param is restricted to {@link EntityKeyWithEndpoint} — entities that
+ * actually have a repo endpoint — so calling it for a singleton like `profile`
+ * is a compile error.
+ *
+ * @example
+ * ```ts
+ * // equivalent to entityRepo('/product/pricelist', fetch, 'price_list')
+ * const priceListRepo = entityRepoFor<PriceList, PriceListCreate, PriceListUpdate>(
+ *   'price_list',
+ *   $geinsApi,
+ * );
+ * ```
+ */
+export function entityRepoFor<
+  TResponse extends EntityBase,
+  TCreate extends object,
+  TUpdate extends object,
+  TOptions extends ApiOptions<string> = ApiOptions<string>,
+>(
+  key: EntityKeyWithEndpoint,
+  fetch: $Fetch,
+): EntityRepo<TResponse, TCreate, TUpdate, TOptions> {
+  return entityRepo<TResponse, TCreate, TUpdate, TOptions>(
+    ENTITIES[key].endpoint,
+    fetch,
+    key,
+  );
 }

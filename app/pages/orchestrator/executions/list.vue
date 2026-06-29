@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ExecutionLog, ColumnOptions, StringKeyOf } from '#shared/types';
-import { ENTITY } from '#shared/utils/entities';
+import type { EntityKey } from '#shared/utils/entities';
 import { formatDuration, formatTimestamp } from '#shared/utils/time';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
@@ -36,7 +36,7 @@ const route = useRoute();
 const { orchestratorApi } = useGeinsRepository();
 const breadcrumbsStore = useBreadcrumbsStore();
 const allData = ref<EntityList[]>([]);
-const entityName = ENTITY.execution;
+const entityName: EntityKey = 'execution';
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});

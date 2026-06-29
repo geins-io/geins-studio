@@ -192,6 +192,7 @@ const {
   CustomerCompanyUpdate,
   CustomerCompanyApiOptions
 >({
+  entityName: 'company',
   repository: customerApi.company,
   validationSchema: formSchema,
   initialEntityData: entityBase,

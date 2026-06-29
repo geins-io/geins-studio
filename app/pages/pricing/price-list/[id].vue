@@ -244,6 +244,7 @@ const {
   ProductPriceListUpdate,
   ProductPriceListApiOptions
 >({
+  entityName: 'price_list',
   repository: productApi.priceList,
   validationSchema: formSchema,
   initialEntityData: entityBase,

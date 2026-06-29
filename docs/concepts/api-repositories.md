@@ -106,6 +106,17 @@ await fullRepo.update(id, data, options);
 await fullRepo.delete(id);
 ```
 
+For domain entities, prefer the registry-aware shorthand **`entityRepoFor(key, fetch)`** (exposed as `repo.entityFor`). It reads the endpoint from the [`ENTITIES` registry](./entities.md#entity-registry-single-source-of-truth) and passes the key through as the i18n entity key — so `create`/`update`/`delete` failures surface a specific error toast. It is equivalent to `entityRepo(ENTITIES[key].endpoint, fetch, key)`:
+
+```ts
+const fullRepo = repo.entityFor<Product, ProductCreate, ProductUpdate>(
+  'product',
+  $geinsApi,
+);
+```
+
+The third `entityKey` argument on the raw `entityRepo(endpoint, fetch, entityKey?)` is what wires that error-toast context; `entityRepoFor` fills it in for you.
+
 ## Type Definitions
 
 Repositories use generic types to ensure type safety across all operations:
@@ -154,23 +165,31 @@ type Article = ResponseEntity<ArticleBase>;
 Read more about entity types in the [Entitites](./entities.md) docs.
 :::
 
-2. **Create the repository file**:
+2. **Register the entity** in the `ENTITIES` registry (`shared/utils/entities.ts`) — the key _is_ the i18n key:
+
+```ts
+export const ENTITIES = {
+  // …
+  article: { endpoint: '/article', route: 'content/article' },
+} as const satisfies Record<string, EntityDescriptor>;
+```
+
+3. **Create the repository file** — use `entityRepoFor(key, fetch)`, which reads the endpoint (and the i18n entity key, for error toasts) straight from the registry. No local endpoint literal:
 
 ```ts
 // In app/utils/repositories/article.ts
-import { entityRepo } from './entity';
-
-const BASE_ENDPOINT = '/article';
 
 export function articleRepo(fetch: $Fetch) {
-  return entityRepo<Article, ArticleCreate, ArticleUpdate>(
-    BASE_ENDPOINT,
+  return repo.entityFor<Article, ArticleCreate, ArticleUpdate>(
+    'article',
     fetch,
   );
 }
 ```
 
-3. **Register in the main repo object**:
+Reach for the lower-level `entityRepo('/endpoint', fetch, key)` only for sub-entities with a scoped/non-registry endpoint (e.g. a company-scoped `buyer`).
+
+4. **Register in the main repo object**:
 
 ```ts
 // In app/utils/repos.ts
@@ -182,7 +201,7 @@ export const repo = {
 };
 ```
 
-4. **Add to the useGeinsRepository composable**:
+5. **Add to the useGeinsRepository composable**:
 
 ```ts
 // In app/composables/useGeinsRepository.ts

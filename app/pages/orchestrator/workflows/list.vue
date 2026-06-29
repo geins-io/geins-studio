@@ -8,7 +8,7 @@ import type {
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
-import { ENTITY } from '#shared/utils/entities';
+import type { EntityKey } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 import type { Component } from 'vue';
 import {
@@ -62,7 +62,7 @@ const route = useRoute();
 const { orchestratorApi } = useGeinsRepository();
 const workflowGroupsStore = useWorkflowGroupsStore();
 const allData = ref<EntityList[]>([]);
-const entityName = ENTITY.workflow;
+const entityName: EntityKey = 'workflow';
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});

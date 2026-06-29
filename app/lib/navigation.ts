@@ -1,4 +1,9 @@
 import type { NavigationItem } from '#shared/types';
+import {
+  entityBasePath,
+  entityChildPattern,
+  entityListHref,
+} from '#shared/utils/entities';
 
 /**
  * Main navigation configuration for the admin system
@@ -22,40 +27,40 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
   return [
     {
       label: t('navigation.pricing'),
-      href: '/pricing/price-list/list',
+      href: entityListHref('price_list'),
       icon: 'Tag',
       group: 'workspace',
       children: [
         {
           label: t('navigation.price_lists'),
-          href: '/pricing/price-list/list',
-          childPattern: '/pricing/price-list/:id',
+          href: entityListHref('price_list'),
+          childPattern: entityChildPattern('price_list'),
         },
       ],
     },
     {
       label: t('navigation.customers'),
-      href: '/customers/company/list',
+      href: entityListHref('company'),
       icon: 'Users',
       group: 'workspace',
       children: [
         {
           label: t('navigation.companies'),
-          href: '/customers/company/list',
-          childPattern: '/customers/company/:id',
+          href: entityListHref('company'),
+          childPattern: entityChildPattern('company'),
         },
       ],
     },
     {
       label: t('navigation.orders'),
-      href: '/orders/quotation/list',
+      href: entityListHref('quotation'),
       icon: 'Package',
       group: 'workspace',
       children: [
         {
           label: t('navigation.quotations'),
-          href: '/orders/quotation/list',
-          childPattern: '/orders/quotation/:id',
+          href: entityListHref('quotation'),
+          childPattern: entityChildPattern('quotation'),
         },
       ],
     },
@@ -71,34 +76,34 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
         },
         {
           label: t('navigation.workflows'),
-          href: '/orchestrator/workflows/list',
-          childPattern: '/orchestrator/workflows/:id',
+          href: entityListHref('workflow'),
+          childPattern: entityChildPattern('workflow'),
         },
         {
           label: t('navigation.executions'),
-          href: '/orchestrator/executions/list',
-          childPattern: '/orchestrator/executions/:id',
+          href: entityListHref('execution'),
+          childPattern: entityChildPattern('execution'),
         },
       ],
     },
     {
       label: t('navigation.channels'),
-      href: '/settings/channel/list',
+      href: entityListHref('channel'),
       icon: 'Store',
       group: 'settings',
-      childPattern: '/settings/channel/:id',
+      childPattern: entityChildPattern('channel'),
     },
     {
       label: t('navigation.orchestrator_config'),
-      href: '/settings/orchestrator/variables/list',
+      href: entityListHref('variable'),
       icon: 'Plug',
       group: 'settings',
       defaultOpen: false,
       children: [
         {
           label: t('navigation.variables'),
-          href: '/settings/orchestrator/variables/list',
-          childPattern: '/settings/orchestrator/variables/:id',
+          href: entityListHref('variable'),
+          childPattern: entityChildPattern('variable'),
         },
         {
           label: t('navigation.installed_kits'),
@@ -118,7 +123,7 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
       children: [
         {
           label: t('navigation.profile'),
-          href: '/account/profile',
+          href: entityBasePath('profile'),
         },
       ],
     },
