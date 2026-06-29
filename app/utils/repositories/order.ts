@@ -38,7 +38,7 @@ export function orderRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     QuotationCreate,
     QuotationUpdate,
     QuotationApiOptions
-  >('quotation', fetch);
+  >(ENTITIES.quotation, fetch);
 
   return {
     ...baseRepo,

@@ -4,8 +4,7 @@ import type {
   GeinsErrorContext,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
-import { ENTITIES } from '#shared/utils/entities';
-import type { EntityKey, EntityKeyWithEndpoint } from '#shared/utils/entities';
+import type { EntityKey, EntityWithEndpoint } from '#shared/utils/entities';
 import { entityBaseRepo } from './entity-base';
 import type { EntityBaseRepo } from './entity-base';
 import type { $Fetch } from 'nitropack';
@@ -107,20 +106,20 @@ export function entityRepo<
 }
 
 /**
- * Registry-aware shorthand for {@link entityRepo}: reads the endpoint from the
- * {@link ENTITIES} registry by key, so a domain repo declares the entity once
- * instead of hand-passing endpoint + key. The key doubles as the i18n entity
- * key (wired into the global error toast).
+ * Registry-aware shorthand for {@link entityRepo}: takes a registry entry and
+ * reads its `endpoint` + `key` directly, so a domain repo declares the entity
+ * once (`ENTITIES.price_list`) instead of hand-passing endpoint + key. The key
+ * doubles as the i18n entity key (wired into the global error toast).
  *
- * The param is restricted to {@link EntityKeyWithEndpoint} — entities that
- * actually have a repo endpoint — so calling it for a singleton like `profile`
- * is a compile error.
+ * The param is {@link EntityWithEndpoint} — only entries that actually have a
+ * repo endpoint — so passing a singleton like `ENTITIES.profile` is a compile
+ * error.
  *
  * @example
  * ```ts
  * // equivalent to entityRepo('/product/pricelist', fetch, 'price_list')
  * const priceListRepo = entityRepoFor<PriceList, PriceListCreate, PriceListUpdate>(
- *   'price_list',
+ *   ENTITIES.price_list,
  *   $geinsApi,
  * );
  * ```
@@ -131,12 +130,12 @@ export function entityRepoFor<
   TUpdate extends object,
   TOptions extends ApiOptions<string> = ApiOptions<string>,
 >(
-  key: EntityKeyWithEndpoint,
+  entity: EntityWithEndpoint,
   fetch: $Fetch,
 ): EntityRepo<TResponse, TCreate, TUpdate, TOptions> {
   return entityRepo<TResponse, TCreate, TUpdate, TOptions>(
-    ENTITIES[key].endpoint,
+    entity.endpoint,
     fetch,
-    key,
+    entity.key,
   );
 }

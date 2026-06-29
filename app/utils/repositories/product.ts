@@ -27,7 +27,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     ProductCreate,
     ProductUpdate,
     ProductApiOptions
-  >('product', fetch);
+  >(ENTITIES.product, fetch);
 
   const categoryEndpoint = `${BASE_ENDPOINT}/category`;
 
@@ -38,7 +38,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     ProductPriceList,
     ProductPriceListCreate,
     ProductPriceListUpdate
-  >('price_list', fetch);
+  >(ENTITIES.price_list, fetch);
 
   return {
     ...productRepo,

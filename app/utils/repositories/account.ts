@@ -35,7 +35,7 @@ export function accountRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     ChannelCreate,
     ChannelUpdate,
     ChannelApiOptions
-  >('channel', fetch);
+  >(ENTITIES.channel, fetch);
 
   return {
     account: {

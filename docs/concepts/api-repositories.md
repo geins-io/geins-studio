@@ -106,16 +106,16 @@ await fullRepo.update(id, data, options);
 await fullRepo.delete(id);
 ```
 
-For domain entities, prefer the registry-aware shorthand **`entityRepoFor(key, fetch)`** (exposed as `repo.entityFor`). It reads the endpoint from the [`ENTITIES` registry](./entities.md#entity-registry-single-source-of-truth) and passes the key through as the i18n entity key — so `create`/`update`/`delete` failures surface a specific error toast. It is equivalent to `entityRepo(ENTITIES[key].endpoint, fetch, key)`:
+For domain entities, prefer the registry-aware shorthand **`entityRepoFor(entity, fetch)`** (exposed as `repo.entityFor`). It takes a registry entry and reads its `endpoint` + `key` directly — the key is passed through as the i18n entity key, so `create`/`update`/`delete` failures surface a specific error toast. It is equivalent to `entityRepo(entity.endpoint, fetch, entity.key)`:
 
 ```ts
 const fullRepo = repo.entityFor<Product, ProductCreate, ProductUpdate>(
-  'product',
+  ENTITIES.product,
   $geinsApi,
 );
 ```
 
-The third `entityKey` argument on the raw `entityRepo(endpoint, fetch, entityKey?)` is what wires that error-toast context; `entityRepoFor` fills it in for you.
+Passing an endpointless entry (e.g. `ENTITIES.profile`) is a compile error. The third `entityKey` argument on the raw `entityRepo(endpoint, fetch, entityKey?)` is what wires the error-toast context; `entityRepoFor` fills it in from the entry.
 
 ## Type Definitions
 
@@ -174,14 +174,14 @@ export const ENTITIES = {
 } as const satisfies Record<string, EntityDescriptor>;
 ```
 
-3. **Create the repository file** — use `entityRepoFor(key, fetch)`, which reads the endpoint (and the i18n entity key, for error toasts) straight from the registry. No local endpoint literal:
+3. **Create the repository file** — use `repo.entityFor(ENTITIES.entity, fetch)`, which reads the endpoint (and the i18n entity key, for error toasts) straight from the registry entry. No local endpoint literal:
 
 ```ts
 // In app/utils/repositories/article.ts
 
 export function articleRepo(fetch: $Fetch) {
   return repo.entityFor<Article, ArticleCreate, ArticleUpdate>(
-    'article',
+    ENTITIES.article,
     fetch,
   );
 }

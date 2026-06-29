@@ -12,21 +12,22 @@ A _domain_ entity is known by **three** string forms that must stay in sync:
 | **endpoint** | `/product/pricelist` | the repository factory                                |
 | **route**    | `pricing/price-list` | the page folder under `app/pages/`                    |
 
-`shared/utils/entities.ts` reconciles them in one place — the **`ENTITIES`** registry. The registry **key _is_ the i18n key**; its descriptor carries the `endpoint` and (optionally) the `route`:
+`shared/utils/entities.ts` reconciles them in one place — the **`ENTITIES`** registry. The registry **key _is_ the i18n key**; its descriptor carries the `endpoint` and (optionally) the `route`. `defineEntities` stamps each entry with its own `key`, so an entry is a complete, self-describing identity — pass `ENTITIES.product` and it knows both its endpoint and its key:
 
 ```ts
-export const ENTITIES = {
+export const ENTITIES = defineEntities({
   price_list: { endpoint: '/product/pricelist', route: 'pricing/price-list' },
   quotation: { endpoint: '/quotation', route: 'orders/quotation' },
   channel: { endpoint: '/account/channel', route: 'settings/channel' },
   profile: { route: 'account/profile' }, // singleton — no CRUD endpoint
   // …
-} as const satisfies Record<string, EntityDescriptor>;
+});
 
 export type EntityKey = keyof typeof ENTITIES; // 'price_list' | 'quotation' | …
+// ENTITIES.price_list === { endpoint: '/product/pricelist', route: 'pricing/price-list', key: 'price_list' }
 ```
 
-- **`endpoint`** is omitted for singletons with no standard CRUD endpoint (`profile`, served via `/user/me`). Repositories read it via `entityRepoFor(key, fetch)` (see [API Repositories](./api-repositories.md)).
+- **`endpoint`** is omitted for singletons with no standard CRUD endpoint (`profile`, served via `/user/me`). Repositories read it by passing the entry to `repo.entityFor(ENTITIES.x, fetch)` (see [API Repositories](./api-repositories.md)).
 - **`route`** is omitted for sub-entities rendered inside a parent page (`buyer`, `customer`) and entities with no list/`[id]` page (`product`, `message`). It is the one place a route↔i18n-key mismatch (e.g. a plural folder) is reconciled. The route helpers `entityListHref(key)` / `entityChildPattern(key)` / `entityBasePath(key)` build page URLs from it, so [`navigation.ts`](/composables/) (and any entity link) reads paths from the registry rather than hardcoding them.
 
 Two distinct sets exist, and only the first goes in the registry:
@@ -40,7 +41,7 @@ Used everywhere from the one declaration:
 
 | Consumer    | Reads            | How                                                                 |
 | ----------- | ---------------- | ------------------------------------------------------------------- |
-| repository  | `endpoint`       | `repo.entityFor('price_list', fetch)`                               |
+| repository  | `endpoint`       | `repo.entityFor(ENTITIES.price_list, fetch)`                        |
 | entity page | key (= i18n key) | `const entityName: EntityKey = 'price_list'`                        |
 | navigation  | `route`          | `entityListHref('price_list')` / `entityChildPattern('price_list')` |
 | i18n        | key              | `en.json` / `sv.json` (guarded by the parity test)                  |

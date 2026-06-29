@@ -84,18 +84,19 @@ export const ENTITIES = {
 
 ## 4. Repository — `app/utils/repositories/<entity>.ts`
 
-This is a **separate file** from the types. It imports from `#shared/types` and uses the factory chain — don't write raw fetch calls. Use `repo.entityFor(key, fetch)` so the endpoint comes from the registry (no endpoint literal here) and the i18n key is wired into the global error toast:
+This is a **separate file** from the types. It imports from `#shared/types` and uses the factory chain — don't write raw fetch calls. Pass the registry entry to `repo.entityFor(ENTITIES.entity, fetch)` so the endpoint comes from the registry (no endpoint literal here) and the i18n key is wired into the global error toast:
 
 ```ts
 import type { Entity, EntityCreate, EntityUpdate } from '#shared/types'
+import { ENTITIES } from '#shared/utils/entities'
 import type { NitroFetchRequest, $Fetch } from 'nitropack'
 
 export function entityRepoFactory(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  return repo.entityFor<Entity, EntityCreate, EntityUpdate>('entity', fetch)
+  return repo.entityFor<Entity, EntityCreate, EntityUpdate>(ENTITIES.entity, fetch)
 }
 ```
 
-Available base repos (simplest → fullest): `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `entityRepo` (full CRUD). Use `repo.entityFor(key, fetch)` for registry-backed domain entities; drop to `repo.entity('/scoped-endpoint', fetch, 'key')` only for sub-entities on a scoped/non-registry endpoint, and use thin custom wrappers for non-standard endpoints/actions.
+Available base repos (simplest → fullest): `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `entityRepo` (full CRUD). Use `repo.entityFor(ENTITIES.entity, fetch)` for registry-backed domain entities; drop to `repo.entity('/scoped-endpoint', fetch, 'key')` only for sub-entities on a scoped/non-registry endpoint, and use thin custom wrappers for non-standard endpoints/actions.
 
 ## 5. Register the repo
 

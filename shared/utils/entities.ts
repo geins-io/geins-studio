@@ -38,7 +38,21 @@ export interface EntityDescriptor {
   route?: string;
 }
 
-export const ENTITIES = {
+/**
+ * Builds the registry, stamping each entry with its own `key` (literal-typed)
+ * so an entry is a complete, self-describing identity: pass `ENTITIES.product`
+ * and it carries both its endpoint and its i18n key. The `const` type parameter
+ * preserves the literal endpoint/route/key types without a call-site `as const`.
+ */
+function defineEntities<const T extends Record<string, EntityDescriptor>>(
+  entries: T,
+): { [K in keyof T]: T[K] & { readonly key: K } } {
+  return Object.fromEntries(
+    Object.entries(entries).map(([key, value]) => [key, { ...value, key }]),
+  ) as { [K in keyof T]: T[K] & { readonly key: K } };
+}
+
+export const ENTITIES = defineEntities({
   product: { endpoint: '/product' },
   price_list: { endpoint: '/product/pricelist', route: 'pricing/price-list' },
   quotation: { endpoint: '/quotation', route: 'orders/quotation' },
@@ -61,21 +75,22 @@ export const ENTITIES = {
     endpoint: '/orchestrator/variables',
     route: 'settings/orchestrator/variables',
   },
-} as const satisfies Record<string, EntityDescriptor>;
+});
 
 /** Union of all domain-entity keys (e.g. 'price_list' | 'quotation' | …). */
 export type EntityKey = keyof typeof ENTITIES;
 
+/** A single registry entry: its descriptor plus its own `key`. */
+export type Entity = (typeof ENTITIES)[EntityKey];
+
 /**
- * Subset of {@link EntityKey} whose descriptor declares an `endpoint`. Used to
- * type `entityRepoFor` so it can only be called for entities that have a repo
- * endpoint to fetch from (excludes singletons like `profile`).
+ * A registry entry that has a repo `endpoint` — the input to `entityRepoFor`.
+ * Passing an endpointless entry (e.g. `ENTITIES.profile`) is a compile error.
  */
-export type EntityKeyWithEndpoint = {
-  [K in EntityKey]: (typeof ENTITIES)[K] extends { endpoint: string }
-    ? K
-    : never;
-}[EntityKey];
+export type EntityWithEndpoint = EntityDescriptor & {
+  endpoint: string;
+  key: EntityKey;
+};
 
 /** Subset of {@link EntityKey} whose descriptor declares a page `route`. */
 export type EntityKeyWithRoute = {

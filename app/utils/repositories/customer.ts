@@ -26,7 +26,7 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     CustomerCompanyCreate,
     CustomerCompanyUpdate,
     CustomerCompanyApiOptions
-  >('company', fetch);
+  >(ENTITIES.company, fetch);
 
   const buyerEndpoint = ENTITIES.buyer.endpoint;
   const buyerRepo = repo.entityBase<CompanyBuyer>(buyerEndpoint, fetch);
@@ -35,7 +35,7 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     Customer,
     CustomerCreate,
     CustomerUpdate
-  >('customer', fetch);
+  >(ENTITIES.customer, fetch);
 
   return {
     company: {
