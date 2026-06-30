@@ -5,7 +5,7 @@ import type {
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
-import type { EntityKey } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 import type { Component } from 'vue';
 import { LucideKeyRound, LucideEye } from '#components';
@@ -35,12 +35,13 @@ const route = useRoute();
 const { orchestratorApi } = useGeinsRepository();
 const breadcrumbsStore = useBreadcrumbsStore();
 const allData = ref<EntityList[]>([]);
-const entityName: EntityKey = 'variable';
+const entity = ENTITIES.variable;
+const entityName = entity.key;
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
 
-usePageError({ entityName, entityList: true, scope });
+usePageError({ entity, entityList: true, scope });
 const fetchError = ref(false);
 
 watch(

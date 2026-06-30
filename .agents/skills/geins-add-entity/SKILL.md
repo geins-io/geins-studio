@@ -149,7 +149,7 @@ List pages should use the standard `fetchError` + `TableView` retry pattern from
 
 This is the most involved step — use the **geins-entity-edit-page** skill (or see `CLAUDE.md` → "Entity Edit Page") for the full pattern. Key requirements:
 - `route.params.id === 'new'` → create mode; any other value → edit mode
-- Pass an explicit `entityName: EntityKey` (`const entityName: EntityKey = 'entity'`) to `useEntityEdit` and `usePageError` — don't rely on route-folder derivation for the i18n key
+- Pass the registry entry `entity: ENTITIES.entity` to `useEntityEdit` and `usePageError` (the composable derives the i18n key from it) — don't rely on route-folder derivation
 - `useEntityEdit` with `parseEntityData`, `prepareCreateData`, `prepareUpdateData`, `onFormValuesChange`
 - The required edit-mode loading block at the bottom of `<script setup>`
 

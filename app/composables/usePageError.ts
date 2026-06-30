@@ -1,12 +1,13 @@
-import type { EntityKey } from '#shared/utils/entities';
+import type { Entity } from '#shared/utils/entities';
 import type { NuxtError } from '#app';
 
 interface PageErrorOptions {
   /**
-   * Domain-entity i18n key from the `ENTITIES` registry (for entity-specific
-   * errors). Omit on non-entity pages for the generic message.
+   * Registry entry for the entity (`ENTITIES.x`) for entity-specific errors;
+   * its `key` drives the localized messages. Omit on non-entity pages for the
+   * generic message.
    */
-  entityName?: EntityKey;
+  entity?: Entity;
   /**
    * The ID of the entity (for more specific error messages)
    */
@@ -64,7 +65,8 @@ export function usePageError(
     contextOptions: PageErrorOptions = {},
   ): string => {
     const effectiveOptions = { ...options, ...contextOptions };
-    const { entityName, entityId } = effectiveOptions;
+    const { entity, entityId } = effectiveOptions;
+    const entityName = entity?.key;
     const name = entityName || 'entity';
     const pluralizerNr = effectiveOptions?.entityList ? 2 : 1;
 

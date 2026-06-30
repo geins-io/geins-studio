@@ -5,7 +5,7 @@ import type {
   ExecutionNodeExecution,
   LiveConsoleLine,
 } from '#shared/types';
-import type { EntityKey } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
 import { formatDuration, formatTimestamp } from '#shared/utils/time';
 import { useToast } from '@/components/ui/toast/use-toast';
 import {
@@ -139,9 +139,9 @@ const canResume = computed(() => {
 // Route a missing/invalid execution ID through the canonical fatal-error path so
 // it renders the standard 404 error boundary like other entity pages, instead of
 // an inline error div.
-const entityName: EntityKey = 'execution';
+const entity = ENTITIES.execution;
 const { handleFetchResult } = usePageError({
-  entityName,
+  entity,
   entityId: executionId.value,
   scope: 'execution-details',
 });

@@ -34,6 +34,7 @@ import type {
   ProductApiOptions,
   ChangelogEntry,
 } from '#shared/types';
+import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
@@ -580,7 +581,7 @@ const {
   QuotationUpdate,
   QuotationApiOptions
 >({
-  entityName: 'quotation',
+  entity: ENTITIES.quotation,
   repository: orderApi.quotation,
   validationSchema: formSchema,
   initialEntityData: entityBase,
@@ -785,7 +786,7 @@ const {
 // ERROR HANDLING SETUP
 // =====================================================================================
 const { handleFetchResult } = usePageError({
-  entityName,
+  entity: ENTITIES.quotation,
   entityId: entityId.value,
   scope,
 });

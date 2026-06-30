@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ColumnOptions, StringKeyOf } from '#shared/types';
-import type { EntityKey } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
@@ -19,7 +19,7 @@ definePageMeta({
 // GLOBAL SETUP
 const { productApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
-const entityName: EntityKey = 'price_list';
+const entityName = ENTITIES.price_list.key;
 const newEntityUrl = getEntityNewUrl();
 const entityIdentifier = '{id}';
 const entityUrl = getEntityUrl(entityIdentifier);

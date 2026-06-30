@@ -13,6 +13,7 @@ import {
   type CustomerCompanyApiOptions,
   type CompanyBuyerList,
 } from '#shared/types';
+import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { LucideUser, LucidePackage } from '#components';
 
@@ -192,7 +193,7 @@ const {
   CustomerCompanyUpdate,
   CustomerCompanyApiOptions
 >({
-  entityName: 'company',
+  entity: ENTITIES.company,
   repository: customerApi.company,
   validationSchema: formSchema,
   initialEntityData: entityBase,
@@ -346,7 +347,7 @@ const {
 // handleFetchResult validates the initial data load and redirects on 404.
 
 const { handleFetchResult } = usePageError({
-  entityName,
+  entity: ENTITIES.company,
   entityId: entityId.value,
   scope,
 });

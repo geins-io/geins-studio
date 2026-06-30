@@ -5,7 +5,7 @@
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import { DataItemDisplayType } from '#shared/types';
-import type { EntityKey } from '#shared/utils/entities';
+import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { createPasswordChangeSchema } from '@/utils/password-validation';
 
@@ -51,7 +51,8 @@ const formSchema = toTypedSchema(
 // =====================================================================================
 // ENTITY DATA SETUP
 // =====================================================================================
-const entityName: EntityKey = 'profile';
+const entity = ENTITIES.profile;
+const entityName = entity.key;
 
 const entityBase: UserProfileCreate = {
   name: '',
@@ -134,7 +135,7 @@ const {
   UserProfileUpdate,
   UserProfileApiOptions
 >({
-  entityName,
+  entity,
   repository: userProfileApi,
   validationSchema: formSchema,
   initialEntityData: entityBase,
@@ -207,7 +208,7 @@ const {
 // =====================================================================================
 
 const { handleFetchResult } = usePageError({
-  entityName,
+  entity,
   scope,
 });
 

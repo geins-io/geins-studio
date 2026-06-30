@@ -35,16 +35,16 @@ Two distinct sets exist, and only the first goes in the registry:
 1. **Domain entities** (~13) — have an endpoint + repo + (usually) a route. These are `ENTITIES`. `EntityKey` is derived from them.
 2. **Label-only keys** (`name`, `currency`, `owner`, …) — used purely as `entityName:` interpolation in validation messages and field labels. No endpoint/repo/route. They stay as plain i18n keys (raw string literals at the call site) and are **not** enumerated anywhere — the locale parity test below covers them for free.
 
-> Reference a typed `EntityKey` literal (`const entityName: EntityKey = 'workflow'`) or the registry — never a bare untyped string — so a typo or rename can't silently drift between a repo and its page. `shared/utils/__tests__/entities.test.ts` asserts (a) `en.json` and `sv.json` have **identical keys** (one zero-maintenance check covering every label + entity key), (b) every registry key resolves in both locales, and (c) every `route` resolves to a real page folder.
+> Reference the registry entry (`ENTITIES.x`) or a typed `EntityKey` — never a bare untyped string — so a typo or rename can't silently drift between a repo and its page. Repos and the entity composables (`useEntityEdit`/`usePageError`) take the **entry** (`ENTITIES.x`); pages read `ENTITIES.x.key` (or the `entityName` the composable returns) for display. `shared/utils/__tests__/entities.test.ts` asserts (a) `en.json` and `sv.json` have **identical keys** (one zero-maintenance check covering every label + entity key), (b) every registry key resolves in both locales, and (c) every `route` resolves to a real page folder.
 
 Used everywhere from the one declaration:
 
-| Consumer    | Reads            | How                                                                 |
-| ----------- | ---------------- | ------------------------------------------------------------------- |
-| repository  | `endpoint`       | `repo.entity(ENTITIES.price_list, fetch)`                           |
-| entity page | key (= i18n key) | `const entityName: EntityKey = 'price_list'`                        |
-| navigation  | `route`          | `entityListHref('price_list')` / `entityChildPattern('price_list')` |
-| i18n        | key              | `en.json` / `sv.json` (guarded by the parity test)                  |
+| Consumer    | Reads      | How                                                                  |
+| ----------- | ---------- | -------------------------------------------------------------------- |
+| repository  | `endpoint` | `repo.entity(ENTITIES.price_list, fetch)`                            |
+| entity page | the entry  | `useEntityEdit({ entity: ENTITIES.price_list, … })` / `usePageError` |
+| navigation  | `route`    | `entityListHref('price_list')` / `entityChildPattern('price_list')`  |
+| i18n        | key        | `en.json` / `sv.json` (guarded by the parity test)                   |
 
 ## Entity Pages
 
@@ -82,7 +82,7 @@ You can read the full specification of the `useEntityUrl` composable here: [useE
 :::
 
 ::: warning
-`getEntityName()` derives the name from the **folder** segment, so it only equals the i18n key when the folder matches the key (e.g. `price-list` → `price_list`). It is reliable for **URL building**. For the **i18n key** fed to `useEntityEdit` / `usePageError`, prefer an explicit typed `EntityKey` (`const entityName: EntityKey = 'workflow'`) from the [registry](#entity-registry-single-source-of-truth) — a pluralized folder (`workflows`) would otherwise yield `workflows`, which is not a valid key.
+`getEntityName()` derives the name from the **folder** segment, so it only equals the i18n key when the folder matches the key (e.g. `price-list` → `price_list`). It is reliable for **URL building**. `useEntityEdit` / `usePageError` instead take the registry entry (`entity: ENTITIES.workflow`) and derive the key from it — so a pluralized folder (`workflows`) never matters, and the key can't drift from the route.
 :::
 
 ## Using the Entity Name

@@ -168,7 +168,7 @@ Rule of thumb: if a page needs to react to something changing over time (duratio
 4. **Repository** → `app/utils/repositories/{entity}.ts` — use `repo.entity(ENTITIES.{key}, fetch)` (endpoint + key read from the registry entry)
 5. **Register repo** → `app/utils/repos.ts` + `app/composables/useGeinsRepository.ts`
 6. **List page** → `app/pages/{domain}/{entity}/list.vue`
-7. **Detail page** → `app/pages/{domain}/{entity}/[id].vue` — pass an explicit `entityName: EntityKey` to `useEntityEdit`/`usePageError`
+7. **Detail page** → `app/pages/{domain}/{entity}/[id].vue` — pass the registry entry `entity: ENTITIES.{key}` to `useEntityEdit`/`usePageError`
 8. **Navigation** → `app/lib/navigation.ts`
 9. **i18n** → `i18n/locales/en.json` + `sv.json`
 
