@@ -225,7 +225,7 @@ const dataList = computed(() => {
 });
 
 const clearFilter = () => {
-  navigateTo(entityListUrl('execution'));
+  navigateTo(entityListUrl(entityName));
 };
 
 const FILTER_QUERY_KEY: Record<ActiveFilter['type'], string> = {
@@ -237,7 +237,7 @@ const FILTER_QUERY_KEY: Record<ActiveFilter['type'], string> = {
 
 const removeFilter = (type: ActiveFilter['type']) => {
   const { [FILTER_QUERY_KEY[type]]: _, ...rest } = route.query;
-  navigateTo({ path: entityListUrl('execution'), query: rest });
+  navigateTo({ path: entityListUrl(entityName), query: rest });
 };
 
 // ─── Live polling: new executions + running-status refresh ─────────

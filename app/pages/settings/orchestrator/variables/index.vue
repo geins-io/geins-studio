@@ -127,7 +127,7 @@ const dataList = computed(() => {
 });
 
 const clearKitFilter = () => {
-  navigateTo(entityListUrl('variable'));
+  navigateTo(entityListUrl(entityName));
 };
 
 // ─── Table Columns ─────────────────────────────────────────────────

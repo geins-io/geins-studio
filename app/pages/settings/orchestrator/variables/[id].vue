@@ -125,7 +125,7 @@ const deleteEntity = async (): Promise<boolean> => {
 };
 
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteEntity, entityListUrl('variable'));
+  useDeleteDialog(deleteEntity, entityListUrl(entityName));
 
 // ─── Copy value ────────────────────────────────────────────────────
 const copied = ref(false);

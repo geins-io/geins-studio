@@ -538,7 +538,7 @@ const deleteWorkflowEntity = async (): Promise<boolean> => {
 };
 
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteWorkflowEntity, entityListUrl('workflow'));
+  useDeleteDialog(deleteWorkflowEntity, entityListUrl(entityName));
 
 const isSavingConfig = ref(false);
 
@@ -1579,7 +1579,7 @@ const { summaryProps } = useEntityEditSummary({
 
             <div v-if="isNew" class="flex flex-row justify-end gap-4">
               <Button variant="secondary" as-child>
-                <NuxtLink :to="entityListUrl('workflow')">
+                <NuxtLink :to="entityListUrl(entityName)">
                   {{ $t('cancel') }}
                 </NuxtLink>
               </Button>

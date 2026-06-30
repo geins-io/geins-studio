@@ -282,7 +282,7 @@ const dataList = computed(() => {
 });
 
 const clearGroupFilter = () => {
-  navigateTo(entityListUrl('workflow'));
+  navigateTo(entityListUrl(entityName));
 };
 
 // ─── Table Columns ─────────────────────────────────────────────────
