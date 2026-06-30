@@ -501,7 +501,6 @@ const handleDuplicate = async () => {
       orchestratorApi.workflow.create({
         ...src,
         name: `${src.name} (copy)`,
-        enabled: false,
       }),
     );
     toast({
@@ -562,7 +561,6 @@ const handleCreate = async () => {
         group: values.details.group || undefined,
         tags: values.details.tags,
         type: 'onDemand',
-        enabled: false,
       }),
     );
     // Snapshot so the route guard doesn't block navigation to the new page.
@@ -664,9 +662,6 @@ const handleSave = async () => {
       group: values.details.group || undefined,
       tags: values.details.tags,
       type: apiType,
-      enabled: workflowActive.value,
-      cronExpression: apiType === 'scheduled' ? values.trigger.cron : undefined,
-      eventName: apiType === 'event' ? values.trigger.eventEntity : undefined,
       nodes: sanitizeWorkflowNodes(
         (graph?.nodes ?? wf.nodes) as WorkflowNode[],
       ),
@@ -804,10 +799,6 @@ const handleValidate = async () => {
         description: values.details.description || undefined,
         tags: values.details.tags,
         type: apiType,
-        enabled: workflowActive.value,
-        cronExpression:
-          apiType === 'scheduled' ? values.trigger.cron : undefined,
-        eventName: apiType === 'event' ? values.trigger.eventEntity : undefined,
         nodes: sanitizeWorkflowNodes(
           (graph?.nodes ?? wf.nodes) as WorkflowNode[],
         ),
@@ -1669,7 +1660,7 @@ const { summaryProps } = useEntityEditSummary({
               {{ input.description }}
             </p>
             <Textarea
-              v-if="input.type === 'object' || input.type === 'json'"
+              v-if="input.type === 'object' || input.type === 'array'"
               :model-value="
                 typeof runInputValues[input.name] === 'string'
                   ? (runInputValues[input.name] as string)
@@ -1680,7 +1671,7 @@ const { summaryProps } = useEntityEditSummary({
               @update:model-value="runInputValues[input.name] = $event"
             />
             <Input
-              v-else-if="input.type === 'number' || input.type === 'integer'"
+              v-else-if="input.type === 'number'"
               type="number"
               :model-value="runInputValues[input.name] as number"
               @update:model-value="runInputValues[input.name] = Number($event)"

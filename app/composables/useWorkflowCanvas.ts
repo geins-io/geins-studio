@@ -1,5 +1,7 @@
 import type {
   ConnectionType,
+  ErrorHandlingStrategy,
+  RetryPolicy,
   WorkflowDefinition,
   WorkflowNode,
   WorkflowNodeConnection,
@@ -20,7 +22,7 @@ interface WorkflowCanvasReturnType {
 }
 
 // Fallback grid layout for nodes without stored positions. The API may omit
-// `position` on older workflows — space them out so they're at least visible
+// `ui.position` on older workflows — space them out so they're at least visible
 // instead of stacked at (0,0).
 const DEFAULT_X = 400;
 const DEFAULT_Y = 200;
@@ -30,65 +32,72 @@ const DEFAULT_X_STEP = 300;
 // use it as the source of truth for canvas position (`ui.position`) and keep
 // the raw blob around on `data.ui` so unknown keys survive a round-trip.
 type NodeUi = { position?: { x: number; y: number }; [key: string]: unknown };
-type WithUi = { ui?: NodeUi };
 
 const HTTP_NO_BODY_METHODS = new Set(['GET', 'DELETE']);
 
-const sanitizeNodeInput = (
-  nodeType: string,
-  input: Record<string, unknown>,
+/** Whether a node's functionName is the HTTP request node (any provider/version). */
+const isHttpRequest = (functionName: string | undefined): boolean => {
+  if (!functionName) return false;
+  const name = (functionName.split('@')[0] ?? functionName).split('.').pop();
+  return name === 'httpRequest';
+};
+
+const sanitizeNodeConfig = (
+  functionName: string | undefined,
+  config: Record<string, unknown>,
 ): Record<string, unknown> => {
   if (
-    (nodeType === 'httpRequest' || nodeType === 'net.httpRequest') &&
-    HTTP_NO_BODY_METHODS.has(String(input.method ?? 'GET'))
+    isHttpRequest(functionName) &&
+    HTTP_NO_BODY_METHODS.has(String(config.method ?? 'GET'))
   ) {
-    const { body: _, ...rest } = input;
+    const { body: _body, ...rest } = config;
     return rest;
   }
-  return input;
+  return config;
 };
 
 export const sanitizeWorkflowNodes = <
   T extends {
-    type?: string;
-    actionName?: string;
-    input?: Record<string, unknown>;
+    functionName?: string;
+    config?: Record<string, unknown>;
   },
 >(
   nodes: T[],
 ): T[] =>
   nodes.map((n) => {
-    const nodeType = n.actionName ?? n.type ?? '';
-    if (!n.input) return n;
-    const sanitized = sanitizeNodeInput(nodeType, n.input);
-    return sanitized === n.input ? n : ({ ...n, input: sanitized } as T);
+    if (!n.config) return n;
+    const sanitized = sanitizeNodeConfig(n.functionName, n.config);
+    return sanitized === n.config ? n : ({ ...n, config: sanitized } as T);
   });
 
-const readPosition = (node: WorkflowNode & WithUi, index: number) =>
-  node.ui?.position ??
-  node.position ?? { x: DEFAULT_X + index * DEFAULT_X_STEP, y: DEFAULT_Y };
+const readPosition = (node: WorkflowNode, index: number) =>
+  (node.ui as NodeUi | undefined)?.position ?? {
+    x: DEFAULT_X + index * DEFAULT_X_STEP,
+    y: DEFAULT_Y,
+  };
 
-const toCanvasNode = (node: WorkflowNode & WithUi, index: number): Node => ({
-  id: node.id,
-  type: node.type,
-  position: readPosition(node, index),
-  data: {
-    label: node.name ?? node.id,
-    actionName: node.actionName,
-    config: node.config ?? {},
-    input: node.input ?? {},
-    ui: node.ui ?? {},
-    conditions:
-      'conditions' in node
-        ? (node as { conditions: unknown }).conditions
-        : undefined,
-    defaultLabel:
-      'defaultLabel' in node
-        ? (node as { defaultLabel: unknown }).defaultLabel
-        : undefined,
-  },
-  ...(node.type === 'trigger' ? { deletable: false } : {}),
-});
+const toCanvasNode = (node: WorkflowNode, index: number): Node => {
+  const kind = functionNameToNodeKind(node.functionName);
+  const config = node.config ?? {};
+  return {
+    id: node.id,
+    type: kind,
+    position: readPosition(node, index),
+    data: {
+      label: node.name ?? node.id,
+      functionName: node.functionName,
+      config,
+      ui: node.ui ?? {},
+      retry: node.retry ?? null,
+      timeout: node.timeout ?? null,
+      errorHandlingStrategy: node.errorHandlingStrategy ?? null,
+      // Condition branch metadata now lives under `config`; surface it on
+      // `data` for the condition renderer/edge-label inference.
+      conditions: config.conditions,
+      defaultLabel: config.defaultLabel,
+    },
+  };
+};
 
 // The API has shipped connections under a few different field names across
 // versions (`sourceNodeId`/`targetNodeId`, `source`/`target`, `from`/`to`).
@@ -119,7 +128,7 @@ const toCanvasEdge = (
   );
   const isConditional =
     c.type === 'conditional' || (!!source && conditionNodeIds.has(source));
-  let label = c.label;
+  let label = c.label ?? undefined;
   // Infer missing labels for condition node edges from the node's branch config.
   if (isConditional && !label && source && inferLabel) {
     label = inferLabel(source, c);
@@ -151,29 +160,31 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
     const apiConnections = Array.isArray(wf?.connections)
       ? wf!.connections
       : [];
+    const kindOf = (n: WorkflowNode) => functionNameToNodeKind(n.functionName);
     const conditionNodeIds = new Set(
-      apiNodes.filter((n) => n.type === 'condition').map((n) => n.id),
+      apiNodes.filter((n) => kindOf(n) === 'condition').map((n) => n.id),
     );
     // Nodes whose outgoing edges leave from named structural handles. Their
     // handle identity is stored on the connection `label`, so the canvas must
-    // restore `sourceHandle` from it on load (see `toCanvasEdge`). `loop` is a
-    // legacy alias for `iterator` that can still appear in saved definitions.
-    const HANDLE_SOURCE_TYPES = new Set(['iterator', 'loop', 'paginator']);
+    // restore `sourceHandle` from it on load (see `toCanvasEdge`).
+    const HANDLE_SOURCE_KINDS = new Set(['iterator', 'paginator']);
     const handleSourceNodeIds = new Set(
-      apiNodes.filter((n) => HANDLE_SOURCE_TYPES.has(n.type)).map((n) => n.id),
+      apiNodes
+        .filter((n) => HANDLE_SOURCE_KINDS.has(kindOf(n)))
+        .map((n) => n.id),
     );
 
     // Build branch labels per condition node so we can infer missing labels
     // on legacy connections that were saved with empty label/type.
     const conditionBranches = new Map<string, string[]>();
     for (const n of apiNodes) {
-      if (n.type !== 'condition') continue;
+      if (kindOf(n) !== 'condition') continue;
       const labels: string[] = [];
-      const conds = (n as { conditions?: { label: string }[] }).conditions;
+      const conds = n.config?.conditions as { label: string }[] | undefined;
       if (Array.isArray(conds)) {
         for (const c of conds) if (c.label) labels.push(c.label);
       }
-      const def = (n as { defaultLabel?: string }).defaultLabel;
+      const def = n.config?.defaultLabel as string | undefined;
       if (def) labels.push(def);
       if (labels.length) conditionBranches.set(n.id, labels);
     }
@@ -228,33 +239,40 @@ export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
 
   const toApi: WorkflowCanvasReturnType['toApi'] = ({ nodes, edges }) => ({
     // The trigger is workflow-level metadata (stored on the Workflow itself),
-    // not an entry in `nodes[]` — strip it so we don't double-persist it.
+    // not an entry in `nodes[]` — strip the synthetic trigger node.
     nodes: nodes
       .filter((n) => n.type !== 'trigger')
       .map((n) => {
         const existingUi = (n.data?.ui as NodeUi | undefined) ?? {};
         const position = { x: n.position.x, y: n.position.y };
+        const functionName = (n.data?.functionName as string | undefined) ?? '';
+        // Merge condition branch edits back into config (the condition editor
+        // mutates `data.conditions`/`data.defaultLabel`).
+        const config: Record<string, unknown> = {
+          ...((n.data?.config as Record<string, unknown> | undefined) ?? {}),
+        };
+        if (n.data?.conditions != null) config.conditions = n.data.conditions;
+        if (n.data?.defaultLabel != null)
+          config.defaultLabel = n.data.defaultLabel;
+        const retry = (n.data?.retry as RetryPolicy | null | undefined) ?? null;
+        const timeout = (n.data?.timeout as string | null | undefined) ?? null;
+        const errorHandlingStrategy =
+          (n.data?.errorHandlingStrategy as
+            | ErrorHandlingStrategy
+            | null
+            | undefined) ?? null;
         return {
           id: n.id,
-          type: n.type as WorkflowNode['type'],
           name: (n.data?.label as string | undefined) ?? n.id,
-          actionName: n.data?.actionName as string | undefined,
-          config: (n.data?.config as Record<string, unknown> | undefined) ?? {},
-          input: sanitizeNodeInput(
-            (n.data?.actionName as string) ?? (n.type as string),
-            (n.data?.input as Record<string, unknown> | undefined) ?? {},
-          ),
-          position,
+          functionName,
+          config: sanitizeNodeConfig(functionName, config),
           // Persist position on the API-native `ui` field so the canvas can
           // restore it on next load (and any unrelated ui keys round-trip).
           ui: { ...existingUi, position },
-          ...(n.data?.conditions != null
-            ? { conditions: n.data.conditions }
-            : {}),
-          ...(n.data?.defaultLabel != null
-            ? { defaultLabel: n.data.defaultLabel }
-            : {}),
-        } as WorkflowNode & WithUi;
+          ...(retry ? { retry } : {}),
+          ...(timeout ? { timeout } : {}),
+          ...(errorHandlingStrategy ? { errorHandlingStrategy } : {}),
+        } as WorkflowNode;
       }),
     connections: edges.map((e) => {
       const storedType = (e.data as { type?: ConnectionType } | undefined)

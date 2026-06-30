@@ -75,7 +75,7 @@ const toggleSection = (key: string) => {
 type UpstreamNode = {
   id: string;
   label: string;
-  actionName?: string;
+  functionName?: string;
   nodeType: string;
   outputFields: Array<{ name: string; type: string }>;
 };
@@ -115,8 +115,8 @@ function resolveOutputFields(
   data: Record<string, unknown>,
   sourceHandle?: string,
 ): Array<{ name: string; type: string }> {
-  const actionName = data.actionName as string | undefined;
-  const action = manifestStore.getAction(actionName);
+  const functionName = data.functionName as string | undefined;
+  const node = manifestStore.getNode(functionName);
 
   if (
     (nodeType === 'iterator' || nodeType === 'loop') &&
@@ -130,14 +130,13 @@ function resolveOutputFields(
   ) {
     return PAGINATOR_CONTEXT_VARS;
   }
-  if (actionName === 'transform.map' || actionName === 'transform.compose') {
-    const input = (data.input ?? {}) as Record<string, unknown>;
-    return Object.keys(input)
+  if (node?.name === 'map' || node?.name === 'compose') {
+    const config = (data.config ?? {}) as Record<string, unknown>;
+    return Object.keys(config)
       .filter((k) => k && !k.startsWith('_'))
-      .map((k) => ({ name: k, type: inferValueType(input[k]) }));
+      .map((k) => ({ name: k, type: inferValueType(config[k]) }));
   }
-  const nodeTypeDef = manifestStore.getNodeType(nodeType);
-  return (action?.output ?? nodeTypeDef?.output ?? []) as Array<{
+  return (node?.output ?? []) as Array<{
     name: string;
     type: string;
   }>;
@@ -161,8 +160,8 @@ const upstreamNodes = computed(() => {
       const n = vfNodes.value.find((nd) => nd.id === edge.source);
       if (!n) continue;
       const data = (n.data ?? {}) as Record<string, unknown>;
-      const action = manifestStore.getAction(
-        data.actionName as string | undefined,
+      const manifestNode = manifestStore.getNode(
+        data.functionName as string | undefined,
       );
       const nodeType = n.type as string;
 
@@ -177,8 +176,8 @@ const upstreamNodes = computed(() => {
 
       result.push({
         id: n.id,
-        label: (data.label as string) || action?.displayName || n.id,
-        actionName: data.actionName as string | undefined,
+        label: (data.label as string) || manifestNode?.displayName || n.id,
+        functionName: data.functionName as string | undefined,
         nodeType,
         outputFields,
       });

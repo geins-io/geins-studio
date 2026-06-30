@@ -1,19 +1,16 @@
 <script setup lang="ts">
+import type { ManifestNode, ManifestNodeExample } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
-import type {
-  ManifestAction,
-  ManifestActionExample,
-} from '@/composables/useWorkflowManifest';
 
 const props = defineProps<{
-  manifestAction: ManifestAction;
+  manifestNode: ManifestNode;
 }>();
 
 const { toast } = useToast();
 const { t } = useI18n();
 
-const inputFields = computed(() => props.manifestAction.input ?? []);
-const examples = computed(() => props.manifestAction.examples ?? []);
+const inputFields = computed(() => props.manifestNode.config ?? []);
+const examples = computed(() => props.manifestNode.examples ?? []);
 
 const complexFields = computed(() =>
   inputFields.value.filter((f) => {
@@ -95,7 +92,7 @@ function copyTemplate(fieldName: string) {
   });
 }
 
-function copyFullExample(example: ManifestActionExample) {
+function copyFullExample(example: ManifestNodeExample) {
   const json = JSON.stringify(example.input, null, 2);
   navigator.clipboard.writeText(json);
   toast({

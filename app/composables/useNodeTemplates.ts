@@ -1,5 +1,9 @@
 import { useLocalStorage } from '@vueuse/core';
-import type { NodeTemplate, PaletteItem } from '#shared/types';
+import type {
+  NodeTemplate,
+  PaletteItem,
+  WorkflowNodeKind,
+} from '#shared/types';
 
 const STORAGE_KEY = 'geins-node-templates';
 
@@ -8,12 +12,12 @@ export function useNodeTemplates() {
 
   const templateCount = computed(() => templates.value.length);
 
-  const templatesByType = computed(() => {
+  const templatesByKind = computed(() => {
     const map = new Map<string, NodeTemplate[]>();
     for (const t of templates.value) {
-      const list = map.get(t.nodeType);
+      const list = map.get(t.kind);
       if (list) list.push(t);
-      else map.set(t.nodeType, [t]);
+      else map.set(t.kind, [t]);
     }
     return map;
   });
@@ -21,16 +25,16 @@ export function useNodeTemplates() {
   function saveTemplate(opts: {
     name: string;
     description?: string;
-    nodeType: string;
-    actionName?: string;
+    kind: WorkflowNodeKind;
+    functionName?: string;
     nodeData: Record<string, unknown>;
   }): NodeTemplate {
     const template: NodeTemplate = {
       id: crypto.randomUUID(),
       name: opts.name,
       description: opts.description || undefined,
-      nodeType: opts.nodeType,
-      actionName: opts.actionName,
+      kind: opts.kind,
+      functionName: opts.functionName,
       nodeData: JSON.parse(JSON.stringify(opts.nodeData)),
       createdAt: new Date().toISOString(),
     };
@@ -60,8 +64,8 @@ export function useNodeTemplates() {
     position: { x: number; y: number },
   ) {
     return {
-      id: `${template.actionName ?? template.nodeType}-${Date.now()}`,
-      type: template.nodeType,
+      id: `${template.functionName ?? template.kind}-${Date.now()}`,
+      type: template.kind,
       position,
       data: JSON.parse(JSON.stringify(template.nodeData)),
     };
@@ -69,11 +73,11 @@ export function useNodeTemplates() {
 
   function toPaletteItem(template: NodeTemplate): PaletteItem {
     return {
-      nodeType: template.nodeType,
-      id: template.actionName ?? template.nodeType,
+      kind: template.kind,
+      id: template.functionName ?? template.kind,
       label: template.name,
       description: template.description,
-      actionName: template.actionName,
+      functionName: template.functionName,
       templateId: template.id,
     };
   }
@@ -81,7 +85,7 @@ export function useNodeTemplates() {
   return {
     templates,
     templateCount,
-    templatesByType,
+    templatesByKind,
     saveTemplate,
     deleteTemplate,
     updateTemplate,

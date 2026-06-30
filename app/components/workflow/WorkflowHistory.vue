@@ -7,7 +7,7 @@ import type {
   WorkflowNode,
   WorkflowNodeConnection,
   WorkflowSettings,
-  WorkflowTriggerConfig,
+  WorkflowTrigger,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 
@@ -357,15 +357,12 @@ async function recreateFromVersion(version: number) {
     const settings = (def.settings ?? def.Settings) as
       | WorkflowSettings
       | undefined;
-    const trigger = (def.trigger ?? def.Trigger) as
-      | WorkflowTriggerConfig
-      | undefined;
+    const trigger = (def.trigger ?? def.Trigger) as WorkflowTrigger | undefined;
 
     const name = `${props.workflowName} - v${version}`;
     const created = await orchestratorApi.workflow.create({
       name,
       type: 'onDemand',
-      enabled: false,
       nodes,
       connections,
       ...(settings ? { settings } : {}),

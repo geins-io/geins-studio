@@ -1,33 +1,34 @@
 <script setup lang="ts">
+import type { ManifestNode } from '#shared/types';
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue';
 import ExpressionInput from '@/components/workflow/shared/ExpressionInput.vue';
-import type { ManifestAction } from '@/composables/useWorkflowManifest';
 import NodeSettingsCompose from './NodeSettingsCompose.vue';
 import NodeSettingsHttpRequest from './NodeSettingsHttpRequest.vue';
 import NodeSettingsTransform from './NodeSettingsTransform.vue';
 import type { Component } from 'vue';
 
+// Keyed by the node's manifest `name` (provider/version agnostic).
 const ACTION_SETTINGS_COMPONENTS: Record<string, Component> = {
-  'net.httpRequest': NodeSettingsHttpRequest,
-  'transform.map': NodeSettingsTransform,
-  'transform.compose': NodeSettingsCompose,
+  httpRequest: NodeSettingsHttpRequest,
+  map: NodeSettingsTransform,
+  compose: NodeSettingsCompose,
 };
 
 const props = defineProps<{
   nodeData: Record<string, unknown>;
   nodeInput: Record<string, unknown>;
   editorHints: Record<string, unknown>;
-  manifestAction?: ManifestAction;
+  manifestNode?: ManifestNode;
   updateInput: (name: string, value: unknown) => void;
   updateEditorHint: (name: string, value: unknown) => void;
 }>();
 
 const customComponent = computed(() => {
-  const name = props.nodeData.actionName as string | undefined;
+  const name = props.manifestNode?.name;
   return name ? ACTION_SETTINGS_COMPONENTS[name] : undefined;
 });
 
-const actionInputFields = computed(() => props.manifestAction?.input ?? []);
+const actionInputFields = computed(() => props.manifestNode?.config ?? []);
 
 const requiredFields = computed(() =>
   actionInputFields.value.filter((f) => f.required),
@@ -109,7 +110,7 @@ const typeBadgeClass = (type: string): string => {
       :node-data="nodeData"
       :node-input="nodeInput"
       :editor-hints="editorHints"
-      :manifest-action="manifestAction"
+      :manifest-node="manifestNode"
       :update-input="updateInput"
       :update-editor-hint="updateEditorHint"
     />

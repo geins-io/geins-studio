@@ -1,50 +1,34 @@
 import type {
   EditorManifest,
-  ManifestActionCategory,
+  ManifestAuthoringGuide,
+  ManifestConfigProperty,
+  ManifestEnumValue,
   ManifestEventEntity,
   ManifestExpressionFunction,
-  ManifestNodeType,
+  ManifestExpressionVariable,
+  ManifestGraphConventions,
+  ManifestNode,
+  ManifestNodeCategory,
+  ManifestProvider,
   ManifestTriggerType,
-  WorkflowAction,
 } from '#shared/types';
 
 /**
  * Fetches the orchestrator editor manifest (GET /orchestrator/manifest) once
  * per app session and exposes it as a shared async data source. Every caller
- * gets the same underlying `useAsyncData` instance via the stable key, so
- * the request only goes out on the first call.
+ * gets the same underlying `useAsyncData` instance via the stable key, so the
+ * request only goes out on the first call.
  *
- * The manifest describes all node types, actions (with input/output schemas),
- * action categories, trigger types, event entities, expression functions and
- * enums — i.e. everything the node palette and node renderers need to stop
- * relying on mocked data.
- *
- * Note: the live API returns some fields the shared `WorkflowAction` type
- * does not declare yet (e.g. `input: ManifestActionInputField[]` instead of
- * `parameters`, `isPseudoAction`). Consumers that touch those extras should
- * normalize at the call site.
+ * The manifest (schemaVersion 3.x) describes node categories, nodes (with
+ * config/output/connection metadata), providers, trigger types, event
+ * entities, expression functions/variables, graph conventions, workflow-level
+ * settings, and authoring guidance — everything the node palette, node
+ * renderers, and config forms need.
  */
 
-export interface ManifestActionExample {
-  name: string;
-  description?: string;
-  input?: Record<string, unknown>;
-}
-
-export type ManifestAction = WorkflowAction & {
-  isPseudoAction?: boolean;
-  provider?: string;
-  input?: Array<{
-    name: string;
-    type: string;
-    description?: string;
-    required?: boolean;
-    default?: unknown;
-    allowedValues?: string[] | number[];
-    schema?: Record<string, unknown>;
-    editorHint?: string;
-  }>;
-  examples?: ManifestActionExample[];
+const EMPTY_GRAPH_CONVENTIONS: ManifestGraphConventions = {
+  triggerSentinel: 'TRIGGER',
+  allowMultipleTriggers: true,
 };
 
 export function useWorkflowManifest() {
@@ -66,87 +50,153 @@ export function useWorkflowManifest() {
 
   // --- Convenience lookups (all reactive, all O(1) after first resolve) ---
 
-  const nodeTypes = computed<ManifestNodeType[]>(
-    () => (manifest.value?.nodeTypes as ManifestNodeType[] | undefined) ?? [],
+  const nodes = computed<ManifestNode[]>(() => manifest.value?.nodes ?? []);
+
+  /** Node categories — the manifest's `nodeTypes` (network/flow/state/…). */
+  const nodeCategories = computed<ManifestNodeCategory[]>(
+    () => manifest.value?.nodeTypes ?? [],
   );
 
-  const actions = computed<ManifestAction[]>(
-    () => (manifest.value?.actions as ManifestAction[] | undefined) ?? [],
+  const providers = computed<ManifestProvider[]>(
+    () => manifest.value?.providers ?? [],
   );
 
   const triggerTypes = computed<ManifestTriggerType[]>(
-    () =>
-      (manifest.value?.triggerTypes as ManifestTriggerType[] | undefined) ?? [],
+    () => manifest.value?.triggerTypes ?? [],
   );
 
   const eventEntities = computed<ManifestEventEntity[]>(
-    () =>
-      (manifest.value?.eventEntities as ManifestEventEntity[] | undefined) ??
-      [],
-  );
-
-  const actionCategories = computed<ManifestActionCategory[]>(
-    () =>
-      (manifest.value?.actionCategories as
-        | ManifestActionCategory[]
-        | undefined) ?? [],
+    () => manifest.value?.eventEntities ?? [],
   );
 
   const expressionFunctions = computed<ManifestExpressionFunction[]>(
-    () =>
-      (manifest.value?.expressionFunctions as
-        | ManifestExpressionFunction[]
-        | undefined) ?? [],
+    () => manifest.value?.expressionFunctions ?? [],
   );
 
-  const actionsByName = computed(() => {
-    const map = new Map<string, ManifestAction>();
-    for (const a of actions.value) map.set(a.name, a);
+  const expressionVariables = computed<ManifestExpressionVariable[]>(
+    () => manifest.value?.expressionVariables ?? [],
+  );
+
+  const workflowSettings = computed<ManifestConfigProperty[]>(
+    () => manifest.value?.workflowSettings ?? [],
+  );
+
+  const graphConventions = computed<ManifestGraphConventions>(
+    () => manifest.value?.graphConventions ?? EMPTY_GRAPH_CONVENTIONS,
+  );
+
+  const authoring = computed<ManifestAuthoringGuide>(
+    () => manifest.value?.authoring ?? {},
+  );
+
+  const enums = computed<Record<string, ManifestEnumValue[]>>(
+    () => manifest.value?.enums ?? {},
+  );
+
+  const nodesByName = computed(() => {
+    const map = new Map<string, ManifestNode>();
+    for (const n of nodes.value) map.set(n.name, n);
     return map;
   });
 
-  const actionsByCategory = computed(() => {
-    const map = new Map<string, ManifestAction[]>();
-    for (const a of actions.value) {
-      const list = map.get(a.category);
-      if (list) list.push(a);
-      else map.set(a.category, [a]);
+  const nodesByFunctionName = computed(() => {
+    const map = new Map<string, ManifestNode>();
+    for (const n of nodes.value) map.set(n.functionName, n);
+    return map;
+  });
+
+  /** Nodes grouped by category name (matches `nodeCategories[].name`). */
+  const nodesByCategory = computed(() => {
+    const map = new Map<string, ManifestNode[]>();
+    for (const n of nodes.value) {
+      const list = map.get(n.type);
+      if (list) list.push(n);
+      else map.set(n.type, [n]);
     }
     return map;
   });
 
-  const nodeTypesByType = computed(() => {
-    const map = new Map<string, ManifestNodeType>();
-    for (const n of nodeTypes.value) map.set(n.type, n);
+  const nodesByProvider = computed(() => {
+    const map = new Map<string, ManifestNode[]>();
+    for (const n of nodes.value) {
+      const list = map.get(n.provider);
+      if (list) list.push(n);
+      else map.set(n.provider, [n]);
+    }
     return map;
   });
 
-  const getAction = (
-    name: string | undefined | null,
-  ): ManifestAction | undefined =>
-    name ? actionsByName.value.get(name) : undefined;
+  const categoryByName = computed(() => {
+    const map = new Map<string, ManifestNodeCategory>();
+    for (const c of nodeCategories.value) map.set(c.name, c);
+    return map;
+  });
 
-  const getNodeType = (
+  const providersByName = computed(() => {
+    const map = new Map<string, ManifestProvider>();
+    for (const p of providers.value) map.set(p.name, p);
+    return map;
+  });
+
+  /** Look up a node by its `functionName` (preferred) or bare `name`. */
+  const getNode = (key: string | undefined | null): ManifestNode | undefined =>
+    key
+      ? (nodesByFunctionName.value.get(key) ?? nodesByName.value.get(key))
+      : undefined;
+
+  const getCategory = (
+    name: string | undefined | null,
+  ): ManifestNodeCategory | undefined =>
+    name ? categoryByName.value.get(name) : undefined;
+
+  const getProvider = (
+    name: string | undefined | null,
+  ): ManifestProvider | undefined =>
+    name ? providersByName.value.get(name) : undefined;
+
+  /** Look up a trigger type descriptor by its (PascalCase) `type`, case-insensitively. */
+  const getTriggerType = (
     type: string | undefined | null,
-  ): ManifestNodeType | undefined =>
-    type ? nodeTypesByType.value.get(type) : undefined;
+  ): ManifestTriggerType | undefined => {
+    if (!type) return undefined;
+    const lower = type.toLowerCase();
+    return triggerTypes.value.find((t) => t.type.toLowerCase() === lower);
+  };
+
+  /** Return the values of a named manifest enum (e.g. `LogVerbosity`). */
+  const getEnum = (name: string): ManifestEnumValue[] =>
+    enums.value[name] ?? [];
 
   return {
     manifest,
     loading: pending,
     error,
     refresh,
-    nodeTypes,
-    actions,
+    // collections
+    nodes,
+    nodeCategories,
+    providers,
     triggerTypes,
     eventEntities,
-    actionCategories,
     expressionFunctions,
-    actionsByName,
-    actionsByCategory,
-    nodeTypesByType,
-    getAction,
-    getNodeType,
+    expressionVariables,
+    workflowSettings,
+    graphConventions,
+    authoring,
+    enums,
+    // lookups
+    nodesByName,
+    nodesByFunctionName,
+    nodesByCategory,
+    nodesByProvider,
+    categoryByName,
+    providersByName,
+    // getters
+    getNode,
+    getCategory,
+    getProvider,
+    getTriggerType,
+    getEnum,
   };
 }
 
