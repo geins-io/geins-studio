@@ -66,6 +66,7 @@ const {
   ProductUpdate,
   ProductApiOptions
 >({
+  entity: ENTITIES.product,
   repository: productApi.product,
   validationSchema: formSchema,
   initialEntityData: entityBase,
