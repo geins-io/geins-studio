@@ -41,7 +41,7 @@ const { data: products } = await useFetch<Product[]>('/api/products');
 
 // Configure columns
 const { getColumns, addActionsColumn } = useColumns<Product>();
-const { getEntityUrl } = useEntityUrl();
+const getEntityUrl = (id: string) => entityDetailHref('your_entity', id); // from #shared/utils/entities
 
 const columnOptions = {
   selectable: true,
@@ -444,8 +444,8 @@ This composable depends on:
 The `useColumns` composable integrates seamlessly with the entity system:
 
 ```ts
-// Combine with useEntityUrl for entity linking
-const { getEntityUrl } = useEntityUrl();
+// Combine with entityDetailHref for entity linking
+const getEntityUrl = (id: string) => entityDetailHref('your_entity', id); // from #shared/utils/entities
 const { getColumns } = useColumns<Product>();
 
 const columns = getColumns(products.value, {

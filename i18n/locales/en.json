@@ -46,7 +46,6 @@
   "payment": "Payment | Payments",
   "changelog_entry": "Changelog entry | Changelog entries",
   "payment_method": "Payment method | Payment methods",
-  "new_entity_url_alias": "new",
   "entity_id": "@:{entityName} ID",
   "entity_identifier": "@:{entityName} identifier",
   "new_entity": "New @.lower:{entityName}",

@@ -6,7 +6,7 @@ import type {
 } from '#shared/types';
 import {
   ENTITIES,
-  entityBasePath,
+  entityNewHref,
   entityDetailHref,
 } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
@@ -14,7 +14,6 @@ type Entity = CustomerCompany;
 type EntityList = CustomerCompanyList;
 
 const { t } = useI18n();
-const { newEntityUrlAlias } = useEntityUrl();
 
 definePageMeta({
   pageType: 'list',
@@ -25,7 +24,7 @@ const { customerApi } = useGeinsRepository();
 const { deleteCompany, extractCompanyGroupsFromTags } = useCustomerCompanies();
 const dataList = ref<EntityList[]>([]);
 const entityName = ENTITIES.company.key;
-const newEntityUrl = `${entityBasePath('company')}/${newEntityUrlAlias.value}`;
+const newEntityUrl = entityNewHref('company');
 const entityIdentifier = '{id}';
 const entityUrl = entityDetailHref('company', entityIdentifier);
 const loading = ref(true);

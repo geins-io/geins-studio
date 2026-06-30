@@ -44,7 +44,6 @@ import type { ColumnDef, Row } from '@tanstack/vue-table';
 const scope = 'pages/orders/quotations/[id].vue';
 const { t } = useI18n();
 const { toast } = useToast();
-const { getEntityUrl } = useEntityUrl();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog(scope);
 const router = useRouter();
@@ -1519,7 +1518,7 @@ const handleCopy = async () => {
     const newQuotation = await orderApi.quotation.copy(entityId.value);
     if (newQuotation?._id) {
       toast({ title: t('entity_copied', { entityName }), variant: 'positive' });
-      await router.push(getEntityUrl(newQuotation._id));
+      await router.push(entityDetailHref('quotation', newQuotation._id));
     }
   } catch (error) {
     geinsLogError('Failed to copy quotation:', error);

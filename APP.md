@@ -91,7 +91,7 @@ definePageMeta({ pageType: 'list' })
 → useAsyncData(key, fn)    — fetch with explicit stable client cache key
 → useColumns<T>()          — column defs + addActionsColumn
 → useTable<T>()            — visibility / sort state
-→ useEntityUrl()           — link generation
+→ entityListHref / entityDetailHref — link generation (registry helpers)
 → usePageError()           — error handling
 → <TableView />            — renders table + pagination
 ```

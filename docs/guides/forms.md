@@ -469,7 +469,6 @@ const {
   repository: domainApi.entity,
   entityName: t('entity'),
   entityListUrl: '/domain/entity',
-  newEntityUrlAlias: 'new',
   validationSchema: formSchema,
   initialEntityData: entityBase,
   initialUpdateData: entityBase,

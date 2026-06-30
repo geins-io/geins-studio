@@ -161,7 +161,7 @@ Add the nav entry. Build entity paths from the registry — **never hardcode** a
 - `entityDetailHref('entity', id)` → `/domain/entities/id` (link to a specific item)
 - `entityBasePath('entity')` → `/domain/entities` (base path; also singletons like `profile`)
 
-(For the **current** entity on an `[id]`/`new` page, `useEntityUrl()` also provides `getEntityUrl(id)` / `getEntityNewUrl()`.)
+(`useEntityEdit` exposes `newEntityUrl` / `entityListUrl` for the current entity, derived from its registry entry.)
 
 **Sidebar gotchas** (all three are required for correct rendering):
 1. Items in the `workspace` group **must** have a `children` array — without it, the sidebar renders a flat button instead of the collapsible parent/child style used by all other workspace items.

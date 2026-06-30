@@ -2,7 +2,7 @@
 import type { ColumnOptions, StringKeyOf } from '#shared/types';
 import {
   ENTITIES,
-  entityBasePath,
+  entityNewHref,
   entityDetailHref,
 } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
@@ -14,7 +14,6 @@ type EntityList = ProductPriceList;
 const scope = 'pages/pricing/price-lists/index.vue';
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog(scope);
-const { newEntityUrlAlias } = useEntityUrl();
 
 definePageMeta({
   pageType: 'list',
@@ -24,7 +23,7 @@ definePageMeta({
 const { productApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
 const entityName = ENTITIES.price_list.key;
-const newEntityUrl = `${entityBasePath('price_list')}/${newEntityUrlAlias.value}`;
+const newEntityUrl = entityNewHref('price_list');
 const entityIdentifier = '{id}';
 const entityUrl = entityDetailHref('price_list', entityIdentifier);
 const loading = ref(true);

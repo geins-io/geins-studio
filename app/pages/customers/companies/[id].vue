@@ -13,7 +13,11 @@ import {
   type CustomerCompanyApiOptions,
   type CompanyBuyerList,
 } from '#shared/types';
-import { ENTITIES, entityDetailHref } from '#shared/utils/entities';
+import {
+  ENTITIES,
+  entityDetailHref,
+  NEW_ENTITY_URL_SEGMENT,
+} from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { LucideUser, LucidePackage } from '#components';
 
@@ -51,8 +55,7 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // addressSchema (shared via useCustomerCompanies) is reused for billing and shipping and by
 // the address edit panel. stepValidationMap (below) ties form steps to schema segments.
 // Keep schema in sync with the form fields in the <template>.
-const { newEntityUrlAlias } = useEntityUrl();
-const isCreateMode = useRoute().params.id === newEntityUrlAlias.value;
+const isCreateMode = useRoute().params.id === NEW_ENTITY_URL_SEGMENT;
 
 const formSchema = toTypedSchema(
   z.object({

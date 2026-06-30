@@ -5,7 +5,7 @@ import type {
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import { ENTITIES, entityListHref } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 import type { Component } from 'vue';
 import { LucideKeyRound, LucideEye } from '#components';
@@ -127,7 +127,7 @@ const dataList = computed(() => {
 });
 
 const clearKitFilter = () => {
-  navigateTo('/settings/orchestrator/variables');
+  navigateTo(entityListHref('variable'));
 };
 
 // ─── Table Columns ─────────────────────────────────────────────────

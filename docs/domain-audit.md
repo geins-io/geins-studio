@@ -22,7 +22,6 @@
 | ---------------------------- | -------------- | ------------------------------- |
 | useEntityEdit.ts             | Infrastructure | Universal entity CRUD lifecycle |
 | useEntityEditSummary.ts      | Infrastructure | Edit page sidebar summary       |
-| useEntityUrl.ts              | Infrastructure | Entity URL generation           |
 | useTable.ts                  | Infrastructure | TanStack Table wrapper          |
 | useColumns.ts                | Infrastructure | Dynamic column definitions      |
 | useSelector.ts               | Infrastructure | Reusable selector state         |

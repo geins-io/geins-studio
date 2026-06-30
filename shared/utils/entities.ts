@@ -89,10 +89,27 @@ export type EntityKeyWithRoute = {
 }[EntityKey];
 
 /**
+ * A registry entry that has a page `route` — its `key` is an
+ * {@link EntityKeyWithRoute}, so it can be passed straight to the URL helpers.
+ * This is what entity pages hand to `useEntityEdit`.
+ */
+export type EntityWithRoute = (typeof ENTITIES)[EntityKeyWithRoute];
+
+/**
+ * The URL segment for the "create new entity" action (`/pricing/price-lists/new`).
+ *
+ * **White-label knob** — this is the single place to change the create-action
+ * word; set it to `'add'`, `'create'`, etc. and every new-entity URL and the
+ * create-mode check (`route.params.id === NEW_ENTITY_URL_SEGMENT`) follow. It's
+ * a plain constant (not localized) so the URL helpers below stay pure.
+ */
+export const NEW_ENTITY_URL_SEGMENT = 'new';
+
+/**
  * Page-path helpers derived from the registry `route` — the single source for
- * an entity's URLs. Use these in `navigation.ts` (and anywhere that builds an
- * entity link) instead of hardcoding `/domain/entity/...`, so a route can't
- * drift between the registry and the nav config.
+ * an entity's URLs. Use these everywhere an entity link is built (pages,
+ * `navigation.ts`, `useEntityEdit`) instead of hardcoding `/domain/entity/...`,
+ * so a route can't drift between the registry and its consumers.
  */
 /** `/pricing/price-lists` — the entity's base page path (also its list/index URL). */
 export const entityBasePath = (key: EntityKeyWithRoute): string =>
@@ -100,6 +117,9 @@ export const entityBasePath = (key: EntityKeyWithRoute): string =>
 /** `/pricing/price-lists` — the entity's list page href (the collection index). */
 export const entityListHref = (key: EntityKeyWithRoute): string =>
   entityBasePath(key);
+/** `/pricing/price-lists/new` — the entity's create page href. */
+export const entityNewHref = (key: EntityKeyWithRoute): string =>
+  `${entityBasePath(key)}/${NEW_ENTITY_URL_SEGMENT}`;
 /** `/pricing/price-lists/123` — link to a specific entity's `[id]` page. */
 export const entityDetailHref = (key: EntityKeyWithRoute, id: string): string =>
   `${entityBasePath(key)}/${id}`;

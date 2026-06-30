@@ -64,41 +64,52 @@ Where:
 - `{parent}` is the parent folder of the entity folders in the `pages` directory
 - `{entity}` is the (plural) name of the entity folder itself
 - `{id}` is a dynamic parameter that represents the unique identifier of the entity item
-- `new` is a localized alias that can be changed in the language files; the create page is handled by `[id].vue` matching `route.params.id === newEntityUrlAlias`
+- the create segment is the **`NEW_ENTITY_URL_SEGMENT`** constant (default `'new'`); the create page is handled by `[id].vue` matching `route.params.id === NEW_ENTITY_URL_SEGMENT`
 
-Build these from the registry with `entityBasePath(key)` / `entityListHref(key)` (the index) / `entityDetailHref(key, id)` rather than hardcoding.
+### Building entity URLs
 
-## Retrieving the Entity Name
-
-For the **current route**, `useEntityUrl` extracts the entity name from the path:
-
-```javascript
-const { getEntityName } = useEntityUrl();
-const entityName = getEntityName(); // "products" from "/pim/products/123"
-```
-
-::: tip
-You can read the full specification of the `useEntityUrl` composable here: [useEntityUrl](/composables/useEntityUrl.md)
-:::
-
-::: warning
-`getEntityName()` derives the name from the **folder** segment, which (now plural) generally does **not** equal the i18n key — e.g. `companies` → `companies`, not the key `company`. It is for **URL building** only. `useEntityEdit` / `usePageError` instead take the registry entry (`entity: ENTITIES.company`) and derive the key from `entity.key` — so the folder name never matters and the key can't drift from the route.
-:::
-
-## Using the Entity Name
-
-The entity name is mainly used as a parameter to a set of language keys to retrieve the correct plural or singular translations for the entity name.
+All entity URLs come from the registry helpers (pure functions in `shared/utils/entities.ts`) — never hardcode `/domain/entity/...`:
 
 ```ts
-const { getEntityName, getEntityNewUrl } = useEntityUrl();
+import {
+  entityBasePath,
+  entityListHref,
+  entityNewHref,
+  entityDetailHref,
+  entityChildPattern,
+} from '#shared/utils/entities';
+
+entityListHref('price_list'); // "/pricing/price-lists" (the collection index)
+entityNewHref('price_list'); // "/pricing/price-lists/new"
+entityDetailHref('price_list', '123'); // "/pricing/price-lists/123"
+entityChildPattern('price_list'); // "/pricing/price-lists/:id" (nav matching)
+```
+
+`useEntityEdit` builds its own `newEntityUrl` / `entityListUrl` from the `entity` it receives, so pages rarely call these directly except on list/index pages and for cross-entity links.
+
+### White-labeling the create segment
+
+To change the create word app-wide (e.g. `/add`, `/create`), set **one** constant:
+
+```ts
+// shared/utils/entities.ts
+export const NEW_ENTITY_URL_SEGMENT = 'add';
+```
+
+`entityNewHref` and the create-mode check both read it, so nothing else changes.
+
+## Using the entity key for i18n
+
+The entity **key** (`ENTITIES.x.key`, or the `entityName` string `useEntityEdit` returns) is the parameter for the localized-name i18n keys:
+
+```ts
+const entityName = ENTITIES.price_list.key; // 'price_list'
 const { t } = useI18n();
 
-const entityName = getEntityName(); // "product"
-
-const singular = t(entityName); // "Product"
-const plural = t(entityName, 2); // "Products"
-const asParamSingular = t('new_entity', { entityName }); // "New Product"
-const asParamPlural = t('new_entity', { entityName }, 2); // "New Products"
+t(entityName); // "Price list"
+t(entityName, 2); // "Price lists"
+t('new_entity', { entityName }); // "New price list"
+t('new_entity', { entityName }, 2); // "New price lists"
 ```
 
 ## Type Definitions

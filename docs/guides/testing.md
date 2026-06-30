@@ -23,7 +23,6 @@ app/
       usePrice.test.ts
       useUnsavedChanges.test.ts
       useDeleteDialog.test.ts
-      useEntityUrl.test.ts
 shared/
   utils/
     __tests__/

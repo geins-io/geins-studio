@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SaveVariableRequest, WorkflowVariable } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import { ENTITIES, entityListHref } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import {
   LucideEye,
@@ -125,7 +125,7 @@ const deleteEntity = async (): Promise<boolean> => {
 };
 
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteEntity, '/settings/orchestrator/variables');
+  useDeleteDialog(deleteEntity, entityListHref('variable'));
 
 // ─── Copy value ────────────────────────────────────────────────────
 const copied = ref(false);

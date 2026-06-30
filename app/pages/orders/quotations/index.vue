@@ -8,7 +8,7 @@ import type {
 } from '#shared/types';
 import {
   ENTITIES,
-  entityBasePath,
+  entityNewHref,
   entityDetailHref,
 } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
@@ -20,7 +20,6 @@ type EntityList = QuotationList;
 const scope = 'pages/orders/quotations/index.vue';
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog(scope);
-const { newEntityUrlAlias } = useEntityUrl();
 const { getChannelNameById } = useAccountStore();
 
 definePageMeta({
@@ -31,7 +30,7 @@ definePageMeta({
 const { orderApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
 const entityName = ENTITIES.quotation.key;
-const newEntityUrl = `${entityBasePath('quotation')}/${newEntityUrlAlias.value}`;
+const newEntityUrl = entityNewHref('quotation');
 const entityIdentifier = '{id}';
 const entityUrl = entityDetailHref('quotation', entityIdentifier);
 const loading = ref(true);

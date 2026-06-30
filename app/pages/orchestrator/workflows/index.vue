@@ -8,7 +8,7 @@ import type {
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import { ENTITIES, entityListHref } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 import type { Component } from 'vue';
 import {
@@ -282,7 +282,7 @@ const dataList = computed(() => {
 });
 
 const clearGroupFilter = () => {
-  navigateTo('/orchestrator/workflows');
+  navigateTo(entityListHref('workflow'));
 };
 
 // ─── Table Columns ─────────────────────────────────────────────────
