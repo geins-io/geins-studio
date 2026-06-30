@@ -466,9 +466,8 @@ const {
   validateSteps, // async function
   // ...more
 } = useEntityEdit<TBase, TResponse, TCreate, TUpdate>({
+  entity: ENTITIES.entity,
   repository: domainApi.entity,
-  entityName: t('entity'),
-  entityListUrl: '/domain/entity',
   validationSchema: formSchema,
   initialEntityData: entityBase,
   initialUpdateData: entityBase,

@@ -50,6 +50,7 @@ import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 type Entity = ApiResponseType;
 type EntityList = TableDisplayType;
 
+// placeholders: {entities} = the plural folder name; {entity} = the singular registry key
 const scope = 'pages/{domain}/{entities}/index.vue';
 const { t } = useI18n();
 
@@ -60,9 +61,9 @@ const { domainApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
 const entityName = ENTITIES.{entity}.key;
 const entityIdentifier = '{id}';
-// List/index pages have no route context — build URLs from the registry:
-const entityUrl = entityEditUrl('{entity}', entityIdentifier);
-const newEntityUrl = entityNewUrl('{entity}');
+// List/index pages have no route context — build URLs from the key in scope:
+const entityUrl = entityEditUrl(entityName, entityIdentifier);
+const newEntityUrl = entityNewUrl(entityName);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
