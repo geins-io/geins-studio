@@ -27,9 +27,13 @@ const {
   nodes: manifestNodes,
   nodeCategories,
   nodesByCategory,
+  nodesByProvider,
   categoryByName,
+  providers,
   providersByName,
 } = manifestStore;
+
+const CORE_PROVIDER = 'core';
 
 const { resolveIcon } = useLucideIcon();
 
@@ -77,14 +81,19 @@ function getProviderLogo(providerKey: string): Component | null {
   return toComponentOrNull(PROVIDER_LOGOS[providerKey]);
 }
 
-function getProviderDisplayName(providerKey: string): string {
-  return providersByName.value.get(providerKey)?.displayName ?? providerKey;
+function getProviderIcon(providerKey: string): Component | null {
+  const icon = providersByName.value.get(providerKey)?.icon;
+  return resolveIcon(icon ?? 'Package');
 }
 
 // ─── Category helpers (icon/displayName from the manifest descriptor) ─
 function getCategoryIcon(name: string): Component | null {
   const icon = categoryByName.value.get(name)?.icon;
   return resolveIcon(icon ?? CATEGORY_FALLBACK_ICON);
+}
+
+function getCategoryLabel(name: string): string {
+  return categoryByName.value.get(name)?.displayName ?? name;
 }
 
 function getKindIcon(kind: string): Component | null {
@@ -97,8 +106,19 @@ type CategoryViewItem = {
   type: 'category';
   key: string;
   label: string;
+  description?: string;
   icon: Component | null;
   color: string;
+  count: number;
+};
+
+type ProviderViewItem = {
+  type: 'provider';
+  key: string;
+  label: string;
+  description?: string;
+  icon: Component | null;
+  logo: Component | null;
   count: number;
 };
 
@@ -108,11 +128,11 @@ type NodeViewItem = {
   icon: Component | null;
   logo?: Component | null;
   color: string;
-  // Provider display name — used to render a divider within a category panel.
+  // Group divider label (category) — used within a provider panel.
   category?: string;
 };
 
-type ViewItem = CategoryViewItem | NodeViewItem;
+type ViewItem = CategoryViewItem | ProviderViewItem | NodeViewItem;
 
 interface ViewStack {
   id: string;
@@ -174,17 +194,46 @@ function buildRootStack() {
     });
   }
 
-  // One card per node category (network/flow/state/event/data-transformation).
+  // Core capabilities: one card per category, counting `core` nodes only.
   for (const cat of nodeCategories.value) {
-    const count = (nodesByCategory.value.get(cat.name) ?? []).length;
-    if (!count) continue;
+    const coreCount = (nodesByCategory.value.get(cat.name) ?? []).filter(
+      (n) => n.provider === CORE_PROVIDER,
+    ).length;
+    if (!coreCount) continue;
     items.push({
       type: 'category',
       key: cat.name,
       label: cat.displayName || cat.name,
       icon: getCategoryIcon(cat.name),
       color: NODE_COLOR,
-      count,
+      count: coreCount,
+    });
+  }
+
+  // All non-core providers collapse into a single "Integrations" entry
+  // (n8n "action in an app"), which drills into the provider list.
+  const integrationProviders = providers.value.filter(
+    (p) =>
+      p.name !== CORE_PROVIDER &&
+      (nodesByProvider.value.get(p.name)?.length ?? 0) > 0,
+  );
+  const integrationCount = integrationProviders.reduce(
+    (sum, p) => sum + (nodesByProvider.value.get(p.name)?.length ?? 0),
+    0,
+  );
+  if (integrationProviders.length > 0) {
+    items.push({
+      type: 'category',
+      key: 'integrations',
+      label: t('node.integrations.title'),
+      description: t('node.integrations.description', {
+        providers: integrationProviders
+          .map((p) => p.displayName || p.name)
+          .join(', '),
+      }),
+      icon: resolveIcon('Boxes'),
+      color: NODE_COLOR,
+      count: integrationCount,
     });
   }
 
@@ -195,38 +244,80 @@ function buildRootStack() {
   });
 }
 
-// ─── Build a category's nodes panel ────────────────────────────────
+// ─── Build the integrations panel (list of non-core providers) ─────
+function buildProvidersStack() {
+  const items: ProviderViewItem[] = providers.value
+    .filter(
+      (p) =>
+        p.name !== CORE_PROVIDER &&
+        (nodesByProvider.value.get(p.name)?.length ?? 0) > 0,
+    )
+    .map((p) => ({
+      type: 'provider' as const,
+      key: p.name,
+      label: p.displayName || p.name,
+      description: p.description,
+      icon: getProviderIcon(p.name),
+      logo: getProviderLogo(p.name),
+      count: nodesByProvider.value.get(p.name)?.length ?? 0,
+    }));
+
+  pushStack({
+    title: t('node.integrations.title'),
+    icon: resolveIcon('Boxes'),
+    items,
+    hasSearch: true,
+  });
+}
+
+// ─── Build a core category's nodes panel (core provider only, flat) ─
 function buildCategoryStack(
   categoryName: string,
   label: string,
   icon: Component | null,
 ) {
-  const catNodes = nodesByCategory.value.get(categoryName) ?? [];
-  // When a category spans multiple providers, group nodes under provider
-  // dividers; otherwise show a flat list.
-  const multiProvider = new Set(catNodes.map((n) => n.provider)).size > 1;
+  const catNodes = (nodesByCategory.value.get(categoryName) ?? []).filter(
+    (n) => n.provider === CORE_PROVIDER,
+  );
+  const sorted = [...catNodes].sort((a, b) =>
+    (a.displayName || a.name).localeCompare(b.displayName || b.name),
+  );
 
-  const sorted = [...catNodes].sort((a, b) => {
-    const p = a.provider.localeCompare(b.provider);
-    if (p !== 0) return p;
+  const items: NodeViewItem[] = sorted.map((n) => ({
+    type: 'node' as const,
+    item: nodeToPaletteItem(n),
+    icon: n.icon ? resolveIcon(n.icon) : icon,
+    color: NODE_COLOR,
+  }));
+
+  pushStack({ title: label, icon, items, hasSearch: true });
+}
+
+// ─── Build a provider's nodes panel (grouped by category) ──────────
+function buildProviderStack(
+  providerKey: string,
+  label: string,
+  icon: Component | null,
+  logo: Component | null,
+) {
+  const provNodes = nodesByProvider.value.get(providerKey) ?? [];
+  const multiCategory = new Set(provNodes.map((n) => n.type)).size > 1;
+
+  const sorted = [...provNodes].sort((a, b) => {
+    const c = getCategoryLabel(a.type).localeCompare(getCategoryLabel(b.type));
+    if (c !== 0) return c;
     return (a.displayName || a.name).localeCompare(b.displayName || b.name);
   });
 
   const items: NodeViewItem[] = sorted.map((n) => ({
     type: 'node' as const,
     item: nodeToPaletteItem(n),
-    icon: n.icon ? resolveIcon(n.icon) : icon,
-    logo: getProviderLogo(n.provider),
+    icon: n.icon ? resolveIcon(n.icon) : (logo ?? icon),
     color: NODE_COLOR,
-    category: multiProvider ? getProviderDisplayName(n.provider) : undefined,
+    category: multiCategory ? getCategoryLabel(n.type) : undefined,
   }));
 
-  pushStack({
-    title: label,
-    icon,
-    items,
-    hasSearch: true,
-  });
+  pushStack({ title: label, icon, logo, items, hasSearch: true });
 }
 
 // ─── Build the templates panel ────────────────────────────────────
@@ -291,9 +382,18 @@ function onItemClick(viewItem: ViewItem) {
   if (viewItem.type === 'category') {
     if (viewItem.key === 'templates') {
       buildTemplatesStack();
+    } else if (viewItem.key === 'integrations') {
+      buildProvidersStack();
     } else {
       buildCategoryStack(viewItem.key, viewItem.label, viewItem.icon);
     }
+  } else if (viewItem.type === 'provider') {
+    buildProviderStack(
+      viewItem.key,
+      viewItem.label,
+      viewItem.icon,
+      viewItem.logo,
+    );
   } else if (viewItem.type === 'node') {
     emit('add', viewItem.item);
   }
@@ -318,6 +418,12 @@ const filteredItems = computed<ViewItem[]>(() => {
   return stack.items.filter((item) => {
     if (item.type === 'category') {
       return item.label.toLowerCase().includes(q);
+    }
+    if (item.type === 'provider') {
+      return (
+        item.label.toLowerCase().includes(q) ||
+        (item.description ?? '').toLowerCase().includes(q)
+      );
     }
     if (item.type === 'node') {
       return (
@@ -576,7 +682,53 @@ function onSearchInput(value: string) {
                       <div class="text-sm font-medium">
                         {{ viewItem.label }}
                       </div>
-                      <div class="text-muted-foreground text-xs">
+                      <div
+                        v-if="viewItem.description"
+                        class="text-muted-foreground line-clamp-2 text-xs"
+                      >
+                        {{ viewItem.description }}
+                      </div>
+                      <div v-else class="text-muted-foreground text-xs">
+                        {{ $t('node.node_count', viewItem.count) }}
+                      </div>
+                    </div>
+                    <LucideChevronRight
+                      class="text-muted-foreground h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5"
+                    />
+                  </button>
+
+                  <!-- Provider card (app-style integration entry) -->
+                  <button
+                    v-if="viewItem.type === 'provider'"
+                    class="hover:bg-muted/50 group flex w-full items-center gap-3 rounded-md border p-3 text-left transition-colors"
+                    @click="onItemClick(viewItem)"
+                  >
+                    <div
+                      class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border"
+                    >
+                      <component
+                        :is="viewItem.logo"
+                        v-if="viewItem.logo"
+                        class="h-5 w-5 dark:invert"
+                        :font-controlled="false"
+                      />
+                      <component
+                        :is="viewItem.icon"
+                        v-else
+                        class="text-muted-foreground h-5 w-5"
+                      />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="text-sm font-medium">
+                        {{ viewItem.label }}
+                      </div>
+                      <div
+                        v-if="viewItem.description"
+                        class="text-muted-foreground line-clamp-2 text-xs"
+                      >
+                        {{ viewItem.description }}
+                      </div>
+                      <div v-else class="text-muted-foreground text-xs">
                         {{ $t('node.node_count', viewItem.count) }}
                       </div>
                     </div>

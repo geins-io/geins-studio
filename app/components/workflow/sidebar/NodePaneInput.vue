@@ -98,16 +98,9 @@ const upstreamLabelClass = (nodeType: string) => {
   return c ? c.split(' ')[0] : 'text-muted-foreground';
 };
 
-const ITERATOR_CONTEXT_VARS: Array<{ name: string; type: string }> = [
-  { name: '$current', type: 'any' },
-  { name: '$index', type: 'number' },
-];
-
-const PAGINATOR_CONTEXT_VARS: Array<{ name: string; type: string }> = [
-  { name: '$cursor', type: 'any' },
-  { name: '$pageNumber', type: 'number' },
-  { name: '$pageSize', type: 'number' },
-];
+// Handles that route into a node's child scope (loop body / page handler) —
+// edges leaving these expose the node's `children`-scoped context variables.
+const CHILD_SCOPE_HANDLES = new Set(['foreach', 'fetchPage', 'forEachPage']);
 
 function resolveOutputFields(
   nodeId: string,
@@ -118,17 +111,15 @@ function resolveOutputFields(
   const functionName = data.functionName as string | undefined;
   const node = manifestStore.getNode(functionName);
 
-  if (
-    (nodeType === 'iterator' || nodeType === 'loop') &&
-    sourceHandle === 'foreach'
-  ) {
-    return ITERATOR_CONTEXT_VARS;
-  }
-  if (
-    nodeType === 'paginator' &&
-    (sourceHandle === 'fetchPage' || sourceHandle === 'forEachPage')
-  ) {
-    return PAGINATOR_CONTEXT_VARS;
+  // Context variables ($current/$index/$cursor/…) come from the manifest node
+  // and are in scope only on edges leaving a child-scope handle.
+  if (sourceHandle && CHILD_SCOPE_HANDLES.has(sourceHandle)) {
+    const childVars = (node?.contextVariables ?? []).filter(
+      (v) => v.scope === 'children',
+    );
+    if (childVars.length) {
+      return childVars.map((v) => ({ name: v.name, type: v.type }));
+    }
   }
   if (node?.name === 'map' || node?.name === 'compose') {
     const config = (data.config ?? {}) as Record<string, unknown>;

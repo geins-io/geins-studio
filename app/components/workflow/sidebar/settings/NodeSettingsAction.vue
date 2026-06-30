@@ -166,8 +166,8 @@ const typeBadgeClass = (type: string): string => {
           </Select>
           <div v-else-if="isBoolean(field)" class="flex items-center gap-2">
             <Switch
-              :checked="Boolean(nodeInput[field.name] ?? field.default)"
-              @update:checked="updateInput(field.name, $event)"
+              :model-value="Boolean(nodeInput[field.name] ?? field.default)"
+              @update:model-value="updateInput(field.name, $event)"
             />
             <span class="text-muted-foreground text-xs">
               {{
@@ -262,8 +262,8 @@ const typeBadgeClass = (type: string): string => {
               </Select>
               <div v-else-if="isBoolean(field)" class="flex items-center gap-2">
                 <Switch
-                  :checked="Boolean(nodeInput[field.name] ?? field.default)"
-                  @update:checked="updateInput(field.name, $event)"
+                  :model-value="Boolean(nodeInput[field.name] ?? field.default)"
+                  @update:model-value="updateInput(field.name, $event)"
                 />
                 <span class="text-muted-foreground text-xs">
                   {{

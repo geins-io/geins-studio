@@ -6,6 +6,7 @@ import * as z from 'zod';
 import 'cronstrue/locales/sv';
 import { DataItemDisplayType } from '#shared/types';
 import type {
+  RetryPolicy,
   WorkflowDefinition,
   WorkflowInput,
   WorkflowNode,
@@ -14,6 +15,7 @@ import type {
 } from '#shared/types';
 import type { EntityKey } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
+import KeyValueEditor from '@/components/workflow/shared/KeyValueEditor.vue';
 import { sanitizeWorkflowNodes } from '@/composables/useWorkflowCanvas';
 import type { Component } from 'vue';
 
@@ -95,6 +97,9 @@ const formSchema = toTypedSchema(
         eventAction: z.string().optional(),
         eventSubEntity: z.string().optional(),
         description: z.string().optional(),
+        startTime: z.string().optional(),
+        endTime: z.string().optional(),
+        inputParameters: z.record(z.string(), z.unknown()).optional(),
       })
       .superRefine((val, ctx) => {
         if (val.type === 'Scheduled') {
@@ -135,6 +140,7 @@ const formSchema = toTypedSchema(
       logVerbosity: z.string().nullish(),
       timeoutBehavior: z.string().nullish(),
       errorHandlingStrategy: z.string().nullish(),
+      retryPolicy: z.record(z.string(), z.unknown()).nullish(),
     }),
   }),
 );
@@ -148,6 +154,9 @@ type WorkflowFormValues = {
     eventAction: string;
     eventSubEntity: string;
     description: string;
+    startTime: string;
+    endTime: string;
+    inputParameters: Record<string, unknown>;
   };
   settings: Record<string, unknown>;
 };
@@ -173,6 +182,9 @@ const form = useForm<WorkflowFormValues>({
       eventAction: '',
       eventSubEntity: '',
       description: '',
+      startTime: '',
+      endTime: '',
+      inputParameters: {},
     },
     settings: {},
   },
@@ -470,6 +482,11 @@ watch(
         eventAction: (triggerObj.action as string | undefined) ?? '',
         eventSubEntity: (triggerObj.subEntity as string | undefined) ?? '',
         description: (triggerObj.description as string | undefined) ?? '',
+        startTime: (triggerObj.startTime as string | undefined) ?? '',
+        endTime: (triggerObj.endTime as string | undefined) ?? '',
+        inputParameters:
+          (triggerObj.inputParameters as Record<string, unknown> | undefined) ??
+          {},
       },
       settings: { ...(workflow.settings ?? {}) },
     });
@@ -602,11 +619,19 @@ const buildTriggerConfig = (
   apiType: 'onDemand' | 'scheduled' | 'event',
   trigger: WorkflowFormValues['trigger'],
 ) => {
+  // Optional trigger-window + input-parameter fields shared by scheduled/event.
+  const hasParams = Object.keys(trigger.inputParameters ?? {}).length > 0;
+  const window = {
+    ...(trigger.startTime ? { startTime: trigger.startTime } : {}),
+    ...(trigger.endTime ? { endTime: trigger.endTime } : {}),
+    ...(hasParams ? { inputParameters: trigger.inputParameters } : {}),
+  };
   if (apiType === 'scheduled') {
     return {
       enabled: true,
       cronExpression: trigger.cron || '',
       description: trigger.description || '',
+      ...window,
     };
   }
   if (apiType === 'event') {
@@ -616,9 +641,36 @@ const buildTriggerConfig = (
       action: trigger.eventAction || '',
       subEntity: trigger.eventSubEntity || '',
       description: trigger.description || '',
+      ...window,
     };
   }
   return undefined;
+};
+
+// ─── Trigger window helpers (ISO ↔ datetime-local) ─────────────────
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/** ISO date-time → `YYYY-MM-DDTHH:mm` in local time for `<input type=datetime-local>`. */
+const toLocalDateTimeInput = (iso: string | undefined): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+};
+
+const setTriggerDateTime = (field: 'startTime' | 'endTime', value: string) => {
+  const iso = value ? new Date(value).toISOString() : '';
+  form.setFieldValue(
+    field === 'startTime' ? 'trigger.startTime' : 'trigger.endTime',
+    iso,
+  );
+};
+
+const updateTriggerParam = (name: string, value: unknown) => {
+  const current = { ...(form.values.trigger?.inputParameters ?? {}) };
+  if (value === undefined) Reflect.deleteProperty(current, name);
+  else current[name] = value;
+  form.setFieldValue('trigger.inputParameters', current);
 };
 
 // ─── Save ──────────────────────────────────────────────────────────
@@ -924,6 +976,22 @@ const triggerSummary = computed<DataItem[]>(() => {
 });
 
 const settingsValuesView = computed(() => form.values.settings ?? {});
+
+// ─── Workflow-level retry policy (default for all nodes) ───────────
+// Defaults come from the manifest's `retryPolicy` setting descriptor.
+const settingsRetry = computed<RetryPolicy | null>(
+  () => (form.values.settings?.retryPolicy as RetryPolicy | undefined) ?? null,
+);
+const toggleSettingsRetry = (enabled: boolean) =>
+  form.setFieldValue(
+    'settings.retryPolicy',
+    enabled ? { ...manifestStore.defaultRetryPolicy.value } : undefined,
+  );
+const setSettingsRetryField = (field: keyof RetryPolicy, value: unknown) =>
+  form.setFieldValue('settings.retryPolicy', {
+    ...(settingsRetry.value ?? manifestStore.defaultRetryPolicy.value),
+    [field]: value,
+  });
 
 const settingsSummary = computed<DataItem[]>(() => {
   const items: DataItem[] = [];
@@ -1367,6 +1435,70 @@ const { summaryProps } = useEntityEditSummary({
                     </FormField>
                   </FormGrid>
                 </template>
+
+                <!-- Trigger window + input parameters (scheduled & event) -->
+                <template v-if="triggerTypeValue !== 'OnDemand'">
+                  <FormGrid design="1+1">
+                    <FormField name="trigger.startTime">
+                      <FormItem>
+                        <FormLabel :optional="true">
+                          {{ $t('workflows.start_time') }}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="datetime-local"
+                            :model-value="
+                              toLocalDateTimeInput(
+                                form.values.trigger.startTime,
+                              )
+                            "
+                            @update:model-value="
+                              setTriggerDateTime('startTime', String($event))
+                            "
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField name="trigger.endTime">
+                      <FormItem>
+                        <FormLabel :optional="true">
+                          {{ $t('workflows.end_time') }}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="datetime-local"
+                            :model-value="
+                              toLocalDateTimeInput(form.values.trigger.endTime)
+                            "
+                            @update:model-value="
+                              setTriggerDateTime('endTime', String($event))
+                            "
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                  <FormGrid design="1">
+                    <FormField name="trigger.inputParameters">
+                      <FormItem>
+                        <FormLabel :optional="true">
+                          {{ $t('workflows.input_parameters') }}
+                        </FormLabel>
+                        <FormControl>
+                          <KeyValueEditor
+                            :input="form.values.trigger.inputParameters"
+                            :update-input="updateTriggerParam"
+                            :key-placeholder="$t('workflows.parameter_key')"
+                            :value-placeholder="$t('workflows.parameter_value')"
+                            inline
+                          />
+                        </FormControl>
+                      </FormItem>
+                    </FormField>
+                  </FormGrid>
+                </template>
               </FormGridWrap>
             </ContentEditCard>
 
@@ -1476,10 +1608,7 @@ const { summaryProps } = useEntityEditSummary({
                             <SelectItem value="fail">
                               {{ $t('workflows.timeout_fail') }}
                             </SelectItem>
-                            <SelectItem value="continue">
-                              {{ $t('workflows.timeout_continue') }}
-                            </SelectItem>
-                            <SelectItem value="cancel">
+                            <SelectItem value="cancelAndReport">
                               {{ $t('workflows.timeout_cancel') }}
                             </SelectItem>
                           </SelectContent>
@@ -1510,8 +1639,8 @@ const { summaryProps } = useEntityEditSummary({
                             <SelectItem value="continueOnError">
                               {{ $t('workflows.error_continue') }}
                             </SelectItem>
-                            <SelectItem value="retry">
-                              {{ $t('workflows.error_retry') }}
+                            <SelectItem value="skipNode">
+                              {{ $t('workflows.error_skip_node') }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1524,43 +1653,63 @@ const { summaryProps } = useEntityEditSummary({
             </ContentEditCard>
 
             <ContentEditCard
-              v-if="
-                !isNew &&
-                ((settingsValuesView as any).retryPolicy ||
-                  (settingsValuesView as any).rateLimit)
-              "
+              v-if="!isNew"
               :title="$t('workflows.advanced')"
               :description="$t('workflows.advanced_description')"
             >
               <FormGridWrap>
-                <FormGrid design="1+1">
-                  <FormItem v-if="(settingsValuesView as any).retryPolicy">
-                    <Label>{{ $t('workflows.retry_policy') }}</Label>
-                    <pre
-                      class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs"
-                    >
-                      {{
-                        JSON.stringify(
-                          (settingsValuesView as any).retryPolicy,
-                          null,
-                          2,
-                        )
-                      }}
-                    </pre>
+                <FormGrid design="1">
+                  <FormItem>
+                    <div class="flex items-center gap-2">
+                      <Switch
+                        :model-value="settingsRetry != null"
+                        @update:model-value="toggleSettingsRetry($event)"
+                      />
+                      <Label>{{ $t('workflows.use_global_policy') }}</Label>
+                    </div>
                   </FormItem>
-                  <FormItem v-if="(settingsValuesView as any).rateLimit">
-                    <Label>{{ $t('workflows.rate_limit') }}</Label>
-                    <pre
-                      class="bg-muted text-muted-foreground overflow-x-auto rounded p-2 text-xs"
-                    >
-                      {{
-                        JSON.stringify(
-                          (settingsValuesView as any).rateLimit,
-                          null,
-                          2,
+                </FormGrid>
+                <FormGrid v-if="settingsRetry" design="1+1+1">
+                  <FormItem>
+                    <Label class="text-muted-foreground text-xs">
+                      {{ $t('node.execution.max_attempts') }}
+                    </Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      :model-value="settingsRetry.maxAttempts"
+                      @update:model-value="
+                        setSettingsRetryField('maxAttempts', Number($event))
+                      "
+                    />
+                  </FormItem>
+                  <FormItem>
+                    <Label class="text-muted-foreground text-xs">
+                      {{ $t('node.execution.initial_interval') }}
+                    </Label>
+                    <Input
+                      placeholder="00:00:10"
+                      :model-value="settingsRetry.initialInterval"
+                      @update:model-value="
+                        setSettingsRetryField('initialInterval', String($event))
+                      "
+                    />
+                  </FormItem>
+                  <FormItem>
+                    <Label class="text-muted-foreground text-xs">
+                      {{ $t('node.execution.backoff_multiplier') }}
+                    </Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      :model-value="settingsRetry.backoffMultiplier"
+                      @update:model-value="
+                        setSettingsRetryField(
+                          'backoffMultiplier',
+                          Number($event),
                         )
-                      }}
-                    </pre>
+                      "
+                    />
                   </FormItem>
                 </FormGrid>
               </FormGridWrap>
@@ -1681,8 +1830,8 @@ const { summaryProps } = useEntityEditSummary({
               class="flex items-center gap-2"
             >
               <Switch
-                :checked="!!runInputValues[input.name]"
-                @update:checked="runInputValues[input.name] = $event"
+                :model-value="!!runInputValues[input.name]"
+                @update:model-value="runInputValues[input.name] = $event"
               />
               <span class="text-muted-foreground text-xs">
                 {{ runInputValues[input.name] ? 'true' : 'false' }}

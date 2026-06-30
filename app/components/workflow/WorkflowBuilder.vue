@@ -1242,8 +1242,8 @@ useKeybindings({
                 class="flex items-center gap-2"
               >
                 <Switch
-                  :checked="!!runInputValues[input.name]"
-                  @update:checked="runInputValues[input.name] = $event"
+                  :model-value="!!runInputValues[input.name]"
+                  @update:model-value="runInputValues[input.name] = $event"
                 />
                 <span class="text-muted-foreground text-xs">
                   {{ runInputValues[input.name] ? 'true' : 'false' }}

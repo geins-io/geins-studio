@@ -3,6 +3,7 @@ import type { ManifestConfigProperty, ManifestNode } from '#shared/types';
 import NodeSettingsAction from './settings/NodeSettingsAction.vue';
 import NodeSettingsCondition from './settings/NodeSettingsCondition.vue';
 import NodeSettingsDelay from './settings/NodeSettingsDelay.vue';
+import NodeSettingsExecution from './settings/NodeSettingsExecution.vue';
 import NodeSettingsInputSchema from './settings/NodeSettingsInputSchema.vue';
 import NodeSettingsIterator from './settings/NodeSettingsIterator.vue';
 import NodeSettingsPaginator from './settings/NodeSettingsPaginator.vue';
@@ -103,6 +104,22 @@ const updateEditorHint = (name: string, value: unknown) => {
   onNodeSettingsChange();
 };
 
+// Per-node execution overrides (retry / timeout / errorHandlingStrategy) live
+// at the top level of the node, not under `config`.
+const updateNodeField = (key: string, value: unknown) => {
+  if (value === undefined || value === null) {
+    Reflect.deleteProperty(props.nodeData, key);
+  } else {
+    // eslint-disable-next-line vue/no-mutating-props -- shared reactive node data
+    props.nodeData[key] = value;
+  }
+  onNodeSettingsChange();
+};
+
+const errorHandlingOptions = computed(() =>
+  manifestStore.getEnum('ErrorHandlingStrategy'),
+);
+
 const prettyLabel = (name: string): string =>
   name
     .replace(/([a-z])([A-Z])/g, '$1 $2')
@@ -173,6 +190,20 @@ const expressionVariables = computed(
 
 const expressionFunctions = computed(
   () => manifestStore.expressionFunctions.value,
+);
+
+// Authoring guidance (summary + evaluation rules) from the manifest, rendered
+// as help text above the function reference. Content is manifest-provided.
+const authoringExpressions = computed(
+  () =>
+    (manifestStore.authoring.value?.expressions ?? {}) as {
+      summary?: string;
+      evaluationRules?: Array<{
+        title: string;
+        description?: string;
+        examples?: string[];
+      }>;
+    },
 );
 
 const fnCategories = computed(() => {
@@ -437,6 +468,16 @@ const onSettingsDrop = (event: DragEvent) => {
           </div>
         </div>
       </template>
+
+      <!-- Per-node execution overrides (retry / timeout / error handling) -->
+      <NodeSettingsExecution
+        v-if="nodeType !== 'trigger'"
+        class="mt-4"
+        :node-data="nodeData"
+        :error-handling-options="errorHandlingOptions"
+        :default-retry="manifestStore.defaultRetryPolicy.value"
+        :update="updateNodeField"
+      />
     </div>
 
     <!-- Schema tab (combined input + output) -->
@@ -528,6 +569,43 @@ const onSettingsDrop = (event: DragEvent) => {
       v-show="activeTab === 'expressions'"
       class="flex flex-1 flex-col overflow-hidden"
     >
+      <!-- Authoring guidance (manifest-provided help text) -->
+      <div
+        v-if="
+          authoringExpressions.summary ||
+          authoringExpressions.evaluationRules?.length
+        "
+        class="space-y-2 border-b p-4"
+      >
+        <p
+          v-if="authoringExpressions.summary"
+          class="text-muted-foreground text-xs leading-relaxed"
+        >
+          {{ authoringExpressions.summary }}
+        </p>
+        <details
+          v-for="rule in authoringExpressions.evaluationRules ?? []"
+          :key="rule.title"
+        >
+          <summary class="text-foreground cursor-pointer text-xs font-medium">
+            {{ rule.title }}
+          </summary>
+          <p
+            v-if="rule.description"
+            class="text-muted-foreground mt-1 text-[11px] leading-relaxed"
+          >
+            {{ rule.description }}
+          </p>
+          <code
+            v-for="ex in rule.examples ?? []"
+            :key="ex"
+            class="bg-muted/70 mt-1 block rounded px-2 py-1 font-mono text-[11px]"
+          >
+            {{ ex }}
+          </code>
+        </details>
+      </div>
+
       <!-- Category pills -->
       <div
         v-if="fnCategories.size > 1"

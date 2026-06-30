@@ -114,16 +114,9 @@ const expressionCompletions = computed<ExpressionCompletion[]>(() => {
 
   const items: ExpressionCompletion[] = [];
 
-  const ITERATOR_CONTEXT_VARS: Array<{ name: string; type: string }> = [
-    { name: '$current', type: 'any' },
-    { name: '$index', type: 'number' },
-  ];
-
-  const PAGINATOR_CONTEXT_VARS: Array<{ name: string; type: string }> = [
-    { name: '$cursor', type: 'any' },
-    { name: '$pageNumber', type: 'number' },
-    { name: '$pageSize', type: 'number' },
-  ];
+  // Handles that route into a node's child scope expose its `children`-scoped
+  // context variables ($current/$index/$cursor/…) from the manifest.
+  const CHILD_SCOPE_HANDLES = new Set(['foreach', 'fetchPage', 'forEachPage']);
 
   const incomingEdges = vfEdges.value.filter((e) => e.target === nodeId);
   for (const edge of incomingEdges) {
@@ -134,19 +127,17 @@ const expressionCompletions = computed<ExpressionCompletion[]>(() => {
     const label = (data.label as string) || node?.displayName || n.id;
     const section = `output · ${label}`;
     const exec = lastNodeExecutions?.value?.get(edge.source);
-    const nodeType = n.type as string;
 
+    const childVars = (node?.contextVariables ?? []).filter(
+      (v) => v.scope === 'children',
+    );
     let outputFields: Array<{ name: string; type: string }>;
     if (
-      (nodeType === 'iterator' || nodeType === 'loop') &&
-      edge.sourceHandle === 'foreach'
+      edge.sourceHandle &&
+      CHILD_SCOPE_HANDLES.has(edge.sourceHandle) &&
+      childVars.length
     ) {
-      outputFields = ITERATOR_CONTEXT_VARS;
-    } else if (
-      nodeType === 'paginator' &&
-      (edge.sourceHandle === 'fetchPage' || edge.sourceHandle === 'forEachPage')
-    ) {
-      outputFields = PAGINATOR_CONTEXT_VARS;
+      outputFields = childVars.map((v) => ({ name: v.name, type: v.type }));
     } else if (node?.name === 'map' || node?.name === 'compose') {
       const config = (data.config ?? {}) as Record<string, unknown>;
       outputFields = Object.keys(config)

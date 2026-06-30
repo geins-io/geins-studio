@@ -11,6 +11,7 @@ import type {
   ManifestNodeCategory,
   ManifestProvider,
   ManifestTriggerType,
+  RetryPolicy,
 } from '#shared/types';
 
 /**
@@ -167,6 +168,26 @@ export function useWorkflowManifest() {
   const getEnum = (name: string): ManifestEnumValue[] =>
     enums.value[name] ?? [];
 
+  /**
+   * The default retry policy, sourced from the `retryPolicy` workflow-setting
+   * descriptor's schema. Falls back to the manifest-documented defaults
+   * (maxAttempts=3, initialInterval=00:00:05, backoffMultiplier=1.5).
+   */
+  const defaultRetryPolicy = computed<RetryPolicy>(() => {
+    const descriptor = workflowSettings.value.find(
+      (s) => s.name === 'retryPolicy',
+    );
+    const props = (descriptor?.schema?.properties ?? {}) as Record<
+      string,
+      { default?: unknown }
+    >;
+    return {
+      maxAttempts: Number(props.maxAttempts?.default ?? 3),
+      initialInterval: String(props.initialInterval?.default ?? '00:00:05'),
+      backoffMultiplier: Number(props.backoffMultiplier?.default ?? 1.5),
+    };
+  });
+
   return {
     manifest,
     loading: pending,
@@ -197,6 +218,7 @@ export function useWorkflowManifest() {
     getProvider,
     getTriggerType,
     getEnum,
+    defaultRetryPolicy,
   };
 }
 
