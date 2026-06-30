@@ -20,8 +20,6 @@ const { productApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
 const entityName = ENTITIES.price_list.key;
 const newEntityUrl = entityNewUrl(entityName);
-const entityIdentifier = '{id}';
-const entityUrl = entityEditUrl(entityName, entityIdentifier);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -66,7 +64,7 @@ onMounted(() => {
   const columnOptions: ColumnOptions<EntityList> = {
     columnTypes: { name: 'link', channel: 'channels' },
     linkColumns: {
-      name: { url: entityUrl, idField: '_id' },
+      name: { entityKey: entityName, idField: '_id' },
     },
     columnTitles: { active: t('status') },
     excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
@@ -78,7 +76,7 @@ onMounted(() => {
     columns.value,
     {
       onEdit: (item: Entity) =>
-        navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+        navigateTo(entityEditUrl(entityName, String(item._id))),
       onCopy: async (item: Entity) => {
         try {
           const newPriceList = await productApi.priceList.id(item._id).copy();
@@ -86,9 +84,7 @@ onMounted(() => {
             title: t('entity_copied', { entityName }),
             variant: 'positive',
           });
-          await navigateTo(
-            entityUrl.replace(entityIdentifier, String(newPriceList._id)),
-          );
+          await navigateTo(entityEditUrl(entityName, String(newPriceList._id)));
         } catch (err) {
           geinsLogError('copyPriceList :::', getErrorMessage(err));
         }

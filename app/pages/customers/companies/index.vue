@@ -21,8 +21,6 @@ const { deleteCompany, extractCompanyGroupsFromTags } = useCustomerCompanies();
 const dataList = ref<EntityList[]>([]);
 const entityName = ENTITIES.company.key;
 const newEntityUrl = entityNewUrl(entityName);
-const entityIdentifier = '{id}';
-const entityUrl = entityEditUrl(entityName, entityIdentifier);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -110,7 +108,7 @@ onMounted(() => {
       priceLists: 'tooltip',
     },
     linkColumns: {
-      name: { url: entityUrl, idField: '_id' },
+      name: { entityKey: entityName, idField: '_id' },
     },
     columnTitles: {
       active: t('status'),
@@ -126,7 +124,7 @@ onMounted(() => {
     columns.value,
     {
       onEdit: (item: Entity) =>
-        navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+        navigateTo(entityEditUrl(entityName, String(item._id))),
       onDelete: async (item: Entity) => await openDeleteDialog(item._id),
     },
     'actions',

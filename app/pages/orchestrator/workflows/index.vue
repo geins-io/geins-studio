@@ -349,7 +349,7 @@ onMounted(() => {
       updatedAt: 'date',
     },
     linkColumns: {
-      name: { url: '/orchestrator/workflows/{id}', idField: 'id' },
+      name: { entityKey: entityName, idField: 'id' },
       executionsTotal: {
         url: '/orchestrator/executions?id={id}',
         idField: 'id',

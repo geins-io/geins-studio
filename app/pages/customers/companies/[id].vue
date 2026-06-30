@@ -13,11 +13,7 @@ import {
   type CustomerCompanyApiOptions,
   type CompanyBuyerList,
 } from '#shared/types';
-import {
-  ENTITIES,
-  entityEditUrl,
-  NEW_ENTITY_URL_SEGMENT,
-} from '#shared/utils/entities';
+import { ENTITIES, NEW_ENTITY_URL_SEGMENT } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { LucideUser, LucidePackage } from '#components';
 
@@ -471,7 +467,7 @@ const columnOptionsPriceLists: ColumnOptions<CustomerPriceList> = {
   },
   linkColumns: {
     name: {
-      url: entityEditUrl('price_list', '{id}'),
+      entityKey: 'price_list',
       idField: '_id',
     },
   },

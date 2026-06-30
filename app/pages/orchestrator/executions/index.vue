@@ -319,19 +319,19 @@ onMounted(() => {
     },
     linkColumns: {
       id: {
-        url: '/orchestrator/executions/{id}',
+        entityKey: entityName,
         idField: 'id',
         maxTextLength: 24,
       },
       workflowName: {
-        url: '/orchestrator/workflows/{id}',
+        entityKey: 'workflow',
         idField: 'workflowId',
       },
     },
     iconColumns: {
       status: {
         resolveIcon: resolveStatusIcon,
-        url: '/orchestrator/executions/{id}',
+        entityKey: entityName,
         idField: 'id',
       },
     },

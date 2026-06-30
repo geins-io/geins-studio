@@ -27,8 +27,6 @@ const { orderApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
 const entityName = ENTITIES.quotation.key;
 const newEntityUrl = entityNewUrl(entityName);
-const entityIdentifier = '{id}';
-const entityUrl = entityEditUrl(entityName, entityIdentifier);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -101,7 +99,7 @@ onMounted(() => {
       sum: 'currency',
     },
     linkColumns: {
-      name: { url: entityUrl, idField: '_id' },
+      name: { entityKey: entityName, idField: '_id' },
     },
     excludeColumns: [
       'suggestedShippingFee',
@@ -127,7 +125,7 @@ onMounted(() => {
     columns.value,
     {
       onEdit: (item: EntityList) =>
-        navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+        navigateTo(entityEditUrl(entityName, String(item._id))),
       onCopy: async (item: EntityList) => {
         try {
           const newDraft = await orderApi.quotation.copy(item._id);
@@ -135,9 +133,7 @@ onMounted(() => {
             title: t('entity_copied', { entityName }),
             variant: 'positive',
           });
-          await navigateTo(
-            entityUrl.replace(entityIdentifier, String(newDraft._id)),
-          );
+          await navigateTo(entityEditUrl(entityName, String(newDraft._id)));
         } catch (err) {
           geinsLogError('copyQuotation :::', getErrorMessage(err));
         }

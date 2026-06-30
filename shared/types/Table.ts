@@ -1,4 +1,5 @@
 import type { StringKeyOf } from './Global';
+import type { EntityKeyWithRoute } from '../utils/entities';
 import '@tanstack/vue-table';
 import type { RowData } from '@tanstack/vue-table';
 import type { Component } from 'vue';
@@ -44,6 +45,14 @@ export type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
 export type ColumnKey<T> = keyof T | ColumnType;
 
 export interface LinkColumnConfig<T> {
+  /**
+   * Registry entity key — the row's link is built as
+   * `entityEditUrl(entityKey, row[idField])`. Preferred for links to an
+   * entity's `[id]` page; requires `idField`. Use `url` instead for
+   * external / filtered-list / non-registry links.
+   */
+  entityKey?: EntityKeyWithRoute;
+  /** Raw URL template (`/path/{id}`) or static URL — for non-registry links. */
   url?: string;
   idField?: StringKeyOf<T>;
   /** Use the cell value itself as the URL */
@@ -59,6 +68,9 @@ export interface IconColumnConfig<T> {
   icon?: Component;
   /** Derive icon + optional CSS class from the row data */
   resolveIcon?: (row: T) => { icon: Component; class?: string } | undefined;
+  /** Registry entity key — link built as `entityEditUrl(entityKey, row[idField])`. */
+  entityKey?: EntityKeyWithRoute;
+  /** Raw URL template (`/path/{id}`) or static URL — for non-registry links. */
   url?: string;
   idField?: StringKeyOf<T>;
 }
