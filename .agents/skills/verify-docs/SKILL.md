@@ -77,7 +77,7 @@ For key conventions documented in CLAUDE.md, spot-check compliance:
 For page patterns documented in APP.md:
 
 - Verify `useEntityEdit` is used in all `[id].vue` pages
-- Verify `definePageMeta({ pageType: 'list' })` is in all `list.vue` pages
+- Verify `definePageMeta({ pageType: 'list' })` is in all entity `index.vue` (list) pages
 - Verify `useAsyncData` + `onMounted` + `parseAndSaveData` pattern in edit pages
 
 ### 7. Command Check (CONTRIBUTING.md)

@@ -1,44 +1,29 @@
 /** Return type for {@link useEntityUrl}. */
 interface UseEntityUrlReturnType {
   newEntityUrlAlias: ComputedRef<string>;
-  listEntityUrlAlias: ComputedRef<string>;
   getEntityName: () => string;
   getEntityBasePath: () => string;
   getEntityNewUrl: () => string;
   getEntityUrl: (id: string) => string;
-  getEntityListUrl: () => string;
-  getEntityNewUrlFor: (entityName: string, targetParent: string) => string;
-  getEntityUrlFor: (
-    entityName: string,
-    targetParent: string,
-    id: string,
-  ) => string;
-  getEntityListUrlFor: (entityName: string, targetParent: string) => string;
 }
 
 /**
- * Composable for managing entity-related URLs and extracting entity information from routes.
+ * Composable for **current-route** entity URLs — it derives everything from the
+ * active route path. Use it on entity `[id].vue` / `new` pages, where the route
+ * always has a trailing action segment (`new` / `:id`) so the base path is the
+ * folder above it.
  *
- * Provides utility functions for constructing entity URLs (new, edit, list) and extracting
- * entity names from the current route path. Automatically handles localization for URL aliases
- * and supports standard entity URL patterns used throughout the application.
+ * For links to *another* entity (by key), or from a list/index page (which has
+ * no trailing segment), build URLs from the registry instead:
+ * `entityBasePath(key)` / `entityListHref(key)` / `entityDetailHref(key, id)`
+ * (`#shared/utils/entities`).
  *
- * Can be used in two modes:
- * 1. Context-aware: Uses current route to determine entity and generate URLs
- * 2. Entity-specific: Generate URLs for any entity by providing the entity name
- *
- * @returns {UseEntityUrlReturnType} - An object containing URL utilities and entity information.
- * @property {ComputedRef<string>} newEntityUrlAlias - Localized alias for new entity URLs
- * @property {ComputedRef<string>} listEntityUrlAlias - Localized alias for list entity URLs
- * @property {function} getEntityName - Extract entity name from current route path
- * @property {function} getEntityBasePath - Get base path for the current entity
- * @property {function} getEntityNewUrl - Generate URL for creating a new entity (current context)
- * @property {function} getEntityUrl - Generate URL for editing a specific entity (current context)
- * @property {function} getEntityListUrl - Generate URL for entity list page (current context)
- * @property {function} getEntityNewUrlFor - Generate new entity URL for any entity by name
- * @property {function} getEntityUrlFor - Generate entity URL for any entity by name and ID
- * @property {function} getEntityListUrlFor - Generate list URL for any entity by name
- *
+ * @returns {UseEntityUrlReturnType} - Current-route URL utilities.
+ * @property {ComputedRef<string>} newEntityUrlAlias - Localized alias for the "new" URL segment
+ * @property {function} getEntityName - Extract entity name from current route path (URL folder)
+ * @property {function} getEntityBasePath - Base path for the current entity (drops the last segment)
+ * @property {function} getEntityNewUrl - URL for creating a new entity (current context)
+ * @property {function} getEntityUrl - URL for a specific entity id (current context)
  */
 export const useEntityUrl = (): UseEntityUrlReturnType => {
   const route = useRoute();
@@ -52,7 +37,6 @@ export const useEntityUrl = (): UseEntityUrlReturnType => {
   });
 
   const newEntityUrlAlias = computed(() => t('new_entity_url_alias'));
-  const listEntityUrlAlias = computed(() => t('list_entity_url_alias'));
 
   const getEntityName = () => {
     return pathParts.value.at(-2)?.replace(/-/g, '_') || '';
@@ -75,43 +59,11 @@ export const useEntityUrl = (): UseEntityUrlReturnType => {
     return `${basePath}/${id}`;
   };
 
-  const getEntityListUrl = () => {
-    const basePath = getEntityBasePath();
-    return `${basePath}/${listEntityUrlAlias.value}`;
-  };
-
-  const getEntityNewUrlFor = (
-    targetEntityName: string,
-    targetParent: string,
-  ) => {
-    return `/${targetParent}/${targetEntityName}/${newEntityUrlAlias.value}`;
-  };
-
-  const getEntityUrlFor = (
-    targetEntityName: string,
-    targetParent: string,
-    id: string,
-  ) => {
-    return `/${targetParent}/${targetEntityName}/${id}`;
-  };
-
-  const getEntityListUrlFor = (
-    targetEntityName: string,
-    targetParent: string,
-  ) => {
-    return `/${targetParent}/${targetEntityName}/${listEntityUrlAlias.value}`;
-  };
-
   return {
     newEntityUrlAlias,
-    listEntityUrlAlias,
     getEntityName,
     getEntityBasePath,
     getEntityNewUrl,
     getEntityUrl,
-    getEntityListUrl,
-    getEntityNewUrlFor,
-    getEntityUrlFor,
-    getEntityListUrlFor,
   };
 };

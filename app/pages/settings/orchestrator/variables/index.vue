@@ -22,7 +22,7 @@ export interface VariableListItem {
 type Entity = WorkflowVariable;
 type EntityList = VariableListItem;
 
-const scope = 'pages/settings/orchestrator/variables/list.vue';
+const scope = 'pages/settings/orchestrator/variables/index.vue';
 const { t } = useI18n();
 const { geinsLog } = useGeinsLog(scope);
 
@@ -127,7 +127,7 @@ const dataList = computed(() => {
 });
 
 const clearKitFilter = () => {
-  navigateTo('/settings/orchestrator/variables/list');
+  navigateTo('/settings/orchestrator/variables');
 };
 
 // ─── Table Columns ─────────────────────────────────────────────────

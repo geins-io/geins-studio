@@ -15,7 +15,7 @@ import {
   type PriceListRuleField,
   type ProductPriceListApiOptions,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import { ENTITIES, entityDetailHref } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 import type { AcceptableValue } from 'reka-ui';
@@ -26,13 +26,12 @@ import type { AcceptableValue } from 'reka-ui';
 // Intent: Initialize all composables and Pinia stores used across this page.
 // Order matters — some composables depend on values from earlier ones (e.g. useGeinsRepository before API calls).
 // Add new composables here; do not scatter initialization throughout the file.
-const scope = 'pages/pricing/price-list/[id].vue';
+const scope = 'pages/pricing/price-lists/[id].vue';
 const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog(scope);
-const { getEntityUrlFor } = useEntityUrl();
 const { formatDate } = useDate();
 const accountStore = useAccountStore();
 const productsStore = useProductsStore();
@@ -554,7 +553,7 @@ const handleChannelChange = async (value: AcceptableValue) => {
 // Intent: Delete confirmation dialog wired to useDeleteDialog composable.
 // Redirects to the list page after successful deletion.
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteEntity, '/pricing/price-list/list');
+  useDeleteDialog(deleteEntity, entityListUrl);
 
 // =====================================================================================
 // SUMMARY DATA
@@ -597,7 +596,7 @@ const summary = computed<DataItem[]>(() => {
       label: t('pricing.price_list_channel'),
       value: displayValue,
       displayType: DataItemDisplayType.Link,
-      href: getEntityUrlFor('channel', 'settings', channelId),
+      href: entityDetailHref('channel', channelId),
       target: '_blank',
     });
   }

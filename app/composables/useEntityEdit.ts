@@ -133,7 +133,7 @@ export function useEntityEdit<
   const route = useRoute();
   const router = useRouter();
   const { toast } = useToast();
-  const { newEntityUrlAlias, getEntityNewUrl, getEntityListUrl } =
+  const { newEntityUrlAlias, getEntityNewUrl, getEntityBasePath } =
     useEntityUrl();
   const { hasReducedSpace } = useLayout();
 
@@ -141,7 +141,9 @@ export function useEntityEdit<
   // (single source); never derived from the route folder.
   const entityName = options.entity.key;
   const newEntityUrl = getEntityNewUrl();
-  const entityListUrl = getEntityListUrl();
+  // Back-to-list = the collection index, i.e. the entity folder itself. On an
+  // [id]/new page that's the path with the trailing segment dropped.
+  const entityListUrl = getEntityBasePath();
   const createMode = ref(route.params.id === newEntityUrlAlias.value);
   const loading = ref(false);
   const refreshEntityData = ref<() => Promise<void>>(() => Promise.resolve());

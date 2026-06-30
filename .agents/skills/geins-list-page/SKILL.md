@@ -1,17 +1,17 @@
 ---
 name: geins-list-page
-description: "Guides correct implementation of entity list pages (list.vue) in the Geins Studio codebase. Use this skill whenever building a new list page, adding columns to an existing list, working with Tooltip columns, or debugging list page data flow. Trigger on: list page, list.vue, entity list, EntityList type, mapToListData, createTooltip, Tooltip column, useAsyncData list, TableView list, fetchError, list page pattern."
+description: "Guides correct implementation of entity list pages (index.vue) in the Geins Studio codebase. Use this skill whenever building a new list page, adding columns to an existing list, working with Tooltip columns, or debugging list page data flow. Trigger on: list page, list.vue, entity list, EntityList type, mapToListData, createTooltip, Tooltip column, useAsyncData list, TableView list, fetchError, list page pattern."
 ---
 
 # Geins Studio — Entity List Page
 
-List pages render a paginated, sortable table of entities at `pages/{domain}/{entity}/list.vue`. They follow a strict two-type pattern: the **API response type** and the **table display type**.
+List pages render a paginated, sortable table of entities at `pages/{domain}/{entity}/index.vue`. They follow a strict two-type pattern: the **API response type** and the **table display type**.
 
 ## Reference implementations
 
-- **With Tooltip columns**: `app/pages/customers/company/list.vue` (best reference for new list pages)
-- **With data mapping**: `app/pages/orders/quotation/list.vue`
-- **Simple (no mapping)**: `app/pages/pricing/price-list/list.vue`
+- **With Tooltip columns**: `app/pages/customers/companies/index.vue` (best reference for new list pages)
+- **With data mapping**: `app/pages/orders/quotations/index.vue`
+- **Simple (no mapping)**: `app/pages/pricing/price-lists/index.vue`
 
 ## The two-type pattern
 
@@ -44,24 +44,26 @@ Use `Omit<Entity, ...fields>` to replace fields that need display transformation
 ```vue
 <script setup lang="ts">
 import type { Entity, EntityList, ColumnOptions, StringKeyOf } from '#shared/types';
+import { ENTITIES, entityBasePath, entityDetailHref } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = ApiResponseType;
 type EntityList = TableDisplayType;
 
-const scope = 'pages/{domain}/{entity}/list.vue';
+const scope = 'pages/{domain}/{entities}/index.vue';
 const { t } = useI18n();
-const { getEntityUrlFor } = useEntityUrl();
+const { newEntityUrlAlias } = useEntityUrl();
 
 definePageMeta({ pageType: 'list' });
 
 // 1. GLOBAL SETUP
 const { domainApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
-const entityName = '{entity}';
+const entityName = ENTITIES.{entity}.key;
 const entityIdentifier = '{id}';
-const entityUrl = getEntityUrlFor('{entity}', '{domain}', entityIdentifier);
-const newEntityUrl = '/{domain}/{entity}/new';
+// List/index pages have no route context — build URLs from the registry:
+const entityUrl = entityDetailHref('{entity}', entityIdentifier);
+const newEntityUrl = `${entityBasePath('{entity}')}/${newEntityUrlAlias.value}`;
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -192,7 +194,7 @@ visibilityState.value = getVisibilityState(hiddenColumns);
 </Card>
 ```
 
-Ref: [orchestrator/index.vue](app/pages/orchestrator/index.vue), [settings/orchestrator/kits/list.vue](app/pages/settings/orchestrator/kits/list.vue).
+Ref: [orchestrator/index.vue](app/pages/orchestrator/index.vue), [settings/orchestrator/kits/index.vue](app/pages/settings/orchestrator/kits/index.vue).
 
 ## Tooltip columns with `createTooltip()`
 

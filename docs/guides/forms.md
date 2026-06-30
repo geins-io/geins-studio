@@ -468,7 +468,7 @@ const {
 } = useEntityEdit<TBase, TResponse, TCreate, TUpdate>({
   repository: domainApi.entity,
   entityName: t('entity'),
-  entityListUrl: '/domain/entity/list',
+  entityListUrl: '/domain/entity',
   newEntityUrlAlias: 'new',
   validationSchema: formSchema,
   initialEntityData: entityBase,

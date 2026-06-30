@@ -42,12 +42,6 @@ describe('useEntityUrl', () => {
     it('constructs entity URL with given id', () => {
       expect(setup().getEntityUrl('456')).toBe('/cms/products/456');
     });
-
-    it('constructs entity list URL with alias', () => {
-      expect(setup().getEntityListUrl()).toBe(
-        '/cms/products/list_entity_url_alias',
-      );
-    });
   });
 
   describe('with dashed entity name /cms/product-variants/42', () => {
@@ -86,37 +80,11 @@ describe('useEntityUrl', () => {
     });
   });
 
-  describe('getEntityNewUrlFor', () => {
-    it('constructs new URL for a given entity and parent', () => {
-      mockRoute.path = '/cms/products/123';
-      const { getEntityNewUrlFor } = useEntityUrl();
-      expect(getEntityNewUrlFor('categories', 'cms')).toBe(
-        '/cms/categories/new_entity_url_alias',
-      );
-    });
-  });
-
-  describe('getEntityListUrlFor', () => {
-    it('constructs list URL for a given entity and parent', () => {
-      mockRoute.path = '/cms/products/123';
-      const { getEntityListUrlFor } = useEntityUrl();
-      expect(getEntityListUrlFor('categories', 'cms')).toBe(
-        '/cms/categories/list_entity_url_alias',
-      );
-    });
-  });
-
   describe('computed aliases', () => {
     it('newEntityUrlAlias returns translated key', () => {
       mockRoute.path = '/cms/products/123';
       const { newEntityUrlAlias } = useEntityUrl();
       expect(newEntityUrlAlias.value).toBe('new_entity_url_alias');
-    });
-
-    it('listEntityUrlAlias returns translated key', () => {
-      mockRoute.path = '/cms/products/123';
-      const { listEntityUrlAlias } = useEntityUrl();
-      expect(listEntityUrlAlias.value).toBe('list_entity_url_alias');
     });
   });
 });

@@ -5,15 +5,14 @@ import type {
   ChannelListItem,
   StringKeyOf,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import { ENTITIES, entityDetailHref } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = ChannelListItem;
 type EntityList = ChannelList;
 
-const scope = 'pages/settings/channel/list.vue';
+const scope = 'pages/settings/channels/index.vue';
 const { t } = useI18n();
-const { getEntityUrlFor } = useEntityUrl();
 
 definePageMeta({
   pageType: 'list',
@@ -25,7 +24,7 @@ const dataList = ref<EntityList[]>([]);
 const entity = ENTITIES.channel;
 const entityName = entity.key;
 const entityIdentifier = '{id}';
-const entityUrl = getEntityUrlFor('channel', 'settings', entityIdentifier);
+const entityUrl = entityDetailHref('channel', entityIdentifier);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});

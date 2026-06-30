@@ -86,7 +86,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           <ContentCardLinked
             title="Create a new company"
             description="Create a new company"
-            link="/customers/company/new"
+            link="/customers/companies/new"
             link-type="create"
           />
 
@@ -94,7 +94,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           <ContentCardLinked
             title="Companies"
             description="Manage existing companies"
-            link="/customers/company/list"
+            link="/customers/companies"
             link-type="list"
           />
 
@@ -102,7 +102,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           <ContentCardLinked
             title="Create a new price list"
             description="Create a new price list"
-            link="/pricing/price-list/new"
+            link="/pricing/price-lists/new"
             link-type="create"
           />
 
@@ -110,7 +110,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           <ContentCardLinked
             title="Price lists"
             description="Manage existing price lists"
-            link="/pricing/price-list/list"
+            link="/pricing/price-lists"
             link-type="list"
           />
         </div>

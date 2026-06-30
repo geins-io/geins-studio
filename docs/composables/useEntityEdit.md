@@ -423,7 +423,7 @@ const { hasUnsavedChanges, unsavedChangesDialogOpen, confirmLeave } =
 ### `useEntityUrl`
 
 ```ts
-const { getEntityName, getEntityNewUrl, getEntityListUrl } = useEntityUrl();
+const { getEntityName, getEntityNewUrl } = useEntityUrl();
 ```
 
 ### `useLayout`

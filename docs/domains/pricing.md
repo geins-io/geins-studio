@@ -61,7 +61,7 @@ These compose together on the `[id].vue` edit page. `usePriceListProducts` manag
 | Repository  | `app/utils/repositories/product.ts` (`.priceList` sub-repo)                                                                                                |
 | Composables | `usePriceListProducts.ts`, `usePriceListProductsTable.ts`, `usePriceListRules.ts`, `usePriceListVolumePricing.ts`, `usePriceListPreview.ts`, `usePrice.ts` |
 | Components  | `app/components/price-list/`                                                                                                                               |
-| Pages       | `app/pages/pricing/price-list/list.vue`, `[id].vue`                                                                                                        |
+| Pages       | `app/pages/pricing/price-lists/index.vue`, `[id].vue`                                                                                                      |
 
 ## Decision Log
 

@@ -128,7 +128,7 @@ const confirmUninstall = async (payload: {
     :description="$t('kits.installed_description')"
   >
     <ContentActionBar>
-      <ButtonIcon icon="Search" href="/settings/orchestrator/kits/list">
+      <ButtonIcon icon="Search" href="/settings/orchestrator/kits">
         {{ $t('kits.browse_kits') }}
       </ButtonIcon>
     </ContentActionBar>
@@ -188,7 +188,7 @@ const confirmUninstall = async (payload: {
           </EmptyHeader>
           <EmptyContent>
             <ButtonIcon icon="Search" variant="secondary" as-child>
-              <NuxtLink to="/settings/orchestrator/kits/list">
+              <NuxtLink to="/settings/orchestrator/kits">
                 {{ $t('kits.browse_kits') }}
               </NuxtLink>
             </ButtonIcon>

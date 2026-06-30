@@ -6,25 +6,25 @@ The concept of entities is used throughout the application to dynamically handle
 
 A _domain_ entity is known by **three** string forms that must stay in sync:
 
-| Form         | Example              | Used by                                               |
-| ------------ | -------------------- | ----------------------------------------------------- |
-| **i18n key** | `price_list`         | toasts, 404 titles, empty states, validation messages |
-| **endpoint** | `/product/pricelist` | the repository factory                                |
-| **route**    | `pricing/price-list` | the page folder under `app/pages/`                    |
+| Form         | Example               | Used by                                               |
+| ------------ | --------------------- | ----------------------------------------------------- |
+| **i18n key** | `price_list`          | toasts, 404 titles, empty states, validation messages |
+| **endpoint** | `/product/pricelist`  | the repository factory                                |
+| **route**    | `pricing/price-lists` | the page folder under `app/pages/`                    |
 
 `shared/utils/entities.ts` reconciles them in one place — the **`ENTITIES`** registry. The registry **key _is_ the i18n key**; its descriptor carries the `endpoint` and (optionally) the `route`. `defineEntities` stamps each entry with its own `key`, so an entry is a complete, self-describing identity — pass `ENTITIES.product` and it knows both its endpoint and its key:
 
 ```ts
 export const ENTITIES = defineEntities({
-  price_list: { endpoint: '/product/pricelist', route: 'pricing/price-list' },
-  quotation: { endpoint: '/quotation', route: 'orders/quotation' },
-  channel: { endpoint: '/account/channel', route: 'settings/channel' },
+  price_list: { endpoint: '/product/pricelist', route: 'pricing/price-lists' },
+  quotation: { endpoint: '/quotation', route: 'orders/quotations' },
+  channel: { endpoint: '/account/channel', route: 'settings/channels' },
   profile: { route: 'account/profile' }, // singleton — no CRUD endpoint
   // …
 });
 
 export type EntityKey = keyof typeof ENTITIES; // 'price_list' | 'quotation' | …
-// ENTITIES.price_list === { endpoint: '/product/pricelist', route: 'pricing/price-list', key: 'price_list' }
+// ENTITIES.price_list === { endpoint: '/product/pricelist', route: 'pricing/price-lists', key: 'price_list' }
 ```
 
 - **`endpoint`** is omitted for singletons with no standard CRUD endpoint (`profile`, served via `/user/me`). Repositories read it by passing the entry to `repo.entity(ENTITIES.x, fetch)` (see [API Repositories](./api-repositories.md)).
@@ -39,42 +39,42 @@ Two distinct sets exist, and only the first goes in the registry:
 
 Used everywhere from the one declaration:
 
-| Consumer    | Reads      | How                                                                  |
-| ----------- | ---------- | -------------------------------------------------------------------- |
-| repository  | `endpoint` | `repo.entity(ENTITIES.price_list, fetch)`                            |
-| entity page | the entry  | `useEntityEdit({ entity: ENTITIES.price_list, … })` / `usePageError` |
-| navigation  | `route`    | `entityListHref('price_list')` / `entityChildPattern('price_list')`  |
-| i18n        | key        | `en.json` / `sv.json` (guarded by the parity test)                   |
+| Consumer    | Reads      | How                                                                                                        |
+| ----------- | ---------- | ---------------------------------------------------------------------------------------------------------- |
+| repository  | `endpoint` | `repo.entity(ENTITIES.price_list, fetch)`                                                                  |
+| entity page | the entry  | `useEntityEdit({ entity: ENTITIES.price_list, … })` / `usePageError`                                       |
+| navigation  | `route`    | `entityListHref('price_list')` / `entityDetailHref('price_list', id)` / `entityChildPattern('price_list')` |
+| i18n        | key        | `en.json` / `sv.json` (guarded by the parity test)                                                         |
+
+Entity folders are **plural** and the collection lives at the folder **index** (e.g. `/customers/companies`, `/customers/companies/123`, `/customers/companies/new`).
 
 ## Entity Pages
 
-The default setup for an entity is that it has it's own folder in the `pages` directory. For example, the entity `product` would have a folder named `product` in it's parents folder (in this case `pim`) inside the `pages` directory. Inside this folder, you would have the following files:
+The default setup for an entity is that it has its own (plural) folder in the `pages` directory. For example, companies live in `app/pages/customers/companies/`. Inside this folder, you would have the following files:
 
-- `[id].vue`
-- `list.vue`
-
-The `[id].vue` file is used to dynamically display a single entity item in create or edit mode, while the `list.vue` file is used to display a list of all entities of that type in a data table.
+- `index.vue` — the collection (list) view, served at the folder itself (`/customers/companies`)
+- `[id].vue` — a single item in create (`new`) or edit mode
 
 ## Entity URL Pattern
 
-The URL pattern for an entity always follows the structure `/{parent}/{entity}/{id}` for individual items, `/{parent}/{entity}/list` for the list view and `/{parent}/{entity}/new` for the create view.
+The URL pattern for an entity follows the structure `/{parent}/{entity}` for the collection index (list), `/{parent}/{entity}/{id}` for individual items, and `/{parent}/{entity}/new` for the create view.
 
 Where:
 
 - `{parent}` is the parent folder of the entity folders in the `pages` directory
-- `{entity}` is the name of the entity itself
+- `{entity}` is the (plural) name of the entity folder itself
 - `{id}` is a dynamic parameter that represents the unique identifier of the entity item
-- `list` and `new` are localized aliases that can be changed in the language files
+- `new` is a localized alias that can be changed in the language files; the create page is handled by `[id].vue` matching `route.params.id === newEntityUrlAlias`
+
+Build these from the registry with `entityBasePath(key)` / `entityListHref(key)` (the index) / `entityDetailHref(key, id)` rather than hardcoding.
 
 ## Retrieving the Entity Name
 
-The entity name is typically retrieved using the `useEntityUrl` composable. This composable automatically extracts the entity name from the current route path without requiring any parameters.
-
-For example, if the current route path is `/pim/product/list`, the entity name would be `product`.
+For the **current route**, `useEntityUrl` extracts the entity name from the path:
 
 ```javascript
 const { getEntityName } = useEntityUrl();
-const entityName = getEntityName(); // "product"
+const entityName = getEntityName(); // "products" from "/pim/products/123"
 ```
 
 ::: tip
@@ -82,7 +82,7 @@ You can read the full specification of the `useEntityUrl` composable here: [useE
 :::
 
 ::: warning
-`getEntityName()` derives the name from the **folder** segment, so it only equals the i18n key when the folder matches the key (e.g. `price-list` → `price_list`). It is reliable for **URL building**. `useEntityEdit` / `usePageError` instead take the registry entry (`entity: ENTITIES.workflow`) and derive the key from it — so a pluralized folder (`workflows`) never matters, and the key can't drift from the route.
+`getEntityName()` derives the name from the **folder** segment, which (now plural) generally does **not** equal the i18n key — e.g. `companies` → `companies`, not the key `company`. It is for **URL building** only. `useEntityEdit` / `usePageError` instead take the registry entry (`entity: ENTITIES.company`) and derive the key from `entity.key` — so the folder name never matters and the key can't drift from the route.
 :::
 
 ## Using the Entity Name

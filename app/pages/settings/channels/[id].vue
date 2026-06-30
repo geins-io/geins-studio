@@ -30,7 +30,7 @@ import { deepMerge, getDefaultSettings } from '@/utils/storefront';
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
-const scope = 'pages/settings/channel/[id].vue';
+const scope = 'pages/settings/channels/[id].vue';
 const { t } = useI18n();
 const { toast } = useToast();
 const breadcrumbsStore = useBreadcrumbsStore();

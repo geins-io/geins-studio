@@ -111,7 +111,7 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
         },
         {
           label: t('navigation.kits'),
-          href: '/settings/orchestrator/kits/list',
+          href: '/settings/orchestrator/kits',
         },
       ],
     },

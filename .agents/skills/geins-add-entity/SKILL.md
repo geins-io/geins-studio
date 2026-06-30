@@ -122,7 +122,7 @@ export function useGeinsRepository(): UseGeinsRepositoryReturnType {
 }
 ```
 
-## 6. List page — `app/pages/<domain>/<entity>/list.vue`
+## 6. List page — `app/pages/<domain>/<entity>/index.vue`
 
 Standard pattern:
 ```ts
@@ -156,11 +156,12 @@ This is the most involved step — use the **geins-entity-edit-page** skill (or 
 ## 8. Navigation — `app/lib/navigation.ts`
 
 Add the nav entry. Build entity paths from the registry — **never hardcode** a path that lives in `ENTITIES[key].route`:
-- `entityListHref('entity')` → `/domain/entity/list` (the item `href`)
-- `entityChildPattern('entity')` → `/domain/entity/:id` (the `childPattern`)
-- `entityBasePath('entity')` → `/domain/entity` (singletons like `profile`)
+- `entityListHref('entity')` → `/domain/entities` (the item `href`; the collection index)
+- `entityChildPattern('entity')` → `/domain/entities/:id` (the `childPattern`)
+- `entityDetailHref('entity', id)` → `/domain/entities/id` (link to a specific item)
+- `entityBasePath('entity')` → `/domain/entities` (base path; also singletons like `profile`)
 
-(For links inside pages/components, `useEntityUrl()` provides `getEntityUrl(id)` / `getEntityUrlFor('entity', 'domain', id)`.)
+(For the **current** entity on an `[id]`/`new` page, `useEntityUrl()` also provides `getEntityUrl(id)` / `getEntityNewUrl()`.)
 
 **Sidebar gotchas** (all three are required for correct rendering):
 1. Items in the `workspace` group **must** have a `children` array — without it, the sidebar renders a flat button instead of the collapsible parent/child style used by all other workspace items.

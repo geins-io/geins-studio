@@ -34,17 +34,17 @@ import type {
   ProductApiOptions,
   ChangelogEntry,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import { ENTITIES, entityDetailHref } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
-const scope = 'pages/orders/quotation/[id].vue';
+const scope = 'pages/orders/quotations/[id].vue';
 const { t } = useI18n();
 const { toast } = useToast();
-const { getEntityUrl, getEntityUrlFor } = useEntityUrl();
+const { getEntityUrl } = useEntityUrl();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog(scope);
 const router = useRouter();
@@ -1648,7 +1648,7 @@ const companySummary = computed<DataItem[]>(() => {
       value: selectedAccountName.value,
       ...(companyId && {
         displayType: DataItemDisplayType.Link,
-        href: getEntityUrlFor('company', 'customers', companyId),
+        href: entityDetailHref('company', companyId),
         target: '_blank',
       }),
     });
@@ -2425,7 +2425,7 @@ definePageMeta({
                     <NuxtLink
                       v-for="pl in selectedCompany.priceLists"
                       :key="pl._id"
-                      :to="getEntityUrlFor('price-list', 'pricing', pl._id)"
+                      :to="entityDetailHref('price_list', pl._id)"
                       target="_blank"
                       :class="
                         cn(
@@ -2647,7 +2647,7 @@ definePageMeta({
                   <NuxtLink
                     v-for="pl in selectedCompany.priceLists"
                     :key="pl._id"
-                    :to="getEntityUrlFor('price-list', 'pricing', pl._id)"
+                    :to="entityDetailHref('price_list', pl._id)"
                     target="_blank"
                     :class="
                       cn(

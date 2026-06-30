@@ -54,11 +54,11 @@ function defineEntities<const T extends Record<string, EntityDescriptor>>(
 
 export const ENTITIES = defineEntities({
   product: { endpoint: '/product' },
-  price_list: { endpoint: '/product/pricelist', route: 'pricing/price-list' },
-  quotation: { endpoint: '/quotation', route: 'orders/quotation' },
+  price_list: { endpoint: '/product/pricelist', route: 'pricing/price-lists' },
+  quotation: { endpoint: '/quotation', route: 'orders/quotations' },
   message: { endpoint: '/quotation/message' },
-  channel: { endpoint: '/account/channel', route: 'settings/channel' },
-  company: { endpoint: '/wholesale/account', route: 'customers/company' },
+  channel: { endpoint: '/account/channel', route: 'settings/channels' },
+  company: { endpoint: '/wholesale/account', route: 'customers/companies' },
   customer: { endpoint: '/wholesale/customer' },
   buyer: { endpoint: '/wholesale/buyer' },
   user: { endpoint: '/user', route: 'account/user' },
@@ -94,12 +94,15 @@ export type EntityKeyWithRoute = {
  * entity link) instead of hardcoding `/domain/entity/...`, so a route can't
  * drift between the registry and the nav config.
  */
-/** `/pricing/price-list` — the entity's base page path. */
+/** `/pricing/price-lists` — the entity's base page path (also its list/index URL). */
 export const entityBasePath = (key: EntityKeyWithRoute): string =>
   `/${ENTITIES[key].route}`;
-/** `/pricing/price-list/list` — the entity's list page href. */
+/** `/pricing/price-lists` — the entity's list page href (the collection index). */
 export const entityListHref = (key: EntityKeyWithRoute): string =>
-  `${entityBasePath(key)}/list`;
-/** `/pricing/price-list/:id` — the nav `childPattern` for the entity's `[id]` page. */
+  entityBasePath(key);
+/** `/pricing/price-lists/123` — link to a specific entity's `[id]` page. */
+export const entityDetailHref = (key: EntityKeyWithRoute, id: string): string =>
+  `${entityBasePath(key)}/${id}`;
+/** `/pricing/price-lists/:id` — the nav `childPattern` for the entity's `[id]` page. */
 export const entityChildPattern = (key: EntityKeyWithRoute): string =>
   `${entityBasePath(key)}/:id`;

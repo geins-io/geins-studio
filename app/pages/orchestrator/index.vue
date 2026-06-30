@@ -769,7 +769,7 @@ watchEffect(() => {
                     >
                       <NuxtLink
                         :to="{
-                          path: '/orchestrator/workflows/list',
+                          path: '/orchestrator/workflows',
                           query: group.isStandalone
                             ? { name: group.name }
                             : { group: group.id },
@@ -791,7 +791,7 @@ watchEffect(() => {
                     >
                       <NuxtLink
                         :to="{
-                          path: '/orchestrator/executions/list',
+                          path: '/orchestrator/executions',
                           query: group.isStandalone
                             ? { name: group.name }
                             : { group: group.id },

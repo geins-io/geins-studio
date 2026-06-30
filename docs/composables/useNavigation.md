@@ -133,7 +133,7 @@ interface UseNavigationReturnType {
 
 - **Type**: `ComputedRef<NavigationItem[]>`
 - **Description**: Breadcrumb trail for current route, auto-derived from navigation structure
-- **Details**: Returns array of NavigationItems from root to current page. Supports partial path matching for detail pages (e.g., `/customers/company/123` matches `/customers/company/list`)
+- **Details**: Returns array of NavigationItems from root to current page. Supports partial path matching for detail pages (e.g., `/customers/companies/123` matches `/customers/companies`)
 
 #### `currentPageTitle`
 
@@ -186,7 +186,7 @@ export const getNavigation = (
     children: [
       {
         label: t('company', 2),
-        href: '/customers/company/list',
+        href: '/customers/companies',
       },
     ],
   },
@@ -215,13 +215,13 @@ The breadcrumb trail finder uses intelligent path matching:
 
 1. **Exact match priority**: Exact path matches are preferred
 2. **Depth-first search**: Children are checked before siblings (prefers deeper exact matches)
-3. **Partial matching**: For detail pages, removes `/list` suffix and checks if target path starts with the base
+3. **Child-pattern matching**: A detail route (`/customers/companies/123`) matches its nav item's `childPattern` (`/customers/companies/:id`); the collection index (`= the item's `href``) is treated as the item itself, not a child
 4. **Longest match wins**: When multiple partial matches exist, the longest one is selected
 
 Example:
 
-- Route: `/customers/company/123`
-- Matches: `/customers/company/list` (base: `/customers/company`)
+- Route: `/customers/companies/123`
+- Matches: `/customers/companies` (base: `/customers/companies`)
 - Trail: `Home > Customers > Companies`
 
 ## Integration with Breadcrumbs Store
@@ -247,7 +247,7 @@ breadcrumbsStore.setBreadcrumbs([{ label: 'Custom', href: '/custom' }]);
 2. **Use localization keys**: Always use `t()` function for labels
 3. **Consistent paths**: Ensure navigation `href` values match route paths
 4. **Permission filtering**: Add `roles` and `permissions` arrays to restrict access
-5. **List suffix convention**: Use `/list` suffix for list views to enable partial matching
+5. **Index convention**: The collection (list) lives at the entity folder index (`/customers/companies`); set the nav item `href` to it and `childPattern` to `/…/:id`
 
 ## Related
 

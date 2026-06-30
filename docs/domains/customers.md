@@ -29,7 +29,7 @@ The Customers domain manages B2B wholesale accounts. A company is the central en
 
 **Field selection** — `list({ fields: ['buyers', 'salesreps'] })` and `get(id, { fields: ['buyers', 'salesreps', 'addresses', 'pricelists'] })`. Use field filters to control payload size.
 
-**Price list edit route** — `/pricing/price-list/[id]` — use `getEntityUrlFor('price-list', 'pricing', id)` to generate links.
+**Price list edit route** — `/pricing/price-lists/[id]` — use `entityDetailHref('price_list', id)` to generate links.
 
 ## Contracts (Cross-Domain Usage)
 
@@ -48,13 +48,13 @@ The Customers domain manages B2B wholesale accounts. A company is the central en
 
 ## Key Files
 
-| Layer       | Path                                               |
-| ----------- | -------------------------------------------------- |
-| Types       | `shared/types/Customer.ts`                         |
-| Repository  | `app/utils/repositories/customer.ts`               |
-| Composables | `useCustomerCompanies.ts`, `useCompanyOrders.ts`   |
-| Components  | `app/components/company/CompanyBuyerPanel.vue`     |
-| Pages       | `app/pages/customers/company/list.vue`, `[id].vue` |
+| Layer       | Path                                                  |
+| ----------- | ----------------------------------------------------- |
+| Types       | `shared/types/Customer.ts`                            |
+| Repository  | `app/utils/repositories/customer.ts`                  |
+| Composables | `useCustomerCompanies.ts`, `useCompanyOrders.ts`      |
+| Components  | `app/components/company/CompanyBuyerPanel.vue`        |
+| Pages       | `app/pages/customers/companies/index.vue`, `[id].vue` |
 
 ## Decision Log
 

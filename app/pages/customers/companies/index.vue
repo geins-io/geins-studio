@@ -4,13 +4,17 @@ import type {
   StringKeyOf,
   CustomerCompanyList,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import {
+  ENTITIES,
+  entityBasePath,
+  entityDetailHref,
+} from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 type Entity = CustomerCompany;
 type EntityList = CustomerCompanyList;
 
 const { t } = useI18n();
-const { getEntityNewUrl, getEntityUrl } = useEntityUrl();
+const { newEntityUrlAlias } = useEntityUrl();
 
 definePageMeta({
   pageType: 'list',
@@ -21,9 +25,9 @@ const { customerApi } = useGeinsRepository();
 const { deleteCompany, extractCompanyGroupsFromTags } = useCustomerCompanies();
 const dataList = ref<EntityList[]>([]);
 const entityName = ENTITIES.company.key;
-const newEntityUrl = getEntityNewUrl();
+const newEntityUrl = `${entityBasePath('company')}/${newEntityUrlAlias.value}`;
 const entityIdentifier = '{id}';
-const entityUrl = getEntityUrl(entityIdentifier);
+const entityUrl = entityDetailHref('company', entityIdentifier);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});

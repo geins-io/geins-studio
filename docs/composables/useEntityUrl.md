@@ -1,76 +1,52 @@
 # `useEntityUrl`
 
-The `useEntityUrl` composable provides utility functions for manipulating entity-related URLs and extracting entity names from the current route. It integrates localization through `useI18n` and supports both context-aware and entity-specific URL generation.
+The `useEntityUrl` composable provides utility functions for **current-route** entity URLs — it derives everything from the active route path. Use it on entity `[id].vue` / `new` pages, where the route always has a trailing action segment (`new` / `:id`) so the base path is the folder above it.
 
 ::: tip
 Read more about the concept of entities in Geins MC here: [Entities](/concepts/entities)
 :::
 
-## Features
-
-- Extracts an entity's name from the current route path
-- Constructs URLs for creating a new entity (current context)
-- Constructs URLs for editing an entity (current context)
-- Constructs URLs for entity list pages (current context)
-- Generates URLs for any entity from anywhere in the application
-- Supports localization for dynamic URL aliases
-
-## Usage
-
-Here are the different ways you can use the `useEntityUrl` composable:
-
-### Context-Aware Usage (Current Route)
+::: warning Cross-entity & list URLs come from the registry
+For a link to _another_ entity (by key), or from a **list/index page** (which has no trailing segment to derive a base path from), build URLs from the registry instead of this composable:
 
 ```ts
-// Automatically uses the current route
+import {
+  entityBasePath,
+  entityListHref,
+  entityDetailHref,
+} from '#shared/utils/entities';
+
+entityBasePath('price_list'); // "/pricing/price-lists"
+entityListHref('price_list'); // "/pricing/price-lists" (the collection index)
+entityDetailHref('price_list', '123'); // "/pricing/price-lists/123"
+```
+
+These read `ENTITIES[key].route`, the single source of truth, so they can't drift from the folder structure. See [Entities](/concepts/entities#entity-registry-single-source-of-truth).
+:::
+
+## Usage (current route)
+
+```ts
 const {
   newEntityUrlAlias,
   getEntityName,
   getEntityBasePath,
   getEntityNewUrl,
   getEntityUrl,
-  getEntityListUrl,
 } = useEntityUrl();
 
-const entityName = getEntityName(); // "product" from "/pim/product/list"
-const entityBasePath = getEntityBasePath(); // "/pim/product"
-const newEntityUrl = getEntityNewUrl(); // "/pim/product/new"
-const editUrl = getEntityUrl('123'); // "/pim/product/123"
-const listUrl = getEntityListUrl(); // "/pim/product/list"
-```
-
-### Entity-Specific Usage (Any Entity)
-
-```ts
-// Generate URLs for any entity from anywhere
-const { getEntityNewUrlFor, getEntityListUrlFor } = useEntityUrl();
-
-// Generate URLs for different entities
-const productListUrl = getEntityListUrlFor('product', 'pim'); // "/pim/product/list"
-const userNewUrl = getEntityNewUrlFor('user', 'account'); // "/account/user/new"
-```
-
-### Navigation Component Usage
-
-```ts
-const { getEntityListUrlFor } = useEntityUrl();
-
-const navigationItems = [
-  { name: 'Products', url: getEntityListUrlFor('product', 'pim') },
-  { name: 'Users', url: getEntityListUrlFor('user', 'account') },
-  { name: 'Orders', url: getEntityListUrlFor('order', 'customer') },
-];
+// On a route like /pricing/price-lists/123:
+getEntityName(); // "price_lists" (URL folder — NOT the i18n key)
+getEntityBasePath(); // "/pricing/price-lists" (drops the last segment = the index)
+getEntityNewUrl(); // "/pricing/price-lists/new"
+getEntityUrl('456'); // "/pricing/price-lists/456"
 ```
 
 ## Properties and Methods
 
 ### `newEntityUrlAlias`
 
-A localized `computed` reference representing the alias for creating a new entity. It is fetched using `useI18n` and the key `new_entity_url_alias`. By default this is set to `"new"`.
-
-### `listEntityUrlAlias`
-
-A localized `computed` reference representing the alias for entity list pages. It is fetched using `useI18n` and the key `list_entity_url_alias`. By default this is set to `"list"`.
+A localized `computed` for the "new" URL segment. Fetched via `useI18n` with the key `new_entity_url_alias` (`"new"` in `en`, `"ny"` in `sv`). The create page is handled by `[id].vue` matching `route.params.id === newEntityUrlAlias.value`.
 
 ### `getEntityName`
 
@@ -78,11 +54,15 @@ A localized `computed` reference representing the alias for entity list pages. I
 getEntityName(): string
 ```
 
-Extracts the entity name from the current route path.
+Extracts the entity folder name from the current route path (second-to-last segment, dashes → underscores). For **URL building only** — with plural folders it generally does not equal the i18n key (e.g. `companies`, not `company`).
 
-- **Returns**: A string representing the entity name.
-- **Example**:  
-  For a current route of `/pim/product/list`, the result is `"product"`.
+### `getEntityBasePath`
+
+```ts
+getEntityBasePath(): string
+```
+
+The current entity's base path = the route with its last segment dropped. On an `[id]`/`new` page that is the collection index (e.g. `/pricing/price-lists`).
 
 ### `getEntityNewUrl`
 
@@ -90,11 +70,7 @@ Extracts the entity name from the current route path.
 getEntityNewUrl(): string
 ```
 
-Constructs a URL for creating a new entity based on the current route.
-
-- **Returns**: A string representing the new entity URL.
-- **Example**:  
-  For a current route of `/pim/product/list`, the result is `/pim/product/new`.
+`${getEntityBasePath()}/${newEntityUrlAlias}` — the create URL for the current entity.
 
 ### `getEntityUrl`
 
@@ -102,96 +78,12 @@ Constructs a URL for creating a new entity based on the current route.
 getEntityUrl(id: string): string
 ```
 
-Constructs a URL for editing a specific entity based on the current route.
-
-- **Parameters**:
-  - `id`: A string representing the identifier of the entity.
-
-- **Returns**: A string representing the edit entity URL.
-- **Example**:  
-  For a current route of `/pim/product/list` and an `id` of `"123"`, the result is `/pim/product/123`.
-
-### `getEntityListUrl`
-
-```ts
-getEntityListUrl(): string
-```
-
-Constructs a URL for the entity list page based on the current route.
-
-- **Returns**: A string representing the entity list URL.
-- **Example**:  
-  For a current route of `/pim/product/new`, the result is `/pim/product/list`.
-
-### `getEntityNewUrlFor`
-
-```ts
-getEntityNewUrlFor(targetEntityName: string, targetParent: string): string
-```
-
-Constructs a URL for creating a new entity for any entity type.
-
-- **Parameters**:
-  - `targetEntityName`: The name of the entity (e.g., "product", "user")
-  - `targetParent`: The parent path segment (e.g., "pim", "account")
-
-- **Returns**: A string representing the new entity URL.
-- **Example**:  
-  `getEntityNewUrlFor("product", "pim")` returns `/pim/product/new`.
-
-### `getEntityUrlFor`
-
-```ts
-getEntityUrlFor(targetEntityName: string, targetParent: string, id: string): string
-```
-
-Constructs a URL for editing a specific entity of any entity type.
-
-- **Parameters**:
-  - `targetEntityName`: The name of the entity (e.g., "price-list", "product")
-  - `targetParent`: The parent path segment (e.g., "pricing", "pim")
-  - `id`: The entity identifier
-
-- **Returns**: A string representing the entity edit URL.
-- **Example**:  
-  `getEntityUrlFor("price-list", "pricing", "abc-123")` returns `/pricing/price-list/abc-123`.
-
-### `getEntityListUrlFor`
-
-```ts
-getEntityListUrlFor(targetEntityName: string, targetParent: string): string
-```
-
-Constructs a URL for the entity list page for any entity type.
-
-- **Parameters**:
-  - `targetEntityName`: The name of the entity (e.g., "product", "user")
-  - `targetParent`: The parent path segment (e.g., "pim", "account")
-
-- **Returns**: A string representing the entity list URL.
-- **Example**:  
-  `getEntityListUrlFor("user", "account")` returns `/account/user/list`.
+`${getEntityBasePath()}/${id}` — the detail URL for the given id in the current entity.
 
 ## Dependencies
 
-This composable depends on:
-
-1. **`useRoute`**: Uses the current route to extract entity information and construct context-aware URLs.
-2. **`useI18n`**: Ensures localization support for dynamic URL aliases like "new" and "list".
-
-## URL Pattern
-
-The composable follows this URL pattern:
-
-- **List**: `/{parent}/{entity}/list`
-- **New**: `/{parent}/{entity}/new`
-- **Edit**: `/{parent}/{entity}/{id}`
-
-Where:
-
-- `parent` is the parent route segment (e.g., "pim", "account", "customer")
-- `entity` is the entity name (e.g., "product", "user", "price_list")
-- `id` is the specific entity identifier
+1. **`useRoute`** — current route, for context-aware URLs.
+2. **`useI18n`** — localization for the `new` alias.
 
 ## Type Definitions
 
@@ -200,18 +92,9 @@ function useEntityUrl(): UseEntityUrlReturnType;
 
 interface UseEntityUrlReturnType {
   newEntityUrlAlias: ComputedRef<string>;
-  listEntityUrlAlias: ComputedRef<string>;
   getEntityName: () => string;
   getEntityBasePath: () => string;
   getEntityNewUrl: () => string;
   getEntityUrl: (id: string) => string;
-  getEntityListUrl: () => string;
-  getEntityNewUrlFor: (entityName: string, targetParent: string) => string;
-  getEntityUrlFor: (
-    entityName: string,
-    targetParent: string,
-    id: string,
-  ) => string;
-  getEntityListUrlFor: (entityName: string, targetParent: string) => string;
 }
 ```

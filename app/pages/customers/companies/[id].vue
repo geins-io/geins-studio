@@ -13,7 +13,7 @@ import {
   type CustomerCompanyApiOptions,
   type CompanyBuyerList,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import { ENTITIES, entityDetailHref } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { LucideUser, LucidePackage } from '#components';
 
@@ -23,7 +23,7 @@ import { LucideUser, LucidePackage } from '#components';
 // Intent: Initialize all composables and Pinia stores used across this page.
 // Order matters — some composables depend on values from earlier ones (e.g. useGeinsRepository before API calls).
 // Add new composables here; do not scatter initialization throughout the file.
-const scope = 'pages/customers/company/[id].vue';
+const scope = 'pages/customers/companies/[id].vue';
 const { customerApi, userApi } = useGeinsRepository();
 const {
   hasValidatedVat,
@@ -468,7 +468,7 @@ const columnOptionsPriceLists: ColumnOptions<CustomerPriceList> = {
   },
   linkColumns: {
     name: {
-      url: '/pricing/price-list/{id}',
+      url: entityDetailHref('price_list', '{id}'),
       idField: '_id',
     },
   },
