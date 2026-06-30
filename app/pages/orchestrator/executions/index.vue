@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ExecutionLog, ColumnOptions, StringKeyOf } from '#shared/types';
-import { ENTITIES, entityListHref } from '#shared/utils/entities';
+import { ENTITIES, entityListUrl } from '#shared/utils/entities';
 import { formatDuration, formatTimestamp } from '#shared/utils/time';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
@@ -225,7 +225,7 @@ const dataList = computed(() => {
 });
 
 const clearFilter = () => {
-  navigateTo(entityListHref('execution'));
+  navigateTo(entityListUrl('execution'));
 };
 
 const FILTER_QUERY_KEY: Record<ActiveFilter['type'], string> = {
@@ -237,7 +237,7 @@ const FILTER_QUERY_KEY: Record<ActiveFilter['type'], string> = {
 
 const removeFilter = (type: ActiveFilter['type']) => {
   const { [FILTER_QUERY_KEY[type]]: _, ...rest } = route.query;
-  navigateTo({ path: entityListHref('execution'), query: rest });
+  navigateTo({ path: entityListUrl('execution'), query: rest });
 };
 
 // ─── Live polling: new executions + running-status refresh ─────────

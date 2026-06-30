@@ -91,7 +91,7 @@ definePageMeta({ pageType: 'list' })
 → useAsyncData(key, fn)    — fetch with explicit stable client cache key
 → useColumns<T>()          — column defs + addActionsColumn
 → useTable<T>()            — visibility / sort state
-→ entityListHref / entityDetailHref — link generation (registry helpers)
+→ entityListUrl / entityEditUrl — link generation (registry helpers)
 → usePageError()           — error handling
 → <TableView />            — renders table + pagination
 ```
@@ -250,7 +250,7 @@ Routes are entry points; domains are the capabilities they expose.
 | `/account/profile`       | Edit own user profile and preferences                                       |
 | `/auth/*`                | Session management (login, logout, password reset)                          |
 
-Cross-domain links: the quotation edit page links to company and price-list entities via the registry helper `entityDetailHref(key, id)`.
+Cross-domain links: the quotation edit page links to company and price-list entities via the registry helper `entityEditUrl(key, id)`.
 
 ---
 

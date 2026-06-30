@@ -15,7 +15,7 @@ import {
 } from '#shared/types';
 import {
   ENTITIES,
-  entityDetailHref,
+  entityEditUrl,
   NEW_ENTITY_URL_SEGMENT,
 } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
@@ -471,7 +471,7 @@ const columnOptionsPriceLists: ColumnOptions<CustomerPriceList> = {
   },
   linkColumns: {
     name: {
-      url: entityDetailHref('price_list', '{id}'),
+      url: entityEditUrl('price_list', '{id}'),
       idField: '_id',
     },
   },

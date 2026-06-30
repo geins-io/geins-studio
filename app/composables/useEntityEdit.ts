@@ -1,8 +1,8 @@
 import { useForm, type GenericObject } from 'vee-validate';
 import {
-  entityListHref,
-  entityNewHref,
-  entityDetailHref,
+  entityBasePath,
+  entityNewUrl,
+  entityEditUrl,
   NEW_ENTITY_URL_SEGMENT,
 } from '#shared/utils/entities';
 import type { EntityKey, EntityWithRoute } from '#shared/utils/entities';
@@ -144,9 +144,9 @@ export function useEntityEdit<
   // Core state — all URLs derive from the registry entry the page passes in
   // (single source); never from the route folder.
   const entityName = options.entity.key;
-  const newEntityUrl = entityNewHref(options.entity.key);
+  const newEntityUrl = entityNewUrl(options.entity.key);
   // Back-to-list = the collection index (the entity folder itself).
-  const entityListUrl = entityListHref(options.entity.key);
+  const entityListUrl = entityBasePath(options.entity.key);
   const createMode = ref(route.params.id === NEW_ENTITY_URL_SEGMENT);
   const loading = ref(false);
   const refreshEntityData = ref<() => Promise<void>>(() => Promise.resolve());
@@ -307,7 +307,7 @@ export function useEntityEdit<
       const result = await options.repository.create(createData, queryOptions);
 
       if (result?._id) {
-        const newUrl = entityDetailHref(options.entity.key, result._id);
+        const newUrl = entityEditUrl(options.entity.key, result._id);
         await router.replace(newUrl);
 
         toast({

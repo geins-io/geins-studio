@@ -7,7 +7,7 @@ import type {
   KitSummary,
   KitInstallation,
 } from '#shared/types';
-import { entityListHref } from '#shared/utils/entities';
+import { entityListUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { Avatar, AvatarFallback } from '~/components/ui/avatar';
 import {
@@ -770,7 +770,7 @@ watchEffect(() => {
                     >
                       <NuxtLink
                         :to="{
-                          path: entityListHref('workflow'),
+                          path: entityListUrl('workflow'),
                           query: group.isStandalone
                             ? { name: group.name }
                             : { group: group.id },
@@ -792,7 +792,7 @@ watchEffect(() => {
                     >
                       <NuxtLink
                         :to="{
-                          path: entityListHref('execution'),
+                          path: entityListUrl('execution'),
                           query: group.isStandalone
                             ? { name: group.name }
                             : { group: group.id },

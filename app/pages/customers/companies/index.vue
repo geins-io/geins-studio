@@ -4,11 +4,7 @@ import type {
   StringKeyOf,
   CustomerCompanyList,
 } from '#shared/types';
-import {
-  ENTITIES,
-  entityNewHref,
-  entityDetailHref,
-} from '#shared/utils/entities';
+import { ENTITIES, entityNewUrl, entityEditUrl } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 type Entity = CustomerCompany;
 type EntityList = CustomerCompanyList;
@@ -24,9 +20,9 @@ const { customerApi } = useGeinsRepository();
 const { deleteCompany, extractCompanyGroupsFromTags } = useCustomerCompanies();
 const dataList = ref<EntityList[]>([]);
 const entityName = ENTITIES.company.key;
-const newEntityUrl = entityNewHref('company');
+const newEntityUrl = entityNewUrl(entityName);
 const entityIdentifier = '{id}';
-const entityUrl = entityDetailHref('company', entityIdentifier);
+const entityUrl = entityEditUrl(entityName, entityIdentifier);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});

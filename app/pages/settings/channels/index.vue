@@ -5,7 +5,7 @@ import type {
   ChannelListItem,
   StringKeyOf,
 } from '#shared/types';
-import { ENTITIES, entityDetailHref } from '#shared/utils/entities';
+import { ENTITIES, entityEditUrl } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = ChannelListItem;
@@ -24,7 +24,7 @@ const dataList = ref<EntityList[]>([]);
 const entity = ENTITIES.channel;
 const entityName = entity.key;
 const entityIdentifier = '{id}';
-const entityUrl = entityDetailHref('channel', entityIdentifier);
+const entityUrl = entityEditUrl(entityName, entityIdentifier);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});

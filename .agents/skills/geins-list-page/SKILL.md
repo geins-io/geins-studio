@@ -44,7 +44,7 @@ Use `Omit<Entity, ...fields>` to replace fields that need display transformation
 ```vue
 <script setup lang="ts">
 import type { Entity, EntityList, ColumnOptions, StringKeyOf } from '#shared/types';
-import { ENTITIES, entityNewHref, entityDetailHref } from '#shared/utils/entities';
+import { ENTITIES, entityNewUrl, entityEditUrl } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = ApiResponseType;
@@ -61,8 +61,8 @@ const dataList = ref<EntityList[]>([]);
 const entityName = ENTITIES.{entity}.key;
 const entityIdentifier = '{id}';
 // List/index pages have no route context — build URLs from the registry:
-const entityUrl = entityDetailHref('{entity}', entityIdentifier);
-const newEntityUrl = entityNewHref('{entity}');
+const entityUrl = entityEditUrl('{entity}', entityIdentifier);
+const newEntityUrl = entityNewUrl('{entity}');
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});

@@ -22,7 +22,7 @@ type EntityList = {Entity}; // May extend with computed display fields
 const scope = '{entity}-list';
 const { t } = useI18n();
 const { geinsLog, geinsLogError } = useGeinsLog(scope);
-const getEntityUrl = (id: string) => entityDetailHref('your_entity', id); // from #shared/utils/entities
+const getEntityUrl = (id: string) => entityEditUrl('your_entity', id); // from #shared/utils/entities
 
 // === 3. PAGE META ===
 definePageMeta({

@@ -28,7 +28,7 @@ export type EntityKey = keyof typeof ENTITIES; // 'price_list' | 'quotation' | �
 ```
 
 - **`endpoint`** is omitted for singletons with no standard CRUD endpoint (`profile`, served via `/user/me`). Repositories read it by passing the entry to `repo.entity(ENTITIES.x, fetch)` (see [API Repositories](./api-repositories.md)).
-- **`route`** is omitted for sub-entities rendered inside a parent page (`buyer`, `customer`) and entities with no list/`[id]` page (`product`, `message`). It is the one place a route↔i18n-key mismatch (e.g. a plural folder) is reconciled. The route helpers `entityListHref(key)` / `entityChildPattern(key)` / `entityBasePath(key)` build page URLs from it, so [`navigation.ts`](/composables/) (and any entity link) reads paths from the registry rather than hardcoding them.
+- **`route`** is omitted for sub-entities rendered inside a parent page (`buyer`, `customer`) and entities with no list/`[id]` page (`product`, `message`). It is the one place a route↔i18n-key mismatch (e.g. a plural folder) is reconciled. The route helpers `entityListUrl(key)` / `entityChildPattern(key)` / `entityBasePath(key)` build page URLs from it, so [`navigation.ts`](/composables/) (and any entity link) reads paths from the registry rather than hardcoding them.
 
 Two distinct sets exist, and only the first goes in the registry:
 
@@ -39,12 +39,12 @@ Two distinct sets exist, and only the first goes in the registry:
 
 Used everywhere from the one declaration:
 
-| Consumer    | Reads      | How                                                                                                        |
-| ----------- | ---------- | ---------------------------------------------------------------------------------------------------------- |
-| repository  | `endpoint` | `repo.entity(ENTITIES.price_list, fetch)`                                                                  |
-| entity page | the entry  | `useEntityEdit({ entity: ENTITIES.price_list, … })` / `usePageError`                                       |
-| navigation  | `route`    | `entityListHref('price_list')` / `entityDetailHref('price_list', id)` / `entityChildPattern('price_list')` |
-| i18n        | key        | `en.json` / `sv.json` (guarded by the parity test)                                                         |
+| Consumer    | Reads      | How                                                                                                    |
+| ----------- | ---------- | ------------------------------------------------------------------------------------------------------ |
+| repository  | `endpoint` | `repo.entity(ENTITIES.price_list, fetch)`                                                              |
+| entity page | the entry  | `useEntityEdit({ entity: ENTITIES.price_list, … })` / `usePageError`                                   |
+| navigation  | `route`    | `entityListUrl('price_list')` / `entityEditUrl('price_list', id)` / `entityChildPattern('price_list')` |
+| i18n        | key        | `en.json` / `sv.json` (guarded by the parity test)                                                     |
 
 Entity folders are **plural** and the collection lives at the folder **index** (e.g. `/customers/companies`, `/customers/companies/123`, `/customers/companies/new`).
 
@@ -73,15 +73,15 @@ All entity URLs come from the registry helpers (pure functions in `shared/utils/
 ```ts
 import {
   entityBasePath,
-  entityListHref,
-  entityNewHref,
-  entityDetailHref,
+  entityListUrl,
+  entityNewUrl,
+  entityEditUrl,
   entityChildPattern,
 } from '#shared/utils/entities';
 
-entityListHref('price_list'); // "/pricing/price-lists" (the collection index)
-entityNewHref('price_list'); // "/pricing/price-lists/new"
-entityDetailHref('price_list', '123'); // "/pricing/price-lists/123"
+entityListUrl('price_list'); // "/pricing/price-lists" (the collection index)
+entityNewUrl('price_list'); // "/pricing/price-lists/new"
+entityEditUrl('price_list', '123'); // "/pricing/price-lists/123"
 entityChildPattern('price_list'); // "/pricing/price-lists/:id" (nav matching)
 ```
 
@@ -96,7 +96,7 @@ To change the create word app-wide (e.g. `/add`, `/create`), set **one** constan
 export const NEW_ENTITY_URL_SEGMENT = 'add';
 ```
 
-`entityNewHref` and the create-mode check both read it, so nothing else changes.
+`entityNewUrl` and the create-mode check both read it, so nothing else changes.
 
 ## Using the entity key for i18n
 

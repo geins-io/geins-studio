@@ -2,7 +2,7 @@ import type { NavigationItem } from '#shared/types';
 import {
   entityBasePath,
   entityChildPattern,
-  entityListHref,
+  entityListUrl,
 } from '#shared/utils/entities';
 
 /**
@@ -27,39 +27,39 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
   return [
     {
       label: t('navigation.pricing'),
-      href: entityListHref('price_list'),
+      href: entityListUrl('price_list'),
       icon: 'Tag',
       group: 'workspace',
       children: [
         {
           label: t('navigation.price_lists'),
-          href: entityListHref('price_list'),
+          href: entityListUrl('price_list'),
           childPattern: entityChildPattern('price_list'),
         },
       ],
     },
     {
       label: t('navigation.customers'),
-      href: entityListHref('company'),
+      href: entityListUrl('company'),
       icon: 'Users',
       group: 'workspace',
       children: [
         {
           label: t('navigation.companies'),
-          href: entityListHref('company'),
+          href: entityListUrl('company'),
           childPattern: entityChildPattern('company'),
         },
       ],
     },
     {
       label: t('navigation.orders'),
-      href: entityListHref('quotation'),
+      href: entityListUrl('quotation'),
       icon: 'Package',
       group: 'workspace',
       children: [
         {
           label: t('navigation.quotations'),
-          href: entityListHref('quotation'),
+          href: entityListUrl('quotation'),
           childPattern: entityChildPattern('quotation'),
         },
       ],
@@ -76,33 +76,33 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
         },
         {
           label: t('navigation.workflows'),
-          href: entityListHref('workflow'),
+          href: entityListUrl('workflow'),
           childPattern: entityChildPattern('workflow'),
         },
         {
           label: t('navigation.executions'),
-          href: entityListHref('execution'),
+          href: entityListUrl('execution'),
           childPattern: entityChildPattern('execution'),
         },
       ],
     },
     {
       label: t('navigation.channels'),
-      href: entityListHref('channel'),
+      href: entityListUrl('channel'),
       icon: 'Store',
       group: 'settings',
       childPattern: entityChildPattern('channel'),
     },
     {
       label: t('navigation.orchestrator_config'),
-      href: entityListHref('variable'),
+      href: entityListUrl('variable'),
       icon: 'Plug',
       group: 'settings',
       defaultOpen: false,
       children: [
         {
           label: t('navigation.variables'),
-          href: entityListHref('variable'),
+          href: entityListUrl('variable'),
           childPattern: entityChildPattern('variable'),
         },
         {

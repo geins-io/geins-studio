@@ -425,9 +425,9 @@ const { hasUnsavedChanges, unsavedChangesDialogOpen, confirmLeave } =
 
 ```ts
 import {
-  entityListHref,
-  entityNewHref,
-  entityDetailHref,
+  entityListUrl,
+  entityNewUrl,
+  entityEditUrl,
 } from '#shared/utils/entities';
 ```
 

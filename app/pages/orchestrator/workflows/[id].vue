@@ -12,7 +12,7 @@ import type {
   WorkflowNodeConnection,
   EntityBaseWithName,
 } from '#shared/types';
-import { ENTITIES, entityListHref } from '#shared/utils/entities';
+import { ENTITIES, entityListUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { sanitizeWorkflowNodes } from '@/composables/useWorkflowCanvas';
 import type { Component } from 'vue';
@@ -538,7 +538,7 @@ const deleteWorkflowEntity = async (): Promise<boolean> => {
 };
 
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteWorkflowEntity, entityListHref('workflow'));
+  useDeleteDialog(deleteWorkflowEntity, entityListUrl('workflow'));
 
 const isSavingConfig = ref(false);
 
@@ -1579,7 +1579,7 @@ const { summaryProps } = useEntityEditSummary({
 
             <div v-if="isNew" class="flex flex-row justify-end gap-4">
               <Button variant="secondary" as-child>
-                <NuxtLink :to="entityListHref('workflow')">
+                <NuxtLink :to="entityListUrl('workflow')">
                   {{ $t('cancel') }}
                 </NuxtLink>
               </Button>

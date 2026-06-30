@@ -115,13 +115,13 @@ export const NEW_ENTITY_URL_SEGMENT = 'new';
 export const entityBasePath = (key: EntityKeyWithRoute): string =>
   `/${ENTITIES[key].route}`;
 /** `/pricing/price-lists` — the entity's list page href (the collection index). */
-export const entityListHref = (key: EntityKeyWithRoute): string =>
+export const entityListUrl = (key: EntityKeyWithRoute): string =>
   entityBasePath(key);
 /** `/pricing/price-lists/new` — the entity's create page href. */
-export const entityNewHref = (key: EntityKeyWithRoute): string =>
+export const entityNewUrl = (key: EntityKeyWithRoute): string =>
   `${entityBasePath(key)}/${NEW_ENTITY_URL_SEGMENT}`;
 /** `/pricing/price-lists/123` — link to a specific entity's `[id]` page. */
-export const entityDetailHref = (key: EntityKeyWithRoute, id: string): string =>
+export const entityEditUrl = (key: EntityKeyWithRoute, id: string): string =>
   `${entityBasePath(key)}/${id}`;
 /** `/pricing/price-lists/:id` — the nav `childPattern` for the entity's `[id]` page. */
 export const entityChildPattern = (key: EntityKeyWithRoute): string =>

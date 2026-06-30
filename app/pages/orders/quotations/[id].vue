@@ -34,7 +34,7 @@ import type {
   ProductApiOptions,
   ChangelogEntry,
 } from '#shared/types';
-import { ENTITIES, entityDetailHref } from '#shared/utils/entities';
+import { ENTITIES, entityEditUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
@@ -1518,7 +1518,7 @@ const handleCopy = async () => {
     const newQuotation = await orderApi.quotation.copy(entityId.value);
     if (newQuotation?._id) {
       toast({ title: t('entity_copied', { entityName }), variant: 'positive' });
-      await router.push(entityDetailHref('quotation', newQuotation._id));
+      await router.push(entityEditUrl('quotation', newQuotation._id));
     }
   } catch (error) {
     geinsLogError('Failed to copy quotation:', error);
@@ -1647,7 +1647,7 @@ const companySummary = computed<DataItem[]>(() => {
       value: selectedAccountName.value,
       ...(companyId && {
         displayType: DataItemDisplayType.Link,
-        href: entityDetailHref('company', companyId),
+        href: entityEditUrl('company', companyId),
         target: '_blank',
       }),
     });
@@ -2424,7 +2424,7 @@ definePageMeta({
                     <NuxtLink
                       v-for="pl in selectedCompany.priceLists"
                       :key="pl._id"
-                      :to="entityDetailHref('price_list', pl._id)"
+                      :to="entityEditUrl('price_list', pl._id)"
                       target="_blank"
                       :class="
                         cn(
@@ -2646,7 +2646,7 @@ definePageMeta({
                   <NuxtLink
                     v-for="pl in selectedCompany.priceLists"
                     :key="pl._id"
-                    :to="entityDetailHref('price_list', pl._id)"
+                    :to="entityEditUrl('price_list', pl._id)"
                     target="_blank"
                     :class="
                       cn(

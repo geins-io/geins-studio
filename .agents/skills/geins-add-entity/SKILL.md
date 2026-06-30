@@ -156,9 +156,9 @@ This is the most involved step — use the **geins-entity-edit-page** skill (or 
 ## 8. Navigation — `app/lib/navigation.ts`
 
 Add the nav entry. Build entity paths from the registry — **never hardcode** a path that lives in `ENTITIES[key].route`:
-- `entityListHref('entity')` → `/domain/entities` (the item `href`; the collection index)
+- `entityListUrl('entity')` → `/domain/entities` (the item `href`; the collection index)
 - `entityChildPattern('entity')` → `/domain/entities/:id` (the `childPattern`)
-- `entityDetailHref('entity', id)` → `/domain/entities/id` (link to a specific item)
+- `entityEditUrl('entity', id)` → `/domain/entities/id` (link to a specific item)
 - `entityBasePath('entity')` → `/domain/entities` (base path; also singletons like `profile`)
 
 (`useEntityEdit` exposes `newEntityUrl` / `entityListUrl` for the current entity, derived from its registry entry.)

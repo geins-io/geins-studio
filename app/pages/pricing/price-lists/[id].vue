@@ -15,7 +15,7 @@ import {
   type PriceListRuleField,
   type ProductPriceListApiOptions,
 } from '#shared/types';
-import { ENTITIES, entityDetailHref } from '#shared/utils/entities';
+import { ENTITIES, entityEditUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 import type { AcceptableValue } from 'reka-ui';
@@ -596,7 +596,7 @@ const summary = computed<DataItem[]>(() => {
       label: t('pricing.price_list_channel'),
       value: displayValue,
       displayType: DataItemDisplayType.Link,
-      href: entityDetailHref('channel', channelId),
+      href: entityEditUrl('channel', channelId),
       target: '_blank',
     });
   }
