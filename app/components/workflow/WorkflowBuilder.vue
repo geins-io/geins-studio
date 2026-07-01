@@ -51,6 +51,7 @@ const { geinsLogError } = useGeinsLog('workflow-builder');
 const { toast } = useToast();
 const { t } = useI18n();
 const { toCanvas, toApi } = useWorkflowCanvas();
+const manifestStore = useWorkflowManifest();
 
 // All node types are routed through the same dispatcher so the canvas host
 // doesn't need to know about individual node implementations. WorkflowNode
@@ -248,8 +249,6 @@ watch(
   },
   { deep: true },
 );
-
-const manifestStore = useWorkflowManifest();
 
 function getNodeOutputFields(
   nodeId: string,

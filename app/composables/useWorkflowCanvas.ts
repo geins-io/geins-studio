@@ -156,6 +156,9 @@ const toCanvasEdge = (
 
 export const useWorkflowCanvas = (): WorkflowCanvasReturnType => {
   const toCanvas: WorkflowCanvasReturnType['toCanvas'] = (wf) => {
+    // `functionName` is part of the API contract (workflow_nodeModel) — read it
+    // straight from the response. Nodes missing it indicate non-conformant
+    // (un-migrated) data and are surfaced by backend validation, not patched here.
     const apiNodes = Array.isArray(wf?.nodes) ? wf!.nodes : [];
     const apiConnections = Array.isArray(wf?.connections)
       ? wf!.connections
