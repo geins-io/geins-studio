@@ -1270,7 +1270,10 @@
       "no_functions": "Inga funktioner hittades",
       "no_output_schema_hint": "Den här nodtypen definierar inget utdataschema",
       "no_expression_variables": "Inga uttrycksvariabler",
-      "no_expression_variables_hint": "Manifestet definierar inga uttrycksvariabler"
+      "no_expression_variables_hint": "Manifestet definierar inga uttrycksvariabler",
+      "context_variables": "Kontextvariabler",
+      "context_variables_hint": "Tillgängliga inuti loop- och pagineringskroppar.",
+      "provided_by": "Tillhandahålls av"
     },
     "templates": {
       "title": "Mina mallar",

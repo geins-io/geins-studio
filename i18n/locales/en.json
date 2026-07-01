@@ -1273,7 +1273,10 @@
       "no_functions": "No functions found",
       "no_output_schema_hint": "This node type does not define an output schema",
       "no_expression_variables": "No expression variables",
-      "no_expression_variables_hint": "The manifest does not define any expression variables"
+      "no_expression_variables_hint": "The manifest does not define any expression variables",
+      "context_variables": "Context variables",
+      "context_variables_hint": "Available inside loop and paginator bodies.",
+      "provided_by": "Provided by"
     },
     "templates": {
       "title": "My templates",

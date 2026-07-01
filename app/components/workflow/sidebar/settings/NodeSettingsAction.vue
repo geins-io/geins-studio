@@ -268,8 +268,8 @@ const typeBadgeClass = (type: string): string => {
                 <span class="text-muted-foreground text-xs">
                   {{
                     Boolean(nodeInput[field.name] ?? field.default)
-                      ? 'Enabled'
-                      : 'Disabled'
+                      ? $t('node.settings.enabled')
+                      : $t('node.settings.disabled')
                   }}
                 </span>
               </div>

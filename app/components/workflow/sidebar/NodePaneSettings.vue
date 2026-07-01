@@ -210,6 +210,34 @@ const expressionVariables = computed(
   () => manifestStore.manifest.value?.expressionVariables ?? [],
 );
 
+// Context variables are exposed by flow nodes (iterator `$current`/`$index`,
+// paginator `$cursor`/`$pageNumber`/`$pageSize`) to their child nodes. Aggregate
+// them across the manifest — deduped by name — so authors editing a loop body
+// can discover what's referenceable, alongside the global expression variables.
+type AggregatedContextVariable = {
+  name: string;
+  type: string;
+  description?: string;
+  scope?: string;
+  providers: string[];
+};
+const contextVariables = computed<AggregatedContextVariable[]>(() => {
+  const map = new Map<string, AggregatedContextVariable>();
+  for (const node of manifestStore.nodes.value) {
+    for (const cv of node.contextVariables ?? []) {
+      const existing = map.get(cv.name);
+      if (existing) {
+        if (!existing.providers.includes(node.displayName)) {
+          existing.providers.push(node.displayName);
+        }
+      } else {
+        map.set(cv.name, { ...cv, providers: [node.displayName] });
+      }
+    }
+  }
+  return [...map.values()];
+});
+
 const expressionFunctions = computed(
   () => manifestStore.expressionFunctions.value,
 );
@@ -742,6 +770,48 @@ const onSettingsDrop = (event: DragEvent) => {
       class="flex-1 overflow-y-auto p-4"
       style="scrollbar-gutter: stable"
     >
+      <!-- Context variables (exposed by loop/paginator nodes to their body) -->
+      <div v-if="contextVariables.length" class="mb-4">
+        <div
+          class="text-muted-foreground mb-2 text-[10px] font-medium tracking-wider uppercase"
+        >
+          {{ $t('node.properties.context_variables') }}
+        </div>
+        <p class="text-muted-foreground mb-2 text-[11px] leading-relaxed">
+          {{ $t('node.properties.context_variables_hint') }}
+        </p>
+        <div class="divide-y">
+          <div
+            v-for="cv in contextVariables"
+            :key="cv.name"
+            class="space-y-1 py-3 first:pt-0"
+          >
+            <div class="flex items-center gap-2">
+              <code
+                class="rounded bg-sky-500/10 px-2 py-0.5 font-mono text-xs font-medium text-sky-700 dark:text-sky-400"
+              >
+                {{ cv.name }}
+              </code>
+              <span
+                class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[9px]"
+              >
+                {{ cv.type }}
+              </span>
+            </div>
+            <p
+              v-if="cv.description"
+              class="text-muted-foreground text-xs leading-relaxed"
+            >
+              {{ cv.description }}
+            </p>
+            <p class="text-muted-foreground text-[10px]">
+              {{ $t('node.properties.provided_by') }}:
+              {{ cv.providers.join(', ') }}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div v-if="expressionVariables.length" class="divide-y">
         <div
           v-for="v in expressionVariables"
@@ -769,7 +839,7 @@ const onSettingsDrop = (event: DragEvent) => {
         </div>
       </div>
       <div
-        v-else
+        v-if="!expressionVariables.length && !contextVariables.length"
         class="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center text-xs"
       >
         <LucideVariable class="h-8 w-8 opacity-40" />

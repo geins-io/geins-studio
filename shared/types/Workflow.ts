@@ -624,7 +624,8 @@ export interface ManifestContextVariable {
 export interface ManifestNodeExample {
   name?: string;
   description?: string;
-  input?: Record<string, unknown>;
+  /** Example `config` payload for the node (manifest 3.x renamed this from `input`). */
+  config?: Record<string, unknown>;
 }
 
 /**
