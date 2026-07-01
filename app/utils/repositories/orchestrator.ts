@@ -84,13 +84,24 @@ function unwrapArray<T = unknown>(res: unknown): T[] {
   }
   return [];
 }
-const WORKFLOW_ENDPOINT = `${BASE}/workflows`;
-const EXECUTION_ENDPOINT = `${BASE}/executions`;
-const METRICS_ENDPOINT = `${BASE}/workflows/metrics`;
-const VARIABLE_ENDPOINT = `${BASE}/variables`;
+// Registry-backed endpoints (workflow/execution/variable are domain entities).
+const WORKFLOW_ENDPOINT = ENTITIES.workflow.endpoint;
+const EXECUTION_ENDPOINT = ENTITIES.execution.endpoint;
+const VARIABLE_ENDPOINT = ENTITIES.variable.endpoint;
+const METRICS_ENDPOINT = `${WORKFLOW_ENDPOINT}/metrics`;
+// Non-registry endpoints (not domain entities) — kept as local constants.
 const MANIFEST_ENDPOINT = `${BASE}/manifest`;
 const KIT_ENDPOINT = `${BASE}/kits`;
 
+/**
+ * Orchestrator (workflow engine) repository — deliberately bespoke, NOT built on
+ * `entityRepo`/`entityBaseRepo`: the API shape doesn't fit the factory. `list()`
+ * returns `WorkflowSummary` but `get()` returns `WorkflowDefinition` (the factory
+ * binds a single `TResponse`); `update` is PUT (the factory hardcodes PATCH);
+ * lists sit at the base path behind a varying envelope and several responses need
+ * PascalCase→camel normalization. Registry-backed endpoints still come from
+ * `ENTITIES.*.endpoint` so the part that can be shared is.
+ */
 export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   return {
     // -- Workflow CRUD ------------------------------------------------------
