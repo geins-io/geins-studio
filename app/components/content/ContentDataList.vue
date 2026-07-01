@@ -34,7 +34,7 @@ const _props = withDefaults(
           {{
             $t(
               'nr_of_entity',
-              { count: item.value.length, entityName: item.entityName },
+              { count: item.value.length, entityKey: item.entityKey },
               item.value.length,
             )
           }}

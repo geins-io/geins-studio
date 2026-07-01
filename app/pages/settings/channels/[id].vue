@@ -55,7 +55,7 @@ const formSchema = toTypedSchema(
   z.object({
     name: z
       .string()
-      .min(1, t('entity_required', { entityName: 'name' }))
+      .min(1, t('entity_required', { entityKey: 'name' }))
       .max(50, t('channels.validation_name_max_length')),
     url: z.url(t('channels.invalid_url')).optional().or(z.literal('')),
     active: z.boolean(),
@@ -344,7 +344,7 @@ const handleRemoveMarket = (marketId: string) => {
 // ENTITY EDIT COMPOSABLE
 // =====================================================================================
 const {
-  entityName,
+  entityKey,
   entityId,
   createMode,
   loading,
@@ -742,7 +742,7 @@ const summary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   if (!createMode.value) {
     dataList.push({
-      label: t('entity_id', { entityName }),
+      label: t('entity_id', { entityKey }),
       value: entityId.value ?? '',
       displayType: DataItemDisplayType.Copy,
     });
@@ -778,7 +778,7 @@ const summary = computed<DataItem[]>(() => {
         value: activeLanguages.map((l) => l._id),
         displayValue: displayValue || t('none'),
         displayType: DataItemDisplayType.Array,
-        entityName: 'language',
+        entityKey: 'language',
       });
     }
     if (channelData?.markets?.length) {
@@ -796,7 +796,7 @@ const summary = computed<DataItem[]>(() => {
         value: activeMarkets.map((m) => m._id),
         displayValue: displayValue || t('none'),
         displayType: DataItemDisplayType.Array,
-        entityName: 'market',
+        entityKey: 'market',
       });
     }
     if (channelPayments.value?.length) {
@@ -808,7 +808,7 @@ const summary = computed<DataItem[]>(() => {
           value: activePayments.map((p) => p._id),
           displayValue,
           displayType: DataItemDisplayType.Array,
-          entityName: 'payment_method',
+          entityKey: 'payment_method',
         });
       }
     }
@@ -828,7 +828,7 @@ const { summaryProps } = useEntityEditSummary({
   formTouched,
   summary,
   settingsSummary,
-  entityName,
+  entityKey,
   entityLiveStatus,
 });
 
@@ -864,13 +864,13 @@ if (!createMode.value) {
 <template>
   <DialogUnsavedChanges
     v-model:open="unsavedChangesDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="loading"
     @confirm="confirmLeave"
   />
   <ContentEditWrap>
     <template #header>
-      <ContentHeader :title="entityPageTitle" :entity-name="entityName">
+      <ContentHeader :title="entityPageTitle" :entity-key="entityKey">
         <ContentActionBar>
           <ButtonIcon
             v-if="createMode"
@@ -878,7 +878,7 @@ if (!createMode.value) {
             :loading="loading"
             @click="handleCreateChannel"
           >
-            {{ $t('save_entity', { entityName }) }}
+            {{ $t('save_entity', { entityKey }) }}
           </ButtonIcon>
           <ButtonIcon
             v-if="!createMode"
@@ -887,7 +887,7 @@ if (!createMode.value) {
             :disabled="!hasUnsavedChanges || loading"
             @click="handleSave"
           >
-            {{ $t('save_entity', { entityName }) }}
+            {{ $t('save_entity', { entityKey }) }}
           </ButtonIcon>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>

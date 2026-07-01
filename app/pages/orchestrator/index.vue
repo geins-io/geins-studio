@@ -615,7 +615,7 @@ watchEffect(() => {
           <EmptyContent>
             <ButtonIcon icon="new" variant="secondary" as-child>
               <NuxtLink to="/orchestrator/workflows/new">
-                {{ $t('new_entity', { entityName: 'workflow' }) }}
+                {{ $t('new_entity', { entityKey: 'workflow' }) }}
               </NuxtLink>
             </ButtonIcon>
           </EmptyContent>
@@ -811,7 +811,7 @@ watchEffect(() => {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {{ $t('edit_entity', { entityName: 'workflow' }) }}
+                    {{ $t('edit_entity', { entityKey: 'workflow' }) }}
                   </TooltipContent>
                 </Tooltip>
               </div>

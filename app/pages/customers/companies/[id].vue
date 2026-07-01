@@ -158,7 +158,7 @@ const createDisabled = ref(true);
 // Configuration callbacks transform data between API shape and form shape.
 // Do NOT duplicate CRUD logic outside this composable.
 const {
-  entityName,
+  entityKey,
   entityId,
   createMode,
   loading,
@@ -220,7 +220,7 @@ const {
         ...buyer,
         priceLists: createTooltip({
           items: buyer.priceLists || [],
-          entityName: 'price_list',
+          entityKey: 'price_list',
           formatter: (priceList) => `${priceList?.name}`,
           t,
         }),
@@ -538,7 +538,7 @@ if (!createMode.value) {
 
   if (!data.value || error.value) {
     geinsLogError(
-      `${t('failed_to_fetch_entity', { entityName: 'price_list' }, 2)}`,
+      `${t('failed_to_fetch_entity', { entityKey: 'price_list' }, 2)}`,
       error.value,
     );
   } else {
@@ -590,7 +590,7 @@ const confirmAddressDelete = async () => {
   addShippingAddress.value = false;
 
   toast({
-    title: t('entity_deleted', { entityName: 'shipping_address' }),
+    title: t('entity_deleted', { entityKey: 'shipping_address' }),
     variant: 'positive',
   });
 
@@ -711,14 +711,14 @@ const summary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   if (!createMode.value) {
     dataList.push({
-      label: t('entity_id', { entityName }),
+      label: t('entity_id', { entityKey }),
       value: String(entityDataUpdate.value?._id),
       displayType: DataItemDisplayType.Copy,
     });
   }
   if (entityData.value?.name) {
     dataList.push({
-      label: t('entity_name', { entityName }),
+      label: t('entity_name', { entityKey }),
       value: entityData.value.name,
     });
   }
@@ -731,7 +731,7 @@ const summary = computed<DataItem[]>(() => {
       value: entityData.value.salesReps,
       displayValue,
       displayType: DataItemDisplayType.Array,
-      entityName: 'sales_rep',
+      entityKey: 'sales_rep',
     });
   }
   if (entityData.value?.channels?.length) {
@@ -743,7 +743,7 @@ const summary = computed<DataItem[]>(() => {
       value: entityData.value.channels,
       displayValue,
       displayType: DataItemDisplayType.Array,
-      entityName: 'channel',
+      entityKey: 'channel',
     });
   }
   if (companyGroups.value.length) {
@@ -753,7 +753,7 @@ const summary = computed<DataItem[]>(() => {
       value: companyGroups.value,
       displayValue,
       displayType: DataItemDisplayType.Array,
-      entityName: 'company_group',
+      entityKey: 'company_group',
     });
   }
   return dataList;
@@ -787,7 +787,7 @@ const otherSummary = computed<DataItem[]>(() => {
       label: t('buyer', 2),
       value: entityData.value.buyers,
       displayValue,
-      entityName: 'buyer',
+      entityKey: 'buyer',
       displayType: DataItemDisplayType.Array,
     });
   }
@@ -799,7 +799,7 @@ const otherSummary = computed<DataItem[]>(() => {
       label: t('price_list', 2),
       value: entityData.value.priceLists,
       displayValue,
-      entityName: 'price_list',
+      entityKey: 'price_list',
       displayType: DataItemDisplayType.Array,
     });
   }
@@ -808,7 +808,7 @@ const otherSummary = computed<DataItem[]>(() => {
       label: t('order', 2),
       value: t('nr_of_entity', {
         count: ordersList.value.length,
-        entityName: 'order',
+        entityKey: 'order',
       }),
     });
   }
@@ -820,7 +820,7 @@ const { summaryProps } = useEntityEditSummary({
   formTouched,
   summary,
   settingsSummary,
-  entityName,
+  entityKey,
   entityLiveStatus,
 });
 
@@ -896,26 +896,26 @@ if (!createMode.value) {
 <template>
   <DialogUnsavedChanges
     v-model:open="unsavedChangesDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="loading"
     @confirm="confirmLeave"
   />
   <DialogDelete
     v-model:open="deleteDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="deleting"
     @confirm="confirmDelete"
   />
   <DialogDelete
     v-model:open="deleteAddressDialogOpen"
-    entity-name="shipping_address"
+    entity-key="shipping_address"
     :loading="deleting"
     @confirm="confirmAddressDelete"
   />
 
   <ContentEditWrap>
     <template #header>
-      <ContentHeader :title="entityPageTitle" :entity-name="entityName">
+      <ContentHeader :title="entityPageTitle" :entity-key="entityKey">
         <ContentActionBar>
           <ButtonIcon
             v-if="!createMode"
@@ -924,7 +924,7 @@ if (!createMode.value) {
             :disabled="!hasUnsavedChanges || loading"
             @click="handleUpdateCompany"
           >
-            {{ $t('save_entity', { entityName }) }}
+            {{ $t('save_entity', { entityKey }) }}
           </ButtonIcon>
           <DropdownMenu v-if="!createMode">
             <DropdownMenuTrigger as-child>
@@ -936,13 +936,13 @@ if (!createMode.value) {
               <DropdownMenuItem as-child>
                 <NuxtLink :to="newEntityUrl">
                   <LucidePlus class="mr-2 size-4" />
-                  <span>{{ $t('new_entity', { entityName }) }}</span>
+                  <span>{{ $t('new_entity', { entityKey }) }}</span>
                 </NuxtLink>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem @click="openDeleteDialog">
                 <LucideTrash class="mr-2 size-4" />
-                <span>{{ $t('delete_entity', { entityName }) }}</span>
+                <span>{{ $t('delete_entity', { entityKey }) }}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -976,7 +976,7 @@ if (!createMode.value) {
                   <FormField v-slot="{ componentField }" name="details.name">
                     <FormItem>
                       <FormLabel>
-                        {{ $t('entity_name', { entityName }) }}
+                        {{ $t('entity_name', { entityKey }) }}
                       </FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="text" />
@@ -1069,7 +1069,7 @@ if (!createMode.value) {
                       <FormControl>
                         <FormInputTagsSearch
                           :model-value="componentField.modelValue"
-                          entity-name="sales_rep"
+                          entity-key="sales_rep"
                           :data-set="users"
                           @update:model-value="
                             componentField['onUpdate:modelValue']
@@ -1108,7 +1108,7 @@ if (!createMode.value) {
                       <FormControl>
                         <FormInputTagsSearch
                           :model-value="componentField.modelValue"
-                          entity-name="company_group"
+                          entity-key="company_group"
                           :data-set="companyTags"
                           :allow-custom-tags="true"
                           @update:model-value="
@@ -1174,7 +1174,7 @@ if (!createMode.value) {
                     >
                       <Button class="mt-4" variant="outline">
                         {{
-                          $t('add_entity', { entityName: 'shipping_address' })
+                          $t('add_entity', { entityKey: 'shipping_address' })
                         }}
                       </Button>
                     </ContentEditAddressPanel>
@@ -1232,7 +1232,7 @@ if (!createMode.value) {
                 :disabled="createDisabled"
                 @click="handleCreateCompany"
               >
-                {{ $t('create_entity', { entityName }) }}
+                {{ $t('create_entity', { entityKey }) }}
               </Button>
             </div>
           </ContentEditMainContent>
@@ -1263,14 +1263,14 @@ if (!createMode.value) {
                     variant="outline"
                     size="sm"
                   >
-                    {{ $t('add_entity', { entityName: 'buyer' }) }}
+                    {{ $t('add_entity', { entityKey: 'buyer' }) }}
                   </ButtonIcon>
                 </CompanyBuyerPanel>
               </template>
               <div>
                 <TableView
                   :mode="TableMode.Simple"
-                  entity-name="buyer"
+                  entity-key="buyer"
                   :columns="buyerColumns"
                   :data="buyersList"
                   :empty-icon="LucideUser"
@@ -1296,7 +1296,7 @@ if (!createMode.value) {
                 <SelectorQuickAdd
                   :entities="allPriceLists"
                   :selection="addedPriceListsIds"
-                  entity-name="price_list"
+                  entity-key="price_list"
                   :show-image="false"
                   class="sm:w-60! lg:w-96!"
                   @add="addPriceList($event)"
@@ -1306,7 +1306,7 @@ if (!createMode.value) {
               <div>
                 <TableView
                   :mode="TableMode.Simple"
-                  entity-name="price_list"
+                  entity-key="price_list"
                   :columns="priceListColumns"
                   :data="addedPriceLists"
                   :init-visibility-state="visibilityState"
@@ -1331,7 +1331,7 @@ if (!createMode.value) {
               <div>
                 <TableView
                   :mode="TableMode.Simple"
-                  entity-name="order"
+                  entity-key="order"
                   :columns="orderColumns"
                   :data="ordersList"
                   :page-size="20"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
-  entityName: string;
+  entityKey: string;
   loading: boolean;
 }>();
 const open = defineModel('open', {
@@ -20,7 +20,7 @@ const _emit = defineEmits(['confirm', 'cancel']);
         <AlertDialogDescription>
           {{
             $t('dialog.delete_confirm_description', {
-              entityName: $t(props.entityName),
+              entityKey: $t(props.entityKey),
             })
           }}
         </AlertDialogDescription>

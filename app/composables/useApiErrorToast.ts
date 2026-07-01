@@ -35,9 +35,9 @@ export function useApiErrorToast(): UseApiErrorToastReturnType {
     const { toast } = useToast();
 
     // `entity` is a raw i18n key so `error_{action}_entity` can resolve it via
-    // `@.lower:{entityName}` with correct per-locale grammar.
+    // `@.lower:{entityKey}` with correct per-locale grammar.
     const contextMessage = context
-      ? i18n.t(`error_${context.action}_entity`, { entityName: context.entity })
+      ? i18n.t(`error_${context.action}_entity`, { entityKey: context.entity })
       : undefined;
 
     toast({

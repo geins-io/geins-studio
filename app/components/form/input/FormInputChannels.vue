@@ -21,6 +21,6 @@ const { channels } = storeToRefs(accountStore);
     v-model="model"
     :data-set="channels"
     :placeholder="placeholder"
-    entity-name="channel"
+    entity-key="channel"
   />
 </template>

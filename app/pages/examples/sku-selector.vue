@@ -94,7 +94,7 @@ const selectedSkuColumns = computed(() => {
       <SelectorPanel
         :selection="selection"
         :mode="SelectorMode.Simple"
-        entity-name="sku"
+        entity-key="sku"
         :entities="productsWithSkus"
         :entity-type="SelectorEntityType.Sku"
         :options="[
@@ -107,14 +107,14 @@ const selectedSkuColumns = computed(() => {
         @save="updateSelection"
       >
         <ButtonIcon icon="new" size="sm" class="mb-6">
-          {{ $t('add_entity', { entityName: 'sku' }) }}
+          {{ $t('add_entity', { entityKey: 'sku' }) }}
         </ButtonIcon>
       </SelectorPanel>
 
       <TableView
         :columns="selectedSkuColumns"
         :data="selectedSkus"
-        entity-name="sku"
+        entity-key="sku"
         :mode="TableMode.Simple"
         :page-size="10"
         :show-search="true"

@@ -36,7 +36,7 @@ const { orchestratorApi } = useGeinsRepository();
 const breadcrumbsStore = useBreadcrumbsStore();
 const allData = ref<EntityList[]>([]);
 const entity = ENTITIES.variable;
-const entityName = entity.key;
+const entityKey = entity.key;
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -127,7 +127,7 @@ const dataList = computed(() => {
 });
 
 const clearKitFilter = () => {
-  navigateTo(entityListUrl(entityName));
+  navigateTo(entityListUrl(entityKey));
 };
 
 // ─── Table Columns ─────────────────────────────────────────────────
@@ -164,7 +164,7 @@ onMounted(() => {
       isSecret: 'icon',
     },
     linkColumns: {
-      key: { entityKey: entityName, idField: 'key' },
+      key: { entityKey: entityKey, idField: 'key' },
     },
     iconColumns: {
       isSecret: { resolveIcon: resolveSecretIcon },
@@ -199,7 +199,7 @@ const searchableFields: Array<keyof EntityList> = ['key', 'description'];
   >
     <ContentActionBar>
       <ButtonIcon icon="new" href="/settings/orchestrator/variables/new">
-        {{ $t('new_entity', { entityName }) }}
+        {{ $t('new_entity', { entityKey }) }}
       </ButtonIcon>
     </ContentActionBar>
   </ContentHeader>
@@ -230,7 +230,7 @@ const searchableFields: Array<keyof EntityList> = ['key', 'description'];
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
-      :entity-name="entityName"
+      :entity-key="entityKey"
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
@@ -244,7 +244,7 @@ const searchableFields: Array<keyof EntityList> = ['key', 'description'];
           variant="secondary"
           @click="navigateTo('/settings/orchestrator/variables/new')"
         >
-          {{ $t('create_new_entity', { entityName }) }}
+          {{ $t('create_new_entity', { entityKey }) }}
         </ButtonIcon>
       </template>
     </TableView>

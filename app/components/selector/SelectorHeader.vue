@@ -5,7 +5,7 @@ const props = withDefaults(
     description: string;
     selection: SelectorSelectionInternal;
     entities: T[];
-    entityName: string;
+    entityKey: string;
   }>(),
   {},
 );
@@ -21,7 +21,7 @@ const selectedIds = computed(() => props.selection?.ids || []);
       v-if="entities.length"
       :entities="entities"
       :selection="selectedIds"
-      :entity-name="entityName"
+      :entity-key="entityKey"
       :show-id="true"
       :show-image="true"
       @add="$emit('add', $event)"

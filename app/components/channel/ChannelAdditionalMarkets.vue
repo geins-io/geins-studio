@@ -141,7 +141,7 @@ const addDialogOpen = ref(false);
         :data="tableRows"
         :mode="TableMode.Minimal"
         :dim-inactive-rows="true"
-        entity-name="market"
+        entity-key="market"
         :empty-text="t('channels.additional_markets_empty')"
         :empty-icon="emptyIcon"
       />

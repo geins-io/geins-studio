@@ -11,7 +11,7 @@ const { t } = useI18n();
 const props = withDefaults(
   defineProps<{
     dataSet?: T[];
-    entityName?: string;
+    entityKey?: string;
     placeholder?: string;
     allowCustomTags?: boolean;
     disableTeleport?: boolean;
@@ -36,12 +36,12 @@ const placeholder = computed(() => {
   if (props.placeholder) {
     return props.placeholder;
   }
-  if (props.entityName) {
+  if (props.entityKey) {
     return (
       t(
         'add_entity',
         {
-          entityName: props.entityName,
+          entityKey: props.entityKey,
         },
         props.singleSelect ? 1 : 2,
       ) + '...'
@@ -164,10 +164,10 @@ const getItemFromDataSet = (id: string): T | undefined => {
         "
       >
         <ComboboxEmpty v-if="allowCustomTags">
-          {{ $t('add_entity_by_typing', { entityName }, 2) }}
+          {{ $t('add_entity_by_typing', { entityKey }, 2) }}
         </ComboboxEmpty>
         <ComboboxEmpty v-else>
-          {{ $t('no_entity', { entityName }, 2) }}
+          {{ $t('no_entity', { entityKey }, 2) }}
         </ComboboxEmpty>
         <ComboboxGroup>
           <ComboboxItem
@@ -188,7 +188,7 @@ const getItemFromDataSet = (id: string): T | undefined => {
           @select.prevent="handleAddNewOption"
         >
           <span class="text-muted-foreground text-xs">
-            {{ $t('add_entity', { entityName }) }}:
+            {{ $t('add_entity', { entityKey }) }}:
           </span>
           {{ searchTerm }}
         </ComboboxItem>

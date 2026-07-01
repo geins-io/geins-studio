@@ -37,7 +37,7 @@ const { orchestratorApi } = useGeinsRepository();
 const breadcrumbsStore = useBreadcrumbsStore();
 const allData = ref<EntityList[]>([]);
 const entity = ENTITIES.execution;
-const entityName = entity.key;
+const entityKey = entity.key;
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -225,7 +225,7 @@ const dataList = computed(() => {
 });
 
 const clearFilter = () => {
-  navigateTo(entityListUrl(entityName));
+  navigateTo(entityListUrl(entityKey));
 };
 
 const FILTER_QUERY_KEY: Record<ActiveFilter['type'], string> = {
@@ -237,7 +237,7 @@ const FILTER_QUERY_KEY: Record<ActiveFilter['type'], string> = {
 
 const removeFilter = (type: ActiveFilter['type']) => {
   const { [FILTER_QUERY_KEY[type]]: _, ...rest } = route.query;
-  navigateTo({ path: entityListUrl(entityName), query: rest });
+  navigateTo({ path: entityListUrl(entityKey), query: rest });
 };
 
 // ─── Live polling: new executions + running-status refresh ─────────
@@ -319,7 +319,7 @@ onMounted(() => {
     },
     linkColumns: {
       id: {
-        entityKey: entityName,
+        entityKey: entityKey,
         idField: 'id',
         maxTextLength: 24,
       },
@@ -331,7 +331,7 @@ onMounted(() => {
     iconColumns: {
       status: {
         resolveIcon: resolveStatusIcon,
-        entityKey: entityName,
+        entityKey: entityKey,
         idField: 'id',
       },
     },
@@ -423,7 +423,7 @@ const searchableFields: Array<keyof EntityList> = [
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
-      :entity-name="entityName"
+      :entity-key="entityKey"
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"

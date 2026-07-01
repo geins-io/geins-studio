@@ -125,7 +125,7 @@ const handleKeyDown = () => {
           />
           <template v-else>{{ choice.label }}</template>
         </span>
-        <span v-else>{{ t('select_entity', { entityName: 'language' }) }}</span>
+        <span v-else>{{ t('select_entity', { entityKey: 'language' }) }}</span>
 
         <LucideChevronsUpDown class="ml-2 size-4 shrink-0 opacity-50" />
       </button>
@@ -146,9 +146,7 @@ const handleKeyDown = () => {
           <ComboboxInput
             ref="searchInput"
             class="focus:border-primary focus-visible:border-primary h-10 rounded-none border-0 border-b pl-9 focus:rounded-lg focus:border focus-visible:ring-0 focus-visible:outline-hidden"
-            :placeholder="
-              t('search_entity', { entityName: 'language' }) + '...'
-            "
+            :placeholder="t('search_entity', { entityKey: 'language' }) + '...'"
             autocomplete="off"
             @blur="handleBlur"
           />
@@ -160,7 +158,7 @@ const handleKeyDown = () => {
         </div>
 
         <ComboboxEmpty>
-          {{ t('no_entity_found', { entityName: 'language' }) }}
+          {{ t('no_entity_found', { entityKey: 'language' }) }}
         </ComboboxEmpty>
 
         <ComboboxGroup class="max-h-75 overflow-auto">

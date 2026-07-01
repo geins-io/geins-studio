@@ -38,9 +38,9 @@ const {
 
 const workflowId = computed(() => route.params.id as string);
 const isNew = computed(() => workflowId.value === 'new');
-// entityName for display/summary; the entry is passed inline to usePageError.
+// entityKey for display/summary; the entry is passed inline to usePageError.
 // (A local `const entity` would shadow the template's `v-for="entity in …"`.)
-const entityName = ENTITIES.workflow.key;
+const entityKey = ENTITIES.workflow.key;
 
 // ─── Editor manifest — trigger types + event entities for General tab ──
 const manifestStore = useWorkflowManifest();
@@ -350,7 +350,7 @@ const prettyLabel = (name: string): string =>
 
 // Pre-compute i18n labels before `await` — after an await, Vue loses the
 // active component instance so `t()` silently fails in post-await computeds.
-const idLabel = t('entity_id', { entityName: 'workflow' });
+const idLabel = t('entity_id', { entityKey: 'workflow' });
 
 // ─── Unsaved changes tracking ────────────────────────────────────
 // Must be declared BEFORE `await useAsyncData` — after an await, Vue loses
@@ -544,7 +544,7 @@ const deleteWorkflowEntity = async (): Promise<boolean> => {
 };
 
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteWorkflowEntity, entityListUrl(entityName));
+  useDeleteDialog(deleteWorkflowEntity, entityListUrl(entityKey));
 
 const isSavingConfig = ref(false);
 
@@ -877,7 +877,7 @@ const summary = computed<DataItem[]>(() => {
       value: [group],
       displayValue: group,
       displayType: DataItemDisplayType.Array,
-      entityName: 'group',
+      entityKey: 'group',
     });
   }
   const tags = form.values.details?.tags ?? [];
@@ -887,7 +887,7 @@ const summary = computed<DataItem[]>(() => {
       value: tags,
       displayValue: tags.join(', '),
       displayType: DataItemDisplayType.Array,
-      entityName: 'tag',
+      entityKey: 'tag',
     });
   }
   return items;
@@ -963,7 +963,7 @@ const { summaryProps } = useEntityEditSummary({
   formTouched: hasUnsavedChanges,
   summary,
   settingsSummary,
-  entityName,
+  entityKey,
   entityLiveStatus: isEnabled,
   status: computed(() => (isEnabled.value ? 'active' : 'inactive')),
 });
@@ -972,13 +972,13 @@ const { summaryProps } = useEntityEditSummary({
 <template>
   <DialogUnsavedChanges
     v-model:open="unsavedChangesDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="isSavingConfig"
     @confirm="confirmLeave"
   />
   <DialogDelete
     v-model:open="deleteDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="deleting"
     @confirm="confirmDelete"
   />
@@ -992,7 +992,7 @@ const { summaryProps } = useEntityEditSummary({
             ? $t('workflows.new_workflow_name')
             : workflowNameValue || $t('workflow')
         "
-        :entity-name="entityName"
+        :entity-key="entityKey"
       >
         <ContentActionBar>
           <ContentViewModeSwitch
@@ -1007,7 +1007,7 @@ const { summaryProps } = useEntityEditSummary({
             :disabled="isSavingConfig || !hasUnsavedChanges"
             @click="handleSave"
           >
-            {{ $t('save_entity', { entityName }) }}
+            {{ $t('save_entity', { entityKey }) }}
           </ButtonIcon>
           <DropdownMenu v-if="!isNew">
             <DropdownMenuTrigger as-child>
@@ -1019,7 +1019,7 @@ const { summaryProps } = useEntityEditSummary({
               <DropdownMenuItem as-child>
                 <NuxtLink to="/orchestrator/workflows/new">
                   <LucidePlus class="mr-2 size-4" />
-                  <span>{{ $t('new_entity', { entityName }) }}</span>
+                  <span>{{ $t('new_entity', { entityKey }) }}</span>
                 </NuxtLink>
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -1067,7 +1067,7 @@ const { summaryProps } = useEntityEditSummary({
               <DropdownMenuSeparator />
               <DropdownMenuItem @click="openDeleteDialog">
                 <LucideTrash class="mr-2 size-4" />
-                <span>{{ $t('delete_entity', { entityName }) }}</span>
+                <span>{{ $t('delete_entity', { entityKey }) }}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1117,7 +1117,7 @@ const { summaryProps } = useEntityEditSummary({
                       <FormLabel :optional="true">{{ $t('group') }}</FormLabel>
                       <FormControl>
                         <FormInputTagsSearch
-                          entity-name="group"
+                          entity-key="group"
                           :data-set="groupDataSet"
                           :allow-custom-tags="true"
                           :single-select="true"
@@ -1661,12 +1661,12 @@ const { summaryProps } = useEntityEditSummary({
 
             <div v-if="isNew" class="flex flex-row justify-end gap-4">
               <Button variant="secondary" as-child>
-                <NuxtLink :to="entityListUrl(entityName)">
+                <NuxtLink :to="entityListUrl(entityKey)">
                   {{ $t('cancel') }}
                 </NuxtLink>
               </Button>
               <Button :loading="isSavingConfig" @click="handleCreate">
-                {{ $t('create_entity', { entityName }) }}
+                {{ $t('create_entity', { entityKey }) }}
               </Button>
             </div>
           </ContentEditMainContent>

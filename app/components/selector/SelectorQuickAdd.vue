@@ -2,7 +2,7 @@
 const props = defineProps<{
   entities: T[];
   selection: string[];
-  entityName: string;
+  entityKey: string;
   showImage?: boolean;
   showId?: boolean;
 }>();
@@ -49,7 +49,7 @@ const handleClick = (id: string) => {
     >
       <CommandInput
         ref="input"
-        :placeholder="$t('quick_add_entity', { entityName }, 2)"
+        :placeholder="$t('quick_add_entity', { entityKey }, 2)"
         @focus="handleFocused"
       />
       <Popover :open="focused">
@@ -64,9 +64,9 @@ const handleClick = (id: string) => {
             "
           >
             <CommandEmpty>
-              {{ $t('no_entity_found', { entityName }, 2) }}
+              {{ $t('no_entity_found', { entityKey }, 2) }}
             </CommandEmpty>
-            <CommandGroup :heading="$t(entityName, 2)" class="text-left">
+            <CommandGroup :heading="$t(entityKey, 2)" class="text-left">
               <CommandItem
                 v-for="entity in entities"
                 :key="entity._id"

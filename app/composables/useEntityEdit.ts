@@ -59,7 +59,7 @@ interface _UseEntityEditReturnType<
   TUpdate extends UpdateEntity<TBase>,
 > {
   // State
-  entityName: EntityKey;
+  entityKey: EntityKey;
   entityId: ComputedRef<string>;
   createMode: Ref<boolean>;
   loading: Ref<boolean>;
@@ -144,7 +144,7 @@ export function useEntityEdit<
 
   // Core state — all URLs derive from the registry entry the page passes in
   // (single source); never from the route folder.
-  const entityName = options.entity.key;
+  const entityKey = options.entity.key;
   const newEntityUrl = entityNewUrl(options.entity.key);
   // Back-to-list = the collection index (the entity folder itself).
   const entityListUrl = entityBasePath(options.entity.key);
@@ -164,13 +164,13 @@ export function useEntityEdit<
     () => entityData.value?._id || String(route.params.id),
   );
 
-  const entityFetchKey = computed(() => `${entityName}-${entityId.value}`);
+  const entityFetchKey = computed(() => `${entityKey}-${entityId.value}`);
 
   const entityPageTitle = computed(() =>
     createMode.value
-      ? t('new_entity', { entityName }) +
+      ? t('new_entity', { entityKey }) +
         (entityData.value?.name ? ': ' + entityData.value.name : '')
-      : entityData.value?.name || t('edit_entity', { entityName }),
+      : entityData.value?.name || t('edit_entity', { entityKey }),
   );
 
   // Sidebar + tabs
@@ -308,7 +308,7 @@ export function useEntityEdit<
         await router.replace(newUrl);
 
         toast({
-          title: t('entity_created', { entityName }),
+          title: t('entity_created', { entityKey }),
           variant: 'positive',
         });
       }
@@ -359,7 +359,7 @@ export function useEntityEdit<
 
       if (!silent) {
         toast({
-          title: t('entity_updated', { entityName }),
+          title: t('entity_updated', { entityKey }),
           variant: 'positive',
         });
       }
@@ -377,7 +377,7 @@ export function useEntityEdit<
     try {
       await options.repository.delete(entityId.value);
       toast({
-        title: t('entity_deleted', { entityName }),
+        title: t('entity_deleted', { entityKey }),
         variant: 'positive',
       });
       return true;
@@ -389,7 +389,7 @@ export function useEntityEdit<
 
   return {
     // State
-    entityName,
+    entityKey,
     entityId,
     createMode,
     loading,

@@ -11,7 +11,7 @@ navigateTo('/account/profile');
 // // GLOBAL SETUP
 // // const apiEndpoint = '/users';
 // const dataList = ref<Entity[]>([]);
-// const entityName = ENTITIES.user.key;
+// const entityKey = ENTITIES.user.key;
 // const newEntityUrl = entityNewUrl('user');
 // const entityUrl = entityEditUrl('user', '<id>');
 // const loading = ref(true);

@@ -18,8 +18,8 @@ definePageMeta({
 // GLOBAL SETUP
 const { productApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
-const entityName = ENTITIES.price_list.key;
-const newEntityUrl = entityNewUrl(entityName);
+const entityKey = ENTITIES.price_list.key;
+const newEntityUrl = entityNewUrl(entityKey);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -64,7 +64,7 @@ onMounted(() => {
   const columnOptions: ColumnOptions<EntityList> = {
     columnTypes: { name: 'link', channel: 'channels' },
     linkColumns: {
-      name: { entityKey: entityName, idField: '_id' },
+      name: { entityKey: entityKey, idField: '_id' },
     },
     columnTitles: { active: t('status') },
     excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
@@ -76,15 +76,15 @@ onMounted(() => {
     columns.value,
     {
       onEdit: (item: Entity) =>
-        navigateTo(entityEditUrl(entityName, String(item._id))),
+        navigateTo(entityEditUrl(entityKey, String(item._id))),
       onCopy: async (item: Entity) => {
         try {
           const newPriceList = await productApi.priceList.id(item._id).copy();
           toast({
-            title: t('entity_copied', { entityName }),
+            title: t('entity_copied', { entityKey }),
             variant: 'positive',
           });
-          await navigateTo(entityEditUrl(entityName, String(newPriceList._id)));
+          await navigateTo(entityEditUrl(entityKey, String(newPriceList._id)));
         } catch (err) {
           geinsLogError('copyPriceList :::', getErrorMessage(err));
         }
@@ -105,7 +105,7 @@ visibilityState.value = getVisibilityState(hiddenColumns);
 const { toast } = useToast();
 const deletePriceList = async (
   id?: string,
-  entityName?: string,
+  entityKey?: string,
 ): Promise<boolean> => {
   try {
     if (!id) {
@@ -113,7 +113,7 @@ const deletePriceList = async (
     }
     await productApi.priceList.delete(id);
     toast({
-      title: t('entity_deleted', { entityName }),
+      title: t('entity_deleted', { entityKey }),
       variant: 'positive',
     });
     return true;
@@ -133,7 +133,7 @@ const openDeleteDialog = async (id?: string) => {
 };
 const confirmDelete = async () => {
   deleting.value = true;
-  const success = await deletePriceList(deleteId.value, entityName);
+  const success = await deletePriceList(deleteId.value, entityKey);
   if (success) {
     refresh();
   }
@@ -145,21 +145,21 @@ const confirmDelete = async () => {
 <template>
   <DialogDelete
     v-model:open="deleteDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="deleting"
     @confirm="confirmDelete"
   />
-  <ContentHeader :title="$t(entityName, 2)">
+  <ContentHeader :title="$t(entityKey, 2)">
     <ContentActionBar>
       <ButtonIcon icon="new" :href="newEntityUrl">
-        {{ $t('new_entity', { entityName }) }}
+        {{ $t('new_entity', { entityKey }) }}
       </ButtonIcon>
     </ContentActionBar>
   </ContentHeader>
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
-      :entity-name="entityName"
+      :entity-key="entityKey"
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
@@ -172,7 +172,7 @@ const confirmDelete = async () => {
           variant="secondary"
           @click="navigateTo(newEntityUrl)"
         >
-          {{ $t('create_new_entity', { entityName }) }}
+          {{ $t('create_new_entity', { entityKey }) }}
         </ButtonIcon>
       </template>
     </TableView>

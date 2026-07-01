@@ -29,7 +29,7 @@ const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('components/CompanyBuyerPanel.vue');
 const { customerApi } = useGeinsRepository();
 
-const entityName = ENTITIES.buyer.key;
+const entityKey = ENTITIES.buyer.key;
 
 const open = defineModel<boolean>('open');
 const loading = ref(false);
@@ -135,7 +135,7 @@ const handleSuccess = () => {
   emit('added');
   const feedbackWord = props.mode === 'edit' ? 'updated' : 'added';
   toast({
-    title: t(`entity_${feedbackWord}`, { entityName }),
+    title: t(`entity_${feedbackWord}`, { entityKey }),
     variant: 'positive',
   });
 };
@@ -214,7 +214,7 @@ const handleSave = async () => {
 const handleRemoveClick = async () => {
   await removeBuyer();
   toast({
-    title: t('entity_removed', { entityName }),
+    title: t('entity_removed', { entityKey }),
     variant: 'positive',
   });
   open.value = false;
@@ -256,10 +256,10 @@ const existingCustomerName = computed(() => {
     </SheetTrigger>
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>{{ $t(`${mode}_entity`, { entityName }) }}</SheetTitle>
+        <SheetTitle>{{ $t(`${mode}_entity`, { entityKey }) }}</SheetTitle>
         <VisuallyHidden>
           <SheetDescription>
-            {{ $t(`${mode}_entity`, { entityName }) }}
+            {{ $t(`${mode}_entity`, { entityKey }) }}
           </SheetDescription>
         </VisuallyHidden>
       </SheetHeader>
@@ -368,7 +368,7 @@ const existingCustomerName = computed(() => {
                     <FormControl>
                       <FormInputTagsSearch
                         :model-value="componentField.modelValue"
-                        entity-name="price_list"
+                        entity-key="price_list"
                         :data-set="priceLists"
                         @update:model-value="
                           componentField['onUpdate:modelValue']
@@ -415,7 +415,7 @@ const existingCustomerName = computed(() => {
               heading-level="h3"
               :title="
                 $t('remove_entity', {
-                  entityName,
+                  entityKey,
                 })
               "
               :description="$t('customers.buyers_remove_description')"
@@ -470,7 +470,7 @@ const existingCustomerName = computed(() => {
           :disabled="saveDisabled"
           @click.stop="handleSave"
         >
-          {{ $t(`${mode === 'add' ? mode : 'update'}_entity`, { entityName }) }}
+          {{ $t(`${mode === 'add' ? mode : 'update'}_entity`, { entityKey }) }}
         </Button>
       </SheetFooter>
     </SheetContent>

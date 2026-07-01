@@ -15,7 +15,7 @@ const props = withDefaults(
     mode: SelectorMode;
     currency?: string;
     options: SelectorSelectionOption[];
-    entityName: string;
+    entityKey: string;
     entities: T[];
     entityType?: SelectorEntityType;
   }>(),
@@ -33,7 +33,7 @@ const emit = defineEmits<{
 const productsStore = useProductsStore();
 const { categories, brands } = storeToRefs(productsStore);
 
-const entityName = toRef(props, 'entityName');
+const entityKey = toRef(props, 'entityKey');
 const entities = toRef(props, 'entities');
 const entityType = toRef(props, 'entityType');
 /* const type = toRef(props, 'type');
@@ -361,7 +361,7 @@ const handleCancel = () => {
     </SheetTrigger>
     <SheetContent width="wide">
       <SheetHeader>
-        <SheetTitle>{{ $t('entity_selection', { entityName }) }}</SheetTitle>
+        <SheetTitle>{{ $t('entity_selection', { entityKey }) }}</SheetTitle>
         <SheetDescription>
           {{ $t('selector_panel_description') }}
         </SheetDescription>
@@ -390,7 +390,7 @@ const handleCancel = () => {
             <TableView
               :columns="columns"
               :data="entities"
-              :entity-name="entityName"
+              :entity-key="entityKey"
               :show-search="true"
               :pinned-state="{}"
               :selected-ids="selectedIds"
@@ -408,7 +408,7 @@ const handleCancel = () => {
             <TableView
               :columns="categoriesColumns"
               :data="categories"
-              entity-name="category"
+              entity-key="category"
               :pinned-state="{}"
               :show-search="true"
               :selected-ids="currentSelection.categoryIds"
@@ -423,7 +423,7 @@ const handleCancel = () => {
             <TableView
               :columns="brandsColumns"
               :data="brands"
-              entity-name="brand"
+              entity-key="brand"
               :pinned-state="{}"
               :show-search="true"
               :selected-ids="currentSelection.brandIds"

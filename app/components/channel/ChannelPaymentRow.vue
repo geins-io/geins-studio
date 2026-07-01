@@ -44,7 +44,7 @@ const resolvedMarketNames = computed(() =>
 const marketsTooltip = computed(() =>
   createTooltip({
     items: resolvedMarketNames.value,
-    entityName: 'market',
+    entityKey: 'market',
     formatter: (m) => m,
     t,
   }),
@@ -53,7 +53,7 @@ const marketsTooltip = computed(() =>
 const customerTypesTooltip = computed(() =>
   createTooltip({
     items: props.payment.customerTypes,
-    entityName: 'customer_type',
+    entityKey: 'customer_type',
     formatter: (ct) => ct,
     t,
   }),

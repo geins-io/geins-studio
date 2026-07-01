@@ -79,7 +79,7 @@ export interface DataItem {
     | Record<string, unknown>;
   displayValue?: string;
   displayType?: DataItemDisplayType;
-  entityName?: string;
+  entityKey?: string;
   href?: string;
   target?: string;
 }

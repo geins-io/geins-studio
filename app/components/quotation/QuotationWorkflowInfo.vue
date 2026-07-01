@@ -43,7 +43,7 @@ const defaultFlow = computed<FlowItem[]>(() => [
     },
     action: {
       icon: LucideSend,
-      label: t('send_entity', { entityName: 'quotation' }),
+      label: t('send_entity', { entityKey: 'quotation' }),
     },
   },
   {
@@ -74,7 +74,7 @@ const strictFlow = computed<FlowItem[]>(() => [
     },
     action: {
       icon: LucideSend,
-      label: t('send_entity', { entityName: 'quotation' }),
+      label: t('send_entity', { entityKey: 'quotation' }),
     },
   },
   {

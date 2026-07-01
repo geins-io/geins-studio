@@ -52,7 +52,7 @@ watch(
 const autocompleteGroup = computed(() => {
   return props.address.addressType === 'shipping' ? 'shipping' : 'billing';
 });
-const entityName = computed(() => {
+const entityKey = computed(() => {
   return `${autocompleteGroup.value}_address`;
 });
 
@@ -93,10 +93,10 @@ const handleCancel = () => {
     </SheetTrigger>
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>{{ $t('edit_entity', { entityName }) }}</SheetTitle>
+        <SheetTitle>{{ $t('edit_entity', { entityKey }) }}</SheetTitle>
         <VisuallyHidden>
           <SheetDescription>
-            {{ $t('edit_entity', { entityName }) }}
+            {{ $t('edit_entity', { entityKey }) }}
           </SheetDescription>
         </VisuallyHidden>
       </SheetHeader>
@@ -113,7 +113,7 @@ const handleCancel = () => {
             heading-level="h3"
             :title="
               $t('delete_entity', {
-                entityName,
+                entityKey,
               })
             "
             :description="$t('dialog.delete_shipping_address_description')"
@@ -133,7 +133,7 @@ const handleCancel = () => {
           {{ $t('cancel') }}
         </Button>
         <Button @click.stop="handleSave">
-          {{ $t('update_entity', { entityName }) }}
+          {{ $t('update_entity', { entityKey }) }}
         </Button>
       </SheetFooter>
     </SheetContent>

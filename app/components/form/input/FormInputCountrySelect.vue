@@ -41,7 +41,7 @@ const countries = computed<PlainDataItem[]>(() => {
     v-model="countryCode"
     :data-set="countries"
     :disable-teleport="disableTeleport"
-    entity-name="country"
+    entity-key="country"
     autocomplete="country"
   />
 </template>

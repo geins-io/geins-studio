@@ -67,18 +67,18 @@ const { getFallbackSelection, transformProductsToSelectorEntities } =
 const formSchema = toTypedSchema(
   z.object({
     details: z.object({
-      name: z.string().min(1, t('entity_required', { entityName: 'name' })),
+      name: z.string().min(1, t('entity_required', { entityKey: 'name' })),
       accountId: z
         .string()
-        .min(1, t('entity_required', { entityName: 'company' })),
-      ownerId: z.string().min(1, t('entity_required', { entityName: 'owner' })),
+        .min(1, t('entity_required', { entityKey: 'company' })),
+      ownerId: z.string().min(1, t('entity_required', { entityKey: 'owner' })),
       buyerId: z.string().optional(),
       channelId: z
         .string()
-        .min(1, t('entity_required', { entityName: 'channel' })),
+        .min(1, t('entity_required', { entityKey: 'channel' })),
       marketId: z
         .string()
-        .min(1, t('entity_required', { entityName: 'market' })),
+        .min(1, t('entity_required', { entityKey: 'market' })),
       expirationDate: z.string().optional(),
       paymentTerms: z.string().optional(),
       requireConfirmation: z.boolean().optional(),
@@ -545,7 +545,7 @@ const getDefaultMarketIdForChannel = (channelId: string): string => {
 // ENTITY EDIT COMPOSABLE
 // =====================================================================================
 const {
-  entityName,
+  entityKey,
   entityId,
   createMode,
   loading,
@@ -1289,7 +1289,7 @@ const statusActions = computed<StatusActionLayout>(() => {
   const status = entityData.value?.status;
   const strict = entityData.value?.settings?.requireConfirmation ?? false;
 
-  const en = { entityName };
+  const en = { entityKey };
 
   const extendAction = (description: string): StatusAction => ({
     action: 'extend',
@@ -1517,7 +1517,7 @@ const handleCopy = async () => {
   try {
     const newQuotation = await orderApi.quotation.copy(entityId.value);
     if (newQuotation?._id) {
-      toast({ title: t('entity_copied', { entityName }), variant: 'positive' });
+      toast({ title: t('entity_copied', { entityKey }), variant: 'positive' });
       await router.push(entityEditUrl('quotation', newQuotation._id));
     }
   } catch (error) {
@@ -1552,7 +1552,7 @@ const handleSendMessage = async (
     await refreshEntityData.value?.();
     messageSendSuccessCount.value++;
     toast({
-      title: t('entity_sent', { entityName: 'message' }),
+      title: t('entity_sent', { entityKey: 'message' }),
       variant: 'positive',
     });
   } catch (error) {
@@ -1580,7 +1580,7 @@ const handleDeleteMessage = async (messageId: string) => {
     await orderApi.quotation.deleteMessage(messageId);
     await refreshEntityData.value?.();
     toast({
-      title: t('entity_deleted', { entityName: 'message' }),
+      title: t('entity_deleted', { entityKey: 'message' }),
       variant: 'positive',
     });
   } catch (error) {
@@ -1752,7 +1752,7 @@ const productsSummary = computed<DataItem[]>(() => {
       label: t('product', displayItems.value.length),
       value: t(
         'nr_of_entity',
-        { entityName: 'product', count: displayItems.value.length },
+        { entityKey: 'product', count: displayItems.value.length },
         displayItems.value.length,
       ),
     });
@@ -1762,7 +1762,7 @@ const productsSummary = computed<DataItem[]>(() => {
     label: t('orders.price_lists_applied'),
     value: priceLists.map((pl) => pl._id),
     displayValue: priceLists.map((pl) => pl.name).join(', '),
-    entityName: 'price_list',
+    entityKey: 'price_list',
     displayType: DataItemDisplayType.Array,
   });
 
@@ -1780,7 +1780,7 @@ const { summaryProps } = useEntityEditSummary({
   formTouched,
   summary,
   settingsSummary,
-  entityName,
+  entityKey,
   entityLiveStatus,
   showActiveStatus: false,
   status: quotationStatus,
@@ -1794,13 +1794,13 @@ definePageMeta({
 <template>
   <DialogUnsavedChanges
     v-model:open="unsavedChangesDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="loading"
     @confirm="confirmLeave"
   />
   <DialogDelete
     v-model:open="deleteDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="deleting"
     @confirm="confirmDelete"
   />
@@ -1827,13 +1827,13 @@ definePageMeta({
     "
   />
   <ContentEditWrap
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :entity-id="entityId"
     :create-mode="createMode"
     :show-sidebar="showSidebar"
   >
     <template #header>
-      <ContentHeader :title="entityPageTitle" :entity-name="entityName">
+      <ContentHeader :title="entityPageTitle" :entity-key="entityKey">
         <ContentActionBar>
           <!-- DRAFT MODE actions -->
           <template v-if="!createMode && !sentMode">
@@ -1843,7 +1843,7 @@ definePageMeta({
               :disabled="!hasUnsavedChanges || loading || fetchingData"
               @click="handleSave"
             >
-              {{ $t('save_entity', { entityName: 'draft' }) }}
+              {{ $t('save_entity', { entityKey: 'draft' }) }}
             </ButtonIcon>
             <ButtonGroup>
               <ButtonIcon
@@ -1853,8 +1853,8 @@ definePageMeta({
                 @click="
                   openTransitionDialog({
                     action: 'send',
-                    label: $t('send_entity', { entityName }),
-                    title: $t('send_entity', { entityName }),
+                    label: $t('send_entity', { entityKey }),
+                    title: $t('send_entity', { entityKey }),
                     description: form.values.details.requireConfirmation
                       ? $t(
                           'orders.send_quotation_description_require_confirmation',
@@ -1866,7 +1866,7 @@ definePageMeta({
                   })
                 "
               >
-                {{ $t('send_entity', { entityName }) }}
+                {{ $t('send_entity', { entityKey }) }}
               </ButtonIcon>
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
@@ -1878,7 +1878,7 @@ definePageMeta({
                   <DropdownMenuItem as-child>
                     <NuxtLink :to="newEntityUrl">
                       <LucidePlus class="mr-2 size-4" />
-                      <span>{{ $t('new_entity', { entityName }) }}</span>
+                      <span>{{ $t('new_entity', { entityKey }) }}</span>
                     </NuxtLink>
                   </DropdownMenuItem>
                   <DropdownMenuItem :disabled="copyLoading" @click="handleCopy">
@@ -1888,7 +1888,7 @@ definePageMeta({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem @click="openDeleteDialog">
                     <LucideTrash class="mr-2 size-4" />
-                    <span>{{ $t('delete_entity', { entityName }) }}</span>
+                    <span>{{ $t('delete_entity', { entityKey }) }}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -1966,7 +1966,7 @@ definePageMeta({
                   <DropdownMenuItem as-child>
                     <NuxtLink :to="newEntityUrl">
                       <LucidePlus class="mr-2 size-4" />
-                      <span>{{ $t('new_entity', { entityName }) }}</span>
+                      <span>{{ $t('new_entity', { entityKey }) }}</span>
                     </NuxtLink>
                   </DropdownMenuItem>
                   <DropdownMenuItem :disabled="copyLoading" @click="handleCopy">
@@ -1977,7 +1977,7 @@ definePageMeta({
                     <DropdownMenuSeparator />
                     <DropdownMenuItem @click="openDeleteDialog">
                       <LucideTrash class="mr-2 size-4" />
-                      <span>{{ $t('delete_entity', { entityName }) }}</span>
+                      <span>{{ $t('delete_entity', { entityKey }) }}</span>
                     </DropdownMenuItem>
                   </template>
                 </DropdownMenuContent>
@@ -1986,7 +1986,7 @@ definePageMeta({
                 <Button variant="secondary" as-child>
                   <NuxtLink :to="newEntityUrl">
                     <LucidePlus class="mr-2 size-4" />
-                    <span>{{ $t('new_entity', { entityName }) }}</span>
+                    <span>{{ $t('new_entity', { entityKey }) }}</span>
                   </NuxtLink>
                 </Button>
                 <Button
@@ -2003,7 +2003,7 @@ definePageMeta({
                   @click="openDeleteDialog"
                 >
                   <LucideTrash class="mr-2 size-4" />
-                  {{ $t('delete_entity', { entityName }) }}
+                  {{ $t('delete_entity', { entityKey }) }}
                 </Button>
               </template>
             </ButtonGroup>
@@ -2026,7 +2026,7 @@ definePageMeta({
       <ContentEditMain
         v-model:current-tab="currentTab"
         v-model:show-sidebar="showSidebar"
-        :entity-name="entityName"
+        :entity-key="entityKey"
         :entity-id="entityId"
         :entity-page-title="entityPageTitle"
         :new-entity-url="newEntityUrl"
@@ -2047,7 +2047,7 @@ definePageMeta({
             <template v-if="createMode">
               <ContentEditCard
                 :create-mode="createMode"
-                :title="$t('entity_details', { entityName })"
+                :title="$t('entity_details', { entityKey })"
                 :description="$t('orders.quotation_create_description')"
               >
                 <FormGridWrap>
@@ -2055,12 +2055,12 @@ definePageMeta({
                     <FormField v-slot="{ componentField }" name="details.name">
                       <FormItem>
                         <FormLabel>
-                          {{ $t('entity_name', { entityName }) }}
+                          {{ $t('entity_name', { entityKey }) }}
                         </FormLabel>
                         <FormControl>
                           <Input
                             v-bind="componentField"
-                            :placeholder="$t('entity_name', { entityName })"
+                            :placeholder="$t('entity_name', { entityKey })"
                           />
                         </FormControl>
                         <FormMessage />
@@ -2079,7 +2079,7 @@ definePageMeta({
                             <SelectTrigger>
                               <SelectValue
                                 :placeholder="
-                                  $t('select_entity', { entityName: 'company' })
+                                  $t('select_entity', { entityKey: 'company' })
                                 "
                               />
                             </SelectTrigger>
@@ -2120,7 +2120,7 @@ definePageMeta({
                             <SelectTrigger>
                               <SelectValue
                                 :placeholder="
-                                  $t('select_entity', { entityName: 'owner' })
+                                  $t('select_entity', { entityKey: 'owner' })
                                 "
                               />
                             </SelectTrigger>
@@ -2155,7 +2155,7 @@ definePageMeta({
                             <SelectTrigger>
                               <SelectValue
                                 :placeholder="
-                                  $t('select_entity', { entityName: 'buyer' })
+                                  $t('select_entity', { entityKey: 'buyer' })
                                 "
                               />
                             </SelectTrigger>
@@ -2196,7 +2196,7 @@ definePageMeta({
                             <SelectTrigger>
                               <SelectValue
                                 :placeholder="
-                                  $t('select_entity', { entityName: 'channel' })
+                                  $t('select_entity', { entityKey: 'channel' })
                                 "
                               />
                             </SelectTrigger>
@@ -2248,7 +2248,7 @@ definePageMeta({
                   :disabled="!formValid || loading"
                   @click="createEntity"
                 >
-                  {{ $t('create_entity', { entityName }) }}
+                  {{ $t('create_entity', { entityKey }) }}
                 </Button>
               </div>
             </template>
@@ -2258,13 +2258,13 @@ definePageMeta({
               <!-- Card 1: Quotation Details (read-only) -->
               <ContentEditCard
                 :create-mode="false"
-                :title="$t('entity_details', { entityName })"
+                :title="$t('entity_details', { entityKey })"
               >
                 <div class="space-y-4">
                   <div class="grid grid-cols-2 gap-4">
                     <div>
                       <p class="text-muted-foreground mb-1 text-xs font-medium">
-                        {{ $t('entity_name', { entityName }) }}
+                        {{ $t('entity_name', { entityKey }) }}
                       </p>
                       <p class="text-sm">
                         {{ entityData?.name || '-' }}
@@ -2439,13 +2439,13 @@ definePageMeta({
                   <TableView
                     :columns="sentModeSkuColumns"
                     :data="quotationProductRows"
-                    entity-name="product"
+                    entity-key="product"
                     :mode="TableMode.Minimal"
                     :empty-description="
                       t(
                         'empty_description_not_added',
                         {
-                          entityName: 'product',
+                          entityKey: 'product',
                         },
                         2,
                       )
@@ -2474,7 +2474,7 @@ definePageMeta({
               <!-- Card 1: Quotation Details -->
               <ContentEditCard
                 :create-mode="false"
-                :title="$t('entity_details', { entityName })"
+                :title="$t('entity_details', { entityKey })"
                 :description="$t('orders.quotation_edit_description')"
               >
                 <FormGridWrap>
@@ -2482,12 +2482,12 @@ definePageMeta({
                     <FormField v-slot="{ componentField }" name="details.name">
                       <FormItem>
                         <FormLabel>
-                          {{ $t('entity_name', { entityName }) }}
+                          {{ $t('entity_name', { entityKey }) }}
                         </FormLabel>
                         <FormControl>
                           <Input
                             v-bind="componentField"
-                            :placeholder="$t('entity_name', { entityName })"
+                            :placeholder="$t('entity_name', { entityKey })"
                           />
                         </FormControl>
                         <FormMessage />
@@ -2618,7 +2618,7 @@ definePageMeta({
                 <SelectorPanel
                   :selection="skuSelection"
                   :mode="SelectorMode.Simple"
-                  entity-name="product"
+                  entity-key="product"
                   :entities="productsWithSkus"
                   :entity-type="SelectorEntityType.Sku"
                   :options="[
@@ -2631,7 +2631,7 @@ definePageMeta({
                   @save="updateSkuSelection"
                 >
                   <ButtonIcon icon="new" size="sm">
-                    {{ $t('add_entity', { entityName: 'product' }, 2) }}
+                    {{ $t('add_entity', { entityKey: 'product' }, 2) }}
                   </ButtonIcon>
                 </SelectorPanel>
               </template>
@@ -2661,13 +2661,13 @@ definePageMeta({
                 <TableView
                   :columns="selectedSkuColumns"
                   :data="quotationProductRows"
-                  entity-name="product"
+                  entity-key="product"
                   :mode="TableMode.Minimal"
                   :empty-description="
                     t(
                       'empty_description_not_added',
                       {
-                        entityName: 'product',
+                        entityKey: 'product',
                       },
                       2,
                     )

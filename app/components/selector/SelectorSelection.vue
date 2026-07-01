@@ -15,7 +15,7 @@ const props = withDefaults(
   defineProps<{
     currency?: string;
     type: SelectorSelectionType;
-    entityName: string;
+    entityKey: string;
     mode: SelectorMode;
     entities: SelectorEntity[];
     selectionStrategy?: SelectorSelectionStrategy;
@@ -32,23 +32,23 @@ const selection = defineModel<SelectorSelectionInternal>('selection', {
 const { t } = useI18n();
 const { getCategoryName, getBrandName } = useProductsStore();
 const currentCurrency = toRef(props, 'currency');
-const entityName = toRef(props, 'entityName');
+const entityKey = toRef(props, 'entityKey');
 const entities = toRef(props, 'entities');
 const mode = toRef(props, 'mode');
 const selectionStrategy = toRef(props, 'selectionStrategy');
 const type = toRef(props, 'type');
-const entityIsProduct = computed(() => entityName.value === 'product');
+const entityIsProduct = computed(() => entityKey.value === 'product');
 const selectorOptions: Ref<SelectorSelectionOption[]> = computed(() => {
   const options = [
     {
       id: 'product',
       group: 'ids',
-      label: t(entityName.value, 2),
+      label: t(entityKey.value, 2),
     },
     {
       id: 'entity',
       group: 'ids',
-      label: t(entityName.value, 2),
+      label: t(entityKey.value, 2),
     },
     {
       id: 'category',
@@ -114,7 +114,7 @@ const manuallySelectedText = computed(() =>
   t(
     'manually_selected_entity',
     {
-      entityName: entityName.value,
+      entityKey: entityKey.value,
       count: selection.value.ids?.length ?? 0,
     },
     selection.value.ids?.length ?? 0,
@@ -180,8 +180,8 @@ const noSelectionLabel = computed(() => {
   return (type.value === SelectorSelectionType.Include &&
     selectionStrategy.value === SelectorSelectionStrategy.All) ||
     activeConditionTypes.value > 0
-    ? t('all_entity', { entityName: entityName.value }, 2)
-    : t('no_entity', { entityName: entityName.value }, 2);
+    ? t('all_entity', { entityKey: entityKey.value }, 2)
+    : t('no_entity', { entityKey: entityKey.value }, 2);
 });
 </script>
 
@@ -197,7 +197,7 @@ const noSelectionLabel = computed(() => {
         :selection="selection"
         :mode="mode"
         :currency="currentCurrency"
-        :entity-name="entityName"
+        :entity-key="entityKey"
         :entities="entities"
         :options="selectorOptions"
         @save="updateSelection"
@@ -302,7 +302,7 @@ const noSelectionLabel = computed(() => {
         class="mt-4 items-center gap-5 border-t pt-4 text-sm @2xl:flex"
       >
         <div class="mb-2 @2xl:mb-0">
-          {{ $t('select_entity_that_match', { entityName }, 2) }}
+          {{ $t('select_entity_that_match', { entityKey }, 2) }}
         </div>
         <RadioGroup
           v-model="selection.condition"
