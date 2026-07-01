@@ -1,29 +1,27 @@
 <script setup lang="ts">
-import type {
-  ColumnOptions,
-  StringKeyOf,
-  CustomerCompanyList,
-} from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import type { ColumnOptions, StringKeyOf } from '#shared/types';
+import { ENTITIES, entityNewUrl, entityEditUrl } from '#shared/utils/entities';
+import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
-type Entity = CustomerCompany;
-type EntityList = CustomerCompanyList;
 
+type Entity = ProductPriceList;
+type EntityList = ProductPriceList;
+
+const scope = 'pages/pricing/price-lists/index.vue';
 const { t } = useI18n();
-const { getEntityNewUrl, getEntityUrl } = useEntityUrl();
+const { geinsLogError } = useGeinsLog(scope);
 
 definePageMeta({
   pageType: 'list',
 });
 
 // GLOBAL SETUP
-const { customerApi } = useGeinsRepository();
-const { deleteCompany, extractCompanyGroupsFromTags } = useCustomerCompanies();
+const { productApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
-const entityName = ENTITIES.company.key;
-const newEntityUrl = getEntityNewUrl();
+const entityName = ENTITIES.price_list.key;
+const newEntityUrl = entityNewUrl(entityName);
 const entityIdentifier = '{id}';
-const entityUrl = getEntityUrl(entityIdentifier);
+const entityUrl = entityEditUrl(entityName, entityIdentifier);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -31,55 +29,18 @@ const visibilityState = ref<VisibilityState>({});
 const fetchError = ref(false);
 
 // Add the mapping function
-const mapToListData = (companies: Entity[]): EntityList[] => {
-  return companies.map((company) => {
-    const groups = extractCompanyGroupsFromTags(company.tags);
-
-    const companyGroups = createTooltip({
-      items: groups,
-      entityName: 'company_group',
-      formatter: (group) => `${group}`,
-      t,
-    });
-
-    const buyers = createTooltip({
-      items: company.buyers,
-      entityName: 'buyer',
-      formatter: (buyer) => `${fullName(buyer)} (${buyer._id})`,
-      t,
-    });
-
-    const salesReps = createTooltip({
-      items: company.salesReps,
-      entityName: 'sales_rep',
-      formatter: (salesRep) => fullName(salesRep),
-      t,
-    });
-
-    const priceLists = createTooltip({
-      items: company.priceLists,
-      entityName: 'price_list',
-      formatter: (priceList) => `${priceList?.name}`,
-      t,
-    });
-
+const mapToListData = (list: Entity[]): EntityList[] => {
+  return list.map((item) => {
     return {
-      ...company,
-      companyGroups,
-      salesReps,
-      buyers,
-      priceLists,
+      ...item,
     };
   });
 };
 
 // FETCH DATA FOR ENTITY
 const { data, error, refresh } = await useAsyncData<Entity[]>(
-  'customer-companies-list',
-  () =>
-    customerApi.company.list({
-      fields: ['salesreps', 'buyers', 'pricelists'],
-    }),
+  'pricing-price-lists-list',
+  () => productApi.priceList.list(),
 );
 
 const { getColumns, addActionsColumn } = useColumns<EntityList>();
@@ -103,24 +64,14 @@ onMounted(() => {
 
   // SET UP COLUMN OPTIONS FOR ENTITY
   const columnOptions: ColumnOptions<EntityList> = {
-    columnTypes: {
-      name: 'link',
-      buyers: 'tooltip',
-      salesReps: 'tooltip',
-      companyGroups: 'tooltip',
-      priceLists: 'tooltip',
-    },
+    columnTypes: { name: 'link', channel: 'channels' },
     linkColumns: {
       name: { url: entityUrl, idField: '_id' },
     },
-    columnTitles: {
-      active: t('status'),
-      limitedProductAccess: t('customers.product_access_restricted_label'),
-    },
-    excludeColumns: ['meta', 'addresses', 'tags'],
+    columnTitles: { active: t('status') },
+    excludeColumns: ['autoAddProducts', 'forced', 'identifier'],
   };
   // GET AND SET COLUMNS
-
   columns.value = getColumns(dataList.value, columnOptions);
 
   addActionsColumn(
@@ -128,23 +79,53 @@ onMounted(() => {
     {
       onEdit: (item: Entity) =>
         navigateTo(`${entityUrl.replace(entityIdentifier, String(item._id))}`),
+      onCopy: async (item: Entity) => {
+        try {
+          const newPriceList = await productApi.priceList.id(item._id).copy();
+          toast({
+            title: t('entity_copied', { entityName }),
+            variant: 'positive',
+          });
+          await navigateTo(
+            entityUrl.replace(entityIdentifier, String(newPriceList._id)),
+          );
+        } catch (err) {
+          geinsLogError('copyPriceList :::', getErrorMessage(err));
+        }
+      },
       onDelete: async (item: Entity) => await openDeleteDialog(item._id),
     },
     'actions',
-    ['edit', 'delete'],
+    ['edit', 'copy', 'delete'],
   );
-
-  // SET COLUMN VISIBILITY STATE
   loading.value = false;
 });
 
+// SET COLUMN VISIBILITY STATE
 const { getVisibilityState } = useTable<EntityList>();
-const hiddenColumns: StringKeyOf<EntityList>[] = [
-  'externalId',
-  'exVat',
-  'limitedProductAccess',
-];
+const hiddenColumns: StringKeyOf<EntityList>[] = [];
 visibilityState.value = getVisibilityState(hiddenColumns);
+
+const { toast } = useToast();
+const deletePriceList = async (
+  id?: string,
+  entityName?: string,
+): Promise<boolean> => {
+  try {
+    if (!id) {
+      throw new Error('ID is required for deletion');
+    }
+    await productApi.priceList.delete(id);
+    toast({
+      title: t('entity_deleted', { entityName }),
+      variant: 'positive',
+    });
+    return true;
+  } catch (error) {
+    geinsLogError('deletePriceList :::', getErrorMessage(error));
+    return false;
+  }
+};
 
 const deleteDialogOpen = ref(false);
 const deleting = ref(false);
@@ -156,15 +137,13 @@ const openDeleteDialog = async (id?: string) => {
 };
 const confirmDelete = async () => {
   deleting.value = true;
-  const success = await deleteCompany(deleteId.value, entityName);
+  const success = await deletePriceList(deleteId.value, entityName);
   if (success) {
     refresh();
   }
   deleting.value = false;
   deleteDialogOpen.value = false;
 };
-// SET UP SEARCHABLE FIELDS
-const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
 </script>
 
 <template>
@@ -188,7 +167,6 @@ const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
-      :searchable-fields="searchableFields"
       :error="fetchError"
       :on-retry="refresh"
     >

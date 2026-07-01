@@ -34,17 +34,16 @@ import type {
   ProductApiOptions,
   ChangelogEntry,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import { ENTITIES, entityEditUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { ColumnDef, Row } from '@tanstack/vue-table';
 
 // =====================================================================================
 // COMPOSABLES & STORES
 // =====================================================================================
-const scope = 'pages/orders/quotation/[id].vue';
+const scope = 'pages/orders/quotations/[id].vue';
 const { t } = useI18n();
 const { toast } = useToast();
-const { getEntityUrl, getEntityUrlFor } = useEntityUrl();
 const { formatDate } = useDate();
 const { geinsLogError } = useGeinsLog(scope);
 const router = useRouter();
@@ -1519,7 +1518,7 @@ const handleCopy = async () => {
     const newQuotation = await orderApi.quotation.copy(entityId.value);
     if (newQuotation?._id) {
       toast({ title: t('entity_copied', { entityName }), variant: 'positive' });
-      await router.push(getEntityUrl(newQuotation._id));
+      await router.push(entityEditUrl('quotation', newQuotation._id));
     }
   } catch (error) {
     geinsLogError('Failed to copy quotation:', error);
@@ -1648,7 +1647,7 @@ const companySummary = computed<DataItem[]>(() => {
       value: selectedAccountName.value,
       ...(companyId && {
         displayType: DataItemDisplayType.Link,
-        href: getEntityUrlFor('company', 'customers', companyId),
+        href: entityEditUrl('company', companyId),
         target: '_blank',
       }),
     });
@@ -2425,7 +2424,7 @@ definePageMeta({
                     <NuxtLink
                       v-for="pl in selectedCompany.priceLists"
                       :key="pl._id"
-                      :to="getEntityUrlFor('price-list', 'pricing', pl._id)"
+                      :to="entityEditUrl('price_list', pl._id)"
                       target="_blank"
                       :class="
                         cn(
@@ -2647,7 +2646,7 @@ definePageMeta({
                   <NuxtLink
                     v-for="pl in selectedCompany.priceLists"
                     :key="pl._id"
-                    :to="getEntityUrlFor('price-list', 'pricing', pl._id)"
+                    :to="entityEditUrl('price_list', pl._id)"
                     target="_blank"
                     :class="
                       cn(

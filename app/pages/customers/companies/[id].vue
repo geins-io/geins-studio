@@ -13,7 +13,11 @@ import {
   type CustomerCompanyApiOptions,
   type CompanyBuyerList,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import {
+  ENTITIES,
+  entityEditUrl,
+  NEW_ENTITY_URL_SEGMENT,
+} from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { LucideUser, LucidePackage } from '#components';
 
@@ -23,7 +27,7 @@ import { LucideUser, LucidePackage } from '#components';
 // Intent: Initialize all composables and Pinia stores used across this page.
 // Order matters — some composables depend on values from earlier ones (e.g. useGeinsRepository before API calls).
 // Add new composables here; do not scatter initialization throughout the file.
-const scope = 'pages/customers/company/[id].vue';
+const scope = 'pages/customers/companies/[id].vue';
 const { customerApi, userApi } = useGeinsRepository();
 const {
   hasValidatedVat,
@@ -51,8 +55,7 @@ const breadcrumbsStore = useBreadcrumbsStore();
 // addressSchema (shared via useCustomerCompanies) is reused for billing and shipping and by
 // the address edit panel. stepValidationMap (below) ties form steps to schema segments.
 // Keep schema in sync with the form fields in the <template>.
-const { newEntityUrlAlias } = useEntityUrl();
-const isCreateMode = useRoute().params.id === newEntityUrlAlias.value;
+const isCreateMode = useRoute().params.id === NEW_ENTITY_URL_SEGMENT;
 
 const formSchema = toTypedSchema(
   z.object({
@@ -468,7 +471,7 @@ const columnOptionsPriceLists: ColumnOptions<CustomerPriceList> = {
   },
   linkColumns: {
     name: {
-      url: '/pricing/price-list/{id}',
+      url: entityEditUrl('price_list', '{id}'),
       idField: '_id',
     },
   },

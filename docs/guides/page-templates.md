@@ -4,7 +4,7 @@ Annotated templates for creating new list and detail/edit pages. Copy the releva
 
 ## List Page Template
 
-File: `app/pages/{domain}/{entity}/list.vue`
+File: `app/pages/{domain}/{entity}/index.vue`
 
 ```vue
 <script setup lang="ts">
@@ -22,7 +22,7 @@ type EntityList = {Entity}; // May extend with computed display fields
 const scope = '{entity}-list';
 const { t } = useI18n();
 const { geinsLog, geinsLogError } = useGeinsLog(scope);
-const { getEntityUrl } = useEntityUrl();
+const getEntityUrl = (id: string) => entityEditUrl('your_entity', id); // from #shared/utils/entities
 
 // === 3. PAGE META ===
 definePageMeta({

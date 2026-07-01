@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ExecutionLog, ColumnOptions, StringKeyOf } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import { ENTITIES, entityListUrl } from '#shared/utils/entities';
 import { formatDuration, formatTimestamp } from '#shared/utils/time';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
@@ -24,7 +24,7 @@ export interface ExecutionListItem {
 type Entity = ExecutionLog;
 type EntityList = ExecutionListItem;
 
-const scope = 'pages/orchestrator/executions/list.vue';
+const scope = 'pages/orchestrator/executions/index.vue';
 const { t } = useI18n();
 
 definePageMeta({
@@ -225,7 +225,7 @@ const dataList = computed(() => {
 });
 
 const clearFilter = () => {
-  navigateTo('/orchestrator/executions/list');
+  navigateTo(entityListUrl(entityName));
 };
 
 const FILTER_QUERY_KEY: Record<ActiveFilter['type'], string> = {
@@ -237,7 +237,7 @@ const FILTER_QUERY_KEY: Record<ActiveFilter['type'], string> = {
 
 const removeFilter = (type: ActiveFilter['type']) => {
   const { [FILTER_QUERY_KEY[type]]: _, ...rest } = route.query;
-  navigateTo({ path: '/orchestrator/executions/list', query: rest });
+  navigateTo({ path: entityListUrl(entityName), query: rest });
 };
 
 // ─── Live polling: new executions + running-status refresh ─────────

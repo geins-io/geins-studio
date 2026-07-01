@@ -54,11 +54,11 @@ function defineEntities<const T extends Record<string, EntityDescriptor>>(
 
 export const ENTITIES = defineEntities({
   product: { endpoint: '/product' },
-  price_list: { endpoint: '/product/pricelist', route: 'pricing/price-list' },
-  quotation: { endpoint: '/quotation', route: 'orders/quotation' },
+  price_list: { endpoint: '/product/pricelist', route: 'pricing/price-lists' },
+  quotation: { endpoint: '/quotation', route: 'orders/quotations' },
   message: { endpoint: '/quotation/message' },
-  channel: { endpoint: '/account/channel', route: 'settings/channel' },
-  company: { endpoint: '/wholesale/account', route: 'customers/company' },
+  channel: { endpoint: '/account/channel', route: 'settings/channels' },
+  company: { endpoint: '/wholesale/account', route: 'customers/companies' },
   customer: { endpoint: '/wholesale/customer' },
   buyer: { endpoint: '/wholesale/buyer' },
   user: { endpoint: '/user', route: 'account/user' },
@@ -89,17 +89,40 @@ export type EntityKeyWithRoute = {
 }[EntityKey];
 
 /**
- * Page-path helpers derived from the registry `route` — the single source for
- * an entity's URLs. Use these in `navigation.ts` (and anywhere that builds an
- * entity link) instead of hardcoding `/domain/entity/...`, so a route can't
- * drift between the registry and the nav config.
+ * A registry entry that has a page `route` — its `key` is an
+ * {@link EntityKeyWithRoute}, so it can be passed straight to the URL helpers.
+ * This is what entity pages hand to `useEntityEdit`.
  */
-/** `/pricing/price-list` — the entity's base page path. */
+export type EntityWithRoute = (typeof ENTITIES)[EntityKeyWithRoute];
+
+/**
+ * The URL segment for the "create new entity" action (`/pricing/price-lists/new`).
+ *
+ * **White-label knob** — this is the single place to change the create-action
+ * word; set it to `'add'`, `'create'`, etc. and every new-entity URL and the
+ * create-mode check (`route.params.id === NEW_ENTITY_URL_SEGMENT`) follow. It's
+ * a plain constant (not localized) so the URL helpers below stay pure.
+ */
+export const NEW_ENTITY_URL_SEGMENT = 'new';
+
+/**
+ * Page-path helpers derived from the registry `route` — the single source for
+ * an entity's URLs. Use these everywhere an entity link is built (pages,
+ * `navigation.ts`, `useEntityEdit`) instead of hardcoding `/domain/entity/...`,
+ * so a route can't drift between the registry and its consumers.
+ */
+/** `/pricing/price-lists` — the entity's base page path (also its list/index URL). */
 export const entityBasePath = (key: EntityKeyWithRoute): string =>
   `/${ENTITIES[key].route}`;
-/** `/pricing/price-list/list` — the entity's list page href. */
-export const entityListHref = (key: EntityKeyWithRoute): string =>
-  `${entityBasePath(key)}/list`;
-/** `/pricing/price-list/:id` — the nav `childPattern` for the entity's `[id]` page. */
+/** `/pricing/price-lists` — the entity's list page href (the collection index). */
+export const entityListUrl = (key: EntityKeyWithRoute): string =>
+  entityBasePath(key);
+/** `/pricing/price-lists/new` — the entity's create page href. */
+export const entityNewUrl = (key: EntityKeyWithRoute): string =>
+  `${entityBasePath(key)}/${NEW_ENTITY_URL_SEGMENT}`;
+/** `/pricing/price-lists/123` — link to a specific entity's `[id]` page. */
+export const entityEditUrl = (key: EntityKeyWithRoute, id: string): string =>
+  `${entityBasePath(key)}/${id}`;
+/** `/pricing/price-lists/:id` — the nav `childPattern` for the entity's `[id]` page. */
 export const entityChildPattern = (key: EntityKeyWithRoute): string =>
   `${entityBasePath(key)}/:id`;

@@ -4,8 +4,6 @@ navigateTo('/account/profile');
 // import type { ColumnOptions, User } from '#shared/types';
 // type Entity = User;
 
-// const { getEntityName, getEntityNewUrl, getEntityUrl } = useEntityUrl();
-
 // definePageMeta({
 //   pageType: 'list',
 // });

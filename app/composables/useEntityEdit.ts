@@ -1,5 +1,11 @@
 import { useForm, type GenericObject } from 'vee-validate';
-import type { Entity, EntityKey } from '#shared/utils/entities';
+import {
+  entityBasePath,
+  entityNewUrl,
+  entityEditUrl,
+  NEW_ENTITY_URL_SEGMENT,
+} from '#shared/utils/entities';
+import type { EntityKey, EntityWithRoute } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { toTypedSchema } from '@vee-validate/zod';
 
@@ -10,8 +16,8 @@ interface EntityEditOptions<
   TUpdate extends UpdateEntity<TBase>,
   TOptions extends ApiOptions<string> = ApiOptions<string>,
 > {
-  /** Registry entry for the entity (`ENTITIES.x` from `#shared/utils/entities`). Its `key` drives i18n/toasts. */
-  entity: Entity;
+  /** Registry entry for the entity (`ENTITIES.x` from `#shared/utils/entities`). Its `key` drives i18n/toasts and its `route` drives the page URLs. */
+  entity: EntityWithRoute;
   repository: {
     get: (id: string, options?: TOptions) => Promise<TResponse>;
     create: (data: TCreate, options?: TOptions) => Promise<TResponse>;
@@ -133,16 +139,15 @@ export function useEntityEdit<
   const route = useRoute();
   const router = useRouter();
   const { toast } = useToast();
-  const { newEntityUrlAlias, getEntityNewUrl, getEntityListUrl } =
-    useEntityUrl();
   const { hasReducedSpace } = useLayout();
 
-  // Core state — i18n key comes from the registry entry the page passes in
-  // (single source); never derived from the route folder.
+  // Core state — all URLs derive from the registry entry the page passes in
+  // (single source); never from the route folder.
   const entityName = options.entity.key;
-  const newEntityUrl = getEntityNewUrl();
-  const entityListUrl = getEntityListUrl();
-  const createMode = ref(route.params.id === newEntityUrlAlias.value);
+  const newEntityUrl = entityNewUrl(options.entity.key);
+  // Back-to-list = the collection index (the entity folder itself).
+  const entityListUrl = entityBasePath(options.entity.key);
+  const createMode = ref(route.params.id === NEW_ENTITY_URL_SEGMENT);
   const loading = ref(false);
   const refreshEntityData = ref<() => Promise<void>>(() => Promise.resolve());
   const entityLiveStatus = ref<boolean>(false);
@@ -302,10 +307,7 @@ export function useEntityEdit<
       const result = await options.repository.create(createData, queryOptions);
 
       if (result?._id) {
-        const newUrl = newEntityUrl.replace(
-          newEntityUrlAlias.value,
-          result._id,
-        );
+        const newUrl = entityEditUrl(options.entity.key, result._id);
         await router.replace(newUrl);
 
         toast({

@@ -84,7 +84,7 @@ All status transitions are one-way (no revert to draft). Each transition is a `P
 | Repository  | `app/utils/repositories/order.ts`                    |
 | Composables | `useCompanyOrders.ts`                                |
 | Components  | `app/components/quotation/`                          |
-| Pages       | `app/pages/orders/quotation/list.vue`, `[id].vue`    |
+| Pages       | `app/pages/orders/quotations/index.vue`, `[id].vue`  |
 
 ## Decision Log
 

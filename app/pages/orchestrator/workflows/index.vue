@@ -8,7 +8,7 @@ import type {
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import { ENTITIES, entityListUrl } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 import type { Component } from 'vue';
 import {
@@ -48,7 +48,7 @@ export interface WorkflowListItem {
 type Entity = WorkflowSummary;
 type EntityList = WorkflowListItem;
 
-const scope = 'pages/orchestrator/workflows.vue';
+const scope = 'pages/orchestrator/workflows/index.vue';
 const { t, te, locale } = useI18n();
 const { triggerTypeLabel } = useWorkflowLabels();
 const { geinsLog } = useGeinsLog(scope);
@@ -282,7 +282,7 @@ const dataList = computed(() => {
 });
 
 const clearGroupFilter = () => {
-  navigateTo('/orchestrator/workflows/list');
+  navigateTo(entityListUrl(entityName));
 };
 
 // ─── Table Columns ─────────────────────────────────────────────────
@@ -351,19 +351,19 @@ onMounted(() => {
     linkColumns: {
       name: { url: '/orchestrator/workflows/{id}', idField: 'id' },
       executionsTotal: {
-        url: '/orchestrator/executions/list?id={id}',
+        url: '/orchestrator/executions?id={id}',
         idField: 'id',
       },
       executions24h: {
-        url: '/orchestrator/executions/list?id={id}&period=24h',
+        url: '/orchestrator/executions?id={id}&period=24h',
         idField: 'id',
       },
       executions7d: {
-        url: '/orchestrator/executions/list?id={id}&period=7d',
+        url: '/orchestrator/executions?id={id}&period=7d',
         idField: 'id',
       },
       executions30d: {
-        url: '/orchestrator/executions/list?id={id}&period=30d',
+        url: '/orchestrator/executions?id={id}&period=30d',
         idField: 'id',
       },
     },

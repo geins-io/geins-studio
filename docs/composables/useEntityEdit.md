@@ -66,6 +66,7 @@ const {
   ProductUpdate,
   ProductApiOptions
 >({
+  entity: ENTITIES.product,
   repository: productApi.product,
   validationSchema: formSchema,
   initialEntityData: entityBase,
@@ -76,9 +77,9 @@ const {
 
 ## Options
 
-### `entityName`
+### `entity`
 
-A string representing the name of the entity being edited (e.g., "product"). This is used for generating titles and URLs. If not provided, defaults to using `getEntityName()` from [`useEntityUrl`](/composables/useEntityUrl).
+The registry entry for the entity being edited (`ENTITIES.x` from `#shared/utils/entities`) — **required**. Its `key` drives titles, toasts, and the i18n `entityName` (returned by the composable); its `route` drives `newEntityUrl` / `entityListUrl`.
 
 ### `repository`
 
@@ -420,10 +421,14 @@ const { hasUnsavedChanges, unsavedChangesDialogOpen, confirmLeave } =
   );
 ```
 
-### `useEntityUrl`
+### entity URL helpers
 
 ```ts
-const { getEntityName, getEntityNewUrl, getEntityListUrl } = useEntityUrl();
+import {
+  entityListUrl,
+  entityNewUrl,
+  entityEditUrl,
+} from '#shared/utils/entities';
 ```
 
 ### `useLayout`

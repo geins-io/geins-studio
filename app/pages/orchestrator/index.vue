@@ -7,6 +7,7 @@ import type {
   KitSummary,
   KitInstallation,
 } from '#shared/types';
+import { entityListUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { Avatar, AvatarFallback } from '~/components/ui/avatar';
 import {
@@ -769,7 +770,7 @@ watchEffect(() => {
                     >
                       <NuxtLink
                         :to="{
-                          path: '/orchestrator/workflows/list',
+                          path: entityListUrl('workflow'),
                           query: group.isStandalone
                             ? { name: group.name }
                             : { group: group.id },
@@ -791,7 +792,7 @@ watchEffect(() => {
                     >
                       <NuxtLink
                         :to="{
-                          path: '/orchestrator/executions/list',
+                          path: entityListUrl('execution'),
                           query: group.isStandalone
                             ? { name: group.name }
                             : { group: group.id },

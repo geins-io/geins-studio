@@ -5,7 +5,7 @@ import type {
   ColumnOptions,
   StringKeyOf,
 } from '#shared/types';
-import { ENTITIES } from '#shared/utils/entities';
+import { ENTITIES, entityListUrl } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 import type { Component } from 'vue';
 import { LucideKeyRound, LucideEye } from '#components';
@@ -22,7 +22,7 @@ export interface VariableListItem {
 type Entity = WorkflowVariable;
 type EntityList = VariableListItem;
 
-const scope = 'pages/settings/orchestrator/variables/list.vue';
+const scope = 'pages/settings/orchestrator/variables/index.vue';
 const { t } = useI18n();
 const { geinsLog } = useGeinsLog(scope);
 
@@ -127,7 +127,7 @@ const dataList = computed(() => {
 });
 
 const clearKitFilter = () => {
-  navigateTo('/settings/orchestrator/variables/list');
+  navigateTo(entityListUrl(entityName));
 };
 
 // ─── Table Columns ─────────────────────────────────────────────────

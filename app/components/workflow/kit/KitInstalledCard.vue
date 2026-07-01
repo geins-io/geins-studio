@@ -92,7 +92,7 @@ const variableCount = computed(
       >
         <NuxtLink
           v-if="workflows.length"
-          :to="`/orchestrator/workflows/list?kit=${installation.id}`"
+          :to="`/orchestrator/workflows?kit=${installation.id}`"
           class="hover:text-foreground inline-flex items-center gap-1 underline-offset-2 hover:underline"
         >
           <LucideWorkflow class="size-3" />
@@ -104,7 +104,7 @@ const variableCount = computed(
         </span>
         <NuxtLink
           v-if="variableCount"
-          :to="`/settings/orchestrator/variables/list?kit=${installation.id}`"
+          :to="`/settings/orchestrator/variables?kit=${installation.id}`"
           class="hover:text-foreground inline-flex items-center gap-1 underline-offset-2 hover:underline"
         >
           <LucideKeyRound class="size-3" />

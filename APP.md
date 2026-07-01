@@ -10,16 +10,16 @@
 
 All pages live under `app/pages/` and are auto-registered by Nuxt as routes.
 
-| Route prefix   | Domain pages                         | Capability                               |
-| -------------- | ------------------------------------ | ---------------------------------------- |
-| `/`            | `index.vue`                          | Dashboard — quick access + recent orders |
-| `/auth/*`      | `login`, `logout`, `reset-password`  | Authentication flows (no sidebar)        |
-| `/pricing/*`   | `price-list/list`, `price-list/[id]` | Price list management                    |
-| `/customers/*` | `company/list`, `company/[id]`       | Company / buyer management               |
-| `/orders/*`    | `quotation/list`, `quotation/[id]`   | Quotation lifecycle                      |
-| `/account/*`   | `profile/index`, `user/index`        | User profile (hidden from nav)           |
+| Route prefix   | Domain pages                            | Capability                               |
+| -------------- | --------------------------------------- | ---------------------------------------- |
+| `/`            | `index.vue`                             | Dashboard — quick access + recent orders |
+| `/auth/*`      | `login`, `logout`, `reset-password`     | Authentication flows (no sidebar)        |
+| `/pricing/*`   | `price-lists/index`, `price-lists/[id]` | Price list management                    |
+| `/customers/*` | `companies/index`, `companies/[id]`     | Company / buyer management               |
+| `/orders/*`    | `quotations/index`, `quotations/[id]`   | Quotation lifecycle                      |
+| `/account/*`   | `profile/index`, `user/index`           | User profile (hidden from nav)           |
 
-Entity pages follow the convention `pages/{domain}/{entity}/list.vue` and `pages/{domain}/{entity}/[id].vue`. The param `new` on `[id].vue` activates create mode.
+Entity pages follow the convention `pages/{domain}/{entity}/index.vue` and `pages/{domain}/{entity}/[id].vue`. The param `new` on `[id].vue` activates create mode.
 
 ---
 
@@ -70,12 +70,12 @@ Nuxt loads plugins in filename order. Each plugin has a single responsibility:
 
 Current top-level entries (all in group `sales`):
 
-| Label     | Root href                  | Domain       |
-| --------- | -------------------------- | ------------ |
-| Pricing   | `/pricing/price-list/list` | Price lists  |
-| Customers | `/customers/company/list`  | Companies    |
-| Orders    | `/orders/quotation/list`   | Quotations   |
-| Account   | _(hidden from menu)_       | User profile |
+| Label     | Root href              | Domain       |
+| --------- | ---------------------- | ------------ |
+| Pricing   | `/pricing/price-lists` | Price lists  |
+| Customers | `/customers/companies` | Companies    |
+| Orders    | `/orders/quotations`   | Quotations   |
+| Account   | _(hidden from menu)_   | User profile |
 
 Each entry has optional `children[]` with `childPattern` used for active-state matching. Labels are i18n keys resolved via `t('navigation.*')`.
 
@@ -91,7 +91,7 @@ definePageMeta({ pageType: 'list' })
 → useAsyncData(key, fn)    — fetch with explicit stable client cache key
 → useColumns<T>()          — column defs + addActionsColumn
 → useTable<T>()            — visibility / sort state
-→ useEntityUrl()           — link generation
+→ entityListUrl / entityEditUrl — link generation (registry helpers)
 → usePageError()           — error handling
 → <TableView />            — renders table + pagination
 ```
@@ -167,7 +167,7 @@ Rule of thumb: if a page needs to react to something changing over time (duratio
 3. **Registry** → `shared/utils/entities.ts` — add an `ENTITIES` entry (`{ endpoint, route }`); the key _is_ the i18n key, and `EntityKey` is derived from it. See [Entities](docs/concepts/entities.md#entity-registry-single-source-of-truth).
 4. **Repository** → `app/utils/repositories/{entity}.ts` — use `repo.entity(ENTITIES.{key}, fetch)` (endpoint + key read from the registry entry)
 5. **Register repo** → `app/utils/repos.ts` + `app/composables/useGeinsRepository.ts`
-6. **List page** → `app/pages/{domain}/{entity}/list.vue`
+6. **List page** → `app/pages/{domain}/{entity}/index.vue`
 7. **Detail page** → `app/pages/{domain}/{entity}/[id].vue` — pass the registry entry `entity: ENTITIES.{key}` to `useEntityEdit`/`usePageError`
 8. **Navigation** → `app/lib/navigation.ts`
 9. **i18n** → `i18n/locales/en.json` + `sv.json`
@@ -242,15 +242,15 @@ Components in `app/components/` are classified as **domain** or **infrastructure
 
 Routes are entry points; domains are the capabilities they expose.
 
-| Route                   | Domain capability                                                           |
-| ----------------------- | --------------------------------------------------------------------------- |
-| `/pricing/price-list/*` | CRUD price lists; assign to companies                                       |
-| `/customers/company/*`  | CRUD companies; assign buyers, salesreps, price lists, addresses            |
-| `/orders/quotation/*`   | Full quotation lifecycle: draft → send → accept/reject → confirm → finalize |
-| `/account/profile`      | Edit own user profile and preferences                                       |
-| `/auth/*`               | Session management (login, logout, password reset)                          |
+| Route                    | Domain capability                                                           |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `/pricing/price-lists/*` | CRUD price lists; assign to companies                                       |
+| `/customers/companies/*` | CRUD companies; assign buyers, salesreps, price lists, addresses            |
+| `/orders/quotations/*`   | Full quotation lifecycle: draft → send → accept/reject → confirm → finalize |
+| `/account/profile`       | Edit own user profile and preferences                                       |
+| `/auth/*`                | Session management (login, logout, password reset)                          |
 
-Cross-domain links: the quotation edit page links to company and price-list entities via `useEntityUrl()` / `getEntityUrlFor()`.
+Cross-domain links: the quotation edit page links to company and price-list entities via the registry helper `entityEditUrl(key, id)`.
 
 ---
 
@@ -259,7 +259,7 @@ Cross-domain links: the quotation edit page links to company and price-list enti
 **2024-05-27: Two-layout system (default + auth)**
 Authenticated pages get the full sidebar/header layout; auth pages get a minimal centered card. Keeps auth flows visually distinct and avoids loading sidebar state before login.
 
-**2024-05-30: File-based routing with `{domain}/{entity}/list.vue` and `[id].vue` convention**
+**2024-05-30: File-based routing with `{domain}/{entity}/index.vue` and `[id].vue` convention**
 Consistent URL structure across all domains. The `new` param on `[id].vue` activates create mode, avoiding separate create pages.
 
 **2025-02-01: `useEntityEdit` as the universal detail/edit page composable**

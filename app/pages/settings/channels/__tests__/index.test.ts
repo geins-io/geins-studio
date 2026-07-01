@@ -11,13 +11,13 @@ vi.mock('#app/stores/account', () => ({
   }),
 }));
 
-describe('settings/channel/list', () => {
+describe('settings/channels', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders without crashing', async () => {
-    const ListPage = await import('../list.vue').then((m) => m.default);
+    const ListPage = await import('../index.vue').then((m) => m.default);
     const wrapper = await mountWithContext(ListPage, {
       global: {
         stubs: {
