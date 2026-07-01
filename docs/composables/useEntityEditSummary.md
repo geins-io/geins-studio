@@ -7,20 +7,20 @@ The `useEntityEditSummary` composable is used to create a `computed` object that
 ### Basic Usage
 
 ```ts
-const { entityName, createMode, formTouched } = useEntityEdit( ... );
+const { entityKey, createMode, formTouched } = useEntityEdit( ... );
 
 const summary = computed<DataItem[]>(() => {
   const dataList: DataItem[] = [];
   if (!createMode.value) {
     dataList.push({
-      label: t('entity_id', { entityName }),
+      label: t('entity_id', { entityKey }),
       value: String(entityDataUpdate.value?._id),
       displayType: DataItemDisplayType.Copy,
     });
   }
   if (entityData.value?.name) {
     dataList.push({
-      label: t('entity_name', { entityName }),
+      label: t('entity_name', { entityKey }),
       value: entityData.value.name,
     });
   }
@@ -31,7 +31,7 @@ const { summaryProps } = useEntityEditSummary({
   createMode,
   formTouched,
   summary,
-  entityName,
+  entityKey,
   entityLiveStatus,
   showActiveStatus: false,
   status: 'pending',
@@ -85,10 +85,10 @@ settingsSummary: Ref<DataItem[]> | ComputedRef<DataItem[]>;
 
 Array of data items for the settings/configuration summary section.
 
-#### `entityName`
+#### `entityKey`
 
 ```ts
-entityName: string;
+entityKey: string;
 ```
 
 Name of the entity being edited (e.g., 'product', 'user', 'order').
@@ -127,7 +127,7 @@ summaryProps: ComputedRef<{
   formTouched: boolean;
   summary: DataItem[];
   settingsSummary: DataItem[];
-  entityName: string;
+  entityKey: string;
   entityLiveStatus: boolean;
   showActiveStatus?: boolean;
   status?: StatusBadgeStatus;
@@ -144,7 +144,7 @@ function useEntityEditSummary(props: {
   formTouched: Ref<boolean> | ComputedRef<boolean>;
   summary: Ref<DataItem[]> | ComputedRef<DataItem[]>;
   settingsSummary: Ref<DataItem[]> | ComputedRef<DataItem[]>;
-  entityName: string;
+  entityKey: string;
   entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
   showActiveStatus?: boolean;
   status?: StatusBadgeStatus;
@@ -156,7 +156,7 @@ interface UseEntityEditSummaryReturnType {
     formTouched: boolean;
     summary: DataItem[];
     settingsSummary: DataItem[];
-    entityName: string;
+    entityKey: string;
     entityLiveStatus: boolean;
     showActiveStatus?: boolean;
     status?: StatusBadgeStatus;
@@ -181,6 +181,6 @@ interface DataItem {
     | Record<string, unknown>;
   displayValue?: string;
   displayType?: DataItemDisplayType;
-  entityName?: string;
+  entityKey?: string;
 }
 ```

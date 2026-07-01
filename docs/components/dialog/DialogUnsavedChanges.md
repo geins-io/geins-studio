@@ -30,7 +30,7 @@ const {
   <!-- … edit page content … -->
   <DialogUnsavedChanges
     v-model:open="unsavedChangesDialog.open"
-    entity-name="quotation"
+    entity-key="quotation"
     :loading="unsavedChangesDialog.loading"
     @confirm="confirmUnsavedChanges"
     @cancel="cancelUnsavedChanges"
@@ -43,10 +43,10 @@ const {
 
 ## Props
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName: string;
+entityKey: string;
 ```
 
 Reserved for future copy interpolation. Currently the localized strings don't reference it but the prop is required for parity with [`DialogDelete`](/components/dialog/DialogDelete).

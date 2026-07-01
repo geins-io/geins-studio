@@ -60,14 +60,14 @@ watch(vatNumber, async (newVat) => {
 #### `deleteCompany`
 
 ```ts
-deleteCompany(id?: string, entityName?: string): Promise<boolean>
+deleteCompany(id?: string, entityKey?: string): Promise<boolean>
 ```
 
 Deletes a customer company with error handling and user feedback.
 
 - **Parameters**:
   - `id`: Company ID to delete
-  - `entityName`: Display name for toast messages
+  - `entityKey`: Entity i18n key (e.g. `'company'`) for the toast message
 
 - **Returns**: Promise resolving to `true` on success, `false` on failure
 - **Features**: Toast notifications, error logging, validation
@@ -184,7 +184,7 @@ Formats billing and shipping addresses for API submission.
 function useCustomerCompanies(): UseCustomerCompaniesReturnType;
 
 interface UseCustomerCompaniesReturnType {
-  deleteCompany: (id?: string, entityName?: string) => Promise<boolean>;
+  deleteCompany: (id?: string, entityKey?: string) => Promise<boolean>;
   extractCompanyGroupsFromTags: (tags: string[]) => string[];
   convertCompanyGroupsToTags: (companyGroups: string[]) => string[];
   hasValidatedVat: Readonly<Ref<boolean>>;

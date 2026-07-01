@@ -31,7 +31,7 @@ const onRemove = (id: string) => {
     description="Choose products to include in this rule"
     :selection="selection"
     :entities="products"
-    entity-name="product"
+    entity-key="product"
     @add="onAdd"
     @remove="onRemove"
   />
@@ -80,10 +80,10 @@ entities: T[]
 - **Required:** yes
 - **Description:** Entity pool forwarded to `SelectorQuickAdd`. If the array is empty the quick-add input is hidden.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName: string;
+entityKey: string;
 ```
 
 - **Type:** `string`

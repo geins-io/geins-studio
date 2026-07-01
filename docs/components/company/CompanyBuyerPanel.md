@@ -32,7 +32,7 @@ const onRemoved = () => refetchBuyers();
     @removed="onRemoved"
   >
     <Button variant="outline">
-      {{ $t('add_entity', { entityName: 'buyer' }) }}
+      {{ $t('add_entity', { entityKey: 'buyer' }) }}
     </Button>
   </CompanyBuyerPanel>
 </template>

@@ -63,10 +63,10 @@ description?: string
 - **Default:** `''`
 - **Description:** Sub-title passed to the default `ContentTitleBlock`.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName?: string
+entityKey?: string
 ```
 
 - **Type:** `string`

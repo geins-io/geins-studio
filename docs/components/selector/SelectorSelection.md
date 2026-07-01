@@ -34,7 +34,7 @@ const selection = defineModel<SelectorSelectionInternal>('selection', {
     v-model:selection="selection"
     :type="SelectorSelectionType.Include"
     :mode="SelectorMode.Advanced"
-    entity-name="product"
+    entity-key="product"
     :entities="products"
   />
 </template>
@@ -61,10 +61,10 @@ type: SelectorSelectionType;
 - **Required:** yes
 - **Description:** `Include` or `Exclude` — controls the section heading label.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName: string;
+entityKey: string;
 ```
 
 - **Type:** `string`
@@ -144,7 +144,7 @@ Typical usage inside a price-list or promotion entity edit page where include an
     v-model:selection="inclusion"
     :type="SelectorSelectionType.Include"
     :mode="SelectorMode.Advanced"
-    entity-name="product"
+    entity-key="product"
     :entities="products"
     :selection-strategy="SelectorSelectionStrategy.All"
   />
@@ -152,7 +152,7 @@ Typical usage inside a price-list or promotion entity edit page where include an
     v-model:selection="exclusion"
     :type="SelectorSelectionType.Exclude"
     :mode="SelectorMode.Advanced"
-    entity-name="product"
+    entity-key="product"
     :entities="products"
   />
 </template>

@@ -27,7 +27,7 @@ const channels = await fetchChannels();
   <FormInputTagsSearch
     v-model="selectedIds"
     :data-set="channels"
-    entity-name="channel"
+    entity-key="channel"
   />
 </template>
 ```
@@ -39,7 +39,7 @@ const channels = await fetchChannels();
   <FormInputTagsSearch
     v-model="selectedIds"
     :data-set="markets"
-    entity-name="market"
+    entity-key="market"
   >
     <template #tag="{ item }">
       <span class="flex items-center gap-1.5">
@@ -61,7 +61,7 @@ const channels = await fetchChannels();
   <FormInputTagsSearch
     v-model="labels"
     :data-set="presetLabels"
-    entity-name="label"
+    entity-key="label"
     allow-custom-tags
   />
 </template>
@@ -79,7 +79,7 @@ const selectedIds = ref<string[]>([]);
   <FormInputTagsSearch
     v-model="selectedIds"
     :data-set="groups"
-    entity-name="group"
+    entity-key="group"
     single-select
   />
 </template>
@@ -97,10 +97,10 @@ dataSet?: T[]   // T extends EntityBaseWithName
 
 Items the user can pick. Each must have `_id` and either `displayName` or `name`.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName?: string
+entityKey?: string
 ```
 
 i18n key for placeholders ("Add channel…", "No channels", etc.).
