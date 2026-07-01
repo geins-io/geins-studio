@@ -43,6 +43,7 @@ import type {
   UpgradeKitRequest,
   UpgradeKitResponse,
 } from '#shared/types';
+import { ENTITIES } from '#shared/utils/entities';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE = '/orchestrator';
@@ -112,6 +113,7 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return await fetch<WorkflowDefinition>(WORKFLOW_ENDPOINT, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'creating', entity: ENTITIES.workflow.key },
         });
       },
 
@@ -122,12 +124,14 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return await fetch<WorkflowDefinition>(`${WORKFLOW_ENDPOINT}/${id}`, {
           method: 'PUT',
           body: data,
+          errorContext: { action: 'updating', entity: ENTITIES.workflow.key },
         });
       },
 
       async delete(id: string): Promise<void> {
         await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}`, {
           method: 'DELETE',
+          errorContext: { action: 'deleting', entity: ENTITIES.workflow.key },
         });
       },
 
@@ -209,6 +213,7 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             method: 'POST',
             ...(params && Object.keys(params).length > 0 && { body: params }),
             headers,
+            errorContext: { action: 'running', entity: ENTITIES.workflow.key },
           },
         );
         return {

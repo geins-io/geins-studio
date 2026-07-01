@@ -12,16 +12,8 @@ import type {
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import { ENTITIES } from '#shared/utils/entities';
+import type { RepoFetchOptions } from './entity-base';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
-import type { FetchOptions } from 'ofetch';
-
-/**
- * Per-call fetch options the catalog read methods forward to `$geinsApi`.
- * These reads are POST `/query` calls (batch-query pattern), so they count as
- * mutations to the global error-toast gate — `suppressErrorToast` lets a
- * background caller (e.g. the products store warm-up) opt out. See STU-254.
- */
-type ReadFetchOptions = Pick<FetchOptions, 'suppressErrorToast'>;
 
 const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
 
@@ -54,7 +46,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
     async list(
       options?: ProductApiOptions,
-      fetchOptions?: ReadFetchOptions,
+      fetchOptions?: RepoFetchOptions,
     ): Promise<BatchQueryResult<Product>> {
       return await fetch<BatchQueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
         method: 'POST',
@@ -85,7 +77,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
       async list(
         query?: Record<string, unknown>,
-        fetchOptions?: ReadFetchOptions,
+        fetchOptions?: RepoFetchOptions,
       ): Promise<BatchQueryResult<Category>> {
         return await fetch<BatchQueryResult<Category>>(
           `${categoryEndpoint}/query`,
@@ -121,7 +113,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
       async list(
         query?: Record<string, unknown>,
-        fetchOptions?: ReadFetchOptions,
+        fetchOptions?: RepoFetchOptions,
       ): Promise<BatchQueryResult<Brand>> {
         return await fetch<BatchQueryResult<Brand>>(
           `${brandEndpoint}/query`,
@@ -168,6 +160,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             priceList: ProductPriceListUpdate,
             batchQuery?: BatchQuery,
             options?: ProductPriceListApiOptions,
+            fetchOptions?: RepoFetchOptions,
           ): Promise<ProductPriceList> {
             return await fetch<ProductPriceList>(
               `${priceListIdEndpoint}/preview`,
@@ -178,11 +171,13 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
                   batchQuery,
                 },
                 query: buildQueryObject(options),
+                ...fetchOptions,
               },
             );
           },
           async previewPrice(
             priceListProduct: PriceListProductPreview,
+            fetchOptions?: RepoFetchOptions,
           ): Promise<PriceListProductPreviewResponse> {
             return await fetch<PriceListProductPreviewResponse>(
               `${priceListIdEndpoint}/previewprice`,
@@ -191,6 +186,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
                 body: {
                   ...priceListProduct,
                 },
+                ...fetchOptions,
               },
             );
           },

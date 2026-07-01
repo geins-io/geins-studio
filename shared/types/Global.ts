@@ -150,7 +150,8 @@ export type GeinsErrorAction =
   | 'deleting'
   | 'sending'
   | 'copying'
-  | 'adding';
+  | 'adding'
+  | 'running';
 
 /**
  * Optional per-request context attached to a $geinsApi mutation call. When

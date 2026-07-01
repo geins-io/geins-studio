@@ -6,7 +6,7 @@ import type {
 import { buildQueryObject } from '#shared/utils/api-query';
 import type { EntityKey } from '#shared/utils/entities';
 import { entityBaseRepo } from './entity-base';
-import type { EntityBaseRepo } from './entity-base';
+import type { EntityBaseRepo, RepoFetchOptions } from './entity-base';
 import type { $Fetch } from 'nitropack';
 
 /**
@@ -27,9 +27,18 @@ export interface EntityRepo<
   TUpdate extends object,
   TOptions extends ApiOptions<string> = ApiOptions<string>,
 > extends EntityBaseRepo<TResponse, TOptions> {
-  create(data: TCreate, options?: TOptions): Promise<TResponse>;
-  update(id: string, data: TUpdate, options?: TOptions): Promise<TResponse>;
-  delete(id: string): Promise<void>;
+  create(
+    data: TCreate,
+    options?: TOptions,
+    fetchOptions?: RepoFetchOptions,
+  ): Promise<TResponse>;
+  update(
+    id: string,
+    data: TUpdate,
+    options?: TOptions,
+    fetchOptions?: RepoFetchOptions,
+  ): Promise<TResponse>;
+  delete(id: string, fetchOptions?: RepoFetchOptions): Promise<void>;
 }
 
 /**
@@ -85,12 +94,17 @@ export function entityRepo<
   return {
     ...entityBase,
 
-    async create(data: TCreate, options?: TOptions): Promise<TResponse> {
+    async create(
+      data: TCreate,
+      options?: TOptions,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<TResponse> {
       return await fetch<TResponse>(entityEndpoint, {
         method: 'POST',
         body: data,
         query: buildQueryObject(options),
         errorContext: errorContext('creating'),
+        ...fetchOptions,
       });
     },
 
@@ -98,19 +112,22 @@ export function entityRepo<
       id: string,
       data: TUpdate,
       options?: TOptions,
+      fetchOptions?: RepoFetchOptions,
     ): Promise<TResponse> {
       return await fetch<TResponse>(`${entityEndpoint}/${id}`, {
         method: 'PATCH',
         body: data,
         query: buildQueryObject(options),
         errorContext: errorContext('updating'),
+        ...fetchOptions,
       });
     },
 
-    async delete(id: string): Promise<void> {
+    async delete(id: string, fetchOptions?: RepoFetchOptions): Promise<void> {
       await fetch<null>(`${entityEndpoint}/${id}`, {
         method: 'DELETE',
         errorContext: errorContext('deleting'),
+        ...fetchOptions,
       });
     },
   };

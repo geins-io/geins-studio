@@ -25,7 +25,6 @@ const { t } = useI18n();
 const { orchestratorApi } = useGeinsRepository();
 // handleReplay owns its error toast (it also reports a non-API "no new id"
 // case), so suppress the global API error toast on the replay call.
-const { withSuppressedErrorToast } = useApiErrorToast();
 const breadcrumbsStore = useBreadcrumbsStore();
 
 const executionId = computed(() => route.params.id as string);
@@ -234,12 +233,8 @@ const runAction = async (label: string, fn: () => Promise<unknown>) => {
     await fn();
     await refresh();
     toast({ title: t('executions.action_successful', { action: label }) });
-  } catch (err) {
-    toast({
-      title: t('executions.action_failed', { action: label }),
-      description: err instanceof Error ? err.message : String(err),
-      variant: 'negative',
-    });
+  } catch {
+    // API failures surface via the global error toast.
   } finally {
     actionPending.value = false;
   }
@@ -269,12 +264,17 @@ const copyExecutionId = async () => {
 const handleReplay = async () => {
   actionPending.value = true;
   try {
-    const res = await withSuppressedErrorToast(() =>
-      orchestratorApi.execution.replay(executionId.value),
-    );
+    const res = await orchestratorApi.execution.replay(executionId.value);
     const newId = res?.newExecutionId ?? res?.executionId ?? res?.instanceId;
     if (!newId) {
-      throw new Error(res?.message ?? t('executions.replay_no_new_id'));
+      // 200 with no execution id — not an API error, so the global toast
+      // won't fire; surface it here.
+      toast({
+        title: t('executions.replay_failed'),
+        description: res?.message ?? t('executions.replay_no_new_id'),
+        variant: 'negative',
+      });
+      return;
     }
     toast({
       title: t('executions.replay_started'),
@@ -282,12 +282,8 @@ const handleReplay = async () => {
         res?.message ?? t('executions.new_execution_value', { id: newId }),
     });
     await navigateTo(`/orchestrator/executions/${newId}`);
-  } catch (err) {
-    toast({
-      title: t('executions.replay_failed'),
-      description: err instanceof Error ? err.message : String(err),
-      variant: 'negative',
-    });
+  } catch {
+    // API failures surface via the global error toast.
   } finally {
     actionPending.value = false;
   }

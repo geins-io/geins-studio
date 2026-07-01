@@ -25,6 +25,7 @@ interface EntityEditOptions<
       id: string,
       data: TUpdate,
       options?: TOptions,
+      fetchOptions?: { suppressErrorToast?: boolean },
     ) => Promise<TResponse>;
     delete?: (id: string) => Promise<void>;
   };
@@ -151,10 +152,6 @@ export function useEntityEdit<
   const loading = ref(false);
   const refreshEntityData = ref<() => Promise<void>>(() => Promise.resolve());
   const entityLiveStatus = ref<boolean>(false);
-  // Error toasts are owned globally by $geinsApi.onResponseError. Silent
-  // updates suppress that global toast so a background save can fail without
-  // alarming the user.
-  const { withSuppressedErrorToast } = useApiErrorToast();
 
   // Entity data
   const entityDataCreate = ref<TCreate>(options.initialEntityData);
@@ -348,13 +345,14 @@ export function useEntityEdit<
       if (!updateData) {
         return;
       }
-      // Silent updates (e.g. background re-save on load) must fail without the
-      // global error toast firing.
-      const result = silent
-        ? await withSuppressedErrorToast(() =>
-            options.repository.update(id, updateData, queryOptions),
-          )
-        : await options.repository.update(id, updateData, queryOptions);
+      // Silent updates (e.g. background re-save on load) opt out of the global
+      // error toast so a background save can fail without alarming the user.
+      const result = await options.repository.update(
+        id,
+        updateData,
+        queryOptions,
+        silent ? { suppressErrorToast: true } : undefined,
+      );
       const newData =
         result ?? (await options.repository.get(id, queryOptions));
       await parseAndSaveData(newData, setSavedData);
