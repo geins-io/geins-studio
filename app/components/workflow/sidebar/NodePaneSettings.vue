@@ -137,12 +137,34 @@ const inputTypeToHtml = (type: string): string => {
   return 'text';
 };
 
-const isTextarea = (field: { editorHint?: string; type: string }): boolean =>
-  field.editorHint === 'textarea' ||
-  field.editorHint === 'json' ||
-  field.editorHint === 'expression' ||
-  field.type.toLowerCase() === 'object' ||
-  field.type.toLowerCase() === 'json';
+const isExpressionField = (field: {
+  editorHint?: string;
+  type: string;
+}): boolean => {
+  const hint = field.editorHint?.toLowerCase();
+  return (
+    hint === 'expression' ||
+    hint === 'expression-editor' ||
+    field.type.toLowerCase() === 'expression'
+  );
+};
+
+// Multiline control for the generic fallback (unknown/new manifest nodes that
+// have no dedicated NodeSettings* panel). Covers expression editors, JSON and
+// structured (object/array) fields, and the key-value editor hint.
+const isTextarea = (field: { editorHint?: string; type: string }): boolean => {
+  const hint = field.editorHint?.toLowerCase();
+  const type = field.type.toLowerCase();
+  return (
+    hint === 'textarea' ||
+    hint === 'json' ||
+    hint === 'key-value-editor' ||
+    isExpressionField(field) ||
+    type === 'object' ||
+    type === 'json' ||
+    type === 'array'
+  );
+};
 
 const typeBadgeClass = (type: string): string => {
   const t = type.toLowerCase();
@@ -425,9 +447,7 @@ const onSettingsDrop = (event: DragEvent) => {
                   : String(nodeConfig[field.name] ?? field.default ?? '')
               "
               rows="3"
-              :placeholder="
-                field.editorHint === 'expression' ? '{{ expression }}' : ''
-              "
+              :placeholder="isExpressionField(field) ? '{{ expression }}' : ''"
               class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none"
               @input="
                 updateConfig(

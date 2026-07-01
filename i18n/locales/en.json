@@ -1480,8 +1480,8 @@
         "wait_for_completion_help": "Wait for child workflow to finish before continuing",
         "cascade_cancellation": "Cascade cancellation",
         "cascade_cancellation_help": "Cancel child workflow if parent is cancelled",
-        "inherit_variables": "Inherit variables",
-        "inherit_variables_help": "Pass parent workflow variables to child"
+        "inherit_input": "Inherit input",
+        "inherit_input_help": "Pass the parent workflow's input to the child"
       },
       "condition": {
         "conditions": "Conditions",
@@ -1509,6 +1509,13 @@
         "default_branch": "Default branch",
         "default_branch_help": "Fallback when no condition matches.",
         "default_branch_placeholder": "e.g. default, else, fallback",
+        "loop": "Loop",
+        "loop_help": "Re-execute selected upstream nodes when a branch targets them.",
+        "loop_max_iterations": "Max iterations",
+        "loop_max_iterations_help": "Safety limit on how many times the loop can run.",
+        "loop_reset_nodes": "Reset nodes",
+        "loop_reset_nodes_help": "Nodes to reset before each re-execution.",
+        "loop_reset_nodes_empty": "No other nodes to reset yet.",
         "op_equals": "equals",
         "op_not_equals": "not equals",
         "op_greater_than": "greater than",

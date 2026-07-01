@@ -514,21 +514,21 @@ function paramError(inp: WorkflowInput): string | null {
         <div class="flex items-start gap-2">
           <input
             type="checkbox"
-            :checked="Boolean(nodeConfig.inheritVariables ?? false)"
+            :checked="Boolean(nodeConfig.inheritInput ?? false)"
             class="mt-0.5 rounded border"
             @change="
               updateConfig(
-                'inheritVariables',
+                'inheritInput',
                 ($event.target as HTMLInputElement).checked,
               )
             "
           />
           <div>
             <label class="text-sm">
-              {{ $t('node.settings.workflow.inherit_variables') }}
+              {{ $t('node.settings.workflow.inherit_input') }}
             </label>
             <p class="text-muted-foreground text-xs">
-              {{ $t('node.settings.workflow.inherit_variables_help') }}
+              {{ $t('node.settings.workflow.inherit_input_help') }}
             </p>
           </div>
         </div>

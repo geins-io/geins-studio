@@ -289,6 +289,19 @@ const nodeData = computed(
 const nodeType = computed(() => (props.node?.type ?? '') as string);
 const selectedNodeId = computed(() => (props.node?.id ?? '') as string);
 provide('selectedNodeId', selectedNodeId);
+
+// Other graph nodes (excluding the synthetic trigger and the selected node),
+// exposed to settings panels that need to reference sibling nodes — e.g. the
+// condition loop editor's `resetNodes` picker.
+const graphNodes = computed<Array<{ id: string; label: string }>>(() =>
+  vfNodes.value
+    .filter((n) => n.type !== 'trigger' && n.id !== selectedNodeId.value)
+    .map((n) => ({
+      id: n.id,
+      label: (n.data?.label as string | undefined) ?? n.id,
+    })),
+);
+provide('graphNodes', graphNodes);
 const isTriggerNode = computed(() => nodeType.value === 'trigger');
 
 const manifestNode = computed(() =>

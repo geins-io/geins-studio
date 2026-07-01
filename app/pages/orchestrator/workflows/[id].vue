@@ -32,8 +32,12 @@ const { orchestratorApi } = useGeinsRepository();
 // This page owns its API error toasts (rich extractApiError title/detail), so
 // it suppresses the global error toast on its mutations to avoid a double.
 const { withSuppressedErrorToast } = useApiErrorToast();
-const { triggerTypeLabel, logVerbosityLabel, errorHandlingLabel } =
-  useWorkflowLabels();
+const {
+  triggerTypeLabel,
+  logVerbosityLabel,
+  errorHandlingLabel,
+  timeoutBehaviorLabel,
+} = useWorkflowLabels();
 
 function extractApiError(
   err: unknown,
@@ -65,6 +69,25 @@ const {
   triggerTypes: manifestTriggerTypes,
   eventEntities: manifestEventEntities,
 } = manifestStore;
+
+// Workflow-level enum selects are driven from the manifest so their values can
+// never drift from the backend contract; labels stay translated via
+// useWorkflowLabels (manifest displayNames are English-only Title Case).
+const logVerbosityOptions = computed(() =>
+  manifestStore
+    .getEnum('LogVerbosity')
+    .map((e) => ({ value: e.value, label: logVerbosityLabel(e.value) })),
+);
+const timeoutBehaviorOptions = computed(() =>
+  manifestStore
+    .getEnum('TimeoutBehavior')
+    .map((e) => ({ value: e.value, label: timeoutBehaviorLabel(e.value) })),
+);
+const errorHandlingStrategyOptions = computed(() =>
+  manifestStore
+    .getEnum('ErrorHandlingStrategy')
+    .map((e) => ({ value: e.value, label: errorHandlingLabel(e.value) })),
+);
 
 // ─── Workflow groups (single-select group input) ──────────────────────
 // No groups endpoint exists; the set is derived from existing workflows.
@@ -1574,14 +1597,12 @@ const { summaryProps } = useEntityEditSummary({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="minimal">
-                              {{ $t('workflows.verbosity_minimal') }}
-                            </SelectItem>
-                            <SelectItem value="normal">
-                              {{ $t('workflows.verbosity_normal') }}
-                            </SelectItem>
-                            <SelectItem value="detailed">
-                              {{ $t('workflows.verbosity_detailed') }}
+                            <SelectItem
+                              v-for="opt in logVerbosityOptions"
+                              :key="opt.value"
+                              :value="opt.value"
+                            >
+                              {{ opt.label }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1605,11 +1626,12 @@ const { summaryProps } = useEntityEditSummary({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="fail">
-                              {{ $t('workflows.timeout_fail') }}
-                            </SelectItem>
-                            <SelectItem value="cancelAndReport">
-                              {{ $t('workflows.timeout_cancel') }}
+                            <SelectItem
+                              v-for="opt in timeoutBehaviorOptions"
+                              :key="opt.value"
+                              :value="opt.value"
+                            >
+                              {{ opt.label }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1633,14 +1655,12 @@ const { summaryProps } = useEntityEditSummary({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="failFast">
-                              {{ $t('workflows.error_fail_fast') }}
-                            </SelectItem>
-                            <SelectItem value="continueOnError">
-                              {{ $t('workflows.error_continue') }}
-                            </SelectItem>
-                            <SelectItem value="skipNode">
-                              {{ $t('workflows.error_skip_node') }}
+                            <SelectItem
+                              v-for="opt in errorHandlingStrategyOptions"
+                              :key="opt.value"
+                              :value="opt.value"
+                            >
+                              {{ opt.label }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
