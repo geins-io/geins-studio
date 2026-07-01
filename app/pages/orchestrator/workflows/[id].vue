@@ -15,7 +15,6 @@ import type {
 } from '#shared/types';
 import { ENTITIES, entityListUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
-import KeyValueEditor from '@/components/workflow/shared/KeyValueEditor.vue';
 import { sanitizeWorkflowNodes } from '@/composables/useWorkflowCanvas';
 import type { Component } from 'vue';
 
@@ -84,9 +83,6 @@ const formSchema = toTypedSchema(
         eventAction: z.string().optional(),
         eventSubEntity: z.string().optional(),
         description: z.string().optional(),
-        startTime: z.string().optional(),
-        endTime: z.string().optional(),
-        inputParameters: z.record(z.string(), z.unknown()).optional(),
       })
       .superRefine((val, ctx) => {
         if (val.type === 'Scheduled') {
@@ -141,9 +137,6 @@ type WorkflowFormValues = {
     eventAction: string;
     eventSubEntity: string;
     description: string;
-    startTime: string;
-    endTime: string;
-    inputParameters: Record<string, unknown>;
   };
   settings: Record<string, unknown>;
 };
@@ -169,9 +162,6 @@ const form = useForm<WorkflowFormValues>({
       eventAction: '',
       eventSubEntity: '',
       description: '',
-      startTime: '',
-      endTime: '',
-      inputParameters: {},
     },
     settings: {},
   },
@@ -480,11 +470,6 @@ watch(
         eventAction: (triggerObj.action as string | undefined) ?? '',
         eventSubEntity: (triggerObj.subEntity as string | undefined) ?? '',
         description: (triggerObj.description as string | undefined) ?? '',
-        startTime: (triggerObj.startTime as string | undefined) ?? '',
-        endTime: (triggerObj.endTime as string | undefined) ?? '',
-        inputParameters:
-          (triggerObj.inputParameters as Record<string, unknown> | undefined) ??
-          {},
       },
       settings: { ...(workflow.settings ?? {}) },
     });
@@ -596,19 +581,11 @@ const buildTriggerConfig = (
   apiType: 'onDemand' | 'scheduled' | 'event',
   trigger: WorkflowFormValues['trigger'],
 ) => {
-  // Optional trigger-window + input-parameter fields shared by scheduled/event.
-  const hasParams = Object.keys(trigger.inputParameters ?? {}).length > 0;
-  const window = {
-    ...(trigger.startTime ? { startTime: trigger.startTime } : {}),
-    ...(trigger.endTime ? { endTime: trigger.endTime } : {}),
-    ...(hasParams ? { inputParameters: trigger.inputParameters } : {}),
-  };
   if (apiType === 'scheduled') {
     return {
       enabled: true,
       cronExpression: trigger.cron || '',
       description: trigger.description || '',
-      ...window,
     };
   }
   if (apiType === 'event') {
@@ -618,36 +595,9 @@ const buildTriggerConfig = (
       action: trigger.eventAction || '',
       subEntity: trigger.eventSubEntity || '',
       description: trigger.description || '',
-      ...window,
     };
   }
   return undefined;
-};
-
-// ─── Trigger window helpers (ISO ↔ datetime-local) ─────────────────
-const pad2 = (n: number) => String(n).padStart(2, '0');
-
-/** ISO date-time → `YYYY-MM-DDTHH:mm` in local time for `<input type=datetime-local>`. */
-const toLocalDateTimeInput = (iso: string | undefined): string => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-};
-
-const setTriggerDateTime = (field: 'startTime' | 'endTime', value: string) => {
-  const iso = value ? new Date(value).toISOString() : '';
-  form.setFieldValue(
-    field === 'startTime' ? 'trigger.startTime' : 'trigger.endTime',
-    iso,
-  );
-};
-
-const updateTriggerParam = (name: string, value: unknown) => {
-  const current = { ...(form.values.trigger?.inputParameters ?? {}) };
-  if (value === undefined) Reflect.deleteProperty(current, name);
-  else current[name] = value;
-  form.setFieldValue('trigger.inputParameters', current);
 };
 
 // ─── Save ──────────────────────────────────────────────────────────
@@ -1374,70 +1324,6 @@ const { summaryProps } = useEntityEditSummary({
                           />
                         </FormControl>
                         <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                </template>
-
-                <!-- Trigger window + input parameters (scheduled & event) -->
-                <template v-if="triggerTypeValue !== 'OnDemand'">
-                  <FormGrid design="1+1">
-                    <FormField name="trigger.startTime">
-                      <FormItem>
-                        <FormLabel :optional="true">
-                          {{ $t('workflows.start_time') }}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="datetime-local"
-                            :model-value="
-                              toLocalDateTimeInput(
-                                form.values.trigger.startTime,
-                              )
-                            "
-                            @update:model-value="
-                              setTriggerDateTime('startTime', String($event))
-                            "
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                    <FormField name="trigger.endTime">
-                      <FormItem>
-                        <FormLabel :optional="true">
-                          {{ $t('workflows.end_time') }}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="datetime-local"
-                            :model-value="
-                              toLocalDateTimeInput(form.values.trigger.endTime)
-                            "
-                            @update:model-value="
-                              setTriggerDateTime('endTime', String($event))
-                            "
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                  <FormGrid design="1">
-                    <FormField name="trigger.inputParameters">
-                      <FormItem>
-                        <FormLabel :optional="true">
-                          {{ $t('workflows.input_parameters') }}
-                        </FormLabel>
-                        <FormControl>
-                          <KeyValueEditor
-                            :input="form.values.trigger.inputParameters"
-                            :update-input="updateTriggerParam"
-                            :key-placeholder="$t('workflows.parameter_key')"
-                            :value-placeholder="$t('workflows.parameter_value')"
-                            inline
-                          />
-                        </FormControl>
                       </FormItem>
                     </FormField>
                   </FormGrid>
