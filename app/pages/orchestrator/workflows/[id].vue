@@ -237,6 +237,17 @@ const { data: workflowVariables } = useAsyncData(
 );
 provide('workflowVariables', workflowVariables);
 
+// Event-trigger context for the node expression/variables panel — lets node
+// authors see the event payload fields + example access for this workflow's
+// chosen entity/action. Only meaningful when the trigger type is Event.
+const workflowEventTrigger = computed(() => ({
+  type: triggerTypeValue.value,
+  entity: triggerEventEntity.value,
+  action: triggerEventAction.value,
+  subEntity: form.values.trigger?.eventSubEntity ?? '',
+}));
+provide('workflowEventTrigger', workflowEventTrigger);
+
 // Sync breadcrumb title with workflow name.
 watch(
   [isNew, workflowNameValue],

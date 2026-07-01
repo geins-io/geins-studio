@@ -1276,7 +1276,12 @@
       "no_expression_variables_hint": "The manifest does not define any expression variables",
       "context_variables": "Context variables",
       "context_variables_hint": "Available inside loop and paginator bodies.",
-      "provided_by": "Provided by"
+      "provided_by": "Provided by",
+      "event_context": "Event context",
+      "event_context_hint": "Available on the input of every event-triggered workflow.",
+      "event_payload": "{entity} / {action} payload",
+      "copy_expression": "Copy expression",
+      "expression_copied": "Expression copied"
     },
     "templates": {
       "title": "My templates",

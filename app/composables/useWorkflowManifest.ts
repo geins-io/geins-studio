@@ -1,9 +1,11 @@
 import type {
   EditorManifest,
   ManifestAuthoringGuide,
+  ManifestCommonEventContext,
   ManifestConfigProperty,
   ManifestEnumValue,
   ManifestEventEntity,
+  ManifestEventPayload,
   ManifestExpressionFunction,
   ManifestExpressionVariable,
   ManifestGraphConventions,
@@ -68,6 +70,15 @@ export function useWorkflowManifest() {
 
   const eventEntities = computed<ManifestEventEntity[]>(
     () => manifest.value?.eventEntities ?? [],
+  );
+
+  /** Context fields on `input` for every event-triggered workflow. */
+  const commonEventContext = computed<ManifestCommonEventContext[]>(
+    () => manifest.value?.commonEventContext ?? [],
+  );
+
+  const eventPayloads = computed<ManifestEventPayload[]>(
+    () => manifest.value?.eventPayloads ?? [],
   );
 
   const expressionFunctions = computed<ManifestExpressionFunction[]>(
@@ -168,6 +179,19 @@ export function useWorkflowManifest() {
   const getEnum = (name: string): ManifestEnumValue[] =>
     enums.value[name] ?? [];
 
+  /** Look up the event payload descriptor for an `entity`/`action`, case-insensitively. */
+  const getEventPayload = (
+    entity: string | undefined | null,
+    action: string | undefined | null,
+  ): ManifestEventPayload | undefined => {
+    if (!entity || !action) return undefined;
+    const e = entity.toLowerCase();
+    const a = action.toLowerCase();
+    return eventPayloads.value.find(
+      (p) => p.entity.toLowerCase() === e && p.action.toLowerCase() === a,
+    );
+  };
+
   /**
    * The default retry policy, sourced from the `retryPolicy` workflow-setting
    * descriptor's schema. Falls back to the manifest-documented defaults
@@ -199,6 +223,8 @@ export function useWorkflowManifest() {
     providers,
     triggerTypes,
     eventEntities,
+    commonEventContext,
+    eventPayloads,
     expressionFunctions,
     expressionVariables,
     workflowSettings,
@@ -218,6 +244,7 @@ export function useWorkflowManifest() {
     getProvider,
     getTriggerType,
     getEnum,
+    getEventPayload,
     defaultRetryPolicy,
   };
 }

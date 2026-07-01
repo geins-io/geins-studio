@@ -1273,7 +1273,12 @@
       "no_expression_variables_hint": "Manifestet definierar inga uttrycksvariabler",
       "context_variables": "Kontextvariabler",
       "context_variables_hint": "Tillgängliga inuti loop- och pagineringskroppar.",
-      "provided_by": "Tillhandahålls av"
+      "provided_by": "Tillhandahålls av",
+      "event_context": "Händelsekontext",
+      "event_context_hint": "Tillgängliga på indata för varje händelseutlöst arbetsflöde.",
+      "event_payload": "{entity} / {action}-nyttolast",
+      "copy_expression": "Kopiera uttryck",
+      "expression_copied": "Uttryck kopierat"
     },
     "templates": {
       "title": "Mina mallar",
