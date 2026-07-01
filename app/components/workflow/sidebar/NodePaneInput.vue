@@ -75,7 +75,7 @@ const toggleSection = (key: string) => {
 type UpstreamNode = {
   id: string;
   label: string;
-  actionName?: string;
+  functionName?: string;
   nodeType: string;
   outputFields: Array<{ name: string; type: string }>;
 };
@@ -98,16 +98,9 @@ const upstreamLabelClass = (nodeType: string) => {
   return c ? c.split(' ')[0] : 'text-muted-foreground';
 };
 
-const ITERATOR_CONTEXT_VARS: Array<{ name: string; type: string }> = [
-  { name: '$current', type: 'any' },
-  { name: '$index', type: 'number' },
-];
-
-const PAGINATOR_CONTEXT_VARS: Array<{ name: string; type: string }> = [
-  { name: '$cursor', type: 'any' },
-  { name: '$pageNumber', type: 'number' },
-  { name: '$pageSize', type: 'number' },
-];
+// Handles that route into a node's child scope (loop body / page handler) —
+// edges leaving these expose the node's `children`-scoped context variables.
+const CHILD_SCOPE_HANDLES = new Set(['foreach', 'fetchPage', 'forEachPage']);
 
 function resolveOutputFields(
   nodeId: string,
@@ -115,29 +108,26 @@ function resolveOutputFields(
   data: Record<string, unknown>,
   sourceHandle?: string,
 ): Array<{ name: string; type: string }> {
-  const actionName = data.actionName as string | undefined;
-  const action = manifestStore.getAction(actionName);
+  const functionName = data.functionName as string | undefined;
+  const node = manifestStore.getNode(functionName);
 
-  if (
-    (nodeType === 'iterator' || nodeType === 'loop') &&
-    sourceHandle === 'foreach'
-  ) {
-    return ITERATOR_CONTEXT_VARS;
+  // Context variables ($current/$index/$cursor/…) come from the manifest node
+  // and are in scope only on edges leaving a child-scope handle.
+  if (sourceHandle && CHILD_SCOPE_HANDLES.has(sourceHandle)) {
+    const childVars = (node?.contextVariables ?? []).filter(
+      (v) => v.scope === 'children',
+    );
+    if (childVars.length) {
+      return childVars.map((v) => ({ name: v.name, type: v.type }));
+    }
   }
-  if (
-    nodeType === 'paginator' &&
-    (sourceHandle === 'fetchPage' || sourceHandle === 'forEachPage')
-  ) {
-    return PAGINATOR_CONTEXT_VARS;
-  }
-  if (actionName === 'transform.map' || actionName === 'transform.compose') {
-    const input = (data.input ?? {}) as Record<string, unknown>;
-    return Object.keys(input)
+  if (node?.name === 'map' || node?.name === 'compose') {
+    const config = (data.config ?? {}) as Record<string, unknown>;
+    return Object.keys(config)
       .filter((k) => k && !k.startsWith('_'))
-      .map((k) => ({ name: k, type: inferValueType(input[k]) }));
+      .map((k) => ({ name: k, type: inferValueType(config[k]) }));
   }
-  const nodeTypeDef = manifestStore.getNodeType(nodeType);
-  return (action?.output ?? nodeTypeDef?.output ?? []) as Array<{
+  return (node?.output ?? []) as Array<{
     name: string;
     type: string;
   }>;
@@ -161,8 +151,8 @@ const upstreamNodes = computed(() => {
       const n = vfNodes.value.find((nd) => nd.id === edge.source);
       if (!n) continue;
       const data = (n.data ?? {}) as Record<string, unknown>;
-      const action = manifestStore.getAction(
-        data.actionName as string | undefined,
+      const manifestNode = manifestStore.getNode(
+        data.functionName as string | undefined,
       );
       const nodeType = n.type as string;
 
@@ -177,8 +167,8 @@ const upstreamNodes = computed(() => {
 
       result.push({
         id: n.id,
-        label: (data.label as string) || action?.displayName || n.id,
-        actionName: data.actionName as string | undefined,
+        label: (data.label as string) || manifestNode?.displayName || n.id,
+        functionName: data.functionName as string | undefined,
         nodeType,
         outputFields,
       });

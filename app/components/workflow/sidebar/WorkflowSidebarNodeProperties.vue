@@ -2,7 +2,6 @@
 import { useVueFlow } from '@vue-flow/core';
 import type { WorkflowInput, WorkflowVariable } from '#shared/types';
 import type { ExpressionCompletion } from '@/components/workflow/shared/ExpressionInput.vue';
-import type { ManifestAction } from '@/composables/useWorkflowManifest';
 import NodePaneInput from './NodePaneInput.vue';
 import NodePaneOutput from './NodePaneOutput.vue';
 import NodePaneSettings from './NodePaneSettings.vue';
@@ -115,53 +114,37 @@ const expressionCompletions = computed<ExpressionCompletion[]>(() => {
 
   const items: ExpressionCompletion[] = [];
 
-  const ITERATOR_CONTEXT_VARS: Array<{ name: string; type: string }> = [
-    { name: '$current', type: 'any' },
-    { name: '$index', type: 'number' },
-  ];
-
-  const PAGINATOR_CONTEXT_VARS: Array<{ name: string; type: string }> = [
-    { name: '$cursor', type: 'any' },
-    { name: '$pageNumber', type: 'number' },
-    { name: '$pageSize', type: 'number' },
-  ];
+  // Handles that route into a node's child scope expose its `children`-scoped
+  // context variables ($current/$index/$cursor/…) from the manifest.
+  const CHILD_SCOPE_HANDLES = new Set(['foreach', 'fetchPage', 'forEachPage']);
 
   const incomingEdges = vfEdges.value.filter((e) => e.target === nodeId);
   for (const edge of incomingEdges) {
     const n = vfNodes.value.find((nd) => nd.id === edge.source);
     if (!n) continue;
     const data = (n.data ?? {}) as Record<string, unknown>;
-    const action = manifestStore.getAction(
-      data.actionName as string | undefined,
-    );
-    const label = (data.label as string) || action?.displayName || n.id;
+    const node = manifestStore.getNode(data.functionName as string | undefined);
+    const label = (data.label as string) || node?.displayName || n.id;
     const section = `output · ${label}`;
     const exec = lastNodeExecutions?.value?.get(edge.source);
-    const nodeType = n.type as string;
 
-    const actionName = data.actionName as string | undefined;
+    const childVars = (node?.contextVariables ?? []).filter(
+      (v) => v.scope === 'children',
+    );
     let outputFields: Array<{ name: string; type: string }>;
     if (
-      (nodeType === 'iterator' || nodeType === 'loop') &&
-      edge.sourceHandle === 'foreach'
+      edge.sourceHandle &&
+      CHILD_SCOPE_HANDLES.has(edge.sourceHandle) &&
+      childVars.length
     ) {
-      outputFields = ITERATOR_CONTEXT_VARS;
-    } else if (
-      nodeType === 'paginator' &&
-      (edge.sourceHandle === 'fetchPage' || edge.sourceHandle === 'forEachPage')
-    ) {
-      outputFields = PAGINATOR_CONTEXT_VARS;
-    } else if (
-      actionName === 'transform.map' ||
-      actionName === 'transform.compose'
-    ) {
-      const input = (data.input ?? {}) as Record<string, unknown>;
-      outputFields = Object.keys(input)
+      outputFields = childVars.map((v) => ({ name: v.name, type: v.type }));
+    } else if (node?.name === 'map' || node?.name === 'compose') {
+      const config = (data.config ?? {}) as Record<string, unknown>;
+      outputFields = Object.keys(config)
         .filter((k) => k && !k.startsWith('_'))
-        .map((k) => ({ name: k, type: inferTransformValueType(input[k]) }));
+        .map((k) => ({ name: k, type: inferTransformValueType(config[k]) }));
     } else {
-      const nodeTypeDef = manifestStore.getNodeType(nodeType);
-      outputFields = (action?.output ?? nodeTypeDef?.output ?? []) as Array<{
+      outputFields = (node?.output ?? []) as Array<{
         name: string;
         type: string;
       }>;
@@ -306,30 +289,35 @@ const nodeData = computed(
 const nodeType = computed(() => (props.node?.type ?? '') as string);
 const selectedNodeId = computed(() => (props.node?.id ?? '') as string);
 provide('selectedNodeId', selectedNodeId);
+
+// Other graph nodes (excluding the synthetic trigger and the selected node),
+// exposed to settings panels that need to reference sibling nodes — e.g. the
+// condition loop editor's `resetNodes` picker.
+const graphNodes = computed<Array<{ id: string; label: string }>>(() =>
+  vfNodes.value
+    .filter((n) => n.type !== 'trigger' && n.id !== selectedNodeId.value)
+    .map((n) => ({
+      id: n.id,
+      label: (n.data?.label as string | undefined) ?? n.id,
+    })),
+);
+provide('graphNodes', graphNodes);
 const isTriggerNode = computed(() => nodeType.value === 'trigger');
 
-const manifestNodeType = computed(() =>
-  manifestStore.getNodeType(nodeType.value),
+const manifestNode = computed(() =>
+  manifestStore.getNode(nodeData.value.functionName as string | undefined),
 );
-const manifestAction = computed<ManifestAction | undefined>(() => {
-  if (nodeType.value !== 'action') return undefined;
-  return manifestStore.getAction(
-    nodeData.value.actionName as string | undefined,
-  );
-});
 
 const nodeIcon = computed(() => {
   const iconName =
-    (nodeData.value.icon as string | undefined) ??
-    manifestNodeType.value?.icon ??
-    manifestAction.value?.icon;
+    (nodeData.value.icon as string | undefined) ?? manifestNode.value?.icon;
   return resolveIcon(iconName);
 });
 
 const nodeLabel = computed(
   () =>
     (nodeData.value.label as string) ||
-    manifestNodeType.value?.displayName ||
+    manifestNode.value?.displayName ||
     t('node.properties.title'),
 );
 

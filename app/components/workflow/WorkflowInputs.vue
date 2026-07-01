@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import draggable from 'vuedraggable';
-import type { WorkflowInput } from '#shared/types';
+import type { InputVariableType, WorkflowInput } from '#shared/types';
 import JsonCodeEditor from '@/components/shared/JsonCodeEditor.vue';
 import WorkflowDataType from './shared/WorkflowDataType.vue';
 
@@ -80,7 +80,7 @@ const addInputCategory = ref('');
 const addInputError = ref('');
 const newInput = reactive({
   name: '',
-  type: 'string',
+  type: 'string' as InputVariableType,
   required: false,
   description: '',
   defaultValue: '',

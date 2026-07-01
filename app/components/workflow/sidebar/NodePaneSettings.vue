@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { ManifestNodeTypeConfig } from '#shared/types';
-import type { ManifestAction } from '@/composables/useWorkflowManifest';
+import type { ManifestConfigProperty, ManifestNode } from '#shared/types';
 import NodeSettingsAction from './settings/NodeSettingsAction.vue';
 import NodeSettingsCondition from './settings/NodeSettingsCondition.vue';
 import NodeSettingsDelay from './settings/NodeSettingsDelay.vue';
+import NodeSettingsExecution from './settings/NodeSettingsExecution.vue';
 import NodeSettingsInputSchema from './settings/NodeSettingsInputSchema.vue';
 import NodeSettingsIterator from './settings/NodeSettingsIterator.vue';
 import NodeSettingsPaginator from './settings/NodeSettingsPaginator.vue';
@@ -29,26 +29,20 @@ const props = defineProps<{
 
 const manifestStore = useWorkflowManifest();
 
-const manifestNodeType = computed(() =>
-  manifestStore.getNodeType(props.nodeType),
+const manifestNode = computed<ManifestNode | undefined>(() =>
+  manifestStore.getNode(props.nodeData.functionName as string | undefined),
 );
-const manifestAction = computed<ManifestAction | undefined>(() => {
-  if (props.nodeType !== 'action') return undefined;
-  return manifestStore.getAction(
-    props.nodeData.actionName as string | undefined,
-  );
-});
 
-const nodeTypeConfig = computed<ManifestNodeTypeConfig[]>(
-  () => manifestNodeType.value?.config ?? [],
+const nodeConfigFields = computed<ManifestConfigProperty[]>(
+  () => manifestNode.value?.config ?? [],
 );
 
 const nodeConfig = computed(
   () => (props.nodeData.config ?? {}) as Record<string, unknown>,
 );
-const nodeInput = computed(
-  () => (props.nodeData.input ?? {}) as Record<string, unknown>,
-);
+// Inputs are now part of `config` (schemaVersion 3.x). `nodeInput`/`updateInput`
+// remain as aliases so the per-kind settings panels keep their existing API.
+const nodeInput = nodeConfig;
 const nodeUi = computed(
   () => (props.nodeData.ui ?? {}) as Record<string, unknown>,
 );
@@ -89,11 +83,11 @@ const updateConfig = (name: string, value: unknown) => {
 };
 
 const updateInput = (name: string, value: unknown) => {
-  const input = getNodeSection('input');
+  const config = getNodeSection('config');
   if (value === undefined) {
-    Reflect.deleteProperty(input, name);
+    Reflect.deleteProperty(config, name);
   } else {
-    input[name] = value;
+    config[name] = value;
   }
   onNodeSettingsChange();
 };
@@ -109,6 +103,22 @@ const updateEditorHint = (name: string, value: unknown) => {
   }
   onNodeSettingsChange();
 };
+
+// Per-node execution overrides (retry / timeout / errorHandlingStrategy) live
+// at the top level of the node, not under `config`.
+const updateNodeField = (key: string, value: unknown) => {
+  if (value === undefined || value === null) {
+    Reflect.deleteProperty(props.nodeData, key);
+  } else {
+    // eslint-disable-next-line vue/no-mutating-props -- shared reactive node data
+    props.nodeData[key] = value;
+  }
+  onNodeSettingsChange();
+};
+
+const errorHandlingOptions = computed(() =>
+  manifestStore.getEnum('ErrorHandlingStrategy'),
+);
 
 const prettyLabel = (name: string): string =>
   name
@@ -127,12 +137,34 @@ const inputTypeToHtml = (type: string): string => {
   return 'text';
 };
 
-const isTextarea = (field: { editorHint?: string; type: string }): boolean =>
-  field.editorHint === 'textarea' ||
-  field.editorHint === 'json' ||
-  field.editorHint === 'expression' ||
-  field.type.toLowerCase() === 'object' ||
-  field.type.toLowerCase() === 'json';
+const isExpressionField = (field: {
+  editorHint?: string;
+  type: string;
+}): boolean => {
+  const hint = field.editorHint?.toLowerCase();
+  return (
+    hint === 'expression' ||
+    hint === 'expression-editor' ||
+    field.type.toLowerCase() === 'expression'
+  );
+};
+
+// Multiline control for the generic fallback (unknown/new manifest nodes that
+// have no dedicated NodeSettings* panel). Covers expression editors, JSON and
+// structured (object/array) fields, and the key-value editor hint.
+const isTextarea = (field: { editorHint?: string; type: string }): boolean => {
+  const hint = field.editorHint?.toLowerCase();
+  const type = field.type.toLowerCase();
+  return (
+    hint === 'textarea' ||
+    hint === 'json' ||
+    hint === 'key-value-editor' ||
+    isExpressionField(field) ||
+    type === 'object' ||
+    type === 'json' ||
+    type === 'array'
+  );
+};
 
 const typeBadgeClass = (type: string): string => {
   const t = type.toLowerCase();
@@ -153,8 +185,8 @@ const activeTab = ref<'settings' | 'schema' | 'expressions' | 'variables'>(
 const schemaSubTab = ref<'input' | 'output'>('input');
 
 const hasInputSchema = computed(() => {
-  if (!manifestAction.value?.examples?.length) return false;
-  const inputs = manifestAction.value.input ?? [];
+  if (!manifestNode.value?.examples?.length) return false;
+  const inputs = manifestNode.value.config ?? [];
   return inputs.some((f) => {
     const t = f.type.toLowerCase();
     return t === 'array' || t === 'object' || t === 'json';
@@ -162,14 +194,16 @@ const hasInputSchema = computed(() => {
 });
 
 const outputFields = computed(() => {
-  const actionName = props.nodeData.actionName as string | undefined;
-  if (actionName === 'transform.map' || actionName === 'transform.compose') {
-    const input = (props.nodeData.input ?? {}) as Record<string, unknown>;
-    return Object.keys(input)
+  if (
+    manifestNode.value?.name === 'map' ||
+    manifestNode.value?.name === 'compose'
+  ) {
+    const config = (props.nodeData.config ?? {}) as Record<string, unknown>;
+    return Object.keys(config)
       .filter((k) => k && !k.startsWith('_'))
       .map((k) => ({ name: k, type: 'any', description: '' }));
   }
-  return manifestAction.value?.output ?? manifestNodeType.value?.output ?? [];
+  return manifestNode.value?.output ?? [];
 });
 
 const expressionVariables = computed(
@@ -178,6 +212,20 @@ const expressionVariables = computed(
 
 const expressionFunctions = computed(
   () => manifestStore.expressionFunctions.value,
+);
+
+// Authoring guidance (summary + evaluation rules) from the manifest, rendered
+// as help text above the function reference. Content is manifest-provided.
+const authoringExpressions = computed(
+  () =>
+    (manifestStore.authoring.value?.expressions ?? {}) as {
+      summary?: string;
+      evaluationRules?: Array<{
+        title: string;
+        description?: string;
+        examples?: string[];
+      }>;
+    },
 );
 
 const fnCategories = computed(() => {
@@ -368,17 +416,17 @@ const onSettingsDrop = (event: DragEvent) => {
         :node-config="nodeConfig"
         :node-input="nodeInput"
         :editor-hints="nodeEditorHints"
-        :manifest-action="manifestAction"
+        :manifest-node="manifestNode"
         :update-config="updateConfig"
         :update-input="updateInput"
         :update-editor-hint="updateEditorHint"
       />
 
       <!-- Fallback: manifest config fields for unknown node types -->
-      <template v-else-if="nodeTypeConfig.length">
+      <template v-else-if="nodeConfigFields.length">
         <div class="space-y-3">
           <div
-            v-for="field in nodeTypeConfig"
+            v-for="field in nodeConfigFields"
             :key="field.name"
             class="space-y-1"
           >
@@ -396,12 +444,10 @@ const onSettingsDrop = (event: DragEvent) => {
               :value="
                 typeof nodeConfig[field.name] === 'object'
                   ? JSON.stringify(nodeConfig[field.name], null, 2)
-                  : String(nodeConfig[field.name] ?? field.defaultValue ?? '')
+                  : String(nodeConfig[field.name] ?? field.default ?? '')
               "
               rows="3"
-              :placeholder="
-                field.editorHint === 'expression' ? '{{ expression }}' : ''
-              "
+              :placeholder="isExpressionField(field) ? '{{ expression }}' : ''"
               class="bg-background focus:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus:ring-2 focus:outline-none"
               @input="
                 updateConfig(
@@ -416,7 +462,7 @@ const onSettingsDrop = (event: DragEvent) => {
             >
               <input
                 type="checkbox"
-                :checked="Boolean(nodeConfig[field.name] ?? field.defaultValue)"
+                :checked="Boolean(nodeConfig[field.name] ?? field.default)"
                 class="rounded border"
                 @change="
                   updateConfig(
@@ -429,8 +475,8 @@ const onSettingsDrop = (event: DragEvent) => {
             <input
               v-else
               :type="inputTypeToHtml(field.type)"
-              :value="nodeConfig[field.name] ?? field.defaultValue ?? ''"
-              :placeholder="String(field.defaultValue ?? '')"
+              :value="nodeConfig[field.name] ?? field.default ?? ''"
+              :placeholder="String(field.default ?? '')"
               class="bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               @input="
                 updateConfig(
@@ -442,6 +488,16 @@ const onSettingsDrop = (event: DragEvent) => {
           </div>
         </div>
       </template>
+
+      <!-- Per-node execution overrides (retry / timeout / error handling) -->
+      <NodeSettingsExecution
+        v-if="nodeType !== 'trigger'"
+        class="mt-4"
+        :node-data="nodeData"
+        :error-handling-options="errorHandlingOptions"
+        :default-retry="manifestStore.defaultRetryPolicy.value"
+        :update="updateNodeField"
+      />
     </div>
 
     <!-- Schema tab (combined input + output) -->
@@ -479,8 +535,8 @@ const onSettingsDrop = (event: DragEvent) => {
         <!-- Input schema sub-tab -->
         <div v-if="hasInputSchema && schemaSubTab === 'input'">
           <NodeSettingsInputSchema
-            v-if="manifestAction"
-            :manifest-action="manifestAction"
+            v-if="manifestNode"
+            :manifest-node="manifestNode"
           />
         </div>
         <!-- Output schema sub-tab (or sole content when no input schema) -->
@@ -533,6 +589,43 @@ const onSettingsDrop = (event: DragEvent) => {
       v-show="activeTab === 'expressions'"
       class="flex flex-1 flex-col overflow-hidden"
     >
+      <!-- Authoring guidance (manifest-provided help text) -->
+      <div
+        v-if="
+          authoringExpressions.summary ||
+          authoringExpressions.evaluationRules?.length
+        "
+        class="space-y-2 border-b p-4"
+      >
+        <p
+          v-if="authoringExpressions.summary"
+          class="text-muted-foreground text-xs leading-relaxed"
+        >
+          {{ authoringExpressions.summary }}
+        </p>
+        <details
+          v-for="rule in authoringExpressions.evaluationRules ?? []"
+          :key="rule.title"
+        >
+          <summary class="text-foreground cursor-pointer text-xs font-medium">
+            {{ rule.title }}
+          </summary>
+          <p
+            v-if="rule.description"
+            class="text-muted-foreground mt-1 text-[11px] leading-relaxed"
+          >
+            {{ rule.description }}
+          </p>
+          <code
+            v-for="ex in rule.examples ?? []"
+            :key="ex"
+            class="bg-muted/70 mt-1 block rounded px-2 py-1 font-mono text-[11px]"
+          >
+            {{ ex }}
+          </code>
+        </details>
+      </div>
+
       <!-- Category pills -->
       <div
         v-if="fnCategories.size > 1"
@@ -667,10 +760,11 @@ const onSettingsDrop = (event: DragEvent) => {
             {{ v.description }}
           </p>
           <div
-            v-if="v.example"
+            v-for="ex in v.examples ?? []"
+            :key="ex"
             class="bg-muted/70 rounded px-2.5 py-1.5 font-mono text-[11px]"
           >
-            {{ v.example }}
+            {{ ex }}
           </div>
         </div>
       </div>
