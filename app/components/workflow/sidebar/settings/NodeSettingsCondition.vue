@@ -17,6 +17,19 @@ const props = defineProps<{
   updateConfig: (name: string, value: unknown) => void;
 }>();
 
+type LoopConfig = {
+  enabled?: boolean;
+  maxIterations?: number;
+  resetNodes?: string[];
+};
+
+// Other graph nodes, provided by the properties panel — the reset-nodes picker
+// lets the loop re-run selected upstream nodes on each iteration.
+const graphNodes = inject<Ref<Array<{ id: string; label: string }>>>(
+  'graphNodes',
+  ref([]),
+);
+
 const onNodeSettingsChange = inject<() => void>(
   'onNodeSettingsChange',
   () => {},
@@ -55,6 +68,50 @@ function updateDefaultLabel(val: string) {
   // eslint-disable-next-line vue/no-mutating-props -- nodeData is a shared reactive object mutated by all settings panels
   props.nodeData.defaultLabel = val || undefined;
   onNodeSettingsChange();
+}
+
+// ─── Loop configuration (re-execute upstream nodes) ──────────────
+const DEFAULT_MAX_ITERATIONS = 100;
+
+const loop = computed<LoopConfig>(
+  () => (props.nodeConfig.loop as LoopConfig | undefined) ?? {},
+);
+const loopEnabled = computed<boolean>(() => Boolean(loop.value.enabled));
+const loopMaxIterations = computed<number>(
+  () => loop.value.maxIterations ?? DEFAULT_MAX_ITERATIONS,
+);
+const loopResetNodes = computed<string[]>(() => loop.value.resetNodes ?? []);
+
+function writeLoop(patch: Partial<LoopConfig>) {
+  props.updateConfig('loop', { ...loop.value, ...patch });
+}
+
+function toggleLoop(enabled: boolean) {
+  if (enabled) {
+    props.updateConfig('loop', {
+      enabled: true,
+      maxIterations: loop.value.maxIterations ?? DEFAULT_MAX_ITERATIONS,
+      resetNodes: loop.value.resetNodes ?? [],
+    });
+  } else {
+    // Drop the loop object entirely so nodes that never loop stay clean.
+    props.updateConfig('loop', undefined);
+  }
+}
+
+function setLoopMaxIterations(value: number | string) {
+  const n = Number(value);
+  writeLoop({
+    maxIterations:
+      Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_MAX_ITERATIONS,
+  });
+}
+
+function toggleResetNode(id: string, checked: boolean) {
+  const next = checked
+    ? [...loopResetNodes.value, id]
+    : loopResetNodes.value.filter((n) => n !== id);
+  writeLoop({ resetNodes: next });
 }
 
 function addCondition() {
@@ -970,6 +1027,78 @@ function getError(index: number, field: string): string | undefined {
         class="mt-2"
         @update:model-value="updateDefaultLabel(String($event))"
       />
+    </div>
+
+    <!-- Loop: re-execute upstream nodes while a branch targets them -->
+    <div class="border-t pt-4">
+      <div class="flex items-start gap-2">
+        <Switch
+          :model-value="loopEnabled"
+          class="mt-0.5"
+          @update:model-value="toggleLoop($event)"
+        />
+        <div class="flex-1 space-y-1">
+          <label class="text-sm font-medium">
+            {{ $t('node.settings.condition.loop') }}
+          </label>
+          <p class="text-muted-foreground text-[11px]">
+            {{ $t('node.settings.condition.loop_help') }}
+          </p>
+        </div>
+      </div>
+
+      <div v-if="loopEnabled" class="mt-3 space-y-3">
+        <div class="space-y-1">
+          <label class="text-muted-foreground text-xs">
+            {{ $t('node.settings.condition.loop_max_iterations') }}
+          </label>
+          <Input
+            type="number"
+            min="1"
+            :model-value="loopMaxIterations"
+            size="sm"
+            @update:model-value="setLoopMaxIterations($event)"
+          />
+          <p class="text-muted-foreground text-[11px]">
+            {{ $t('node.settings.condition.loop_max_iterations_help') }}
+          </p>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-muted-foreground text-xs">
+            {{ $t('node.settings.condition.loop_reset_nodes') }}
+          </label>
+          <p class="text-muted-foreground text-[11px]">
+            {{ $t('node.settings.condition.loop_reset_nodes_help') }}
+          </p>
+          <div
+            v-if="graphNodes.length"
+            class="mt-1 space-y-1 rounded-md border p-2"
+          >
+            <label
+              v-for="n in graphNodes"
+              :key="n.id"
+              class="flex cursor-pointer items-center gap-2 text-sm"
+            >
+              <input
+                type="checkbox"
+                class="rounded border"
+                :checked="loopResetNodes.includes(n.id)"
+                @change="
+                  toggleResetNode(
+                    n.id,
+                    ($event.target as HTMLInputElement).checked,
+                  )
+                "
+              />
+              <span class="truncate">{{ n.label }}</span>
+            </label>
+          </div>
+          <p v-else class="text-muted-foreground text-[11px] italic">
+            {{ $t('node.settings.condition.loop_reset_nodes_empty') }}
+          </p>
+        </div>
+      </div>
     </div>
 
     <!-- Expression reference (collapsible) -->

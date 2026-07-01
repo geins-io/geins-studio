@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { NodeTemplate, PaletteItem } from '#shared/types';
+import type { NodeTemplate, PaletteItem, ManifestNode } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
-import type { ManifestAction } from '@/composables/useWorkflowManifest';
 import WorkflowNodeSaveTemplateDialog from '../node/WorkflowNodeSaveTemplateDialog.vue';
 import type { Component } from 'vue';
 import MonitorSymbol from '~/assets/logos/kits/monitor.svg';
@@ -25,69 +24,49 @@ const showEditDialog = ref(false);
 // ─── Manifest data ─────────────────────────────────────────────────
 const manifestStore = useWorkflowManifest();
 const {
-  actions: manifestActions,
-  nodeTypes: manifestNodeTypes,
-  actionCategories: manifestActionCategories,
+  nodes: manifestNodes,
+  nodeCategories,
+  nodesByCategory,
+  nodesByProvider,
+  categoryByName,
+  providers,
+  providersByName,
 } = manifestStore;
+
+const CORE_PROVIDER = 'core';
 
 const { resolveIcon } = useLucideIcon();
 
-// ─── Node-type metadata (for the root category cards) ──────────────
-const NODE_TYPE_META: Record<
-  string,
-  { icon: string; color: string; labelKey: string }
-> = {
-  action: {
-    icon: 'Globe',
-    color: 'text-blue-500',
-    labelKey: 'node.add_category.action',
-  },
-  condition: {
-    icon: 'GitBranch',
-    color: 'text-yellow-500',
-    labelKey: 'node.add_category.condition',
-  },
-  iterator: {
-    icon: 'Repeat',
-    color: 'text-purple-500',
-    labelKey: 'node.add_category.iterator',
-  },
-  delay: {
-    icon: 'Timer',
-    color: 'text-orange-500',
-    labelKey: 'node.add_category.delay',
-  },
-  workflow: {
-    icon: 'Workflow',
-    color: 'text-blue-500',
-    labelKey: 'node.add_category.workflow',
-  },
+const CATEGORY_FALLBACK_ICON = 'Zap';
+const NODE_COLOR = 'text-blue-500';
+
+/** Icon used for saved templates, keyed by canvas kind. */
+const KIND_ICON: Record<string, string> = {
+  action: 'Globe',
+  condition: 'GitBranch',
+  iterator: 'Repeat',
+  paginator: 'Layers',
+  delay: 'Timer',
+  workflow: 'Workflow',
+  trigger: 'Zap',
 };
 
-/** Extract the provider prefix from a dotted action name: "monitor.buildPartQuery" → "monitor" */
-function getProviderFromName(actionName: string): string {
-  const dotIndex = actionName.indexOf('.');
-  return dotIndex > 0 ? actionName.substring(0, dotIndex) : actionName;
+/** Build a PaletteItem from a manifest node descriptor. */
+function nodeToPaletteItem(node: ManifestNode): PaletteItem {
+  return {
+    kind: functionNameToNodeKind(node.functionName),
+    id: node.functionName,
+    label: node.displayName || node.name,
+    description: node.description,
+    functionName: node.functionName,
+  };
 }
 
-/** Titlecase a provider prefix: "monitor" → "Monitor" */
-function titleCase(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-/** Provider icon lookup — first tries manifest actionCategories, then falls back to defaults */
-const PROVIDER_ICON_DEFAULTS: Record<string, string> = {
-  geins: 'Box',
-  monitor: 'Activity',
-  net: 'Globe',
-  storage: 'Database',
-  transform: 'ArrowRightLeft',
-  common: 'Settings',
-};
-
+// ─── Provider branding ─────────────────────────────────────────────
 const PROVIDER_LOGOS: Record<string, unknown> = {
   litium: LitiumSymbol,
   monitor: MonitorSymbol,
+  'monitor-erp': MonitorSymbol,
 };
 
 function toComponentOrNull(value: unknown): Component | null {
@@ -103,43 +82,23 @@ function getProviderLogo(providerKey: string): Component | null {
 }
 
 function getProviderIcon(providerKey: string): Component | null {
-  // Check if manifestActionCategories has a matching entry
-  const cat = manifestActionCategories.value.find(
-    (c) => c.name === providerKey,
-  );
-  if (cat?.icon) return resolveIcon(cat.icon);
-  return resolveIcon(PROVIDER_ICON_DEFAULTS[providerKey] ?? 'Package');
+  const icon = providersByName.value.get(providerKey)?.icon;
+  return resolveIcon(icon ?? 'Package');
 }
 
-function getProviderDisplayName(providerKey: string): string {
-  const cat = manifestActionCategories.value.find(
-    (c) => c.name === providerKey,
-  );
-  if (cat?.displayName) return cat.displayName;
-  return titleCase(providerKey);
+// ─── Category helpers (icon/displayName from the manifest descriptor) ─
+function getCategoryIcon(name: string): Component | null {
+  const icon = categoryByName.value.get(name)?.icon;
+  return resolveIcon(icon ?? CATEGORY_FALLBACK_ICON);
 }
 
-function getProviderDescription(providerKey: string): string | undefined {
-  const cat = manifestActionCategories.value.find(
-    (c) => c.name === providerKey,
-  );
-  if (!cat) return undefined;
-  return 'description' in cat
-    ? (cat.description as string | undefined)
-    : undefined;
+function getCategoryLabel(name: string): string {
+  return categoryByName.value.get(name)?.displayName ?? name;
 }
 
-/** Group actions by their provider prefix */
-const actionsByProvider = computed(() => {
-  const map = new Map<string, ManifestAction[]>();
-  for (const a of manifestActions.value) {
-    const provider = getProviderFromName(a.name);
-    const list = map.get(provider);
-    if (list) list.push(a);
-    else map.set(provider, [a]);
-  }
-  return map;
-});
+function getKindIcon(kind: string): Component | null {
+  return resolveIcon(KIND_ICON[kind] ?? 'Bookmark');
+}
 
 // ─── View stack types ──────────────────────────────────────────────
 // Items renderable at any panel level.
@@ -147,6 +106,7 @@ type CategoryViewItem = {
   type: 'category';
   key: string;
   label: string;
+  description?: string;
   icon: Component | null;
   color: string;
   count: number;
@@ -168,6 +128,7 @@ type NodeViewItem = {
   icon: Component | null;
   logo?: Component | null;
   color: string;
+  // Group divider label (category) — used within a provider panel.
   category?: string;
 };
 
@@ -233,31 +194,46 @@ function buildRootStack() {
     });
   }
 
-  // Actions category — count from manifest
-  const actionCount = manifestActions.value.length;
-  if (actionCount > 0) {
-    const meta = NODE_TYPE_META.action!;
+  // Core capabilities: one card per category, counting `core` nodes only.
+  for (const cat of nodeCategories.value) {
+    const coreCount = (nodesByCategory.value.get(cat.name) ?? []).filter(
+      (n) => n.provider === CORE_PROVIDER,
+    ).length;
+    if (!coreCount) continue;
     items.push({
       type: 'category',
-      key: 'action',
-      label: t(meta.labelKey),
-      icon: resolveIcon(meta.icon),
-      color: meta.color,
-      count: actionCount,
+      key: cat.name,
+      label: cat.displayName || cat.name,
+      icon: getCategoryIcon(cat.name),
+      color: NODE_COLOR,
+      count: coreCount,
     });
   }
 
-  // Non-action node types (condition, iterator, delay, etc.)
-  for (const nt of manifestNodeTypes.value) {
-    if (nt.type === 'trigger' || nt.type === 'action') continue;
-    const meta = NODE_TYPE_META[nt.type];
+  // All non-core providers collapse into a single "Integrations" entry
+  // (n8n "action in an app"), which drills into the provider list.
+  const integrationProviders = providers.value.filter(
+    (p) =>
+      p.name !== CORE_PROVIDER &&
+      (nodesByProvider.value.get(p.name)?.length ?? 0) > 0,
+  );
+  const integrationCount = integrationProviders.reduce(
+    (sum, p) => sum + (nodesByProvider.value.get(p.name)?.length ?? 0),
+    0,
+  );
+  if (integrationProviders.length > 0) {
     items.push({
       type: 'category',
-      key: nt.type,
-      label: meta ? t(meta.labelKey) : nt.displayName || nt.type,
-      icon: resolveIcon(meta?.icon ?? 'Zap'),
-      color: meta?.color ?? 'text-blue-500',
-      count: 1,
+      key: 'integrations',
+      label: t('node.integrations.title'),
+      description: t('node.integrations.description', {
+        providers: integrationProviders
+          .map((p) => p.displayName || p.name)
+          .join(', '),
+      }),
+      icon: resolveIcon('Boxes'),
+      color: NODE_COLOR,
+      count: integrationCount,
     });
   }
 
@@ -268,88 +244,90 @@ function buildRootStack() {
   });
 }
 
-// ─── Build the providers panel (grouped by action name prefix) ──────
+// ─── Build the integrations panel (list of non-core providers) ─────
 function buildProvidersStack() {
-  const items: ViewItem[] = [];
+  const items: ProviderViewItem[] = providers.value
+    .filter(
+      (p) =>
+        p.name !== CORE_PROVIDER &&
+        (nodesByProvider.value.get(p.name)?.length ?? 0) > 0,
+    )
+    .map((p) => ({
+      type: 'provider' as const,
+      key: p.name,
+      label: p.displayName || p.name,
+      description: p.description,
+      icon: getProviderIcon(p.name),
+      logo: getProviderLogo(p.name),
+      count: nodesByProvider.value.get(p.name)?.length ?? 0,
+    }));
 
-  // Sort providers alphabetically
-  const providers = [...actionsByProvider.value.entries()].sort(([a], [b]) =>
-    a.localeCompare(b),
-  );
-
-  for (const [providerKey, providerActions] of providers) {
-    items.push({
-      type: 'provider',
-      key: providerKey,
-      label: getProviderDisplayName(providerKey),
-      description: getProviderDescription(providerKey),
-      icon: getProviderIcon(providerKey),
-      logo: getProviderLogo(providerKey),
-      count: providerActions.length,
-    });
-  }
-
-  const meta = NODE_TYPE_META.action!;
   pushStack({
-    title: t(meta.labelKey),
-    icon: resolveIcon(meta.icon),
-    color: meta.color,
+    title: t('node.integrations.title'),
+    icon: resolveIcon('Boxes'),
     items,
     hasSearch: true,
   });
 }
 
-// ─── Build a provider's actions panel ──────────────────────────────
-function buildActionsStack(
+// ─── Build a core category's nodes panel (core provider only, flat) ─
+function buildCategoryStack(
+  categoryName: string,
+  label: string,
+  icon: Component | null,
+) {
+  const catNodes = (nodesByCategory.value.get(categoryName) ?? []).filter(
+    (n) => n.provider === CORE_PROVIDER,
+  );
+  const sorted = [...catNodes].sort((a, b) =>
+    (a.displayName || a.name).localeCompare(b.displayName || b.name),
+  );
+
+  const items: NodeViewItem[] = sorted.map((n) => ({
+    type: 'node' as const,
+    item: nodeToPaletteItem(n),
+    icon: n.icon ? resolveIcon(n.icon) : icon,
+    color: NODE_COLOR,
+  }));
+
+  pushStack({ title: label, icon, items, hasSearch: true });
+}
+
+// ─── Build a provider's nodes panel (grouped by category) ──────────
+function buildProviderStack(
   providerKey: string,
   label: string,
   icon: Component | null,
-  logo?: Component | null,
+  logo: Component | null,
 ) {
-  const actions = actionsByProvider.value.get(providerKey) ?? [];
+  const provNodes = nodesByProvider.value.get(providerKey) ?? [];
+  const multiCategory = new Set(provNodes.map((n) => n.type)).size > 1;
 
-  // Sort actions by category first, then by display name
-  const sorted = [...actions].sort((a, b) => {
-    const catCmp = (a.category ?? '').localeCompare(b.category ?? '');
-    if (catCmp !== 0) return catCmp;
+  const sorted = [...provNodes].sort((a, b) => {
+    const c = getCategoryLabel(a.type).localeCompare(getCategoryLabel(b.type));
+    if (c !== 0) return c;
     return (a.displayName || a.name).localeCompare(b.displayName || b.name);
   });
 
-  const items: NodeViewItem[] = sorted.map((a) => ({
+  const items: NodeViewItem[] = sorted.map((n) => ({
     type: 'node' as const,
-    item: {
-      nodeType: 'action',
-      id: a.name,
-      label: a.displayName || a.name,
-      description: a.description,
-      actionName: a.name,
-    },
-    icon: icon,
-    logo,
-    color: 'text-blue-500',
-    category: a.category,
+    item: nodeToPaletteItem(n),
+    icon: n.icon ? resolveIcon(n.icon) : (logo ?? icon),
+    color: NODE_COLOR,
+    category: multiCategory ? getCategoryLabel(n.type) : undefined,
   }));
 
-  pushStack({
-    title: label,
-    icon,
-    logo,
-    items,
-    hasSearch: true,
-  });
+  pushStack({ title: label, icon, logo, items, hasSearch: true });
 }
 
 // ─── Build the templates panel ────────────────────────────────────
 function buildTemplatesStack() {
-  const items: NodeViewItem[] = nodeTemplates.templates.value.map((tpl) => {
-    const meta = NODE_TYPE_META[tpl.nodeType];
-    return {
-      type: 'node' as const,
-      item: nodeTemplates.toPaletteItem(tpl),
-      icon: resolveIcon(meta?.icon ?? 'Bookmark'),
-      color: meta?.color ?? 'text-amber-500',
-    };
-  });
+  const items: NodeViewItem[] = nodeTemplates.templates.value.map((tpl) => ({
+    type: 'node' as const,
+    item: nodeTemplates.toPaletteItem(tpl),
+    icon: getKindIcon(tpl.kind),
+    color: 'text-amber-500',
+  }));
 
   pushStack({
     title: t('node.templates.title'),
@@ -363,15 +341,12 @@ function buildTemplatesStack() {
 function refreshTemplatesStack() {
   const stack = activeStack.value;
   if (!stack || stack.title !== t('node.templates.title')) return;
-  const items: NodeViewItem[] = nodeTemplates.templates.value.map((tpl) => {
-    const meta = NODE_TYPE_META[tpl.nodeType];
-    return {
-      type: 'node' as const,
-      item: nodeTemplates.toPaletteItem(tpl),
-      icon: resolveIcon(meta?.icon ?? 'Bookmark'),
-      color: meta?.color ?? 'text-amber-500',
-    };
-  });
+  const items: NodeViewItem[] = nodeTemplates.templates.value.map((tpl) => ({
+    type: 'node' as const,
+    item: nodeTemplates.toPaletteItem(tpl),
+    icon: getKindIcon(tpl.kind),
+    color: 'text-amber-500',
+  }));
   stack.items = items;
 }
 
@@ -402,33 +377,18 @@ function onEditTemplateSave(payload: { name: string; description?: string }) {
   refreshTemplatesStack();
 }
 
-// ─── Direct-add for single-node categories (condition, delay, etc.) ─
-function addSingleNodeType(nodeTypeKey: string) {
-  const nt = manifestNodeTypes.value.find((n) => n.type === nodeTypeKey);
-  if (!nt) return;
-
-  const item: PaletteItem = {
-    nodeType: nt.type,
-    id: nt.type,
-    label: nt.displayName || nt.type,
-    description: nt.description,
-  };
-  emit('add', item);
-}
-
 // ─── Item click handler ────────────────────────────────────────────
 function onItemClick(viewItem: ViewItem) {
   if (viewItem.type === 'category') {
-    if (viewItem.key === 'action') {
-      buildProvidersStack();
-    } else if (viewItem.key === 'templates') {
+    if (viewItem.key === 'templates') {
       buildTemplatesStack();
+    } else if (viewItem.key === 'integrations') {
+      buildProvidersStack();
     } else {
-      // Single-item category — add directly
-      addSingleNodeType(viewItem.key);
+      buildCategoryStack(viewItem.key, viewItem.label, viewItem.icon);
     }
   } else if (viewItem.type === 'provider') {
-    buildActionsStack(
+    buildProviderStack(
       viewItem.key,
       viewItem.label,
       viewItem.icon,
@@ -460,13 +420,16 @@ const filteredItems = computed<ViewItem[]>(() => {
       return item.label.toLowerCase().includes(q);
     }
     if (item.type === 'provider') {
-      return item.label.toLowerCase().includes(q);
+      return (
+        item.label.toLowerCase().includes(q) ||
+        (item.description ?? '').toLowerCase().includes(q)
+      );
     }
     if (item.type === 'node') {
       return (
         item.item.label.toLowerCase().includes(q) ||
         (item.item.description ?? '').toLowerCase().includes(q) ||
-        (item.item.actionName ?? '').toLowerCase().includes(q)
+        (item.item.functionName ?? '').toLowerCase().includes(q)
       );
     }
     return false;
@@ -483,7 +446,7 @@ function showCategoryDivider(item: NodeViewItem, items: ViewItem[]): boolean {
   return prev.category !== item.category;
 }
 
-// ─── Global search (from root level, search across all actions) ────
+// ─── Global search (from root level, search across all nodes) ──────
 const globalSearchResults = computed<NodeViewItem[]>(() => {
   const stack = activeStack.value;
   if (!stack || viewStacks.value.length !== 1) return [];
@@ -491,58 +454,21 @@ const globalSearchResults = computed<NodeViewItem[]>(() => {
   const q = stack.search.trim().toLowerCase();
   if (!q) return [];
 
-  // Search across all actions in the manifest
-  return manifestActions.value
+  return manifestNodes.value
     .filter(
-      (a) =>
-        (a.displayName || a.name).toLowerCase().includes(q) ||
-        (a.description ?? '').toLowerCase().includes(q) ||
-        a.name.toLowerCase().includes(q),
+      (n) =>
+        (n.displayName || n.name).toLowerCase().includes(q) ||
+        (n.description ?? '').toLowerCase().includes(q) ||
+        n.name.toLowerCase().includes(q) ||
+        n.functionName.toLowerCase().includes(q),
     )
-    .map((a) => ({
+    .map((n) => ({
       type: 'node' as const,
-      item: {
-        nodeType: 'action',
-        id: a.name,
-        label: a.displayName || a.name,
-        description: a.description,
-        actionName: a.name,
-      },
-      icon: a.icon ? resolveIcon(a.icon) : resolveIcon('Zap'),
-      logo: getProviderLogo(getProviderFromName(a.name)),
-      color: 'text-blue-500',
+      item: nodeToPaletteItem(n),
+      icon: n.icon ? resolveIcon(n.icon) : resolveIcon('Zap'),
+      logo: getProviderLogo(n.provider),
+      color: NODE_COLOR,
     }));
-});
-
-// Also build palette items for non-action node types in global search
-const globalNodeTypeResults = computed<NodeViewItem[]>(() => {
-  const stack = activeStack.value;
-  if (!stack || viewStacks.value.length !== 1) return [];
-
-  const q = stack.search.trim().toLowerCase();
-  if (!q) return [];
-
-  return manifestNodeTypes.value
-    .filter((nt) => nt.type !== 'trigger' && nt.type !== 'action')
-    .filter(
-      (nt) =>
-        (nt.displayName || nt.type).toLowerCase().includes(q) ||
-        (nt.description ?? '').toLowerCase().includes(q),
-    )
-    .map((nt) => {
-      const meta = NODE_TYPE_META[nt.type];
-      return {
-        type: 'node' as const,
-        item: {
-          nodeType: nt.type,
-          id: nt.type,
-          label: nt.displayName || nt.type,
-          description: nt.description,
-        },
-        icon: resolveIcon(meta?.icon ?? 'Zap'),
-        color: meta?.color ?? 'text-blue-500',
-      };
-    });
 });
 
 const isGlobalSearch = computed(() => {
@@ -564,22 +490,18 @@ const globalTemplateResults = computed<NodeViewItem[]>(() => {
       (tpl) =>
         tpl.name.toLowerCase().includes(q) ||
         (tpl.description ?? '').toLowerCase().includes(q) ||
-        (tpl.actionName ?? '').toLowerCase().includes(q),
+        (tpl.functionName ?? '').toLowerCase().includes(q),
     )
-    .map((tpl) => {
-      const meta = NODE_TYPE_META[tpl.nodeType];
-      return {
-        type: 'node' as const,
-        item: nodeTemplates.toPaletteItem(tpl),
-        icon: resolveIcon(meta?.icon ?? 'Bookmark'),
-        color: meta?.color ?? 'text-amber-500',
-      };
-    });
+    .map((tpl) => ({
+      type: 'node' as const,
+      item: nodeTemplates.toPaletteItem(tpl),
+      icon: getKindIcon(tpl.kind),
+      color: 'text-amber-500',
+    }));
 });
 
 const allGlobalResults = computed<NodeViewItem[]>(() => [
   ...globalTemplateResults.value,
-  ...globalNodeTypeResults.value,
   ...globalSearchResults.value,
 ]);
 
@@ -713,10 +635,10 @@ function onSearchInput(value: string) {
                       {{ viewItem.item.label }}
                     </div>
                     <div
-                      v-if="viewItem.item.actionName"
+                      v-if="viewItem.item.functionName"
                       class="text-muted-foreground font-mono text-[10px]"
                     >
-                      {{ viewItem.item.actionName }}
+                      {{ viewItem.item.functionName }}
                     </div>
                     <div
                       v-if="viewItem.item.description"
@@ -761,10 +683,10 @@ function onSearchInput(value: string) {
                         {{ viewItem.label }}
                       </div>
                       <div
-                        v-if="viewItem.key === 'action'"
-                        class="text-muted-foreground text-xs"
+                        v-if="viewItem.description"
+                        class="text-muted-foreground line-clamp-2 text-xs"
                       >
-                        {{ $t('node.action_description') }}
+                        {{ viewItem.description }}
                       </div>
                       <div v-else class="text-muted-foreground text-xs">
                         {{ $t('node.node_count', viewItem.count) }}
@@ -775,9 +697,9 @@ function onSearchInput(value: string) {
                     />
                   </button>
 
-                  <!-- Provider card (actions sub-level) -->
+                  <!-- Provider card (app-style integration entry) -->
                   <button
-                    v-else-if="viewItem.type === 'provider'"
+                    v-if="viewItem.type === 'provider'"
                     class="hover:bg-muted/50 group flex w-full items-center gap-3 rounded-md border p-3 text-left transition-colors"
                     @click="onItemClick(viewItem)"
                   >
@@ -806,8 +728,8 @@ function onSearchInput(value: string) {
                       >
                         {{ viewItem.description }}
                       </div>
-                      <div class="text-muted-foreground text-xs">
-                        {{ $t('node.action_count', viewItem.count) }}
+                      <div v-else class="text-muted-foreground text-xs">
+                        {{ $t('node.node_count', viewItem.count) }}
                       </div>
                     </div>
                     <LucideChevronRight
@@ -815,7 +737,7 @@ function onSearchInput(value: string) {
                     />
                   </button>
 
-                  <!-- Category divider (shown before first item of each category) -->
+                  <!-- Category divider (shown before first item of each provider group) -->
                   <div
                     v-if="
                       viewItem.type === 'node' &&

@@ -38,13 +38,16 @@ const LOG_VERBOSITY_KEYS: Record<string, string> = {
 const ERROR_HANDLING_KEYS: Record<string, string> = {
   failfast: 'workflows.error_fail_fast',
   continueonerror: 'workflows.error_continue',
+  skipnode: 'workflows.error_skip_node',
   retry: 'workflows.error_retry',
 };
 
 const TIMEOUT_BEHAVIOR_KEYS: Record<string, string> = {
   fail: 'workflows.timeout_fail',
   continue: 'workflows.timeout_continue',
+  continuewithpartialresults: 'workflows.timeout_continue',
   cancel: 'workflows.timeout_cancel',
+  cancelandreport: 'workflows.timeout_cancel',
 };
 
 export const useWorkflowLabels = (): UseWorkflowLabelsReturnType => {

@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia';
 import type {
   EditorManifest,
-  WorkflowAction,
+  ManifestNode,
+  ManifestNodeCategory,
+  ManifestProvider,
   ManifestTriggerType,
 } from '#shared/types';
 
@@ -10,16 +12,16 @@ const CACHE_KEY = 'geins-workflow-manifest';
 /**
  * Workflow store — caches the workflow editor manifest by schema version.
  *
- * Provides available actions, triggers, and categories for the workflow editor.
- * Fetches on first access, then serves from localStorage cache.
- * Call `refresh()` to force a re-fetch when the schema version changes.
+ * Provides available nodes, providers, categories, and triggers for the
+ * workflow editor. Fetches on first access, then serves from localStorage
+ * cache. Call `refresh()` to force a re-fetch when the schema version changes.
  * Components access via `storeToRefs()`.
  *
  * @example
  * ```ts
  * const workflowStore = useWorkflowStore();
  * await workflowStore.init();
- * const { actions, actionsByCategory, triggerTypes } = storeToRefs(workflowStore);
+ * const { nodes, nodesByCategory, triggerTypes } = storeToRefs(workflowStore);
  * ```
  */
 export const useWorkflowStore = defineStore('workflow', () => {
@@ -34,18 +36,25 @@ export const useWorkflowStore = defineStore('workflow', () => {
   // GETTERS
   const version = computed(() => manifest.value?.schemaVersion ?? '');
 
-  const actions = computed<WorkflowAction[]>(
-    () => manifest.value?.actions ?? [],
+  const nodes = computed<ManifestNode[]>(() => manifest.value?.nodes ?? []);
+
+  const nodeCategories = computed<ManifestNodeCategory[]>(
+    () => manifest.value?.nodeTypes ?? [],
   );
 
-  const actionsByCategory = computed(() => {
-    const grouped: Record<string, WorkflowAction[]> = {};
-    for (const action of actions.value) {
-      const category = action.category || 'uncategorized';
+  const providers = computed<ManifestProvider[]>(
+    () => manifest.value?.providers ?? [],
+  );
+
+  /** Nodes grouped by category name (matches `nodeCategories[].name`). */
+  const nodesByCategory = computed(() => {
+    const grouped: Record<string, ManifestNode[]> = {};
+    for (const node of nodes.value) {
+      const category = node.type || 'uncategorized';
       if (!grouped[category]) {
         grouped[category] = [];
       }
-      grouped[category].push(action);
+      grouped[category].push(node);
     }
     return grouped;
   });
@@ -133,8 +142,10 @@ export const useWorkflowStore = defineStore('workflow', () => {
     manifest,
     ready,
     version,
-    actions,
-    actionsByCategory,
+    nodes,
+    nodeCategories,
+    providers,
+    nodesByCategory,
     triggerTypes,
     init,
     refresh,

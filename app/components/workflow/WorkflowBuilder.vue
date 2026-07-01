@@ -20,6 +20,7 @@ import type {
   PaletteItem,
   WorkflowDefinition,
   WorkflowInput,
+  WorkflowNodeKind,
   WorkflowType,
 } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
@@ -50,6 +51,7 @@ const { geinsLogError } = useGeinsLog('workflow-builder');
 const { toast } = useToast();
 const { t } = useI18n();
 const { toCanvas, toApi } = useWorkflowCanvas();
+const manifestStore = useWorkflowManifest();
 
 // All node types are routed through the same dispatcher so the canvas host
 // doesn't need to know about individual node implementations. WorkflowNode
@@ -248,24 +250,21 @@ watch(
   { deep: true },
 );
 
-const manifestStore = useWorkflowManifest();
-
 function getNodeOutputFields(
   nodeId: string,
 ): Array<{ name: string; type: string }> {
   const n = findNode(nodeId);
   if (!n) return [];
   const data = (n.data ?? {}) as Record<string, unknown>;
-  const actionName = data.actionName as string | undefined;
-  const action = manifestStore.getAction(actionName);
-  const nodeTypeDef = manifestStore.getNodeType(n.type as string);
-  if (actionName === 'transform.map' || actionName === 'transform.compose') {
-    const input = (data.input ?? {}) as Record<string, unknown>;
-    return Object.keys(input)
+  const functionName = data.functionName as string | undefined;
+  const node = manifestStore.getNode(functionName);
+  if (node?.name === 'map' || node?.name === 'compose') {
+    const config = (data.config ?? {}) as Record<string, unknown>;
+    return Object.keys(config)
       .filter((k) => k && !k.startsWith('_'))
       .map((k) => ({ name: k, type: 'any' }));
   }
-  return (action?.output ?? nodeTypeDef?.output ?? []) as Array<{
+  return (node?.output ?? []) as Array<{
     name: string;
     type: string;
   }>;
@@ -275,14 +274,14 @@ function autoBindInputs(sourceId: string, targetId: string) {
   const target = findNode(targetId);
   if (!target) return;
   const data = (target.data ?? {}) as Record<string, unknown>;
-  const existingInput = (data.input ?? {}) as Record<string, unknown>;
-  const hasSettings = Object.keys(existingInput).some(
-    (k) => !k.startsWith('_') && existingInput[k] != null,
+  const existingConfig = (data.config ?? {}) as Record<string, unknown>;
+  const hasSettings = Object.keys(existingConfig).some(
+    (k) => !k.startsWith('_') && existingConfig[k] != null,
   );
   if (hasSettings) return;
 
-  const action = manifestStore.getAction(data.actionName as string | undefined);
-  const inputFields = action?.input ?? [];
+  const node = manifestStore.getNode(data.functionName as string | undefined);
+  const inputFields = node?.config ?? [];
   if (!inputFields.length) return;
 
   const outputFields = getNodeOutputFields(sourceId);
@@ -300,8 +299,8 @@ function autoBindInputs(sourceId: string, targetId: string) {
   }
 
   if (Object.keys(bindings).length) {
-    if (!data.input) data.input = {};
-    Object.assign(data.input as Record<string, unknown>, bindings);
+    if (!data.config) data.config = {};
+    Object.assign(data.config as Record<string, unknown>, bindings);
   }
 }
 
@@ -479,8 +478,8 @@ const showSaveTemplateDialog = ref(false);
 const saveTemplateDefaults = ref({
   name: '',
   description: '',
-  nodeType: '',
-  actionName: '',
+  kind: 'action' as WorkflowNodeKind,
+  functionName: '',
   nodeData: {} as Record<string, unknown>,
 });
 
@@ -489,10 +488,11 @@ const onNodeSaveAsTemplate = (nodeId: string) => {
   if (!source) return;
   const data = (source.data ?? {}) as Record<string, unknown>;
   saveTemplateDefaults.value = {
-    name: (data.label as string) || (data.actionName as string) || source.type,
+    name:
+      (data.label as string) || (data.functionName as string) || source.type,
     description: (data.description as string) || '',
-    nodeType: source.type,
-    actionName: (data.actionName as string) || '',
+    kind: source.type as WorkflowNodeKind,
+    functionName: (data.functionName as string) || '',
     nodeData: JSON.parse(JSON.stringify(data)),
   };
   showSaveTemplateDialog.value = true;
@@ -503,8 +503,8 @@ const onSaveTemplate = (payload: { name: string; description?: string }) => {
   nodeTemplates.saveTemplate({
     name: payload.name,
     description: payload.description,
-    nodeType: saveTemplateDefaults.value.nodeType,
-    actionName: saveTemplateDefaults.value.actionName || undefined,
+    kind: saveTemplateDefaults.value.kind,
+    functionName: saveTemplateDefaults.value.functionName || undefined,
     nodeData: saveTemplateDefaults.value.nodeData,
   });
   toast({
@@ -590,13 +590,13 @@ const buildNewNode = (
   }
   return {
     id: nextNodeId(item.id),
-    type: item.nodeType,
+    type: item.kind,
     position,
     data: {
       label: item.label,
       description: item.description,
-      actionName: item.actionName,
-      subtype: item.nodeType === 'action' ? undefined : item.id,
+      functionName: item.functionName,
+      subtype: item.kind === 'action' ? undefined : item.id,
       config: {},
     },
   };
@@ -917,7 +917,6 @@ const validateWorkflow = async () => {
     const result = await orchestratorApi.workflow.validate({
       name: wf?.name ?? '',
       type: toWorkflowType(wf?.type),
-      enabled: wf?.enabled ?? false,
       nodes: apiNodes,
       connections: apiConnections,
       settings: wf?.settings,
@@ -1219,7 +1218,7 @@ useKeybindings({
                 {{ input.description }}
               </p>
               <Textarea
-                v-if="input.type === 'object' || input.type === 'json'"
+                v-if="input.type === 'object' || input.type === 'array'"
                 :model-value="
                   typeof runInputValues[input.name] === 'string'
                     ? (runInputValues[input.name] as string)
@@ -1230,7 +1229,7 @@ useKeybindings({
                 @update:model-value="runInputValues[input.name] = $event"
               />
               <Input
-                v-else-if="input.type === 'number' || input.type === 'integer'"
+                v-else-if="input.type === 'number'"
                 type="number"
                 :model-value="runInputValues[input.name] as number"
                 @update:model-value="
@@ -1242,8 +1241,8 @@ useKeybindings({
                 class="flex items-center gap-2"
               >
                 <Switch
-                  :checked="!!runInputValues[input.name]"
-                  @update:checked="runInputValues[input.name] = $event"
+                  :model-value="!!runInputValues[input.name]"
+                  @update:model-value="runInputValues[input.name] = $event"
                 />
                 <span class="text-muted-foreground text-xs">
                   {{ runInputValues[input.name] ? 'true' : 'false' }}

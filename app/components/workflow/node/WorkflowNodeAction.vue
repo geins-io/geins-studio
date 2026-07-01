@@ -8,14 +8,15 @@ import LitiumSymbol from '~/assets/logos/litium-symbol.svg';
 const PROVIDER_LOGOS: Record<string, Component | string> = {
   litium: LitiumSymbol,
   monitor: MonitorSymbol,
+  'monitor-erp': MonitorSymbol,
 };
 
 const props = defineProps<{
   data: {
     label: string;
-    icon: string;
-    description: string;
-    actionName?: string;
+    icon?: string;
+    description?: string;
+    functionName?: string;
     config: Record<string, unknown>;
   };
   selected?: boolean;
@@ -23,37 +24,23 @@ const props = defineProps<{
 
 const { resolveIcon } = useLucideIcon();
 
-const providerKey = computed(() => {
-  const name = props.data.actionName ?? '';
-  const dotIndex = name.indexOf('.');
-  return dotIndex > 0 ? name.substring(0, dotIndex) : name;
-});
-
-const PROVIDER_ICON_DEFAULTS: Record<string, string> = {
-  geins: 'Box',
-  monitor: 'Activity',
-  net: 'Globe',
-  storage: 'Database',
-  transform: 'ArrowRightLeft',
-  common: 'Settings',
-};
-
 const manifestStore = useWorkflowManifest();
-const { actionCategories: manifestActionCategories } = manifestStore;
+const { providersByName } = manifestStore;
 
-const actionDisplayName = computed(() => {
-  const action = manifestStore.getAction(props.data.actionName);
-  return action?.displayName ?? '';
-});
+const node = computed(() => manifestStore.getNode(props.data.functionName));
+
+const providerKey = computed(() => node.value?.provider ?? '');
+
+const actionDisplayName = computed(() => node.value?.displayName ?? '');
 
 const providerLogo = computed<Component | string | null>(
   () => PROVIDER_LOGOS[providerKey.value] ?? null,
 );
 const IconComponent = computed(() => {
-  const key = providerKey.value;
-  const cat = manifestActionCategories.value.find((c) => c.name === key);
-  if (cat?.icon) return resolveIcon(cat.icon);
-  return resolveIcon(PROVIDER_ICON_DEFAULTS[key] ?? '') || resolveIcon('Zap');
+  // Prefer the node's own icon, then the provider's icon, then a fallback.
+  if (node.value?.icon) return resolveIcon(node.value.icon);
+  const providerIcon = providersByName.value.get(providerKey.value)?.icon;
+  return resolveIcon(providerIcon ?? '') || resolveIcon('Zap');
 });
 </script>
 

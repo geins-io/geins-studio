@@ -32,9 +32,58 @@ const throwOnError = computed({
   set: (v: boolean) => props.updateInput('throwOnError', v),
 });
 
-const httpClientName = computed({
-  get: () => (props.nodeInput.httpClientName as string) ?? '',
-  set: (v: string) => props.updateInput('httpClientName', v || undefined),
+const validateCertificates = computed({
+  // Manifest default is true — treat anything but an explicit `false` as on.
+  get: () => props.nodeInput.validateCertificates !== false,
+  // Omit when on (engine default), persist `false` when disabled.
+  set: (v: boolean) =>
+    props.updateInput('validateCertificates', v ? undefined : false),
+});
+
+// --- Declarative auth (manifest `auth` object) ---
+
+type AuthMode = 'none' | 'basic' | 'bearer' | 'apiKey' | 'monitor';
+const AUTH_MODES: AuthMode[] = ['none', 'basic', 'bearer', 'apiKey', 'monitor'];
+
+const auth = computed(
+  () => (props.nodeInput.auth ?? {}) as Record<string, unknown>,
+);
+const authMode = computed<AuthMode>(
+  () => (auth.value.mode as AuthMode) ?? 'none',
+);
+
+const setAuthMode = (mode: AuthMode) => {
+  if (mode === 'none') {
+    props.updateInput('auth', undefined);
+    return;
+  }
+  props.updateInput('auth', { ...auth.value, mode });
+};
+
+const authField = (field: string): string =>
+  (auth.value[field] as string) ?? '';
+
+const setAuthField = (field: string, value: unknown) => {
+  const next: Record<string, unknown> = { ...auth.value, mode: authMode.value };
+  if (value === undefined || value === '') Reflect.deleteProperty(next, field);
+  else next[field] = value;
+  props.updateInput('auth', next);
+};
+
+const apiKeyIn = computed<string>(() => (auth.value.in as string) ?? 'header');
+
+const reauthStatusCodesText = computed({
+  get: () => {
+    const v = auth.value.reauthStatusCodes;
+    return Array.isArray(v) ? v.join(', ') : '';
+  },
+  set: (text: string) => {
+    const codes = text
+      .split(/[,\s]+/)
+      .map(Number)
+      .filter((n) => !isNaN(n) && n > 0);
+    setAuthField('reauthStatusCodes', codes.length > 0 ? codes : undefined);
+  },
 });
 
 // --- Headers as key-value pairs ---
@@ -110,6 +159,7 @@ const expectedStatusCodesText = computed({
 const showRequest = ref(true);
 const showHeaders = ref(Object.keys(headersRaw.value).length > 0);
 const showBody = ref(props.nodeInput.body != null);
+const showAuth = ref(props.nodeInput.auth != null);
 const showOptions = ref(false);
 
 const needsBody = computed(() =>
@@ -374,21 +424,259 @@ const methodBadgeColor = computed(() => {
           </p>
         </div>
 
-        <!-- HTTP client name -->
+        <!-- Validate TLS certificates -->
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <label class="text-xs font-medium">
+              {{ $t('node.settings.http.validate_certificates') }}
+            </label>
+            <p class="text-muted-foreground text-[10px]">
+              {{ $t('node.settings.http.validate_certificates_help') }}
+            </p>
+          </div>
+          <Switch v-model="validateCertificates" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Authentication (collapsible) -->
+    <div class="border-t py-3">
+      <button
+        class="flex w-full items-center justify-between text-sm font-medium"
+        @click="showAuth = !showAuth"
+      >
+        <span class="flex items-center gap-1.5">
+          <LucideChevronRight
+            class="h-3.5 w-3.5 transition-transform"
+            :class="{ 'rotate-90': showAuth }"
+          />
+          {{ $t('node.settings.http.auth') }}
+        </span>
+        <span
+          v-if="authMode !== 'none'"
+          class="bg-primary/10 text-primary rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+        >
+          {{ $t(`node.settings.http.auth_mode_${authMode.toLowerCase()}`) }}
+        </span>
+      </button>
+      <div v-if="showAuth" class="mt-3 space-y-3">
+        <!-- Mode -->
         <div class="space-y-1">
           <label class="text-muted-foreground text-xs">
-            {{ $t('node.settings.http.client_name') }}
+            {{ $t('node.settings.http.auth_mode') }}
           </label>
-          <input
-            :value="httpClientName"
-            :placeholder="$t('node.settings.http.client_name_placeholder')"
-            class="bg-background focus:ring-ring w-full rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
-            @input="httpClientName = ($event.target as HTMLInputElement).value"
-          />
-          <p class="text-muted-foreground text-[10px]">
-            {{ $t('node.settings.http.client_name_help') }}
-          </p>
+          <Select
+            :model-value="authMode"
+            @update:model-value="setAuthMode($event as AuthMode)"
+          >
+            <SelectTrigger size="sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="m in AUTH_MODES" :key="m" :value="m">
+                {{ $t(`node.settings.http.auth_mode_${m.toLowerCase()}`) }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        <!-- Basic -->
+        <template v-if="authMode === 'basic'">
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_username') }}
+            </label>
+            <ExpressionInput
+              :model-value="authField('username')"
+              size="sm"
+              :default-mode="
+                authField('username').includes('{{') ? 'expression' : 'fixed'
+              "
+              @update:model-value="setAuthField('username', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_password') }}
+            </label>
+            <ExpressionInput
+              :model-value="authField('password')"
+              size="sm"
+              :default-mode="
+                authField('password').includes('{{') ? 'expression' : 'fixed'
+              "
+              @update:model-value="setAuthField('password', $event)"
+            />
+          </div>
+        </template>
+
+        <!-- Bearer -->
+        <template v-else-if="authMode === 'bearer'">
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_token') }}
+            </label>
+            <ExpressionInput
+              :model-value="authField('token')"
+              size="sm"
+              :default-mode="
+                authField('token').includes('{{') ? 'expression' : 'fixed'
+              "
+              @update:model-value="setAuthField('token', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_header_name') }}
+            </label>
+            <ExpressionInput
+              :model-value="authField('headerName')"
+              size="sm"
+              placeholder="Authorization"
+              :default-mode="
+                authField('headerName').includes('{{') ? 'expression' : 'fixed'
+              "
+              @update:model-value="setAuthField('headerName', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_scheme') }}
+            </label>
+            <ExpressionInput
+              :model-value="authField('scheme')"
+              size="sm"
+              placeholder="Bearer"
+              :default-mode="
+                authField('scheme').includes('{{') ? 'expression' : 'fixed'
+              "
+              @update:model-value="setAuthField('scheme', $event)"
+            />
+          </div>
+        </template>
+
+        <!-- API key -->
+        <template v-else-if="authMode === 'apiKey'">
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_key') }}
+            </label>
+            <ExpressionInput
+              :model-value="authField('key')"
+              size="sm"
+              :default-mode="
+                authField('key').includes('{{') ? 'expression' : 'fixed'
+              "
+              @update:model-value="setAuthField('key', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_key_name') }}
+            </label>
+            <ExpressionInput
+              :model-value="authField('name')"
+              size="sm"
+              :default-mode="
+                authField('name').includes('{{') ? 'expression' : 'fixed'
+              "
+              @update:model-value="setAuthField('name', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_in') }}
+            </label>
+            <Select
+              :model-value="apiKeyIn"
+              @update:model-value="setAuthField('in', $event)"
+            >
+              <SelectTrigger size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="header">
+                  {{ $t('node.settings.http.auth_in_header') }}
+                </SelectItem>
+                <SelectItem value="query">
+                  {{ $t('node.settings.http.auth_in_query') }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </template>
+
+        <!-- Monitor session -->
+        <template v-else-if="authMode === 'monitor'">
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_login_url') }}
+            </label>
+            <ExpressionInput
+              :model-value="authField('loginUrl')"
+              size="sm"
+              :default-mode="
+                authField('loginUrl').includes('{{') ? 'expression' : 'fixed'
+              "
+              @update:model-value="setAuthField('loginUrl', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_username') }}
+            </label>
+            <ExpressionInput
+              :model-value="authField('username')"
+              size="sm"
+              :default-mode="
+                authField('username').includes('{{') ? 'expression' : 'fixed'
+              "
+              @update:model-value="setAuthField('username', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_password') }}
+            </label>
+            <ExpressionInput
+              :model-value="authField('password')"
+              size="sm"
+              :default-mode="
+                authField('password').includes('{{') ? 'expression' : 'fixed'
+              "
+              @update:model-value="setAuthField('password', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_solution_access_key') }}
+            </label>
+            <ExpressionInput
+              :model-value="authField('solutionAccessKey')"
+              size="sm"
+              :default-mode="
+                authField('solutionAccessKey').includes('{{')
+                  ? 'expression'
+                  : 'fixed'
+              "
+              @update:model-value="setAuthField('solutionAccessKey', $event)"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-muted-foreground text-xs">
+              {{ $t('node.settings.http.auth_reauth_status_codes') }}
+            </label>
+            <input
+              :value="reauthStatusCodesText"
+              placeholder="401"
+              class="bg-background focus:ring-ring w-full rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
+              @input="
+                reauthStatusCodesText = ($event.target as HTMLInputElement)
+                  .value
+              "
+            />
+          </div>
+        </template>
       </div>
     </div>
   </div>
