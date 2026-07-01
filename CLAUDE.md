@@ -108,6 +108,7 @@ i18n/locales/           # en.json, sv.json
 ## Code Conventions
 
 - **Logging**: `useGeinsLog('scope')` — never `console.log` (ESLint enforces)
+- **Comments**: Comment only the non-obvious **why** — gotchas, external/runtime behavior not visible in the file (e.g. framework internals in `node_modules`), workarounds, race conditions. NEVER narrate the **what** of self-evident code (`// clone the query`, `// wait for next tick`). NEVER put issue references in comments (`STU-xxx`, ticket links) — git blame/PR history covers traceability; they bloat and rot. Keep to ~2 lines unless a gotcha genuinely needs more. Match this over the surrounding density if the existing code is more verbose.
 - **Composables**: File `use{Name}.ts`, export named function, return type ending in `ReturnType`
 - **Props**: `defineProps<{}>()` with `withDefaults()` | **Stores**: `storeToRefs(store)` for reactive state
 - **Imports**: Nuxt auto-imports composables/utils/components. Types: `import type { X } from '#shared/types'`
