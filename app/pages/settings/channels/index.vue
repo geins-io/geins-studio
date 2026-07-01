@@ -23,8 +23,6 @@ const accountStore = useAccountStore();
 const dataList = ref<EntityList[]>([]);
 const entity = ENTITIES.channel;
 const entityName = entity.key;
-const entityIdentifier = '{id}';
-const entityUrl = entityEditUrl(entityName, entityIdentifier);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -84,7 +82,7 @@ onMounted(() => {
       active: 'status',
     },
     linkColumns: {
-      name: { url: entityUrl, idField: '_id' },
+      name: { entityKey: entityName, idField: '_id' },
       url: { useValueAsUrl: true, external: true },
     },
     columnTitles: {
@@ -129,7 +127,7 @@ onMounted(() => {
     columns.value,
     {
       onEdit: (item: EntityList) =>
-        navigateTo(entityUrl.replace(entityIdentifier, String(item._id))),
+        navigateTo(entityEditUrl(entityName, String(item._id))),
     },
     'actions',
     ['edit'],

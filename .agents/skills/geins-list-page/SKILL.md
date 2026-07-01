@@ -60,9 +60,6 @@ definePageMeta({ pageType: 'list' });
 const { domainApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
 const entityName = ENTITIES.{entity}.key;
-const entityIdentifier = '{id}';
-// List/index pages have no route context — build URLs from the key in scope:
-const entityUrl = entityEditUrl(entityName, entityIdentifier);
 const newEntityUrl = entityNewUrl(entityName);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
@@ -105,14 +102,16 @@ onMounted(() => {
 
   const columnOptions: ColumnOptions<EntityList> = {
     columnTypes: { name: 'link', arrayField: 'tooltip', active: 'status' },
-    linkColumns: { name: { url: entityUrl, idField: '_id' } },
+    // entityKey builds row links via the registry: entityEditUrl(key, row[idField]).
+    // Use a raw `url` template only for external / filtered-list links.
+    linkColumns: { name: { entityKey: entityName, idField: '_id' } },
     columnTitles: { active: t('status') },
     excludeColumns: ['fieldsToHide'],
   };
 
   columns.value = getColumns(dataList.value, columnOptions);
   addActionsColumn(columns.value,
-    { onEdit: (item: EntityList) => navigateTo(entityUrl.replace(entityIdentifier, String(item._id))) },
+    { onEdit: (item: EntityList) => navigateTo(entityEditUrl(entityName, String(item._id))) },
     'actions', ['edit'],  // available actions
   );
   loading.value = false;

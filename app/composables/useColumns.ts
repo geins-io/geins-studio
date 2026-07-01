@@ -1,5 +1,6 @@
 import { h } from 'vue';
 import { TableMode } from '#shared/types';
+import { entityEditUrl } from '#shared/utils/entities';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
 import {
   Checkbox,
@@ -446,13 +447,18 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               ? cn(getBasicCellStyle(table), 'gap-1.5')
               : cn(getBasicCellStyle(table), 'justify-center');
 
-            if (iconConfig.url && iconConfig.idField) {
+            if (
+              (iconConfig.entityKey || iconConfig.url) &&
+              iconConfig.idField
+            ) {
               const original = row.original as Record<string, unknown>;
               const idValue = String(
                 original[iconConfig.idField] ??
                   row.getValue(iconConfig.idField),
               );
-              const fullUrl = iconConfig.url.replace('{id}', idValue);
+              const fullUrl = iconConfig.entityKey
+                ? entityEditUrl(iconConfig.entityKey, idValue)
+                : iconConfig.url!.replace('{id}', idValue);
               return h(
                 'div',
                 { class: cellClass },
@@ -485,6 +491,12 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               if (linkConfig.useValueAsUrl) {
                 // Use the cell value itself as the URL
                 fullUrl = text || undefined;
+              } else if (linkConfig.entityKey && linkConfig.idField) {
+                // Registry-keyed link to the entity's [id] page
+                const idValue = String(row.getValue(linkConfig.idField));
+                if (idValue) {
+                  fullUrl = entityEditUrl(linkConfig.entityKey, idValue);
+                }
               } else if (linkConfig.idField && linkConfig.url) {
                 // Internal link with ID replacement
                 const idValue = String(row.getValue(linkConfig.idField));

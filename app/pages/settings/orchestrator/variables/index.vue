@@ -164,7 +164,7 @@ onMounted(() => {
       isSecret: 'icon',
     },
     linkColumns: {
-      key: { url: '/settings/orchestrator/variables/{id}', idField: 'key' },
+      key: { entityKey: entityName, idField: 'key' },
     },
     iconColumns: {
       isSecret: { resolveIcon: resolveSecretIcon },

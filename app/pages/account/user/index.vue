@@ -11,9 +11,9 @@ navigateTo('/account/profile');
 // // GLOBAL SETUP
 // // const apiEndpoint = '/users';
 // const dataList = ref<Entity[]>([]);
-// const entityName = getEntityName();
-// const newEntityUrl = getEntityNewUrl();
-// const entityUrl = getEntityUrl('{id}');
+// const entityName = ENTITIES.user.key;
+// const newEntityUrl = entityNewUrl('user');
+// const entityUrl = entityEditUrl('user', '<id>');
 // const loading = ref(true);
 // const columns: Ref<ColumnDef<Entity>[]> = ref([]);
 
