@@ -37,8 +37,11 @@ export type LogVerbosity = 'minimal' | 'normal' | 'detailed';
  *
  * NOTE: the persisted contract (swagger `settingsModel`) uses
  * `fail | cancelAndReport`; the editor manifest's `TimeoutBehavior` enum lists
- * `fail | continueWithPartialResults`. We follow the persisted contract here —
- * see the plan's "Open items" (flagged to backend).
+ * `fail | continueWithPartialResults`. These genuinely disagree — verified
+ * 2026-07-01 against the live backend: saving `continueWithPartialResults`
+ * returns 422 "Could not parse property settings.timeoutBehavior … ensure it is
+ * of the correct type." We follow the persisted contract (flagged to backend);
+ * `useWorkflowLabels` maps the manifest value on read as a defensive fallback.
  */
 export type TimeoutBehavior = 'fail' | 'cancelAndReport';
 

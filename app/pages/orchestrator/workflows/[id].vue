@@ -29,12 +29,8 @@ const { geinsLogInfo, geinsLogError } = useGeinsLog('workflow-editor');
 const { t, locale } = useI18n();
 const { toast } = useToast();
 const { orchestratorApi } = useGeinsRepository();
-const {
-  triggerTypeLabel,
-  logVerbosityLabel,
-  errorHandlingLabel,
-  timeoutBehaviorLabel,
-} = useWorkflowLabels();
+const { triggerTypeLabel, logVerbosityLabel, errorHandlingLabel } =
+  useWorkflowLabels();
 
 const workflowId = computed(() => route.params.id as string);
 const isNew = computed(() => workflowId.value === 'new');
@@ -49,24 +45,13 @@ const {
   eventEntities: manifestEventEntities,
 } = manifestStore;
 
-// Workflow-level enum selects are driven from the manifest so their values can
-// never drift from the backend contract; labels stay translated via
-// useWorkflowLabels (manifest displayNames are English-only Title Case).
-const logVerbosityOptions = computed(() =>
-  manifestStore
-    .getEnum('LogVerbosity')
-    .map((e) => ({ value: e.value, label: logVerbosityLabel(e.value) })),
-);
-const timeoutBehaviorOptions = computed(() =>
-  manifestStore
-    .getEnum('TimeoutBehavior')
-    .map((e) => ({ value: e.value, label: timeoutBehaviorLabel(e.value) })),
-);
-const errorHandlingStrategyOptions = computed(() =>
-  manifestStore
-    .getEnum('ErrorHandlingStrategy')
-    .map((e) => ({ value: e.value, label: errorHandlingLabel(e.value) })),
-);
+// NOTE: workflow-level settings selects (logVerbosity / timeoutBehavior /
+// errorHandlingStrategy) are hardcoded from the PERSISTED contract, NOT the
+// editor manifest enums. Verified 2026-07-01: saving `timeoutBehavior:
+// continueWithPartialResults` (the manifest value) is rejected by the persist
+// endpoint with 422 "Could not parse property settings.timeoutBehavior … ensure
+// it is of the correct type." The persist model still uses `cancelAndReport`.
+// See shared/types/Workflow.ts `TimeoutBehavior`.
 
 // ─── Workflow groups (single-select group input) ──────────────────────
 // No groups endpoint exists; the set is derived from existing workflows.
@@ -1521,12 +1506,14 @@ const { summaryProps } = useEntityEditSummary({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem
-                              v-for="opt in logVerbosityOptions"
-                              :key="opt.value"
-                              :value="opt.value"
-                            >
-                              {{ opt.label }}
+                            <SelectItem value="minimal">
+                              {{ $t('workflows.verbosity_minimal') }}
+                            </SelectItem>
+                            <SelectItem value="normal">
+                              {{ $t('workflows.verbosity_normal') }}
+                            </SelectItem>
+                            <SelectItem value="detailed">
+                              {{ $t('workflows.verbosity_detailed') }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1550,12 +1537,11 @@ const { summaryProps } = useEntityEditSummary({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem
-                              v-for="opt in timeoutBehaviorOptions"
-                              :key="opt.value"
-                              :value="opt.value"
-                            >
-                              {{ opt.label }}
+                            <SelectItem value="fail">
+                              {{ $t('workflows.timeout_fail') }}
+                            </SelectItem>
+                            <SelectItem value="cancelAndReport">
+                              {{ $t('workflows.timeout_cancel') }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1579,12 +1565,14 @@ const { summaryProps } = useEntityEditSummary({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem
-                              v-for="opt in errorHandlingStrategyOptions"
-                              :key="opt.value"
-                              :value="opt.value"
-                            >
-                              {{ opt.label }}
+                            <SelectItem value="failFast">
+                              {{ $t('workflows.error_fail_fast') }}
+                            </SelectItem>
+                            <SelectItem value="continueOnError">
+                              {{ $t('workflows.error_continue') }}
+                            </SelectItem>
+                            <SelectItem value="skipNode">
+                              {{ $t('workflows.error_skip_node') }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
