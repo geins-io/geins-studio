@@ -75,6 +75,9 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         `${BASE_ENDPOINT}/validateVatNumber/${vatNumber}`,
         {
           method: 'POST',
+          // VAT validity is surfaced inline in the form, so a failed/invalid
+          // lookup must not raise the global error toast.
+          suppressErrorToast: true,
         },
       );
     },

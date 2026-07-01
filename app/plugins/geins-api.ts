@@ -183,7 +183,12 @@ export default defineNuxtPlugin(() => {
       // the same global toast rules. Cancelled requests are intentional (user
       // navigation / abort) so they stay silent.
       const isMutation = !['GET', 'HEAD'].includes(method.toUpperCase());
-      if (isMutation && errorType !== 'CANCELLED_ERROR' && !isSuppressed()) {
+      if (
+        isMutation &&
+        errorType !== 'CANCELLED_ERROR' &&
+        !options.suppressErrorToast &&
+        !isSuppressed()
+      ) {
         void showGlobalErrorToast(geinsApiError, {}, options.errorContext);
       }
 
@@ -229,11 +234,17 @@ export default defineNuxtPlugin(() => {
 
       // Surface mutation failures globally. Reads (GET/HEAD) render page-level
       // error/empty states instead, and 401 is the silent token refresh/retry
-      // path. Flows that opt out (e.g. silent auto-saves, or pages that show
-      // their own richer error toast) set the suppression flag via
-      // useApiErrorToast.
+      // path. A call opts out either per-request via `suppressErrorToast`
+      // (request-scoped — e.g. `validateVatNumber`, which surfaces validity
+      // inline) or for a whole block via `withSuppressedErrorToast` from
+      // useApiErrorToast (e.g. silent auto-saves).
       const isMutation = !['GET', 'HEAD'].includes(method.toUpperCase());
-      if (isMutation && response.status !== 401 && !isSuppressed()) {
+      if (
+        isMutation &&
+        response.status !== 401 &&
+        !options.suppressErrorToast &&
+        !isSuppressed()
+      ) {
         void showGlobalErrorToast(
           geinsApiError,
           errorData,

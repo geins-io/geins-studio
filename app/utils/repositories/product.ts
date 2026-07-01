@@ -13,6 +13,15 @@ import type {
 import { buildQueryObject } from '#shared/utils/api-query';
 import { ENTITIES } from '#shared/utils/entities';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
+import type { FetchOptions } from 'ofetch';
+
+/**
+ * Per-call fetch options the catalog read methods forward to `$geinsApi`.
+ * These reads are POST `/query` calls (batch-query pattern), so they count as
+ * mutations to the global error-toast gate — `suppressErrorToast` lets a
+ * background caller (e.g. the products store warm-up) opt out. See STU-254.
+ */
+type ReadFetchOptions = Pick<FetchOptions, 'suppressErrorToast'>;
 
 const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
 
@@ -45,11 +54,13 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
     async list(
       options?: ProductApiOptions,
+      fetchOptions?: ReadFetchOptions,
     ): Promise<BatchQueryResult<Product>> {
       return await fetch<BatchQueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
         method: 'POST',
         body: { ...batchQueryMatchAll.value, ...batchQueryNoPagination.value },
         query: buildQueryObject(options),
+        ...fetchOptions,
       });
     },
 
@@ -74,6 +85,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
       async list(
         query?: Record<string, unknown>,
+        fetchOptions?: ReadFetchOptions,
       ): Promise<BatchQueryResult<Category>> {
         return await fetch<BatchQueryResult<Category>>(
           `${categoryEndpoint}/query`,
@@ -85,6 +97,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
               ...batchQueryNoPagination.value,
             },
             query,
+            ...fetchOptions,
           },
         );
       },
@@ -108,6 +121,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
       async list(
         query?: Record<string, unknown>,
+        fetchOptions?: ReadFetchOptions,
       ): Promise<BatchQueryResult<Brand>> {
         return await fetch<BatchQueryResult<Brand>>(
           `${brandEndpoint}/query`,
@@ -119,6 +133,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
               ...batchQueryNoPagination.value,
             },
             query,
+            ...fetchOptions,
           },
         );
       },
