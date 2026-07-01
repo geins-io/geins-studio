@@ -13,5 +13,17 @@ declare module 'ofetch' {
      * the generic fallback. See {@link GeinsErrorContext}.
      */
     errorContext?: GeinsErrorContext;
+    /**
+     * Opt this request out of the global API error toast. When `true`, a
+     * failure on this exact request never raises `showGlobalErrorToast` — the
+     * error still propagates to the caller and is still logged. Use for calls
+     * whose failure is surfaced to the user in a better way inline (e.g.
+     * `validateVatNumber`, where VAT validity is shown in the form), or for
+     * background fetches where a generic toast would confuse the user.
+     *
+     * Request-scoped, unlike `withSuppressedErrorToast` (a time-window seam in
+     * `useApiErrorToast`) — so it cannot swallow a concurrent unrelated failure.
+     */
+    suppressErrorToast?: boolean;
   }
 }
