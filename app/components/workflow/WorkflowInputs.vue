@@ -405,7 +405,7 @@ const confirmAddGroup = () => {
             class="h-9"
             @click="openAddGroup"
           >
-            {{ t('add_entity', { entityName: 'group' }) }}
+            {{ t('add_entity', { entityKey: 'group' }) }}
           </ButtonIcon>
         </div>
       </template>
@@ -417,7 +417,7 @@ const confirmAddGroup = () => {
             <LucideCircleDot class="size-5" />
           </EmptyMedia>
           <EmptyTitle>
-            {{ t('no_entity', { entityName: 'input' }, 2) }}
+            {{ t('no_entity', { entityKey: 'input' }, 2) }}
           </EmptyTitle>
           <EmptyDescription>
             {{ t('workflow_builder.no_inputs_yet') }}
@@ -473,7 +473,7 @@ const confirmAddGroup = () => {
                 variant="secondary"
                 @click="openAddInput(group.category)"
               >
-                {{ t('add_entity', { entityName: 'input' }) }}
+                {{ t('add_entity', { entityKey: 'input' }) }}
               </ButtonIcon>
               <DropdownMenu>
                 <DropdownMenuTrigger as-child>
@@ -515,7 +515,7 @@ const confirmAddGroup = () => {
                     @click="openAddInput(group.category)"
                   >
                     <LucidePlus class="mr-2 h-3.5 w-3.5" />
-                    {{ t('add_entity', { entityName: 'input' }) }}
+                    {{ t('add_entity', { entityKey: 'input' }) }}
                   </Button>
                 </EmptyContent>
               </Empty>
@@ -614,7 +614,7 @@ const confirmAddGroup = () => {
           @click="openAddGroup"
         >
           <LucidePlus class="mr-2 size-4" />
-          {{ t('add_entity', { entityName: 'group' }) }}
+          {{ t('add_entity', { entityKey: 'group' }) }}
         </Button>
       </div>
     </ContentEditCard>
@@ -625,7 +625,7 @@ const confirmAddGroup = () => {
     <SheetContent width="medium">
       <SheetHeader>
         <SheetTitle>
-          {{ t('add_entity', { entityName: 'input' }) }}
+          {{ t('add_entity', { entityKey: 'input' }) }}
         </SheetTitle>
         <SheetDescription>
           {{
@@ -789,7 +789,7 @@ const confirmAddGroup = () => {
           {{ t('cancel') }}
         </Button>
         <Button :disabled="!newInputCanSave" @click="confirmAddInput">
-          {{ t('add_entity', { entityName: 'input' }) }}
+          {{ t('add_entity', { entityKey: 'input' }) }}
         </Button>
       </SheetFooter>
     </SheetContent>
@@ -926,7 +926,7 @@ const confirmAddGroup = () => {
     <DialogContent>
       <DialogHeader>
         <DialogTitle>
-          {{ t('add_entity', { entityName: 'group' }) }}
+          {{ t('add_entity', { entityKey: 'group' }) }}
         </DialogTitle>
         <DialogDescription>
           {{ t('workflow_builder.add_group_description') }}
@@ -955,7 +955,7 @@ const confirmAddGroup = () => {
           {{ t('cancel') }}
         </Button>
         <Button @click="confirmAddGroup">
-          {{ t('add_entity', { entityName: 'group' }) }}
+          {{ t('add_entity', { entityKey: 'group' }) }}
         </Button>
       </DialogFooter>
     </DialogContent>

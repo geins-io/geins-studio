@@ -19,8 +19,8 @@ definePageMeta({
 const { customerApi } = useGeinsRepository();
 const { deleteCompany, extractCompanyGroupsFromTags } = useCustomerCompanies();
 const dataList = ref<EntityList[]>([]);
-const entityName = ENTITIES.company.key;
-const newEntityUrl = entityNewUrl(entityName);
+const entityKey = ENTITIES.company.key;
+const newEntityUrl = entityNewUrl(entityKey);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -34,28 +34,28 @@ const mapToListData = (companies: Entity[]): EntityList[] => {
 
     const companyGroups = createTooltip({
       items: groups,
-      entityName: 'company_group',
+      entityKey: 'company_group',
       formatter: (group) => `${group}`,
       t,
     });
 
     const buyers = createTooltip({
       items: company.buyers,
-      entityName: 'buyer',
+      entityKey: 'buyer',
       formatter: (buyer) => `${fullName(buyer)} (${buyer._id})`,
       t,
     });
 
     const salesReps = createTooltip({
       items: company.salesReps,
-      entityName: 'sales_rep',
+      entityKey: 'sales_rep',
       formatter: (salesRep) => fullName(salesRep),
       t,
     });
 
     const priceLists = createTooltip({
       items: company.priceLists,
-      entityName: 'price_list',
+      entityKey: 'price_list',
       formatter: (priceList) => `${priceList?.name}`,
       t,
     });
@@ -108,7 +108,7 @@ onMounted(() => {
       priceLists: 'tooltip',
     },
     linkColumns: {
-      name: { entityKey: entityName, idField: '_id' },
+      name: { entityKey: entityKey, idField: '_id' },
     },
     columnTitles: {
       active: t('status'),
@@ -124,7 +124,7 @@ onMounted(() => {
     columns.value,
     {
       onEdit: (item: Entity) =>
-        navigateTo(entityEditUrl(entityName, String(item._id))),
+        navigateTo(entityEditUrl(entityKey, String(item._id))),
       onDelete: async (item: Entity) => await openDeleteDialog(item._id),
     },
     'actions',
@@ -153,7 +153,7 @@ const openDeleteDialog = async (id?: string) => {
 };
 const confirmDelete = async () => {
   deleting.value = true;
-  const success = await deleteCompany(deleteId.value, entityName);
+  const success = await deleteCompany(deleteId.value, entityKey);
   if (success) {
     refresh();
   }
@@ -167,21 +167,21 @@ const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
 <template>
   <DialogDelete
     v-model:open="deleteDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="deleting"
     @confirm="confirmDelete"
   />
-  <ContentHeader :title="$t(entityName, 2)">
+  <ContentHeader :title="$t(entityKey, 2)">
     <ContentActionBar>
       <ButtonIcon icon="new" :href="newEntityUrl">
-        {{ $t('new_entity', { entityName }) }}
+        {{ $t('new_entity', { entityKey }) }}
       </ButtonIcon>
     </ContentActionBar>
   </ContentHeader>
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
-      :entity-name="entityName"
+      :entity-key="entityKey"
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
@@ -195,7 +195,7 @@ const searchableFields: Array<keyof EntityList> = ['_id', 'name', 'vatNumber'];
           variant="secondary"
           @click="navigateTo(newEntityUrl)"
         >
-          {{ $t('create_new_entity', { entityName }) }}
+          {{ $t('create_new_entity', { entityKey }) }}
         </ButtonIcon>
       </template>
     </TableView>

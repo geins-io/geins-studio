@@ -52,7 +52,7 @@ const formSchema = toTypedSchema(
 // ENTITY DATA SETUP
 // =====================================================================================
 const entity = ENTITIES.profile;
-const entityName = entity.key;
+const entityKey = entity.key;
 
 const entityBase: UserProfileCreate = {
   name: '',
@@ -66,9 +66,9 @@ const userFullName = computed(() => fullName(entityData.value));
 
 const entityPageTitle = computed(() =>
   createMode.value
-    ? t('new_entity', { entityName }) +
+    ? t('new_entity', { entityKey }) +
       (userFullName.value ? ': ' + userFullName.value : '')
-    : userFullName.value || t('edit_entity', { entityName }),
+    : userFullName.value || t('edit_entity', { entityKey }),
 );
 
 // =====================================================================================
@@ -230,7 +230,7 @@ const handleSave = async () => {
       );
       if (!hasUnsavedChanges.value) {
         toast({
-          title: t('entity_updated', { entityName }),
+          title: t('entity_updated', { entityKey }),
           variant: 'positive',
         });
         emptyPasswords();
@@ -318,7 +318,7 @@ const { summaryProps } = useEntityEditSummary({
   formTouched,
   summary,
   settingsSummary,
-  entityName,
+  entityKey,
   entityLiveStatus,
   showActiveStatus: false,
 });
@@ -354,14 +354,14 @@ if (!createMode.value) {
 <template>
   <DialogUnsavedChanges
     v-model:open="unsavedChangesDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="loading"
     @confirm="confirmLeave"
   />
 
   <ContentEditWrap>
     <template #header>
-      <ContentHeader :title="entityPageTitle" :entity-name="entityName">
+      <ContentHeader :title="entityPageTitle" :entity-key="entityKey">
         <ContentActionBar>
           <ButtonIcon
             v-if="!createMode"
@@ -370,7 +370,7 @@ if (!createMode.value) {
             :disabled="!hasUnsavedChanges || loading"
             @click="handleSave"
           >
-            {{ $t('save_entity', { entityName }) }}
+            {{ $t('save_entity', { entityKey }) }}
           </ButtonIcon>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
@@ -385,7 +385,7 @@ if (!createMode.value) {
       <ContentEditMain :show-sidebar="showSidebar">
         <ContentEditMainContent>
           <ContentEditCard
-            :title="$t('entity_details', { entityName })"
+            :title="$t('entity_details', { entityKey })"
             :description="$t('account_profile.contact_information')"
           >
             <FormGridWrap>

@@ -66,32 +66,32 @@ export function usePageError(
   ): string => {
     const effectiveOptions = { ...options, ...contextOptions };
     const { entity, entityId } = effectiveOptions;
-    const entityName = entity?.key;
-    const name = entityName || 'entity';
+    const entityKey = entity?.key;
+    const name = entityKey || 'entity';
     const pluralizerNr = effectiveOptions?.entityList ? 2 : 1;
 
     if (statusCode === 404) {
-      if (entityName && entityId) {
+      if (entityKey && entityId) {
         return t('entity_with_id_not_found', {
-          entityName,
+          entityKey,
           id: entityId,
         });
       }
-      if (entityName) {
-        return t('no_entity_found', { entityName }, pluralizerNr);
+      if (entityKey) {
+        return t('no_entity_found', { entityKey }, pluralizerNr);
       }
       return t('error.404_description');
     }
 
     if (statusCode >= 500) {
-      if (entityName) {
-        return t('error_loading_entity', { entityName: name }, pluralizerNr);
+      if (entityKey) {
+        return t('error_loading_entity', { entityKey: name }, pluralizerNr);
       }
       return t('error.500_description');
     }
 
-    if (entityName) {
-      return t('error_loading_entity', { entityName: name }, pluralizerNr);
+    if (entityKey) {
+      return t('error_loading_entity', { entityKey: name }, pluralizerNr);
     }
     return t('error.500_description');
   };

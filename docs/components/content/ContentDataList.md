@@ -78,7 +78,7 @@ interface DataItem {
   displayType?: DataItemDisplayType;
   href?: string;
   target?: '_blank' | '_self';
-  entityName?: string; // used with Array type for pluralization
+  entityKey?: string; // used with Array type for pluralization
 }
 ```
 

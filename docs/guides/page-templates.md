@@ -32,7 +32,7 @@ definePageMeta({
 // === 4. GLOBAL SETUP ===
 const { {domain}Api } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
-const entityName = t('{entity}');
+const entityKey = t('{entity}');
 const newEntityUrl = getEntityUrl('{entity}', 'new');
 const entityIdentifier = '{id}';
 const entityUrl = '{entity}';
@@ -42,7 +42,7 @@ const visibilityState = ref<VisibilityState>({});
 
 // === 5. ERROR HANDLING ===
 const { handleFetchResult, showErrorToast } = usePageError({
-  entityName,
+  entityKey,
   entityList: true,
   scope,
 });
@@ -120,12 +120,12 @@ async function confirmDelete() {
 <template>
   <DialogDelete
     v-model:open="deleteDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :deleting="deleting"
     @confirm="confirmDelete"
   />
 
-  <ContentHeader :title="entityName">
+  <ContentHeader :title="entityKey">
     <ContentActionBar>
       <ButtonIcon icon="new" :label="t('new')" :href="newEntityUrl" />
     </ContentActionBar>
@@ -134,7 +134,7 @@ async function confirmDelete() {
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
-      :entity-name="entityName"
+      :entity-key="entityKey"
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
@@ -144,7 +144,7 @@ async function confirmDelete() {
       </template>
     </TableView>
     <template #error="{ error: errorCatched }">
-      <h2>{{ t('error_loading_entity', { entityName }) }}</h2>
+      <h2>{{ t('error_loading_entity', { entityKey }) }}</h2>
       <p>{{ errorCatched }}</p>
     </template>
   </NuxtErrorBoundary>
@@ -215,7 +215,7 @@ const stepValidationMap: Record<number, string> = {
 
 // === ENTITY EDIT COMPOSABLE ===
 const {
-  entityName,
+  entityKey,
   entityId,
   createMode,
   loading,
@@ -287,7 +287,7 @@ async function confirmDelete() {
 
 // === SUMMARY PROPS (sidebar) ===
 const summaryProps = computed(() => ({
-  entityName: entityName.value,
+  entityKey: entityKey.value,
   id: entityId.value,
   // ...metadata for ContentEditSummary
 }));
@@ -301,14 +301,14 @@ const summaryProps = computed(() => ({
   />
   <DialogDelete
     v-model:open="deleteDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     @confirm="confirmDelete"
   />
 
   <ContentEditWrap>
     <!-- Header -->
     <template #header>
-      <ContentHeader :title="entityPageTitle" :entity-name="entityName">
+      <ContentHeader :title="entityPageTitle" :entity-key="entityKey">
         <ContentActionBar>
           <ButtonIcon
             v-if="!createMode"

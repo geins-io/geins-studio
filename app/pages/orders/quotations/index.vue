@@ -25,8 +25,8 @@ definePageMeta({
 // GLOBAL SETUP
 const { orderApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
-const entityName = ENTITIES.quotation.key;
-const newEntityUrl = entityNewUrl(entityName);
+const entityKey = ENTITIES.quotation.key;
+const newEntityUrl = entityNewUrl(entityKey);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -42,7 +42,7 @@ const mapToListData = (list: Entity[]): EntityList[] => {
       buyer: fullName(item.customer),
       company: item.company?.name || '',
       products: t('nr_of_entity', {
-        entityName: 'product',
+        entityKey: 'product',
         count: items?.length ?? 0,
       }),
       owner: fullName(item.owner),
@@ -99,7 +99,7 @@ onMounted(() => {
       sum: 'currency',
     },
     linkColumns: {
-      name: { entityKey: entityName, idField: '_id' },
+      name: { entityKey: entityKey, idField: '_id' },
     },
     excludeColumns: [
       'suggestedShippingFee',
@@ -125,15 +125,15 @@ onMounted(() => {
     columns.value,
     {
       onEdit: (item: EntityList) =>
-        navigateTo(entityEditUrl(entityName, String(item._id))),
+        navigateTo(entityEditUrl(entityKey, String(item._id))),
       onCopy: async (item: EntityList) => {
         try {
           const newDraft = await orderApi.quotation.copy(item._id);
           toast({
-            title: t('entity_copied', { entityName }),
+            title: t('entity_copied', { entityKey }),
             variant: 'positive',
           });
-          await navigateTo(entityEditUrl(entityName, String(newDraft._id)));
+          await navigateTo(entityEditUrl(entityKey, String(newDraft._id)));
         } catch (err) {
           geinsLogError('copyQuotation :::', getErrorMessage(err));
         }
@@ -168,7 +168,7 @@ visibilityState.value = getVisibilityState(hiddenColumns);
 const { toast } = useToast();
 const deleteQuotation = async (
   id?: string,
-  entityName?: string,
+  entityKey?: string,
 ): Promise<boolean> => {
   try {
     if (!id) {
@@ -176,7 +176,7 @@ const deleteQuotation = async (
     }
     await orderApi.quotation.delete(id);
     toast({
-      title: t('entity_deleted', { entityName }),
+      title: t('entity_deleted', { entityKey }),
       variant: 'positive',
     });
     return true;
@@ -196,7 +196,7 @@ const openDeleteDialog = async (id?: string) => {
 };
 const confirmDelete = async () => {
   deleting.value = true;
-  const success = await deleteQuotation(deleteId.value, entityName);
+  const success = await deleteQuotation(deleteId.value, entityKey);
   if (success) {
     refresh();
   }
@@ -217,21 +217,21 @@ const searchableFields: Array<keyof EntityList> = [
 <template>
   <DialogDelete
     v-model:open="deleteDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="deleting"
     @confirm="confirmDelete"
   />
-  <ContentHeader :title="$t(entityName, 2)">
+  <ContentHeader :title="$t(entityKey, 2)">
     <ContentActionBar>
       <ButtonIcon icon="new" :href="newEntityUrl">
-        {{ $t('new_entity', { entityName }) }}
+        {{ $t('new_entity', { entityKey }) }}
       </ButtonIcon>
     </ContentActionBar>
   </ContentHeader>
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
-      :entity-name="entityName"
+      :entity-key="entityKey"
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
@@ -245,7 +245,7 @@ const searchableFields: Array<keyof EntityList> = [
           variant="secondary"
           @click="navigateTo(newEntityUrl)"
         >
-          {{ $t('create_new_entity', { entityName }) }}
+          {{ $t('create_new_entity', { entityKey }) }}
         </ButtonIcon>
       </template>
     </TableView>

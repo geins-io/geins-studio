@@ -26,7 +26,7 @@ const buildAddressSchema = (t: (key: string) => string) =>
   });
 
 interface UseCustomerCompaniesReturnType {
-  deleteCompany: (id?: string, entityName?: string) => Promise<boolean>;
+  deleteCompany: (id?: string, entityKey?: string) => Promise<boolean>;
   extractCompanyGroupsFromTags: (tags: string[]) => string[];
   convertCompanyGroupsToTags: (companyGroups: string[]) => string[];
   hasValidatedVat: Readonly<Ref<boolean>>;
@@ -76,7 +76,7 @@ export const useCustomerCompanies = (): UseCustomerCompaniesReturnType => {
   // =====================================================================================
   const deleteCompany = async (
     id?: string,
-    entityName?: string,
+    entityKey?: string,
   ): Promise<boolean> => {
     try {
       if (!id) {
@@ -84,7 +84,7 @@ export const useCustomerCompanies = (): UseCustomerCompaniesReturnType => {
       }
       await customerApi.company.delete(id);
       toast({
-        title: t('entity_deleted', { entityName }),
+        title: t('entity_deleted', { entityKey }),
         variant: 'positive',
       });
       return true;

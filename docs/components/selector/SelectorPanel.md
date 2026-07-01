@@ -41,7 +41,7 @@ const onSave = (updated: SelectorSelectionInternal) => {
     :selection="selection"
     :mode="SelectorMode.Advanced"
     :options="options"
-    entity-name="product"
+    entity-key="product"
     :entities="products"
     @save="onSave"
   >
@@ -92,10 +92,10 @@ options: SelectorSelectionOption[]
 - **Required:** yes
 - **Description:** Array of navigation tabs. Each item maps an `id` to a `group` key in `SelectorSelectionInternal`.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName: string;
+entityKey: string;
 ```
 
 - **Type:** `string`

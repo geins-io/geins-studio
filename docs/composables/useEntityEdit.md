@@ -79,7 +79,7 @@ const {
 
 ### `entity`
 
-The registry entry for the entity being edited (`ENTITIES.x` from `#shared/utils/entities`) — **required**. Its `key` drives titles, toasts, and the i18n `entityName` (returned by the composable); its `route` drives `newEntityUrl` / `entityListUrl`.
+The registry entry for the entity being edited (`ENTITIES.x` from `#shared/utils/entities`) — **required**. Its `key` drives titles, toasts, and the i18n `entityKey` (returned by the composable); its `route` drives `newEntityUrl` / `entityListUrl`.
 
 ### `repository`
 
@@ -226,7 +226,7 @@ Creates a JSON snapshot of current entity data for unsaved changes detection. Ca
 
 ### Entity State
 
-#### `entityName`
+#### `entityKey`
 
 A `ref` representing the name of the entity being edited (e.g., "product").
 
@@ -455,7 +455,7 @@ function useEntityEdit<
 ): UseEntityEditReturnType<TBase, TResponse, TCreate, TUpdate>;
 
 interface EntityEditOptions<TBase, TResponse, TCreate, TUpdate, TOptions> {
-  entityName?: string;
+  entityKey?: string;
   repository: {
     get: (id: string, options?: TOptions) => Promise<TResponse>;
     create: (data: TCreate, options?: TOptions) => Promise<TResponse>;
@@ -496,7 +496,7 @@ interface UseEntityEditReturnType<
   TUpdate extends UpdateEntity<TBase>,
 > {
   // State
-  entityName: string;
+  entityKey: string;
   entityId: ComputedRef<string>;
   createMode: Ref<boolean>;
   loading: Ref<boolean>;

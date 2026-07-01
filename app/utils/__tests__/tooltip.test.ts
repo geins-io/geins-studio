@@ -10,21 +10,21 @@ const t = (
 
 describe('createTooltip', () => {
   it('returns disabled tooltip when items array is empty', () => {
-    const result = createTooltip({ items: [], entityName: 'products', t });
+    const result = createTooltip({ items: [], entityKey: 'products', t });
     expect(result.disabled).toBe(true);
     expect(result.displayValue).toBe('no_entity');
     expect(result.contentValue).toBe('');
   });
 
   it('returns disabled tooltip when items is undefined (default)', () => {
-    const result = createTooltip({ entityName: 'products', t });
+    const result = createTooltip({ entityKey: 'products', t });
     expect(result.disabled).toBe(true);
   });
 
   it('returns enabled tooltip with translation key when items exist', () => {
     const result = createTooltip({
       items: ['a', 'b', 'c'],
-      entityName: 'products',
+      entityKey: 'products',
       t,
     });
     expect(result.disabled).toBe(false);
@@ -34,7 +34,7 @@ describe('createTooltip', () => {
   it('uses custom formatter for content value', () => {
     const result = createTooltip({
       items: [{ name: 'A' }, { name: 'B' }],
-      entityName: 'products',
+      entityKey: 'products',
       formatter: (item) => item.name,
       t,
     });
@@ -44,7 +44,7 @@ describe('createTooltip', () => {
   it('returns empty contentValue when no formatter is provided', () => {
     const result = createTooltip({
       items: ['a', 'b'],
-      entityName: 'products',
+      entityKey: 'products',
       t,
     });
     expect(result.contentValue).toBe('');
@@ -53,7 +53,7 @@ describe('createTooltip', () => {
   it('uses custom emptyMessage when provided and items are empty', () => {
     const result = createTooltip({
       items: [],
-      entityName: 'products',
+      entityKey: 'products',
       emptyMessage: 'No products available',
       t,
     });
@@ -63,7 +63,7 @@ describe('createTooltip', () => {
   it('handles single item with formatter', () => {
     const result = createTooltip({
       items: ['only'],
-      entityName: 'item',
+      entityKey: 'item',
       formatter: (i) => i,
       t,
     });

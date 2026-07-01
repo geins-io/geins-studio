@@ -59,13 +59,13 @@ const formSchema = toTypedSchema(
       exVat: z.boolean().optional(),
     }),
     default: z.object({
-      name: z.string().min(1, t('entity_required', { entityName: 'name' })),
+      name: z.string().min(1, t('entity_required', { entityKey: 'name' })),
       channel: z
         .string()
-        .min(1, t('entity_required', { entityName: 'channel' })),
+        .min(1, t('entity_required', { entityKey: 'channel' })),
       currency: z
         .string()
-        .min(1, t('entity_required', { entityName: 'currency' })),
+        .min(1, t('entity_required', { entityKey: 'currency' })),
       identifier: z.string().optional(),
       forced: z.boolean().optional(),
       autoAddProducts: z.boolean().optional(),
@@ -210,7 +210,7 @@ watch(
 // parseEntityData, prepareCreateData, prepareUpdateData) transform data between API and form shapes.
 // Do NOT duplicate CRUD logic outside this composable.
 const {
-  entityName,
+  entityKey,
   entityId,
   createMode,
   loading,
@@ -519,7 +519,7 @@ const copyEntity = async () => {
       await parseAndSaveData(result, false);
       await router.replace(newPath);
       toast({
-        title: t('entity_copied', { entityName }),
+        title: t('entity_copied', { entityKey }),
         variant: 'positive',
       });
     }
@@ -568,7 +568,7 @@ const summary = computed<DataItem[]>(() => {
 
   if (!createMode.value) {
     dataList.push({
-      label: t('entity_id', { entityName }),
+      label: t('entity_id', { entityKey }),
       value: String(entityDataUpdate.value?._id),
       displayType: DataItemDisplayType.Copy,
     });
@@ -576,13 +576,13 @@ const summary = computed<DataItem[]>(() => {
 
   if (entityData.value?.name) {
     dataList.push({
-      label: t('entity_name', { entityName }),
+      label: t('entity_name', { entityKey }),
       value: entityData.value.name,
     });
   }
 
   dataList.push({
-    label: t('entity_identifier', { entityName }),
+    label: t('entity_identifier', { entityKey }),
     value: entityData.value?.identifier || '–',
     displayType: entityData.value?.identifier
       ? DataItemDisplayType.Copy
@@ -637,7 +637,7 @@ const { summaryProps } = useEntityEditSummary({
   formTouched,
   summary,
   settingsSummary,
-  entityName,
+  entityKey,
   entityLiveStatus,
 });
 
@@ -692,13 +692,13 @@ if (!createMode.value) {
 <template>
   <DialogUnsavedChanges
     v-model:open="unsavedChangesDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="loading"
     @confirm="confirmLeave"
   />
   <DialogDelete
     v-model:open="deleteDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="deleting"
     @confirm="confirmDelete"
   />
@@ -815,7 +815,7 @@ if (!createMode.value) {
 
   <ContentEditWrap>
     <template #header>
-      <ContentHeader :title="entityPageTitle" :entity-name="entityName">
+      <ContentHeader :title="entityPageTitle" :entity-key="entityKey">
         <ContentActionBar>
           <ButtonIcon
             v-if="!createMode"
@@ -824,7 +824,7 @@ if (!createMode.value) {
             :disabled="!hasUnsavedChanges || saveInProgress"
             @click="handleSave"
           >
-            {{ $t('save_entity', { entityName }) }}
+            {{ $t('save_entity', { entityKey }) }}
           </ButtonIcon>
           <DropdownMenu v-if="!createMode">
             <DropdownMenuTrigger as-child>
@@ -836,19 +836,19 @@ if (!createMode.value) {
               <DropdownMenuItem as-child>
                 <NuxtLink :to="newEntityUrl">
                   <LucidePlus class="mr-2 size-4" />
-                  <span>{{ $t('new_entity', { entityName }) }}</span>
+                  <span>{{ $t('new_entity', { entityKey }) }}</span>
                 </NuxtLink>
               </DropdownMenuItem>
               <DropdownMenuItem as-child>
                 <button type="button" class="w-full" @click="copyEntity">
                   <LucideCopy class="mr-2 size-4" />
-                  <span>{{ $t('copy_entity', { entityName }) }}</span>
+                  <span>{{ $t('copy_entity', { entityKey }) }}</span>
                 </button>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem @click="openDeleteDialog">
                 <LucideTrash class="mr-2 size-4" />
-                <span>{{ $t('delete_entity', { entityName }) }}</span>
+                <span>{{ $t('delete_entity', { entityKey }) }}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -911,7 +911,7 @@ if (!createMode.value) {
                   <FormField v-slot="{ componentField }" name="default.name">
                     <FormItem>
                       <FormLabel>
-                        {{ $t('entity_name', { entityName }) }}
+                        {{ $t('entity_name', { entityKey }) }}
                       </FormLabel>
                       <FormControl>
                         <Input v-bind="componentField" type="text" />
@@ -925,7 +925,7 @@ if (!createMode.value) {
                   >
                     <FormItem>
                       <FormLabel>
-                        {{ $t('entity_identifier', { entityName }) }}
+                        {{ $t('entity_identifier', { entityKey }) }}
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -1056,7 +1056,7 @@ if (!createMode.value) {
                 :disabled="!formValid || loading"
                 @click="createEntity"
               >
-                {{ $t('create_entity', { entityName }) }}
+                {{ $t('create_entity', { entityKey }) }}
               </Button>
             </div>
           </ContentEditMainContent>
@@ -1170,20 +1170,20 @@ if (!createMode.value) {
               :currency="entityData.currency"
               :fetch-entities-externally="true"
             >
-              <template #list="{ selectorEntityName }">
+              <template #list="{ selectorEntityKey }">
                 <ContentHeading>
                   {{
-                    $t('selected_entity', { entityName: selectorEntityName }, 2)
+                    $t('selected_entity', { entityKey: selectorEntityKey }, 2)
                   }}
                 </ContentHeading>
                 <TableView
                   :columns="columns"
                   :data="selectedProducts"
-                  :entity-name="selectorEntityName"
+                  :entity-key="selectorEntityKey"
                   :empty-text="
                     $t(
                       'no_entity_selected',
-                      { entityName: selectorEntityName },
+                      { entityKey: selectorEntityKey },
                       2,
                     )
                   "

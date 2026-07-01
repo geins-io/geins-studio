@@ -31,7 +31,7 @@ const onRemove = (id: string) => {
   <SelectorQuickAdd
     :entities="products"
     :selection="selectedIds"
-    entity-name="product"
+    entity-key="product"
     :show-image="true"
     :show-id="true"
     @add="onAdd"
@@ -62,10 +62,10 @@ selection: string[]
 - **Required:** yes
 - **Description:** Array of currently selected entity `_id` values. Used to render the checkmark state.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName: string;
+entityKey: string;
 ```
 
 - **Type:** `string`

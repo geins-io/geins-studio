@@ -29,7 +29,7 @@ const selection = ref<SelectorSelectionQueryBase>({
 <template>
   <Selector
     v-model:selection="selection"
-    entity-name="product"
+    entity-key="product"
     :mode="SelectorMode.Advanced"
   />
 </template>
@@ -48,7 +48,7 @@ const selection = ref<SelectorSelectionSimpleBase>({ ids: [] });
 <template>
   <Selector
     v-model:simple-selection="selection"
-    entity-name="product"
+    entity-key="product"
     :mode="SelectorMode.Simple"
     :allow-exclusions="false"
   />
@@ -67,10 +67,10 @@ entities: T[]
 - **Required:** yes
 - **Description:** The pool of selectable entities to display in the panel table.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName?: string
+entityKey?: string
 ```
 
 - **Type:** `string`

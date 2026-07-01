@@ -22,7 +22,7 @@ const breadcrumbsStore = useBreadcrumbsStore();
 
 const routeKey = computed(() => decodeURIComponent(route.params.id as string));
 const isNew = computed(() => routeKey.value === 'new');
-const entityName = ENTITIES.variable.key;
+const entityKey = ENTITIES.variable.key;
 const variableDataKey = computed(
   () => `orchestrator-variable-${routeKey.value}`,
 );
@@ -125,7 +125,7 @@ const deleteEntity = async (): Promise<boolean> => {
 };
 
 const { deleteDialogOpen, deleting, openDeleteDialog, confirmDelete } =
-  useDeleteDialog(deleteEntity, entityListUrl(entityName));
+  useDeleteDialog(deleteEntity, entityListUrl(entityKey));
 
 // ─── Copy value ────────────────────────────────────────────────────
 const copied = ref(false);
@@ -162,14 +162,14 @@ const pageTitle = computed(() =>
     Failed to load variable: {{ error.message ?? 'Unknown error' }}
   </div>
   <div v-else class="flex flex-col gap-4">
-    <ContentHeader :title="pageTitle" :entity-name="entityName">
+    <ContentHeader :title="pageTitle" :entity-key="entityKey">
       <ContentActionBar>
         <ButtonIcon
           icon="save"
           :disabled="!canSave || saving"
           @click="handleSave"
         >
-          {{ $t('save_entity', { entityName }) }}
+          {{ $t('save_entity', { entityKey }) }}
         </ButtonIcon>
         <DropdownMenu v-if="!isNew">
           <DropdownMenuTrigger as-child>
@@ -180,7 +180,7 @@ const pageTitle = computed(() =>
           <DropdownMenuContent>
             <DropdownMenuItem :disabled="deleting" @click="openDeleteDialog">
               <LucideTrash2 class="text-destructive mr-2 size-4" />
-              <span>{{ $t('delete_entity', { entityName }) }}</span>
+              <span>{{ $t('delete_entity', { entityKey }) }}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -281,7 +281,7 @@ const pageTitle = computed(() =>
 
     <DialogDelete
       v-model:open="deleteDialogOpen"
-      :entity-name="entityName"
+      :entity-key="entityKey"
       :loading="deleting"
       @confirm="confirmDelete"
     />

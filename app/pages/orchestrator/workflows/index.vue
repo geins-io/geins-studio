@@ -63,7 +63,7 @@ const { orchestratorApi } = useGeinsRepository();
 const workflowGroupsStore = useWorkflowGroupsStore();
 const allData = ref<EntityList[]>([]);
 const entity = ENTITIES.workflow;
-const entityName = entity.key;
+const entityKey = entity.key;
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -282,7 +282,7 @@ const dataList = computed(() => {
 });
 
 const clearGroupFilter = () => {
-  navigateTo(entityListUrl(entityName));
+  navigateTo(entityListUrl(entityKey));
 };
 
 // ─── Table Columns ─────────────────────────────────────────────────
@@ -349,7 +349,7 @@ onMounted(() => {
       updatedAt: 'date',
     },
     linkColumns: {
-      name: { entityKey: entityName, idField: 'id' },
+      name: { entityKey: entityKey, idField: 'id' },
       executionsTotal: {
         url: '/orchestrator/executions?id={id}',
         idField: 'id',
@@ -444,7 +444,7 @@ const searchableFields: Array<keyof EntityList> = [
   >
     <ContentActionBar>
       <ButtonIcon icon="new" href="/orchestrator/workflows/new">
-        {{ $t('new_entity', { entityName }) }}
+        {{ $t('new_entity', { entityKey }) }}
       </ButtonIcon>
     </ContentActionBar>
   </ContentHeader>
@@ -473,7 +473,7 @@ const searchableFields: Array<keyof EntityList> = [
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
-      :entity-name="entityName"
+      :entity-key="entityKey"
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"
@@ -488,7 +488,7 @@ const searchableFields: Array<keyof EntityList> = [
           variant="secondary"
           @click="navigateTo('/orchestrator/workflows/new')"
         >
-          {{ $t('create_new_entity', { entityName }) }}
+          {{ $t('create_new_entity', { entityKey }) }}
         </ButtonIcon>
       </template>
     </TableView>

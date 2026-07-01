@@ -6,7 +6,7 @@ interface EntityEditSummaryProps {
   formTouched: Ref<boolean> | ComputedRef<boolean>;
   summary: Ref<DataItem[]> | ComputedRef<DataItem[]>;
   settingsSummary: Ref<DataItem[]> | ComputedRef<DataItem[]>;
-  entityName: string;
+  entityKey: string;
   entityLiveStatus: Ref<boolean> | ComputedRef<boolean>;
   showActiveStatus?: boolean;
   status?:
@@ -22,7 +22,7 @@ interface UseEntityEditSummaryReturnType {
     formTouched: boolean;
     summary: DataItem[];
     settingsSummary?: DataItem[];
-    entityName: string;
+    entityKey: string;
     entityLiveStatus: boolean;
     showActiveStatus?: boolean;
     status?: StatusBadgeStatus;
@@ -47,7 +47,7 @@ export const useEntityEditSummary = (
     formTouched: unref(props.formTouched),
     summary: unref(props.summary),
     settingsSummary: unref(props.settingsSummary),
-    entityName: props.entityName,
+    entityKey: props.entityKey,
     entityLiveStatus: unref(props.entityLiveStatus),
     ...(props.showActiveStatus !== undefined && {
       showActiveStatus: props.showActiveStatus,

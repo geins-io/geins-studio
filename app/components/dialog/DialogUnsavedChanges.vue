@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const _props = defineProps<{
-  entityName: string;
+  entityKey: string;
   loading: boolean;
 }>();
 const open = defineModel('open', {

@@ -7,7 +7,7 @@ const { t } = useI18n();
 interface DataTablePaginationProps {
   table: Table<TData>;
   rowsSelectable: boolean;
-  entityName: string;
+  entityKey: string;
   advanced: boolean;
 }
 
@@ -37,23 +37,23 @@ const setPageSize = (value: AcceptableValue) => {
             {
               selected: table.getFilteredSelectedRowModel().rows.length,
               total: totalRows,
-              entityName,
+              entityKey,
             },
             totalRows,
           )
         }}
       </span>
       <span v-else-if="viewport.isGreaterThan('sm')">
-        {{ $t('rows_total', { total: totalRows, entityName }, totalRows) }}
+        {{ $t('rows_total', { total: totalRows, entityKey }, totalRows) }}
       </span>
       <span v-else>
-        {{ `${totalRows} ${t(entityName, totalRows).toLowerCase()}` }}
+        {{ `${totalRows} ${t(entityKey, totalRows).toLowerCase()}` }}
       </span>
     </div>
     <div class="flex items-center space-x-6 lg:space-x-8">
       <div v-if="advanced" class="flex items-center space-x-2 max-sm:hidden">
         <p class="font-semibold">
-          {{ $t('rows_per_page', { entityName }, 2) }}
+          {{ $t('rows_per_page', { entityKey }, 2) }}
         </p>
         <Select
           :model-value="`${table.getState().pagination.pageSize}`"

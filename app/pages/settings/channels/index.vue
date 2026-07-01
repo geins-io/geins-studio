@@ -22,7 +22,7 @@ definePageMeta({
 const accountStore = useAccountStore();
 const dataList = ref<EntityList[]>([]);
 const entity = ENTITIES.channel;
-const entityName = entity.key;
+const entityKey = entity.key;
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -42,13 +42,13 @@ const mapToListData = (list: Entity[]): EntityList[] => {
       ...rest,
       markets: createTooltip({
         items: rawMarkets,
-        entityName: 'market',
+        entityKey: 'market',
         formatter: (m) => m.country.name,
         t,
       }),
       languages: createTooltip({
         items: rawLanguages,
-        entityName: 'language',
+        entityKey: 'language',
         formatter: (l) => l.name,
         t,
       }),
@@ -82,7 +82,7 @@ onMounted(() => {
       active: 'status',
     },
     linkColumns: {
-      name: { entityKey: entityName, idField: '_id' },
+      name: { entityKey: entityKey, idField: '_id' },
       url: { useValueAsUrl: true, external: true },
     },
     columnTitles: {
@@ -127,7 +127,7 @@ onMounted(() => {
     columns.value,
     {
       onEdit: (item: EntityList) =>
-        navigateTo(entityEditUrl(entityName, String(item._id))),
+        navigateTo(entityEditUrl(entityKey, String(item._id))),
     },
     'actions',
     ['edit'],
@@ -146,7 +146,7 @@ visibilityState.value = getVisibilityState(hiddenColumns);
   <NuxtErrorBoundary>
     <TableView
       :loading="loading"
-      :entity-name="entityName"
+      :entity-key="entityKey"
       :columns="columns"
       :data="dataList"
       :init-visibility-state="visibilityState"

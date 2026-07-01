@@ -30,7 +30,7 @@ await fetchOrders(
 ```
 
 ```vue
-<TableView :columns="orderColumns" :data="ordersList" entity-name="order" />
+<TableView :columns="orderColumns" :data="ordersList" entity-key="order" />
 ```
 
 ## Properties and Methods

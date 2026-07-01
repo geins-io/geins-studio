@@ -128,7 +128,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
         <TableView
           :columns="orderColumns"
           :data="ordersList"
-          entity-name="order"
+          entity-key="order"
           :page-size="10"
           :mode="TableMode.Simple"
           :empty-icon="LucidePackage"

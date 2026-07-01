@@ -3,9 +3,9 @@
  * wiring. Each entry reconciles the three string forms an entity is known by:
  *
  * - **i18n key** — the registry *key itself* (e.g. `price_list`). Resolved via
- *   `@.lower:{entityName}` / `@:{entityName}` links and the `entity_*` action
+ *   `@.lower:{entityKey}` / `@:{entityKey}` links and the `entity_*` action
  *   keys. Consumed by repo factories (`entityRepo`'s `entityKey` → global error
- *   toast), page `usePageError({ entityName })`, table empty states, and
+ *   toast), page `usePageError({ entityKey })`, table empty states, and
  *   validation messages — all of which must agree on the same key.
  * - **endpoint** — the API base path the repo fetches (current, verbatim — this
  *   file does NOT change any endpoint string). Read by `repo.entity(ENTITIES.x, fetch)`.
@@ -18,7 +18,7 @@
  * exists in both locale files and every `route` resolves to a real page folder.
  *
  * Label-only entity-name keys (`name`, `currency`, … — used purely as
- * `entityName:` interpolation in validation/labels, with no endpoint/repo/route)
+ * `entityKey:` interpolation in validation/labels, with no endpoint/repo/route)
  * are NOT domain entities; they stay as plain i18n keys (raw string literals at
  * the call site), not here. The `entities.test.ts` en↔sv key-parity check guards
  * those (and every other key) against drift with zero per-key maintenance.

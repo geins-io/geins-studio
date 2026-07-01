@@ -15,7 +15,7 @@
 
 ```vue
 <script setup lang="ts">
-const { entityDataUpdate, summary, entityName } = useEntityEdit({
+const { entityDataUpdate, summary, entityKey } = useEntityEdit({
   /* ... */
 });
 const active = computed({
@@ -29,7 +29,7 @@ const active = computed({
     v-model:active="active"
     :entity-live-status="originalEntity?.active"
     :summary="summary"
-    :entity-name="entityName"
+    :entity-key="entityKey"
   />
 </template>
 ```
@@ -76,10 +76,10 @@ Optional second list rendered under a "Settings" label.
 
 - **Default:** `[]`
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName?: string
+entityKey?: string
 ```
 
 Used in the active-toggle description copy (`entity_is_active`, `entity_will_activate`, etc.).

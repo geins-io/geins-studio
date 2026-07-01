@@ -3,12 +3,12 @@ const _props = withDefaults(
   defineProps<{
     title?: string;
     description?: string;
-    entityName?: string;
+    entityKey?: string;
   }>(),
   {
     title: '',
     description: '',
-    entityName: '',
+    entityKey: '',
   },
 );
 

@@ -33,7 +33,7 @@ const table = useVueTable({
   <TablePagination
     :table="table"
     :rows-selectable="true"
-    entity-name="quotation"
+    entity-key="quotation"
     :advanced="true"
   />
 </template>
@@ -57,10 +57,10 @@ rowsSelectable: boolean;
 
 When `true`, the row counter renders "X of Y selected" instead of "Y total".
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName: string;
+entityKey: string;
 ```
 
 i18n key for the entity used in the counter and "rows per page" labels.

@@ -29,7 +29,7 @@
         <ContentEditSummary
           v-model:active="entityDataUpdate.active"
           :summary="summary"
-          :entity-name="entityName"
+          :entity-key="entityKey"
         />
       </template>
     </ContentEditMain>

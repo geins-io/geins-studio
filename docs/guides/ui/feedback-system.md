@@ -32,7 +32,7 @@ Will show a a table filled with cells containing a loading animation.
 <template>
   <TableView
     :loading="loading"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :columns="columns"
     :data="data"
   />
