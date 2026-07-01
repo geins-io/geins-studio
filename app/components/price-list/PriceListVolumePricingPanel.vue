@@ -20,7 +20,6 @@ const emit = defineEmits<{
 
 const { getPriceListProduct, getNewPriceListProducts } = usePriceListProducts();
 const { productApi } = useGeinsRepository();
-const { withSuppressedErrorToast } = useApiErrorToast();
 const { t } = useI18n();
 const { toast } = useToast();
 const { geinsLogError } = useGeinsLog(
@@ -69,11 +68,11 @@ const handleUpdateRule = useDebounceFn(
         ...(valueType === 'margin' && { margin: value }),
         ...(valueType === 'discountPercent' && { discountPercent: value }),
       };
-      // Read-style POST with its own error toast below — suppress the global
-      // API error toast to avoid a double.
-      const previewPrice = await withSuppressedErrorToast(() =>
-        productApi.priceList.id(props.priceListId).previewPrice(previewProduct),
-      );
+      // Read-style POST with its own error toast below — opt out of the global
+      // toast to avoid a double.
+      const previewPrice = await productApi.priceList
+        .id(props.priceListId)
+        .previewPrice(previewProduct, { suppressErrorToast: true });
 
       // Create a new array to ensure reactivity
       const updatedRules = [...editableRules.value];

@@ -89,35 +89,63 @@ export function getFallbackErrorMessage(
   return serverMessage || statusMessages[status] || 'Unknown error';
 }
 
-export function getApiErrorTitle(error: unknown): string | undefined {
+// Pull a string field (`title` / `detail`) out of the two error shapes the app
+// sees: a normalized GeinsApiError (`error.originalError.data.<field>`) and a
+// raw ofetch FetchError (`error.data.<field>` or the Nitro-wrapped
+// `error.data.data.<field>`).
+function pickErrorField(
+  error: unknown,
+  field: 'title' | 'detail',
+): string | undefined {
   if (!error || typeof error !== 'object') return undefined;
   const err = error as Record<string, unknown>;
 
-  // GeinsApiError shape: error.originalError.data.title
+  const read = (data: unknown): string | undefined => {
+    if (data && typeof data === 'object' && field in data) {
+      const value = (data as Record<string, unknown>)[field];
+      if (typeof value === 'string') return value;
+    }
+    return undefined;
+  };
+
   const orig = err.originalError;
   if (orig && typeof orig === 'object') {
-    const data = (orig as Record<string, unknown>).data;
-    if (data && typeof data === 'object' && 'title' in data) {
-      const title = (data as Record<string, unknown>).title;
-      if (typeof title === 'string') return title;
-    }
+    const fromOrig = read((orig as Record<string, unknown>).data);
+    if (fromOrig !== undefined) return fromOrig;
   }
 
-  // FetchError shape: error.data.title or error.data.data.title
   const outer = err.data;
   if (outer && typeof outer === 'object') {
-    if ('title' in outer) {
-      const title = (outer as Record<string, unknown>).title;
-      if (typeof title === 'string') return title;
-    }
-    const inner = (outer as Record<string, unknown>).data;
-    if (inner && typeof inner === 'object' && 'title' in inner) {
-      const title = (inner as Record<string, unknown>).title;
-      if (typeof title === 'string') return title;
-    }
+    return read(outer) ?? read((outer as Record<string, unknown>).data);
   }
 
   return undefined;
+}
+
+export function getApiErrorTitle(error: unknown): string | undefined {
+  return pickErrorField(error, 'title');
+}
+
+export function getApiErrorDetail(error: unknown): string | undefined {
+  return pickErrorField(error, 'detail');
+}
+
+/**
+ * Join a backend error title and detail into one string. The separator is
+ * `'. '`, collapsing to a single space when the title already ends with a
+ * period so there is no doubled or dangling dot. Falls back to whichever part
+ * is present, or `undefined` when neither is.
+ */
+export function composeErrorMessage(
+  title?: string,
+  detail?: string,
+): string | undefined {
+  const head = title?.trim();
+  const tail = detail?.trim();
+  if (head && tail) {
+    return `${head}${/\.$/.test(head) ? ' ' : '. '}${tail}`;
+  }
+  return head || tail || undefined;
 }
 
 export function getErrorType(status: number): GeinsErrorType {

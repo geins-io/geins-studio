@@ -17,12 +17,12 @@ import { resolveAppId } from '#shared/utils/app';
 
 export default defineNuxtPlugin(() => {
   const { geinsLog, geinsLogError } = useGeinsLog('plugins/geins-api.ts');
-  // Suppression check + the global error toast emitter both live in the
-  // useApiErrorToast composable. Keeping NuxtApp/$i18n out of THIS file is
-  // deliberate: referencing them here re-instantiates the provided
-  // $geinsApiFetchInstance type and tips Nitro's route-type resolution over
-  // the "excessive stack depth" limit (see the GeinsApiFetch note below).
-  const { isSuppressed, showGlobalErrorToast } = useApiErrorToast();
+  // The global error toast emitter lives in the useApiErrorToast composable.
+  // Keeping NuxtApp/$i18n out of THIS file is deliberate: referencing them here
+  // re-instantiates the provided $geinsApiFetchInstance type and tips Nitro's
+  // route-type resolution over the "excessive stack depth" limit (see the
+  // GeinsApiFetch note below).
+  const { showGlobalErrorToast } = useApiErrorToast();
   const {
     isAuthenticated,
     accessToken,
@@ -186,8 +186,7 @@ export default defineNuxtPlugin(() => {
       if (
         isMutation &&
         errorType !== 'CANCELLED_ERROR' &&
-        !options.suppressErrorToast &&
-        !isSuppressed()
+        !options.suppressErrorToast
       ) {
         void showGlobalErrorToast(geinsApiError, {}, options.errorContext);
       }
@@ -234,16 +233,13 @@ export default defineNuxtPlugin(() => {
 
       // Surface mutation failures globally. Reads (GET/HEAD) render page-level
       // error/empty states instead, and 401 is the silent token refresh/retry
-      // path. A call opts out either per-request via `suppressErrorToast`
-      // (request-scoped — e.g. `validateVatNumber`, which surfaces validity
-      // inline) or for a whole block via `withSuppressedErrorToast` from
-      // useApiErrorToast (e.g. silent auto-saves).
+      // path. A call opts out per-request via `suppressErrorToast` (e.g.
+      // `validateVatNumber`, which surfaces validity inline).
       const isMutation = !['GET', 'HEAD'].includes(method.toUpperCase());
       if (
         isMutation &&
         response.status !== 401 &&
-        !options.suppressErrorToast &&
-        !isSuppressed()
+        !options.suppressErrorToast
       ) {
         void showGlobalErrorToast(
           geinsApiError,
