@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.5.0 - 2026-06-24
+## v0.5.0 - 2026-07-02
 
 ### 🚀 Enhancements
 
@@ -17,6 +17,10 @@
 
 ### 🔄 Refactor
 
+- Entity registry as the single source of truth — endpoints, routes & i18n keys declared once; composables take the registry entry; orchestrator repo aligned ([#277](https://github.com/geins-io/geins-studio/pull/277), [#278](https://github.com/geins-io/geins-studio/pull/278), [#285](https://github.com/geins-io/geins-studio/pull/285))
+- Entity URLs restructured — pluralized paths, dropped `/list`, registry-keyed list-column links ([#279](https://github.com/geins-io/geins-studio/pull/279), [#280](https://github.com/geins-io/geins-studio/pull/280))
+- Renamed `entityName` → `entityKey` across code & docs ([#286](https://github.com/geins-io/geins-studio/pull/286))
+- Consolidated API error toasts onto one global handler ([#284](https://github.com/geins-io/geins-studio/pull/284))
 - Prettier formatting baseline + automated enforcement ([#257](https://github.com/geins-io/geins-studio/pull/257))
 
 ### ❤️ Contributors
