@@ -82,7 +82,6 @@ const formSchema = toTypedSchema(
         eventEntity: z.string().optional(),
         eventAction: z.string().optional(),
         eventSubEntity: z.string().optional(),
-        description: z.string().optional(),
       })
       .superRefine((val, ctx) => {
         if (val.type === 'Scheduled') {
@@ -136,7 +135,6 @@ type WorkflowFormValues = {
     eventEntity: string;
     eventAction: string;
     eventSubEntity: string;
-    description: string;
   };
   settings: Record<string, unknown>;
 };
@@ -161,7 +159,6 @@ const form = useForm<WorkflowFormValues>({
       eventEntity: '',
       eventAction: '',
       eventSubEntity: '',
-      description: '',
     },
     settings: {},
   },
@@ -469,7 +466,6 @@ watch(
         eventEntity: (triggerObj.entity as string | undefined) ?? '',
         eventAction: (triggerObj.action as string | undefined) ?? '',
         eventSubEntity: (triggerObj.subEntity as string | undefined) ?? '',
-        description: (triggerObj.description as string | undefined) ?? '',
       },
       settings: { ...(workflow.settings ?? {}) },
     });
@@ -585,7 +581,6 @@ const buildTriggerConfig = (
     return {
       enabled: true,
       cronExpression: trigger.cron || '',
-      description: trigger.description || '',
     };
   }
   if (apiType === 'event') {
@@ -594,7 +589,6 @@ const buildTriggerConfig = (
       entity: trigger.eventEntity || '',
       action: trigger.eventAction || '',
       subEntity: trigger.eventSubEntity || '',
-      description: trigger.description || '',
     };
   }
   return undefined;
@@ -1301,27 +1295,6 @@ const { summaryProps } = useEntityEditSummary({
                               </SelectItem>
                             </SelectContent>
                           </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                  <FormGrid design="1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="trigger.description"
-                    >
-                      <FormItem>
-                        <FormLabel :optional="true">
-                          {{ $t('workflows.field_description') }}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            v-bind="componentField"
-                            :placeholder="
-                              $t('workflows.trigger_description_placeholder')
-                            "
-                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
