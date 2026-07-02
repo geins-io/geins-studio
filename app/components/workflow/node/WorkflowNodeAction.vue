@@ -25,13 +25,22 @@ const props = defineProps<{
 const { resolveIcon } = useLucideIcon();
 
 const manifestStore = useWorkflowManifest();
-const { providersByName } = manifestStore;
+const { providersByName, categoryByName } = manifestStore;
 
 const node = computed(() => manifestStore.getNode(props.data.functionName));
 
 const providerKey = computed(() => node.value?.provider ?? '');
 
 const actionDisplayName = computed(() => node.value?.displayName ?? '');
+
+// Eyebrow label — the node's manifest category (e.g. "Data transformation",
+// "Network"). Empty when the node/category is unknown; the template then falls
+// back to the generic "action" label.
+const categoryLabel = computed(() => {
+  const category = node.value?.type;
+  if (!category) return '';
+  return categoryByName.value.get(category)?.displayName ?? category;
+});
 
 const providerLogo = computed<Component | string | null>(
   () => PROVIDER_LOGOS[providerKey.value] ?? null,
@@ -72,7 +81,7 @@ const IconComponent = computed(() => {
       </div>
       <div>
         <div class="text-xs font-medium tracking-wider text-blue-500 uppercase">
-          {{ $t('node.types.action') }}
+          {{ categoryLabel || $t('node.types.action') }}
         </div>
         <div class="font-semibold">{{ data.label }}</div>
         <div
