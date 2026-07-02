@@ -25,8 +25,8 @@ const hasSchemaInfo = computed(
 
 function getExampleForField(fieldName: string): unknown | null {
   for (const ex of examples.value) {
-    if (ex.input && fieldName in ex.input) {
-      return ex.input[fieldName];
+    if (ex.config && fieldName in ex.config) {
+      return ex.config[fieldName];
     }
   }
   return null;
@@ -93,7 +93,7 @@ function copyTemplate(fieldName: string) {
 }
 
 function copyFullExample(example: ManifestNodeExample) {
-  const json = JSON.stringify(example.input, null, 2);
+  const json = JSON.stringify(example.config, null, 2);
   navigator.clipboard.writeText(json);
   toast({
     title: t('node.settings.schema.example_copied'),
@@ -278,7 +278,7 @@ function toggleExample(idx: number) {
           <div v-if="expandedExamples.has(idx)" class="mt-1 ml-5">
             <pre
               class="bg-muted/50 max-h-60 overflow-auto rounded border p-2 font-mono text-[11px]"
-              >{{ JSON.stringify(example.input, null, 2) }}</pre
+              >{{ JSON.stringify(example.config, null, 2) }}</pre
             >
           </div>
         </div>

@@ -37,8 +37,11 @@ export type LogVerbosity = 'minimal' | 'normal' | 'detailed';
  *
  * NOTE: the persisted contract (swagger `settingsModel`) uses
  * `fail | cancelAndReport`; the editor manifest's `TimeoutBehavior` enum lists
- * `fail | continueWithPartialResults`. We follow the persisted contract here —
- * see the plan's "Open items" (flagged to backend).
+ * `fail | continueWithPartialResults`. These genuinely disagree — verified
+ * 2026-07-01 against the live backend: saving `continueWithPartialResults`
+ * returns 422 "Could not parse property settings.timeoutBehavior … ensure it is
+ * of the correct type." We follow the persisted contract (flagged to backend);
+ * `useWorkflowLabels` maps the manifest value on read as a defensive fallback.
  */
 export type TimeoutBehavior = 'fail' | 'cancelAndReport';
 
@@ -624,7 +627,8 @@ export interface ManifestContextVariable {
 export interface ManifestNodeExample {
   name?: string;
   description?: string;
-  input?: Record<string, unknown>;
+  /** Example `config` payload for the node (manifest 3.x renamed this from `input`). */
+  config?: Record<string, unknown>;
 }
 
 /**
@@ -714,6 +718,55 @@ export interface ManifestEventEntity {
   subEntities?: string[];
 }
 
+/**
+ * A context field present on the `input` of every event-triggered workflow
+ * (manifest `commonEventContext`), e.g. `input._eventEntity`, `input._eventPayload`.
+ */
+export interface ManifestCommonEventContext {
+  name: string;
+  type: string;
+  /** Fully-qualified access path, e.g. `input._eventPayload`. */
+  path: string;
+  description?: string;
+}
+
+/** A single field within an event payload (manifest `eventPayloads[].fields`). */
+export interface ManifestEventPayloadField {
+  name: string;
+  type: string;
+  description?: string;
+}
+
+/**
+ * The payload shape delivered for a given event `entity`/`action`
+ * (manifest `eventPayloads`). `fields` is absent when the payload is a scalar
+ * (`payloadType` `number`/`guid`) — then `exampleAccess` references the payload
+ * directly.
+ */
+export interface ManifestEventPayload {
+  entity: string;
+  action: string;
+  /** `object` | `number` | `guid` | … — the shape of `input._eventPayload`. */
+  payloadType: string;
+  description?: string;
+  fields?: ManifestEventPayloadField[];
+  /** Ready-to-use expression accessing the payload, e.g. `{{ input._eventPayload.Email }}`. */
+  exampleAccess?: string;
+}
+
+/**
+ * A node-level property descriptor (manifest `nodeProperties`) — the per-node
+ * execution overrides (`retry`, `timeout`, `errorHandlingStrategy`) that live at
+ * the top level of a node, not under `config`.
+ */
+export interface ManifestNodeProperty {
+  name: string;
+  type: string;
+  description?: string;
+  required?: boolean;
+  schema?: Record<string, unknown>;
+}
+
 /** Graph-level conventions (swagger `graphConventionsDescriptor`). */
 export interface ManifestGraphConventions {
   /** Reserved `from` value marking a connection as a workflow entry (e.g. `TRIGGER`). */
@@ -738,8 +791,14 @@ export interface EditorManifest {
   expressionVariables: ManifestExpressionVariable[];
   triggerTypes: ManifestTriggerType[];
   eventEntities: ManifestEventEntity[];
+  /** Context fields on `input` for every event-triggered workflow. */
+  commonEventContext?: ManifestCommonEventContext[];
+  /** Per entity/action payload shapes for event triggers. */
+  eventPayloads?: ManifestEventPayload[];
   graphConventions: ManifestGraphConventions;
   workflowSettings: ManifestConfigProperty[];
+  /** Per-node execution override descriptors (retry/timeout/errorHandlingStrategy). */
+  nodeProperties?: ManifestNodeProperty[];
   authoring: ManifestAuthoringGuide;
   enums: Record<string, ManifestEnumValue[]>;
 }

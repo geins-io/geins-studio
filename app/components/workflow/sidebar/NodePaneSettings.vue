@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import type { ManifestConfigProperty, ManifestNode } from '#shared/types';
+import type {
+  ManifestCommonEventContext,
+  ManifestConfigProperty,
+  ManifestEventPayload,
+  ManifestNode,
+} from '#shared/types';
+import { useToast } from '@/components/ui/toast/use-toast';
 import NodeSettingsAction from './settings/NodeSettingsAction.vue';
 import NodeSettingsCondition from './settings/NodeSettingsCondition.vue';
 import NodeSettingsDelay from './settings/NodeSettingsDelay.vue';
@@ -9,7 +15,7 @@ import NodeSettingsIterator from './settings/NodeSettingsIterator.vue';
 import NodeSettingsPaginator from './settings/NodeSettingsPaginator.vue';
 import NodeSettingsTrigger from './settings/NodeSettingsTrigger.vue';
 import NodeSettingsWorkflow from './settings/NodeSettingsWorkflow.vue';
-import type { Component } from 'vue';
+import type { Component, Ref } from 'vue';
 
 const SETTINGS_COMPONENTS: Record<string, Component> = {
   trigger: NodeSettingsTrigger,
@@ -36,6 +42,44 @@ const manifestNode = computed<ManifestNode | undefined>(() =>
 const nodeConfigFields = computed<ManifestConfigProperty[]>(
   () => manifestNode.value?.config ?? [],
 );
+
+const { toast } = useToast();
+const { t: translate } = useI18n();
+
+// ─── Event trigger context ───────────────────────────────────────
+// Provided by the workflow editor page. For event-triggered workflows we surface
+// the common event context (`input._event*`) and the chosen entity/action's
+// payload fields so authors know what they can reference in expressions.
+type WorkflowEventTrigger = {
+  type: string;
+  entity: string;
+  action: string;
+  subEntity: string;
+};
+const workflowEventTrigger = inject<Ref<WorkflowEventTrigger>>(
+  'workflowEventTrigger',
+  ref({ type: '', entity: '', action: '', subEntity: '' }),
+);
+const isEventTriggered = computed(
+  () => workflowEventTrigger.value?.type === 'Event',
+);
+const eventContext = computed<ManifestCommonEventContext[]>(() =>
+  isEventTriggered.value ? manifestStore.commonEventContext.value : [],
+);
+const eventPayload = computed<ManifestEventPayload | undefined>(() =>
+  isEventTriggered.value
+    ? manifestStore.getEventPayload(
+        workflowEventTrigger.value.entity,
+        workflowEventTrigger.value.action,
+      )
+    : undefined,
+);
+
+function copyExpression(expr: string) {
+  if (!expr) return;
+  navigator.clipboard.writeText(expr);
+  toast({ title: translate('node.properties.expression_copied') });
+}
 
 const nodeConfig = computed(
   () => (props.nodeData.config ?? {}) as Record<string, unknown>,
@@ -209,6 +253,34 @@ const outputFields = computed(() => {
 const expressionVariables = computed(
   () => manifestStore.manifest.value?.expressionVariables ?? [],
 );
+
+// Context variables are exposed by flow nodes (iterator `$current`/`$index`,
+// paginator `$cursor`/`$pageNumber`/`$pageSize`) to their child nodes. Aggregate
+// them across the manifest — deduped by name — so authors editing a loop body
+// can discover what's referenceable, alongside the global expression variables.
+type AggregatedContextVariable = {
+  name: string;
+  type: string;
+  description?: string;
+  scope?: string;
+  providers: string[];
+};
+const contextVariables = computed<AggregatedContextVariable[]>(() => {
+  const map = new Map<string, AggregatedContextVariable>();
+  for (const node of manifestStore.nodes.value) {
+    for (const cv of node.contextVariables ?? []) {
+      const existing = map.get(cv.name);
+      if (existing) {
+        if (!existing.providers.includes(node.displayName)) {
+          existing.providers.push(node.displayName);
+        }
+      } else {
+        map.set(cv.name, { ...cv, providers: [node.displayName] });
+      }
+    }
+  }
+  return [...map.values()];
+});
 
 const expressionFunctions = computed(
   () => manifestStore.expressionFunctions.value,
@@ -742,6 +814,154 @@ const onSettingsDrop = (event: DragEvent) => {
       class="flex-1 overflow-y-auto p-4"
       style="scrollbar-gutter: stable"
     >
+      <!-- Event context + payload (event-triggered workflows only) -->
+      <div v-if="eventContext.length" class="mb-4">
+        <div
+          class="text-muted-foreground mb-2 text-[10px] font-medium tracking-wider uppercase"
+        >
+          {{ $t('node.properties.event_context') }}
+        </div>
+        <p class="text-muted-foreground mb-2 text-[11px] leading-relaxed">
+          {{ $t('node.properties.event_context_hint') }}
+        </p>
+        <div class="divide-y">
+          <div
+            v-for="ec in eventContext"
+            :key="ec.name"
+            class="space-y-1 py-2 first:pt-0"
+          >
+            <div class="flex items-center gap-2">
+              <code
+                class="rounded bg-amber-500/10 px-2 py-0.5 font-mono text-xs font-medium text-amber-700 dark:text-amber-400"
+              >
+                {{ ec.path }}
+              </code>
+              <span
+                class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[9px]"
+              >
+                {{ ec.type }}
+              </span>
+              <button
+                type="button"
+                class="text-muted-foreground hover:text-foreground ml-auto shrink-0 rounded p-0.5"
+                :aria-label="$t('node.properties.copy_expression')"
+                @click="copyExpression(`{{ ${ec.path} }}`)"
+              >
+                <LucideCopy class="h-3 w-3" />
+              </button>
+            </div>
+            <p
+              v-if="ec.description"
+              class="text-muted-foreground text-[11px] leading-relaxed"
+            >
+              {{ ec.description }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Payload for the workflow's chosen entity/action -->
+        <template v-if="eventPayload">
+          <div
+            class="text-muted-foreground mt-4 mb-2 text-[10px] font-medium tracking-wider uppercase"
+          >
+            {{
+              $t('node.properties.event_payload', {
+                entity: workflowEventTrigger.entity,
+                action: workflowEventTrigger.action,
+              })
+            }}
+          </div>
+          <p
+            v-if="eventPayload.description"
+            class="text-muted-foreground mb-2 text-[11px] leading-relaxed"
+          >
+            {{ eventPayload.description }}
+          </p>
+          <div
+            v-if="eventPayload.exampleAccess"
+            class="mb-2 flex items-center gap-2"
+          >
+            <code
+              class="bg-muted/70 min-w-0 flex-1 truncate rounded px-2 py-1 font-mono text-[11px]"
+            >
+              {{ eventPayload.exampleAccess }}
+            </code>
+            <button
+              type="button"
+              class="text-muted-foreground hover:text-foreground shrink-0 rounded p-0.5"
+              :aria-label="$t('node.properties.copy_expression')"
+              @click="copyExpression(eventPayload.exampleAccess)"
+            >
+              <LucideCopy class="h-3 w-3" />
+            </button>
+          </div>
+          <div v-if="eventPayload.fields?.length" class="divide-y">
+            <div
+              v-for="f in eventPayload.fields"
+              :key="f.name"
+              class="space-y-0.5 py-2 first:pt-0"
+            >
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs font-medium">{{ f.name }}</span>
+                <span
+                  class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[9px]"
+                >
+                  {{ f.type }}
+                </span>
+              </div>
+              <p
+                v-if="f.description"
+                class="text-muted-foreground text-[11px] leading-relaxed"
+              >
+                {{ f.description }}
+              </p>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Context variables (exposed by loop/paginator nodes to their body) -->
+      <div v-if="contextVariables.length" class="mb-4">
+        <div
+          class="text-muted-foreground mb-2 text-[10px] font-medium tracking-wider uppercase"
+        >
+          {{ $t('node.properties.context_variables') }}
+        </div>
+        <p class="text-muted-foreground mb-2 text-[11px] leading-relaxed">
+          {{ $t('node.properties.context_variables_hint') }}
+        </p>
+        <div class="divide-y">
+          <div
+            v-for="cv in contextVariables"
+            :key="cv.name"
+            class="space-y-1 py-3 first:pt-0"
+          >
+            <div class="flex items-center gap-2">
+              <code
+                class="rounded bg-sky-500/10 px-2 py-0.5 font-mono text-xs font-medium text-sky-700 dark:text-sky-400"
+              >
+                {{ cv.name }}
+              </code>
+              <span
+                class="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[9px]"
+              >
+                {{ cv.type }}
+              </span>
+            </div>
+            <p
+              v-if="cv.description"
+              class="text-muted-foreground text-xs leading-relaxed"
+            >
+              {{ cv.description }}
+            </p>
+            <p class="text-muted-foreground text-[10px]">
+              {{ $t('node.properties.provided_by') }}:
+              {{ cv.providers.join(', ') }}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div v-if="expressionVariables.length" class="divide-y">
         <div
           v-for="v in expressionVariables"
@@ -769,7 +989,11 @@ const onSettingsDrop = (event: DragEvent) => {
         </div>
       </div>
       <div
-        v-else
+        v-if="
+          !expressionVariables.length &&
+          !contextVariables.length &&
+          !eventContext.length
+        "
         class="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center text-xs"
       >
         <LucideVariable class="h-8 w-8 opacity-40" />

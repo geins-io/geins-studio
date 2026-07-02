@@ -15,7 +15,6 @@ import type {
 } from '#shared/types';
 import { ENTITIES, entityListUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
-import KeyValueEditor from '@/components/workflow/shared/KeyValueEditor.vue';
 import { sanitizeWorkflowNodes } from '@/composables/useWorkflowCanvas';
 import type { Component } from 'vue';
 
@@ -29,12 +28,8 @@ const { geinsLogInfo, geinsLogError } = useGeinsLog('workflow-editor');
 const { t, locale } = useI18n();
 const { toast } = useToast();
 const { orchestratorApi } = useGeinsRepository();
-const {
-  triggerTypeLabel,
-  logVerbosityLabel,
-  errorHandlingLabel,
-  timeoutBehaviorLabel,
-} = useWorkflowLabels();
+const { triggerTypeLabel, logVerbosityLabel, errorHandlingLabel } =
+  useWorkflowLabels();
 
 const workflowId = computed(() => route.params.id as string);
 const isNew = computed(() => workflowId.value === 'new');
@@ -49,24 +44,13 @@ const {
   eventEntities: manifestEventEntities,
 } = manifestStore;
 
-// Workflow-level enum selects are driven from the manifest so their values can
-// never drift from the backend contract; labels stay translated via
-// useWorkflowLabels (manifest displayNames are English-only Title Case).
-const logVerbosityOptions = computed(() =>
-  manifestStore
-    .getEnum('LogVerbosity')
-    .map((e) => ({ value: e.value, label: logVerbosityLabel(e.value) })),
-);
-const timeoutBehaviorOptions = computed(() =>
-  manifestStore
-    .getEnum('TimeoutBehavior')
-    .map((e) => ({ value: e.value, label: timeoutBehaviorLabel(e.value) })),
-);
-const errorHandlingStrategyOptions = computed(() =>
-  manifestStore
-    .getEnum('ErrorHandlingStrategy')
-    .map((e) => ({ value: e.value, label: errorHandlingLabel(e.value) })),
-);
+// NOTE: workflow-level settings selects (logVerbosity / timeoutBehavior /
+// errorHandlingStrategy) are hardcoded from the PERSISTED contract, NOT the
+// editor manifest enums. Verified 2026-07-01: saving `timeoutBehavior:
+// continueWithPartialResults` (the manifest value) is rejected by the persist
+// endpoint with 422 "Could not parse property settings.timeoutBehavior … ensure
+// it is of the correct type." The persist model still uses `cancelAndReport`.
+// See shared/types/Workflow.ts `TimeoutBehavior`.
 
 // ─── Workflow groups (single-select group input) ──────────────────────
 // No groups endpoint exists; the set is derived from existing workflows.
@@ -98,10 +82,6 @@ const formSchema = toTypedSchema(
         eventEntity: z.string().optional(),
         eventAction: z.string().optional(),
         eventSubEntity: z.string().optional(),
-        description: z.string().optional(),
-        startTime: z.string().optional(),
-        endTime: z.string().optional(),
-        inputParameters: z.record(z.string(), z.unknown()).optional(),
       })
       .superRefine((val, ctx) => {
         if (val.type === 'Scheduled') {
@@ -155,10 +135,6 @@ type WorkflowFormValues = {
     eventEntity: string;
     eventAction: string;
     eventSubEntity: string;
-    description: string;
-    startTime: string;
-    endTime: string;
-    inputParameters: Record<string, unknown>;
   };
   settings: Record<string, unknown>;
 };
@@ -183,10 +159,6 @@ const form = useForm<WorkflowFormValues>({
       eventEntity: '',
       eventAction: '',
       eventSubEntity: '',
-      description: '',
-      startTime: '',
-      endTime: '',
-      inputParameters: {},
     },
     settings: {},
   },
@@ -251,6 +223,17 @@ const { data: workflowVariables } = useAsyncData(
   },
 );
 provide('workflowVariables', workflowVariables);
+
+// Event-trigger context for the node expression/variables panel — lets node
+// authors see the event payload fields + example access for this workflow's
+// chosen entity/action. Only meaningful when the trigger type is Event.
+const workflowEventTrigger = computed(() => ({
+  type: triggerTypeValue.value,
+  entity: triggerEventEntity.value,
+  action: triggerEventAction.value,
+  subEntity: form.values.trigger?.eventSubEntity ?? '',
+}));
+provide('workflowEventTrigger', workflowEventTrigger);
 
 // Sync breadcrumb title with workflow name.
 watch(
@@ -483,12 +466,6 @@ watch(
         eventEntity: (triggerObj.entity as string | undefined) ?? '',
         eventAction: (triggerObj.action as string | undefined) ?? '',
         eventSubEntity: (triggerObj.subEntity as string | undefined) ?? '',
-        description: (triggerObj.description as string | undefined) ?? '',
-        startTime: (triggerObj.startTime as string | undefined) ?? '',
-        endTime: (triggerObj.endTime as string | undefined) ?? '',
-        inputParameters:
-          (triggerObj.inputParameters as Record<string, unknown> | undefined) ??
-          {},
       },
       settings: { ...(workflow.settings ?? {}) },
     });
@@ -600,19 +577,10 @@ const buildTriggerConfig = (
   apiType: 'onDemand' | 'scheduled' | 'event',
   trigger: WorkflowFormValues['trigger'],
 ) => {
-  // Optional trigger-window + input-parameter fields shared by scheduled/event.
-  const hasParams = Object.keys(trigger.inputParameters ?? {}).length > 0;
-  const window = {
-    ...(trigger.startTime ? { startTime: trigger.startTime } : {}),
-    ...(trigger.endTime ? { endTime: trigger.endTime } : {}),
-    ...(hasParams ? { inputParameters: trigger.inputParameters } : {}),
-  };
   if (apiType === 'scheduled') {
     return {
       enabled: true,
       cronExpression: trigger.cron || '',
-      description: trigger.description || '',
-      ...window,
     };
   }
   if (apiType === 'event') {
@@ -621,37 +589,9 @@ const buildTriggerConfig = (
       entity: trigger.eventEntity || '',
       action: trigger.eventAction || '',
       subEntity: trigger.eventSubEntity || '',
-      description: trigger.description || '',
-      ...window,
     };
   }
   return undefined;
-};
-
-// ─── Trigger window helpers (ISO ↔ datetime-local) ─────────────────
-const pad2 = (n: number) => String(n).padStart(2, '0');
-
-/** ISO date-time → `YYYY-MM-DDTHH:mm` in local time for `<input type=datetime-local>`. */
-const toLocalDateTimeInput = (iso: string | undefined): string => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-};
-
-const setTriggerDateTime = (field: 'startTime' | 'endTime', value: string) => {
-  const iso = value ? new Date(value).toISOString() : '';
-  form.setFieldValue(
-    field === 'startTime' ? 'trigger.startTime' : 'trigger.endTime',
-    iso,
-  );
-};
-
-const updateTriggerParam = (name: string, value: unknown) => {
-  const current = { ...(form.values.trigger?.inputParameters ?? {}) };
-  if (value === undefined) Reflect.deleteProperty(current, name);
-  else current[name] = value;
-  form.setFieldValue('trigger.inputParameters', current);
 };
 
 // ─── Save ──────────────────────────────────────────────────────────
@@ -1360,91 +1300,6 @@ const { summaryProps } = useEntityEditSummary({
                       </FormItem>
                     </FormField>
                   </FormGrid>
-                  <FormGrid design="1">
-                    <FormField
-                      v-slot="{ componentField }"
-                      name="trigger.description"
-                    >
-                      <FormItem>
-                        <FormLabel :optional="true">
-                          {{ $t('workflows.field_description') }}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            v-bind="componentField"
-                            :placeholder="
-                              $t('workflows.trigger_description_placeholder')
-                            "
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                </template>
-
-                <!-- Trigger window + input parameters (scheduled & event) -->
-                <template v-if="triggerTypeValue !== 'OnDemand'">
-                  <FormGrid design="1+1">
-                    <FormField name="trigger.startTime">
-                      <FormItem>
-                        <FormLabel :optional="true">
-                          {{ $t('workflows.start_time') }}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="datetime-local"
-                            :model-value="
-                              toLocalDateTimeInput(
-                                form.values.trigger.startTime,
-                              )
-                            "
-                            @update:model-value="
-                              setTriggerDateTime('startTime', String($event))
-                            "
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                    <FormField name="trigger.endTime">
-                      <FormItem>
-                        <FormLabel :optional="true">
-                          {{ $t('workflows.end_time') }}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="datetime-local"
-                            :model-value="
-                              toLocalDateTimeInput(form.values.trigger.endTime)
-                            "
-                            @update:model-value="
-                              setTriggerDateTime('endTime', String($event))
-                            "
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
-                  <FormGrid design="1">
-                    <FormField name="trigger.inputParameters">
-                      <FormItem>
-                        <FormLabel :optional="true">
-                          {{ $t('workflows.input_parameters') }}
-                        </FormLabel>
-                        <FormControl>
-                          <KeyValueEditor
-                            :input="form.values.trigger.inputParameters"
-                            :update-input="updateTriggerParam"
-                            :key-placeholder="$t('workflows.parameter_key')"
-                            :value-placeholder="$t('workflows.parameter_value')"
-                            inline
-                          />
-                        </FormControl>
-                      </FormItem>
-                    </FormField>
-                  </FormGrid>
                 </template>
               </FormGridWrap>
             </ContentEditCard>
@@ -1521,12 +1376,14 @@ const { summaryProps } = useEntityEditSummary({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem
-                              v-for="opt in logVerbosityOptions"
-                              :key="opt.value"
-                              :value="opt.value"
-                            >
-                              {{ opt.label }}
+                            <SelectItem value="minimal">
+                              {{ $t('workflows.verbosity_minimal') }}
+                            </SelectItem>
+                            <SelectItem value="normal">
+                              {{ $t('workflows.verbosity_normal') }}
+                            </SelectItem>
+                            <SelectItem value="detailed">
+                              {{ $t('workflows.verbosity_detailed') }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1550,12 +1407,11 @@ const { summaryProps } = useEntityEditSummary({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem
-                              v-for="opt in timeoutBehaviorOptions"
-                              :key="opt.value"
-                              :value="opt.value"
-                            >
-                              {{ opt.label }}
+                            <SelectItem value="fail">
+                              {{ $t('workflows.timeout_fail') }}
+                            </SelectItem>
+                            <SelectItem value="cancelAndReport">
+                              {{ $t('workflows.timeout_cancel') }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
@@ -1579,12 +1435,14 @@ const { summaryProps } = useEntityEditSummary({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem
-                              v-for="opt in errorHandlingStrategyOptions"
-                              :key="opt.value"
-                              :value="opt.value"
-                            >
-                              {{ opt.label }}
+                            <SelectItem value="failFast">
+                              {{ $t('workflows.error_fail_fast') }}
+                            </SelectItem>
+                            <SelectItem value="continueOnError">
+                              {{ $t('workflows.error_continue') }}
+                            </SelectItem>
+                            <SelectItem value="skipNode">
+                              {{ $t('workflows.error_skip_node') }}
                             </SelectItem>
                           </SelectContent>
                         </Select>
