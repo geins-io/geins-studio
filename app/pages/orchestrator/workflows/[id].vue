@@ -148,7 +148,7 @@ const form = useForm<WorkflowFormValues>({
   keepValuesOnUnmount: true,
   initialValues: {
     details: {
-      name: isNew.value ? t('workflows.new_workflow_name') : '',
+      name: '',
       description: '',
       group: '',
       tags: [],
@@ -550,8 +550,8 @@ const handleCreate = async () => {
     // Snapshot so the route guard doesn't block navigation to the new page.
     originalEditableState.value = JSON.stringify(editableState.value);
     toast({
-      title: t('workflows.created'),
-      description: t('workflows.created_named', { name: created.name }),
+      title: t('entity_created', { entityKey }),
+      variant: 'positive',
     });
     await navigateTo(`/orchestrator/workflows/${created.id}`);
   } catch (err) {
@@ -668,7 +668,7 @@ const handleSave = async () => {
     await nextTick();
     await nextTick();
     originalEditableState.value = JSON.stringify(editableState.value);
-    toast({ title: t('workflows.configuration_saved') });
+    toast({ title: t('entity_updated', { entityKey }), variant: 'positive' });
   } catch (err) {
     geinsLogError('Failed to save workflow configuration', err);
   } finally {
@@ -787,8 +787,7 @@ const showSidebar = computed(
   () =>
     !hasReducedSpace.value &&
     viewMode.value === 'settings' &&
-    currentTab.value === 0 &&
-    !isNew.value,
+    currentTab.value === 0,
 );
 
 const triggerDisplayName = computed(() =>
@@ -1459,19 +1458,12 @@ const { summaryProps } = useEntityEditSummary({
               :title="$t('workflows.advanced')"
               :description="$t('workflows.advanced_description')"
             >
-              <FormGridWrap>
-                <FormGrid design="1">
-                  <FormItem>
-                    <div class="flex items-center gap-2">
-                      <Switch
-                        :model-value="settingsRetry != null"
-                        @update:model-value="toggleSettingsRetry($event)"
-                      />
-                      <Label>{{ $t('workflows.use_global_policy') }}</Label>
-                    </div>
-                  </FormItem>
-                </FormGrid>
-                <FormGrid v-if="settingsRetry" design="1+1+1">
+              <ContentSwitch
+                :label="$t('workflows.use_global_policy')"
+                :checked="settingsRetry != null"
+                @update:checked="toggleSettingsRetry($event ?? false)"
+              >
+                <FormGrid design="1+1+1">
                   <FormItem>
                     <Label class="text-muted-foreground text-xs">
                       {{ $t('node.execution.max_attempts') }}
@@ -1479,7 +1471,7 @@ const { summaryProps } = useEntityEditSummary({
                     <Input
                       type="number"
                       min="0"
-                      :model-value="settingsRetry.maxAttempts"
+                      :model-value="settingsRetry?.maxAttempts"
                       @update:model-value="
                         setSettingsRetryField('maxAttempts', Number($event))
                       "
@@ -1491,7 +1483,7 @@ const { summaryProps } = useEntityEditSummary({
                     </Label>
                     <Input
                       placeholder="00:00:10"
-                      :model-value="settingsRetry.initialInterval"
+                      :model-value="settingsRetry?.initialInterval"
                       @update:model-value="
                         setSettingsRetryField('initialInterval', String($event))
                       "
@@ -1504,7 +1496,7 @@ const { summaryProps } = useEntityEditSummary({
                     <Input
                       type="number"
                       step="0.1"
-                      :model-value="settingsRetry.backoffMultiplier"
+                      :model-value="settingsRetry?.backoffMultiplier"
                       @update:model-value="
                         setSettingsRetryField(
                           'backoffMultiplier',
@@ -1514,7 +1506,7 @@ const { summaryProps } = useEntityEditSummary({
                     />
                   </FormItem>
                 </FormGrid>
-              </FormGridWrap>
+              </ContentSwitch>
             </ContentEditCard>
 
             <div v-if="isNew" class="flex flex-row justify-end gap-4">

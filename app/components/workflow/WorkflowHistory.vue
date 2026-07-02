@@ -543,7 +543,7 @@ function truncateValue(val: unknown): string {
 <template>
   <ContentEditMainContent>
     <ContentEditCard
-      :title="$t('workflow_builder.version_history')"
+      :title="$t('workflows.changelog')"
       :description="
         $t('workflow_builder.version_count', { count: versions.length })
       "
@@ -940,13 +940,14 @@ function truncateValue(val: unknown): string {
           </div>
         </div>
 
-        <!-- Empty state -->
-        <div
-          v-if="versions.length === 0"
-          class="text-muted-foreground py-12 text-center text-sm"
-        >
-          {{ $t('workflow_builder.no_version_history') }}
-        </div>
+        <Empty v-if="versions.length === 0">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LucideHistory class="size-5" />
+            </EmptyMedia>
+            <EmptyTitle>{{ $t('changelog.empty') }}</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       </div>
     </ContentEditCard>
   </ContentEditMainContent>
