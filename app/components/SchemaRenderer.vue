@@ -25,11 +25,7 @@ defineEmits<{
         v-for="row in groupFieldsIntoRows(section.fields)"
         :key="row.fields.map((f) => f.key).join('-')"
       >
-        <div
-          :class="
-            row.columns > 1 ? gridClass(row.columns) : undefined
-          "
-        >
+        <div :class="row.columns > 1 ? gridClass(row.columns) : undefined">
           <template v-for="field in row.fields" :key="field.key">
             <SchemaFormField
               :field="field"

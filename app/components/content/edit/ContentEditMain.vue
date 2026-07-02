@@ -59,8 +59,8 @@ const handleToggleSidebar = () => {
         <TooltipContent>
           {{
             sidebarToggled
-              ? $t('hide_entity', { entityName: 'summary' })
-              : $t('show_entity', { entityName: 'summary' })
+              ? $t('hide_entity', { entityKey: 'summary' })
+              : $t('show_entity', { entityKey: 'summary' })
           }}
         </TooltipContent>
       </Tooltip>

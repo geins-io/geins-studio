@@ -91,11 +91,17 @@ export function usePriceListPreview({
     try {
       updateInProgress.value = true;
 
+      const id = entityId.value;
+      // Preview is a read-style POST with its own contextual error toast
+      // below — opt out of the global toast to avoid a double.
       const previewPriceList = await productApi.priceList
-        .id(entityId.value)
-        .preview(entityDataUpdate.value, batchQueryNoPagination.value, {
-          fields: ['products', 'productinfo'],
-        });
+        .id(id)
+        .preview(
+          entityDataUpdate.value,
+          batchQueryNoPagination.value,
+          { fields: ['products', 'productinfo'] },
+          { suppressErrorToast: true },
+        );
 
       priceListProducts.value = previewPriceList.products?.items || [];
 

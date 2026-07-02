@@ -66,22 +66,39 @@ export * from './Entity'
 
 Import shared types elsewhere via `#shared/types` (never long relative imports).
 
-## 3. Repository — `app/utils/repositories/<entity>.ts`
+## 3. Register in the entity registry — `shared/utils/entities.ts`
 
-This is a **separate file** from the types. It imports from `#shared/types` and uses the factory chain — don't write raw fetch calls:
+`ENTITIES` is the single source of truth for every domain entity. Add one entry — **the key IS the i18n entity key**, the descriptor holds the API `endpoint` and (if the entity has its own list/`[id]` page) the `route` folder:
+
+```ts
+export const ENTITIES = {
+  // …existing
+  entity: { endpoint: '/entity-endpoint', route: 'domain/entity' },
+} as const satisfies Record<string, EntityDescriptor>;
+```
+
+- `EntityKey` is derived from these keys — a new entry instantly becomes a valid `EntityKey` everywhere (repos, `usePageError`, error toasts).
+- Omit `route` for a sub-entity rendered inside a parent page; omit `endpoint` for a singleton with no CRUD endpoint.
+- Add the singular/plural i18n key to **both** locale files (step 9). The `entities.test.ts` guard asserts en/sv have identical keys, the registry key resolves in both locales, and the `route` resolves to a real page folder.
+- Label-only names (`name`, `currency`, …) are NOT entities — leave them as plain i18n keys (raw literals at the call site), never add them here.
+
+## 4. Repository — `app/utils/repositories/<entity>.ts`
+
+This is a **separate file** from the types. It imports from `#shared/types` and uses the factory chain — don't write raw fetch calls. Pass the registry entry to `repo.entity(ENTITIES.entity, fetch)` so the endpoint comes from the registry (no endpoint literal here) and the i18n key is wired into the global error toast:
 
 ```ts
 import type { Entity, EntityCreate, EntityUpdate } from '#shared/types'
+import { ENTITIES } from '#shared/utils/entities'
 import type { NitroFetchRequest, $Fetch } from 'nitropack'
 
 export function entityRepoFactory(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  return repo.entity<Entity, EntityCreate, EntityUpdate>('/entity-endpoint', fetch)
+  return repo.entity<Entity, EntityCreate, EntityUpdate>(ENTITIES.entity, fetch)
 }
 ```
 
-Available base repos (simplest → fullest): `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `entityRepo` (full CRUD). Pick the right level for the endpoint's API capabilities, and use thin custom wrappers for non-standard endpoints/actions.
+Available base repos (simplest → fullest): `entityGetRepo` → `entityListRepo` → `entityBaseRepo` (all take a raw endpoint string) → `entityRepo` (full CRUD; takes an entity target). Pass `ENTITIES.entity` to `repo.entity(...)` for registry-backed domain entities; pass an inline `{ endpoint, key }` only for sub-entities on a scoped/non-registry endpoint, and use thin custom wrappers for non-standard endpoints/actions.
 
-## 4. Register the repo
+## 5. Register the repo
 
 Two files to update:
 
@@ -105,7 +122,7 @@ export function useGeinsRepository(): UseGeinsRepositoryReturnType {
 }
 ```
 
-## 5. List page — `app/pages/<domain>/<entity>/list.vue`
+## 6. List page — `app/pages/<domain>/<entity>/index.vue`
 
 Standard pattern:
 ```ts
@@ -128,25 +145,30 @@ watch([data, error], ([newData, newError]) => {
 
 List pages should use the standard `fetchError` + `TableView` retry pattern from `CLAUDE.md`, not fatal page errors for normal fetch failures.
 
-## 6. Detail page — `app/pages/<domain>/<entity>/[id].vue`
+## 7. Detail page — `app/pages/<domain>/<entity>/[id].vue`
 
 This is the most involved step — use the **geins-entity-edit-page** skill (or see `CLAUDE.md` → "Entity Edit Page") for the full pattern. Key requirements:
 - `route.params.id === 'new'` → create mode; any other value → edit mode
+- Pass the registry entry `entity: ENTITIES.entity` to `useEntityEdit` and `usePageError` (the composable derives the i18n key from it) — don't rely on route-folder derivation
 - `useEntityEdit` with `parseEntityData`, `prepareCreateData`, `prepareUpdateData`, `onFormValuesChange`
 - The required edit-mode loading block at the bottom of `<script setup>`
 
-## 7. Navigation — `app/lib/navigation.ts`
+## 8. Navigation — `app/lib/navigation.ts`
 
-Add route entries. Use `useEntityUrl()` helpers — never hardcode route strings:
-- `getEntityUrl(id)` — uses current route context
-- `getEntityUrlFor('entity-name', 'domain', id)` — cross-domain links
+Add the nav entry. Build entity paths from the registry — **never hardcode** a path that lives in `ENTITIES[key].route`:
+- `entityListUrl('entity')` → `/domain/entities` (the item `href`; the collection index)
+- `entityChildPattern('entity')` → `/domain/entities/:id` (the `childPattern`)
+- `entityEditUrl('entity', id)` → `/domain/entities/id` (link to a specific item)
+- `entityBasePath('entity')` → `/domain/entities` (base path; also singletons like `profile`)
+
+(`useEntityEdit` exposes `newEntityUrl` / `entityListUrl` for the current entity, derived from its registry entry.)
 
 **Sidebar gotchas** (all three are required for correct rendering):
 1. Items in the `workspace` group **must** have a `children` array — without it, the sidebar renders a flat button instead of the collapsible parent/child style used by all other workspace items.
 2. Parent and child labels **must be distinct** (domain ≠ entity). If both share the same label and href, breadcrumbs and page title duplicate (e.g. "Workflows > Workflows"). Use a domain-level parent label: "Pricing" > "Price lists", "Orchestrator" > "Workflows".
-3. New `icon` strings require importing the Lucide component and adding it to the `iconComponents` map in `app/components/layout/sidebar/LayoutSidebar.vue`. The string→component resolution is manual.
+3. `icon` strings are resolved dynamically by `useLucideIcon()` — any PascalCase Lucide name works, no manual import/map needed.
 
-## 8. i18n — **both** locale files (don't skip this)
+## 9. i18n — **both** locale files (don't skip this)
 
 Always update both files in the same commit — leaving one out breaks the Swedish locale:
 - `i18n/locales/en.json`

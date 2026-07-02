@@ -133,7 +133,7 @@ export const useCompanyOrders = (): UseCompanyOrdersReturnType => {
       ...(allPriceLists && {
         priceLists: createTooltip({
           items: order.priceLists,
-          entityName: 'price_list',
+          entityKey: 'price_list',
           formatter: (group) =>
             `${getEntityNameById(group._id, allPriceLists)}`,
           t,

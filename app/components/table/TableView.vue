@@ -32,7 +32,7 @@ const props = withDefaults(
   defineProps<{
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
-    entityName?: string;
+    entityKey?: string;
     idColumn?: string;
     pageSize?: number;
     loading?: boolean;
@@ -51,12 +51,13 @@ const props = withDefaults(
     error?: boolean;
     onRetry?: () => void;
     initVisibilityState?: VisibilityState;
+    initSortingState?: SortingState;
     enableExpanding?: boolean;
     getSubRows?: (row: TData) => TData[] | undefined;
     dimInactiveRows?: boolean;
   }>(),
   {
-    entityName: 'row',
+    entityKey: 'row',
     idColumn: '_id',
     pageSize: 30,
     loading: false,
@@ -96,6 +97,19 @@ const pinnedStateOverride = computed(() => {
  * Setup table state
  */
 const sorting = ref<SortingState>([]);
+watch(
+  () => props.loading,
+  (loading) => {
+    if (
+      !loading &&
+      sorting.value.length === 0 &&
+      props.initSortingState?.length
+    ) {
+      sorting.value = props.initSortingState;
+    }
+  },
+  { immediate: true },
+);
 const columnFilters = ref<ColumnFiltersState>([]);
 const globalFilter = ref('');
 const searchInput = ref(''); // Local search input for debouncing
@@ -411,7 +425,7 @@ const table = useVueTable({
   },
   meta: {
     mode: props.mode,
-    entityName: props.entityName,
+    entityKey: props.entityKey,
   },
 });
 
@@ -449,13 +463,13 @@ const emptyState = computed(() => {
     isFiltered: hasActiveFilter,
     title: hasActiveFilter
       ? props.emptyFilteredText ||
-        t('no_entity_found', { entityName: props.entityName }, 2)
-      : props.emptyText || t('no_entity', { entityName: props.entityName }, 2),
+        t('no_entity_found', { entityKey: props.entityKey }, 2)
+      : props.emptyText || t('no_entity', { entityKey: props.entityKey }, 2),
     description: hasActiveFilter
       ? props.emptyFilteredDescription ||
-        t('empty_filtered_description', { entityName: props.entityName }, 2)
+        t('empty_filtered_description', { entityKey: props.entityKey }, 2)
       : props.emptyDescription ||
-        t('empty_description', { entityName: props.entityName }, 2),
+        t('empty_description', { entityKey: props.entityKey }, 2),
   };
 });
 
@@ -486,7 +500,7 @@ const hasSearchableColumns = computed(() => {
     >
       <Input
         class="w-full pl-8"
-        :placeholder="$t('filter_entity', { entityName }, 2)"
+        :placeholder="$t('filter_entity', { entityKey }, 2)"
         :model-value="searchInput"
         @update:model-value="searchInput = String($event)"
       />
@@ -577,7 +591,7 @@ const hasSearchableColumns = computed(() => {
                     <LucideCircleAlert />
                   </EmptyMedia>
                   <EmptyTitle>
-                    {{ $t('error_fetching_entity', { entityName }, 2) }}
+                    {{ $t('error_fetching_entity', { entityKey }, 2) }}
                   </EmptyTitle>
                   <EmptyDescription>
                     {{ $t('error_empty_description') }}
@@ -634,7 +648,7 @@ const hasSearchableColumns = computed(() => {
     </Table>
     <TablePagination
       v-if="!minimalMode"
-      :entity-name="entityName"
+      :entity-key="entityKey"
       :rows-selectable="rowsSelectable"
       :table="table"
       :advanced="advancedMode"

@@ -82,12 +82,12 @@ function onSettingsUpdate(value: StorefrontSettings) {
         <AlertDialog v-model:open="resetConfirmOpen">
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>{{
-                t('channels.reset_schema_confirm_title')
-              }}</AlertDialogTitle>
-              <AlertDialogDescription>{{
-                t('channels.reset_schema_confirm_description')
-              }}</AlertDialogDescription>
+              <AlertDialogTitle>
+                {{ t('channels.reset_schema_confirm_title') }}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {{ t('channels.reset_schema_confirm_description') }}
+              </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>{{ t('cancel') }}</AlertDialogCancel>

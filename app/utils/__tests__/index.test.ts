@@ -115,18 +115,24 @@ describe('prettifyLangKey', () => {
   it('strips common prefix and sentence-cases the remainder', () => {
     expect(prettifyLangKey('ORDER_PREPARED_SUBJECT', keys)).toBe('Subject');
     expect(prettifyLangKey('ORDER_PREPARED_TITLE', keys)).toBe('Title');
-    expect(prettifyLangKey('ORDER_PREPARED_INBOX_PREVIEW', keys)).toBe('Inbox preview');
-    expect(prettifyLangKey('ORDER_PREPARED_MESSAGE_PARTIAL', keys)).toBe('Message partial');
-  });
-
-  it('falls back to full prettified key for a single key', () => {
-    expect(prettifyLangKey('ORDER_PREPARED_SUBJECT', ['ORDER_PREPARED_SUBJECT'])).toBe(
-      'Order prepared subject',
+    expect(prettifyLangKey('ORDER_PREPARED_INBOX_PREVIEW', keys)).toBe(
+      'Inbox preview',
+    );
+    expect(prettifyLangKey('ORDER_PREPARED_MESSAGE_PARTIAL', keys)).toBe(
+      'Message partial',
     );
   });
 
+  it('falls back to full prettified key for a single key', () => {
+    expect(
+      prettifyLangKey('ORDER_PREPARED_SUBJECT', ['ORDER_PREPARED_SUBJECT']),
+    ).toBe('Order prepared subject');
+  });
+
   it('falls back to full prettified key for empty allKeys', () => {
-    expect(prettifyLangKey('ORDER_PREPARED_SUBJECT', [])).toBe('Order prepared subject');
+    expect(prettifyLangKey('ORDER_PREPARED_SUBJECT', [])).toBe(
+      'Order prepared subject',
+    );
   });
 
   it('handles keys with no common prefix', () => {

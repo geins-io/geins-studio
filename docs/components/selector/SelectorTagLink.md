@@ -31,7 +31,7 @@ Wrapper that renders a [`SelectorTag`](/components/selector/SelectorTag) with an
 ### `linkingWord`
 
 ```ts
-linkingWord: string
+linkingWord: string;
 ```
 
 - **Type:** `string`
@@ -41,7 +41,7 @@ linkingWord: string
 ### `isLast`
 
 ```ts
-isLast: boolean
+isLast: boolean;
 ```
 
 - **Type:** `boolean`

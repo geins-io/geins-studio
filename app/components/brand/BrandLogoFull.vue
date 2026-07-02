@@ -1,11 +1,21 @@
 <script setup lang="ts">
-import GeinsLogo from '@/assets/logos/geins.svg';
-import LitiumLogo from '@/assets/logos/litium.svg';
+import type { Component } from 'vue';
 
-const { isLitium } = useBrand();
+const modules = import.meta.glob<{ default: Component }>(
+  '@/assets/logos/*-logo.svg',
+  { eager: true },
+);
+
+const logoMap: Record<string, Component> = {};
+for (const [path, mod] of Object.entries(modules)) {
+  const name = path.match(/\/([^/]+)-logo\.svg$/)?.[1];
+  if (name) logoMap[name] = mod.default;
+}
+
+const { appId } = useBrand();
+const logo = computed(() => logoMap[appId.value] ?? logoMap['geins']);
 </script>
 
 <template>
-  <LitiumLogo v-if="isLitium" v-bind="$attrs" style="max-width: 86px" />
-  <GeinsLogo v-else v-bind="$attrs" />
+  <component :is="logo" v-bind="$attrs" />
 </template>

@@ -43,7 +43,7 @@ const defaultFlow = computed<FlowItem[]>(() => [
     },
     action: {
       icon: LucideSend,
-      label: t('send_entity', { entityName: 'quotation' }),
+      label: t('send_entity', { entityKey: 'quotation' }),
     },
   },
   {
@@ -74,7 +74,7 @@ const strictFlow = computed<FlowItem[]>(() => [
     },
     action: {
       icon: LucideSend,
-      label: t('send_entity', { entityName: 'quotation' }),
+      label: t('send_entity', { entityKey: 'quotation' }),
     },
   },
   {
@@ -219,9 +219,7 @@ const selectFlow = (flowName: string) => {
                   <StatusBadge :status="item.step.status" class="mb-2" />
                   <p v-if="item.step.actors" class="mb-0.5 text-[0.7rem]">
                     <template v-for="(actor, ai) in item.step.actors" :key="ai">
-                      <span v-if="ai > 0" class="text-muted-foreground">
-                        /
-                      </span>
+                      <span v-if="ai > 0" class="text-muted-foreground">/</span>
                       {{ actor }}
                     </template>
                   </p>

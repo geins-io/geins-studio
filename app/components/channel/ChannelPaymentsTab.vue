@@ -38,11 +38,11 @@ function handleToggle(paymentId: string, active: boolean) {
           <LucideCreditCard class="size-5" />
         </EmptyMedia>
         <EmptyTitle>
-          {{ t('no_entity', { entityName: 'payment_method' }, 2) }}
+          {{ t('no_entity', { entityKey: 'payment_method' }, 2) }}
         </EmptyTitle>
-        <EmptyDescription>{{
-          t('channels.no_payment_methods')
-        }}</EmptyDescription>
+        <EmptyDescription>
+          {{ t('channels.no_payment_methods') }}
+        </EmptyDescription>
       </EmptyHeader>
     </Empty>
 

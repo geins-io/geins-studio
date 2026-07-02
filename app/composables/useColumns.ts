@@ -1,4 +1,6 @@
 import { h } from 'vue';
+import { TableMode } from '#shared/types';
+import { entityEditUrl } from '#shared/utils/entities';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
 import {
   Checkbox,
@@ -11,6 +13,7 @@ import {
   TableCellChannels,
   TableCellTags,
   TableCellStatus,
+  TableCellCode,
   TableCellTooltip,
   TableCellBoolean,
   TableCellEditable,
@@ -444,13 +447,18 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               ? cn(getBasicCellStyle(table), 'gap-1.5')
               : cn(getBasicCellStyle(table), 'justify-center');
 
-            if (iconConfig.url && iconConfig.idField) {
+            if (
+              (iconConfig.entityKey || iconConfig.url) &&
+              iconConfig.idField
+            ) {
               const original = row.original as Record<string, unknown>;
               const idValue = String(
                 original[iconConfig.idField] ??
                   row.getValue(iconConfig.idField),
               );
-              const fullUrl = iconConfig.url.replace('{id}', idValue);
+              const fullUrl = iconConfig.entityKey
+                ? entityEditUrl(iconConfig.entityKey, idValue)
+                : iconConfig.url!.replace('{id}', idValue);
               return h(
                 'div',
                 { class: cellClass },
@@ -483,6 +491,12 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               if (linkConfig.useValueAsUrl) {
                 // Use the cell value itself as the URL
                 fullUrl = text || undefined;
+              } else if (linkConfig.entityKey && linkConfig.idField) {
+                // Registry-keyed link to the entity's [id] page
+                const idValue = String(row.getValue(linkConfig.idField));
+                if (idValue) {
+                  fullUrl = entityEditUrl(linkConfig.entityKey, idValue);
+                }
               } else if (linkConfig.idField && linkConfig.url) {
                 // Internal link with ID replacement
                 const idValue = String(row.getValue(linkConfig.idField));
@@ -500,10 +514,17 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
               return h('div', { class: getBasicCellStyle(table) }, text);
             }
 
-            const displayText =
-              text.length > maxTextLength
-                ? text.slice(0, maxTextLength) + '...'
-                : text;
+            // Per-column max length override, fall back to the shared one
+            const effectiveMaxLength =
+              linkConfig?.maxTextLength ?? maxTextLength;
+            // Head + tail ellipsis for long values (e.g. IDs) — "abc…xyz"
+            const shortenWithEllipsis = (val: string, max: number) => {
+              if (val.length <= max) return val;
+              const tail = Math.max(4, Math.floor(max / 3));
+              const head = Math.max(1, max - tail - 1);
+              return `${val.slice(0, head)}…${val.slice(-tail)}`;
+            };
+            const displayText = shortenWithEllipsis(text, effectiveMaxLength);
 
             const linkClass = isExternal ? 'external-link-text' : 'link-text';
 
@@ -530,13 +551,13 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
                   { default: () => displayText },
                 );
 
-            if (text.length > maxTextLength) {
+            if (text.length > effectiveMaxLength) {
               return h(
                 TableCellLongText,
                 {
                   text,
                   className: getBasicCellStyle(table),
-                  maxTextLength,
+                  maxTextLength: effectiveMaxLength,
                 },
                 { default: () => link },
               );
@@ -602,6 +623,16 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
             return h(TableCellStatus, {
               class: getBasicCellStyle(table),
               status: value as StatusBadgeStatus,
+              ...cellProps,
+            });
+          };
+          break;
+        case 'code':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value = row.getValue(key);
+            return h(TableCellCode, {
+              class: getBasicCellStyle(table),
+              value: value == null ? '' : String(value),
               ...cellProps,
             });
           };

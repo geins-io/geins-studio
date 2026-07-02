@@ -58,11 +58,11 @@ const handleCancel = () => {
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>{{
-          t('add_entity', { entityName: 'market' }, 2)
-        }}</DialogTitle>
+        <DialogTitle>
+          {{ t('add_entity', { entityKey: 'market' }, 2) }}
+        </DialogTitle>
         <DialogDescription class="sr-only">
-          {{ t('add_entity', { entityName: 'market' }, 2) }}
+          {{ t('add_entity', { entityKey: 'market' }, 2) }}
         </DialogDescription>
       </DialogHeader>
       <div v-if="!marketOptions.length" class="text-muted-foreground text-sm">

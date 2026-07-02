@@ -33,9 +33,9 @@
 ### `table`, `row`, `column`
 
 ```ts
-table: Table<T>
-row: Row<T>
-column: Column<T>
+table: Table<T>;
+row: Row<T>;
+column: Column<T>;
 ```
 
 TanStack instances passed from the cell context.
@@ -43,7 +43,7 @@ TanStack instances passed from the cell context.
 ### `colKey`
 
 ```ts
-colKey: string
+colKey: string;
 ```
 
 Field key used for the `Label` `for` attribute and the initial value lookup.
@@ -51,7 +51,7 @@ Field key used for the `Label` `for` attribute and the initial value lookup.
 ### `type`
 
 ```ts
-type: EditableColumnType  // 'text' | 'number' | 'percentage'
+type: EditableColumnType; // 'text' | 'number' | 'percentage'
 ```
 
 Input handling. `'number'` parses to float; `'percentage'` parses to float and forces the `%` suffix.

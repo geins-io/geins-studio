@@ -38,6 +38,7 @@ describe('getDefaultSettings', () => {
         priceVisibility: { enabled: true, access: 'authenticated' },
         orderPlacement: { enabled: true, access: 'authenticated' },
         stockStatus: { enabled: false, access: 'authenticated' },
+        newsletterSignup: false,
       },
       seo: {
         defaultTitle: '',
@@ -113,7 +114,9 @@ describe('getSettingValue', () => {
   });
 
   it('returns undefined for any missing segment', () => {
-    expect(getSettingValue({}, 'theme.colors.buttonBackground')).toBeUndefined();
+    expect(
+      getSettingValue({}, 'theme.colors.buttonBackground'),
+    ).toBeUndefined();
     expect(
       getSettingValue({ theme: {} }, 'theme.colors.buttonBackground'),
     ).toBeUndefined();
@@ -135,7 +138,11 @@ describe('setSettingValue', () => {
   });
 
   it('creates intermediate objects on a fresh path', () => {
-    const updated = setSettingValue({}, 'theme.colors.buttonBackground', '#000');
+    const updated = setSettingValue(
+      {},
+      'theme.colors.buttonBackground',
+      '#000',
+    );
     expect(updated).toEqual({
       theme: { colors: { buttonBackground: '#000' } },
     });
@@ -176,9 +183,9 @@ describe('setSettingValue', () => {
 
     expect(updated).not.toBe(original);
     expect(updated.theme).not.toBe(original.theme);
-    expect(
-      (updated.theme as { colors: object }).colors,
-    ).not.toBe(original.theme.colors);
+    expect((updated.theme as { colors: object }).colors).not.toBe(
+      original.theme.colors,
+    );
   });
 
   it('overwrites a non-object segment with a fresh object', () => {

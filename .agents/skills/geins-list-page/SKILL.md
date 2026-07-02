@@ -1,17 +1,17 @@
 ---
 name: geins-list-page
-description: "Guides correct implementation of entity list pages (list.vue) in the Geins Studio codebase. Use this skill whenever building a new list page, adding columns to an existing list, working with Tooltip columns, or debugging list page data flow. Trigger on: list page, list.vue, entity list, EntityList type, mapToListData, createTooltip, Tooltip column, useAsyncData list, TableView list, fetchError, list page pattern."
+description: "Guides correct implementation of entity list pages (index.vue) in the Geins Studio codebase. Use this skill whenever building a new list page, adding columns to an existing list, working with Tooltip columns, or debugging list page data flow. Trigger on: list page, list.vue, entity list, EntityList type, mapToListData, createTooltip, Tooltip column, useAsyncData list, TableView list, fetchError, list page pattern."
 ---
 
 # Geins Studio — Entity List Page
 
-List pages render a paginated, sortable table of entities at `pages/{domain}/{entity}/list.vue`. They follow a strict two-type pattern: the **API response type** and the **table display type**.
+List pages render a paginated, sortable table of entities at `pages/{domain}/{entity}/index.vue`. They follow a strict two-type pattern: the **API response type** and the **table display type**.
 
 ## Reference implementations
 
-- **With Tooltip columns**: `app/pages/customers/company/list.vue` (best reference for new list pages)
-- **With data mapping**: `app/pages/orders/quotation/list.vue`
-- **Simple (no mapping)**: `app/pages/pricing/price-list/list.vue`
+- **With Tooltip columns**: `app/pages/customers/companies/index.vue` (best reference for new list pages)
+- **With data mapping**: `app/pages/orders/quotations/index.vue`
+- **Simple (no mapping)**: `app/pages/pricing/price-lists/index.vue`
 
 ## The two-type pattern
 
@@ -44,24 +44,23 @@ Use `Omit<Entity, ...fields>` to replace fields that need display transformation
 ```vue
 <script setup lang="ts">
 import type { Entity, EntityList, ColumnOptions, StringKeyOf } from '#shared/types';
+import { ENTITIES, entityNewUrl, entityEditUrl } from '#shared/utils/entities';
 import type { ColumnDef, VisibilityState } from '@tanstack/vue-table';
 
 type Entity = ApiResponseType;
 type EntityList = TableDisplayType;
 
-const scope = 'pages/{domain}/{entity}/list.vue';
+// placeholders: {entities} = the plural folder name; {entity} = the singular registry key
+const scope = 'pages/{domain}/{entities}/index.vue';
 const { t } = useI18n();
-const { getEntityUrlFor } = useEntityUrl();
 
 definePageMeta({ pageType: 'list' });
 
 // 1. GLOBAL SETUP
 const { domainApi } = useGeinsRepository();
 const dataList = ref<EntityList[]>([]);
-const entityName = '{entity}';
-const entityIdentifier = '{id}';
-const entityUrl = getEntityUrlFor('{entity}', '{domain}', entityIdentifier);
-const newEntityUrl = '/{domain}/{entity}/new';
+const entityName = ENTITIES.{entity}.key;
+const newEntityUrl = entityNewUrl(entityName);
 const loading = ref(true);
 const columns = ref<ColumnDef<EntityList>[]>([]);
 const visibilityState = ref<VisibilityState>({});
@@ -103,14 +102,16 @@ onMounted(() => {
 
   const columnOptions: ColumnOptions<EntityList> = {
     columnTypes: { name: 'link', arrayField: 'tooltip', active: 'status' },
-    linkColumns: { name: { url: entityUrl, idField: '_id' } },
+    // entityKey builds row links via the registry: entityEditUrl(key, row[idField]).
+    // Use a raw `url` template only for external / filtered-list links.
+    linkColumns: { name: { entityKey: entityName, idField: '_id' } },
     columnTitles: { active: t('status') },
     excludeColumns: ['fieldsToHide'],
   };
 
   columns.value = getColumns(dataList.value, columnOptions);
   addActionsColumn(columns.value,
-    { onEdit: (item: EntityList) => navigateTo(entityUrl.replace(entityIdentifier, String(item._id))) },
+    { onEdit: (item: EntityList) => navigateTo(entityEditUrl(entityName, String(item._id))) },
     'actions', ['edit'],  // available actions
   );
   loading.value = false;
@@ -153,6 +154,46 @@ visibilityState.value = getVisibilityState(hiddenColumns);
   </NuxtErrorBoundary>
 </template>
 ```
+
+## Empty & error states
+
+`TableView` renders empty + error states internally (`:error` / `:on-retry`) — table list pages get them for free. **Card-grid / non-table list pages** must supply them with the `<Empty>` primitive — NEVER hand-roll `Card`+`div` with manual centering. Wrap each in `<Card><CardContent class="p-0">` (the primitive provides its own padding, so `p-0` avoids double-pad):
+
+```vue
+<!-- Error -->
+<Card v-else-if="error">
+  <CardContent class="p-0">
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="destructive"><LucideXCircle /></EmptyMedia>
+        <EmptyTitle>{{ $t('feedback_error') }}</EmptyTitle>
+        <EmptyDescription>{{ $t('error_empty_description') }}</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <ButtonIcon icon="retry" variant="secondary" @click="refresh()">
+          {{ $t('retry') }}
+        </ButtonIcon>
+      </EmptyContent>
+    </Empty>
+  </CardContent>
+</Card>
+
+<!-- Empty -->
+<Card v-else-if="items.length === 0">
+  <CardContent class="p-0">
+    <Empty>
+      <EmptyHeader>
+        <EmptyMedia variant="icon"><LucidePackage class="size-5" /></EmptyMedia>
+        <EmptyTitle>{{ $t('...no_items') }}</EmptyTitle>
+        <EmptyDescription>{{ $t('...no_items_description') }}</EmptyDescription>
+      </EmptyHeader>
+      <!-- optional action; use Button/ButtonIcon as-child for links -->
+    </Empty>
+  </CardContent>
+</Card>
+```
+
+Ref: [orchestrator/index.vue](app/pages/orchestrator/index.vue), [settings/orchestrator/kits/index.vue](app/pages/settings/orchestrator/kits/index.vue).
 
 ## Tooltip columns with `createTooltip()`
 

@@ -1,76 +1,76 @@
 name: Vercel Deployment Notifications
 
 on:
-    deployment_status:
+  deployment_status:
 
 jobs:
-    notify_teams:
-        if: github.event.deployment_status.state == 'success'
-        runs-on: ubuntu-latest
-        name: Notify Teams of Successful Deployment
-        steps:
-            - name: Debug Deployment Info
-              run: |
-                  echo "Environment: ${{ github.event.deployment.environment }}"
-                  echo "Target URL: ${{ github.event.deployment_status.target_url }}"
-                  echo "Ref: ${{ github.event.deployment.ref }}"
+  notify_teams:
+    if: github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    name: Notify Teams of Successful Deployment
+    steps:
+      - name: Debug Deployment Info
+        run: |
+          echo "Environment: ${{ github.event.deployment.environment }}"
+          echo "Target URL: ${{ github.event.deployment_status.target_url }}"
+          echo "Ref: ${{ github.event.deployment.ref }}"
 
-            - name: Post to Teams - Production
-              if: github.event.deployment.environment == 'Production'
-              env:
-                  TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
-                  PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
-              run: |
-                  curl -X POST -H 'Content-type: application/json' --data '{
-                    "@type": "MessageCard",
-                    "@context": "https://schema.org/extensions",
-                    "summary": "New production release",
-                    "themeColor": "28a745",
-                    "title": "🚀✨ A new release is live!",
-                    "sections": [{
-                      "activityTitle": "Deployment successful",
-                      "activitySubtitle": "Production environment",
-                      "facts": [{
-                        "name": "Environment:",
-                        "value": "Production"
-                      }]
-                    }],
-                    "potentialAction": [{
-                      "@type": "OpenUri",
-                      "name": "View site",
-                      "targets": [{
-                        "os": "default",
-                        "uri": "'"$PRODUCTION_URL"'"
-                      }]
-                    }]
-                  }' $TEAMS_WEBHOOK_URL
+      - name: Post to Teams - Production
+        if: github.event.deployment.environment == 'Production'
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "summary": "New production release",
+            "themeColor": "28a745",
+            "title": "🚀✨ A new release is live!",
+            "sections": [{
+              "activityTitle": "Deployment successful",
+              "activitySubtitle": "Production environment",
+              "facts": [{
+                "name": "Environment:",
+                "value": "Production"
+              }]
+            }],
+            "potentialAction": [{
+              "@type": "OpenUri",
+              "name": "View site",
+              "targets": [{
+                "os": "default",
+                "uri": "'"$PRODUCTION_URL"'"
+              }]
+            }]
+          }' $TEAMS_WEBHOOK_URL
 
-            - name: Post to Teams - QA/Next
-              if: github.event.deployment.environment == 'qa'
-              env:
-                  TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
-                  QA_URL: ${{ vars.QA_URL }}
-              run: |
-                  curl -X POST -H 'Content-type: application/json' --data '{
-                    "@type": "MessageCard",
-                    "@context": "https://schema.org/extensions",
-                    "summary": "QA site updated",
-                    "themeColor": "0078d4",
-                    "title": "🦄 The QA site has been updated!",
-                    "sections": [{
-                      "activityTitle": "Deployment successful",
-                      "activitySubtitle": "QA environment",
-                      "facts": [{
-                        "name": "Environment:",
-                        "value": "QA"
-                      }]
-                    }],
-                    "potentialAction": [{
-                      "@type": "OpenUri",
-                      "name": "View site",
-                      "targets": [{
-                        "os": "default",
-                        "uri": "'"$QA_URL"'"
-                      }]
-                    }]
-                  }' $TEAMS_WEBHOOK_URL
+      - name: Post to Teams - QA/Next
+        if: github.event.deployment.environment == 'qa'
+        env:
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          QA_URL: ${{ vars.QA_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "summary": "QA site updated",
+            "themeColor": "0078d4",
+            "title": "🦄 The QA site has been updated!",
+            "sections": [{
+              "activityTitle": "Deployment successful",
+              "activitySubtitle": "QA environment",
+              "facts": [{
+                "name": "Environment:",
+                "value": "QA"
+              }]
+            }],
+            "potentialAction": [{
+              "@type": "OpenUri",
+              "name": "View site",
+              "targets": [{
+                "os": "default",
+                "uri": "'"$QA_URL"'"
+              }]
+            }]
+          }' $TEAMS_WEBHOOK_URL

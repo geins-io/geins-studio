@@ -5,6 +5,7 @@
 ## Features
 
 - Multi-select with chip rendering inside the input
+- Optional single-select mode (`singleSelect`) — caps at one tag, hides the search input + its placeholder once filled, and uses a singular placeholder
 - Searchable dataset filter via reka-ui `useFilter` (case-insensitive)
 - Optional custom-tag mode (`allowCustomTags`) — adds whatever the user typed when no match
 - Slot for custom tag rendering (e.g. flag, color swatch) and for custom item rendering in the dropdown
@@ -26,7 +27,7 @@ const channels = await fetchChannels();
   <FormInputTagsSearch
     v-model="selectedIds"
     :data-set="channels"
-    entity-name="channel"
+    entity-key="channel"
   />
 </template>
 ```
@@ -38,11 +39,14 @@ const channels = await fetchChannels();
   <FormInputTagsSearch
     v-model="selectedIds"
     :data-set="markets"
-    entity-name="market"
+    entity-key="market"
   >
     <template #tag="{ item }">
       <span class="flex items-center gap-1.5">
-        <span :class="flagClass(item?.country?._id)" class="size-3 rounded-full" />
+        <span
+          :class="flagClass(item?.country?._id)"
+          class="size-3 rounded-full"
+        />
         <TagsInputItemText />
       </span>
     </template>
@@ -57,11 +61,31 @@ const channels = await fetchChannels();
   <FormInputTagsSearch
     v-model="labels"
     :data-set="presetLabels"
-    entity-name="label"
+    entity-key="label"
     allow-custom-tags
   />
 </template>
 ```
+
+### Single selection
+
+```vue
+<script setup lang="ts">
+// Model stays string[] — it just never holds more than one item.
+const selectedIds = ref<string[]>([]);
+</script>
+
+<template>
+  <FormInputTagsSearch
+    v-model="selectedIds"
+    :data-set="groups"
+    entity-key="group"
+    single-select
+  />
+</template>
+```
+
+Caps the picker at one tag. Once a tag is selected the search input — and its singular `Add group…` placeholder — is hidden; delete the tag to pick a different one. To bind a single `string` field (rather than `string[]`), wrap the model: `:model-value="value ? [value] : []"` and set the field to `val[0] ?? ''` on update (see the workflow `group` field in `app/pages/orchestrator/workflows/[id].vue`).
 
 ## Props
 
@@ -73,10 +97,10 @@ dataSet?: T[]   // T extends EntityBaseWithName
 
 Items the user can pick. Each must have `_id` and either `displayName` or `name`.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName?: string
+entityKey?: string
 ```
 
 i18n key for placeholders ("Add channel…", "No channels", etc.).
@@ -99,6 +123,16 @@ When `true`, surfaces an `Add: {typed value}` item when no dataset match exists,
 
 - **Default:** `false`
 
+### `singleSelect`
+
+```ts
+singleSelect?: boolean
+```
+
+Restrict to a single selection: caps at one tag (`TagsInput :max="1"`), hides the search input and its `Add …` placeholder once a tag is selected, and renders the placeholder in singular form (`Add group…` rather than `Add groups…`). The model is still `string[]` — it just never holds more than one item.
+
+- **Default:** `false`
+
 ### `disableTeleport`
 
 ```ts
@@ -117,7 +151,7 @@ Render the dropdown inline instead of portaled to `body`.
 v-model: string[]
 ```
 
-Array of selected item ids (or raw strings when `allowCustomTags` is on).
+Array of selected item ids (or raw strings when `allowCustomTags` is on). In `singleSelect` mode the array holds 0 or 1 items.
 
 ## Slots
 

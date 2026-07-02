@@ -27,7 +27,7 @@ const dataSet: PlainDataItem[] = [
   <FormInputSelectSearch
     v-model="country"
     :data-set="dataSet"
-    entity-name="country"
+    entity-key="country"
     autocomplete="country"
   />
 </template>
@@ -43,10 +43,10 @@ dataSet: PlainDataItem[]
 
 Selectable items with `{ value, label }` shape.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName?: string
+entityKey?: string
 ```
 
 i18n key for the entity — used in the placeholder, search placeholder, and empty state.

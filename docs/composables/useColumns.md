@@ -41,7 +41,7 @@ const { data: products } = await useFetch<Product[]>('/api/products');
 
 // Configure columns
 const { getColumns, addActionsColumn } = useColumns<Product>();
-const { getEntityUrl } = useEntityUrl();
+const getEntityUrl = (id: string) => entityEditUrl('your_entity', id); // from #shared/utils/entities
 
 const columnOptions = {
   selectable: true,
@@ -345,24 +345,24 @@ When no specific `columnTypes` are provided, the system automatically infers typ
 
 ### Column Types Overview
 
-| Type                  | Description                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------- |
-| `default`             | Basic text display with truncation, boolean indicators, and array formatting          |
-| `product`             | Displays product info (image, name, article number) using `TableCellProduct`          |
-| `currency`            | Expects object with `price` and `currency` properties, displays formatted currency    |
-| `price`               | Simple number formatting as currency with current locale and current currency         |
-| `date`                | Formats to date using current locale                                                  |
-| `image`               | Displays images as small thumbnails with alt text                                     |
+| Type                  | Description                                                                                                    |
+| --------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `default`             | Basic text display with truncation, boolean indicators, and array formatting                                   |
+| `product`             | Displays product info (image, name, article number) using `TableCellProduct`                                   |
+| `currency`            | Expects object with `price` and `currency` properties, displays formatted currency                             |
+| `price`               | Simple number formatting as currency with current locale and current currency                                  |
+| `date`                | Formats to date using current locale                                                                           |
+| `image`               | Displays images as small thumbnails with alt text                                                              |
 | `link`                | Creates clickable links — internal via NuxtLink or external (`<a>` with icon) via `useValueAsUrl` / `external` |
-| `expander`            | Expander button for hierarchical rows, shows chevron icon for expand/collapse         |
-| `channels`            | Displays channel IDs as badge components with channel names using `TableCellChannels` |
-| `tags`                | Displays string arrays as tag badge components using `TableCellTags`                  |
-| `status`              | Shows status indicators for string or boolean values using `TableCellStatus`          |
-| `tooltip`             | Text with hover tooltip functionality using `TableCellTooltip`                        |
-| `editable-string`     | Inline editable text field using `TableCellEditable`                                  |
-| `editable-number`     | Inline editable number input using `TableCellEditable`                                |
-| `editable-currency`   | Inline editable currency input with formatting using `TableCellEditable`              |
-| `editable-percentage` | Inline editable percentage input using `TableCellEditable`                            |
+| `expander`            | Expander button for hierarchical rows, shows chevron icon for expand/collapse                                  |
+| `channels`            | Displays channel IDs as badge components with channel names using `TableCellChannels`                          |
+| `tags`                | Displays string arrays as tag badge components using `TableCellTags`                                           |
+| `status`              | Shows status indicators for string or boolean values using `TableCellStatus`                                   |
+| `tooltip`             | Text with hover tooltip functionality using `TableCellTooltip`                                                 |
+| `editable-string`     | Inline editable text field using `TableCellEditable`                                                           |
+| `editable-number`     | Inline editable number input using `TableCellEditable`                                                         |
+| `editable-currency`   | Inline editable currency input with formatting using `TableCellEditable`                                       |
+| `editable-percentage` | Inline editable percentage input using `TableCellEditable`                                                     |
 
 ### Editable Columns
 
@@ -444,8 +444,8 @@ This composable depends on:
 The `useColumns` composable integrates seamlessly with the entity system:
 
 ```ts
-// Combine with useEntityUrl for entity linking
-const { getEntityUrl } = useEntityUrl();
+// Combine with entityEditUrl for entity linking
+const getEntityUrl = (id: string) => entityEditUrl('your_entity', id); // from #shared/utils/entities
 const { getColumns } = useColumns<Product>();
 
 const columns = getColumns(products.value, {

@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="T extends SelectorEntity">
 import {
+  TableMode,
   SelectorMode,
   SelectorSelectionStrategy,
   SelectorSelectionType,
@@ -11,7 +12,7 @@ import type { ColumnDef } from '@tanstack/vue-table';
 const props = withDefaults(
   defineProps<{
     entities: T[];
-    entityName?: string;
+    entityKey?: string;
     mode?: SelectorMode;
     selectionStrategy?: SelectorSelectionStrategy;
     allowExclusions?: boolean;
@@ -21,7 +22,7 @@ const props = withDefaults(
     columnsOrder?: (keyof T)[];
   }>(),
   {
-    entityName: 'product',
+    entityKey: 'product',
     mode: SelectorMode.Advanced,
     selectionStrategy: SelectorSelectionStrategy.All,
     allowExclusions: true,
@@ -67,7 +68,7 @@ watch(
 // GLOBALS
 const entities = toRef(props, 'entities');
 const mode: Ref<SelectorMode> = toRef(props, 'mode');
-const entityName = toRef(props, 'entityName');
+const entityKey = toRef(props, 'entityKey');
 const selectionStrategy = toRef(props, 'selectionStrategy');
 const allowExclusions = toRef(props, 'allowExclusions');
 const accountStore = useAccountStore();
@@ -138,7 +139,7 @@ const addToManuallySelected = (id: string) => {
   includeSelection.value?.ids?.push(id);
   toast({
     title: t('entity_with_id_added_to_selection', {
-      entityName: props.entityName,
+      entityKey: props.entityKey,
       id,
     }),
     variant: 'positive',
@@ -275,9 +276,9 @@ defineExpose({
       <slot name="header">
         <SelectorHeader
           :entities="entities"
-          :entity-name="entityName"
+          :entity-key="entityKey"
           :selection="includeSelection"
-          :title="$t('entity_selection', { entityName })"
+          :title="$t('entity_selection', { entityKey })"
           :description="$t('selector_include_description')"
           @add="addToManuallySelected($event)"
           @remove="removeFromManuallySelected($event)"
@@ -292,14 +293,14 @@ defineExpose({
             :type="SelectorSelectionType.Include"
             :mode="mode"
             :currency="selectorCurrency"
-            :entity-name="entityName"
+            :entity-key="entityKey"
             :entities="entities"
             :selection-strategy="selectionStrategy"
           />
           <ContentSwitch
             v-if="allowExclusions"
             v-model:checked="showExclude"
-            :label="$t('exclude_entity_from_selection', { entityName }, 2)"
+            :label="$t('exclude_entity_from_selection', { entityKey }, 2)"
             :description="$t('selector_exclude_description')"
           >
             <SelectorSelection
@@ -307,22 +308,22 @@ defineExpose({
               :type="SelectorSelectionType.Exclude"
               :mode="mode"
               :currency="selectorCurrency"
-              :entity-name="entityName"
+              :entity-key="entityKey"
               :entities="entities"
             />
           </ContentSwitch>
         </slot>
       </div>
       <slot />
-      <slot name="list" :selector-entity-name="entityName">
+      <slot name="list" :selector-entity-key="entityKey">
         <ContentHeading>
-          {{ $t('selected_entity', { entityName }, 2) }}
+          {{ $t('selected_entity', { entityKey }, 2) }}
         </ContentHeading>
         <TableView
           :columns="columns"
           :data="selectedEntities as T[]"
-          :entity-name="entityName"
-          :empty-text="$t('no_entity_selected', { entityName }, 2)"
+          :entity-key="entityKey"
+          :empty-text="$t('no_entity_selected', { entityKey }, 2)"
           :mode="TableMode.Simple"
           :page-size="15"
           :show-search="true"

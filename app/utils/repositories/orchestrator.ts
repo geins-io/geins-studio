@@ -5,7 +5,9 @@ import type {
   UpdateWorkflowRequest,
   ValidateWorkflowResult,
   ExecutionLog,
-  ExecutionDetails,
+  ExecutionDetailsResponse,
+  BulkEnableDisableRequest,
+  BulkWorkflowOperationResponse,
   ReplayChain,
   ConcurrencyState,
   StartWorkflowRequest,
@@ -31,24 +33,87 @@ import type {
   WorkflowVariable,
   SaveVariableRequest,
   EditorManifest,
+  KitSummary,
+  Kit,
+  InstallKitRequest,
+  InstallKitResponse,
+  KitInstallation,
+  UninstallKitRequest,
+  UninstallKitResponse,
+  UpgradeKitRequest,
+  UpgradeKitResponse,
 } from '#shared/types';
+import { ENTITIES } from '#shared/utils/entities';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE = '/orchestrator';
-const WORKFLOW_ENDPOINT = `${BASE}/workflows`;
-const EXECUTION_ENDPOINT = `${BASE}/executions`;
-const METRICS_ENDPOINT = `${BASE}/workflows/metrics`;
-const VARIABLE_ENDPOINT = `${BASE}/variables`;
-const MANIFEST_ENDPOINT = `${BASE}/manifest`;
 
+function toCamelKey(key: string): string {
+  return key.charAt(0).toLowerCase() + key.slice(1);
+}
+
+const PRESERVE_VALUE_KEYS = new Set(['input', 'output', 'Input', 'Output']);
+
+function normalizeKeys<T>(value: unknown, preserveValue = false): T {
+  if (Array.isArray(value)) {
+    return value.map((v) => normalizeKeys(v, preserveValue)) as unknown as T;
+  }
+  if (value && typeof value === 'object') {
+    if (preserveValue) return value as T;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      const camelKey = toCamelKey(k);
+      out[camelKey] = normalizeKeys(v, PRESERVE_VALUE_KEYS.has(k));
+    }
+    return out as T;
+  }
+  return value as T;
+}
+
+/**
+ * Unwrap a list response that may be a bare array or an envelope. The
+ * orchestrator API has shipped both shapes and varies the envelope key and
+ * its casing (`kits` / `Kits` / `items` / `data`). Falls back to the first
+ * array-valued property so we never silently drop a populated list.
+ */
+function unwrapArray<T = unknown>(res: unknown): T[] {
+  if (Array.isArray(res)) return res as T[];
+  if (res && typeof res === 'object') {
+    const obj = res as Record<string, unknown>;
+    return (Object.values(obj).find((v) => Array.isArray(v)) ?? []) as T[];
+  }
+  return [];
+}
+// Registry-backed endpoints (workflow/execution/variable are domain entities).
+const WORKFLOW_ENDPOINT = ENTITIES.workflow.endpoint;
+const EXECUTION_ENDPOINT = ENTITIES.execution.endpoint;
+const VARIABLE_ENDPOINT = ENTITIES.variable.endpoint;
+const METRICS_ENDPOINT = `${WORKFLOW_ENDPOINT}/metrics`;
+// Non-registry endpoints (not domain entities) — kept as local constants.
+const MANIFEST_ENDPOINT = `${BASE}/manifest`;
+const KIT_ENDPOINT = `${BASE}/kits`;
+
+/**
+ * Orchestrator (workflow engine) repository — deliberately bespoke, NOT built on
+ * `entityRepo`/`entityBaseRepo`: the API shape doesn't fit the factory. `list()`
+ * returns `WorkflowSummary` but `get()` returns `WorkflowDefinition` (the factory
+ * binds a single `TResponse`); `update` is PUT (the factory hardcodes PATCH);
+ * lists sit at the base path behind a varying envelope and several responses need
+ * PascalCase→camel normalization. Registry-backed endpoints still come from
+ * `ENTITIES.*.endpoint` so the part that can be shared is.
+ */
 export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   return {
     // -- Workflow CRUD ------------------------------------------------------
 
     workflow: {
       async list(): Promise<WorkflowSummary[]> {
-        const res = await fetch<{ workflows: WorkflowSummary[] }>(WORKFLOW_ENDPOINT);
-        return res?.workflows ?? [];
+        const res = await fetch<
+          | WorkflowSummary[]
+          | { workflows?: WorkflowSummary[]; items?: WorkflowSummary[] }
+        >(WORKFLOW_ENDPOINT);
+        if (Array.isArray(res)) return res;
+        return res?.workflows ?? res?.items ?? [];
       },
 
       async get(id: string): Promise<WorkflowDefinition> {
@@ -59,6 +124,7 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return await fetch<WorkflowDefinition>(WORKFLOW_ENDPOINT, {
           method: 'POST',
           body: data,
+          errorContext: { action: 'creating', entity: ENTITIES.workflow.key },
         });
       },
 
@@ -69,16 +135,20 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         return await fetch<WorkflowDefinition>(`${WORKFLOW_ENDPOINT}/${id}`, {
           method: 'PUT',
           body: data,
+          errorContext: { action: 'updating', entity: ENTITIES.workflow.key },
         });
       },
 
       async delete(id: string): Promise<void> {
         await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}`, {
           method: 'DELETE',
+          errorContext: { action: 'deleting', entity: ENTITIES.workflow.key },
         });
       },
 
-      async validate(data: CreateWorkflowRequest): Promise<ValidateWorkflowResult> {
+      async validate(
+        data: CreateWorkflowRequest,
+      ): Promise<ValidateWorkflowResult> {
         return await fetch<ValidateWorkflowResult>(
           `${WORKFLOW_ENDPOINT}/validate`,
           {
@@ -86,6 +156,51 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             body: data,
           },
         );
+      },
+
+      async listExecutions(
+        id: string,
+        options?: ListExecutionLogsOptions,
+      ): Promise<ExecutionLog[]> {
+        return await fetch<ExecutionLog[]>(`${WORKFLOW_ENDPOINT}/${id}/logs`, {
+          query: options,
+        });
+      },
+
+      async enable(id: string): Promise<void> {
+        await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}/enable`, {
+          method: 'POST',
+        });
+      },
+
+      async disable(id: string): Promise<void> {
+        await fetch<null>(`${WORKFLOW_ENDPOINT}/${id}/disable`, {
+          method: 'POST',
+        });
+      },
+
+      async bulkEnable(
+        workflowIds: string[],
+      ): Promise<BulkWorkflowOperationResponse> {
+        const raw = await fetch<unknown>(`${WORKFLOW_ENDPOINT}/bulk-enable`, {
+          method: 'POST',
+          body: { workflowIds } satisfies BulkEnableDisableRequest,
+        });
+        const { geinsLog } = useGeinsLog('orchestratorRepo.bulkEnable');
+        geinsLog('raw response', raw);
+        return normalizeKeys<BulkWorkflowOperationResponse>(raw);
+      },
+
+      async bulkDisable(
+        workflowIds: string[],
+      ): Promise<BulkWorkflowOperationResponse> {
+        const raw = await fetch<unknown>(`${WORKFLOW_ENDPOINT}/bulk-disable`, {
+          method: 'POST',
+          body: { workflowIds } satisfies BulkEnableDisableRequest,
+        });
+        const { geinsLog } = useGeinsLog('orchestratorRepo.bulkDisable');
+        geinsLog('raw response', raw);
+        return normalizeKeys<BulkWorkflowOperationResponse>(raw);
       },
     },
 
@@ -96,65 +211,104 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         workflowId: string,
         data?: StartWorkflowRequest,
       ): Promise<StartWorkflowResponse> {
-        return await fetch<StartWorkflowResponse>(
+        const params = data?.parameters;
+        const headers: Record<string, string> = {};
+        if (data?.idempotencyKey)
+          headers['Idempotency-Key'] = data.idempotencyKey;
+
+        // POST with input values as the body (not wrapped in `parameters`).
+        // GET is also supported but POST allows a JSON body for complex inputs.
+        const raw = await fetch<Record<string, unknown>>(
           `${WORKFLOW_ENDPOINT}/${workflowId}/execute`,
           {
-            method: 'GET',
-            body: data ?? {},
+            method: 'POST',
+            ...(params && Object.keys(params).length > 0 && { body: params }),
+            headers,
+            errorContext: { action: 'running', entity: ENTITIES.workflow.key },
           },
         );
+        return {
+          success: raw.Status === 'accepted' || raw.success === true,
+          status: (raw.Status ?? raw.status) as string | undefined,
+          executionId: (raw.ExecutionId ?? raw.executionId) as
+            | string
+            | undefined,
+          newExecutionId: (raw.NewExecutionId ?? raw.newExecutionId) as
+            | string
+            | undefined,
+          message: (raw.Message ?? raw.message) as string | undefined,
+          instanceId: (raw.InstanceId ?? raw.instanceId) as string | undefined,
+        };
+      },
+
+      async testRun(
+        workflowId: string,
+        data?: StartWorkflowRequest,
+      ): Promise<StartWorkflowResponse> {
+        const params = data?.parameters;
+        const raw = await fetch<Record<string, unknown>>(
+          `${WORKFLOW_ENDPOINT}/${workflowId}/test-run`,
+          {
+            method: 'POST',
+            ...(params && Object.keys(params).length > 0 && { body: params }),
+          },
+        );
+        return {
+          success: raw.Status === 'accepted' || raw.success === true,
+          status: (raw.Status ?? raw.status) as string | undefined,
+          executionId: (raw.ExecutionId ?? raw.executionId) as
+            | string
+            | undefined,
+          newExecutionId: (raw.NewExecutionId ?? raw.newExecutionId) as
+            | string
+            | undefined,
+          message: (raw.Message ?? raw.message) as string | undefined,
+          instanceId: (raw.InstanceId ?? raw.instanceId) as string | undefined,
+        };
       },
 
       async cancel(
         executionId: string,
         data?: CancelExecutionRequest,
       ): Promise<void> {
-        await fetch<null>(
-          `${EXECUTION_ENDPOINT}/${executionId}/cancel`,
-          {
-            method: 'POST',
-            body: data ?? {},
-          },
-        );
+        await fetch<null>(`${EXECUTION_ENDPOINT}/${executionId}/cancel`, {
+          method: 'POST',
+          body: data ?? {},
+        });
       },
 
       async pause(
         executionId: string,
         data?: PauseExecutionRequest,
       ): Promise<void> {
-        await fetch<null>(
-          `${EXECUTION_ENDPOINT}/${executionId}/pause`,
-          {
-            method: 'POST',
-            body: data ?? {},
-          },
-        );
+        await fetch<null>(`${EXECUTION_ENDPOINT}/${executionId}/pause`, {
+          method: 'POST',
+          body: data ?? {},
+        });
       },
 
       async resume(
         executionId: string,
         data?: ResumeExecutionRequest,
       ): Promise<void> {
-        await fetch<null>(
-          `${EXECUTION_ENDPOINT}/${executionId}/resume`,
-          {
-            method: 'POST',
-            body: data ?? {},
-          },
-        );
+        await fetch<null>(`${EXECUTION_ENDPOINT}/${executionId}/resume`, {
+          method: 'POST',
+          body: data ?? {},
+        });
       },
 
       async replay(
         executionId: string,
         data?: ReplayExecutionRequest,
       ): Promise<StartWorkflowResponse> {
-        return await fetch<StartWorkflowResponse>(
+        const raw = await fetch<unknown>(
           `${EXECUTION_ENDPOINT}/${executionId}/replay`,
           {
             method: 'POST',
             body: data ?? {},
           },
         );
+        return normalizeKeys<StartWorkflowResponse>(raw);
       },
 
       async bulkCancel(data: BulkCancelRequest): Promise<BulkCancelResponse> {
@@ -179,19 +333,34 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         );
       },
 
-      async listLogs(
-        options?: ListExecutionLogsOptions,
-      ): Promise<ExecutionLog[]> {
-        return await fetch<ExecutionLog[]>(
-          `${EXECUTION_ENDPOINT}/logs`,
-          { query: options },
-        );
+      async list(options?: ListExecutionLogsOptions): Promise<ExecutionLog[]> {
+        const url = options?.workflowId
+          ? `${WORKFLOW_ENDPOINT}/${options.workflowId}/logs`
+          : `${EXECUTION_ENDPOINT}/logs`;
+
+        const res = await fetch<unknown>(url, { query: options });
+
+        const raw = Array.isArray(res)
+          ? res
+          : ((
+              res as {
+                logs?: unknown[];
+                executions?: unknown[];
+                items?: unknown[];
+              }
+            )?.logs ??
+            (res as { executions?: unknown[] })?.executions ??
+            (res as { items?: unknown[] })?.items ??
+            []);
+
+        return normalizeKeys<ExecutionLog[]>(raw);
       },
 
-      async get(executionId: string): Promise<ExecutionDetails> {
-        return await fetch<ExecutionDetails>(
+      async get(executionId: string): Promise<ExecutionDetailsResponse> {
+        const raw = await fetch<unknown>(
           `${EXECUTION_ENDPOINT}/${executionId}`,
         );
+        return normalizeKeys<ExecutionDetailsResponse>(raw);
       },
 
       async getReplayChain(executionId: string): Promise<ReplayChain> {
@@ -221,8 +390,12 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
 
       async list(): Promise<WorkflowMetrics[]> {
-        const res = await fetch<WorkflowMetricsListResponse>(METRICS_ENDPOINT);
-        return res?.workflows ?? [];
+        const res = await fetch<
+          | WorkflowMetrics[]
+          | (WorkflowMetricsListResponse & { items?: WorkflowMetrics[] })
+        >(METRICS_ENDPOINT);
+        if (Array.isArray(res)) return res;
+        return res?.workflows ?? res?.items ?? [];
       },
 
       async getAggregate(): Promise<AggregateMetrics> {
@@ -239,10 +412,9 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       async getErrorSummary(
         options?: ErrorSummaryOptions,
       ): Promise<ErrorSummary> {
-        return await fetch<ErrorSummary>(
-          `${EXECUTION_ENDPOINT}/errors`,
-          { query: options },
-        );
+        return await fetch<ErrorSummary>(`${EXECUTION_ENDPOINT}/errors`, {
+          query: options,
+        });
       },
     },
 
@@ -274,7 +446,7 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         to: number,
       ): Promise<VersionComparison> {
         return await fetch<VersionComparison>(
-          `${WORKFLOW_ENDPOINT}/${workflowId}/version/diff`,
+          `${WORKFLOW_ENDPOINT}/${workflowId}/versions/diff`,
           { query: { from, to } },
         );
       },
@@ -284,22 +456,32 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
 
     variable: {
       async list(): Promise<WorkflowVariable[]> {
-        return await fetch<WorkflowVariable[]>(VARIABLE_ENDPOINT);
+        const res = await fetch<unknown>(VARIABLE_ENDPOINT);
+        const raw = Array.isArray(res)
+          ? res
+          : ((res as { variables?: unknown[]; items?: unknown[] })?.variables ??
+            (res as { items?: unknown[] })?.items ??
+            []);
+        return normalizeKeys<WorkflowVariable[]>(raw);
       },
 
       async get(key: string): Promise<WorkflowVariable> {
-        return await fetch<WorkflowVariable>(`${VARIABLE_ENDPOINT}/${key}`);
+        const raw = await fetch<unknown>(
+          `${VARIABLE_ENDPOINT}/${encodeURIComponent(key)}`,
+        );
+        return normalizeKeys<WorkflowVariable>(raw);
       },
 
       async save(data: SaveVariableRequest): Promise<WorkflowVariable> {
-        return await fetch<WorkflowVariable>(VARIABLE_ENDPOINT, {
+        const raw = await fetch<unknown>(VARIABLE_ENDPOINT, {
           method: 'POST',
           body: data,
         });
+        return normalizeKeys<WorkflowVariable>(raw);
       },
 
       async delete(key: string): Promise<void> {
-        await fetch<null>(`${VARIABLE_ENDPOINT}/${key}`, {
+        await fetch<null>(`${VARIABLE_ENDPOINT}/${encodeURIComponent(key)}`, {
           method: 'DELETE',
         });
       },
@@ -310,6 +492,97 @@ export function orchestratorRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     editor: {
       async getManifest(): Promise<EditorManifest> {
         return await fetch<EditorManifest>(MANIFEST_ENDPOINT);
+      },
+    },
+
+    // -- Kits ---------------------------------------------------------------
+    // Provider-supplied bundles of workflows + variables. The catalog returns
+    // summaries; the detail endpoint adds full variable/workflow specs.
+
+    kit: {
+      async list(): Promise<KitSummary[]> {
+        const res = await fetch<unknown>(KIT_ENDPOINT);
+        const { geinsLog } = useGeinsLog('orchestratorRepo.kit.list');
+        geinsLog('raw response', res);
+        return normalizeKeys<KitSummary[]>(unwrapArray(res));
+      },
+
+      async get(id: string): Promise<Kit> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/${encodeURIComponent(id)}`,
+        );
+        return normalizeKeys<Kit>(raw);
+      },
+
+      async install(
+        id: string,
+        data?: InstallKitRequest,
+      ): Promise<InstallKitResponse> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/${encodeURIComponent(id)}/install`,
+          { method: 'POST', body: data ?? {} },
+        );
+        return normalizeKeys<InstallKitResponse>(raw);
+      },
+
+      async listInstallations(): Promise<KitInstallation[]> {
+        const res = await fetch<unknown>(`${KIT_ENDPOINT}/installations`);
+        const { geinsLog } = useGeinsLog(
+          'orchestratorRepo.kit.listInstallations',
+        );
+        geinsLog('raw response', res);
+        return normalizeKeys<KitInstallation[]>(unwrapArray(res));
+      },
+
+      async getInstallation(installationId: string): Promise<KitInstallation> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/installations/${encodeURIComponent(installationId)}`,
+        );
+        return normalizeKeys<KitInstallation>(raw);
+      },
+
+      async upgrade(
+        id: string,
+        data?: UpgradeKitRequest,
+      ): Promise<UpgradeKitResponse> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/${encodeURIComponent(id)}/upgrade`,
+          { method: 'POST', body: data ?? {} },
+        );
+        return normalizeKeys<UpgradeKitResponse>(raw);
+      },
+
+      async upgradeByInstallation(
+        installationId: string,
+        data?: UpgradeKitRequest,
+      ): Promise<UpgradeKitResponse> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/installations/${encodeURIComponent(installationId)}/upgrade`,
+          { method: 'POST', body: data ?? {} },
+        );
+        return normalizeKeys<UpgradeKitResponse>(raw);
+      },
+
+      async uninstall(
+        id: string,
+        data?: UninstallKitRequest,
+      ): Promise<UninstallKitResponse> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/${encodeURIComponent(id)}/uninstall`,
+          { method: 'POST', body: data ?? {} },
+        );
+        return normalizeKeys<UninstallKitResponse>(raw);
+      },
+
+      async uninstallByInstallation(
+        installationId: string,
+        data?: UninstallKitRequest,
+      ): Promise<UninstallKitResponse> {
+        const raw = await fetch<unknown>(
+          `${KIT_ENDPOINT}/installations/${encodeURIComponent(installationId)}/uninstall`,
+          { method: 'POST', body: data ?? {} },
+        );
+        return normalizeKeys<UninstallKitResponse>(raw);
       },
     },
   };

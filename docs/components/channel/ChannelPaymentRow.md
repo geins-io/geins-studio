@@ -28,7 +28,7 @@
 ### `payment`
 
 ```ts
-payment: ChannelPaymentMethod
+payment: ChannelPaymentMethod;
 ```
 
 The provider configuration to render.

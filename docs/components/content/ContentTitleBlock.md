@@ -14,7 +14,10 @@ The default title + description block for page-level headers. Optionally shows a
 
 ```vue
 <template>
-  <ContentTitleBlock title="Order #1234" description="View and edit this order" />
+  <ContentTitleBlock
+    title="Order #1234"
+    description="View and edit this order"
+  />
 </template>
 ```
 
@@ -22,7 +25,7 @@ The default title + description block for page-level headers. Optionally shows a
 
 ```vue
 <script setup lang="ts">
-const { hasUnsavedChanges } = useEntityEdit(/* ... */)
+const { hasUnsavedChanges } = useEntityEdit(/* ... */);
 </script>
 
 <template>
@@ -38,7 +41,7 @@ const { hasUnsavedChanges } = useEntityEdit(/* ... */)
 ### `title`
 
 ```ts
-title: string
+title: string;
 ```
 
 - **Type:** `string`

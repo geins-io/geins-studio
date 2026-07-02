@@ -87,7 +87,6 @@ export default defineConfig({
                 text: 'useEntityEditSummary',
                 link: '/composables/useEntityEditSummary.md',
               },
-              { text: 'useEntityUrl', link: '/composables/useEntityUrl.md' },
               { text: 'useSelector', link: '/composables/useSelector.md' },
               {
                 text: 'useStepManagement',

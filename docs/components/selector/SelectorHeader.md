@@ -14,15 +14,15 @@ Section header for a selector widget that displays a title, description, and an 
 
 ```vue
 <script setup lang="ts">
-import type { SelectorSelectionInternal } from '#shared/types'
+import type { SelectorSelectionInternal } from '#shared/types';
 
-const selection = ref<SelectorSelectionInternal>({ ids: [] })
-const products = ref([])
+const selection = ref<SelectorSelectionInternal>({ ids: [] });
+const products = ref([]);
 
-const onAdd = (id: string) => selection.value.ids?.push(id)
+const onAdd = (id: string) => selection.value.ids?.push(id);
 const onRemove = (id: string) => {
-  selection.value.ids = selection.value.ids?.filter(i => i !== id)
-}
+  selection.value.ids = selection.value.ids?.filter((i) => i !== id);
+};
 </script>
 
 <template>
@@ -31,7 +31,7 @@ const onRemove = (id: string) => {
     description="Choose products to include in this rule"
     :selection="selection"
     :entities="products"
-    entity-name="product"
+    entity-key="product"
     @add="onAdd"
     @remove="onRemove"
   />
@@ -43,7 +43,7 @@ const onRemove = (id: string) => {
 ### `title`
 
 ```ts
-title: string
+title: string;
 ```
 
 - **Type:** `string`
@@ -53,7 +53,7 @@ title: string
 ### `description`
 
 ```ts
-description: string
+description: string;
 ```
 
 - **Type:** `string`
@@ -63,7 +63,7 @@ description: string
 ### `selection`
 
 ```ts
-selection: SelectorSelectionInternal
+selection: SelectorSelectionInternal;
 ```
 
 - **Type:** `SelectorSelectionInternal`
@@ -80,10 +80,10 @@ entities: T[]
 - **Required:** yes
 - **Description:** Entity pool forwarded to `SelectorQuickAdd`. If the array is empty the quick-add input is hidden.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName: string
+entityKey: string;
 ```
 
 - **Type:** `string`

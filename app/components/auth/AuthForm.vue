@@ -34,7 +34,7 @@ const emit = defineEmits<{
 }>();
 
 const { geinsLogError } = useGeinsLog('components/AuthForm.vue');
-const { isLitium, brandName } = useBrand();
+const { brand, brandName } = useBrand();
 const { t } = useI18n();
 const {
   public: { baseUrl },
@@ -318,7 +318,8 @@ const backToLogin = () => {
         </CardTitle>
         <CardDescription v-if="cardDescription">
           <template v-if="verifyMode && mfaMethod.length > 0">
-            {{ $t('auth.verify_description') }} <strong>{{ mfaMethod }}</strong>
+            {{ $t('auth.verify_description') }}
+            <strong>{{ mfaMethod }}</strong>
           </template>
           <template v-else>
             {{ cardDescription }}
@@ -494,7 +495,9 @@ const backToLogin = () => {
             class="flex max-h-58 flex-col gap-2 overflow-auto px-2"
           >
             <li
-              v-for="account in [...(accounts ?? [])].sort((a, b) => a.name.localeCompare(b.name))"
+              v-for="account in [...(accounts ?? [])].sort((a, b) =>
+                a.name.localeCompare(b.name),
+              )"
               :key="account.accountKey"
               class="w-full"
             >
@@ -504,7 +507,10 @@ const backToLogin = () => {
                 size="lg"
                 @click="$emit('set-account', account.accountKey)"
               >
-                <BrandLogoSymbol class="mr-auto size-4" :font-controlled="false" />
+                <BrandLogoSymbol
+                  class="mr-auto size-4"
+                  :font-controlled="false"
+                />
                 <span class="mr-auto">{{ account.name }}</span>
               </Button>
             </li>
@@ -512,7 +518,7 @@ const backToLogin = () => {
               v-if="accounts?.length === 0 && !loading"
               class="text-muted-foreground text-center text-xs"
             >
-              {{ $t('no_entity_found', { entityName: 'account' }, 2) }}
+              {{ $t('no_entity_found', { entityKey: 'account' }, 2) }}
             </li>
           </ul>
           <div
@@ -543,10 +549,12 @@ const backToLogin = () => {
         <template #brandName>{{ brandName }}</template>
         <template #link>
           <a
-            :href="isLitium ? 'https://www.litium.com' : 'https://www.geins.io'"
+            :href="brand.website.url"
             target="_blank"
             rel="noopener noreferrer"
-          >{{ isLitium ? 'litium.com' : 'geins.io' }}</a>
+          >
+            {{ brand.website.label }}
+          </a>
         </template>
       </i18n-t>
     </FieldDescription>

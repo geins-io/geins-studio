@@ -17,8 +17,7 @@ import { h } from 'vue';
 const columns: ColumnDef<Quotation>[] = [
   {
     accessorKey: 'createdAt',
-    header: ({ column }) =>
-      h(TableHeaderSort, { column, title: t('created') }),
+    header: ({ column }) => h(TableHeaderSort, { column, title: t('created') }),
     enableSorting: true,
   },
 ];
@@ -29,7 +28,7 @@ const columns: ColumnDef<Quotation>[] = [
 ### `column`
 
 ```ts
-column: Column<T>
+column: Column<T>;
 ```
 
 [TanStack Table](https://tanstack.com/table/latest/docs/introduction) column instance.
@@ -37,7 +36,7 @@ column: Column<T>
 ### `title`
 
 ```ts
-title: string
+title: string;
 ```
 
 Header label.

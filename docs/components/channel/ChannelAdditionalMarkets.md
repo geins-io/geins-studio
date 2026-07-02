@@ -46,7 +46,7 @@ Markets currently on the channel.
 ### `defaultMarketId`
 
 ```ts
-defaultMarketId: string
+defaultMarketId: string;
 ```
 
 Used to filter the default out of the table.

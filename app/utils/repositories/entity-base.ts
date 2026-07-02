@@ -2,13 +2,26 @@
 import type { ApiOptions } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
+import type { FetchOptions } from 'ofetch';
+
+/**
+ * Extra fetch options a repository call may forward to `$geinsApi` on top of
+ * the query/body it builds. Currently just the per-request error-toast opt-out
+ * so a caller (a background fetch, a flow with its own inline error UX) can
+ * silence the global toast without the block-scoped wrapper.
+ */
+export type RepoFetchOptions = Pick<FetchOptions, 'suppressErrorToast'>;
 
 /** Return type for {@link entityGetRepo} — single entity retrieval */
 export interface EntityGetRepo<
   TResponse,
   TOptions extends ApiOptions<string> = ApiOptions<string>,
 > {
-  get(id: string, options?: TOptions): Promise<TResponse>;
+  get(
+    id: string,
+    options?: TOptions,
+    fetchOptions?: RepoFetchOptions,
+  ): Promise<TResponse>;
 }
 
 /** Return type for {@link entityListRepo} — list operations */
@@ -16,7 +29,10 @@ export interface EntityListRepo<
   TResponse,
   TOptions extends ApiOptions<string> = ApiOptions<string>,
 > {
-  list(options?: TOptions): Promise<TResponse[]>;
+  list(
+    options?: TOptions,
+    fetchOptions?: RepoFetchOptions,
+  ): Promise<TResponse[]>;
 }
 
 /** Return type for {@link entityBaseRepo} — combined get + list (read-only) */
@@ -36,9 +52,14 @@ export function entityGetRepo<
   fetch: $Fetch<TResponse, NitroFetchRequest>,
 ): EntityGetRepo<TResponse, TOptions> {
   return {
-    async get(id: string, options?: TOptions): Promise<TResponse> {
+    async get(
+      id: string,
+      options?: TOptions,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<TResponse> {
       return await fetch<TResponse>(`${entityEndpoint}/${id}`, {
         query: buildQueryObject(options),
+        ...fetchOptions,
       });
     },
   };
@@ -55,9 +76,13 @@ export function entityListRepo<
   fetch: $Fetch<TResponse, NitroFetchRequest>,
 ): EntityListRepo<TResponse, TOptions> {
   return {
-    async list(options?: TOptions): Promise<TResponse[]> {
+    async list(
+      options?: TOptions,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<TResponse[]> {
       return await fetch<TResponse[]>(`${entityEndpoint}/list`, {
         query: buildQueryObject(options),
+        ...fetchOptions,
       });
     },
   };

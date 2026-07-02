@@ -232,7 +232,7 @@ const ready = computed(() => columns.value.length > 0 || !props.loading);
     <TableView
       :columns="columns"
       :data="rows"
-      entity-name="changelog_entry"
+      entity-key="changelog_entry"
       :mode="TableMode.Simple"
       :loading="loading && rows.length === 0"
       :error="error"

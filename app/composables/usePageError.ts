@@ -1,10 +1,13 @@
+import type { Entity } from '#shared/utils/entities';
 import type { NuxtError } from '#app';
 
 interface PageErrorOptions {
   /**
-   * The name of the entity being edited/viewed (for entity-specific errors)
+   * Registry entry for the entity (`ENTITIES.x`) for entity-specific errors;
+   * its `key` drives the localized messages. Omit on non-entity pages for the
+   * generic message.
    */
-  entityName?: string;
+  entity?: Entity;
   /**
    * The ID of the entity (for more specific error messages)
    */
@@ -62,32 +65,33 @@ export function usePageError(
     contextOptions: PageErrorOptions = {},
   ): string => {
     const effectiveOptions = { ...options, ...contextOptions };
-    const { entityName, entityId } = effectiveOptions;
-    const name = entityName || 'entity';
+    const { entity, entityId } = effectiveOptions;
+    const entityKey = entity?.key;
+    const name = entityKey || 'entity';
     const pluralizerNr = effectiveOptions?.entityList ? 2 : 1;
 
     if (statusCode === 404) {
-      if (entityName && entityId) {
+      if (entityKey && entityId) {
         return t('entity_with_id_not_found', {
-          entityName,
+          entityKey,
           id: entityId,
         });
       }
-      if (entityName) {
-        return t('no_entity_found', { entityName }, pluralizerNr);
+      if (entityKey) {
+        return t('no_entity_found', { entityKey }, pluralizerNr);
       }
       return t('error.404_description');
     }
 
     if (statusCode >= 500) {
-      if (entityName) {
-        return t('error_loading_entity', { entityName: name }, pluralizerNr);
+      if (entityKey) {
+        return t('error_loading_entity', { entityKey: name }, pluralizerNr);
       }
       return t('error.500_description');
     }
 
-    if (entityName) {
-      return t('error_loading_entity', { entityName: name }, pluralizerNr);
+    if (entityKey) {
+      return t('error_loading_entity', { entityKey: name }, pluralizerNr);
     }
     return t('error.500_description');
   };

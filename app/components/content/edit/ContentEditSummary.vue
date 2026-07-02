@@ -8,7 +8,7 @@ const props = withDefaults(
     formTouched?: boolean;
     summary?: DataItem[];
     settingsSummary?: DataItem[];
-    entityName?: string;
+    entityKey?: string;
     entityLiveStatus?: boolean;
     showActiveStatus?: boolean;
     disabled?: boolean;
@@ -48,16 +48,16 @@ const description = computed(() => {
 
 const activeDescription = computed(() => {
   if (active.value && props.entityLiveStatus) {
-    return t('entity_is_active', { entityName: props.entityName });
+    return t('entity_is_active', { entityKey: props.entityKey });
   }
   if (!active.value && !props.entityLiveStatus) {
-    return t('entity_is_inactive', { entityName: props.entityName });
+    return t('entity_is_inactive', { entityKey: props.entityKey });
   }
   if (active.value && !props.entityLiveStatus) {
-    return t('entity_will_activate', { entityName: props.entityName });
+    return t('entity_will_activate', { entityKey: props.entityKey });
   }
   if (!active.value && props.entityLiveStatus) {
-    return t('entity_will_deactivate', { entityName: props.entityName });
+    return t('entity_will_deactivate', { entityKey: props.entityKey });
   }
   return '';
 });

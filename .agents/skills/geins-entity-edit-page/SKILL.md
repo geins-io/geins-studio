@@ -36,6 +36,23 @@ Key callbacks you implement:
 - `prepareCreateData()` / `prepareUpdateData()` — map form → POST/PATCH body
 - `onFormValuesChange(values)` — keep `entityDataUpdate` in sync as the form changes
 
+## Entity identity (`entity`)
+
+Pass the **registry entry** `ENTITIES.x` to both `useEntityEdit` and `usePageError`. The entry carries the entity's `key` (which drives the CRUD toasts, the 404 title, and the page heading) — `useEntityEdit` derives `entityName = entity.key` and returns the string for `$t(entityName, …)` in the template. Don't rely on route-folder derivation (it only equals the key when folder == key, and breaks for plural folders):
+
+```ts
+import { ENTITIES } from '#shared/utils/entities';
+
+const {
+  entityName, // = ENTITIES.channel.key, returned for template use
+  /* … */
+} = useEntityEdit<…>({ entity: ENTITIES.channel, repository, /* … */ });
+
+const { handleFetchResult } = usePageError({ entity: ENTITIES.channel });
+```
+
+The entity must exist in the `ENTITIES` registry (`shared/utils/entities.ts`) — see the **geins-add-entity** skill, step 3. (A page whose template has a `v-for="entity in …"` should pass `ENTITIES.x` inline rather than aliasing it to a local `const entity`, to avoid a template-shadow warning.)
+
 ## Required edit-mode loading block
 
 Every `[id].vue` **must** include this block at the bottom of `<script setup>`. Without it, reloading on an existing entity or returning after creation shows a blank form.

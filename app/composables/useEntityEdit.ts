@@ -1,4 +1,11 @@
 import { useForm, type GenericObject } from 'vee-validate';
+import {
+  entityBasePath,
+  entityNewUrl,
+  entityEditUrl,
+  NEW_ENTITY_URL_SEGMENT,
+} from '#shared/utils/entities';
+import type { EntityKey, EntityWithRoute } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { toTypedSchema } from '@vee-validate/zod';
 
@@ -9,7 +16,8 @@ interface EntityEditOptions<
   TUpdate extends UpdateEntity<TBase>,
   TOptions extends ApiOptions<string> = ApiOptions<string>,
 > {
-  entityName?: string;
+  /** Registry entry for the entity (`ENTITIES.x` from `#shared/utils/entities`). Its `key` drives i18n/toasts and its `route` drives the page URLs. */
+  entity: EntityWithRoute;
   repository: {
     get: (id: string, options?: TOptions) => Promise<TResponse>;
     create: (data: TCreate, options?: TOptions) => Promise<TResponse>;
@@ -17,6 +25,7 @@ interface EntityEditOptions<
       id: string,
       data: TUpdate,
       options?: TOptions,
+      fetchOptions?: { suppressErrorToast?: boolean },
     ) => Promise<TResponse>;
     delete?: (id: string) => Promise<void>;
   };
@@ -50,7 +59,7 @@ interface _UseEntityEditReturnType<
   TUpdate extends UpdateEntity<TBase>,
 > {
   // State
-  entityName: string;
+  entityKey: EntityKey;
   entityId: ComputedRef<string>;
   createMode: Ref<boolean>;
   loading: Ref<boolean>;
@@ -131,23 +140,18 @@ export function useEntityEdit<
   const route = useRoute();
   const router = useRouter();
   const { toast } = useToast();
-  const {
-    newEntityUrlAlias,
-    getEntityName,
-    getEntityNewUrl,
-    getEntityListUrl,
-  } = useEntityUrl();
   const { hasReducedSpace } = useLayout();
 
-  // Core state
-  const entityName = options.entityName || getEntityName();
-  const newEntityUrl = getEntityNewUrl();
-  const entityListUrl = getEntityListUrl();
-  const createMode = ref(route.params.id === newEntityUrlAlias.value);
+  // Core state — all URLs derive from the registry entry the page passes in
+  // (single source); never from the route folder.
+  const entityKey = options.entity.key;
+  const newEntityUrl = entityNewUrl(options.entity.key);
+  // Back-to-list = the collection index (the entity folder itself).
+  const entityListUrl = entityBasePath(options.entity.key);
+  const createMode = ref(route.params.id === NEW_ENTITY_URL_SEGMENT);
   const loading = ref(false);
   const refreshEntityData = ref<() => Promise<void>>(() => Promise.resolve());
   const entityLiveStatus = ref<boolean>(false);
-  const { showErrorToast } = usePageError({ entityName });
 
   // Entity data
   const entityDataCreate = ref<TCreate>(options.initialEntityData);
@@ -160,13 +164,13 @@ export function useEntityEdit<
     () => entityData.value?._id || String(route.params.id),
   );
 
-  const entityFetchKey = computed(() => `${entityName}-${entityId.value}`);
+  const entityFetchKey = computed(() => `${entityKey}-${entityId.value}`);
 
   const entityPageTitle = computed(() =>
     createMode.value
-      ? t('new_entity', { entityName }) +
+      ? t('new_entity', { entityKey }) +
         (entityData.value?.name ? ': ' + entityData.value.name : '')
-      : entityData.value?.name || t('edit_entity', { entityName }),
+      : entityData.value?.name || t('edit_entity', { entityKey }),
   );
 
   // Sidebar + tabs
@@ -300,25 +304,16 @@ export function useEntityEdit<
       const result = await options.repository.create(createData, queryOptions);
 
       if (result?._id) {
-        const newUrl = newEntityUrl.replace(
-          newEntityUrlAlias.value,
-          result._id,
-        );
+        const newUrl = entityEditUrl(options.entity.key, result._id);
         await router.replace(newUrl);
 
         toast({
-          title: t('entity_created', { entityName }),
+          title: t('entity_created', { entityKey }),
           variant: 'positive',
         });
       }
 
       return result;
-    } catch (error) {
-      showErrorToast(
-        t('error_creating_entity', { entityName }),
-        getApiErrorTitle(error),
-      );
-      throw error;
     } finally {
       loading.value = false;
     }
@@ -350,10 +345,13 @@ export function useEntityEdit<
       if (!updateData) {
         return;
       }
+      // Silent updates (e.g. background re-save on load) opt out of the global
+      // error toast so a background save can fail without alarming the user.
       const result = await options.repository.update(
         id,
         updateData,
         queryOptions,
+        silent ? { suppressErrorToast: true } : undefined,
       );
       const newData =
         result ?? (await options.repository.get(id, queryOptions));
@@ -361,20 +359,12 @@ export function useEntityEdit<
 
       if (!silent) {
         toast({
-          title: t('entity_updated', { entityName }),
+          title: t('entity_updated', { entityKey }),
           variant: 'positive',
         });
       }
 
       return result;
-    } catch (error) {
-      if (!silent) {
-        showErrorToast(
-          t('error_updating_entity', { entityName }),
-          getApiErrorTitle(error),
-        );
-      }
-      throw error;
     } finally {
       loading.value = false;
     }
@@ -387,22 +377,19 @@ export function useEntityEdit<
     try {
       await options.repository.delete(entityId.value);
       toast({
-        title: t('entity_deleted', { entityName }),
+        title: t('entity_deleted', { entityKey }),
         variant: 'positive',
       });
       return true;
-    } catch (error) {
-      showErrorToast(
-        t('entity_delete_failed', { entityName }),
-        getApiErrorTitle(error),
-      );
+    } catch {
+      // Error toast shown globally by $geinsApi; just signal failure here.
       return false;
     }
   };
 
   return {
     // State
-    entityName,
+    entityKey,
     entityId,
     createMode,
     loading,

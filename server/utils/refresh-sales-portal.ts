@@ -20,8 +20,7 @@ export function describeFetchError(err: unknown): string {
   let cause: unknown;
   if (e && typeof e === 'object' && 'cause' in e) {
     const c = e.cause;
-    cause =
-      typeof c === 'string' ? c : { code: c?.code, message: c?.message };
+    cause = typeof c === 'string' ? c : { code: c?.code, message: c?.message };
   }
   return JSON.stringify({
     name: e?.name,

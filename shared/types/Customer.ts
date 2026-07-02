@@ -25,16 +25,14 @@ export interface CustomerCompanyBase {
   meta?: Record<string, unknown>;
 }
 
-export interface CustomerCompanyCreate
-  extends CreateEntity<CustomerCompanyBase> {
+export interface CustomerCompanyCreate extends CreateEntity<CustomerCompanyBase> {
   buyers: CompanyBuyerCreate[];
   addresses: AddressCreate[];
   salesReps: string[];
   priceLists: string[];
 }
 
-export interface CustomerCompanyUpdate
-  extends UpdateEntity<CustomerCompanyBase> {
+export interface CustomerCompanyUpdate extends UpdateEntity<CustomerCompanyBase> {
   buyers?: CompanyBuyerUpdate[];
   addresses?: AddressUpdate[];
   salesReps?: string[];
@@ -59,7 +57,8 @@ export type CustomerCompanyFieldsFilter =
 export type CustomerCompanyApiOptions = ApiOptions<CustomerCompanyFieldsFilter>;
 
 export interface CustomerCompanyList
-  extends Omit<CustomerCompany, 'salesReps' | 'buyers' | 'priceLists'>,
+  extends
+    Omit<CustomerCompany, 'salesReps' | 'buyers' | 'priceLists'>,
     EntityBase {
   companyGroups: Tooltip;
   salesReps: Tooltip;
@@ -89,14 +88,18 @@ export interface CompanyBuyerBase {
   restrictToDedicatedPriceLists?: boolean;
 }
 
-export interface CompanyBuyerCreate
-  extends Omit<CreateEntity<CompanyBuyerBase>, 'priceLists'> {
+export interface CompanyBuyerCreate extends Omit<
+  CreateEntity<CompanyBuyerBase>,
+  'priceLists'
+> {
   _id: string; // TODO: Remove when fixed
   priceLists?: string[];
 }
 
-export interface CompanyBuyerUpdate
-  extends Omit<UpdateEntity<CompanyBuyerBase>, 'priceLists'> {
+export interface CompanyBuyerUpdate extends Omit<
+  UpdateEntity<CompanyBuyerBase>,
+  'priceLists'
+> {
   _id?: string; // TODO: Remove when fixed
   priceLists?: string[];
 }
@@ -104,8 +107,7 @@ export interface CompanyBuyerUpdate
 export type CompanyBuyer = ResponseEntity<CompanyBuyerBase>;
 
 export interface CompanyBuyerList
-  extends Omit<CompanyBuyer, 'priceLists'>,
-    EntityBase {
+  extends Omit<CompanyBuyer, 'priceLists'>, EntityBase {
   priceLists: Tooltip;
 }
 
@@ -130,15 +132,14 @@ export interface CustomerOrder {
   status: string;
 }
 
-export interface CustomerPriceList
-  extends Omit<
-    ProductPriceList,
-    | 'products'
-    | 'rules'
-    | 'productSelectionQuery'
-    | 'autoAddProducts'
-    | 'forced'
-    | 'dateCreated'
-  > {
+export interface CustomerPriceList extends Omit<
+  ProductPriceList,
+  | 'products'
+  | 'rules'
+  | 'productSelectionQuery'
+  | 'autoAddProducts'
+  | 'forced'
+  | 'dateCreated'
+> {
   productCount: number;
 }

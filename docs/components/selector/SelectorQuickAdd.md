@@ -16,20 +16,22 @@ Keyboard-first search input for quickly adding or removing entities from a selec
 
 ```vue
 <script setup lang="ts">
-const products = ref([/* SelectorEntity[] */])
-const selectedIds = ref<string[]>([])
+const products = ref([
+  /* SelectorEntity[] */
+]);
+const selectedIds = ref<string[]>([]);
 
-const onAdd = (id: string) => selectedIds.value.push(id)
+const onAdd = (id: string) => selectedIds.value.push(id);
 const onRemove = (id: string) => {
-  selectedIds.value = selectedIds.value.filter(i => i !== id)
-}
+  selectedIds.value = selectedIds.value.filter((i) => i !== id);
+};
 </script>
 
 <template>
   <SelectorQuickAdd
     :entities="products"
     :selection="selectedIds"
-    entity-name="product"
+    entity-key="product"
     :show-image="true"
     :show-id="true"
     @add="onAdd"
@@ -60,10 +62,10 @@ selection: string[]
 - **Required:** yes
 - **Description:** Array of currently selected entity `_id` values. Used to render the checkmark state.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName: string
+entityKey: string;
 ```
 
 - **Type:** `string`

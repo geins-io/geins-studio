@@ -23,18 +23,18 @@ That's it — every page automatically gets the correct title based on breadcrum
 
 ### Title Examples
 
-| Page                 | Breadcrumb Trail              | Browser Tab Title                      |
-| -------------------- | ----------------------------- | -------------------------------------- |
-| Quotation list       | Orders → Quotations           | Quotations - Orders - Geins Studio     |
-| Quotation edit       | Orders → Quotations → Q-1001 | Q-1001 - Quotations - Geins Studio     |
-| Root / Start         | _(empty)_                     | Geins Studio                           |
+| Page           | Breadcrumb Trail             | Browser Tab Title                  |
+| -------------- | ---------------------------- | ---------------------------------- |
+| Quotation list | Orders → Quotations          | Quotations - Orders - Geins Studio |
+| Quotation edit | Orders → Quotations → Q-1001 | Q-1001 - Quotations - Geins Studio |
+| Root / Start   | _(empty)_                    | Geins Studio                       |
 
 ## Properties and Methods
 
 ### `pageTitle`
 
 ```ts
-pageTitle: Readonly<Ref<string>>
+pageTitle: Readonly<Ref<string>>;
 ```
 
 A computed ref containing the current page title string (without the app name suffix). Empty string when the breadcrumb trail is empty.

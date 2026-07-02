@@ -16,19 +16,24 @@ A slide-over sheet that lets the user browse and select entities by ID, category
 
 ```vue
 <script setup lang="ts">
-import type { SelectorSelectionInternal, SelectorSelectionOption } from '#shared/types'
-import { SelectorMode, SelectorEntityType } from '#shared/types'
+import type {
+  SelectorSelectionInternal,
+  SelectorSelectionOption,
+} from '#shared/types';
+import { SelectorMode, SelectorEntityType } from '#shared/types';
 
-const selection = ref<SelectorSelectionInternal>({ ids: [] })
-const products = ref([/* ... */])
+const selection = ref<SelectorSelectionInternal>({ ids: [] });
+const products = ref([
+  /* ... */
+]);
 
 const options: SelectorSelectionOption[] = [
   { id: 'product', group: 'ids', label: 'Products' },
-]
+];
 
 const onSave = (updated: SelectorSelectionInternal) => {
-  selection.value = updated
-}
+  selection.value = updated;
+};
 </script>
 
 <template>
@@ -36,7 +41,7 @@ const onSave = (updated: SelectorSelectionInternal) => {
     :selection="selection"
     :mode="SelectorMode.Advanced"
     :options="options"
-    entity-name="product"
+    entity-key="product"
     :entities="products"
     @save="onSave"
   >
@@ -51,7 +56,7 @@ const onSave = (updated: SelectorSelectionInternal) => {
 ### `selection`
 
 ```ts
-selection: SelectorSelectionInternal
+selection: SelectorSelectionInternal;
 ```
 
 - **Type:** `SelectorSelectionInternal`
@@ -61,7 +66,7 @@ selection: SelectorSelectionInternal
 ### `mode`
 
 ```ts
-mode: SelectorMode
+mode: SelectorMode;
 ```
 
 - **Type:** `SelectorMode`
@@ -87,10 +92,10 @@ options: SelectorSelectionOption[]
 - **Required:** yes
 - **Description:** Array of navigation tabs. Each item maps an `id` to a `group` key in `SelectorSelectionInternal`.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName: string
+entityKey: string;
 ```
 
 - **Type:** `string`
@@ -137,9 +142,9 @@ The trigger element that opens the sheet (wrapped in `SheetTrigger as-child`). T
 
 ```ts
 interface SelectorSelectionOption {
-  id: SelectorSelectionOptionsId
-  group: string
-  label: string
+  id: SelectorSelectionOptionsId;
+  group: string;
+  label: string;
 }
 
 enum SelectorEntityType {

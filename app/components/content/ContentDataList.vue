@@ -21,9 +21,9 @@ const _props = withDefaults(
         :key="index"
         class="text-muted-foreground flex items-center justify-between gap-2 text-right text-xs sm:text-sm"
       >
-        <span class="text-foreground text-left font-bold"
-          >{{ item.label }}:</span
-        >
+        <span class="text-foreground text-left font-bold">
+          {{ item.label }}:
+        </span>
 
         <ContentTextTooltip
           v-if="
@@ -34,7 +34,7 @@ const _props = withDefaults(
           {{
             $t(
               'nr_of_entity',
-              { count: item.value.length, entityName: item.entityName },
+              { count: item.value.length, entityKey: item.entityKey },
               item.value.length,
             )
           }}

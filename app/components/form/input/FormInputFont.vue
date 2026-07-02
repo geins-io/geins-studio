@@ -134,7 +134,7 @@ const handleKeyDown = () => {
           </span>
         </div>
 
-        <ComboboxEmpty> No fonts found </ComboboxEmpty>
+        <ComboboxEmpty>No fonts found</ComboboxEmpty>
 
         <ComboboxGroup class="max-h-75 overflow-auto">
           <ComboboxItem

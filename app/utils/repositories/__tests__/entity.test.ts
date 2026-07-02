@@ -10,7 +10,7 @@ beforeEach(() => {
 });
 
 describe('entityRepo', () => {
-  const repo = entityRepo('/products', mockFetch);
+  const repo = entityRepo({ endpoint: '/products' }, mockFetch);
 
   describe('inherited read operations', () => {
     it('has get method from entityBaseRepo', () => {

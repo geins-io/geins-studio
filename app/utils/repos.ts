@@ -7,7 +7,6 @@ import { orchestratorRepo } from './repositories/orchestrator';
 import { orderRepo } from './repositories/order';
 import { productRepo } from './repositories/product';
 import { userRepo } from './repositories/user';
-import { workflowRepo } from './repositories/workflow';
 
 export const repo = {
   account: accountRepo,
@@ -19,5 +18,4 @@ export const repo = {
   order: orderRepo,
   changelog: changelogRepo,
   orchestrator: orchestratorRepo,
-  workflow: workflowRepo,
 };

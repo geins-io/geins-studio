@@ -23,7 +23,9 @@ function onInput(event: Event) {
 </script>
 
 <template>
-  <div class="bg-input focus-within:border-primary relative h-10 w-full rounded-lg border focus-within:outline-hidden">
+  <div
+    class="bg-input focus-within:border-primary relative h-10 w-full rounded-lg border focus-within:outline-hidden"
+  >
     <input
       :value="displayValue"
       :placeholder="placeholder?.replace(/px$/i, '')"
@@ -31,7 +33,9 @@ function onInput(event: Event) {
       class="bg-input placeholder:text-muted-foreground h-full w-full rounded-lg py-1 pr-9 pl-2 text-sm transition-colors focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 sm:pl-3"
       @input="onInput"
     />
-    <span class="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm">
+    <span
+      class="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm"
+    >
       px
     </span>
   </div>

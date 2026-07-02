@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ChannelMarket, ChannelMarketRow } from '#shared/types';
+import { TableMode } from '#shared/types';
 
 const { t } = useI18n();
 const { resolveIcon } = useLucideIcon();
@@ -63,7 +64,7 @@ const columns = computed(() => {
         :columns="columns"
         :data="tableRows"
         :mode="TableMode.Minimal"
-        entity-name="market"
+        entity-key="market"
         :empty-text="t('channels.additional_markets_empty')"
         :empty-icon="emptyIcon"
       />

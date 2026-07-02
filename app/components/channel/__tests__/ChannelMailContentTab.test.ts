@@ -31,7 +31,9 @@ describe('ChannelMailContentTab', () => {
     const component = await mountWithContext(ChannelMailContentTab, {
       props: { mailTypes: [mailType] },
     });
-    const buttons = component.findComponent(ChannelMailContentRow).findAll('button');
+    const buttons = component
+      .findComponent(ChannelMailContentRow)
+      .findAll('button');
     await buttons[buttons.length - 1]!.trigger('click');
     expect(component.emitted('edit')).toBeTruthy();
     expect(component.emitted('edit')![0]).toEqual([mailType]);

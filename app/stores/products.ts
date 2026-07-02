@@ -31,22 +31,25 @@ export const useProductsStore = defineStore('products', () => {
   const initialized = ref(false);
 
   // ACTIONS
+
+  const SILENT: { suppressErrorToast: true } = { suppressErrorToast: true };
+
   async function fetchProducts(
     fields: ProductFieldsFilter[] = ['localizations', 'media', 'prices'],
   ): Promise<Product[]> {
-    const data = await productApi.list({ fields });
+    const data = await productApi.list({ fields }, SILENT);
     products.value = transformProducts(data?.items);
     return products.value;
   }
 
   async function fetchCategories(): Promise<Category[]> {
-    const data = await productApi.category.list();
+    const data = await productApi.category.list(undefined, SILENT);
     categories.value = transformCategories(data?.items) as Category[];
     return categories.value;
   }
 
   async function fetchBrands(): Promise<Brand[]> {
-    const data = await productApi.brand.list();
+    const data = await productApi.brand.list(undefined, SILENT);
     brands.value = transformBrands(data?.items) as Brand[];
     return brands.value;
   }

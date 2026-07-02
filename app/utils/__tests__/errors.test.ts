@@ -5,6 +5,9 @@ import {
   getErrorStatus,
   getFallbackErrorMessage,
   getErrorType,
+  getApiErrorTitle,
+  getApiErrorDetail,
+  composeErrorMessage,
 } from '../errors';
 
 describe('getErrorMessage', () => {
@@ -113,9 +116,9 @@ describe('getFallbackErrorMessage', () => {
   });
 
   it('prefers data.message over data.error', () => {
-    expect(
-      getFallbackErrorMessage(500, { message: 'msg', error: 'err' }),
-    ).toBe('msg');
+    expect(getFallbackErrorMessage(500, { message: 'msg', error: 'err' })).toBe(
+      'msg',
+    );
   });
 
   it('ignores non-string message values in data', () => {
@@ -180,5 +183,98 @@ describe('getErrorType', () => {
 
   it('returns API_ERROR for 422', () => {
     expect(getErrorType(422)).toBe('API_ERROR');
+  });
+});
+
+describe('getApiErrorTitle', () => {
+  it('reads GeinsApiError shape (originalError.data.title)', () => {
+    expect(
+      getApiErrorTitle({
+        originalError: { data: { title: 'Market not found' } },
+      }),
+    ).toBe('Market not found');
+  });
+
+  it('reads FetchError shape (data.title)', () => {
+    expect(getApiErrorTitle({ data: { title: 'Bad request' } })).toBe(
+      'Bad request',
+    );
+  });
+
+  it('reads Nitro-wrapped shape (data.data.title)', () => {
+    expect(getApiErrorTitle({ data: { data: { title: 'Nested' } } })).toBe(
+      'Nested',
+    );
+  });
+
+  it('returns undefined when no title is present', () => {
+    expect(
+      getApiErrorTitle({ data: { detail: 'only detail' } }),
+    ).toBeUndefined();
+    expect(getApiErrorTitle(null)).toBeUndefined();
+    expect(getApiErrorTitle('nope')).toBeUndefined();
+  });
+
+  it('ignores a non-string title', () => {
+    expect(getApiErrorTitle({ data: { title: 42 } })).toBeUndefined();
+  });
+});
+
+describe('getApiErrorDetail', () => {
+  it('reads GeinsApiError shape (originalError.data.detail)', () => {
+    expect(
+      getApiErrorDetail({
+        originalError: { data: { detail: 'Id was invalid' } },
+      }),
+    ).toBe('Id was invalid');
+  });
+
+  it('reads FetchError shapes (data.detail and data.data.detail)', () => {
+    expect(getApiErrorDetail({ data: { detail: 'direct' } })).toBe('direct');
+    expect(getApiErrorDetail({ data: { data: { detail: 'nested' } } })).toBe(
+      'nested',
+    );
+  });
+
+  it('returns undefined when detail is absent', () => {
+    expect(
+      getApiErrorDetail({ data: { title: 'only title' } }),
+    ).toBeUndefined();
+    expect(getApiErrorDetail(undefined)).toBeUndefined();
+  });
+});
+
+describe('composeErrorMessage', () => {
+  it('joins title and detail with ". "', () => {
+    expect(
+      composeErrorMessage('Market not found: 1', 'The market id was invalid.'),
+    ).toBe('Market not found: 1. The market id was invalid.');
+  });
+
+  it('collapses the separator to a single space when the title ends with a period', () => {
+    expect(
+      composeErrorMessage('Market not found.', 'The market id was invalid.'),
+    ).toBe('Market not found. The market id was invalid.');
+  });
+
+  it('returns the title alone when there is no detail', () => {
+    expect(composeErrorMessage('Market not found.')).toBe('Market not found.');
+  });
+
+  it('returns the detail alone when there is no title', () => {
+    expect(composeErrorMessage(undefined, 'Just a detail')).toBe(
+      'Just a detail',
+    );
+  });
+
+  it('trims surrounding whitespace before joining', () => {
+    expect(composeErrorMessage('  Market not found  ', '  invalid  ')).toBe(
+      'Market not found. invalid',
+    );
+  });
+
+  it('returns undefined when both parts are empty or missing', () => {
+    expect(composeErrorMessage()).toBeUndefined();
+    expect(composeErrorMessage('', '   ')).toBeUndefined();
   });
 });

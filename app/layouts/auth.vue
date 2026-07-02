@@ -2,6 +2,8 @@
 import { SpeedInsights } from '@vercel/speed-insights/vue';
 
 const { brandName } = useBrand();
+
+const isVercel = useRuntimeConfig().public.isVercel;
 </script>
 
 <template>
@@ -20,5 +22,5 @@ const { brandName } = useBrand();
       <slot />
     </div>
   </div>
-  <SpeedInsights />
+  <SpeedInsights v-if="isVercel" />
 </template>

@@ -18,6 +18,7 @@ The Pricing domain manages price lists — named collections of product prices s
 **Volume pricing rules** (`PriceListRule`) — Quantity-based pricing tiers. Each rule specifies a `quantity` threshold and a `margin`, `discountPercent`, or `price`. Rules can be global (applied to all products) or per-product. The `lastFieldChanged` tracks which field was most recently edited for UI calculation logic.
 
 **Preview** — Two preview endpoints:
+
 - `POST /product/pricelist/{id}/preview` — Preview the entire price list with proposed changes
 - `POST /product/pricelist/{id}/previewprice` — Preview a single product's calculated price
 
@@ -27,25 +28,25 @@ The Pricing domain manages price lists — named collections of product prices s
 
 The pricing domain has the most composables (6), each with a focused responsibility:
 
-| Composable | Purpose |
-| --- | --- |
-| `usePriceListProducts` | Product selection and CRUD within a price list |
+| Composable                  | Purpose                                                          |
+| --------------------------- | ---------------------------------------------------------------- |
+| `usePriceListProducts`      | Product selection and CRUD within a price list                   |
 | `usePriceListProductsTable` | Column definitions and table interactions for the products table |
-| `usePriceListRules` | Global volume pricing rule management |
-| `usePriceListVolumePricing` | Per-product volume pricing panel interactions |
-| `usePriceListPreview` | Preview endpoint calls and result handling |
-| `usePrice` | Price/currency formatting and conversion utilities |
+| `usePriceListRules`         | Global volume pricing rule management                            |
+| `usePriceListVolumePricing` | Per-product volume pricing panel interactions                    |
+| `usePriceListPreview`       | Preview endpoint calls and result handling                       |
+| `usePrice`                  | Price/currency formatting and conversion utilities               |
 
 These compose together on the `[id].vue` edit page. `usePriceListProducts` manages the data, `usePriceListProductsTable` renders it, `usePriceListRules`/`usePriceListVolumePricing` handle the rules UI, and `usePriceListPreview` coordinates live calculations.
 
 ## Contracts (Cross-Domain Usage)
 
-| Type | Used By | Purpose |
-| --- | --- | --- |
-| `ProductPriceList` | Customers | Price list assignment to companies |
-| `CustomerPriceList` | Customers | Slimmed-down price list view on company cards |
-| `PriceListProduct` | Pricing pages | Per-product pricing rows |
-| `PriceListRule` | Pricing pages | Volume pricing tiers |
+| Type                | Used By       | Purpose                                       |
+| ------------------- | ------------- | --------------------------------------------- |
+| `ProductPriceList`  | Customers     | Price list assignment to companies            |
+| `CustomerPriceList` | Customers     | Slimmed-down price list view on company cards |
+| `PriceListProduct`  | Pricing pages | Per-product pricing rows                      |
+| `PriceListRule`     | Pricing pages | Volume pricing tiers                          |
 
 ## Dependencies
 
@@ -54,13 +55,13 @@ These compose together on the `[id].vue` edit page. `usePriceListProducts` manag
 
 ## Key Files
 
-| Layer | Path |
-| --- | --- |
-| Types | `shared/types/Product.ts` (price list types colocated with product types) |
-| Repository | `app/utils/repositories/product.ts` (`.priceList` sub-repo) |
+| Layer       | Path                                                                                                                                                       |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Types       | `shared/types/Product.ts` (price list types colocated with product types)                                                                                  |
+| Repository  | `app/utils/repositories/product.ts` (`.priceList` sub-repo)                                                                                                |
 | Composables | `usePriceListProducts.ts`, `usePriceListProductsTable.ts`, `usePriceListRules.ts`, `usePriceListVolumePricing.ts`, `usePriceListPreview.ts`, `usePrice.ts` |
-| Components | `app/components/price-list/` |
-| Pages | `app/pages/pricing/price-list/list.vue`, `[id].vue` |
+| Components  | `app/components/price-list/`                                                                                                                               |
+| Pages       | `app/pages/pricing/price-lists/index.vue`, `[id].vue`                                                                                                      |
 
 ## Decision Log
 

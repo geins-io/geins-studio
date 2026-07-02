@@ -1,13 +1,16 @@
 import { createConfigForNuxt } from '@nuxt/eslint-config/flat';
-import pkg from 'eslint-plugin-prettier/recommended';
+import prettierConfig from 'eslint-config-prettier';
 import tailwind from 'eslint-plugin-tailwindcss';
-const { eslintPluginPrettierRecommended } = pkg;
 
+// Prettier owns all formatting. eslint handles code quality only.
+// eslint-config-prettier (appended LAST) disables any eslint rules that would
+// conflict with Prettier. We intentionally do NOT use eslint-plugin-prettier —
+// it diverged from standalone Prettier (missing vue/tailwind plugin transforms),
+// so formatting is enforced via `prettier`/`format:check`, not through eslint.
 export default createConfigForNuxt()
   .prepend({
     ignores: ['.agents/**'],
   })
-  .append(eslintPluginPrettierRecommended)
   .append(tailwind.configs['flat/recommended'])
   .append({
     settings: {
@@ -61,9 +64,21 @@ export default createConfigForNuxt()
         'error',
         {
           patterns: [
-            { group: ['@/*', '~/*', '~/app/*', '@/components/*', '@/composables/*', '@/utils/*'], message: 'shared/ must not import from app/ — dependency direction violation.' },
+            {
+              group: [
+                '@/*',
+                '~/*',
+                '~/app/*',
+                '@/components/*',
+                '@/composables/*',
+                '@/utils/*',
+              ],
+              message:
+                'shared/ must not import from app/ — dependency direction violation.',
+            },
           ],
         },
       ],
     },
-  });
+  })
+  .append(prettierConfig);

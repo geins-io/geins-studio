@@ -25,7 +25,7 @@
 ### `defaultMarket`
 
 ```ts
-defaultMarket: ChannelMarket | undefined
+defaultMarket: ChannelMarket | undefined;
 ```
 
 The market currently set as default. `undefined` shows the empty state.
@@ -33,7 +33,7 @@ The market currently set as default. `undefined` shows the empty state.
 ### `canChange`
 
 ```ts
-canChange: boolean
+canChange: boolean;
 ```
 
 Enables the Change button.

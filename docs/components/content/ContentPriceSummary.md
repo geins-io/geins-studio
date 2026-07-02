@@ -17,9 +17,16 @@ A detailed order/quotation price breakdown table with optional inline edit popov
 
 ```vue
 <script setup lang="ts">
-import type { QuotationTotal } from '#shared/types'
+import type { QuotationTotal } from '#shared/types';
 
-const total: QuotationTotal = { subtotal: 1000, discount: 0, shipping: 0, grandTotalExVat: 1000, vat: 250, grandTotalIncVat: 1250 }
+const total: QuotationTotal = {
+  subtotal: 1000,
+  discount: 0,
+  shipping: 0,
+  grandTotalExVat: 1000,
+  vat: 250,
+  grandTotalIncVat: 1250,
+};
 </script>
 
 <template>
@@ -31,9 +38,9 @@ const total: QuotationTotal = { subtotal: 1000, discount: 0, shipping: 0, grandT
 
 ```vue
 <script setup lang="ts">
-const discountType = ref<'percent' | 'fixedAmount'>('percent')
-const discountValue = ref('')
-const shippingFee = ref('')
+const discountType = ref<'percent' | 'fixedAmount'>('percent');
+const discountValue = ref('');
+const shippingFee = ref('');
 </script>
 
 <template>
@@ -54,7 +61,7 @@ const shippingFee = ref('')
 ### `total`
 
 ```ts
-total: QuotationTotal
+total: QuotationTotal;
 ```
 
 - **Type:** `QuotationTotal`
@@ -64,7 +71,7 @@ total: QuotationTotal
 ### `currency`
 
 ```ts
-currency: string
+currency: string;
 ```
 
 - **Type:** `string`
@@ -131,13 +138,13 @@ Emitted when the user exits the discount or shipping input. Use to trigger a pri
 
 ```ts
 interface QuotationTotal {
-  subtotal: number
-  discount: number
-  shipping?: number
-  suggestedShippingFee?: number
-  grandTotalExVat: number
-  vat: number
-  grandTotalIncVat: number
+  subtotal: number;
+  discount: number;
+  shipping?: number;
+  suggestedShippingFee?: number;
+  grandTotalExVat: number;
+  vat: number;
+  grandTotalIncVat: number;
 }
 ```
 

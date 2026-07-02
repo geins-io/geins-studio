@@ -4,6 +4,7 @@ import type {
   FlagText,
   Language,
 } from '#shared/types';
+import { TableMode } from '#shared/types';
 import type { Row } from '@tanstack/vue-table';
 
 const { t } = useI18n();
@@ -162,7 +163,7 @@ const confirmAdd = () => {
         :data="tableRows"
         :mode="TableMode.Minimal"
         :dim-inactive-rows="true"
-        entity-name="language"
+        entity-key="language"
         :empty-text="t('channels.additional_languages_empty')"
         :empty-icon="emptyIcon"
       />
@@ -194,16 +195,16 @@ const confirmAdd = () => {
     <DialogContent>
       <DialogHeader>
         <DialogTitle>
-          {{ t('add_entity', { entityName: 'language' }, 2) }}
+          {{ t('add_entity', { entityKey: 'language' }, 2) }}
         </DialogTitle>
         <DialogDescription class="sr-only">
-          {{ t('add_entity', { entityName: 'language' }, 2) }}
+          {{ t('add_entity', { entityKey: 'language' }, 2) }}
         </DialogDescription>
       </DialogHeader>
       <FormInputTagsSearch
         v-model="selectedLanguageIds"
         :data-set="availableLanguages"
-        entity-name="language"
+        entity-key="language"
         disable-teleport
       >
         <template #item="{ item }">

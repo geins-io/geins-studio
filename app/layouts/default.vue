@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { SpeedInsights } from '@vercel/speed-insights/vue';
-
 usePageTitle();
 const { currentSidebarWidth, sidebarOpen } = useLayout();
 const route = useRoute();
@@ -40,7 +38,7 @@ const contentClasses = computed(() => {
       >
         <slot />
       </div>
+      <NuxtAnnouncer />
     </SidebarInset>
   </SidebarProvider>
-  <SpeedInsights />
 </template>

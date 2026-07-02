@@ -8,7 +8,6 @@ interface UseGeinsRepositoryReturnType {
   customerApi: ReturnType<typeof repo.customer>;
   changelogApi: ReturnType<typeof repo.changelog>;
   orchestratorApi: ReturnType<typeof repo.orchestrator>;
-  workflowApi: ReturnType<typeof repo.workflow>;
 }
 
 /**
@@ -29,6 +28,5 @@ export function useGeinsRepository(): UseGeinsRepositoryReturnType {
     customerApi: repo.customer($geinsApiFetchInstance),
     changelogApi: repo.changelog($geinsApiFetchInstance),
     orchestratorApi: repo.orchestrator($geinsApiFetchInstance),
-    workflowApi: repo.workflow($geinsApiFetchInstance),
   };
 }

@@ -4,6 +4,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { VisuallyHidden } from 'reka-ui';
 import { useForm } from 'vee-validate';
 import * as z from 'zod';
+import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 const props = withDefaults(
@@ -28,7 +29,7 @@ const { toast } = useToast();
 const { geinsLogError } = useGeinsLog('components/CompanyBuyerPanel.vue');
 const { customerApi } = useGeinsRepository();
 
-const entityName = 'buyer';
+const entityKey = ENTITIES.buyer.key;
 
 const open = defineModel<boolean>('open');
 const loading = ref(false);
@@ -134,7 +135,7 @@ const handleSuccess = () => {
   emit('added');
   const feedbackWord = props.mode === 'edit' ? 'updated' : 'added';
   toast({
-    title: t(`entity_${feedbackWord}`, { entityName }),
+    title: t(`entity_${feedbackWord}`, { entityKey }),
     variant: 'positive',
   });
 };
@@ -204,14 +205,7 @@ const handleSave = async () => {
 
     handleSuccess();
   } catch (error) {
-    const feedbackWord = props.mode === 'edit' ? 'updating' : 'adding';
-    toast({
-      title: t(`error_${feedbackWord}_entity`, { entityName }),
-      description: t('feedback_error_description'),
-      variant: 'negative',
-    });
-    const message = getErrorMessage(error);
-    geinsLogError('error saving buyer:', message);
+    geinsLogError('error saving buyer:', getErrorMessage(error));
   } finally {
     loading.value = false;
   }
@@ -220,7 +214,7 @@ const handleSave = async () => {
 const handleRemoveClick = async () => {
   await removeBuyer();
   toast({
-    title: t('entity_removed', { entityName }),
+    title: t('entity_removed', { entityKey }),
     variant: 'positive',
   });
   open.value = false;
@@ -262,10 +256,10 @@ const existingCustomerName = computed(() => {
     </SheetTrigger>
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>{{ $t(`${mode}_entity`, { entityName }) }}</SheetTitle>
+        <SheetTitle>{{ $t(`${mode}_entity`, { entityKey }) }}</SheetTitle>
         <VisuallyHidden>
           <SheetDescription>
-            {{ $t(`${mode}_entity`, { entityName }) }}
+            {{ $t(`${mode}_entity`, { entityKey }) }}
           </SheetDescription>
         </VisuallyHidden>
       </SheetHeader>
@@ -275,9 +269,9 @@ const existingCustomerName = computed(() => {
             <FormGrid design="1+1">
               <FormField v-slot="{ componentField }" name="firstName">
                 <FormItem>
-                  <FormLabel :optional="true">{{
-                    t('person.first_name')
-                  }}</FormLabel>
+                  <FormLabel :optional="true">
+                    {{ t('person.first_name') }}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -290,9 +284,9 @@ const existingCustomerName = computed(() => {
               </FormField>
               <FormField v-slot="{ componentField }" name="lastName">
                 <FormItem>
-                  <FormLabel :optional="true">{{
-                    t('person.last_name')
-                  }}</FormLabel>
+                  <FormLabel :optional="true">
+                    {{ t('person.last_name') }}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -321,9 +315,9 @@ const existingCustomerName = computed(() => {
               </FormField>
               <FormField v-slot="{ componentField }" name="phone">
                 <FormItem>
-                  <FormLabel :optional="true">{{
-                    $t('person.phone')
-                  }}</FormLabel>
+                  <FormLabel :optional="true">
+                    {{ $t('person.phone') }}
+                  </FormLabel>
                   <FormControl>
                     <Input
                       v-bind="componentField"
@@ -374,7 +368,7 @@ const existingCustomerName = computed(() => {
                     <FormControl>
                       <FormInputTagsSearch
                         :model-value="componentField.modelValue"
-                        entity-name="price_list"
+                        entity-key="price_list"
                         :data-set="priceLists"
                         @update:model-value="
                           componentField['onUpdate:modelValue']
@@ -421,7 +415,7 @@ const existingCustomerName = computed(() => {
               heading-level="h3"
               :title="
                 $t('remove_entity', {
-                  entityName,
+                  entityKey,
                 })
               "
               :description="$t('customers.buyers_remove_description')"
@@ -476,7 +470,7 @@ const existingCustomerName = computed(() => {
           :disabled="saveDisabled"
           @click.stop="handleSave"
         >
-          {{ $t(`${mode === 'add' ? mode : 'update'}_entity`, { entityName }) }}
+          {{ $t(`${mode === 'add' ? mode : 'update'}_entity`, { entityKey }) }}
         </Button>
       </SheetFooter>
     </SheetContent>

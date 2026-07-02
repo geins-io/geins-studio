@@ -34,13 +34,13 @@ This is mounted inside [`ChannelMailsTab`](/components/channel/ChannelMailsTab) 
 ### `channelId`
 
 ```ts
-channelId: string
+channelId: string;
 ```
 
 ### `mailType`
 
 ```ts
-mailType: ChannelMailType | null
+mailType: ChannelMailType | null;
 ```
 
 Which mail type is being configured. `null` keeps the sheet idle.
@@ -56,7 +56,7 @@ Languages available for the language picker.
 ### `defaultLanguage`
 
 ```ts
-defaultLanguage: string
+defaultLanguage: string;
 ```
 
 Pre-selected language when the sheet opens.

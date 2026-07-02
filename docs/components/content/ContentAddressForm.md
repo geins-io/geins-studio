@@ -32,10 +32,7 @@ VeeValidate-integrated address form block that renders all standard address fiel
 <template>
   <Form>
     <!-- Fields will be named billing.addressLine1, billing.zip, etc. -->
-    <ContentAddressForm
-      address-type="billing"
-      form-input-prefix="billing"
-    />
+    <ContentAddressForm address-type="billing" form-input-prefix="billing" />
   </Form>
 </template>
 ```

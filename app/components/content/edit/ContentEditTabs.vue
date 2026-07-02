@@ -49,6 +49,17 @@ watch(currentTab, async (value) => {
     // Wait for next tick to ensure DOM is ready
     await nextTick();
 
+    // Skip no-op navigations: Nuxt's router `afterEach` clears any active fatal
+    // error even on a redundant `replace`, so re-writing an unchanged tab param
+    // on a 404 page clears the error, re-renders, re-throws — an infinite loop.
+    const currentTabParam = Array.isArray(currentRoute.query.tab)
+      ? currentRoute.query.tab[0]
+      : currentRoute.query.tab;
+    const nextTabParam = value === 0 ? undefined : value.toString();
+    if ((currentTabParam ?? undefined) === nextTabParam) {
+      return;
+    }
+
     // Clone the current query parameters safely
     const query = { ...currentRoute.query };
 
@@ -94,9 +105,9 @@ watch(currentTab, async (value) => {
               )
             "
           />
-          <span v-if="tab.error" class="sr-only">{{
-            t('tab_has_errors')
-          }}</span>
+          <span v-if="tab.error" class="sr-only">
+            {{ t('tab_has_errors') }}
+          </span>
         </button>
       </li>
     </ul>

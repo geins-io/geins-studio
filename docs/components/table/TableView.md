@@ -30,7 +30,7 @@ const { data, loading } = await useQuotations();
   <TableView
     :columns="columns"
     :data="data"
-    entity-name="quotation"
+    entity-key="quotation"
     :loading="loading"
     :searchable-fields="['_id', 'customerName', 'reference']"
   />
@@ -47,7 +47,7 @@ For tables embedded inside cards or panels — no search, no pagination, no pinn
     :columns="columns"
     :data="data"
     :mode="TableMode.Minimal"
-    entity-name="line"
+    entity-key="line"
   />
 </template>
 ```
@@ -61,7 +61,7 @@ For tables embedded inside cards or panels — no search, no pagination, no pinn
     :data="categories"
     enable-expanding
     :get-sub-rows="(row) => row.children"
-    entity-name="category"
+    entity-key="category"
   />
 </template>
 ```
@@ -71,7 +71,7 @@ For tables embedded inside cards or panels — no search, no pagination, no pinn
 ### `columns`
 
 ```ts
-columns: ColumnDef<TData, TValue>[]
+columns: (ColumnDef < TData, TValue > []);
 ```
 
 TanStack column definitions. Use [`useColumns`](/composables/useColumns) to compose typed column factories.
@@ -84,10 +84,10 @@ data: TData[]
 
 Row data. While `loading` is `true`, skeleton rows replace this entirely.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName?: string
+entityKey?: string
 ```
 
 i18n key for the entity. Used in empty states and pagination labels (e.g. "10 quotations selected").

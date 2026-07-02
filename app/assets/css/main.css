@@ -149,7 +149,7 @@
   --positive: hsl(151 45% 56%);
   --positive-foreground: hsl(0 0% 100%);
 
-  --warning: hsl(32 78% 56%);
+  --warning: hsl(43 95% 46%);
   --warning-foreground: hsl(0 0% 100%);
 
   --negative: hsl(0 59% 60%);
@@ -233,6 +233,28 @@
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+/* Always-visible thin scrollbar — gives an affordance that a list overflows
+   (macOS overlay scrollbars stay hidden until scrolling otherwise). */
+@utility scroll-visible {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 9999px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+  }
 }
 
 @layer base {

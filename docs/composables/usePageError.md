@@ -30,7 +30,7 @@ onMounted(() => {
 // For entity edit pages
 // Will show contextual 404 error like "Could not find product with ID 123"
 const { handleFetchResult } = usePageError({
-  entityName: 'product',
+  entityKey: 'product',
   entityId: '123',
 });
 
@@ -70,7 +70,7 @@ throwPageError(
 
 - **Parameters**:
   - `statusCodeOrError`: HTTP status code (defaults to 404) or NuxtError object
-  - `contextOptions`: Optional override for error context (entityName, entityId)
+  - `contextOptions`: Optional override for error context (entityKey, entityId)
 
 - **Returns**: Never returns (throws error)
 
@@ -149,8 +149,8 @@ User request → Entity or list page
 
 The composable uses the following priority for generating error messages:
 
-1. **Entity with ID** (`entityName` + `entityId` provided in options or context)
-2. **Entity only** (`entityName` provided)
+1. **Entity with ID** (`entityKey` + `entityId` provided in options or context)
+2. **Entity only** (`entityKey` provided)
 3. **Generic messages** (fallback)
 
 ### Status code handling
@@ -165,7 +165,7 @@ The composable uses the following priority for generating error messages:
 function usePageError(options?: PageErrorOptions): UsePageErrorReturnType;
 
 interface PageErrorOptions {
-  entityName?: string;
+  entityKey?: string;
   entityId?: string;
   entityList?: boolean;
   scope?: string;

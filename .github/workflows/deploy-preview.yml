@@ -1,0 +1,104 @@
+name: Deploy Preview (Dev)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=dev
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            GEINS_API_URL=${{ secrets.GEINS_API_URL }}
+            GIT_SHA=${{ github.sha }}
+
+  deploy:
+    name: Deploy to Dev
+    needs: build
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Ensure resource group exists
+        run: |
+          az group create \
+            --name rg-studio-dev \
+            --location westeurope \
+            --tags Environment=dev Application=studio ManagedBy=Bicep
+
+      - name: Deploy to dev environment
+        uses: azure/arm-deploy@v2
+        with:
+          resourceGroupName: rg-studio-dev
+          template: infra/main.bicep
+          parameters: >-
+            environment=dev
+            location=westeurope
+            appName=studio
+            containerImage=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.image-tag }}
+            ghcrUsername=${{ github.actor }}
+            ghcrToken=${{ secrets.GHCR_PAT }}
+            authSecret=${{ secrets.AUTH_SECRET }}
+            geinsApiUrl=${{ secrets.GEINS_API_URL }}
+            baseUrl=${{ vars.BASE_URL }}
+            authPath=${{ vars.AUTH_PATH }}
+            geinsDebug=true
+            salesPortalWebhookSecret=${{ secrets.SALES_PORTAL_WEBHOOK_SECRET }}
+            logLevel=debug
+          deploymentName: deploy-dev-${{ github.sha }}
+
+      - name: Print preview URL
+        run: |
+          echo "### Preview deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://studio-dev-app.azurewebsites.net" >> $GITHUB_STEP_SUMMARY

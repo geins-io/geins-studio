@@ -169,7 +169,7 @@ async function handleSave() {
       previewLoaded.value = false;
     }
   } catch {
-    await showErrorToast(t('channels.mail_save_error'));
+    // Error toast shown globally by $geinsApi.
   } finally {
     saving.value = false;
   }
@@ -201,7 +201,7 @@ async function handleRestoreDefaults() {
       previewLoaded.value = false;
     }
   } catch {
-    await showErrorToast(t('channels.mail_save_error'));
+    // Error toast shown globally by $geinsApi.
   } finally {
     saving.value = false;
   }
@@ -333,11 +333,11 @@ const categoryLabel = computed(() => {
                     v-for="(variable, idx) in entry.variables"
                     :key="variable"
                   >
-                    <code class="bg-muted rounded px-1 py-0.5 text-xs">{{
-                      '{' + variable + '}'
-                    }}</code
-                    ><span v-if="idx < (entry.variables?.length ?? 0) - 1"
-                      >,
+                    <code class="bg-muted rounded px-1 py-0.5 text-xs">
+                      {{ '{' + variable + '}' }}
+                    </code>
+                    <span v-if="idx < (entry.variables?.length ?? 0) - 1">
+                      ,
                     </span>
                   </template>
                 </FormInputDescription>

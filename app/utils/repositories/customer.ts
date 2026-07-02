@@ -11,6 +11,7 @@ import type {
   CustomerCreate,
   CustomerUpdate,
 } from '#shared/types';
+import { ENTITIES } from '#shared/utils/entities';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const BASE_ENDPOINT = '/wholesale';
@@ -19,20 +20,19 @@ const BASE_ENDPOINT = '/wholesale';
  * Repository for managing customer company operations
  */
 export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
-  const companyEndpoint = `${BASE_ENDPOINT}/account`;
+  const companyEndpoint = ENTITIES.company.endpoint;
   const companyRepo = repo.entity<
     CustomerCompany,
     CustomerCompanyCreate,
     CustomerCompanyUpdate,
     CustomerCompanyApiOptions
-  >(companyEndpoint, fetch);
+  >(ENTITIES.company, fetch);
 
-  const buyerEndpoint = `${BASE_ENDPOINT}/buyer`;
+  const buyerEndpoint = ENTITIES.buyer.endpoint;
   const buyerRepo = repo.entityBase<CompanyBuyer>(buyerEndpoint, fetch);
 
-  const customerEndpoint = `${BASE_ENDPOINT}/customer`;
   const subCustomerRepo = repo.entity<Customer, CustomerCreate, CustomerUpdate>(
-    customerEndpoint,
+    ENTITIES.customer,
     fetch,
   );
 
@@ -52,7 +52,7 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
           CompanyBuyer,
           CompanyBuyerCreate,
           CompanyBuyerUpdate
-        >(companyBuyerEndpoint, fetch);
+        >({ endpoint: companyBuyerEndpoint, key: 'buyer' }, fetch);
         return {
           buyer: {
             ...buyerEntityRepo,
@@ -75,6 +75,9 @@ export function customerRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         `${BASE_ENDPOINT}/validateVatNumber/${vatNumber}`,
         {
           method: 'POST',
+          // VAT validity is surfaced inline in the form, so a failed/invalid
+          // lookup must not raise the global error toast.
+          suppressErrorToast: true,
         },
       );
     },

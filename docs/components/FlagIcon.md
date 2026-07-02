@@ -19,7 +19,11 @@
   <FlagIcon country-code="gb" name="United Kingdom" />
 
   <!-- from a language code, use the helper -->
-  <FlagIcon :country-code="languageToCountryCode('sv')" name="Swedish" size="md" />
+  <FlagIcon
+    :country-code="languageToCountryCode('sv')"
+    name="Swedish"
+    size="md"
+  />
 </template>
 ```
 
@@ -31,7 +35,7 @@
 ### `countryCode`
 
 ```ts
-countryCode: string
+countryCode: string;
 ```
 
 ISO 3166-1 alpha-2 country code. Case-insensitive — the `flagClass` utility lower-cases internally.

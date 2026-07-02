@@ -5,6 +5,7 @@ import type {
   ChannelMarketAssignment,
   ChannelMarketRow,
 } from '#shared/types';
+import { TableMode } from '#shared/types';
 import type { Row } from '@tanstack/vue-table';
 
 const { t } = useI18n();
@@ -140,7 +141,7 @@ const addDialogOpen = ref(false);
         :data="tableRows"
         :mode="TableMode.Minimal"
         :dim-inactive-rows="true"
-        entity-name="market"
+        entity-key="market"
         :empty-text="t('channels.additional_markets_empty')"
         :empty-icon="emptyIcon"
       />

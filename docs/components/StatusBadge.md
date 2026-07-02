@@ -35,7 +35,7 @@ For boolean active flags:
 ### `status`
 
 ```ts
-status: StatusBadgeStatus
+status: StatusBadgeStatus;
 ```
 
 The status value to render. Drives both the badge variant (color) and the displayed label.

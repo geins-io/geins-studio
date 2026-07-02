@@ -18,7 +18,11 @@ const onDelete = (id: string) => removeAddress(id);
 </script>
 
 <template>
-  <ContentEditAddressPanel :address="billingAddress" @save="onSave" @delete="onDelete">
+  <ContentEditAddressPanel
+    :address="billingAddress"
+    @save="onSave"
+    @delete="onDelete"
+  >
     <Button variant="outline">{{ $t('edit') }}</Button>
   </ContentEditAddressPanel>
 </template>
@@ -29,7 +33,7 @@ const onDelete = (id: string) => removeAddress(id);
 ### `address`
 
 ```ts
-address: AddressUpdate
+address: AddressUpdate;
 ```
 
 The address to edit. `addressType` drives whether the delete block is shown.

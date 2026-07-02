@@ -3,12 +3,10 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
 import { VisuallyHidden } from 'reka-ui';
 import { useForm } from 'vee-validate';
-import * as z from 'zod';
 
 const props = defineProps<{
   address: AddressUpdate;
 }>();
-const { t } = useI18n();
 const emit = defineEmits<{
   (event: 'save', address: AddressUpdate): void;
   (event: 'delete', id: string): void;
@@ -31,21 +29,8 @@ watch(open, (value) => {
   }
 });
 
-const formSchema = toTypedSchema(
-  z.object({
-    email: z.string().min(1, { message: t('form.field_required') }),
-    phone: z.string().optional(),
-    company: z.string().min(1, { message: t('form.field_required') }),
-    firstName: z.string().min(1, { message: t('form.field_required') }),
-    lastName: z.string().min(1, { message: t('form.field_required') }),
-    addressLine1: z.string().min(1, { message: t('form.field_required') }),
-    addressLine2: z.string().optional(),
-    zip: z.string().min(1, { message: t('form.field_required') }),
-    city: z.string().min(1, { message: t('form.field_required') }),
-    region: z.string().optional(),
-    country: z.string().min(1, { message: t('form.field_required') }),
-  }),
-);
+const { addressSchema } = useCustomerCompanies();
+const formSchema = toTypedSchema(addressSchema);
 
 const form = useForm({
   validationSchema: formSchema,
@@ -67,7 +52,7 @@ watch(
 const autocompleteGroup = computed(() => {
   return props.address.addressType === 'shipping' ? 'shipping' : 'billing';
 });
-const entityName = computed(() => {
+const entityKey = computed(() => {
   return `${autocompleteGroup.value}_address`;
 });
 
@@ -108,10 +93,10 @@ const handleCancel = () => {
     </SheetTrigger>
     <SheetContent width="medium">
       <SheetHeader>
-        <SheetTitle>{{ $t('edit_entity', { entityName }) }}</SheetTitle>
+        <SheetTitle>{{ $t('edit_entity', { entityKey }) }}</SheetTitle>
         <VisuallyHidden>
           <SheetDescription>
-            {{ $t('edit_entity', { entityName }) }}
+            {{ $t('edit_entity', { entityKey }) }}
           </SheetDescription>
         </VisuallyHidden>
       </SheetHeader>
@@ -128,7 +113,7 @@ const handleCancel = () => {
             heading-level="h3"
             :title="
               $t('delete_entity', {
-                entityName,
+                entityKey,
               })
             "
             :description="$t('dialog.delete_shipping_address_description')"
@@ -148,7 +133,7 @@ const handleCancel = () => {
           {{ $t('cancel') }}
         </Button>
         <Button @click.stop="handleSave">
-          {{ $t('update_entity', { entityName }) }}
+          {{ $t('update_entity', { entityKey }) }}
         </Button>
       </SheetFooter>
     </SheetContent>

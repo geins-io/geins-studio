@@ -30,7 +30,7 @@
 ### `id`
 
 ```ts
-id: string
+id: string;
 ```
 
 Product `_id` carried back through the `edit` event.
@@ -38,7 +38,7 @@ Product `_id` carried back through the `edit` event.
 ### `name`
 
 ```ts
-name: string
+name: string;
 ```
 
 Product name (used in the edit event payload + sheet title downstream).
@@ -54,7 +54,7 @@ The product's volume-break rules. Drives the count and the tooltip preview.
 ### `vatDescription`
 
 ```ts
-vatDescription: string
+vatDescription: string;
 ```
 
 Localized VAT descriptor shown in the tooltip's price column header.

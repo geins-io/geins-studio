@@ -26,7 +26,7 @@
 ### `rowData`
 
 ```ts
-rowData: T
+rowData: T;
 ```
 
 The full row passed back through the `delete` event.

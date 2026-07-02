@@ -58,8 +58,15 @@ Full entity CRUD plus scoped sub-resources per channel.
 ```ts
 function get(id: string, options?: ChannelApiOptions): Promise<Channel>;
 function list(options?: ChannelApiOptions): Promise<ChannelListItem[]>;
-function create(data: ChannelCreate, options?: ChannelApiOptions): Promise<Channel>;
-function update(id: string, data: ChannelUpdate, options?: ChannelApiOptions): Promise<Channel>;
+function create(
+  data: ChannelCreate,
+  options?: ChannelApiOptions,
+): Promise<Channel>;
+function update(
+  id: string,
+  data: ChannelUpdate,
+  options?: ChannelApiOptions,
+): Promise<Channel>;
 ```
 
 ##### `id(channelId: string)`

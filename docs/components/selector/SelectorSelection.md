@@ -17,12 +17,16 @@ Full selection display panel for a single include-or-exclude axis. Shows the cur
 
 ```vue
 <script setup lang="ts">
-import type { SelectorSelectionInternal } from '#shared/types'
-import { SelectorMode, SelectorSelectionType, SelectorSelectionStrategy } from '#shared/types'
+import type { SelectorSelectionInternal } from '#shared/types';
+import {
+  SelectorMode,
+  SelectorSelectionType,
+  SelectorSelectionStrategy,
+} from '#shared/types';
 
 const selection = defineModel<SelectorSelectionInternal>('selection', {
   required: true,
-})
+});
 </script>
 
 <template>
@@ -30,7 +34,7 @@ const selection = defineModel<SelectorSelectionInternal>('selection', {
     v-model:selection="selection"
     :type="SelectorSelectionType.Include"
     :mode="SelectorMode.Advanced"
-    entity-name="product"
+    entity-key="product"
     :entities="products"
   />
 </template>
@@ -50,17 +54,17 @@ currency?: string
 ### `type`
 
 ```ts
-type: SelectorSelectionType
+type: SelectorSelectionType;
 ```
 
 - **Type:** `SelectorSelectionType`
 - **Required:** yes
 - **Description:** `Include` or `Exclude` — controls the section heading label.
 
-### `entityName`
+### `entityKey`
 
 ```ts
-entityName: string
+entityKey: string;
 ```
 
 - **Type:** `string`
@@ -70,7 +74,7 @@ entityName: string
 ### `mode`
 
 ```ts
-mode: SelectorMode
+mode: SelectorMode;
 ```
 
 - **Type:** `SelectorMode`
@@ -140,7 +144,7 @@ Typical usage inside a price-list or promotion entity edit page where include an
     v-model:selection="inclusion"
     :type="SelectorSelectionType.Include"
     :mode="SelectorMode.Advanced"
-    entity-name="product"
+    entity-key="product"
     :entities="products"
     :selection-strategy="SelectorSelectionStrategy.All"
   />
@@ -148,7 +152,7 @@ Typical usage inside a price-list or promotion entity edit page where include an
     v-model:selection="exclusion"
     :type="SelectorSelectionType.Exclude"
     :mode="SelectorMode.Advanced"
-    entity-name="product"
+    entity-key="product"
     :entities="products"
   />
 </template>

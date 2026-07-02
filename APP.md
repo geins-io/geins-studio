@@ -10,16 +10,16 @@
 
 All pages live under `app/pages/` and are auto-registered by Nuxt as routes.
 
-| Route prefix   | Domain pages                        | Capability                           |
-| -------------- | ----------------------------------- | ------------------------------------ |
-| `/`            | `index.vue`                         | Dashboard — quick access + recent orders |
-| `/auth/*`      | `login`, `logout`, `reset-password` | Authentication flows (no sidebar)    |
-| `/pricing/*`   | `price-list/list`, `price-list/[id]`| Price list management                |
-| `/customers/*` | `company/list`, `company/[id]`      | Company / buyer management           |
-| `/orders/*`    | `quotation/list`, `quotation/[id]`  | Quotation lifecycle                  |
-| `/account/*`   | `profile/index`, `user/index`       | User profile (hidden from nav)       |
+| Route prefix   | Domain pages                            | Capability                               |
+| -------------- | --------------------------------------- | ---------------------------------------- |
+| `/`            | `index.vue`                             | Dashboard — quick access + recent orders |
+| `/auth/*`      | `login`, `logout`, `reset-password`     | Authentication flows (no sidebar)        |
+| `/pricing/*`   | `price-lists/index`, `price-lists/[id]` | Price list management                    |
+| `/customers/*` | `companies/index`, `companies/[id]`     | Company / buyer management               |
+| `/orders/*`    | `quotations/index`, `quotations/[id]`   | Quotation lifecycle                      |
+| `/account/*`   | `profile/index`, `user/index`           | User profile (hidden from nav)           |
 
-Entity pages follow the convention `pages/{domain}/{entity}/list.vue` and `pages/{domain}/{entity}/[id].vue`. The param `new` on `[id].vue` activates create mode.
+Entity pages follow the convention `pages/{domain}/{entity}/index.vue` and `pages/{domain}/{entity}/[id].vue`. The param `new` on `[id].vue` activates create mode.
 
 ---
 
@@ -27,10 +27,10 @@ Entity pages follow the convention `pages/{domain}/{entity}/list.vue` and `pages
 
 Two layouts in `app/layouts/`:
 
-| Layout        | Used by               | Structure                                        |
-| ------------- | --------------------- | ------------------------------------------------ |
+| Layout        | Used by                 | Structure                                                                                                     |
+| ------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `default.vue` | All authenticated pages | `SidebarProvider` → `LayoutSidebar` + `SidebarInset` with sticky `LayoutHeader` and a scrollable content slot |
-| `auth.vue`    | `/auth/*` routes      | Minimal centered card, no sidebar or header      |
+| `auth.vue`    | `/auth/*` routes        | Minimal centered card, no sidebar or header                                                                   |
 
 The default layout reads `route.meta.pageType` and applies `overflow-hidden` when `pageType === 'list'` (enables proper full-height table scrolling). Edit/detail pages use `overflow-y-auto`.
 
@@ -50,15 +50,15 @@ The default layout reads `route.meta.pageType` and applies `overflow-hidden` whe
 
 Nuxt loads plugins in filename order. Each plugin has a single responsibility:
 
-| Plugin                       | Runs on     | Purpose                                                                        |
-| ---------------------------- | ----------- | ------------------------------------------------------------------------------ |
-| `geins-api.ts`               | client+server | Creates `$geinsApi` (`$fetch`) with auth headers and token auto-refresh         |
-| `auth-state.ts`              | client      | Syncs auth state across browser tabs via `BroadcastChannel`; sets skeleton cookie |
-| `geins-global.ts`            | client      | Calls `accountStore.init()` and `productsStore.fetchProducts()` on session start |
-| `error-handler.ts`           | client      | Catches `AUTH_ERROR` / `API_ERROR` from Vue's global error handler             |
-| `click-outside.client.ts`    | client      | Registers `v-click-outside` directive                                          |
-| `click-outside.server.ts`    | server      | Stub — prevents directive errors during SSR compatibility checks               |
-| `suppress-devtools-warn.client.ts` | client | Suppresses noisy devtools warnings in development                             |
+| Plugin                             | Runs on       | Purpose                                                                           |
+| ---------------------------------- | ------------- | --------------------------------------------------------------------------------- |
+| `geins-api.ts`                     | client+server | Creates `$geinsApi` (`$fetch`) with auth headers and token auto-refresh           |
+| `auth-state.ts`                    | client        | Syncs auth state across browser tabs via `BroadcastChannel`; sets skeleton cookie |
+| `geins-global.ts`                  | client        | Calls `accountStore.init()` and `productsStore.fetchProducts()` on session start  |
+| `error-handler.ts`                 | client        | Catches `AUTH_ERROR` / `API_ERROR` from Vue's global error handler                |
+| `click-outside.client.ts`          | client        | Registers `v-click-outside` directive                                             |
+| `click-outside.server.ts`          | server        | Stub — prevents directive errors during SSR compatibility checks                  |
+| `suppress-devtools-warn.client.ts` | client        | Suppresses noisy devtools warnings in development                                 |
 
 `$geinsApi` must be initialised before `geins-global.ts` runs — plugin filename order guarantees this.
 
@@ -70,12 +70,12 @@ Nuxt loads plugins in filename order. Each plugin has a single responsibility:
 
 Current top-level entries (all in group `sales`):
 
-| Label      | Root href                   | Domain              |
-| ---------- | --------------------------- | ------------------- |
-| Pricing    | `/pricing/price-list/list`  | Price lists         |
-| Customers  | `/customers/company/list`   | Companies           |
-| Orders     | `/orders/quotation/list`    | Quotations          |
-| Account    | *(hidden from menu)*        | User profile        |
+| Label     | Root href              | Domain       |
+| --------- | ---------------------- | ------------ |
+| Pricing   | `/pricing/price-lists` | Price lists  |
+| Customers | `/customers/companies` | Companies    |
+| Orders    | `/orders/quotations`   | Quotations   |
+| Account   | _(hidden from menu)_   | User profile |
 
 Each entry has optional `children[]` with `childPattern` used for active-state matching. Labels are i18n keys resolved via `t('navigation.*')`.
 
@@ -88,15 +88,22 @@ Each entry has optional `children[]` with `childPattern` used for active-state m
 ```
 definePageMeta({ pageType: 'list' })
 → useGeinsRepository()     — typed API client
-→ useAsyncData()           — fetch with SSR cache key
+→ useAsyncData(key, fn)    — fetch with explicit stable client cache key
 → useColumns<T>()          — column defs + addActionsColumn
 → useTable<T>()            — visibility / sort state
-→ useEntityUrl()           — link generation
+→ entityListUrl / entityEditUrl — link generation (registry helpers)
 → usePageError()           — error handling
 → <TableView />            — renders table + pagination
 ```
 
 Error handling: a `fetchError` ref is passed to `TableView` (`:error` + `:on-retry`). `NuxtErrorBoundary` wraps as a safety net.
+
+Data fetching convention:
+
+- Reads: `useAsyncData(key, () => repo.x())`.
+- Mutations: imperative repository calls, then invalidate reads with `refresh()` or `refreshNuxtData(key)`.
+- Shared reference data (channels/currencies/countries/etc.): Pinia store fetch actions with explicit invalidation.
+- Avoid `useFetch(url)` when a repository exists.
 
 ### Detail / Edit Page
 
@@ -142,16 +149,28 @@ if (!createMode.value) {
 - **VeeValidate field unmount**: When switching from form-mode to read-only mode, VeeValidate unregisters fields and clears values. Guard with `if (sentMode.value) return;` in `onFormValuesChange`. Read display data from `entityData` (not `form.values`) in read-only mode
 - **Reactive refresh**: Pages calling `refreshEntityData` after status transitions need `watch(data, async (newData) => { await parseAndSaveData(newData, false); await nextTick(); setOriginalSavedData(); })` in the `if (!createMode.value)` block
 
+### Live & Async Primitives
+
+Use the shared primitives instead of hand-rolling `setInterval` / `Date.now()` loops in a page or component:
+
+- **`useLiveClock(active, intervalMs?)`** → `{ now }`. Reactive `now` ref that ticks only while `active` (boolean / getter) is true. Auto-stops on unmount. Use for live duration cells.
+- **`usePollWhile(active, fn, intervalMs)`** — run `fn` on an interval while `active` is true. Swallows tick errors via `useGeinsLog`. Use to poll `refresh()` on a running entity detail page, or to pull new rows into a list page.
+- **`useExecutionStatus()`** → `{ resolveStatusIcon }`. Single source of truth for orchestrator execution status → Lucide icon + color class. Case-insensitive; returns a fallback alert icon for unknown values.
+- **`formatTimestamp(iso)`** / **`formatDuration(ms)`** from `#shared/utils/time` — fixed-format log timestamps (`YYYY-MM-DD HH:mm:ss.SSS`) and compact durations (`123ms` / `12.34s` / `1m 23s`). Use these for any execution/log/console UI. `useDate()` is still the right choice for locale-aware absolute dates elsewhere.
+
+Rule of thumb: if a page needs to react to something changing over time (duration cells, polling a running execution, live status badges), reach for these composables before adding a local interval. They centralize start/stop/cleanup so pages stay declarative.
+
 ### Adding a New Entity (Checklist)
 
 1. **Types** → `shared/types/{Entity}.ts` — Define `{Entity}Base`, `{Entity}Create`, `{Entity}Update`, and `{Entity}` (response type)
 2. **Export types** → `shared/types/index.ts`
-3. **Repository** → `app/utils/repositories/{entity}.ts`
-4. **Register repo** → `app/utils/repos.ts` + `app/composables/useGeinsRepository.ts`
-5. **List page** → `app/pages/{domain}/{entity}/list.vue`
-6. **Detail page** → `app/pages/{domain}/{entity}/[id].vue`
-7. **Navigation** → `app/lib/navigation.ts`
-8. **i18n** → `i18n/locales/en.json` + `sv.json`
+3. **Registry** → `shared/utils/entities.ts` — add an `ENTITIES` entry (`{ endpoint, route }`); the key _is_ the i18n key, and `EntityKey` is derived from it. See [Entities](docs/concepts/entities.md#entity-registry-single-source-of-truth).
+4. **Repository** → `app/utils/repositories/{entity}.ts` — use `repo.entity(ENTITIES.{key}, fetch)` (endpoint + key read from the registry entry)
+5. **Register repo** → `app/utils/repos.ts` + `app/composables/useGeinsRepository.ts`
+6. **List page** → `app/pages/{domain}/{entity}/index.vue`
+7. **Detail page** → `app/pages/{domain}/{entity}/[id].vue` — pass the registry entry `entity: ENTITIES.{key}` to `useEntityEdit`/`usePageError`
+8. **Navigation** → `app/lib/navigation.ts`
+9. **i18n** → `i18n/locales/en.json` + `sv.json`
 
 ---
 
@@ -159,20 +178,21 @@ if (!createMode.value) {
 
 Components in `app/components/` are classified as **domain** or **infrastructure**:
 
-| Directory | Classification | Notes |
-|---|---|---|
-| `ui/` | Infrastructure | shadcn-vue primitives (CLI-installed) |
-| `content/`, `content/edit/`, `content/text/` | Infrastructure | Reusable edit page building blocks |
-| `table/`, `table/cell/`, `table/header/` | Infrastructure | Table system |
-| `form/`, `form/input/`, `form/item/` | Infrastructure | Form layout and inputs |
-| `dialog/` | Infrastructure | Delete, unsaved changes, status transitions |
-| `selector/` | Infrastructure | Reusable entity selection pattern |
-| `layout/`, `sidebar/`, `button/`, `error/`, `feedback/` | Infrastructure | App shell and utilities |
-| `company/` | **Customers** | CompanyBuyerPanel |
-| `price-list/` | **Pricing** | PriceMode, Rules, VolumePricing |
-| `quotation/` | **Orders** | Changelog, Communications, Messages |
-| `content/quotation/` | **Orders** | QuotationCustomerDisplay, WorkflowInfo |
-| `auth/` | **Account/Auth** | AuthForm |
+| Directory                                               | Classification   | Notes                                             |
+| ------------------------------------------------------- | ---------------- | ------------------------------------------------- |
+| `ui/`                                                   | Infrastructure   | shadcn-vue primitives (CLI-installed)             |
+| `content/`, `content/edit/`, `content/text/`            | Infrastructure   | Reusable edit page building blocks                |
+| `table/`, `table/cell/`, `table/header/`                | Infrastructure   | Table system                                      |
+| `form/`, `form/input/`, `form/item/`                    | Infrastructure   | Form layout and inputs                            |
+| `dialog/`                                               | Infrastructure   | Delete, unsaved changes, status transitions       |
+| `selector/`                                             | Infrastructure   | Reusable entity selection pattern                 |
+| `layout/`, `sidebar/`, `button/`, `error/`, `feedback/` | Infrastructure   | App shell and utilities                           |
+| `shared/`                                               | Infrastructure   | Cross-domain reusable components (JsonCodeEditor) |
+| `company/`                                              | **Customers**    | CompanyBuyerPanel                                 |
+| `price-list/`                                           | **Pricing**      | PriceMode, Rules, VolumePricing                   |
+| `quotation/`                                            | **Orders**       | Changelog, Communications, Messages               |
+| `content/quotation/`                                    | **Orders**       | QuotationCustomerDisplay, WorkflowInfo            |
+| `auth/`                                                 | **Account/Auth** | AuthForm                                          |
 
 > Components are **not moved** into domain groupings because Nuxt auto-import naming depends on directory path. See `docs/domain-colocation-proposal.md` for rationale.
 
@@ -190,6 +210,10 @@ Components in `app/components/` are classified as **domain** or **infrastructure
 - `ButtonGroup` / `ButtonGroupSeparator` / `ButtonGroupText` — Groups buttons with shared border radius. Supports `orientation` and nesting.
 - `ContentEditTabs` — Tab navigation. Accepts `string[]` or `(string | { label: string; badge?: number })[]`.
 - `ContentPriceSummary` — Price summary rows. Props: `total` (`QuotationTotal`), `currency`, `editMode?`. Uses `defineModel` for two-way binding and emits `blur`.
+
+### Shared Components
+
+- `SharedJsonCodeEditor` — CodeMirror 6 JSON editor/viewer with app theme integration. Props: `modelValue` (v-model), `readonly` (display-only), `lineNumbers` (default `true`), `lineWrapping` (default `false`). Uses `basicSetup` when line numbers are enabled, `minimalSetup` otherwise. Themed with CSS custom properties to match light/dark mode.
 
 ### Display Patterns in Edit Pages
 
@@ -218,15 +242,15 @@ Components in `app/components/` are classified as **domain** or **infrastructure
 
 Routes are entry points; domains are the capabilities they expose.
 
-| Route                       | Domain capability                            |
-| --------------------------- | -------------------------------------------- |
-| `/pricing/price-list/*`     | CRUD price lists; assign to companies        |
-| `/customers/company/*`      | CRUD companies; assign buyers, salesreps, price lists, addresses |
-| `/orders/quotation/*`       | Full quotation lifecycle: draft → send → accept/reject → confirm → finalize |
-| `/account/profile`          | Edit own user profile and preferences        |
-| `/auth/*`                   | Session management (login, logout, password reset) |
+| Route                    | Domain capability                                                           |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `/pricing/price-lists/*` | CRUD price lists; assign to companies                                       |
+| `/customers/companies/*` | CRUD companies; assign buyers, salesreps, price lists, addresses            |
+| `/orders/quotations/*`   | Full quotation lifecycle: draft → send → accept/reject → confirm → finalize |
+| `/account/profile`       | Edit own user profile and preferences                                       |
+| `/auth/*`                | Session management (login, logout, password reset)                          |
 
-Cross-domain links: the quotation edit page links to company and price-list entities via `useEntityUrl()` / `getEntityUrlFor()`.
+Cross-domain links: the quotation edit page links to company and price-list entities via the registry helper `entityEditUrl(key, id)`.
 
 ---
 
@@ -235,7 +259,7 @@ Cross-domain links: the quotation edit page links to company and price-list enti
 **2024-05-27: Two-layout system (default + auth)**
 Authenticated pages get the full sidebar/header layout; auth pages get a minimal centered card. Keeps auth flows visually distinct and avoids loading sidebar state before login.
 
-**2024-05-30: File-based routing with `{domain}/{entity}/list.vue` and `[id].vue` convention**
+**2024-05-30: File-based routing with `{domain}/{entity}/index.vue` and `[id].vue` convention**
 Consistent URL structure across all domains. The `new` param on `[id].vue` activates create mode, avoiding separate create pages.
 
 **2025-02-01: `useEntityEdit` as the universal detail/edit page composable**

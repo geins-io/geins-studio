@@ -1,4 +1,5 @@
 import type { StringKeyOf } from './Global';
+import type { EntityKeyWithRoute } from '../utils/entities';
 import '@tanstack/vue-table';
 import type { RowData } from '@tanstack/vue-table';
 import type { Component } from 'vue';
@@ -32,6 +33,7 @@ export type ColumnType =
   | 'channels'
   | 'tags'
   | 'status'
+  | 'code'
   | 'tooltip'
   | 'product'
   | 'flag'
@@ -43,12 +45,22 @@ export type ColumnTypes<T> = Partial<Record<StringKeyOf<T>, ColumnType>>;
 export type ColumnKey<T> = keyof T | ColumnType;
 
 export interface LinkColumnConfig<T> {
+  /**
+   * Registry entity key — the row's link is built as
+   * `entityEditUrl(entityKey, row[idField])`. Preferred for links to an
+   * entity's `[id]` page; requires `idField`. Use `url` instead for
+   * external / filtered-list / non-registry links.
+   */
+  entityKey?: EntityKeyWithRoute;
+  /** Raw URL template (`/path/{id}`) or static URL — for non-registry links. */
   url?: string;
   idField?: StringKeyOf<T>;
   /** Use the cell value itself as the URL */
   useValueAsUrl?: boolean;
   /** Render as an external link (opens in new tab, shows external icon) */
   external?: boolean;
+  /** Override the shared maxTextLength for this column only */
+  maxTextLength?: number;
 }
 
 export interface IconColumnConfig<T> {
@@ -56,6 +68,9 @@ export interface IconColumnConfig<T> {
   icon?: Component;
   /** Derive icon + optional CSS class from the row data */
   resolveIcon?: (row: T) => { icon: Component; class?: string } | undefined;
+  /** Registry entity key — link built as `entityEditUrl(entityKey, row[idField])`. */
+  entityKey?: EntityKeyWithRoute;
+  /** Raw URL template (`/path/{id}`) or static URL — for non-registry links. */
   url?: string;
   idField?: StringKeyOf<T>;
 }
@@ -84,6 +99,6 @@ declare module '@tanstack/vue-table' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData extends RowData> {
     mode: TableMode;
-    entityName: string;
+    entityKey: string;
   }
 }

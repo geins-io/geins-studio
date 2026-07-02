@@ -49,6 +49,17 @@ if (allCompanies.value.length === 0) {
 }
 
 const { brandName } = useBrand();
+const { t } = useI18n();
+
+const accountStore = useAccountStore();
+const { account } = storeToRefs(accountStore);
+
+const welcomeTitle = computed(() =>
+  t('welcome_title', {
+    brand: brandName.value,
+    account: account.value?.name ?? '',
+  }).trim(),
+);
 
 const breadcrumbsStore = useBreadcrumbsStore();
 breadcrumbsStore.setShowBreadcrumbs(false);
@@ -56,7 +67,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
 
 <template>
   <div class="max-w-full sm:p-4">
-    <ContentHeader :title="`Welcome to ${brandName}`" />
+    <ContentHeader :title="welcomeTitle" />
 
     <!-- Main content area -->
     <div class="space-y-8">
@@ -75,7 +86,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           <ContentCardLinked
             title="Create a new company"
             description="Create a new company"
-            link="/customers/company/new"
+            link="/customers/companies/new"
             link-type="create"
           />
 
@@ -83,7 +94,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           <ContentCardLinked
             title="Companies"
             description="Manage existing companies"
-            link="/customers/company/list"
+            link="/customers/companies"
             link-type="list"
           />
 
@@ -91,7 +102,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           <ContentCardLinked
             title="Create a new price list"
             description="Create a new price list"
-            link="/pricing/price-list/new"
+            link="/pricing/price-lists/new"
             link-type="create"
           />
 
@@ -99,7 +110,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
           <ContentCardLinked
             title="Price lists"
             description="Manage existing price lists"
-            link="/pricing/price-list/list"
+            link="/pricing/price-lists"
             link-type="list"
           />
         </div>
@@ -117,7 +128,7 @@ breadcrumbsStore.setShowBreadcrumbs(false);
         <TableView
           :columns="orderColumns"
           :data="ordersList"
-          entity-name="order"
+          entity-key="order"
           :page-size="10"
           :mode="TableMode.Simple"
           :empty-icon="LucidePackage"

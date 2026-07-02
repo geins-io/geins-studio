@@ -40,7 +40,7 @@ This is recursive and called from [`SchemaRenderer`](/components/SchemaRenderer)
 ### `field`
 
 ```ts
-field: SchemaFormField
+field: SchemaFormField;
 ```
 
 The field descriptor. The `type` property switches the renderer.
@@ -48,7 +48,7 @@ The field descriptor. The `type` property switches the renderer.
 ### `modelValue`
 
 ```ts
-modelValue: StorefrontSettings
+modelValue: StorefrontSettings;
 ```
 
 The full settings object — every field reads/writes by key into this.

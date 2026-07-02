@@ -30,7 +30,7 @@ A compact removable badge displaying a single selection condition label. Used in
 ### `label`
 
 ```ts
-label: string
+label: string;
 ```
 
 - **Type:** `string`

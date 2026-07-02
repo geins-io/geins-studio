@@ -1,3 +1,5 @@
+import type { EntityKey } from '../utils/entities';
+
 export type StringKeyOf<T> = Extract<keyof T, string>;
 
 /**
@@ -77,7 +79,7 @@ export interface DataItem {
     | Record<string, unknown>;
   displayValue?: string;
   displayType?: DataItemDisplayType;
-  entityName?: string;
+  entityKey?: string;
   href?: string;
   target?: string;
 }
@@ -93,6 +95,11 @@ export interface NavigationItem {
   icon?: string;
   children?: NavigationItem[];
   hideFromMenu?: boolean;
+
+  // Initial expand state for collapsible groups (items with children).
+  // Defaults to `true` (expanded). Set `false` to start collapsed — the group
+  // still auto-expands when the current route matches one of its children.
+  defaultOpen?: boolean;
 
   // Role-based access control
   roles?: string[]; // e.g., ['admin', 'editor', 'viewer']
@@ -114,6 +121,9 @@ export interface GeinsApiError {
   timestamp: string;
   type: GeinsErrorType;
   originalError: unknown;
+  // Network cause for connection-level failures (DNS/TLS/ECONNRESET/timeout).
+  // Non-enumerable on the raw Error, so captured explicitly.
+  cause?: { name?: string; code?: string; message?: string };
 }
 
 export type GeinsErrorType =
@@ -126,6 +136,35 @@ export type GeinsErrorType =
   | 'TIMEOUT_ERROR'
   | 'CANCELLED_ERROR'
   | 'NETWORK_ERROR';
+
+/**
+ * Semantic action for the global API error toast. Maps to the
+ * `error_{action}_entity` i18n key (e.g. 'creating' → `error_creating_entity`),
+ * which is a full grammatically-correct sentence per locale — we cannot inject
+ * a bare verb into one template because verb position/conjugation differ
+ * between languages (en: "…while creating {entity}", sv: "…när {entity} skapades").
+ */
+export type GeinsErrorAction =
+  | 'creating'
+  | 'updating'
+  | 'deleting'
+  | 'sending'
+  | 'copying'
+  | 'adding'
+  | 'running';
+
+/**
+ * Optional per-request context attached to a $geinsApi mutation call. When
+ * present, the global error toast renders the specific
+ * `error_{action}_entity` message with `entity` as the i18n entity key
+ * (e.g. 'price_list'); when absent it falls back to the generic message.
+ * Rides through ofetch options into the interceptors.
+ */
+export interface GeinsErrorContext {
+  action: GeinsErrorAction;
+  /** Entity-name i18n key — a domain-entity key from `ENTITIES` (`#shared/utils/entities`), NOT a translated string. */
+  entity: EntityKey;
+}
 
 export type AddressType = 'billing' | 'shipping' | 'billingandshipping';
 

@@ -1,12 +1,13 @@
 {
   "name": "geins-studio",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "author": "Geins",
   "private": true,
   "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "nuxi build",
+    "build:profile": "nuxi build --profile",
     "dev": "nuxi dev",
     "generate": "nuxi generate",
     "preview": "nuxi preview",
@@ -17,6 +18,7 @@
     "lint:check": "eslint .",
     "typecheck": "nuxi typecheck",
     "format:check": "prettier --check .",
+    "format": "prettier --write .",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "changelog:release": "changelogen --bump --release --push",
@@ -30,10 +32,15 @@
     "infra:deploy:staging": "bash infra/scripts/deploy.sh --env staging",
     "infra:deploy:prod": "bash infra/scripts/deploy.sh --env prod",
     "infra:validate": "bash infra/scripts/validate.sh",
-    "infra:validate:build": "bash infra/scripts/validate.sh --build-only"
+    "infra:validate:build": "bash infra/scripts/validate.sh --build-only",
+    "prepare": "husky"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.2",
     "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.42.1",
+    "@dagrejs/dagre": "^3.0.0",
     "@formkit/auto-animate": "^0.9.0",
     "@internationalized/date": "^3.11.0",
     "@lucide/vue": "^1.7.0",
@@ -46,7 +53,12 @@
     "@vee-validate/zod": "^4.15.1",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
+    "@vue-flow/background": "^1.3.2",
+    "@vue-flow/controls": "^1.1.3",
+    "@vue-flow/core": "^1.48.2",
+    "@vue-flow/minimap": "^1.5.4",
     "@vueuse/core": "^14.2.1",
+    "blockly": "^12.5.1",
     "chalk": "^5.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -55,7 +67,7 @@
     "flag-icons": "^7.5.0",
     "jwt-decode": "^4.0.0",
     "next-auth": "4.21.1",
-    "nuxt": "^4.3.1",
+    "nuxt": "^4.4.8",
     "nuxt-lucide-icons": "2.0.0",
     "nuxt-svgo": "^4.0.1",
     "nuxt-viewport": "2.3.1",
@@ -80,9 +92,10 @@
     "changelogen": "^0.6.2",
     "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-tailwindcss": "^4.0.0-beta.0",
     "happy-dom": "20.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "prettier-plugin-vue": "^1.1.6",
@@ -94,5 +107,14 @@
   "packageManager": "pnpm@10.29.3",
   "engines": {
     "node": ">=24"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,jsonc,md,css,yml,yaml,html}": [
+      "prettier --write"
+    ]
   }
 }

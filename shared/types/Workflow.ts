@@ -1,6 +1,3 @@
-import type { ApiOptions } from './Api';
-import type { CreateEntity, UpdateEntity, ResponseEntity } from './Global';
-
 // ---------------------------------------------------------------------------
 // Workflow Engine Types (Orchestrator)
 // ---------------------------------------------------------------------------
@@ -29,66 +26,149 @@ export type HealthStatus =
 
 export type ConnectionType = 'sequential' | 'conditional' | 'parallel';
 
-export type WorkflowNodeType =
-  | 'Action'
-  | 'Condition'
-  | 'Iterator'
-  | 'Delay'
-  | 'Trigger'
-  | 'Workflow';
+/** Default error-handling strategy (workflow-level and per-node override). */
+export type ErrorHandlingStrategy = 'failFast' | 'continueOnError' | 'skipNode';
+
+/** Execution-log verbosity captured per node. */
+export type LogVerbosity = 'minimal' | 'normal' | 'detailed';
+
+/**
+ * What happens when the workflow-level timeout fires.
+ *
+ * NOTE: the persisted contract (swagger `settingsModel`) uses
+ * `fail | cancelAndReport`; the editor manifest's `TimeoutBehavior` enum lists
+ * `fail | continueWithPartialResults`. These genuinely disagree — verified
+ * 2026-07-01 against the live backend: saving `continueWithPartialResults`
+ * returns 422 "Could not parse property settings.timeoutBehavior … ensure it is
+ * of the correct type." We follow the persisted contract (flagged to backend);
+ * `useWorkflowLabels` maps the manifest value on read as a defensive fallback.
+ */
+export type TimeoutBehavior = 'fail' | 'cancelAndReport';
+
+/** Input variable types accepted by `WorkflowInput.type`. */
+export type InputVariableType =
+  | 'string'
+  | 'number'
+  | 'boolean'
+  | 'object'
+  | 'array';
+
+export type PaginationStrategy =
+  | 'offset'
+  | 'pageNumber'
+  | 'cursor'
+  | 'linkHeader'
+  | 'watermark';
+
+/**
+ * Editor-only canvas renderer kind. Derived from a node's `functionName`
+ * (e.g. `core.flow.condition` → `condition`); every node that is not one of
+ * the special flow kinds renders as a generic `action`. `trigger` is the
+ * synthetic entry node injected by the canvas (never persisted as a node).
+ */
+export type WorkflowNodeKind =
+  | 'action'
+  | 'condition'
+  | 'iterator'
+  | 'delay'
+  | 'trigger'
+  | 'workflow'
+  | 'paginator';
 
 // -- Workflow Definition ----------------------------------------------------
 
+/**
+ * Trigger configuration for scheduled or event-driven workflows
+ * (swagger `triggerModel`). Stored on the workflow itself, not in `nodes[]`.
+ *
+ * Required on create/update:
+ * - `scheduled` → `cronExpression`
+ * - `event` → `entity` + `action`
+ */
 export interface WorkflowTrigger {
   enabled: boolean;
-  type: WorkflowType;
-  cron?: string;
-  entity?: string;
-  action?: string;
-  subEntity?: string;
-  eventFilters?: Record<string, unknown>;
-  timeWindow?: string;
+  /** Cron expression for scheduled workflows (6-field, with seconds). */
+  cronExpression?: string | null;
+  /** Triggering entity (e.g. `product`, `order`). `*` = wildcard. */
+  entity?: string | null;
+  /** Triggering action (e.g. `create`, `update`). `*` = wildcard. */
+  action?: string | null;
+  /** Optional sub-entity qualifier. `*` = any; `!` = only when absent. */
+  subEntity?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  description?: string | null;
+  eventFilters?: Record<string, unknown> | null;
+  inputParameters?: Record<string, unknown> | null;
 }
 
 export interface WorkflowNodeConnection {
-  sourceNodeId: string;
-  targetNodeId: string;
+  /** Source node id. `TRIGGER` (graphConventions.triggerSentinel) marks an entry connection. */
+  from: string;
+  /** Target node id. */
+  to: string;
   type: ConnectionType;
-  label?: string;
+  /** Connection label — drives conditional/handle routing. Empty string when unset. */
+  label?: string | null;
+  /** Free-form editor metadata (positions, sourceHandle, etc.). `null` when unset. */
+  ui?: Record<string, unknown> | null;
 }
 
 export interface WorkflowNodeConfig {
   [key: string]: unknown;
 }
 
+/** Retry policy for a node (swagger `retryPolicyModel`). */
+export interface RetryPolicy {
+  maxAttempts: number;
+  /** Initial interval between retries (TimeSpan, e.g. `00:00:05`). */
+  initialInterval: string;
+  /** Multiplier applied to the interval after each retry. */
+  backoffMultiplier: number;
+}
+
+/**
+ * A persisted workflow node (swagger `nodeModel`). Identity is `functionName`
+ * (`provider.type.name[@version]`, e.g. `core.network.httpRequest`). All node
+ * parameters live in `config`; the canvas position lives in `ui.position`.
+ */
 export interface WorkflowNode {
   id: string;
-  type: WorkflowNodeType;
   name?: string;
-  actionName?: string;
+  /** Canonical function identifier, e.g. `core.flow.condition`. */
+  functionName: string;
   config?: WorkflowNodeConfig;
-  input?: Record<string, unknown>;
-  position?: { x: number; y: number };
+  /** UI-specific metadata for visual editors (position, sourceHandle, …). */
+  ui?: Record<string, unknown> | null;
+  retry?: RetryPolicy | null;
+  /** Optional per-node timeout (ISO-8601, e.g. `PT30S`). */
+  timeout?: string | null;
+  /** Per-node error-handling override. `null`/undefined uses the workflow default. */
+  errorHandlingStrategy?: ErrorHandlingStrategy | null;
 }
 
+/** Workflow input definition (swagger `inputDefinitionModel`). */
 export interface WorkflowInput {
   name: string;
-  type: string;
+  type: InputVariableType;
   required?: boolean;
   defaultValue?: unknown;
-  description?: string;
+  description?: string | null;
+  /** Used to group inputs in the editor — empty/undefined falls back to `general`. */
+  category?: string | null;
 }
 
+/** Workflow-level settings (swagger `settingsModel`). */
 export interface WorkflowSettings {
+  /** TimeSpan (`01:00:00`), ISO-8601 (`PT1H`), or numeric seconds. */
+  timeout?: string | null;
   maxConcurrency?: number;
-  maxQueueDepth?: number;
-  timeout?: string;
-  timeoutBehavior?: string;
-  retryPolicy?: Record<string, unknown>;
-  rateLimiting?: Record<string, unknown>;
-  circuitBreaker?: Record<string, unknown>;
-  logging?: Record<string, unknown>;
-  errorHandling?: Record<string, unknown>;
+  retryPolicy?: RetryPolicy | null;
+  /** Retention in days. `null` = global default; `0` = keep forever. */
+  executionLogRetentionDays?: number | null;
+  logVerbosity?: LogVerbosity;
+  timeoutBehavior?: TimeoutBehavior;
+  errorHandlingStrategy?: ErrorHandlingStrategy;
 }
 
 export interface WorkflowUiMetadata {
@@ -113,28 +193,31 @@ export interface WorkflowSummary {
   version: number;
   createdAt?: string;
   updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface WorkflowDefinition extends WorkflowSummary {
+  trigger?: WorkflowTrigger | null;
   input?: WorkflowInput[];
   nodes: WorkflowNode[];
   connections: WorkflowNodeConnection[];
-  settings?: WorkflowSettings;
+  settings?: WorkflowSettings | null;
   ui?: WorkflowUiMetadata;
 }
 
 export interface CreateWorkflowRequest {
   name: string;
-  description?: string;
-  tags?: string[];
+  description?: string | null;
+  tags?: string[] | null;
+  group?: string | null;
   type?: WorkflowType;
-  enabled?: boolean;
-  cronExpression?: string;
-  eventName?: string;
-  input?: WorkflowInput[];
+  /** Required for `scheduled` and `event` workflow types. */
+  trigger?: WorkflowTrigger | null;
+  input?: WorkflowInput[] | null;
   nodes?: WorkflowNode[];
   connections?: WorkflowNodeConnection[];
-  settings?: WorkflowSettings;
+  settings?: WorkflowSettings | null;
   ui?: WorkflowUiMetadata;
 }
 
@@ -143,7 +226,9 @@ export interface UpdateWorkflowRequest extends CreateWorkflowRequest {
 }
 
 export interface ValidateWorkflowResult {
-  valid: boolean;
+  valid?: boolean;
+  isValid?: boolean;
+  message?: string;
   errors?: WorkflowValidationError[];
 }
 
@@ -155,24 +240,77 @@ export interface WorkflowValidationError {
 
 // -- Executions -------------------------------------------------------------
 
+export interface ExecutionNodeExecution {
+  nodeId: string;
+  nodeName?: string;
+  nodeType: string;
+  activityName?: string | null;
+  status: string;
+  startTime?: string;
+  endTime?: string;
+  durationMs?: number;
+  retryCount?: number;
+  retryErrors?: string[] | null;
+  executionOrder?: number;
+  input?: Record<string, unknown> | null;
+  output?: Record<string, unknown> | null;
+}
+
 export interface ExecutionLog {
-  _id: string;
-  _type: string;
-  instanceId: string;
+  id: string;
   workflowId: string;
   workflowName: string;
-  status: ExecutionStatus;
-  startedAt: string;
-  completedAt?: string;
-  durationMs?: number;
-  startedBy?: string;
-  error?: string;
+  group?: string;
+  status: string;
+  startTime: string;
+  endTime?: string | null;
+  durationMs?: number | null;
+  totalNodes?: number;
+  completedNodes?: number;
+  failedNodes?: number;
+  skippedNodes?: number;
+  isScheduled?: boolean;
+  triggerType?: string | null;
+  startedBy?: string | null;
+  cronExpression?: string | null;
+  eventName?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  workflowVersion?: string | number;
+  tags?: string[] | null;
+  childExecutionIds?: string[] | null;
+  parentExecutionLogId?: string | null;
+  parentWorkflowId?: string | null;
+  cascadeCancellation?: boolean;
+  idempotencyKey?: string | null;
+  replayOf?: string | null;
+  replayedBy?: string | null;
+  replayedAt?: string | null;
+  pauseReason?: string | null;
+  pausedBy?: string | null;
+  pausedAt?: string | null;
+  cancelledBy?: string | null;
+  cancellationReason?: string | null;
+  errors?: string[] | null;
+  errorCount?: number;
+  isTestRun?: boolean;
+  nodeExecutions?: ExecutionNodeExecution[] | null;
+}
+
+export interface ExecutionDetailsResponse {
+  execution: ExecutionLog;
+  orchestrationStatus: string | null;
+  canCancel: boolean;
+  canPause: boolean;
+  canResume?: boolean;
+  canReplay: boolean;
 }
 
 export interface ExecutionNodeResult {
   nodeId: string;
   nodeName?: string;
-  nodeType: WorkflowNodeType;
+  /** Node kind/category string as returned by the execution API. */
+  nodeType: string;
   status: ExecutionStatus;
   startedAt?: string;
   completedAt?: string;
@@ -184,7 +322,6 @@ export interface ExecutionNodeResult {
 
 export interface ExecutionDetails extends ExecutionLog {
   workflowVersion: number;
-  idempotencyKey?: string;
   parameters?: Record<string, unknown>;
   nodeResults: ExecutionNodeResult[];
   availableActions: string[];
@@ -218,8 +355,26 @@ export interface StartWorkflowRequest {
   startedBy?: string;
 }
 
+export interface BulkEnableDisableRequest {
+  workflowIds: string[];
+}
+
+export interface BulkWorkflowOperationResponse {
+  totalProcessed: number;
+  successful: number;
+  failed: number;
+  successfulWorkflowIds: string[];
+  failedWorkflowIds: string[];
+  errors?: Record<string, string>;
+}
+
 export interface StartWorkflowResponse {
-  instanceId: string;
+  success?: boolean;
+  status?: string;
+  executionId?: string;
+  newExecutionId?: string;
+  message?: string;
+  instanceId?: string;
 }
 
 export interface CancelExecutionRequest {
@@ -266,9 +421,10 @@ export interface BulkReplayFailedResponse {
 
 export interface ListExecutionLogsOptions {
   status?: ExecutionStatus;
-  startTime?: string;
-  endTime?: string;
+  startedAfter?: string;
+  startedBefore?: string;
   limit?: number;
+  workflowId?: string;
 }
 
 export interface ListWorkflowExecutionsOptions {
@@ -371,6 +527,14 @@ export interface WorkflowVersionEntry {
   createdAt: string;
   createdBy?: string;
   description?: string;
+  archivedAt?: string;
+  archivedBy?: string;
+  definitionHash?: string;
+  definition?: {
+    nodes?: unknown[];
+    connections?: unknown[];
+    [key: string]: unknown;
+  };
 }
 
 export interface WorkflowHistory {
@@ -414,324 +578,405 @@ export interface SaveVariableRequest {
   isSecret?: boolean;
 }
 
-// -- Editor Manifest --------------------------------------------------------
+// -- Editor Manifest (schemaVersion 3.x) ------------------------------------
 
-export interface ManifestNodeTypeConnection {
-  allowedTypes: ConnectionType[];
-  maxOutgoing?: number;
-  labels?: string[];
-  customLabels?: boolean;
+/**
+ * A single config/output field descriptor (swagger `nodeConfigProperty`).
+ * Used for node `config`/`output`, trigger-type `config`, and `workflowSettings`.
+ */
+export interface ManifestConfigProperty {
+  name: string;
+  /** Field type: string | number | boolean | object | array | datetime | duration | expression | any. */
+  type: string;
+  description?: string;
+  required?: boolean;
+  default?: unknown;
+  allowedValues?: Array<string | number>;
+  /** JSON-schema-ish nested shape for object/array fields. */
+  schema?: Record<string, unknown>;
+  /** Editor rendering hint, e.g. `duration-picker`, `condition-list`, `key-value-editor`. */
+  editorHint?: string;
 }
 
-export interface ManifestNodeTypeConfig {
+/** A named outgoing-connection handle on a node (swagger `connectionLabelDescriptor`). */
+export interface ManifestConnectionLabel {
+  label: string;
+  description?: string;
+  isDefault?: boolean;
+}
+
+/** Outgoing-connection rules for a node (swagger `nodeConnectionRules`). */
+export interface ManifestNodeConnectionRules {
+  maxOutgoing?: number | null;
+  allowedOutgoingTypes?: ConnectionType[];
+  labels?: ManifestConnectionLabel[];
+  allowCustomLabels?: boolean;
+  supportsParallelFanOut?: boolean;
+}
+
+/** A context variable a node exposes to its children (swagger `contextVariable`). */
+export interface ManifestContextVariable {
   name: string;
   type: string;
-  required?: boolean;
-  defaultValue?: unknown;
-  editorHint?: string;
   description?: string;
+  /** Visibility scope, e.g. `children`. */
+  scope?: string;
 }
 
-export interface ManifestNodeType {
-  type: WorkflowNodeType;
+/** A usage example for a node (swagger `functionExample`). */
+export interface ManifestNodeExample {
+  name?: string;
+  description?: string;
+  /** Example `config` payload for the node (manifest 3.x renamed this from `input`). */
+  config?: Record<string, unknown>;
+}
+
+/**
+ * A node descriptor in the manifest (swagger `nodeDescriptor`). Identity is
+ * `functionName`; `type` is the category name (matches a `ManifestNodeCategory`).
+ */
+export interface ManifestNode {
+  name: string;
+  displayName: string;
+  description?: string;
+  icon?: string;
+  /** Category name (e.g. `flow`, `network`, `state`) — matches `nodeTypes[].name`. */
+  type: string;
+  provider: string;
+  functionName: string;
+  connections: ManifestNodeConnectionRules;
+  config?: ManifestConfigProperty[];
+  output?: ManifestConfigProperty[];
+  contextVariables?: ManifestContextVariable[];
+  examples?: ManifestNodeExample[];
+}
+
+/** A node-category descriptor (swagger `nodeTypeCategoryDescriptor`). */
+export interface ManifestNodeCategory {
+  name: string;
   displayName: string;
   description?: string;
   icon?: string;
   color?: string;
-  connections: ManifestNodeTypeConnection;
-  config?: ManifestNodeTypeConfig[];
 }
 
-export interface ManifestActionParameter {
-  name: string;
-  type: string;
-  required?: boolean;
-  defaultValue?: unknown;
-  description?: string;
-}
-
-export interface ManifestActionOutput {
-  name: string;
-  type: string;
-  description?: string;
-}
-
-export interface WorkflowAction {
+/** An integration provider (swagger `providerDescriptor`). */
+export interface ManifestProvider {
   name: string;
   displayName: string;
+  version?: string;
   description?: string;
-  category: string;
   icon?: string;
-  parameters?: ManifestActionParameter[];
-  output?: ManifestActionOutput[];
 }
 
-export interface ManifestActionCategory {
-  name: string;
-  displayName: string;
-  icon?: string;
+/** A single enum value with display metadata (manifest `enums` entries). */
+export interface ManifestEnumValue {
+  value: string;
+  displayName?: string;
+  description?: string;
 }
 
 export interface ManifestExpressionFunction {
   name: string;
+  category?: string;
   description?: string;
-  parameters?: { name: string; type: string; description?: string }[];
+  parameters?: {
+    name: string;
+    type: string;
+    required?: boolean;
+    description?: string;
+    default?: unknown;
+  }[];
   returnType?: string;
+  aliases?: string[];
   example?: string;
 }
 
 export interface ManifestExpressionVariable {
   pattern: string;
   description?: string;
-  example?: string;
+  examples?: string[];
 }
 
+/**
+ * A trigger type descriptor (swagger `triggerTypeDescriptor`). `type` is
+ * PascalCase here (`OnDemand`/`Scheduled`/`Event`) — map to the camelCase
+ * `WorkflowType` when reading/writing a workflow.
+ */
 export interface ManifestTriggerType {
-  type: WorkflowType;
+  type: string;
   displayName: string;
   description?: string;
-}
-
-export interface ManifestEventEntityAction {
-  name: string;
-  displayName: string;
+  config?: ManifestConfigProperty[];
 }
 
 export interface ManifestEventEntity {
   name: string;
   displayName: string;
-  actions: ManifestEventEntityAction[];
+  /** Action names as returned by the manifest (e.g. `['create', 'update', 'activate']`). */
+  actions: string[];
   subEntities?: string[];
+}
+
+/**
+ * A context field present on the `input` of every event-triggered workflow
+ * (manifest `commonEventContext`), e.g. `input._eventEntity`, `input._eventPayload`.
+ */
+export interface ManifestCommonEventContext {
+  name: string;
+  type: string;
+  /** Fully-qualified access path, e.g. `input._eventPayload`. */
+  path: string;
+  description?: string;
+}
+
+/** A single field within an event payload (manifest `eventPayloads[].fields`). */
+export interface ManifestEventPayloadField {
+  name: string;
+  type: string;
+  description?: string;
+}
+
+/**
+ * The payload shape delivered for a given event `entity`/`action`
+ * (manifest `eventPayloads`). `fields` is absent when the payload is a scalar
+ * (`payloadType` `number`/`guid`) — then `exampleAccess` references the payload
+ * directly.
+ */
+export interface ManifestEventPayload {
+  entity: string;
+  action: string;
+  /** `object` | `number` | `guid` | … — the shape of `input._eventPayload`. */
+  payloadType: string;
+  description?: string;
+  fields?: ManifestEventPayloadField[];
+  /** Ready-to-use expression accessing the payload, e.g. `{{ input._eventPayload.Email }}`. */
+  exampleAccess?: string;
+}
+
+/**
+ * A node-level property descriptor (manifest `nodeProperties`) — the per-node
+ * execution overrides (`retry`, `timeout`, `errorHandlingStrategy`) that live at
+ * the top level of a node, not under `config`.
+ */
+export interface ManifestNodeProperty {
+  name: string;
+  type: string;
+  description?: string;
+  required?: boolean;
+  schema?: Record<string, unknown>;
+}
+
+/** Graph-level conventions (swagger `graphConventionsDescriptor`). */
+export interface ManifestGraphConventions {
+  /** Reserved `from` value marking a connection as a workflow entry (e.g. `TRIGGER`). */
+  triggerSentinel: string;
+  allowMultipleTriggers?: boolean;
+  triggerSentinelDescription?: string;
+}
+
+/** Expression/transform authoring guidance (swagger `manifestAuthoringGuide`). Shape is loose; UI renders it as help text. */
+export interface ManifestAuthoringGuide {
+  expressions?: Record<string, unknown>;
+  transform?: Record<string, unknown>;
 }
 
 export interface EditorManifest {
   schemaVersion: string;
-  nodeTypes: ManifestNodeType[];
-  actions: WorkflowAction[];
-  actionCategories: ManifestActionCategory[];
+  /** Node categories (network/flow/state/event/data-transformation). */
+  nodeTypes: ManifestNodeCategory[];
+  nodes: ManifestNode[];
+  providers: ManifestProvider[];
   expressionFunctions: ManifestExpressionFunction[];
   expressionVariables: ManifestExpressionVariable[];
   triggerTypes: ManifestTriggerType[];
   eventEntities: ManifestEventEntity[];
-  enums: Record<string, string[]>;
+  /** Context fields on `input` for every event-triggered workflow. */
+  commonEventContext?: ManifestCommonEventContext[];
+  /** Per entity/action payload shapes for event triggers. */
+  eventPayloads?: ManifestEventPayload[];
+  graphConventions: ManifestGraphConventions;
+  workflowSettings: ManifestConfigProperty[];
+  /** Per-node execution override descriptors (retry/timeout/errorHandlingStrategy). */
+  nodeProperties?: ManifestNodeProperty[];
+  authoring: ManifestAuthoringGuide;
+  enums: Record<string, ManifestEnumValue[]>;
 }
 
-// ---------------------------------------------------------------------------
-// Workflow Entity Types (next branch — entity-pattern CRUD)
-// ---------------------------------------------------------------------------
-
-export interface WorkflowEntityBase {
-  name: string;
-  description: string;
-  status: WorkflowEntityStatus;
-  trigger: WorkflowEntityTrigger;
-  steps: WorkflowStep[];
-  tags: string[];
-  version: number;
-  enabled: boolean;
+export interface LiveConsoleLine {
+  id: number;
+  timestamp: string;
+  level: 'info' | 'warn' | 'error' | 'debug';
+  source: string;
+  message: string;
 }
 
-export type WorkflowEntityCreate = CreateEntity<WorkflowEntityBase>;
-export type WorkflowEntityUpdate = UpdateEntity<WorkflowEntityBase>;
-export type WorkflowEntity = ResponseEntity<WorkflowEntityBase>;
+// -- Workflow Node Palette --------------------------------------------------
+// Used by WorkflowSidebarAddNode (produces items) and WorkflowBuilder
+// (consumes items when placing nodes on the canvas).
 
-export type WorkflowEntityStatus = 'draft' | 'active' | 'inactive' | 'archived';
-
-export interface WorkflowEntityTrigger {
-  type: string;
-  config: Record<string, unknown>;
-}
-
-export interface WorkflowStep {
+export interface PaletteItem {
+  // Canvas renderer kind this item creates ('action' | 'condition' | 'iterator' | 'delay' | 'workflow' | 'paginator').
+  kind: WorkflowNodeKind;
+  // Stable id for template keying.
   id: string;
-  actionId: string;
-  name: string;
-  config: Record<string, unknown>;
-  next?: string[];
-  errorHandler?: string;
-}
-
-// ─── Entity Validation ─────────────────────────────────────────────
-
-export interface WorkflowEntityValidationResult {
-  valid: boolean;
-  errors: WorkflowEntityValidationError[];
-  warnings: WorkflowEntityValidationWarning[];
-}
-
-export interface WorkflowEntityValidationError {
-  code: string;
-  message: string;
-  stepId?: string;
-}
-
-export interface WorkflowEntityValidationWarning {
-  code: string;
-  message: string;
-  stepId?: string;
-}
-
-// ─── Entity Execution ──────────────────────────────────────────────
-
-export interface WorkflowEntityExecutionBase {
-  workflowId: string;
-  status: WorkflowEntityExecutionStatus;
-  triggeredBy: string;
-  startedAt: string;
-  completedAt?: string;
-  duration?: number;
-  input: Record<string, unknown>;
-  output?: Record<string, unknown>;
-  error?: string;
-  currentStepId?: string;
-}
-
-export type WorkflowEntityExecution = ResponseEntity<WorkflowEntityExecutionBase>;
-
-export type WorkflowEntityExecutionStatus =
-  | 'pending'
-  | 'running'
-  | 'paused'
-  | 'completed'
-  | 'failed'
-  | 'cancelled';
-
-export interface WorkflowEntityExecutionStartRequest {
-  input?: Record<string, unknown>;
-}
-
-export interface WorkflowEntityExecutionLog {
-  stepId: string;
-  stepName: string;
-  status: string;
-  startedAt: string;
-  completedAt?: string;
-  duration?: number;
-  input?: Record<string, unknown>;
-  output?: Record<string, unknown>;
-  error?: string;
-}
-
-export interface WorkflowEntityExecutionConcurrency {
-  workflowId: string;
-  running: number;
-  limit: number;
-}
-
-// ─── Entity Metrics ────────────────────────────────────────────────
-
-export interface WorkflowEntityMetrics {
-  workflowId: string;
-  totalExecutions: number;
-  successCount: number;
-  failureCount: number;
-  averageDuration: number;
-  p95Duration: number;
-  lastExecutedAt?: string;
-}
-
-export interface WorkflowEntityAggregateMetrics {
-  totalWorkflows: number;
-  totalExecutions: number;
-  successRate: number;
-  averageDuration: number;
-  period: string;
-}
-
-export interface WorkflowEntityErrorSummary {
-  workflowId: string;
-  errorCode: string;
-  message: string;
-  count: number;
-  lastOccurredAt: string;
-}
-
-// ─── Entity Version ────────────────────────────────────────────────
-
-export interface WorkflowEntityVersionBase {
-  workflowId: string;
-  version: number;
-  createdBy: string;
-  createdAt: string;
-  changelog?: string;
-  definition: WorkflowEntity;
-}
-
-export type WorkflowEntityVersion = ResponseEntity<WorkflowEntityVersionBase>;
-
-export interface WorkflowEntityVersionComparison {
-  fromVersion: number;
-  toVersion: number;
-  changes: WorkflowEntityVersionChange[];
-}
-
-export interface WorkflowEntityVersionChange {
-  path: string;
-  type: 'added' | 'removed' | 'modified';
-  oldValue?: unknown;
-  newValue?: unknown;
-}
-
-// ─── Entity Variable ───────────────────────────────────────────────
-
-export interface WorkflowEntityVariableBase {
-  key: string;
-  value: string;
+  label: string;
   description?: string;
-  isSecret: boolean;
-  workflowId?: string;
+  // The canonical `functionName` (e.g. `core.network.httpRequest`) that identifies the node.
+  functionName?: string;
+  // When set, the item originates from a saved node template and should
+  // be created with the full template data instead of a blank node.
+  templateId?: string;
 }
 
-export type WorkflowEntityVariableCreate = CreateEntity<WorkflowEntityVariableBase>;
-export type WorkflowEntityVariable = ResponseEntity<WorkflowEntityVariableBase>;
-
-// ─── Entity Editor ─────────────────────────────────────────────────
-
-export interface WorkflowEditorManifest {
-  version: string;
-  actions: WorkflowEditorAction[];
-  triggers: WorkflowTriggerDefinition[];
-}
-
-export interface WorkflowEditorAction {
-  id: string;
-  name: string;
-  description: string;
+export interface PaletteSection {
   category: string;
-  inputs: WorkflowEditorActionParameter[];
-  outputs: WorkflowEditorActionParameter[];
+  items: PaletteItem[];
 }
 
-export interface WorkflowEditorActionParameter {
+// -- Node Templates --------------------------------------------------------
+// Locally stored (localStorage) node configurations that users can reuse
+// across workflows.
+
+export interface NodeTemplate {
+  id: string;
   name: string;
-  type: string;
-  required: boolean;
   description?: string;
-  defaultValue?: unknown;
+  kind: WorkflowNodeKind;
+  functionName?: string;
+  nodeData: Record<string, unknown>;
+  createdAt: string;
 }
 
-export interface WorkflowTriggerDefinition {
-  type: string;
+// ---------------------------------------------------------------------------
+// Kits (provider-supplied workflow + variable bundles / integrations)
+// ---------------------------------------------------------------------------
+// Engine-type family (plain interfaces, like WorkflowSummary). A kit bundles
+// one or more workflow definitions plus the variables they depend on, ready to
+// install into an account. The catalog (`GET /orchestrator/kits`) returns
+// `KitSummary[]`; the detail endpoint adds the full `variables`/`workflows`.
+
+/** A variable a kit needs in order to run. Created on install from `defaultValue`. */
+export interface KitVariableSpec {
+  key: string;
+  description?: string;
+  /** Secret variables have no default and must be supplied by the installer. */
+  isSecret?: boolean;
+  required?: boolean;
+  defaultValue?: string;
+  /** Workflow refIds (or names) that consume this variable. */
+  usedBy?: string[];
+}
+
+/** A workflow bundled in a kit. `refId` is the kit-local identifier. */
+export interface KitWorkflowSpec {
+  refId: string;
+  /** Full workflow definition payload (opaque to the UI). */
+  definition?: Record<string, unknown>;
+  description?: string;
+  /** refIds of other kit workflows this one depends on. */
+  dependencies?: string[];
+}
+
+/** Catalog list item. */
+export interface KitSummary {
+  id: string;
   name: string;
-  description: string;
-  configSchema: Record<string, unknown>;
+  author: string;
+  description?: string;
+  category?: string;
+  version: string;
+  tags?: string[];
+  workflowCount?: number;
+  variableCount?: number;
 }
 
-// ─── Entity API Options ────────────────────────────────────────────
+/** Full kit detail (`GET /orchestrator/kits/{id}`). */
+export interface Kit extends KitSummary {
+  variables: KitVariableSpec[];
+  workflows: KitWorkflowSpec[];
+}
 
-export type WorkflowFieldsFilter =
-  | 'all'
-  | 'default'
-  | 'steps'
-  | 'trigger'
-  | 'tags';
-export type WorkflowApiOptions = ApiOptions<WorkflowFieldsFilter>;
+export interface InstallKitRequest {
+  /** refIds of the kit workflows to install. Omit/empty installs all. */
+  workflows?: string[];
+  /**
+   * Variable values to create on install, keyed by variable key. Required
+   * variables (e.g. secrets without a default) must be supplied here or the
+   * API rejects the install with 422.
+   */
+  variables?: Record<string, string>;
+}
 
-export type WorkflowExecutionFieldsFilter =
-  | 'all'
-  | 'default'
-  | 'input'
-  | 'output'
-  | 'logs';
-export type WorkflowExecutionApiOptions =
-  ApiOptions<WorkflowExecutionFieldsFilter>;
+/** A workflow created (or referenced) by an installation. */
+export interface KitInstallationWorkflow {
+  refId: string;
+  workflowId: string;
+  workflowName: string;
+}
+
+/** A variable created by an installation. */
+export interface KitInstallationVariable {
+  key: string;
+  created?: string;
+}
+
+export interface InstallKitResponse {
+  installationId: string;
+  kitId: string;
+  kitName: string;
+  kitVersion: string;
+  workflowsCreated?: number;
+  variablesCreated?: number;
+  variablesExisted?: number;
+  workflows?: KitInstallationWorkflow[];
+  variables?: KitInstallationVariable[];
+}
+
+/** A record of a kit installed into the account. */
+export interface KitInstallation {
+  id: string;
+  kitId: string;
+  kitName: string;
+  kitVersion: string;
+  installedAt?: string;
+  installedBy: string;
+  workflows?: KitInstallationWorkflow[];
+  variables?: KitInstallationVariable[];
+}
+
+export interface UninstallKitRequest {
+  /** refIds to remove. Omit/empty uninstalls all installed workflows. */
+  workflows?: string[];
+  /** Also delete the kit's variables. Defaults to keeping them. */
+  deleteVariables?: boolean;
+}
+
+export interface UninstallKitResponse {
+  workflowsDeleted?: number;
+  workflowsSkipped?: number;
+  variablesDeleted?: number;
+  workflowsRemaining?: string[];
+}
+
+export interface UpgradeKitRequest {
+  /** Overwrite workflows that were modified locally since install. */
+  force?: boolean;
+}
+
+export interface UpgradeKitResponse {
+  installationId: string;
+  kitId: string;
+  kitName: string;
+  previousVersion: string;
+  newVersion: string;
+  workflowsUpdated?: number;
+  workflowsCreated?: number;
+  workflowsRemoved?: number;
+  variablesCreated?: number;
+  variablesExisted?: number;
+  workflows?: KitInstallationWorkflow[];
+  variables?: KitInstallationVariable[];
+  /** Workflows changed by the upgrade — surfaced as a warning before applying. */
+  modifiedWorkflows?: KitInstallationWorkflow[];
+}

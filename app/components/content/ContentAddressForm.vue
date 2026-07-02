@@ -85,9 +85,9 @@ const formPrefix = computed(
         :name="`${formPrefix}addressLine2`"
       >
         <FormItem>
-          <FormLabel :optional="true">{{
-            $t('address.addressLine2')
-          }}</FormLabel>
+          <FormLabel :optional="true">
+            {{ $t('address.addressLine2') }}
+          </FormLabel>
           <FormControl>
             <Input
               v-bind="componentField"

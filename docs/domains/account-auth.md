@@ -30,17 +30,17 @@ The Account & Auth domain handles everything related to identity and merchant co
 
 ## API Shape
 
-| Endpoint | Method | Purpose |
-| --- | --- | --- |
-| `/user` | CRUD | User management (admin) |
-| `/user/me` | GET/PUT | Current user profile |
-| `/user/me/password` | POST | Password change |
-| `/user/password/restore` | POST | Begin password reset flow |
-| `/user/password` | POST | Complete password reset with token |
-| `/account` | GET | Merchant account details |
-| `/account/channel/list` | GET | Available channels |
-| `/account/currency/list` | GET | Available currencies |
-| `/account/language/list` | GET | Available languages |
+| Endpoint                 | Method  | Purpose                            |
+| ------------------------ | ------- | ---------------------------------- |
+| `/user`                  | CRUD    | User management (admin)            |
+| `/user/me`               | GET/PUT | Current user profile               |
+| `/user/me/password`      | POST    | Password change                    |
+| `/user/password/restore` | POST    | Begin password reset flow          |
+| `/user/password`         | POST    | Complete password reset with token |
+| `/account`               | GET     | Merchant account details           |
+| `/account/channel/list`  | GET     | Available channels                 |
+| `/account/currency/list` | GET     | Available currencies               |
+| `/account/language/list` | GET     | Available languages                |
 
 **User types** — `ApiUserType` is either `'api'` (service account) or `'personal'` (human user).
 
@@ -48,12 +48,12 @@ The Account & Auth domain handles everything related to identity and merchant co
 
 ## Contracts (Cross-Domain Usage)
 
-| Type | Used By | Purpose |
-| --- | --- | --- |
-| `Channel`, `Market`, `Currency` | All domains | Scoping products, prices, and quotations |
-| `Account` | All domains | Merchant context (`accountKey`, `defaultCurrency`) |
-| `User` | Orders | Author info for quotation messages and status transitions |
-| `Session`, `AuthTokens` | Plugins | Token management and request authentication |
+| Type                            | Used By     | Purpose                                                   |
+| ------------------------------- | ----------- | --------------------------------------------------------- |
+| `Channel`, `Market`, `Currency` | All domains | Scoping products, prices, and quotations                  |
+| `Account`                       | All domains | Merchant context (`accountKey`, `defaultCurrency`)        |
+| `User`                          | Orders      | Author info for quotation messages and status transitions |
+| `Session`, `AuthTokens`         | Plugins     | Token management and request authentication               |
 
 ## Dependencies
 
@@ -62,16 +62,16 @@ The Account & Auth domain handles everything related to identity and merchant co
 
 ## Key Files
 
-| Layer | Path |
-| --- | --- |
-| Types | `shared/types/Auth.ts`, `shared/types/Account.ts` |
-| Repositories | `app/utils/repositories/user.ts`, `app/utils/repositories/global.ts` |
-| Stores | `app/stores/account.ts`, `app/stores/user.ts` |
-| Composables | `useGeinsAuth.ts`, `useGeinsApi.ts` |
-| Plugins | `geins-api.ts`, `auth-state.ts`, `geins-global.ts`, `error-handler.ts` |
-| Server | `server/api/auth/[...].ts`, `server/utils/auth.ts` |
-| Components | `app/components/auth/AuthForm.vue` |
-| Pages | `app/pages/auth/login.vue`, `logout.vue`, `reset-password.vue`, `app/pages/account/profile/index.vue` |
+| Layer        | Path                                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
+| Types        | `shared/types/Auth.ts`, `shared/types/Account.ts`                                                     |
+| Repositories | `app/utils/repositories/user.ts`, `app/utils/repositories/global.ts`                                  |
+| Stores       | `app/stores/account.ts`, `app/stores/user.ts`                                                         |
+| Composables  | `useGeinsAuth.ts`, `useGeinsApi.ts`                                                                   |
+| Plugins      | `geins-api.ts`, `auth-state.ts`, `geins-global.ts`, `error-handler.ts`                                |
+| Server       | `server/api/auth/[...].ts`, `server/utils/auth.ts`                                                    |
+| Components   | `app/components/auth/AuthForm.vue`                                                                    |
+| Pages        | `app/pages/auth/login.vue`, `logout.vue`, `reset-password.vue`, `app/pages/account/profile/index.vue` |
 
 ## Decision Log
 

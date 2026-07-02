@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const _props = defineProps<{
-  entityName: string;
+  entityKey: string;
   loading: boolean;
 }>();
 const open = defineModel('open', {
@@ -14,17 +14,17 @@ const _emit = defineEmits(['confirm', 'cancel']);
   <AlertDialog v-model:open="open">
     <AlertDialogContent>
       <AlertDialogHeader>
-        <AlertDialogTitle>{{
-          $t('dialog.unsaved_changes_title')
-        }}</AlertDialogTitle>
+        <AlertDialogTitle>
+          {{ $t('dialog.unsaved_changes_title') }}
+        </AlertDialogTitle>
         <AlertDialogDescription>
           {{ $t('dialog.unsaved_changes_description') }}
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel @click="$emit('cancel')">{{
-          $t('cancel')
-        }}</AlertDialogCancel>
+        <AlertDialogCancel @click="$emit('cancel')">
+          {{ $t('cancel') }}
+        </AlertDialogCancel>
 
         <Button :loading="loading" @click.prevent.stop="$emit('confirm')">
           {{ $t('continue') }}

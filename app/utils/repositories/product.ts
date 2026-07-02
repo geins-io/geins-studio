@@ -11,11 +11,13 @@ import type {
   ProductPriceListApiOptions,
 } from '#shared/types';
 import { buildQueryObject } from '#shared/utils/api-query';
+import { ENTITIES } from '#shared/utils/entities';
+import type { RepoFetchOptions } from './entity-base';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 const { batchQueryMatchAll, batchQueryNoPagination } = useBatchQuery();
 
-const BASE_ENDPOINT = '/product';
+const BASE_ENDPOINT = ENTITIES.product.endpoint;
 
 /**
  * Repository for managing product operations
@@ -26,29 +28,31 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     ProductCreate,
     ProductUpdate,
     ProductApiOptions
-  >(BASE_ENDPOINT, fetch);
+  >(ENTITIES.product, fetch);
 
   const categoryEndpoint = `${BASE_ENDPOINT}/category`;
 
   const brandEndpoint = `${BASE_ENDPOINT}/brand`;
 
-  const priceListEndpoint = `${BASE_ENDPOINT}/pricelist`;
+  const priceListEndpoint = ENTITIES.price_list.endpoint;
   const priceListRepo = repo.entity<
     ProductPriceList,
     ProductPriceListCreate,
     ProductPriceListUpdate
-  >(priceListEndpoint, fetch);
+  >(ENTITIES.price_list, fetch);
 
   return {
     ...productRepo,
 
     async list(
       options?: ProductApiOptions,
+      fetchOptions?: RepoFetchOptions,
     ): Promise<BatchQueryResult<Product>> {
       return await fetch<BatchQueryResult<Product>>(`${BASE_ENDPOINT}/query`, {
         method: 'POST',
         body: { ...batchQueryMatchAll.value, ...batchQueryNoPagination.value },
         query: buildQueryObject(options),
+        ...fetchOptions,
       });
     },
 
@@ -73,6 +77,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
       async list(
         query?: Record<string, unknown>,
+        fetchOptions?: RepoFetchOptions,
       ): Promise<BatchQueryResult<Category>> {
         return await fetch<BatchQueryResult<Category>>(
           `${categoryEndpoint}/query`,
@@ -84,6 +89,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
               ...batchQueryNoPagination.value,
             },
             query,
+            ...fetchOptions,
           },
         );
       },
@@ -107,6 +113,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
       },
       async list(
         query?: Record<string, unknown>,
+        fetchOptions?: RepoFetchOptions,
       ): Promise<BatchQueryResult<Brand>> {
         return await fetch<BatchQueryResult<Brand>>(
           `${brandEndpoint}/query`,
@@ -118,6 +125,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
               ...batchQueryNoPagination.value,
             },
             query,
+            ...fetchOptions,
           },
         );
       },
@@ -152,6 +160,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
             priceList: ProductPriceListUpdate,
             batchQuery?: BatchQuery,
             options?: ProductPriceListApiOptions,
+            fetchOptions?: RepoFetchOptions,
           ): Promise<ProductPriceList> {
             return await fetch<ProductPriceList>(
               `${priceListIdEndpoint}/preview`,
@@ -162,11 +171,13 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
                   batchQuery,
                 },
                 query: buildQueryObject(options),
+                ...fetchOptions,
               },
             );
           },
           async previewPrice(
             priceListProduct: PriceListProductPreview,
+            fetchOptions?: RepoFetchOptions,
           ): Promise<PriceListProductPreviewResponse> {
             return await fetch<PriceListProductPreviewResponse>(
               `${priceListIdEndpoint}/previewprice`,
@@ -175,6 +186,7 @@ export function productRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
                 body: {
                   ...priceListProduct,
                 },
+                ...fetchOptions,
               },
             );
           },

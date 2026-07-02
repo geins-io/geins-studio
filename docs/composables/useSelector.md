@@ -112,7 +112,7 @@ onMounted(async () => {
   <SelectorPanel
     :selection="selection"
     :mode="SelectorMode.Simple"
-    entity-name="sku"
+    entity-key="sku"
     :entities="productsWithSkus"
     :entity-type="SelectorEntityType.Sku"
     @save="updateSelection"
@@ -340,8 +340,10 @@ interface SelectorSelectionQuery {
   productIds?: string[];
 }
 
-interface SelectorSelectionInternal
-  extends Omit<SelectorSelectionQuery, 'productIds'> {
+interface SelectorSelectionInternal extends Omit<
+  SelectorSelectionQuery,
+  'productIds'
+> {
   ids?: string[];
 }
 

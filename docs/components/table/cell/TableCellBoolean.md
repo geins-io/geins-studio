@@ -21,7 +21,7 @@
 ### `isTrue`
 
 ```ts
-isTrue: boolean
+isTrue: boolean;
 ```
 
 `true` renders the positive variant; `false` renders the negative variant.

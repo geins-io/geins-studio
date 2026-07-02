@@ -63,13 +63,13 @@ All status transitions are one-way (no revert to draft). Each transition is a `P
 
 ## Contracts (Cross-Domain Usage)
 
-| Type | Used By | Purpose |
-| --- | --- | --- |
-| `Quotation`, `QuotationList` | List/detail pages | Core quotation display |
-| `QuotationTotal` | Price summary component | Totals display and preview |
-| `QuotationProductRow` | Products tab table | Flat row type for quotation items |
-| `StatusTransitionRequest` | Status transition dialogs | Action payloads |
-| `Order`, `CustomerOrder` | Customers | Company order history |
+| Type                         | Used By                   | Purpose                           |
+| ---------------------------- | ------------------------- | --------------------------------- |
+| `Quotation`, `QuotationList` | List/detail pages         | Core quotation display            |
+| `QuotationTotal`             | Price summary component   | Totals display and preview        |
+| `QuotationProductRow`        | Products tab table        | Flat row type for quotation items |
+| `StatusTransitionRequest`    | Status transition dialogs | Action payloads                   |
+| `Order`, `CustomerOrder`     | Customers                 | Company order history             |
 
 ## Dependencies
 
@@ -78,13 +78,13 @@ All status transitions are one-way (no revert to draft). Each transition is a `P
 
 ## Key Files
 
-| Layer | Path |
-| --- | --- |
-| Types | `shared/types/Order.ts`, `shared/types/Quotation.ts` |
-| Repository | `app/utils/repositories/order.ts` |
-| Composables | `useCompanyOrders.ts` |
-| Components | `app/components/quotation/` |
-| Pages | `app/pages/orders/quotation/list.vue`, `[id].vue` |
+| Layer       | Path                                                 |
+| ----------- | ---------------------------------------------------- |
+| Types       | `shared/types/Order.ts`, `shared/types/Quotation.ts` |
+| Repository  | `app/utils/repositories/order.ts`                    |
+| Composables | `useCompanyOrders.ts`                                |
+| Components  | `app/components/quotation/`                          |
+| Pages       | `app/pages/orders/quotations/index.vue`, `[id].vue`  |
 
 ## Decision Log
 

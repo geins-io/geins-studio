@@ -39,7 +39,7 @@
 ### `schema`
 
 ```ts
-schema: StorefrontSchema
+schema: StorefrontSchema;
 ```
 
 Drives the tab list. Empty / missing schema falls back to the bundled default.
@@ -47,7 +47,7 @@ Drives the tab list. Empty / missing schema falls back to the bundled default.
 ### `modelValue`
 
 ```ts
-modelValue: StorefrontSettings
+modelValue: StorefrontSettings;
 ```
 
 The settings object — passed through every tab to [`SchemaFormField`](/components/SchemaFormField).

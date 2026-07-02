@@ -53,14 +53,14 @@ Start with subdirectories (approach 2) for composables, repositories, and types.
 
 ### What Moves
 
-| Layer | Strategy | Notes |
-|---|---|---|
-| **Composables** | Subdirectories by domain | Done (STU-45). Config: `imports.dirs: ['composables/**']` |
-| **Components** | Document classification only | Moving components changes auto-import names (e.g. `ContentEditCard` → `InfraContentEditCard`), which is too disruptive. Classify in APP.md instead. |
-| **Repositories** | Already domain-organized | One file per domain in `utils/repositories/`. No changes needed. |
-| **Types** | Already domain-organized | One file per domain in `shared/types/`. No changes needed. |
-| **Pages** | Already domain-organized | `pages/{domain}/{entity}/`. No changes needed. |
-| **Stores** | Too few to subdirectory | Only 4 stores. Classification in domain-audit.md is sufficient. |
+| Layer            | Strategy                     | Notes                                                                                                                                               |
+| ---------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Composables**  | Subdirectories by domain     | Done (STU-45). Config: `imports.dirs: ['composables/**']`                                                                                           |
+| **Components**   | Document classification only | Moving components changes auto-import names (e.g. `ContentEditCard` → `InfraContentEditCard`), which is too disruptive. Classify in APP.md instead. |
+| **Repositories** | Already domain-organized     | One file per domain in `utils/repositories/`. No changes needed.                                                                                    |
+| **Types**        | Already domain-organized     | One file per domain in `shared/types/`. No changes needed.                                                                                          |
+| **Pages**        | Already domain-organized     | `pages/{domain}/{entity}/`. No changes needed.                                                                                                      |
+| **Stores**       | Too few to subdirectory      | Only 4 stores. Classification in domain-audit.md is sufficient.                                                                                     |
 
 ### What Stays Put
 

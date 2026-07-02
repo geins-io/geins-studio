@@ -17,7 +17,12 @@
 
 ```vue
 <script setup lang="ts">
-const { data: entries, pending, error, refresh } = await useFetch(`/api/quotations/${id}/changelog`);
+const {
+  data: entries,
+  pending,
+  error,
+  refresh,
+} = await useFetch(`/api/quotations/${id}/changelog`);
 </script>
 
 <template>

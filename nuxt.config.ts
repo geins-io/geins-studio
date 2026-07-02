@@ -1,16 +1,47 @@
+import { readFileSync } from 'node:fs';
 import tailwindcss from '@tailwindcss/vite';
 import { getBaseUrl, getAuthBaseUrl } from './shared/utils/deployment';
 
+const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
+
 export default defineNuxtConfig({
   ssr: false,
+
+  app: {
+    head: {
+      meta: [
+        {
+          name: 'app-version',
+          content: `${pkg.version}+${process.env.GIT_SHA || 'dev'}`,
+        },
+      ],
+    },
+  },
 
   spaLoadingTemplate: 'app-skeleton.html',
 
   routeRules: {
     '/auth/*': { prerender: true },
+    // Orchestrator variables + kits moved under Settings (Settings › Orchestrator).
+    // Keep old links working.
+    '/orchestrator/kits/list': {
+      redirect: '/settings/orchestrator/kits/list',
+    },
+    '/orchestrator/kits/installed': {
+      redirect: '/settings/orchestrator/kits/installed',
+    },
+    '/orchestrator/variables/**': {
+      redirect: '/settings/orchestrator/variables/**',
+    },
   },
 
   devtools: { enabled: true },
+
+  experimental: {
+    normalizeComponentNames: true,
+  },
+
+  ignore: ['.temp/**', '.agents/**', '.mint/**', '.claude/**'],
 
   modules: [
     '@sidebase/nuxt-auth',
@@ -37,8 +68,42 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css', 'flag-icons/css/flag-icons.min.css'],
 
   vite: {
-    // @ts-expect-error Type conflict: @tailwindcss/vite uses vite 7 types, vitepress pulls in vite 5 types
-    plugins: [tailwindcss()],
+    // Cast required because Nuxt and VitePress may resolve different Vite type versions.
+    plugins: [tailwindcss() as unknown as never],
+    optimizeDeps: {
+      include: [
+        '@lucide/vue',
+        '@tanstack/vue-table',
+        '@vercel/analytics/nuxt',
+        '@vueuse/core',
+        'chalk',
+        'class-variance-authority',
+        'clsx',
+        'jwt-decode',
+        'reka-ui',
+        'tailwind-merge',
+        'vuedraggable',
+      ],
+    },
+    server: {
+      watch: {
+        ignored: [
+          '**/.temp/**',
+          '**/.agents/**',
+          '**/.mint/**',
+          '**/.claude/**',
+          '**/.output/**',
+          '**/.nuxt/**',
+        ],
+      },
+    },
+  },
+
+  nitro: {
+    watchOptions: {
+      ignored: ['**/.temp/**', '**/.agents/**', '**/.mint/**', '**/.claude/**'],
+    },
+    ...(process.env.NITRO_PRESET && { preset: process.env.NITRO_PRESET }),
   },
 
   viewport: {
@@ -89,18 +154,19 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
+      appVersion: pkg.version,
+      gitSha: process.env.GIT_SHA || 'dev',
       fallback: {
         language: 'en',
         currency: 'SEK',
         channel: '1',
         country: 'SE',
       },
-      baseUrl: getBaseUrl(),
+      baseUrl: process.env.NUXT_PUBLIC_BASE_URL || getBaseUrl(),
       apiUrl: process.env.GEINS_API_URL,
       debug: process.env.GEINS_DEBUG === 'true',
-      featureOrchestrator:
-        process.env.NUXT_PUBLIC_FEATURE_ORCHESTRATOR === 'true',
-      brandOverride: process.env.NUXT_PUBLIC_BRAND_OVERRIDE || '',
+      appId: process.env.NUXT_PUBLIC_APP_ID || '',
+      isVercel: !!process.env.VERCEL,
     },
     private: {
       authSecret: process.env.AUTH_SECRET,
@@ -113,12 +179,6 @@ export default defineNuxtConfig({
     server: false,
     client: true,
   },
-
-  ...(process.env.NITRO_PRESET && {
-    nitro: {
-      preset: process.env.NITRO_PRESET,
-    },
-  }),
 
   compatibilityDate: '2024-07-05',
 });

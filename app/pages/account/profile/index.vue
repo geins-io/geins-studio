@@ -5,6 +5,7 @@
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import { DataItemDisplayType } from '#shared/types';
+import { ENTITIES } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { createPasswordChangeSchema } from '@/utils/password-validation';
 
@@ -50,7 +51,8 @@ const formSchema = toTypedSchema(
 // =====================================================================================
 // ENTITY DATA SETUP
 // =====================================================================================
-const entityName = 'profile';
+const entity = ENTITIES.profile;
+const entityKey = entity.key;
 
 const entityBase: UserProfileCreate = {
   name: '',
@@ -60,15 +62,13 @@ const entityBase: UserProfileCreate = {
   phoneNumber: '',
 };
 
-const userFullName = computed(() =>
-  fullName(entityData.value),
-);
+const userFullName = computed(() => fullName(entityData.value));
 
 const entityPageTitle = computed(() =>
   createMode.value
-    ? t('new_entity', { entityName }) +
+    ? t('new_entity', { entityKey }) +
       (userFullName.value ? ': ' + userFullName.value : '')
-    : userFullName.value || t('edit_entity', { entityName }),
+    : userFullName.value || t('edit_entity', { entityKey }),
 );
 
 // =====================================================================================
@@ -135,6 +135,7 @@ const {
   UserProfileUpdate,
   UserProfileApiOptions
 >({
+  entity,
   repository: userProfileApi,
   validationSchema: formSchema,
   initialEntityData: entityBase,
@@ -206,8 +207,8 @@ const {
 // ERROR HANDLING SETUP
 // =====================================================================================
 
-const { handleFetchResult, showErrorToast } = usePageError({
-  entityName,
+const { handleFetchResult } = usePageError({
+  entity,
   scope,
 });
 
@@ -229,7 +230,7 @@ const handleSave = async () => {
       );
       if (!hasUnsavedChanges.value) {
         toast({
-          title: t('entity_updated', { entityName }),
+          title: t('entity_updated', { entityKey }),
           variant: 'positive',
         });
         emptyPasswords();
@@ -237,7 +238,6 @@ const handleSave = async () => {
       }
     } catch (error) {
       geinsLogError('error updating password:', error);
-      showErrorToast(t('error_updating_entity', { entityName }));
       return;
     }
   }
@@ -318,7 +318,7 @@ const { summaryProps } = useEntityEditSummary({
   formTouched,
   summary,
   settingsSummary,
-  entityName,
+  entityKey,
   entityLiveStatus,
   showActiveStatus: false,
 });
@@ -354,14 +354,14 @@ if (!createMode.value) {
 <template>
   <DialogUnsavedChanges
     v-model:open="unsavedChangesDialogOpen"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :loading="loading"
     @confirm="confirmLeave"
   />
 
   <ContentEditWrap>
     <template #header>
-      <ContentHeader :title="entityPageTitle" :entity-name="entityName">
+      <ContentHeader :title="entityPageTitle" :entity-key="entityKey">
         <ContentActionBar>
           <ButtonIcon
             v-if="!createMode"
@@ -369,8 +369,9 @@ if (!createMode.value) {
             :loading="loading"
             :disabled="!hasUnsavedChanges || loading"
             @click="handleSave"
-            >{{ $t('save_entity', { entityName }) }}</ButtonIcon
           >
+            {{ $t('save_entity', { entityKey }) }}
+          </ButtonIcon>
         </ContentActionBar>
         <template v-if="!createMode" #tabs>
           <ContentEditTabs v-model:current-tab="currentTab" :tabs="tabs" />
@@ -384,7 +385,7 @@ if (!createMode.value) {
       <ContentEditMain :show-sidebar="showSidebar">
         <ContentEditMainContent>
           <ContentEditCard
-            :title="$t('entity_details', { entityName })"
+            :title="$t('entity_details', { entityKey })"
             :description="$t('account_profile.contact_information')"
           >
             <FormGridWrap>
@@ -463,9 +464,9 @@ if (!createMode.value) {
                   :validate-on-blur="true"
                 >
                   <FormItem>
-                    <FormLabel>{{
-                      $t('account_profile.current_password')
-                    }}</FormLabel>
+                    <FormLabel>
+                      {{ $t('account_profile.current_password') }}
+                    </FormLabel>
                     <FormControl>
                       <Input type="password" v-bind="componentField" />
                     </FormControl>
@@ -479,9 +480,9 @@ if (!createMode.value) {
                   :validate-on-blur="true"
                 >
                   <FormItem>
-                    <FormLabel>{{
-                      $t('account_profile.new_password')
-                    }}</FormLabel>
+                    <FormLabel>
+                      {{ $t('account_profile.new_password') }}
+                    </FormLabel>
                     <FormControl>
                       <Input type="password" v-bind="componentField" />
                     </FormControl>
@@ -498,9 +499,9 @@ if (!createMode.value) {
                   :validate-on-blur="true"
                 >
                   <FormItem>
-                    <FormLabel>{{
-                      $t('account_profile.confirm_new_password')
-                    }}</FormLabel>
+                    <FormLabel>
+                      {{ $t('account_profile.confirm_new_password') }}
+                    </FormLabel>
                     <FormControl>
                       <Input type="password" v-bind="componentField" />
                     </FormControl>

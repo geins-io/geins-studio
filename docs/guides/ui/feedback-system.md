@@ -16,7 +16,7 @@ Used to show that an action initiated by the user is being processed. The button
 
 ```vue
 <template>
-  <Button :loading="pending"> Submit </Button>
+  <Button :loading="pending">Submit</Button>
 </template>
 ```
 
@@ -32,7 +32,7 @@ Will show a a table filled with cells containing a loading animation.
 <template>
   <TableView
     :loading="loading"
-    :entity-name="entityName"
+    :entity-key="entityKey"
     :columns="columns"
     :data="data"
   />
@@ -85,8 +85,8 @@ Use the **Alert** component to show a message to the user.
 ```vue
 <template>
   <Alert v-if="showInvalid" variant="destructive">
-    <ExclamationTriangleIcon class="w-4 h-4" />
-    <AlertTitle> Invalid credentials </AlertTitle>
+    <ExclamationTriangleIcon class="h-4 w-4" />
+    <AlertTitle>Invalid credentials</AlertTitle>
     <AlertDescription>
       Please check your email and password and try again.
     </AlertDescription>

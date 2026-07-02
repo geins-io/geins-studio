@@ -17,7 +17,9 @@
 
 ```vue
 <template>
-  <QuotationWorkflowInfo :require-confirmation="quotation.requireConfirmation" />
+  <QuotationWorkflowInfo
+    :require-confirmation="quotation.requireConfirmation"
+  />
 </template>
 ```
 
