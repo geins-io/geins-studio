@@ -87,6 +87,13 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
       ],
     },
     {
+      label: t('navigation.assets'),
+      href: entityListUrl('asset'),
+      icon: 'Image',
+      group: 'workspace',
+      childPattern: entityChildPattern('asset'),
+    },
+    {
       label: t('navigation.channels'),
       href: entityListUrl('channel'),
       icon: 'Store',
