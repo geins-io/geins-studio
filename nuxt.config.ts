@@ -172,6 +172,11 @@ export default defineNuxtConfig({
       authSecret: process.env.AUTH_SECRET,
       // HOTFIX STU-216 — remove when BE handles config-refresh natively (STU-217)
       salesPortalWebhookSecret: process.env.SALES_PORTAL_WEBHOOK_SECRET,
+      // Assets Library mock backend (STU-263). Server-only — the secret key
+      // bypasses Supabase RLS, so it must never reach the client. Delete when
+      // the real Management API serves /asset (see docs/domains/assets.md).
+      supabaseUrl: process.env.SUPABASE_URL,
+      supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
     },
   },
 
