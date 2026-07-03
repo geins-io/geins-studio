@@ -65,6 +65,13 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
       ],
     },
     {
+      label: t('navigation.assets'),
+      href: entityListUrl('asset'),
+      icon: 'FolderOpen',
+      group: 'workspace',
+      childPattern: entityChildPattern('asset'),
+    },
+    {
       label: t('navigation.orchestrator'),
       href: '/orchestrator',
       icon: 'Workflow',
@@ -85,13 +92,6 @@ export const getNavigation = (t: (key: string) => string): NavigationItem[] => {
           childPattern: entityChildPattern('execution'),
         },
       ],
-    },
-    {
-      label: t('navigation.assets'),
-      href: entityListUrl('asset'),
-      icon: 'Image',
-      group: 'workspace',
-      childPattern: entityChildPattern('asset'),
     },
     {
       label: t('navigation.channels'),
