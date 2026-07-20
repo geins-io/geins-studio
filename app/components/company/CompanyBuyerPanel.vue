@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { toTypedSchema } from '@vee-validate/zod';
 import { useDebounceFn } from '@vueuse/core';
-import { VisuallyHidden } from 'reka-ui';
 import { useForm } from 'vee-validate';
 import * as z from 'zod';
 import { ENTITIES } from '#shared/utils/entities';
@@ -48,16 +47,24 @@ const buyerActive = computed(() =>
 
 watch(open, (value) => {
   if (value) {
-    form.setValues({
-      ...buyer.value,
-      email: buyer.value?._id,
-      active: buyerActive.value,
+    // resetForm (not setValues) so meta.dirty starts false and tracks real edits
+    form.resetForm({
+      values: {
+        ...buyer.value,
+        email: buyer.value?._id,
+        active: buyerActive.value,
+      },
     });
+    // Mirror the toggle to whether this buyer actually has price lists —
+    // otherwise a stale `true` from a previously-edited buyer leaks over and
+    // shows the picker for a buyer with none.
+    assignPriceLists.value = (form.values.priceLists?.length ?? 0) > 0;
   } else {
     buyerExistsAsCustomer.value = false;
     existingCustomer.value = undefined;
     updateCustomer.value = false;
     loading.value = false;
+    assignPriceLists.value = false;
   }
 });
 
@@ -76,6 +83,12 @@ const formSchema = toTypedSchema(
 const form = useForm({
   validationSchema: formSchema,
 });
+
+const isDirty = computed(() => form.meta.value.dirty);
+const saveLabel = computed(() =>
+  t(`${props.mode === 'add' ? 'add' : 'update'}_entity`, { entityKey }),
+);
+const panelTitle = computed(() => t(`${props.mode}_entity`, { entityKey }));
 
 // Check if customer exists without creating a buyer
 const checkCustomerExists = async (email: string) => {
@@ -233,13 +246,6 @@ const removeBuyer = async (id: string = buyerId.value) => {
   }
 };
 
-const handleCancel = () => {
-  open.value = false;
-  if (!hasPricelistsAssigned.value) {
-    assignPriceLists.value = false;
-  }
-};
-
 const existingCustomerName = computed(() => {
   // First try to get name from existing customer
   if (existingCustomer.value?.firstName || existingCustomer.value?.lastName) {
@@ -250,229 +256,204 @@ const existingCustomerName = computed(() => {
 });
 </script>
 <template>
-  <Sheet v-model:open="open">
-    <SheetTrigger as-child>
+  <PanelEdit
+    v-model:open="open"
+    :title="panelTitle"
+    :entity-key="entityKey"
+    :dirty="isDirty"
+    :loading="loading"
+    :save-disabled="saveDisabled"
+    :save-label="saveLabel"
+    @save="handleSave"
+  >
+    <template #trigger>
       <slot />
-    </SheetTrigger>
-    <SheetContent width="medium">
-      <SheetHeader>
-        <SheetTitle>{{ $t(`${mode}_entity`, { entityKey }) }}</SheetTitle>
-        <VisuallyHidden>
-          <SheetDescription>
-            {{ $t(`${mode}_entity`, { entityKey }) }}
-          </SheetDescription>
-        </VisuallyHidden>
-      </SheetHeader>
-      <SheetBody>
-        <form @submit.prevent>
-          <FormGridWrap>
-            <FormGrid design="1+1">
-              <FormField v-slot="{ componentField }" name="firstName">
-                <FormItem>
-                  <FormLabel :optional="true">
-                    {{ t('person.first_name') }}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      v-bind="componentField"
-                      type="text"
-                      autocomplete="given-name"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-              <FormField v-slot="{ componentField }" name="lastName">
-                <FormItem>
-                  <FormLabel :optional="true">
-                    {{ t('person.last_name') }}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      v-bind="componentField"
-                      type="text"
-                      autocomplete="family-name"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-            <FormGrid design="1+1">
-              <FormField v-slot="{ componentField }" name="email">
-                <FormItem>
-                  <FormLabel>{{ $t('person.email') }}</FormLabel>
-                  <FormControl>
-                    <Input
-                      v-bind="componentField"
-                      type="email"
-                      autocomplete="email"
-                      :loading="isChecking"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-              <FormField v-slot="{ componentField }" name="phone">
-                <FormItem>
-                  <FormLabel :optional="true">
-                    {{ $t('person.phone') }}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      v-bind="componentField"
-                      type="text"
-                      autocomplete="tel"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </FormGrid>
-            <FormGrid design="1">
-              <FormField v-slot="{ value, handleChange }" name="active">
-                <FormItemSwitch
-                  :label="$t('active')"
-                  :description="$t('toggle_active_state')"
-                  :model-value="value"
-                  @update:model-value="handleChange"
+    </template>
+    <form @submit.prevent>
+      <FormGridWrap>
+        <FormGrid design="1+1">
+          <FormField v-slot="{ componentField }" name="firstName">
+            <FormItem>
+              <FormLabel :optional="true">
+                {{ t('person.first_name') }}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  type="text"
+                  autocomplete="given-name"
                 />
-              </FormField>
-            </FormGrid>
-          </FormGridWrap>
-        </form>
-        <div class="my-8">
-          <ContentCardHeader
-            size="md"
-            heading-level="h3"
-            :title="$t('price_list', 2)"
-            class="mb-4"
-            :description="
-              $t('customers.buyers_price_list_priority_description')
-            "
-          />
-          <ContentSwitch
-            v-model:checked="assignPriceLists"
-            :label="$t('customers.buyers_assign_price_lists_label')"
-            :description="$t('customers.buyers_assign_price_lists_description')"
-          >
-            <FormGridWrap>
-              <FormGrid design="1">
-                <FormField
-                  v-slot="{ componentField }"
-                  name="priceLists"
-                  class="mb-4"
-                >
-                  <FormItem>
-                    <FormLabel>{{ $t('price_list', 2) }}</FormLabel>
-                    <FormControl>
-                      <FormInputTagsSearch
-                        :model-value="componentField.modelValue"
-                        entity-key="price_list"
-                        :data-set="priceLists"
-                        @update:model-value="
-                          componentField['onUpdate:modelValue']
-                        "
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                </FormField>
-                <FormField
-                  v-slot="{ value, handleChange }"
-                  name="restrictToDedicatedPriceLists"
-                >
-                  <FormItem>
-                    <FormLabel>{{ $t('customers.product_access') }}</FormLabel>
-                    <FormControl>
-                      <FormItemSwitch
-                        :label="
-                          $t('customers.buyers_restrict_to_price_lists_label')
-                        "
-                        :description="
-                          $t(
-                            'customers.buyers_restrict_to_price_lists_description',
-                          )
-                        "
-                        :disabled="!hasPricelistsAssigned"
-                        :model-value="value"
-                        @update:model-value="handleChange"
-                      />
-                    </FormControl>
-                  </FormItem>
-                </FormField>
-              </FormGrid>
-            </FormGridWrap>
-          </ContentSwitch>
-        </div>
-        <div class="mt-4 border-t pt-4 sm:mt-8 sm:pt-8">
-          <div
-            v-if="mode === 'edit'"
-            class="mb-8 flex items-center justify-between"
-          >
-            <ContentCardHeader
-              size="md"
-              heading-level="h3"
-              :title="
-                $t('remove_entity', {
-                  entityKey,
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="lastName">
+            <FormItem>
+              <FormLabel :optional="true">
+                {{ t('person.last_name') }}
+              </FormLabel>
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  type="text"
+                  autocomplete="family-name"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+        </FormGrid>
+        <FormGrid design="1+1">
+          <FormField v-slot="{ componentField }" name="email">
+            <FormItem>
+              <FormLabel>{{ $t('person.email') }}</FormLabel>
+              <FormControl>
+                <Input
+                  v-bind="componentField"
+                  type="email"
+                  autocomplete="email"
+                  :loading="isChecking"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField v-slot="{ componentField }" name="phone">
+            <FormItem>
+              <FormLabel :optional="true">
+                {{ $t('person.phone') }}
+              </FormLabel>
+              <FormControl>
+                <Input v-bind="componentField" type="text" autocomplete="tel" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+        </FormGrid>
+        <FormGrid design="1">
+          <FormField v-slot="{ value, handleChange }" name="active">
+            <FormItemSwitch
+              :label="$t('active')"
+              :description="$t('toggle_active_state')"
+              :model-value="value"
+              @update:model-value="handleChange"
+            />
+          </FormField>
+        </FormGrid>
+      </FormGridWrap>
+    </form>
+    <div class="my-8">
+      <ContentCardHeader
+        size="md"
+        heading-level="h3"
+        :title="$t('price_list', 2)"
+        class="mb-4"
+        :description="$t('customers.buyers_price_list_priority_description')"
+      />
+      <ContentSwitch
+        v-model:checked="assignPriceLists"
+        :label="$t('customers.buyers_assign_price_lists_label')"
+        :description="$t('customers.buyers_assign_price_lists_description')"
+      >
+        <FormGridWrap>
+          <FormGrid design="1">
+            <FormField
+              v-slot="{ componentField }"
+              name="priceLists"
+              class="mb-4"
+            >
+              <FormItem>
+                <FormLabel>{{ $t('price_list', 2) }}</FormLabel>
+                <FormControl>
+                  <FormInputTagsSearch
+                    :model-value="componentField.modelValue"
+                    entity-key="price_list"
+                    :data-set="priceLists"
+                    @update:model-value="componentField['onUpdate:modelValue']"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            </FormField>
+            <FormField
+              v-slot="{ value, handleChange }"
+              name="restrictToDedicatedPriceLists"
+            >
+              <FormItem>
+                <FormLabel>{{ $t('customers.product_access') }}</FormLabel>
+                <FormControl>
+                  <FormItemSwitch
+                    :label="
+                      $t('customers.buyers_restrict_to_price_lists_label')
+                    "
+                    :description="
+                      $t('customers.buyers_restrict_to_price_lists_description')
+                    "
+                    :disabled="!hasPricelistsAssigned"
+                    :model-value="value"
+                    @update:model-value="handleChange"
+                  />
+                </FormControl>
+              </FormItem>
+            </FormField>
+          </FormGrid>
+        </FormGridWrap>
+      </ContentSwitch>
+    </div>
+    <div class="mt-4 border-t pt-4 sm:mt-8 sm:pt-8">
+      <div
+        v-if="mode === 'edit'"
+        class="mb-8 flex items-center justify-between"
+      >
+        <ContentCardHeader
+          size="md"
+          heading-level="h3"
+          :title="
+            $t('remove_entity', {
+              entityKey,
+            })
+          "
+          :description="$t('customers.buyers_remove_description')"
+        />
+        <Button
+          size="sm"
+          variant="destructive"
+          :loading="isDeleting"
+          @click.stop="handleRemoveClick"
+        >
+          {{ $t('remove') }}
+        </Button>
+      </div>
+      <div v-if="buyerExistsAsCustomer" class="w-full space-y-6">
+        <Feedback type="info">
+          <template #title>
+            {{ $t('customers.buyers_feedback_existing_title') }}
+          </template>
+          <template #description>
+            <i18n-t
+              keypath="customers.buyers_feedback_existing_description"
+              scope="global"
+              tag="span"
+            >
+              <template #email>
+                <span class="font-bold">{{ existingCustomer?._id }}</span>
+              </template>
+            </i18n-t>
+          </template>
+          <template #actions>
+            <ContentSwitch
+              v-model:checked="updateCustomer"
+              :label="
+                $t('customers.buyers_assign_existing', {
+                  customerName: existingCustomerName,
+                  companyName: companyName,
                 })
               "
-              :description="$t('customers.buyers_remove_description')"
+              :description="$t('customers.buyers_assign_description')"
             />
-            <Button
-              size="sm"
-              variant="destructive"
-              :loading="isDeleting"
-              @click.stop="handleRemoveClick"
-            >
-              {{ $t('remove') }}
-            </Button>
-          </div>
-          <div v-if="buyerExistsAsCustomer" class="w-full space-y-6">
-            <Feedback type="info">
-              <template #title>
-                {{ $t('customers.buyers_feedback_existing_title') }}
-              </template>
-              <template #description>
-                <i18n-t
-                  keypath="customers.buyers_feedback_existing_description"
-                  scope="global"
-                  tag="span"
-                >
-                  <template #email>
-                    <span class="font-bold">{{ existingCustomer?._id }}</span>
-                  </template>
-                </i18n-t>
-              </template>
-              <template #actions>
-                <ContentSwitch
-                  v-model:checked="updateCustomer"
-                  :label="
-                    $t('customers.buyers_assign_existing', {
-                      customerName: existingCustomerName,
-                      companyName: companyName,
-                    })
-                  "
-                  :description="$t('customers.buyers_assign_description')"
-                />
-              </template>
-            </Feedback>
-          </div>
-        </div>
-      </SheetBody>
-      <SheetFooter>
-        <Button variant="outline" @click="handleCancel">
-          {{ $t('cancel') }}
-        </Button>
-        <Button
-          :loading="loading"
-          :disabled="saveDisabled"
-          @click.stop="handleSave"
-        >
-          {{ $t(`${mode === 'add' ? mode : 'update'}_entity`, { entityKey }) }}
-        </Button>
-      </SheetFooter>
-    </SheetContent>
-  </Sheet>
+          </template>
+        </Feedback>
+      </div>
+    </div>
+  </PanelEdit>
 </template>
