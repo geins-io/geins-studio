@@ -159,7 +159,7 @@ Factory chain: `entityGetRepo` → `entityListRepo` → `entityBaseRepo` → `en
 
 - **Page patterns, components, tables**: [APP.md](APP.md)
 - **Architecture & golden path**: [ARCHITECTURE.md](ARCHITECTURE.md)
-- **Domain docs**: [orders](docs/domains/orders.md) | [customers](docs/domains/customers.md) | [products](docs/domains/products.md) | [pricing](docs/domains/pricing.md) | [account-auth](docs/domains/account-auth.md)
+- **Domain docs**: [orders](docs/domains/orders.md) | [customers](docs/domains/customers.md) | [products](docs/domains/products.md) | [pricing](docs/domains/pricing.md) | [account-auth](docs/domains/account-auth.md) | [assets](docs/domains/assets.md)
 
 ## Decision Log
 
