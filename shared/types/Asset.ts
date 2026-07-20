@@ -71,8 +71,6 @@ export interface FolderBase {
   name: string;
   /** Parent folder id; `null` = top-level. */
   parentId: string | null;
-  /** Locked system folder (Uncategorised / Archived) — not user-editable. */
-  system: boolean;
   sortOrder: number;
 }
 
@@ -80,5 +78,7 @@ export type FolderCreate = CreateEntity<FolderBase>;
 export type FolderUpdate = UpdateEntity<FolderBase>;
 
 export interface Folder extends ResponseEntity<FolderBase> {
+  /** Locked system folder (Uncategorised / Archived) — server-owned, not creatable. */
+  system: boolean;
   createdAt: string;
 }
