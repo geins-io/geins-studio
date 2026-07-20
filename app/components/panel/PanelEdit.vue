@@ -45,6 +45,10 @@ const emit = defineEmits<{
   discard: [];
 }>();
 
+// Panel-on-panel: only the top panel is modal (one active focus trap; Reka's
+// hideOthers marks lower panels inert), lower panels recede visually.
+const { isTop, hasPanelAbove } = usePanelStack(open);
+
 const unsavedOpen = ref(false);
 
 function requestClose() {
@@ -73,11 +77,17 @@ function confirmDiscard() {
 </script>
 
 <template>
-  <Sheet :open="open" @update:open="onOpenChange">
+  <Sheet :open="open" :modal="isTop" @update:open="onOpenChange">
     <SheetTrigger v-if="$slots.trigger" as-child>
       <slot name="trigger" />
     </SheetTrigger>
-    <SheetContent :width="width">
+    <SheetContent
+      :width="width"
+      :class="
+        hasPanelAbove &&
+        'pointer-events-none -translate-x-8 scale-[0.98] brightness-95 transition-transform duration-300'
+      "
+    >
       <SheetHeader>
         <SheetTitle>{{ title }}</SheetTitle>
         <SheetDescription v-if="description">
