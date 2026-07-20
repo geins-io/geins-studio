@@ -55,12 +55,16 @@ watch(open, (value) => {
         active: buyerActive.value,
       },
     });
+    // Mirror the toggle to whether this buyer actually has price lists —
+    // otherwise a stale `true` from a previously-edited buyer leaks over and
+    // shows the picker for a buyer with none.
+    assignPriceLists.value = (form.values.priceLists?.length ?? 0) > 0;
   } else {
     buyerExistsAsCustomer.value = false;
     existingCustomer.value = undefined;
     updateCustomer.value = false;
     loading.value = false;
-    if (!hasPricelistsAssigned.value) assignPriceLists.value = false;
+    assignPriceLists.value = false;
   }
 });
 
