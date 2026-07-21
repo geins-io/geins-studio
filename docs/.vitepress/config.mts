@@ -111,6 +111,7 @@ export default defineConfig({
               { text: 'usePageError', link: '/composables/usePageError.md' },
               { text: 'usePageTitle', link: '/composables/usePageTitle.md' },
               { text: 'usePrice', link: '/composables/usePrice.md' },
+              { text: 'usePanelStack', link: '/composables/usePanelStack.md' },
               { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
             ],
           },
@@ -189,6 +190,17 @@ export default defineConfig({
               {
                 text: 'DialogUnsavedChanges',
                 link: '/components/dialog/DialogUnsavedChanges.md',
+              },
+            ],
+          },
+          {
+            text: 'Panels',
+            collapsed: true,
+            items: [
+              { text: 'PanelEdit', link: '/components/panel/PanelEdit.md' },
+              {
+                text: 'PanelTranslation',
+                link: '/components/panel/PanelTranslation.md',
               },
             ],
           },
