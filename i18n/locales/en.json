@@ -152,6 +152,15 @@
   "default": "Default",
   "translations": "Translations",
   "translations_single_language": "Only one language is configured, so there is nothing to translate.",
+  "asset_type": {
+    "image": "Image",
+    "svg": "SVG",
+    "doc": "Document",
+    "pdf": "PDF",
+    "video": "Video",
+    "audio": "Audio",
+    "other": "File"
+  },
   "actions": "Actions",
   "change": "Change",
   "copy": "Copy",
