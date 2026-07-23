@@ -112,6 +112,7 @@ export default defineConfig({
               { text: 'usePageTitle', link: '/composables/usePageTitle.md' },
               { text: 'usePrice', link: '/composables/usePrice.md' },
               { text: 'usePanelStack', link: '/composables/usePanelStack.md' },
+              { text: 'useAssetType', link: '/composables/useAssetType.md' },
               { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
             ],
           },
@@ -201,6 +202,20 @@ export default defineConfig({
               {
                 text: 'PanelTranslation',
                 link: '/components/panel/PanelTranslation.md',
+              },
+            ],
+          },
+          {
+            text: 'Assets',
+            collapsed: true,
+            items: [
+              {
+                text: 'AssetTypeBadge',
+                link: '/components/asset/AssetTypeBadge.md',
+              },
+              {
+                text: 'AssetThumbnail',
+                link: '/components/asset/AssetThumbnail.md',
               },
             ],
           },

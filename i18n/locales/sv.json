@@ -152,6 +152,15 @@
   "default": "Standard",
   "translations": "Översättningar",
   "translations_single_language": "Endast ett språk är konfigurerat, så det finns inget att översätta.",
+  "asset_type": {
+    "image": "Bild",
+    "svg": "SVG",
+    "doc": "Dokument",
+    "pdf": "PDF",
+    "video": "Video",
+    "audio": "Ljud",
+    "other": "Fil"
+  },
   "actions": "Åtgärder",
   "change": "Ändra",
   "copy": "Kopiera",
