@@ -72,15 +72,11 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
         <span class="truncate">{{ folderName }}</span>
       </div>
 
-      <div v-if="asset.tags.length" class="flex flex-wrap items-center gap-1">
-        <Badge
-          v-for="tag in asset.tags"
-          :key="tag"
-          variant="secondary"
-          size="sm"
-        >
-          {{ tag }}
-        </Badge>
+      <div v-if="asset.tags.length" class="flex items-center gap-1.5">
+        <LucideTag class="text-muted-foreground size-3 shrink-0" />
+        <div class="flex flex-wrap items-center gap-1.5">
+          <Tag v-for="tag in asset.tags" :key="tag" :label="tag" size="sm" />
+        </div>
       </div>
 
       <div
