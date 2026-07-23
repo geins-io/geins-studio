@@ -326,6 +326,10 @@ export default defineConfig({
                     link: '/components/table/cell/TableCellActions.md',
                   },
                   {
+                    text: 'TableCellAssetThumbnail',
+                    link: '/components/table/cell/TableCellAssetThumbnail.md',
+                  },
+                  {
                     text: 'TableCellBoolean',
                     link: '/components/table/cell/TableCellBoolean.md',
                   },

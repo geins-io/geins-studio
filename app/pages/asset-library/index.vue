@@ -2,6 +2,7 @@
 import type { Asset } from '#shared/types';
 import { TableMode } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
+import { cn } from '@/utils/index';
 import type { ColumnDef } from '@tanstack/vue-table';
 
 definePageMeta({ pageType: 'list' });
@@ -59,7 +60,7 @@ const pagedAssets = computed(() =>
 // List columns — useColumns generates tags + modified; the type-badge,
 // thumbnail, name-opens-panel, and byte-formatted size need custom cells, so
 // they are defined explicitly and prepended.
-const AssetThumbnail = resolveComponent('AssetThumbnail');
+const TableCellAssetThumbnail = resolveComponent('TableCellAssetThumbnail');
 const AssetTypeBadge = resolveComponent('AssetTypeBadge');
 
 // getColumns builds every column (consistent header / sort / cell style /
@@ -105,26 +106,23 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
       );
   }
 
-  // Fixed-width thumbnail column (mirrors the built-in image column pattern).
+  // Fixed-width thumbnail column — same size/style as the built-in image type.
   cols.push({
     id: 'thumb',
     enableSorting: false,
-    size: 64,
-    minSize: 64,
-    maxSize: 64,
+    size: 40,
+    minSize: 40,
+    maxSize: 40,
     meta: { type: 'image' },
-    header: ({ table }) => h('div', { class: getBasicHeaderStyle(table) }),
+    header: ({ table }) =>
+      h('div', { class: cn(getBasicHeaderStyle(table), 'px-2') }),
     cell: ({ table, row }) =>
-      h(
-        'div',
-        { class: getBasicCellStyle(table) },
-        h(AssetThumbnail, {
-          type: row.original.type,
-          thumbUrl: row.original.thumbUrl,
-          alt: row.original.name,
-          size: 'row',
-        }),
-      ),
+      h(TableCellAssetThumbnail, {
+        type: row.original.type,
+        thumbUrl: row.original.thumbUrl,
+        alt: row.original.name,
+        className: getBasicCellStyle(table),
+      }),
   });
 
   const order = ['thumb', 'name', 'type', 'sizeBytes', 'tags', 'updatedAt'];
