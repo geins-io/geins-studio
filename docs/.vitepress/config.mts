@@ -746,6 +746,7 @@ export default defineConfig({
               },
               { text: 'SchemaRenderer', link: '/components/SchemaRenderer.md' },
               { text: 'StatusBadge', link: '/components/StatusBadge.md' },
+              { text: 'Tag', link: '/components/Tag.md' },
             ],
           },
         ],

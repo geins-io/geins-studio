@@ -115,15 +115,7 @@ const logo = computed<Component | null>(() =>
 
       <!-- Tags -->
       <div v-if="tags.length" class="flex flex-wrap gap-1">
-        <Badge
-          v-for="tag in tags"
-          :key="tag"
-          variant="secondary"
-          size="sm"
-          class="font-normal"
-        >
-          {{ tag }}
-        </Badge>
+        <Tag v-for="tag in tags" :key="tag" :label="tag" size="sm" />
       </div>
 
       <!-- Actions -->
