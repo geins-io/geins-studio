@@ -209,6 +209,7 @@ export default defineConfig({
             text: 'Assets',
             collapsed: true,
             items: [
+              { text: 'AssetCard', link: '/components/asset/AssetCard.md' },
               {
                 text: 'AssetTypeBadge',
                 link: '/components/asset/AssetTypeBadge.md',
