@@ -24,6 +24,7 @@ export type ColumnType =
   | 'price'
   | 'date'
   | 'number'
+  | 'filesize'
   | 'image'
   | 'icon'
   | 'link'

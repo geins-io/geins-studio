@@ -27,19 +27,22 @@ const wrapperClass = computed(() =>
 </script>
 
 <template>
-  <div :class="[wrapperClass, 'bg-muted overflow-hidden rounded-md']">
+  <div :class="[wrapperClass, 'overflow-hidden rounded-md']">
     <img
       v-if="thumbUrl"
       :src="thumbUrl"
       :alt="alt ?? ''"
-      class="h-full w-full object-cover"
+      class="bg-muted h-full w-full object-cover"
     />
     <div
       v-else
-      class="text-muted-foreground/60 flex h-full w-full flex-col items-center justify-center gap-1"
+      :class="[
+        info.tint,
+        'flex h-full w-full flex-col items-center justify-center gap-1',
+      ]"
     >
       <component :is="icon" :class="size === 'card' ? 'size-9' : 'size-5'" />
-      <span v-if="size === 'card'" class="text-xs font-medium opacity-80">
+      <span v-if="size === 'card'" class="text-xs font-medium opacity-90">
         {{ label(type) }}
       </span>
     </div>
