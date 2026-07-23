@@ -114,7 +114,7 @@ const logo = computed<Component | null>(() =>
       </div>
 
       <!-- Tags -->
-      <div v-if="tags.length" class="flex flex-wrap gap-1">
+      <div v-if="tags.length" class="flex flex-wrap gap-1.5">
         <Tag v-for="tag in tags" :key="tag" :label="tag" size="sm" />
       </div>
 
