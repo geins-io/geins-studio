@@ -9,7 +9,7 @@ definePageMeta({ pageType: 'list' });
 
 const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
-const { formatDate } = useDate();
+const { getColumns } = useColumns<Asset>();
 const entityKey = ENTITIES.asset.key;
 
 const loading = ref(true);
@@ -18,9 +18,12 @@ const dataList = ref<Asset[]>([]);
 
 const view = ref<'grid' | 'list'>('grid');
 const search = ref('');
+// Folder tree lands in Phase 4; the toggle is the affordance for now.
+const showFolders = ref(false);
 
 // const enum is erased at runtime — resolve to a value in script (not template).
 const listMode = TableMode.Simple;
+const columns = ref<ColumnDef<Asset>[]>([]);
 
 const { data, error, refresh } = await useAsyncData<Asset[]>(
   'asset-library-list',
@@ -53,55 +56,58 @@ const pagedAssets = computed(() =>
   ),
 );
 
-// List columns — custom cells for thumbnail + type badge (resolveComponent so
-// the auto-imported components can be used inside render functions).
+// List columns — useColumns generates tags + modified; the type-badge,
+// thumbnail, name-opens-panel, and byte-formatted size need custom cells, so
+// they are defined explicitly and prepended.
 const AssetThumbnail = resolveComponent('AssetThumbnail');
 const AssetTypeBadge = resolveComponent('AssetTypeBadge');
 
-const columns: ColumnDef<Asset>[] = [
-  {
-    id: 'thumb',
-    header: '',
-    enableSorting: false,
-    cell: ({ row }) =>
-      h(AssetThumbnail, {
-        type: row.original.type,
-        thumbUrl: row.original.thumbUrl,
-        alt: row.original.name,
-        size: 'row',
-      }),
-  },
-  {
-    accessorKey: 'name',
-    header: t('name', 1),
-    cell: ({ row }) =>
-      h(
-        'button',
-        {
-          type: 'button',
-          class: 'text-left font-medium hover:underline',
-          onClick: () => openAsset(row.original),
-        },
-        row.original.name,
-      ),
-  },
-  {
-    accessorKey: 'type',
-    header: t('type'),
-    cell: ({ row }) => h(AssetTypeBadge, { type: row.original.type }),
-  },
-  {
-    accessorKey: 'sizeBytes',
-    header: t('size'),
-    cell: ({ row }) => formatFileSize(row.original.sizeBytes),
-  },
-  {
-    accessorKey: 'updatedAt',
-    header: t('modified'),
-    cell: ({ row }) =>
-      formatDate(row.original.updatedAt, { dateStyle: 'medium' }),
-  },
-];
+function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
+  const custom: ColumnDef<Asset>[] = [
+    {
+      id: 'thumb',
+      header: '',
+      enableSorting: false,
+      cell: ({ row }) =>
+        h(AssetThumbnail, {
+          type: row.original.type,
+          thumbUrl: row.original.thumbUrl,
+          alt: row.original.name,
+          size: 'row',
+        }),
+    },
+    {
+      accessorKey: 'name',
+      header: t('name', 1),
+      cell: ({ row }) =>
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'text-left font-medium hover:underline',
+            onClick: () => openAsset(row.original),
+          },
+          row.original.name,
+        ),
+    },
+    {
+      accessorKey: 'type',
+      header: t('type'),
+      cell: ({ row }) => h(AssetTypeBadge, { type: row.original.type }),
+    },
+    {
+      accessorKey: 'sizeBytes',
+      header: t('size'),
+      cell: ({ row }) => formatFileSize(row.original.sizeBytes),
+    },
+  ];
+  const generated = getColumns(rows, {
+    includeColumns: ['tags', 'updatedAt'],
+    columnTitles: { tags: t('tag', 2), updatedAt: t('modified') },
+    columnTypes: { tags: 'tags', updatedAt: 'date' },
+  });
+  return [...custom, ...generated];
+}
 
 onMounted(() => {
   watch(
@@ -110,10 +116,12 @@ onMounted(() => {
       if (newError) {
         fetchError.value = true;
         dataList.value = [];
+        columns.value = buildColumns([]);
         return;
       }
       fetchError.value = false;
       dataList.value = Array.isArray(newData) ? newData : [];
+      columns.value = buildColumns(dataList.value);
     },
     { immediate: true },
   );
@@ -127,125 +135,143 @@ function openAsset(_asset: Asset) {}
 <template>
   <ContentHeader :title="$t(entityKey, 2)">
     <ContentActionBar>
-      <Input
-        v-model="search"
-        :placeholder="$t('search')"
-        class="w-full sm:w-56"
-      />
-      <div class="flex gap-1">
-        <Button
-          :variant="view === 'grid' ? 'default' : 'outline'"
-          size="icon"
-          :aria-label="$t('grid_view')"
-          @click="view = 'grid'"
-        >
-          <LucideLayoutGrid class="size-4" />
-        </Button>
-        <Button
-          :variant="view === 'list' ? 'default' : 'outline'"
-          size="icon"
-          :aria-label="$t('list_view')"
-          @click="view = 'list'"
-        >
-          <LucideList class="size-4" />
-        </Button>
-      </div>
+      <ButtonIcon icon="upload">
+        {{ $t('upload_assets') }}
+      </ButtonIcon>
     </ContentActionBar>
   </ContentHeader>
 
-  <!-- LIST VIEW -->
-  <NuxtErrorBoundary v-if="view === 'list'">
-    <TableView
-      :loading="loading"
-      :entity-key="entityKey"
-      :columns="columns"
-      :data="filtered"
-      :error="fetchError"
-      :on-retry="refresh"
-      :mode="listMode"
-      :show-search="false"
-    />
-  </NuxtErrorBoundary>
-
-  <!-- GRID VIEW -->
-  <template v-else>
-    <div
-      v-if="loading"
-      class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
+  <!-- Toolbar: folder toggle + search (left), view toggle (right) -->
+  <div class="flex flex-wrap items-center gap-2 border-t pt-4">
+    <Button
+      variant="outline"
+      size="icon"
+      :class="showFolders && 'bg-accent'"
+      :aria-label="$t('folder', 2)"
+      @click="showFolders = !showFolders"
     >
-      <Skeleton
-        v-for="n in 8"
-        :key="n"
-        class="aspect-[4/5] w-full rounded-xl"
-      />
+      <LucideFolder class="size-4" />
+    </Button>
+    <Input
+      v-model="search"
+      :placeholder="$t('search')"
+      class="w-full sm:w-64"
+    />
+    <div class="ml-auto flex gap-1">
+      <Button
+        :variant="view === 'grid' ? 'default' : 'outline'"
+        size="icon"
+        :aria-label="$t('grid_view')"
+        @click="view = 'grid'"
+      >
+        <LucideLayoutGrid class="size-4" />
+      </Button>
+      <Button
+        :variant="view === 'list' ? 'default' : 'outline'"
+        size="icon"
+        :aria-label="$t('list_view')"
+        @click="view = 'list'"
+      >
+        <LucideList class="size-4" />
+      </Button>
     </div>
+  </div>
 
-    <Card v-else-if="fetchError">
-      <CardContent class="p-0">
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="destructive">
-              <LucideTriangleAlert />
-            </EmptyMedia>
-            <EmptyTitle>{{ $t('error_loading_data') }}</EmptyTitle>
-          </EmptyHeader>
-          <EmptyContent>
-            <ButtonIcon icon="retry" variant="secondary" @click="refresh">
-              {{ $t('retry') }}
-            </ButtonIcon>
-          </EmptyContent>
-        </Empty>
-      </CardContent>
-    </Card>
+  <div class="mt-4">
+    <!-- LIST VIEW -->
+    <NuxtErrorBoundary v-if="view === 'list'">
+      <TableView
+        :loading="loading"
+        :entity-key="entityKey"
+        :columns="columns"
+        :data="filtered"
+        :error="fetchError"
+        :on-retry="refresh"
+        :mode="listMode"
+        :show-search="false"
+      />
+    </NuxtErrorBoundary>
 
-    <Card v-else-if="!filtered.length">
-      <CardContent class="p-0">
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <LucideFolderOpen />
-            </EmptyMedia>
-            <EmptyTitle>{{ $t('no_entity', { entityKey }, 2) }}</EmptyTitle>
-          </EmptyHeader>
-        </Empty>
-      </CardContent>
-    </Card>
-
+    <!-- GRID VIEW -->
     <template v-else>
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
-        <AssetCard
-          v-for="asset in pagedAssets"
-          :key="asset._id"
-          :asset="asset"
-          @open="openAsset(asset)"
+      <div
+        v-if="loading"
+        class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
+      >
+        <Skeleton
+          v-for="n in 8"
+          :key="n"
+          class="aspect-[4/5] w-full rounded-xl"
         />
       </div>
-      <div
-        v-if="pageCount > 1"
-        class="mt-6 flex items-center justify-end gap-3"
-      >
-        <span class="text-muted-foreground text-sm">
-          {{ $t('page_of', { page, total: pageCount }) }}
-        </span>
-        <Button
-          variant="outline"
-          size="icon"
-          :disabled="page <= 1"
-          :aria-label="$t('previous')"
-          @click="page--"
+
+      <Card v-else-if="fetchError">
+        <CardContent class="p-0">
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="destructive">
+                <LucideTriangleAlert />
+              </EmptyMedia>
+              <EmptyTitle>{{ $t('error_loading_data') }}</EmptyTitle>
+            </EmptyHeader>
+            <EmptyContent>
+              <ButtonIcon icon="retry" variant="secondary" @click="refresh">
+                {{ $t('retry') }}
+              </ButtonIcon>
+            </EmptyContent>
+          </Empty>
+        </CardContent>
+      </Card>
+
+      <Card v-else-if="!filtered.length">
+        <CardContent class="p-0">
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <LucideFolderOpen />
+              </EmptyMedia>
+              <EmptyTitle>{{ $t('no_entity', { entityKey }, 2) }}</EmptyTitle>
+            </EmptyHeader>
+          </Empty>
+        </CardContent>
+      </Card>
+
+      <template v-else>
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+          <AssetCard
+            v-for="asset in pagedAssets"
+            :key="asset._id"
+            :asset="asset"
+            @open="openAsset(asset)"
+          />
+        </div>
+        <div
+          v-if="pageCount > 1"
+          class="mt-6 flex items-center justify-end gap-3"
         >
-          <LucideChevronLeft class="size-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          :disabled="page >= pageCount"
-          :aria-label="$t('next')"
-          @click="page++"
-        >
-          <LucideChevronRight class="size-4" />
-        </Button>
-      </div>
+          <span class="text-muted-foreground text-sm">
+            {{ $t('page_of', { page, total: pageCount }) }}
+          </span>
+          <Button
+            variant="outline"
+            size="icon"
+            :disabled="page <= 1"
+            :aria-label="$t('previous')"
+            @click="page--"
+          >
+            <LucideChevronLeft class="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            :disabled="page >= pageCount"
+            :aria-label="$t('next')"
+            @click="page++"
+          >
+            <LucideChevronRight class="size-4" />
+          </Button>
+        </div>
+      </template>
     </template>
-  </template>
+  </div>
 </template>
