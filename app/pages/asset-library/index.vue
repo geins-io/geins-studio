@@ -2,14 +2,14 @@
 import type { Asset } from '#shared/types';
 import { TableMode } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
-import { formatFileSize } from '#shared/utils/file';
 import type { ColumnDef } from '@tanstack/vue-table';
 
 definePageMeta({ pageType: 'list' });
 
 const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
-const { getColumns } = useColumns<Asset>();
+const { getColumns, getBasicCellStyle, getBasicHeaderStyle } =
+  useColumns<Asset>();
 const entityKey = ENTITIES.asset.key;
 
 const loading = ref(true);
@@ -62,24 +62,37 @@ const pagedAssets = computed(() =>
 const AssetThumbnail = resolveComponent('AssetThumbnail');
 const AssetTypeBadge = resolveComponent('AssetTypeBadge');
 
+// getColumns builds every column (consistent header / sort / cell style /
+// ordering); only the cell BODY is swapped for the asset-specific columns.
 function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
-  const custom: ColumnDef<Asset>[] = [
-    {
-      id: 'thumb',
-      header: '',
-      enableSorting: false,
-      cell: ({ row }) =>
-        h(AssetThumbnail, {
-          type: row.original.type,
-          thumbUrl: row.original.thumbUrl,
-          alt: row.original.name,
-          size: 'row',
-        }),
+  const cols = getColumns(rows, {
+    includeColumns: ['name', 'type', 'sizeBytes', 'tags', 'updatedAt'],
+    columnTitles: {
+      name: t('name', 1),
+      type: t('type'),
+      sizeBytes: t('size'),
+      tags: t('tag', 2),
+      updatedAt: t('modified'),
     },
-    {
-      accessorKey: 'name',
-      header: t('name', 1),
-      cell: ({ row }) =>
+    columnTypes: { sizeBytes: 'filesize', tags: 'tags', updatedAt: 'date' },
+  });
+
+  const typeCol = cols.find((col) => col.id === 'type');
+  if (typeCol) {
+    typeCol.cell = ({ table, row }) =>
+      h(
+        'div',
+        { class: getBasicCellStyle(table) },
+        h(AssetTypeBadge, { type: row.original.type }),
+      );
+  }
+
+  const nameCol = cols.find((col) => col.id === 'name');
+  if (nameCol) {
+    nameCol.cell = ({ table, row }) =>
+      h(
+        'div',
+        { class: getBasicCellStyle(table) },
         h(
           'button',
           {
@@ -89,24 +102,35 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
           },
           row.original.name,
         ),
-    },
-    {
-      accessorKey: 'type',
-      header: t('type'),
-      cell: ({ row }) => h(AssetTypeBadge, { type: row.original.type }),
-    },
-    {
-      accessorKey: 'sizeBytes',
-      header: t('size'),
-      cell: ({ row }) => formatFileSize(row.original.sizeBytes),
-    },
-  ];
-  const generated = getColumns(rows, {
-    includeColumns: ['tags', 'updatedAt'],
-    columnTitles: { tags: t('tag', 2), updatedAt: t('modified') },
-    columnTypes: { tags: 'tags', updatedAt: 'date' },
+      );
+  }
+
+  // Fixed-width thumbnail column (mirrors the built-in image column pattern).
+  cols.push({
+    id: 'thumb',
+    enableSorting: false,
+    size: 64,
+    minSize: 64,
+    maxSize: 64,
+    meta: { type: 'image' },
+    header: ({ table }) => h('div', { class: getBasicHeaderStyle(table) }),
+    cell: ({ table, row }) =>
+      h(
+        'div',
+        { class: getBasicCellStyle(table) },
+        h(AssetThumbnail, {
+          type: row.original.type,
+          thumbUrl: row.original.thumbUrl,
+          alt: row.original.name,
+          size: 'row',
+        }),
+      ),
   });
-  return [...custom, ...generated];
+
+  const order = ['thumb', 'name', 'type', 'sizeBytes', 'tags', 'updatedAt'];
+  return order
+    .map((id) => cols.find((col) => col.id === id))
+    .filter((col): col is ColumnDef<Asset> => col !== undefined);
 }
 
 onMounted(() => {

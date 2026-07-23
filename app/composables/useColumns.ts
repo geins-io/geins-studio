@@ -1,6 +1,7 @@
 import { h } from 'vue';
 import { TableMode } from '#shared/types';
 import { entityEditUrl } from '#shared/utils/entities';
+import { formatFileSize } from '#shared/utils/file';
 import type { ColumnDef, Table, Row, Column } from '@tanstack/vue-table';
 import {
   Checkbox,
@@ -764,6 +765,16 @@ export const useColumns = <T>(): UseColumnsReturnType<T> => {
           };
           columnSize = { size: 80, minSize: 80, maxSize: 80 };
           skipInactiveDim = true;
+          break;
+        case 'filesize':
+          cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
+            const value = Number(row.getValue(key) ?? 0);
+            return h(
+              'div',
+              { class: getBasicCellStyle(table) },
+              formatFileSize(value),
+            );
+          };
           break;
         default:
           cellRenderer = ({ table, row }: { table: Table<T>; row: Row<T> }) => {
