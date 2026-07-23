@@ -27,6 +27,19 @@ export const badgeVariants = cva(
           'text-warning ring-warning border-warning bg-transparent ring-1',
         inactive:
           'bg-muted text-muted-foreground/60 dark:bg-muted/90 dark:text-muted-foreground/60',
+        // Tinted color set (e.g. asset-type badges). Same light style as the
+        // *-light variants; readable in both themes.
+        blue: 'bg-blue-500/15 text-blue-700 ring-1 ring-blue-500/30 dark:text-blue-300',
+        teal: 'bg-teal-500/15 text-teal-700 ring-1 ring-teal-500/30 dark:text-teal-300',
+        indigo:
+          'bg-indigo-500/15 text-indigo-700 ring-1 ring-indigo-500/30 dark:text-indigo-300',
+        rose: 'bg-rose-500/15 text-rose-700 ring-1 ring-rose-500/30 dark:text-rose-300',
+        purple:
+          'bg-purple-500/15 text-purple-700 ring-1 ring-purple-500/30 dark:text-purple-300',
+        amber:
+          'bg-amber-500/15 text-amber-700 ring-1 ring-amber-500/30 dark:text-amber-300',
+        slate:
+          'bg-slate-500/15 text-slate-700 ring-1 ring-slate-500/30 dark:text-slate-300',
       },
     },
     defaultVariants: {
