@@ -1,31 +1,43 @@
 <script setup lang="ts">
 import type { FolderNode } from '@/composables/useFolders';
 
-/** Recursive folder tree row — selectable; a leading chevron expands children. */
+/** Recursive folder tree row — selectable, expandable, with hover add/delete. */
 const props = defineProps<{
   node: FolderNode;
   selected: string | null;
 }>();
 
-const emit = defineEmits<{ select: [id: string] }>();
+const emit = defineEmits<{
+  select: [id: string];
+  create: [payload: { parentId: string; name: string }];
+  delete: [node: FolderNode];
+}>();
 
 const { resolveIcon } = useLucideIcon();
 
 const hasChildren = computed(() => props.node.children.length > 0);
 const open = ref(false);
+const addingChild = ref(false);
 const isActive = computed(() => props.selected === props.node._id);
 
 // Open-folder icon when expanded or active, closed otherwise.
 const folderIcon = computed(() =>
   resolveIcon(open.value || isActive.value ? 'FolderOpen' : 'Folder'),
 );
+
+function startAddChild() {
+  open.value = true;
+  addingChild.value = true;
+}
+function onCreateChild(name: string) {
+  emit('create', { parentId: props.node._id, name });
+  addingChild.value = false;
+}
 </script>
 
 <template>
   <SidebarMenuItem>
     <SidebarMenuButton :is-active="isActive" @click="emit('select', node._id)">
-      <!-- chevron before the folder icon; a span (not a button) so it can live
-           inside the button without invalid nesting -->
       <span
         v-if="hasChildren"
         class="flex size-4 shrink-0 items-center justify-center"
@@ -44,17 +56,46 @@ const folderIcon = computed(() =>
       </span>
     </SidebarMenuButton>
 
+    <!-- Hover actions (siblings of the row button, not nested) -->
     <div
-      v-if="hasChildren && open"
+      class="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover/menu-item:opacity-100"
+    >
+      <button
+        type="button"
+        class="text-muted-foreground hover:bg-sidebar-accent hover:text-foreground flex size-6 items-center justify-center rounded"
+        :aria-label="$t('add_entity', { entityKey: 'folder' })"
+        @click.stop="startAddChild"
+      >
+        <LucidePlus class="size-3.5" />
+      </button>
+      <button
+        type="button"
+        class="text-muted-foreground hover:bg-sidebar-accent hover:text-destructive flex size-6 items-center justify-center rounded"
+        :aria-label="$t('delete_entity', { entityKey: 'folder' })"
+        @click.stop="emit('delete', node)"
+      >
+        <LucideTrash2 class="size-3.5" />
+      </button>
+    </div>
+
+    <div
+      v-if="(hasChildren && open) || addingChild"
       class="border-sidebar-border mt-1 ml-3.5 border-l pl-2.5"
     >
       <SidebarMenu>
+        <AssetFolderCreateInput
+          v-if="addingChild"
+          @create="onCreateChild"
+          @cancel="addingChild = false"
+        />
         <AssetFolderTreeItem
           v-for="child in node.children"
           :key="child._id"
           :node="child"
           :selected="selected"
           @select="emit('select', $event)"
+          @create="emit('create', $event)"
+          @delete="emit('delete', $event)"
         />
       </SidebarMenu>
     </div>
