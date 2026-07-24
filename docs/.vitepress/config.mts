@@ -113,6 +113,7 @@ export default defineConfig({
               { text: 'usePrice', link: '/composables/usePrice.md' },
               { text: 'usePanelStack', link: '/composables/usePanelStack.md' },
               { text: 'useAssetType', link: '/composables/useAssetType.md' },
+              { text: 'useFolders', link: '/composables/useFolders.md' },
               { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
             ],
           },
