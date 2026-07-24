@@ -189,6 +189,7 @@
   "list_view": "Listvy",
   "upload_assets": "Ladda upp filer",
   "error_loading_data": "Kunde inte ladda data",
+  "no_assets_in_folder": "Inga filer i den här mappen",
   "created_by": "Skapad av",
   "modified_by": "Ändrad av",
   "expiration_date": "Utgångsdatum",
