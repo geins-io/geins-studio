@@ -38,8 +38,10 @@ const folderIcon = computed(() =>
         />
       </span>
       <span v-else class="size-4 shrink-0" />
-      <component :is="folderIcon" />
-      <span class="truncate">{{ node.name }}</span>
+      <component :is="folderIcon" class="text-muted-foreground" />
+      <span class="truncate" :class="isActive && 'font-semibold'">
+        {{ node.name }}
+      </span>
     </SidebarMenuButton>
 
     <div

@@ -14,6 +14,10 @@ const { resolveIcon } = useLucideIcon();
 
 const systemIcon = (name: string) =>
   resolveIcon(/archiv|arkiv/i.test(name) ? 'Archive' : 'FolderMinus');
+
+const allIcon = computed(() =>
+  resolveIcon(selected.value === null ? 'FolderOpenDot' : 'FolderDot'),
+);
 </script>
 
 <template>
@@ -27,8 +31,10 @@ const systemIcon = (name: string) =>
               :is-active="selected === null"
               @click="selected = null"
             >
-              <LucideFolder />
-              <span>{{ $t('all_entity', { entityKey: 'asset' }, 2) }}</span>
+              <component :is="allIcon" class="text-muted-foreground" />
+              <span :class="selected === null && 'font-semibold'">
+                {{ $t('all_entity', { entityKey: 'asset' }, 2) }}
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -51,8 +57,13 @@ const systemIcon = (name: string) =>
               :is-active="selected === sys._id"
               @click="selected = sys._id"
             >
-              <component :is="systemIcon(sys.name)" />
-              <span>{{ sys.name }}</span>
+              <component
+                :is="systemIcon(sys.name)"
+                class="text-muted-foreground"
+              />
+              <span :class="selected === sys._id && 'font-semibold'">
+                {{ sys.name }}
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
