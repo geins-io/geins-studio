@@ -28,7 +28,7 @@ const folderIcon = computed(() =>
            inside the button without invalid nesting -->
       <span
         v-if="hasChildren"
-        class="-ml-1 flex size-4 shrink-0 items-center justify-center"
+        class="flex size-4 shrink-0 items-center justify-center"
         :aria-label="$t('expand')"
         @click.stop="open = !open"
       >

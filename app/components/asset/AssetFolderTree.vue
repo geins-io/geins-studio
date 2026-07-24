@@ -35,6 +35,7 @@ const allIcon = computed(() =>
               :is-active="selected === null"
               @click="selected = null"
             >
+              <span class="size-4 shrink-0" />
               <component :is="allIcon" class="text-muted-foreground" />
               <span :class="selected === null && 'font-semibold'">
                 {{ $t('all_entity', { entityKey: 'asset' }, 2) }}
@@ -61,6 +62,7 @@ const allIcon = computed(() =>
               :is-active="selected === sys._id"
               @click="selected = sys._id"
             >
+              <span class="size-4 shrink-0" />
               <component
                 :is="systemIcon(sys.name)"
                 class="text-muted-foreground"
