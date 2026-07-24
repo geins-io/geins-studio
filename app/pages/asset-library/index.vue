@@ -11,6 +11,7 @@ const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
 const { getColumns, getBasicCellStyle, getBasicHeaderStyle } =
   useColumns<Asset>();
+const { folderName } = useFolders();
 const entityKey = ENTITIES.asset.key;
 
 const loading = ref(true);
@@ -19,8 +20,9 @@ const dataList = ref<Asset[]>([]);
 
 const view = ref<'grid' | 'list'>('grid');
 const search = ref('');
-// Folder tree lands in Phase 4; the toggle is the affordance for now.
 const showFolders = ref(false);
+// Selected folder id (null = All assets); drives the server-side filter.
+const selectedFolder = ref<string | null>(null);
 
 // const enum is erased at runtime — resolve to a value in script (not template).
 const listMode = TableMode.Simple;
@@ -28,7 +30,11 @@ const columns = ref<ColumnDef<Asset>[]>([]);
 
 const { data, error, refresh } = await useAsyncData<Asset[]>(
   'asset-library-list',
-  () => assetApi.list(),
+  () =>
+    assetApi.list(
+      selectedFolder.value ? { folderId: selectedFolder.value } : undefined,
+    ),
+  { watch: [selectedFolder] },
 );
 
 // Shared name filter across both views (the page owns search, so TableView's
@@ -50,6 +56,9 @@ const pageCount = computed(() =>
 watch([filtered, view], () => {
   if (page.value > pageCount.value) page.value = 1;
 });
+watch(selectedFolder, () => {
+  page.value = 1;
+});
 const pagedAssets = computed(() =>
   filtered.value.slice(
     (page.value - 1) * GRID_PAGE_SIZE,
@@ -67,16 +76,34 @@ const AssetTypeBadge = resolveComponent('AssetTypeBadge');
 // ordering); only the cell BODY is swapped for the asset-specific columns.
 function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
   const cols = getColumns(rows, {
-    includeColumns: ['name', 'type', 'sizeBytes', 'tags', 'updatedAt'],
+    includeColumns: [
+      'name',
+      'type',
+      'folderId',
+      'sizeBytes',
+      'tags',
+      'updatedAt',
+    ],
     columnTitles: {
       name: t('name', 1),
       type: t('type'),
+      folderId: t('folder', 1),
       sizeBytes: t('size'),
       tags: t('tag', 2),
       updatedAt: t('modified'),
     },
     columnTypes: { sizeBytes: 'filesize', tags: 'tags', updatedAt: 'date' },
   });
+
+  const folderCol = cols.find((col) => col.id === 'folderId');
+  if (folderCol) {
+    folderCol.cell = ({ table, row }) =>
+      h(
+        'div',
+        { class: getBasicCellStyle(table) },
+        folderName(row.original.folderId) ?? '—',
+      );
+  }
 
   const typeCol = cols.find((col) => col.id === 'type');
   if (typeCol) {
@@ -125,7 +152,15 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
       }),
   });
 
-  const order = ['thumb', 'name', 'type', 'sizeBytes', 'tags', 'updatedAt'];
+  const order = [
+    'thumb',
+    'name',
+    'type',
+    'folderId',
+    'sizeBytes',
+    'tags',
+    'updatedAt',
+  ];
   return order
     .map((id) => cols.find((col) => col.id === id))
     .filter((col): col is ColumnDef<Asset> => col !== undefined);
@@ -199,101 +234,120 @@ function openAsset(_asset: Asset) {}
     </div>
   </div>
 
-  <div class="mt-4">
-    <!-- LIST VIEW -->
-    <NuxtErrorBoundary v-if="view === 'list'">
-      <TableView
-        :loading="loading"
-        :entity-key="entityKey"
-        :columns="columns"
-        :data="filtered"
-        :error="fetchError"
-        :on-retry="refresh"
-        :mode="listMode"
-        :show-search="false"
-      />
-    </NuxtErrorBoundary>
+  <SidebarProvider class="mt-4 min-h-0! items-start gap-4">
+    <Sidebar
+      v-if="showFolders"
+      collapsible="none"
+      class="bg-card w-(--sidebar-width) shrink-0 self-stretch overflow-hidden rounded-lg border"
+    >
+      <AssetFolderTree v-model:selected="selectedFolder" />
+    </Sidebar>
 
-    <!-- GRID VIEW -->
-    <template v-else>
-      <div
-        v-if="loading"
-        class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
-      >
-        <Skeleton
-          v-for="n in 8"
-          :key="n"
-          class="aspect-[4/5] w-full rounded-xl"
+    <div class="min-w-0 flex-1">
+      <!-- LIST VIEW -->
+      <NuxtErrorBoundary v-if="view === 'list'">
+        <TableView
+          :loading="loading"
+          :entity-key="entityKey"
+          :columns="columns"
+          :data="filtered"
+          :error="fetchError"
+          :on-retry="refresh"
+          :mode="listMode"
+          :show-search="false"
         />
-      </div>
+      </NuxtErrorBoundary>
 
-      <Card v-else-if="fetchError">
-        <CardContent class="p-0">
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="destructive">
-                <LucideTriangleAlert />
-              </EmptyMedia>
-              <EmptyTitle>{{ $t('error_loading_data') }}</EmptyTitle>
-            </EmptyHeader>
-            <EmptyContent>
-              <ButtonIcon icon="retry" variant="secondary" @click="refresh">
-                {{ $t('retry') }}
-              </ButtonIcon>
-            </EmptyContent>
-          </Empty>
-        </CardContent>
-      </Card>
-
-      <Card v-else-if="!filtered.length">
-        <CardContent class="p-0">
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon">
-                <LucideFolderOpen />
-              </EmptyMedia>
-              <EmptyTitle>{{ $t('no_entity', { entityKey }, 2) }}</EmptyTitle>
-            </EmptyHeader>
-          </Empty>
-        </CardContent>
-      </Card>
-
+      <!-- GRID VIEW -->
       <template v-else>
-        <div class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
-          <AssetCard
-            v-for="asset in pagedAssets"
-            :key="asset._id"
-            :asset="asset"
-            @open="openAsset(asset)"
+        <div
+          v-if="loading"
+          class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
+        >
+          <Skeleton
+            v-for="n in 8"
+            :key="n"
+            class="aspect-[4/5] w-full rounded-xl"
           />
         </div>
-        <div
-          v-if="pageCount > 1"
-          class="mt-6 flex items-center justify-end gap-3"
-        >
-          <span class="text-muted-foreground text-sm">
-            {{ $t('page_of', { page, total: pageCount }) }}
-          </span>
-          <Button
-            variant="outline"
-            size="icon"
-            :disabled="page <= 1"
-            :aria-label="$t('previous')"
-            @click="page--"
+
+        <Card v-else-if="fetchError">
+          <CardContent class="p-0">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="destructive">
+                  <LucideTriangleAlert />
+                </EmptyMedia>
+                <EmptyTitle>{{ $t('error_loading_data') }}</EmptyTitle>
+              </EmptyHeader>
+              <EmptyContent>
+                <ButtonIcon icon="retry" variant="secondary" @click="refresh">
+                  {{ $t('retry') }}
+                </ButtonIcon>
+              </EmptyContent>
+            </Empty>
+          </CardContent>
+        </Card>
+
+        <Card v-else-if="!filtered.length">
+          <CardContent class="p-0">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <LucideFolderOpen />
+                </EmptyMedia>
+                <EmptyTitle>
+                  {{
+                    selectedFolder
+                      ? $t('no_assets_in_folder')
+                      : $t('no_entity', { entityKey }, 2)
+                  }}
+                </EmptyTitle>
+              </EmptyHeader>
+            </Empty>
+          </CardContent>
+        </Card>
+
+        <template v-else>
+          <div
+            class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
           >
-            <LucideChevronLeft class="size-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            :disabled="page >= pageCount"
-            :aria-label="$t('next')"
-            @click="page++"
+            <AssetCard
+              v-for="asset in pagedAssets"
+              :key="asset._id"
+              :asset="asset"
+              :folder-name="folderName(asset.folderId)"
+              @open="openAsset(asset)"
+            />
+          </div>
+          <div
+            v-if="pageCount > 1"
+            class="mt-6 flex items-center justify-end gap-3"
           >
-            <LucideChevronRight class="size-4" />
-          </Button>
-        </div>
+            <span class="text-muted-foreground text-sm">
+              {{ $t('page_of', { page, total: pageCount }) }}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              :disabled="page <= 1"
+              :aria-label="$t('previous')"
+              @click="page--"
+            >
+              <LucideChevronLeft class="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              :disabled="page >= pageCount"
+              :aria-label="$t('next')"
+              @click="page++"
+            >
+              <LucideChevronRight class="size-4" />
+            </Button>
+          </div>
+        </template>
       </template>
-    </template>
-  </div>
+    </div>
+  </SidebarProvider>
 </template>
