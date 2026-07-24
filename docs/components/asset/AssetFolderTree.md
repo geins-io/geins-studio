@@ -1,6 +1,6 @@
 # `AssetFolderTree`
 
-`AssetFolderTree` is the folder-navigation tree for the Assets Library, built on the shadcn `Sidebar` primitives. It shows **All assets** on top, the nested user folders (each expandable), and the locked system folders (`Uncategorised`, `Archived`) pinned to the bottom.
+`AssetFolderTree` is the folder-navigation tree for the Assets Library, built on the shadcn `Sidebar` primitives. Under a "Folders" header it shows **All assets**, then the nested user folders (each expandable via a leading chevron; the folder icon opens when expanded/active), followed inline by the locked system folders (`Uncategorised`, `Archived`).
 
 Selection is emitted via `v-model:selected` — the folder id, or `null` for **All assets**. The library page turns that into the server-side `folderId` filter (`assetApi.list`); the tree itself only selects.
 

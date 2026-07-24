@@ -238,7 +238,7 @@ function openAsset(_asset: Asset) {}
     <Sidebar
       v-if="showFolders"
       collapsible="none"
-      class="bg-card w-(--sidebar-width) shrink-0 self-stretch overflow-hidden rounded-lg border"
+      class="w-(--sidebar-width) shrink-0 self-stretch bg-transparent!"
     >
       <AssetFolderTree v-model:selected="selectedFolder" />
     </Sidebar>
