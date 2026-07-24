@@ -23,7 +23,11 @@ const allIcon = computed(() =>
 <template>
   <SidebarContent>
     <SidebarGroup>
-      <SidebarGroupLabel>{{ $t('folder', 2) }}</SidebarGroupLabel>
+      <SidebarGroupLabel
+        class="text-muted-foreground text-[10px] font-medium tracking-wider uppercase"
+      >
+        {{ $t('folder', 2) }}
+      </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           <SidebarMenuItem>

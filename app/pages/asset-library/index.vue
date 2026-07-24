@@ -235,13 +235,15 @@ function openAsset(_asset: Asset) {}
   </div>
 
   <SidebarProvider class="mt-4 min-h-0! items-start gap-4">
-    <Sidebar
-      v-if="showFolders"
-      collapsible="none"
-      class="w-(--sidebar-width) shrink-0 self-stretch bg-transparent!"
-    >
-      <AssetFolderTree v-model:selected="selectedFolder" />
-    </Sidebar>
+    <Transition name="folder-panel">
+      <Sidebar
+        v-if="showFolders"
+        collapsible="none"
+        class="w-(--sidebar-width) shrink-0 self-stretch bg-transparent!"
+      >
+        <AssetFolderTree v-model:selected="selectedFolder" />
+      </Sidebar>
+    </Transition>
 
     <div class="min-w-0 flex-1">
       <!-- LIST VIEW -->
@@ -351,3 +353,19 @@ function openAsset(_asset: Asset) {}
     </div>
   </SidebarProvider>
 </template>
+
+<style scoped>
+/* Slide the folder panel in/out by animating its width (grid reflows with it). */
+.folder-panel-enter-active,
+.folder-panel-leave-active {
+  overflow: hidden;
+  transition:
+    width 200ms ease,
+    opacity 200ms ease;
+}
+.folder-panel-enter-from,
+.folder-panel-leave-to {
+  width: 0 !important;
+  opacity: 0;
+}
+</style>
