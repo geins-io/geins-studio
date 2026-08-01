@@ -9,6 +9,7 @@ import type {
 } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
 import { entityRepo } from './entity';
+import type { RepoFetchOptions } from './entity-base';
 import type { NitroFetchRequest, $Fetch } from 'nitropack';
 
 /**
@@ -31,5 +32,22 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
   return {
     ...assets,
     folder,
+
+    /**
+     * Upload files (multipart) — stores each in Supabase storage and creates
+     * its asset row, returning the created assets. `formData` carries the
+     * file(s) and optional fields (e.g. `folderId`).
+     */
+    async upload(
+      formData: FormData,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<Asset[]> {
+      return await fetch<Asset[]>(`${ENTITIES.asset.endpoint}/upload`, {
+        method: 'POST',
+        body: formData,
+        errorContext: { action: 'creating', entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      });
+    },
   };
 }
