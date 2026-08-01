@@ -32,6 +32,7 @@ The contract is **camelCase + `_id`/`_type`** (via `ResponseEntity`), mirroring 
 | `POST /asset`              | `assetApi.create(data)`      | `AssetCreate`                  | `Asset`    |
 | `PATCH /asset/:id`         | `assetApi.update(id, data)`  | `AssetUpdate`                  | `Asset`    |
 | `DELETE /asset/:id`        | `assetApi.delete(id)`        | —                              | `null`     |
+| `POST /asset/upload`       | `assetApi.upload(formData)`  | multipart files + `folderId`   | `Asset[]`  |
 | `GET /asset/folder/list`   | `assetApi.folder.list()`     | —                              | `Folder[]` |
 | `GET /asset/folder/:id`    | `assetApi.folder.get(id)`    | —                              | `Folder`   |
 | `POST /asset/folder`       | `assetApi.folder.create(d)`  | `FolderCreate`                 | `Folder`   |
@@ -41,6 +42,7 @@ The contract is **camelCase + `_id`/`_type`** (via `ResponseEntity`), mirroring 
 - **List envelope:** bare arrays today. Consumers must still guard with `Array.isArray()` / a normalizer before `.map()` — the real API may wrap in `{ items }` (per the repository rules in `CLAUDE.md`).
 - **`folderId` filtering** resolves the selected folder + descendants server-side.
 - **Folder delete:** assets fall back to uncategorised (`folder_id` FK is `ON DELETE SET NULL`); child folders cascade.
+- **Upload:** `POST /asset/upload` (multipart) stores each file in the `assets` bucket server-side (service key), derives `sizeBytes` / `mime` / `AssetType` (`mimeToAssetType`), builds the public URL, inserts the row, and returns the created `Asset[]`. Images reuse the original as `thumbUrl` (v0). Deleting an asset removes the row, not the stored object (mock — orphaned objects are harmless).
 
 ## Mock backend (Supabase)
 
