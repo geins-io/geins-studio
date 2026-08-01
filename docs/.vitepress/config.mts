@@ -216,6 +216,10 @@ export default defineConfig({
                 link: '/components/asset/AssetFolderTree.md',
               },
               {
+                text: 'AssetUploadDialog',
+                link: '/components/asset/AssetUploadDialog.md',
+              },
+              {
                 text: 'AssetTypeBadge',
                 link: '/components/asset/AssetTypeBadge.md',
               },
