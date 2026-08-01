@@ -190,6 +190,7 @@
   "upload_assets": "Upload assets",
   "error_loading_data": "Could not load data",
   "no_assets_in_folder": "No assets in this folder",
+  "folder_name": "Folder name",
   "created_by": "Created by",
   "modified_by": "Modified by",
   "expiration_date": "Expiration date",
