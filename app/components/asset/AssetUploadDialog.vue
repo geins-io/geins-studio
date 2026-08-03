@@ -204,10 +204,9 @@ async function upload() {
         </TooltipProvider>
 
         <DialogFooter class="sm:justify-between">
-          <Button variant="ghost" @click="open = false">
-            <LucideChevronLeft class="size-4" />
+          <ButtonIcon icon="ChevronLeft" variant="ghost" @click="open = false">
             {{ $t('cancel') }}
-          </Button>
+          </ButtonIcon>
           <Button @click="goContinue">{{ $t('continue') }}</Button>
         </DialogFooter>
       </template>
@@ -219,7 +218,9 @@ async function upload() {
           <DialogDescription>{{ $t('upload_quick_hint') }}</DialogDescription>
         </DialogHeader>
 
-        <div class="space-y-4">
+        <!-- min-w-0: DialogContent is a grid, so this keeps long file names
+             from expanding the track past the dialog (lets truncate work) -->
+        <div class="min-w-0 space-y-4">
           <button
             type="button"
             class="hover:bg-muted/40 flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-12 text-center transition-colors"
@@ -258,7 +259,9 @@ async function upload() {
                 <component :is="row.icon" class="size-5" />
               </div>
               <div class="min-w-0 flex-1">
-                <div class="truncate font-medium">{{ row.file.name }}</div>
+                <div class="truncate text-sm font-semibold">
+                  {{ row.file.name }}
+                </div>
                 <div class="text-muted-foreground text-xs">
                   {{ formatFileSize(row.file.size) }}
                 </div>
@@ -319,22 +322,22 @@ async function upload() {
         </div>
 
         <DialogFooter class="sm:justify-between">
-          <Button
+          <ButtonIcon
+            icon="ChevronLeft"
             variant="ghost"
             :disabled="uploading"
             @click="step = 'choose'"
           >
-            <LucideChevronLeft class="size-4" />
             {{ $t('back') }}
-          </Button>
-          <Button
+          </ButtonIcon>
+          <ButtonIcon
+            icon="upload"
             :loading="uploading"
             :disabled="!files.length"
             @click="upload"
           >
-            <LucideUpload class="size-4" />
             {{ $t('upload') }}
-          </Button>
+          </ButtonIcon>
         </DialogFooter>
       </template>
     </DialogContent>
