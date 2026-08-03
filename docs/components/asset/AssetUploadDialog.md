@@ -1,6 +1,6 @@
 # `AssetUploadDialog`
 
-`AssetUploadDialog` is the quick-upload dialog: drag-and-drop or browse for files, pick a target folder (with inline folder create), and upload. On success it refreshes the library list and closes.
+`AssetUploadDialog` is the upload dialog. Step 1 picks an upload method — only **Quick upload** is available in v0; **Upload wizard** and **CSV import** are shown disabled with a "coming soon" tooltip. Step 2 is quick upload: drag-and-drop or browse for files, pick a target folder (with inline folder create), and upload. On success it refreshes the library list and closes.
 
 ## Usage
 
