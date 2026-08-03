@@ -316,6 +316,7 @@ async function upload() {
               <ButtonIcon
                 icon="new"
                 variant="outline"
+                size="lg"
                 @click="creatingFolder = true"
               >
                 {{ $t('new') }}
