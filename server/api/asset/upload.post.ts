@@ -1,11 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { defineEventHandler, readMultipartFormData, createError } from 'h3';
 import type { Asset } from '#shared/types';
-import {
-  assetMockSupabase,
-  mimeToAssetType,
-  toAsset,
-} from '../../utils/assets-mock';
+import { mimeToAssetType } from '#shared/utils/asset';
+import { assetMockSupabase, toAsset } from '../../utils/assets-mock';
 
 // POST /api/asset/upload — repo `upload(formData)`. Stores each file in the
 // `assets` bucket and inserts the asset row; returns the created Asset[].
