@@ -23,6 +23,7 @@ const search = ref('');
 const showFolders = ref(false);
 // Selected folder id (null = All assets); drives the server-side filter.
 const selectedFolder = ref<string | null>(null);
+const uploadOpen = ref(false);
 
 // const enum is erased at runtime — resolve to a value in script (not template).
 const listMode = TableMode.Simple;
@@ -190,9 +191,14 @@ function openAsset(_asset: Asset) {}
 </script>
 
 <template>
+  <AssetUploadDialog
+    v-model:open="uploadOpen"
+    :default-folder-id="selectedFolder"
+  />
+
   <ContentHeader :title="$t(entityKey, 2)">
     <ContentActionBar>
-      <ButtonIcon icon="upload">
+      <ButtonIcon icon="upload" @click="uploadOpen = true">
         {{ $t('upload_assets') }}
       </ButtonIcon>
     </ContentActionBar>
