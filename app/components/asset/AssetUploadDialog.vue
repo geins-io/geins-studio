@@ -182,7 +182,7 @@ async function upload() {
                     </p>
                   </div>
                   <span
-                    class="mt-1 flex size-5 shrink-0 items-center justify-center rounded-full border"
+                    class="flex size-5 shrink-0 items-center justify-center self-center rounded-full border"
                     :class="
                       m.enabled && method === m.id
                         ? 'border-primary'
@@ -313,10 +313,13 @@ async function upload() {
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" @click="creatingFolder = true">
-                <LucidePlus class="size-4" />
+              <ButtonIcon
+                icon="new"
+                variant="outline"
+                @click="creatingFolder = true"
+              >
                 {{ $t('new') }}
-              </Button>
+              </ButtonIcon>
             </div>
           </div>
         </div>
