@@ -291,7 +291,7 @@ async function upload() {
                 @keydown.enter.prevent="createFolder"
                 @keydown.esc.prevent="creatingFolder = false"
               />
-              <Button variant="secondary" @click="createFolder">
+              <Button variant="secondary" size="lg" @click="createFolder">
                 {{ $t('save') }}
               </Button>
             </div>
