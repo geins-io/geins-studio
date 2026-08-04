@@ -2,7 +2,7 @@
 import { toTypedSchema } from '@vee-validate/zod';
 import { useForm } from 'vee-validate';
 import * as z from 'zod';
-import type { Asset, AssetUpdate } from '#shared/types';
+import type { Asset, AssetUpdate, LocalizedText } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
 
@@ -20,6 +20,7 @@ const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
 const { formatDate } = useDate();
 const { folders, refresh: refreshFolders } = useFolders();
+const { currentLanguage } = storeToRefs(useAccountStore());
 const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
 
 const entityKey = ENTITIES.asset.key;
@@ -28,18 +29,47 @@ const NO_FOLDER = '__none__';
 const loading = ref(false);
 const creatingFolder = ref(false);
 const newFolderName = ref('');
+const translationOpen = ref(false);
 
 const formSchema = toTypedSchema(
   z.object({
     name: z.string().min(1, t('form.required')),
     folderId: z.string().nullable(),
     description: z.string(),
+    altText: z.record(z.string(), z.string()),
     tags: z.array(z.string()),
     channels: z.array(z.string()),
   }),
 );
 const form = useForm({ validationSchema: formSchema });
 const isDirty = computed(() => form.meta.value.dirty);
+
+// altText is a LocalizedText map edited via the translation panel; the inline
+// input edits the current language, the panel edits every language.
+const altText = computed<LocalizedText>({
+  get: () => (form.values.altText as LocalizedText | undefined) ?? {},
+  set: (value) => form.setFieldValue('altText', value),
+});
+const currentAltText = computed<string>({
+  get: () => altText.value[currentLanguage.value] ?? '',
+  set: (value) => {
+    if (value) {
+      form.setFieldValue('altText', {
+        ...altText.value,
+        [currentLanguage.value]: value,
+      });
+    } else {
+      // Drop the current language without a dynamic delete.
+      const { [currentLanguage.value]: _removed, ...rest } = altText.value;
+      form.setFieldValue('altText', rest);
+    }
+  },
+});
+const hasOtherTranslations = computed(() =>
+  Object.entries(altText.value).some(
+    ([code, value]) => code !== currentLanguage.value && !!value?.trim(),
+  ),
+);
 
 watch(open, (value) => {
   if (value && props.asset) {
@@ -50,6 +80,7 @@ watch(open, (value) => {
         name: props.asset.name,
         folderId: props.asset.folderId,
         description: props.asset.description ?? '',
+        altText: { ...(props.asset.altText ?? {}) },
         tags: [...props.asset.tags],
         channels: [...props.asset.channels],
       },
@@ -88,6 +119,7 @@ async function handleSave() {
       name: form.values.name,
       folderId: form.values.folderId ?? null,
       description: form.values.description || null,
+      altText: (form.values.altText as LocalizedText | undefined) ?? {},
       tags: form.values.tags ?? [],
       channels: form.values.channels ?? [],
     };
@@ -195,6 +227,31 @@ async function handleSave() {
               </FormItem>
             </FormField>
 
+            <FormItem v-if="asset.type === 'image'">
+              <FormLabel :optional="true">{{ $t('alt_text') }}</FormLabel>
+              <div class="flex gap-2">
+                <Input
+                  v-model="currentAltText"
+                  :placeholder="$t('alt_text_placeholder')"
+                  class="flex-1"
+                />
+                <Button
+                  variant="outline"
+                  size="lg"
+                  type="button"
+                  class="relative"
+                  :aria-label="$t('translations')"
+                  @click="translationOpen = true"
+                >
+                  <LucideLanguages class="size-4" />
+                  <span
+                    v-if="hasOtherTranslations"
+                    class="bg-primary absolute top-1 right-1 size-1.5 rounded-full"
+                  />
+                </Button>
+              </div>
+            </FormItem>
+
             <FormField v-slot="{ componentField }" name="tags">
               <FormItem>
                 <FormLabel :optional="true">{{ $t('tag', 2) }}</FormLabel>
@@ -258,4 +315,10 @@ async function handleSave() {
       </dl>
     </template>
   </PanelEdit>
+
+  <PanelTranslation
+    v-model:open="translationOpen"
+    v-model="altText"
+    :field-label="$t('alt_text')"
+  />
 </template>

@@ -210,6 +210,8 @@
   "created_by": "Skapad av",
   "description": "Beskrivning",
   "add_tag": "Lägg till tagg",
+  "alt_text": "Alternativtext",
+  "alt_text_placeholder": "Beskriv bilden för skärmläsare…",
   "modified_by": "Ändrad av",
   "expiration_date": "Utgångsdatum",
   "ref_number": "Referensnummer",
