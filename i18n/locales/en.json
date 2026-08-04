@@ -208,6 +208,8 @@
   "upload_csv": "CSV import",
   "upload_csv_description": "Import assets in bulk using a CSV with file URLs and metadata. Best for migrations.",
   "created_by": "Created by",
+  "description": "Description",
+  "add_tag": "Add tag",
   "modified_by": "Modified by",
   "expiration_date": "Expiration date",
   "ref_number": "Ref number",

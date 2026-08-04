@@ -3,14 +3,15 @@ import type { AssetType } from '#shared/types';
 
 /**
  * Asset preview — the image when a `thumbUrl` is present, otherwise a typed
- * icon block. `card` (3:2, grid) and `row` (small square, list) sizes.
+ * icon block. `card` (3:2, grid), `banner` (2:1, full-width panel preview),
+ * and `row` (small square, list) sizes.
  */
 const props = withDefaults(
   defineProps<{
     type: AssetType;
     thumbUrl?: string | null;
     alt?: string;
-    size?: 'card' | 'row';
+    size?: 'card' | 'banner' | 'row';
   }>(),
   { size: 'card' },
 );
@@ -20,10 +21,18 @@ const { resolveIcon } = useLucideIcon();
 
 const info = computed(() => meta(props.type));
 const icon = computed(() => resolveIcon(info.value.icon));
+const isRow = computed(() => props.size === 'row');
 
-const wrapperClass = computed(() =>
-  props.size === 'card' ? 'aspect-[3/2] w-full' : 'size-10 shrink-0',
-);
+const wrapperClass = computed(() => {
+  switch (props.size) {
+    case 'banner':
+      return 'aspect-[2/1] w-full';
+    case 'row':
+      return 'size-10 shrink-0';
+    default:
+      return 'aspect-[3/2] w-full';
+  }
+});
 </script>
 
 <template>
@@ -41,8 +50,8 @@ const wrapperClass = computed(() =>
         'flex h-full w-full flex-col items-center justify-center gap-1',
       ]"
     >
-      <component :is="icon" :class="size === 'card' ? 'size-9' : 'size-5'" />
-      <span v-if="size === 'card'" class="text-xs font-medium opacity-90">
+      <component :is="icon" :class="isRow ? 'size-5' : 'size-9'" />
+      <span v-if="!isRow" class="text-xs font-medium opacity-90">
         {{ label(type) }}
       </span>
     </div>

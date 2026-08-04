@@ -208,6 +208,8 @@
   "upload_csv": "CSV-import",
   "upload_csv_description": "Importera filer i bulk med en CSV med fil-URL:er och metadata. Bäst för migreringar.",
   "created_by": "Skapad av",
+  "description": "Beskrivning",
+  "add_tag": "Lägg till tagg",
   "modified_by": "Ändrad av",
   "expiration_date": "Utgångsdatum",
   "ref_number": "Referensnummer",
