@@ -24,6 +24,8 @@ const showFolders = ref(false);
 // Selected folder id (null = All assets); drives the server-side filter.
 const selectedFolder = ref<string | null>(null);
 const uploadOpen = ref(false);
+const detailOpen = ref(false);
+const detailAsset = ref<Asset | null>(null);
 
 // const enum is erased at runtime — resolve to a value in script (not template).
 const listMode = TableMode.Simple;
@@ -186,14 +188,21 @@ onMounted(() => {
   loading.value = false;
 });
 
-// Asset detail panel lands in Phase 6; open is a no-op for now.
-function openAsset(_asset: Asset) {}
+function openAsset(asset: Asset) {
+  detailAsset.value = asset;
+  detailOpen.value = true;
+}
 </script>
 
 <template>
   <AssetUploadDialog
     v-model:open="uploadOpen"
     :default-folder-id="selectedFolder"
+  />
+  <AssetDetailPanel
+    v-model:open="detailOpen"
+    :asset="detailAsset"
+    @updated="refresh"
   />
 
   <ContentHeader :title="$t(entityKey, 2)">
