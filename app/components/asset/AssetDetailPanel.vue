@@ -115,12 +115,12 @@ async function handleSave() {
     @save="handleSave"
   >
     <template v-if="asset">
-      <div class="mx-auto mb-6 w-full max-w-56">
+      <div class="mb-6">
         <AssetThumbnail
           :type="asset.type"
           :thumb-url="asset.thumbUrl"
           :alt="asset.name"
-          size="card"
+          size="banner"
         />
       </div>
 
