@@ -106,6 +106,7 @@ async function handleSave() {
 <template>
   <PanelEdit
     v-model:open="open"
+    width="narrow"
     :title="asset?.name ?? $t(entityKey, 1)"
     :entity-key="entityKey"
     :dirty="isDirty"
@@ -114,7 +115,7 @@ async function handleSave() {
     @save="handleSave"
   >
     <template v-if="asset">
-      <div class="mb-6">
+      <div class="mx-auto mb-6 w-full max-w-56">
         <AssetThumbnail
           :type="asset.type"
           :thumb-url="asset.thumbUrl"
