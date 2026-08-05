@@ -152,6 +152,8 @@
   "default": "Default",
   "translations": "Translations",
   "translations_single_language": "Only one language is configured, so there is nothing to translate.",
+  "languages_filled": "{filled} of {total} languages filled",
+  "translation_field_placeholder": "{field} in {language}…",
   "asset_type": {
     "image": "Image",
     "svg": "SVG",

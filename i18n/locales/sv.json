@@ -152,6 +152,8 @@
   "default": "Standard",
   "translations": "Översättningar",
   "translations_single_language": "Endast ett språk är konfigurerat, så det finns inget att översätta.",
+  "languages_filled": "{filled} av {total} språk ifyllda",
+  "translation_field_placeholder": "{field} på {language}…",
   "asset_type": {
     "image": "Bild",
     "svg": "SVG",

@@ -1,10 +1,12 @@
 # `PanelTranslation`
 
-`PanelTranslation` is the global translation panel — it edits a locale-keyed value ([`LocalizedText`](/domains/assets)) across the account's configured languages. It is built on [`PanelEdit`](/components/panel/PanelEdit), so it stacks over a base panel (panel-on-panel) and reuses the shared unsaved-changes guard.
+`PanelTranslation` is the global translation panel — it edits a locale-keyed value ([`LocalizedText`](/domains/assets)) across the account's configured languages. It is built on [`PanelEdit`](/components/panel/PanelEdit) with `variant="inline"`, so it stacks over a base panel (panel-on-panel) from the base's `#stack` slot and reuses the shared unsaved-changes guard.
 
 ## Features
 
 - **Account-driven locales** — languages come from the account language setup ([`useAccountStore`](/stores/account) `languages`), not a fixed list. Only `active` languages are shown; the current/default language sorts first and is marked.
+- **Per-language rows** — each row shows a [`FlagIcon`](/components/FlagIcon) (country resolved via `languageToCountryCode`) + language name, and an input placeholder of the form `{field} in {language}…`.
+- **Fill-count subtitle** — the panel subtitle shows `{subject} · {filled} of {total} languages filled`.
 - **Working copy + guard** — edits a copy; `dirty` reflects real changes and the `PanelEdit` guard prompts before discarding. Blank locales are dropped on save.
 - **Degenerate state** — when only one language is configured there is nothing to translate, so an empty state is shown and the footer is hidden.
 - Opened programmatically from a translatable field via `v-model:open`; the value rides on `v-model`.
@@ -20,21 +22,33 @@ const translationsOpen = ref(false);
 </script>
 
 <template>
-  <div class="flex items-end gap-2">
-    <FormItem>
-      <FormLabel>{{ $t('alt_text') }}</FormLabel>
-      <Input v-model="altText[currentLanguage]" />
-    </FormItem>
-    <Button variant="outline" @click="translationsOpen = true">
-      {{ $t('translations') }}
-    </Button>
-  </div>
+  <PanelEdit v-model:open="open" :title="asset.name">
+    <FormField v-slot="{ componentField }" name="altText" keep-value>
+      <FormItem>
+        <FormLabel>{{ $t('alt_text') }}</FormLabel>
+        <div class="relative">
+          <Input v-model="altText[currentLanguage]" class="pr-11" />
+          <button
+            type="button"
+            class="absolute top-1/2 right-3 -translate-y-1/2"
+            @click="translationsOpen = true"
+          >
+            <FlagIcon :country-code="languageToCountryCode(currentLanguage)" />
+          </button>
+        </div>
+      </FormItem>
+    </FormField>
 
-  <PanelTranslation
-    v-model="altText"
-    v-model:open="translationsOpen"
-    :field-label="$t('alt_text')"
-  />
+    <!-- stacked inside the base panel so it shares the modal subtree -->
+    <template #stack>
+      <PanelTranslation
+        v-model="altText"
+        v-model:open="translationsOpen"
+        :field-label="$t('alt_text')"
+        :subject="asset.name"
+      />
+    </template>
+  </PanelEdit>
 </template>
 ```
 
@@ -46,7 +60,15 @@ const translationsOpen = ref(false);
 fieldLabel?: string;
 ```
 
-Shown as the panel subtitle — what is being translated (e.g. the field label).
+The field being translated — used in each locale input's placeholder (`{field} in {language}…`).
+
+### `subject`
+
+```ts
+subject?: string;
+```
+
+Context shown before the fill count in the subtitle (e.g. the asset name).
 
 ## v-model
 
@@ -68,6 +90,7 @@ Panel visibility.
 
 ## Dependencies
 
-- [`PanelEdit`](/components/panel/PanelEdit) — shell, stacking, unsaved guard
+- [`PanelEdit`](/components/panel/PanelEdit) (`variant="inline"`) — shell, stacking, unsaved guard
+- [`FlagIcon`](/components/FlagIcon) + `languageToCountryCode` — per-language flags
 - [`useAccountStore`](/stores/account) — configured languages + current language
 - shadcn-vue `Input`, `Label`, [`Empty`](/components/shadcn-vue)
