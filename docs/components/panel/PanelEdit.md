@@ -5,8 +5,13 @@
 ## Features
 
 - **Standard chrome** — title/description header, body slot, footer with save + cancel (overridable via the `#footer` slot).
-- **Opt-in unsaved-changes guard** — pass `:dirty` (e.g. vee-validate `form.meta.value.dirty`). While dirty, every close path (X, Esc, overlay, Cancel) is intercepted and routed through [`DialogUnsavedChanges`](/components/dialog/DialogUnsavedChanges); confirming emits `discard` and closes. Dirty state stays in the consumer's form — no per-panel tracking.
-- **Panel-on-panel** — via [`usePanelStack`](/composables/usePanelStack): only the top panel is `modal` (one focus trap at a time; lower panels inert + receded).
+- **Two variants** (`variant`): `sheet` (default) is a modal [`Sheet`](/components/shadcn-vue) for a top-level panel; `inline` is a plain `fixed` slide-over for a panel that STACKS on top of a `sheet` (see below).
+- **Opt-in unsaved-changes guard** — pass `:dirty` (e.g. vee-validate `form.meta.value.dirty`, or a snapshot compare). While dirty, every close path (X, Esc, overlay, Cancel, backdrop) is intercepted and routed through [`DialogUnsavedChanges`](/components/dialog/DialogUnsavedChanges); confirming emits `discard` and closes. Dirty state stays in the consumer — no per-panel tracking.
+- **Panel-on-panel** — a `sheet` stays `modal` the whole time and renders its stacked children (`inline` panels) inside its own content via the `#stack` slot, so they live in the modal subtree (Reka `hideOthers` / focus-trap stay correct) and the base is **never remounted**. While a child is open the base recedes (shift-left + dim) and goes `inert`; a click-catcher over the receded base closes the top panel (through the guard). Stacking membership is tracked by [`usePanelStack`](/composables/usePanelStack).
+
+::: warning Why the base stays modal
+Toggling the base `Sheet`'s `modal` prop makes Reka swap `DialogContentModal` ↔ `DialogContentNonModal` — a full remount of the base content that wipes child `FormField` values and resets `form.meta.dirty`. Keeping the base modal and rendering stacked panels inside it (rather than as separate modal Sheets) avoids that. The card `bg`/`shadow` sit on an inner wrapper, not on `SheetContent`, because a `transform`/`filter` on `SheetContent` would drag the `fixed` stacked child along with it.
+:::
 
 ## Usage
 
@@ -49,6 +54,16 @@ title: string;
 ```
 
 Header title (also the accessible description when `description` is omitted).
+
+### `variant`
+
+```ts
+variant?: 'sheet' | 'inline';
+```
+
+- **Default:** `'sheet'`
+
+`sheet` renders a modal [`Sheet`](/components/shadcn-vue) (top-level panel). `inline` renders a plain `fixed` slide-over with no Reka Dialog — for a panel that stacks over a `sheet`. Place an `inline` panel inside the base sheet's `#stack` slot so it lands in the base's modal subtree.
 
 ### `description`
 
@@ -154,6 +169,19 @@ Optional element that opens the panel (rendered `as-child` in `SheetTrigger`). O
 ### `footer`
 
 Overrides the default cancel/save footer.
+
+### `stack`
+
+Stacked (`inline`) child panels, rendered inside the base sheet's content so they share its modal subtree (only meaningful on a `sheet` variant). Example: [`AssetDetailPanel`](/components/asset/AssetDetailPanel) places [`PanelTranslation`](/components/panel/PanelTranslation) here.
+
+```vue
+<PanelEdit v-model:open="open" :title="title">
+  <!-- body -->
+  <template #stack>
+    <PanelTranslation v-model:open="translationOpen" v-model="value" />
+  </template>
+</PanelEdit>
+```
 
 ## Dependencies
 

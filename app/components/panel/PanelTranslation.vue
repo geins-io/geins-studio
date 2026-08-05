@@ -10,14 +10,17 @@ import type { LocalizedText } from '#shared/types';
  * language sorts first and is marked as default. Opened programmatically from a
  * translatable field via `v-model:open`; `v-model` carries the value.
  */
-defineProps<{
-  /** Field label shown as the panel subtitle (what is being translated). */
+const props = defineProps<{
+  /** Field being translated; used in each locale input's placeholder. */
   fieldLabel?: string;
+  /** Context shown before the fill count in the subtitle (e.g. asset name). */
+  subject?: string;
 }>();
 
 const open = defineModel<boolean>('open', { default: false });
 const model = defineModel<LocalizedText>({ default: () => ({}) });
 
+const { t } = useI18n();
 const { languages, currentLanguage } = storeToRefs(useAccountStore());
 
 // Active languages with the current/default language first.
@@ -40,6 +43,17 @@ watch(open, (value) => {
     seeded[lang._id] = model.value?.[lang._id] ?? '';
   }
   working.value = seeded;
+});
+
+const filledCount = computed(
+  () => Object.values(working.value).filter((value) => value?.trim()).length,
+);
+const subtitle = computed(() => {
+  const count = t('languages_filled', {
+    filled: filledCount.value,
+    total: orderedLanguages.value.length,
+  });
+  return props.subject ? `${props.subject} · ${count}` : count;
 });
 
 // Drop blank locales so we never persist empty strings.
@@ -78,9 +92,10 @@ function handleDiscard() {
 <template>
   <PanelEdit
     v-model:open="open"
+    variant="inline"
     width="narrow"
     :title="$t('translations')"
-    :description="fieldLabel"
+    :description="subtitle"
     :dirty="isDirty"
     :hide-footer="!canTranslate"
     @save="handleSave"
@@ -88,8 +103,11 @@ function handleDiscard() {
   >
     <div v-if="canTranslate" class="space-y-4">
       <div v-for="lang in orderedLanguages" :key="lang._id" class="space-y-1.5">
-        <Label :for="`translation-${lang._id}`">
-          {{ lang.name }}
+        <Label :for="`translation-${lang._id}`" class="flex items-center gap-2">
+          <FlagIcon
+            :country-code="languageToCountryCode(lang._id)"
+            :name="lang.name"
+          />
           <span
             v-if="lang._id === currentLanguage"
             class="text-muted-foreground font-normal"
@@ -101,6 +119,12 @@ function handleDiscard() {
           :id="`translation-${lang._id}`"
           v-model="working[lang._id]"
           type="text"
+          :placeholder="
+            $t('translation_field_placeholder', {
+              field: fieldLabel,
+              language: lang.name,
+            })
+          "
         />
       </div>
     </div>

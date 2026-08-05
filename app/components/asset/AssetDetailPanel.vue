@@ -2,7 +2,7 @@
 import { toTypedSchema } from '@vee-validate/zod';
 import { useForm } from 'vee-validate';
 import * as z from 'zod';
-import type { Asset, AssetUpdate } from '#shared/types';
+import type { Asset, AssetUpdate, LocalizedText } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
 
@@ -20,6 +20,7 @@ const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
 const { formatDate } = useDate();
 const { folders, refresh: refreshFolders } = useFolders();
+const { currentLanguage } = storeToRefs(useAccountStore());
 const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
 
 const entityKey = ENTITIES.asset.key;
@@ -28,32 +29,98 @@ const NO_FOLDER = '__none__';
 const loading = ref(false);
 const creatingFolder = ref(false);
 const newFolderName = ref('');
+const translationOpen = ref(false);
 
 const formSchema = toTypedSchema(
   z.object({
-    name: z.string().min(1, t('form.required')),
+    name: z.string().min(1, { message: t('form.field_required') }),
     folderId: z.string().nullable(),
     description: z.string(),
+    altText: z.record(z.string(), z.string()),
     tags: z.array(z.string()),
     channels: z.array(z.string()),
   }),
 );
 const form = useForm({ validationSchema: formSchema });
-const isDirty = computed(() => form.meta.value.dirty);
 
+interface AssetFormValues {
+  name: string;
+  folderId: string | null;
+  description: string;
+  altText: LocalizedText;
+  tags: string[];
+  channels: string[];
+}
+
+// Dirtiness is derived from a stable snapshot held in this setup scope (the same
+// approach PanelTranslation uses), not from `form.meta.value.dirty`. altText is
+// edited entirely programmatically (the inline current-language input + the
+// translation panel), and the snapshot stays correct even if the panel content
+// is ever remounted — which panel-on-panel used to force via a `:modal` flip
+// before the inline-stack redesign. `keep-value` on each field keeps
+// `form.values` intact across any such remount. See [project_panel_on_panel_dirty_remount].
+const originalSnapshot = ref('');
+function snapshotOf(values: {
+  name?: string;
+  folderId?: string | null;
+  description?: string;
+  altText?: Record<string, string | undefined>;
+  tags?: string[];
+  channels?: string[];
+}): string {
+  const altText = Object.entries(values.altText ?? {})
+    .filter(([, text]) => text?.trim())
+    .sort(([a], [b]) => a.localeCompare(b));
+  return JSON.stringify({
+    name: values.name ?? '',
+    folderId: values.folderId ?? null,
+    description: values.description ?? '',
+    altText,
+    tags: values.tags ?? [],
+    channels: values.channels ?? [],
+  });
+}
+const isDirty = computed(
+  () =>
+    !!originalSnapshot.value &&
+    snapshotOf(form.values) !== originalSnapshot.value,
+);
+
+// altText is a LocalizedText map edited via the translation panel; the inline
+// input edits the current language, the panel edits every language.
+const altText = computed<LocalizedText>({
+  get: () => (form.values.altText as LocalizedText | undefined) ?? {},
+  set: (value) => form.setFieldValue('altText', value),
+});
+const currentAltText = computed<string>({
+  get: () => altText.value[currentLanguage.value] ?? '',
+  set: (value) => {
+    if (value) {
+      form.setFieldValue('altText', {
+        ...altText.value,
+        [currentLanguage.value]: value,
+      });
+    } else {
+      // Drop the current language without a dynamic delete.
+      const { [currentLanguage.value]: _removed, ...rest } = altText.value;
+      form.setFieldValue('altText', rest);
+    }
+  },
+});
 watch(open, (value) => {
   if (value && props.asset) {
     creatingFolder.value = false;
     newFolderName.value = '';
-    form.resetForm({
-      values: {
-        name: props.asset.name,
-        folderId: props.asset.folderId,
-        description: props.asset.description ?? '',
-        tags: [...props.asset.tags],
-        channels: [...props.asset.channels],
-      },
-    });
+    const values: AssetFormValues = {
+      name: props.asset.name,
+      folderId: props.asset.folderId,
+      description: props.asset.description ?? '',
+      altText: { ...(props.asset.altText ?? {}) },
+      tags: [...props.asset.tags],
+      channels: [...props.asset.channels],
+    };
+    form.resetForm({ values });
+    originalSnapshot.value = snapshotOf(values);
   }
 });
 
@@ -88,6 +155,7 @@ async function handleSave() {
       name: form.values.name,
       folderId: form.values.folderId ?? null,
       description: form.values.description || null,
+      altText: (form.values.altText as LocalizedText | undefined) ?? {},
       tags: form.values.tags ?? [],
       channels: form.values.channels ?? [],
     };
@@ -127,7 +195,7 @@ async function handleSave() {
       <form @submit.prevent>
         <FormGridWrap>
           <FormGrid design="1">
-            <FormField v-slot="{ componentField }" name="name">
+            <FormField v-slot="{ componentField }" name="name" keep-value>
               <FormItem>
                 <FormLabel>{{ $t('name', 1) }}</FormLabel>
                 <FormControl>
@@ -137,7 +205,11 @@ async function handleSave() {
               </FormItem>
             </FormField>
 
-            <FormField v-slot="{ value, handleChange }" name="folderId">
+            <FormField
+              v-slot="{ value, handleChange }"
+              name="folderId"
+              keep-value
+            >
               <FormItem>
                 <FormLabel :optional="true">{{ $t('folder', 1) }}</FormLabel>
                 <div v-if="creatingFolder" class="flex gap-2">
@@ -186,7 +258,11 @@ async function handleSave() {
               </FormItem>
             </FormField>
 
-            <FormField v-slot="{ componentField }" name="description">
+            <FormField
+              v-slot="{ componentField }"
+              name="description"
+              keep-value
+            >
               <FormItem>
                 <FormLabel :optional="true">{{ $t('description') }}</FormLabel>
                 <FormControl>
@@ -195,7 +271,30 @@ async function handleSave() {
               </FormItem>
             </FormField>
 
-            <FormField v-slot="{ componentField }" name="tags">
+            <FormField v-if="asset.type === 'image'" name="altText" keep-value>
+              <FormItem>
+                <FormLabel :optional="true">{{ $t('alt_text') }}</FormLabel>
+                <div class="relative">
+                  <Input
+                    v-model="currentAltText"
+                    :placeholder="$t('alt_text_placeholder')"
+                    class="pr-11"
+                  />
+                  <button
+                    type="button"
+                    class="absolute top-1/2 right-3 -translate-y-1/2 transition-opacity hover:opacity-80"
+                    :aria-label="$t('translations')"
+                    @click="translationOpen = true"
+                  >
+                    <FlagIcon
+                      :country-code="languageToCountryCode(currentLanguage)"
+                    />
+                  </button>
+                </div>
+              </FormItem>
+            </FormField>
+
+            <FormField v-slot="{ componentField }" name="tags" keep-value>
               <FormItem>
                 <FormLabel :optional="true">{{ $t('tag', 2) }}</FormLabel>
                 <FormControl>
@@ -219,7 +318,11 @@ async function handleSave() {
               </FormItem>
             </FormField>
 
-            <FormField v-slot="{ value, handleChange }" name="channels">
+            <FormField
+              v-slot="{ value, handleChange }"
+              name="channels"
+              keep-value
+            >
               <FormItem>
                 <FormLabel :optional="true">{{ $t('channel', 2) }}</FormLabel>
                 <FormControl>
@@ -256,6 +359,15 @@ async function handleSave() {
           <dd>{{ asset.createdBy }}</dd>
         </div>
       </dl>
+    </template>
+
+    <template #stack>
+      <PanelTranslation
+        v-model:open="translationOpen"
+        v-model="altText"
+        :field-label="$t('alt_text')"
+        :subject="asset?.name"
+      />
     </template>
   </PanelEdit>
 </template>

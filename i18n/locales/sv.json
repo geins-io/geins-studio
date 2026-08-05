@@ -152,6 +152,8 @@
   "default": "Standard",
   "translations": "Översättningar",
   "translations_single_language": "Endast ett språk är konfigurerat, så det finns inget att översätta.",
+  "languages_filled": "{filled} av {total} språk ifyllda",
+  "translation_field_placeholder": "{field} på {language}…",
   "asset_type": {
     "image": "Bild",
     "svg": "SVG",
@@ -210,6 +212,8 @@
   "created_by": "Skapad av",
   "description": "Beskrivning",
   "add_tag": "Lägg till tagg",
+  "alt_text": "Alternativtext",
+  "alt_text_placeholder": "Beskriv bilden för skärmläsare…",
   "modified_by": "Ändrad av",
   "expiration_date": "Utgångsdatum",
   "ref_number": "Referensnummer",

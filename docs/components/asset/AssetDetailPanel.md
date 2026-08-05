@@ -42,7 +42,7 @@ Emitted after a successful save (the page refreshes the library list).
 
 ## Editable fields
 
-- **name** (required), **folder** (`Select` from [`useFolders`](/composables/useFolders) with inline create), **description** (`Textarea`), **tags** (`TagsInput`), **channels** ([`FormInputChannels`](/components/form/input/FormInputChannels)).
+- **name** (required), **folder** (`Select` from [`useFolders`](/composables/useFolders) with inline create), **description** (`Textarea`), **alt text** (images only — inline input for the current language + a translate button that opens [`PanelTranslation`](/components/panel/PanelTranslation) stacked over the panel), **tags** (`TagsInput`), **channels** ([`FormInputChannels`](/components/form/input/FormInputChannels)).
 - Save → `assetApi.update(id, …)` → refresh `asset-library-list`.
 
 ## Read-only info
@@ -51,4 +51,4 @@ Preview ([`AssetThumbnail`](/components/asset/AssetThumbnail)), type badge, size
 
 ## Not here
 
-Alt-text (translation panel), copy/download/delete actions, and replace-file are separate changes.
+Copy/download/delete actions and replace-file are separate changes.

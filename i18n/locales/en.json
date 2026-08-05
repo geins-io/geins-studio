@@ -152,6 +152,8 @@
   "default": "Default",
   "translations": "Translations",
   "translations_single_language": "Only one language is configured, so there is nothing to translate.",
+  "languages_filled": "{filled} of {total} languages filled",
+  "translation_field_placeholder": "{field} in {language}…",
   "asset_type": {
     "image": "Image",
     "svg": "SVG",
@@ -210,6 +212,8 @@
   "created_by": "Created by",
   "description": "Description",
   "add_tag": "Add tag",
+  "alt_text": "Alt text",
+  "alt_text_placeholder": "Describe the image for screen readers…",
   "modified_by": "Modified by",
   "expiration_date": "Expiration date",
   "ref_number": "Ref number",
