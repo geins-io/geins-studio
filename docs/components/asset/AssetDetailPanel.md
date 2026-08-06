@@ -38,7 +38,16 @@ v-model:open: boolean
 
 ### `updated`
 
-Emitted after a successful save (the page refreshes the library list).
+Emitted after a successful save **or delete** (the page refreshes the library list).
+
+## Actions
+
+An action row under the preview:
+
+- **Copy URL** — writes the asset's `url` to the clipboard (`entity_copied` toast); disabled when the asset has no `url`.
+- **Download** — anchor `download` of `url` (falls back to opening in a new tab); disabled when there is no `url`.
+
+Footer: **Delete asset** (destructive, left) opens [`DialogDelete`](/components/dialog/DialogDelete) → `assetApi.delete(id)` → refresh `asset-library-list` + toast + close; **Save** (right).
 
 ## Editable fields
 
@@ -51,4 +60,4 @@ Preview ([`AssetThumbnail`](/components/asset/AssetThumbnail)), type badge, size
 
 ## Not here
 
-Copy/download/delete actions and replace-file are separate changes.
+Replace-file is a separate change (STU-289).

@@ -38,9 +38,19 @@ Resolved folder name — the asset only carries `folderId`, so the page resolves
 
 ## Events
 
+The action menu (hover ellipsis) emits per-action events; the page wires them to [`useAssetActions`](/composables/useAssetActions) + a shared [`DialogDelete`](/components/dialog/DialogDelete).
+
 ### `open`
 
-Emitted when the name, the action menu's "View details" item is clicked. The page maps this to opening the detail panel.
+Emitted from the name or the menu's "View details" item — the page opens the detail panel.
+
+### `download` / `copyUrl`
+
+Download the file / copy its URL. Disabled in the menu when the asset has no `url`.
+
+### `delete`
+
+Request deletion — the page opens the confirm dialog for this asset.
 
 ## Dependencies
 
