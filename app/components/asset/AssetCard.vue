@@ -13,7 +13,12 @@ const props = defineProps<{
   folderName?: string;
 }>();
 
-const emit = defineEmits<{ open: [] }>();
+const emit = defineEmits<{
+  open: [];
+  download: [];
+  copyUrl: [];
+  delete: [];
+}>();
 
 const { formatDate } = useDate();
 const size = computed(() => formatFileSize(props.asset.sizeBytes));
@@ -43,8 +48,21 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem @click="emit('open')">
-              <LucideEye class="size-4" />
-              {{ $t('view_details') }}
+              <LucideEye class="mr-2 size-4" />
+              <span>{{ $t('view_details') }}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem :disabled="!asset.url" @click="emit('download')">
+              <LucideDownload class="mr-2 size-4" />
+              <span>{{ $t('download') }}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem :disabled="!asset.url" @click="emit('copyUrl')">
+              <LucideCopy class="mr-2 size-4" />
+              <span>{{ $t('copy') }} {{ $t('public_url') }}</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem @click="emit('delete')">
+              <LucideTrash2 class="mr-2 size-4" />
+              <span>{{ $t('delete_entity', { entityKey: 'asset' }) }}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

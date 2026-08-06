@@ -22,6 +22,7 @@ const { formatDate } = useDate();
 const { folders, refresh: refreshFolders } = useFolders();
 const { currentLanguage } = storeToRefs(useAccountStore());
 const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
+const { copyUrl, download, deleteAsset } = useAssetActions();
 
 const entityKey = ENTITIES.asset.key;
 const NO_FOLDER = '__none__';
@@ -30,6 +31,8 @@ const loading = ref(false);
 const creatingFolder = ref(false);
 const newFolderName = ref('');
 const translationOpen = ref(false);
+const deleteOpen = ref(false);
+const deleting = ref(false);
 
 const formSchema = toTypedSchema(
   z.object({
@@ -169,6 +172,17 @@ async function handleSave() {
     loading.value = false;
   }
 }
+
+async function handleDelete() {
+  if (!props.asset) return;
+  deleting.value = true;
+  const ok = await deleteAsset(props.asset);
+  deleting.value = false;
+  if (!ok) return;
+  deleteOpen.value = false;
+  open.value = false;
+  emit('updated');
+}
 </script>
 
 <template>
@@ -179,8 +193,6 @@ async function handleSave() {
     :entity-key="entityKey"
     :dirty="isDirty"
     :loading="loading"
-    :save-disabled="!isDirty"
-    @save="handleSave"
   >
     <template v-if="asset">
       <div class="mb-6">
@@ -191,6 +203,31 @@ async function handleSave() {
           size="banner"
         />
       </div>
+
+      <div class="flex gap-2">
+        <ButtonIcon
+          icon="copy"
+          variant="outline"
+          size="sm"
+          class="flex-1 bg-transparent dark:bg-transparent"
+          :disabled="!asset.url"
+          @click="copyUrl(asset)"
+        >
+          {{ $t('copy') }} {{ $t('public_url') }}
+        </ButtonIcon>
+        <ButtonIcon
+          icon="download"
+          variant="outline"
+          size="sm"
+          class="flex-1 bg-transparent dark:bg-transparent"
+          :disabled="!asset.url"
+          @click="download(asset)"
+        >
+          {{ $t('download') }}
+        </ButtonIcon>
+      </div>
+
+      <div class="border-border -mx-3 mt-4 mb-6 border-b sm:-mx-6" />
 
       <form @submit.prevent>
         <FormGridWrap>
@@ -359,6 +396,27 @@ async function handleSave() {
           <dd>{{ asset.createdBy }}</dd>
         </div>
       </dl>
+
+      <DialogDelete
+        v-model:open="deleteOpen"
+        :entity-key="entityKey"
+        :loading="deleting"
+        @confirm="handleDelete"
+      />
+    </template>
+
+    <template #footer>
+      <Button
+        variant="ghost"
+        class="text-destructive hover:text-destructive"
+        :disabled="deleting"
+        @click="deleteOpen = true"
+      >
+        {{ $t('delete_entity', { entityKey: 'asset' }) }}
+      </Button>
+      <Button :loading="loading" :disabled="!isDirty" @click="handleSave">
+        {{ $t('save') }}
+      </Button>
     </template>
 
     <template #stack>

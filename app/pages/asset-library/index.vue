@@ -192,6 +192,26 @@ function openAsset(asset: Asset) {
   detailAsset.value = asset;
   detailOpen.value = true;
 }
+
+const { copyUrl, download, deleteAsset } = useAssetActions();
+const deleteOpen = ref(false);
+const deleting = ref(false);
+const pendingDelete = ref<Asset | null>(null);
+
+function requestDelete(asset: Asset) {
+  pendingDelete.value = asset;
+  deleteOpen.value = true;
+}
+
+async function confirmDelete() {
+  if (!pendingDelete.value) return;
+  deleting.value = true;
+  const ok = await deleteAsset(pendingDelete.value);
+  deleting.value = false;
+  if (!ok) return;
+  deleteOpen.value = false;
+  pendingDelete.value = null;
+}
 </script>
 
 <template>
@@ -203,6 +223,14 @@ function openAsset(asset: Asset) {
     v-model:open="detailOpen"
     :asset="detailAsset"
     @updated="refresh"
+  />
+
+  <DialogDelete
+    v-model:open="deleteOpen"
+    :entity-key="entityKey"
+    :loading="deleting"
+    @confirm="confirmDelete"
+    @cancel="deleteOpen = false"
   />
 
   <ContentHeader :title="$t(entityKey, 2)">
@@ -335,6 +363,9 @@ function openAsset(asset: Asset) {
               :asset="asset"
               :folder-name="folderName(asset.folderId)"
               @open="openAsset(asset)"
+              @download="download(asset)"
+              @copy-url="copyUrl(asset)"
+              @delete="requestDelete(asset)"
             />
           </div>
           <div
