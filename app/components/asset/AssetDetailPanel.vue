@@ -14,7 +14,7 @@ import { formatFileSize } from '#shared/utils/file';
  */
 const props = defineProps<{ asset: Asset | null }>();
 const open = defineModel<boolean>('open', { default: false });
-const emit = defineEmits<{ updated: [] }>();
+const emit = defineEmits<{ updated: []; replaced: [Asset] }>();
 
 const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
@@ -31,6 +31,7 @@ const loading = ref(false);
 const creatingFolder = ref(false);
 const newFolderName = ref('');
 const translationOpen = ref(false);
+const replaceOpen = ref(false);
 const deleteOpen = ref(false);
 const deleting = ref(false);
 
@@ -225,6 +226,15 @@ async function handleDelete() {
         >
           {{ $t('download') }}
         </ButtonIcon>
+        <ButtonIcon
+          icon="RefreshCw"
+          variant="outline"
+          size="sm"
+          class="flex-1 bg-transparent dark:bg-transparent"
+          @click="replaceOpen = true"
+        >
+          {{ $t('replace') }}
+        </ButtonIcon>
       </div>
 
       <div class="border-border -mx-3 mt-4 mb-6 border-b sm:-mx-6" />
@@ -396,6 +406,12 @@ async function handleDelete() {
           <dd>{{ asset.createdBy }}</dd>
         </div>
       </dl>
+
+      <AssetReplaceDialog
+        v-model:open="replaceOpen"
+        :asset="asset"
+        @replaced="emit('replaced', $event)"
+      />
 
       <DialogDelete
         v-model:open="deleteOpen"

@@ -223,6 +223,7 @@ async function confirmDelete() {
     v-model:open="detailOpen"
     :asset="detailAsset"
     @updated="refresh"
+    @replaced="detailAsset = $event"
   />
 
   <DialogDelete

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { mimeToAssetType } from '#shared/utils/asset';
-import { formatFileSize } from '#shared/utils/file';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 /**
@@ -19,7 +17,6 @@ const open = defineModel<boolean>('open', { default: false });
 const { assetApi } = useGeinsRepository();
 const { folders, refresh: refreshFolders } = useFolders();
 const { resolveIcon } = useLucideIcon();
-const { meta } = useAssetType();
 const { toast } = useToast();
 const { t } = useI18n();
 const { geinsLogError } = useGeinsLog('components/AssetUploadDialog.vue');
@@ -68,14 +65,6 @@ const folderModel = computed({
     folderId.value = value === NO_FOLDER ? null : value;
   },
 });
-
-// Per-file type icon + tint (same source as the grid/list), from the mime type.
-const fileRows = computed(() =>
-  files.value.map((file) => {
-    const info = meta(mimeToAssetType(file.type));
-    return { file, tint: info.tint, icon: resolveIcon(info.icon) };
-  }),
-);
 
 function addFiles(list: FileList | null | undefined) {
   if (list) files.value = [...files.value, ...Array.from(list)];
@@ -244,37 +233,13 @@ async function upload() {
             @change="onPick"
           />
 
-          <div v-if="fileRows.length" class="space-y-2">
-            <div
-              v-for="(row, index) in fileRows"
+          <div v-if="files.length" class="space-y-2">
+            <AssetFileRow
+              v-for="(file, index) in files"
               :key="index"
-              class="bg-muted/40 flex items-center gap-3 rounded-lg px-3 py-2.5"
-            >
-              <div
-                :class="[
-                  row.tint,
-                  'flex size-9 shrink-0 items-center justify-center rounded-lg',
-                ]"
-              >
-                <component :is="row.icon" class="size-5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <div class="truncate text-sm font-semibold">
-                  {{ row.file.name }}
-                </div>
-                <div class="text-muted-foreground text-xs">
-                  {{ formatFileSize(row.file.size) }}
-                </div>
-              </div>
-              <button
-                type="button"
-                class="text-muted-foreground hover:text-foreground shrink-0"
-                :aria-label="$t('remove')"
-                @click="removeFile(index)"
-              >
-                <LucideX class="size-4" />
-              </button>
-            </div>
+              :file="file"
+              @remove="removeFile(index)"
+            />
           </div>
 
           <div class="space-y-1.5">

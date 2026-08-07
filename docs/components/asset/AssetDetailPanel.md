@@ -40,12 +40,21 @@ v-model:open: boolean
 
 Emitted after a successful save **or delete** (the page refreshes the library list).
 
+### `replaced`
+
+```ts
+replaced: [asset: Asset];
+```
+
+Emitted with the updated asset after a file replace; the page sets `detailAsset` to it so the preview refreshes.
+
 ## Actions
 
 An action row under the preview:
 
 - **Copy URL** — writes the asset's `url` to the clipboard (`entity_copied` toast); disabled when the asset has no `url`.
 - **Download** — anchor `download` of `url` (falls back to opening in a new tab); disabled when there is no `url`.
+- **Replace** — opens [`AssetReplaceDialog`](/components/asset/AssetReplaceDialog) to swap the underlying file (same id + metadata).
 
 Footer: **Delete asset** (destructive, left) opens [`DialogDelete`](/components/dialog/DialogDelete) → `assetApi.delete(id)` → refresh `asset-library-list` + toast + close; **Save** (right).
 
