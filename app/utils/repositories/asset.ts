@@ -49,5 +49,23 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         ...fetchOptions,
       });
     },
+
+    /**
+     * Replace an asset's underlying file (multipart) — uploads the new file and
+     * repoints the row's file columns, keeping the same id + metadata. Returns
+     * the updated asset.
+     */
+    async replace(
+      id: string,
+      formData: FormData,
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<Asset> {
+      return await fetch<Asset>(`${ENTITIES.asset.endpoint}/${id}/replace`, {
+        method: 'POST',
+        body: formData,
+        errorContext: { action: 'updating', entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      });
+    },
   };
 }

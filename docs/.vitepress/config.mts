@@ -213,12 +213,20 @@ export default defineConfig({
             items: [
               { text: 'AssetCard', link: '/components/asset/AssetCard.md' },
               {
+                text: 'AssetFileRow',
+                link: '/components/asset/AssetFileRow.md',
+              },
+              {
                 text: 'AssetDetailPanel',
                 link: '/components/asset/AssetDetailPanel.md',
               },
               {
                 text: 'AssetFolderTree',
                 link: '/components/asset/AssetFolderTree.md',
+              },
+              {
+                text: 'AssetReplaceDialog',
+                link: '/components/asset/AssetReplaceDialog.md',
               },
               {
                 text: 'AssetUploadDialog',
