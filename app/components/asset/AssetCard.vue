@@ -79,7 +79,7 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
     <div class="flex flex-col gap-2 p-3">
       <button
         type="button"
-        class="truncate text-left text-sm font-medium hover:underline"
+        class="link-text truncate text-left text-sm"
         @click="emit('open')"
       >
         {{ asset.name }}
