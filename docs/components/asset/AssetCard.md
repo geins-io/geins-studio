@@ -42,7 +42,7 @@ The action menu (hover ellipsis) emits per-action events; the page wires them to
 
 ### `open`
 
-Emitted from the name or the menu's "View details" item — the page opens the detail panel.
+Emitted from the thumbnail, the name, or the menu's "View details" item — the page opens the detail panel.
 
 ### `download` / `copyUrl`
 

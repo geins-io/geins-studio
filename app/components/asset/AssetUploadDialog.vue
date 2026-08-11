@@ -233,7 +233,7 @@ async function upload() {
             @change="onPick"
           />
 
-          <div v-if="files.length" class="space-y-2">
+          <div v-if="files.length" class="max-h-72 space-y-2 overflow-y-auto">
             <AssetFileRow
               v-for="(file, index) in files"
               :key="index"

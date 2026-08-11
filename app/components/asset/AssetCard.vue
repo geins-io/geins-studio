@@ -29,13 +29,20 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
     class="group hover:border-ring/40 gap-0 overflow-hidden py-0 transition-colors hover:shadow-sm"
   >
     <div class="relative">
-      <AssetThumbnail
-        :type="asset.type"
-        :thumb-url="asset.thumbUrl"
-        :alt="asset.name"
-        size="card"
-        class="rounded-none"
-      />
+      <button
+        type="button"
+        class="block w-full cursor-pointer"
+        :aria-label="$t('view_details')"
+        @click="emit('open')"
+      >
+        <AssetThumbnail
+          :type="asset.type"
+          :thumb-url="asset.thumbUrl"
+          :alt="asset.name"
+          size="card"
+          class="rounded-none"
+        />
+      </button>
       <div
         class="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100"
       >
