@@ -56,39 +56,9 @@ interface AssetFormValues {
   channels: string[];
 }
 
-// Dirtiness is derived from a stable snapshot held in this setup scope (the same
-// approach PanelTranslation uses), not from `form.meta.value.dirty`. altText is
-// edited entirely programmatically (the inline current-language input + the
-// translation panel), and the snapshot stays correct even if the panel content
-// is ever remounted — which panel-on-panel used to force via a `:modal` flip
-// before the inline-stack redesign. `keep-value` on each field keeps
-// `form.values` intact across any such remount. See [project_panel_on_panel_dirty_remount].
-const originalSnapshot = ref('');
-function snapshotOf(values: {
-  name?: string;
-  folderId?: string | null;
-  description?: string;
-  altText?: Record<string, string | undefined>;
-  tags?: string[];
-  channels?: string[];
-}): string {
-  const altText = Object.entries(values.altText ?? {})
-    .filter(([, text]) => text?.trim())
-    .sort(([a], [b]) => a.localeCompare(b));
-  return JSON.stringify({
-    name: values.name ?? '',
-    folderId: values.folderId ?? null,
-    description: values.description ?? '',
-    altText,
-    tags: values.tags ?? [],
-    channels: values.channels ?? [],
-  });
-}
-const isDirty = computed(
-  () =>
-    !!originalSnapshot.value &&
-    snapshotOf(form.values) !== originalSnapshot.value,
-);
+// `form.meta.dirty` false-positives on open (undefined fields settling +
+// child input mount emits), so derive dirty from a post-settle snapshot.
+const { isDirty, captureBaseline } = usePanelDirty(() => form.values);
 
 // altText is a LocalizedText map edited via the translation panel; the inline
 // input edits the current language, the panel edits every language.
@@ -124,7 +94,7 @@ watch(open, (value) => {
       channels: [...props.asset.channels],
     };
     form.resetForm({ values });
-    originalSnapshot.value = snapshotOf(values);
+    captureBaseline();
   }
 });
 

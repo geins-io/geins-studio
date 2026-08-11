@@ -59,6 +59,7 @@ watch(open, (value) => {
     // otherwise a stale `true` from a previously-edited buyer leaks over and
     // shows the picker for a buyer with none.
     assignPriceLists.value = (form.values.priceLists?.length ?? 0) > 0;
+    captureBaseline();
   } else {
     buyerExistsAsCustomer.value = false;
     existingCustomer.value = undefined;
@@ -84,7 +85,9 @@ const form = useForm({
   validationSchema: formSchema,
 });
 
-const isDirty = computed(() => form.meta.value.dirty);
+// `form.meta.dirty` false-positives on open (undefined fields settling +
+// child input mount emits), so derive dirty from a post-settle snapshot.
+const { isDirty, captureBaseline } = usePanelDirty(() => form.values);
 const saveLabel = computed(() =>
   t(`${props.mode === 'add' ? 'add' : 'update'}_entity`, { entityKey }),
 );
@@ -169,7 +172,9 @@ watch(
   (newValue) => {
     if (newValue) {
       assignPriceLists.value = true;
-    } else {
+    } else if (form.values.restrictToDedicatedPriceLists) {
+      // Only clear when actually set — a no-op setFieldValue here (e.g. on open
+      // with an unset field) would flip `meta.dirty` and trip the unsaved guard.
       form.setFieldValue('restrictToDedicatedPriceLists', false);
     }
   },
