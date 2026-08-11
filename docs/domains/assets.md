@@ -43,7 +43,7 @@ The contract is **camelCase + `_id`/`_type`** (via `ResponseEntity`), mirroring 
 - **List envelope:** bare arrays today. Consumers must still guard with `Array.isArray()` / a normalizer before `.map()` — the real API may wrap in `{ items }` (per the repository rules in `CLAUDE.md`).
 - **`folderId` filtering** resolves the selected folder + descendants server-side.
 - **Folder delete:** assets fall back to uncategorised (`folder_id` FK is `ON DELETE SET NULL`); child folders cascade.
-- **Upload:** `POST /asset/upload` (multipart) stores each file in the `assets` bucket server-side (service key), derives `sizeBytes` / `mime` / `AssetType` (`mimeToAssetType`), builds the public URL, inserts the row, and returns the created `Asset[]`. Images reuse the original as `thumbUrl` (v0). Deleting an asset removes the row, not the stored object (mock — orphaned objects are harmless).
+- **Upload:** `POST /asset/upload` (multipart) stores each file in the `assets` bucket server-side (service key), derives `sizeBytes` / `mime` / `AssetType` (`mimeToAssetType`), builds the public URL, inserts the row, and returns the created `Asset[]`. Images and SVGs reuse the original as `thumbUrl` (both render in an `<img>`; v0). Deleting an asset removes the row, not the stored object (mock — orphaned objects are harmless).
 - **Replace:** `POST /asset/:id/replace` (multipart, single file) uploads the new file and repoints the existing row's file columns (`url` / `thumbUrl` / `sizeBytes` / `mime` / `type`), keeping the same id, name, and metadata. The old stored object is left in place (mock — harmless). Returns the updated `Asset`.
 
 ## Mock backend (Supabase)
