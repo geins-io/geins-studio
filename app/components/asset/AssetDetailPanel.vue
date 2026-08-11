@@ -128,6 +128,11 @@ watch(open, (value) => {
   }
 });
 
+function cancelCreateFolder() {
+  creatingFolder.value = false;
+  newFolderName.value = '';
+}
+
 async function createFolder() {
   const name = newFolderName.value.trim();
   if (!name) {
@@ -262,12 +267,16 @@ async function handleDelete() {
                 <div v-if="creatingFolder" class="flex gap-2">
                   <Input
                     v-model="newFolderName"
+                    class="flex-1"
                     :placeholder="$t('folder_name')"
                     @keydown.enter.prevent="createFolder"
-                    @keydown.esc.prevent="creatingFolder = false"
+                    @keydown.esc.prevent="cancelCreateFolder"
                   />
                   <Button variant="secondary" size="lg" @click="createFolder">
                     {{ $t('save') }}
+                  </Button>
+                  <Button variant="ghost" size="lg" @click="cancelCreateFolder">
+                    {{ $t('cancel') }}
                   </Button>
                 </div>
                 <div v-else class="flex gap-2">
