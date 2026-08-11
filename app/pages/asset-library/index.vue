@@ -5,8 +5,6 @@ import { ENTITIES } from '#shared/utils/entities';
 import { cn } from '@/utils/index';
 import type { ColumnDef } from '@tanstack/vue-table';
 
-definePageMeta({ pageType: 'list' });
-
 const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
 const { getColumns, getBasicCellStyle, getBasicHeaderStyle } =
@@ -243,11 +241,10 @@ async function confirmDelete() {
   </ContentHeader>
 
   <!-- Toolbar: folder toggle + search (left), view toggle (right) -->
-  <div class="flex flex-wrap items-center gap-2 border-t pt-4">
+  <div class="flex flex-wrap items-center gap-2">
     <Button
-      variant="outline"
+      :variant="showFolders ? 'default' : 'outline'"
       size="icon"
-      :class="showFolders && 'bg-accent'"
       :aria-label="$t('folder', 2)"
       @click="showFolders = !showFolders"
     >
@@ -258,7 +255,7 @@ async function confirmDelete() {
       :placeholder="$t('search')"
       class="w-full sm:w-64"
     />
-    <div class="ml-auto flex gap-1">
+    <ButtonGroup class="ml-auto">
       <Button
         :variant="view === 'grid' ? 'default' : 'outline'"
         size="icon"
@@ -275,7 +272,7 @@ async function confirmDelete() {
       >
         <LucideList class="size-4" />
       </Button>
-    </div>
+    </ButtonGroup>
   </div>
 
   <SidebarProvider class="mt-4 min-h-0! items-start gap-4">
@@ -289,7 +286,7 @@ async function confirmDelete() {
       </Sidebar>
     </Transition>
 
-    <div class="min-w-0 flex-1">
+    <div class="min-w-0 flex-1 pb-8">
       <!-- LIST VIEW -->
       <NuxtErrorBoundary v-if="view === 'list'">
         <TableView
