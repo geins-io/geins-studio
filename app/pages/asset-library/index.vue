@@ -126,7 +126,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
           'button',
           {
             type: 'button',
-            class: 'text-left font-medium hover:underline',
+            class: 'link-text text-left',
             onClick: () => openAsset(row.original),
           },
           row.original.name,
