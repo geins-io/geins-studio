@@ -49,8 +49,9 @@ export default defineEventHandler(async (event): Promise<Asset> => {
       size_bytes: file.data.length,
       mime,
       url,
-      // v0: reuse the original as the thumbnail for images; no thumb otherwise.
-      thumb_url: type === 'image' ? url : null,
+      // v0: reuse the original as the thumbnail for images + SVGs (both render
+      // directly in an <img>); no thumb otherwise.
+      thumb_url: type === 'image' || type === 'svg' ? url : null,
     })
     .eq('id', id)
     .select('*')
