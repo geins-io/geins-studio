@@ -48,24 +48,18 @@ const filtered = computed(() => {
   );
 });
 
-// Grid client-side pagination (list view paginates via TableView).
+// Grid load-more (list view paginates via TableView). Show a growing window
+// over the fetched list; reset it whenever the result set changes.
 const GRID_PAGE_SIZE = 30;
-const page = ref(1);
-const pageCount = computed(() =>
-  Math.max(1, Math.ceil(filtered.value.length / GRID_PAGE_SIZE)),
-);
-watch([filtered, view], () => {
-  if (page.value > pageCount.value) page.value = 1;
+const visibleCount = ref(GRID_PAGE_SIZE);
+watch(filtered, () => {
+  visibleCount.value = GRID_PAGE_SIZE;
 });
-watch(selectedFolder, () => {
-  page.value = 1;
-});
-const pagedAssets = computed(() =>
-  filtered.value.slice(
-    (page.value - 1) * GRID_PAGE_SIZE,
-    page.value * GRID_PAGE_SIZE,
-  ),
-);
+const pagedAssets = computed(() => filtered.value.slice(0, visibleCount.value));
+const hasMore = computed(() => visibleCount.value < filtered.value.length);
+function loadMore() {
+  visibleCount.value += GRID_PAGE_SIZE;
+}
 
 // List columns — useColumns generates tags + modified; the type-badge,
 // thumbnail, name-opens-panel, and byte-formatted size need custom cells, so
@@ -366,30 +360,9 @@ async function confirmDelete() {
               @delete="requestDelete(asset)"
             />
           </div>
-          <div
-            v-if="pageCount > 1"
-            class="mt-6 flex items-center justify-end gap-3"
-          >
-            <span class="text-muted-foreground text-sm">
-              {{ $t('page_of', { page, total: pageCount }) }}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              :disabled="page <= 1"
-              :aria-label="$t('previous')"
-              @click="page--"
-            >
-              <LucideChevronLeft class="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              :disabled="page >= pageCount"
-              :aria-label="$t('next')"
-              @click="page++"
-            >
-              <LucideChevronRight class="size-4" />
+          <div v-if="hasMore" class="mt-6 flex justify-center">
+            <Button variant="outline" @click="loadMore">
+              {{ $t('load_more') }}
             </Button>
           </div>
         </template>

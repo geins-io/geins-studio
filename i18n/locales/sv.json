@@ -193,6 +193,7 @@
   "type": "Typ",
   "size": "Storlek",
   "search": "Sök",
+  "load_more": "Ladda fler",
   "grid_view": "Rutnätsvy",
   "list_view": "Listvy",
   "upload_assets": "Ladda upp filer",
