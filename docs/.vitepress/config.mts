@@ -112,6 +112,7 @@ export default defineConfig({
               { text: 'usePageTitle', link: '/composables/usePageTitle.md' },
               { text: 'usePrice', link: '/composables/usePrice.md' },
               { text: 'usePanelStack', link: '/composables/usePanelStack.md' },
+              { text: 'usePanelDirty', link: '/composables/usePanelDirty.md' },
               { text: 'useAssetActions', link: '/composables/useAssetActions.md' },
               { text: 'useAssetType', link: '/composables/useAssetType.md' },
               { text: 'useFolders', link: '/composables/useFolders.md' },
