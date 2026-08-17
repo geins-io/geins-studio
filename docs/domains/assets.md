@@ -17,7 +17,7 @@ The Assets domain manages media files (images, SVGs, documents, PDFs, video, aud
 
 **Asset types** (`AssetType`) — `image | svg | doc | pdf | video | audio | other`. Drives the type badge and thumbnail rendering.
 
-**Localized alt text** (`LocalizedText`) — Alt text is a locale-keyed map (`{ en: '…', sv: '…' }`), not a single string. The available locales come from the **account/channel language setup**, not a fixed list — this feeds the global translation panel (Phase 2), not this domain alone.
+**Localized fields** (`localizations`) — Translatable text follows the product-standard shape: `localizations: Localized<AssetLocalizations>` = `{ en: { altText }, sv: { altText } }` (locale → fields). The top-level `altText` on the returned `Asset` is the **default-language** value, **derived server-side** from `localizations` (single source of truth; the mapper reads `localizations[DEFAULT_LANG].altText`). Writes send `localizations` only. Available locales come from the **account/channel language setup**, feeding the global translation panel. (`LocalizedText` — a plain locale→string map — is still used inside the translation panel UI for a single field.)
 
 **Channels** — String tags marking where an asset is published (web, mobile, …).
 
@@ -53,20 +53,22 @@ The mock lives entirely under `server/` and never reaches the client:
 - **`server/utils/assets-mock.ts`** — server-only Supabase client (secret/`service_role` key from `runtimeConfig.private`, **bypasses RLS**), the `toAsset`/`toFolder` + `assetColumns`/`folderColumns` mappers, and `descendantFolderIds`.
 - **`server/api/asset/**`** — dedicated Nitro routes that intercept before the catch-all proxy (`server/api/[...].ts`).
 - **`supabase/migrations/0001_assets_mock.sql`** — schema, RLS (enabled, **no policies** → public data API denied, server key bypasses), public storage buckets (`assets`, `asset-thumbnails`), and seed data.
+- **`supabase/migrations/0003_asset_localizations.sql`** — migrates `alt_text` (locale→string) to `localizations` (locale→fields) and drops `alt_text`. Idempotent; run it in the SQL editor before the localizations changes work.
 
 **Casing is the contract boundary.** Postgres columns are idiomatic `snake_case`; the routes **map** rows to the camelCase contract and never return raw rows (a raw PostgREST proxy would leak `snake_case`).
 
-| Contract (camelCase)      | Column (snake_case)                |
-| ------------------------- | ---------------------------------- |
-| `_id`                     | `id`                               |
-| `_type`                   | _(literal `'asset'` / `'folder'`)_ |
-| `folderId`                | `folder_id`                        |
-| `thumbUrl`                | `thumb_url`                        |
-| `sizeBytes`               | `size_bytes`                       |
-| `altText`                 | `alt_text` (jsonb)                 |
-| `parentId`                | `parent_id`                        |
-| `sortOrder`               | `sort_order`                       |
-| `createdAt` / `updatedAt` | `created_at` / `updated_at`        |
+| Contract (camelCase)      | Column (snake_case)                  |
+| ------------------------- | ------------------------------------ |
+| `_id`                     | `id`                                 |
+| `_type`                   | _(literal `'asset'` / `'folder'`)_   |
+| `folderId`                | `folder_id`                          |
+| `thumbUrl`                | `thumb_url`                          |
+| `sizeBytes`               | `size_bytes`                         |
+| `localizations`           | `localizations` (jsonb)              |
+| `altText` (derived)       | _(from `localizations[en].altText`)_ |
+| `parentId`                | `parent_id`                          |
+| `sortOrder`               | `sort_order`                         |
+| `createdAt` / `updatedAt` | `created_at` / `updated_at`          |
 
 ## Mock → real swap
 

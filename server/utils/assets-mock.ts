@@ -13,6 +13,10 @@ import { useRuntimeConfig } from '#imports';
  * repo/UI change (see docs/domains/assets.md).
  */
 
+// Default language for deriving the top-level `altText` from `localizations`
+// (mirrors how a channel default resolves the inline value in the real API).
+const DEFAULT_LANG = 'en';
+
 // ── Supabase client (secret/service_role key — bypasses RLS, never client-side)
 let client: SupabaseClient | null = null;
 
@@ -43,7 +47,7 @@ export interface AssetRow {
   url: string | null;
   thumb_url: string | null;
   description: string | null;
-  alt_text: Record<string, string> | null;
+  localizations: Record<string, { altText?: string }> | null;
   tags: string[] | null;
   channels: string[] | null;
   created_by: string | null;
@@ -69,7 +73,9 @@ export function toAsset(row: AssetRow): Asset {
     type: row.type,
     folderId: row.folder_id,
     description: row.description,
-    altText: row.alt_text ?? {},
+    localizations: row.localizations ?? {},
+    // Default-language value surfaced inline (derived; source of truth is localizations).
+    altText: row.localizations?.[DEFAULT_LANG]?.altText ?? null,
     tags: row.tags ?? [],
     channels: row.channels ?? [],
     sizeBytes: row.size_bytes,
@@ -103,7 +109,7 @@ export function assetColumns(
   if ('type' in body) row.type = body.type;
   if ('folderId' in body) row.folder_id = body.folderId;
   if ('description' in body) row.description = body.description;
-  if ('altText' in body) row.alt_text = body.altText;
+  if ('localizations' in body) row.localizations = body.localizations;
   if ('tags' in body) row.tags = body.tags;
   if ('channels' in body) row.channels = body.channels;
   return row;
