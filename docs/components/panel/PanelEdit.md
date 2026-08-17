@@ -5,9 +5,9 @@
 ## Features
 
 - **Standard chrome** — title/description header, body slot, footer with save + cancel (overridable via the `#footer` slot).
-- **Two variants** (`variant`): `sheet` (default) is a modal [`Sheet`](/components/shadcn-vue) for a top-level panel; `inline` is a plain `fixed` slide-over for a panel that STACKS on top of a `sheet` (see below).
+- **Automatic panel-on-panel**: the first panel opens as a modal [`Sheet`](/components/shadcn-vue); any panel opened while another is already open renders as a stacked slide-over and teleports into the bottom sheet (see below). No `variant` prop or manual wiring.
 - **Opt-in unsaved-changes guard** — pass `:dirty` (e.g. vee-validate `form.meta.value.dirty`, or a snapshot compare). While dirty, every close path (X, Esc, overlay, Cancel, backdrop) is intercepted and routed through [`DialogUnsavedChanges`](/components/dialog/DialogUnsavedChanges); confirming emits `discard` and closes. Dirty state stays in the consumer — no per-panel tracking.
-- **Panel-on-panel** — a `sheet` stays `modal` the whole time and renders its stacked children (`inline` panels) inside its own content via the `#stack` slot, so they live in the modal subtree (Reka `hideOthers` / focus-trap stay correct) and the base is **never remounted**. While a child is open the base recedes (shift-left + dim) and goes `inert`; a click-catcher over the receded base closes the top panel (through the guard). Stacking membership is tracked by [`usePanelStack`](/composables/usePanelStack).
+- **Panel-on-panel** — the bottom sheet stays `modal` the whole time and exposes a teleport container inside its content ([`usePanelStack`](/composables/usePanelStack) `registerTarget`). Stacked panels `<Teleport>` into it, so they live in the modal subtree (Reka `hideOthers` / focus-trap stay correct) and the base is **never remounted**. Which panels are open (and their order) is global stack state, so a stacked panel can be rendered anywhere — e.g. a translatable field deep in the base's body. While a panel is above, the one below recedes (shift-left + dim) and goes `inert`; a click-catcher over it closes the top panel (through the guard). Layers stack by index for N levels.
 
 ::: warning Why the base stays modal
 Toggling the base `Sheet`'s `modal` prop makes Reka swap `DialogContentModal` ↔ `DialogContentNonModal` — a full remount of the base content that wipes child `FormField` values and resets `form.meta.dirty`. Keeping the base modal and rendering stacked panels inside it (rather than as separate modal Sheets) avoids that. The card `bg`/`shadow` sit on an inner wrapper, not on `SheetContent`, because a `transform`/`filter` on `SheetContent` would drag the `fixed` stacked child along with it.
@@ -54,16 +54,6 @@ title: string;
 ```
 
 Header title (also the accessible description when `description` is omitted).
-
-### `variant`
-
-```ts
-variant?: 'sheet' | 'inline';
-```
-
-- **Default:** `'sheet'`
-
-`sheet` renders a modal [`Sheet`](/components/shadcn-vue) (top-level panel). `inline` renders a plain `fixed` slide-over with no Reka Dialog — for a panel that stacks over a `sheet`. Place an `inline` panel inside the base sheet's `#stack` slot so it lands in the base's modal subtree.
 
 ### `description`
 
@@ -170,17 +160,13 @@ Optional element that opens the panel (rendered `as-child` in `SheetTrigger`). O
 
 Overrides the default cancel/save footer.
 
-### `stack`
+## Stacking
 
-Stacked (`inline`) child panels, rendered inside the base sheet's content so they share its modal subtree (only meaningful on a `sheet` variant). Example: [`AssetDetailPanel`](/components/asset/AssetDetailPanel) places [`PanelTranslation`](/components/panel/PanelTranslation) here.
+There is no slot or prop to wire — just render a second `PanelEdit`-based panel (e.g. [`PanelTranslation`](/components/panel/PanelTranslation)) anywhere and open it while the base is open. It detects the open base via [`usePanelStack`](/composables/usePanelStack), renders as a stacked slide-over, and teleports into the base sheet.
 
 ```vue
-<PanelEdit v-model:open="open" :title="title">
-  <!-- body -->
-  <template #stack>
-    <PanelTranslation v-model:open="translationOpen" v-model="value" />
-  </template>
-</PanelEdit>
+<PanelEdit v-model:open="open" :title="title"><!-- body --></PanelEdit>
+<PanelTranslation v-model:open="translationOpen" v-model="value" />
 ```
 
 ## Dependencies

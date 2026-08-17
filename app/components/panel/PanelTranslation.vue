@@ -92,7 +92,6 @@ function handleDiscard() {
 <template>
   <PanelEdit
     v-model:open="open"
-    variant="inline"
     width="narrow"
     :title="$t('translations')"
     :description="subtitle"

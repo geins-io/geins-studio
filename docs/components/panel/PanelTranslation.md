@@ -1,6 +1,6 @@
 # `PanelTranslation`
 
-`PanelTranslation` is the global translation panel — it edits a locale-keyed value ([`LocalizedText`](/domains/assets)) across the account's configured languages. It is built on [`PanelEdit`](/components/panel/PanelEdit) with `variant="inline"`, so it stacks over a base panel (panel-on-panel) from the base's `#stack` slot and reuses the shared unsaved-changes guard.
+`PanelTranslation` is the global translation panel — it edits a locale-keyed value ([`LocalizedText`](/domains/assets)) across the account's configured languages. It is built on [`PanelEdit`](/components/panel/PanelEdit), so when opened while another panel is open it automatically stacks over it (panel-on-panel) and reuses the shared unsaved-changes guard.
 
 ## Features
 
@@ -38,17 +38,15 @@ const translationsOpen = ref(false);
         </div>
       </FormItem>
     </FormField>
-
-    <!-- stacked inside the base panel so it shares the modal subtree -->
-    <template #stack>
-      <PanelTranslation
-        v-model="altText"
-        v-model:open="translationsOpen"
-        :field-label="$t('alt_text')"
-        :subject="asset.name"
-      />
-    </template>
   </PanelEdit>
+
+  <!-- Auto-stacks over the base panel (panel-on-panel) — no wiring needed. -->
+  <PanelTranslation
+    v-model="altText"
+    v-model:open="translationsOpen"
+    :field-label="$t('alt_text')"
+    :subject="asset.name"
+  />
 </template>
 ```
 
@@ -90,7 +88,7 @@ Panel visibility.
 
 ## Dependencies
 
-- [`PanelEdit`](/components/panel/PanelEdit) (`variant="inline"`) — shell, stacking, unsaved guard
+- [`PanelEdit`](/components/panel/PanelEdit) — shell, auto-stacking, unsaved guard
 - [`FlagIcon`](/components/FlagIcon) + `languageToCountryCode` — per-language flags
 - [`useAccountStore`](/stores/account) — configured languages + current language
 - shadcn-vue `Input`, `Label`, [`Empty`](/components/shadcn-vue)
