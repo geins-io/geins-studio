@@ -89,7 +89,13 @@ watch(open, (value) => {
       name: props.asset.name,
       folderId: props.asset.folderId,
       description: props.asset.description ?? '',
-      altText: { ...(props.asset.altText ?? {}) },
+      // Edit alt text as a locale→string map; localizations is the wire shape.
+      altText: Object.fromEntries(
+        Object.entries(props.asset.localizations ?? {}).map(([lang, loc]) => [
+          lang,
+          loc.altText ?? '',
+        ]),
+      ),
       tags: [...props.asset.tags],
       channels: [...props.asset.channels],
     };
@@ -134,7 +140,11 @@ async function handleSave() {
       name: form.values.name,
       folderId: form.values.folderId ?? null,
       description: form.values.description || null,
-      altText: (form.values.altText as LocalizedText | undefined) ?? {},
+      localizations: Object.fromEntries(
+        Object.entries((form.values.altText as LocalizedText | undefined) ?? {})
+          .filter(([, text]) => text?.trim())
+          .map(([lang, text]) => [lang, { altText: text }]),
+      ),
       tags: form.values.tags ?? [],
       channels: form.values.channels ?? [],
     };

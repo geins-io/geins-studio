@@ -6,6 +6,7 @@ import type {
   UpdateEntity,
   ResponseEntity,
   Price,
+  Localized,
 } from './Global';
 import type { SelectorSelectionQueryBase } from './Selector';
 
@@ -120,10 +121,6 @@ export interface VariantValues {
   groupKey: string;
   dimensions: string[];
   values: Record<string, string>;
-}
-
-export interface Localized<T> {
-  [lang: string]: T;
 }
 
 export interface CurrencyConverted<T> {

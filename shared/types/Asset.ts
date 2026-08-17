@@ -3,6 +3,7 @@ import type {
   UpdateEntity,
   ResponseEntity,
   ApiOptions,
+  Localized,
 } from './index';
 
 // =============================================================================
@@ -30,6 +31,11 @@ export type AssetType =
  */
 export type LocalizedText = Record<string, string>;
 
+/** Per-locale translatable asset fields (product-standard `localizations`). */
+export interface AssetLocalizations {
+  altText?: string;
+}
+
 /** Editable/creatable asset fields. Server-derived fields live on {@link Asset}. */
 export interface AssetBase {
   name: string;
@@ -37,7 +43,8 @@ export interface AssetBase {
   /** Folder acts as a backend category filter; `null` = uncategorised. */
   folderId: string | null;
   description?: string | null;
-  altText?: LocalizedText;
+  /** Locale-keyed translatable fields, e.g. `{ en: { altText }, sv: { altText } }`. */
+  localizations?: Localized<AssetLocalizations>;
   tags: string[];
   channels: string[];
 }
@@ -47,6 +54,8 @@ export type AssetUpdate = UpdateEntity<AssetBase>;
 
 /** Asset as returned by the API — base + identity + server-managed fields. */
 export interface Asset extends ResponseEntity<AssetBase> {
+  /** Default-language alt text, derived server-side from `localizations`. */
+  altText: string | null;
   sizeBytes: number;
   mime: string | null;
   url: string | null;

@@ -217,3 +217,9 @@ export interface FlagText {
   code: string;
   label: string;
 }
+
+/** Locale-keyed localized fields: `{ en: { … }, sv: { … } }`. Shared shape for
+ * entity `localizations` (products, assets, …). */
+export interface Localized<T> {
+  [lang: string]: T;
+}
