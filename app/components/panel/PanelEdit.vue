@@ -3,32 +3,26 @@ import { VisuallyHidden } from 'reka-ui';
 
 /**
  * Reusable slide-in edit panel — the standard shell for route-less entity
- * editing (asset detail, company buyer, …). Two variants share one set of
- * header/body/footer + unsaved-changes logic:
+ * editing (asset detail, company buyer, …).
  *
- * - `sheet` (default): a modal Reka `Sheet`, for a top-level panel.
- * - `inline`: a plain `fixed` slide-over (no Reka Dialog), for a panel that
- *   STACKS on top of a `sheet`. It is placed inside the base sheet's content
- *   (via the base's `#stack` slot) so it lives within the base's modal subtree
- *   — Reka's `hideOthers` therefore never hides it and the base's focus trap
- *   still reaches it. Crucially the base panel stays `modal` the whole time, so
- *   Reka never swaps its Dialog content component (modal ↔ non-modal) and the
- *   base is never remounted. Remounting used to wipe every child `FormField`
- *   and reset `form.meta.dirty` — see the panel-on-panel dirty gotcha.
+ * Panel-on-panel is automatic (no per-consumer wiring): the first panel opens
+ * as a modal Reka `Sheet`; any panel opened while another is already open
+ * renders as a stacked `inline` slide-over and `<Teleport>`s into the bottom
+ * sheet's content container (registered via `usePanelStack`). That keeps stacked
+ * panels inside the base's modal subtree — Reka's `hideOthers` never hides them
+ * and its focus trap reaches them — while the base stays `modal` throughout, so
+ * Reka never swaps its Dialog content (which would remount + wipe child fields).
+ * While a panel is above, the one below recedes (shift-left + dim) and goes
+ * `inert`; a click-catcher over it closes the top panel (through the guard).
  *
- * Unsaved changes are NOT tracked here: pass `:dirty` (e.g. vee-validate's
- * `form.meta.value.dirty`, or a snapshot compare). When dirty, any close attempt
- * (X, Esc, overlay, Cancel) is intercepted and routed through
- * `DialogUnsavedChanges`; confirming emits `discard` and closes.
- *
- * A `sheet` panel exposes a `#stack` slot for its stacked (`inline`) children
- * and recedes its own content (`hasPanelAbove`) while one is open.
+ * Unsaved changes are NOT tracked here: pass `:dirty` (e.g. `usePanelDirty`).
+ * When dirty, any close attempt (X, Esc, overlay, Cancel, backdrop) is routed
+ * through `DialogUnsavedChanges`; confirming emits `discard` and closes.
  */
 const props = withDefaults(
   defineProps<{
     title: string;
     description?: string;
-    variant?: 'sheet' | 'inline';
     width?: 'narrow' | 'medium' | 'wide';
     /** When true, closing prompts via DialogUnsavedChanges first. */
     dirty?: boolean;
@@ -42,7 +36,6 @@ const props = withDefaults(
     entityKey?: string;
   }>(),
   {
-    variant: 'sheet',
     width: 'medium',
     dirty: false,
     loading: false,
@@ -59,9 +52,8 @@ const emit = defineEmits<{
   discard: [];
 }>();
 
-// A `sheet` base recedes while a stacked (`inline`) panel is open. Both variants
-// register here so an inline child's open state drives its base's hasPanelAbove.
-const { hasPanelAbove } = usePanelStack(open);
+const { index, hasPanelAbove, isStacked, stackTarget, registerTarget } =
+  usePanelStack(open);
 
 const unsavedOpen = ref(false);
 
@@ -75,6 +67,9 @@ const widthClass = computed(() => {
       return 'w-[96vw] max-w-[550px]';
   }
 });
+
+// Stacked panels layer by stack position (base sheet is z-50).
+const stackZ = computed(() => 50 + index.value * 10);
 
 function requestClose() {
   if (props.dirty && !props.loading) {
@@ -102,8 +97,10 @@ function confirmDiscard() {
 </script>
 
 <template>
+  <!-- Bottom panel: a modal Sheet that also hosts the teleport target for any
+       stacked panels. -->
   <Sheet
-    v-if="variant === 'sheet'"
+    v-if="!isStacked"
     :open="open"
     :modal="true"
     @update:open="onOpenChange"
@@ -113,13 +110,13 @@ function confirmDiscard() {
     </SheetTrigger>
     <!-- bg/shadow live on the inner wrapper so the WHOLE card recedes as one
          unit; SheetContent stays visually neutral because a transform/filter on
-         it would drag the `fixed` #stack slide-over (a descendant) along too. -->
+         it would drag the `fixed` stacked panels (descendants) along too. -->
     <SheetContent :width="width" class="bg-transparent shadow-none">
       <div
         class="bg-card flex h-full min-h-0 w-full flex-col shadow-lg transition-transform duration-300 ease-in-out"
         :class="
           hasPanelAbove &&
-          'pointer-events-none -translate-x-[72px] brightness-95'
+          'pointer-events-none translate-x-[-72px] brightness-95'
         "
         :inert="hasPanelAbove"
       >
@@ -153,7 +150,9 @@ function confirmDiscard() {
         </SheetFooter>
       </div>
 
-      <slot name="stack" />
+      <!-- Teleport destination for stacked panels (sibling of the receding
+           wrapper, so it is not transformed with it). -->
+      <div :ref="registerTarget" />
     </SheetContent>
 
     <DialogUnsavedChanges
@@ -164,18 +163,27 @@ function confirmDiscard() {
     />
   </Sheet>
 
-  <!-- inline: stacked slide-over rendered inside the base sheet's content -->
-  <template v-else>
-    <!-- Click-catcher over the receded base panel: closes this panel (through
-         the unsaved guard), like a scrim dismiss. -->
-    <div v-if="open" class="fixed inset-0 z-[55]" @click="requestClose" />
+  <!-- Stacked panel: a plain slide-over teleported into the bottom sheet's
+       container so it shares the modal subtree. -->
+  <Teleport v-else :to="stackTarget" :disabled="!stackTarget">
+    <!-- Click-catcher over the receded panel below: closes this one (guarded). -->
+    <div
+      v-if="open"
+      class="fixed inset-0"
+      :style="{ zIndex: stackZ - 5 }"
+      @click="requestClose"
+    />
     <div
       role="dialog"
+      :style="{ zIndex: stackZ }"
       :class="[
         widthClass,
-        'bg-card fixed inset-y-0 right-0 z-[60] flex flex-col shadow-2xl transition-transform duration-300 ease-in-out',
+        'bg-card fixed inset-y-0 right-0 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out',
         open ? 'translate-x-0' : 'pointer-events-none translate-x-full',
+        hasPanelAbove &&
+          'pointer-events-none translate-x-[-72px] brightness-95',
       ]"
+      :inert="hasPanelAbove"
     >
       <div class="flex flex-col gap-y-2 border-b p-4">
         <h2 class="text-foreground text-xl font-semibold sm:text-2xl">
@@ -221,5 +229,5 @@ function confirmDiscard() {
       :loading="false"
       @confirm="confirmDiscard"
     />
-  </template>
+  </Teleport>
 </template>

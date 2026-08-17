@@ -1,27 +1,35 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComponentPublicInstance, ComputedRef, Ref } from 'vue';
 
 /**
- * Tracks the global open order of stacking panels so a base panel knows when
- * another has opened on top of it (panel-on-panel).
+ * Global open-order tracker for stacking panels (panel-on-panel), so a panel
+ * opened while another is already open renders as a stacked (`inline`) slide-over
+ * instead of its own modal sheet — no per-consumer wiring.
  *
- * The crux of the focus-trap fix lives in the consumer (`PanelEdit`): only the
- * TOP panel is rendered `modal`, so exactly one Reka `FocusScope` traps at a
- * time and Reka's `hideOthers` marks every lower panel inert. Without this,
- * nested trapped FocusScopes fight and a `MutationObserver` yanks focus to the
- * panel start — the reason an inline combobox in a stacked panel loses focus.
+ * The bottom (first-opened) panel is a modal Reka `Sheet` and registers a
+ * teleport container inside its content (`registerTarget`). Stacked panels
+ * `<Teleport>` into that container (`stackTarget`) so they live in the base's
+ * modal subtree — Reka's `hideOthers` never hides them and its focus trap
+ * reaches them. The base stays `modal` throughout (no content-swap remount).
  *
- * Order = open order; the last id in the stack is the top. Only panels that
- * call this participate, so unrelated Sheets elsewhere are unaffected.
+ * See PanelEdit for the consumer; docs/components/panel/PanelEdit.md.
  */
 const stack = ref<symbol[]>([]);
+// The bottom sheet's teleport container; stacked panels render into it.
+const stackTarget = ref<HTMLElement | null>(null);
 
 export interface UsePanelStackReturn {
-  /** This panel is the top-most open panel (should be modal + interactive). */
+  /** 0-based position from the bottom of the stack (-1 when closed). */
+  index: ComputedRef<number>;
+  /** This panel is the top-most open panel. */
   isTop: ComputedRef<boolean>;
   /** Another panel opened above this one (should recede + go inert). */
   hasPanelAbove: ComputedRef<boolean>;
-  /** 0-based position from the bottom of the stack (-1 when closed). */
-  index: ComputedRef<number>;
+  /** Latched at open: a panel was already open → render as a stacked inline panel. */
+  isStacked: ComputedRef<boolean>;
+  /** Shared teleport target — the bottom sheet's content container. */
+  stackTarget: Ref<HTMLElement | null>;
+  /** Bottom sheet registers its container (function ref: element on mount, null on unmount). */
+  registerTarget: (el: Element | ComponentPublicInstance | null) => void;
 }
 
 export function usePanelStack(
@@ -55,6 +63,23 @@ export function usePanelStack(
   const hasPanelAbove = computed(
     () => index.value !== -1 && index.value < stack.value.length - 1,
   );
+  // Render as a stacked slide-over when open above the bottom, OR — while
+  // closed — whenever another panel is open (pre-mount off-screen so the
+  // open/close slide transition runs instead of mounting/unmounting).
+  const isStacked = computed(() =>
+    open.value ? index.value > 0 : stack.value.length > 0,
+  );
 
-  return { isTop, hasPanelAbove, index };
+  function registerTarget(el: Element | ComponentPublicInstance | null) {
+    stackTarget.value = el instanceof HTMLElement ? el : null;
+  }
+
+  return {
+    index,
+    isTop,
+    hasPanelAbove,
+    isStacked,
+    stackTarget,
+    registerTarget,
+  };
 }

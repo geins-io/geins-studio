@@ -423,14 +423,13 @@ async function handleDelete() {
         {{ $t('save') }}
       </Button>
     </template>
-
-    <template #stack>
-      <PanelTranslation
-        v-model:open="translationOpen"
-        v-model="altText"
-        :field-label="$t('alt_text')"
-        :subject="asset?.name"
-      />
-    </template>
   </PanelEdit>
+
+  <!-- Auto-stacks over the detail panel (panel-on-panel) via usePanelStack. -->
+  <PanelTranslation
+    v-model:open="translationOpen"
+    v-model="altText"
+    :field-label="$t('alt_text')"
+    :subject="asset?.name"
+  />
 </template>
