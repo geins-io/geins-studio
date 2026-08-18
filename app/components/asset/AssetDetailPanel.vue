@@ -20,7 +20,6 @@ const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
 const { formatDate } = useDate();
 const { folders, refresh: refreshFolders } = useFolders();
-const { currentLanguage } = storeToRefs(useAccountStore());
 const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
 const { copyUrl, download, deleteAsset } = useAssetActions();
 
@@ -30,7 +29,6 @@ const NO_FOLDER = '__none__';
 const loading = ref(false);
 const creatingFolder = ref(false);
 const newFolderName = ref('');
-const translationOpen = ref(false);
 const replaceOpen = ref(false);
 const deleteOpen = ref(false);
 const deleting = ref(false);
@@ -60,26 +58,11 @@ interface AssetFormValues {
 // child input mount emits), so derive dirty from a post-settle snapshot.
 const { isDirty, captureBaseline } = usePanelDirty(() => form.values);
 
-// altText is a LocalizedText map edited via the translation panel; the inline
-// input edits the current language, the panel edits every language.
+// altText is a LocalizedText map (locale→string) bound to FormTranslatableField,
+// mapped to/from the wire `localizations` shape at load/save.
 const altText = computed<LocalizedText>({
   get: () => (form.values.altText as LocalizedText | undefined) ?? {},
   set: (value) => form.setFieldValue('altText', value),
-});
-const currentAltText = computed<string>({
-  get: () => altText.value[currentLanguage.value] ?? '',
-  set: (value) => {
-    if (value) {
-      form.setFieldValue('altText', {
-        ...altText.value,
-        [currentLanguage.value]: value,
-      });
-    } else {
-      // Drop the current language without a dynamic delete.
-      const { [currentLanguage.value]: _removed, ...rest } = altText.value;
-      form.setFieldValue('altText', rest);
-    }
-  },
 });
 watch(open, (value) => {
   if (value && props.asset) {
@@ -310,23 +293,12 @@ async function handleDelete() {
             <FormField v-if="asset.type === 'image'" name="altText" keep-value>
               <FormItem>
                 <FormLabel :optional="true">{{ $t('alt_text') }}</FormLabel>
-                <div class="relative">
-                  <Input
-                    v-model="currentAltText"
-                    :placeholder="$t('alt_text_placeholder')"
-                    class="pr-11"
-                  />
-                  <button
-                    type="button"
-                    class="absolute top-1/2 right-3 -translate-y-1/2 transition-opacity hover:opacity-80"
-                    :aria-label="$t('translations')"
-                    @click="translationOpen = true"
-                  >
-                    <FlagIcon
-                      :country-code="languageToCountryCode(currentLanguage)"
-                    />
-                  </button>
-                </div>
+                <FormTranslatableField
+                  v-model="altText"
+                  :label="$t('alt_text')"
+                  :placeholder="$t('alt_text_placeholder')"
+                  :subject="asset.name"
+                />
               </FormItem>
             </FormField>
 
@@ -424,12 +396,4 @@ async function handleDelete() {
       </Button>
     </template>
   </PanelEdit>
-
-  <!-- Auto-stacks over the detail panel (panel-on-panel) via usePanelStack. -->
-  <PanelTranslation
-    v-model:open="translationOpen"
-    v-model="altText"
-    :field-label="$t('alt_text')"
-    :subject="asset?.name"
-  />
 </template>
