@@ -162,6 +162,8 @@ async function handleDelete() {
     :entity-key="entityKey"
     :dirty="isDirty"
     :loading="loading"
+    :save-disabled="!isDirty"
+    @save="handleSave"
   >
     <template v-if="asset">
       <div class="mb-6">
@@ -368,6 +370,25 @@ async function handleDelete() {
         </div>
       </dl>
 
+      <div class="mt-6 border-t pt-6">
+        <div class="flex items-center justify-between gap-4">
+          <ContentCardHeader
+            size="md"
+            heading-level="h3"
+            :title="$t('delete_entity', { entityKey })"
+            :description="$t('asset_remove_description')"
+          />
+          <Button
+            size="sm"
+            variant="destructive"
+            :disabled="deleting"
+            @click.stop="deleteOpen = true"
+          >
+            {{ $t('delete') }}
+          </Button>
+        </div>
+      </div>
+
       <AssetReplaceDialog
         v-model:open="replaceOpen"
         :asset="asset"
@@ -380,20 +401,6 @@ async function handleDelete() {
         :loading="deleting"
         @confirm="handleDelete"
       />
-    </template>
-
-    <template #footer>
-      <Button
-        variant="ghost"
-        class="text-destructive hover:text-destructive"
-        :disabled="deleting"
-        @click="deleteOpen = true"
-      >
-        {{ $t('delete_entity', { entityKey: 'asset' }) }}
-      </Button>
-      <Button :loading="loading" :disabled="!isDirty" @click="handleSave">
-        {{ $t('save') }}
-      </Button>
     </template>
   </PanelEdit>
 </template>

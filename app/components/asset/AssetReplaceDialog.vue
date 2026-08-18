@@ -72,6 +72,11 @@ async function replace() {
 
       <!-- min-w-0 keeps long file names from expanding the dialog grid track -->
       <div class="min-w-0 space-y-4">
+        <Feedback type="warning">
+          <template #title>{{ $t('replacing_everywhere') }}</template>
+          <template #description>{{ $t('replace_warning') }}</template>
+        </Feedback>
+
         <button
           type="button"
           class="hover:bg-muted/40 flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-12 text-center transition-colors"
@@ -102,7 +107,7 @@ async function replace() {
           :disabled="!file"
           @click="replace"
         >
-          {{ $t('replace') }}
+          {{ $t('replace_everywhere') }}
         </ButtonIcon>
       </DialogFooter>
     </DialogContent>
