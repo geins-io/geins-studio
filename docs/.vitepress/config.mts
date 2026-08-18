@@ -256,6 +256,10 @@ export default defineConfig({
                     link: '/components/form/FormGridWrap.md',
                   },
                   {
+                    text: 'FormTranslatableField',
+                    link: '/components/form/FormTranslatableField.md',
+                  },
+                  {
                     text: 'FormItemSwitch',
                     link: '/components/form/item/FormItemSwitch.md',
                   },

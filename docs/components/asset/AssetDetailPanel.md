@@ -60,7 +60,7 @@ Footer: **Delete asset** (destructive, left) opens [`DialogDelete`](/components/
 
 ## Editable fields
 
-- **name** (required), **folder** (`Select` from [`useFolders`](/composables/useFolders) with inline create), **description** (`Textarea`), **alt text** (images only — inline input for the current language + a translate button that opens [`PanelTranslation`](/components/panel/PanelTranslation) stacked over the panel), **tags** (`TagsInput`), **channels** ([`FormInputChannels`](/components/form/input/FormInputChannels)).
+- **name** (required), **folder** (`Select` from [`useFolders`](/composables/useFolders) with inline create), **description** (`Textarea`), **alt text** (images only — a [`FormTranslatableField`](/components/form/FormTranslatableField): current-language input + flag that opens the translation panel, which auto-stacks over this one), **tags** (`TagsInput`), **channels** ([`FormInputChannels`](/components/form/input/FormInputChannels)).
 - Alt text is edited as a locale→string map in the form, then written as `localizations` (`{ [lang]: { altText } }`) on save — the product-standard shape (see [assets domain](/domains/assets)).
 - Save → `assetApi.update(id, …)` → refresh `asset-library-list`.
 
