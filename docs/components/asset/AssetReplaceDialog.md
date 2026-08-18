@@ -1,6 +1,6 @@
 # `AssetReplaceDialog`
 
-`AssetReplaceDialog` swaps an asset's underlying file while keeping the same asset — id, name, metadata, and references. Drop or pick a single file, confirm, and it calls `assetApi.replace(id, formData)`.
+`AssetReplaceDialog` swaps an asset's underlying file while keeping the same asset — id, name, metadata, and references. Drop or pick a single file, then confirm with **Replace everywhere**, and it calls `assetApi.replace(id, formData)`. A warning [`Feedback`](/components/Feedback) notes that replacing updates the asset everywhere it's used.
 
 It is rendered **inside** the [`AssetDetailPanel`](/components/asset/AssetDetailPanel) (from its `Replace` action) so it stays within the panel's modal subtree — a page-level dialog would be hidden by the sheet's `hideOthers`.
 
