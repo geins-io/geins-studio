@@ -38,7 +38,7 @@ Resolved folder name — the asset only carries `folderId`, so the page resolves
 
 ## Events
 
-The action menu (hover ellipsis) emits per-action events; the page wires them to [`useAssetActions`](/composables/useAssetActions) + a shared [`DialogDelete`](/components/dialog/DialogDelete).
+The hover action menu is the shared [`AssetActionsMenu`](/components/asset/AssetActionsMenu); the card re-emits its per-action events and the page wires them to [`useAssetActions`](/composables/useAssetActions) + a shared [`DialogDelete`](/components/dialog/DialogDelete).
 
 ### `open`
 
@@ -54,6 +54,6 @@ Request deletion — the page opens the confirm dialog for this asset.
 
 ## Dependencies
 
-- [`AssetThumbnail`](/components/asset/AssetThumbnail), [`AssetTypeBadge`](/components/asset/AssetTypeBadge)
-- shadcn-vue [`Card`](/components/shadcn-vue), `Badge`, `Button`, `DropdownMenu`
+- [`AssetThumbnail`](/components/asset/AssetThumbnail), [`AssetTypeBadge`](/components/asset/AssetTypeBadge), [`AssetActionsMenu`](/components/asset/AssetActionsMenu)
+- shadcn-vue [`Card`](/components/shadcn-vue), `Badge`, `Button`
 - [`useDate`](/composables/useDate) — modified date; `formatFileSize` (`#shared/utils/file`) — size

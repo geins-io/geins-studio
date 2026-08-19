@@ -46,33 +46,13 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
       <div
         class="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100"
       >
-        <DropdownMenu>
-          <DropdownMenuTrigger as-child>
-            <Button variant="secondary" size="icon-xs">
-              <LucideEllipsis class="size-4" />
-              <span class="sr-only">{{ $t('actions') }}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem @click="emit('open')">
-              <LucideEye class="mr-2 size-4" />
-              <span>{{ $t('view_details') }}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem :disabled="!asset.url" @click="emit('download')">
-              <LucideDownload class="mr-2 size-4" />
-              <span>{{ $t('download') }}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem :disabled="!asset.url" @click="emit('copyUrl')">
-              <LucideCopy class="mr-2 size-4" />
-              <span>{{ $t('copy') }} {{ $t('public_url') }}</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem @click="emit('delete')">
-              <LucideTrash2 class="mr-2 size-4" />
-              <span>{{ $t('delete_entity', { entityKey: 'asset' }) }}</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <AssetActionsMenu
+          :asset="asset"
+          @open="emit('open')"
+          @download="emit('download')"
+          @copy-url="emit('copyUrl')"
+          @delete="emit('delete')"
+        />
       </div>
     </div>
 

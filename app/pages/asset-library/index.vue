@@ -99,6 +99,7 @@ watch([selectedFolder, page, pageSize], () => {
 // they are defined explicitly and prepended.
 const TableCellAssetThumbnail = resolveComponent('TableCellAssetThumbnail');
 const AssetTypeBadge = resolveComponent('AssetTypeBadge');
+const AssetActionsMenu = resolveComponent('AssetActionsMenu');
 
 // getColumns builds every column (consistent header / sort / cell style /
 // ordering); only the cell BODY is swapped for the asset-specific columns.
@@ -180,6 +181,31 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
       }),
   });
 
+  // Per-row actions — same context menu as the grid card (AssetActionsMenu).
+  cols.push({
+    id: 'actions',
+    enableSorting: false,
+    enableHiding: false,
+    size: 49,
+    minSize: 49,
+    maxSize: 49,
+    header: ({ table }) => h('div', { class: getBasicHeaderStyle(table) }),
+    cell: ({ table, row }) =>
+      h(
+        'div',
+        { class: cn(getBasicCellStyle(table), 'justify-center px-2') },
+        h(AssetActionsMenu, {
+          asset: row.original,
+          trigger: 'table',
+          onOpen: () => openAsset(row.original),
+          onDownload: () => download(row.original),
+          onCopyUrl: () => copyUrl(row.original),
+          onDelete: () => requestDelete(row.original),
+        }),
+      ),
+    meta: { type: 'actions' },
+  });
+
   const order = [
     'thumb',
     'name',
@@ -188,6 +214,7 @@ function buildColumns(rows: Asset[]): ColumnDef<Asset>[] {
     'sizeBytes',
     'tags',
     'updatedAt',
+    'actions',
   ];
   return order
     .map((id) => cols.find((col) => col.id === id))

@@ -214,6 +214,10 @@ export default defineConfig({
             items: [
               { text: 'AssetCard', link: '/components/asset/AssetCard.md' },
               {
+                text: 'AssetActionsMenu',
+                link: '/components/asset/AssetActionsMenu.md',
+              },
+              {
                 text: 'AssetFileRow',
                 link: '/components/asset/AssetFileRow.md',
               },
