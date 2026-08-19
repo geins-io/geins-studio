@@ -21,6 +21,8 @@ The Assets domain manages media files (images, SVGs, documents, PDFs, video, aud
 
 **Channels** — String tags marking where an asset is published (web, mobile, …).
 
+**Browse state in the URL** — the library page reflects the selected folder + grid pagination in the query (`?folder=<id>&page=<n>&perPage=<n>`, defaults omitted) so a link opens the exact folder + page. The grid uses [`PaginationBar`](/components/PaginationBar) (page-size + page nav, matching the table); the list view paginates via `TableView`.
+
 ## API Contract
 
 The contract is **camelCase + `_id`/`_type`** (via `ResponseEntity`), mirroring the rest of the Management API. It is independent of the storage backend — the mock maps to it (see below).

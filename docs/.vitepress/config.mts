@@ -767,6 +767,7 @@ export default defineConfig({
               { text: 'Feedback', link: '/components/Feedback.md' },
               { text: 'FlagIcon', link: '/components/FlagIcon.md' },
               { text: 'JsonCodeEditor', link: '/components/JsonCodeEditor.md' },
+              { text: 'PaginationBar', link: '/components/PaginationBar.md' },
               {
                 text: 'SchemaFormField',
                 link: '/components/SchemaFormField.md',

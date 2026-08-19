@@ -5,12 +5,18 @@ import { ENTITIES } from '#shared/utils/entities';
 import { cn } from '@/utils/index';
 import type { ColumnDef } from '@tanstack/vue-table';
 
+// Fixed-height list layout: header + toolbar + folder nav + pagination stay put;
+// only the grid/table body scrolls (default.vue → overflow-hidden).
+definePageMeta({ pageType: 'list' });
+
 const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
 const { getColumns, getBasicCellStyle, getBasicHeaderStyle } =
   useColumns<Asset>();
 const { folderName } = useFolders();
 const entityKey = ENTITIES.asset.key;
+const route = useRoute();
+const router = useRouter();
 
 const loading = ref(true);
 const fetchError = ref(false);
@@ -20,7 +26,10 @@ const view = ref<'grid' | 'list'>('grid');
 const search = ref('');
 const showFolders = ref(false);
 // Selected folder id (null = All assets); drives the server-side filter.
-const selectedFolder = ref<string | null>(null);
+// Browse state (folder + page + page size) is restored from / synced to the URL.
+const selectedFolder = ref<string | null>(
+  (route.query.folder as string) || null,
+);
 const uploadOpen = ref(false);
 const detailOpen = ref(false);
 const detailAsset = ref<Asset | null>(null);
@@ -48,18 +57,42 @@ const filtered = computed(() => {
   );
 });
 
-// Grid load-more (list view paginates via TableView). Show a growing window
-// over the fetched list; reset it whenever the result set changes.
-const GRID_PAGE_SIZE = 30;
-const visibleCount = ref(GRID_PAGE_SIZE);
-watch(filtered, () => {
-  visibleCount.value = GRID_PAGE_SIZE;
+// Grid pagination (list view paginates via TableView). Page + size live in the
+// URL (?page, ?perPage) so a link opens the exact page.
+const GRID_PAGE_SIZES = [24, 48, 96];
+const DEFAULT_PAGE_SIZE = 24;
+const clampPageSize = (value: number) =>
+  GRID_PAGE_SIZES.includes(value) ? value : DEFAULT_PAGE_SIZE;
+const pageSize = ref(clampPageSize(Number(route.query.perPage)));
+const page = ref(Math.max(1, Number(route.query.page) || 1));
+
+const pageCount = computed(() =>
+  Math.max(1, Math.ceil(filtered.value.length / pageSize.value)),
+);
+const pagedAssets = computed(() => {
+  const current = Math.min(page.value, pageCount.value);
+  return filtered.value.slice(
+    (current - 1) * pageSize.value,
+    current * pageSize.value,
+  );
 });
-const pagedAssets = computed(() => filtered.value.slice(0, visibleCount.value));
-const hasMore = computed(() => visibleCount.value < filtered.value.length);
-function loadMore() {
-  visibleCount.value += GRID_PAGE_SIZE;
-}
+
+// User-driven changes to the result set / size go back to page 1 (not on load,
+// so a deep-linked ?page survives the initial fetch).
+watch([search, selectedFolder, pageSize], () => {
+  page.value = 1;
+});
+
+// Mirror browse state to the URL (omit defaults to keep it clean).
+watch([selectedFolder, page, pageSize], () => {
+  const query: Record<string, string> = {};
+  if (selectedFolder.value) query.folder = selectedFolder.value;
+  if (page.value > 1) query.page = String(page.value);
+  if (pageSize.value !== DEFAULT_PAGE_SIZE) {
+    query.perPage = String(pageSize.value);
+  }
+  router.replace({ query });
+});
 
 // List columns — useColumns generates tags + modified; the type-badge,
 // thumbnail, name-opens-panel, and byte-formatted size need custom cells, so
@@ -174,6 +207,8 @@ onMounted(() => {
       fetchError.value = false;
       dataList.value = Array.isArray(newData) ? newData : [];
       columns.value = buildColumns(dataList.value);
+      // Clamp a deep-linked / stale page once the data (and page count) is known.
+      if (page.value > pageCount.value) page.value = pageCount.value;
     },
     { immediate: true },
   );
@@ -269,20 +304,25 @@ async function confirmDelete() {
     </ButtonGroup>
   </div>
 
-  <SidebarProvider class="mt-4 min-h-0! items-start gap-4">
+  <SidebarProvider
+    class="mt-4 -mb-12 min-h-0! flex-1 items-stretch gap-4 @2xl:-mb-14"
+  >
     <Transition name="folder-panel">
       <Sidebar
         v-if="showFolders"
         collapsible="none"
-        class="w-(--sidebar-width) shrink-0 self-stretch bg-transparent!"
+        class="w-(--sidebar-width) shrink-0 self-stretch overflow-y-auto bg-transparent!"
       >
         <AssetFolderTree v-model:selected="selectedFolder" />
       </Sidebar>
     </Transition>
 
-    <div class="min-w-0 flex-1 pb-8">
-      <!-- LIST VIEW -->
-      <NuxtErrorBoundary v-if="view === 'list'">
+    <!-- LIST VIEW: bound the height so TableView's container scrolls internally -->
+    <div
+      v-if="view === 'list'"
+      class="min-h-0 min-w-0 flex-1 overflow-hidden [&_.table-view]:h-full"
+    >
+      <NuxtErrorBoundary>
         <TableView
           :loading="loading"
           :entity-key="entityKey"
@@ -294,9 +334,11 @@ async function confirmDelete() {
           :show-search="false"
         />
       </NuxtErrorBoundary>
+    </div>
 
-      <!-- GRID VIEW -->
-      <template v-else>
+    <!-- GRID VIEW: only the grid body scrolls; pagination is a fixed footer -->
+    <div v-else class="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div class="min-h-0 flex-1 overflow-y-auto pb-4">
         <div
           v-if="loading"
           class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
@@ -345,28 +387,34 @@ async function confirmDelete() {
           </CardContent>
         </Card>
 
-        <template v-else>
-          <div
-            class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
-          >
-            <AssetCard
-              v-for="asset in pagedAssets"
-              :key="asset._id"
-              :asset="asset"
-              :folder-name="folderName(asset.folderId)"
-              @open="openAsset(asset)"
-              @download="download(asset)"
-              @copy-url="copyUrl(asset)"
-              @delete="requestDelete(asset)"
-            />
-          </div>
-          <div v-if="hasMore" class="mt-6 flex justify-center">
-            <Button variant="outline" @click="loadMore">
-              {{ $t('load_more') }}
-            </Button>
-          </div>
-        </template>
-      </template>
+        <div
+          v-else
+          class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
+        >
+          <AssetCard
+            v-for="asset in pagedAssets"
+            :key="asset._id"
+            :asset="asset"
+            :folder-name="folderName(asset.folderId)"
+            @open="openAsset(asset)"
+            @download="download(asset)"
+            @copy-url="copyUrl(asset)"
+            @delete="requestDelete(asset)"
+          />
+        </div>
+      </div>
+
+      <PaginationBar
+        v-if="!loading && !fetchError && filtered.length"
+        :page="page"
+        :page-size="pageSize"
+        :total="filtered.length"
+        :entity-key="entityKey"
+        :page-sizes="GRID_PAGE_SIZES"
+        class="shrink-0"
+        @update:page="page = $event"
+        @update:page-size="pageSize = $event"
+      />
     </div>
   </SidebarProvider>
 </template>
