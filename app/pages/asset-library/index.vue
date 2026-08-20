@@ -14,6 +14,10 @@ const { assetApi } = useGeinsRepository();
 const { getColumns, getBasicCellStyle, getBasicHeaderStyle } =
   useColumns<Asset>();
 const { folderName } = useFolders();
+const { resolveIcon } = useLucideIcon();
+// TableView's `emptyIcon` prop wants a component, not a tag — resolve it here so
+// the list view's empty state matches the grid card's folder icon.
+const emptyIcon = resolveIcon('FolderOpen') ?? undefined;
 const entityKey = ENTITIES.asset.key;
 const route = useRoute();
 const router = useRouter();
@@ -363,6 +367,7 @@ async function confirmDelete() {
           :on-retry="refresh"
           :mode="listMode"
           :show-search="false"
+          :empty-icon="emptyIcon"
         />
       </NuxtErrorBoundary>
     </div>
@@ -381,42 +386,45 @@ async function confirmDelete() {
           />
         </div>
 
-        <Card v-else-if="fetchError">
-          <CardContent class="p-0">
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="destructive">
-                  <LucideTriangleAlert />
-                </EmptyMedia>
-                <EmptyTitle>{{ $t('error_loading_data') }}</EmptyTitle>
-              </EmptyHeader>
-              <EmptyContent>
-                <ButtonIcon icon="retry" variant="secondary" @click="refresh">
-                  {{ $t('retry') }}
-                </ButtonIcon>
-              </EmptyContent>
-            </Empty>
-          </CardContent>
-        </Card>
+        <!-- Grid canvas is the gray page background, so the state sits directly
+             on it (no Card) — the list view gets the white surface via
+             TableView's `.table-view`. Copy + shape mirror TableView. -->
+        <Empty v-else-if="fetchError" class="mt-12">
+          <EmptyHeader>
+            <EmptyMedia variant="destructive">
+              <LucideCircleAlert />
+            </EmptyMedia>
+            <EmptyTitle>
+              {{ $t('error_fetching_entity', { entityKey }, 2) }}
+            </EmptyTitle>
+            <EmptyDescription>
+              {{ $t('error_empty_description') }}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <ButtonIcon icon="retry" variant="secondary" @click="refresh">
+              {{ $t('retry') }}
+            </ButtonIcon>
+          </EmptyContent>
+        </Empty>
 
-        <Card v-else-if="!filtered.length">
-          <CardContent class="p-0">
-            <Empty>
-              <EmptyHeader>
-                <EmptyMedia variant="icon">
-                  <LucideFolderOpen />
-                </EmptyMedia>
-                <EmptyTitle>
-                  {{
-                    selectedFolder
-                      ? $t('no_assets_in_folder')
-                      : $t('no_entity', { entityKey }, 2)
-                  }}
-                </EmptyTitle>
-              </EmptyHeader>
-            </Empty>
-          </CardContent>
-        </Card>
+        <Empty v-else-if="!filtered.length" class="mt-12">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <LucideFolderOpen />
+            </EmptyMedia>
+            <EmptyTitle>
+              {{
+                selectedFolder
+                  ? $t('no_assets_in_folder')
+                  : $t('no_entity', { entityKey }, 2)
+              }}
+            </EmptyTitle>
+            <EmptyDescription>
+              {{ $t('empty_description', { entityKey }, 2) }}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
 
         <div
           v-else
