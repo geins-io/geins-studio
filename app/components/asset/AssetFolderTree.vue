@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { FolderDeleteAssets } from '#shared/types';
 import { useToast } from '@/components/ui/toast/use-toast';
 import type { FolderNode } from '@/composables/useFolders';
 
@@ -11,7 +12,7 @@ import type { FolderNode } from '@/composables/useFolders';
  */
 const selected = defineModel<string | null>('selected', { default: null });
 
-const { tree, systemFolders, loading, refresh } = useFolders();
+const { tree, systemFolders, loading, refresh, descendantIds } = useFolders();
 const { assetApi } = useGeinsRepository();
 const { resolveIcon } = useLucideIcon();
 const { toast } = useToast();
@@ -50,23 +51,43 @@ async function createFolder(payload: {
 
 const deleteTarget = ref<FolderNode | null>(null);
 const deleteOpen = ref(false);
+const choiceOpen = ref(false);
+const pendingCount = ref(0);
 const deleting = ref(false);
 
-function requestDelete(node: FolderNode) {
+// Empty folders get the plain confirm; folders that (with their subtree) still
+// hold assets get the choice dialog. `list({ folderId })` already returns the
+// folder + descendants (server-side), so its length is the subtree count.
+async function requestDelete(node: FolderNode) {
   deleteTarget.value = node;
-  deleteOpen.value = true;
+  try {
+    const assets = await assetApi.list({ folderId: node._id });
+    pendingCount.value = Array.isArray(assets) ? assets.length : 0;
+  } catch {
+    pendingCount.value = 0;
+  }
+  if (pendingCount.value > 0) choiceOpen.value = true;
+  else deleteOpen.value = true;
 }
-async function confirmDelete() {
+
+async function confirmDelete(assets: FolderDeleteAssets = 'move') {
   if (!deleteTarget.value) return;
+  const removed = descendantIds(deleteTarget.value._id);
   deleting.value = true;
   try {
-    await assetApi.folder.delete(deleteTarget.value._id);
+    await assetApi.deleteFolder(deleteTarget.value._id, assets);
     await refresh();
+    await refreshNuxtData('asset-library-list');
+    // Deleting the active folder (or an ancestor of it) drops the filter target.
+    if (selected.value && removed.includes(selected.value)) {
+      selected.value = null;
+    }
     toast({
       title: t('entity_deleted', { entityKey: 'folder' }),
       variant: 'positive',
     });
     deleteOpen.value = false;
+    choiceOpen.value = false;
   } catch (error) {
     geinsLogError('deleteFolder', getErrorMessage(error));
   } finally {
@@ -157,5 +178,14 @@ async function confirmDelete() {
     entity-key="folder"
     :loading="deleting"
     @confirm="confirmDelete"
+  />
+
+  <AssetFolderDeleteDialog
+    v-model:open="choiceOpen"
+    :folder-name="deleteTarget?.name ?? ''"
+    :count="pendingCount"
+    :loading="deleting"
+    @confirm="confirmDelete"
+    @cancel="choiceOpen = false"
   />
 </template>

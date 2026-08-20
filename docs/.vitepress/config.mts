@@ -218,6 +218,10 @@ export default defineConfig({
                 link: '/components/asset/AssetActionsMenu.md',
               },
               {
+                text: 'AssetFolderDeleteDialog',
+                link: '/components/asset/AssetFolderDeleteDialog.md',
+              },
+              {
                 text: 'AssetFileRow',
                 link: '/components/asset/AssetFileRow.md',
               },

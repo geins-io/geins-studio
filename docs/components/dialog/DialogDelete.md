@@ -61,6 +61,17 @@ Disables the confirm button and shows a spinner while the delete request is in f
 
 - **Required:** yes
 
+### `warningTitle` / `warningDescription`
+
+```ts
+warningTitle?: string;
+warningDescription?: string;
+```
+
+Optional caution callout rendered as a `Feedback` (warning style) between the description and the footer — e.g. warning that an asset used in several places will be removed from all of them. `warningTitle` gates rendering; pass both for the full title + description. Omit for the plain confirm.
+
+- **Required:** no
+
 ## v-model
 
 ### `open`
