@@ -2,6 +2,12 @@
 const props = defineProps<{
   entityKey: string;
   loading: boolean;
+  /**
+   * Optional caution callout (e.g. an asset used in several places). Both are
+   * needed to render it — a `Feedback` with this title + description.
+   */
+  warningTitle?: string;
+  warningDescription?: string;
 }>();
 const open = defineModel('open', {
   type: Boolean,
@@ -25,6 +31,10 @@ const _emit = defineEmits(['confirm', 'cancel']);
           }}
         </AlertDialogDescription>
       </AlertDialogHeader>
+      <Feedback v-if="props.warningTitle" type="warning">
+        <template #title>{{ props.warningTitle }}</template>
+        <template #description>{{ props.warningDescription }}</template>
+      </Feedback>
       <AlertDialogFooter>
         <AlertDialogCancel @click="$emit('cancel')">
           {{ $t('cancel') }}

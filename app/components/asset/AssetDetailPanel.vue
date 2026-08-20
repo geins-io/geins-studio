@@ -399,6 +399,8 @@ async function handleDelete() {
         v-model:open="deleteOpen"
         :entity-key="entityKey"
         :loading="deleting"
+        :warning-title="$t('removing_everywhere')"
+        :warning-description="$t('remove_everywhere_description', 1)"
         @confirm="handleDelete"
       />
     </template>

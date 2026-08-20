@@ -6,6 +6,7 @@ import type {
   Folder,
   FolderCreate,
   FolderUpdate,
+  FolderDeleteAssets,
 } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
 import { entityRepo } from './entity';
@@ -64,6 +65,25 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
         method: 'POST',
         body: formData,
         errorContext: { action: 'updating', entity: ENTITIES.asset.key },
+        ...fetchOptions,
+      });
+    },
+
+    /**
+     * Delete a folder and its subtree, choosing what happens to the assets
+     * inside via `assets`: `'move'` (default) re-homes them to uncategorised;
+     * `'delete'` permanently removes them too. `folder.delete` (the plain
+     * entityRepo method) still exists for the move-only default.
+     */
+    async deleteFolder(
+      id: string,
+      assets: FolderDeleteAssets = 'move',
+      fetchOptions?: RepoFetchOptions,
+    ): Promise<void> {
+      await fetch<null>(`${ENTITIES.folder.endpoint}/${id}`, {
+        method: 'DELETE',
+        query: { assets },
+        errorContext: { action: 'deleting', entity: ENTITIES.folder.key },
         ...fetchOptions,
       });
     },

@@ -91,3 +91,10 @@ export interface Folder extends ResponseEntity<FolderBase> {
   system: boolean;
   createdAt: string;
 }
+
+/**
+ * What happens to the assets inside a folder (and its subtree) when the folder
+ * is deleted: `move` re-homes them to uncategorised (server FK `SET NULL`);
+ * `delete` permanently removes them too.
+ */
+export type FolderDeleteAssets = 'move' | 'delete';

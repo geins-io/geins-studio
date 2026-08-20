@@ -103,5 +103,25 @@ describe('assetRepo', () => {
         errorContext: { action: 'deleting', entity: 'folder' },
       });
     });
+
+    it('deleteFolder defaults to moving assets to uncategorised', async () => {
+      mockFetch.mockResolvedValue(null);
+      await api.deleteFolder('f');
+      expect(mockFetch).toHaveBeenCalledWith('/asset/folder/f', {
+        method: 'DELETE',
+        query: { assets: 'move' },
+        errorContext: { action: 'deleting', entity: 'folder' },
+      });
+    });
+
+    it('deleteFolder forwards the delete disposition', async () => {
+      mockFetch.mockResolvedValue(null);
+      await api.deleteFolder('f', 'delete');
+      expect(mockFetch).toHaveBeenCalledWith('/asset/folder/f', {
+        method: 'DELETE',
+        query: { assets: 'delete' },
+        errorContext: { action: 'deleting', entity: 'folder' },
+      });
+    });
   });
 });
