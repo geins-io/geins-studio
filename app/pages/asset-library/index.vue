@@ -344,10 +344,14 @@ async function confirmDelete() {
       </Sidebar>
     </Transition>
 
-    <!-- LIST VIEW: bound the height so TableView's container scrolls internally -->
+    <!-- LIST VIEW: flex column so TableView's `.table-view` is a flex child —
+         it hugs content when short (its own overflow-hidden zeroes its flex
+         min-height) and shrinks to scroll internally with a floating header +
+         pinned pagination once it's taller than the viewport, matching the
+         regular list pages. -->
     <div
       v-if="view === 'list'"
-      class="min-h-0 min-w-0 flex-1 overflow-hidden [&_.table-view]:h-full"
+      class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
     >
       <NuxtErrorBoundary>
         <TableView
