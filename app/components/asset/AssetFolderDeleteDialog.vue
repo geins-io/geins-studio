@@ -57,11 +57,13 @@ function confirm() {
         </DialogDescription>
       </DialogHeader>
 
-      <div class="space-y-3">
+      <div class="space-y-3" role="radiogroup">
         <button
           v-for="option in OPTIONS"
           :key="option.id"
           type="button"
+          role="radio"
+          :aria-checked="disposition === option.id"
           class="flex w-full items-start gap-4 rounded-lg border p-4 text-left transition-colors"
           :class="
             disposition === option.id
@@ -84,7 +86,11 @@ function confirm() {
                   : 'bg-secondary text-foreground'
             "
           >
-            <component :is="resolveIcon(option.icon)" class="size-5" />
+            <component
+              :is="resolveIcon(option.icon)"
+              class="size-5"
+              aria-hidden="true"
+            />
           </div>
           <div class="flex-1">
             <div

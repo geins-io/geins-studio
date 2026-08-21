@@ -44,7 +44,7 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
         />
       </button>
       <div
-        class="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100"
+        class="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
       >
         <AssetActionsMenu
           :asset="asset"
@@ -73,12 +73,15 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
         v-if="folderName"
         class="text-muted-foreground flex items-center gap-1.5 text-xs"
       >
-        <LucideFolder class="size-3 shrink-0" />
+        <LucideFolder class="size-3 shrink-0" aria-hidden="true" />
         <span class="truncate">{{ folderName }}</span>
       </div>
 
       <div v-if="asset.tags.length" class="flex items-center gap-1.5">
-        <LucideTag class="text-muted-foreground size-3 shrink-0" />
+        <LucideTag
+          class="text-muted-foreground size-3 shrink-0"
+          aria-hidden="true"
+        />
         <div class="flex flex-wrap items-center gap-1.5">
           <Tag v-for="tag in asset.tags" :key="tag" :label="tag" size="sm" />
         </div>
