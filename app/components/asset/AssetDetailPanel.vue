@@ -184,7 +184,7 @@ async function handleDelete() {
           :disabled="!asset.url"
           @click="copyUrl(asset)"
         >
-          {{ $t('copy') }} {{ $t('public_url') }}
+          {{ $t('copy_public_url') }}
         </ButtonIcon>
         <ButtonIcon
           icon="download"
