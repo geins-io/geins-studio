@@ -15,9 +15,6 @@ const { getColumns, getBasicCellStyle, getBasicHeaderStyle } =
   useColumns<Asset>();
 const { folderName } = useFolders();
 const { resolveIcon } = useLucideIcon();
-// TableView's `emptyIcon` prop wants a component, not a tag — resolve it here so
-// the list view's empty state matches the grid card's folder icon.
-const emptyIcon = resolveIcon('FolderOpen') ?? undefined;
 const entityKey = ENTITIES.asset.key;
 const route = useRoute();
 const router = useRouter();
@@ -60,6 +57,26 @@ const filtered = computed(() => {
     asset.name.toLowerCase().includes(term),
   );
 });
+
+// Empty-state descriptor shared by the grid (inline <Empty>) and the list
+// (TableView props): a search with no matches reads differently from an empty
+// folder / empty library.
+const isSearching = computed(() => search.value.trim().length > 0);
+const emptyIcon = computed(
+  () => resolveIcon(isSearching.value ? 'SearchX' : 'FolderOpen') ?? undefined,
+);
+const emptyTitle = computed(() =>
+  isSearching.value
+    ? t('no_entity_found', { entityKey }, 2)
+    : selectedFolder.value
+      ? t('no_assets_in_folder')
+      : t('no_entity', { entityKey }, 2),
+);
+const emptyDescription = computed(() =>
+  isSearching.value
+    ? t('empty_filtered_description', { entityKey }, 2)
+    : t('empty_description', { entityKey }, 2),
+);
 
 // Grid pagination (list view paginates via TableView). Page + size live in the
 // URL (?page, ?perPage) so a link opens the exact page.
@@ -370,6 +387,8 @@ async function confirmDelete() {
           :mode="listMode"
           :show-search="false"
           :empty-icon="emptyIcon"
+          :empty-text="emptyTitle"
+          :empty-description="emptyDescription"
         />
       </NuxtErrorBoundary>
     </div>
@@ -413,18 +432,10 @@ async function confirmDelete() {
         <Empty v-else-if="!filtered.length" class="mt-12">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <LucideFolderOpen />
+              <component :is="emptyIcon" />
             </EmptyMedia>
-            <EmptyTitle>
-              {{
-                selectedFolder
-                  ? $t('no_assets_in_folder')
-                  : $t('no_entity', { entityKey }, 2)
-              }}
-            </EmptyTitle>
-            <EmptyDescription>
-              {{ $t('empty_description', { entityKey }, 2) }}
-            </EmptyDescription>
+            <EmptyTitle>{{ emptyTitle }}</EmptyTitle>
+            <EmptyDescription>{{ emptyDescription }}</EmptyDescription>
           </EmptyHeader>
         </Empty>
 
