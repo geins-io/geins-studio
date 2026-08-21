@@ -10,6 +10,7 @@ describe('createMockRepository', () => {
     expect(mock.orderApi).toBeDefined();
     expect(mock.customerApi).toBeDefined();
     expect(mock.productApi).toBeDefined();
+    expect(mock.assetApi).toBeDefined();
   });
 
   it('useGeinsRepository returns all API objects when called', () => {

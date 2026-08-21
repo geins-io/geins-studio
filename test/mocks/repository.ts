@@ -86,11 +86,30 @@ export function createMockRepository() {
     },
   };
 
+  const assetApi = {
+    get: vi.fn(),
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    upload: vi.fn(),
+    replace: vi.fn(),
+    deleteFolder: vi.fn(),
+    folder: {
+      get: vi.fn(),
+      list: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+  };
+
   const useGeinsRepository = vi.fn(() => ({
     accountApi,
     orderApi,
     customerApi,
     productApi,
+    assetApi,
   }));
 
   return {
@@ -99,5 +118,6 @@ export function createMockRepository() {
     orderApi,
     customerApi,
     productApi,
+    assetApi,
   };
 }

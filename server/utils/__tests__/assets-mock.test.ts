@@ -1,0 +1,144 @@
+// @vitest-environment node
+import { describe, it, expect } from 'vitest';
+import {
+  toAsset,
+  toFolder,
+  assetColumns,
+  folderColumns,
+  descendantFolderIds,
+} from '../assets-mock';
+
+// Minimal row shapes matching the Supabase mock columns.
+const assetRow = {
+  id: 'a1',
+  name: 'hero.jpg',
+  type: 'image' as const,
+  folder_id: 'f1',
+  description: null,
+  localizations: { en: { altText: 'Hero' }, sv: { altText: 'Hjälte' } },
+  tags: ['campaign'],
+  channels: ['web'],
+  size_bytes: 1234,
+  mime: 'image/jpeg',
+  url: 'https://cdn/hero.jpg',
+  thumb_url: 'https://cdn/hero-t.jpg',
+  created_by: 'olivia',
+  created_at: '2026-08-17T00:00:00.000Z',
+  updated_at: '2026-08-18T00:00:00.000Z',
+};
+
+const folderRow = {
+  id: 'f1',
+  name: 'Marketing',
+  parent_id: null,
+  system: false,
+  sort_order: 2,
+  created_at: '2026-08-17T00:00:00.000Z',
+};
+
+describe('toAsset', () => {
+  it('maps snake_case columns to the camelCase contract', () => {
+    const asset = toAsset(assetRow);
+    expect(asset).toMatchObject({
+      _id: 'a1',
+      _type: 'asset',
+      folderId: 'f1',
+      sizeBytes: 1234,
+      thumbUrl: 'https://cdn/hero-t.jpg',
+      createdBy: 'olivia',
+      createdAt: '2026-08-17T00:00:00.000Z',
+      updatedAt: '2026-08-18T00:00:00.000Z',
+    });
+  });
+
+  it('derives default-language altText from localizations', () => {
+    expect(toAsset(assetRow).altText).toBe('Hero');
+  });
+
+  it('defaults nullable collections + altText when absent', () => {
+    const asset = toAsset({
+      ...assetRow,
+      localizations: null,
+      tags: null,
+      channels: null,
+    });
+    expect(asset.altText).toBeNull();
+    expect(asset.tags).toEqual([]);
+    expect(asset.channels).toEqual([]);
+    expect(asset.localizations).toEqual({});
+  });
+});
+
+describe('toFolder', () => {
+  it('maps folder columns to the contract', () => {
+    expect(toFolder(folderRow)).toEqual({
+      _id: 'f1',
+      _type: 'folder',
+      name: 'Marketing',
+      parentId: null,
+      system: false,
+      sortOrder: 2,
+      createdAt: '2026-08-17T00:00:00.000Z',
+    });
+  });
+});
+
+describe('assetColumns', () => {
+  it('only maps provided keys (partial PATCH)', () => {
+    expect(assetColumns({ name: 'x', folderId: 'f2' })).toEqual({
+      name: 'x',
+      folder_id: 'f2',
+    });
+  });
+
+  it('is empty for an empty body', () => {
+    expect(assetColumns({})).toEqual({});
+  });
+});
+
+describe('folderColumns', () => {
+  it('maps provided keys only', () => {
+    expect(folderColumns({ name: 'A', parentId: 'p', sortOrder: 3 })).toEqual({
+      name: 'A',
+      parent_id: 'p',
+      sort_order: 3,
+    });
+  });
+});
+
+describe('descendantFolderIds', () => {
+  // f1 ┬ f2 ┬ f4
+  //    │    └ f5
+  //    └ f3
+  // f6 (unrelated)
+  const folders = [
+    { id: 'f1', parent_id: null },
+    { id: 'f2', parent_id: 'f1' },
+    { id: 'f3', parent_id: 'f1' },
+    { id: 'f4', parent_id: 'f2' },
+    { id: 'f5', parent_id: 'f2' },
+    { id: 'f6', parent_id: null },
+  ];
+
+  it('returns the folder plus its whole subtree', () => {
+    expect([...descendantFolderIds(folders, 'f1')].sort()).toEqual([
+      'f1',
+      'f2',
+      'f3',
+      'f4',
+      'f5',
+    ]);
+  });
+
+  it('returns a subtree from a nested node', () => {
+    expect([...descendantFolderIds(folders, 'f2')].sort()).toEqual([
+      'f2',
+      'f4',
+      'f5',
+    ]);
+  });
+
+  it('returns just the id for a leaf', () => {
+    expect(descendantFolderIds(folders, 'f6')).toEqual(['f6']);
+  });
+});
