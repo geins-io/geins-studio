@@ -184,7 +184,7 @@ async function handleDelete() {
           :disabled="!asset.url"
           @click="copyUrl(asset)"
         >
-          {{ $t('copy_public_url') }}
+          {{ $t('asset_library.copy_public_url') }}
         </ButtonIcon>
         <ButtonIcon
           icon="download"
@@ -233,7 +233,7 @@ async function handleDelete() {
                   <Input
                     v-model="newFolderName"
                     class="flex-1"
-                    :placeholder="$t('folder_name')"
+                    :placeholder="$t('asset_library.folder_name')"
                     @keydown.enter.prevent="createFolder"
                     @keydown.esc.prevent="cancelCreateFolder"
                   />
@@ -252,11 +252,13 @@ async function handleDelete() {
                     "
                   >
                     <SelectTrigger class="flex-1">
-                      <SelectValue :placeholder="$t('no_folder')" />
+                      <SelectValue
+                        :placeholder="$t('asset_library.no_folder')"
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem :value="NO_FOLDER">
-                        {{ $t('no_folder') }}
+                        {{ $t('asset_library.no_folder') }}
                       </SelectItem>
                       <SelectItem
                         v-for="folder in folders"
@@ -294,11 +296,13 @@ async function handleDelete() {
 
             <FormField v-if="asset.type === 'image'" name="altText" keep-value>
               <FormItem>
-                <FormLabel :optional="true">{{ $t('alt_text') }}</FormLabel>
+                <FormLabel :optional="true">
+                  {{ $t('asset_library.alt_text') }}
+                </FormLabel>
                 <FormTranslatableField
                   v-model="altText"
-                  :label="$t('alt_text')"
-                  :placeholder="$t('alt_text_placeholder')"
+                  :label="$t('asset_library.alt_text')"
+                  :placeholder="$t('asset_library.alt_text_placeholder')"
                   :subject="asset.name"
                 />
               </FormItem>
@@ -322,7 +326,9 @@ async function handleDelete() {
                       <TagsInputItemText />
                       <TagsInputItemDelete />
                     </TagsInputItem>
-                    <TagsInputInput :placeholder="$t('add_tag')" />
+                    <TagsInputInput
+                      :placeholder="$t('asset_library.add_tag')"
+                    />
                   </TagsInput>
                 </FormControl>
               </FormItem>
@@ -376,7 +382,7 @@ async function handleDelete() {
             size="md"
             heading-level="h3"
             :title="$t('delete_entity', { entityKey })"
-            :description="$t('asset_remove_description')"
+            :description="$t('asset_library.asset_remove_description')"
           />
           <Button
             size="sm"
@@ -399,8 +405,10 @@ async function handleDelete() {
         v-model:open="deleteOpen"
         :entity-key="entityKey"
         :loading="deleting"
-        :warning-title="$t('removing_everywhere')"
-        :warning-description="$t('remove_everywhere_description', 1)"
+        :warning-title="$t('asset_library.removing_everywhere')"
+        :warning-description="
+          $t('asset_library.remove_everywhere_description', 1)
+        "
         @confirm="handleDelete"
       />
     </template>

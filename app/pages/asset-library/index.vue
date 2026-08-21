@@ -69,7 +69,7 @@ const emptyTitle = computed(() =>
   isSearching.value
     ? t('no_entity_found', { entityKey }, 2)
     : selectedFolder.value
-      ? t('no_assets_in_folder')
+      ? t('asset_library.no_assets_in_folder')
       : t('no_entity', { entityKey }, 2),
 );
 const emptyDescription = computed(() =>
@@ -305,8 +305,8 @@ async function confirmDelete() {
     v-model:open="deleteOpen"
     :entity-key="entityKey"
     :loading="deleting"
-    :warning-title="$t('removing_everywhere')"
-    :warning-description="$t('remove_everywhere_description', 1)"
+    :warning-title="$t('asset_library.removing_everywhere')"
+    :warning-description="$t('asset_library.remove_everywhere_description', 1)"
     @confirm="confirmDelete"
     @cancel="deleteOpen = false"
   />
@@ -314,7 +314,7 @@ async function confirmDelete() {
   <ContentHeader :title="$t(entityKey, 2)">
     <ContentActionBar>
       <ButtonIcon icon="upload" @click="uploadOpen = true">
-        {{ $t('upload_assets') }}
+        {{ $t('asset_library.upload_assets') }}
       </ButtonIcon>
     </ContentActionBar>
   </ContentHeader>

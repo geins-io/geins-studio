@@ -50,10 +50,16 @@ function confirm() {
     <DialogContent class="sm:max-w-lg">
       <DialogHeader>
         <DialogTitle>
-          {{ $t('delete_folder_title', { name: folderName }) }}
+          {{ $t('asset_library.delete_folder_title', { name: folderName }) }}
         </DialogTitle>
         <DialogDescription>
-          {{ $t('folder_delete_intro', { assets: assetCount }, count) }}
+          {{
+            $t(
+              'asset_library.folder_delete_intro',
+              { assets: assetCount },
+              count,
+            )
+          }}
         </DialogDescription>
       </DialogHeader>
 
@@ -97,10 +103,10 @@ function confirm() {
               class="font-semibold"
               :class="option.id === 'delete' && 'text-destructive'"
             >
-              {{ $t(`folder_delete_${option.id}_title`) }}
+              {{ $t(`asset_library.folder_delete_${option.id}_title`) }}
             </div>
             <p class="text-muted-foreground mt-0.5 text-sm">
-              {{ $t(`folder_delete_${option.id}_description`) }}
+              {{ $t(`asset_library.folder_delete_${option.id}_description`) }}
             </p>
           </div>
           <span
@@ -123,9 +129,11 @@ function confirm() {
       </div>
 
       <Feedback v-if="disposition === 'delete'" type="warning">
-        <template #title>{{ $t('removing_everywhere') }}</template>
+        <template #title>
+          {{ $t('asset_library.removing_everywhere') }}
+        </template>
         <template #description>
-          {{ $t('remove_everywhere_description', count) }}
+          {{ $t('asset_library.remove_everywhere_description', count) }}
         </template>
       </Feedback>
 

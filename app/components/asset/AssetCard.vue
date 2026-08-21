@@ -32,7 +32,7 @@ const size = computed(() => formatFileSize(props.asset.sizeBytes));
       <button
         type="button"
         class="block w-full cursor-pointer"
-        :aria-label="$t('view_details')"
+        :aria-label="$t('asset_library.view_details')"
         @click="emit('open')"
       >
         <AssetThumbnail

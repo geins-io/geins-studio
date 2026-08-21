@@ -11,7 +11,7 @@ describe('useAssetType', () => {
 
   it('returns presentation metadata per type', () => {
     expect(meta('image')).toMatchObject({
-      labelKey: 'asset_type.image',
+      labelKey: 'asset_library.asset_type.image',
       variant: 'blue',
       icon: 'Image',
     });
@@ -26,11 +26,13 @@ describe('useAssetType', () => {
 
   it('falls back to "other" for an unknown type', () => {
     expect(meta('bogus' as never)).toBe(meta('other'));
-    expect(meta('bogus' as never).labelKey).toBe('asset_type.other');
+    expect(meta('bogus' as never).labelKey).toBe(
+      'asset_library.asset_type.other',
+    );
   });
 
   it("label() resolves the type's label key via t", () => {
-    expect(label('doc')).toBe('asset_type.doc');
-    expect(label('other')).toBe('asset_type.other');
+    expect(label('doc')).toBe('asset_library.asset_type.doc');
+    expect(label('other')).toBe('asset_library.asset_type.other');
   });
 });

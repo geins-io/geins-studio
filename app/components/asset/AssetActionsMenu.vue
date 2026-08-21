@@ -43,7 +43,7 @@ const emit = defineEmits<{
     <DropdownMenuContent align="end">
       <DropdownMenuItem @click="emit('open')">
         <LucideEye class="mr-2 size-4" aria-hidden="true" />
-        <span>{{ $t('view_details') }}</span>
+        <span>{{ $t('asset_library.view_details') }}</span>
       </DropdownMenuItem>
       <DropdownMenuItem :disabled="!asset.url" @click="emit('download')">
         <LucideDownload class="mr-2 size-4" aria-hidden="true" />
@@ -51,7 +51,7 @@ const emit = defineEmits<{
       </DropdownMenuItem>
       <DropdownMenuItem :disabled="!asset.url" @click="emit('copyUrl')">
         <LucideCopy class="mr-2 size-4" aria-hidden="true" />
-        <span>{{ $t('copy_public_url') }}</span>
+        <span>{{ $t('asset_library.copy_public_url') }}</span>
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem @click="emit('delete')">

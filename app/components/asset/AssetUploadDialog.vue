@@ -118,7 +118,11 @@ async function upload() {
     const created = await assetApi.upload(form);
     await refreshNuxtData('asset-library-list');
     toast({
-      title: t('assets_uploaded', { count: created.length }, created.length),
+      title: t(
+        'asset_library.assets_uploaded',
+        { count: created.length },
+        created.length,
+      ),
       variant: 'positive',
     });
     open.value = false;
@@ -136,9 +140,9 @@ async function upload() {
       <!-- Step 1 — choose method -->
       <template v-if="step === 'choose'">
         <DialogHeader>
-          <DialogTitle>{{ $t('upload_assets') }}</DialogTitle>
+          <DialogTitle>{{ $t('asset_library.upload_assets') }}</DialogTitle>
           <DialogDescription>
-            {{ $t('upload_choose_description') }}
+            {{ $t('asset_library.upload_choose_description') }}
           </DialogDescription>
         </DialogHeader>
 
@@ -170,9 +174,11 @@ async function upload() {
                     <component :is="resolveIcon(m.icon)" class="size-5" />
                   </div>
                   <div class="flex-1">
-                    <div class="font-semibold">{{ $t(`upload_${m.id}`) }}</div>
+                    <div class="font-semibold">
+                      {{ $t(`asset_library.upload_${m.id}`) }}
+                    </div>
                     <p class="text-muted-foreground mt-0.5 text-sm">
-                      {{ $t(`upload_${m.id}_description`) }}
+                      {{ $t(`asset_library.upload_${m.id}_description`) }}
                     </p>
                   </div>
                   <span
@@ -208,8 +214,10 @@ async function upload() {
       <!-- Step 2 — quick upload -->
       <template v-else>
         <DialogHeader>
-          <DialogTitle>{{ $t('upload_quick') }}</DialogTitle>
-          <DialogDescription>{{ $t('upload_quick_hint') }}</DialogDescription>
+          <DialogTitle>{{ $t('asset_library.upload_quick') }}</DialogTitle>
+          <DialogDescription>
+            {{ $t('asset_library.upload_quick_hint') }}
+          </DialogDescription>
         </DialogHeader>
 
         <!-- min-w-0: DialogContent is a grid, so this keeps long file names
@@ -225,9 +233,11 @@ async function upload() {
             @dragleave.prevent="dragOver = false"
           >
             <LucideUpload class="text-muted-foreground size-7" />
-            <span class="text-sm font-medium">{{ $t('drop_files_here') }}</span>
+            <span class="text-sm font-medium">
+              {{ $t('asset_library.drop_files_here') }}
+            </span>
             <span class="text-muted-foreground text-xs">
-              {{ $t('upload_accepted_types') }}
+              {{ $t('asset_library.upload_accepted_types') }}
             </span>
           </button>
           <input
@@ -258,7 +268,7 @@ async function upload() {
               <Input
                 v-model="newFolderName"
                 class="flex-1"
-                :placeholder="$t('folder_name')"
+                :placeholder="$t('asset_library.folder_name')"
                 @keydown.enter.prevent="createFolder"
                 @keydown.esc.prevent="cancelCreateFolder"
               />
@@ -272,11 +282,11 @@ async function upload() {
             <div v-else class="flex gap-2">
               <Select v-model="folderModel">
                 <SelectTrigger class="flex-1">
-                  <SelectValue :placeholder="$t('no_folder')" />
+                  <SelectValue :placeholder="$t('asset_library.no_folder')" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem :value="NO_FOLDER">
-                    {{ $t('no_folder') }}
+                    {{ $t('asset_library.no_folder') }}
                   </SelectItem>
                   <SelectItem
                     v-for="folder in folders"
