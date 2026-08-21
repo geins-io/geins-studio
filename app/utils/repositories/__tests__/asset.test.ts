@@ -72,6 +72,30 @@ describe('assetRepo', () => {
         errorContext: { action: 'deleting', entity: 'asset' },
       });
     });
+
+    it('upload POSTs the form data to /asset/upload', async () => {
+      const form = new FormData();
+      form.append('file', new File(['x'], 'a.jpg', { type: 'image/jpeg' }));
+      mockFetch.mockResolvedValue([]);
+      await api.upload(form);
+      expect(mockFetch).toHaveBeenCalledWith('/asset/upload', {
+        method: 'POST',
+        body: form,
+        errorContext: { action: 'creating', entity: 'asset' },
+      });
+    });
+
+    it('replace POSTs the form data to /asset/:id/replace', async () => {
+      const form = new FormData();
+      form.append('file', new File(['x'], 'b.jpg', { type: 'image/jpeg' }));
+      mockFetch.mockResolvedValue({ _id: '1', _type: 'asset' });
+      await api.replace('1', form);
+      expect(mockFetch).toHaveBeenCalledWith('/asset/1/replace', {
+        method: 'POST',
+        body: form,
+        errorContext: { action: 'updating', entity: 'asset' },
+      });
+    });
   });
 
   describe('folder sub-repo → /asset/folder', () => {

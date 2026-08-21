@@ -22,6 +22,15 @@ describe('entity registry', () => {
     expect(Object.keys(en).sort()).toEqual(Object.keys(sv).sort());
   });
 
+  // Top-level parity above treats a nested object (e.g. `asset_type`) as one
+  // key, so guard its sub-keys explicitly — a missing locale variant inside it
+  // would otherwise render the raw key path.
+  it('asset_type sub-keys match across locales', () => {
+    expect(Object.keys(en.asset_type).sort()).toEqual(
+      Object.keys(sv.asset_type).sort(),
+    );
+  });
+
   const entityKeys = Object.keys(ENTITIES);
 
   it.each(entityKeys)('"%s" exists in en.json', (key) => {
