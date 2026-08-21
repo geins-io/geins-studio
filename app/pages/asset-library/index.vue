@@ -332,9 +332,9 @@ async function confirmDelete() {
     <Input
       v-model="search"
       :placeholder="$t('search')"
-      class="w-full sm:w-64"
+      class="order-2 w-full sm:order-1 sm:w-64"
     />
-    <ButtonGroup class="ml-auto">
+    <ButtonGroup class="order-1 ml-auto sm:order-2">
       <Button
         :variant="view === 'grid' ? 'default' : 'outline'"
         size="icon"
@@ -355,13 +355,22 @@ async function confirmDelete() {
   </div>
 
   <SidebarProvider
-    class="mt-4 -mb-12 min-h-0! flex-1 items-stretch gap-4 @2xl:-mb-14"
+    class="relative mt-4 -mb-12 min-h-0! flex-1 items-stretch gap-4 @2xl:-mb-14"
   >
+    <!-- Below sm the folder panel overlays the grid (see the Sidebar's
+         absolute/sm:relative classes) instead of stealing 256px of width, so
+         this backdrop dismisses it. Hidden at sm+ where the panel is inline. -->
+    <div
+      v-if="showFolders"
+      class="absolute inset-0 z-30 bg-black/40 sm:hidden"
+      aria-hidden="true"
+      @click="showFolders = false"
+    />
     <Transition name="folder-panel">
       <Sidebar
         v-if="showFolders"
         collapsible="none"
-        class="w-(--sidebar-width) shrink-0 self-stretch overflow-y-auto bg-transparent!"
+        class="absolute inset-y-0 left-0 z-40 w-(--sidebar-width) shrink-0 self-stretch overflow-y-auto shadow-xl sm:relative sm:inset-auto sm:z-auto sm:bg-transparent! sm:shadow-none"
       >
         <AssetFolderTree v-model:selected="selectedFolder" />
       </Sidebar>
