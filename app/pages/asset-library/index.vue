@@ -332,9 +332,9 @@ async function confirmDelete() {
     <Input
       v-model="search"
       :placeholder="$t('search')"
-      class="w-full sm:w-64"
+      class="order-2 w-full sm:order-1 sm:w-64"
     />
-    <ButtonGroup class="ml-auto">
+    <ButtonGroup class="order-1 ml-auto sm:order-2">
       <Button
         :variant="view === 'grid' ? 'default' : 'outline'"
         size="icon"
