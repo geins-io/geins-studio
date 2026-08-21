@@ -32,30 +32,30 @@ const emit = defineEmits<{
         size="xs"
         class="size-6 p-1 sm:size-7"
       >
-        <LucideMoreHorizontal class="size-3.5" />
+        <LucideMoreHorizontal class="size-3.5" aria-hidden="true" />
         <span class="sr-only">{{ $t('actions') }}</span>
       </Button>
       <Button v-else variant="secondary" size="icon-xs">
-        <LucideEllipsis class="size-4" />
+        <LucideEllipsis class="size-4" aria-hidden="true" />
         <span class="sr-only">{{ $t('actions') }}</span>
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="end">
       <DropdownMenuItem @click="emit('open')">
-        <LucideEye class="mr-2 size-4" />
+        <LucideEye class="mr-2 size-4" aria-hidden="true" />
         <span>{{ $t('view_details') }}</span>
       </DropdownMenuItem>
       <DropdownMenuItem :disabled="!asset.url" @click="emit('download')">
-        <LucideDownload class="mr-2 size-4" />
+        <LucideDownload class="mr-2 size-4" aria-hidden="true" />
         <span>{{ $t('download') }}</span>
       </DropdownMenuItem>
       <DropdownMenuItem :disabled="!asset.url" @click="emit('copyUrl')">
-        <LucideCopy class="mr-2 size-4" />
+        <LucideCopy class="mr-2 size-4" aria-hidden="true" />
         <span>{{ $t('copy_public_url') }}</span>
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem @click="emit('delete')">
-        <LucideTrash2 class="mr-2 size-4" />
+        <LucideTrash2 class="mr-2 size-4" aria-hidden="true" />
         <span>{{ $t('delete_entity', { entityKey: 'asset' }) }}</span>
       </DropdownMenuItem>
     </DropdownMenuContent>

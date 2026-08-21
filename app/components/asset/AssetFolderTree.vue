@@ -112,7 +112,11 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
               @click="selected = null"
             >
               <span class="size-4 shrink-0" />
-              <component :is="allIcon" class="text-muted-foreground" />
+              <component
+                :is="allIcon"
+                class="text-muted-foreground"
+                aria-hidden="true"
+              />
               <span :class="selected === null && 'font-semibold'">
                 {{ $t('all_entity', { entityKey: 'asset' }, 2) }}
               </span>
@@ -146,6 +150,7 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
               <component
                 :is="systemIcon(sys.name)"
                 class="text-muted-foreground"
+                aria-hidden="true"
               />
               <span :class="selected === sys._id && 'font-semibold'">
                 {{ sys.name }}
@@ -164,7 +169,7 @@ async function confirmDelete(assets: FolderDeleteAssets = 'move') {
               @click="addingTop = true"
             >
               <span class="size-4 shrink-0" />
-              <LucidePlus class="text-muted-foreground" />
+              <LucidePlus class="text-muted-foreground" aria-hidden="true" />
               <span>{{ $t('new_entity', { entityKey: 'folder' }) }}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>

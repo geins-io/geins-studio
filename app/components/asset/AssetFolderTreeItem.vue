@@ -38,27 +38,41 @@ function onCreateChild(name: string) {
 <template>
   <SidebarMenuItem>
     <SidebarMenuButton :is-active="isActive" @click="emit('select', node._id)">
-      <span
-        v-if="hasChildren"
-        class="flex size-4 shrink-0 items-center justify-center"
-        :aria-label="$t('expand')"
-        @click.stop="open = !open"
-      >
-        <LucideChevronRight
-          class="size-3.5 transition-transform"
-          :class="open && 'rotate-90'"
-        />
-      </span>
-      <span v-else class="size-4 shrink-0" />
-      <component :is="folderIcon" class="text-muted-foreground" />
+      <!-- Reserved leading slot; the chevron toggle (below) overlays it so the
+           row button holds no nested interactive element. -->
+      <span class="size-4 shrink-0" aria-hidden="true" />
+      <component
+        :is="folderIcon"
+        class="text-muted-foreground"
+        aria-hidden="true"
+      />
       <span class="truncate" :class="isActive && 'font-semibold'">
         {{ node.name }}
       </span>
     </SidebarMenuButton>
 
-    <!-- Hover actions (siblings of the row button, not nested) -->
+    <!-- Expand toggle: a real, focusable button (sibling of the row button, not
+         nested) overlaid on the reserved leading slot, so keyboard users can
+         expand/collapse and AT gets aria-expanded. -->
+    <button
+      v-if="hasChildren"
+      type="button"
+      class="text-muted-foreground hover:text-foreground absolute top-1.5 left-1.5 flex size-5 items-center justify-center rounded"
+      :aria-label="$t(open ? 'collapse' : 'expand')"
+      :aria-expanded="open"
+      @click.stop="open = !open"
+    >
+      <LucideChevronRight
+        class="size-3.5 transition-transform"
+        :class="open && 'rotate-90'"
+        aria-hidden="true"
+      />
+    </button>
+
+    <!-- Hover actions (siblings of the row button, not nested); reveal on
+         keyboard focus too, not just hover. -->
     <div
-      class="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover/menu-item:opacity-100"
+      class="absolute top-1 right-1 flex gap-0.5 opacity-0 group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100"
     >
       <button
         type="button"
@@ -66,7 +80,7 @@ function onCreateChild(name: string) {
         :aria-label="$t('add_entity', { entityKey: 'folder' })"
         @click.stop="startAddChild"
       >
-        <LucidePlus class="size-3.5" />
+        <LucidePlus class="size-3.5" aria-hidden="true" />
       </button>
       <button
         type="button"
@@ -74,7 +88,7 @@ function onCreateChild(name: string) {
         :aria-label="$t('delete_entity', { entityKey: 'folder' })"
         @click.stop="emit('delete', node)"
       >
-        <LucideTrash2 class="size-3.5" />
+        <LucideTrash2 class="size-3.5" aria-hidden="true" />
       </button>
     </div>
 

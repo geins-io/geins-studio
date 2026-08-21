@@ -327,7 +327,7 @@ async function confirmDelete() {
       :aria-label="$t('folder', 2)"
       @click="showFolders = !showFolders"
     >
-      <LucideFolder class="size-4" />
+      <LucideFolder class="size-4" aria-hidden="true" />
     </Button>
     <Input
       v-model="search"
@@ -341,7 +341,7 @@ async function confirmDelete() {
         :aria-label="$t('grid_view')"
         @click="view = 'grid'"
       >
-        <LucideLayoutGrid class="size-4" />
+        <LucideLayoutGrid class="size-4" aria-hidden="true" />
       </Button>
       <Button
         :variant="view === 'list' ? 'default' : 'outline'"
@@ -349,7 +349,7 @@ async function confirmDelete() {
         :aria-label="$t('list_view')"
         @click="view = 'list'"
       >
-        <LucideList class="size-4" />
+        <LucideList class="size-4" aria-hidden="true" />
       </Button>
     </ButtonGroup>
   </div>
@@ -398,7 +398,7 @@ async function confirmDelete() {
       <div class="min-h-0 flex-1 overflow-y-auto pb-4">
         <div
           v-if="loading"
-          class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
+          class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]"
         >
           <Skeleton
             v-for="n in 8"
@@ -441,7 +441,7 @@ async function confirmDelete() {
 
         <div
           v-else
-          class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
+          class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(260px,1fr))]"
         >
           <AssetCard
             v-for="asset in pagedAssets"
