@@ -178,6 +178,7 @@
   "asset_remove_description": "Radera tillgången permanent. Detta kan inte ångras.",
   "file_replaced": "Filen har ersatts!",
   "public_url": "URL",
+  "copy_public_url": "Kopiera URL",
   "new": "Ny",
   "edit": "Redigera",
   "browse": "Bläddra",

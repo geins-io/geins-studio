@@ -51,7 +51,7 @@ const emit = defineEmits<{
       </DropdownMenuItem>
       <DropdownMenuItem :disabled="!asset.url" @click="emit('copyUrl')">
         <LucideCopy class="mr-2 size-4" />
-        <span>{{ $t('copy') }} {{ $t('public_url') }}</span>
+        <span>{{ $t('copy_public_url') }}</span>
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem @click="emit('delete')">
