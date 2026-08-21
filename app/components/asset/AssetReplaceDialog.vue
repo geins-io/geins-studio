@@ -51,7 +51,7 @@ async function replace() {
   try {
     const updated = await assetApi.replace(props.asset._id, form);
     await refreshNuxtData('asset-library-list');
-    toast({ title: t('file_replaced'), variant: 'positive' });
+    toast({ title: t('asset_library.file_replaced'), variant: 'positive' });
     emit('replaced', updated);
     open.value = false;
   } catch (error) {
@@ -66,15 +66,21 @@ async function replace() {
   <Dialog v-model:open="open">
     <DialogContent class="sm:max-w-xl">
       <DialogHeader>
-        <DialogTitle>{{ $t('replace_file') }}</DialogTitle>
-        <DialogDescription>{{ $t('replace_file_hint') }}</DialogDescription>
+        <DialogTitle>{{ $t('asset_library.replace_file') }}</DialogTitle>
+        <DialogDescription>
+          {{ $t('asset_library.replace_file_hint') }}
+        </DialogDescription>
       </DialogHeader>
 
       <!-- min-w-0 keeps long file names from expanding the dialog grid track -->
       <div class="min-w-0 space-y-4">
         <Feedback type="warning">
-          <template #title>{{ $t('replacing_everywhere') }}</template>
-          <template #description>{{ $t('replace_warning') }}</template>
+          <template #title>
+            {{ $t('asset_library.replacing_everywhere') }}
+          </template>
+          <template #description>
+            {{ $t('asset_library.replace_warning') }}
+          </template>
         </Feedback>
 
         <button
@@ -87,9 +93,11 @@ async function replace() {
           @dragleave.prevent="dragOver = false"
         >
           <LucideUpload class="text-muted-foreground size-7" />
-          <span class="text-sm font-medium">{{ $t('drop_file_here') }}</span>
+          <span class="text-sm font-medium">
+            {{ $t('asset_library.drop_file_here') }}
+          </span>
           <span class="text-muted-foreground text-xs">
-            {{ $t('upload_accepted_types') }}
+            {{ $t('asset_library.upload_accepted_types') }}
           </span>
         </button>
         <input ref="fileInput" type="file" class="hidden" @change="onPick" />
@@ -107,7 +115,7 @@ async function replace() {
           :disabled="!file"
           @click="replace"
         >
-          {{ $t('replace_everywhere') }}
+          {{ $t('asset_library.replace_everywhere') }}
         </ButtonIcon>
       </DialogFooter>
     </DialogContent>

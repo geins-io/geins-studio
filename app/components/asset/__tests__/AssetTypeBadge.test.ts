@@ -8,7 +8,7 @@ describe('AssetTypeBadge', () => {
       props: { type: 'image' },
     });
     // With empty test messages, t() echoes the label key.
-    expect(badge.text()).toBe('asset_type.image');
+    expect(badge.text()).toBe('asset_library.asset_type.image');
   });
 
   it('renders a badge element', async () => {

@@ -20,7 +20,7 @@ function commit() {
       <input
         ref="inputRef"
         v-model="name"
-        :placeholder="$t('folder_name')"
+        :placeholder="$t('asset_library.folder_name')"
         class="border-input bg-background focus-visible:ring-ring h-7 w-full rounded-md border px-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
         @keydown.enter.prevent="commit"
         @keydown.esc.prevent="emit('cancel')"

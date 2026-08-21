@@ -22,7 +22,7 @@ describe('AssetThumbnail', () => {
       props: { type: 'pdf', thumbUrl: null },
     });
     expect(thumb.find('img').exists()).toBe(false);
-    expect(thumb.text()).toBe('asset_type.pdf');
+    expect(thumb.text()).toBe('asset_library.asset_type.pdf');
   });
 
   it('hides the label in the compact row size', async () => {
