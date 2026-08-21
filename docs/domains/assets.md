@@ -27,24 +27,24 @@ The Assets domain manages media files (images, SVGs, documents, PDFs, video, aud
 
 The contract is **camelCase + `_id`/`_type`** (via `ResponseEntity`), mirroring the rest of the Management API. It is independent of the storage backend — the mock maps to it (see below).
 
-| Method & path              | Repo call                    | Body / query                   | Returns    |
-| -------------------------- | ---------------------------- | ------------------------------ | ---------- |
-| `GET /asset/list`          | `assetApi.list(opts)`        | `?folderId`, `?search`         | `Asset[]`  |
-| `GET /asset/:id`           | `assetApi.get(id)`           | —                              | `Asset`    |
-| `POST /asset`              | `assetApi.create(data)`      | `AssetCreate`                  | `Asset`    |
-| `PATCH /asset/:id`         | `assetApi.update(id, data)`  | `AssetUpdate`                  | `Asset`    |
-| `DELETE /asset/:id`        | `assetApi.delete(id)`        | —                              | `null`     |
-| `POST /asset/upload`       | `assetApi.upload(formData)`  | multipart files + `folderId`   | `Asset[]`  |
-| `POST /asset/:id/replace`  | `assetApi.replace(id, fd)`   | multipart single file          | `Asset`    |
-| `GET /asset/folder/list`   | `assetApi.folder.list()`     | —                              | `Folder[]` |
-| `GET /asset/folder/:id`    | `assetApi.folder.get(id)`    | —                              | `Folder`   |
-| `POST /asset/folder`       | `assetApi.folder.create(d)`  | `FolderCreate`                 | `Folder`   |
-| `PATCH /asset/folder/:id`  | `assetApi.folder.update(…)`  | `FolderUpdate` (rename / move) | `Folder`   |
-| `DELETE /asset/folder/:id` | `assetApi.folder.delete(id)` | —                              | `null`     |
+| Method & path              | Repo call                           | Body / query                            | Returns    |
+| -------------------------- | ----------------------------------- | --------------------------------------- | ---------- |
+| `GET /asset/list`          | `assetApi.list(opts)`               | `?folderId`, `?search`                  | `Asset[]`  |
+| `GET /asset/:id`           | `assetApi.get(id)`                  | —                                       | `Asset`    |
+| `POST /asset`              | `assetApi.create(data)`             | `AssetCreate`                           | `Asset`    |
+| `PATCH /asset/:id`         | `assetApi.update(id, data)`         | `AssetUpdate`                           | `Asset`    |
+| `DELETE /asset/:id`        | `assetApi.delete(id)`               | —                                       | `null`     |
+| `POST /asset/upload`       | `assetApi.upload(formData)`         | multipart files + `folderId`            | `Asset[]`  |
+| `POST /asset/:id/replace`  | `assetApi.replace(id, fd)`          | multipart single file                   | `Asset`    |
+| `GET /asset/folder/list`   | `assetApi.folder.list()`            | —                                       | `Folder[]` |
+| `GET /asset/folder/:id`    | `assetApi.folder.get(id)`           | —                                       | `Folder`   |
+| `POST /asset/folder`       | `assetApi.folder.create(d)`         | `FolderCreate`                          | `Folder`   |
+| `PATCH /asset/folder/:id`  | `assetApi.folder.update(…)`         | `FolderUpdate` (rename / move)          | `Folder`   |
+| `DELETE /asset/folder/:id` | `assetApi.deleteFolder(id, assets)` | `?assets=move\|delete` (default `move`) | `null`     |
 
 - **List envelope:** bare arrays today. Consumers must still guard with `Array.isArray()` / a normalizer before `.map()` — the real API may wrap in `{ items }` (per the repository rules in `CLAUDE.md`).
 - **`folderId` filtering** resolves the selected folder + descendants server-side.
-- **Folder delete:** assets fall back to uncategorised (`folder_id` FK is `ON DELETE SET NULL`); child folders cascade.
+- **Folder delete:** the caller picks what happens to the assets inside via `?assets`. `move` (default) re-homes them to uncategorised (`folder_id` FK is `ON DELETE SET NULL`); `delete` removes the whole folder + descendant subtree's assets first. Child folders cascade in both cases. The UI ([`AssetFolderDeleteDialog`](/components/asset/AssetFolderDeleteDialog)) only prompts for the choice when the subtree still holds assets; empty folders use the plain `DialogDelete` (`assetApi.folder.delete` — the move-only default).
 - **Upload:** `POST /asset/upload` (multipart) stores each file in the `assets` bucket server-side (service key), derives `sizeBytes` / `mime` / `AssetType` (`mimeToAssetType`), builds the public URL, inserts the row, and returns the created `Asset[]`. Images and SVGs reuse the original as `thumbUrl` (both render in an `<img>`; v0). Deleting an asset removes the row, not the stored object (mock — orphaned objects are harmless).
 - **Replace:** `POST /asset/:id/replace` (multipart, single file) uploads the new file and repoints the existing row's file columns (`url` / `thumbUrl` / `sizeBytes` / `mime` / `type`), keeping the same id, name, and metadata. The old stored object is left in place (mock — harmless). Returns the updated `Asset`.
 
@@ -89,14 +89,14 @@ When the Management API serves `/asset`:
 
 ## Key Files
 
-| Layer      | Path                                                               |
-| ---------- | ------------------------------------------------------------------ |
-| Types      | `shared/types/Asset.ts` (Asset + Folder)                           |
-| Registry   | `shared/utils/entities.ts` (`asset`, `folder`)                     |
-| Repository | `app/utils/repositories/asset.ts` (`assetApi`, `.folder` sub-repo) |
-| Mock API   | `server/api/asset/**`, `server/utils/assets-mock.ts`               |
-| Migration  | `supabase/migrations/0001_assets_mock.sql`                         |
-| Pages      | `app/pages/asset-library/index.vue` (placeholder until Phase 3)    |
+| Layer      | Path                                                                               |
+| ---------- | ---------------------------------------------------------------------------------- |
+| Types      | `shared/types/Asset.ts` (Asset + Folder)                                           |
+| Registry   | `shared/utils/entities.ts` (`asset`, `folder`)                                     |
+| Repository | `app/utils/repositories/asset.ts` (`assetApi`, `.folder` sub-repo)                 |
+| Mock API   | `server/api/asset/**`, `server/utils/assets-mock.ts`                               |
+| Migration  | `supabase/migrations/0001_assets_mock.sql`                                         |
+| Pages      | `app/pages/asset-library/index.vue` (grid + list browse, folder nav, detail panel) |
 
 ## Decision Log
 
