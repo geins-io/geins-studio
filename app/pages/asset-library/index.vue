@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useMediaQuery } from '@vueuse/core';
 import type { Asset } from '#shared/types';
 import { TableMode } from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
@@ -25,7 +26,10 @@ const dataList = ref<Asset[]>([]);
 
 const view = ref<'grid' | 'list'>('grid');
 const search = ref('');
-const showFolders = ref(false);
+// Open by default where the panel sits inline (sm+, the same 640px boundary the
+// template uses to switch from overlay-drawer to inline) so the active folder
+// filter is always visible; below sm it starts closed and overlays on demand.
+const showFolders = ref(useMediaQuery('(min-width: 640px)').value);
 // Selected folder id (null = All assets); drives the server-side filter.
 // Browse state (folder + page + page size) is restored from / synced to the URL.
 const selectedFolder = ref<string | null>(
