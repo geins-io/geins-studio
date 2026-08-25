@@ -110,6 +110,17 @@ export const useAccountStore = defineStore('account', () => {
     if (account.value) {
       currentCurrency.value = account.value.defaultCurrency;
     }
+
+    // Seed the UI language from the account's default channel language when the
+    // user hasn't picked one — otherwise the static `fallback.language` ('en')
+    // wins even for accounts whose default is another language.
+    const channelDefaultLanguage = pickChannelDefaultLanguage(
+      channels.value,
+      currentChannelId.value,
+    );
+    if (channelDefaultLanguage && currentLanguage.value === fallback.language) {
+      currentLanguage.value = channelDefaultLanguage;
+    }
   }
 
   // Granular refresh actions for use after mutations
