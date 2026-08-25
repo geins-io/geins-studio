@@ -35,6 +35,16 @@ export function assetRepo(fetch: $Fetch<unknown, NitroFetchRequest>) {
     folder,
 
     /**
+     * Distinct, sorted tag set across all assets — feeds the tag-input
+     * suggestions. Read-only; failures surface inline, not via a toast.
+     */
+    async listTags(fetchOptions?: RepoFetchOptions): Promise<string[]> {
+      return await fetch<string[]>(`${ENTITIES.asset.endpoint}/tags`, {
+        ...fetchOptions,
+      });
+    },
+
+    /**
      * Upload files (multipart) — stores each in Supabase storage and creates
      * its asset row, returning the created assets. `formData` carries the
      * file(s) and optional fields (e.g. `folderId`).

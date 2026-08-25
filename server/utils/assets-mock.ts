@@ -126,6 +126,22 @@ export function folderColumns(
 }
 
 /**
+ * Distinct, sorted tag set across the given asset rows — the source for the
+ * tag-input suggestions. Trims blanks and de-dupes case-sensitively (tags are
+ * stored as authored).
+ */
+export function distinctSortedTags(rows: Pick<AssetRow, 'tags'>[]): string[] {
+  const set = new Set<string>();
+  for (const row of rows) {
+    for (const tag of row.tags ?? []) {
+      const trimmed = tag.trim();
+      if (trimmed) set.add(trimmed);
+    }
+  }
+  return [...set].sort((a, b) => a.localeCompare(b));
+}
+
+/**
  * The seed "Uncategorised" system folder. It owns no asset rows of its own:
  * assets with `folder_id IS NULL` ARE uncategorised (folder delete re-homes
  * them here via the FK `ON DELETE SET NULL`). Filtering by this id must

@@ -6,6 +6,7 @@ import {
   assetColumns,
   folderColumns,
   descendantFolderIds,
+  distinctSortedTags,
   resolveAssetFolderFilter,
   UNCATEGORISED_FOLDER_ID,
 } from '../assets-mock';
@@ -123,6 +124,28 @@ describe('resolveAssetFolderFilter', () => {
     expect(
       resolveAssetFolderFilter('10000000-0000-0000-0000-000000000001'),
     ).toBe('descendants');
+  });
+});
+
+describe('distinctSortedTags', () => {
+  it('collects a distinct, sorted tag set across rows', () => {
+    expect(
+      distinctSortedTags([
+        { tags: ['social', 'sale'] },
+        { tags: ['sale', 'brand'] },
+        { tags: null },
+      ]),
+    ).toEqual(['brand', 'sale', 'social']);
+  });
+
+  it('trims blanks and drops empty tags', () => {
+    expect(distinctSortedTags([{ tags: ['  hero  ', '', '   '] }])).toEqual([
+      'hero',
+    ]);
+  });
+
+  it('is empty for no rows', () => {
+    expect(distinctSortedTags([])).toEqual([]);
   });
 });
 
