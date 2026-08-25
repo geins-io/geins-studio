@@ -6,6 +6,8 @@ import {
   assetColumns,
   folderColumns,
   descendantFolderIds,
+  resolveAssetFolderFilter,
+  UNCATEGORISED_FOLDER_ID,
 } from '../assets-mock';
 
 // Minimal row shapes matching the Supabase mock columns.
@@ -103,6 +105,24 @@ describe('folderColumns', () => {
       parent_id: 'p',
       sort_order: 3,
     });
+  });
+});
+
+describe('resolveAssetFolderFilter', () => {
+  it('returns "none" when no folder is selected', () => {
+    expect(resolveAssetFolderFilter(undefined)).toBe('none');
+  });
+
+  it('maps the Uncategorised system folder to a NULL-folder filter', () => {
+    // Regression: Uncategorised owns no rows — assets re-homed by folder delete
+    // land at folder_id IS NULL, so matching its id returned an empty view.
+    expect(resolveAssetFolderFilter(UNCATEGORISED_FOLDER_ID)).toBe('null');
+  });
+
+  it('resolves any other folder to a subtree filter', () => {
+    expect(
+      resolveAssetFolderFilter('10000000-0000-0000-0000-000000000001'),
+    ).toBe('descendants');
   });
 });
 

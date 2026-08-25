@@ -2,6 +2,7 @@ import { defineEventHandler, getQuery, createError } from 'h3';
 import {
   assetMockSupabase,
   descendantFolderIds,
+  resolveAssetFolderFilter,
   toAsset,
 } from '../../utils/assets-mock';
 
@@ -17,8 +18,12 @@ export default defineEventHandler(async (event) => {
     .select('*')
     .order('updated_at', { ascending: false });
 
-  // Folder-as-category: include the selected folder + all descendants.
-  if (folderId) {
+  // Folder-as-category. Uncategorised is the NULL-folder bucket (no rows of its
+  // own); any other folder includes its whole subtree.
+  const folderFilter = resolveAssetFolderFilter(folderId);
+  if (folderFilter === 'null') {
+    query = query.is('folder_id', null);
+  } else if (folderFilter === 'descendants' && folderId) {
     const { data: folders, error: fErr } = await sb
       .from('folder')
       .select('id,parent_id');
