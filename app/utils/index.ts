@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { ChannelListItem } from '#shared/types';
 import type { Updater } from '@tanstack/vue-table';
 import type { Ref } from 'vue';
 
@@ -86,6 +87,20 @@ export function languageToCountryCode(langCode: string): string {
   };
   const code = langCode.toLowerCase().split('-')[0] ?? langCode.toLowerCase();
   return map[code] || code;
+}
+
+/**
+ * The account's default UI language: the current channel's `defaultLanguage`,
+ * falling back to the first channel's. Both are Language `_id`s (e.g. `sv`),
+ * the same space as the `geins-language` cookie. Returns `undefined` when no
+ * channel resolves one, so callers keep their static fallback.
+ */
+export function pickChannelDefaultLanguage(
+  channels: Pick<ChannelListItem, '_id' | 'defaultLanguage'>[],
+  currentChannelId: string,
+): string | undefined {
+  const current = channels.find((c) => c._id === String(currentChannelId));
+  return current?.defaultLanguage || channels[0]?.defaultLanguage || undefined;
 }
 
 /**

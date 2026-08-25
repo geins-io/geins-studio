@@ -6,6 +6,7 @@ import {
   generateInternalId,
   flagClass,
   languageToCountryCode,
+  pickChannelDefaultLanguage,
   prettifyLangKey,
 } from '../index';
 
@@ -174,5 +175,24 @@ describe('languageToCountryCode', () => {
 
   it('lowercases the input', () => {
     expect(languageToCountryCode('SV')).toBe('se');
+  });
+});
+
+describe('pickChannelDefaultLanguage', () => {
+  const channels = [
+    { _id: '1', defaultLanguage: 'sv' },
+    { _id: '2', defaultLanguage: 'en' },
+  ];
+
+  it('returns the current channel default language', () => {
+    expect(pickChannelDefaultLanguage(channels, '2')).toBe('en');
+  });
+
+  it('falls back to the first channel when the current id has no match', () => {
+    expect(pickChannelDefaultLanguage(channels, '99')).toBe('sv');
+  });
+
+  it('returns undefined when there are no channels', () => {
+    expect(pickChannelDefaultLanguage([], '1')).toBeUndefined();
   });
 });
