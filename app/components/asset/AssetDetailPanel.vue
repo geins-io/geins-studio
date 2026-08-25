@@ -2,7 +2,12 @@
 import { toTypedSchema } from '@vee-validate/zod';
 import { useForm } from 'vee-validate';
 import * as z from 'zod';
-import type { Asset, AssetUpdate, LocalizedText } from '#shared/types';
+import type {
+  Asset,
+  AssetUpdate,
+  EntityBaseWithName,
+  LocalizedText,
+} from '#shared/types';
 import { ENTITIES } from '#shared/utils/entities';
 import { formatFileSize } from '#shared/utils/file';
 
@@ -25,6 +30,18 @@ const { copyUrl, download, deleteAsset } = useAssetActions();
 
 const entityKey = ENTITIES.asset.key;
 const NO_FOLDER = '__none__';
+
+// Distinct tags across all assets feed the tags field's autocomplete (custom
+// tags can still be typed). Shaped as `{ _id, name }` for FormInputTagsSearch;
+// refreshed each open so freshly coined tags appear as options.
+const { data: allTags, refresh: refreshTags } = useAsyncData<string[]>(
+  'asset-tags',
+  () => assetApi.listTags(),
+  { default: () => [] },
+);
+const tagOptions = computed<EntityBaseWithName[]>(() =>
+  (allTags.value ?? []).map((tag) => ({ _id: tag, name: tag })),
+);
 
 const loading = ref(false);
 const creatingFolder = ref(false);
@@ -68,6 +85,7 @@ watch(open, (value) => {
   if (value && props.asset) {
     creatingFolder.value = false;
     newFolderName.value = '';
+    refreshTags();
     const values: AssetFormValues = {
       name: props.asset.name,
       folderId: props.asset.folderId,
@@ -312,24 +330,13 @@ async function handleDelete() {
               <FormItem>
                 <FormLabel :optional="true">{{ $t('tag', 2) }}</FormLabel>
                 <FormControl>
-                  <TagsInput
-                    :model-value="(componentField.modelValue as string[]) || []"
-                    class="min-h-10 flex-wrap"
+                  <FormInputTagsSearch
+                    :model-value="componentField.modelValue"
+                    entity-key="tag"
+                    :data-set="tagOptions"
+                    :allow-custom-tags="true"
                     @update:model-value="componentField['onUpdate:modelValue']"
-                  >
-                    <TagsInputItem
-                      v-for="tag in (componentField.modelValue as string[]) ||
-                      []"
-                      :key="tag"
-                      :value="tag"
-                    >
-                      <TagsInputItemText />
-                      <TagsInputItemDelete />
-                    </TagsInputItem>
-                    <TagsInputInput
-                      :placeholder="$t('asset_library.add_tag')"
-                    />
-                  </TagsInput>
+                  />
                 </FormControl>
               </FormItem>
             </FormField>

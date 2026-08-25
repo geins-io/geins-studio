@@ -1627,7 +1627,6 @@
     "folder_delete_delete_title": "Delete folder and assets",
     "folder_delete_delete_description": "Permanently delete the assets too. This can't be undone.",
     "view_details": "View details",
-    "add_tag": "Add tag",
     "alt_text": "Alt text",
     "alt_text_placeholder": "Describe the image for screen readers…",
     "copy_public_url": "Copy URL",
