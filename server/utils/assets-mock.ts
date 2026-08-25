@@ -126,6 +126,28 @@ export function folderColumns(
 }
 
 /**
+ * The seed "Uncategorised" system folder. It owns no asset rows of its own:
+ * assets with `folder_id IS NULL` ARE uncategorised (folder delete re-homes
+ * them here via the FK `ON DELETE SET NULL`). Filtering by this id must
+ * therefore match NULL, not the id — otherwise the Uncategorised view is
+ * always empty even after assets have been moved into it.
+ */
+export const UNCATEGORISED_FOLDER_ID = '00000000-0000-0000-0000-000000000001';
+
+/**
+ * How to filter assets for a selected folder id: no filter, the NULL-folder
+ * bucket (Uncategorised), or the folder's own subtree. See
+ * {@link UNCATEGORISED_FOLDER_ID} for why Uncategorised maps to NULL.
+ */
+export function resolveAssetFolderFilter(
+  folderId: string | undefined,
+): 'none' | 'null' | 'descendants' {
+  if (!folderId) return 'none';
+  if (folderId === UNCATEGORISED_FOLDER_ID) return 'null';
+  return 'descendants';
+}
+
+/**
  * Folder-as-category filter: given the full folder set and a selected folder,
  * return that folder plus every descendant id (iterative DFS over the
  * adjacency list). Keeps folder filtering server-side, no client tree math.
