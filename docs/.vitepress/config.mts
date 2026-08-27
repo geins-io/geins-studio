@@ -116,6 +116,10 @@ export default defineConfig({
               { text: 'useAssetActions', link: '/composables/useAssetActions.md' },
               { text: 'useAssetType', link: '/composables/useAssetType.md' },
               { text: 'useFolders', link: '/composables/useFolders.md' },
+              {
+                text: 'useUploadWizard',
+                link: '/composables/useUploadWizard.md',
+              },
               { text: 'useSkeleton', link: '/composables/useSkeleton.md' },
             ],
           },
@@ -224,6 +228,10 @@ export default defineConfig({
               {
                 text: 'AssetFileRow',
                 link: '/components/asset/AssetFileRow.md',
+              },
+              {
+                text: 'AssetDropzone',
+                link: '/components/asset/AssetDropzone.md',
               },
               {
                 text: 'AssetDetailPanel',

@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import { entityListUrl } from '#shared/utils/entities';
 import { useToast } from '@/components/ui/toast/use-toast';
 
 /**
- * Upload dialog. Step 1 picks a method (only Quick upload is available in v0;
- * the wizard + CSV import are shown disabled with a "coming soon" tooltip).
- * Step 2 is quick upload: drag/drop or browse, pick a folder (with inline
- * create), and upload via `assetApi.upload`, then refresh the library.
+ * Upload dialog. Step 1 picks a method: Quick upload or the multi-step wizard
+ * (CSV import is still disabled with a "coming soon" tooltip). Quick upload
+ * continues inline (step 2 below: drag/drop or browse, pick a folder with inline
+ * create, upload via `assetApi.upload`, refresh the library). The wizard closes
+ * the dialog and routes to the full-page wizard at `/asset-library/upload`.
  */
 const props = defineProps<{
   /** Pre-selected target folder (e.g. the folder currently filtered). */
@@ -23,7 +25,7 @@ const { geinsLogError } = useGeinsLog('components/AssetUploadDialog.vue');
 
 const UPLOAD_METHODS = [
   { id: 'quick', icon: 'Upload', enabled: true },
-  { id: 'wizard', icon: 'FileText', enabled: false },
+  { id: 'wizard', icon: 'FileText', enabled: true },
   { id: 'csv', icon: 'FileDown', enabled: false },
 ] as const;
 
@@ -33,8 +35,6 @@ const method = ref<'quick' | 'wizard' | 'csv'>('quick');
 const files = ref<File[]>([]);
 const folderId = ref<string | null>(props.defaultFolderId ?? null);
 const uploading = ref(false);
-const dragOver = ref(false);
-const fileInput = ref<HTMLInputElement | null>(null);
 
 const creatingFolder = ref(false);
 const newFolderName = ref('');
@@ -54,7 +54,12 @@ function selectMethod(m: (typeof UPLOAD_METHODS)[number]) {
   if (m.enabled) method.value = m.id;
 }
 function goContinue() {
-  if (method.value === 'quick') step.value = 'quick';
+  if (method.value === 'quick') {
+    step.value = 'quick';
+  } else if (method.value === 'wizard') {
+    open.value = false;
+    navigateTo(`${entityListUrl('asset')}/upload`);
+  }
 }
 
 // Select needs string values, so map null ↔ a sentinel.
@@ -66,17 +71,8 @@ const folderModel = computed({
   },
 });
 
-function addFiles(list: FileList | null | undefined) {
-  if (list) files.value = [...files.value, ...Array.from(list)];
-}
-function onDrop(event: DragEvent) {
-  dragOver.value = false;
-  addFiles(event.dataTransfer?.files);
-}
-function onPick(event: Event) {
-  const input = event.target as HTMLInputElement;
-  addFiles(input.files);
-  input.value = '';
+function addFiles(list: File[]) {
+  files.value = [...files.value, ...list];
 }
 function removeFile(index: number) {
   files.value.splice(index, 1);
@@ -223,30 +219,7 @@ async function upload() {
         <!-- min-w-0: DialogContent is a grid, so this keeps long file names
              from expanding the track past the dialog (lets truncate work) -->
         <div class="min-w-0 space-y-4">
-          <button
-            type="button"
-            class="hover:bg-muted/40 flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-12 text-center transition-colors"
-            :class="dragOver && 'border-primary bg-muted/40'"
-            @click="fileInput?.click()"
-            @drop.prevent="onDrop"
-            @dragover.prevent="dragOver = true"
-            @dragleave.prevent="dragOver = false"
-          >
-            <LucideUpload class="text-muted-foreground size-7" />
-            <span class="text-sm font-medium">
-              {{ $t('asset_library.drop_files_here') }}
-            </span>
-            <span class="text-muted-foreground text-xs">
-              {{ $t('asset_library.upload_accepted_types') }}
-            </span>
-          </button>
-          <input
-            ref="fileInput"
-            type="file"
-            multiple
-            class="hidden"
-            @change="onPick"
-          />
+          <AssetDropzone @add="addFiles" />
 
           <div v-if="files.length" class="max-h-72 space-y-2 overflow-y-auto">
             <AssetFileRow
