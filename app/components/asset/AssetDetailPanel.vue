@@ -24,12 +24,10 @@ const emit = defineEmits<{ updated: []; replaced: [Asset] }>();
 const { t } = useI18n();
 const { assetApi } = useGeinsRepository();
 const { formatDate } = useDate();
-const { folders, refresh: refreshFolders } = useFolders();
 const { geinsLogError } = useGeinsLog('components/AssetDetailPanel.vue');
 const { copyUrl, download, deleteAsset } = useAssetActions();
 
 const entityKey = ENTITIES.asset.key;
-const NO_FOLDER = '__none__';
 
 // Distinct tags across all assets feed the tags field's autocomplete (custom
 // tags can still be typed). Shaped as `{ _id, name }` for FormInputTagsSearch;
@@ -44,8 +42,6 @@ const tagOptions = computed<EntityBaseWithName[]>(() =>
 );
 
 const loading = ref(false);
-const creatingFolder = ref(false);
-const newFolderName = ref('');
 const replaceOpen = ref(false);
 const deleteOpen = ref(false);
 const deleting = ref(false);
@@ -83,8 +79,6 @@ const altText = computed<LocalizedText>({
 });
 watch(open, (value) => {
   if (value && props.asset) {
-    creatingFolder.value = false;
-    newFolderName.value = '';
     refreshTags();
     const values: AssetFormValues = {
       name: props.asset.name,
@@ -104,32 +98,6 @@ watch(open, (value) => {
     captureBaseline();
   }
 });
-
-function cancelCreateFolder() {
-  creatingFolder.value = false;
-  newFolderName.value = '';
-}
-
-async function createFolder() {
-  const name = newFolderName.value.trim();
-  if (!name) {
-    creatingFolder.value = false;
-    return;
-  }
-  try {
-    const folder = await assetApi.folder.create({
-      name,
-      parentId: null,
-      sortOrder: 0,
-    });
-    await refreshFolders();
-    form.setFieldValue('folderId', folder._id);
-  } catch (error) {
-    geinsLogError('createFolder', getErrorMessage(error));
-  }
-  creatingFolder.value = false;
-  newFolderName.value = '';
-}
 
 async function handleSave() {
   if (!props.asset) return;
@@ -247,55 +215,10 @@ async function handleDelete() {
             >
               <FormItem>
                 <FormLabel :optional="true">{{ $t('folder', 1) }}</FormLabel>
-                <div v-if="creatingFolder" class="flex gap-2">
-                  <Input
-                    v-model="newFolderName"
-                    class="flex-1"
-                    :placeholder="$t('asset_library.folder_name')"
-                    @keydown.enter.prevent="createFolder"
-                    @keydown.esc.prevent="cancelCreateFolder"
-                  />
-                  <Button variant="secondary" size="lg" @click="createFolder">
-                    {{ $t('save') }}
-                  </Button>
-                  <Button variant="ghost" size="lg" @click="cancelCreateFolder">
-                    {{ $t('cancel') }}
-                  </Button>
-                </div>
-                <div v-else class="flex gap-2">
-                  <Select
-                    :model-value="value ?? NO_FOLDER"
-                    @update:model-value="
-                      (v) => handleChange(v === NO_FOLDER ? null : v)
-                    "
-                  >
-                    <SelectTrigger class="flex-1">
-                      <SelectValue
-                        :placeholder="$t('asset_library.no_folder')"
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem :value="NO_FOLDER">
-                        {{ $t('asset_library.no_folder') }}
-                      </SelectItem>
-                      <SelectItem
-                        v-for="folder in folders"
-                        :key="folder._id"
-                        :value="folder._id"
-                      >
-                        {{ folder.name }}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <ButtonIcon
-                    icon="new"
-                    variant="outline"
-                    size="lg"
-                    @click="creatingFolder = true"
-                  >
-                    {{ $t('new') }}
-                  </ButtonIcon>
-                </div>
+                <AssetFolderPicker
+                  :model-value="value"
+                  @update:model-value="handleChange"
+                />
               </FormItem>
             </FormField>
 

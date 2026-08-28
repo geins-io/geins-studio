@@ -36,7 +36,7 @@ interface WizardFileSettings {
   channels?: string[];
   description?: string;
   tags?: string[];
-  localizations?: Localized<AssetLocalizations>;
+  altText?: LocalizedText;
 }
 ```
 

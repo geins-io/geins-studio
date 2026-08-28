@@ -17,7 +17,6 @@ const props = defineProps<{
 const open = defineModel<boolean>('open', { default: false });
 
 const { assetApi } = useGeinsRepository();
-const { folders, refresh: refreshFolders } = useFolders();
 const { resolveIcon } = useLucideIcon();
 const { toast } = useToast();
 const { t } = useI18n();
@@ -36,17 +35,12 @@ const files = ref<File[]>([]);
 const folderId = ref<string | null>(props.defaultFolderId ?? null);
 const uploading = ref(false);
 
-const creatingFolder = ref(false);
-const newFolderName = ref('');
-
 watch(open, (value) => {
   if (value) {
     step.value = 'choose';
     method.value = 'quick';
     files.value = [];
     folderId.value = props.defaultFolderId ?? null;
-    creatingFolder.value = false;
-    newFolderName.value = '';
   }
 });
 
@@ -62,46 +56,11 @@ function goContinue() {
   }
 }
 
-// Select needs string values, so map null ↔ a sentinel.
-const NO_FOLDER = '__none__';
-const folderModel = computed({
-  get: () => folderId.value ?? NO_FOLDER,
-  set: (value: string) => {
-    folderId.value = value === NO_FOLDER ? null : value;
-  },
-});
-
 function addFiles(list: File[]) {
   files.value = [...files.value, ...list];
 }
 function removeFile(index: number) {
   files.value.splice(index, 1);
-}
-
-function cancelCreateFolder() {
-  creatingFolder.value = false;
-  newFolderName.value = '';
-}
-
-async function createFolder() {
-  const name = newFolderName.value.trim();
-  if (!name) {
-    creatingFolder.value = false;
-    return;
-  }
-  try {
-    const folder = await assetApi.folder.create({
-      name,
-      parentId: null,
-      sortOrder: 0,
-    });
-    await refreshFolders();
-    folderId.value = folder._id;
-  } catch (error) {
-    geinsLogError('createFolder', getErrorMessage(error));
-  }
-  creatingFolder.value = false;
-  newFolderName.value = '';
 }
 
 async function upload() {
@@ -237,48 +196,7 @@ async function upload() {
                 ({{ $t('optional') }})
               </span>
             </Label>
-            <div v-if="creatingFolder" class="flex gap-2">
-              <Input
-                v-model="newFolderName"
-                class="flex-1"
-                :placeholder="$t('asset_library.folder_name')"
-                @keydown.enter.prevent="createFolder"
-                @keydown.esc.prevent="cancelCreateFolder"
-              />
-              <Button variant="secondary" size="lg" @click="createFolder">
-                {{ $t('save') }}
-              </Button>
-              <Button variant="ghost" size="lg" @click="cancelCreateFolder">
-                {{ $t('cancel') }}
-              </Button>
-            </div>
-            <div v-else class="flex gap-2">
-              <Select v-model="folderModel">
-                <SelectTrigger class="flex-1">
-                  <SelectValue :placeholder="$t('asset_library.no_folder')" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem :value="NO_FOLDER">
-                    {{ $t('asset_library.no_folder') }}
-                  </SelectItem>
-                  <SelectItem
-                    v-for="folder in folders"
-                    :key="folder._id"
-                    :value="folder._id"
-                  >
-                    {{ folder.name }}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <ButtonIcon
-                icon="new"
-                variant="outline"
-                size="lg"
-                @click="creatingFolder = true"
-              >
-                {{ $t('new') }}
-              </ButtonIcon>
-            </div>
+            <AssetFolderPicker v-model="folderId" />
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import type { AssetLocalizations, Localized } from '#shared/types';
+import type { LocalizedText } from '#shared/types';
 import type { InjectionKey, Ref, ComputedRef } from 'vue';
 
 /**
@@ -13,8 +13,9 @@ export interface WizardFileSettings {
   channels?: string[];
   description?: string;
   tags?: string[];
-  /** Localized alt text (images only), keyed by locale. */
-  localizations?: Localized<AssetLocalizations>;
+  /** Localized alt text (images only): locale → text. Mapped to the wire
+   *  `localizations` shape at upload time (step 3). */
+  altText?: LocalizedText;
 }
 
 /**
