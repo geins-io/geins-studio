@@ -234,6 +234,14 @@ export default defineConfig({
                 link: '/components/asset/AssetDropzone.md',
               },
               {
+                text: 'AssetFolderPicker',
+                link: '/components/asset/AssetFolderPicker.md',
+              },
+              {
+                text: 'AssetWizardManage',
+                link: '/components/asset/AssetWizardManage.md',
+              },
+              {
                 text: 'AssetDetailPanel',
                 link: '/components/asset/AssetDetailPanel.md',
               },
